@@ -1741,7 +1741,11 @@ work package there, and ruling 2 replaces that for the sheet product.
    a 3D host only. `RENDER-2D:WP6` extends the three to a 2D host: the transfer's
    [float form](RENDER-2D/DESIGN.md#7-colour) is drawn in the EDR present pass, a 2D host changes display mode
    through the same generation transition, and engine capture's tap reads its float frame as seam 6 has it read
-   a 3D host's. A 2D game asks for the EDR surface with the declaration seam 6 put in `thrum-app`'s game
+   a 3D host's. A capture that names the 8-bit stage on a float-mode 2D host is served from
+   [an 8-bit display image](RENDER-2D/DESIGN.md#an-8-bit-capture-of-a-float-mode-host) held only while that
+   capture is enabled. The image is the 8-bit mode's output up to capture's read, so the interface stage of
+   [`GAME-UI`'s ruling 1](#seam-rulings-for-game-ui) draws into it in its 8-bit form as well as into the float
+   target; `GAME-UI:WP1` builds that draw. A 2D game asks for the EDR surface with the declaration seam 6 put in `thrum-app`'s game
    contract for a 3D game: `RENDER-2D:WP6` rewords that declaration's documentation for either scene kind and
    changes nothing the shell does with it. A 3D host compiles the same passes and draws the same bytes in both
    modes.
@@ -3315,3 +3319,10 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   endpoint, the third place WP6 builds outside the seam, so `WATERS` WP19 posts with its world's own
   identity. The tick-pass interface row, every other module's item and dependency, and every exact baseline
   stand.
+- 2026-11-25 [Seam ruling 1 for `RENDER-2D`](#seam-rulings-for-render-2d) now says what the 8-bit stage of a
+  float-mode 2D host is, after the design's review found that a recording of such a host would lack the
+  interface the player sees: `GAME-UI`'s float-mode stage draws into the float target only. `RENDER-2D:WP6`
+  builds the stage as the 8-bit mode's output up to capture's read. Owed by `GAME-UI`'s planner before WP1
+  starts: its mechanism 1 says the stage draws into both outputs of such a frame, and WP1 gains the comparison
+  of a recording with a visible overlay against the 8-bit mode's frame. No interface row, no other module's
+  item or dependency, and no exact baseline changed.

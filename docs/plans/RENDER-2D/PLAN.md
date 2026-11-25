@@ -74,7 +74,9 @@ the 2D graph, the capture tap and the change of display mode stop at a 3D host. 
 [the float form](DESIGN.md#7-colour) under [seam ruling 1](../ARCHITECTURE.md#seam-rulings-for-render-2d), starting
 from [the design's reading list](DESIGN.md#proof-and-builder-handoff). The checks select tests whose names contain
 `float_mode` in three test binaries that exist, and three actions of `scripts/render2d.py`: `edr`,
-`edr-crowd` and `edr-observed`. The bright sprite WP6.5 and WP6.8 need is drawn only when those checks ask
+`edr-crowd` and `edr-observed`. WP6.4's test also takes its host through an 8-bit capture and out again, and
+WP6.6 builds [the 8-bit stage](DESIGN.md#an-8-bit-capture-of-a-float-mode-host) as the 8-bit mode's own output,
+which `GAME-UI:WP1` then draws its interface into; build no interface draw here. The bright sprite WP6.5 and WP6.8 need is drawn only when those checks ask
 for it, because the Chrome case and the simulator proof compare the sprite scene's card as it is. WP6.7 gives
 the Crowd view a window launch that forces the display record; its other proofs stay offscreen. Say in
 [the 2D creator guide](../../SPRITE-SCENES.md) how a 2D game declares itself eligible for the EDR surface and

@@ -348,3 +348,13 @@
   is served (WP6.6, WP6.8). The clip is at the greatest half-float not above the headroom (WP6.1, WP6.3).
   [Review](../../../.orchestrate/evidence/RENDER-2D/design-review.md) ·
   [What changed](../../../.orchestrate/evidence/RENDER-2D/design-revision-2026-11-25.md)
+- 2026-11-25 Planner: the second design review of WP6 asked for two changes, both settled in mechanism 7 and
+  WP6's items. The 8-bit stage of a float-mode host is the 8-bit mode's output, whole, so `GAME-UI`'s interface
+  stage draws into it (WP6.6, with an `ask`). A disable ends the stage and releases its storage (WP6.4).
+  This was the last round, so no reviewer read these before building.
+  [Review](../../../.orchestrate/evidence/RENDER-2D/design-review.md) ·
+  [What changed](../../../.orchestrate/evidence/RENDER-2D/design-revision-2026-11-25-2.md)
+- 2026-11-25 Proposal to `GAME-UI`'s planner, before `GAME-UI:WP1` starts: on a float-mode host with an 8-bit
+  capture enabled its stage must draw its 8-bit form into the display image too, and WP1 needs the comparison
+  of a recording with a visible overlay against the 8-bit mode's frame. `GAME-UI`'s files are unchanged.
+  [Detail](../../../.orchestrate/evidence/RENDER-2D/design-revision-2026-11-25-2.md)

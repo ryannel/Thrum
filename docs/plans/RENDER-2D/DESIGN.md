@@ -396,8 +396,8 @@ At H = 1 the float mode clips at white as the 8-bit mode does, so its frame, enc
 mode's to within one code at every pixel. A change of H reaches the next frame and creates nothing.
 
 The float form reads the sprite target itself. A float-mode generation therefore holds no 8-bit display image
-and runs no 8-bit transfer, unless [a capture asks for the 8-bit stage](#an-8-bit-capture-of-a-float-mode-host):
-the mode costs one full-screen pass, not two. Both forms' pipelines are made when the
+and runs no 8-bit transfer, except while [a capture of the 8-bit stage](#an-8-bit-capture-of-a-float-mode-host)
+is enabled: the mode costs one full-screen pass, not two. Both forms' pipelines are made when the
 host is prepared, wherever the float mode can be selected, so a generation build that changes the mode compiles
 nothing. A 2D host changes mode through the generation transition a 3D host uses, in each direction the output
 half offers.
@@ -413,8 +413,32 @@ is still given the float frame, with the values it has when nothing is captured,
 change. The capture can be disabled and enabled again, as a recorder does after it replaces a surface or a
 device. The Mac window's qualification observer records this way: its recording is 8-bit, and it asks for the
 8-bit stage by name when it starts and each time it restarts. So a 2D game on the float surface runs the same
-with the observer recording as without it. A host that nobody has asked for the 8-bit stage holds no 8-bit
-display image and runs no 8-bit transfer, as above.
+with the observer recording as without it.
+
+*The 8-bit stage is the 8-bit mode's output, whole.* While that capture is enabled the frame has two outputs,
+and each is a target the display transfer wrote. The display image is not a copy of the float frame: the 8-bit
+form of the transfer writes it from the sprite target, and capture reads it at the point of the frame where the
+8-bit mode's capture reads its own, after every stage the output half draws between the transfer and that read.
+Today there is none. [`GAME-UI`'s interface stage](../GAME-UI/DESIGN.md#1-the-interface-stage) is the first, and
+this is the handoff to it: in such a frame the stage draws its paint list into both outputs, in its float form
+into the float target and in its 8-bit form into the display image, each blended in its own target's colour
+space. The recording then shows the interface the player sees, and it is still the frame an 8-bit-mode host
+with that interface submits, to within one code. A recording made by converting the finished float frame would
+not be: black at half alpha over a sprite channel of 2 leaves 1 on the float target, which converts to code 255,
+where the same row over the 8-bit scene's clipped white is code 188. So no recorded pixel is made from the
+float target. WP6 builds the stage this way, with no interface to draw. `GAME-UI:WP1` builds the paint list's
+draw into the display image and compares a recording with a visible overlay against the 8-bit mode's frame,
+because the interface first exists there. Where the two designs meet, this paragraph governs.
+
+*When the capture stops.* Disabling the capture ends the stage's work and gives its storage back. Every frame
+the host starts after the disable, with no 8-bit capture enabled again, runs the sprite pass and the present
+pass and no other full-screen pass. The 8-bit display image and the capture's readback storage are released
+once the frames that were in flight at the disable have retired, and the host then holds what a host never
+asked for the stage holds. Nothing waits for that: the disable returns at once, as it does today. A capture
+enabled again before the host starts another frame, as the observer's restart does, finds the stage in place
+and is accepted with frames in flight. So a float-mode host with no 8-bit capture enabled, whether none was
+ever asked for or the last one has been disabled, holds no 8-bit display image and runs no 8-bit transfer, as
+above.
 
 **Which games get the float surface.** The shell chooses the surface when it creates the window, before the
 scene is prepared, so it cannot read the scene kind and asks the game. The game contract has one EDR
@@ -519,7 +543,9 @@ product exists. An embedded sheet is rebuilt from its retained bytes after devic
 the engine updates the kept order and uploads changed rows and the order list. The game
 gives the view for this frame's alpha and its frame rows. Residency's upload pass copies. The sprite pass clears
 the target to the scene's background colour and draws once. Tone encodes it, capture reads it if asked, and present copies it to the surface. In
-the float mode present writes the transfer into the float target and capture reads that target. On
+the float mode present writes the transfer into the float target and capture reads that target. While a capture
+of the 8-bit stage is enabled on a float-mode host, the 8-bit transfer also writes the display image, and that
+capture reads it where the 8-bit mode's would. On
 submission residency commits and a sheet switch takes effect; on discard nothing commits.
 
 **An artist's journey.** Put PNG files and a description in a folder; the cooker packs them and the game shows
@@ -548,8 +574,11 @@ on what the owning module has landed by then, with the behaviour defined here, a
 1. **The frame runtime** (`APPLE-TILE`, `APPLE-PRESENTATION`): scene-kind selection, the display-referred
    transfer, and a scene that declares no reconstruction. Built in WP1. The transfer's
    [float form](#7-colour), a 2D host's change of display mode and its capture, by default and at the 8-bit
-   stage, are built in WP6. WP6 also words the game contract's EDR declaration for either scene kind; what
-   the shell does with the declaration does not change.
+   stage, are built in WP6. [The 8-bit stage of a float-mode host](#an-8-bit-capture-of-a-float-mode-host) is
+   the 8-bit mode's output up to capture's read, held only while its capture is enabled. `GAME-UI`'s interface
+   stage draws into it in its 8-bit form as well as into the float target, and `GAME-UI:WP1` builds that draw
+   and proves it with a visible overlay. WP6 also words the game contract's EDR declaration for either scene
+   kind; what the shell does with the declaration does not change.
 2. **Content** (`CONTENT-LOOP`, `EFFECT-GRAPH`): the sheet product, pages as a lease, and residency and the
    contribution list in a 2D scene. WP4 extends the texture cooker in `thrum-cook` and runtime views in
    `thrum-asset`. The game connects `thrum-asset-gpu` residency to the sprite scene, so `thrum-render` can
@@ -584,7 +613,7 @@ No budget is set (brief, decision 3). Estimates, to be replaced by measurements:
 | Upload a tick | Changed rows only. A crowd where everything moves uploads all of them, about 38 MB a second at 60 Hz, and a 40 KB order list |
 | Order a tick | 121 µs at 10,000 natively for the kept order in the probe's crowd, where an exact sort is 76 µs; Chrome not measured. The worst case is a tick that gives every row with history a new value: about 25 million exchanges and 10 ms at 10,000. Rows without history are sorted, not exchanged in, so a rewind or a wave of spawns does not pay it |
 | Draw | One call; four vertices a row |
-| Fill | The sprite target at 3456×2234 is 7.7 million pixels: 62 MB as half-float, plus the output half's 31 MB intermediate. The float mode holds no intermediate, and its drawable is half-float; while an 8-bit capture of it is enabled it holds the intermediate and runs both output passes. A crowd three deep shades about three times its own area |
+| Fill | The sprite target at 3456×2234 is 7.7 million pixels: 62 MB as half-float, plus the output half's 31 MB intermediate. The float mode holds no intermediate, and its drawable is half-float; while an 8-bit capture of it is enabled it holds the intermediate and runs both output passes, and it gives the 31 MB back once the capture is disabled and the frames in flight have retired. A crowd three deep shades about three times its own area |
 | Pixel filter | The widened 1.5× footprint meets at most four source texels per axis. Pair adjacent positive weights for up to four hardware bilinear samples per affected fragment. The aligned and base box paths can use one sample. The off-grid 2× cost depends on the chosen neighbourhood and scales with shaded pixels and overdraw. Reuse level zero, the sampler and the sheet bindings, and derive scale-dependent terms once per quad where possible |
 | A sheet | 16 MiB a 2048² page uncompressed, a third more with mips |
 | 3D work | None |
@@ -670,6 +699,14 @@ Whether motion is smooth on the built-in panel itself is not measured here. That
     start and in its restart after a replaced surface or device, and its writer takes 8-bit frames. It stays as
     it is: the frame host serves the request. The window entry points that take a display override and an
     observer are public in `thrum-app`, and the V1 game already reads both from its launch settings.
+  - *The 8-bit stage.* `enable_submitted_capture_at` in `runtime/submitted_capture.rs` replaces the host's frame
+    targets when a capture names a stage they lack, and refuses that change while frames are pending.
+    `disable_submitted_capture` clears the taps and leaves those targets in place, so a float-mode host that
+    reused it unchanged would keep the display image and the 8-bit transfer for the rest of the session.
+    Mechanism 7 says [what a disable does](#an-8-bit-capture-of-a-float-mode-host) on a float-mode 2D host,
+    and the observer's restart, a disable and an enable in one call, must still be accepted with frames in
+    flight. Reuse the 8-bit mode's transfer pass and its point of capture for the stage. Convert nothing from
+    the float target, because `GAME-UI:WP1` draws its interface between that transfer and that read.
 - **Capture.** Inspected items use T2 engine capture and name their mode. Motion is judged from `realtime`
   captures at 1920×1080 as consecutive frames at 1x; the display's full 3456×2234 is captured as `fixed` stills
   and timed in the cost records, because twenty seconds of it would not fit capture's output bound.
