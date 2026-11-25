@@ -837,7 +837,7 @@
           "lock": "gpu",
           "ask": "Is the scaler encoded on the native segment's own command buffer, as APPLE-TILE's boundary requires? Are creations counted by phase, with Metal's validation layer on for the run?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP8/target-a30845335/D8.1/metalfx.json",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP8/target-exposure-texture/metalfx/metalfx.json",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -848,7 +848,7 @@
           "check": "python3 scripts/apple_presentation.py metalfx-motion --target mac-metal",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP8/target-a30845335/D8.2/metalfx-motion.json",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP8/target-exposure-texture/metalfx-motion/metalfx-motion.json",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -860,10 +860,10 @@
           "lock": "gpu",
           "ask": "Does the held run differ from the stepped run in the storage scale alone, with the same view, light and sample count, and did the stepped run record both scales? If the pre-pass is on, is the exposure texture alone on record failing this bound? With the pre-pass on, does any second exposure or tone step exist, does a still frame equal the frame without the pre-pass to within float rounding of the tone input, and is an exposed value just above 65504/K clamped to the largest finite half value and counted while one just below it is not?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP8/target-exposure-texture/metalfx-exposure/comparison.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D8.4",

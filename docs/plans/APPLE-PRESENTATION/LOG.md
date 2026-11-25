@@ -534,3 +534,8 @@
   [Exposure at 1920×1080](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP8/exposure-1080p/comparison.json) ·
   [GPU tone-input witness](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP8/still-tone-input.log) ·
   [Motion record](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP8/motion-previews/README.md)
+
+- 2026-11-25 WP8. The exposure texture passed the revised D8.3 on Mac Metal at every sample. The peak
+  differences were 0.0707% for the matched storage-step arm and 0.4551% for the scrub. The unused
+  normalising pre-pass and its counters were removed. The rerun also confirmed the five-scale native
+  route and its motion controls. [Mac target evidence](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP8/target-exposure-texture/README.md)
