@@ -439,7 +439,7 @@
     {
       "id": "WP6",
       "name": "A game's question to an effect is answered every tick from the state the last drawn frame left, even when that tick's frame is skipped, on the Mac and in Chrome",
-      "status": "ready_for_review",
+      "status": "in_progress",
       "quality_bar": "A query path as in Unity's Crest ocean queries and Unreal's GPU readbacks: asked by the simulation's step, answered a step or two later without a stall, and no later when the renderer drops a frame. A wrong declaration is refused when the scene is prepared, with a named error, and never becomes a wrong answer.",
       "items": [
         {
@@ -449,8 +449,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP6/WP6.1.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP6-review.md"
         },
         {
           "id": "WP6.2",
@@ -461,8 +461,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP6/WP6.2.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP6-review.md"
         },
         {
           "id": "WP6.3",
@@ -471,10 +471,10 @@
           "ask": "Is there no blocking poll and no blocking map between a post and its drain? Is the confirmation the last thing the frame host does before a tick submission's `queue.submit`, with no call between the two that can wait? Is there any path on which the frame host records a tick pass before it has entered the permission it was given, or makes a tick submission's submit without that confirmation? Does the tick stage create no timestamp query set of its own? Do the tests that hold `advance_without_rendering` to touching no device still stand as they were?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP6/WP6.3.log",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP6-review.md"
         },
         {
           "id": "WP6.4",
@@ -484,8 +484,8 @@
           "target": "chrome-webgpu",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP6/WP6.4.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP6-review.md"
         },
         {
           "id": "WP6.5",
@@ -495,8 +495,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP6/WP6.5.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP6-review.md"
         },
         {
           "id": "WP6.6",
@@ -506,8 +506,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP6/WP6.6.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP6-review.md"
         },
         {
           "id": "WP6.7",
@@ -517,8 +517,8 @@
           "target": "stand_in:ios-sim",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP6/WP6.7.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP6-review.md"
         },
         {
           "id": "WP6.8",
@@ -527,12 +527,23 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP6/WP6.8.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP6-review.md"
         }
       ],
-      "failed_reviews": 0,
-      "failed_reviews_with_repeat": 0
+      "failed_reviews": 1,
+      "failed_reviews_with_repeat": 0,
+      "findings": [
+        {
+          "name": "Tick preparation accepts an out-of-range mip",
+          "repeat": false
+        },
+        {
+          "name": "A governed host timestamps a tick pass with timing switched off",
+          "item": "WP6.3",
+          "repeat": false
+        }
+      ]
     }
   ]
 }

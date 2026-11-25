@@ -504,7 +504,50 @@
     },
     "WP6": {
       "definitions": "ed9f51a39c0d78aabbff99810385856535040278906b39115fbdbf8a566ed509",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "39702cf8562ede51fd95005effc94554de32945d",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP6-review.md",
+          "items": {
+            "WP6.1": "pass",
+            "WP6.2": "pass",
+            "WP6.3": "fail",
+            "WP6.4": "pass",
+            "WP6.5": "pass",
+            "WP6.6": "pass",
+            "WP6.7": "pass",
+            "WP6.8": "pass"
+          },
+          "findings": [
+            {
+              "name": "Tick preparation accepts an out-of-range mip",
+              "repeat": false
+            },
+            {
+              "name": "A governed host timestamps a tick pass with timing switched off",
+              "item": "WP6.3",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 113158,
+            "cached": 2896128,
+            "output": 8970,
+            "turns": 1
+          },
+          "at": "2026-11-25T13:28:03Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of EFFECT-GRAPH at .orchestrate/evidence/EFFECT-GRAPH/design-review.md asked for changes, with its 2 M",
