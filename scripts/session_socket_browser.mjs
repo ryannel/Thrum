@@ -10,7 +10,8 @@ const [directory, artifacts, log, control, pageControl, ticket, bodies, trace, m
 const windowed = mode === 'windowed';
 const chromePath = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const player = windowed ? 'windowed_player.js' : 'socket_player.js';
-const page = `<!doctype html><title>Thrum socket match</title>${windowed ? '<canvas></canvas>' : ''}<script type="module" src="/${player}"></script>`;
+const canvas = '<style>body{margin:0}canvas{display:block;max-width:100%;height:auto}</style><canvas></canvas>';
+const page = `<!doctype html><title>Thrum socket match</title>${windowed ? canvas : ''}<script type="module" src="/${player}"></script>`;
 const staticFiles = new Set(['match_proof.js', 'match_proof_bg.wasm', player]);
 const readControl = async file => (await fs.readFile(file, 'utf8').catch(() => '')).trim();
 const writeRows = rows => fs.appendFile(log, rows.map(row => JSON.stringify(row) + '\n').join(''));
@@ -55,7 +56,9 @@ await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 // The isolated proof page represents an active player. Keep both its timer
 // wakeups and renderer scheduling in the foreground class. The freeze
 // scenario still suspends the renderer explicitly.
-const flags = [windowed ? '--disable-backgrounding-occluded-windows' : '--headless=new',
+const display = windowed ? ['--disable-backgrounding-occluded-windows', '--window-position=25,60',
+    '--window-size=700,450'] : ['--headless=new'];
+const flags = [...display,
     '--remote-debugging-port=0', `--user-data-dir=${directory}`,
     '--disable-background-timer-throttling', '--disable-renderer-backgrounding', '--no-first-run', 'about:blank'];
 const chrome = spawn(chromePath, flags, { detached: true, stdio: ['ignore', 'ignore', 'inherit'] });
