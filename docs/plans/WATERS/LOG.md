@@ -1042,8 +1042,8 @@
   [Handoff](../../../.orchestrate/evidence/WATERS/WP19-handoff.md)
 - 2026-11-25 WP19 builder. Water posts and drains on the world's endpoint. The tick stage reads submitted
   cascades and wake, and stages its own map products. Conservative depth ceilings skip unreachable cells,
-  and groups of eight lanes accumulate component sums for an isolated sea sheet.
+  and groups of eight lanes accumulate component sums and refine the final stencil for an isolated sea sheet.
 - All six Mac checks passed. At 192 × 108 with 30 view opportunities per second, both arms completed 600
-  measured batches. Open water delivered 97.50% within two ticks and the breakers delivered 94.83%, with
-  zero unavailable replies, fallbacks or blocking reads in either arm. The 1440p surf tick pass took 16.336 ms
+  measured batches. Open water delivered 100% within two ticks and the breakers delivered 99.33%, with
+  zero unavailable replies, fallbacks or blocking reads in either arm. The 1440p surf tick pass took 1.565 ms
   under shared load. [Metal proof](../../../.orchestrate/evidence/WATERS/WP19/delivery-proof.md)
