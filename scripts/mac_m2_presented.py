@@ -111,11 +111,16 @@ def replay_origin_shift(path, pid, rows):
     root, resolve = xml(path)
     live = {}
     ambiguous = set()
+    names = []
     for node in root.findall('node'):
         schema = node.find('schema')
-        if schema is None or schema.get('name') != 'kdebug':
+        if schema is not None:
+            names = ([c.findtext('mnemonic') for c in schema.findall('col')]
+                     if schema.get('name') == 'kdebug' else [])
+        # When exports have consecutive tables with the same schema,
+        # Instruments emits the table description only for the first.
+        if not names:
             continue
-        names = [c.findtext('mnemonic') for c in schema.findall('col')]
         for row in node.findall('row'):
             f = dict(zip(names, (resolve(e) for e in row), strict=True))
             # Core Animation's CAMetalDrawable presented-handler event.

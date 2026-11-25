@@ -223,7 +223,7 @@ def collect(arm, store, wind, *, diagnostic=False):
     export(trace, arm / 'signposts.xml',
            ['--xpath', "/trace-toc/run/data/table[contains(@schema, 'signpost')]"])
     export(trace, arm / 'source-presented-events.xml',
-           ['--xpath', '/trace-toc/run/data/table[@schema="kdebug" and @target="SINGLE"]'])
+           ['--xpath', "/trace-toc/run/data/table[@schema='kdebug' and contains(@codes, '0xca')]"])
     pid = int(re.search(r'^pid=(\d+)$', identity, re.MULTILINE)[1])
     raw = kernel_recording(pid, began, ended, owned)
 
