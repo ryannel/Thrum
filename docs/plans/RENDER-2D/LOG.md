@@ -273,3 +273,11 @@
   Each 2× repeat retained 570 frames. Eight isolated crossing blends held for 7.6–8.8 ms.
   All seven automated item checks passed. [Metal motion](../../../.orchestrate/evidence/RENDER-2D/WP3/tie-crossings/motion.md) ·
   [Sampling, timing and checks](../../../.orchestrate/evidence/RENDER-2D/WP3/tie-crossings/sampling.md)
+- 2026-11-25 WP3.8 narrows the simultaneous colour blend near axis-aligned 2× and computes the
+  phase relative to the nearest edge from the split pivot. Both Metal recipes preserve straight
+  stripes and distinct checks through the submitted pans. An additional fast take contains one
+  8.24 ms dip versus the repeated fading in review. Refreshed Chrome motion, fixed Metal stills
+  and the real-window resize on the repair build.
+  [Metal motion](../../../.orchestrate/evidence/RENDER-2D/WP3/phase-precision/motion.md) ·
+  [Sampling and timings](../../../.orchestrate/evidence/RENDER-2D/WP3/phase-precision/sampling.md) ·
+  [Chrome motion](../../../.orchestrate/evidence/RENDER-2D/WP3/phase-precision/chrome-motion.md)
