@@ -155,8 +155,8 @@ fn select_fine(@builtin(workgroup_id) group: vec3<u32>, @builtin(local_invocatio
     }
     coarse_lattice[owners_offset() + job.z + index] = vec4(owner, 0u, 0u, 0u);
     if owner != 0xffffffffu {
-        let active = atomicAdd(&selected_count, 1u);
-        coarse_lattice[jobs_offset() + active] = vec4(job.x, index, 0u, 0u);
+        let selected = atomicAdd(&selected_count, 1u);
+        coarse_lattice[jobs_offset() + selected] = vec4(job.x, index, 0u, 0u);
     }
 }
 
@@ -166,8 +166,8 @@ fn sample_fine(@builtin(workgroup_id) group: vec3<u32>, @builtin(num_workgroups)
     let count = atomicLoad(&selected_count);
     let step = u32(surf.coarse.x);
     let side = step + 1u;
-    for (var active = group.x; active < count; active += groups.x) {
-        let job = coarse_lattice[jobs_offset() + active];
+    for (var selected = group.x; selected < count; selected += groups.x) {
+        let job = coarse_lattice[jobs_offset() + selected];
         let sheet = points[job.x];
         let width = u32(sheet.coarse_grid.z);
         let index = job.y;
