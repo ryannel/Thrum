@@ -1,4 +1,4 @@
-use super::{ShoreBody, SurfGpu, SurfRecord};
+use super::{ShoreBody, SurfGpu, SurfRecord, cache::CacheSettings};
 use crate::map_gpu;
 use thrum_test_support::{record, records};
 
@@ -22,7 +22,23 @@ fn surf_records_match_the_cache_and_query() {
             record!(SurfRecord, controls, bounds, coarse, bodies, shoaling),
         ],
     );
-    validate(&super::cache::Cache::compute_source());
+    let cache = super::cache::Cache::compute_source();
+    records::named(
+        "surf field cache",
+        &cache,
+        &[record!(
+            CacheSettings,
+            anchor,
+            count,
+            components,
+            heights,
+            chop_dt,
+            shore_size,
+            camera_planes,
+            vertical_bounds
+        )],
+    );
+    validate(&cache);
     let query = map_gpu::declarations_at(1)
         + COMPONENT
         + &SurfGpu::source(1, 7)

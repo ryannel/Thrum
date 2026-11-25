@@ -5,6 +5,8 @@ struct CacheSettings {
     heights: vec4<f32>,
     chop_dt: vec2<f32>,
     shore_size: vec2<u32>,
+    camera_planes: array<vec4<f32>, 4>,
+    vertical_bounds: vec4<f32>,
 }
 struct CacheSample {
     current: vec4<f32>,
@@ -39,6 +41,22 @@ fn unresolved_throw(sample: SurfPoint, spacing: f32) -> vec2<f32> {
     return sample.section_throw * smoothstep(0.25, 0.65, spacing * sample.phase_step);
 }
 
+fn visible_shore_face(point: vec2<f32>, halo: vec2<f32>) -> bool {
+    let bounds = cache_settings.vertical_bounds;
+    if bounds.z == 0.0 { return true; }
+    // The face is read only by visible water fragments. A bilinear
+    // footprint can reach one node beyond the fragment's world column.
+    let lo = vec3(point.x - halo.x, bounds.x, point.y - halo.y);
+    let hi = vec3(point.x + halo.x, bounds.y, point.y + halo.y);
+    for (var i = 0u; i < 4u; i++) {
+        let plane = cache_settings.camera_planes[i];
+        let extreme = max(lo * plane.xyz, hi * plane.xyz);
+        let scale = dot(max(abs(lo), abs(hi)), abs(plane.xyz)) + abs(plane.w) + 1.0;
+        if dot(extreme, vec3(1.0)) + plane.w < -0.000002 * scale { return false; }
+    }
+    return true;
+}
+
 fn cache_shore_face(i: u32) {
     let size = cache_settings.shore_size;
     let count = size.x * size.y;
@@ -52,7 +70,8 @@ fn cache_shore_face(i: u32) {
         let span = vec2<f32>(map.size_count_sea.xy - 1u) * map.origin_spacing_margin.z;
         let point = map.origin_spacing_margin.xy + uv * span;
         let distance = abs(point - cache_settings.anchor);
-        if max(distance.x, distance.y) > 76.0 {
+        let halo = span / vec2<f32>(size - 1u);
+        if max(distance.x, distance.y) > 76.0 && visible_shore_face(point, halo) {
             let answer = map_sample(point);
             if answer.body != NO_BODY && answer.has_bed {
                 let sample = cache_sample(point, answer.body, 0.0, false);

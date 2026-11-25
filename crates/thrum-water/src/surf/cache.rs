@@ -8,7 +8,7 @@ use bytemuck::{Pod, Zeroable};
 use std::sync::{Arc, Mutex};
 use thrum_render::{
     binding,
-    contribution::{EffectAccess, EffectCadence, EffectGraph, EffectPass},
+    contribution::{ContributionFrame, EffectAccess, EffectCadence, EffectGraph, EffectPass},
     graph::{AccessKind, ResourceDescriptor, ResourceScope},
     runtime::DeviceSite,
 };
@@ -50,13 +50,15 @@ pub struct SurfWitness {
 
 #[repr(C)]
 #[derive(Clone, Copy, Pod, Zeroable)]
-struct CacheSettings {
-    anchor: [f32; 2],
-    count: u32,
-    components: u32,
-    heights: [f32; 4],
-    chop_dt: [f32; 2],
-    shore_size: [u32; 2],
+pub(super) struct CacheSettings {
+    pub(super) anchor: [f32; 2],
+    pub(super) count: u32,
+    pub(super) components: u32,
+    pub(super) heights: [f32; 4],
+    pub(super) chop_dt: [f32; 2],
+    pub(super) shore_size: [u32; 2],
+    pub(super) camera_planes: [[f32; 4]; 4],
+    pub(super) vertical_bounds: [f32; 4],
 }
 
 #[repr(C)]
@@ -226,12 +228,16 @@ impl Cache {
         queue: &wgpu::Queue,
         spectrum: &Spectrum,
         heights: [f32; 4],
-        anchor: [f32; 2],
-        time: f64,
-        dt: f64,
-        chop: f64,
+        frame: &ContributionFrame,
+        bounds: Option<[f32; 2]>,
+        [time, dt, chop]: [f64; 3],
     ) {
+        let anchor = [frame.camera[0], frame.camera[2]];
         self.recorded_anchor = anchor;
+        let matrix = glam::Mat4::from_cols_array_2d(&frame.view_proj);
+        let [x, y, _, w] = std::array::from_fn(|row| matrix.row(row));
+        let camera_planes = [w + x, w - x, w + y, w - y].map(|plane| plane.to_array());
+        let vertical_bounds = bounds.map_or([0.0; 4], |[low, high]| [low, high, 1.0, 0.0]);
         let mut active = 0;
         let mut components = [Component::zeroed(); COMPONENT_LIMIT];
         for component in spectrum.long.iter().filter(|wave| wave.amplitude > 0.0) {
@@ -249,6 +255,8 @@ impl Cache {
                 heights,
                 chop_dt: [chop as f32, dt as f32],
                 shore_size: self.shore_size,
+                camera_planes,
+                vertical_bounds,
             }),
         );
         if active != 0 {

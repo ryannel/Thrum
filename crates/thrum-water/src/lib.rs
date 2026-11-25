@@ -107,6 +107,7 @@ pub struct Water {
     height_rms: f32,
     layer_heights: [f32; 4],
     offshore_displacement: [f32; 2],
+    surf_vertical_bounds: Option<[f32; 2]>,
     profile: Profile,
     query: Option<query::QueryMailbox>,
     interaction: Option<interaction::Mailbox>,
@@ -190,12 +191,17 @@ impl Water {
             return Err(WaterError::UnsupportedBody);
         }
         let row = guard.row(body, [0.0; 2]);
+        let offshore_displacement = offshore_bound(&spectrum, profile.waves.choppiness);
+        let surf_vertical_bounds = if profile.interaction.is_none() {
+            surf_vertical_bounds(&guard, &spectrum, offshore_displacement[1])
+        } else {
+            None
+        };
         drop(guard);
         if !row.level.is_finite() {
             return Err(WaterError::InvalidLevel);
         }
         let layer_heights = records::layer_heights(&spectrum);
-        let offshore_displacement = offshore_bound(&spectrum, profile.waves.choppiness);
         Ok(Self {
             report: Arc::default(),
             map: Arc::clone(&map),
@@ -205,6 +211,7 @@ impl Water {
             height_rms: records::height_rms(&spectrum),
             layer_heights,
             offshore_displacement,
+            surf_vertical_bounds,
             spectrum,
             profile,
             query: profile
@@ -341,6 +348,51 @@ fn offshore_bound(spectrum: &Spectrum, chop: f64) -> [f32; 2] {
     [chop, 1.0].map(|scale| ((amplitude * scale).mul_add(1.05, 0.05) as f32).next_up())
 }
 
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "round outward to GPU world metres"
+)]
+fn surf_vertical_bounds(map: &Map, spectrum: &Spectrum, ambient: f32) -> Option<[f32; 2]> {
+    let surf = map.surf_profile()?;
+    let bodies = (0..).map_while(|index| map.body(index));
+    let mut limits = [f64::INFINITY, f64::NEG_INFINITY];
+    for body in bodies {
+        if matches!(body.kind, thrum_water_model::BodyKind::Chart(_)) {
+            // A chart can edit its sampled levels independently of these bounds.
+            return None;
+        }
+        limits[0] = limits[0].min(body.level + body.stage.min);
+        limits[1] = limits[1].max(body.level + body.stage.max);
+    }
+    let height_factor = surf
+        .section
+        .rows()
+        .flat_map(|(_, row)| row)
+        .map(|point| point.height.abs())
+        .fold(1.0_f64, f64::max);
+    let amplitude: f64 = spectrum
+        .long
+        .iter()
+        .map(|wave| {
+            let [x, z] = wave.wave_vector;
+            wave.amplitude * thrum_water_model::shoaling(x.hypot(z), surf.lag_floor).max(1.0)
+        })
+        .sum();
+    let wave_height = height_factor * amplitude * 1.05 + f64::from(ambient) + 1.0;
+    let swash = map.profile().margin_height;
+    let highest_bed = map
+        .bed()
+        .heights()
+        .iter()
+        .copied()
+        .fold(f64::NEG_INFINITY, f64::max);
+    // Overlap can lift the surface from the displaced bed; outside the
+    // overlap, the section and contour stay inside the wave and swash bounds.
+    let lo = ((limits[0] - wave_height - swash) as f32).next_down();
+    let hi = ((limits[1].max(highest_bed) + wave_height + swash) as f32).next_up();
+    (lo.is_finite() && hi.is_finite()).then_some([lo, hi])
+}
+
 impl SceneContribution for Water {
     fn passes(&self) -> ContributionPasses {
         ContributionPasses {
@@ -421,10 +473,9 @@ impl SceneContribution for Water {
                 &p.queue,
                 &self.spectrum,
                 self.layer_heights,
-                [frame.camera[0], frame.camera[2]],
-                now,
-                now - previous,
-                self.profile.waves.choppiness,
+                frame,
+                self.surf_vertical_bounds,
+                [now, now - previous, self.profile.waves.choppiness],
             );
         }
         if let Some(interaction) = &mut p.interaction {
