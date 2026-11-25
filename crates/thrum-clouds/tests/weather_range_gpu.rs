@@ -21,6 +21,12 @@ thrum_test_support::macos_gpu_test! {
 }
 
 thrum_test_support::macos_gpu_test! {
+    fn broken_banks_shape_both_visible_cloud_and_ground_shade() {
+        weather_range::check_broken_bank();
+    }
+}
+
+thrum_test_support::macos_gpu_test! {
     fn the_visible_trace_reads_placed_columns() {
         weather_range::check_placed_trace();
     }

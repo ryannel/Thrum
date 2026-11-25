@@ -66,6 +66,7 @@ struct Uniform {
     direction: [f32; 4],
     physical: [f32; 4],
     erosion: [f32; 4],
+    bank_noise: [f32; 4],
     rows: [u32; 4],
 }
 
@@ -480,6 +481,7 @@ impl SunPath {
                         (origin[1].rem_euclid(SHAPE_PERIOD) / SHAPE_PERIOD) as f32,
                         self.profile.levels[i].texel as f32,
                     ],
+                    bank_noise: crate::noise::bank_noise(origin, kind.deck),
                     rows: [start, count, self.profile.levels[i].slices, 0],
                 };
                 queue.write_buffer(&self.params[i], 0, bytemuck::bytes_of(&uniform));
@@ -506,6 +508,7 @@ impl SunPath {
                 direction: [0.0; 4],
                 physical: [self.profile.size as f32, 0.0, 0.0, 0.0],
                 erosion: [0.0; 4],
+                bank_noise: [0.0; 4],
                 rows: [0; 4],
             };
             queue.write_buffer(&self.params[3], 0, bytemuck::bytes_of(&uniform));

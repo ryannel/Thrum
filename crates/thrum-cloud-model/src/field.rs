@@ -441,6 +441,10 @@ impl Field {
         };
         let column = self.column(air, state.time(), p);
         let mut sigma = erode(column_density(column, point[1]), extinction, false);
+        if sigma > 0.0 && self.profile.erosion > 0.0 && !matches!(fidelity, Density::Uneroded) {
+            let height = (point[1] - column.base) / (column.top - column.base);
+            sigma *= self.bank_shape(point_air, height, kind.deck);
+        }
         let mut used_footprint = false;
         let hashed = self.hashed_at(air, state);
         for (shape, selection) in state

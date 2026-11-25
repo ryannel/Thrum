@@ -16,7 +16,7 @@ pub use field::{Cell, Column, Conformance, Density, Field, Profile, Sample, Type
 pub use ground::{Affinity, Fog, Ground, GroundProfile, GroundState, Surface, SurfacePoint};
 pub use library::{HashedShapes, PlacedLibrary, PlacedSlab, ShapeSource};
 pub use medium::{Coefficients, Handover, Light};
-pub use noise::{DETAIL_PERIOD, DETAIL_SIZE, SHAPE_PERIOD, SHAPE_SIZE};
+pub use noise::{BANK_NOISE_PERIOD, DETAIL_PERIOD, DETAIL_SIZE, SHAPE_PERIOD, SHAPE_SIZE};
 pub use optics::{Orders, Phase, PhaseTable, Segment};
 pub use shape::{Footprint, Shape};
 pub use state::{Directed, Parameters, State};

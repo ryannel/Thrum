@@ -11,9 +11,11 @@ fn procedural_edges_are_removed_rather_than_uniformly_attenuated() {
     let mut removed = [0; 2];
     let mut retained = [0; 2];
     let mut different = 0;
-    for x in -80..=80 {
+    // Sample the same band more closely across the bank. The broad shaping
+    // leaves fewer surviving billow edges where the detail term can differ.
+    for x in -110..=110 {
         for y in 0..=100 {
-            let p = [f64::from(x) * 17.75, 700.0 + f64::from(y) * 5.0, 417.0];
+            let p = [f64::from(x) * 13.0, 700.0 + f64::from(y) * 5.0, 417.0];
             let u = field.density(p, &state, Density::Uneroded, |_| None, 0.0);
             let densities = [Density::Coarse, Density::Full]
                 .map(|f| field.density(p, &state, f, |_| None, 0.0));

@@ -4,6 +4,8 @@ use std::cell::Cell;
 
 /// Period in metres of the shape volume.
 pub const SHAPE_PERIOD: f64 = 6400.0;
+/// Horizontal period in metres of the broad bank-shaping octave.
+pub const BANK_NOISE_PERIOD: f64 = 22_400.0;
 /// Period in metres of the detail volume.
 pub const DETAIL_PERIOD: f64 = 800.0;
 /// Shape volume extent on each axis.
@@ -20,6 +22,24 @@ thread_local! {
 }
 
 impl Field {
+    pub(crate) fn bank_shape(&self, point: [f64; 3], height: f64, deck: f64) -> f64 {
+        let smoothstep = |low, high, value| crate::smooth((value - low) / (high - low));
+        let weight = smoothstep(0.12, 0.45, deck) * (1.0 - smoothstep(0.73, 0.98, deck));
+        if weight == 0.0 {
+            return 1.0;
+        }
+        let stretch = SHAPE_PERIOD / BANK_NOISE_PERIOD;
+        let swell = self.shape_noise([point[0] * stretch, 0.31 * SHAPE_PERIOD, point[2] * stretch]);
+        let bank_height = smoothstep(0.32, 0.68, swell);
+        let billow = self.shape_noise([point[0] * 2.0, point[1] * 3.0, point[2] * 2.0]);
+        let bottom = 0.05 + 0.59 * bank_height + 0.08 * billow;
+        let top = 0.55 + 0.45 * bank_height;
+        let interval = smoothstep(0.78 * bottom, bottom + 0.12, height)
+            * (1.0 - smoothstep(top - 0.18, top, height));
+        let separation = smoothstep(0.20, 0.48, swell + 0.16 * billow);
+        1.0 - weight + weight * interval * (0.28 + 0.72 * separation)
+    }
+
     pub(crate) fn shape_noise(&self, point: [f64; 3]) -> f64 {
         SHAPE_TEXELS.with(|cache| {
             volume(point, SHAPE_PERIOD, SHAPE_SIZE, |texel, uv| {

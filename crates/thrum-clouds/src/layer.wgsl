@@ -59,44 +59,22 @@ fn cloud_density(point:vec3<f32>,footprint:f32)->f32 {
     let column=cloud_column(point);
     return cloud_detail(column.x,point,footprint,cloud.physical.x,column.w) + placed.x;
 }
-fn cloud_billow(point:vec3<f32>,footprint:f32)->f32 {
-    let uv=point/6400.0+vec3(cloud.noise.x,0.0,cloud.noise.y);
+fn cloud_shape_uv(point:vec3<f32>)->vec3<f32> {
+    return point/6400.0+vec3(cloud.noise.x,0.0,cloud.noise.y);
+}
+fn cloud_billow(uv:vec3<f32>,footprint:f32)->f32 {
     return textureSampleLevel(shape_noise,noise_sampler,uv,erosion_mip(footprint,50.0)).r;
-}
-fn cloud_bank_weight()->f32 {
-    return smoothstep(0.12,0.45,cloud.physical.z)*(1.0-smoothstep(0.73,0.98,cloud.physical.z));
-}
-fn cloud_bank_billow(point:vec3<f32>,footprint:f32)->f32 {
-    // Smaller lobes break up an otherwise continuous underside. The octave
-    // is anchored in the same air coordinates as the parent bank.
-    let air=point/6400.0+vec3(cloud.noise.x,0.0,cloud.noise.y);
-    return textureSampleLevel(shape_noise,noise_sampler,air*vec3(2.0,3.0,2.0),erosion_mip(2.0*footprint,50.0)).r;
 }
 fn cloud_detail(sigma:f32,point:vec3<f32>,footprint:f32,extinction:f32,height:f32)->f32 {
     if sigma<=0.0 || extinction<=0.0 || cloud.physical.y==0.0 {return sigma;}
     let detail_uv = point / 800.0 + vec3(cloud.noise.z, 0.0, cloud.noise.w);
     let detail = textureSampleLevel(detail_noise, noise_sampler, detail_uv, erosion_mip(footprint, 12.5)).r;
-    let shape=cloud_billow(point,footprint);
+    let uv=cloud_shape_uv(point);
+    let shape=cloud_billow(uv,footprint);
     let eroded=cloud_erode(sigma,extinction,cloud.physical.y,shape,detail);
-    let bank=cloud_bank_weight();
-    if bank==0.0 {return eroded;}
-    // Vary the visible ceiling and underside independently of the weather
-    // column bounds. Adjacent skies retain the same condensation level for
-    // column queries. The longer bank scale avoids a row of equal shelves.
-    let air=point.xz/cloud.bank_noise.z+cloud.bank_noise.xy;
-    let swell=textureSampleLevel(shape_noise,noise_sampler,vec3(air.x,0.31,air.y),
-                                 erosion_mip(footprint,175.0)).r;
-    let bank_height=smoothstep(0.32,0.68,swell);
-    let billow=cloud_bank_billow(point,footprint);
-    let bottom=0.05+0.59*bank_height+0.08*billow;
-    let top=0.55+0.45*bank_height;
-    let interval=smoothstep(0.78*bottom,bottom+0.12,height)
-        *(1.0-smoothstep(top-0.18,top,height));
-    // Thin the spaces between broad banks so low sight lines can see
-    // through to the next bank rather than meeting a uniform ceiling.
-    let separation=smoothstep(0.20,0.48,swell+0.16*billow);
-    let shape_weight=interval*mix(0.28,1.0,separation);
-    return eroded*mix(1.0,shape_weight,bank);
+    if eroded==0.0 {return 0.0;}
+    return eroded*cloud_bank_shape(shape_noise,noise_sampler,point,uv,cloud.bank_noise,
+                                  footprint,height,cloud_bank_weight(cloud.bank_noise.w));
 }
 fn cloud_sun_depths(world:vec3<f32>,start_height:f32)->vec3<f32> {
     let point=world.xz-mapping.path_border.xz*(world.y-mapping.plane_drift.x)/mapping.path_border.y;
@@ -231,7 +209,8 @@ fn cloud_bank_light(source:vec3<f32>,solar:vec3<f32>,point:vec3<f32>,sigma:f32,
     let exposed=smoothstep(-0.18,0.78,relative);
     let beam=exp(-mix(0.28,0.14,high_sun)*sun_depth);
     let interior=exp(-0.085*sun_depth);
-    let billow=smoothstep(0.20,0.79,cloud_bank_billow(point,footprint));
+    let billow=smoothstep(0.20,0.79,
+        cloud_bank_billow(shape_noise,noise_sampler,cloud_shape_uv(point),footprint));
     let shade=(mix(0.29,0.19,high_sun)+0.36*interior+mix(0.38,0.29,high_sun)*exposed)
         *mix(0.61,1.18,billow);
     // At noon the Sun lights the inward wall of a gap from above. Keep
@@ -283,7 +262,7 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
     let transmission_floor = select(0.001, 1e-8, covers_disc);
     let sun_base=sun_irradiance(vec3(camera.x,cloud.heights.x,camera.z));
     let sun_top=sun_irradiance(vec3(camera.x,cloud.heights.y,camera.z));
-    let bank=cloud_bank_weight();
+    let bank=cloud_bank_weight(cloud.bank_noise.w);
     var distance=begin;var samples=0u;
     for(var i=0u;i<768u && distance<end && total.transmittance*part.transmittance>transmission_floor;i++) {
         samples+=1u;

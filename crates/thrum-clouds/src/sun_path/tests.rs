@@ -32,6 +32,7 @@ fn validate_uniform_layout(source: &str) {
             direction,
             physical,
             erosion,
+            bank_noise,
             rows
         )],
     );

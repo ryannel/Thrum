@@ -9,7 +9,7 @@
 @group(0) @binding(10) var shape_sampler: sampler;
 
 fn extinction_at(point: vec3<f32>) -> f32 {
-    var density = 0.0;
+    var column = vec2(0.0);
     for (var level = 3; level >= 0; level--) {
         let map = p.weather[level];
         let uv = (point.xz - map.xy) / map.z;
@@ -31,18 +31,22 @@ fn extinction_at(point: vec3<f32>) -> f32 {
             c += tap * textureLoad(columns, at, level, 0);
             o += tap * textureLoad(optical, at, level, 0);
         }
-        var local = 0.0;
+        var local = vec2(0.0);
         if c.x < point.y && point.y < c.y {
             let h = (point.y - c.x) / (c.y - c.x);
             let fades = smoothstep(0.0, o.z, h) * (1.0 - smoothstep(1.0 - o.w, 1.0, h));
-            local = p.physical.z * c.z * fades;
+            local = vec2(p.physical.z * c.z * fades, h);
         }
-        density = mix(density, local, weight);
+        column = mix(column, local, weight);
     }
+    let density = column.x;
     if density == 0.0 || p.physical.w == 0.0 { return density; }
     let uv = point / 6400.0 + vec3(p.erosion.y, 0.0, p.erosion.z);
     let billow = textureSampleLevel(shape, shape_sampler, uv, erosion_mip(p.erosion.w, 50.0)).r;
-    return cloud_erode(density, p.physical.z, p.physical.w, billow, p.erosion.x);
+    let eroded = cloud_erode(density, p.physical.z, p.physical.w, billow, p.erosion.x);
+    if eroded == 0.0 { return 0.0; }
+    return eroded * cloud_bank_shape(shape, shape_sampler, point, uv, p.bank_noise,
+                                    p.erosion.w, column.y, cloud_bank_weight(p.bank_noise.w));
 }
 
 @compute @workgroup_size(8, 8)

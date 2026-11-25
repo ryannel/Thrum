@@ -1,6 +1,6 @@
 use std::{io::Write as _, sync::Arc, time::Duration};
-use thrum_cloud_model::{Field, Parameters, State};
-use thrum_clouds::{Shade, ShadeConfig, SkyProfile, WeatherMap};
+use thrum_cloud_model::{Density, Field, Parameters, Sample, State, Type};
+use thrum_clouds::{Shade, ShadeConfig, SkyProfile, WeatherInput, WeatherMap};
 use thrum_render::{
     contribution::EffectTime,
     runtime::{DeviceSite, FrameConfig},
@@ -15,7 +15,7 @@ use crate::{placed_fixture, scene_fixture};
 const PRESETS: [[f64; 2]; 5] = [
     [0.0, 1.0],
     [0.5, 1.0],
-    [0.712, 0.42],
+    [0.726, 0.42],
     [1.0, 0.0],
     [0.0, 1.0],
 ];
@@ -109,6 +109,77 @@ pub(super) fn check_map() {
         "Metal weather map maximum errors [base, top, coverage, type, tau]: {peak:?}"
     )
     .expect("record errors");
+}
+
+pub(super) fn check_broken_bank() {
+    let Some(gpu) = metal("matched broken bank and ground shade") else {
+        return;
+    };
+    let mut config = config();
+    config.seed = 39;
+    config.model.pitch = 4600.0;
+    config.model.turret_pitch = 1300.0;
+    config.model.turret_least = 0.22;
+    config.model.turret_fade = 0.12;
+    config.model.erosion = 0.61;
+    config.types = vec![
+        Type {
+            base: 1600.0,
+            depth: [1400.0, 2500.0],
+            liquid_water: 0.0003,
+            droplet_radius: 0.00001,
+            deck: 0.58,
+            profile: [0.48, 0.31],
+        };
+        2
+    ];
+    config.weather.size = 32;
+    config.weather.texels = vec![20.0, 80.0, 320.0, 1600.0];
+    config.sun.ground_size = 2 * config.sun.size;
+    for (level, texel) in config.sun.levels.iter_mut().zip([20.0, 80.0, 320.0]) {
+        level.texel = texel;
+        level.slices = 96;
+    }
+    let field = Field::new(config.seed, config.model, config.types.clone()).expect("bank field");
+    let state = Arc::new(State::new(parameters(PRESETS[2], [0.0; 2]), 5.0, 0).expect("broken"));
+    pollster::block_on(async {
+        for (point, gap) in [([-1090.0, 2210.0], true), ([-930.0, 2210.0], false)] {
+            let ray = Sample {
+                tick: state.tick(),
+                origin: [point[0], 1600.0, point[1]],
+                direction: [0.0, 1.0, 0.0],
+                length: 2500.0,
+                steps: 256,
+            };
+            let cpu = [Density::Uneroded, Density::Full, Density::Coarse]
+                .map(|fidelity| field.optical_depth(&ray, &state, fidelity, |_| None, 1.0));
+            let input = trace_input(&gpu, &config, &state, point, [0.0, 1.0, 0.0]).await;
+            let visible = centre_depth(&gpu, &input);
+            let ground = near_ground_depth(&gpu, &input, point, config.sun.ground_size);
+            writeln!(
+                std::io::stderr().lock(),
+                "bank {point:?}: CPU bound/full/coarse={cpu:?}, visible={visible}, ground={ground}"
+            )
+            .expect("record matched ray depths");
+            assert!(cpu[0] > 5.0, "the weather column covers both rays");
+            if gap {
+                assert!(
+                    [cpu[1], cpu[2], visible, ground]
+                        .into_iter()
+                        .all(|tau| tau < 0.10)
+                );
+            } else {
+                assert!(
+                    [cpu[1], cpu[2], visible, ground]
+                        .into_iter()
+                        .all(|tau| tau > 1.0)
+                );
+            }
+            // The visible path samples fine detail while the ground path averages it.
+            assert!((visible - cpu[1]).abs() < 0.12, "visible density");
+            assert!((ground - cpu[2]).abs() < 0.12, "ground density");
+        }
+    });
 }
 
 fn compare_map(
@@ -351,6 +422,17 @@ fn vertical_view(point: [f64; 2]) -> SyntheticView {
 }
 
 async fn trace(gpu: &Opened, config: &ShadeConfig, state: &Arc<State>, point: [f64; 2]) -> f64 {
+    let input = trace_input(gpu, config, state, point, [0.5, 0.866_025_4, 0.0]).await;
+    centre_depth(gpu, &input)
+}
+
+async fn trace_input(
+    gpu: &Opened,
+    config: &ShadeConfig,
+    state: &Arc<State>,
+    point: [f64; 2],
+    sun: [f32; 3],
+) -> WeatherInput {
     let extent = [66, 66];
     let mut host = scene_fixture::prepare_view(
         &gpu.capabilities,
@@ -363,7 +445,7 @@ async fn trace(gpu: &Opened, config: &ShadeConfig, state: &Arc<State>, point: [f
                 format: wgpu::TextureFormat::Bgra8Unorm,
             }),
         },
-        [0.5, 0.866_025_4, 0.0],
+        sun,
         state.tick(),
         &vertical_view(point),
         false,
@@ -383,10 +465,28 @@ async fn trace(gpu: &Opened, config: &ShadeConfig, state: &Arc<State>, point: [f
     host.set_scene_contribution(Box::new(shade))
         .expect("attach");
     placed_fixture::frame(gpu, &mut host, &placed_fixture::output(gpu), Duration::ZERO);
-    centre_depth(gpu, &input)
+    input
 }
 
-fn centre_depth(gpu: &Opened, input: &thrum_clouds::WeatherInput) -> f64 {
+fn near_ground_depth(gpu: &Opened, input: &WeatherInput, point: [f64; 2], side: u32) -> f64 {
+    let (_, mapping) = input.ground_product().expect("ground mapping");
+    let raw = readback::buffer(&gpu.device, &gpu.queue, &mapping, ..);
+    let map: thrum_render::atmosphere::GpuSunMapping = bytemuck::pod_read_unaligned(&raw);
+    let spacing = f64::from(map.near[2]) / f64::from(side / 2);
+    let [x, z] = std::array::from_fn(|axis| {
+        (0..side / 2)
+            .find(|&i| {
+                let centre = f64::from(map.near[axis]) + (f64::from(i) + 0.5) * spacing;
+                (centre - point[axis]).abs() < 1e-6
+            })
+            .expect("the ground texel centre coincides with the vertical view ray")
+    });
+    let bytes = placed_fixture::ground(gpu, input);
+    let at = ((z * side + x) * 8) as usize;
+    fp16(u16::from_le_bytes([bytes[at], bytes[at + 1]]))
+}
+
+fn centre_depth(gpu: &Opened, input: &WeatherInput) -> f64 {
     let sky = input.sky_products().expect("submitted trace");
     let texture = &sky.fresh_transport;
     let bytes = readback::texture(
@@ -400,16 +500,19 @@ fn centre_depth(gpu: &Opened, input: &thrum_clouds::WeatherInput) -> f64 {
     assert_eq!(side % 2, 1, "central ray is vertical");
     let at = ((side / 2) * side + side / 2) * 8 + 6;
     let word = u16::from_le_bytes([bytes[at], bytes[at + 1]]);
-    let exponent = i32::from((word >> 10) & 31);
-    let fraction = f64::from(word & 1023) / 1024.0;
-    let transmission = if exponent == 0 {
-        fraction * 2.0_f64.powi(-14)
-    } else {
-        (1.0 + fraction) * 2.0_f64.powi(exponent - 15)
-    };
     if word == 0x3c00 {
         0.0
     } else {
-        -transmission.ln()
+        -fp16(word).ln()
+    }
+}
+
+fn fp16(word: u16) -> f64 {
+    let exponent = i32::from((word >> 10) & 31);
+    let fraction = f64::from(word & 1023) / 1024.0;
+    if exponent == 0 {
+        fraction * 2.0_f64.powi(-14)
+    } else {
+        (1.0 + fraction) * 2.0_f64.powi(exponent - 15)
     }
 }

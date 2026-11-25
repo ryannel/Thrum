@@ -6,6 +6,20 @@ use thrum_render::{
 
 pub(crate) use thrum_cloud_model::{DETAIL_PERIOD, DETAIL_SIZE, SHAPE_PERIOD, SHAPE_SIZE};
 
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "wrapped noise phase fits the GPU record"
+)]
+pub(crate) fn bank_noise(origin: [f64; 2], deck: f64) -> [f32; 4] {
+    let period = thrum_cloud_model::BANK_NOISE_PERIOD;
+    [
+        (origin[0].rem_euclid(period) / period) as f32,
+        (origin[1].rem_euclid(period) / period) as f32,
+        period as f32,
+        deck as f32,
+    ]
+}
+
 pub(crate) struct Noise {
     texture: wgpu::Texture,
     view: wgpu::TextureView,

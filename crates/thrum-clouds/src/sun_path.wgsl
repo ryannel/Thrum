@@ -21,8 +21,9 @@ fn bilinear(field:texture_2d_array<f32>,coordinate:vec2<f32>,level:i32)->vec4<f3
     let d=textureLoad(field,clamp(lo+vec2<i32>(1),vec2<i32>(0),dimensions-1),level,0);
     return mix(mix(a,b,f.x),mix(c,d,f.x),f.y);
 }
-fn column_density(point:vec3<f32>)->f32 {
-    var sigma=0.0;
+// Density and height fraction, blended from the same windows as the view.
+fn column_density(point:vec3<f32>)->vec2<f32> {
+    var column=vec2(0.0);
     var remaining=1.0;
     // A fully covering fine window replaces every coarser contribution.
     // Accumulate from that side, as in the visible trace, to avoid fetching
@@ -37,20 +38,24 @@ fn column_density(point:vec3<f32>)->f32 {
         if depth>0.0 && point.y>c.x && point.y<c.y {
             let o=bilinear(optical,uv,level);
             let h=(point.y-c.x)/depth;
-            let vertical=smooth_unit(h/o.z)*(1.0-smooth_unit((h-(1.0-o.w))/o.w));
-            sigma+=p.physical.z*c.z*vertical*(remaining*w);
+            let vertical=smooth_unit(h/o.z)*smooth_unit((1.0-h)/o.w);
+            column+=vec2(p.physical.z*c.z*vertical,h)*(remaining*w);
         }
         if w==1.0 { break; }
         remaining*=1.0-w;
     }
-    return sigma;
+    return column;
 }
 fn density(point:vec3<f32>)->f32 {
-    let sigma=column_density(point);
+    let column=column_density(point);
+    let sigma=column.x;
     if sigma<=0.0 || p.physical.z<=0.0 || p.physical.w==0.0 {return sigma;}
     let uv = point / 6400.0 + vec3(p.erosion.y, 0.0, p.erosion.z);
     let billow = textureSampleLevel(shape_noise, noise_sampler, uv, erosion_mip(p.erosion.w, 50.0)).r;
-    return cloud_erode(sigma, p.physical.z, p.physical.w, billow, p.erosion.x);
+    let eroded=cloud_erode(sigma,p.physical.z,p.physical.w,billow,p.erosion.x);
+    if eroded==0.0 {return 0.0;}
+    return eroded*cloud_bank_shape(shape_noise,noise_sampler,point,uv,p.bank_noise,
+                                  p.erosion.w,column.y,cloud_bank_weight(p.bank_noise.w));
 }
 @compute @workgroup_size(8,8)
 fn path(@builtin(global_invocation_id) id:vec3<u32>) {
