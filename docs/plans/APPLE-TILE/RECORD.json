@@ -2,30 +2,27 @@
   "module": "APPLE-TILE",
   "adopted": true,
   "design": {
-    "verdict": "ok",
+    "verdict": "changes",
     "review": ".orchestrate/evidence/APPLE-TILE/design-review.md",
-    "commit": "99a81d89d58bfe8fa587e1fa7e13d74ebf48df46",
-    "hash": "062dea2d6dd62734467d48c202f10523e348f62830d7a24ac3f2f16df1c73be5",
+    "commit": "cd07387d086ab4c60c52fcef1f02935fb1ed86de",
+    "hash": "d46f58ec1e7083e5aae90fa6b665fcc6772128682fd64ce68137196e5a5cff59",
     "by": "review",
     "host": "codex",
-    "model": "gpt-6-astra",
+    "model": "gpt-6.2-astra",
     "effort": "high",
     "observed": {
-      "model": "gpt-6-astra",
+      "model": "gpt-6.2-astra",
       "effort": "high"
     },
-    "cli": "codex-cli 0.167.0-alpha.3.2",
+    "cli": "codex-cli 0.171.0-alpha.13",
     "path": "headless",
     "usage": {
-      "input": 96739,
-      "cached": 917376,
-      "output": 6254,
+      "input": 98086,
+      "cached": 1342080,
+      "output": 7229,
       "turns": 1
     },
-    "at": "2026-11-11T05:56:59Z",
-    "items_owed": [
-      "WP13"
-    ]
+    "at": "2026-11-25T13:50:24Z"
   },
   "work_packages": {
     "WP0": {
@@ -756,6 +753,32 @@
         "incomplete_turns": 1
       },
       "at": "2026-11-11T01:48:14Z"
+    },
+    {
+      "verdict": "ok",
+      "review": ".orchestrate/evidence/APPLE-TILE/design-review-4.md",
+      "commit": "99a81d89d58bfe8fa587e1fa7e13d74ebf48df46",
+      "hash": "062dea2d6dd62734467d48c202f10523e348f62830d7a24ac3f2f16df1c73be5",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.167.0-alpha.3.2",
+      "path": "headless",
+      "usage": {
+        "input": 96739,
+        "cached": 917376,
+        "output": 6254,
+        "turns": 1
+      },
+      "at": "2026-11-11T05:56:59Z",
+      "items_owed": [
+        "WP13"
+      ]
     }
   ]
 }
