@@ -4,7 +4,7 @@ The orchestrate script writes this page from the plan files and record files aft
 
 ## Overview
 
-21 of 36 modules done · 13 in progress · 2 to come
+21 of 36 modules done · 14 in progress · 1 to come
 
 ### Needs you now
 
@@ -313,7 +313,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - A game's question to an effect is answered every tick from the state the last drawn frame left, even when that tick's frame is skipped, on the Mac and in Chrome (EFFECT-GRAPH WP6): Not Started · [plan](EFFECT-GRAPH/PLAN.md)
 - WATERS's design: Design Changes Requested · [design](WATERS/DESIGN.md) · [plan](WATERS/PLAN.md)
 - The reference crowd is played in a window by a host and by clients on the Mac and in Chrome, each world stepped by its match (SESSION WP7): In Progress · [plan](SESSION/PLAN.md) · [latest review](../../.orchestrate/evidence/SESSION/WP7-review.md)
-- Panels and marks a game draws appear over its own frame, exact to the pixel, on the Mac and in Chrome, and a game with no interface pays nothing (GAME-UI WP1): Not Started · [plan](GAME-UI/PLAN.md)
+- GAME-UI WP1 Panels and marks a game draws appear over its own frame, exact to the pixel, on the Mac and in Chrome, and a game with no interface pays nothing: Blocked: Needs Dependency: Land shared EDR display and submitted half-float capture support for the 2D renderer before WP1. A planner adds it to the module that owns it
 - Props and terrain are grounded: sky light is dimmed in creases and where things stand close together (RAY-TRACING WP5): In Progress · [plan](RAY-TRACING/PLAN.md) · [latest review](../../.orchestrate/evidence/RAY-TRACING/WP5-review.md)
 - GATE-TIME WP5 The post-rollout record shows a five-minute median for Rust landings: Blocked: Needs Context: WP5.1 needs 17 more qualifying ordinary Rust landings before the fixed window can be judged. The lead finds the missing fact, or asks you for it
 
@@ -451,7 +451,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 21 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser |  | Done 16 Nov |
 | 22 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | EFFECT-GRAPH WP3 and APPLE-PRESENTATION WP3 to start; SIM-2D WP1 for its last work package | Done 25 Nov |
 | 23 | SESSION | Two to four players share one run and keep seeing the same crowd, and a windowed game is stepped by its match | SIM-2D WP3 to start; TRANSPORT WP1 for its second work package and TRANSPORT WP2 for its socket work packages; RENDER-2D WP5 for its last | WP7 of 8 · In Progress |
-| 24 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame, and one iPhone shell for every game | RENDER-2D WP5 and APPLE-PRESENTATION WP6 | WP1 of 6 · Not Started |
+| 24 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame, and one iPhone shell for every game | RENDER-2D WP5 and APPLE-PRESENTATION WP6 | WP1 of 6 · Blocked: Needs Dependency |
 | 25 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SHOWCASE WP8 to start, with the owner's pick of a concept; SIM-2D WP3, SESSION WP1, RENDER-2D WP5 and GAME-SPLIT WP4 for the first slice; GAME-UI WP4 for the whole run alone and GAME-UI WP6 for the iPhone simulator; SESSION WP4 for a rehearsed match and SESSION WP7 for co-op on sockets | Waiting: On Dependency, SHOWCASE:WP8 |
 | 26 | REPO-RULES | `./dev check` refuses the code shapes the code review found, bulk media leaves the checkout, and names and layout are put right once | Nothing to start; every other track 4 module's fixes, and track 6's, for the rename and the tidy-up | Waiting: On Dependency, GATE-TIME:WP5 |
 | 27 | REVIEW-ENGINE | The review's findings in the simulation, the sea, cooked assets and the cooker are fixed, and the iPhone app gets the textures and buffers its hardware has | Nothing to start; REPO-RULES WP1 for its errors | Done 24 Nov |
