@@ -1016,10 +1016,15 @@ impl<G: WindowGame + 'static> App<G> {
             let reply = worker
                 .recv_timeout(Duration::from_secs(10))
                 .ok_or("render worker did not finish its last frame")?;
-            // Closing the window stops the render owner, which may refuse the frame in flight;
-            // that refusal ends a run until closed normally.
+            // Closing can cancel the frame in flight after it collected completions from
+            // earlier submissions. Keep those completions for the final report.
             if self.window_closed && matches!(reply.outcome, RenderOutcome::Frame(Err(_))) {
                 self.render_in_flight = None;
+                self.samples
+                    .extend(reply.samples.into_iter().flatten().map(|mut sample| {
+                        sample.detach_gpu_timing();
+                        sample
+                    }));
             } else {
                 self.receive_render(reply)?;
             }
