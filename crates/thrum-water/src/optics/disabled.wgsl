@@ -3,7 +3,7 @@ struct OpticalPaths {
     reflected: vec3<f32>,
     behind: vec3<f32>,
     transmission: vec3<f32>,
-    thickness: f32,
+    edge_depth: f32,
 }
 fn water_optical_paths(
     row: SurfaceRow, world: vec3<f32>, pixel: vec2<u32>, n: vec3<f32>, v: vec3<f32>,

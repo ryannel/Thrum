@@ -31,6 +31,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
     let whitewater = super::whitewater();
     let surf = super::surf_route();
     let route = std::env::var("THRUM_WATER_ROUTE").unwrap_or_default();
+    let optics_height = std::env::var("THRUM_WATER_OPTICS_HEIGHT").unwrap_or_else(|_| "2".into());
     let handoff_cut = surf && route == "handoff-cut";
     let island_view = std::env::var("THRUM_WATER_ISLAND_CAMERA").unwrap_or_else(|_| "0".into());
     if handoff_cut {
@@ -118,7 +119,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
         if route == "optics-pan" {
             if floating.is_some() {
                 let yaw = -56.0 + elapsed * 30.0;
-                runtime.parameters(&format!(r#"{{"camera.optics_height":2,"camera.optics_pan":{yaw},"sun.elevation":6}}"#))
+                runtime.parameters(&format!(r#"{{"camera.optics_height":{optics_height},"camera.optics_pan":{yaw},"sun.elevation":6}}"#))
                     .expect("fleet pan");
             } else if island.is_some() {
                 let yaw = elapsed * 14.0;

@@ -294,7 +294,7 @@ fn reflected_sky(slope:vec2<f32>,covariance:vec3<f32>,v:vec3<f32>)->vec4<f32> {
     var motion=(input.previous.xy/input.previous.w-input.current.xy/input.current.w)*vec2(0.5,-0.5)*view_aux.viewport_inv_viewport.xy;
     if water.level_dt_reset.z>0.5 {motion=vec2(65504.0);}
     var opacity=surface_opacity(row,input.world,v.y);
-    if OPTICS_ENABLED { opacity=smoothstep(0.0,0.035,paths.thickness); }
+    if OPTICS_ENABLED { opacity=smoothstep(0.0,0.095,paths.edge_depth); }
     if FOAM_ENABLED { opacity=max(opacity,whitewater.y); }
     return Output(vec4(colour,opacity),motion,clamp(fresnel+0.1+whitewater.y,0.0,1.0));
 }

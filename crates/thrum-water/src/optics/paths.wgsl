@@ -6,7 +6,7 @@ struct OpticalPaths {
     reflected: vec3<f32>,
     behind: vec3<f32>,
     transmission: vec3<f32>,
-    thickness: f32,
+    edge_depth: f32,
 }
 
 struct GatherHit {
@@ -169,6 +169,7 @@ fn water_optical_paths(
     }
 
     let depth = max(0.0, world.y - row.bed);
+    var edge_depth = depth;
     var thickness = depth / max(0.08, -refracted_ray.y);
     var behind = vec3(0.0);
     var moved = empty_hit();
@@ -193,6 +194,7 @@ fn water_optical_paths(
     if through.distance > 0.0 {
         thickness = length(through.point - world);
         let down = max(0.0, world.y - through.point.y);
+        edge_depth = down;
         behind = hit_light(through) * exp(-optics.downwelling_mirror.xyz * down);
         if moved.distance > 0.0 && any(moved.pixel != through.pixel) {
             let separation = abs(moved.point.y - through.point.y);
@@ -203,5 +205,5 @@ fn water_optical_paths(
             thickness = mix(thickness, length(moved.point - world), weight);
         }
     }
-    return OpticalPaths(outgoing, behind, exp(-optics.extinction_sight.xyz * thickness), thickness);
+    return OpticalPaths(outgoing, behind, exp(-optics.extinction_sight.xyz * thickness), edge_depth);
 }
