@@ -156,8 +156,8 @@
           "check": "sh -c 'cargo test --locked --offline -p v1-game --no-default-features --test game_alone && cargo build --locked --offline -p v1-game --no-default-features --lib --target wasm32-unknown-unknown'",
           "ask": "With the feature off, does the library export anything that qualifies an engine module? Which tests are the game's own, and do they all run with it off? Is any test target declared with `required-features`, which would let another module's check pass by running nothing?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GAME-SPLIT/WP3/round-3/README.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GAME-SPLIT/WP3-review.md"
         },
@@ -177,8 +177,8 @@
           "statement": "A normal web build exports no qualification function and a normal iPhone build accepts no qualification command. The proving builds that other modules' checks run still have them.",
           "ask": "Which exports does the default web bundle hold? Do the browser and simulator checks that other modules pinned still find the hooks they drive, with their check strings unchanged?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GAME-SPLIT/WP3/round-3/README.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GAME-SPLIT/WP3-review.md"
         },

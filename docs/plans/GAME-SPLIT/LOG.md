@@ -56,3 +56,16 @@
   default-feature targets passed on Metal. Chrome exercised both bundles, and both iPhone
   simulator binaries linked with the expected command ABI.
   [Review-fix evidence](../../../.orchestrate/evidence/GAME-SPLIT/WP3-review-fixes/README.md)
+
+- 2026-11-25 WP3 third builder round moved endpoint readback, native qualification
+  selections and the sizing rigs behind `proving`. HOST's ten Chrome lifecycle
+  cases loaded proving and material reload loaded the development bundle. The
+  Mac game-only tests, Wasm build, shipping Chrome boundary, field oracle and
+  both iPhone simulator links passed.
+  [Review-fix evidence](../../../.orchestrate/evidence/GAME-SPLIT/WP3/round-3/README.md)
+- WP3 proposes a BASELINE-GUARD verifier refresh for artifact identity. Build and
+  hash one proving bundle, give it to each registered Chrome capture, and compare
+  its hash with the Wasm instantiation receipt. Keep the references, comparison
+  and sampling. The exact-baseline rule requires a planner ruling with the owner
+  before the verifier's protected pins can change.
+  [Proposed patch](../../../.orchestrate/evidence/GAME-SPLIT/WP3/round-3/exact-receipt-proposal.patch)

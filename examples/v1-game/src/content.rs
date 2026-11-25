@@ -360,35 +360,6 @@ fn selected_reconstruction(
     }
 }
 
-#[cfg(test)]
-mod reconstruction_tests {
-    use super::{GameReconstruction, selected_reconstruction};
-
-    #[test]
-    fn native_launch_admits_only_the_reconstruction_modes_in_this_build() {
-        assert_eq!(
-            selected_reconstruction(Err(&std::env::VarError::NotPresent)),
-            Ok(GameReconstruction::Off)
-        );
-        assert_eq!(
-            selected_reconstruction(Ok("off")),
-            Ok(GameReconstruction::Off)
-        );
-        assert_eq!(
-            selected_reconstruction(Ok("taau")),
-            Ok(GameReconstruction::Taau)
-        );
-        assert!(selected_reconstruction(Ok("invalid")).is_err());
-        #[cfg(feature = "proving")]
-        assert_eq!(
-            selected_reconstruction(Ok("reference")),
-            Ok(GameReconstruction::Reference)
-        );
-        #[cfg(not(feature = "proving"))]
-        assert!(selected_reconstruction(Ok("reference")).is_err());
-    }
-}
-
 #[cfg(feature = "proving")]
 fn validate_sprite_launch() -> Result<(), String> {
     if !matches!(
@@ -607,4 +578,33 @@ fn attach_selected(
         host.set_scene_camera(camera)?;
     }
     Ok(Some(stats))
+}
+
+#[cfg(test)]
+mod reconstruction_tests {
+    use super::{GameReconstruction, selected_reconstruction};
+
+    #[test]
+    fn native_launch_admits_only_the_reconstruction_modes_in_this_build() {
+        assert_eq!(
+            selected_reconstruction(Err(&std::env::VarError::NotPresent)),
+            Ok(GameReconstruction::Off)
+        );
+        assert_eq!(
+            selected_reconstruction(Ok("off")),
+            Ok(GameReconstruction::Off)
+        );
+        assert_eq!(
+            selected_reconstruction(Ok("taau")),
+            Ok(GameReconstruction::Taau)
+        );
+        assert!(selected_reconstruction(Ok("invalid")).is_err());
+        #[cfg(feature = "proving")]
+        assert_eq!(
+            selected_reconstruction(Ok("reference")),
+            Ok(GameReconstruction::Reference)
+        );
+        #[cfg(not(feature = "proving"))]
+        assert!(selected_reconstruction(Ok("reference")).is_err());
+    }
 }

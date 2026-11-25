@@ -9,10 +9,12 @@ use runtime::FrameConfig;
 use std::time::Duration;
 #[cfg(not(target_arch = "wasm32"))]
 use std::time::Instant;
+#[cfg(any(feature = "proving", target_os = "macos", target_arch = "wasm32", test))]
+use thrum_render::synthetic::DisplayOverlay;
 use thrum_render::{
     capabilities::DeviceCapabilities,
     runtime,
-    synthetic::{CullMode, DisplayOverlay, SunShadowMethod},
+    synthetic::{CullMode, SunShadowMethod},
 };
 
 #[cfg(all(feature = "proving", any(target_os = "macos", target_arch = "wasm32")))]
@@ -899,6 +901,7 @@ pub(crate) fn set_haze_eye(runtime: &mut Runtime, eye: [f32; 3], cut: bool) -> R
 }
 
 /// Select the display diagnostic. It replaces only the display encode, so history stays valid.
+#[cfg(any(feature = "proving", target_os = "macos", target_arch = "wasm32", test))]
 pub(crate) fn set_display_overlay(runtime: &mut Runtime, overlay: DisplayOverlay) {
     runtime.source_mut().display_overlay = overlay;
 }
