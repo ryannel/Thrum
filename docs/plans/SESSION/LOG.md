@@ -286,3 +286,11 @@
   records to a bounded writer off the render thread. Two Mac T2 takes preserved 1.100× catch-up and reduced the
   longest joined submission gaps from 88–128 ms in the review to 24–36 ms.
   [Cadence inspection and work-cap test](../../../.orchestrate/evidence/SESSION/WP7/cadence/README.md)
+
+- 2026-11-25 WP7 timing review fixes. A driven sample supplies the authoritative tick duration,
+  bounded effect phase and host due time. Pausing presents the committed endpoint and clears
+  interpolation. The 40 ms Metal contribution regression covers the ordinary and catch-up frames,
+  a lead beyond the endpoint, pause and resume. The resident lane regression checks when the
+  driver’s clock and page become eligible. The Mac and Chrome matches each matched all 120 digests
+  over 3,600 ticks. The Chrome T2 run includes every named hold and skip.
+  [Timing checks and motion inspections](../../../.orchestrate/evidence/SESSION/WP7/timing/README.md)
