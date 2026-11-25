@@ -1,6 +1,28 @@
 {
   "module": "GAME-SDK",
-  "design": null,
+  "design": {
+    "verdict": "changes",
+    "review": ".orchestrate/evidence/GAME-SDK/design-review.md",
+    "commit": "21970690c0f518dd11952aaf45d0996635851219",
+    "hash": "af66c33ca162b82f897e02d91050afe6a0a34fd877080df3059621f9671c5953",
+    "by": "review",
+    "host": "codex",
+    "model": "gpt-6.2-astra",
+    "effort": "high",
+    "observed": {
+      "model": "gpt-6.2-astra",
+      "effort": "high"
+    },
+    "cli": "codex-cli 0.171.0-alpha.13.2",
+    "path": "headless",
+    "usage": {
+      "input": 140104,
+      "cached": 3374592,
+      "output": 14273,
+      "turns": 1
+    },
+    "at": "2026-11-25T20:52:20Z"
+  },
   "work_packages": {
     "WP1": {
       "definitions": "e475b45b869dbaeceebfbc7bf1d720162a6714c9897109cbcd11dc8c0fce53c9",
