@@ -960,3 +960,10 @@
   height. The tapered section and resolution-dependent throw clear the large handoff blades in the
   selected witnesses. Smaller tabs and a weak visible roll remain at sand height on the third look.
   [Diagnosis and target witnesses](../../../.orchestrate/evidence/WATERS/WP13/fin-review/remaining-witness.md).
+- 2026-11-25 WP13.5 and WP13.11 passed the revised crest-line inspection at the retained taper
+  and throw fade. Portable Metal showed connected swash in both winds and different onset distances
+  at 1 km. Hardware Chrome and portable Metal matched across 27 fixed phases and six trade-wind views.
+  The 641 Chrome submissions advanced in engine time with zero omissions or faults. The WP20
+  diagnostic frames were retained unchanged.
+  [Metal crest and swash](../../../.orchestrate/evidence/WATERS/WP13/crest-sweep/metal-inspection.md) ·
+  [Matched Chrome inspection](../../../.orchestrate/evidence/WATERS/WP13/crest-sweep/chrome-inspection.md).
