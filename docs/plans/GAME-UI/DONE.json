@@ -202,10 +202,10 @@
           "ask": "Is the reference composed on the CPU from the cooked sheet's texels and the table, without the renderer's shaders and without the layout's own output positions? Is a run scaled from another scale's sheet a control that the test fails?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP2/revision/metal.log",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GAME-UI/WP2-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP2.6",
@@ -237,10 +237,10 @@
           "ask": "Does the edit keep the cooked size and widen the advances, as from 8 to 12 pixels for two glyphs in a 16-pixel box, so that new glyphs at old offsets would overlap and leave the box? Is every submitted frame of the edit captured and compared with both fresh references, and not only the settled one, while a value in the text keeps changing? Does the test discard the switch frame once, and show that a refused publication leaves no prepared layout behind?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP2/revision/metal.log",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GAME-UI/WP2-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP2.9",
@@ -248,10 +248,10 @@
           "check": "node scripts/check_v1_browser.mjs --case interface-text",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP2/revision/chrome/interface-text.json",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GAME-UI/WP2-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP2.10",
@@ -260,10 +260,10 @@
           "ask": "Were both retained runs release builds of the claimed commit, with the load on the machine recorded? Does the command succeed or fail on the record being complete, and never on a time?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP2/revision/costs/summary.json",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GAME-UI/WP2-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP2.11",

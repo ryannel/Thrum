@@ -106,3 +106,8 @@
   The combined committed font textures held 3,922,212, 9,298,212 and 16,394,532 bytes at the three scales. The cook
   and layout measurements record both release runs and the machine load.
   [Proof index](../../../.orchestrate/evidence/GAME-UI/WP2/index.md)
+- 2026-11-25 WP2 review fixes. A late refusal restores the committed font offer before binding and
+  drops the pending publication. Font planning selects the input named in the description, preserving
+  unrelated sibling products. Mac Metal proved the late refusal and exact opaque texels. Chrome WebGPU
+  rejected both mixed metric and sheet references at every tested density, and both release cost runs
+  recorded every cooked sheet. [Review fix evidence](../../../.orchestrate/evidence/GAME-UI/WP2/revision/index.md)
