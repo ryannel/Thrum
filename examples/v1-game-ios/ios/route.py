@@ -336,7 +336,8 @@ def raced_present(base: dict[str, str]) -> dict[str, str]:
     return s
 
 
-def background(base: dict[str, str], name: str, during_stall: bool = False) -> dict[str, str]:
+def background(base: dict[str, str], name: str, during_stall: bool = False, *,
+               check_history: bool = False) -> dict[str, str]:
     if during_stall:
         start_stall()
     simctl("launch", DEVICE, "com.apple.Preferences")
@@ -345,6 +346,12 @@ def background(base: dict[str, str], name: str, during_stall: bool = False) -> d
     check(b.get("world_paused") == "true", "the world pause was not confirmed", b)
     check(b.get("lifecycle_thread") == "main", "lifecycle ran off UIKit main", b)
     check(num(b, "lifecycle_main_max_us") < 1_000_000, "a lifecycle callback blocked", b)
+    if check_history:
+        b = wait(lambda s: num(s, "background_discards") > num(base, "background_discards"),
+                 20, "the render owner to discard its encoded frame in the background")
+        check(b.get("state") == "Suspended", "background discard happened after resume", b)
+        check(num(b, "empty_submits") == num(base, "empty_submits"),
+              "background cancellation flushed staging", b)
     time.sleep(2)
     snapshot(f"{name}-background", b)
     foreground()
@@ -363,6 +370,27 @@ def background(base: dict[str, str], name: str, during_stall: bool = False) -> d
         f"at tick {s['resume_tick']}; surface epoch {base['epoch']} -> {s['epoch']}; "
         f"deferred releases {s['release_deferred']}")
     return s
+
+
+def background_history_reset() -> None:
+    base = wait(lambda s: num(s, "surface_samples") >= 8, 120, "warm temporal history")
+    check("Apple_iOS_simulator_GPU" in base.get("adapter", ""), "simulator Metal adapter not selected", base)
+    check(base.get("reconstructor") == "Some(Taau)", "portable TAAU did not resolve", base)
+    background(base, "reset", during_stall=True, check_history=True)
+    resumed = wait(lambda s: s.get("background_resume_history", "none") != "none",
+                   20, "completion of the first submission after the background discard")
+    dropped_order, dropped_predecessor = map(int, resumed["background_discard"].split(","))
+    resumed_order, resumed_predecessor, jitter = map(int, resumed["background_resume_history"].split(","))
+    check(num(resumed, "background_discards") == num(base, "background_discards") + 1,
+          "expected one encoded background discard", resumed)
+    check(dropped_predecessor > 0, "the discarded frame lacked valid temporal history", resumed)
+    check(resumed_order == dropped_order and resumed_predecessor == 0 and jitter >= 0,
+          "the first resumed reconstruction submission did not use invalid history", resumed)
+    check(num(resumed, "device_generation") == num(base, "device_generation"),
+          "the device was replaced during the proof", resumed)
+    snapshot("reset-completed", resumed, screenshot=False)
+    log(f"discarded submission {dropped_order} with predecessor {dropped_predecessor}; "
+        f"resumed at {resumed_order} with invalid history and jitter phase {jitter}")
 
 
 def gesture(test: str) -> subprocess.Popen:
@@ -770,8 +798,11 @@ def main() -> None:
     identity()
     log("manual steps: none; every interaction below is a logged simctl command, Darwin notification "
         "or XCUITest HID gesture")
-    s = startup()
     rows = os.environ.get("THRUM_V1_ROWS")
+    if rows == "reset":
+        background_history_reset()
+        return
+    s = startup()
     if rows == "edr":
         snapshot("edr-before", s, screenshot=False)
         post("force-headroom")

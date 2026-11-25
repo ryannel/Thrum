@@ -43,6 +43,9 @@ pub(super) struct Witness {
     pub(super) missing: u64,
     pub(super) reconfigure_waits: u64,
     pub(super) stale_dropped: u64,
+    background_discards: u64,
+    background_discard: Option<(u64, u64)>,
+    background_resume_history: Option<(u64, u64, Option<u32>)>,
     pub(super) configured: u64,
     pub(super) max_pending_frames: usize,
     pub(super) late_targets: u64,
@@ -202,9 +205,25 @@ impl Witness {
         if frame.platform.raced_present && frame.platform.epoch < self.resize_epoch {
             self.resize_raced_presents += 1;
         }
+        if let Some(discard) = frame.platform.background_discard {
+            self.background_discards += 1;
+            self.background_discard = Some(discard);
+            self.background_resume_history = None;
+        }
         for sample in frame.samples.iter().flatten() {
             self.completed_gpu += 1;
             self.surface_samples += u64::from(sample.surface_presented);
+            if self.background_resume_history.is_none()
+                && self
+                    .background_discard
+                    .is_some_and(|(order, _)| sample.submission_order >= order)
+            {
+                self.background_resume_history = Some((
+                    sample.submission_order,
+                    sample.history_identity[1],
+                    sample.jitter_phase,
+                ));
+            }
         }
         self.presentable_encodes += u64::from(frame.platform.presentable_encode);
         self.acquired += u64::from(frame.platform.acquired);
@@ -311,10 +330,21 @@ impl Witness {
         )
     }
 
+    fn write_background_history(&self, out: &mut String) {
+        let _ = writeln!(out, "background_discards={}", self.background_discards);
+        if let Some((order, prior)) = self.background_discard {
+            let _ = writeln!(out, "background_discard={order},{prior}");
+        }
+        if let Some((order, prior, phase)) = self.background_resume_history {
+            let phase = phase.map_or(-1, i64::from);
+            let _ = writeln!(out, "background_resume_history={order},{prior},{phase}");
+        }
+    }
+
     pub(super) fn write(&self) {
         let mut out = String::with_capacity(2048);
         let g = self.gesture;
-        let rows: [(&str, String); 71] = [
+        let rows = [
             ("pid", std::process::id().to_string()),
             ("state", self.state.clone()),
             ("adapter", self.adapter.replace(' ', "_")),
@@ -498,6 +528,7 @@ impl Witness {
         for (key, value) in tail {
             let _ = writeln!(out, "{key}={value}");
         }
+        self.write_background_history(&mut out);
         let _ = writeln!(out, "{}", self.cooked);
         replace(&out);
     }

@@ -27,6 +27,8 @@ def worker(turn, mode, env):
 def presentation(mode, output, *, clock=time.monotonic, prepared=False):
     holder, _ = simulator.admission()
     env = dict(os.environ, THRUM_V1_ROUTE_OUT=str(output))
+    if mode == "reset":
+        env.update(SIMCTL_CHILD_THRUM_RECONSTRUCTION="taau", SIMCTL_CHILD_THRUM_RECIPE="portable")
     if not holder:
         prepare(env)
         command = [sys.executable, __file__, "--presentation", mode, "--output", output, "--prepared"]
@@ -47,7 +49,7 @@ def main():
     mode = parser.add_mutually_exclusive_group()
     for name in ("extent", "transition", "edr"):
         mode.add_argument(f"--{name}", dest="mode", action="store_const", const=name)
-    mode.add_argument("--presentation", choices=("extent", "transition", "edr"))
+    mode.add_argument("--presentation", choices=("extent", "transition", "edr", "reset"))
     parser.add_argument("--output", type=Path)
     parser.add_argument("--prepared", action="store_true")
     args = parser.parse_args()

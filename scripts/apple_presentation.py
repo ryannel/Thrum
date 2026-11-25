@@ -570,9 +570,23 @@ def ios_edr(output):
                 before=str(route / "edr-before.txt"), after=str(route / "edr-after.txt"))
 
 
+def ios_reset(output):
+    route = output / "route"
+    v1_simulator_route.presentation("reset", route)
+    state = dict(line.split("=", 1) for line in (route / "reset-completed.txt").read_text().splitlines()
+                 if "=" in line)
+    discarded, prior = map(int, state["background_discard"].split(","))
+    resumed, predecessor, phase = map(int, state["background_resume_history"].split(","))
+    return dict(target="ios-sim", reconstructor="TAAU",
+                background_discards=int(state["background_discards"]),
+                discarded_order=discarded, discarded_predecessor=prior,
+                resumed_order=resumed, resumed_predecessor=predecessor, resumed_jitter_phase=phase,
+                simulator_build=json.loads((route / "identity.json").read_text()))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("check", choices=["extent", "transition", "configure-fault", "transition-capture", "scale", "scale-costs", "edr", "edr-identity", "edr-modes", "edr-headroom", "edr-route", "governor", "governor-identity", "governor-thermal"])
+    parser.add_argument("check", choices=["extent", "transition", "configure-fault", "transition-capture", "scale", "scale-costs", "edr", "edr-identity", "edr-modes", "edr-headroom", "edr-route", "governor", "governor-identity", "governor-thermal", "reset"])
     parser.add_argument("--target", choices=["mac-metal", "ios-sim"], required=True)
     parser.add_argument("--output", type=Path)
     parser.add_argument("--steady", action="store_true", help="qualify the unloaded governor arm")
@@ -595,6 +609,7 @@ def main():
                   output, steady=args.steady, capture=args.realtime_capture),
               ("governor-identity", "mac-metal"): mac_governor_identity,
               ("governor-thermal", "mac-metal"): mac_governor_thermal,("edr", "ios-sim"): ios_edr,
+              ("reset", "ios-sim"): ios_reset,
               ("edr", "mac-metal"): mac_edr,
               ("edr-modes", "mac-metal"): mac_edr_modes,
               ("edr-headroom", "mac-metal"): mac_edr_headroom,

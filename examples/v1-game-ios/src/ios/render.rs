@@ -144,6 +144,8 @@ pub(super) struct FrameObservation {
     pub(super) empty_submit: bool,
     /// A recorded frame was abandoned after loss, with no queue call.
     pub(super) abandoned: bool,
+    /// Submission order and predecessor of an encoded frame cancelled in the background.
+    pub(super) background_discard: Option<(u64, u64)>,
 }
 
 /// A published replacement device.
@@ -336,6 +338,7 @@ fn frame_reply(request: &FrameRequest, generation: u64, target: TargetLeadStatus
             old_extent_present: false,
             empty_submit: false,
             abandoned: false,
+            background_discard: None,
         },
     }
 }
@@ -765,6 +768,13 @@ impl Owner {
             });
         reply.platform.pending_frames = gpu.host.pending_frames();
         reply.platform.native_witness(&gpu.host);
+        if self.diagnostics {
+            let _ = write!(
+                reply.platform.cooked,
+                "\nreconstructor={:?}",
+                gpu.host.resolved_reconstructor()
+            );
+        }
         let culling = gpu.host.culling_selection();
         let _ = write!(
             reply.platform.cooked,
@@ -843,7 +853,8 @@ impl Gpu {
         background: &AtomicBool,
         diagnostics: bool,
     ) -> Result<Option<DriveReport>, FrameError> {
-        let native_hold = self.host.native_witness_report().is_some();
+        let observe_background_discard = self.host.native_witness_report().is_some()
+            || (diagnostics && self.host.resolved_reconstructor().is_some());
         let advanced = self.host.advance(now)?;
         if !advanced.can_acquire_serial() {
             return advanced.submit(None).map(Some);
@@ -872,7 +883,7 @@ impl Gpu {
                 .expect("encoded frame enters the section once");
             if background.load(Ordering::Acquire) {
                 reply.platform.status = SurfaceStatus::NoLease;
-                return Ok(Some(encoded.cancel_background()));
+                return Ok(Some(cancel_background(encoded, reply)));
             }
             let acquiring = Instant::now();
             reply.platform.unconfigured_acquire =
@@ -913,10 +924,9 @@ impl Gpu {
                     // the device while this drawable is held.
                     let until = Instant::now() + stall;
                     while Instant::now() < until {
-                        // The native race observes cancellation while still in
-                        // the background. Once both owner signals are visible,
-                        // finish this qualification hold and refuse the frame.
-                        if native_hold
+                        // Finish the diagnostic hold as soon as cancellation
+                        // can be observed while the app is still in background.
+                        if observe_background_discard
                             && background.load(Ordering::Acquire)
                             && !lease.is_current(request.surface_generation)
                         {
@@ -1003,10 +1013,22 @@ fn cancel_revoked(
     background: &AtomicBool,
 ) -> DriveReport {
     if background.load(Ordering::Acquire) {
-        encoded.cancel_background()
+        cancel_background(encoded, reply)
     } else {
         skip(encoded, reply)
     }
+}
+
+fn cancel_background(
+    encoded: EncodedFrame<'_, GameWorld, GameScene>,
+    reply: &mut FrameReply,
+) -> DriveReport {
+    reply.platform.background_discard = reply
+        .platform
+        .frame_extent
+        .zip(encoded.history_identity())
+        .map(|(extent, [_, predecessor])| (extent.submission, predecessor));
+    encoded.cancel_background()
 }
 
 /// Skip a recorded frame on a healthy device. The engine flushes its staged
