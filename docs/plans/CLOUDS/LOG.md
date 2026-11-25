@@ -788,3 +788,7 @@
   withholds the cadence judgement. A later loss at a place establishes recurrence even when the paired count
   is within the neighbours' range. The recorder verifies a writable descriptor's path and file identity
   before it models or removes the scratch. [Review replay](../../../.orchestrate/evidence/CLOUDS/WP19/review-fixed-accounting/reviewer-replay.json)
+- A live refresh landed just before a call that still served the display link's interval. The measured
+  rows now export the drawable's own request outcome so the analyser can place that loss before the call.
+  The ten refresh-account tests pass on the rebased build.
+  [CPU proof](../../../.orchestrate/evidence/CLOUDS/WP19/review-refresh-account-tests.log)
