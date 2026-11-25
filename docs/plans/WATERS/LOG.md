@@ -866,3 +866,9 @@
   13,849,632 bytes. The surf cut used 47,425,760 nodes over 48 stations and took 18,117.774 ms. The paired
   surf-disabled query took 0.311 ms. The investigation is recorded for WP19.
   [Metal cost and tripwires](../../../.orchestrate/evidence/WATERS/WP13/surf-cost.json).
+
+- 2026-11-25 The revised 2 m Chrome and Metal takes show matched crest, swash and fading lace at the
+  tested times. Chrome submitted 118 frames from 1.0905 to 13.1066 s with zero omissions or faults.
+  WP13.11 remains open on the offshore height comparison. All nine automatic worktree checks passed.
+  [Chrome and Metal matches](../../../.orchestrate/evidence/WATERS/WP13/chrome-matched-inspection.md) ·
+  [Worktree checks](../../../.orchestrate/evidence/WATERS/WP13/bed-grid-package-check.log).
