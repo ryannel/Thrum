@@ -13,7 +13,7 @@ Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-bu
 - Assumption: "breaking waves" (14 November) is met by the sea's own swell, which wave theory turns, shortens and raises over the bed and which takes a breaker's shape as each crest passes its breaking height, then by a bounded swash profile that swell drives at the still-water contour. It is neither baked nor a live solver. There is no spray or splash, no ride inside a barrel and no current from surf.
 - Assumption: the island's exposed beach gets a swell set for the look, with several lines showing at once and a period inside the surf cue's 6 s to 14 s.
 - Assumption: from 1 km the surf is judged for fronts that start at different distances and run in. That a set's taller crest breaks farther out is held on the model (WP12.4), not by eye: a known gap.
-- Assumption: a short gray patch that flashes for a few frames in the pitching face at the exposed beach's bend is not foundational to the breaker's look. WP13 passes with it as a known gap, and WP20 fixes it before WP10's motion review.
+- Assumption: how the pitching face is finished seen close (tabs and strands under the lip, bands on its white, blunt crest ends, the bend's gray patch) is not foundational to the breaker. WP13 passes with it as a known gap, and WP20 names each cause and repairs it before WP10's motion review.
 - Assumption: wet long-wave loss keeps WP7.5's distributed foam wherever no breaking face is available, including the swash. An eligible crest concentrates part of it on its face and under a resolved lip, and distant beaches take their steady cover from the same loss.
 - Assumption: as part of surf an island shelters its lee, so a lee beach laps with short waves only.
 - Assumption: the surf query's age is proved for the example's eight floats in a gale on the Mac (nine answers in ten within two ticks), not for 2,048 points in breakers or in Chrome; the coarse-cell rule is measured, not proved.
@@ -72,10 +72,11 @@ Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-bu
 
 ## WP13 Swell turns to face the beach, rises and breaks into white water that runs up the sand, on the Mac and in Chrome
 
-Resume `build/waters` from its [handoff](../../../.orchestrate/evidence/WATERS/WP13-handoff.md). The flap at
-the bend is parked as WP20's ([decision and witness](LOG.md#wp13-bend-flap-parked)), so take no fourth look and
-change no setting. Record WP13.5's and WP13.11's evidence from the retained `refined-bend` takes on both targets
-and go to review.
+Resume `build/waters` from its [handoff](../../../.orchestrate/evidence/WATERS/WP13-handoff.md) at candidate
+`757681030`, keeping its taper and throw fade. Take no further look at the pitching face and change no setting:
+its finish is WP20's ([decision](LOG.md#wp13-face-finish-parked)). Finish the capture sweep there, record WP13.5
+and WP13.11 against the revised point 1 and go to review. File the near-face diagnostic's frames under
+`.orchestrate/evidence/WATERS/WP20/`, unchanged.
 
 ## WP19 Floats in a gale's breaking surf get the height of the crest they ride in time to ride it, with the game running
 
@@ -89,13 +90,12 @@ If the window's mean current makes interaction waves visibly wrong in the exampl
 
 ## WP16 Under water the Sun casts a moving net of light on the bed and the hull, shafts of light stand in the water, and the picture stays readable as the camera goes down
 
-## WP20 A crest pitching at the bend of the exposed beach is drawn whole, with no gray patch flashing in its face, on the Mac and in Chrome
+## WP20 A pitching crest seen close is drawn whole, with no tabs, strands, bands or flashing patch on its face, on the Mac and in Chrome
 
-Begin with WP20.1's starting take at [the witness](LOG.md#wp13-bend-flap-parked), on Metal and in Chrome. If the
-patch shows in neither, change nothing: the items' check and inspections settle it. If it shows, three visual
-trials have failed, so take WP20.1's diagnostic where it shows before changing anything, then fix what it names,
-keeping the throw ([risk 18](DESIGN.md#risks)). If that record names no cause, or its fix fails three looks, end
-`BLOCKED` with it.
+Begin with WP20.1, before changing anything. [The reading at WP13's candidate](LOG.md#wp13-face-finish-parked)
+gives the sand-height cues to the foam's cover: confirm it, and read the bend and the crest ends. Repair only
+what a record names ([risk 18](DESIGN.md#risks)). If a record names no cause, or a repair fails three looks,
+end `BLOCKED`.
 
 ## WP10 A visitor takes the water from glassy calm to gale, raises and lowers the lake, and goes from dawn to night with the controls, and it holds up in motion, on the Mac and in Chrome
 

@@ -928,3 +928,31 @@
   receipts show advancing engine time and zero omissions or faults. The brief bend patch remains WP20's.
   [Metal inspection](../../../.orchestrate/evidence/WATERS/WP13/refined-metal-breaker-inspection.md) ·
   [Matched Chrome inspection](../../../.orchestrate/evidence/WATERS/WP13/refined-chrome-surf-inspection.md).
+
+<a id="wp13-face-finish-parked"></a>
+
+- 2026-11-25 WP13 blocked a second time on the pitching face, after three more looks: finer rings, a tapered
+  island section and the throw faded where cells cannot resolve the fold, the last two kept at `757681030`. The
+  review's long blades and dark opening are gone. Short tabs, strands and upright bands remain under the lip at
+  2 m, on Metal and in Chrome. Lead's direction: no more blind looks at this face inside WP13.
+  [Review](../../../.orchestrate/evidence/WATERS/WP13-review.md) ·
+  [three looks](../../../.orchestrate/evidence/WATERS/WP13/fin-review/diagnosis.md) ·
+  [what remains](../../../.orchestrate/evidence/WATERS/WP13/fin-review/remaining-witness.md)
+- 2026-11-25 Chosen: how the pitching face is finished seen close is parked as WP20's, with the bend's flap, and
+  WP13 passes on its other claims. WP13.5's point 1 now holds the crest line (an unbroken lip, no teeth, no long
+  blade) and names the finish as WP20's, WP13.11 follows through it, and the quality bar and the plan file's
+  assumption say the same. Six looks have failed on this face across two stops, and every other claim passes.
+- 2026-11-25 The near-face diagnostic at `757681030` (job `20261125-064546-26938`, native Metal, foam warmed
+  from the scene's start): the trade-wind tabs and bands and the gale's strands show as shipped, go with the
+  foam left out, and sit on front-facing triangles. So the sand-height cues are the foam's cover on the face,
+  not the mesh. The shader fits: the face weight is interpolated from mesh vertices and the stocks are read by
+  horizontal position. No depth was read, and the bend's patch, the crest ends and Chrome have no reading.
+  [Planner's reading and crops](../../../.orchestrate/evidence/WATERS/WP20/near-face-reading/README.md)
+- 2026-11-25 WP20 rewritten around five cues: the bend's patch, tabs, strands, crest-end caps and bands. WP20.1
+  is the attribution, on record before any change. WP20.2 and WP20.3 judge the repaired face on Metal and in
+  Chrome. It stays after WP16 and before WP10, so another stop on this face holds only the motion review. The
+  design is unchanged: the cause is a planner's reading until WP20.1 records it, and the repair follows that.
+- 2026-11-25 Not taken: the attribution and the repair as WP13's next item. It would hold the surf query, optics,
+  the channel and the underwater view behind a face that has already stopped the module twice.
+- 2026-11-25 Not taken here, as outside this block: the WP13 review's suggestion that the Metal and Chrome
+  conformance samplers still choose points by the former ring widths and miss the widened band of each ring.
