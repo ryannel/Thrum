@@ -240,3 +240,82 @@ fn tick_stage_rules_validate_texture_read_descriptors() {
         invalid_read(GraphError::UsageMismatch { pass: 0 })
     );
 }
+
+#[test]
+fn tick_stage_rules_enforce_device_storage_texture_support_per_pass() {
+    use crate::{
+        error::EffectGraphError,
+        graph::{GraphError, TextureKind},
+    };
+
+    let texture = |format| ResourceDescriptor::Texture {
+        dimension: TextureKind::D2,
+        width: 8,
+        height: 8,
+        layers: 1,
+        mips: 1,
+        samples: 1,
+        format,
+        usage: wgpu::TextureUsages::STORAGE_BINDING,
+    };
+    let read = |resource| EffectAccess {
+        resource,
+        range: 0..1,
+        kind: AccessKind::StorageRead,
+        view: None,
+        history: None,
+    };
+    let mut graph = EffectGraph {
+        resources: [0, 1]
+            .map(|owner| {
+                (
+                    texture(wgpu::TextureFormat::R32Uint),
+                    ResourceScope::Persistent {
+                        owner,
+                        epoch: 1,
+                        initialized: true,
+                    },
+                )
+            })
+            .to_vec(),
+        tick_passes: vec![
+            TickPass {
+                name: "query first texture".into(),
+                reads: vec![read(0)],
+            },
+            TickPass {
+                name: "query second texture".into(),
+                reads: vec![read(1)],
+            },
+        ],
+        ..Default::default()
+    };
+    let limits = wgpu::Limits {
+        max_storage_textures_per_shader_stage: 1,
+        ..wgpu::Limits::default()
+    };
+    let validate = |graph: &EffectGraph| {
+        graph.validate()?;
+        graph.validate_tick_texture_support(&limits, wgpu::Features::empty())
+    };
+    assert_eq!(validate(&graph), Ok(()));
+
+    let invalid_read = |source| {
+        Err(EffectGraphError::InvalidTickRead {
+            pass: "query second texture".into(),
+            source,
+        })
+    };
+    graph.resources[1].0 = texture(wgpu::TextureFormat::Rgba8UnormSrgb);
+    assert_eq!(
+        validate(&graph),
+        invalid_read(GraphError::StorageFormat { pass: 1 })
+    );
+
+    graph.resources[1].0 = texture(wgpu::TextureFormat::R32Uint);
+    graph.tick_passes[1].reads.push(read(0));
+    assert_eq!(
+        validate(&graph),
+        invalid_read(GraphError::StorageTextureLimit { pass: 1 })
+    );
+}

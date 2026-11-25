@@ -417,11 +417,11 @@ pub enum EffectGraphError {
     TickPassRequiresRetainedRead(String),
     /// A tick pass may only read the committed side of a history.
     TickPassRequiresPrevious(String),
-    /// A tick read is incompatible with its resource descriptor.
+    /// A tick read is incompatible with its resource descriptor or device capabilities.
     InvalidTickRead {
         /// Name of the tick pass.
         pass: String,
-        /// Descriptor validation failure.
+        /// Resource or capability validation failure.
         source: crate::graph::GraphError,
     },
     /// A 2D scene does not support the named tick pass.

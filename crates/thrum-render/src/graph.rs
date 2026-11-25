@@ -29,6 +29,7 @@ impl Eq for ResourceId {}
 mod native;
 mod texture;
 pub use texture::TextureKind;
+pub(crate) use texture::validate_storage_textures;
 
 /// Immutable physical properties required to reuse a transient allocation.
 #[derive(Clone, Debug, Eq, PartialEq)]

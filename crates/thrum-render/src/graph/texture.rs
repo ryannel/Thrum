@@ -69,6 +69,39 @@ fn storage(kind: AccessKind) -> bool {
     )
 }
 
+pub(crate) fn validate_storage_textures<'a>(
+    accesses: impl IntoIterator<Item = (&'a ResourceDescriptor, AccessKind)>,
+    limits: &wgpu::Limits,
+    features: wgpu::Features,
+    pass: usize,
+) -> Result<(), GraphError> {
+    let mut count = 0;
+    for (descriptor, kind) in accesses {
+        if let ResourceDescriptor::Texture { format, .. } = descriptor
+            && storage(kind)
+        {
+            count += 1;
+            let facts = format.guaranteed_format_features(features);
+            let flag = match kind {
+                AccessKind::StorageRead => wgpu::TextureFormatFeatureFlags::STORAGE_READ_ONLY,
+                AccessKind::StorageWrite => wgpu::TextureFormatFeatureFlags::STORAGE_WRITE_ONLY,
+                _ => wgpu::TextureFormatFeatureFlags::STORAGE_READ_WRITE,
+            };
+            if !facts
+                .allowed_usages
+                .contains(wgpu::TextureUsages::STORAGE_BINDING)
+                || !facts.flags.contains(flag)
+            {
+                return Err(GraphError::StorageFormat { pass });
+            }
+        }
+    }
+    if count > limits.max_storage_textures_per_shader_stage {
+        return Err(GraphError::StorageTextureLimit { pass });
+    }
+    Ok(())
+}
+
 pub(super) fn validate_access(
     descriptor: &ResourceDescriptor,
     range: &Range<u64>,
@@ -202,37 +235,17 @@ impl FrameGraph {
             }
         }
         for (pass, declaration) in self.passes.iter().enumerate() {
-            let mut count = 0;
-            for access in &declaration.accesses {
-                if !storage(access.kind) {
-                    continue;
-                }
-                if let ResourceDescriptor::Texture { format, .. } =
-                    self.resources[access.resource.index].descriptor
-                {
-                    count += 1;
-                    let facts = format.guaranteed_format_features(features);
-                    let flag = match access.kind {
-                        AccessKind::StorageRead => {
-                            wgpu::TextureFormatFeatureFlags::STORAGE_READ_ONLY
-                        }
-                        AccessKind::StorageWrite => {
-                            wgpu::TextureFormatFeatureFlags::STORAGE_WRITE_ONLY
-                        }
-                        _ => wgpu::TextureFormatFeatureFlags::STORAGE_READ_WRITE,
-                    };
-                    if !facts
-                        .allowed_usages
-                        .contains(wgpu::TextureUsages::STORAGE_BINDING)
-                        || !facts.flags.contains(flag)
-                    {
-                        return Err(GraphError::StorageFormat { pass });
-                    }
-                }
-            }
-            if count > limits.max_storage_textures_per_shader_stage {
-                return Err(GraphError::StorageTextureLimit { pass });
-            }
+            validate_storage_textures(
+                declaration.accesses.iter().map(|access| {
+                    (
+                        &self.resources[access.resource.index].descriptor,
+                        access.kind,
+                    )
+                }),
+                limits,
+                features,
+                pass,
+            )?;
         }
         Ok(())
     }

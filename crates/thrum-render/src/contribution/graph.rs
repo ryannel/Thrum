@@ -420,6 +420,29 @@ impl EffectGraph {
         Ok(())
     }
 
+    // The scene calls this after append has validated every resource index.
+    pub(crate) fn validate_tick_texture_support(
+        &self,
+        limits: &wgpu::Limits,
+        features: wgpu::Features,
+    ) -> Result<(), crate::error::EffectGraphError> {
+        for (index, pass) in self.tick_passes.iter().enumerate() {
+            crate::graph::validate_storage_textures(
+                pass.reads
+                    .iter()
+                    .map(|read| (&self.resources[read.resource].0, read.kind)),
+                limits,
+                features,
+                index,
+            )
+            .map_err(|source| crate::error::EffectGraphError::InvalidTickRead {
+                pass: pass.name.clone(),
+                source,
+            })?;
+        }
+        Ok(())
+    }
+
     pub(crate) fn append(
         &self,
         graph: &mut FrameGraph,

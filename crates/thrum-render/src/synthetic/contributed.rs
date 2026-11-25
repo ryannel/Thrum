@@ -137,6 +137,10 @@ impl super::SyntheticTargetInputs {
             ));
         }
         let resources = self.effect_graph.append(graph, self.key, prepared_keys)?;
+        self.effect_graph.validate_tick_texture_support(
+            self.capabilities.limits(),
+            self.capabilities.features(),
+        )?;
         accesses.extend_from_slice(&resources.opaque_reads);
         Ok((resources, ray_structure))
     }
