@@ -15,16 +15,18 @@ const MARKS: [[u8; 4]; 6] = [
 pub(crate) struct Card {
     scale: u8,
     load_rows: Option<u32>,
+    over_sprites: bool,
     paint: Option<PaintList>,
     reuse_next: bool,
     green: bool,
 }
 
 impl Card {
-    pub(crate) fn new(scale: u8, load_rows: Option<u32>) -> Self {
+    pub(crate) fn new(scale: u8, load_rows: Option<u32>, over_sprites: bool) -> Self {
         Self {
             scale,
             load_rows,
+            over_sprites,
             paint: None,
             reuse_next: false,
             green: false,
@@ -97,7 +99,14 @@ impl Card {
     }
 
     fn panel(&self, extent: [u32; 2], builder: &mut PaintListBuilder) {
-        let mut scrim = self.rect(0, [8, 8], [112, 58]);
+        let scale = u32::from(self.scale);
+        let [left, top] = if self.over_sprites {
+            extent.map(|side| side / (4 * scale))
+        } else {
+            [0; 2]
+        };
+        let rect = |frame, [x, y]: [u32; 2], size| self.rect(frame, [left + x, top + y], size);
+        let mut scrim = rect(0, [8, 8], [112, 58]);
         scrim.tint = [0.0, 0.0, 0.0, 0.5];
         builder.push(scrim);
         for (frame, origin, size) in [
@@ -109,13 +118,12 @@ impl Card {
             (2, [22, 28], [54, 6]),
             (6, [76, 28], [24, 6]),
         ] {
-            builder.push(self.rect(frame, origin, size));
+            builder.push(rect(frame, origin, size));
         }
         for (column, frame) in (1..=6).enumerate() {
             let column = u32::try_from(column).expect("six panel swatches");
-            builder.push(self.rect(frame, [22 + column * 13, 45], [11, 8]));
+            builder.push(rect(frame, [22 + column * 13, 45], [11, 8]));
         }
-        let scale = u32::from(self.scale);
         let anchor = extent.map(|side| side.saturating_sub(10 * scale));
         let mut mark = self.rect(3, [0; 2], [4, 4]);
         mark.position = anchor.map(f64::from);

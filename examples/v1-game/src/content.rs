@@ -172,18 +172,8 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
     #[cfg(feature = "proving")]
     let scene = scene_with_interface_background(scene);
     #[cfg(feature = "proving")]
-    let sprite_scale = if matches!(scene.as_deref(), Ok("sprites" | "interface")) {
-        validate_sprite_launch()?;
-        Some(match launch_value("THRUM_SPRITE_SCALE") {
-            Ok(scale) => scale
-                .parse::<u16>()
-                .map_err(|_| "THRUM_SPRITE_SCALE must be an integer from 1 to 6")?,
-            Err(std::env::VarError::NotPresent) => 2,
-            Err(error) => return Err(error.to_string()),
-        })
-    } else {
-        None
-    };
+    let sprite_scale =
+        selected_sprite_scale(matches!(scene.as_deref(), Ok("sprites" | "interface")))?;
     #[cfg(not(feature = "proving"))]
     if matches!(
         scene.as_deref(),
@@ -483,6 +473,22 @@ fn scene_with_interface_background(
     } else {
         scene
     }
+}
+
+#[cfg(feature = "proving")]
+fn selected_sprite_scale(enabled: bool) -> Result<Option<u16>, String> {
+    if !enabled {
+        return Ok(None);
+    }
+    validate_sprite_launch()?;
+    let scale = match launch_value("THRUM_SPRITE_SCALE") {
+        Ok(scale) => scale
+            .parse()
+            .map_err(|_| "THRUM_SPRITE_SCALE must be an integer from 1 to 6")?,
+        Err(std::env::VarError::NotPresent) => 2,
+        Err(error) => return Err(error.to_string()),
+    };
+    Ok(Some(scale))
 }
 
 #[cfg(feature = "proving")]

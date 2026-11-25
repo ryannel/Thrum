@@ -518,9 +518,13 @@ impl GameScene {
             });
         Self {
             #[cfg(feature = "proving")]
-            interface: setup
-                .interface_scale
-                .map(|scale| crate::interface_card::Card::new(scale, setup.interface_rows)),
+            interface: setup.interface_scale.map(|scale| {
+                crate::interface_card::Card::new(
+                    scale,
+                    setup.interface_rows,
+                    setup.sprite_scale.is_some(),
+                )
+            }),
             #[cfg(feature = "proving")]
             sprite_scale: setup.sprite_scale,
             #[cfg(feature = "proving")]

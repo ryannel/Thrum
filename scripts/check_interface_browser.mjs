@@ -10,12 +10,15 @@ const marks = [
 ];
 
 function colour(plain, actual, width, height, scale) {
+  const left = Math.floor(width / (4 * scale));
+  const top = Math.floor(height / (4 * scale));
   const boxes = [
     [1, 8, 8, 9, 4], [2, 111, 8, 9, 6], [4, 8, 59, 4, 7], [5, 114, 62, 6, 4],
     [3, 22, 19, 40, 2], [2, 22, 28, 54, 6], [6, 76, 28, 24, 6],
     ...marks.map((_, index) => [index + 1, 22 + index * 13, 45, 11, 8]),
-    [3, width / scale - 10, height / scale - 10, 4, 4],
-  ].reverse();
+  ].map(([frame, x, y, w, h]) => [frame, x + left, y + top, w, h]);
+  boxes.push([3, width / scale - 10, height / scale - 10, 4, 4]);
+  boxes.reverse();
   if (plain.length !== width * height * 4 || plain.length !== actual.length) {
     throw new Error('unexpected submitted image extent');
   }
@@ -32,7 +35,7 @@ function colour(plain, actual, width, height, scale) {
     const x = (i / 4) % width;
     const y = Math.floor(i / 4 / width);
     const box = boxes.find(([, left, top, w, h]) => covered(x, y, left, top, w, h));
-    const scrim = !box && covered(x, y, 8, 8, 112, 58);
+    const scrim = !box && covered(x, y, left + 8, top + 8, 112, 58);
     if (box) opaque++;
     else if (scrim) blended++;
     else uncovered++;

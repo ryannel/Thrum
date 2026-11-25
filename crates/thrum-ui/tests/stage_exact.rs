@@ -16,7 +16,7 @@ fn sprite_scene_matches_authored_paint_and_preserves_every_uncovered_pixel() {
             return;
         };
         for format in [SDR, FLOAT] {
-            for (extent, scale) in [([18, 12], 1), ([19, 13], 3)] {
+            for (extent, scale) in [([18, 12], 1), ([20, 14], 2), ([19, 13], 3)] {
                 let mut control =
                     support::host(&gpu.capabilities, &gpu.queue, extent, format, None, 3.0)
                         .expect("prepare the no-interface control");

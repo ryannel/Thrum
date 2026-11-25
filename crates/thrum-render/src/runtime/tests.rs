@@ -349,7 +349,7 @@ async fn prepared_host(
         tick: 0,
         timeline: 1,
     };
-    FrameHost::new(
+    Box::pin(FrameHost::new(
         &capabilities,
         &queue,
         FrameConfig::offscreen([640, 360]),
@@ -360,7 +360,7 @@ async fn prepared_host(
         StaticScene::default(),
         SyntheticScene::grid(1).expect("one diagnostic row"),
         1.0,
-    )
+    ))
     .await
     .expect("prepared engine host")
 }
