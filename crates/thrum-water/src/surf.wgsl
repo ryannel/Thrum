@@ -236,13 +236,6 @@ fn surf_moments_lanes(point: vec2<f32>, cell: Cell, stages: StageBlend, transfor
     return result;
 }
 
-fn surf_moments(point: vec2<f32>, cell: Cell, stages: StageBlend, transformed: bool,
-    floor_depth: f32, fade: f32, gain: f32, anchor: vec2<f32>, dt: f32, chop: f32,
-    count: u32, local: bool) -> SurfMoments {
-    return surf_moments_lanes(point, cell, stages, transformed, floor_depth, fade, gain,
-        anchor, dt, chop, count, local, 0u, 1u);
-}
-
 // The still-water contour keeps the approaching phase with no shoaling.
 fn contour_phase(sample: SurfMoments, swash: f32) -> vec2<f32> {
     let field = sample.field;

@@ -7,7 +7,7 @@ use gpu::{Correction, ReadyBody};
 use std::{
     cmp::Reverse,
     collections::{BTreeMap, VecDeque},
-    sync::{Arc, Mutex},
+    sync::{Arc, Mutex, Weak},
     time::Duration,
 };
 use thrum_render::extract::SourceTick;
@@ -113,6 +113,33 @@ pub struct QueryStats {
     pub age_older: u64,
 }
 
+const CUT_RECORD_LIMIT: usize = 64;
+
+/// Node evaluations reported by one completed tick batch.
+#[derive(Clone, Copy, Debug)]
+pub struct QueryCutRecord {
+    /// World endpoint at which the batch was posted.
+    pub endpoint: SourceTick,
+    /// Coarse and fine node evaluations, counting shared nodes once.
+    pub nodes: [u64; 2],
+}
+
+/// Bounded observer of completed batches, independent of game answer delivery.
+pub struct QueryCutTap(Arc<Mutex<VecDeque<QueryCutRecord>>>);
+
+impl QueryCutTap {
+    /// Remove the available records. The tap retains the last 64 completions.
+    /// # Panics
+    /// Panics if the probe's lock is poisoned.
+    pub fn drain(&self) -> Vec<QueryCutRecord> {
+        self.0
+            .lock()
+            .expect("water cut records")
+            .drain(..)
+            .collect()
+    }
+}
+
 #[derive(Default)]
 struct State {
     pages: VecDeque<Page>,
@@ -123,6 +150,7 @@ struct State {
     generations: BTreeMap<u32, u32>,
     epoch: u64,
     stats: QueryStats,
+    cut_tap: Weak<Mutex<VecDeque<QueryCutRecord>>>,
 }
 
 impl State {
@@ -360,6 +388,19 @@ impl QueryMailbox {
     /// Panics if the mailbox lock was poisoned.
     pub fn stats(&self) -> QueryStats {
         self.state.lock().expect("water query mailbox").stats
+    }
+
+    /// Observe cut counts at GPU completion, even if the game supersedes an answer.
+    /// # Panics
+    /// Panics if the mailbox lock is poisoned.
+    pub fn tap_cuts(&self) -> QueryCutTap {
+        let mut state = self.state.lock().expect("water query mailbox");
+        let records = state.cut_tap.upgrade().unwrap_or_else(|| {
+            let records = Arc::new(Mutex::new(VecDeque::with_capacity(CUT_RECORD_LIMIT)));
+            state.cut_tap = Arc::downgrade(&records);
+            records
+        });
+        QueryCutTap(records)
     }
 
     pub(super) fn reset_readback(&self) {

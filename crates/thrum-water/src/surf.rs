@@ -19,6 +19,7 @@ const LAG_LAYERS: usize = SECTORS * RUNGS / CHANNELS;
 const EXPOSURE_LAYERS: usize = SECTORS / CHANNELS;
 const BINDINGS: u32 = 5;
 pub(crate) const QUERY_ONE_SHEET: u32 = 2;
+pub(crate) const QUERY_WAVE_LANES: u32 = 8;
 
 #[repr(C)]
 #[derive(Clone, Copy, Pod, Zeroable)]
@@ -60,7 +61,9 @@ impl SurfGpu {
 
     pub(crate) fn query_source(group: u32, first: u32) -> String {
         Self::source(group, first)
-            + &format!("const ONE_SHEET = {QUERY_ONE_SHEET}u;\n")
+            + &format!(
+                "const ONE_SHEET = {QUERY_ONE_SHEET}u; const WAVE_LANES = {QUERY_WAVE_LANES}u;\n"
+            )
             + include_str!("surf/cut.wgsl")
     }
 

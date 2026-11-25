@@ -1,12 +1,15 @@
 mod coarse;
 mod correction;
 
-use super::{BodyAnswers, BodyQuery, QueryAnswer, QueryLimits, QueryMailbox, seconds_between};
+use super::{
+    BodyAnswers, BodyQuery, CUT_RECORD_LIMIT, QueryAnswer, QueryCutRecord, QueryLimits,
+    QueryMailbox, seconds_between,
+};
 use crate::{
     column::{COMPONENT_LIMIT, Component},
     interaction::{Interaction, SampleSettings},
     map_gpu::{self, MapGpu},
-    surf::{QUERY_ONE_SHEET, SurfGpu},
+    surf::{QUERY_ONE_SHEET, QUERY_WAVE_LANES, SurfGpu},
 };
 use bytemuck::{Pod, Zeroable};
 use coarse::CoarsePlan;
@@ -33,7 +36,7 @@ const QUERY_PASS: &str = "water body query";
 const CARRY_TICKS: f64 = 5.0;
 const SLOT_COUNT: usize = 4;
 const GROUP_WIDTH: u32 = 64;
-const NODES_PER_GROUP: u32 = 8;
+const NODES_PER_GROUP: u32 = GROUP_WIDTH / QUERY_WAVE_LANES;
 const SURF_GROUP: u32 = 1;
 const SURF_BINDING: u32 = 7;
 const COARSE_GROUP: u32 = 2;
@@ -860,12 +863,24 @@ impl Batch {
         if state.epoch != self.epoch {
             return;
         }
-        for answer in values {
-            let coarse = u64::from(answer.cut_coarse_nodes);
-            let fine = u64::from(answer.cut_fine_nodes);
-            state.stats.cut_coarse_nodes += coarse;
-            state.stats.cut_fine_nodes += fine;
-            state.stats.cut_nodes += coarse + fine;
+        let nodes = values.iter().fold([0, 0], |[coarse, fine], answer| {
+            [
+                coarse + u64::from(answer.cut_coarse_nodes),
+                fine + u64::from(answer.cut_fine_nodes),
+            ]
+        });
+        state.stats.cut_coarse_nodes += nodes[0];
+        state.stats.cut_fine_nodes += nodes[1];
+        state.stats.cut_nodes += nodes[0] + nodes[1];
+        if let Some(tap) = state.cut_tap.upgrade() {
+            let mut records = tap.lock().expect("water cut records");
+            if records.len() == CUT_RECORD_LIMIT {
+                records.pop_front();
+            }
+            records.push_back(QueryCutRecord {
+                endpoint: self.endpoint,
+                nodes,
+            });
         }
         let mut values = values.iter().zip(self.map_revisions);
         for body in self.bodies {

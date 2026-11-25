@@ -7,7 +7,7 @@ use std::{
 };
 use thrum_app::sky::Camera;
 use thrum_render::{extract::SourceTick, runtime::SurfaceOutput};
-use thrum_water::query::{BodyAnswers, QueryMailbox};
+use thrum_water::query::{BodyAnswers, QueryCutTap, QueryMailbox};
 use water_scene::{
     floating::{Body, fallback},
     island::{Wind, build_surf, surf_inputs, surf_water_profile},
@@ -28,7 +28,7 @@ struct GameTick {
     begin: Option<u64>,
     ticks: u32,
     ages: [usize; AGE + 1],
-    nodes: Vec<[u64; 2]>,
+    nodes: Vec<Option<[u64; 2]>>,
     witness: [Vec<BodyAnswers>; WITNESSES.len()],
     latest: [Option<BodyAnswers>; 8],
     fallback: usize,
@@ -40,7 +40,7 @@ impl Default for GameTick {
             begin: None,
             ticks: 0,
             ages: [0; AGE + 1],
-            nodes: vec![[0; 2]; MEASURE_TICKS as usize],
+            nodes: vec![None; MEASURE_TICKS as usize],
             witness: std::array::from_fn(|_| Vec::with_capacity(8)),
             latest: std::array::from_fn(|_| None),
             fallback: 0,
@@ -49,7 +49,14 @@ impl Default for GameTick {
 }
 
 impl GameTick {
-    fn tick(&mut self, query: &QueryMailbox, fleet: &[Body], endpoint: SourceTick, step: Duration) {
+    fn tick(
+        &mut self,
+        query: &QueryMailbox,
+        cuts: &QueryCutTap,
+        fleet: &[Body],
+        endpoint: SourceTick,
+        step: Duration,
+    ) {
         let Some(begin) = self.begin else {
             return;
         };
@@ -57,6 +64,22 @@ impl GameTick {
         let sequence = self.ticks;
         self.ticks += 1;
         let measured = begin + u64::from(WARM_TICKS);
+        for batch in cuts.drain() {
+            assert_eq!(batch.endpoint.epoch, endpoint.epoch);
+            assert_eq!(batch.endpoint.timeline, endpoint.timeline);
+            if let Some(index) = batch
+                .endpoint
+                .tick
+                .checked_sub(measured)
+                .and_then(|n| usize::try_from(n).ok())
+                .filter(|&n| n < self.nodes.len())
+            {
+                assert!(
+                    self.nodes[index].replace(batch.nodes).is_none(),
+                    "one batch per posted tick"
+                );
+            }
+        }
         for reply in query.drain(endpoint, step) {
             if let Some(index) = reply
                 .posted
@@ -66,8 +89,6 @@ impl GameTick {
             {
                 let age = usize::try_from(tick - reply.posted).expect("reply age");
                 self.ages[age] += reply.points.len();
-                self.nodes[index][0] += reply.cut_nodes[0];
-                self.nodes[index][1] += reply.cut_nodes[1];
                 if let Some(witness) = WITNESSES.iter().position(|&i| i == index) {
                     self.witness[witness].push(reply.clone());
                 }
@@ -100,6 +121,7 @@ impl GameTick {
 fn arm(gpu: &thrum_test_support::Gpu, extent: [u32; 2], fleet: Vec<Body>) -> GameArm {
     let (game, report, _, probes) = build_surf(Wind::Gale, true).expect("island gale");
     let query = probes.expect("island body query").query;
+    let cuts = query.tap_cuts();
     let stats = Arc::new(Mutex::new(GameTick::default()));
     let game = game
         .with_presentation_camera(|_| CAMERA)
@@ -110,7 +132,7 @@ fn arm(gpu: &thrum_test_support::Gpu, extent: [u32; 2], fleet: Vec<Body>) -> Gam
                 stats
                     .lock()
                     .expect("game tick")
-                    .tick(&query, &fleet, endpoint, step);
+                    .tick(&query, &cuts, &fleet, endpoint, step);
             }
         });
     let mut fixture = Fixture::from_game(gpu, extent, game, report);
@@ -188,11 +210,18 @@ fn arm(gpu: &thrum_test_support::Gpu, extent: [u32; 2], fleet: Vec<Body>) -> Gam
     .unwrap_or_else(|_| panic!("fixed update still owns the game tick record"))
     .into_inner()
     .expect("game tick");
+    let completed_batch_ticks = stats.nodes.iter().flatten().count();
+    let nodes: Vec<_> = stats
+        .nodes
+        .iter()
+        .map(|nodes| nodes.unwrap_or_default())
+        .collect();
     GameArm {
         record: json!({
             "extent":extent, "ticks":MEASURE_TICKS, "warm_ticks":WARM_TICKS, "wall_seconds":wall_seconds,
             "render_in_flight":1, "view_opportunity_hz":30, "warm_profile":warm_profile, "warm_wall_ms":warm_wall_ms, "frames_submitted":submitted, "frames_completed":completed,
-            "dropped_views":dropped, "age":stats.ages, "nodes":stats.nodes,
+            "dropped_views":dropped, "age":stats.ages, "nodes":nodes,
+            "completed_batch_ticks":completed_batch_ticks,
             "fallback":stats.fallback, "unavailable":mailbox.unavailable,
             "blocking_reads":mailbox.blocking_reads, "busy":mailbox.busy,
             "dispatches":mailbox.dispatches, "refused":mailbox.refused,

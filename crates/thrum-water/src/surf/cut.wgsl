@@ -80,7 +80,6 @@ fn sample_coarse(@builtin(workgroup_id) group: vec3<u32>, @builtin(local_invocat
 }
 
 // Eight adjacent lanes accumulate independent components of one node.
-const WAVE_LANES: u32 = 8u;
 const NODES_PER_GROUP: u32 = QUERY_WIDTH / WAVE_LANES;
 var<workgroup> wave_lanes: array<SurfMoments, QUERY_WIDTH>;
 var<workgroup> swash_lanes: array<SurfMoments, QUERY_WIDTH>;
