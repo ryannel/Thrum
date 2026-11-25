@@ -35,11 +35,11 @@
         "scripts/compare_v1_pixels.py"
       ],
       "refresh": {
-        "anchor": "ruling-on-native-mip-bias",
-        "module": "APPLE-PRESENTATION",
-        "milestone": "M14"
+        "anchor": "ruling-on-the-wasm-a-chrome-capture-runs",
+        "module": "BASELINE-GUARD",
+        "milestone": "WP3"
       },
-      "pin": "5e6bba56479036d5d12f258702fa1172ed3d3d938ff819347d9dc65c55e0c8d9"
+      "pin": "07d0bc1b5c839f2cda6cc5745282c4f533e34b8e38ae75d4efac48c3642f787d"
     },
     {
       "id": "chrome-day-sdr",
@@ -55,11 +55,11 @@
         "scripts/apple_tile_m1_compare_browser.py"
       ],
       "refresh": {
-        "anchor": "ruling-on-native-mip-bias",
-        "module": "APPLE-PRESENTATION",
-        "milestone": "M14"
+        "anchor": "ruling-on-the-wasm-a-chrome-capture-runs",
+        "module": "BASELINE-GUARD",
+        "milestone": "WP3"
       },
-      "pin": "3ec79439a936e6309cced5a4a369773436bf159fbc95af9fd08977d9b6ca1b2f"
+      "pin": "31a08bd6c5f8fc40f357b480963a472efd35f55eb7a1a242e36ba42f26d4ebb1"
     },
     {
       "id": "chrome-day-scene-linear",
@@ -75,11 +75,11 @@
         "scripts/apple_tile_m1_compare_browser.py"
       ],
       "refresh": {
-        "anchor": "ruling-on-native-mip-bias",
-        "module": "APPLE-PRESENTATION",
-        "milestone": "M14"
+        "anchor": "ruling-on-the-wasm-a-chrome-capture-runs",
+        "module": "BASELINE-GUARD",
+        "milestone": "WP3"
       },
-      "pin": "cd9517c7a3af477ca1a481f81109fbba17fadab8196709590b1e429d46d3ac1a"
+      "pin": "a784685fa4924fece559835cec70d8cdfb9cda24bfedcff2d4bf35ff30f023c4"
     },
     {
       "id": "chrome-night-sdr",
@@ -95,11 +95,11 @@
         "scripts/apple_tile_m1_compare_browser.py"
       ],
       "refresh": {
-        "anchor": "ruling-on-native-mip-bias",
-        "module": "APPLE-PRESENTATION",
-        "milestone": "M14"
+        "anchor": "ruling-on-the-wasm-a-chrome-capture-runs",
+        "module": "BASELINE-GUARD",
+        "milestone": "WP3"
       },
-      "pin": "5cd4760cd3a62a30977c5d7701d968803d1b53940e94992f4b2e42e94e22e8bd"
+      "pin": "232a542053db88234051f5ed50115bda20c28f7eb005187cd811e40a4e6e9cc8"
     },
     {
       "id": "chrome-night-scene-linear",
@@ -115,11 +115,11 @@
         "scripts/apple_tile_m1_compare_browser.py"
       ],
       "refresh": {
-        "anchor": "ruling-on-native-mip-bias",
-        "module": "APPLE-PRESENTATION",
-        "milestone": "M14"
+        "anchor": "ruling-on-the-wasm-a-chrome-capture-runs",
+        "module": "BASELINE-GUARD",
+        "milestone": "WP3"
       },
-      "pin": "f52532e905cd612637a84b8888ebfc712cdec87e058b7157f534e34fe03cfaf7"
+      "pin": "62c0f2eeece70f5eb0da1defc9dbf88e104d5e32ffece7e122551128d5d8f2a7"
     }
   ],
   "retired": []
