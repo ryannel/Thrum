@@ -229,3 +229,10 @@
   keeping the test in the harness on other targets. With `creation-counters` enabled, all `thrum-render`
   targets type-checked for Linux and Windows on this Mac ([WP7.1](../../../.orchestrate/evidence/RAY-TRACING/WP7/WP7.1-cross-target.log)).
   The one lifecycle test passed with Metal required ([WP7.2](../../../.orchestrate/evidence/RAY-TRACING/WP7/WP7.2-metal-lifecycle.log)).
+
+- 2026-11-25 WP5 adds radius-bounded ambient visibility, submitted history and live extent controls on Apple tile.
+  Cooked geometry and cloud Shade prepare through the same host transition. Metal tests verified direct-light bytes,
+  radius, allocation-free quality changes and fallback. Fixed and realtime inspections showed contact under daylight,
+  dusk and the overcast sky, including occlusion from an offscreen caster and clearing within the settle window.
+  [Metal proof and captures](../../../.orchestrate/evidence/RAY-TRACING/WP5/README.md) ·
+  [Contended route cost](../../../.orchestrate/evidence/RAY-TRACING/WP5/cost-notes.md).

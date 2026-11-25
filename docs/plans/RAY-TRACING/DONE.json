@@ -538,8 +538,8 @@
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test ray_ambient_only_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/WP5/checks/final-metal.log",
           "verdict": "",
           "review": ""
         },
@@ -549,8 +549,8 @@
           "inspect": "Take paired `fixed` stills of the shade and dusk stops and of a prop under the overcast preset. Match the camera, world and weather state, and Sun and lamp settings within each pair. Settle the occlusion through submitted frames before sampling the still. Verify Apple tile in both reports, with traced ambient occlusion resolved in the on capture and occlusion off in its control. In both overcast stills confirm a visible overcast sky with the game's Shade provider active. Check the whole views and native-size contact and open-ground crops for the stated differences.",
           "ask": "Does the production cooked-plus-Shade list opt into the WP3 boundary for traced and Maps surfaces? Trace same-generation visual replacement and device replacement. Does Shade leave the accepted weather, history and mailbox intact if the candidate is dropped, with fallible preparation and candidate initialization complete before commit?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/WP5/README.md#wp53-contacts-and-cloud-composition",
           "verdict": "",
           "review": ""
         },
@@ -559,8 +559,8 @@
           "statement": "No dark or bright halo follows a silhouette, and turning the camera until an occluder leaves the view changes nothing on its receiver.",
           "inspect": "`fixed` stills before and after a turn that takes an occluder out of view, whole and as native-size crops at silhouettes and at the receiver.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/WP5/README.md#wp54-silhouettes-and-a-camera-turn",
           "verdict": "",
           "review": ""
         },
@@ -569,8 +569,8 @@
           "statement": "Occlusion shows no grain at rest. When an occluder moves away from a still receiver, once in view and once from off screen, the receiver's darkening is gone once the occlusion's settle length and one more frame have passed. The evidence names the frame the occluder moved and states the settle length.",
           "inspect": "`realtime` sequences at rest and of an occluder leaving a named still receiver, in view and from off screen: the consecutive native-size frames from the one before it moves to two past the settle length, each numbered.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/WP5/README.md#wp55-rest-and-departure",
           "verdict": "",
           "review": ""
         },
@@ -580,8 +580,8 @@
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test ray_ambient_knob_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/WP5/checks/final-metal.log",
           "verdict": "",
           "review": ""
         },
@@ -591,8 +591,8 @@
           "check": "python3 scripts/ray_tracing_cost.py ambient",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/WP5/cost-notes.md",
           "verdict": "",
           "review": ""
         }

@@ -187,6 +187,20 @@
         "../../.orchestrate/evidence/RAY-TRACING/WP4/cost-notes.md"
       ]
     },
+    "RAY_TRACING_WP5": {
+      "implementation": "Opt-in Apple tile ambient occlusion uses a radius-bounded cosine ray, finite submitted visibility history and depth-aware filtering. The live extent controls reuse prepared resources. The cooked valley and cloud Shade prepare and publish together through the candidate boundary.",
+      "functional_validation": "Metal proofs verified direct-light byte parity, the declared radius, the runtime off and extent controls, stable allocations and the reported fallback when ray queries are missing.",
+      "experienced_quality": "Fixed Metal pairs show contact at the props, grounded cooked balloon basket and lookout ramp fold, including the prop under the visible overcast sky. Fixed camera turns and realtime receiver sequences show offscreen occlusion, stable held output and clearing after the 16-frame settle interval and one more submission.",
+      "platform_performance": {
+        "mac_apple_tile": "Contended paired route records contain ambient visibility pass times, timed-pass spans and frame CPU times at off, half and full, with investigation of the observed tripwires.",
+        "browser": "Ray ambient occlusion is unqualified. The portable recipe resolves it off.",
+        "ios": "Ray ambient occlusion is unqualified."
+      },
+      "evidence": [
+        "../../.orchestrate/evidence/RAY-TRACING/WP5/README.md",
+        "../../.orchestrate/evidence/RAY-TRACING/WP5/cost-notes.md"
+      ]
+    },
     "SCENE_VIEWS": {
       "implementation": "Prepared contribution-owned secondary slots, per-frame camera and clip requests, separate entity and cooked visibility, Sun cascades, local-light clusters and aerial products, and same-frame colour, depth and record reads. The mirror pool composes two air stretches and declares five runtime quality controls.",
       "functional_validation": "M1 and M2 were independently reviewed on Metal, including stored-format equality, slot lifetime and absence, view-local light and shadow products, direct and indirect cooked draws, and composition from main-view marker colours. M3 verifies both knob endpoints against direct requests on both Metal recipes, checks main draw-buffer equality and reads the prepared viewport attachments. Chrome WebGPU matches its own main draw for entities and cooked placements to zero stored colour and depth steps, including the three hill-shadow camera cases at both extents, and passes both marker exposures.",
