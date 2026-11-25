@@ -1,4 +1,5 @@
 """The paired wind series. The Mac presented-time witness owns display cadence."""
+from bisect import bisect_left
 from collections import Counter
 from decimal import Decimal, ROUND_CEILING
 import json
@@ -123,6 +124,33 @@ def window_conditions(arm):
     return dict(line.split('=', 1) for line in raw)
 
 
+def require_complete_observations(witness, start, end):
+    frames = witness['drawables']
+    ordinals = [frame['drawable'] for frame in frames]
+    missing = {row['drawable'] for row in witness['unmatched']}
+    missing.update(left + 1 for left, right in zip(ordinals, ordinals[1:]) if right > left + 1)
+    for ordinal in sorted(missing):
+        index = bisect_left(ordinals, ordinal)
+        if index < len(frames) and Decimal(frames[index]['presented_media_ns']) <= start:
+            continue
+        if index and Decimal(frames[index - 1]['presented_media_ns']) >= end:
+            continue
+        raise InvalidMeasurement(f'unmatched drawable {ordinal} can affect the measured interval')
+
+
+def present_calls(rows):
+    """Index both views of a present call by the game submission ID."""
+    calls = {}
+    for submission, timestamp in (
+        ('submission_id', 'present_call_media_seconds'),
+        ('interval_submission_id', 'interval_call_media_seconds'),
+    ):
+        for row in rows.values():
+            if row[submission]:
+                calls.setdefault(int(row[submission]), (row[timestamp], row))
+    return calls
+
+
 def analyze_arm(arm, wind):
     witness = json.loads((arm / 'witness.json').read_text())
     conditions = window_conditions(arm)
@@ -137,7 +165,10 @@ def analyze_arm(arm, wind):
         raise InvalidMeasurement(f'{arm.name}: witness coverage or conversion failed')
     if witness['reported_refresh_hz'] != HZ:
         raise InvalidMeasurement(f'{arm.name}: the game did not report a {HZ} Hz display')
-    drawables = []
+    start, end = interval(arm)
+    require_complete_observations(witness, start, end)
+    first_drawable = []
+    last_drawable = []
     presented = []
     for frame in witness['drawables']:
         timestamp = Decimal(frame['presented_media_ns'])
@@ -146,47 +177,62 @@ def analyze_arm(arm, wind):
         if presented and timestamp == presented[-1]:
             # The OS can report two submissions at the same refresh. The
             # witness keeps both; only the latest can bracket the next loss.
-            drawables[-1] = frame
+            last_drawable[-1] = frame
         else:
-            drawables.append(frame)
+            first_drawable.append(frame)
+            last_drawable.append(frame)
             presented.append(timestamp)
     frames = {int(frame['submission_id']): frame for frame in table(arm / 'cadence-frames.tsv')}
     if not frames or any(frame['timing_requested'] != 'false' for frame in frames.values()):
         raise InvalidMeasurement(f'{arm.name}: timing was enabled or no frame samples were collected')
-    start, end = interval(arm)
     result, stalls = measure(presented, start, end, PERIOD)
     rows = account_rows(arm)
     counts = (arm / 'refresh-counts.txt').read_text()
     if 'excess_present_records=0;' not in counts or not rows:
         raise InvalidMeasurement(f'{arm.name}: incomplete refresh account')
+    calls = present_calls(rows)
     targets = sorted(rows)
-    # Walk the two monotonic grids once. The account locates a loss that the
-    # presented-time witness already found. It never supplies a shown refresh.
+    # Match unserved opportunities only while the next drawable was waiting
+    # for its present call. The witness alone supplies the missing refreshes.
     position = 0
     drawable = 0
     all_places = Counter()
     for record, stall in zip(result['stalls'], stalls, strict=True):
         missing = []
         for timestamp in stall:
-            while position + 1 < len(targets) and abs(targets[position + 1] - timestamp) < abs(
-                    targets[position] - timestamp):
-                position += 1
-            # ProMotion can shift the callback grid by half a period between
-            # presented frames. Match in order and use each opportunity once.
-            if position == len(targets) or abs(targets[position] - timestamp) >= PERIOD:
-                raise InvalidMeasurement(f'{arm.name}: missing refresh-account row for {timestamp} ns')
-            target = targets[position]
-            position += 1
-            while drawable + 1 < len(drawables) and presented[drawable + 1] < timestamp:
+            while drawable + 1 < len(presented) and presented[drawable + 1] < timestamp:
                 drawable += 1
-            row = rows[target]
-            place = 'after_present_call' if row['place'] == 'served' else row['place']
+            following = first_drawable[drawable + 1]
+            # The witness's surface sample is stamped after queue.present.
+            # The account has the exact call when it falls in a retained row.
+            call, call_row = calls.get(following['drawable'],
+                                       (following['present_call_media_seconds'], None))
+            if Decimal(call) * NS <= timestamp:
+                place = 'after_present_call'
+                row = call_row
+            else:
+                if call_row is None and Decimal(following['opportunity_media_seconds']) * NS <= timestamp:
+                    raise InvalidMeasurement(f'{arm.name}: present call for drawable {following["drawable"]}'
+                                             f' may straddle {timestamp} ns')
+                while position + 1 < len(targets) and abs(targets[position + 1] - timestamp) < abs(
+                        targets[position] - timestamp):
+                    position += 1
+                # ProMotion can shift the callback grid by half a period.
+                # Match in order and use each unserved opportunity once.
+                if position == len(targets) or abs(targets[position] - timestamp) >= PERIOD:
+                    raise InvalidMeasurement(f'{arm.name}: missing refresh-account row for {timestamp} ns')
+                target = targets[position]
+                position += 1
+                row = rows[target]
+                place = row['place']
             if place not in PLACES:
-                raise InvalidMeasurement(f'{arm.name}: invalid loss place {place!r}')
+                raise InvalidMeasurement(f'{arm.name}: no unserved opportunity for {timestamp} ns ({place})')
             missing.append(dict(
                 seconds=float((timestamp - start) / NS), presented_grid_media_ns=str(timestamp),
-                place=place, previous_drawable=drawables[drawable]['drawable'],
-                next_drawable=drawables[drawable + 1]['drawable'], account=row,
+                place=place, previous_drawable=last_drawable[drawable]['drawable'],
+                next_drawable=following['drawable'], next_present_call_media_seconds=call,
+                present_call_source='window_account' if call_row is not None else 'surface_sample_after_call',
+                account=row,
             ))
         record['refreshes'] = missing
         record['places'] = dict(Counter(row['place'] for row in missing))

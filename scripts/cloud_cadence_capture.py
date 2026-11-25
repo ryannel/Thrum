@@ -8,8 +8,8 @@ import os
 import plistlib
 from pathlib import Path
 import re
-import select
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -87,60 +87,57 @@ def export(trace, output, arguments):
         raise InvalidMeasurement(f'Instruments export failed for {output.name}')
 
 
+def writable_recordings(fields, temporary):
+    """Read lsof's NUL-delimited file records for writable kernel traces."""
+    records = []
+    file = {}
+    for field in fields.split('\0'):
+        field = field.lstrip('\n')
+        if not field:
+            continue
+        key, value = field[0], field[1:]
+        if key in ('p', 'f'):
+            records.append(file)
+            file = {}
+        else:
+            file[key] = value
+    records.append(file)
+    results = set()
+    for file in records:
+        if file.get('a') not in ('w', 'u') or file.get('t') != 'REG' or not {'D', 'i', 'n'} <= file.keys():
+            continue
+        path = Path(file['n'])
+        if path.parent.resolve() == temporary and re.fullmatch(r'instruments[^/]+\.ktrace', path.name):
+            results.add((temporary / path.name, int(file['D'], 0), int(file['i'])))
+    return results
+
+
 def recording_scratch(pid):
-    """Take only scratch held by the xctrace process we launched or its children."""
+    """Observe writes by xctrace and its descendants while they are alive."""
     processes = subprocess.check_output(['/bin/ps', '-axo', 'pid=,ppid='], text=True, timeout=4)
-    children = [child for child, parent in map(str.split, processes.splitlines())
-                if int(parent) == pid]
-    pids = [str(pid), *children]
-    found = subprocess.run(['/usr/sbin/lsof', '-n', '-p', ','.join(pids), '-Fn'],
+    children = defaultdict(list)
+    for child, parent in map(str.split, processes.splitlines()):
+        children[parent].append(child)
+    pids = [str(pid)]
+    for parent in pids:
+        pids.extend(children[parent])
+    found = subprocess.run(['/usr/sbin/lsof', '-n', '-p', ','.join(pids), '-F0faDint'],
                            text=True, capture_output=True, timeout=5).stdout
-    temporary = Path(tempfile.gettempdir()).resolve()
-    paths = {Path(line[1:]).resolve() for line in found.splitlines()
-             if re.fullmatch(r'n/.*/instruments[^/]+\.ktrace', line)}
-    return {path for path in paths if path.parent == temporary}, pids
+    return writable_recordings(found, Path(tempfile.gettempdir()).resolve())
 
 
-def kernel_recording(pid, began, ended, owned):
-    paths, _ = owned
-    if len(paths) == 1:
-        return next(iter(paths))
-    temporary = Path(tempfile.gettempdir())
-    for path in temporary.glob('instruments*.ktrace'):
-        try:
-            birth = path.stat().st_birthtime
-        except FileNotFoundError:
-            continue
-        if not began <= birth <= ended:
-            continue
-        # File creation time selects candidates only. Read the owned game's
-        # PID from the kernel events before using or removing the file.
-        command = ['/usr/bin/ktrace', 'trace', '-R', path, '-p', str(pid), '--ndjson']
-        sample = bounded_trace_identity(command)
-        if sample and sample['pid'] == pid and sample['execname'] == 'v1-game':
-            return path
-    raise InvalidMeasurement('the owned kernel recording was not retained by Instruments')
-
-
-def bounded_trace_identity(command):
-    # Stop at the first event of the requested process, including when
-    # other users' trace files happened to start at the same time.
+def kernel_recording(candidates):
+    if len(candidates) != 1:
+        raise InvalidMeasurement('Instruments did not establish one owned kernel recording')
+    (recording,) = candidates
+    path, device, inode = recording
     try:
-        with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
-                              text=True) as reader:
-            try:
-                ready, _, _ = select.select([reader.stdout], [], [], 15)
-                line = reader.stdout.readline() if ready else ''
-                return json.loads(line) if line else None
-            finally:
-                if reader.poll() is None:
-                    reader.terminate()
-                    try:
-                        reader.wait(timeout=3)
-                    except subprocess.TimeoutExpired:
-                        reader.kill()
-    except (OSError, ValueError):
-        return None
+        info = path.stat(follow_symlinks=False)
+    except FileNotFoundError as error:
+        raise InvalidMeasurement('the owned kernel recording is no longer retained') from error
+    if not stat.S_ISREG(info.st_mode) or (info.st_dev, info.st_ino) != (device, inode):
+        raise InvalidMeasurement('the owned kernel recording path changed identity')
+    return path
 
 
 def collect(arm, store, wind, *, diagnostic=False):
@@ -181,9 +178,9 @@ def collect(arm, store, wind, *, diagnostic=False):
     recorder = game if diagnostic else arm / 'recorder.log'
     power = subprocess.Popen(['/usr/bin/caffeinate', '-d', '-i', '-u', '-t', '40'])
     load = None
-    began = time.time()
     recorder_pid = None
-    owned = (set(), [])
+    candidates = set()
+    next_ownership_probe = 0.0
 
     def launched(pid):
         nonlocal recorder_pid
@@ -193,22 +190,22 @@ def collect(arm, store, wind, *, diagnostic=False):
         observe_panel = panel_witness(arm)
 
         def observe():
-            nonlocal owned
+            nonlocal next_ownership_probe
             if power.poll() is not None:
                 return
             if (arm / 'refresh-counts.txt').exists() or (
                 not diagnostic and recorder.exists() and 'ending recording' in recorder.read_text(errors='replace')
             ):
                 power.terminate()
-                if not diagnostic and recorder_pid is not None:
-                    try:
-                        owned = recording_scratch(recorder_pid)
-                    except (OSError, subprocess.SubprocessError):
-                        # The recorder is closing. The raw-PID check can
-                        # recover ownership if the process is already gone.
-                        pass
             else:
                 observe_panel()
+                if (not diagnostic and not candidates and recorder_pid is not None
+                        and (arm / 'window.txt').exists() and time.monotonic() >= next_ownership_probe):
+                    next_ownership_probe = time.monotonic() + 2.0
+                    try:
+                        candidates.update(recording_scratch(recorder_pid))
+                    except (OSError, subprocess.SubprocessError):
+                        pass
 
         observe_panel()
         load = LoadRecord(arm)
@@ -224,7 +221,6 @@ def collect(arm, store, wind, *, diagnostic=False):
         if load:
             save(arm / 'load.json', load.finish())
 
-    ended = time.time()
     identity = (arm / 'window.txt').read_text()
     if not re.search(r'^extent=1920x1080$', identity, re.MULTILINE) or f'Some({HZ}000)))' not in identity:
         raise InvalidMeasurement(f'{arm.name}: the window was not 1920x1080 at {HZ} Hz')
@@ -236,7 +232,7 @@ def collect(arm, store, wind, *, diagnostic=False):
     export(trace, arm / 'source-presented-events.xml',
            ['--xpath', "/trace-toc/run/data/table[@schema='kdebug' and contains(@codes, '0xca')]"])
     pid = int(re.search(r'^pid=(\d+)$', identity, re.MULTILINE)[1])
-    raw = kernel_recording(pid, began, ended, owned)
+    raw = kernel_recording(candidates)
 
     # The live capture requests only the game's Core Animation events. Ask
     # Instruments to populate its standard presented-handler table offline,
@@ -245,8 +241,9 @@ def collect(arm, store, wind, *, diagnostic=False):
     command = ['xcrun', 'xctrace', 'import', '--input', str(raw), '--output', str(modeled),
                '--template', str(TRACE_TEMPLATE), '--package', str(INSTRUMENT_PACKAGE),
                '--instrument', 'Thrum Presented Time']
-    save(arm / 'modeling.json', {'command': command, 'game_pid': pid,
-                                'raw_bytes': raw.stat().st_size, 'recording_pids': owned[1]})
+    save(arm / 'modeling.json', {'command': command, 'game_pid': pid, 'raw_bytes': raw.stat().st_size,
+                                'recorder_pid': recorder_pid, 'owned_device': raw.stat().st_dev,
+                                'owned_inode': raw.stat().st_ino})
     if bounded(command, arm / 'modeling.log', 60):
         raise InvalidMeasurement(f'{arm.name}: offline Instruments modeling failed')
     export(modeled, arm / 'presented.xml',
@@ -258,7 +255,7 @@ def collect(arm, store, wind, *, diagnostic=False):
         source.unlink()
     shutil.rmtree(trace)
     shutil.rmtree(modeled)
-    raw.unlink()
+    kernel_recording(candidates).unlink()
     return read_witness(arm, wind)
 
 
