@@ -1,9 +1,17 @@
 //! Virtual-time tests for driver-owned tick admission.
-use std::{convert::Infallible, num::NonZeroU32, time::Duration};
+use std::{
+    convert::Infallible,
+    num::NonZeroU32,
+    sync::mpsc,
+    time::{Duration, Instant},
+};
 
 use thrum_core::{
     ClockSample, WorldEpoch,
-    sim::{DrivenAdvance, DrivenWorld, SnapshotId, WorldDriver, WorldPublication, WorldTask},
+    sim::{
+        DrivenAdvance, DrivenWorld, SnapshotId, WorldDriver, WorldLane, WorldLifecycle,
+        WorldPublication, WorldTask,
+    },
 };
 
 const TICK: Duration = Duration::from_millis(40);
@@ -11,6 +19,7 @@ const TICK: Duration = Duration::from_millis(40);
 #[derive(Default)]
 struct Script {
     tick: u64,
+    resident_anchor: Option<mpsc::Sender<Duration>>,
 }
 
 impl WorldDriver for Script {
@@ -41,10 +50,15 @@ impl WorldDriver for Script {
     }
 
     fn advance(&mut self, now: Duration, cap: NonZeroU32) -> Result<DrivenAdvance, Self::Error> {
-        let (requested, fraction, rate) = match now.as_secs() {
-            11 => (1, 0.25, 5.0),
-            12 => (7, 0.5, 2.0),
-            _ => (0, 0.75, 0.0),
+        let (requested, fraction, rate) = if let Some(anchor) = &self.resident_anchor {
+            anchor.send(now).expect("record scripted sample");
+            (1, 0.25, 25.0)
+        } else {
+            match now.as_secs() {
+                11 => (1, 0.25, 5.0),
+                12 => (7, 0.5, 2.0),
+                _ => (0, 0.75, 0.0),
+            }
         };
         let completed_ticks = requested.min(cap.get());
         for _ in 0..completed_ticks {
@@ -53,7 +67,7 @@ impl WorldDriver for Script {
         Ok(DrivenAdvance {
             completed_ticks,
             presentation: ClockSample::driven(now, fraction, rate, TICK).expect("script phase"),
-            next_due: Duration::from_millis(5),
+            next_due: Duration::from_secs(30),
         })
     }
 
@@ -127,4 +141,56 @@ fn pausing_holds_the_pair_and_stops_polling_the_driver() {
         resumed.clock.tick_due_time(),
         Some(Duration::from_millis(11_750))
     );
+}
+
+#[test]
+fn resident_observer_uses_the_tick_due_time_to_select_its_pair() {
+    let (anchors, samples) = mpsc::channel();
+    let (wakes, changed) = mpsc::channel();
+    let world = DrivenWorld::new(
+        Script {
+            tick: 0,
+            resident_anchor: Some(anchors),
+        },
+        NonZeroU32::MIN,
+        TICK,
+    );
+    let origin = Instant::now() - TICK;
+    let (mut lane, controls) = WorldLane::start(world, (), origin, move || {
+        let _ = wakes.send(());
+    })
+    .expect("resident world");
+    let timeout = Duration::from_secs(2);
+    let anchor = samples.recv_timeout(timeout).expect("driver observation");
+    changed.recv_timeout(timeout).expect("worker published");
+    let due = anchor - Duration::from_millis(10);
+
+    assert_eq!(
+        lane.poll(due - Duration::from_nanos(1))
+            .expect("refused pair")
+            .tick,
+        0
+    );
+    assert_eq!(
+        lane.poll(due + Duration::from_millis(5))
+            .expect("eligible pair")
+            .tick,
+        1
+    );
+    assert_eq!(lane.current_page(), Some(1));
+    assert_eq!(lane.tick_duration(), TICK);
+    assert_eq!(lane.tick_due_time(), Some(due));
+    assert!(lane.is_interpolating());
+    let lead = Duration::from_millis(40);
+    assert!((lane.display_phase_at(lead) - 1.125).abs() < f32::EPSILON);
+    assert!((lane.presentation_alpha_at(lead) - 1.0).abs() < f32::EPSILON);
+
+    controls
+        .request_lifecycle(WorldLifecycle::Pause)
+        .expect("pause on worker");
+    changed.recv_timeout(timeout).expect("worker paused");
+    lane.poll(due + TICK).expect("held pair");
+    assert_eq!(lane.tick_due_time(), None);
+    assert!(!lane.is_interpolating());
+    assert!((lane.display_phase_at(lead) - 1.0).abs() < f32::EPSILON);
 }
