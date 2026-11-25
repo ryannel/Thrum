@@ -776,3 +776,9 @@
   proposal. Still air and the 90° turn again had excess losses after the present call. Pass timing did not
   identify the work that delayed those presentations. The cloud workload is unchanged.
   [Device evidence](../../../.orchestrate/evidence/CLOUDS/WP19/README.md)
+
+- The merged cadence check rejected a clouds-absent run after one occluded Metal surface acquisition.
+  AppKit reported zero window occlusion events and the panel stayed awake and unlocked. The default cadence
+  command now keeps each rejected attempt and starts a whole new series after occlusion, up to three
+  attempts in total. The CPU tests cover a fresh restart, the retry limit and propagation of other failures.
+  [Retained arm replay](../../../.orchestrate/evidence/CLOUDS/WP19/occlusion-replay.log)
