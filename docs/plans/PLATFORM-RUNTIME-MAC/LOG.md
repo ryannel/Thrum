@@ -195,3 +195,19 @@ the present call, 38 were at late request and four were at encoding and submissi
 adds two losses after the present call within its neighbours' range. The record includes each loss's place,
 OS drawable brackets, the next present call and the window-account row where retained.
 [Corrected loss rows](../../../.orchestrate/evidence/CLOUDS/WP19/request-attribution/accounting/platform-loss-rows.json)
+
+## Refreshes lost with clouds absent in CLOUDS WP20
+
+The quiet wind series on `bea780010a58` used the release V1 game's
+1920×1080 window on the built-in 120 Hz panel. The OS witness recorded
+four lost refreshes in the six clouds-absent arms. Each was an isolated
+loss after the present call. Times are relative to the measured arm's start.
+
+| Arm | Time (s) | Place | OS drawable bracket |
+|---|---:|---|---|
+| 00-off | 10.591084 | After present call | 1385–1386 |
+| 06-off | 2.473930 | After present call | 409–410 |
+| 10-off | 1.974410 | After present call | 350–351 |
+| 10-off | 4.474411 | After present call | 649–650 |
+
+[OS witness series and loss rows](../../../.orchestrate/evidence/CLOUDS/WP20/hold-20261125T224406.456981Z/series.json)

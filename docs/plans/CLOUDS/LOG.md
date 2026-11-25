@@ -815,3 +815,14 @@
   and reviewer series replays preserve every OS loss time and stall length. The first-series accounting
   reaches the same six decisions, and the Mac platform rows carry the corrected places.
   [Replays and accounting](../../../.orchestrate/evidence/CLOUDS/WP19/request-attribution/README.md)
+
+## WP20 quiet wind series
+
+The release V1 game on `bea780010a58` held by both paired limits in all five
+cloud conditions on the M3 Max built-in 120 Hz display. The OS presented-time
+witness covered all eleven measured intervals. The independent audit
+reproduced each lost refresh and stall. The 10 m/s run lost one isolated
+refresh between loss-free controls. The other four cloud runs lost none.
+The four clouds-absent losses are in the
+[Mac runtime log](../PLATFORM-RUNTIME-MAC/LOG.md#refreshes-lost-with-clouds-absent-in-clouds-wp20).
+[Series and audit](../../../.orchestrate/evidence/CLOUDS/WP20/hold-20261125T224406.456981Z/README.md)

@@ -1104,8 +1104,8 @@
             "type": "access",
             "what": "Unlock the Mac for one sitting. The agent wakes the built-in display for each of its eleven runs of about 25 seconds, and launches, records and reviews; nothing else is needed."
           },
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP20/hold-20261125T224406.456981Z/README.md",
           "verdict": "",
           "review": ""
         }
