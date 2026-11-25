@@ -181,7 +181,33 @@
         "task": "GAME-SPLIT WP3's last two reviews (.orchestrate/evidence/GAME-SPLIT/WP3-review.md, finding 1, and WP3-review-2.md) found",
         "at": "2026-11-25T01:16:42Z"
       },
-      "ends_stretch": true
+      "ends_stretch": true,
+      "ready_for_review": {
+        "commit": "20fa78bb7356931a844afce0f2de1620a7635bbc",
+        "checked": "5f6ce56bb07bdc2aac3bad39654c8f321ce663e0",
+        "at": "2026-11-25T10:13:39Z",
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.171.0-alpha.13",
+        "path": "headless",
+        "usage": {
+          "input": 140049,
+          "cached": 11531392,
+          "output": 24770,
+          "turns": 1
+        },
+        "session_usage": {
+          "input": 140049,
+          "cached": 11531392,
+          "output": 24770,
+          "turns": 1
+        }
+      }
     }
   },
   "tasks": [
