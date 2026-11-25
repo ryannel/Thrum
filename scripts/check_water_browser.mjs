@@ -56,9 +56,9 @@ function png(rgba,width,height) {
 // This observer only appends copies to the ordinary frame encoder. No field shader is replaced.
 const observer = `
   globalThis.__devices=[];globalThis.__buffers={};globalThis.__faults=[];
-  globalThis.__manual=true;globalThis.__callback=null;
-  const raf=window.requestAnimationFrame.bind(window);
-  window.requestAnimationFrame=cb=>__manual?(__callback=cb,1):raf(cb);
+  // The inspection supplies the page's frame opportunities from one RAF loop.
+  globalThis.__requestCaptureFrame=window.requestAnimationFrame.bind(window);
+  window.requestAnimationFrame=()=>-1;
   const request=GPUAdapter.prototype.requestDevice;
   GPUAdapter.prototype.requestDevice=async function(...args){
     const d=await request.apply(this,args);__devices.push(d);
@@ -692,12 +692,21 @@ try {
       }
       await until(()=>evaluate('game.frame_ready()'),'surf warm-up completion');
     }
-    await evaluate(`globalThis.__motion=[];globalThis.__intervals=[];globalThis.__motionDone=false;globalThis.__start=null;globalThis.__cameraCut=null;
+    await evaluate(`globalThis.__motion=[];globalThis.__intervals=[];globalThis.__motionDone=false;globalThis.__start=null;globalThis.__cameraCut=null;globalThis.__motionOmissions=null;
       let lastOpportunity=-Infinity;
       globalThis.__opportunities=0;const presented=()=>Number(/presented=(\\d+)/.exec(game.frame_info())[1]);
       globalThis.__firstPresented=presented();globalThis.__expected=0;
       const collect=()=>{let image;while((image=game.capture())){if(__motion.length>=120)throw Error('motion export reached its 120-image allowance');__motion.push(image);}};
-      const drain=()=>{collect();if(__motion.length===__expected){__motionDone=true;return;}setTimeout(drain,5);};
+      const drain=()=>{
+        collect();
+        if(__motion.length===__expected){
+          __motionOmissions=game.capture_omissions();
+          game.end_capture();
+          __motionDone=true;
+          return;
+        }
+        setTimeout(drain,5);
+      };
       const loop=timestamp=>{
         __start??=timestamp;const elapsed=timestamp-__start;
         __intervals.push(timestamp);collect();
@@ -710,8 +719,8 @@ try {
           game.frame(${surfInspection?'timestamp':`${now}+elapsed`});__opportunities++;lastOpportunity=elapsed;
         }
         if(game.capture_omissions())throw Error('submitted motion observer omitted an image');
-        if(elapsed<${duration})requestAnimationFrame(loop);else {__expected=presented()-__firstPresented;drain();}
-      };game.begin_capture();__manual=false;requestAnimationFrame(loop);`);
+        if(elapsed<${duration})__requestCaptureFrame(loop);else {__expected=presented()-__firstPresented;drain();}
+      };game.begin_capture();__requestCaptureFrame(loop);`);
     await until(()=>evaluate('__motionDone'),'realtime pan');
     if(handoffCut){
       result.camera_cut=await evaluate('__cameraCut');
@@ -726,7 +735,7 @@ try {
       const file=`motion-${String(i).padStart(4,'0')}.png`;await fs.writeFile(path.join(output,file),png(rgba,width,height));result.frames.push({...image,file,sha256_rgba:hash(rgba)});
     }
     const timestamps=await evaluate('__intervals');result.callback_intervals_ms=timestamps.slice(1).map((v,i)=>v-timestamps[i]);
-    result.omissions=await evaluate('game.capture_omissions()');await evaluate('game.end_capture()');
+    result.omissions=await evaluate('__motionOmissions');
     assert(result.omissions===0,'motion contains omissions');
     if(surfInspection){
       const first=result.frames[0]?.observation_seconds;
