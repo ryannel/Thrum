@@ -880,7 +880,7 @@
     {
       "id": "WP5",
       "name": "The post-rollout record shows a five-minute median for Rust landings",
-      "status": "not_started",
+      "status": "blocked",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -909,7 +909,17 @@
           "verdict": "",
           "review": ""
         }
-      ]
+      ],
+      "blocked": {
+        "reason": "needs_context",
+        "what": "WP5.1 needs 17 more qualifying ordinary Rust landings before the fixed window can be judged.",
+        "work": {
+          "commit": "31787a806ec898c9e2e125caa8a87612c2e3b4bc",
+          "branch": "build/gate-time",
+          "pushed": false
+        },
+        "handoff": ".orchestrate/evidence/GATE-TIME/WP5-handoff.md"
+      }
     }
   ]
 }
