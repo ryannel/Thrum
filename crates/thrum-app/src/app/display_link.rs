@@ -244,20 +244,6 @@ impl Drop for ViewDisplayLink {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::SubmissionCadence;
-
-    #[test]
-    fn missing_submissions_and_display_callbacks_break_the_interval() {
-        let mut cadence = SubmissionCadence::default();
-        for (sequence, tick) in [(1, 0), (2, 1), (4, 3), (5, 4), (6, 6), (7, 7), (8, 8)] {
-            cadence.presented(sequence, f64::from(tick) / 120.0, 120.0);
-        }
-        assert_eq!(cadence.longest(), (6.0 / 120.0, 8.0 / 120.0));
-    }
-}
-
 /// Stable OS window number for joining this process to Instruments surface rows.
 #[expect(
     unsafe_code,
@@ -275,4 +261,18 @@ pub(super) fn window_number(window: &Window) -> Result<isize, String> {
     let native = native.ok_or("view has no AppKit window")?;
     // SAFETY: windowNumber is an NSInteger-returning selector on NSWindow.
     Ok(unsafe { msg_send![&*native, windowNumber] })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::SubmissionCadence;
+
+    #[test]
+    fn missing_submissions_and_display_callbacks_break_the_interval() {
+        let mut cadence = SubmissionCadence::default();
+        for (sequence, tick) in [(1, 0), (2, 1), (4, 3), (5, 4), (6, 6), (7, 7), (8, 8)] {
+            cadence.presented(sequence, f64::from(tick) / 120.0, 120.0);
+        }
+        assert_eq!(cadence.longest(), (6.0 / 120.0, 8.0 / 120.0));
+    }
 }
