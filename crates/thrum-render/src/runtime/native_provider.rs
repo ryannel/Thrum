@@ -109,7 +109,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             .get_mapped_range()
             .map_err(|_| FrameError::Render(crate::error::RenderError::Readback))?;
         let mut total = [0_u64; 3];
-        for bytes in mapped.chunks_exact(size_of::<MetalFxRepairs>()) {
+        for bytes in mapped.as_chunks::<{ size_of::<MetalFxRepairs>() }>().0 {
             let repairs = bytemuck::pod_read_unaligned::<MetalFxRepairs>(bytes);
             for (total, count) in
                 total
