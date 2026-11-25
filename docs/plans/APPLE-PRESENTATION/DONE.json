@@ -656,8 +656,8 @@
         },
         {
           "id": "WP16.2",
-          "statement": "`crates/thrum-render/src` creates timestamp query sets at one call site. On Metal, with 32 live in the process, held on two devices so that neither holds 32, a request on either device is refused before wgpu is asked. A frame host with timing on fails its preparation with a typed timing error that names timestamp query sets as what the process has run out of. A ray build probe installed before the 32 were reached still builds a mesh handed to it: a ray query hits the mesh, and no timestamp sample is recorded for that build. Neither device is lost: a host already drawing on each draws its next frame. Guard: a GPU test that holds 32 real query sets on two devices; only Metal shows that the request is refused before the device is lost.",
-          "check": "git grep -n 'create_query_set(' -- crates/thrum-render/src | wc -l | grep -qx ' *1' && THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render --features creation-counters --test timestamp_budget -E 'test(=the_33rd_across_two_devices_is_refused_and_both_survive)' --no-tests=fail",
+          "statement": "Timestamp query sets are created at one call site in `crates/thrum-render/src`. No other Rust file under `crates`, `examples`, `tools` or `tests` calls `create_query_set`, except `SEA`'s test harness, `crates/thrum-sea/tests/support.rs`. On Metal, with 32 live in the process, held on two devices so that neither holds 32, a request on either device is refused before wgpu is asked. A frame host with timing on fails its preparation with a typed timing error that names timestamp query sets as what the process has run out of. A ray build probe installed before the 32 were reached still builds a mesh handed to it: a ray query hits the mesh, and no timestamp sample is recorded for that build. Neither device is lost: a host already drawing on each draws its next frame. Guard: a GPU test that holds 32 real query sets on two devices; only Metal shows that the request is refused before the device is lost.",
+          "check": "m=$(git grep -n 'create_query_set(' -- crates examples tools tests | grep -v '^crates/thrum-sea/tests/support\\.rs:'); [ \"$(printf '%s\\n' \"$m\" | grep -c .)\" = 1 ] && [ \"$(printf '%s\\n' \"$m\" | grep -c '^crates/thrum-render/src/')\" = 1 ] && THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render --features creation-counters --test timestamp_budget -E 'test(=the_33rd_across_two_devices_is_refused_and_both_survive)' --no-tests=fail",
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "open",
@@ -691,6 +691,17 @@
           "id": "WP16.5",
           "statement": "A timestamp query set keeps its place until Metal has it back, and a refused frame host prepares once the process has room for all its frame slots. On Metal, with 31 held and one more whose engine holder was dropped after an encoder recorded its resolve, a request is refused while that encoder is unsubmitted, and again while its submission is still running on the GPU, and the device is not lost. Once the device has collected the finished submission, the same request is admitted. With 32 live and one then released, a frame host with timing on, which has two frame slots, is still refused and leaves no query set behind: one further single request is admitted. With two released, the host prepares and draws a frame. Guard: a GPU test; only wgpu on Metal shows when a dropped query set's place returns.",
           "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render --features creation-counters --test timestamp_budget -E 'test(=a_place_returns_when_metal_has_it_and_a_host_needs_every_slot)' --no-tests=fail",
+          "target": "mac-metal",
+          "lock": "gpu",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP16.6",
+          "statement": "Requests at the call site are answered one at a time across the process, so two that compete for the last places each get a whole answer. On Metal, with two devices and 30 live in the process: a frame host with timing on, which has two frame slots, is held between its Metal trial and its wgpu creation while a single request arrives on another thread for the other device. The single request gets no answer while the host is held. Let go, the host prepares and draws a frame, and the single request is refused with the typed timing error. In the other order, from 30 live again, the single request is held and the host arrives: the host gets no answer while the single request is held, the single request is then admitted, and the host is refused and leaves no query set behind, since one further single request is admitted. After each order a frame host without timing draws a frame on each device, so neither is lost. Guard: a GPU test that holds a request inside the call site; only two threads on Metal show that a second request waits for the first.",
+          "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render --features creation-counters --test timestamp_budget -E 'test(=two_requests_for_the_last_places_are_answered_in_turn)' --no-tests=fail",
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "open",

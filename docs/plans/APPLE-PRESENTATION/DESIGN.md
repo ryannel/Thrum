@@ -635,15 +635,45 @@ Two mechanisms, both in the frame runtime's timing files:
 - **Metal is asked first, at the one place that creates timestamp query sets.** Every timestamp query set
   `thrum-render` creates is made at one call site, the ray build probe's included
   ([ruling](../ARCHITECTURE.md#interfaces)). On the Metal backend that call site holds one lock for the whole
-  process. Under it, it first creates as many counter sample buffers as the request asks for, directly on the
-  device's `MTLDevice`, and releases them. If Metal refuses one, the request is refused with a typed timing
-  error that names timestamp query sets as what the process has run out of, and wgpu is not asked, so the
-  device is untouched. If Metal grants them, the query sets are created through wgpu before the lock is
-  released. Metal is the one authority on what is live, and the engine keeps no number of its own. So a
-  request is judged against every query set in the process: those on another device, those wgpu still holds
-  for a recorded encoder or a running submission after their engine holder was dropped, and those made
-  outside the engine. A place is free again exactly when Metal has it back. Other backends have no measured
-  limit and are not asked. A query set created outside the engine does not take the lock.
+  process, from its first step to its last. Under it, it first creates as many counter sample buffers as the
+  request asks for, directly on the device's `MTLDevice`, and releases them. If Metal refuses one, the request
+  is refused with a typed timing error that names timestamp query sets as what the process has run out of, and
+  wgpu is not asked, so the device is untouched and nothing of the request remains. If Metal grants them, the
+  query sets are created through wgpu before the lock is released. Metal is the one authority on what is live,
+  and the engine keeps no number of its own. So a request is judged against every query set live in the
+  process when it asks: those on another device, those wgpu still holds for a recorded encoder or a running
+  submission after their engine holder was dropped, and those made outside the call site. A place is free
+  again exactly when Metal has it back. Other backends have no measured limit and are not asked.
+
+**Who may create at once.** Between the trial and the wgpu creation, the places the trial proved are free
+again. The trial's buffers cannot be handed to wgpu, because wgpu 30.0.1 has no way to make a query set from
+a Metal buffer, and wgpu's own failed creation is the one that loses the device. So the lock is what closes that interval, and
+it closes it only against requests that take it. Measured on Metal alone on 25 November 2026, with 30 live: a
+trial of two passed, a creation that took no lock then took one of the two places, and only the first of the
+two real creations succeeded. Answered in turn, the same two askers each got a whole answer: the two and then a
+refusal, or the one, a refusal of the two, and room for one more.
+[Measurement](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP16-plan/README.md#the-interval-between-the-trial-and-the-creation)
+
+The guarantee is therefore this, and no wider: while every timestamp query set created in the process during a
+request comes through the call site, no request loses a device, and a refused request leaves nothing behind.
+Requests are answered one at a time, on whichever device and thread they arrive, so two that compete for the
+last places cannot both pass the trial: the first has its query sets before the second is tried. A release
+needs no lock, because it can only free a place.
+
+The call site is the one route for everything that shares a process with a request:
+
+- the frame host's timing and the ray build probe, inside `thrum-render`;
+- code outside the crate, to which `thrum-render` offers the same call site. The tests of `timestamp_budget`
+  hold their query sets through it, because the tests of one binary run side by side and one test's holding
+  must not fall in another's interval.
+
+A timestamp query set made with `wgpu::Device::create_query_set` directly is outside the guarantee. Its own
+creation is as unprotected as it was, and made during a request it can cost that request its device. One
+exists today: `SEA`'s test harness, `crates/thrum-sea/tests/support.rs`, makes one for each frame it times.
+Its test binaries prepare no frame host with timing and install no ray build probe, so they hold no request
+for it to fall into, and it stays as it is. Code that comes to share a process with a timed frame host or a ray
+build probe creates its timestamp query sets at the call site. Making wgpu's creation itself safe to refuse
+would take a change to wgpu's Metal backend, and none is planned for this.
 
 A refusal means one thing for each kind of asker:
 

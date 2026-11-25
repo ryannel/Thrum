@@ -476,3 +476,9 @@
   replaced by asking Metal first, because wgpu holds dropped query sets the engine cannot see; WP16.2 holds the 32
   on two devices and new WP16.5 proves when a place returns. The witness rows are W1 to W7 again in the design.
   [What changed and the measurement](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP16-plan/README.md)
+
+- 2026-11-25 Planner: the second WP16 design review had one Must Fix, the interval between the Metal trial and
+  the wgpu creation. The guarantee is now bounded to creations that come through the one call site, which
+  answers requests one at a time (design, ruling). WP16.2 also holds that nothing else calls `create_query_set`
+  but `SEA`'s test harness, and new WP16.6 holds one request while a second competes for the last places.
+  [What changed and the measurement](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP16-plan/README.md#the-interval-between-the-trial-and-the-creation)

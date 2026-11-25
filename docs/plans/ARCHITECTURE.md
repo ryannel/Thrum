@@ -334,8 +334,17 @@ query set for each mesh build it brackets, in `RayBuildProbe::encode` in `RAY-TR
 `APPLE-PRESENTATION` WP16 builder changes that one call site to ask there. A refusal means the same for both of
 `encode`'s callers, the renderer and the cooked-asset uploader: the mesh build is recorded as it is without a
 probe, the mesh answers ray queries, no sample is recorded for that build, and the probe stays installed. No
-item of `RAY-TRACING` changes. Once built, the call site belongs to the frame runtime: a module that needs a
-timestamp query set in `thrum-render` creates it there.
+item of `RAY-TRACING` changes. Once built, the call site belongs to the frame runtime.
+
+The call site answers requests one at a time for the whole process, and its guarantee is bounded by who uses
+it: while every timestamp query set created in a process during a request comes through it, no request loses a
+device and a refused request leaves nothing behind. A timestamp query set made with
+`wgpu::Device::create_query_set` directly is outside that guarantee, and made during a request it can cost the
+request its device. So the call site is the one route for code that shares a process with a timed frame host
+or a ray build probe: a module that needs a timestamp query set in `thrum-render` creates it there, and
+`thrum-render` offers the call site to tests and crates outside it. `SEA`'s test harness
+(`crates/thrum-sea/tests/support.rs`) creates its own directly, in test binaries that prepare no timed frame
+host and install no probe, and does not change.
 
 **Seam ruling for `CREATOR` WP2.** The profiler needs the frame host to stop timing frames while it is off, which
 no interface offered. The timing-demand switch and the "not requested" reason are built in `thrum-render`'s

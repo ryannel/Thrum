@@ -16,6 +16,9 @@ Build in the order below.
 - Assumption: at full window size the frame rate may dip until the governor lands in WP7. Record times for
   that interval without applying a frame-time gate.
 - Assumption: WP10 pins wgpu-hal 30.0.1 for the Metal library loader. WP12 adds the archive to that copy.
+- Assumption: WP16 keeps the device safe for timestamp query sets created at the engine's one call site. Code
+  that creates one with wgpu directly, in the same process and at the same moment as an engine request, is not
+  protected, because that needs a change to wgpu's Metal backend. The owner can ask for that change.
 
 ## WP1 Every pixel of the valley carries correct motion under jitter, including the sky and stars: done
 [review](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP1-review.md)
@@ -60,6 +63,11 @@ fails from four test threads up, and passes with three.
 
 `./dev long-tests` runs every test of `timestamp_budget` in one process, side by side, and WP16.4 does the same.
 So the two tests that fill the process to 32 must not leave the binary's other tests refused, or each other.
+The guarantee holds [while every creation during a request comes through the call
+site](DESIGN.md#timestamp-query-sets-and-metals-limit-wp16), so the tests hold their query sets through it and
+`thrum-render` offers it outside the crate. WP16.6 needs a test to hold a request between its Metal trial and its
+wgpu creation: keep that hold out of builds without `creation-counters`. `SEA`'s harness in
+`crates/thrum-sea/tests/support.rs` is not yours to change.
 WP7's items do not change and its tests keep passing: the governed frame still frees its slot while its
 timestamps are read back. In `RAY-TRACING`'s `build_probe.rs` change only how `encode` asks for its query set
 and what it records when refused, under [the ruling](../ARCHITECTURE.md#interfaces). The test-only cap in
