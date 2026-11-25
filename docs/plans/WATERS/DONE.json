@@ -1317,7 +1317,9 @@
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
-          "lock": "gpu"
+          "lock": "gpu",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP21.3",
@@ -1326,7 +1328,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP21.4",
@@ -1335,7 +1339,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP21.5",
@@ -1344,7 +1350,9 @@
           "lock": "chrome",
           "target": "chrome-webgpu",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP21.6",

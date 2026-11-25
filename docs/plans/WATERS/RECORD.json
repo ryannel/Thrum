@@ -1,27 +1,14 @@
 {
   "module": "WATERS",
   "design": {
-    "verdict": "changes",
-    "review": ".orchestrate/evidence/WATERS/design-review.md",
-    "commit": "c1beee4e38c702b103ff7514b935ffba5ead66db",
-    "hash": "1b866e789b3884898dab6b6e45790aec85d1e76d45610331da213971c1127e8f",
-    "by": "review",
-    "host": "codex",
-    "model": "gpt-6.2-astra",
-    "effort": "high",
-    "observed": {
-      "model": "gpt-6.2-astra",
-      "effort": "high"
-    },
-    "cli": "codex-cli 0.171.0-alpha.13",
-    "path": "headless",
-    "usage": {
-      "input": 87976,
-      "cached": 643072,
-      "output": 4924,
-      "turns": 1
-    },
-    "at": "2026-11-25T16:22:06Z"
+    "verdict": "ok",
+    "by": "review_limit",
+    "hash": "22a54bbd54834a80a7f92494ca73695a589ddcb6ba5609d0ba8e72521926dff6",
+    "after": [
+      ".orchestrate/evidence/WATERS/design-review-23.md",
+      ".orchestrate/evidence/WATERS/design-review.md"
+    ],
+    "at": "2026-11-25T16:28:11Z"
   },
   "work_packages": {
     "WP1": {
@@ -1944,12 +1931,12 @@
       }
     },
     "WP21": {
-      "definitions": "aebd1d96d939869a4d1d5ebd3554ebde7c112c1b0ab33466751fcc2f56c3ec88",
+      "definitions": "11ad8c5626b2f041efa00a45d03eedbbde80a1bd4bf879438e89d2f4da5b7732",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "WATERS WP19 needs something no plan provides yet. The builder wrote: The tick stage needs a delivery path that meets the",
-        "at": "2026-11-25T16:12:13Z"
+        "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 6 Must Fix find",
+        "at": "2026-11-25T16:28:11Z"
       }
     },
     "WP22": {
@@ -2106,11 +2093,15 @@
     {
       "task": "The main-branch check cross-target fails, and the script couldn't tell which commit broke it. Find what breaks it, and plan the fix in the module whose code it is, in its plan or as its next work package.\n\nFrom the lead: the log (.git/orchestrate/main-checks/cross-target/logs/20261125-170212-*) shows error E0432 in examples/water/tests/surf_running.rs: unresolved imports super::support and super::surf_cost. In examples/water/tests/proof_gpu.rs, realtime, support and surf_cost are gated #[cfg(target_os = \"macos\")] but `mod surf_running;` is not, so non-Mac targets fail to compile. It arrived with WATERS WP19 commits (for example f6617c977 / 8d8340e65). The fix is WATERS' and small; put it where a builder lands it soonest, without waiting on WP19's open delivery problem.",
       "at": "2026-11-25T16:18:59Z"
+    },
+    {
+      "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 6 Must Fix findings.",
+      "at": "2026-11-25T16:28:11Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-25T16:18:59Z"
+    "at": "2026-11-25T16:28:11Z"
   },
   "design_history": [
     {
@@ -2673,6 +2664,29 @@
         "turns": 1
       },
       "at": "2026-11-25T16:18:42Z"
+    },
+    {
+      "verdict": "changes",
+      "review": ".orchestrate/evidence/WATERS/design-review.md",
+      "commit": "c1beee4e38c702b103ff7514b935ffba5ead66db",
+      "hash": "1b866e789b3884898dab6b6e45790aec85d1e76d45610331da213971c1127e8f",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6.2-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6.2-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.171.0-alpha.13",
+      "path": "headless",
+      "usage": {
+        "input": 87976,
+        "cached": 643072,
+        "output": 4924,
+        "turns": 1
+      },
+      "at": "2026-11-25T16:22:06Z"
     }
   ]
 }
