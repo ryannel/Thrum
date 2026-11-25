@@ -115,3 +115,7 @@
   font product. A rejected grid rename leaves HEAD and the private grid intact across reopen. An independent
   published texture edit still lands, and a later valid rename publishes its new bindings and font together.
   The Mac Metal publication checks and all named WP2 checks passed. [Proof](../../../.orchestrate/evidence/GAME-UI/WP2/round3/index.md)
+- 2026-11-26 WP2 review fix. The cooker records the last good font input binding with the manifest. A new
+  sibling PNG now publishes all three profiles during a refused outline edit or grid rename. Reopening keeps
+  the refused rename's old grid private and the proposed input's public hashes intact. The two valid fixture
+  font products matched the previous cook byte for byte. [Proof](../../../.orchestrate/evidence/GAME-UI/WP2/round4/index.md)
