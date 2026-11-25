@@ -1413,7 +1413,7 @@
       }
     },
     "WP13": {
-      "definitions": "6e93f683bd8f981ec50f4951f7f2bcd1b9fdb5a9e9deb5cd5d78b89dc58b6e64",
+      "definitions": "7f2554212f0a5f741d081f0f5e72401344bebff5ab2b9d4bc5eb36b5525f1920",
       "reviews": [
         {
           "verdict": "fail",
@@ -1525,38 +1525,8 @@
       ],
       "authorised": {
         "by": "plan",
-        "task": "WATERS WP13 is Blocked: a short gray straight-sided flap in the pitching face (native x~2200-2260, y~345-370, engine tim",
-        "at": "2026-11-25T04:04:31Z"
-      },
-      "ready_for_review": {
-        "commit": "293ac2cc91b000746dd522d7bd0b561f7072632d",
-        "checked": "293ac2cc91b000746dd522d7bd0b561f7072632d",
-        "at": "2026-11-25T04:49:09Z",
-        "reused": [
-          "WP13.12",
-          "WP13.14"
-        ],
-        "host": "codex",
-        "model": "gpt-6.2-sol",
-        "effort": "medium",
-        "observed": {
-          "model": "gpt-6.2-sol",
-          "effort": "medium"
-        },
-        "cli": "codex-cli 0.171.0-alpha.13",
-        "path": "headless",
-        "usage": {
-          "input": 329121,
-          "cached": 35416064,
-          "output": 56202,
-          "turns": 2
-        },
-        "session_usage": {
-          "input": 3673564,
-          "cached": 307390208,
-          "output": 532702,
-          "turns": 13
-        }
+        "task": "WATERS WP13 is Blocked again on a three-look stop, now the sand-height cue: short straight-sided bright projections/fins",
+        "at": "2026-11-25T06:11:25Z"
       }
     },
     "WP15": {
@@ -1739,12 +1709,12 @@
       }
     },
     "WP20": {
-      "definitions": "332ffa55e58a77d119a14299054925e5d37bb6e24e4b36a22bb25949ca8a2e8c",
+      "definitions": "7f7653681e03b5ad6f0cbe73b645ff920f3180c84a69f5d69d0c3e1d041c5fa9",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 1 Must Fix find",
-        "at": "2026-11-25T04:19:53Z"
+        "task": "WATERS WP13 is Blocked again on a three-look stop, now the sand-height cue: short straight-sided bright projections/fins",
+        "at": "2026-11-25T06:11:25Z"
       }
     }
   },
@@ -1868,11 +1838,15 @@
     {
       "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 1 Must Fix findings.",
       "at": "2026-11-25T04:19:53Z"
+    },
+    {
+      "task": "WATERS WP13 is Blocked again on a three-look stop, now the sand-height cue: short straight-sided bright projections/fins under the pitching lip (WP13.5, WP13.11) on Metal and Chrome; eleven items pass. This is the same family as the gray flap already moved to WP20: geometry or compositing of the near-vertical pitching face. Lead's direction: stop blind visual looks on the breaker face inside WP13. Read the handoff and the warmed near-face diagnostic (job 20261125-064546-26938, output under tmp/waters-wp13-review/near-proof-*; wait for or use its result if present). Then either (a) fold all pitching-face artifacts (flap, fins, projections, curtain read) into WP20 as one diagnostic-first package \u2014 witness that attributes the cue to submitted geometry/depth winner vs foam compositing before any repair \u2014 and let WP13 pass on its remaining items; or (b) if you judge a clean pitching face is the core of WP13's outcome, make the diagnostic attribution the next bounded item and the repair follow from it. Record the choice as an assumption the owner can overturn. Bar: a shipped high-end game's breaker in motion; references diagnose, never gate.",
+      "at": "2026-11-25T06:11:25Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-25T04:19:53Z"
+    "at": "2026-11-25T06:11:25Z"
   },
   "design_history": [
     {
