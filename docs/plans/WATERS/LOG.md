@@ -1148,3 +1148,10 @@
   whether an undelivered result waits (WP21.2, eight cases). A wait between submission and publication
   has no cause until evidence names one (WP21.3 counts late stations by interval). No Suggestions.
   [What changed](../../../.orchestrate/evidence/WATERS/design-review-25-fixes.md).
+- 2026-11-25 WP21 follow-up. The CPU mailbox guard exercises repeated drains with the next answer
+  published both before and after the first drain. Both Metal mailbox guards pass. The 60 Hz open-water
+  run delivered all 28,800 stations at age one with zero fallback, unavailable answers or blocking reads.
+  The record counts late stations by wait interval, with zero in each interval on this run.
+  The Metal cache guard, paired 1440p cost check and Chrome surf guard passed again. The rendering
+  sources still match the result used for the 12 Metal and Chrome still pairs, which were reviewed again.
+  [Updated target records](../../../.orchestrate/evidence/WATERS/WP21/README.md).
