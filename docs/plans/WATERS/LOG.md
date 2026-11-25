@@ -879,3 +879,9 @@
   comparison that holds in the 0.25 m cut. WP13.5 and WP13.11 still need a legible visual comparison.
   [Matched captures](../../../.orchestrate/evidence/WATERS/WP13/chrome-matched-inspection.md) ·
   [Offshore sampling diagnostic](../../../.orchestrate/evidence/WATERS/WP13/offshore-mesh-resolution.log).
+
+- 2026-11-25 WP13.11 passed on hardware Chrome against the revised matching criteria. At 1 km in trade
+  wind successive white fronts start at different distances and run shoreward on both targets. An
+  independent inspection confirmed the matched approach, peel, connected swash, retreating lace and
+  handoff. All six Chrome motion receipts advance throughout, with zero omissions or faults.
+  [Inspection and receipts](../../../.orchestrate/evidence/WATERS/WP13/chrome-matched-inspection.md).
