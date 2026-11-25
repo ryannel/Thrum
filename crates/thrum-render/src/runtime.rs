@@ -769,18 +769,6 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     pub fn mesh_row_binding_limit(&self) -> u64 {
         self.device.limits().max_storage_buffer_binding_size
     }
-    /// Request timestamps for subsequently encoded frames. In-flight frames finish as
-    /// encoded; prepared query resources are retained. Survives device replacement.
-    pub fn set_timing_requested(&mut self, requested: bool) {
-        self.timing_requested = requested;
-    }
-
-    /// Current demand; defaults to true for report and offscreen consumers.
-    #[must_use]
-    pub fn timing_requested(&self) -> bool {
-        self.timing_requested
-    }
-
     /// Attach an engine module that draws into the scene's forward pass with the scene's
     /// lighting. It is rebuilt on every visual or device republication.
     ///

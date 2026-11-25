@@ -263,6 +263,30 @@ impl Readback {
     }
 }
 
+/// Map a test's already-submitted staging buffer without polling or waiting.
+/// Call this from the submission callback when the test needs to observe the
+/// asynchronous delivery path. The buffer is unmapped before `publish` runs.
+/// A cancelled or failed map delivers `None`.
+pub fn map_submitted_buffer(
+    staging: &wgpu::Buffer,
+    publish: impl FnOnce(Option<Vec<u8>>) + wgpu::WasmNotSend + 'static,
+) {
+    let buffer = staging.clone();
+    staging.map_async(wgpu::MapMode::Read, .., move |result| {
+        let bytes = if result.is_ok() {
+            let bytes = buffer
+                .get_mapped_range(..)
+                .ok()
+                .map(|mapped| mapped.to_vec());
+            buffer.unmap();
+            bytes
+        } else {
+            None
+        };
+        publish(bytes);
+    });
+}
+
 /// Read `range` of `buffer`, which needs `COPY_SRC`, on a submission of its own.
 ///
 /// # Panics

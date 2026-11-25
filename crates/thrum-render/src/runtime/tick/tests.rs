@@ -12,9 +12,10 @@ use crate::{
 };
 use std::{
     sync::{Arc, Mutex, atomic::AtomicBool},
-    time::{Duration, Instant},
+    time::Duration,
 };
 use thrum_core::sim::{WorldAdvance, WorldPublication};
+use thrum_test_support::wait::until;
 
 const STEP: Duration = Duration::from_millis(16);
 const PROFILE: SurfaceProfile = SurfaceProfile {
@@ -244,31 +245,20 @@ impl Fixture {
     }
 
     fn until(&mut self, ready: impl Fn(&Mailbox) -> bool) {
-        let until = Instant::now() + Duration::from_secs(3);
-        loop {
+        until("tick readback", Duration::from_secs(3), || {
             if let Some(sample) = self.host.poll_completed().unwrap() {
                 self.views.push_back(sample);
             }
-            if ready(&self.mail.lock().unwrap()) {
-                return;
-            }
-            assert!(Instant::now() < until, "tick readback did not complete");
-            std::thread::yield_now();
-        }
+            ready(&self.mail.lock().unwrap()).then_some(())
+        });
     }
 
     fn finish_view(&mut self) -> FrameSample {
-        if let Some(sample) = self.views.pop_front() {
-            return sample;
-        }
-        let deadline = Instant::now() + Duration::from_secs(3);
-        loop {
-            if let Some(sample) = self.host.poll_completed().unwrap() {
-                return sample;
-            }
-            assert!(Instant::now() < deadline, "view did not complete");
-            std::thread::yield_now();
-        }
+        self.views.pop_front().unwrap_or_else(|| {
+            until("view completion", Duration::from_secs(3), || {
+                self.host.poll_completed().unwrap()
+            })
+        })
     }
 
     fn hold_view_slots(&mut self) {
@@ -665,12 +655,10 @@ fn tick_stage_lifecycle_and_tick_stage_world_change_across_device_replacement() 
         assert!(f.mail.lock().unwrap().answers.is_empty());
         assert!(f.mail.lock().unwrap().busy.iter().any(|busy| *busy));
         f.host.publish_device(&mut candidate).unwrap();
-        let until = Instant::now() + Duration::from_secs(3);
-        while f.mail.lock().unwrap().retired_callbacks == 0 {
+        until("retired map callback", Duration::from_secs(3), || {
             old_device.poll(wgpu::PollType::Poll).unwrap();
-            assert!(Instant::now() < until, "retired map callback did not run");
-            std::thread::yield_now();
-        }
+            (f.mail.lock().unwrap().retired_callbacks > 0).then_some(())
+        });
         drop(old_queue);
         let post = f.host.world().post_from_world(1);
         assert_eq!(post.endpoint, old_post.endpoint);

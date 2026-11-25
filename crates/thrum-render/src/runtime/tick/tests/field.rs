@@ -208,7 +208,6 @@ impl SceneContribution for Field {
         let gpu = self.gpu.as_ref().unwrap();
         let generation = gpu.generation;
         let index = self.readback;
-        let bytes = gpu.readbacks[index].clone();
         let batch = std::mem::take(&mut self.batch);
         let mail = Arc::clone(&self.mail);
         {
@@ -217,21 +216,17 @@ impl SceneContribution for Field {
             mail.busy[index] = true;
             mail.posts.drain(..batch.len());
         }
-        gpu.readbacks[index].map_async(wgpu::MapMode::Read, .., move |result| {
-            let answers = result.ok().map(|()| {
-                let mapped = bytes.get_mapped_range(..).unwrap();
+        thrum_test_support::readback::map_submitted_buffer(&gpu.readbacks[index], move |bytes| {
+            let answers = bytes.map(|bytes| {
                 batch
                     .into_iter()
-                    .zip(mapped.as_chunks::<4>().0)
+                    .zip(bytes.as_chunks::<4>().0)
                     .map(|((post, seeded), value)| Answer {
                         post,
                         value: seeded.then(|| u32::from_le_bytes(*value)),
                     })
                     .collect::<Vec<_>>()
             });
-            if answers.is_some() {
-                bytes.unmap();
-            }
             let mut mail = mail.lock().unwrap();
             if mail.generation == generation {
                 mail.busy[index] = false;
