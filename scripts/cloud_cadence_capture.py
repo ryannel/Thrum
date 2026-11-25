@@ -85,7 +85,33 @@ def export(trace, output, arguments):
         raise InvalidMeasurement(f'Instruments export failed for {output.name}')
 
 
-def discard_kernel_scratch(arm, pid, began, ended):
+def recording_scratch(pid):
+    """Take only scratch held by the xctrace process we launched or its children."""
+    processes = subprocess.check_output(['/bin/ps', '-axo', 'pid=,ppid='], text=True, timeout=4)
+    children = [child for child, parent in map(str.split, processes.splitlines())
+                if int(parent) == pid]
+    pids = [str(pid), *children]
+    found = subprocess.run(['/usr/sbin/lsof', '-n', '-p', ','.join(pids), '-Fn'],
+                           text=True, capture_output=True, timeout=5).stdout
+    temporary = Path(tempfile.gettempdir()).resolve()
+    paths = {Path(line[1:]).resolve() for line in found.splitlines()
+             if re.fullmatch(r'n/.*/instruments[^/]+\.ktrace', line)}
+    return {path for path in paths if path.parent == temporary}, pids
+
+
+def discard_kernel_scratch(arm, pid, began, ended, owned):
+    paths, process_ids = owned
+    if paths:
+        removed = []
+        for path in paths:
+            try:
+                size = path.stat().st_size
+                path.unlink()
+            except FileNotFoundError:
+                continue
+            removed.append({'path': str(path), 'bytes': size})
+        save(arm / 'kernel-scratch.json', {'recording_pids': process_ids, 'removed': removed})
+        return
     temporary = Path(tempfile.gettempdir())
     for path in temporary.glob('instruments*.ktrace'):
         try:
@@ -113,12 +139,16 @@ def bounded_trace_identity(command):
         with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
                               text=True) as reader:
             try:
-                ready, _, _ = select.select([reader.stdout], [], [], 6)
+                ready, _, _ = select.select([reader.stdout], [], [], 15)
                 line = reader.stdout.readline() if ready else ''
                 return json.loads(line) if line else None
             finally:
                 if reader.poll() is None:
                     reader.terminate()
+                    try:
+                        reader.wait(timeout=3)
+                    except subprocess.TimeoutExpired:
+                        reader.kill()
     except (OSError, ValueError):
         return None
 
@@ -163,23 +193,39 @@ def collect(arm, store, wind, *, diagnostic=False):
     power = subprocess.Popen(['/usr/bin/caffeinate', '-d', '-i', '-u'])
     load = None
     began = time.time()
+    recorder_pid = None
+    owned = (set(), [])
+
+    def launched(pid):
+        nonlocal recorder_pid
+        recorder_pid = pid
+
     try:
         observe_panel = panel_witness(arm)
 
         def observe():
+            nonlocal owned
             if power.poll() is not None:
                 return
             if (arm / 'refresh-counts.txt').exists() or (
                 not diagnostic and recorder.exists() and 'ending recording' in recorder.read_text(errors='replace')
             ):
                 power.terminate()
+                if not diagnostic and recorder_pid is not None:
+                    try:
+                        owned = recording_scratch(recorder_pid)
+                    except (OSError, subprocess.SubprocessError):
+                        # The recorder is closing. The raw-PID check can
+                        # recover ownership if the process is already gone.
+                        pass
             else:
                 observe_panel()
 
         observe_panel()
         load = LoadRecord(arm)
         code = bounded(command, recorder, 155 if not diagnostic else 33, environment=env,
-                       observe=observe, finalization_seconds=None if diagnostic else 125)
+                       observe=observe, finalization_seconds=None if diagnostic else 125,
+                       on_start=launched)
         if code or not (arm / 'refresh-account.tsv').is_file():
             raise InvalidMeasurement(f'{arm.name}: window did not finish the cadence record (exit {code})')
     finally:
@@ -214,7 +260,7 @@ def collect(arm, store, wind, *, diagnostic=False):
     # Keep an unsuccessful trace for setup diagnosis.
     shutil.rmtree(trace)
     discard_kernel_scratch(arm, int(re.search(r'^pid=(\d+)$', identity, re.MULTILINE)[1]),
-                           began, ended)
+                           began, ended, owned)
     return result
 
 
@@ -266,6 +312,14 @@ def diagnose(arm, entries):
         }
 
 
+def save_series(destination, record):
+    # A cancelled collector must leave either the last complete receipt or a
+    # fully written new one. The per-arm raw exports remain separately usable.
+    staged = destination.with_suffix('.next.json')
+    save(staged, record)
+    staged.replace(destination)
+
+
 def series(output, *, diagnostics, resume=False):
     store = prepare()
     output.mkdir(parents=True, exist_ok=resume)
@@ -303,7 +357,7 @@ def series(output, *, diagnostics, resume=False):
                 print(f'{name}: recording the built-in panel', flush=True)
                 run = collect(arm, store, wind)
             record['runs'].append(dict(arm=name, **run))
-            save(destination, record)
+            save_series(destination, record)
         for index in range(1, len(ARMS), 2):
             before, cloud, after = record['runs'][index - 1:index + 2]
             verdict, entries = differences(cloud, before, after)
@@ -313,14 +367,14 @@ def series(output, *, diagnostics, resume=False):
                 print(f'{arm.name}: recording GPU pass timing', flush=True)
                 collect(arm, store, ARMS[index], diagnostic=True)
                 diagnose(arm, entries)
-            save(destination, record)
+            save_series(destination, record)
         if digest(BIN) != record['binary_sha256']:
             raise InvalidMeasurement('the game binary changed while the series was running')
     except Exception as error:
         record['setup_failure'] = str(error)
         raise
     finally:
-        save(destination, record)
+        save_series(destination, record)
     return record
 
 

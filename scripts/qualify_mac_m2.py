@@ -74,12 +74,14 @@ print("screen_recording_preflight=\\(CGPreflightScreenCaptureAccess())")
         raise RuntimeError('BLOCKED: Instruments setup/authorization unavailable; no recording attempted')
 
 
-def bounded(command, log, seconds, environment=None, observe=None, finalization_seconds=None):
+def bounded(command, log, seconds, environment=None, observe=None, finalization_seconds=None, on_start=None):
     """Only terminate the process group created here; never enumerate/kill others."""
     with log.open('wb') as stream:
         process = subprocess.Popen(command, cwd=ROOT, env=environment, stdout=stream,
                                    stderr=subprocess.STDOUT, start_new_session=True)
         try:
+            if on_start is not None:
+                on_start(process.pid)
             if observe is None and finalization_seconds is None:
                 return process.wait(timeout=seconds)
             started = time.monotonic()
