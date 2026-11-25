@@ -21,7 +21,10 @@
       "output": 3628,
       "turns": 1
     },
-    "at": "2026-11-25T17:20:13Z"
+    "at": "2026-11-25T17:20:13Z",
+    "items_owed": [
+      "WP23"
+    ]
   },
   "work_packages": {
     "WP1": {
@@ -2238,6 +2241,15 @@
         "checked": "0f2aed1cf9e0f5adb9f99297ef5152032bb67e00",
         "at": "2026-11-25T16:34:52Z"
       }
+    },
+    "WP23": {
+      "definitions": "4f96c5d310a699afaf786ff58a7e29cea252b94f8f00b51a396f7391f172e634",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "The main-branch check cross-target fails, and the script couldn't tell which commit broke it. Find what breaks it, and p",
+        "at": "2026-11-25T20:17:27Z"
+      }
     }
   },
   "tasks": [
@@ -2396,11 +2408,15 @@
     {
       "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its Must Fix findings.",
       "at": "2026-11-25T17:17:51Z"
+    },
+    {
+      "task": "The main-branch check cross-target fails, and the script couldn't tell which commit broke it. Find what breaks it, and plan the fix in the module whose code it is, in its plan or as its next work package.\n\nFrom the lead: the log (.git/orchestrate/main-checks/cross-target/logs/20261125-210755-*) shows E0599 in examples/water/tests/support.rs (SkyGame has no prepare, poll_status, controls_mut, take_edits, apply off macOS), failing the water-scene tests cloud_shade_gpu, gather_gpu, optics_once_gpu and proof_gpu. Those tests declare `mod support;` ungated. It arrived with WATERS WP8 commits (8af523d28, de26f04ba, b8e28e05e, d412ec35d). This is the same family as WP22, so consider whether the fix should also stop it recurring (for example gating each Metal test file as a whole, or a check the water tests run for a non-Mac target). The WATERS WP8 builder is running now: do not change WP8's items, because that voids its build; plan the fix as the next WATERS work package so it lands right after WP8.",
+      "at": "2026-11-25T20:17:27Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-25T17:17:51Z"
+    "at": "2026-11-25T20:17:27Z"
   },
   "design_history": [
     {
