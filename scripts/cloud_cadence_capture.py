@@ -248,7 +248,6 @@ def collect(arm, store, wind, *, diagnostic=False):
         raise InvalidMeasurement(f'{arm.name}: offline Instruments modeling failed')
     export(modeled, arm / 'presented.xml',
            ['--xpath', '/trace-toc/run/data/table[@schema="ca-client-presented-handler"]'])
-    result = read_witness(arm, wind)
     for filename in ('toc.xml', 'signposts.xml', 'source-presented-events.xml', 'presented.xml'):
         source = arm / filename
         with source.open('rb') as original, gzip.open(source.with_suffix('.xml.gz'), 'wb') as retained:
@@ -257,7 +256,7 @@ def collect(arm, store, wind, *, diagnostic=False):
     shutil.rmtree(trace)
     shutil.rmtree(modeled)
     raw.unlink()
-    return result
+    return read_witness(arm, wind)
 
 
 def read_witness(arm, wind):

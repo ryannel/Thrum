@@ -128,10 +128,19 @@ def analyze_arm(arm, wind):
         raise InvalidMeasurement(f'{arm.name}: witness coverage or conversion failed')
     if witness['reported_refresh_hz'] != HZ:
         raise InvalidMeasurement(f'{arm.name}: the game did not report a {HZ} Hz display')
-    drawables = witness['drawables']
-    presented = [Decimal(frame['presented_media_ns']) for frame in drawables]
-    if any(b <= a for a, b in zip(presented, presented[1:])):
-        raise InvalidMeasurement(f'{arm.name}: presented times are out of drawable order')
+    drawables = []
+    presented = []
+    for frame in witness['drawables']:
+        timestamp = Decimal(frame['presented_media_ns'])
+        if presented and timestamp < presented[-1]:
+            raise InvalidMeasurement(f'{arm.name}: presented times are out of drawable order')
+        if presented and timestamp == presented[-1]:
+            # The OS can report two submissions at the same refresh. The
+            # witness keeps both; only the latest can bracket the next loss.
+            drawables[-1] = frame
+        else:
+            drawables.append(frame)
+            presented.append(timestamp)
     frames = {int(frame['submission_id']): frame for frame in table(arm / 'cadence-frames.tsv')}
     if not frames or any(frame['timing_requested'] != 'false' for frame in frames.values()):
         raise InvalidMeasurement(f'{arm.name}: timing was enabled or no frame samples were collected')
