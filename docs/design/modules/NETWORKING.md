@@ -240,7 +240,8 @@ uses the same renderer without the networking crates.
 
 The windowed proof uses the reference Crowd and independent sockets over an A0-conditioned loopback relay.
 It compares committed digests and records the interpolation consumed by each submitted view. The Mac replica
-exercises a buffered burst, a stall and a skip. The Chrome replica exercises hiding and showing its tab.
+exercises a buffered burst, a stall with bounded catch-up, and a skip. The recovery check measures sustained
+travel from submitted positions and display times. The Chrome replica exercises hiding and showing its tab.
 T2 realtime clips cover the submitted motion separately from the numeric checks. See the
 [driven-world design](../../plans/SESSION/DESIGN.md#12-a-driven-world),
 [game-maker guide](../../SESSION.md#drive-a-world-in-a-window-or-on-a-page) and
