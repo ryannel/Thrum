@@ -128,7 +128,7 @@ impl Factory {
                         history: [retain(&history[0])?, retain(&history[1])?],
                         zero: retain(&zero)?,
                     },
-                    std::time::Duration::ZERO,
+                    Duration::ZERO,
                 ))
             });
             (prepared, raw)
