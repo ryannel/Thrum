@@ -326,12 +326,15 @@ tests passing.
   are. No shipping package links the cook, and nothing is posted upstream.
 
 **Seam ruling for `APPLE-PRESENTATION` WP16.** Metal allows a process 32 live timestamp query sets, and passing
-that loses the device, so `thrum-render` keeps
-[one count of them](APPLE-PRESENTATION/DESIGN.md#timestamp-query-sets-and-metals-limit-wp16) in the frame
-runtime's timing files. The ray build probe makes a query set of its own in `RAY-TRACING`'s
-`synthetic/raytrace/build_probe.rs`. The `APPLE-PRESENTATION` WP16 builder changes that one call site to create
-it through the count, and when the count refuses, the probe is not made, as on a device with no timestamps.
-No item of `RAY-TRACING` changes. Once built, the count belongs to the frame runtime: a module that needs a
+that loses the device, so `thrum-render` creates every one at
+[one call site](APPLE-PRESENTATION/DESIGN.md#timestamp-query-sets-and-metals-limit-wp16) in the frame runtime's
+timing files, which asks Metal first and refuses when the process has none left. The ray build probe asks for a
+query set for each mesh build it brackets, in `RayBuildProbe::encode` in `RAY-TRACING`'s
+`synthetic/raytrace/build_probe.rs`, so a refusal can reach a probe that is already installed. The
+`APPLE-PRESENTATION` WP16 builder changes that one call site to ask there. A refusal means the same for both of
+`encode`'s callers, the renderer and the cooked-asset uploader: the mesh build is recorded as it is without a
+probe, the mesh answers ray queries, no sample is recorded for that build, and the probe stays installed. No
+item of `RAY-TRACING` changes. Once built, the call site belongs to the frame runtime: a module that needs a
 timestamp query set in `thrum-render` creates it there.
 
 **Seam ruling for `CREATOR` WP2.** The profiler needs the frame host to stop timing frames while it is off, which

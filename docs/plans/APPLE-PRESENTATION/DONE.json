@@ -654,8 +654,8 @@
         },
         {
           "id": "WP16.2",
-          "statement": "`crates/thrum-render/src` creates timestamp query sets at one call site, behind the process's count. On Metal, with 32 live, a frame host with timing on is refused with a typed timing error that names the count and the limit of 32, and the ray build probe is not made. The device is not lost: a host already drawing on it draws its next frame. When one holder is dropped, the refused host prepares. Guard: a GPU test that holds 32 real query sets; only Metal shows that the count refuses before the device does.",
-          "check": "git grep -n 'create_query_set(' -- crates/thrum-render/src | wc -l | grep -qx ' *1' && THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render --features creation-counters --test timestamp_budget -E 'test(=creation_past_the_limit_is_refused_and_the_device_survives)' --no-tests=fail",
+          "statement": "`crates/thrum-render/src` creates timestamp query sets at one call site. On Metal, with 32 live in the process, held on two devices so that neither holds 32, a request on either device is refused before wgpu is asked. A frame host with timing on fails its preparation with a typed timing error that names timestamp query sets as what the process has run out of. A ray build probe installed before the 32 were reached still builds a mesh handed to it: a ray query hits the mesh, and no timestamp sample is recorded for that build. Neither device is lost: a host already drawing on each draws its next frame. Guard: a GPU test that holds 32 real query sets on two devices; only Metal shows that the request is refused before the device is lost.",
+          "check": "git grep -n 'create_query_set(' -- crates/thrum-render/src | wc -l | grep -qx ' *1' && THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render --features creation-counters --test timestamp_budget -E 'test(=the_33rd_across_two_devices_is_refused_and_both_survive)' --no-tests=fail",
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "open",
@@ -674,6 +674,15 @@
           "id": "WP16.4",
           "statement": "Run with 16 test threads in one process, each of these passes five times in a row: `ray_tracing_gpu` of `v1-game`, and `scene_view_air_shaded_gpu`, the library's tests and `timestamp_budget` of `thrum-render`. The first three are the binaries that failed `long-tests` at a25e1d13d. Record: the five runs' output.",
           "check": "for i in 1 2 3 4 5; do THRUM_REQUIRE_GPU=1 cargo test --locked --offline -p v1-game --features draw-probe,thrum-render/creation-counters --test ray_tracing_gpu -- --test-threads=16 && THRUM_REQUIRE_GPU=1 cargo test --locked --offline -p thrum-render --features creation-counters --lib --test scene_view_air_shaded_gpu --test timestamp_budget -- --test-threads=16 || exit 1; done",
+          "target": "mac-metal",
+          "lock": "gpu",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "WP16.5",
+          "statement": "A timestamp query set keeps its place until Metal has it back, and a refused frame host prepares once the process has room for all its frame slots. On Metal, with 31 held and one more whose engine holder was dropped after an encoder recorded its resolve, a request is refused while that encoder is unsubmitted, and again while its submission is still running on the GPU, and the device is not lost. Once the device has collected the finished submission, the same request is admitted. With 32 live and one then released, a frame host with timing on, which has two frame slots, is still refused and leaves no query set behind: one further single request is admitted. With two released, the host prepares and draws a frame. Guard: a GPU test; only wgpu on Metal shows when a dropped query set's place returns.",
+          "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render --features creation-counters --test timestamp_budget -E 'test(=a_place_returns_when_metal_has_it_and_a_host_needs_every_slot)' --no-tests=fail",
           "target": "mac-metal",
           "lock": "gpu",
           "builder_result": "open",

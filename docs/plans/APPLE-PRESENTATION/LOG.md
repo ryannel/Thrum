@@ -470,3 +470,9 @@
   up and pass with three or fewer, run alone, so it is not other GPU work. WP16 is planned before WP7: one
   query set a slot, and a count that refuses the 33rd with a typed error.
   [Design](DESIGN.md#timestamp-query-sets-and-metals-limit-wp16)
+
+- 2026-11-25 Planner: the WP16 design review asked for two changes. A refused timestamp request in an installed
+  ray build probe now still builds the mesh, with no sample (design, ruling, WP16.2). The engine's own count is
+  replaced by asking Metal first, because wgpu holds dropped query sets the engine cannot see; WP16.2 holds the 32
+  on two devices and new WP16.5 proves when a place returns. The witness rows are W1 to W7 again in the design.
+  [What changed and the measurement](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP16-plan/README.md)

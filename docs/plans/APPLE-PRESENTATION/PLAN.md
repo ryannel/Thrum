@@ -52,17 +52,20 @@ Keep the real display record alongside the forced record in the proofs so they c
 ## WP16 The long tests pass again, and running out of GPU timers is a named error, not a lost device
 
 The main-branch check `long-tests` has failed since a25e1d13d, and this is its fix:
-[the design](DESIGN.md#timestamp-query-sets-and-metals-limit-wp16) gives the cause and the two mechanisms. The
+[the design](DESIGN.md#timestamp-query-sets-and-metals-limit-wp16) gives the cause, the two mechanisms and what a
+refusal means for a frame host and for the ray build probe. The
 fault needs tests that share a process. `./dev check` runs each test in a process of its own and passes with the
 fault in. `cargo test -p v1-game --features draw-probe,thrum-render/creation-counters --test ray_tracing_gpu`
 fails from four test threads up, and passes with three.
 
 `./dev long-tests` runs every test of `timestamp_budget` in one process, side by side, and WP16.4 does the same.
-So the test that holds 32 query sets must not leave the binary's other tests refused. WP7's items do not change
-and its tests keep passing: the governed frame still frees its slot while its timestamps are read back. In
-`RAY-TRACING`'s `build_probe.rs` change only how the query set is created, under
-[the ruling](../ARCHITECTURE.md#interfaces). `mesh_stage_gpu`'s not-run line in `.config/long-tests.txt` is
-`MESH-SHADING`'s to lift: record in the log whether it passes whole after this work package, and leave the line.
+So the two tests that fill the process to 32 must not leave the binary's other tests refused, or each other.
+WP7's items do not change and its tests keep passing: the governed frame still frees its slot while its
+timestamps are read back. In `RAY-TRACING`'s `build_probe.rs` change only how `encode` asks for its query set
+and what it records when refused, under [the ruling](../ARCHITECTURE.md#interfaces). The test-only cap in
+`timestamp_permit.rs` stays unless WP16.4 passes without it. `mesh_stage_gpu`'s not-run line in
+`.config/long-tests.txt` is `MESH-SHADING`'s to lift: record in the log whether it passes whole after this
+work package, and leave the line.
 
 ## WP7 The governor holds the display rate under forced load, then recovers step by step
 

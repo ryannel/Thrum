@@ -206,16 +206,16 @@ temporal inputs themselves, from frames the game's own frame path submitted.
 
 | Row | Step | Observed in the submitted frame | A fault it catches |
 |---|---|---|---|
-| WP1 | One object has no valid history: a spawn, or another of WP1's invalid-history cases that marks a single object | Reactive is 1 on the object's pixels | An inert target; invalid history left unmarked |
-| WP2 | The next submitted frame, same object | Reactive is 0 on those pixels | Marking that never clears |
-| WP3 | The cooked volume in view, nothing changing | Reactive is above 0 on the volume and 0 beside it; on the Mac it equals the alpha the volume wrote | A volume that does not write the target |
-| WP4 | A time-of-day edit with stars in view, and one with the Sun disk in view | Reactive is above 0 on star pixels and on the disk in that frame | A star pass or sky that does not write on a phase edit |
-| WP5 | Steady frames before and after WP4, and every other step | Star and Sun pixels read 0; a region no reactive writer covers reads 0 in every step | Stars reactive permanently; a target cleared to a nonzero value |
-| WP6 | Submit A, the unsubmitted view, submit C | C's predecessor is A's sample; the unsubmitted view is no frame's predecessor | History advanced before submission |
-| WP7 | The same | C's motion on static geometry is the camera change from A to P, which the fixture makes clearly nonzero | Previous matrices advanced before submission |
+| W1 | One object has no valid history: a spawn, or another of WP1's invalid-history cases that marks a single object | Reactive is 1 on the object's pixels | An inert target; invalid history left unmarked |
+| W2 | The next submitted frame, same object | Reactive is 0 on those pixels | Marking that never clears |
+| W3 | The cooked volume in view, nothing changing | Reactive is above 0 on the volume and 0 beside it; on the Mac it equals the alpha the volume wrote | A volume that does not write the target |
+| W4 | A time-of-day edit with stars in view, and one with the Sun disk in view | Reactive is above 0 on star pixels and on the disk in that frame | A star pass or sky that does not write on a phase edit |
+| W5 | Steady frames before and after W4, and every other step | Star and Sun pixels read 0; a region no reactive writer covers reads 0 in every step | Stars reactive permanently; a target cleared to a nonzero value |
+| W6 | Submit A, the unsubmitted view, submit C | C's predecessor is A's sample; the unsubmitted view is no frame's predecessor | History advanced before submission |
+| W7 | The same | C's motion on static geometry is the camera change from A to P, which the fixture makes clearly nonzero | Previous matrices advanced before submission |
 
-A row that cannot be observed on a target fails the witness there. It is not skipped. WP6 and WP7 on the Mac are the
-pipelined frame-host tests of the acceptance protocol above; WP1–WP5 on the Mac and WP1–WP7 in Chrome are the witness
+A row that cannot be observed on a target fails the witness there. It is not skipped. W6 and W7 on the Mac are the
+pipelined frame-host tests of the acceptance protocol above; W1–W5 on the Mac and W1–W7 in Chrome are the witness
 runs. The browser checker's existing cases stay as a regression check, and prove nothing about these rows.
 
 **History keys and scale.**
@@ -601,11 +601,24 @@ record and readable by the game.
 
 Metal gives one process 32 live counter sample buffers, and wgpu makes one for every timestamp query set.
 Measured on the M3 Max on 25 November 2026: the 33rd `makeCounterSampleBuffer` fails with "Cannot allocate
-sample buffer" at every sample count from 8 to 512, and buffers held by another process do not count. The
-iPhone's limit is unmeasured and takes the same number until a device run records it. When Metal refuses,
+sample buffer" at every sample count from 8 to 512, and buffers held by another process do not count. The 32
+are the process's, whichever wgpu device asks: two wgpu devices on this Mac share one `MTLDevice`. The
+iPhone's limit is unmeasured, and nothing below depends on the number. When Metal refuses,
 wgpu-core 30.0.1 loses the device (`handle_hal_error`), and reports nothing to an error scope. Every later
 creation on that device is invalid, and the first sign is a panic in `create_buffer_init` that names an
 unrelated buffer.
+
+A place is taken for as long as the buffer object lives, and Metal gives it back the moment the object is
+released. Measured the same day, on Metal alone: with 32 live, releasing one admits one more and not two, and
+releasing two admits two. A refused creation returns an error and harms nothing, 100 times in a row. A Metal
+command buffer that sampled into a buffer does not keep it alive.
+[Measurement](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP16-plan/README.md)
+
+So after the engine drops a timestamp query set, what still holds its place is wgpu. wgpu-core keeps the query
+set in every command encoder that recorded it, and in every submission until the device has collected that
+submission's finished work. wgpu's interface shows the engine neither. A number the engine kept of its own
+query sets would therefore give a place back too early, for a set an unsubmitted encoder or a running
+submission still holds, and it would see nothing made outside the engine.
 
 WP7 gave each native 3D frame slot a second timestamp batch, with a query set of its own, so a governed frame
 could free its slot while its timestamps were read back. That doubled a frame host's query sets. Tests that
@@ -619,15 +632,33 @@ Two mechanisms, both in the frame runtime's timing files:
   the buffers it is read from and no query set, because the next frame on the slot is submitted after the
   resolve of the one before and may write the same queries. WP7's behaviour stays: a governed frame frees its
   slot while its timestamps wait, and samples are published in submission order.
-- **One count of live timestamp query sets in the process, checked before wgpu is asked.** Every timestamp
-  query set `thrum-render` creates is made through it, the ray build probe's included
-  ([ruling](../ARCHITECTURE.md#interfaces)). On the Metal backend a creation that would pass 32 is refused
-  with a typed timing error that names the count and the limit, and the device is untouched. The count frees a
-  query set only when Metal has: wgpu keeps a dropped query set alive until the submissions that used it
-  complete. A frame host that asked for timing and is refused fails its preparation with that error, as any
-  failed timing preparation does. It is not prepared without timing, because a governor with no GPU time
-  would pass as one that governs.
-  The ray build probe is an observer and is simply not made, as on a device with no timestamps.
+- **Metal is asked first, at the one place that creates timestamp query sets.** Every timestamp query set
+  `thrum-render` creates is made at one call site, the ray build probe's included
+  ([ruling](../ARCHITECTURE.md#interfaces)). On the Metal backend that call site holds one lock for the whole
+  process. Under it, it first creates as many counter sample buffers as the request asks for, directly on the
+  device's `MTLDevice`, and releases them. If Metal refuses one, the request is refused with a typed timing
+  error that names timestamp query sets as what the process has run out of, and wgpu is not asked, so the
+  device is untouched. If Metal grants them, the query sets are created through wgpu before the lock is
+  released. Metal is the one authority on what is live, and the engine keeps no number of its own. So a
+  request is judged against every query set in the process: those on another device, those wgpu still holds
+  for a recorded encoder or a running submission after their engine holder was dropped, and those made
+  outside the engine. A place is free again exactly when Metal has it back. Other backends have no measured
+  limit and are not asked. A query set created outside the engine does not take the lock.
+
+A refusal means one thing for each kind of asker:
+
+- **A frame host** needs one query set for each of its frame slots, two today, and is admitted for all of them
+  or refused: a refused preparation leaves no query set behind. A host that asked for timing and is refused
+  fails its preparation with the typed error, as any failed timing preparation does. It is not prepared
+  without timing, because a governor with no GPU time would pass as one that governs. The same preparation
+  succeeds once the process has room for the whole host, so one free place does not admit a host of two slots.
+- **The ray build probe** is an observer, and a refusal costs it the observation only. The probe holds no query
+  set of its own. `RayBuildProbe::encode` asks for one for each mesh build it brackets, so a refusal can reach
+  a probe that is already installed. Both of `encode`'s callers, the renderer for its arena meshes and the
+  cooked-asset uploader, hand it the mesh build in place of recording the build themselves. A refused `encode`
+  therefore records the mesh build as the caller would without a probe, with no markers around it, and
+  records no sample for that mesh. The mesh is built and answers ray queries as on a device with no
+  timestamps. The probe stays installed and brackets later builds when there is room.
 
 ### MetalFX exposure and the normalising fallback (WP8)
 
@@ -920,7 +951,7 @@ noise threshold and labels. Additions:
   both, under *Reconstruction reference and tolerance*: a 32-sample reference averaged in scene-linear colour with
   the scene, time and exposure held and checked; CIEDE2000 on the submitted SDR output over the whole frame; p99 at
   most 3 (provisional, changed only by a plan revision) and lower than the no-AA frame's.
-- **Temporal-input witness.** [The design](DESIGN.md#techniques-and-evidence) defines rows WP1–WP7 under
+- **Temporal-input witness.** [The design](DESIGN.md#techniques-and-evidence) defines rows W1–W7 under
   *The temporal-input witness*: one fixture read by the Mac tests and the Chrome case, with values taken from
   submitted frames.
 - **Motion review.** Pans, translating lights, reveals behind a moving prop, a spawn, a time-of-day scrub and a cut,
