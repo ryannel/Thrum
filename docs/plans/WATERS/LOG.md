@@ -846,3 +846,8 @@
   The 2 m sequence shows a crest rise and steepen. The elevated sequence shows three ridges together
   and their direction and spacing change toward the break. A separate fresh inspection agreed.
   [Inspection and receipts](../../../.orchestrate/evidence/WATERS/WP13/short-swell-approach-inspection.md).
+
+- 2026-11-25 WP13.8 passed on portable Metal. The exposed edge stays connected through the tide reversal,
+  the lee laps with short waves, and the fixed views show swell turning around the point and growing
+  downwind. A fresh inspection agreed at the submitted tide samples.
+  [Inspection and receipts](../../../.orchestrate/evidence/WATERS/WP13/tide-motion-inspection.md).

@@ -1212,8 +1212,8 @@
           "statement": "In a trade wind the exposed beach breaks while the sheltered lee laps with short waves. Swell bends around the headland and returns gradually to the ambient sea downwind. As the tide rises and falls the break and connected swash follow the beach waterline smoothly.",
           "inspect": "In trade wind use `fixed` stills from 40 m over the exposed beach, the headland and a lee beach inside the swell shadow, plus a 300 m view of the island and downwind sea. Use `realtime` motion from the lee and from the exposed beach while sweeping the tide up and back. 1. The exposed beach breaks while the sheltered shore laps, with no recurring raised swell front in the lee view. 2. Crests turn around the headland and swell returns downwind without a visible bed-border seam. 3. On the rise and fall, the swash moves with the waterline through the tide samples, with no jumps or detached wet strips.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP13/tide-motion-inspection.md",
           "verdict": "",
           "review": ""
         },
