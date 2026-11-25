@@ -21,7 +21,10 @@
       "output": 3137,
       "turns": 1
     },
-    "at": "2026-11-23T21:17:09Z"
+    "at": "2026-11-23T21:17:09Z",
+    "items_owed": [
+      "WP16"
+    ]
   },
   "work_packages": {
     "WP1": {
@@ -1399,6 +1402,15 @@
         "checked": "2faa2e22dc7a7ea831f904425d15429750a8d4bd",
         "at": "2026-11-23T22:48:11Z"
       }
+    },
+    "WP16": {
+      "definitions": "278d466f4e2896f0428ef7633343087a9b8c451ac38e0ffa6be2a5cab021b63d",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "The main-branch check long-tests fails at a25e1d13d282 (last good 5b5a0aa3e1a3); the script is bisecting. Evidence in .g",
+        "at": "2026-11-25T10:19:36Z"
+      }
     }
   },
   "tasks": [
@@ -1449,11 +1461,15 @@
     {
       "task": "The design review of SESSION at .orchestrate/evidence/SESSION/design-review.md asked for changes, with its 1 Must Fix findings. That makes 2 design reviews in a row that asked for changes, so the script approves the design you leave without another review, and building starts from it.\n\nA planner limited to SESSION stopped. The end of its report:\nThe CPU probe reproduced the Must Fix. The installed runner returned immediately on cancellation of HOST M4.5\u2019s shell, while simulated shutdown took 400 ms. With an explicit `exec` into the supervisor, the runner waited through shutdown.\n\n[HOST M4.5](docs/plans/HOST/DONE.json#L266) needs a check command that preserves its existing assertion and hands the runner\u2019s PID to the simulator supervisor. The [APPLE-PRESENTATION wrapper](scripts/apple_presentation.py#L559) also needs to keep that supervisor in charge through its own timeout. The revised acceptance case should cancel the outer command and prove that a second contender acquires `simulator` only after verified shutdown, accounting for the runner\u2019s ten-second grace.\n\nThe worktree is unchanged. The fix requires a check definition outside SESSION\u2019s scope.\n\nBLOCKED: needs HOST's files",
       "at": "2026-11-23T23:33:41Z"
+    },
+    {
+      "task": "The main-branch check long-tests fails at a25e1d13d282 (last good 5b5a0aa3e1a3); the script is bisecting. Evidence in .git/orchestrate/main-checks/long-tests/logs/: two runs at the same commit failed different GPU tests (run 104030: scene_view_air_shaded_gpu panels + ray_tracing_gpu; run 110703: thrum-render --lib gpu_device_replacement_abandons_slots... + ray_tracing_gpu demand/lifecycle). All panic in wgpu util/device.rs:72 'Failed to get mapped range for buffer created with mapped_at_creation ... Buffer with label ... is invalid' \u2014 buffer creation failing. ray_tracing_gpu failed in both. Decide whether this is a real regression (e.g. a buffer over a device limit, a creation-counters/draw-probe feature combo, device-replacement leaking) or GPU memory exhaustion from concurrent GPU work (visible runs and builders share the GPU), and plan the fix in the owning module. If it is environmental, plan making the tests fail with a clear allocation error or hold the gpu lock, rather than weakening them.",
+      "at": "2026-11-25T10:19:36Z"
     }
   ],
   "planner": {
-    "host": "codex",
-    "at": "2026-11-23T23:33:41Z"
+    "host": "claude",
+    "at": "2026-11-25T10:19:36Z"
   },
   "design_history": [
     {
