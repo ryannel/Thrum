@@ -210,6 +210,7 @@ def analyze_arm(arm, wind):
             if Decimal(call) * NS <= timestamp:
                 place = 'after_present_call'
                 row = call_row
+                opportunity = None
             else:
                 if call_row is None and Decimal(following['opportunity_media_seconds']) * NS <= timestamp:
                     raise InvalidMeasurement(f'{arm.name}: present call for drawable {following["drawable"]}'
@@ -225,6 +226,14 @@ def analyze_arm(arm, wind):
                 position += 1
                 row = rows[target]
                 place = row['place']
+                opportunity = row['target_media_seconds']
+                # A display-link interval can be served by a call just after
+                # the witness's loss. Recover the next drawable's own request
+                # outcome when the interval masks that outcome.
+                if (place == 'served' and call_row is not None
+                        and call_row['submission_id'] == str(following['drawable'])):
+                    row = call_row
+                    place = row.get('request_place', place)
             if place not in PLACES:
                 raise InvalidMeasurement(f'{arm.name}: no unserved opportunity for {timestamp} ns ({place})')
             missing.append(dict(
@@ -232,7 +241,7 @@ def analyze_arm(arm, wind):
                 place=place, previous_drawable=last_drawable[drawable]['drawable'],
                 next_drawable=following['drawable'], next_present_call_media_seconds=call,
                 present_call_source='window_account' if call_row is not None else 'surface_sample_after_call',
-                account=row,
+                opportunity_target_media_seconds=opportunity, account=row,
             ))
         record['refreshes'] = missing
         record['places'] = dict(Counter(row['place'] for row in missing))

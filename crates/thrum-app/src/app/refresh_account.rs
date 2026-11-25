@@ -337,7 +337,7 @@ impl Account {
             io::BufWriter::new(std::fs::File::create(output.join("refresh-account.tsv"))?);
         writeln!(
             file,
-            "target_media_seconds\tpresent_call_media_seconds\tsubmission_id\tinterval_call_media_seconds\tinterval_submission_id\tplace"
+            "target_media_seconds\tpresent_call_media_seconds\tsubmission_id\tinterval_call_media_seconds\tinterval_submission_id\tplace\trequest_place"
         )?;
         for row in &measurement.rows {
             let columns = |present: Option<Present>| {
@@ -348,11 +348,12 @@ impl Account {
             };
             writeln!(
                 file,
-                "{:.9}\t{}\t{}\t{}",
+                "{:.9}\t{}\t{}\t{}\t{}",
                 row.target,
                 columns(row.requested_present),
                 columns(row.interval_present),
                 row.unserved().map_or("served", Place::name),
+                row.place.name(),
             )?;
         }
         file.flush()

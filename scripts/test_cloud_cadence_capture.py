@@ -43,7 +43,7 @@ class WindAttribution(unittest.TestCase):
         }
         request = {'target_media_seconds': '0.008', 'submission_id': '11',
                    'interval_submission_id': '', 'present_call_media_seconds': '-0.001',
-                   'place': 'served'}
+                   'place': 'served', 'request_place': 'drawable'}
         missed = {'target_media_seconds': '0', 'submission_id': '', 'interval_submission_id': '',
                   'place': 'late_request'}
         rows = {Decimal(0): missed, Decimal(8_000_000): request}
@@ -61,11 +61,14 @@ class WindAttribution(unittest.TestCase):
                     'submission_id': '11', 'timing_requested': 'false',
                 }]),
             ):
-                for call, place, source in [
-                    ('-0.001', 'after_present_call', request), ('0.001', 'late_request', missed),
+                for call, opportunity, place, source in [
+                    ('-0.001', 'late_request', 'after_present_call', request),
+                    ('0.001', 'late_request', 'late_request', missed),
+                    ('0.001', 'served', 'drawable', request),
                 ]:
-                    with self.subTest(call=call):
+                    with self.subTest(call=call, opportunity=opportunity):
                         request['present_call_media_seconds'] = call
+                        missed['place'] = opportunity
                         run = cadence.analyze_arm(arm, cadence.ABSENT)
                         (stall,) = run['stalls']
                         (loss,) = stall['refreshes']
