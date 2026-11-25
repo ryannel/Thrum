@@ -313,7 +313,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 - APPLE-PRESENTATION WP8 MetalFX reconstructs the valley on Apple tile, with TAAU as its prepared fallback: Blocked: Needs Dependency: APPLE-TILE must supply the reusable `NativeProvider` interface, or the planner must assign its extraction to WP8. A planner adds it to the module that owns it
 - A game's question to an effect is answered every tick from the state the last drawn frame left, even when that tick's frame is skipped, on the Mac and in Chrome (EFFECT-GRAPH WP6): Ready for Review · [plan](EFFECT-GRAPH/PLAN.md)
-- RENDER-2D's design: Design Changes Requested · [design](RENDER-2D/DESIGN.md) · [plan](RENDER-2D/PLAN.md)
+- A 2D game's colours above white go brighter than white on an EDR display, and a capture records the frame the display was given (RENDER-2D WP6): Not Started · [plan](RENDER-2D/PLAN.md)
 - Props and terrain are grounded: sky light is dimmed in creases and where things stand close together (RAY-TRACING WP5): In Progress · [plan](RAY-TRACING/PLAN.md) · [latest review](../../.orchestrate/evidence/RAY-TRACING/WP5-review.md)
 - GATE-TIME WP5 The post-rollout record shows a five-minute median for Rust landings: Blocked: Needs Context: WP5.1 needs 17 more qualifying ordinary Rust landings before the fixed window can be judged. The lead finds the missing fact, or asks you for it
 
@@ -450,7 +450,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 19 | PUDDLES | Rain wets the ground and fills its hollows with puddles that ripple, reflect the sky and dry out | WATERS WP1 for its puddles and wet ground on the CPU; WATERS WP8 for its first puddle; SHOWCASE WP5 for the valley; WATERS WP10, WP14 and WP16 to close | Waiting: On Dependency, WATERS:WP8 |
 | 20 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply |  | Done 18 Nov |
 | 21 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser |  | Done 16 Nov |
-| 22 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | EFFECT-GRAPH WP3 and APPLE-PRESENTATION WP3 to start; SIM-2D WP1 for its fifth work package; APPLE-PRESENTATION WP6 for its sixth | Design Changes Requested |
+| 22 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | EFFECT-GRAPH WP3 and APPLE-PRESENTATION WP3 to start; SIM-2D WP1 for its fifth work package; APPLE-PRESENTATION WP6 for its sixth | WP6 of 6 · Not Started |
 | 23 | SESSION | Two to four players share one run and keep seeing the same crowd, and a windowed game is stepped by its match | SIM-2D WP3 to start; TRANSPORT WP1 for its second work package and TRANSPORT WP2 for its socket work packages; RENDER-2D WP5 for its last | WP7 of 8 · Blocked: Needs Access |
 | 24 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame, and one iPhone shell for every game | RENDER-2D WP6 and APPLE-PRESENTATION WP6 | Waiting: On Dependency, RENDER-2D:WP6 |
 | 25 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SHOWCASE WP8 to start, with the owner's pick of a concept; SIM-2D WP3, SESSION WP1, RENDER-2D WP5 and GAME-SPLIT WP4 for the first slice; GAME-UI WP4 for the whole run alone and GAME-UI WP6 for the iPhone simulator; SESSION WP4 for a rehearsed match and SESSION WP7 for co-op on sockets | Waiting: On Dependency, SHOWCASE:WP8 |
