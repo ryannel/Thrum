@@ -1418,8 +1418,8 @@
           "check": "python3 scripts/water_cost.py check --scene surf",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP19/review-fix-surf-cost.json",
           "verdict": "fail",
           "review": ".orchestrate/evidence/WATERS/WP19-review.md"
         },

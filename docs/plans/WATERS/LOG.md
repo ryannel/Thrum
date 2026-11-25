@@ -1100,3 +1100,11 @@
   the first drain of a later tick. A held result that passes the maximum age is let go with no mailbox
   count, since the game counts the fallback it takes, which keeps the guard's count of one at tick 10.
   WP21.2 has both as cases and its check runs the guard unchanged.
+- 2026-11-25 WP19 review follow-up. The running proof now samples only the current drain at the island's sand
+  camera and counts a fallback at each station the island would send to the conformance model. At 96 × 54,
+  open water was within two ticks for 2.33% of stations. One view at a time took 117.9 ms median to complete
+  in that arm. The paired 1440p record identified the surf field cache as the largest timed water pass at
+  about 93 ms. The tick-stage dependency in the plan applies. The paired record now reports actual retained
+  cut scratch, 8,388,672 bytes with the fleet query.
+  [Smaller-extent run](../../../.orchestrate/evidence/WATERS/WP19/review-fix-sand-96.json) ·
+  [Paired cost record](../../../.orchestrate/evidence/WATERS/WP19/review-fix-surf-cost.json).

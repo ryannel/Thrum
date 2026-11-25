@@ -3279,9 +3279,9 @@
         "functional_validation": "target_guards_passed",
         "experienced_quality": "qualification_open",
         "scope": "WATERS WP19 moves the highest-surface body query to the tick stage, with a coarse-to-fine cut and world endpoints on posts and replies.",
-        "correctness": "The full-lattice fixtures, grouped and individual Metal stations, four cascade carry cases and restore guard passed. On the island, all 600 measured breakers batches cut the sheet and the 144 sampled stations agreed with the model within 9.56 mm.",
+        "correctness": "The full-lattice fixtures, grouped and individual Metal stations, four cascade carry cases and restore guard passed. The running proof uses the current tick's drain and the island's station sampling rule.",
         "visuals": "Surf visual qualification remains with WATERS WP20.",
-        "device": "M3 Max Metal under shared load. At 192 × 108 with 30 view opportunities per second and 60 Hz ticks, 100% of open-water answers and 99.33% of breakers answers arrived within two ticks, with zero fallbacks or blocking reads. The paired 2560 × 1440 surf tick pass took 1.565 ms.",
+        "device": "M3 Max Metal under shared load. At the island's sand camera, the 60 Hz run misses the 90% two-tick delivery threshold in open water and in breakers, with fallback uses in both arms and zero blocking reads. Halving the 192 × 108 extent did not recover delivery. The paired 2560 × 1440 surf query took 1.751 ms and retained 8,388,672 bytes of cut scratch.",
         "evidence": "../../.orchestrate/evidence/WATERS/WP19/delivery-proof.md"
       },
       "waters_whitewater": {
