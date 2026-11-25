@@ -185,3 +185,12 @@ or scope changed.
   cadence from that witness: M2.4 is the command, new M2.5 the full-interval recording, M2.2 the three arms. Six
   recordings granted; M3.2 follows the same witness. No owner action beyond an unlocked awake panel. Design review
   owed. [Diagnosis](../../../.orchestrate/evidence/PLATFORM-RUNTIME-MAC/m2-display-event-diagnosis.md).
+
+## Proposal from CLOUDS WP19 on refreshes lost with clouds absent
+
+Investigate the Mac window, frame delivery and compositor path using the clouds-absent rows from the two
+1920×1080 wind series on the built-in 120 Hz panel. The first series had 1,932 losses across its six clouds-absent
+runs, and the later series had 437. Three first-series cloud entries were within their neighbours' loss counts
+at the same place. They add one display-link loss and two encoding and submission losses at 10 m/s, and two
+losses after the present call at 40 m/s and 1×. The record includes each lost refresh's place, OS drawable
+brackets and window-account row. [Loss rows](../../../.orchestrate/evidence/CLOUDS/WP19/platform-loss-rows.json)

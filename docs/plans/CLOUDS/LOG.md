@@ -765,3 +765,14 @@
   diagnostics and the later series remain open at this checkpoint.
   [Partial series](../../../.orchestrate/evidence/CLOUDS/WP19/pre-repair-scoped/series.json) ·
   [Resume record](../../../.orchestrate/evidence/CLOUDS/WP19-handoff.md)
+
+## WP19 paired cadence record
+
+- Two complete eleven-run series on the built-in 120 Hz panel account for every lost refresh. The queue
+  fix assigns pending present calls as soon as their interval becomes known. All ten refresh-account tests
+  pass, including the regression from the rejected first attempt at the later series.
+- The accounting covers 17 entries from the first series. The five-refresh stall in the 10 m/s run did
+  not recur. Five entries were not reproduced, nine were not distinguished, and three went to the platform
+  proposal. Still air and the 90° turn again had excess losses after the present call. Pass timing did not
+  identify the work that delayed those presentations. The cloud workload is unchanged.
+  [Device evidence](../../../.orchestrate/evidence/CLOUDS/WP19/README.md)
