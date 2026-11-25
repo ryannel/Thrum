@@ -1384,7 +1384,7 @@
           "ask": "Does `surf_cut` hold the many-component sheet with 20 or more columns of three or more surfaces? In every comparison, is the expected height the cut-cell lattice over the whole reach with the public cut's refinement, and not the two passes themselves or a triangle's unrefined height? Does the island comparison fail with the bend factor at 0? Does the model's public cut, which the query and the conformance fallback use, make the two passes?",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP19/delivery-proof.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP19/post-wp21-proof.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/WATERS/WP19-review.md"
         },
@@ -1396,7 +1396,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP19/delivery-proof.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP19/post-wp21-metal-guard.log",
           "verdict": "pass",
           "review": ".orchestrate/evidence/WATERS/WP19-review.md"
         },
@@ -1407,8 +1407,8 @@
           "ask": "Do the ticks of both runs advance from the wall clock, with nothing waiting for the GPU between a post and its drain? Is an answer's lateness counted from the tick that posted its point to the tick whose drain handed it to the game? Does the breakers run make cuts on every tick, with its node count above zero throughout?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP19/post-wp21-running.json",
           "verdict": "fail",
           "review": ".orchestrate/evidence/WATERS/WP19-review.md"
         },
@@ -1419,7 +1419,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP19/review-fix-surf-cost.json",
+          "evidence": ".orchestrate/evidence/WATERS/WP19/post-wp21-cost.json",
           "verdict": "fail",
           "review": ".orchestrate/evidence/WATERS/WP19-review.md"
         },
@@ -1431,7 +1431,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP19/delivery-proof.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP19/post-wp21-proof.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/WATERS/WP19-review.md"
         },
@@ -1443,7 +1443,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP19/delivery-proof.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP19/post-wp21-proof.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/WATERS/WP19-review.md"
         }

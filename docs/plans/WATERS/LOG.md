@@ -1160,3 +1160,9 @@
   work. The checker requires a measured cache time for both phases from each comparison.
   The fresh capture passed. Replaying it with either WP19 timing null or absent failed before
   writing a record. [Metal record and replay](../../../.orchestrate/evidence/WATERS/WP21/cost-review-fix.md).
+- 2026-11-25 WP19 after WP21. The paired checker counts where late answers waited in both arms.
+  At the island's sand camera, 99.83% of open-water stations and 100% of breakers stations arrived
+  within two ticks. Both 60 Hz arms drew at 192 × 108 for 600 measured ticks with zero unavailable uses,
+  fallbacks or blocking reads. The breakers cut every tick. The largest model witness error was 9.55 mm.
+  The separate 1440p query took 1.770 ms for 1,110 coarse and 4,050 fine nodes in shared load.
+  [Metal proof and paired records](../../../.orchestrate/evidence/WATERS/WP19/post-wp21-proof.md).

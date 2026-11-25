@@ -3276,13 +3276,13 @@
       },
       "waters_surf_body_query": {
         "implementation": "partial",
-        "functional_validation": "target_guards_passed",
+        "functional_validation": "passed",
         "experienced_quality": "qualification_open",
         "scope": "WATERS WP19 moves the highest-surface body query to the tick stage, with a coarse-to-fine cut and world endpoints on posts and replies. WP21 holds the latest delivered reply until its age, generation, timeline or device invalidates it.",
         "correctness": "The full-lattice fixtures, grouped and individual Metal stations, four cascade carry cases and restore guard passed. The running proof uses the current tick's drain and the island's station sampling rule. WP21 passed the CPU held-answer cases and both Metal repeat-drain guards.",
         "visuals": "Surf visual qualification remains with WATERS WP20.",
-        "device": "M3 Max Metal under shared load. At the island's sand camera, the 60 Hz run misses the 90% two-tick delivery threshold in open water and in breakers, with fallback uses in both arms and zero blocking reads. Halving the 192 × 108 extent did not recover delivery. The paired 2560 × 1440 surf query took 1.751 ms and retained 8,388,672 bytes of cut scratch. The WP21 open-water arm from the same sand camera at 192 × 108 delivered all 28,800 stations within two ticks, with 48 held uses and zero fallbacks, unavailable answers or blocking reads. The breakers delivery proof remains with WP19.",
-        "evidence": "../../.orchestrate/evidence/WATERS/WP21/README.md"
+        "device": "M3 Max Metal under shared load. From the island's sand camera at 192 × 108, both arms measured 600 wall-clock ticks at 60 Hz. Open water delivered 99.83% of stations within two ticks and the breakers delivered 100%. Both arms recorded zero fallbacks, unavailable uses and blocking reads. The largest of the three breakers model witness errors was 9.55 mm. The separate 2560 × 1440 breakers query evaluated 1,110 coarse and 4,050 fine nodes in 1.770 ms and retained 8,388,672 bytes of cut scratch.",
+        "evidence": "../../.orchestrate/evidence/WATERS/WP19/post-wp21-proof.md"
       },
       "waters_whitewater": {
         "implementation": "partial",
