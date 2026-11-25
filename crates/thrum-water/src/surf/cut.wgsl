@@ -1,3 +1,5 @@
+override single_sheet: bool = false;
+
 fn surf_component(i: u32) -> Component { return components[i]; }
 
 struct CutNode {
@@ -16,7 +18,7 @@ fn cut_node(query: QueryPoint, rest: vec2<f32>, dt: f32) -> SurfPoint {
     var body = query.body;
     var row = MapRow(query.level_current_bed.xyz, query.gains);
     var stage = query.surf_stage.x;
-    if (query.flags & ONE_SHEET) == 0u && map.size_count_sea.z > 1u {
+    if !single_sheet && (query.flags & ONE_SHEET) == 0u && map.size_count_sea.z > 1u {
         let owner = map_sample(rest);
         if owner.body != NO_BODY && owner.body != body {
             body = owner.body;
@@ -349,7 +351,8 @@ fn surf_query(point: QueryPoint, cut: CutResult) -> QueryWave {
             let next = -cut_node(point, point.position + rest, point.dt).displacement.xz;
             let error = length(next - rest);
             rest = next;
-            if error < 0.00001 { break; }
+            // The fixed point is only needed to the column's declared tolerance.
+            if error <= 0.25 * surf.controls.w { break; }
         }
         height = node(point, rest).height;
     }

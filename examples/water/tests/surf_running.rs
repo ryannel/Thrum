@@ -15,6 +15,8 @@ use water_scene::{
 
 const STEP: Duration = Duration::from_nanos(16_666_667);
 const MEASURE_TICKS: u32 = 600;
+// Leave room for the 60 Hz tick queue while the full scene draws at 30 Hz.
+const VIEW_INTERVAL: Duration = STEP.saturating_mul(2);
 const WARM_TICKS: u32 = 32;
 const AGE: usize = 8;
 const DRAIN_TICKS: u32 = 8;
@@ -152,7 +154,7 @@ fn arm(gpu: &thrum_test_support::Gpu, extent: [u32; 2], fleet: Vec<Body>) -> Gam
             completed += 1;
         }
         let elapsed = wall.elapsed();
-        let opportunity = elapsed.as_nanos() / STEP.as_nanos();
+        let opportunity = elapsed.as_nanos() / VIEW_INTERVAL.as_nanos();
         // Admit one frame per opportunity and keep at most one outstanding.
         // When there is no free slot, the fixed clock still runs. Nonblocking
         // sampling of completions avoids rounding every frame up to a tick.
@@ -178,6 +180,7 @@ fn arm(gpu: &thrum_test_support::Gpu, extent: [u32; 2], fleet: Vec<Body>) -> Gam
     }
     let wall_seconds = wall.elapsed().as_secs_f64();
     let mailbox = query.stats();
+    let tick_submissions = fixture.host.tick_submission_stats();
     let stats = Arc::try_unwrap({
         drop(fixture);
         stats
@@ -188,11 +191,13 @@ fn arm(gpu: &thrum_test_support::Gpu, extent: [u32; 2], fleet: Vec<Body>) -> Gam
     GameArm {
         record: json!({
             "extent":extent, "ticks":MEASURE_TICKS, "warm_ticks":WARM_TICKS, "wall_seconds":wall_seconds,
-            "render_in_flight":1, "warm_profile":warm_profile, "warm_wall_ms":warm_wall_ms, "frames_submitted":submitted, "frames_completed":completed,
+            "render_in_flight":1, "view_opportunity_hz":30, "warm_profile":warm_profile, "warm_wall_ms":warm_wall_ms, "frames_submitted":submitted, "frames_completed":completed,
             "dropped_views":dropped, "age":stats.ages, "nodes":stats.nodes,
             "fallback":stats.fallback, "unavailable":mailbox.unavailable,
             "blocking_reads":mailbox.blocking_reads, "busy":mailbox.busy,
             "dispatches":mailbox.dispatches, "refused":mailbox.refused,
+            "tick_submissions":tick_submissions.submitted,
+            "tick_refused_bound":tick_submissions.refused_bound,
             "completed_cut_nodes":[mailbox.cut_coarse_nodes, mailbox.cut_fine_nodes],
         }),
         witness: stats.witness,

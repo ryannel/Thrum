@@ -80,17 +80,20 @@ impl CoarsePlan {
                 continue;
             }
             let (distance, throws) = reach.at(point.position.map(f64::from));
-            if !throws {
-                continue;
-            }
             let Some(fine) = fine_bounds(point.position, distance, cut) else {
                 continue;
             };
-            point.fine_bounds = [fine.lo[0], fine.lo[1], fine.hi[0], fine.hi[1]];
             let bounds = Rect {
                 lo: fine.lo.map(|v| v.div_euclid(step)),
                 hi: fine.hi.map(|v| -(-v).div_euclid(step)),
             };
+            if one_sea_owner(map, point.body, bounds, cut) {
+                point.flags |= super::QUERY_ONE_SHEET;
+            }
+            if !throws {
+                continue;
+            }
+            point.fine_bounds = [fine.lo[0], fine.lo[1], fine.hi[0], fine.hi[1]];
             let owned = sheets
                 .entry(SheetKey {
                     body: point.body,
@@ -153,8 +156,8 @@ impl CoarsePlan {
                     i32::try_from(width).expect("coarse grid width"),
                     i32::try_from(offset).expect("coarse storage fits a storage binding"),
                 ];
-                if unshared_owner {
-                    point.flags |= super::QUERY_ONE_SHEET;
+                if !unshared_owner {
+                    point.flags &= !super::QUERY_ONE_SHEET;
                 }
                 point.surf_stage[1] = f32::from_bits(first);
                 point.surf_stage[2] = f32::from_bits(count);

@@ -15,7 +15,7 @@ use thrum_render::{
 pub(crate) struct Clock {
     tick: u64,
     interpolate: bool,
-    timeline: u64,
+    pub(crate) timeline: u64,
     now: Duration,
 }
 
@@ -25,10 +25,6 @@ impl Clock {
             tick,
             ..self.source()
         }
-    }
-
-    pub(crate) fn restore(&mut self) {
-        self.timeline += 1;
     }
 
     pub(crate) fn new(interpolate: bool) -> Self {

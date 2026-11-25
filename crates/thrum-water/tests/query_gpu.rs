@@ -871,7 +871,7 @@ fn tick_stage_world_waits_for_its_view_and_rejects_old_timeline_results() {
     assert_eq!(before, 5);
 
     let old_endpoint = host.world().endpoint(5);
-    host.world_mut().restore();
+    host.world_mut().timeline += 1;
     let endpoint = host.world().endpoint(5);
     assert_eq!(old_endpoint.tick, endpoint.tick);
     assert_ne!(old_endpoint.timeline, endpoint.timeline);

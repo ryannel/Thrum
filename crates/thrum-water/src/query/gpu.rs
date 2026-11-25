@@ -102,6 +102,98 @@ struct Slot {
     wake: Option<wgpu::Buffer>,
 }
 
+impl Slot {
+    fn new(
+        device: &wgpu::Device,
+        layout: &wgpu::BindGroupLayout,
+        cascades: &wgpu::TextureView,
+        count: u64,
+        wake: Option<&Interaction>,
+        coarse: Option<&CoarseGpu>,
+    ) -> Self {
+        use wgpu::BufferUsages as Usage;
+        let settings = buffer(
+            device,
+            "query settings",
+            size_of::<Settings>() as u64,
+            Usage::UNIFORM | Usage::COPY_DST,
+        );
+        let components = buffer(
+            device,
+            "query components",
+            (COMPONENT_LIMIT * size_of::<Component>()) as u64,
+            Usage::STORAGE | Usage::COPY_DST,
+        );
+        let points = buffer(
+            device,
+            "query points",
+            count * size_of::<Point>() as u64,
+            Usage::STORAGE | Usage::COPY_DST,
+        );
+        let answers = buffer(
+            device,
+            "query answers",
+            count * size_of::<Answer>() as u64,
+            Usage::STORAGE | Usage::COPY_SRC,
+        );
+        let staging = buffer(
+            device,
+            "query readback",
+            answers.size(),
+            Usage::MAP_READ | Usage::COPY_DST,
+        );
+        let mut entries = vec![
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: settings.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 1,
+                resource: points.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 2,
+                resource: components.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 3,
+                resource: answers.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 4,
+                resource: wgpu::BindingResource::TextureView(cascades),
+            },
+        ];
+        let wake_settings = wake.map(|_| {
+            buffer(
+                device,
+                "query wake settings",
+                size_of::<SampleSettings>() as u64,
+                Usage::UNIFORM | Usage::COPY_DST,
+            )
+        });
+        if let Some((wake, settings)) = wake.zip(wake_settings.as_ref()) {
+            entries.extend(wake.query_entries(settings));
+        }
+        let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("water query bindings"),
+            layout,
+            entries: &entries,
+        });
+        Self {
+            group,
+            settings,
+            components,
+            points,
+            answers,
+            buffer: staging,
+            busy: Arc::default(),
+            wake: wake_settings,
+            coarse: coarse.map(|gpu| CoarseScratch::new(gpu, COARSE_RECORD_BYTES)),
+        }
+    }
+}
+
 struct CoarseScratch {
     buffer: wgpu::Buffer,
     group: wgpu::BindGroup,
@@ -111,9 +203,15 @@ struct CoarseScratch {
 struct CoarseGpu {
     device: wgpu::Device,
     layout: wgpu::BindGroupLayout,
-    pipeline: wgpu::ComputePipeline,
     select: wgpu::ComputePipeline,
+    general: SurfPipelines,
+    single_sheet: SurfPipelines,
+}
+
+struct SurfPipelines {
+    coarse: wgpu::ComputePipeline,
     fine: wgpu::ComputePipeline,
+    answer: wgpu::ComputePipeline,
 }
 
 impl CoarseScratch {
@@ -164,11 +262,12 @@ struct Batch {
     map_revisions: Vec<u64>,
     coarse_groups: u32,
     fine_groups: u32,
+    single_sheet: bool,
 }
 
 pub(crate) struct Readback {
     mailbox: QueryMailbox,
-    pipeline: wgpu::ComputePipeline,
+    plain: Option<wgpu::ComputePipeline>,
     surf: Option<wgpu::BindGroup>,
     coarse: Option<CoarseGpu>,
     slots: [Slot; SLOT_COUNT],
@@ -201,7 +300,6 @@ impl Readback {
         wake: Option<&Interaction>,
         surf: Option<(MapGpu, &SurfGpu)>,
     ) -> Self {
-        use wgpu::BufferUsages as Usage;
         let count = u64::from(mailbox.limits.points);
         let surf_source = if surf.is_some() {
             map_gpu::declarations_at(SURF_GROUP) + &SurfGpu::query_source(SURF_GROUP, SURF_BINDING)
@@ -285,118 +383,48 @@ impl Readback {
                     entries: &entries,
                 })
             });
-        let pipeline = device.compute(&wgpu::ComputePipelineDescriptor {
-            label: Some("water body query"),
-            layout: Some(&pipeline_layout),
-            module: &module,
-            entry_point: Some("sample_query"),
-            compilation_options: wgpu::PipelineCompilationOptions::default(),
-            cache: None,
-        });
-        let make_cut = |label, entry| {
+        let make_pipeline = |label, entry, constants| {
             device.compute(&wgpu::ComputePipelineDescriptor {
                 label: Some(label),
                 layout: Some(&pipeline_layout),
                 module: &module,
                 entry_point: Some(entry),
-                compilation_options: wgpu::PipelineCompilationOptions::default(),
+                compilation_options: wgpu::PipelineCompilationOptions {
+                    constants,
+                    ..Default::default()
+                },
                 cache: None,
             })
+        };
+        let plain = surf
+            .is_none()
+            .then(|| make_pipeline(QUERY_PASS, "sample_query", &[]));
+        let make_surf = |constants| SurfPipelines {
+            coarse: make_pipeline("water query coarse lattice", "sample_coarse", constants),
+            fine: make_pipeline("water query fine lattice", "sample_fine", constants),
+            answer: make_pipeline(QUERY_PASS, "sample_query", constants),
         };
         let coarse = coarse_layout.map(|layout| CoarseGpu {
             device: (**device).clone(),
             layout,
-            pipeline: make_cut("water query coarse lattice", "sample_coarse"),
-            select: make_cut("water query select fine cells", "select_fine"),
-            fine: make_cut("water query fine lattice", "sample_fine"),
+            select: make_pipeline("water query select fine cells", "select_fine", &[]),
+            general: make_surf(&[]),
+            single_sheet: make_surf(&[("single_sheet", 1.0)]),
         });
         let slots = std::array::from_fn(|_| {
-            let settings = buffer(
+            Slot::new(
                 device,
-                "query settings",
-                size_of::<Settings>() as u64,
-                Usage::UNIFORM | Usage::COPY_DST,
-            );
-            let components = buffer(
-                device,
-                "query components",
-                (COMPONENT_LIMIT * size_of::<Component>()) as u64,
-                Usage::STORAGE | Usage::COPY_DST,
-            );
-            let points = buffer(
-                device,
-                "query points",
-                count * size_of::<Point>() as u64,
-                Usage::STORAGE | Usage::COPY_DST,
-            );
-            let answers = buffer(
-                device,
-                "query answers",
-                count * size_of::<Answer>() as u64,
-                Usage::STORAGE | Usage::COPY_SRC,
-            );
-            let staging = buffer(
-                device,
-                "query readback",
-                answers.size(),
-                Usage::MAP_READ | Usage::COPY_DST,
-            );
-            let mut entries = vec![
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: settings.as_entire_binding(),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: points.as_entire_binding(),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 2,
-                    resource: components.as_entire_binding(),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 3,
-                    resource: answers.as_entire_binding(),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 4,
-                    resource: wgpu::BindingResource::TextureView(&ambient.filtered_views()[0]),
-                },
-            ];
-            let wake_settings = wake.map(|_| {
-                buffer(
-                    device,
-                    "query wake settings",
-                    size_of::<SampleSettings>() as u64,
-                    Usage::UNIFORM | Usage::COPY_DST,
-                )
-            });
-            if let Some((wake, settings)) = wake.zip(wake_settings.as_ref()) {
-                entries.extend(wake.query_entries(settings));
-            }
-            let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-                label: Some("water query bindings"),
-                layout: &layout,
-                entries: &entries,
-            });
-            Slot {
-                group,
-                settings,
-                components,
-                points,
-                answers,
-                buffer: staging,
-                busy: Arc::default(),
-                wake: wake_settings,
-                coarse: coarse
-                    .as_ref()
-                    .map(|gpu| CoarseScratch::new(gpu, COARSE_RECORD_BYTES)),
-            }
+                &layout,
+                &ambient.filtered_views()[0],
+                count,
+                wake,
+                coarse.as_ref(),
+            )
         });
         mailbox.reset_readback();
         Self {
             mailbox,
-            pipeline,
+            plain,
             surf: surf_group,
             coarse,
             slots,
@@ -611,6 +639,11 @@ impl Readback {
                 map_revisions,
                 coarse_groups,
                 fine_groups,
+                single_sheet: points.iter().all(|point| {
+                    point.body == u32::MAX
+                        || point.flags & 1 == 0
+                        || point.flags & QUERY_ONE_SHEET != 0
+                }),
             });
         }
     }
@@ -665,22 +698,26 @@ impl Readback {
         for batch in &self.pending {
             let slot = &self.slots[batch.slot];
             pass.set_bind_group(0, &slot.group, &[]);
-            if let Some(surf) = &self.surf {
+            if let Some((surf, cut)) = self.surf.as_ref().zip(self.coarse.as_ref()) {
                 pass.set_bind_group(SURF_GROUP, surf, &[]);
                 pass.set_bind_group(
                     COARSE_GROUP,
                     &slot.coarse.as_ref().expect("surf scratch").group,
                     &[],
                 );
-                let cut = self.coarse.as_ref().expect("surf cut pipelines");
+                let pipelines = if batch.single_sheet {
+                    &cut.single_sheet
+                } else {
+                    &cut.general
+                };
                 if batch.coarse_groups != 0 {
-                    pass.set_pipeline(&cut.pipeline);
+                    pass.set_pipeline(&pipelines.coarse);
                     pass.dispatch_workgroups(batch.coarse_groups, 1, 1);
                 }
                 if batch.fine_groups != 0 {
                     pass.set_pipeline(&cut.select);
                     pass.dispatch_workgroups(batch.fine_groups, 1, 1);
-                    pass.set_pipeline(&cut.fine);
+                    pass.set_pipeline(&pipelines.fine);
                     let groups = cut
                         .device
                         .limits()
@@ -688,14 +725,12 @@ impl Readback {
                         .min(256);
                     pass.dispatch_workgroups(groups, 1, 1);
                 }
-            }
-            pass.set_pipeline(&self.pipeline);
-            let groups = if self.surf.is_some() {
-                batch.count
+                pass.set_pipeline(&pipelines.answer);
+                pass.dispatch_workgroups(batch.count, 1, 1);
             } else {
-                batch.count.div_ceil(GROUP_WIDTH)
-            };
-            pass.dispatch_workgroups(groups, 1, 1);
+                pass.set_pipeline(self.plain.as_ref().expect("plain query pipeline"));
+                pass.dispatch_workgroups(batch.count.div_ceil(GROUP_WIDTH), 1, 1);
+            }
         }
     }
 
