@@ -456,8 +456,7 @@ impl Loader {
     ) -> Result<Option<OpenedTexture>, AssetError> {
         let volume = kind == ProductKind::Volume;
         let sheet = kind == ProductKind::SpriteSheet;
-        let wrong_kind =
-            || AssetError::Malformed("texture dimension or kind does not match its use");
+        let wrong_kind = || AssetError::Malformed("texture dimension does not match its use");
         if let Some(texture) = confirmed.textures.get(hash) {
             let dimension = if volume {
                 wgpu::TextureDimension::D3
@@ -486,11 +485,14 @@ impl Loader {
         } else {
             limits.max_texture_dimension_2d
         };
-        if base.width.max(base.height).max(base.depth) > limit
-            || product.array_layers() > limits.max_texture_array_layers
-        {
+        if base.width.max(base.height).max(base.depth) > limit {
             return Err(AssetError::UnsupportedTexture(
-                "extent or page count exceeds this device's texture limits",
+                "extent exceeds this device's texture limit",
+            ));
+        }
+        if product.array_layers() > limits.max_texture_array_layers {
+            return Err(AssetError::UnsupportedTexture(
+                "sheet page count exceeds this device's texture array limit",
             ));
         }
         if !self

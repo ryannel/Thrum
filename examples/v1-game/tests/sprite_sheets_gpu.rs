@@ -300,7 +300,7 @@ fn sheet_that_exceeds_the_device_layers_keeps_the_last_good_sheet() {
     residency_refusal(
         &mut rig,
         &previous,
-        "lease actors: unsupported KTX2 texture: extent or page count exceeds this device's texture limits",
+        "lease actors: unsupported KTX2 texture: sheet page count exceeds this device's texture array limit",
     );
 }
 
