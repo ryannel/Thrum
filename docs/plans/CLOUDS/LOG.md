@@ -666,3 +666,34 @@
   20 consecutive seconds, including 29.57 seconds across the 90° turn and 41.37 seconds
   at 40 m/s and 60×. Capture and observers were off. Loaded trials also missed
   refreshes. [Release build and display receipts](../../../.orchestrate/evidence/CLOUDS/WP7/r11/README.md)
+
+## WP7 diagnosis
+
+- 2026-11-25 Planner, after four failed reviews, three on WP7.4. The plan was at fault. WP7.4 held two claims
+  as one. Every review passed the clouds' own motion; the one no was whether the whole frame reaches the display
+  at every refresh, and for that the item gave no protocol, no pass rule and no instrument. Each review measured
+  a different run and each repair answered the last one. On one binary the builder's eighteen display receipts
+  served 46% to 99.7% of their refreshes; in both ordered series the early runs held and the late ones did not,
+  whatever the wind; the exclusive GPU lock did not change that; and the window's report counted targets sampled
+  before encoding, which overstated one run and reported 0.125 s for a still-air run that presented 5,400 frames
+  in 5,414 callbacks. [The evidence read](../../../.orchestrate/evidence/CLOUDS/WP7-diagnosis.md)
+- WP7.4 before: "... clouds drift in world space at the wind's speed with their shade under them, by even steps
+  from frame to frame at the display's refresh, and no texture slides inside a cloud's shape. A change of wind
+  direction turns the drift and does not move a cloud." Now: the same drift, shade and turn, with the steps
+  judged by each frame's display target (equal over one refresh, in proportion across a skipped one), as a
+  numbered list. Held refresh moved, unweakened, to WP20.
+- WP19 and WP20 are new, after WP7. WP19: the window's account of every refresh opportunity, placed by the time
+  of the present call, with where each loss happened; a wind series with a clouds-absent run on each side of
+  every cloud run, taken before any repair; the clouds' causes fixed and the window's proposed to
+  `PLATFORM-RUNTIME-MAC`. WP20, `"alone": true`: the series once with no other agent working, each cloud run
+  holding the refresh as the clouds-absent runs beside it do, in the release game with no frame limit or cap.
+  WP12.10 is new: the series' two commands leave the cost tool when the module closes.
+- Review 4's second finding, the governor qualification losing GPU timestamps, needs no item here:
+  `APPLE-PRESENTATION` fixed it at `d7d9d5ddf` by asking for timing in its own proof.
+- The design gains [Holding the display's refresh while clouds drift](DESIGN.md#holding-the-displays-refresh-while-clouds-drift-wp19-and-wp20);
+  "no timing figure decides an item" keeps one exception, WP20, on the lead's words in this task: "Keep the
+  bar: the player's ordinary game holds the display's refresh with clouds drifting; don't weaken it to a bounded
+  or capped run."
+- PLAN.md: WP18's and WP6's notes shrank to their review links, both being Done. WP18's assumption, "1 second
+  below the existing 10-second timeout is enough headroom" for its focused parallel run, left the open list with
+  the work package Done on it.

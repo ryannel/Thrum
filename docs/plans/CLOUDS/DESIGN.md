@@ -34,7 +34,10 @@ decision to park the form of a single cloud: WP3 closes on the sky at a glance a
 the diagnosis in [risk 2](#risks). No mechanism and no interface changed. Revised that day after the review
 of that parking (two findings; `git show 061432e11:docs/evidence/CLOUDS/design-review.md`): WP17 judges the
 form in [a sky of weather alone](#risks), with no library shape in it, on both targets from both heights, and
-the flaws are excused only until WP17 starts.
+the flaws are excused only until WP17 starts. Revised 25 November 2026 after
+[WP7's diagnosis](LOG.md#wp7-diagnosis):
+[holding the display's refresh](#holding-the-displays-refresh-while-clouds-drift-wp19-and-wp20) has its own
+account, protocol and work packages. No mechanism of the sky and no interface changed.
 
 ## The request
 
@@ -1207,6 +1210,11 @@ The owner's bar of 17 November 2026 ([the request](#the-request), and
   bank, a ridge line and a walk through the handover look like.
 - **Speed is a tripwire.** The paired cost records and their wires are in [the cost account](#cost-account). A
   record passes on its check; a reviewer reads the records once, in WP12.
+- **Held refresh has one judge.** Whether the game gives the display a new frame at every refresh while clouds
+  drift is decided once for the weather sky, in WP20, by
+  [the wind series](#holding-the-displays-refresh-while-clouds-drift-wp19-and-wp20), and again for the finished
+  sky in WP12.6. A `realtime` inspection judges where each frame puts the clouds, by that frame's display
+  target. A refresh its capture skipped fails no inspected item.
 - **References are diagnostics.** `thrum-cloud-model`'s f64 marches, the retained Python references and the
   proof scripts stay in the repository. A builder whose picture looks wrong compares against them to find the
   cause. No item holds a GPU product or the Sun term to one within a bound, no work package measures a bound first
@@ -1239,6 +1247,82 @@ The owner's bar of 17 November 2026 ([the request](#the-request), and
 above say "the ceiling", they mean `0.05 × expected + 0.005 × F` at a probe, with `F` 1 for a transmittance and
 otherwise the largest expected value among the case's probes. The planner used it to compare mechanisms, and
 WP13's tests assert it. It decides nothing in a work package that is not yet Done.
+
+### Holding the display's refresh while clouds drift (WP19 and WP20)
+
+K4 asks that drift and time-lapse be smooth at the display's refresh. That is two claims with two proofs. WP7
+held them as one item and failed four reviews on it ([the diagnosis](LOG.md#wp7-diagnosis)).
+
+- **Where a frame puts the clouds** is this module's mechanism,
+  [travel at the display's time](#time-drift-at-the-displays-time-evolution-on-the-tick). It is right when the
+  travel between two submitted frames is in proportion to the refreshes between their display targets, whether
+  or not a refresh was skipped between them. WP7.4 judges it in `realtime` captures, and so does every later
+  `realtime` inspection of this module. A capture is an observer and runs beside other work.
+- **Whether every refresh gets a new frame** is the whole frame's delivery: the clouds' GPU work, the frame
+  host's slots, the Mac window's pacing and the machine. WP20 judges it for the weather sky, in the game as a
+  player runs it. WP12.6 judges the finished sky again, with the governor, by the OS-reported presented times.
+
+**The account.** A **refresh opportunity** is one display target the display link gives the window, and the
+targets make a grid of refresh intervals. An opportunity is **held** when the present call of exactly one new
+frame is made in its interval, and the frame is the next in display time after the one before it. It is
+**lost** otherwise, and the account says where: the display link gave no callback; the request reached the
+render owner after its target; no frame slot was free, which is the GPU not having retired an earlier frame;
+the drawable came too late; or encoding and submission ran past the interval. Each frame also carries its
+display target beside the time of its present call. A run whose every frame is presented just after its own
+target is a refresh behind and still gives the display one new frame at each refresh: that is the window's
+latency, and it loses nothing. The account is the game's own. It cannot see the compositor, which is why
+WP12.6 keeps its witness.
+
+The window keeps the account in memory and writes it when it closes, and takes no GPU timestamp for it. GPU
+pass timing names the pass that was slow, and it costs cadence (334 of 492 opportunities with it, 492 of 492
+without), so it is taken in a second run, labelled a diagnostic, that is never evidence of a held refresh.
+
+**One count.** WP7 added to the window the longest run of consecutive targets, from a status sampled before
+encoding. It is removed. It overstated: a frame that entered submission 42.57 ms after its target stayed in
+the run. It understated: a still-air run presented 5,400 frames in 5,414 callbacks and reported 0.125 s,
+because 752 requests found their target expired and were left out. The governor's count of display ticks
+without a present stays as `APPLE-PRESENTATION` built it. The account adds a record at exit and changes no
+timing policy, frame sample or report line that the governor's proof, the profiler, `scripts/host_overload.py`
+or another module's check reads.
+
+**The wind series.** Eleven runs of the release V1 game in its 1920×1080 window on the built-in 120 Hz display:
+a clouds-absent run, then each of five cloud runs followed by another clouds-absent run. The five are still
+air, 10 m/s and 40 m/s at 1×, 40 m/s at 60×, and 40 m/s at 1× with a 90° change of direction ten world seconds
+in. Every run uses the launch settings WP7's reviews matched (the cooked valley, the Apple recipe, TAAU, the
+fair preset, noon, a held camera, the world running) with no frame limit, frame-rate cap, capture, observer,
+profiler or GPU timing, and is measured for 20 seconds after its first second. Each records the load, the
+thermal state, occlusion and its account. A series is one whole. No run is taken again by itself or chosen
+from several: on one binary WP7's display receipts served between 46% and 99.7% of their opportunities, and in
+both ordered series on record the early runs held and the late ones did not, whatever their wind.
+
+**A cloud run holds** when it loses at most one opportunity more than the worse of the two clouds-absent runs
+beside it. A series in which a clouds-absent run loses more than two, or in which a run was occluded, is not a
+measurement, whoever took it. It says the machine was busy or the window is at fault, and nothing about the
+clouds.
+
+**Where it is taken.** WP19 takes the series beside other work, under the `gpu` lock, as a record: it fails
+on a missing run or a loss with no place, and no count decides it. WP20 takes it once with no other agent
+working, and there the rule decides. WP20 is the sitting this design asks for by name under
+[the project settings' rule for timing](../../../ORCHESTRATE.md#targets): its done-when entry is
+`"alone": true` and its check holds `gpu.alone`. The exclusive GPU lock alone is not enough. Under it, the
+40 m/s run and the turn lost 267 and 349 of 2,412. A review has no quiet window, so a reviewer reads the
+series the script took, and a series of the reviewer's own counts only when its clouds-absent runs hold. A cloud
+run that does not hold in WP20 goes through WP19's steps there: its losses placed, the clouds' cause fixed.
+
+**Whose loss it is.** A loss to a full frame slot in a cloud run whose neighbours held is the clouds', until a
+diagnostic run shows the cloud passes inside the refresh interval. The clouds' remedies move when work is
+done: a product's refresh spread over more frames, a burst bounded, a pass left out when its inputs did not
+change. The cost records give one place to look first: the largest Sun-path refill in one frame is 5 to 17 ms
+at 2560×1440 under load, more than a refresh interval by itself. A remedy that lowers a sample count, an
+extent or a refresh fraction is [risk 1](#risks)'s and brings the stills and sequences it changes back for
+inspection. A loss the record places in the display link, a late request, the drawable, or the frame host's
+slots with the cloud passes inside the interval is the window's. `PLATFORM-RUNTIME-MAC` owns the Mac's present
+and cadence path: the builder writes the loss as a proposal in that module's log, with the record's rows, and
+changes nothing in how the window paces.
+
+The series is under the fair preset. The broken and overcast skies cost more
+([WP7.8's record](#cost-account)); they are held to the refresh in WP12, where the governor can lower the
+clouds' knobs.
 
 ### Check that it can work
 
@@ -1594,11 +1678,14 @@ giving the whole frame, each cloud pass's GPU time by name, the bytes of each re
 machine. A record trips a wire when the whole frame with clouds is over the display's refresh interval, when a
 pass is about 25% or more over its last comparable record, or when a cost grows faster than the work that was
 added. A tripped wire is investigated in the work package that tripped it, and the record says what was measured
-to find the cause and what was fixed or left as a follow-up in the log. Visible stutter is judged in the
-`realtime` inspections.
+to find the cause and what was fixed or left as a follow-up in the log. Stutter in the clouds' own motion, a
+step that does not match its frame's display time, is judged in the `realtime` inspections.
 
 The ambition is the display's full refresh, and whole-frame tuning is the later performance phase. **No timing
-figure decides whether an item passes, whether a work package is Done or whether the next one starts.**
+figure decides whether an item passes, whether a work package is Done or whether the next one starts**, with
+one exception: WP20 holds the weather sky to the display's refresh in the game as a player runs it, by a count
+of refresh opportunities against the same game without clouds
+([below](#holding-the-displays-refresh-while-clouds-drift-wp19-and-wp20)). Pass times stay tripwires there too.
 `cloud_cost.py check` measures the scene again and fails only on a missing measurement or a missing
 investigation. It holds the committed record and its own fresh measurement to one list: for the scene named,
 a run with clouds absent and a run with clouds visible, at one view; and from the visible run, the cloud
@@ -1609,7 +1696,8 @@ the code being checked; the record's commit is written down and decides nothing,
 a commit goes stale at every merge. `cloud_cost.py refuse` shows the list has teeth: it puts the committed
 record, with every clouds-visible run replaced by its clouds-absent run, through the same validation and
 passes only when that is turned away. WP3.9 runs it, and every later scene goes through the validation it
-proved. Presented cadence on the built-in panel is measured once, attended, in WP12.
+proved. Presented cadence on the built-in panel, by the OS-reported presented times, is measured once,
+attended, in WP12.
 
 ## Risks
 
@@ -1617,7 +1705,9 @@ proved. Presented cadence on the built-in panel is measured once, attended, in W
    the detail noise below what the look needs without saying so. The designed ones: a sparser refresh (one texel
    in sixteen), a coarser far step, fewer local samples with a finer near level. WP3 tries the ones its record
    points at and records what each did to the cost and to the look. Building goes on either way; what remains
-   over the refresh interval is written up as a follow-up for the performance phase.
+   over the refresh interval is written up as a follow-up for the performance phase. The weather sky under the
+   fair preset is the exception from WP19 on: there a refresh lost to the clouds is fixed, first by moving when
+   work is done, and a remedy from this list brings the stills and sequences it changes back for inspection.
 2. **Procedural cumulus reads as repeated shapes, and a single cloud shows shelves and folds.** WP3's first
    form did, through three looks: one dome a cell, so domes, lenses and shelves. Turrets and the billow field
    replace it (part XVIII). On Metal they gave a sky that reads as scattered cumulus at a glance, with separate
@@ -1771,6 +1861,8 @@ water scene, WP11.5 uses `scripts/check_water_browser.mjs`.
 | Does the incident-light meter already see cloud shade? | WP8 reads the code and measures |
 | Can the scene's residency take the library as a second source folder? | WP6; if not, the proposal goes to `CONTENT-LOOP`'s log |
 | Is an Apple-tile kernel variant a measured win? | WP12 |
+| Where does the game lose a refresh while clouds drift: the display link, a late request, a full frame slot, the drawable, or encoding and submission? | WP19's first wind series |
+| Are the cloud passes inside the refresh interval at 1920×1080 on the Apple recipe through a wind turn and at 60×, and which pass is not? | WP19's diagnostic runs |
 | How wide a datum window pools mist as the valley's relief wants? | WP13 sets the profile's value on the valley's heights; WP14 judges it |
 | What do the ground band and the medium coefficients cost, on the Mac and in Chrome? | WP14 records |
 | Does a far bank sit in the land's haze at visual ranges of 8 and 60 km? | WP15.4's stills |

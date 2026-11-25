@@ -10,7 +10,6 @@ Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-bu
 ## Open for the human
 
 - Assumption: aim for about 2 s per fast test when run alone on a quiet Mac. The owner can revise this target.
-- Assumption: for WP18's focused parallel run, 1 second below the existing 10-second timeout is enough headroom.
 - Assumption: the owner's "it should start from first principles" (14 November) governs.
 - Assumption: "taking into account mist / fog" and "top quality atmosphere" (14 November) are met by mist, fog and low cloud as the clouds' own droplets in this module's one weather field. `ATMOSPHERE`'s view volume draws them near the camera (its WP7 and WP8, after G3s closes) and this module's trace beyond. It adds WP13 to WP16 and three items to WP11.
 - Assumption: "changing with the weather and time of day" means the mist itself forms after dusk and burns off after sunrise, as well as taking the day's light. The narrower reading leaves every amount to the game and drops WP13.4 and WP16.1.
@@ -27,9 +26,10 @@ Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-bu
 - Assumption: clouds are shown through a selection inside `examples/v1-game` and `examples/water`, off by default; the V1 exit scene is unchanged.
 - Assumption: finished excludes the Broadsides game's ten genera, squall and warm front, rain, a cloud a simulation writes, a cloud held against the wind, and lamps glowing in fog.
 - Assumption: time-lapse runs from 1× to 60×, and "continuous to the horizon" means about 200 km.
-- Assumption: cost is recorded on the Mac only, at 2560×1440 until the showcase's extent exists; no timing figure decides an item (brief decision 3).
+- Assumption: cost is recorded on the Mac only, at 2560×1440 until the showcase's extent exists; no timing figure decides an item (brief decision 3), except in WP20 (the lead's task of 25 November): the weather sky loses at most one refresh in 20 seconds beyond the same game without clouds.
 - Assumption: the fair cumulus's close-up form (shelves, folds, repeated caps) waits for WP17, just before the module closes, on the lead's decision of 18 November; every sky until then shows those flaws.
 - Assumption: the module closes only after `APPLE-PRESENTATION`'s governor and MetalFX work packages. Fog waits for `ATMOSPHERE` WP8, and the sea for `WATERS` WP8.
+- Assumption: the game WP20 measures is the release V1 game in its 1920×1080 window, on the Apple recipe with TAAU under the fair preset, as WP7's reviews ran it. WP20 comes before WP8 and pauses every other agent for one series.
 
 ## WP1 The weather over any place and time is computed on the CPU alone, from a clear sky to overcast, and repeats exactly: done
 [review](../../../.orchestrate/evidence/CLOUDS/WP1-review.md)
@@ -54,22 +54,28 @@ Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-bu
 
 ## WP18 Small cloud products check Metal and portable limits with headroom
 
-Use the [fixture design](DESIGN.md#weather-map-and-sun-path-regressions-wp18) for the cases in the [case list and baseline times](LOG.md#m18-workspace-timing-baseline).
-
-Record the command and the first focused run's Nextest output on the Mac under normal builder load, with both
-named outcomes and per-test times excluding compilation. Use WP18.1's command with the workspace check's
-default worker count and test groups. Record each case's time alone beside its isolated baseline and note
-where any assertion moved to CPU coverage.
+[Review](../../../.orchestrate/evidence/CLOUDS/WP18-review.md)
 
 ## WP6 A cloud made as content stands in the sky where the weather or the game puts it, lit and shading like the clouds around it, and one grows through its staged keys
 
-`examples/v1-game/src/lent` is a working lease consumer, and `thrum-cook`'s demo writes a `TVOL` source.
-[What Broadsides offers](DESIGN.md#what-broadsides-offers) says where the volumes and the growth keys are; read
-the LFS objects with `git show` piped through `git lfs smudge`, which leaves that checkout as it is. If no source
-gives keys that match the track's manifest, end `BLOCKED` with `needs_context`. If the scene's residency cannot take the volumes as a second source folder, write the proposal in
-`CONTENT-LOOP`'s log.
+[Review](../../../.orchestrate/evidence/CLOUDS/WP6-review.md)
 
 ## WP7 The sky runs from clear through fair and broken to overcast and back, and its clouds drift, form, grow and thin
+
+WP7.4 was re-planned on 25 November ([the diagnosis](LOG.md#wp7-diagnosis)); the other seven items passed as
+built. Change nothing in `thrum-app`'s window here.
+
+## WP19 While clouds drift, the game accounts for every refresh it loses, and none is lost to the clouds
+
+Read [Holding the display's refresh](DESIGN.md#holding-the-displays-refresh-while-clouds-drift-wp19-and-wp20)
+first. Take the first wind series before any repair. End `BLOCKED` after three repairs that leave a cause
+standing, or once a window cause has its proposal in `PLATFORM-RUNTIME-MAC`'s log. An occluded run voids a
+series: wake the display for each run only.
+
+## WP20 With clouds drifting, the game holds the display's refresh in its ordinary window on the Mac
+
+Every other agent waits while this is built: run the check and end the session. After three
+series that are not a measurement, end `BLOCKED` with what was running.
 
 ## WP8 Under a clouded sky the land is lit by the clouds: an overcast valley is grey and soft, haze dims with it, and polished surfaces reflect the clouds
 
