@@ -8,7 +8,10 @@
       ".orchestrate/evidence/RAY-TRACING/design-review-7.md",
       ".orchestrate/evidence/RAY-TRACING/design-review.md"
     ],
-    "at": "2026-11-23T09:26:20Z"
+    "at": "2026-11-23T09:26:20Z",
+    "items_owed": [
+      "WP7"
+    ]
   },
   "work_packages": {
     "WP1": {
@@ -856,6 +859,15 @@
         "at": "2026-11-24T22:06:49Z"
       },
       "ends_stretch": true
+    },
+    "WP7": {
+      "definitions": "b639094c39f6b52b08c576ef78a1b80a86ea3f772fd9e85cd7dd33da24d3a8c3",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "The main-branch check cross-target (bash scripts/check_cross_target.sh) fails on main; last pass 84d1e63db, failing sinc",
+        "at": "2026-11-25T01:02:47Z"
+      }
     }
   },
   "tasks": [
@@ -902,11 +914,15 @@
     {
       "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TRACING WP4.10, SESSION WP5.10, WATERS WP13.13, RENDER-2D WP3.11 and WP3.13, GAME-SPLIT, GAME-UI, PUDDLES, RIVERS, SWARM, SHOWCASE and others) check with `python3 scripts/exact_baselines.py verify`, which without --full delegates to `agent_loop.py main-check exact-images`; orchestrate refuses any item check that invokes main-check, so each of those work packages blocks (CLOUDS WP7 and RAY-TRACING WP4 have, and REPO-RULES WP5 already had its copy removed). Fix this once for the whole project rather than per module.\n\nThe lead's assumption, which the owner can overturn: the registered main-branch check `exact-images` (ORCHESTRATE.md) already guards that no baseline moves after every merge, and the owner wants fast merges with long proofs on main, not in each work package. So remove these items where nothing else in the work package depends on them, or replace them with something the work package can show before the merge, such as a check that it changed no registered baseline or comparison file. Do not make each work package run `verify --full`. Change scripts/exact_baselines.py in its owning module only if that is the cleaner fix. Put CLOUDS WP7 and RAY-TRACING WP4 first, since their builders have finished and wait only on this.",
       "at": "2026-11-24T22:06:49Z"
+    },
+    {
+      "task": "The main-branch check cross-target (bash scripts/check_cross_target.sh) fails on main; last pass 84d1e63db, failing since about 1eab8c000, and the script couldn't tell which commit broke it. Diagnosis from the lead: the x86_64-pc-windows-msvc check fails with error[E0432] at crates/thrum-render/tests/ray_structure_lifecycle_gpu.rs:7, unresolved import super::ray_support. The file declares `pub mod ray_support` under #[cfg(all(target_os = \"macos\", feature = \"creation-counters\"))] but `mod metal` and its `use super::ray_support::support` only under #[cfg(feature = \"creation-counters\")], so any non-macOS build with creation-counters on fails. The file itself is old, so something between those commits probably started building it with that feature for Windows (GAME-SPLIT WP3's feature changes and RAY-TRACING WP4 both landed then). Find the cause, then plan the smallest fix in the owning module as its next work package or a plan change, so cross-target passes again. Also check whether other test files share the same cfg mismatch.",
+      "at": "2026-11-25T01:02:47Z"
     }
   ],
   "planner": {
-    "host": "codex",
-    "at": "2026-11-24T22:06:49Z"
+    "host": "claude",
+    "at": "2026-11-25T01:02:47Z"
   },
   "design_history": [
     {
