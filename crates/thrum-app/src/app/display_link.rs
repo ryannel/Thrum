@@ -22,6 +22,41 @@ use winit::{
 
 use super::UserEvent;
 
+pub(super) const PREFERRED_REFRESH_HZ: f32 = 120.0;
+
+/// The longest uninterrupted run of surface submissions at the requested display cadence.
+#[derive(Default)]
+pub(super) struct SubmissionCadence {
+    first: Option<f64>,
+    previous: Option<(u64, f64)>,
+    start: f64,
+    longest: (f64, f64),
+}
+
+impl SubmissionCadence {
+    pub(super) fn presented(&mut self, sequence: u64, target: f64, refresh_hz: f32) {
+        let origin = *self.first.get_or_insert(target);
+        let period = 1.0 / f64::from(refresh_hz);
+        if self
+            .previous
+            .is_none_or(|(previous_sequence, previous_target)| {
+                sequence != previous_sequence + 1
+                    || (target - previous_target - period).abs() > 0.000_25
+            })
+        {
+            self.start = target;
+        }
+        if target - self.start > self.longest.1 - self.longest.0 {
+            self.longest = (self.start - origin, target - origin);
+        }
+        self.previous = Some((sequence, target));
+    }
+
+    pub(super) fn longest(&self) -> (f64, f64) {
+        self.longest
+    }
+}
+
 struct LinkIvars {
     wake: EventLoopProxy<UserEvent>,
     callbacks: Cell<u64>,
@@ -167,8 +202,8 @@ impl ViewDisplayLink {
         };
         link.setPreferredFrameRateRange(CAFrameRateRange {
             minimum: 60.0,
-            maximum: 120.0,
-            preferred: 120.0,
+            maximum: PREFERRED_REFRESH_HZ,
+            preferred: PREFERRED_REFRESH_HZ,
         });
         // SAFETY: creation and removal both occur on AppKit's main thread.
         unsafe { link.addToRunLoop_forMode(&NSRunLoop::mainRunLoop(), NSRunLoopCommonModes) };
@@ -206,6 +241,20 @@ impl Drop for ViewDisplayLink {
             // SAFETY: This is the retained observer registered during start.
             unsafe { NSNotificationCenter::defaultCenter().removeObserver(&self.target) };
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::SubmissionCadence;
+
+    #[test]
+    fn missing_submissions_and_display_callbacks_break_the_interval() {
+        let mut cadence = SubmissionCadence::default();
+        for (sequence, tick) in [(1, 0), (2, 1), (4, 3), (5, 4), (6, 6), (7, 7), (8, 8)] {
+            cadence.presented(sequence, f64::from(tick) / 120.0, 120.0);
+        }
+        assert_eq!(cadence.longest(), (6.0 / 120.0, 8.0 / 120.0));
     }
 }
 

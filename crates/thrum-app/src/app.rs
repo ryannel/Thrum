@@ -27,7 +27,7 @@ use std::{
 };
 
 use device::WindowDevice;
-use display_link::ViewDisplayLink;
+use display_link::{PREFERRED_REFRESH_HZ, SubmissionCadence, ViewDisplayLink};
 use edit_flow::EditFlow;
 use recovery::Recovery;
 use render_actor::{
@@ -70,6 +70,13 @@ const RETAINED_PROFILES: usize = 36_000;
 enum TimingPolicy {
     Report,
     Profiler,
+}
+
+#[derive(Clone, Copy)]
+enum RunMode {
+    Ordinary,
+    Bounded,
+    QuietUntilClosed,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -126,6 +133,8 @@ struct App<G: Game> {
     device_losses: u64,
     world_tick: u64,
     render_in_flight: Option<u64>,
+    render_target: f64,
+    cadence: SubmissionCadence,
     counters: FrameCounters,
     /// The game's controls are shared by keys and the panel. Edits travel to the render
     /// owner in the next frame request.
@@ -240,6 +249,8 @@ impl<G: WindowGame + 'static> App<G> {
             device_losses: 0,
             world_tick: 0,
             render_in_flight: None,
+            render_target: 0.0,
+            cadence: SubmissionCadence::default(),
             counters: FrameCounters::default(),
             game,
             panel: None,
@@ -696,6 +707,13 @@ impl<G: WindowGame + 'static> App<G> {
         }
     }
 
+    fn preferred_refresh(&self) -> f32 {
+        self.transition_proof
+            .as_ref()
+            .and_then(|proof| proof.governor.map(|_| 60.0))
+            .unwrap_or(PREFERRED_REFRESH_HZ)
+    }
+
     fn receive_render(&mut self, mut reply: RenderReply<G::Readback>) -> Result<(), String> {
         self.trim_history();
         if let RenderOutcome::Recovered { attempted, result } = reply.outcome {
@@ -784,6 +802,11 @@ impl<G: WindowGame + 'static> App<G> {
         match reply.platform.surface_status {
             SurfaceStatus::Presented => {
                 self.presented += 1;
+                self.cadence.presented(
+                    reply.sequence,
+                    self.render_target,
+                    self.preferred_refresh(),
+                );
                 if self.surface_configuration_error.take().is_some() {
                     self.refresh_title();
                 }
@@ -949,10 +972,11 @@ impl<G: WindowGame + 'static> App<G> {
                 self.game.controls(),
             )?;
         }
+        let target = self.display_target.ok_or("display target missing")?;
         let job = RenderJob::Frame(FrameRequest {
             sequence: self.target_sequence,
             device_generation: self.recovery.active,
-            target_media_seconds: self.display_target.ok_or("display target missing")?,
+            target_media_seconds: target,
             extent,
             surface_generation: self.surface_generation.load(Ordering::Acquire),
             platform: FrameEdits {
@@ -979,6 +1003,7 @@ impl<G: WindowGame + 'static> App<G> {
             }
         }
         self.render_in_flight = Some(self.edits.submitted());
+        self.render_target = target;
         if self.run_deadline.is_some_and(|deadline| now >= deadline) {
             return Err(self.deadline_error());
         }
@@ -1125,8 +1150,10 @@ impl<G: WindowGame + 'static> App<G> {
         let shadows = presented.last().map(|sample| sample.shadow_selection);
         let culling =
             format!("{culling}; culling_selection={selection:?}; shadow_selection={shadows:?}");
+        let (cadence_start, cadence_end) = self.cadence.longest();
+        let refresh = self.preferred_refresh();
         Ok(format!(
-            "adapter={}; surface={:?} {}x{}; presented={}; callbacks={}; display_link_callbacks={}; late_target_evaluations={}; invalid_target_evaluations={}; clamped_target_evaluations={}; committed_ticks={}; unavailable={}; occluded={}; surface_faults={}; dropped_surface={}; dropped_views={}; dropped_stale_views={}; dropped_reports={}; callback wall p50/p95={:.3}/{:.3} ms; render-worker wall p50/p95={:.3}/{:.3} ms; drawable-acquire wall p50/p95={:.3}/{:.3} ms; tick CPU p50/p95={:.3}/{:.3} us; live-view CPU p50/p95={:.3}/{:.3} us; upload CPU p50/p95={:.3}/{:.3} us; encode CPU p50/p95={:.3}/{:.3} us; upload+encode CPU p50/p95={:.3}/{:.3} us; {gpu}; {culling}; device_losses={}; world_overloads={}; overload_refused_ticks={}; final_drain_device_lost={final_device_loss}; retained_presented_profiles={}; missing_presented_profiles={missing}; profiles describe retained samples",
+            "adapter={}; surface={:?} {}x{}; presented={}; callbacks={}; display_link_callbacks={}; longest_{refresh:.0}hz_submission_interval={cadence_start:.6}..{cadence_end:.6}s; late_target_evaluations={}; invalid_target_evaluations={}; clamped_target_evaluations={}; committed_ticks={}; unavailable={}; occluded={}; surface_faults={}; dropped_surface={}; dropped_views={}; dropped_stale_views={}; dropped_reports={}; callback wall p50/p95={:.3}/{:.3} ms; render-worker wall p50/p95={:.3}/{:.3} ms; drawable-acquire wall p50/p95={:.3}/{:.3} ms; tick CPU p50/p95={:.3}/{:.3} us; live-view CPU p50/p95={:.3}/{:.3} us; upload CPU p50/p95={:.3}/{:.3} us; encode CPU p50/p95={:.3}/{:.3} us; upload+encode CPU p50/p95={:.3}/{:.3} us; {gpu}; {culling}; device_losses={}; world_overloads={}; overload_refused_ticks={}; final_drain_device_lost={final_device_loss}; retained_presented_profiles={}; missing_presented_profiles={missing}; profiles describe retained samples",
             self.adapter_name,
             self.surface_format.ok_or("surface format missing")?,
             self.surface_extent[0],
@@ -1618,9 +1645,9 @@ impl<G: WindowGame + 'static> ApplicationHandler<UserEvent> for App<G> {
     }
 }
 
-/// Run `game` in one window until its bounded frame count presents, then print the frames
-/// report. The count comes from `config.frames_variable` (default 600). Setup, GPU and world
-/// failures are reported on standard error and exit the process with a nonzero status.
+/// Run `game` in one window until it closes, then print the frames report.
+/// Setting `config.frames_variable` ends the run after that many frames present.
+/// Setup, GPU and world failures are reported on standard error and exit with a nonzero status.
 /// Open the frame profiler or set [`REPORT_VARIABLE`] to `1` to collect GPU timestamps.
 ///
 /// # Panics
@@ -1629,7 +1656,7 @@ pub fn run<G: WindowGame + 'static, E: std::error::Error>(
     config: Config,
     game: impl FnOnce() -> Result<G, E>,
 ) {
-    run_with(config, false, None, None, None, None, game);
+    run_with(config, RunMode::Ordinary, None, None, None, None, game);
 }
 
 /// Run the ordinary window with a caller-supplied control qualification observer.
@@ -1652,7 +1679,15 @@ pub fn run_with_qualification_and_display<G: WindowGame + 'static, E: std::error
     display: Option<WindowDisplayOptions>,
     game: impl FnOnce() -> Result<G, E>,
 ) {
-    run_with(config, false, None, None, Some(observer), display, game);
+    run_with(
+        config,
+        RunMode::Bounded,
+        None,
+        None,
+        Some(observer),
+        display,
+        game,
+    );
 }
 
 /// Run the ordinary window and retain one submitted image with its extent witnesses.
@@ -1663,7 +1698,15 @@ pub fn run_with_extent_capture<G: WindowGame + 'static, E: std::error::Error>(
     capture: WindowExtentCapture,
     game: impl FnOnce() -> Result<G, E>,
 ) {
-    run_with(config, false, Some(capture), None, None, None, game);
+    run_with(
+        config,
+        RunMode::Bounded,
+        Some(capture),
+        None,
+        None,
+        None,
+        game,
+    );
 }
 
 /// Run the ordinary window with a scripted resize and retain the frame records.
@@ -1674,7 +1717,15 @@ pub fn run_with_transition_proof<G: WindowGame + 'static, E: std::error::Error>(
     proof: WindowTransitionProof,
     game: impl FnOnce() -> Result<G, E>,
 ) {
-    run_with(config, false, None, Some(proof), None, None, game);
+    run_with(
+        config,
+        RunMode::Bounded,
+        None,
+        Some(proof),
+        None,
+        None,
+        game,
+    );
 }
 
 /// Run `game` in one window until the person closes it. Closing the window is success. Setting
@@ -1689,7 +1740,15 @@ pub fn run_until_closed<G: WindowGame + 'static, E: std::error::Error>(
     config: Config,
     game: impl FnOnce() -> Result<G, E>,
 ) {
-    run_with(config, true, None, None, None, None, game);
+    run_with(
+        config,
+        RunMode::QuietUntilClosed,
+        None,
+        None,
+        None,
+        None,
+        game,
+    );
 }
 
 /// Run the window with a typed display override and optional qualification.
@@ -1701,11 +1760,19 @@ pub fn run_with_display<G: WindowGame + 'static, E: std::error::Error>(
     options: WindowDisplayOptions,
     game: impl FnOnce() -> Result<G, E>,
 ) {
-    run_with(config, false, None, None, None, Some(options), game);
+    run_with(
+        config,
+        RunMode::Bounded,
+        None,
+        None,
+        None,
+        Some(options),
+        game,
+    );
 }
 
 /// Set to `1` to collect GPU timestamps throughout a window run and print the frames report.
-/// Bounded [`run`] always prints a frames report.
+/// [`run`] always prints a frames report.
 pub const REPORT_VARIABLE: &str = "THRUM_REPORT";
 
 #[expect(
@@ -1718,7 +1785,7 @@ pub const REPORT_VARIABLE: &str = "THRUM_REPORT";
 )]
 fn run_with<G: WindowGame + 'static, E: std::error::Error>(
     config: Config,
-    until_closed: bool,
+    mode: RunMode,
     extent_capture: Option<WindowExtentCapture>,
     transition_proof: Option<WindowTransitionProof>,
     qualification: Option<WindowQualification>,
@@ -1728,7 +1795,7 @@ fn run_with<G: WindowGame + 'static, E: std::error::Error>(
     let target_frames = match frame_limit(
         config.frames_variable,
         std::env::var(config.frames_variable).ok().as_deref(),
-        until_closed,
+        !matches!(mode, RunMode::Bounded),
     ) {
         Ok(frames) => frames,
         Err(error) => {
@@ -1786,7 +1853,7 @@ fn run_with<G: WindowGame + 'static, E: std::error::Error>(
     }
     match result {
         Ok(report) => {
-            if prints_report(until_closed, requested_report.as_deref()) {
+            if prints_report(mode, requested_report.as_deref()) {
                 println!("{report}");
             }
         }
@@ -1798,10 +1865,9 @@ fn run_with<G: WindowGame + 'static, E: std::error::Error>(
     }
 }
 
-/// Whether a finished run prints its frames report: always for a bounded [`run`], and for
-/// [`run_until_closed`] only when [`REPORT_VARIABLE`] is `1`.
-fn prints_report(until_closed: bool, requested: Option<&str>) -> bool {
-    !until_closed || requested == Some("1")
+/// The ordinary window and proofs print their reports. Starter windows report on request.
+fn prints_report(mode: RunMode, requested: Option<&str>) -> bool {
+    !matches!(mode, RunMode::QuietUntilClosed) || requested == Some("1")
 }
 
 /// The run's presented-frame bound, or `None` to run until the window closes.
@@ -1842,7 +1908,8 @@ fn never_drawn_hint(presented: usize, display_link_callbacks: usize) -> &'static
 #[cfg(test)]
 mod tests {
     use super::{
-        closed_without_frames, frame_limit, never_drawn_hint, percentile, prints_report, run_frames,
+        RunMode, closed_without_frames, frame_limit, never_drawn_hint, percentile, prints_report,
+        run_frames,
     };
 
     #[test]
@@ -1902,13 +1969,17 @@ mod tests {
 
     #[test]
     fn a_run_until_closed_is_bounded_only_when_its_variable_is_set() {
-        assert!(prints_report(false, None), "a bounded run always reports");
         assert!(
-            !prints_report(true, None),
+            prints_report(RunMode::Bounded, None),
+            "a proof run always reports"
+        );
+        assert!(
+            !prints_report(RunMode::QuietUntilClosed, None),
             "a closed window reports only on request"
         );
-        assert!(!prints_report(true, Some("0")));
-        assert!(prints_report(true, Some("1")));
+        assert!(!prints_report(RunMode::QuietUntilClosed, Some("0")));
+        assert!(prints_report(RunMode::QuietUntilClosed, Some("1")));
+        assert!(prints_report(RunMode::Ordinary, None));
         assert_eq!(frame_limit("THRUM_STARTER_FRAMES", None, true), Ok(None));
         assert_eq!(
             frame_limit("THRUM_STARTER_FRAMES", Some("90"), true),

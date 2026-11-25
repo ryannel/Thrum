@@ -1,4 +1,4 @@
-//! Bounded macOS V1 scene on a real surface.
+//! macOS V1 scene on a real surface.
 
 #[cfg(target_os = "macos")]
 fn main() {

@@ -133,7 +133,7 @@ pub struct WindowGovernor {
     pub route: Option<String>,
 }
 
-/// Run the bounded V1 scene in a macOS window and print its frames report.
+/// Run the V1 scene in a macOS window and print its frames report when it closes.
 /// `THRUM_V1_FRAMES` bounds the run; `THRUM_PARAMS` names a parameter file applied at
 /// start and on `L`. Failures are reported on standard error with a nonzero exit.
 /// Set `THRUM_REPORT=1` to collect GPU timestamps for the whole run.
