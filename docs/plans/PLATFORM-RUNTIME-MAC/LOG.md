@@ -191,7 +191,7 @@ or scope changed.
 Investigate the Mac window, frame delivery and compositor path using the clouds-absent rows from the two
 1920×1080 wind series on the built-in 120 Hz panel. The first series had 1,932 losses across its six clouds-absent
 runs, all after the present call. The later six clouds-absent runs had 437 losses, of which 395 were after
-the present call, 41 were at late request and one was at the display link. The first-series 40 m/s run at 1×
+the present call, 38 were at late request and four were at encoding and submission. The first-series 40 m/s run at 1×
 adds two losses after the present call within its neighbours' range. The record includes each loss's place,
 OS drawable brackets, the next present call and the window-account row where retained.
-[Corrected loss rows](../../../.orchestrate/evidence/CLOUDS/WP19/review-fixed-accounting/platform-loss-rows.json)
+[Corrected loss rows](../../../.orchestrate/evidence/CLOUDS/WP19/request-attribution/accounting/platform-loss-rows.json)

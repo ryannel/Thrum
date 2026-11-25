@@ -809,3 +809,9 @@
   This incomplete witness now restarts the whole default series. The rejected trace and its unmatched
   submission remain available for review.
   [Incomplete witness](../../../.orchestrate/evidence/CLOUDS/WP19/cadence-20261125T195654.460494Z/03-10ms-1x/witness.json)
+- The reviewer found another before-call loss that took its place from a later request. The analyser now
+  uses the joined drawable's request outcome when the request had already been dispatched. An elapsed
+  opportunity can still supply evidence of a skipped callback, late request or refusal. The first, later
+  and reviewer series replays preserve every OS loss time and stall length. The first-series accounting
+  reaches the same six decisions, and the Mac platform rows carry the corrected places.
+  [Replays and accounting](../../../.orchestrate/evidence/CLOUDS/WP19/request-attribution/README.md)
