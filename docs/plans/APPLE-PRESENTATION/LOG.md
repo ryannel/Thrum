@@ -510,3 +510,10 @@
   and completion authority.
   [Hardware probe](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP8/descriptor-probe.md) ·
   [WP8 handoff](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP8-handoff.md)
+
+- 2026-11-25 WP8. MetalFX now records through APPLE-TILE WP13's native segment, with the existing TAAU pass
+  prepared for rejection. D8.1, D8.2 and D8.4–D8.6 passed on Mac Metal. The earlier iPhone simulator pass
+  remains recorded for D8.7. D8.3's normalized path passed the scrub and half-float boundary checks.
+  The forced storage step still exceeded TAAU's mean-luminance error at 17 of 36 samples with a zero repeat
+  noise floor. D8.8's realtime capture and inspection are in progress.
+  [Metal evidence](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP8/target-a30845335/README.md)

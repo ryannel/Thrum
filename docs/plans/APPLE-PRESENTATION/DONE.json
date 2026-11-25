@@ -837,10 +837,10 @@
           "lock": "gpu",
           "ask": "Is the scaler encoded on the native segment's own command buffer, as APPLE-TILE's boundary requires? Are creations counted by phase, with Metal's validation layer on for the run?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP8/target-a30845335/D8.1/metalfx.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D8.2",
@@ -848,10 +848,10 @@
           "check": "python3 scripts/apple_presentation.py metalfx-motion --target mac-metal",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP8/target-a30845335/D8.2/metalfx-motion.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D8.3",
@@ -871,10 +871,10 @@
           "check": "python3 scripts/apple_presentation.py metalfx-quality --target mac-metal",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP8/target-a30845335/D8.4/metalfx-quality.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D8.5",
@@ -882,10 +882,10 @@
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test metalfx_fallback",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP8/target-a30845335/lifecycle.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D8.6",
@@ -894,10 +894,10 @@
           "lock": "gpu",
           "ask": "Read the test. Is each of the three causes driven through the host's own calls, with a control that skips the reset failing?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP8/target-a30845335/lifecycle.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D8.7",
