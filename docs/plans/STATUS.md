@@ -32,6 +32,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - APPLE-PRESENTATION assumes: at full window size the frame rate may dip until the governor lands in WP7. Record times for ([plan](APPLE-PRESENTATION/PLAN.md))
 - APPLE-PRESENTATION assumes: WP10 pins wgpu-hal 30.0.1 for the Metal library loader. WP12 adds the archive to that copy. ([plan](APPLE-PRESENTATION/PLAN.md))
 - APPLE-PRESENTATION assumes: WP16 keeps the device safe for timestamp query sets created at the engine's one call site. Code ([plan](APPLE-PRESENTATION/PLAN.md))
+- APPLE-PRESENTATION assumes: a viewer cannot see a brightness difference under 1% of a frame's mean luminance, so D8.3 allows ([plan](APPLE-PRESENTATION/PLAN.md))
 - ATMOSPHERE assumes: WP3 ends with a CPU diagnosis. The authored-spur replay and an in-game correction remain open under G3s. A later proposal needs the original inputs and the fixed and realtime captures specified in the design. ([plan](ATMOSPHERE/PLAN.md))
 - ATMOSPHERE assumes: WP4 compares the reconstructed geometry cases in one bounded CPU trial. The original ray inputs and exact finite-disk match remain open under G3s. ([plan](ATMOSPHERE/PLAN.md))
 - BASELINE-GUARD assumes: the key-narrowing work of the earlier WP2, nine commits on the branch `build/baseline-guard`, is set aside and not merged. No proof is asked before a merge now, so a proof that survives more rebases saves nothing. The branch is kept as the record. ([plan](BASELINE-GUARD/PLAN.md))
@@ -312,7 +313,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Now and next
 
-- APPLE-PRESENTATION WP8 MetalFX reconstructs the valley on Apple tile, with TAAU as its prepared fallback: Blocked: Needs Context: D8.3 needs a planner decision on whether the luminance bound should include differences that also occur at constant storage scale. The lead finds the missing fact, or asks you for it
+- MetalFX reconstructs the valley on Apple tile, with TAAU as its prepared fallback (APPLE-PRESENTATION WP8): Not Started · [plan](APPLE-PRESENTATION/PLAN.md)
 - With surf in view, a float gets the sea's height within two ticks and rides a hitch on its last answer (WATERS WP21): In Progress · [plan](WATERS/PLAN.md) · [latest review](../../.orchestrate/evidence/WATERS/WP21-review.md)
 - RENDER-2D WP6 A 2D game's colours above white go brighter than white on an EDR display, and a capture records the frame the display was given: Blocked: Needs Context: WP6.5, WP6.7 and WP6.8 can't be met as written while the Mac’s graphical session is locked. Unlock it so the orchestrator can rerun the window checks. The lead finds the missing fact, or asks you for it
 - GATE-TIME WP5 The post-rollout record shows a five-minute median for Rust landings: Blocked: Needs Context: WP5.1 needs 17 more qualifying ordinary Rust landings before the fixed window can be judged. The lead finds the missing fact, or asks you for it
@@ -437,7 +438,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 4 | COOKED-DRAW | Cooked scenes draw on devices that cannot run GPU-driven draws, such as the iPhone simulator | PLATFORM-RUNTIME-IOS WP7 | Done 9 Nov |
 | 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE WP0 and WP1, PLATFORM-RUNTIME-MAC WP1, COOKED-DRAW WP1 | Done 25 Nov |
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE WP3 | Done 24 Nov |
-| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE WP0, WP2, WP3, WP11, WP12 and WP13 | WP8 of 17 · Blocked: Needs Context |
+| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE WP0, WP2, WP3, WP11, WP12 and WP13 | WP8 of 17 · Not Started |
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | CONTENT-LOOP WP4 for its WP9 to pass the full check; APPLE-PRESENTATION WP3 and SHOWCASE WP9 for its WP6 | Done 25 Nov |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is found on main within about two hours and traced to the commit that made it |  | Done 25 Nov |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE WP2, BASELINE-GUARD WP1 | Done 17 Nov |
