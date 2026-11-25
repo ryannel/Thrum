@@ -936,7 +936,7 @@
         {
           "verdict": "fail",
           "commit": "f936ede89a8dc88e41bdf8ba43b37d81f9a4cf10",
-          "review": ".orchestrate/evidence/CLOUDS/WP7-review.md",
+          "review": ".orchestrate/evidence/CLOUDS/WP7-review-3.md",
           "items": {
             "WP7.1": "pass",
             "WP7.2": "pass",
@@ -970,6 +970,48 @@
             "turns": 1
           },
           "at": "2026-11-25T05:39:14Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "c0fe7d1ccee07c369dcb81add8997eb6a0984022",
+          "review": ".orchestrate/evidence/CLOUDS/WP7-review.md",
+          "items": {
+            "WP7.1": "pass",
+            "WP7.2": "pass",
+            "WP7.3": "pass",
+            "WP7.4": "fail",
+            "WP7.5": "pass",
+            "WP7.6": "pass",
+            "WP7.7": "pass",
+            "WP7.8": "pass"
+          },
+          "findings": [
+            {
+              "name": "Wind drift skips refresh targets at a normal game extent",
+              "item": "WP7.4",
+              "repeat": true
+            },
+            {
+              "name": "Governor-off Metal qualification loses GPU timestamps",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "visible",
+          "usage": {
+            "input": 163235,
+            "cached": 9949568,
+            "output": 22346,
+            "turns": 1
+          },
+          "at": "2026-11-25T08:06:49Z"
         }
       ],
       "authorised": {

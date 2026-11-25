@@ -930,9 +930,9 @@
     {
       "id": "WP7",
       "name": "The sky runs from clear through fair and broken to overcast and back, and its clouds drift, form, grow and thin",
-      "status": "ready_for_review",
-      "failed_reviews": 3,
-      "failed_reviews_with_repeat": 2,
+      "status": "in_progress",
+      "failed_reviews": 4,
+      "failed_reviews_with_repeat": 3,
       "diagnoses": 0,
       "depends_on": [],
       "quality_bar": "Weather as in Red Dead Redemption 2: each sky recognisable at a glance, turning into the next the way real weather does, with clouds that live and die and none that pops, slides or returns on a beat.",
@@ -973,8 +973,8 @@
           "statement": "At 1x, in still air, at 10 m/s and at 40 m/s, and at 60x at 40 m/s, clouds drift in world space at the wind's speed with their shade under them, by even steps from frame to frame at the display's refresh, and no texture slides inside a cloud's shape. A change of wind direction turns the drift and does not move a cloud.",
           "inspect": "Capture `realtime` sequences of 20 seconds at each wind and rate and one across a 90\u00b0 change of direction. Judge consecutive frames, following one cloud and its shade.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP7/r11/README.md",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/CLOUDS/WP7-review.md"
         },
@@ -1026,6 +1026,10 @@
           "name": "Wind drift skips refresh targets at a normal game extent",
           "item": "WP7.4",
           "repeat": true
+        },
+        {
+          "name": "Governor-off Metal qualification loses GPU timestamps",
+          "repeat": false
         }
       ]
     },
