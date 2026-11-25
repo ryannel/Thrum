@@ -25,3 +25,18 @@
 - 2026-11-25 Ten work packages named, WP1 and WP2 with items. `SWARM`'s work packages gained edges to WP3, WP5,
   WP6 and WP7; its design is still written against the engine's own API and is re-planned onto the SDK once the
   owner has approved this design.
+- 2026-11-25 Design review 1 asked for changes, with 15 Must Fix findings
+  ([the review](../../../.orchestrate/evidence/GAME-SDK/design-review.md)); each is settled, and
+  [what changed for each](../../../.orchestrate/evidence/GAME-SDK/design-review-1-changes.md) is on record.
+- 2026-11-25 Review 1, findings 1 to 5: the world's component list and `scene.component` (mechanism 2), `Attach`
+  and declared actions; `PlayerJoined` at a scene's first tick and scenes with no camera; a per-player rule as
+  the whole movement step; a rule's contract with file and socket refusals (ruling 1); a game's own rule
+  crate, new item WP2.10 (ruling 5).
+- 2026-11-25 Review 1, findings 6 to 10: the SDK-only guard keyed on naming `thrum`, so the showcase meets it
+  in WP9; shared and local settings; what a command guarantees; frame functions on the pair the draw uses,
+  with an event cursor; turning and scaled models in WP4 (new ruling 8).
+- 2026-11-25 Review 1, findings 11 to 15: one space index for each layer; what WP1 compiles; a panic by
+  target; witnesses beside digests in WP1.2 and WP2.5 to WP2.8; no lock on WP2.6 and WP2.7.
+- 2026-11-25 Suggestions, all three taken: WP1.5 asks about the loop inside a rule and allows one call for each
+  rule through the engine's callback; mechanism 11 gives a repeated control a key; WP4 writes the kit games on
+  the SDK and WP10 removes the old route (ruling 6).

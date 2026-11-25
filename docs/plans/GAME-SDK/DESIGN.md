@@ -1,6 +1,6 @@
 # Game SDK: one crate a game is written against
 
-25 November 2026. [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
+25 November 2026, revised the same day after [design review 1](LOG.md). [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
 [module list](../ARCHITECTURE.md#track-7-the-game-sdk) · [glossary](../GLOSSARY.md) ·
 [the creator guide](../../design/ENGINE-EXPERIENCE.md), whose ambition this module builds ·
 [the performance policy](../../design/AI-PERFORMANCE.md#performance-investment-from-the-first-design) ·
@@ -102,7 +102,7 @@ Twelve words carry the whole SDK. Each means the same thing in a 2D game, a 3D g
 | **Rule** | A function that moves the world on by one tick. Rules are the only code that changes the world | `fn fall(mut rocks: Query<(&Rock, &mut Transform2d)>, tick: Tick)` |
 | **Frame function** | A function that runs once for each picture: it reads the world as shown and sets what only this player sees | `fn follow_my_hero(mut camera: Local<Camera2d>, ..)` |
 | **Action** | A named thing a player can do, bound to keys, pointer and touch | `const MOVE: Stick = Stick::new("move");` |
-| **Command** | A message a player sends once, such as a menu choice. It arrives exactly once, in order | `send.command(Choice::Upgrade(upgrade))` |
+| **Command** | A message a player sends once, such as a menu choice. One that is taken reaches the rules once, in the order sent, and never twice | `send.command(Choice::Upgrade(upgrade))` |
 | **Player** | Who an input came from. A game played alone has one | `inputs.of(player).stick(MOVE)` |
 | **Look** | A component the engine draws: `Sprite`, `Shape2d`, `Model`, `Light` | `Sprite::new("enemies/bat")` |
 | **Setting** | A named value on the tuning panel | `#[slider(-8.0..=60.0)] elevation: f32` |
@@ -229,7 +229,8 @@ fn show_result(mut ui: Ui, score: Res<Score>) {
 
 What the reader did not write: a window, a device, a clock, a schedule, component registration, interpolation
 between ticks, sprite batching, a web page, or a line for Chrome. `cargo play` opens it on the Mac and
-`cargo play --web` serves it to Chrome.
+`cargo play --web` serves it to Chrome. `game_over` has no camera: a scene without one shows its background and
+its interface and draws nothing else ([scenes](#5-scenes)).
 
 ### B. A first 3D scene
 
@@ -240,9 +241,10 @@ is a game and not a still.
 use thrum::prelude::*;
 
 fn main() -> thrum::Result {
-    Game::new("Thrum starter").settings::<Sun>().scene(clearing).run()
+    Game::new("Thrum starter").local_settings::<Sun>().scene(clearing).run()
 }
 
+/// Where the Sun stands is this screen's own, so these sliders are local settings and may be plain `f32`.
 #[derive(Settings)]
 struct Sun {
     #[slider(-8.0..=60.0, step = 0.5, unit = "°", label = "Sun elevation")]
@@ -285,14 +287,16 @@ fn spin(mut things: Query<(&Spins, &mut Transform3d)>, tick: Tick) {
     }
 }
 
-fn move_sun(mut sky: Local<Sky>, sun: Res<Sun>) {
+fn move_sun(mut sky: Local<Sky>, sun: Local<Sun>) {
     sky.sun = SunAngle::degrees(sun.elevation, sun.azimuth);
 }
 ```
 
 The sky, the Sun's light and shadows, exposure, tone mapping, reconstruction and the governor are the engine's
 defaults. The two sliders appear in the Mac panel and on the Chrome page, a parameter file sets them, and the
-profiler is a toggle beside them.
+profiler is a toggle beside them. The rock turns smoothly between ticks, and its shadow turns with it
+([looks](#7-looks-what-is-drawn)). The sliders move the sky on this screen only: no rule reads them, so they are
+[local settings](#10-settings-and-the-panel).
 
 ### C. A slice of the V1 showcase
 
@@ -303,6 +307,7 @@ use thrum::prelude::*;
 
 const NEXT_STOP: Button = Button::new("next stop");
 
+/// Registered with `Game::local_settings::<Day>()`: the hour lights this screen and no rule reads it.
 #[derive(Settings)]
 struct Day {
     #[slider(4.0..=22.0, step = 0.05, unit = " h", label = "Hour")]
@@ -364,7 +369,7 @@ fn tour(inputs: Inputs, mut tour: ResMut<Tour>) {
     }
 }
 
-fn sun_follows_hour(mut sky: Local<Sky>, day: Res<Day>) {
+fn sun_follows_hour(mut sky: Local<Sky>, day: Local<Day>) {
     sky.sun = SunAngle::at_hour(day.hour, VALLEY_LATITUDE);
 }
 
@@ -395,6 +400,7 @@ pub const GEMS: Layer = Layer::new("gems");
 pub struct Hero {
     pub fire_every: Seconds,
     pub damage: i32,
+    pub chose_in_wave: u32,
 }
 #[derive(Component)]
 pub struct Enemy;
@@ -429,6 +435,11 @@ pub enum Phase {
     Lost,
 }
 
+#[derive(Event)]
+pub struct EnemyDied {
+    pub at: Vec2,
+}
+
 #[derive(Command)]
 pub enum Choice {
     Upgrade(Upgrade),
@@ -443,12 +454,14 @@ pub enum Upgrade {
 
 pub fn arena(scene: &mut Scene) {
     scene.space2d(Space2d::cells(4.0)); // part of the rules, so the same for every player
+    scene.action(MOVE); // the rules read it; the crate that draws this scene binds it to keys
+    scene.component::<Gem>(); // no rule or frame function names a gem, so the scene says it exists
     scene.resource(Run::default());
     scene.rules((
         heroes_join_and_leave,
+        per_player(move_hero),
         start_wave,
         (
-            per_player(move_hero),
             spawn_enemies,
             steer_enemies,
             fire_at_nearest,
@@ -466,10 +479,9 @@ pub fn arena(scene: &mut Scene) {
 
 pub fn hero(player: Player) -> impl Bundle {
     (
-        Hero { fire_every: seconds(0.4), damage: 1 },
+        Hero { fire_every: seconds(0.4), damage: 1, chose_in_wave: 0 },
         player,
         Health(100),
-        Velocity(Vec2::ZERO),
         Transform2d::at(num(player.index()) * 3.0 - 4.5, 0.0),
         Sprite::new("heroes/knight").layer(2),
         Collider2d::circle(0.5).on(HEROES),
@@ -487,6 +499,7 @@ fn bat(at: Vec2) -> impl Bundle {
     )
 }
 
+/// `PlayerJoined` comes for every player who is here when the arena starts, and for each who arrives later.
 fn heroes_join_and_leave(
     joined: Events<PlayerJoined>,
     left: Events<PlayerLeft>,
@@ -505,10 +518,11 @@ fn heroes_join_and_leave(
     }
 }
 
-/// A hero walks where its own player steers. A per-player rule reads only that player's entity and input,
-/// so in a match the engine can run it ahead for the local player and their hero answers at once.
-fn move_hero(velocity: &mut Velocity, input: &Input) {
-    velocity.0 = input.stick(MOVE) * 6.0;
+/// A hero walks where its own player steers. This is the hero's whole movement: a per-player rule is given
+/// its player's character, that player's input and the tick, and nothing else, so in a match the engine can
+/// run it ahead for the local player and their hero answers at once.
+fn move_hero(at: &mut Transform2d, input: &Input, tick: Tick) {
+    at.position = (at.position + input.stick(MOVE) * 6.0 * tick.dt()).clamp_to(ARENA);
 }
 
 fn spawn_enemies(run: Res<Run>, heroes: Query<&Transform2d, With<Hero>>, mut entities: Entities, mut random: Random) {
@@ -520,6 +534,7 @@ fn spawn_enemies(run: Res<Run>, heroes: Query<&Transform2d, With<Hero>>, mut ent
 
 fn steer_enemies(mut enemies: Query<(Entity, &Transform2d, &mut Velocity), With<Enemy>>, space: Space2d) {
     enemies.par_each(|(me, at, mut velocity)| {
+        // The heroes are a layer of their own, so this looks at four colliders and not at the crowd.
         let Some(hero) = space.nearest(at.position).on(HEROES).first() else { return };
         let chase = (hero.position - at.position).normalized();
         let mut apart = Vec2::ZERO;
@@ -625,12 +640,15 @@ fn end_wave(
     }
 }
 
-fn take_choices(choices: Commands<Choice>, mut heroes: Query<(&Player, &mut Hero, &mut Health)>) {
+/// A hero takes one upgrade in each intermission. A second choice in the same one changes nothing, so a
+/// choice made twice, or made again after a lost connection, is safe.
+fn take_choices(choices: Commands<Choice>, run: Res<Run>, mut heroes: Query<(&Player, &mut Hero, &mut Health)>) {
     for (player, Choice::Upgrade(upgrade)) in choices.read() {
         for (owner, mut hero, mut health) in &mut heroes {
-            if *owner != player {
+            if *owner != player || hero.chose_in_wave == run.wave {
                 continue;
             }
+            hero.chose_in_wave = run.wave;
             match upgrade {
                 Upgrade::FasterFire => hero.fire_every = hero.fire_every * 0.85,
                 Upgrade::MoreDamage => hero.damage += 1,
@@ -688,10 +706,13 @@ fn status(mut ui: Ui, run: Res<Run>, heroes: Query<(&Player, &Health), With<Hero
     ui.top_right(|ui| ui.text(format!("Level {}", run.team_level)));
 }
 
-fn upgrade_cards(mut ui: Ui, run: Res<Run>, mut send: Send) {
-    if run.phase != Phase::Intermission {
+fn upgrade_cards(mut ui: Ui, run: Res<Run>, heroes: Query<(&Player, &Hero)>, me: Me, mut send: Send) {
+    let chosen = heroes.iter().any(|(player, hero)| *player == me.player() && hero.chose_in_wave == run.wave);
+    if run.phase != Phase::Intermission || chosen {
         return;
     }
+    // The cards are offered from what the world says, not from what was sent. They stay until the choice has
+    // landed, so a choice lost on the way is made again, and `take_choices` ignores one that lands twice.
     ui.modal("Choose an upgrade", |ui| {
         for upgrade in [Upgrade::FasterFire, Upgrade::MoreDamage, Upgrade::Heal] {
             if ui.card(upgrade.name(), upgrade.blurb()).chosen() {
@@ -717,9 +738,11 @@ fn a_hero_shoots_the_nearest_bat_and_it_leaves_a_gem() {
     assert_eq!(game.count::<With<Gem>>(), 1);
 }
 
-/// Only the rules under test: a scene is a function, so a test builds the one it needs.
+/// Only the rules under test: a scene is a function, so a test builds the one it needs. It has no camera
+/// and binds no key, because a test draws nothing and scripts its input.
 fn fight(scene: &mut Scene) {
     scene.space2d(Space2d::cells(4.0));
+    scene.component::<Gem>();
     scene.rules((fire_at_nearest, move_bodies, shots_hit, enemies_die));
 }
 ```
@@ -776,6 +799,19 @@ fn gather(mut ui: Ui, mut session: Session, mut scenes: Go) {
 What made this possible is in the rules already: heroes are spawned from `PlayerJoined`, every rule reads
 `inputs.of(player)`, the upgrade choice is a command, and the numbers agree on every device. A game played
 alone is the same game with one player, who joins at the first tick.
+
+The lobby keeps nobody back. A scene is given `PlayerJoined` at its first tick for every player already in the
+game, and again for each who arrives later ([players](#6-actions-commands-and-players)). So:
+
+- *Play alone*, chosen after any time in the lobby: the arena's first tick brings `PlayerJoined` for the one
+  player, their hero is spawned, and `start_wave` finds a hero.
+- Three friends join the host in the lobby and the host presses *Start*: the arena's first tick brings four
+  `PlayerJoined`, in slot order, on every machine, and four heroes stand in a row.
+- A friend joins while a wave is running: they are sent the world as it stands, with its heroes, and their own
+  `PlayerJoined` comes at the tick they enter. One hero for each player in every case, because a scene's
+  entities leave with it and a player is announced to a scene once.
+
+The lobby has no camera, so it shows its background and its interface and draws nothing else.
 
 ## Research and selection
 
@@ -840,12 +876,12 @@ of the engine's own types is re-exported under `thrum`'s names, and the rest sta
 `thrum` has a **rules half** and a **play half**.
 
 - The rules half is components, resources, queries, rules, entities, events, input, commands, players, the
-  tick, random draws, space queries, the maths, and the look components as data. It builds with no renderer,
-  window, GPU, network or platform crate in its dependency closure. A headless server, a test and a rule crate
-  use only this half.
-- The play half is `run()`, scenes' cameras and sky, frame functions, the interface, settings, assets and the
-  session. The `multiplayer` Cargo feature, off by default, is the only way `thrum-network` and
-  `thrum-transport` enter a game's closure.
+  tick, random draws, space queries, the maths, and the look components and shared settings as data. It
+  builds with no renderer, window, GPU, network or platform crate in its dependency closure. A headless
+  server, a test and a rule crate use only this half.
+- The play half is `run()`, scenes' cameras and sky, frame functions, the interface, the panel and local
+  settings, assets and the session. The `multiplayer` Cargo feature, off by default, is the only way
+  `thrum-network` and `thrum-transport` enter a game's closure.
 
 How the two halves are laid out in crates is the builder's, registered in `.config/architecture.toml`. The
 rule that binds: a crate that names `thrum` with default features off gets the rules half and compiles alone.
@@ -866,8 +902,31 @@ The world is `thrum-core`'s registered simulation. The SDK adds no storage.
   builder's to choose and document, and `Game::max_entities(n)` sets it. A spawn that would pass it is refused
   with [a message](#13-mistakes-that-explain-themselves) and the world is unchanged.
 
-Components and resources are registered from the signatures of the rules that name them. A game writes no list
-of them.
+**What the world holds is fixed before the first tick.** The engine builds its storage and its schedule once,
+at startup, from a list of every component and resource. The SDK makes that list from three places, and a game
+writes the third only for what the first two cannot show:
+
+1. **The signatures of every function the game's scenes list**: rules, conditions, enter and leave functions,
+   per-player functions and frame functions. A component in a `Query`, a `With`, a `Without` or an `Attach`, and
+   a resource in a `Res`, a `ResMut` or a `scene.resource(..)`, are known from there.
+2. **The SDK's own components**: the transforms, the looks, `Collider2d` and `Player`.
+3. **`scene.component::<T>()`**, for a component that is only ever spawned and never named in a signature, such
+   as example D's `Gem`. The body of a rule is not visible to the SDK, so a bundle spawned inside one does not
+   announce what it holds.
+
+Every scene given to the game is read, not only the one running, so the list is one list for the whole game.
+Spawning or counting a component the list lacks is refused with
+[a message](#13-mistakes-that-explain-themselves) that names the rule, the component and the line to add. It
+is refused at that spawn, and not at startup, because nothing before it names the type.
+
+In a game with multiplayer on, the list must come out the same from the rules alone, because the rules are what
+every peer shares. A component that only a frame function names is then a startup error, which says to add
+`scene.component::<T>()` beside the rules.
+
+**What a rule may touch comes from its signature alone.** Each `&T` in a query reads `T` and each `&mut T`
+writes it. `Entities` asks for the engine's one structural permit, which covers spawning any bundle and
+despawning any entity, so what a rule spawns has to be known to the world and never declared for access.
+`Attach<T>` writes `T`.
 
 ### 3. Rules, and the tick
 
@@ -878,13 +937,14 @@ declaration the engine's schedule validates.
 |---|---|
 | `Query<D, F>` | The entities that have `D`, filtered by `With<T>` and `Without<T>`, visited in a fixed order. `&T` reads, `&mut T` writes, `Entity` names |
 | `Res<T>`, `ResMut<T>` | A resource |
-| `Entities` | `spawn`, `despawn`, `insert`, `remove` |
-| `Inputs` | Each player's actions for this tick |
-| `Commands<T>` | The commands of type `T` admitted at this tick, with who sent each, in order |
-| `Events<T>`, `Emit<T>` | Events of this tick: `PlayerJoined`, `PlayerLeft`, `PlayerAway`, `PlayerBack`, and the game's own |
+| `Entities` | `spawn` a bundle and `despawn` an entity |
+| `Attach<T>` | `add(entity, value)` and `remove(entity)`: one component put on or taken off a living entity. It lands when the tick ends, as a spawn does |
+| `Inputs` | Each player's actions for this tick, for the actions the game's scenes declare |
+| `Commands<T>` | The commands of type `T` admitted at this tick, with who sent each, in the order each player sent them |
+| `Events<T>`, `Emit<T>` | Events of this tick: `PlayerJoined`, `PlayerLeft`, `PlayerAway`, `PlayerBack`, and the game's own. An event a rule sends is read by later rules of the tick and by none in the next |
 | `Tick` | The tick's number, its length `dt()`, and `every`, `after`, `reached` |
 | `Random` | Draws keyed by the game's seed, the tick and what is asked, so a replay draws the same |
-| `Space2d` | Overlap, nearest and sweep queries over entities with a `Collider2d`, by layer |
+| `Space2d` | `touching`, `within`, `nearest` and `sweep` over entities with a `Collider2d`, by layer |
 | `Scenes` | `go_to(scene)` |
 
 **What a rule sees.** Rules of the running scene run once each tick, in the order the scene lists them. A rule
@@ -894,9 +954,49 @@ later rules of its last tick. `Space2d` answers from where things stood when the
 engine's own shape (in-place writes that roll back together, with structural changes at the barrier), so the SDK
 adds no machinery to provide it, and the guides state it in these words.
 
-**What a rule may not do.** Read a clock, a file, the network or anything else outside its parameters. Nothing a
-rule can be handed leads there: its parameters are the whole of what it can reach. `per_player(rule)` is
-narrower still: its function is given one player's entity and that player's input, and nothing else.
+**A rule is a function of its parameters.** The same world, input and tick give the same result on every
+machine and in every replay. The SDK holds up its side by type: nothing a rule can be handed leads to a clock,
+a file, the network, the window or one player's screen, and a rule cannot take a frame function's parameters.
+The other side is the author's, because a rule is ordinary Rust and Rust lets any function open a file. The
+contract, in the words the guides use: **a rule reads nothing but its parameters and changes nothing but
+through them.** No file, socket, process, standard input, environment variable, clock, thread or changing
+static, and no result that hangs on a hash map's order or a pointer's value.
+
+What checks the contract:
+
+- **In a rule crate, the profile check** (`cargo play --check`) refuses the ordinary ways of breaking it, each
+  with a message that says why. As the profile does today: raw-float arithmetic and methods, unordered
+  containers, clocks, threads, the environment, outside crates, build scripts and suppressed lints. Added for
+  the SDK ([ruling 1](../ARCHITECTURE.md#seam-rulings-for-game-sdk)): reading or writing a file (`std::fs`),
+  opening a socket (`std::net`), starting a process (`std::process`) and reading standard input.
+- **It is a guard against mistakes, not a sandbox.** `unsafe` code, a foreign function or a static with
+  interior mutability can still reach out, as [the portable rules guide](../../SIM2D-RULES.md) says of the
+  profile. What gets past is caught, where it shows, by the digests a match compares.
+- **A single-crate game is not checked.** Its rules carry the same contract, and it is told so when it turns
+  multiplayer on.
+
+**A per-player rule is a character's whole movement step.** `per_player(f)` runs `f` once a tick for each
+player's character: the one entity that carries that `Player` and the components `f` names. `f` may take `&T`
+and `&mut T` for components of that entity, `&Input` for that player's input, and `Tick`. Nothing else: no
+query, resource, `Space2d`, `Entities` or `Random`, each of which is a compile error there. So the function
+writes the pose itself, as example D's `move_hero` writes its hero's `Transform2d`, and does not leave a
+velocity for a later rule to apply. A per-player rule stands at the top level of a scene's rule list and runs
+in every tick of that scene. Putting one under `when` is a startup error, because whether it ran would then
+hang on something outside it; what gates a character's movement is held on the character, as a component the
+function reads. Two entities that match one per-player rule for one player refuse the tick. These limits are
+what let a match run the function ahead of the host ([multiplayer](#12-multiplayer-as-an-opt-in)). They hold
+alone as well, so the function written for a game played alone is the one a match predicts, unchanged.
+
+**Space queries search one layer.** A collider is on one layer, and each layer has its own index, built once a
+tick from that layer's colliders in slot order, from where they stood when the tick began. `.on(LAYER)`
+searches that layer's index and nothing else. So the cost of a query follows the layer it asks and not the
+world: an enemy that asks for the nearest of four heroes looks at four colliders with 10,000 enemies around
+it, and a nearer enemy can never stand in front of a hero. Answers come in the index's fixed order: nearest
+first by squared distance, ties by slot. `nearest(..).within(r)` looks only in the cells that radius reaches.
+Without `within`, `nearest` looks at every collider on the layer, which is right for a small layer such as the
+heroes; the guides say to give a radius on a crowded one, and a search that widens ring by ring is not built
+in the first release. A query with no `.on` asks every layer and merges the answers in the same order. *It
+would change* if a game needed the nearest of a crowded layer, with no radius, from every member of a crowd.
 
 **Parallel work** is inside a rule: `query.par_each(..)` runs the closure over the engine's chunks. The closure
 writes only the entity it is given and reads the rule's other parameters. The result is the same as the serial
@@ -905,30 +1005,68 @@ loop, by construction.
 **Conditions.** `rules.when(condition)` runs a rule or a group only in ticks where a read-only function returns
 true.
 
-**Failure.** A rule returns nothing, or a `thrum::Result`. An error refuses the tick: the world stays as it was
-at the last tick, and the game stops with the rule's name and the error. A panic in a rule is reported the same
-way.
+**Failure.** A rule returns nothing, or a `thrum::Result`. A returned error refuses the tick, on every target:
+the engine rolls back what earlier rules of the tick wrote, the world is as it was at the last tick, and the
+game stops with the rule's name, the tick and the error. In a test, `step()` returns that error and the game
+can be stepped again. A panic is a bug in the game, and what follows it depends on the target, because Rust's
+browser target aborts on a panic and cannot unwind:
+
+| Target | When a rule panics |
+|---|---|
+| The Mac, the iPhone simulator and `Game::test()` | The panic is caught and reported as a returned error is, with the previous world intact |
+| Chrome (`wasm32-unknown-unknown`) | The game's program stops. Before it does, the SDK's panic hook puts the rule, the tick and the message on the page and in the console. Nothing is rolled back, because nothing runs afterwards |
+
+So a rule that can fail in play returns an error, and the guides say so. A build of the browser target that
+unwinds is not on the stable toolchain, and the SDK does not depend on one.
 
 **The tick** is 60 Hz unless `Game::tick_rate` says otherwise, the brief's "configurable, not an engine
 ceiling". Speeds are written per second and multiplied by `tick.dt()`.
 
 ### 4. Frame functions, and the frame
 
-A frame function runs once for each picture, on the thread that owns the window. It reads the world **as
-shown**: transforms are where the picture has them, between the last two ticks, and everything else is as of the
-newer tick. It writes only what belongs to this player's screen.
+A frame function runs once for each picture, when the engine samples the scene for that picture. For every
+picture the engine chooses a pair of adjacent published ticks and how far between them the picture stands
+([C02](../../design/CONTRACTS.md#c02-time-and-committed-state--f1-coordinator-w1-world)). On the Mac that pair
+can be older than the newest one published. The engine hands the SDK that pair and that fraction, the frame
+functions run on them, and the draw that follows uses the same pair and the same fraction. That is **the world
+as shown**:
+
+- a transform is where the picture has it, between the pair's two ticks at the picture's fraction. A camera
+  set from a hero's transform and the hero's sprite are therefore one instant, whatever the tick rate and the
+  display rate;
+- everything else is as of the pair's newer tick;
+- in a match, the local player's own character is at its predicted pose, in a query and in the draw alike
+  ([multiplayer](#12-multiplayer-as-an-opt-in)).
+
+A frame function writes only what belongs to this player's screen.
 
 | Parameter | What it gives |
 |---|---|
 | `Query<D, F>`, `Res<T>` | The world as shown, read-only |
-| `Events<T>` | Events of the ticks first shown since the last frame, each once |
+| `Events<T>` | The events of every tick shown since the last picture, each once, in tick order. `missed()` counts any that were dropped |
 | `Local<T>` | State of this screen: the camera, the sky, the game's own menu state. Never part of the world |
 | `Ui` | The interface for this frame |
 | `Draw2d` | Sprites and shapes for this frame only, drawn among the world's |
-| `Send` | `command(..)`: the one way a frame function affects the world |
+| `Send` | `command(..)`: the one way a frame function affects the world. It says whether the command was taken |
 | `Me`, `Session` | Which player this screen is, and the match |
 | `Frame` | The frame's time and its `dt()` |
 | `Go` | `go_to(scene)`, as a command |
+
+**Events reach the frame through a bounded cursor.** Pictures and ticks do not come at the same rate, so the
+tick an event happened in may be an endpoint of no picture at all. With each tick it commits, the SDK
+publishes that tick's events for the frame functions that read them, in a ring that holds the most recent
+ticks: at least one second of them, the size the builder's to choose and document. Each `Events<T>` of a frame
+function keeps a cursor, the last tick it has delivered.
+
+- A picture whose newer tick is `n` delivers the events of every tick after the cursor, up to `n`, and moves
+  the cursor to `n`. A tick that fell between two pictures loses nothing: the death that happened in it
+  flashes in the next picture.
+- A picture held on the same pair delivers nothing a second time.
+- When more ticks have passed than the ring holds, as after a hitch or a hidden tab, the oldest are dropped
+  and `missed()` says how many. These events are for show, so nothing in the world hangs on them.
+- A rewind, a resync and a change of scene reset the cursor to the tick the world then stands at. Events still
+  waiting are dropped. A tick stepped again after a rewind delivers its events again, because the second run
+  is the one that stands.
 
 Interpolation between ticks is the engine's, on the GPU, for every look. A game writes none. A component is
 published to frame functions only if one names it, which the SDK knows from their signatures, so a component
@@ -947,24 +1085,63 @@ in one crate and its screens in another.
 - Which scene is running is world state, so a match's players are always in the same scene.
 - A scene's kind (2D or 3D) follows from its camera. A 2D scene compiles none of the 3D passes and a 3D scene
   none of the sprite pass, as [RENDER-2D](../RENDER-2D/DESIGN.md) built.
+- A scene needs no camera. Without one it shows its background and its interface and draws no look, which is
+  what a menu, a lobby and a result page are. An entity with a look in such a scene is not drawn and is
+  [reported once](#13-mistakes-that-explain-themselves).
+- The camera belongs to one player's screen, not to the world. A game with no window, such as a test, has no
+  camera and needs none, so nothing about a camera is checked there.
 
 ### 6. Actions, commands and players
 
-- An **action** is a constant: `Button`, `Axis` (one number from −1 to 1) or `Stick` (two). A scene binds it to
-  keys, the pointer and touch. The shell samples bindings, and each tick admits one input frame for each
-  player. A rule reads `inputs.of(player)`: `held`, `pressed` (went down this tick), `axis`, `stick`.
-  `inputs.first()` is the first player, for a game played alone.
-- A **command** is a value of a type that derives `Command`, sent from a frame function. It is admitted at one
-  tick, in order, exactly once. Alone it arrives at the next tick. In a match it is `SESSION`'s ordered command.
-- A **player** is a slot. `PlayerJoined` arrives as an event at the tick a player enters, and alone that is the
-  first tick. A game that spawns its characters from `PlayerJoined` is ready for a match without knowing it.
-- Settings the rules read are world state, changed by a command the panel sends.
+**Actions.** An action is a constant: `Button`, `Axis` (one number from −1 to 1) or `Stick` (two). A rule reads
+`inputs.of(player)`: `held`, `pressed` (went down this tick), `axis`, `stick`. `inputs.first()` is the first
+player, for a game played alone.
+
+- A scene **declares** the actions its rules read. `scene.bind(ACTION, keys)` declares one and binds it to
+  keys, the pointer and touch. `scene.action(ACTION)` declares one without binding it, for a rule crate whose
+  screens are written elsewhere, as example D's `arena` does.
+- The actions that all of a game's scenes declare are its action set, each known by its name. The set is the
+  same on every peer, fixes the layout of the input frame, and is part of the rule-set identity.
+- The shell samples the running scene's bindings, and each tick admits one input frame for each player.
+- `Inputs` in a signature does not say which actions a rule reads, so two mistakes are found later than
+  compile time. At startup, `run()` refuses a declared action that no scene binds. And a rule that reads an
+  action no scene declared refuses its tick, at the read, with the rule, the action and the line to add. A
+  test scripts its input and needs no binding.
+
+**Commands.** A command is a value of a type that derives `Command`, sent from a frame function. What a game
+can rely on:
+
+- `send.command(..)` says at once whether the command was taken. It is not taken when too many commands are
+  still on their way (`Busy`: send it in a later frame) or when the match has closed (`Closed`). A command
+  that was not taken is never read.
+- A command that is admitted is read by `Commands<T>` at one tick, once, after the same player's earlier
+  commands, on every machine. No command is read twice.
+- Alone, a command that was taken is admitted at the next tick. In a match it is `SESSION`'s ordered command:
+  the host admits it at the first tick with room, and it does not expire while the link holds.
+- If the link drops while a command is on its way, the game cannot know whether it was admitted. The session
+  does not send it again, and the player comes back to a fresh copy of the world
+  ([the session guide](../../SESSION.md)). So a game offers a choice from what the world says and makes a
+  repeated choice harmless, as example D's upgrade does: the cards stay until the hero's own state shows the
+  choice, and the rule ignores a second one.
+
+**Players.** A player is a slot, and who is in the game is world state. `PlayerJoined` is an event a scene's
+rules read at the tick a player enters the game, and at a scene's first tick for every player already in it,
+in slot order. Alone, the one player joins at the first tick. A scene's entities leave with it, and a player
+is announced to a scene once. So a scene that spawns a character for each `PlayerJoined` has one for each
+player, however they came: before the scene started, as from a lobby, or during it. `PlayerLeft`,
+`PlayerAway` and `PlayerBack` come at the tick of each. A game written this way is ready for a match without
+knowing it.
+
+**Settings the rules read** are world state, changed by a command the panel sends
+([settings](#10-settings-and-the-panel)).
 
 Input reaches rules only in these three forms, which is `SWARM`'s
 [three drivers](../SWARM/DESIGN.md#7-who-admits-the-frames-alone-and-in-a-match): alone, hosting and joined, the
 rules cannot tell which. The engine's input frame carries a fixed number of axes and at most eight timed actions
-of up to 256 bytes ([the guide](../../SESSION.md)). A game whose actions cannot fit is refused at startup, with
-the count.
+of up to 256 bytes ([the guide](../../SESSION.md)). What can be known before the first tick is checked at
+startup: that the action set fits the frame, with the counts and the limit, and that each command type's
+encoding fits the bytes one action may have. Room in the queue while the game runs cannot be known then, and
+is what `send.command` reports.
 
 ### 7. Looks: what is drawn
 
@@ -980,8 +1157,18 @@ component.
 | Touching | `Collider2d` and `Space2d` | Not in the first release |
 
 - Extraction is the SDK's, written once: it maps the looks of entities whose rows changed to
-  `RENDER-2D`'s sprite rows and to cooked mesh rows, and the engine interpolates on the GPU. An entity no rule
-  writes is extracted once.
+  `RENDER-2D`'s sprite rows and to the 3D scene's instance rows, and the engine interpolates on the GPU. An
+  entity no rule writes is extracted once.
+- **In 3D the whole placement is interpolated: position, turn and scale.** The 3D scene's rows carry only a
+  position for each of the two ticks today, and its passes interpolate only that, so a model that turned or
+  grew in place would stand still between ticks. WP4 adds the turn and the scale at both ticks to the
+  extraction and to the row ([ruling 8](../ARCHITECTURE.md#seam-rulings-for-game-sdk)), and every pass that
+  places an instance uses the one interpolated placement: the scene's vertices and normals, the shadow caster,
+  the culling bounds for the camera and for the shadow, motion vectors, and the ray-traced instances where ray
+  tracing is on. Position and scale go linearly, and the turn takes the shorter way round. A row whose turn
+  and scale are the same at both ticks is placed exactly as it is today, so no exact image of the engine's
+  changes. The case that tells this from a drifting prop is a lopsided model that stays in one place and
+  turns: its lit faces and its shadow turn together, smoothly, between ticks.
 - Draw order in 2D is layer, then lower on the screen in front, then identity, which `RENDER-2D` keeps stable.
 - The camera, sky and background belong to the screen (`Local<..>`), not the world, so two players of one match
   can look at different places.
@@ -1003,8 +1190,9 @@ so one input trace gives one result on the Mac, in Chrome and on the iPhone simu
   ([ruling 1](../ARCHITECTURE.md#seam-rulings-for-game-sdk)).
 - **A game played alone** uses the same numbers. Its rules are portable without its author doing anything.
 - **What can break it** is code that reaches outside: a raw float computed with the platform's maths, a hash
-  map's order, an outside crate. In a rule crate, the profile's lints refuse those with a message that says
-  why, as they do today. A single-crate game is not linted, and is told so when it turns multiplayer on.
+  map's order, a file, a clock, an outside crate. [A rule's contract](#3-rules-and-the-tick) says what a rule
+  may not reach and what checks it: the profile's lints in a rule crate, and nothing in a single-crate game,
+  which is told so when it turns multiplayer on.
 
 ### 9. Assets
 
@@ -1022,9 +1210,34 @@ the nearest names that do exist. The test harness lists every such name a run us
 `thrum-controls`' typed controls ([CREATOR](../CREATOR/DESIGN.md)), so the Mac panel, the Chrome page and
 parameter files work as they do today, and the profiler is in the panel of every game.
 
-- `Game::settings::<T>()` makes `T` world state: rules and frame functions read `Res<T>`, and a panel edit
-  enters as a command. In a match the host's edits are the ones admitted.
-- `Game::local_settings::<T>()` makes `T` this screen's: frame functions read `Local<T>`.
+A setting has one owner, and the game says which when it registers the struct:
+
+| | A shared setting: `Game::settings::<T>()` | A local setting: `Game::local_settings::<T>()` |
+|---|---|---|
+| Owner | The world. `T` is a resource | This screen |
+| Read by | Rules and frame functions, as `Res<T>` | Frame functions, as `Local<T>`. A rule cannot take it |
+| Fields | What a resource may hold: `Num`, integers, `bool`, a `Data` enum. A raw float is a compile error that says to use `Num`, or to make the setting local | Those, and `f32` |
+| A panel edit | Enters as a command and changes the world at a tick, like any input. The panel's value becomes the field's type once, on the machine where the edit was made, and the command carries that value, so every peer applies the same bits. A replay holds it | Changes this screen at once. It never leaves the machine and is in no digest and no replay |
+| In a match | The host's edits are the ones admitted. Another player's panel shows the value and cannot change it | Each player has their own |
+| A parameter file | Its values enter as the same commands, at the first tick | Read at startup and whenever the file changes |
+
+Examples B and C's Sun and hour light one player's sky and no rule reads them, so they are local settings and
+their sliders are `f32`. A setting that changes play is shared:
+
+```rust
+/// The whole match plays at one difficulty: the host's panel sets it and the rules read it.
+#[derive(Settings)]
+struct Difficulty {
+    #[slider(0.5..=3.0, step = 0.1, label = "Enemy speed")]
+    enemy_speed: Num,
+}
+
+fn enemies_speed_up(mut enemies: Query<&mut Velocity, With<Enemy>>, difficulty: Res<Difficulty>) {
+    for mut velocity in &mut enemies {
+        velocity.0 = velocity.0 * difficulty.enemy_speed;
+    }
+}
+```
 
 ### 11. The interface
 
@@ -1035,6 +1248,16 @@ differs from the last frame, so an interface that did not change costs what `GAM
 exclusive scope: while it is open the game's actions are let go, and what is still held comes back when it
 closes. Focus, direction keys, touch sizes, safe areas and density are `GAME-UI`'s and need nothing from the
 game.
+
+A control is the same control from one frame to the next by its place in the description. Where controls are
+made in a loop and their number, order or labels can change, the game gives each a key that stays with what it
+stands for, so `GAME-UI`'s focus and a press under way follow the control and not its position:
+
+```rust
+for upgrade in offered {
+    if ui.card(upgrade.name(), upgrade.blurb()).key(upgrade).chosen() { /* .. */ }
+}
+```
 
 Text exists at the sizes a font was cooked at. The SDK's default font and sizes ship with it, so a first game
 needs no font.
@@ -1048,13 +1271,29 @@ events, and the driven world. A game writes none of the steps of [the session gu
 
 - **Who does what** is `SESSION`'s and unchanged: a native process hosts, browsers and the simulator join, the
   crowd is shown at the confirmed tick, and a peer too slow is dropped.
-- **The local player's own character answers at once** when its movement is a `per_player` rule: the SDK gives
-  that function to `SESSION`'s predicted controller, with the components it writes as the controller's state.
+- **The local player's own character answers at once** when its movement is
+  [a per-player rule](#3-rules-and-the-tick). The SDK gives that function to `SESSION`'s predicted controller
+  as the controller's step. The controller's state is the components the function names, read from the
+  player's character at the confirmed tick and compared by their encoded bits. Its input is the player's own
+  input as the wire carries it, and its constant is the length of a tick. The function is the whole step, so
+  running it ahead moves the pose and not only a velocity.
+- **What the local player's screen shows.** Their own character is shown from the controller: the components
+  the per-player function names are at the predicted pose, interpolated between predicted ticks, both in a
+  frame function's query and in the draw. `follow_my_hero` and the hero's sprite therefore move together as
+  soon as the stick moves, before the host has confirmed anything. The crowd and the other players' heroes are
+  shown at the confirmed tick. When the host's result differs, the controller returns to the confirmed state
+  and replays, and the SDK eases the shown pose to the corrected one over a few pictures. A game writes none
+  of this.
 - **`Session`** in a frame function: `host()`, `join(ticket)`, `state()`, `leave()`. A ticket arrives as a link,
   a paste or a launch argument.
-- **A game that can be played online keeps its rules in a rule crate**, as example D does, and
-  `cargo play --check` holds that crate to the profile. The `multiplayer` template is laid out so. A game whose
-  rules are not in one is told at startup, with how to move them.
+- **A game that can be played online keeps its rules in a rule crate of its own**, as example D does: a
+  package inside the game's folder, beside the package that draws the game, whose manifest says it is a rule
+  crate. `cargo play --check` holds that crate to the profile. It finds the crate from the game's own
+  manifests and not from the engine's registry of rule packages, so a game outside the engine checkout is
+  checked for its own rules, and a violation in them fails its check. The engine's external game check admits
+  the path from a game's package to its own rule crate as it admits a path to the engine's crates
+  ([rulings 1 and 5](../ARCHITECTURE.md#seam-rulings-for-game-sdk)). The `multiplayer` template is laid out so
+  and passes both. A game whose rules are not in a rule crate is told at startup, with how to move them.
 
 ### 13. Mistakes that explain themselves
 
@@ -1064,29 +1303,44 @@ work package that builds its surface:
 | When | Mistake | The message says |
 |---|---|---|
 | Compile | A rule takes `Ui`, `Local<T>`, `Draw2d`, `Send`, `Me`, `Session` or `Frame` | That a rule must give the same result on every player's machine, and to move this to a frame function |
-| Compile | A frame function takes `ResMut<T>`, `Entities`, `Emit<T>` or a `&mut` query | That frame functions cannot change the world, and to send a command or write a rule |
-| Compile | A component holds a `Vec`, a `String`, a reference or a raw float | That components are plain data, and what to use |
+| Compile | A frame function takes `ResMut<T>`, `Entities`, `Attach<T>`, `Emit<T>` or a `&mut` query | That frame functions cannot change the world, and to send a command or write a rule |
+| Compile | A component, a resource or a shared setting holds a `Vec`, a `String`, a reference or a raw float | That world state is plain data, and what to use: `Num` for a number, and `local_settings` for a setting only this screen reads |
 | Compile | `inputs.stick(..)` on a `Button`, and the like | Rust's own type error, on the constant |
+| Compile | `per_player` is given a function that takes a query, a resource, `Space2d`, `Entities` or `Random` | That a per-player rule must be able to run ahead on one machine, and to keep what it needs on the character |
 | Startup | Two parameters of one rule write the same component | The rule and the component, and to split the query with `Without` |
 | Startup | A rule reads a resource no scene provides | The rule, the resource and `scene.resource(..)` |
-| Startup | A rule reads an action no scene binds | The action and `scene.bind(..)` |
-| Startup | The game's actions do not fit an input frame | The counts and the limit |
-| Startup | A scene has no camera, or a 2D camera with 3D looks | The scene and what to add |
-| Startup | No asset store, or a missing prerequisite | What is missing and the command that provides it |
+| Startup | A `per_player` rule is under `when` | The rule, why it must run every tick, and to hold what gates it on the character |
+| Startup | The game's actions do not fit an input frame, or a command type is larger than a frame's action | The counts or the size, and the limit |
+| Startup | With multiplayer on, a component only a frame function names | The component, and `scene.component::<T>()` beside the rules |
+| Startup, in `run()` | A declared action that no scene binds | The action and `scene.bind(..)` |
+| Startup, in `run()` | No asset store, or a missing prerequisite | What is missing and the command that provides it |
+| Running | A spawn or a count of a component the game does not know | The rule, the component, and to name it in a query or add `scene.component::<T>()` |
+| Running | A rule reads an action no scene declares | The rule, the action, and `scene.action(..)` or `scene.bind(..)` |
+| Running | Two entities match one `per_player` rule for one player | The rule, the player and both entities |
 | Running | `go_to` a scene the game was not given | The scene and `.scene(..)` |
 | Running | A spawn past the world's size | The size and `Game::max_entities` |
-| Running | An asset name that matches nothing | The name, the rule and the nearest names |
-| Running | A rule fails or panics | The rule, the tick and the error |
-| Running | A session is refused or closed | `SESSION`'s reason, in words a player can read |
+| Running | A rule returns an error, or panics | The rule, the tick and the error, [as each target allows](#3-rules-and-the-tick) |
+| Running, on screen | An entity with a look in a scene with no camera, or a 3D look under a 2D camera and the reverse | Once: the scene, the look and `scene.camera(..)`. The look is not drawn and the game goes on |
+| Running, on screen | An asset name that matches nothing | The name, the rule and the nearest names |
+| Running, on screen | A session is refused or closed | `SESSION`'s reason, in words a player can read |
 
-Startup checks run in `run()` and in `test()`, before a window opens. `thrum::Error` is one enum with a variant
-for each kind of remedy, in [the adopted error shape](../../../.agents/skills/thrum-engineering/references/patterns.md).
+`send.command` when the queue is full is not a mistake that stops a game: it returns `Busy` to the frame
+function that called it.
+
+**Where each check runs.** The rules half's startup checks run in `test()` and in `run()` alike, before the
+first tick. The rows marked `run()` and "on screen" belong to the play half: they run in `run()` and in
+`cargo play --shot`, the startup ones before a window opens, and never in `test()`, which has no camera,
+binding, asset store or session. WP1 proves the rules half's rows through `test()`. WP3, which builds the
+first runner, proves that `run()` makes the same checks. `thrum::Error` is one enum with a variant for each
+kind of remedy, in [the adopted error shape](../../../.agents/skills/thrum-engineering/references/patterns.md).
 
 ### 14. Tests without a window, and pictures for an agent
 
 `Game::test()` returns the game with no window, device or clock: `join()`, `hold` and `press` for a player's
 actions, `send` for a command, `step()` and `step_for(..)`, `spawn`, `set`, `count`, `get`, `resource`,
-`digest()`, and `rewind(ticks)`. It runs the same rules, on the same engine path, as `run()`.
+`digest()`, and `rewind(ticks)`. It runs the same rules, on the same engine path, as `run()`. It has no
+camera, binds no key and runs no frame function, so a scene written for a test needs none of them, and `send`
+answers as `send.command` does.
 
 `cargo play --shot <file>` runs a game offscreen for a number of ticks, under a scripted input file if one is
 given, and writes the frame the engine submitted, through [T2 capture](../T2-CAPTURE/DESIGN.md). It needs no
@@ -1104,7 +1358,8 @@ screen and no permission.
   SDK in one file an agent can read in one go. The docs check fails when it is stale.
 - **Templates**: `2d`, `3d` and `multiplayer`. `./dev new <folder> --template <name>` writes a game that builds
   and runs as written, with its `AGENTS.md`, which points an agent at the one file. A game made this way lives
-  outside the engine checkout and reaches `thrum` by path.
+  outside the engine checkout and reaches `thrum` by path. The `multiplayer` template is two packages, the game
+  and its rule crate, and as written it passes the engine's external game check and its own profile check.
 - The engine's own guides ([the session guide](../../SESSION.md), [sprite scenes](../../SPRITE-SCENES.md),
   [portable rules](../../SIM2D-RULES.md)) stay as the reference for what is under the SDK. The creator guide's
   opening points at *Start here*.
@@ -1120,7 +1375,7 @@ aliases onto the engine's tool.
 | `cargo play --web` | The same for Chrome: builds for wasm32, serves the page and the store on loopback, prints the URL |
 | `cargo play --ios` | Builds and starts the game on the iPhone simulator, through [GAME-UI](../GAME-UI/DESIGN.md)'s one shell |
 | `cargo play --shot <file>` | [Writes a picture](#14-tests-without-a-window-and-pictures-for-an-agent) |
-| `cargo play --check` | The rule crate's profile check, where the game has one |
+| `cargo play --check` | The profile check of the game's own rule crate, where the game has one |
 
 The game's `main` is the same file on every target. The SDK supplies each platform's entry.
 
@@ -1131,39 +1386,44 @@ The game's `main` is the same file on every target. The SDK supplies each platfo
 | State | Owner | The SDK's part |
 |---|---|---|
 | Entities, components, resources, the tick, rewind, publication | `thrum-core` (G1, G2S) | Registers what the rules name; adapts rule functions to registered systems |
-| The rules profile, the digest, 2D queries | `SIM-2D` | `Num` and friends are its numbers; `Space2d` is its index |
+| The rules profile, the digest, 2D queries | `SIM-2D` | `Num` and friends are its numbers; `Space2d` is its index, one for each layer |
 | The frame, the recipe, reconstruction, EDR, the governor | `APPLE-TILE`, `APPLE-PRESENTATION` | None. A game gets them by default |
 | Sprite rows, sheets, the 2D scene | `RENDER-2D` | Maps `Sprite`, `Shape2d` and `Transform2d` to rows |
 | Sky, Sun, air | `ATMOSPHERE` | `Sky` sets its inputs |
 | Cooked products and live edits | `CONTENT-LOOP`, `COOKED-DRAW` | Resolves names; maps `Model` to cooked rows |
+| The 3D scene's instance rows and the passes that place them | `thrum-render` (`CULLING`, `RAY-TRACING` and the scene's other owners) | Maps `Transform3d` to a row's placement at both ticks |
 | Typed controls, parameter files, the profiler | `CREATOR` | `Settings` declares controls |
 | The interface tree, events, fonts | `GAME-UI` | `Ui` keeps the tree |
 | The device, pause, recovery, the game contract | `HOST` | Implements the game contract once, for every game |
-| The match, the roster, prediction | `SESSION`, over `TRANSPORT` | Implements the session's world once |
+| The match, the roster, prediction | `SESSION`, over `TRANSPORT` | Implements the session's world once, and gives a per-player rule to the predicted controller as its step |
+| Events for the frame | The SDK, as a presentation product published beside each tick page, which C02 allows. It is not world state and is in no digest | The ring of recent ticks' events and each frame function's cursor |
 | The shells | `PLATFORM-RUNTIME-*`, `CREATOR`, `GAME-UI` WP6 | `run()` picks the one for the target |
 | The game's scenes, rules, looks and content | The game | — |
 
 ### A tick, walked
 
 1. The driver (the fixed clock alone, the session in a match) names a tick to commit.
-2. Input is admitted: each player's frame, the commands for this tick, the roster's events.
-3. The space index is built from where things stood.
+2. Input is admitted: each player's frame, the commands for this tick, the roster's events, and at a scene's
+   first tick `PlayerJoined` for every player already in the game.
+3. The space indexes are built, one for each layer, from where things stood.
 4. The running scene's rules run in order, writing in place.
 5. The engine resolves spawns and despawns, checks every number is finite, and commits. A refused tick leaves
    the world as it was.
-6. The tick page is published. Only the rows that changed are extracted to sprite and mesh rows.
+6. The tick page is published, and with it the tick's events for the frame functions that read them. Only the
+   rows that changed are extracted to sprite and instance rows.
 
 ### A frame, walked
 
 1. The shell is asked for a frame and samples the bindings.
-2. Frame functions run on the newest page pair. They set the camera and sky, describe the interface and send
-   commands.
+2. The engine chooses the pair of ticks and the fraction for this picture and samples the scene. The frame
+   functions run then, on that pair at that fraction. They set the camera and sky, describe the interface,
+   read the events past their cursors and send commands.
 3. The interface is reconciled with last frame's and laid out only if a box could have moved.
-4. The engine draws: the scene's passes for its kind, interpolating between the page pair on the GPU, then
-   exposure, tone, the interface stage and present.
+4. The engine draws from the same pair at the same fraction: the scene's passes for its kind, interpolating on
+   the GPU, then exposure, tone, the interface stage and present.
 
 Rules run on the world's own thread where the shell has one, as today. Frame functions never wait for them:
-they read published pages.
+they read published pages, on the thread that samples the scene.
 
 ### From an empty folder
 
@@ -1187,13 +1447,18 @@ owner's afterwards. No contract's text changes. C01's stable identities, C02's c
 order and C13's authority are what the mechanisms above stand on.
 
 1. **The rules profile** (`SIM-2D`): literal construction, angles and turning, and `thrum`'s rules half as a
-   dependency a rule crate may have.
+   dependency a rule crate may have; refusals of files, sockets, processes and standard input; and a check of a
+   rule crate that a game's own manifest names, outside the engine's registry.
 2. **The registered simulation** (core): queries over more than two components with filters, where the SDK
    cannot build them from columns as they are.
 3. **The shells and the tool** (`CREATOR`, `HOST`, `GAME-UI`): what the window, the page and the phone shell
    still assume of the V1 game or the sky kit; the game commands in `./dev`.
-4. **The repository guard** (`REPO-RULES`, `GAME-SPLIT`): `thrum` registered, and a rule that a game and a kit
-   scene name `thrum` and no other engine crate.
+4. **The repository guard** (`REPO-RULES`, `GAME-SPLIT`): `thrum` registered; the external game check admits a
+   path between two packages of one game; and a rule that a package which names `thrum` names no other engine
+   crate. That rule reaches a game when the game moves onto the SDK, so the showcase is held to it from WP9
+   and passes the external game check on today's API until then, whichever of the move and WP8 lands first.
+5. **The 3D scene's instance placement** (`thrum-render`): the turn and the scale at both ticks, in the
+   extraction and the row, interpolated by every pass that places an instance.
 
 ## Cost
 
@@ -1202,8 +1467,9 @@ of entities beyond what the engine does.
 
 | Work | Account |
 |---|---|
-| A rule | A direct call to a monomorphised function. No boxed call for each entity, no allocation in a tick |
+| A rule | One call each tick through the engine's registered callback, into a function monomorphised for the rule's parameters. The loop over entities is inside it: no dynamic call for each entity and no allocation in a tick |
 | A query | A walk over the engine's columns in slot order. `par_each` uses the engine's chunks |
+| A space query | One index for each layer, built once a tick with its storage kept. A query costs what the layer it asks holds near the point, and `nearest` with no radius what the whole layer holds |
 | Startup | Signatures to access declarations, once |
 | Extraction | Changed rows only, mapped by code written once in the SDK |
 | A frame function | Runs once a frame, over what it names |
@@ -1242,25 +1508,50 @@ items of the first two.
 
 | Work package | Builds | Waits for |
 |---|---|---|
-| WP1 | Mechanisms 2, 3 and 5 with no window: components, resources, rules, entities, events, scenes, the test harness; the surface and documentation checks | Nothing |
-| WP2 | Mechanisms 6 and 8, `Space2d` and `per_player`; the crowd on the SDK, equal on three targets, with its cost | `SIM-2D:WP3`, Done |
-| WP3 | 2D on screen: mechanisms 4, 7 (2D), 9, 14 and 16 for the Mac and Chrome; Rockfall, whose score and result text arrive with WP6 | Nothing still open |
-| WP4 | 3D on screen: mechanism 7 (3D) and mechanism 10; the starter, stones and the lighthouse on the SDK | Nothing still open |
+| WP1 | Mechanisms 2, 3 and 5 with no window, for [the headless subset](#what-wp1-compiles): components, resources, rules, entities, events, scenes, the test harness; the surface and documentation checks | Nothing |
+| WP2 | Mechanisms 6 and 8, `Space2d` and `per_player`; the profile's refusals of files and sockets and the check of a game's own rule crate; the crowd on the SDK, equal on three targets, with its cost | `SIM-2D:WP3`, Done |
+| WP3 | 2D on screen: mechanisms 4, 7 (2D), 9, 14 and 16 for the Mac and Chrome, with the first `run()` and its startup checks beside `test()`'s; Rockfall, whose score and result text arrive with WP6 | Nothing still open |
+| WP4 | 3D on screen: mechanism 7 (3D), with models that turn and scale between ticks ([ruling 8](../ARCHITECTURE.md#seam-rulings-for-game-sdk)), and mechanism 10. The starter, stones and the lighthouse are written on the SDK as new kit games, and the old ones stay beside them until WP10 | For its change to the instance passes, the V1 work packages that hold them, which [the module list](../ARCHITECTURE.md#off-the-v1-path-track-7) names |
 | WP5 | Mechanism 12: the crowd hosted and joined | `SESSION:WP7` |
 | WP6 | Mechanism 11 | `GAME-UI:WP4` |
 | WP7 | The iPhone simulator | `GAME-UI:WP6` |
-| WP8 | Mechanism 15, and three fresh agents | Its own WP1 to WP7 |
-| WP9 | The showcase on the SDK, in the games repository | `GAME-SPLIT:WP4`, which follows the V1 exit |
-| WP10 | The old kit removed, the engine's pointers and the maturity ledger | Its own WP9 |
+| WP8 | Mechanism 15, the guard that a package which names `thrum` names no other engine crate, and three fresh agents | Its own WP1 to WP7 |
+| WP9 | The showcase on the SDK, in the games repository, where it comes under that guard | `GAME-SPLIT:WP4`, which follows the V1 exit |
+| WP10 | The old creator route removed: the old starter, stones and lighthouse, the sky kit, `./dev starter` and `./dev scene`. The engine's pointers and the maturity ledger | Its own WP9 |
 
 Each work package's surface arrives with its reference documentation and its rows of
 [the mistakes table](#13-mistakes-that-explain-themselves), because WP1's guard holds every later one to them.
+A work package is compared with the worked examples only for the surface it builds: WP1 for the subset below,
+WP2 for example D's rules, WP3 for example A, WP4 for examples B and C, WP5 for example E and WP6 for the
+interface in A, D and E.
+
+### What WP1 compiles
+
+WP1 has no window, no input and no space query, so it cannot compile example A or example D as written. Its
+test games are written from this subset and no more:
+
+- **The game and its scenes:** `Game::new`, `.scene(..)`, `.max_entities(..)`, `.tick_rate(..)` and `.test()`;
+  in a scene, `resource`, `component`, `on_enter`, `rules` and `add`. No camera, background, binding or frame
+  function: every WP1 scene is headless, which mechanism 13 allows.
+- **Rule parameters:** `Query` with `With` and `Without`, `Res`, `ResMut`, `Entities`, `Attach`, `Events` and
+  `Emit` for the game's own events, `Tick`, `Random` and `Scenes`; `when` and `par_each`.
+- **Data:** the `Component`, `Resource` and `Data` derives, bundles and template functions, with plain
+  components in place of transforms and looks. `Num` and `Vec2` are the profile's numbers as they stand today,
+  made from integers. Literals, angles, `Vec3` and `Quat` arrive with WP2.
+- **The harness:** `step`, `step_for`, `spawn`, `set`, `count`, `get`, `resource`, `digest` and `rewind`.
+  `run()` arrives with WP3.
+
+From the examples, that is: example A's `Score`, `drop_rocks`, `fall` and its two scenes joined by `go_to`,
+with a plain position in place of `Transform2d` and a comparison of positions in place of `Space2d`; and
+example D's `Run` and `Phase`, `enemies_die`, `start_wave`, `end_wave`, the `in_wave` and `in_intermission`
+conditions and its grouped rule list under `when`. Input, commands, players, `per_player`, `Space2d` and the
+numbers' literals are WP2's. Looks, cameras, frame functions and the parity of `run()` with `test()` are WP3's.
 
 ## Risks
 
 1. **The API in the examples cannot be built as written on the engine.** The likeliest places: typed parameters
-   over core's permits, `per_player` as a predicted controller, and the interface kept from a per-frame
-   description. Early sign: WP1's first item, WP5 and WP6. The builder writes the difference in the log and
+   over core's permits, `per_player` as a predicted controller, frame functions run on the pair the engine
+   chose, and the interface kept from a per-frame description. Early sign: WP1's first item, WP3, WP5 and WP6. The builder writes the difference in the log and
    ends `BLOCKED`, because a change of shape is the owner's to approve.
 2. **A convincing fake of K2:** an example that reads plainly because the plumbing moved into a helper file of
    the game. Early sign: the reviewer's count of game lines includes every file of the game.
@@ -1270,7 +1561,10 @@ Each work package's surface arrives with its reference documentation and its row
 5. **The layer costs the crowd its speed.** Early sign: WP2's cost record.
 6. **The docs teach what is not built.** Early sign: a guide's code block that does not compile fails the docs
    check.
-7. **A wrong substitute for K7:** a fresh agent that succeeds because it read the examples' source in the
+7. **Turning models change passes the V1 exit stands on.** Early sign: an exact image that moves in WP4. A
+   row that does not turn is placed exactly as today, and WP4's change to those passes waits for the V1
+   work packages that hold them.
+8. **A wrong substitute for K7:** a fresh agent that succeeds because it read the examples' source in the
    engine checkout. Its brief allows the guides, the one file and the template, and its record lists every file
    it opened.
 
@@ -1279,6 +1573,12 @@ Each work package's surface arrives with its reference documentation and its row
 - **Correctness**, where a fault is silent and costly: rule order and what a rule sees; equal digests when a
   run is repeated, rewound and replayed, and on the three targets; a refused tick leaving the world unchanged;
   the access checks; a match that stays equal. CPU tests on small worlds.
+- **Equal digests are never the only witness.** A digest that left something out would agree with itself. So
+  a refused tick is proved by reading the components, the resources and the entities back, value by value;
+  the digest is shown to change when any one of them changes; and the crowd's trace carries witnesses of the
+  work it claims, each of which must be more than nothing on every target and in the takes that are costed:
+  four heroes each moved by their own player's input, hits, deaths, respawns, a body turned by an angle, and a
+  tick a rule refused.
 - **Mistakes**: one test for each row of [the table](#13-mistakes-that-explain-themselves), holding the
   message's object, cause and next step.
 - **The surface**: no engine type in `thrum`'s public items; an example on each; guides that compile.
@@ -1291,8 +1591,8 @@ Each work package's surface arrives with its reference documentation and its row
 The worked examples are the shape the owner approved. A builder may change a **spelling**: a method's name, an
 argument's order, a derive's attribute, where the game's code would read as well or better. Each is a line in
 the log. A builder may not change the **shape**: add a concept a game maker must learn, remove one of the twelve
-words, change what a rule sees or when spawns land, move a line of plumbing into game code, or make a game name
-an engine crate. Where the shape cannot be built, the builder ends `BLOCKED` with the difference, and the
+words, change what a rule sees or when spawns land, change what a command or a per-player rule promises, move
+a line of plumbing into game code, or make a game name an engine crate. Where the shape cannot be built, the builder ends `BLOCKED` with the difference, and the
 planner brings it to the owner.
 
 When a work package is Done its examples in this design are replaced by the ones that compile, so the design
@@ -1301,8 +1601,10 @@ keeps reading as what is true.
 ## Open questions
 
 - **How many entities a world holds by default.** WP2's builder chooses from the cost record and documents it.
-- **Whether `per_player` can carry every game's own-character movement**, or some games need to say more.
-  WP5 settles it with the crowd's players as the case.
+- **Whether a per-player rule's limits carry every game's own-character movement.** It may read its
+  character's components, its player's input and the tick. A game whose character's step must read more of the
+  world, such as walls, is not served by it in the first release and moves that character with an ordinary
+  rule, shown at the confirmed tick. WP5 reports what the crowd's players needed.
 - **Whether a single-crate game can be checked for portable rules**, so that multiplayer needs no rule crate.
   WP5 reports what the profile's lints can do on a module.
 - **How the rule-set identity is derived with no line of game code.** `SESSION` hashes the rule sources in a

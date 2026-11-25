@@ -86,8 +86,10 @@ Proposed: the planner chose it for the game SDK.
 
 ### Command
 
-A message a player sends once, such as a menu choice. It reaches the rules exactly once, in order. In a match
-it is the session's ordered command. It is not a deferred spawn, which other engines call a command.
+A message a player sends once, such as a menu choice. A command that is taken and admitted reaches the rules
+once, after the same player's earlier commands, and none reaches them twice. Sending says when a command was
+not taken, and one on its way when a link drops may be lost. In a match it is the session's ordered command.
+It is not a deferred spawn, which other engines call a command.
 
 - **Source** — `SESSION`'s term.
 
@@ -104,8 +106,19 @@ Proposed: the planner chose the name.
 ### Setting
 
 A named value a game shows on the tuning panel, in the Mac window and on the Chrome page: a slider, a toggle, a
-text or a readout. `CREATOR` calls the same thing a typed control.
+text or a readout. `CREATOR` calls the same thing a typed control. A shared setting is part of the world, read
+by rules and changed by a command; a local setting belongs to one player's screen and no rule reads it.
 
 - **Source** — the field's term.
 
 Proposed: the planner chose "setting" for game code, and keeps "action" for what a player does.
+
+### Per-player rule
+
+A rule that is one player's character's whole movement step: it reads that character, that player's input and
+the tick, and nothing else. In a match the engine runs it ahead for the local player, so their character
+answers before the host confirms the input. `SESSION` calls what it is handed to a predicted controller.
+
+- **Source** — coined for the game SDK; the field's term for the technique is client-side prediction.
+
+Proposed: the planner chose the name.

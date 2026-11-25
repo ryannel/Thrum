@@ -24,23 +24,32 @@ Read [the game at a glance](DESIGN.md#the-game-at-a-glance), [the worked example
 - Assumption: the first release leaves out multiplayer for 3D games, gamepads, saved games, entities attached to other entities, scene files and an editor, and a changed rule rebuilds and restarts the game. Sea, clouds and weather join the SDK when their own modules close.
 - Assumption: the starter, stones and the lighthouse are rewritten on the SDK and the sky kit they use is then removed, so there is one way to make a game. That replaces the route milestone G6 delivered.
 - Assumption: three fresh agents prove the documentation, one each for a 2D, a 3D and an online game, each in about 100 game lines, the bar G6 set.
+- Assumption: a game writes one line, `scene.component::<T>()`, for a component it only ever spawns and never names in a rule's or a frame function's parameters. Every other component is found with nothing written. Forgetting the line is reported at the first such spawn, not at startup.
+- Assumption: in a match the local player's own character answers at once only when its whole movement is a per-player rule, which reads that character, that player's input and the tick. A character whose movement must read more of the world, such as walls, is shown as the host confirms it.
+- Assumption: a rule that panics cannot be recovered in Chrome, where the game stops with the rule, the tick and the message shown. On the Mac, the iPhone simulator and in a test it is reported with the world intact. A returned error is handled the same everywhere.
+- Assumption: the check of a rule crate guards against ordinary mistakes (a file, a socket, a clock, a raw float, an outside crate) and is not a sandbox. A single-crate game's rules are not checked.
+- Assumption: a nearest query with no radius looks at every collider on the layer it asks, so a game gives a radius on a crowded layer.
+- Assumption: models that turn or change size between ticks need a change to the engine's 3D drawing. It waits for the V1 work packages that hold that code, so the SDK's 3D part can land after its 2D part.
 
 ## WP1 An agent writes a game's entities and rules in plain Rust against one crate, and proves them in an ordinary test with no window
 
-Start with the item most likely to overturn the design: write example D's rule signatures and example A's scene
-function against an empty crate and make them compile and run under `Game::test()`. If the shape cannot be built,
-end `BLOCKED` with the difference, as [what a builder may change](DESIGN.md#what-a-builder-may-change) says.
+Start with the item most likely to overturn the design: write the test games of
+[the headless subset](DESIGN.md#what-wp1-compiles) against an empty crate and make them compile and run under
+`Game::test()`. That subset is all WP1 compiles: no look, camera, input, command, player, `Space2d`, number
+literal or `run()`. If the shape cannot be built, end `BLOCKED` with the difference, as
+[what a builder may change](DESIGN.md#what-a-builder-may-change) says.
 
 What a game writes today is `examples/crowd-2d/src/rules.rs`: registration, permits, an encoding for each
-component, a candidate and edits. The SDK generates all of it. `thrum-core` owns the simulation:
-`RegisteredSystem::direct` gives writes in place that roll back together, and structural edits resolve when the
-tick ends, which is why spawns and despawns land there. Additions to `thrum-core` are allowed under
-[ruling 2](../ARCHITECTURE.md#seam-rulings-for-game-sdk), and nothing of its existing API or tests changes.
+component, a candidate and edits. The SDK generates all of it over `thrum-core`'s `RegisteredSystem::direct`
+and `GameRuntime`, as [the world](DESIGN.md#2-the-world-entities-components-resources) says. Additions to
+`thrum-core` are allowed under [ruling 2](../ARCHITECTURE.md#seam-rulings-for-game-sdk), and nothing of its
+existing API or tests changes.
 
-Looks, input and `Space2d` are not in this work package: its test games use plain components, and its scenes
-have no camera. The derive crate is a new package: register it and `thrum` in `.config/architecture.toml`. New
-tests go in `thrum`'s one test target, `it`. `scripts/sdk_surface.py` is yours to write, and it joins
-`./dev check` in this landing.
+Startup checks are proved here through `test()` only; `run()` and a panic in Chrome are WP3's.
+
+The derive crate is a new package: register it and `thrum` in `.config/architecture.toml`. New tests go in
+`thrum`'s one test target, `it`. `scripts/sdk_surface.py` is yours to write, and it joins `./dev check` in this
+landing.
 
 ## WP2 A crowd of 10,000 written on the SDK, steered by four players, steps identically on the Mac, in Chrome and on the iPhone simulator, and costs what the hand-written crowd does
 
@@ -53,8 +62,15 @@ additions only, with `crowd-2d`'s retained traces and the profile's refusals unc
 
 Take WP2.8's record first on a rough version, because it chooses the default size of a world, and again at the
 claimed commit. The input frame's limits are in [the session guide](../../SESSION.md). `per_player` is written
-here so that WP5 can hand it to `SESSION`'s predicted controller: keep its function free of everything but its
-player's entity and input.
+here so that WP5 can hand it to `SESSION`'s predicted controller unchanged: its function is the character's
+whole movement step, as `PlayerMovement::step` is in the reference crowd, and takes nothing but its character's
+components, its player's input and the tick.
+
+The conformance runner takes Chrome's lock and the simulator's turns itself, so run WP2.6 and WP2.7 under no
+lock. Register `crowd-sdk`'s witnesses in its conformance entry as `crowd-2d`'s are.
+
+For WP2.10, `scripts/test_game_rules.py` is yours to write, on a scratch game outside the checkout as
+`scripts/test_game_gate.py` makes one. `cargo play --check`, which wraps the profile check, arrives with WP3.
 
 ## WP3 A small 2D game runs on the Mac and in Chrome from one command, and an agent gets a picture of it without a screen
 

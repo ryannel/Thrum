@@ -38,7 +38,7 @@
 | 34 | GATE-TIME | A merge's check takes about five minutes where it took fifty: it runs only the fast tests its change can reach, side by side and each once, and the long tests and the whole workspace run on main after the merge | Nothing to start; TEST-SUPPORT WP2 for the runs that happen twice; TEST-SUPPORT WP6 for the guard rules; WATERS WP7 for the water scene's slow tests; REVIEW-RENDER WP2 for the reference tests; DEAD-TOOLS WP2 for the contributor guide |
 | 35 | DEAD-TOOLS | Scripts, benches and records that nothing runs or reads are gone and the check refuses new ones, no tool writes into `docs/evidence`, and each module's record of what it copied is tracked in Git | Nothing to start; TEST-SUPPORT WP2 for its last work package |
 | 36 | DEAD-CODE | Engine code that nothing calls is gone, and a scene contribution no longer writes empty methods | GATE-TIME WP1 to start; GATE-TIME WP6 for the contribution's defaults; WATERS WP7 for the water scene's settings; HOST WP3 for the game's projection; REVIEW-RENDER WP3 and GATE-TIME WP6 for the two helpers |
-| 37 | GAME-SDK | A developer or an agent builds a 2D, a 3D or an online game in plain Rust against one documented crate, and the showcase and the swarm game are written on it | The owner's approval of its design to start; SESSION WP7 for a game played online; GAME-UI WP4 for menus and status displays and GAME-UI WP6 for the iPhone simulator; GAME-SPLIT WP4 for the showcase on the SDK |
+| 37 | GAME-SDK | A developer or an agent builds a 2D, a 3D or an online game in plain Rust against one documented crate, and the showcase and the swarm game are written on it | The owner's approval of its design to start; SESSION WP7 for a game played online; GAME-UI WP4 for menus and status displays and GAME-UI WP6 for the iPhone simulator; APPLE-PRESENTATION WP8 to WP12, RAY-TRACING WP6 and MESH-SHADING WP3 for 3D models that turn between ticks; GAME-SPLIT WP4 for the showcase on the SDK |
 
 Modules are in build order. Rows 1 to 13 are the road to the V1 exit, 14 to 19 are water and clouds, 20 to 24
 are the 2D and online engine work, which is built beside V1, `TRANSPORT` last and only when a builder slot is free, and 25 is the swarm game, which starts after V1. Rows 26 to 31 are [track 4](#track-4-the-code-review-and-the-games-separation), the code review's fixes and the game's separation, built beside the rest. Rows 32 and 33 are [track 5](#track-5-ray-tracing-and-mesh-shaders-on-the-mac), ray tracing and mesh shaders on the Mac, built beside the rest and never ahead of a V1 work package. Rows 34 to 36 are [track 6](#track-6-the-cleanup-of-20-november), the cleanup of 20 November, built beside the rest by Claude builders. Row 37 is [track 7](#track-7-the-game-sdk), the game SDK, which no builder starts before the owner approves its design and which is built beside the rest and never ahead of a V1 work package. `Needs` names the work packages a module waits on in other modules; each work package's `depends_on` in
@@ -2714,9 +2714,10 @@ the owner approves it by reading game code. So it is one module, with [a design]
 
 - **`CREATOR`** (Done) keeps the typed controls model and its views, parameter files, the profile window and
   the profiler rows, which the SDK's settings use as they are. Its sky kit, its starter and its creator docs
-  were the public way to make a scene. They stay as built until `GAME-SDK` WP10, which rewrites the starter,
-  stones and the lighthouse on the SDK, removes the kit where nothing else uses it, and points the creator guide
-  at the SDK's. G6 stays reached: it was closed on what `CREATOR` built.
+  were the public way to make a scene. They stay as built until `GAME-SDK` WP10. `GAME-SDK` WP4 writes the
+  starter, stones and the lighthouse on the SDK as new kit games beside them, and WP10 removes the old ones
+  and the kit where nothing else uses it, and points the creator guide at the SDK's. G6 stays reached: it was
+  closed on what `CREATOR` built.
 - **`HOST`** (Done) keeps the device recipe, the lifecycle policy and the game contract. A game no longer
   implements that contract: the SDK implements it once, for every game. The proving ground still does, because
   it tests the engine's own API.
@@ -2741,7 +2742,8 @@ No work package on the road to the exit waits on this module: none of `APPLE-PRE
 | `GAME-SDK` work package | Waits for | Because |
 |---|---|---|
 | WP1, WP2 | The owner's approval of the design; `SIM-2D:WP3`, Done | New crates, with additions in `thrum-core` and the rules profile. No V1 builder works there |
-| WP3, WP4 | Nothing still open | They use `RENDER-2D`, `CONTENT-LOOP`, `ATMOSPHERE`, `CREATOR` and `HOST` as built |
+| WP3 | Nothing still open | It uses `RENDER-2D`, `CONTENT-LOOP`, `CREATOR` and `HOST` as built |
+| WP4 | For its change to the 3D scene's instance passes (ruling 8), the V1 work packages that hold those passes, their motion vectors or their compiled shaders: today `APPLE-PRESENTATION` WP8 to WP12, `RAY-TRACING` WP6 and `MESH-SHADING` WP3 | It uses `CONTENT-LOOP`, `ATMOSPHERE`, `CREATOR` and `HOST` as built, and a model that turns between ticks needs the passes changed |
 | WP5 | `SESSION:WP7` | A game in a match is stepped by a driven world |
 | WP6 | `GAME-UI:WP4` | Menus and a modal choice |
 | WP7 | `GAME-UI:WP6` | The one iPhone shell for every game |
@@ -2756,9 +2758,10 @@ No work package on the road to the exit waits on this module: none of `APPLE-PRE
 | WP6, the iPhone simulator | `GAME-SDK:WP7` |
 
 **Priority.** A `GAME-SDK` work package takes a builder only when no V1 work package is waiting for one, as
-track 5's do. **Shared files.** No `GAME-SDK` work package edits `thrum-render`'s frame runtime or
-`examples/v1-game` while a work package named above is open; where one would have to, it waits for that
-work package. Elsewhere its builder integrates on what has landed and keeps the other's tests passing.
+track 5's do. **Shared files.** No `GAME-SDK` work package edits `thrum-render`'s frame runtime, the 3D scene's
+instance passes or `examples/v1-game` while a work package named above is open; where one would have to, it
+waits for that work package. `GAME-SDK`'s planner writes WP4's `depends_on` from this rule when it gives WP4
+its items. Elsewhere its builder integrates on what has landed and keeps the other's tests passing.
 
 ### Seam rulings for GAME-SDK
 
@@ -2769,9 +2772,13 @@ baseline stays exact. Once built, each belongs to its owner.
 1. **The rules profile** (`SIM-2D`; `thrum-core`'s profile, `.config/sim2d-profile`, the profile and
    conformance scripts). Built in WP2. Additions only: a number made from a literal; angles, their directions
    and turning in 2D and 3D, from the profile's exactly rounded operations with no platform maths call, each
-   with conformance vectors on the three targets; and `thrum`'s rules half, with its derive crate, as
-   dependencies a rule crate may have. The profile's refusals of raw-float arithmetic and methods, of hash
-   order, clocks, threads and outside crates stand. `crowd-2d`'s retained digests do not change.
+   with conformance vectors on the three targets; `thrum`'s rules half, with its derive crate, as
+   dependencies a rule crate may have; four more refusals, of a file read or written through `std::fs`, a
+   socket through `std::net`, a process through `std::process` and standard input, each with a control beside
+   the profile's own; and a check of a rule crate that a game's own manifest names, so that a game outside the
+   engine checkout is checked for its own rules and not for the registry's. The profile's refusals of
+   raw-float arithmetic and methods, of hash order, clocks, threads and outside crates stand, and the check of
+   the registered rule packages is unchanged. `crowd-2d`'s retained digests do not change.
 2. **The registered simulation** (core, G2S). Built in WP1 and WP2. Additions only, such as a query over
    several components with filters. Nothing of the existing API changes and G2S's tests pass unedited. When
    structural edits resolve does not change: the SDK's rule that spawns land when a tick ends is this module's
@@ -2785,16 +2792,32 @@ baseline stays exact. Once built, each belongs to its owner.
    public interfaces as built, in WP5 and WP6. Where one falls short, the builder writes a proposal in that
    module's log and a planner settles it here.
 5. **The guard** (`scripts/repo_check.py`, `.config/architecture.toml`, `REPO-RULES`' shape rules,
-   `GAME-SPLIT`'s `boundary`). WP1 registers `thrum`. WP8 adds a shape rule through `REPO-RULES`' engine: a
-   game in the games repository, a kit game and a template name `thrum` and no other engine crate. The kit
-   scenes still on the old kit are in its baseline until WP10. The proving ground is exempt, because it tests
-   engine crates directly.
-6. **The creator's kit and docs** (`CREATOR`). Built in WP10: the starter, stones and the lighthouse are
-   rewritten on the SDK, and `thrum_app::sky` is removed if no other module's example uses it, or kept and
-   named in the log if one does. A name an open item's check uses keeps working.
+   `GAME-SPLIT`'s `boundary`). WP1 registers `thrum`. WP2 lets `boundary` admit a path between two packages of
+   one game, so a game may keep its rules in a rule crate of its own; a path that leaves the game still has to
+   reach a registered package under the engine's `crates/`. WP8 adds a shape rule through `REPO-RULES`' engine:
+   **a package that names `thrum` names no other engine crate**, in the games repository, the kit games and
+   the templates alike. The rule reaches a game when that game moves onto the SDK and not before. So the
+   showcase passes `boundary` on today's API in `GAME-SPLIT` WP4 whether WP8 has landed or not, and is held to
+   the rule from WP9, the landing that rewrites it. The kit scenes still on the old kit, and the proving
+   ground, name no `thrum` and are untouched by it; no baseline of allowances is kept.
+6. **The creator's kit and docs** (`CREATOR`). WP4 writes the starter, stones and the lighthouse on the SDK
+   as new kit games and leaves the old ones as built. WP10 removes the old ones with `./dev starter` and
+   `./dev scene`, and `thrum_app::sky` if no other module's example uses it, or keeps it and names it in the
+   log if one does. A name an open item's check uses keeps working.
 7. **The showcase in the games repository** (`SHOWCASE`, `GAME-SPLIT`). Built in WP9, in
    `thrum-games/v1-game` only. The exit record is `SHOWCASE`'s and gains a dated note. Nothing of the proving
    ground or the frozen qualification content changes.
+8. **Models that turn and scale** (`thrum-render`: the extraction columns, the entity-row adapter, and every
+   pass that places an instance of the 3D scene, which are `CULLING`'s, `RAY-TRACING`'s and the scene's other
+   owners'). Built in WP4. Today a row carries a position for each of the two ticks and the passes interpolate
+   only that, so a model that turns in place does not move between ticks. The producer side: the extraction
+   and the adapter carry each row's turn and scale at both ticks. The renderer side: the scene's vertex stage,
+   for positions and normals; the shadow caster; the culling bounds for the camera and for the shadow; motion
+   vectors; and the ray-traced instances where ray tracing is on, all from one interpolated placement, with
+   position and scale linear and the turn by the shorter way. A row whose turn and scale are the same at both
+   ticks is placed exactly as today, so every registered exact baseline stays exact, and the instance row
+   keeps its size. Under the shared-files rule above, this lands when no V1 work package that holds those
+   passes is open.
 
 ### Interfaces (track 7)
 
@@ -3483,6 +3506,13 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   starts: its mechanism 1 says the stage draws into both outputs of such a frame, and WP1 gains the comparison
   of a recording with a visible overlay against the 8-bit mode's frame. No interface row, no other module's
   item or dependency, and no exact baseline changed.
+- 2026-11-25 Track 7's rulings revised after `GAME-SDK`'s design review 1, in track 7's section only: ruling 1
+  gains the profile's refusals of files, sockets, processes and standard input and a check of a game's own
+  rule crate; ruling 5 lets a game hold a rule crate of its own and keys the SDK-only rule on naming `thrum`,
+  so `GAME-SPLIT` WP4 and `GAME-SDK` WP8 may land in either order; ruling 6 has WP4 write the kit games on the
+  SDK and WP10 remove the old route; new ruling 8 names the work for models that turn and scale between ticks,
+  and WP4 waits for the V1 work packages that hold the instance passes, which row 37's `Needs` now names. No
+  other module's section, item, dependency or interface row changed.
 - 2026-11-25 Track 7 added from the owner's request for a game SDK, quoted in its section: one module,
   `GAME-SDK`, row 37, with its design, plan and done-when file, ten work packages named and the first two with
   items. No builder starts it before the owner approves its design. No work package on the road to the V1 exit
