@@ -726,7 +726,7 @@
           "inspect": "Capture the forced-load run with T2 engine capture in `realtime` mode, with capture's own cost shown apart. Watch it at 1x, then judge native-size crops of thin features across each step the trace names. Say that you watched motion.",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP7/motion-repair/README.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP7-review.md",
           "builder_result": "pass"
         },
@@ -747,15 +747,8 @@
       "failed_reviews": 2,
       "failed_reviews_with_repeat": 1,
       "diagnoses": 0,
-      "status": "ready_for_review",
-      "quality_bar": "A frame-rate governor as steady as Unreal's dynamic resolution in a shipped game: under a sudden load the picture gets a little softer within a few frames and the motion stays smooth, quality returns slowly when the load lifts, nothing oscillates, and the simulation never notices.",
-      "findings": [
-        {
-          "name": "The realtime route misses render opportunities through load and recovery",
-          "item": "D7.8",
-          "repeat": true
-        }
-      ]
+      "status": "done",
+      "quality_bar": "A frame-rate governor as steady as Unreal's dynamic resolution in a shipped game: under a sudden load the picture gets a little softer within a few frames and the motion stays smooth, quality returns slowly when the load lifts, nothing oscillates, and the simulation never notices."
     },
     {
       "id": "WP8",
