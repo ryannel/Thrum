@@ -151,7 +151,11 @@ pub(super) fn run(gpu: &Gpu) -> Value {
                 "inner_profile":"One additional lag and exposure sum with no gradient probes.",
                 "overlap":"Up to four additional bed reads at the displaced position.",
             },
-            "forward_evaluations_per_cached_node":{"interior":2,"ring_edge":6},
+            "forward_evaluations_per_cached_node":{"interior":2,"ring_edge":6,"distant_shore":1},
+            "distant_shore":{
+                "scope":"One current sample outside the near window at each eligible prepared bed node. A resolved breaking face adds one displaced-bed cell lookup.",
+                "fragment_reads":"One grid-size entry and up to four phase-and-strength samples from the field cache.",
+            },
             "sources":["crates/thrum-water/src/surf.wgsl", "crates/thrum-water/src/surf/cache.wgsl"],
         },
     })
