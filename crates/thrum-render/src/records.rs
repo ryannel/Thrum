@@ -168,6 +168,21 @@ records! {
         padding: u32,
         oldest_sun: [f32; 4],
     }
+    AmbientFrame {
+        inverse: Matrix,
+        previous: Matrix,
+        camera: [f32; 4],
+        extent: [u32; 2],
+        jitter_delta: [f32; 2],
+        stride: u32,
+        valid: u32,
+        phase: u32,
+        settle: u32,
+        radius: f32,
+        padding0: u32,
+        padding1: u32,
+        padding2: u32,
+    }
     MeshRecord {
         first_index: u32,
         index_count: u32,

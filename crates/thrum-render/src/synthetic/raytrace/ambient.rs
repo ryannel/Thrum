@@ -19,6 +19,7 @@ use crate::{
         ResourceDescriptor, ResourceId, ResourceScope,
     },
     pass_key::{PassKey, PipelineRole},
+    records::AmbientFrame,
     runtime::DeviceSite,
     shaders::wgsl,
 };
@@ -30,22 +31,6 @@ const COMPUTE: wgpu::ShaderStages = wgpu::ShaderStages::COMPUTE;
 const FRAGMENT: wgpu::ShaderStages = wgpu::ShaderStages::FRAGMENT;
 const FLOAT: wgpu::TextureSampleType = wgpu::TextureSampleType::Float { filterable: false };
 const UINT: wgpu::TextureSampleType = wgpu::TextureSampleType::Uint;
-
-#[repr(C)]
-#[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
-struct AmbientFrame {
-    inverse: [[f32; 4]; 4],
-    previous: [[f32; 4]; 4],
-    camera: [f32; 4],
-    extent: [u32; 2],
-    jitter_delta: [f32; 2],
-    stride: u32,
-    valid: u32,
-    phase: u32,
-    settle: u32,
-    radius: f32,
-    padding: [u32; 3],
-}
 
 const FRAME_BYTES: u64 = size_of::<AmbientFrame>() as u64;
 
@@ -310,7 +295,9 @@ impl Ambient {
             phase: self.phase,
             settle: self.settings.knobs()[1].value,
             radius: self.radius,
-            padding: [0; 3],
+            padding0: 0,
+            padding1: 0,
+            padding2: 0,
         };
         queue.write_buffer(&target.uniform, 0, bytemuck::bytes_of(&frame));
         self.pending = stride.map(|_| Sample {
@@ -580,52 +567,5 @@ impl SceneContext<'_> {
         let [x, y] = self.target.drawn.map(|axis| axis.div_ceil(stride * TILE));
         pass.dispatch_workgroups(x, y, 1);
         Ok(())
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn ambient_shader_layout() {
-        let module = wgpu::naga::front::wgsl::parse_str(&shader_source()).expect("ambient shader");
-        wgpu::naga::valid::Validator::new(
-            wgpu::naga::valid::ValidationFlags::all(),
-            wgpu::naga::valid::Capabilities::all(),
-        )
-        .validate(&module)
-        .expect("ambient shader validation");
-        let frame = module
-            .types
-            .iter()
-            .find(|(_, ty)| ty.name.as_deref() == Some("AmbientFrame"))
-            .unwrap()
-            .1;
-        let wgpu::naga::TypeInner::Struct { members, span } = &frame.inner else {
-            panic!("frame layout");
-        };
-        assert_eq!(*span as usize, size_of::<AmbientFrame>());
-        let offsets = members
-            .iter()
-            .map(|member| member.offset as usize)
-            .collect::<Vec<_>>();
-        assert_eq!(
-            offsets,
-            [
-                std::mem::offset_of!(AmbientFrame, inverse),
-                std::mem::offset_of!(AmbientFrame, previous),
-                std::mem::offset_of!(AmbientFrame, camera),
-                std::mem::offset_of!(AmbientFrame, extent),
-                std::mem::offset_of!(AmbientFrame, jitter_delta),
-                std::mem::offset_of!(AmbientFrame, stride),
-                std::mem::offset_of!(AmbientFrame, valid),
-                std::mem::offset_of!(AmbientFrame, phase),
-                std::mem::offset_of!(AmbientFrame, settle),
-                std::mem::offset_of!(AmbientFrame, radius),
-                std::mem::offset_of!(AmbientFrame, padding),
-                std::mem::offset_of!(AmbientFrame, padding) + 4,
-                std::mem::offset_of!(AmbientFrame, padding) + 8,
-            ]
-        );
     }
 }

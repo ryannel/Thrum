@@ -2,7 +2,14 @@
 @group(1) @binding(9) var sky_dfg: texture_2d<f32>;
 @group(1) @binding(10) var sky_reflection_sampler: sampler;
 
+// Shared surface closure for contributions that use the ordinary sky term.
 fn indirect_radiance(base: vec3<f32>, metalness: f32, roughness: f32,
+                     n: vec3<f32>, v: vec3<f32>, ao: f32,
+                     world_position: vec3<f32>, pixel_position: vec4<f32>) -> vec3<f32> {
+    return occluded_indirect_radiance(base,metalness,roughness,n,v,ao,world_position,pixel_position,1.0);
+}
+
+fn occluded_indirect_radiance(base: vec3<f32>, metalness: f32, roughness: f32,
                      n: vec3<f32>, v: vec3<f32>, ao: f32,
                      world_position: vec3<f32>, pixel_position: vec4<f32>, traced: f32) -> vec3<f32> {
     let nov=dot(n,v);
