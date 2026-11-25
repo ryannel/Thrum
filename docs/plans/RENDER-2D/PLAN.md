@@ -16,6 +16,9 @@ Before building, read the [module interfaces](DESIGN.md#interfaces),
   records establish the refresh result here. Panel measurement belongs to SWARM.
 - Assumption: SWARM art can use linear-light blending. The output half handles SDR clipping and receives
   highlights above white for EDR.
+- Assumption: On an EDR display a 2D colour above white is shown as it is up to the display's headroom and
+  clipped there, channel by channel, as SDR clips at white. A very bright saturated sprite can shift hue at
+  the clip. The other choice is a highlight curve like the 3D scene's, which changes colours below the clip.
 - Assumption: Stable overlap matters more than exact height order for sprites within the sort band.
 - Assumption: The lead treats a visible pulse in fine patterns during ordinary scrolling as a shipped-game
   defect. WP3 judges the original patterns at normal viewing size and speed. The owner has yet to rule on this
@@ -60,3 +63,14 @@ traces from `examples/crowd-2d`. Measure the crowd view's own replay on Mac and 
 the V1 scene selection in `examples/v1-game-ios` and the runner pattern in `scripts/culling_sim.py`.
 Update the creator guide, including frame-row placement and layer guidance, and the maturity ledger.
 [WP5.1–WP5.14](DONE.json)
+
+## WP6 A 2D game's colours above white go brighter than white on an EDR display, and a capture records the frame the display was given
+
+`GAME-UI:WP1` stopped for this: [its handoff](../../../.orchestrate/evidence/GAME-UI/WP1-handoff.md) traces where
+the 2D graph, the capture tap and the change of display mode stop at a 3D host. Build
+[the float form](DESIGN.md#7-colour) under [seam ruling 1](../ARCHITECTURE.md#seam-rulings-for-render-2d), starting
+from [the design's reading list](DESIGN.md#proof-and-builder-handoff). The checks select tests whose names contain
+`float_mode` in three test binaries that exist. The bright sprite WP6.5 needs is drawn only when that check
+asks for it, because the Chrome case and the simulator proof compare the sprite scene's card as it is. Say in
+the creator guide what a colour above white does in each mode, and record the float mode in the 2D rows of the
+maturity ledger, with its look on the panel not judged. [WP6 items](DONE.json)

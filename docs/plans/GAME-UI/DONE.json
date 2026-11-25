@@ -5,7 +5,7 @@
       "id": "WP1",
       "name": "Panels and marks a game draws appear over its own frame, exact to the pixel, on the Mac and in Chrome, and a game with no interface pays nothing",
       "depends_on": [
-        "RENDER-2D:WP5",
+        "RENDER-2D:WP6",
         "APPLE-PRESENTATION:WP6"
       ],
       "failed_reviews": 0,

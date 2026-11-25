@@ -710,6 +710,65 @@
       "diagnoses": 0,
       "status": "done",
       "quality_bar": "Crowd legibility as in Vampire Survivors and Halls of Torment: with thousands on screen every enemy, projectile and player stays readable, the horde moves as one smooth mass at the display's refresh, and nothing flickers where bodies overlap. Pixel stability as in Celeste. A guide a game maker can follow without reading engine source, as Bevy's 2D examples are."
+    },
+    {
+      "id": "WP6",
+      "name": "A 2D game's colours above white go brighter than white on an EDR display, and a capture records the frame the display was given",
+      "status": "not_started",
+      "depends_on": [
+        "APPLE-PRESENTATION:WP6"
+      ],
+      "quality_bar": "As exact as a pixel-art game shown at a whole-number scale, such as Celeste, on either surface the Mac gives a game: every texel below white is its authored colour in both display modes. Bright sprites as a 2D game with HDR output shows them, such as Ori and the Will of the Wisps: brighter than white on an EDR display, with everything below white exactly the SDR picture. What the panel emits is not judged.",
+      "items": [
+        {
+          "id": "WP6.1",
+          "statement": "On the Mac, on both native recipes, a 2D host whose surface is the float surface submits the sprite target's linear values. Read as stored half-floats through engine capture's tap, with a float value put through the sRGB curve where a code is compared: an opaque texel of each of the 256 grey codes and of a set of saturated colours rounds back to its authored code; a half-transparent texel over a known background is within one code of the linear-light blend; and at H of 2 and of 8, a channel the scene draws above 1 leaves as the scene-linear value where that is at most H and as H where it is more, with no submitted value above H.",
+          "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render --test sprite_colour -E 'test(~float_mode)' --no-tests=fail",
+          "ask": "Read the test. Is each expected value built on the CPU from the source texels and the design's rule, without any of the renderer's shaders? Is the frame read from the float target the surface was given, as stored half-floats, and not from the scene-linear checkpoint or a converted copy?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "builder_result": "open",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP6.2",
+          "statement": "At H = 1 the float mode's submitted frame of the same colour card, each value put through the sRGB curve, is within one code of the 8-bit mode's submitted frame of the same scene state at every pixel, and a channel the scene draws above 1 leaves as exactly 1.0.",
+          "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render --test sprite_colour -E 'test(~float_mode)' --no-tests=fail",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "WP6.3",
+          "statement": "A float-mode 2D host draws exactly what a fresh float-mode host draws after each of a resize to another extent, a discarded frame, a refused surface, a capture frame and a replaced device. A generation build that changes the display mode, in each direction the output half offers a 3D host, is accepted for a 2D host and creates no pipeline, and the host then draws what a fresh host in the new mode draws. A change of H reaches the next submitted frame and creates nothing.",
+          "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render --features creation-counters --test scene_2d_lifecycle -E 'test(~float_mode)' --no-tests=fail",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "WP6.4",
+          "statement": "A float-mode 2D host with no contribution holds the sprite target and no 8-bit display image, and a frame of it with no capture runs the sprite pass, the present pass and no other full-screen pass. A 2D host in the 8-bit mode and the inventory test's 3D control keep the pass order, attachment storage and transient slots that test held before this work package. The only creations a 2D host gains at preparation are the float transfer's, and a 3D host gains none.",
+          "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render --features creation-counters --test scene_2d -E 'test(~float_mode)' --no-tests=fail",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "WP6.5",
+          "statement": "In the V1 game on the Mac, with the display record forced to a potential headroom above 1, the sprite scene gets the float surface. At H of 2, engine capture's default tap records the float frame with its encoding in the capture's record: a sprite tinted above white is above 1.0 in it and no value is above 2. With SDR forced, the same scene state is recorded as the 8-bit frame, in which that sprite is clipped at white and every other pixel is within one code of the float frame's.",
+          "check": "python3 scripts/render2d.py edr --target mac-metal",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "evidence": "",
+          "builder_result": "open"
+        }
+      ]
     }
   ]
 }

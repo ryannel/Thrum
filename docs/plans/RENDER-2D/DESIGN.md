@@ -26,7 +26,7 @@ the 3D forward pass, and left four choices to this planner. They are settled her
 |---|---|---|
 | How order is resolved: sorted rows or depth | Sorted rows, on the CPU, in an order kept from tick to tick: two rows near each other exchange places only when one has passed the other by more than a band | [Mechanism 4](#4-order) |
 | Frame reconstruction for sprites | None. A 2D scene is drawn at the surface's own pixel size, with no jitter and no history, as C07's no-reconstruction form | [Mechanism 2](#2-the-view-and-the-output-pixel) |
-| Whether bright effects use EDR | The frame keeps values above white and hands them to the output half. SDR output clips them. How they look on an EDR panel is not judged here | [Mechanism 7](#7-colour) |
+| Whether bright effects use EDR | The frame keeps values above white and hands them to the output half. The 8-bit display mode clips them at white, and the float mode keeps them up to the display's headroom. How they look on an EDR panel is not judged here | [Mechanism 7](#7-colour) |
 | How text shares the sprite path with `GAME-UI` | A glyph is a frame on a sheet and a line of text is a list of rows. `GAME-UI` runs the same pass at its own stage | [Interfaces](#interfaces) |
 
 This design reconciles the code on main at `54ab55bb`; it is not a blind study. Read for it: `thrum-render`'s
@@ -160,7 +160,9 @@ not switched while the game runs. Everything around the scene is the one host as
 frame token, submission and completion, device generations, engine capture, timing, the output half.
 
 A 2D scene's compiled graph holds its own passes and the output half's. With no contribution attached that is
-one render pass named for the sprites, then tone, capture and present, and nothing else. A contribution that
+one render pass named for the sprites, then tone, capture and present, and nothing else; in
+[the float display mode](#7-colour) it is the sprite pass, then present, which applies the transfer, and capture.
+A contribution that
 declares only upload and simulate stages attaches through
 [the existing seam](../EFFECT-GRAPH/DESIGN.md#effects-and-stages-wp2-wp3) and adds its own passes at those two
 stages, before the sprite pass; no second way to declare passes is built.
@@ -367,9 +369,39 @@ Blending is in linear light, which is the engine's one colour contract (C07). So
 over dark than in a paint tool that blends in display space. White at half alpha over black is code 188.
 An opaque, aligned texel passes through at its authored colour.
 
-Tints and additive sprites may push a value above 1. The target keeps it. SDR output clips each channel at white,
-as every SDR 2D game does. Where the output half has resolved an EDR display mode, the value reaches it
-unchanged; how it then looks on the panel is the output half's, and no item here judges it.
+Tints and additive sprites may push a value above 1. The target keeps it, and what leaves the frame depends on
+the display mode.
+
+**The two display modes.** The output half resolves one display mode for a generation, the 8-bit mode or the
+float mode, as [APPLE-PRESENTATION](../APPLE-PRESENTATION/DESIGN.md#techniques-and-evidence) designs them. The
+display-referred transfer has a form for each. WP1 built the first. WP6 builds the second, because the EDR
+surface landed after WP1 and gave a 2D scene only the 8-bit form's codes, decoded onto the float drawable.
+
+| | The 8-bit mode | The float mode |
+|---|---|---|
+| **Where** | Chrome, the simulator, a Mac with no EDR display, and a Mac with SDR forced | A Mac whose surface is the `Rgba16Float` EDR surface |
+| **The transfer writes** | sRGB codes into the `Rgba8Unorm` display image, each channel clipped at white. Present copies the image to the surface | The sprite target's linear values into the float target, in the present pass, with 1.0 at SDR white. The target is the drawable, or the texture that stands for it in a test or a capture. A value from 0 to 1 is written as it is. A value above 1 is kept up to the display's current headroom H and clipped at H, channel by channel. There is no tone curve and no dither |
+| **An opaque texel leaves as** | Its authored 8-bit code | The linear value that the sRGB curve rounds back to that code |
+| **Capture reads** | The display image | The float target the surface was given, through engine capture's tap as for a 3D host, with its encoding in the capture's record |
+
+At H = 1 the float mode clips at white as the 8-bit mode does, so its frame, encoded to 8 bits, is the 8-bit
+mode's to within one code at every pixel. H is the frame host's display headroom, which the platform publishes.
+A change of H reaches the next frame and creates nothing, and no submitted value is above H.
+
+The float form reads the sprite target itself. A float-mode generation therefore holds no 8-bit display image
+and runs no 8-bit transfer: the mode costs one full-screen pass, not two. Both forms' pipelines are made when the
+host is prepared, wherever the float mode can be selected, so a generation build that changes the mode compiles
+nothing. A 2D host changes mode through the generation transition a 3D host uses, in each direction the output
+half offers.
+
+A capture that asks by name for the 8-bit stage on a float-mode host is either served by building that stage
+for the capture, through the existing capture-stage change, or refused by name; which is the builder's. It is
+never answered with another stage's pixels.
+
+Clipping at H, not a highlight curve, is this design's choice: it is what the 8-bit mode does at white, it keeps
+every value below H exact, and at H = 1 the two modes agree. It shifts the hue of a saturated highlight brighter
+than the display can show. How the float frame looks on the panel is the output half's, and no item here judges
+it.
 
 ### 8. Sheets
 
@@ -444,7 +476,8 @@ product exists. An embedded sheet is rebuilt from its retained bytes after devic
 | State | Owner |
 |---|---|
 | The 2D scene: its pass, view record, rows, the kept order, frame tables on the GPU, sheet slots | This module (`thrum-render`) |
-| Scene-kind selection in the frame host and the split graph; the display-referred transfer | `APPLE-TILE`'s frame runtime, extended under [ruling 1](#interfaces) |
+| Scene-kind selection in the frame host and the split graph; the display-referred transfer's 8-bit form | `APPLE-TILE`'s frame runtime, extended under [ruling 1](#interfaces) |
+| The transfer's float form in the EDR present pass, a 2D host's change of display mode, and engine capture's tap on a 2D host's float frame | `APPLE-PRESENTATION`, with `T2-CAPTURE` for the tap, extended under ruling 1 in WP6 |
 | Render extent, reconstruction, the governor, and the refusal of a provider asked for a 2D scene | `APPLE-PRESENTATION`, extended under ruling 1 so a scene can declare none |
 | The sheet product, its cooker and runtime view; pages as a lease; residency in a 2D scene | `CONTENT-LOOP` (`thrum-cook`, `thrum-asset`, `thrum-asset-gpu`), extended under ruling 2 |
 | The contribution list and the tentative-frame protocol | `EFFECT-GRAPH`, extended under ruling 2 |
@@ -456,7 +489,8 @@ product exists. An embedded sheet is rebuilt from its retained bytes after devic
 **A frame, in order.** The host reads the tick page. On a new tick the game's scene source extracts world rows;
 the engine updates the kept order and uploads changed rows and the order list. The game
 gives the view for this frame's alpha and its frame rows. Residency's upload pass copies. The sprite pass clears
-the target to the scene's background colour and draws once. Tone encodes it, capture reads it if asked, and present copies it to the surface. On
+the target to the scene's background colour and draws once. Tone encodes it, capture reads it if asked, and present copies it to the surface. In
+the float mode present writes the transfer into the float target and capture reads that target. On
 submission residency commits and a sheet switch takes effect; on discard nothing commits.
 
 **An artist's journey.** Put PNG files and a description in a folder; the cooker packs them and the game shows
@@ -482,7 +516,8 @@ Asked of other modules. Each is new work inside state another module owns, settl
 on what the owning module has landed by then, with the behaviour defined here, and it then belongs to the owner.
 
 1. **The frame runtime** (`APPLE-TILE`, `APPLE-PRESENTATION`): scene-kind selection, the display-referred
-   transfer, and a scene that declares no reconstruction. Built in WP1.
+   transfer, and a scene that declares no reconstruction. Built in WP1. The transfer's
+   [float form](#7-colour), a 2D host's change of display mode and its capture are built in WP6.
 2. **Content** (`CONTENT-LOOP`, `EFFECT-GRAPH`): the sheet product, pages as a lease, and residency and the
    contribution list in a 2D scene. WP4 extends the texture cooker in `thrum-cook` and runtime views in
    `thrum-asset`. The game connects `thrum-asset-gpu` residency to the sprite scene, so `thrum-render` can
@@ -517,7 +552,7 @@ No budget is set (brief, decision 3). Estimates, to be replaced by measurements:
 | Upload a tick | Changed rows only. A crowd where everything moves uploads all of them, about 38 MB a second at 60 Hz, and a 40 KB order list |
 | Order a tick | 121 µs at 10,000 natively for the kept order in the probe's crowd, where an exact sort is 76 µs; Chrome not measured. The worst case is a tick that gives every row with history a new value: about 25 million exchanges and 10 ms at 10,000. Rows without history are sorted, not exchanged in, so a rewind or a wave of spawns does not pay it |
 | Draw | One call; four vertices a row |
-| Fill | The sprite target at 3456×2234 is 7.7 million pixels: 62 MB as half-float, plus the output half's 31 MB intermediate. A crowd three deep shades about three times its own area |
+| Fill | The sprite target at 3456×2234 is 7.7 million pixels: 62 MB as half-float, plus the output half's 31 MB intermediate. The float mode holds no intermediate, and its drawable is half-float. A crowd three deep shades about three times its own area |
 | Pixel filter | The widened 1.5× footprint meets at most four source texels per axis. Pair adjacent positive weights for up to four hardware bilinear samples per affected fragment. The aligned and base box paths can use one sample. The off-grid 2× cost depends on the chosen neighbourhood and scales with shaded pixels and overdraw. Reuse level zero, the sampler and the sheet bindings, and derive scale-dependent terms once per quad where possible |
 | A sheet | 16 MiB a 2048² page uncompressed, a third more with mips |
 | 3D work | None |
@@ -584,6 +619,14 @@ Whether motion is smooth on the built-in panel itself is not measured here. That
   the landed path, from a run with a drawable. Use a retained record if it covers that path. For a new run,
   preflight for a visible window before taking the GPU lock. This uses the engine tap and the shell's presentation
   record, with no desktop capture or panel claim. Density 1 is exercised in the extent and Chrome proofs.
+- **The float mode (WP6).** In `crates/thrum-render/src`, read `synthetic/display/edr.rs`,
+  `runtime/presentation.rs`, `runtime/submitted_capture.rs` and `runtime/extent.rs` first. The 3D host's EDR present, its late copy of the
+  drawable and its change of display mode are the route to reuse, and each stops at a 3D host today. Build no
+  second present path and no second tap. In a GPU test a float texture given to the frame host as its surface
+  stands for the EDR drawable, as `APPLE-PRESENTATION`'s capture tests do it, and the V1 game's proof forces the
+  display record as that module's arms do, so nothing needs the panel awake. New tests go in the sprite and 2D
+  scene test binaries that exist. No item of `APPLE-PRESENTATION` or `T2-CAPTURE` changes, and a 3D host compiles
+  the same passes and draws the same bytes in both modes.
 - **Capture.** Inspected items use T2 engine capture and name their mode. Motion is judged from `realtime`
   captures at 1920×1080 as consecutive frames at 1x; the display's full 3456×2234 is captured as `fixed` stills
   and timed in the cost records, because twenty seconds of it would not fit capture's output bound.

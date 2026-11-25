@@ -332,3 +332,14 @@
   A fresh `my-crowd` built and ran on Metal. Tick-360 images with and without the guide's
   frame row differ only where the violet mark projects. The copied Wasm library generated
   the import named by its page. [Renamed game proof](../../../.orchestrate/evidence/RENDER-2D/WP5/guide-renamed/inspection.md)
+- 2026-11-25 Planner: WP6 added, because `GAME-UI:WP1` ended `BLOCKED needs_dependency`
+  ([handoff](../../../.orchestrate/evidence/GAME-UI/WP1-handoff.md)). Mechanism 7 promised that a value above white
+  reaches an EDR display, but the EDR surface (`APPLE-PRESENTATION:WP6`) landed after WP1 and serves a 3D host
+  only: a 2D frame is 8-bit codes decoded onto the float drawable, the EDR tap refuses a 2D host, and so does
+  the change of mode. The planner read the code at `05437b579` and confirmed all three.
+- 2026-11-25 Planner's decisions for WP6. It is built here under seam ruling 1, extended, and not as a work
+  package of `APPLE-PRESENTATION`: the transfer is this design's, that module's queue holds the `long-tests` fix,
+  and a changed design there would hold that fix for a design review. The float form clips at the headroom and
+  has no highlight curve (an assumption in the plan). A float-mode generation holds no 8-bit display image.
+  The checks select tests by `float_mode` in existing binaries; each failed for want of a test when written.
+  The changed design needs a design review.

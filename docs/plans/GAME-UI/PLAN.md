@@ -13,7 +13,7 @@ written; its code was thrown away on purpose, so build from the design.
 
 ## Open for the human
 
-- Assumption: GAME-UI waits for all of `RENDER-2D`, because its first work package runs the sprite pass a second time and checks itself against the sprite scene `RENDER-2D` WP5 leaves in the shells. It also waits for `APPLE-PRESENTATION` WP6, because the interface is drawn inside the EDR present pass that work package builds.
+- Assumption: GAME-UI waits for all of `RENDER-2D`, because its first work package runs the sprite pass a second time and checks itself against the sprite scene `RENDER-2D` leaves in the shells, in both display modes. It also waits for `APPLE-PRESENTATION` WP6, because the interface is drawn inside the EDR present pass that work package builds.
 - Assumption: an iPhone app for a second game is engine work, so it is built here (WP6) with the crowd view, and not later inside the game.
 - Assumption: "2D support in the engine" includes text and interface drawn in the frame, and this module builds the smallest part of that the game uses: text in Latin letters with accents (the languages of Western and Central Europe), bars, panels, buttons, one level of modal, and a join screen. Other scripts (Arabic, Hebrew, Chinese, Japanese, Korean, Indic), right-to-left text, translation tools, typed text, screen readers, scrolling lists and animated transitions are not built.
 - Assumption: keys, pointer and touch only. No gamepad.
@@ -37,7 +37,8 @@ planned the tone stage wrote an `Rgba8Unorm` image of encoded values (`crates/th
 ruling 1 and the sprite pass's second use under ruling 2. That is the 8-bit mode. The float mode is the EDR
 present pass `APPLE-PRESENTATION` WP6 builds (`present.rs`, `present.wgsl`), which this Mac selects on its
 built-in display; [mechanism 1](DESIGN.md#1-the-interface-stage) says where the stage sits in each, and forcing
-SDR and forcing a headroom are that module's overrides. `thrum-ui` is a new
+SDR and forcing a headroom are that module's overrides. A 2D scene has the float mode and its float capture from
+`RENDER-2D:WP6`, which this work package stopped for; WP1.3's "before" is main with that landed. `thrum-ui` is a new
 crate: register it, and the cooker's new dependencies in WP2, in `.config/architecture.toml`. In this work package
 it only carries a paint list of rows from an embedded sheet; text and the tree come later. The interface scene
 is a new `THRUM_SCENE` selection beside `RENDER-2D`'s sprite scene in `examples/v1-game/src/content.rs`.

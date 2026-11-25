@@ -23,9 +23,9 @@
 | 19 | PUDDLES | Rain wets the ground and fills its hollows with puddles that ripple, reflect the sky and dry out | WATERS WP1 for its puddles and wet ground on the CPU; WATERS WP8 for its first puddle; SHOWCASE WP5 for the valley; WATERS WP10, WP14 and WP16 to close |
 | 20 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply | |
 | 21 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser | |
-| 22 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | EFFECT-GRAPH WP3 and APPLE-PRESENTATION WP3 to start; SIM-2D WP1 for its last work package |
+| 22 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | EFFECT-GRAPH WP3 and APPLE-PRESENTATION WP3 to start; SIM-2D WP1 for its fifth work package; APPLE-PRESENTATION WP6 for its sixth |
 | 23 | SESSION | Two to four players share one run and keep seeing the same crowd, and a windowed game is stepped by its match | SIM-2D WP3 to start; TRANSPORT WP1 for its second work package and TRANSPORT WP2 for its socket work packages; RENDER-2D WP5 for its last |
-| 24 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame, and one iPhone shell for every game | RENDER-2D WP5 and APPLE-PRESENTATION WP6 |
+| 24 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame, and one iPhone shell for every game | RENDER-2D WP6 and APPLE-PRESENTATION WP6 |
 | 25 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SHOWCASE WP8 to start, with the owner's pick of a concept; SIM-2D WP3, SESSION WP1, RENDER-2D WP5 and GAME-SPLIT WP4 for the first slice; GAME-UI WP4 for the whole run alone and GAME-UI WP6 for the iPhone simulator; SESSION WP4 for a rehearsed match and SESSION WP7 for co-op on sockets |
 | 26 | REPO-RULES | `./dev check` refuses the code shapes the code review found, bulk media leaves the checkout, and names and layout are put right once | Nothing to start; every other track 4 module's fixes, and track 6's, for the rename and the tidy-up |
 | 27 | REVIEW-ENGINE | The review's findings in the simulation, the sea, cooked assets and the cooker are fixed, and the iPhone app gets the textures and buffers its hardware has | Nothing to start; REPO-RULES WP1 for its errors |
@@ -1554,9 +1554,10 @@ An engine work package keeps an edge only where it uses another work package's o
 | `RENDER-2D` WP1 | `EFFECT-GRAPH:WP3`, `APPLE-PRESENTATION:WP3` | It refuses a contribution that declares the after-opaque stage, which WP3 defines, and it declares a scene with no reconstruction, which exists in the game from TAAU on. It no longer waits for `APPLE-TILE:WP12`: it uses the split graph and the pre-tone input, which are Done, and nothing of WP10 to WP12 |
 | `RENDER-2D` WP4 | `CONTENT-LOOP:WP1` | The sheet product is lent as a lease and switched by the publication, both WP1's. It no longer waits for `CONTENT-LOOP:WP3`, which closes G5 and adds nothing a sheet uses |
 | `RENDER-2D` WP5 | `SIM-2D:WP1` | It draws the Crowd trace |
+| `RENDER-2D` WP6 | `APPLE-PRESENTATION:WP6` | It gives a 2D scene the float display mode and the float capture that WP6 built for a 3D scene |
 | `SESSION` WP1, WP2, WP5 | `SIM-2D:WP3`, `TRANSPORT:WP1`, `TRANSPORT:WP2` | As before. WP2 and what follows it wait on `TRANSPORT`, which is last in line for a builder, and not on V1 |
 | `SESSION` WP7 | `RENDER-2D:WP5` | The windowed match is the crowd view with a session attached |
-| `GAME-UI` WP1 | `RENDER-2D:WP5`, `APPLE-PRESENTATION:WP6` | It runs the sprite pass a second time over the sprite scene WP5 leaves, and it draws inside the EDR present pass, which WP6 builds |
+| `GAME-UI` WP1 | `RENDER-2D:WP6`, `APPLE-PRESENTATION:WP6` | It runs the sprite pass a second time over the sprite scene `RENDER-2D` leaves, and it draws inside the EDR present pass, which `APPLE-PRESENTATION:WP6` builds and `RENDER-2D:WP6` gives a 2D scene |
 
 Engine work that the game's plan had carried moved to engine modules, so that it is built and proved without
 the game and the game changes no engine crate for it:
@@ -1573,7 +1574,7 @@ Where an engine item was worded for this game it is now worded for any game: `GA
 modal choice of four cards. The engine modules' proof scenes are the reference crowd, the crowd view, and the
 sprite and interface scenes in the V1 game; none is the swarm game, and no engine check builds a package of it.
 
-**Shared files.** `RENDER-2D` WP1 and WP4 and `GAME-UI` WP1 change the frame runtime and the content loop while
+**Shared files.** `RENDER-2D` WP1, WP4 and WP6 and `GAME-UI` WP1 change the frame runtime and the content loop while
 `APPLE-TILE` WP10 to WP12, `APPLE-PRESENTATION` WP4 to WP12 and `CONTENT-LOOP` WP2 and WP3 are built in the same
 files. That is not an edge: each builder integrates on what has landed and keeps the other's tests passing, as
 the rulings below say. If it costs V1 too much, the owner can ask for `RENDER-2D` WP1 to wait for
@@ -1700,6 +1701,7 @@ it to the asking module's builder. None is added now, so no V1 plan changes.
 | `RENDER-2D` | The sprite pass runs a second time in a frame, at the interface stage, with its own sheets and rows. Built in `GAME-UI:WP1` under [ruling 2](#seam-rulings-for-game-ui) | `GAME-UI` |
 | `CREATOR`, `SHOWCASE` and `PLATFORM-RUNTIME-IOS` | The shells give a game pointer and touch events as well as keys, the display's density, the safe-area insets, text drops and the clipboard; the V1 game gains an interface scene. Built in `GAME-UI` WP1 to WP5 under [ruling 4](#seam-rulings-for-game-ui) | `GAME-UI` |
 | `APPLE-PRESENTATION` | The governor and reconstruction accept a scene that declares no temporal reconstruction, so sprites stay crisp. Built in `RENDER-2D:WP1` under [ruling 1](#seam-rulings-for-render-2d) | `RENDER-2D` |
+| `APPLE-PRESENTATION`, with `T2-CAPTURE` | A 2D scene uses the EDR display mode: the display-referred transfer gains a float form in the EDR present pass, a 2D host changes display mode as a 3D host does, and engine capture's tap reads a 2D host's float frame. Built in `RENDER-2D:WP6` under [ruling 1](#seam-rulings-for-render-2d) | `RENDER-2D`, `GAME-UI` |
 | `CREATOR`, with `PLATFORM-RUNTIME-IOS` and `PLATFORM-RUNTIME-WEB` | An app runner on all three targets for a game that brings no sky kit. The iOS shell lives in `examples/v1-game-ios` today and serves one game. Built in `GAME-UI:WP6` for iOS and for a second program on the window and the page, under [its ruling 5](#seam-rulings-for-game-ui); what is left when the game first runs is `SWARM:WP2`'s, under [its ruling 2](#seam-rulings-for-swarm) | Any second game |
 | Repository guard | `.config/architecture.toml` names one external game; it must admit a second. Built in `SWARM:WP2` under [ruling 1](#seam-rulings-for-swarm) | `SWARM` |
 | Core (W1) and `SIM-2D` | A world image: the bytes the digest covers, with a way back into a fresh runtime in another process. Built in `SESSION:WP1` under [ruling 1](#seam-rulings-for-session) | `SESSION` |
@@ -1722,8 +1724,9 @@ tests passing, and a V1 builder who lands in the same files afterwards keeps `RE
 written while V1 was being built, so that no V1 plan changed; `CONTENT-LOOP`'s design says each ask becomes a
 work package there, and ruling 2 replaces that for the sheet product.
 
-1. **The frame runtime, in `RENDER-2D:WP1`** (`APPLE-TILE` and `APPLE-PRESENTATION`; `thrum-render`'s frame host,
-   scene graph and display files). A frame host is created for one
+1. **The frame runtime, in `RENDER-2D:WP1` and, for the float display mode, `WP6`** (`APPLE-TILE`,
+   `APPLE-PRESENTATION` and `T2-CAPTURE`; `thrum-render`'s frame host, scene graph, display, present and capture
+   files). A frame host is created for one
    [scene kind](RENDER-2D/DESIGN.md#1-the-scene-kind), 2D or 3D, and the 3D kind is the default. A 2D scene binds
    its own colour as the pre-tone input with a fixed exposure, selects a
    [display-referred transfer](RENDER-2D/DESIGN.md#7-colour) with no tone curve and no dither, and declares no
@@ -1733,7 +1736,12 @@ work package there, and ruling 2 replaces that for the sheet product.
    output extent and none of the provider inputs, the registry resolves no provider for it, and a request that
    names one is refused by name at preparation. Every view of a 3D scene still publishes the full form, so no
    provider, history rule or governor behaviour of `APPLE-PRESENTATION` changes. The declaration is the frame
-   runtime's and the refusal is `APPLE-PRESENTATION`'s; both are built in `RENDER-2D:WP1`.
+   runtime's and the refusal is `APPLE-PRESENTATION`'s; both are built in `RENDER-2D:WP1`. `APPLE-PRESENTATION:WP6`
+   landed the EDR surface after that, with a present, a change of display mode and a float capture that serve
+   a 3D host only. `RENDER-2D:WP6` extends the three to a 2D host: the transfer's
+   [float form](RENDER-2D/DESIGN.md#7-colour) is drawn in the EDR present pass, a 2D host changes display mode
+   through the same generation transition, and engine capture's tap reads its float frame as seam 6 has it read
+   a 3D host's. A 3D host compiles the same passes and draws the same bytes in both modes.
 2. **Content, in `RENDER-2D:WP4`** (`CONTENT-LOOP` and `EFFECT-GRAPH`; `thrum-cook`, `thrum-asset`,
    `thrum-asset-gpu` and the contribution list). The [sheet product](RENDER-2D/DESIGN.md#8-sheets) is a new
    product kind; its pages are lent as an array texture under the lease's rules, and they switch with its frame
@@ -1891,11 +1899,12 @@ Approved before a builder starts its module.
    with each other or with the renderer.
 2. **Sprites.** `RENDER-2D`, which builds its asks of `APPLE-TILE` and `CONTENT-LOOP` itself under
    [the seam rulings](#seam-rulings-for-render-2d). It starts after `EFFECT-GRAPH:WP3` and
-   `APPLE-PRESENTATION:WP3`; its last work package draws `SIM-2D`'s crowd and waits for `SIM-2D`'s first.
+   `APPLE-PRESENTATION:WP3`; its fifth work package draws `SIM-2D`'s crowd and waits for `SIM-2D`'s first, and
+   its sixth gives a 2D scene the EDR display mode and waits for `APPLE-PRESENTATION:WP6`.
 3. **A match.** `SESSION`, after `SIM-2D`'s last work package, since its first work package works in the same files.
    Its matches on the in-memory conditioned link follow `TRANSPORT`'s first work package, which delivers that link,
    and its socket work packages follow `TRANSPORT`'s second. Its last work package, the windowed match on a driven
-   world, follows `RENDER-2D`'s last.
+   world, follows `RENDER-2D:WP5`.
 4. **Interface, and a shell for every game.** `GAME-UI`, after `RENDER-2D`'s last work package, whose sprite scene
    its first work package checks against, and after `APPLE-PRESENTATION:WP6`, whose EDR present pass it draws in.
    It builds the interface-stage and font-product asks itself, and in its last work package the shared iPhone
@@ -1953,7 +1962,9 @@ Planned on 13 November 2026: [design](RENDER-2D/DESIGN.md), [plan](RENDER-2D/PLA
 four choices these planning notes carried: order is sorted rows on the CPU, with a band that stops jitter from reordering a
 packed crowd; a 2D scene has no reconstruction and is drawn at the surface's own pixel size; values above white
 are kept for the output half, and how they look on an EDR panel is not judged; and text shares the path as rows,
-a glyph being a frame on a sheet. Five work packages. `GAME-UI` and `SWARM` need WP5. The asks of `APPLE-TILE`, `APPLE-PRESENTATION` and `CONTENT-LOOP` are built in WP1 and WP4
+a glyph being a frame on a sheet. Six work packages. The sixth, added on 25 November, gives a 2D scene the float
+display mode, which `GAME-UI:WP1` stopped for. `SWARM` needs WP5 and `GAME-UI` needs WP6. The asks of `APPLE-TILE`,
+`APPLE-PRESENTATION` and `CONTENT-LOOP` are built in WP1, WP4 and WP6
 under [the seam rulings](#seam-rulings-for-render-2d). Three findings bind later planners: sprites blend in
 linear light, so soft art looks lighter over dark than in a paint tool; a scene shows at most eight sheets; and
 no iOS app for a second game exists yet, so the crowd view is drawn on the Mac and in Chrome and the simulator
@@ -1966,7 +1977,7 @@ choices these planning notes carried: glyphs are rasterised when a font is cooke
 the cooker only, so a shipped game holds no font code; and a join ticket is never typed, but arrives as a text
 drop from a link, a launch argument or a paste. [A probe](../../.orchestrate/evidence/GAME-UI/planning-probe.md) sized a cooked
 font and checked the rules for spacing, event ownership and direction keys. Six work packages, all after
-`RENDER-2D:WP5`, whose sprite scene the first checks against, and `APPLE-PRESENTATION:WP6`, whose EDR present pass
+`RENDER-2D:WP6`, whose sprite scene the first checks against in both display modes, and `APPLE-PRESENTATION:WP6`, whose EDR present pass
 the interface is drawn in. The sixth, added on 14 November, is the iPhone shell shared by every game. The asks of `APPLE-TILE`,
 `RENDER-2D`, `CONTENT-LOOP` and the shells are built in WP1 to WP5 under
 [the seam rulings](#seam-rulings-for-game-ui). `SWARM` needs WP4 for its screens on the Mac and in Chrome and WP6

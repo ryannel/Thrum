@@ -78,3 +78,7 @@
   built is the same. One iPhone shell for every game, engine work that `SWARM` M6 had carried under its ruling
   3, is now mechanism 12 and a new M6 here, proved with the crowd view as a second app. The revised design
   needs a design review.
+- 2026-11-25 Planner, on WP1's `BLOCKED needs_dependency`: the builder's finding holds at `05437b579`. A 2D host
+  has no float display mode, no float capture and no change of mode, so WP1.1, WP1.2 and WP1.5 cannot be met
+  over the sprite scene. The missing part is planned as `RENDER-2D:WP6` under that module's seam ruling 1, and
+  WP1 now waits for it in place of `RENDER-2D:WP5`. No item and no mechanism here changed.
