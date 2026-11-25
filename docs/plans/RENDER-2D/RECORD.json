@@ -724,7 +724,57 @@
     },
     "WP4": {
       "definitions": "0dfd5b7b7746644a627cf4358242f23f378216f510060617cf6374898c797a72",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "84d42f1e68bd117b81350c3352406e88406172e7",
+          "review": ".orchestrate/evidence/RENDER-2D/WP4-review.md",
+          "items": {
+            "WP4.1": "pass",
+            "WP4.2": "pass",
+            "WP4.3": "pass",
+            "WP4.4": "pass",
+            "WP4.5": "pass",
+            "WP4.6": "pass",
+            "WP4.7": "pass",
+            "WP4.8": "fail",
+            "WP4.9": "pass",
+            "WP4.10": "fail"
+          },
+          "findings": [
+            {
+              "name": "The Chrome sprite page refuses the cooked store before loading it",
+              "item": "WP4.8",
+              "repeat": false
+            },
+            {
+              "name": "The sheet guide links to a Chrome launch that cannot draw",
+              "item": "WP4.10",
+              "repeat": false
+            },
+            {
+              "name": "Cooked scenes omit world ordering from the reported ordering time",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 168757,
+            "cached": 7534720,
+            "output": 13082,
+            "turns": 1
+          },
+          "at": "2026-11-25T03:57:31Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",

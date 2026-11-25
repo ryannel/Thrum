@@ -447,8 +447,8 @@
           "ask": "Read the test. Does it decode the cooked pages and compare each frame's texels with its source image, premultiplied, including a trimmed frame and a grid cell? Does it measure that the gutter between frames is wide enough for every mip level written?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/RENDER-2D/WP4/cooker-and-hostile.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RENDER-2D/WP4-review.md",
           "builder_result": "pass"
         },
         {
@@ -458,8 +458,8 @@
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/RENDER-2D/WP4/cooker-and-hostile.md",
           "builder_result": "pass",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RENDER-2D/WP4-review.md"
         },
         {
           "id": "WP4.3",
@@ -469,8 +469,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/RENDER-2D/WP4/metal-tests.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RENDER-2D/WP4-review.md",
           "builder_result": "pass"
         },
         {
@@ -481,8 +481,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/RENDER-2D/WP4/metal-tests.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RENDER-2D/WP4-review.md",
           "builder_result": "pass"
         },
         {
@@ -493,8 +493,8 @@
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/RENDER-2D/WP4/metal-tests.md",
           "builder_result": "pass",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RENDER-2D/WP4-review.md"
         },
         {
           "id": "WP4.6",
@@ -504,8 +504,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/RENDER-2D/WP4/metal-tests.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RENDER-2D/WP4-review.md",
           "builder_result": "pass"
         },
         {
@@ -516,8 +516,8 @@
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/RENDER-2D/WP4/metal-tests.md",
           "builder_result": "pass",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RENDER-2D/WP4-review.md"
         },
         {
           "id": "WP4.8",
@@ -525,10 +525,10 @@
           "check": "node scripts/check_v1_browser.mjs --case sprite-sheets",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/RENDER-2D/WP4/chrome/inspection.md",
-          "builder_result": "pass",
-          "verdict": "",
-          "review": "",
+          "evidence": "",
+          "builder_result": "open",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/RENDER-2D/WP4-review.md",
           "inspect": "Use the same Chrome edit that the check qualifies. Take T2 engine capture in realtime mode from moving frames before the save through the first submitted frame using the new sheet and the following motion. Review at 1x with the save time, monotonic submission times, committed ticks, view motion and skipped-opportunity records aligned to the switch. Does the scene keep moving through fetch and staging without a visible pause relative to the pre-save interval? A gap in submissions must remain visible in elapsed-time playback."
         },
         {
@@ -537,8 +537,8 @@
           "inspect": "Capture the sprite field with a moving view using T2 engine capture in realtime mode. For each edit watch at 1x from ordinary pre-save motion through the first submitted frame using the new sheet and the following motion. Use the save time, monotonic submission times, committed ticks, view motion and skipped-opportunity records to check for a visible pause through cooking and staging against the pre-save interval. Preserve any submission gap in playback. Inspect the eight frames around each switch whole and in native-size crops for blanks, wrong art and a mix of old and new.",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/RENDER-2D/WP4/mac/inspection.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RENDER-2D/WP4-review.md",
           "builder_result": "pass"
         },
         {
@@ -546,17 +546,33 @@
           "statement": "The public sheet guide explains the folder, pixel and smooth sheet kinds, frame names, grid cells, tiles and linear-light blending. It shows how a cooked pivot is authored in original-frame texels, where its default centre is, and how the row position anchors it through trim. It states the embedded top-left convention.",
           "ask": "Does a folder and description written from the documentation alone cook and draw as it says, at the claimed commit?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/RENDER-2D/WP4/guide.md",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/RENDER-2D/WP4-review.md",
+          "builder_result": "open"
         }
       ],
-      "failed_reviews": 0,
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
-      "quality_bar": "Sprite import as in Godot's or Unity's atlas workflow from Aseprite, without a restart or a hitch: save the art and the running game shows it a moment later, never half-swapped and never with the wrong picture on a sprite. A bad save leaves the last good art on screen and says why."
+      "status": "in_progress",
+      "quality_bar": "Sprite import as in Godot's or Unity's atlas workflow from Aseprite, without a restart or a hitch: save the art and the running game shows it a moment later, never half-swapped and never with the wrong picture on a sprite. A bad save leaves the last good art on screen and says why.",
+      "findings": [
+        {
+          "name": "The Chrome sprite page refuses the cooked store before loading it",
+          "item": "WP4.8",
+          "repeat": false
+        },
+        {
+          "name": "The sheet guide links to a Chrome launch that cannot draw",
+          "item": "WP4.10",
+          "repeat": false
+        },
+        {
+          "name": "Cooked scenes omit world ordering from the reported ordering time",
+          "repeat": false
+        }
+      ]
     },
     {
       "id": "WP5",
