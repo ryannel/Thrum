@@ -4,7 +4,7 @@ The orchestrate script writes this page from the plan files and record files aft
 
 ## Overview
 
-21 of 36 modules done · 13 in progress · 2 to come
+22 of 36 modules done · 12 in progress · 2 to come
 
 ### Needs you now
 
@@ -316,12 +316,13 @@ A planner or the lead chose each of these where your words left it open. Each st
 - MetalFX reconstructs the valley on Apple tile, with TAAU as its prepared fallback (APPLE-PRESENTATION WP8): In Progress · [plan](APPLE-PRESENTATION/PLAN.md)
 - Water reflects the sky, the Sun, its shores and the craft, shows the ground and hulls beneath it, glitters and dims under a cloud's shade, from dawn to night (WATERS WP8): Not Started · [plan](WATERS/PLAN.md)
 - While clouds drift, the game can say where each lost refresh went, and the losses the clouds cause are fixed (CLOUDS WP19): In Progress · [plan](CLOUDS/PLAN.md) · [latest review](../../.orchestrate/evidence/CLOUDS/WP19-review.md)
-- A 2D game's colours above white go brighter than white on an EDR display, and a capture records the frame the display was given (RENDER-2D WP6): Ready for Review · [plan](RENDER-2D/PLAN.md) · [latest review](../../.orchestrate/evidence/RENDER-2D/WP6-review.md)
 - The reference crowd is played in a window by a host and by clients on the Mac and in Chrome, each world stepped by its match (SESSION WP7): In Progress · [plan](SESSION/PLAN.md) · [latest review](../../.orchestrate/evidence/SESSION/WP7-review.md)
+- Panels and marks a game draws appear over its own frame, exact to the pixel, on the Mac and in Chrome, and a game with no interface pays nothing (GAME-UI WP1): Not Started · [plan](GAME-UI/PLAN.md)
 - GATE-TIME WP5 The post-rollout record shows a five-minute median for Rust landings: Blocked: Needs Context: WP5.1 needs 17 more qualifying ordinary Rust landings before the fixed window can be judged. The lead finds the missing fact, or asks you for it
 
 ### Recently done
 
+- A 2D game's colours above white go brighter than white on an EDR display, and a capture records the frame the display was given (RENDER-2D WP6), 25 Nov · [review](../../.orchestrate/evidence/RENDER-2D/WP6-review.md)
 - Floats in a gale's breaking surf get the height of the crest they ride in time to ride it, with the game running (WATERS WP19), 25 Nov · [review](../../.orchestrate/evidence/WATERS/WP19-review.md)
 - With surf in view, a float gets the sea's height within two ticks and rides a hitch on its last answer (WATERS WP21), 25 Nov · [review](../../.orchestrate/evidence/WATERS/WP21-review.md)
 - The water scene's tests compile for Linux and Windows again (WATERS WP22), 25 Nov
@@ -456,9 +457,9 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 19 | PUDDLES | Rain wets the ground and fills its hollows with puddles that ripple, reflect the sky and dry out | WATERS WP1 for its puddles and wet ground on the CPU; WATERS WP8 for its first puddle; SHOWCASE WP5 for the valley; WATERS WP10, WP14 and WP16 to close | Waiting: On Dependency, WATERS:WP8 |
 | 20 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply |  | Done 18 Nov |
 | 21 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser |  | Done 16 Nov |
-| 22 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | EFFECT-GRAPH WP3 and APPLE-PRESENTATION WP3 to start; SIM-2D WP1 for its fifth work package; APPLE-PRESENTATION WP6 for its sixth | WP6 of 6 · Ready for Review |
+| 22 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | EFFECT-GRAPH WP3 and APPLE-PRESENTATION WP3 to start; SIM-2D WP1 for its fifth work package; APPLE-PRESENTATION WP6 for its sixth | Done 25 Nov |
 | 23 | SESSION | Two to four players share one run and keep seeing the same crowd, and a windowed game is stepped by its match | SIM-2D WP3 to start; TRANSPORT WP1 for its second work package and TRANSPORT WP2 for its socket work packages; RENDER-2D WP5 for its last | WP7 of 8 · In Progress |
-| 24 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame, and one iPhone shell for every game | RENDER-2D WP6 and APPLE-PRESENTATION WP6 | Waiting: On Dependency, RENDER-2D:WP6 |
+| 24 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame, and one iPhone shell for every game | RENDER-2D WP6 and APPLE-PRESENTATION WP6 | WP1 of 6 · Not Started |
 | 25 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SHOWCASE WP8 to start, with the owner's pick of a concept; SIM-2D WP3, SESSION WP1, RENDER-2D WP5 and GAME-SPLIT WP4 for the first slice; GAME-UI WP4 for the whole run alone and GAME-UI WP6 for the iPhone simulator; SESSION WP4 for a rehearsed match and SESSION WP7 for co-op on sockets | Waiting: On Dependency, SHOWCASE:WP8 |
 | 26 | REPO-RULES | `./dev check` refuses the code shapes the code review found, bulk media leaves the checkout, and names and layout are put right once | Nothing to start; every other track 4 module's fixes, and track 6's, for the rename and the tidy-up | Waiting: On Dependency, GATE-TIME:WP5 |
 | 27 | REVIEW-ENGINE | The review's findings in the simulation, the sea, cooked assets and the cooker are fixed, and the iPhone app gets the textures and buffers its hardware has | Nothing to start; REPO-RULES WP1 for its errors | Done 24 Nov |
