@@ -64,6 +64,16 @@ impl Opportunity {
             (Some(_), false) => None,
         }
     }
+
+    fn record_present(&mut self, present: Present) {
+        self.multiple |= self.interval_present.is_some();
+        if self
+            .interval_present
+            .is_none_or(|previous| previous.time <= present.time)
+        {
+            self.interval_present = Some(present);
+        }
+    }
 }
 
 struct Measurement {
@@ -86,8 +96,9 @@ struct Request {
 }
 
 /// Only the render owner starts, completes and presents a request. The event loop adds
-/// targets before dispatching work for them. Between targets it can get at most the
-/// present already in flight and one for the latest callback; a refusal may be retried.
+/// targets before dispatching work for them. Presents in known intervals go straight
+/// to their opportunity. Only the in-flight frame and one for the latest callback can
+/// present beyond the newest known target before another callback is processed.
 #[derive(Default)]
 pub(super) struct Account {
     current: Option<Opportunity>,
@@ -141,7 +152,9 @@ impl Account {
         } else {
             self.previous_end = Some(target - period);
         }
-        self.current = Some(Opportunity::new(target, Place::LateRequest));
+        let mut current = Opportunity::new(target, Place::LateRequest);
+        self.place_pending(&mut current);
+        self.current = Some(current);
     }
 
     pub(super) fn begin(&mut self, target: f64, arrived: f64) {
@@ -175,13 +188,19 @@ impl Account {
             // A new callback can be delivered just before the prior target's
             // deadline. A present in that last sliver still belongs to it.
             let before = closed.row.unserved();
-            closed.row.multiple |= closed.row.interval_present.replace(present).is_some();
+            closed.row.record_present(present);
             self.revise(closed, before);
             if let Some(request) = &mut self.request
                 && request.target.to_bits() == closed.row.target.to_bits()
             {
                 request.closed = Some(closed);
             }
+            return;
+        }
+        if let Some(row) = &mut self.current
+            && (self.previous_end.expect("tracked interval start")..row.target).contains(&time)
+        {
+            row.record_present(present);
             return;
         }
         if let Some(slot) = self.presents.iter_mut().find(|slot| slot.is_none()) {
@@ -244,18 +263,23 @@ impl Account {
         }
     }
 
-    fn close(&mut self, mut row: Opportunity) {
+    fn place_pending(&mut self, row: &mut Opportunity) {
         let start = self.previous_end.expect("tracked interval start");
         for slot in &mut self.presents {
             if let Some(present) = *slot
                 && present.time < row.target
             {
                 if present.time >= start {
-                    row.multiple |= row.interval_present.replace(present).is_some();
+                    row.record_present(present);
                 }
                 *slot = None;
             }
         }
+    }
+
+    fn close(&mut self, mut row: Opportunity) {
+        let start = self.previous_end.expect("tracked interval start");
+        self.place_pending(&mut row);
         self.previous_end = Some(row.target);
         self.opportunities += 1;
         self.count(row);
@@ -480,5 +504,32 @@ mod tests {
         account.finish();
         assert_eq!(account.served, 0);
         assert_eq!(account.unserved[Place::EncodeSubmit as usize], 2);
+    }
+
+    #[test]
+    fn learning_an_interval_releases_pending_space_for_the_next_present() {
+        let mut account = Account::default();
+        account.measure(0.0, 1.0);
+        account.callback(PERIOD, PERIOD);
+
+        account.begin(PERIOD, 0.1);
+        account.present(0.27, 1);
+        account.complete(Place::EncodeSubmit, Some((0.27, 1)));
+        account.callback(2.0 * PERIOD, PERIOD);
+        account.begin(2.0 * PERIOD, 0.27);
+        account.present(0.28, 2);
+        account.complete(Place::EncodeSubmit, Some((0.28, 2)));
+        account.callback(3.0 * PERIOD, PERIOD);
+        account.begin(3.0 * PERIOD, 0.36);
+        account.present(0.39, 3);
+        account.complete(Place::EncodeSubmit, Some((0.39, 3)));
+        account.callback(4.0 * PERIOD, PERIOD);
+        account.finish();
+
+        assert_eq!(account.excess_presents, 0);
+        let rows = account.measurement.unwrap().rows;
+        assert!(rows[2].multiple);
+        assert_eq!(rows[3].interval_present.unwrap().submission, 3);
+        assert_eq!(rows[3].unserved(), None);
     }
 }
