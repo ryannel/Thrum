@@ -299,6 +299,12 @@ impl SceneSurface<'_> {
         self.cloud
             .and_then(crate::atmosphere::CloudPrepared::gpu_target)
     }
+    /// Scene-owned RGBA16Float cube faces. RGB is scattered radiance in scene units,
+    /// and alpha is transmittance. Faces use the standard cube direction convention.
+    pub fn sky_overlay_target(&self) -> Option<wgpu::Texture> {
+        self.environment?.overlay_target()
+    }
+
     /// Borrow the scene-allocated ground band target and its mapping uniform.
     /// Available only when the provider declares GPU-filled optical depth.
     pub fn ground_band_target(&self) -> Option<(wgpu::Texture, wgpu::Buffer)> {

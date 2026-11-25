@@ -217,6 +217,9 @@ impl Prepared {
             if let Some(trace) = graph.after_opaque.get_mut(1) {
                 trace.accesses.extend(reads.iter().cloned());
             }
+            if sky.is_some_and(Layer::has_overlay) {
+                graph.passes[6].accesses.extend(reads.iter().cloned());
+            }
             if let Some(map) = &self.placed_map {
                 graph::append_placed_map(&mut graph, map, reads, generation);
             }

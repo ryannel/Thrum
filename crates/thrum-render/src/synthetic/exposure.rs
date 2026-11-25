@@ -19,31 +19,46 @@ use crate::timing::GpuTimings;
 pub(super) const SAMPLE_BYTES: u64 = size_of::<crate::records::ExposureSample>() as u64;
 const POLICY_BYTES: u64 = size_of::<crate::records::Policy>() as u64;
 macro_rules! exposure_source {
-    () => {
+    ($body:expr) => {
         concat!(
             wgsl!("directional_light.wgsl"),
             "\n",
             wgsl!("environment_light.wgsl"),
             "\n",
-            wgsl!("synthetic/exposure.wgsl"),
+            $body,
         )
     };
 }
 pub(crate) const SHADER: &str = concat!(
-    exposure_source!(),
+    exposure_source!(wgsl!("synthetic/exposure.wgsl")),
     "\nfn incident_sun_factor() -> f32 { return 1.0; }"
 );
 
 pub(crate) fn ground_band_source(variant: crate::shaders::CloudVariant) -> String {
+    incident_sun_source(exposure_source!(wgsl!("synthetic/exposure.wgsl")), variant)
+}
+
+fn incident_sun_source(body: &str, variant: crate::shaders::CloudVariant) -> String {
     let source = format!(
         "{}\n{}\n{}",
-        exposure_source!(),
+        body,
         wgsl!("records/observer.wgsl"),
-        variant.sampling_source(),
+        variant.sampling_source()
     );
     format!(
         "{source}\n@group(1) @binding(3) var<uniform> aerial_frame: Atmosphere;\n@group(1) @binding(4) var aerial_sampler: sampler;\nfn incident_sun_factor() -> f32 {{ return cloud_factor(aerial_frame.camera_altitude.xyz); }}"
     )
+}
+
+pub(crate) fn world_light_source(variant: crate::shaders::CloudVariant) -> String {
+    let body = exposure_source!(wgsl!(@exposure_body
+        "                ev = adapt_world_light_ev(raw_ev, parameters.zw);\n"));
+    let source = if variant.present() {
+        incident_sun_source(body, variant)
+    } else {
+        format!("{body}\nfn incident_sun_factor() -> f32 {{ return 1.0; }}")
+    };
+    format!("{source}\n{}", wgsl!("atmosphere/overlay_exposure.wgsl"))
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -146,6 +161,7 @@ impl ExposureResolve {
         })
     }
 
+    #[cfg(test)]
     pub(super) fn new(
         device: &crate::runtime::DeviceSite,
         directional: &wgpu::Buffer,
@@ -157,52 +173,91 @@ impl ExposureResolve {
             &crate::atmosphere::AtmospherePrepared,
         )>,
     ) -> Self {
+        let (cloud, atmosphere) = ground.unzip();
+        Self::prepare(
+            device,
+            directional,
+            environment_light,
+            serials,
+            samples,
+            (cloud, atmosphere),
+        )
+    }
+
+    pub(super) fn prepare(
+        device: &crate::runtime::DeviceSite,
+        directional: &wgpu::Buffer,
+        environment_light: &wgpu::Buffer,
+        serials: &wgpu::Buffer,
+        samples: [wgpu::Buffer; 2],
+        (cloud, atmosphere): (
+            Option<&crate::atmosphere::CloudPrepared>,
+            Option<&crate::atmosphere::AtmospherePrepared>,
+        ),
+    ) -> Self {
         let policy = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("camera exposure policy"),
             size: POLICY_BYTES,
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
+        let visibility = wgpu::ShaderStages::COMPUTE;
+        let adapt = atmosphere.is_some_and(crate::atmosphere::AtmospherePrepared::uses_haze_scale);
+        let entries = [
+            binding::uniform(0, visibility, POLICY_BYTES),
+            binding::uniform(1, visibility, DIRECTIONAL_BYTES),
+            binding::uniform(4, visibility, ENVIRONMENT_BYTES),
+            binding::uniform(2, visibility, history_gpu::SERIAL_BYTES),
+            binding::storage(3, visibility, false, SAMPLE_BYTES),
+        ];
+        let mut entries = Vec::from(entries);
+        if adapt {
+            entries.push(binding::uniform(5, visibility, SAMPLE_BYTES));
+        }
         let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("camera exposure resolve"),
-            entries: &[
-                binding::uniform(0, wgpu::ShaderStages::COMPUTE, POLICY_BYTES),
-                binding::uniform(1, wgpu::ShaderStages::COMPUTE, DIRECTIONAL_BYTES),
-                binding::uniform(4, wgpu::ShaderStages::COMPUTE, ENVIRONMENT_BYTES),
-                binding::uniform(2, wgpu::ShaderStages::COMPUTE, history_gpu::SERIAL_BYTES),
-                binding::storage(3, wgpu::ShaderStages::COMPUTE, false, SAMPLE_BYTES),
-            ],
+            entries: &entries,
         });
         let groups = std::array::from_fn(|side| {
+            let mut entries = vec![
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: policy.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: directional.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: serials.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 3,
+                    resource: samples[side].as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 4,
+                    resource: environment_light.as_entire_binding(),
+                },
+            ];
+            if adapt {
+                entries.push(wgpu::BindGroupEntry {
+                    binding: 5,
+                    resource: samples[side ^ 1].as_entire_binding(),
+                });
+            }
             device.create_bind_group(&wgpu::BindGroupDescriptor {
                 label: Some("camera exposure resolve"),
                 layout: &layout,
-                entries: &[
-                    wgpu::BindGroupEntry {
-                        binding: 0,
-                        resource: policy.as_entire_binding(),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 1,
-                        resource: directional.as_entire_binding(),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 2,
-                        resource: serials.as_entire_binding(),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 3,
-                        resource: samples[side].as_entire_binding(),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 4,
-                        resource: environment_light.as_entire_binding(),
-                    },
-                ],
+                entries: &entries,
             })
         });
-        let sun_path = ground.and_then(|(cloud, air)| {
-            let band = cloud.band.as_ref()?;
+        let sun_path = cloud.zip(atmosphere).and_then(|(cloud, air)| {
+            let band = cloud.band.as_ref();
+            if band.is_none() && !air.has_overlay() {
+                return None;
+            }
             let (_, sampler, observer) = air.aerial_sampled();
             let stages = wgpu::ShaderStages::COMPUTE;
             let mut entries = vec![
@@ -216,9 +271,11 @@ impl ExposureResolve {
                 ),
                 binding::uniform(14, stages, cloud.uniform.size()),
             ];
-            entries.extend(crate::atmosphere::ground_band::GroundBandPrepared::layout(
-                stages,
-            ));
+            if band.is_some() {
+                entries.extend(crate::atmosphere::ground_band::GroundBandPrepared::layout(
+                    stages,
+                ));
+            }
             let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
                 label: Some("incident ground band"),
                 entries: &entries,
@@ -241,7 +298,9 @@ impl ExposureResolve {
                     resource: cloud.uniform.as_entire_binding(),
                 },
             ];
-            entries.extend(band.entries());
+            if let Some(band) = band {
+                entries.extend(band.entries());
+            }
             let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
                 label: Some("incident ground band"),
                 layout: &layout,
@@ -249,7 +308,14 @@ impl ExposureResolve {
             });
             Some((layout, group, cloud.variant()))
         });
-        let shader = if let Some((_, _, variant)) = &sun_path {
+        let shader = if adapt {
+            let variant = sun_path
+                .as_ref()
+                .map_or(crate::shaders::CloudVariant::Absent, |(_, _, variant)| {
+                    *variant
+                });
+            crate::shaders::Shader::WorldLightExposure(variant)
+        } else if let Some((_, _, variant)) = &sun_path {
             crate::shaders::Shader::GroundBandExposure(*variant)
         } else {
             crate::shaders::Shader::Exposure
@@ -287,13 +353,51 @@ impl ExposureResolve {
         queue.write_buffer(&self.policy, 0, &policy);
     }
 
+    #[cfg(test)]
     pub(super) fn append_graph(
+        graph: &mut FrameGraph,
+        key: PipelineKey,
+        light: [ResourceId; 2],
+        sun_path: Vec<Access>,
+    ) -> Result<ResourceId, GraphError> {
+        Self::append_with_adaptation(graph, key, light, sun_path, None)
+    }
+
+    pub(super) fn history_sample(
+        graph: &mut FrameGraph,
+        generation: u64,
+        initialized: bool,
+    ) -> Result<ResourceId, GraphError> {
+        graph.resource(
+            ResourceDescriptor::Buffer {
+                bytes: SAMPLE_BYTES,
+                usage: wgpu::BufferUsages::STORAGE
+                    | wgpu::BufferUsages::UNIFORM
+                    | wgpu::BufferUsages::COPY_SRC,
+            },
+            ResourceScope::History {
+                owner: 2,
+                epoch: generation,
+                initialized,
+            },
+        )
+    }
+
+    pub(super) fn append_with_adaptation(
         graph: &mut FrameGraph,
         key: PipelineKey,
         [directional, environment_light]: [ResourceId; 2],
         sun_path: Vec<Access>,
+        previous: Option<&ResourceId>,
     ) -> Result<ResourceId, GraphError> {
         let mut accesses = sun_path;
+        if let Some(previous) = previous {
+            accesses.push(Access::new(
+                previous.clone(),
+                0..SAMPLE_BYTES,
+                AccessKind::UniformRead,
+            ));
+        }
         for bytes in [POLICY_BYTES, history_gpu::SERIAL_BYTES] {
             let resource = graph.resource(
                 ResourceDescriptor::Buffer {
@@ -310,19 +414,7 @@ impl ExposureResolve {
         ] {
             accesses.push(Access::new(resource, 0..bytes, AccessKind::UniformRead));
         }
-        let sample = graph.resource(
-            ResourceDescriptor::Buffer {
-                bytes: SAMPLE_BYTES,
-                usage: wgpu::BufferUsages::STORAGE
-                    | wgpu::BufferUsages::UNIFORM
-                    | wgpu::BufferUsages::COPY_SRC,
-            },
-            ResourceScope::History {
-                owner: 2,
-                epoch: key.device_generation,
-                initialized: false,
-            },
-        )?;
+        let sample = Self::history_sample(graph, key.device_generation, false)?;
         accesses.push(Access::new(
             sample.clone(),
             0..SAMPLE_BYTES,

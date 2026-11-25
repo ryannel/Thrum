@@ -382,6 +382,10 @@ impl SecondaryPrepared {
             immediate_size: 0,
         });
         let variant = crate::shaders::SceneVariant {
+            lighting: prepared.atmosphere.as_ref().map_or(
+                crate::atmosphere::overlay::Lighting::Clear,
+                crate::atmosphere::AtmospherePrepared::overlay_lighting,
+            ),
             atmosphere: crate::shaders::AtmosphereVariant::new(
                 prepared.atmosphere.is_some(),
                 prepared.air_shadow.is_some(),
@@ -987,15 +991,21 @@ impl SceneContext<'_> {
 }
 
 pub(crate) fn composed_source(variant: crate::shaders::SceneVariant) -> String {
-    super::scene_source::cloud_variant(
-        shader_source(&super::scene_source::secondary(
+    let source = super::scene_source::cloud_variant(
+        shader_source(&super::scene_source::secondary_with_lighting(
             variant.atmosphere.present(),
             variant.atmosphere.air_shadow(),
             variant.cloud.present(),
             variant.shadows,
+            variant.lighting,
         )),
         variant.cloud,
-    )
+    );
+    if variant.lighting == crate::atmosphere::overlay::Lighting::Clear {
+        source
+    } else {
+        crate::atmosphere::overlay::with_reflection_gain(&source)
+    }
 }
 
 #[cfg(test)]

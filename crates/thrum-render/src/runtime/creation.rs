@@ -239,6 +239,8 @@ pub struct CreationReport {
     pub frames: u64,
     /// Pipeline creation events through [`site`], in first-seen order.
     pub pipelines: Vec<PipelineRow>,
+    /// Pipeline creations by the label on the pipeline descriptor.
+    pub named_pipelines: std::collections::BTreeMap<String, u64>,
     /// Unscoped pipeline creations after readiness.
     pub violations: u64,
     /// The first of them on each creating thread, in first-seen order.
@@ -260,6 +262,7 @@ impl CreationReport {
             ready: false,
             frames: 0,
             pipelines: Vec::new(),
+            named_pipelines: std::collections::BTreeMap::new(),
             violations: 0,
             first_violations: Vec::new(),
             rows: Vec::new(),
@@ -404,7 +407,7 @@ impl DeviceSite {
     pub fn render(&self, desc: &wgpu::RenderPipelineDescriptor<'_>) -> wgpu::RenderPipeline {
         let pipeline = self.0.device.create_render_pipeline(desc);
         if let Some(ledger) = &self.0.ledger {
-            record(ledger, PipelineKind::Render);
+            record(ledger, PipelineKind::Render, desc.label);
         }
         pipeline
     }
@@ -413,7 +416,7 @@ impl DeviceSite {
     pub fn compute(&self, desc: &wgpu::ComputePipelineDescriptor<'_>) -> wgpu::ComputePipeline {
         let pipeline = self.0.device.create_compute_pipeline(desc);
         if let Some(ledger) = &self.0.ledger {
-            record(ledger, PipelineKind::Compute);
+            record(ledger, PipelineKind::Compute, desc.label);
         }
         pipeline
     }
@@ -422,7 +425,7 @@ impl DeviceSite {
     pub fn mesh(&self, desc: &wgpu::MeshPipelineDescriptor<'_>) -> wgpu::RenderPipeline {
         let pipeline = self.0.device.create_mesh_pipeline(desc);
         if let Some(ledger) = &self.0.ledger {
-            record(ledger, PipelineKind::Mesh);
+            record(ledger, PipelineKind::Mesh, desc.label);
         }
         pipeline
     }
@@ -509,12 +512,12 @@ thread_local! {
 
 /// Record one pipeline creation on `ledger`: in the innermost region this
 /// thread has open on that same ledger, else unscoped.
-fn record(ledger: &Arc<CreationLedger>, kind: PipelineKind) {
+fn record(ledger: &Arc<CreationLedger>, kind: PipelineKind, name: Option<&str>) {
     let scope = event_scope(ledger);
-    if scope.is_some_and(|id| ledger.event(Some(id), kind)) {
+    if scope.is_some_and(|id| ledger.event(Some(id), kind, name)) {
         return;
     }
-    ledger.event(None, kind);
+    ledger.event(None, kind, name);
 }
 
 fn event_scope(ledger: &Arc<CreationLedger>) -> Option<u64> {
@@ -721,6 +724,7 @@ impl CreationLedger {
                     ready: false,
                     frames: 0,
                     pipelines: Vec::new(),
+                    named_pipelines: std::collections::BTreeMap::new(),
                     violations: 0,
                     first_violations: Vec::new(),
                     rows: Vec::new(),
@@ -781,7 +785,7 @@ impl CreationLedger {
 
     /// Record one pipeline event, in region `scope` if it is still open.
     /// Returns false, recording nothing, for a scope that has closed.
-    fn event(&self, scope: Option<u64>, kind: PipelineKind) -> bool {
+    fn event(&self, scope: Option<u64>, kind: PipelineKind, name: Option<&str>) -> bool {
         let mut state = self.lock();
         let Some((phase, label)) = event_region(&state, scope) else {
             return false;
@@ -797,6 +801,14 @@ impl CreationLedger {
                     after_frame,
                     kind,
                 });
+            }
+        }
+        if let Some(name) = name {
+            let counts = &mut state.report.named_pipelines;
+            if let Some(count) = counts.get_mut(name) {
+                *count += 1;
+            } else {
+                counts.insert(name.to_owned(), 1);
             }
         }
         let rows = &mut state.report.pipelines;

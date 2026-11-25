@@ -380,7 +380,14 @@ impl SceneContribution for Shade {
         self.valid_recording
             && self.gpu.as_ref().is_some_and(|gpu| match index {
                 0 => gpu.weather.runs(),
-                6 => gpu
+                6 if gpu
+                    .sky
+                    .as_ref()
+                    .is_some_and(crate::layer::Layer::has_overlay) =>
+                {
+                    true
+                }
+                6 | 7 => gpu
                     .placed_map
                     .as_ref()
                     .is_some_and(crate::shapes::map::ShapeMap::runs),
@@ -398,7 +405,16 @@ impl SceneContribution for Shade {
         {
             match index {
                 0 => gpu.weather.encode(pass),
-                6 => {
+                6 if gpu
+                    .sky
+                    .as_ref()
+                    .is_some_and(crate::layer::Layer::has_overlay) =>
+                {
+                    if let Some(sky) = &gpu.sky {
+                        sky.encode_overlay(pass, gpu.shapes.as_deref());
+                    }
+                }
+                6 | 7 => {
                     if let (Some(map), Some(shapes)) = (&gpu.placed_map, &gpu.shapes) {
                         map.encode(shapes, pass);
                     }
@@ -445,6 +461,7 @@ impl SceneContribution for Shade {
             gpu.sun.submitted();
             if let Some(sky) = &mut gpu.sky {
                 sky.submitted();
+                sky.overlay_submitted();
             }
             let shapes_report = gpu.shapes.as_mut().map(|shapes| {
                 let mut report = shapes.submitted(history_advanced);

@@ -2,6 +2,7 @@
 //! [`crate::contribution::SceneSurface`] lends to contributions.
 
 use super::air_shadow;
+use crate::atmosphere::overlay::{self, Lighting};
 use crate::capabilities::{ShadowSelection, SunShadowMethod};
 use crate::shaders::wgsl;
 
@@ -30,8 +31,13 @@ pub(super) fn prepare(
     selection: ShadowSelection,
     (soft_sun, ambient): (bool, bool),
     fail_pipeline: bool,
+    lighting: Option<&crate::atmosphere::AtmospherePrepared>,
 ) -> (String, wgpu::ShaderModule, &'static str) {
     let shader = crate::shaders::Shader::Scene(crate::shaders::SceneVariant {
+        lighting: lighting.map_or(
+            Lighting::Clear,
+            crate::atmosphere::AtmospherePrepared::overlay_lighting,
+        ),
         atmosphere,
         cloud: crate::shaders::CloudVariant::from_provider(cloud),
         shadows: shadowed,
@@ -153,19 +159,40 @@ fn apply_providers(source: String, cloud: bool, shadowed: SunShadows) -> String 
 }
 
 /// The forward WGSL for a scene with or without the atmosphere and its aerial shadow.
+#[cfg(test)]
 pub(super) fn compose(atmosphere: bool, air_shadow: bool, ambient: bool) -> String {
+    compose_with_lighting(atmosphere, air_shadow, ambient, Lighting::Clear)
+}
+
+fn compose_with_lighting(
+    atmosphere: bool,
+    air_shadow: bool,
+    ambient: bool,
+    lighting: Lighting,
+) -> String {
     compose_aerial(
         atmosphere,
-        air_shadow::aerial_source(atmosphere, air_shadow),
+        &air_shadow::aerial_source(atmosphere, air_shadow, lighting),
         ambient,
+        lighting,
     )
 }
 
-fn compose_aerial(atmosphere: bool, aerial: &str, ambient: bool) -> String {
+fn compose_aerial(atmosphere: bool, aerial: &str, ambient: bool, lighting: Lighting) -> String {
     let surface = if ambient {
         wgsl!(@ambient_opaque_forward)
     } else {
         wgsl!("synthetic.wgsl")
+    };
+    let environment = if atmosphere {
+        format!(
+            "{}\n{}\n{}",
+            wgsl!("atmosphere/geometry.wgsl"),
+            wgsl!("synthetic_sun.wgsl"),
+            overlay::forward_environment(lighting, false)
+        )
+    } else {
+        String::new()
     };
     format!(
         "{}{}\n{}\n{}",
@@ -183,27 +210,28 @@ fn compose_aerial(atmosphere: bool, aerial: &str, ambient: bool) -> String {
         ),
         surface,
         aerial,
-        if atmosphere {
-            concat!(
-                wgsl!("atmosphere/geometry.wgsl"),
-                "\n",
-                wgsl!("synthetic_sun.wgsl"),
-                "\n",
-                wgsl!("synthetic_environment.wgsl")
-            )
-        } else {
-            ""
-        }
+        environment
     )
 }
 
 /// A view changes only the decoder's ray origin/distance. The main source is
 /// assembled as before, and no view declarations add text to that source.
+#[cfg(test)]
 pub(super) fn secondary(
     atmosphere: bool,
     shadowed_air: bool,
     cloud: bool,
     shadows: SunShadows,
+) -> String {
+    secondary_with_lighting(atmosphere, shadowed_air, cloud, shadows, Lighting::Clear)
+}
+
+pub(super) fn secondary_with_lighting(
+    atmosphere: bool,
+    shadowed_air: bool,
+    cloud: bool,
+    shadows: SunShadows,
+    lighting: Lighting,
 ) -> String {
     let aerial = match (atmosphere, shadowed_air) {
         (true, true) => concat!(
@@ -224,7 +252,32 @@ pub(super) fn secondary(
         ),
         _ => wgsl!("synthetic_plain.wgsl"),
     };
-    let source = apply_providers(compose_aerial(atmosphere, aerial, false), cloud, shadows);
+    let cloudy_aerial;
+    let aerial = if lighting == Lighting::OverlayAndHaze {
+        let common = overlay::aerial_source(lighting);
+        cloudy_aerial = if shadowed_air {
+            format!(
+                "{common}\n{}\n{}\n{}",
+                wgsl!("synthetic_aerial_visibility.wgsl"),
+                wgsl!("synthetic/secondary/aerial_ray.wgsl"),
+                wgsl!("synthetic/secondary/aerial_shadowed.wgsl")
+            )
+        } else {
+            format!(
+                "{common}\n{}\n{}",
+                wgsl!("synthetic/secondary/aerial_ray.wgsl"),
+                wgsl!("synthetic/secondary/aerial_clear.wgsl")
+            )
+        };
+        &cloudy_aerial
+    } else {
+        aerial
+    };
+    let source = apply_providers(
+        compose_aerial(atmosphere, aerial, false, lighting),
+        cloud,
+        shadows,
+    );
     if shadows == SunShadows::Enabled {
         // Cascades are view-local; only the distant top-down height layer is
         // sampled from the scene's array. Keep the default source untouched.
@@ -251,16 +304,17 @@ pub(crate) fn main_source(variant: crate::shaders::SceneVariant) -> String {
             wgsl!("synthetic_aerial_clear.wgsl"),
         );
         apply_providers(
-            compose_aerial(true, &aerial, variant.ambient),
+            compose_aerial(true, &aerial, variant.ambient, variant.lighting),
             variant.cloud.present(),
             variant.shadows,
         )
     } else {
         apply_providers(
-            compose(
+            compose_with_lighting(
                 variant.atmosphere.present(),
                 variant.atmosphere.air_shadow(),
                 variant.ambient,
+                variant.lighting,
             ),
             variant.cloud.present(),
             variant.shadows,
@@ -268,7 +322,7 @@ pub(crate) fn main_source(variant: crate::shaders::SceneVariant) -> String {
     };
     let source = if variant.ambient {
         let closure = if variant.atmosphere.present() {
-            wgsl!(@ambient_environment)
+            overlay::forward_environment(variant.lighting, true)
         } else {
             wgsl!(@bytes "synthetic/raytrace/ambient_plain.wgsl")
         };
@@ -282,6 +336,11 @@ pub(crate) fn main_source(variant: crate::shaders::SceneVariant) -> String {
         source
     };
     let source = cloud_variant(source, variant.cloud);
+    let source = if variant.lighting == Lighting::Clear {
+        source
+    } else {
+        overlay::with_reflection_gain(&source)
+    };
     traced(
         source,
         variant.shadows,

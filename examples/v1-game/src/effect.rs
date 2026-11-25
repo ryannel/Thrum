@@ -410,6 +410,7 @@ impl SceneContribution for DiagnosticEffect {
                 reads: vec![access(0, A::SampledRead, Some(H::Previous))],
             }],
             view_volume_media: Vec::new(),
+            sky_overlays: Vec::new(),
             sun_paths: Vec::new(),
             resources,
             passes,

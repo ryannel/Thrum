@@ -78,6 +78,7 @@ pub(super) fn run(
             | "clouds-drift"
             | "clouds-wind"
             | "clouds-cycle"
+            | "clouds-light-cycle"
             | "clouds-life"
             | "clouds-life-fast"
             | "clouds-placed"
@@ -495,7 +496,10 @@ fn start_writer(
         96,
         8 * 1024 * 1024 * 1024,
         encoding,
-        if matches!(scenario, "clouds-cycle" | "clouds-life") {
+        if matches!(
+            scenario,
+            "clouds-cycle" | "clouds-life" | "clouds-light-cycle"
+        ) {
             16_384
         } else if matches!(
             scenario,
@@ -1187,7 +1191,7 @@ fn is_motion_capture(scenario: &str) -> bool {
 fn weather_motion(scenario: &str) -> bool {
     matches!(
         scenario,
-        "clouds-wind" | "clouds-cycle" | "clouds-life" | "clouds-life-fast"
+        "clouds-wind" | "clouds-cycle" | "clouds-light-cycle" | "clouds-life" | "clouds-life-fast"
     )
 }
 
@@ -1512,6 +1516,7 @@ fn scenario_bounds(scenario: &str, recovery: super::NativeRecovery) -> (f64, f64
         "clouds-drift" => (22.5, 22.0, 21.0),
         "clouds-wind" => (22.5, 22.0, 22.0),
         "clouds-cycle" | "clouds-life" => (244.0, 243.0, 243.0),
+        "clouds-light-cycle" => (126.0, 125.0, 125.0),
         "clouds-life-fast" => (48.0, 47.0, 47.0),
         "clouds-placed" => (31.1, 31.0, 31.0),
         "clouds-dusk" => (14.5, 14.0, f64::INFINITY),

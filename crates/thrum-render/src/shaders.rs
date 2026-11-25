@@ -132,19 +132,69 @@ macro_rules! wgsl {
             "\n// thrum-wgsl-end\n",
         )
     };
+    (@diffuse_producer $body:expr) => {
+        concat!(
+                concat!(
+                    $crate::shaders::wgsl!("atmosphere/storage.wgsl"),
+                    "\n",
+                    concat!(
+                        $crate::shaders::wgsl!("atmosphere/geometry.wgsl"),
+                        "\n",
+                        $crate::shaders::wgsl!("atmosphere/common.wgsl")
+                    )
+                ),
+                "\n",
+                $crate::shaders::wgsl!("atmosphere/irradiance.wgsl"),
+                "\n",
+                $crate::shaders::wgsl!("environment_light.wgsl"),
+                "\n",
+                $body
+            )
+    };
+    (@reflection_integrate $sample:literal) => {
+        concat!(
+            "\n// thrum-wgsl-source: atmosphere/reflection.wgsl\n",
+            $crate::shaders::wgsl!(@bytes "atmosphere/reflection.wgsl"),
+            $sample,
+            $crate::shaders::wgsl!(@bytes "atmosphere/reflection_reduce.wgsl"),
+            "\n// thrum-wgsl-end\n",
+        )
+    };
+    (@reflection_product $decode:literal) => {
+        concat!(
+            "\n// thrum-wgsl-source: atmosphere/products_reflection.wgsl\n",
+            $crate::shaders::wgsl!(@bytes "atmosphere/products_reflection.wgsl"),
+            $decode,
+            $crate::shaders::wgsl!(@bytes "atmosphere/products_reflection_result.wgsl"),
+            "\n// thrum-wgsl-end\n",
+        )
+    };
+    (@environment_terms $decode:literal) => {
+        concat!(
+            $crate::shaders::wgsl!(@bytes "synthetic/forward/environment_terms.wgsl"),
+            $decode,
+            $crate::shaders::wgsl!(@bytes "synthetic/forward/environment_surface.wgsl"),
+        )
+    };
     ("synthetic_environment.wgsl") => {
+        $crate::shaders::wgsl!(@environment_surface "    let environment=decode_sky_light(encoded,aerial_frame.sun_lux.w*aerial_frame.colour_pre_exposure.rgb);\n")
+    };
+    (@environment_surface $decode:literal) => {
         concat!(
             "\n// thrum-wgsl-source: synthetic_environment.wgsl\n",
             $crate::shaders::wgsl!(@bytes "synthetic_environment.wgsl"),
-            $crate::shaders::wgsl!(@bytes "synthetic/forward/environment_terms.wgsl"),
+            $crate::shaders::wgsl!(@environment_terms $decode),
             "    return diffuse+ao*environment*ess;\n}\n",
             "\n// thrum-wgsl-end\n",
         )
     };
     (@ambient_environment) => {
+        $crate::shaders::wgsl!(@ambient_environment_terms "    let environment=decode_sky_light(encoded,aerial_frame.sun_lux.w*aerial_frame.colour_pre_exposure.rgb);\n")
+    };
+    (@ambient_environment_terms $decode:literal) => {
         concat!(
             $crate::shaders::wgsl!(@bytes "synthetic/raytrace/ambient_environment_entry.wgsl"),
-            $crate::shaders::wgsl!(@bytes "synthetic/forward/environment_terms.wgsl"),
+            $crate::shaders::wgsl!(@environment_terms $decode),
             $crate::shaders::wgsl!(@bytes "synthetic/raytrace/ambient_environment_result.wgsl"),
         )
     };
@@ -163,12 +213,19 @@ macro_rules! wgsl {
         )
     };
     ("synthetic/exposure.wgsl") => {
+        $crate::shaders::wgsl!(@exposure_body "                ev = clamp(raw_ev, parameters.z, parameters.w);\n")
+    };
+    (@exposure_body $resolve:literal) => {
         concat!(
             $crate::shaders::wgsl!(@lighting_constants),
             include_str!(concat!(env!("OUT_DIR"), "/exposure_modes.wgsl")),
             $crate::shaders::wgsl!(@file "records/serials.wgsl"),
             $crate::shaders::wgsl!(@file "records/exposure.wgsl"),
-            $crate::shaders::wgsl!(@file "synthetic/exposure.wgsl"),
+            "\n// thrum-wgsl-source: synthetic/exposure.wgsl\n",
+            $crate::shaders::wgsl!(@bytes "synthetic/exposure.wgsl"),
+            $resolve,
+            $crate::shaders::wgsl!(@bytes "synthetic/exposure_result.wgsl"),
+            "\n// thrum-wgsl-end\n",
         )
     };
     ("synthetic/history_gpu.wgsl") => {
@@ -226,12 +283,15 @@ macro_rules! wgsl {
         )
     };
     ("synthetic_aerial.wgsl") => {
+        $crate::shaders::wgsl!(@aerial_sample_and_decode "synthetic_aerial_decode.wgsl")
+    };
+    (@aerial_sample_and_decode $decode:literal) => {
         concat!(
             $crate::shaders::wgsl!(@file "records/observer.wgsl"),
             "\n// thrum-wgsl-source: synthetic_aerial.wgsl\n",
             $crate::shaders::wgsl!(@bytes "synthetic_aerial.wgsl"),
             $crate::shaders::wgsl!(@bytes "synthetic_aerial_sample.wgsl"),
-            $crate::shaders::wgsl!(@bytes "synthetic_aerial_decode.wgsl"),
+            $crate::shaders::wgsl!(@bytes $decode),
             "\n// thrum-wgsl-end\n",
         )
     };
@@ -374,6 +434,7 @@ impl AtmosphereVariant {
 
 #[derive(Clone, Copy)]
 pub(crate) struct SceneVariant {
+    pub(crate) lighting: crate::atmosphere::overlay::Lighting,
     pub(crate) atmosphere: AtmosphereVariant,
     pub(crate) cloud: CloudVariant,
     pub(crate) shadows: SunShadows,
@@ -392,6 +453,7 @@ macro_rules! shader_catalog {
             SecondaryScene(SceneVariant),
             ViewVolume(bool, CloudVariant, bool, u32),
             GroundBandExposure(CloudVariant),
+            WorldLightExposure(CloudVariant),
         }
 
         impl Shader {
@@ -399,6 +461,7 @@ macro_rules! shader_catalog {
                 match self {
                     $(Self::$name => ($source).into(),)*
                     Self::GroundBandExposure(variant) => crate::synthetic::exposure::ground_band_source(variant).into(),
+                    Self::WorldLightExposure(variant) => crate::synthetic::exposure::world_light_source(variant).into(),
                     Self::Scene(variant) => crate::synthetic::scene_source::main_source(variant).into(),
                     Self::ViewVolume(cascades, cloud, medium, near) => crate::atmosphere::gpu::view_volume::source(cascades, cloud, medium, near).into(),
                     Self::SecondaryScene(variant) => crate::synthetic::secondary::composed_source(variant).into(),
@@ -483,23 +546,13 @@ shader_catalog! {
         wgsl!("atmosphere/volume_sky.wgsl"),
         wgsl!("atmosphere/volume_sky_diffuse.wgsl")
     );
-    AtmosphereDiffuse => concat!(
-                concat!(
-                    wgsl!("atmosphere/storage.wgsl"),
-                    "\n",
-                    concat!(
-                        wgsl!("atmosphere/geometry.wgsl"),
-                        "\n",
-                        wgsl!("atmosphere/common.wgsl")
-                    )
-                ),
-                "\n",
-                wgsl!("atmosphere/irradiance.wgsl"),
-                "\n",
-                wgsl!("environment_light.wgsl"),
-                "\n",
-                wgsl!("atmosphere/diffuse.wgsl")
-            );
+    AtmosphereDiffuse => wgsl!(@diffuse_producer concat!(
+        "\n// thrum-wgsl-source: atmosphere/diffuse.wgsl\n",
+        wgsl!(@bytes "atmosphere/diffuse.wgsl"),
+        wgsl!(@bytes "atmosphere/diffuse_nodes.wgsl"),
+        wgsl!(@bytes "atmosphere/diffuse_integrate.wgsl"),
+        "\n// thrum-wgsl-end\n",
+    ));
     AtmosphereAerial => crate::atmosphere::spectrum::EARTH
                 .shader(concat!(
                     wgsl!("atmosphere/storage.wgsl"),
@@ -651,6 +704,7 @@ pub fn composed_sources() -> Vec<(&'static str, Cow<'static, str>)> {
             }
             for shadows in [SunShadows::Disabled, SunShadows::Enabled] {
                 let variant = SceneVariant {
+                    lighting: crate::atmosphere::overlay::Lighting::Clear,
                     atmosphere,
                     cloud,
                     shadows,

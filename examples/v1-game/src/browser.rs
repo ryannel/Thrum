@@ -707,10 +707,13 @@ fn cloud_selection(
         "off" => Ok(crate::CloudSelection::Off),
         "shade" if !diagnostic => Ok(crate::CloudSelection::Shade),
         "sky" if !diagnostic => Ok(crate::CloudSelection::Sky),
-        "shade" | "sky" => Err(JsValue::from_str(
+        "world-light" if !diagnostic => Ok(crate::CloudSelection::WorldLight),
+        "shade" | "sky" | "world-light" => Err(JsValue::from_str(
             "clouds and diagnostic-clouds are mutually exclusive",
         )),
-        _ => Err(JsValue::from_str("clouds must be off, shade or sky")),
+        _ => Err(JsValue::from_str(
+            "clouds must be off, shade, sky or world-light",
+        )),
     }
 }
 

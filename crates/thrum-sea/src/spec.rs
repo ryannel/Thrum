@@ -253,6 +253,7 @@ pub(super) fn declaration(sizes: &[u64]) -> EffectGraph {
     EffectGraph {
         tick_passes: Vec::new(),
         view_volume_media: Vec::new(),
+        sky_overlays: Vec::new(),
         sun_paths: Vec::new(),
         passes: passes()
             .iter()

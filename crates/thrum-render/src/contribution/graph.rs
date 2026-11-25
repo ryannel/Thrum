@@ -91,6 +91,8 @@ pub struct EffectGraph {
     /// The provider's Sun-path target, if an effect writes it. At most one pair
     /// is allowed. Both resources must also have their full opaque read declared.
     pub sun_paths: Vec<SunPathResources>,
+    /// Texture index for each registered sky-overlay producer. At most one is allowed.
+    pub sky_overlays: Vec<usize>,
     /// The scene-owned medium coefficient array filled by an effect.
     pub view_volume_media: Vec<ViewVolumeResources>,
     /// Render passes after the sky and stars, in contribution order.
@@ -100,6 +102,7 @@ pub struct EffectGraph {
 pub(crate) struct EffectResources {
     pub(crate) opaque_reads: Vec<Access>,
     pub(crate) sun_path_reads: Option<[Access; 2]>,
+    pub(crate) sky_overlay_read: Option<Access>,
     pub(crate) medium_read: Option<Access>,
     pub(crate) ground_band_read: Option<Access>,
     pub(crate) simulate: Vec<usize>,
@@ -464,8 +467,25 @@ impl EffectGraph {
         graph: &mut FrameGraph,
         base: PipelineKey,
         keys: &mut BTreeSet<PipelineKey>,
+        overlay_inputs: &[Access],
     ) -> Result<EffectResources, crate::error::RenderError> {
         self.validate()?;
+        let overlay = match self.sky_overlays.as_slice() {
+            [] => None,
+            [index] if !overlay_inputs.is_empty() => Some(*index),
+            _ => return Err(crate::error::RenderError::GraphPassMismatch),
+        };
+        if let Some(resource) = overlay
+            && !self.passes.iter().any(|pass| {
+                pass.accesses.iter().any(|access| {
+                    access.resource == resource
+                        && access.kind == AccessKind::StorageWrite
+                        && access.range == (0..6)
+                })
+            })
+        {
+            return Err(crate::error::RenderError::GraphPassMismatch);
+        }
         let mut owners = std::collections::BTreeMap::new();
         let pairs = self
             .resources
@@ -488,12 +508,14 @@ impl EffectGraph {
             })
             .collect::<Result<Vec<_>, crate::graph::GraphError>>()?;
         let mut resources = EffectResources {
-            pairs,
             opaque_reads: Vec::new(),
             sun_path_reads: None,
+            sky_overlay_read: overlay
+                .map(|index| Access::new(pairs[index].0.clone(), 0..6, AccessKind::SampledRead)),
             medium_read: None,
             ground_band_read: None,
             simulate: Vec::new(),
+            pairs,
         };
         for (index, pass) in self.passes.iter().enumerate() {
             let key = PipelineRole::Effect(
@@ -501,13 +523,19 @@ impl EffectGraph {
             )
             .key(base);
             keys.insert(key);
+            let mut accesses = resources.accesses(&pass.accesses);
+            if pass.accesses.iter().any(|access| {
+                Some(access.resource) == overlay && access.kind == AccessKind::StorageWrite
+            }) {
+                accesses.extend_from_slice(overlay_inputs);
+            }
             let id = graph.declare_named(
                 PassKey::Effect(crate::pass_key::pass_index(index)),
                 format!("effect {index}: {}", pass.name),
                 PassBody {
                     scope: PassScope::View(1),
                     pipeline: Some(key),
-                    accesses: resources.accesses(&pass.accesses),
+                    accesses,
                     external_side_effect: true,
                 },
             );

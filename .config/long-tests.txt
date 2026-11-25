@@ -43,3 +43,6 @@ thrum-asset-gpu features=fault-probe cooked_fault_gpu
 #
 # <package> not-run <test binary> features=<feature>[,...] owner=<MODULE> # <its failure>
 v1-game not-run mesh_stage_gpu features=draw-probe owner=MESH-SHADING # 2026-11-20 at 8d3180963: run whole, 4 to 6 of its 10 metal:: tests fail each time (a buffer or pipeline "is invalid", or WrongSubmissionIndex in support.rs read_buffer); all pass with --test-threads=1, and scripts/mesh_stage_proof.py runs one case at a time
+
+# CLOUDS WP8.9 compares the named capabilities using the creation ledger.
+thrum-clouds features=thrum-render/creation-counters capabilities_gpu

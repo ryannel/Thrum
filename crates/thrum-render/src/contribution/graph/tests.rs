@@ -13,6 +13,7 @@ fn history_previous_and_next_are_distinct_and_result_orders_its_consumer() {
         tick_passes: Vec::new(),
         opaque_reads: vec![access(AccessKind::StorageRead, HistoryBinding::Result)],
         view_volume_media: Vec::new(),
+        sky_overlays: Vec::new(),
         sun_paths: Vec::new(),
         after_opaque: Vec::new(),
         resources: vec![(
@@ -69,6 +70,7 @@ fn history_previous_and_next_are_distinct_and_result_orders_its_consumer() {
                 role: 0,
             },
             &mut keys,
+            &[],
         )
         .expect("effect declaration");
     assert_eq!(reads.opaque_reads.len(), 1);
@@ -90,6 +92,7 @@ fn history_previous_and_next_are_distinct_and_result_orders_its_consumer() {
                 role: 0,
             },
             &mut keys,
+            &[],
         )
         .expect("flagged graph");
     let flagged = flagged.compile(1, &keys).expect("flagged compile");

@@ -36,6 +36,8 @@ FIRST_FRAME_ESTIMATES = (
     'resolve 0.1–0.2 ms, compose 0.2–0.4 ms, total 47 MiB. Trace is measured.'
 )
 DECK_PRESETS = ('fair', 'broken', 'overcast')
+WORLD_LIGHT_PASSES = ('cloud sky overlay', 'atmosphere diffuse irradiance',
+                      *(f'atmosphere reflection mip {mip}' for mip in range(7)))
 
 
 def run(command, **kwargs):
@@ -51,6 +53,7 @@ def measure(scene='shade', alternatives=True):
         'low-sun': ROOT / 'tmp/clouds-m5/cost',
         'placed': ROOT / 'tmp/clouds-m6/cost',
         'decks': ROOT / 'tmp/clouds-m7/cost',
+        'overcast-lit': ROOT / 'tmp/clouds-wp8/cost',
     }.get(scene, SCRATCH)
     scratch.mkdir(parents=True, exist_ok=True)
     run(['cargo', 'build', '--release', '--locked', '--offline', '-p', 'v1-game',
@@ -71,6 +74,8 @@ def measure(scene='shade', alternatives=True):
             arms += [('sky',1,2,3),('sky',1,4,3),('sky',1,1,1),('sky',1,1,0)]
     if scene == 'decks':
         arms = [('off', 1, None, None)] + [('sky', 1, None, None) for _ in DECK_PRESETS]
+    if scene == 'overcast-lit':
+        arms = [('sky', 1, None, None), ('world-light', 1, None, None)]
     recipes = ('portable', 'native') if scene == 'placed' else ('portable',)
     for recipe, (index, (selection, scale, stride, samples)) in (
         (recipe, arm) for recipe in recipes for arm in enumerate(arms)
@@ -80,7 +85,7 @@ def measure(scene='shade', alternatives=True):
                            THRUM_CLOUD_WIND='40', THRUM_RECIPE='portable')
         environment.pop('THRUM_CLOUD_PRESET', None)
         environment.pop('THRUM_CLOUD_SEQUENCE', None)
-        if scene in ('first-frame', 'low-sun', 'placed', 'decks'):
+        if scene in ('first-frame', 'low-sun', 'placed', 'decks', 'overcast-lit'):
             environment.pop('THRUM_CLOUD_REFRESH_STRIDE', None)
             environment.pop('THRUM_CLOUD_LIGHT_SAMPLES', None)
             environment.update(THRUM_CAMERA_HEIGHT='260.4846459239257',THRUM_CAMERA_Z='80')
@@ -91,6 +96,9 @@ def measure(scene='shade', alternatives=True):
             command += ['--device-profile', 'portable', '--noon']
             if selection == 'sky':
                 environment['THRUM_CLOUD_PRESET'] = DECK_PRESETS[index - 1]
+        if scene == 'overcast-lit':
+            command += ['--device-profile', 'portable', '--noon']
+            environment['THRUM_CLOUD_PRESET'] = 'overcast'
         if scene in ('low-sun', 'placed'):
             command.append('--low-sun')
         if scene == 'placed':
@@ -99,11 +107,11 @@ def measure(scene='shade', alternatives=True):
                 command += ['--placed-store', str(placed_store)]
         row = json.loads(run(command, env=environment, timeout=180))
         row.update(selection=selection, weather_speed=scale)
-        if scene == 'decks':
+        if scene in ('decks', 'overcast-lit'):
             row.update(preset=environment.get('THRUM_CLOUD_PRESET'))
         if scene == 'placed':
             row.update(recipe=recipe)
-        if selection == 'sky':
+        if selection in ('sky', 'world-light'):
             knobs = {knob['name'].rsplit('/', 1)[-1]: knob['value'] for knob in row['quality']}
             row.update(refresh_stride=1 << knobs['cloud refresh exponent'],
                        local_light_samples=knobs['cloud local light samples'])
@@ -324,10 +332,68 @@ def investigate_decks(rows, tripwires):
     return '\n'.join(notes) or 'No deck tripwires triggered in this measurement.'
 
 
+def overcast_lit():
+    revision = run(['git', 'rev-parse', 'HEAD'])
+    status = run(['git', 'status', '--porcelain'])
+    changes = run(['git', 'diff', '--binary', 'HEAD'])
+    load = os.getloadavg()
+    control, lit = measure('overcast-lit', False)
+    if (revision, status, changes) != (run(['git', 'rev-parse', 'HEAD']),
+                                      run(['git', 'status', '--porcelain']),
+                                      run(['git', 'diff', '--binary', 'HEAD'])):
+        raise ValueError('checkout changed during World light measurement')
+    prior = json.loads(FIXTURES['decks'].read_text())
+    prior_arm = next(row for row in prior['runs'] if row['preset'] == 'overcast')
+    for row in (control, lit):
+        if (row['extent'] != [2560, 1440] or row['capture'] or row['preset'] != 'overcast'
+                or row['view'] != prior_arm['view'] or row['view_angles'] != prior_arm['view_angles']
+                or row['frames'] < 30 or not positive(row['whole_frame_gpu_ns'])):
+            raise ValueError('overcast measurement must match the WP7 view and output extent')
+    def pass_times(row):
+        return {name: value for name, value in row['pass_gpu_ns'].items()
+                if any(name.endswith(suffix) for suffix in WORLD_LIGHT_PASSES)}
+    named = pass_times(lit)
+    for suffix in WORLD_LIGHT_PASSES:
+        if not any(name.endswith(suffix) and positive(value) for name, value in named.items()):
+            raise ValueError(f'World light lacks a measured pass for {suffix}')
+    if any(name.endswith('cloud sky overlay') for name in control['pass_gpu_ns']):
+        raise ValueError('the matched Sky-only control ran the overlay')
+    old_ns = prior_arm['whole_frame_gpu_ns']
+    control_ns = control['whole_frame_gpu_ns']
+    lit_ns = lit['whole_frame_gpu_ns']
+    investigation = {}
+    if lit_ns > 1e9 / 120:
+        investigation['refresh_interval'] = (
+            f'{lit_ns / 1e6:.2f} ms with World light and {control_ns / 1e6:.2f} ms '
+            'with Sky alone. The existing cloud trace and Sun-path costs are '
+            'visible in both arms. The added overlay and per-mip reflection are timed separately.')
+    if lit_ns >= 1.25 * control_ns:
+        investigation['paired_regression'] = (
+            'The camera and weather were held equal. World light updates the diffuse '
+            'and seven reflection mips when the time-sliced overlay changes. The difference '
+            'can be checked against their named timings and the preserve-only Sky control.')
+    if lit_ns >= 1.25 * old_ns:
+        investigation['wp7_regression'] = (
+            f'WP7 recorded {old_ns / 1e6:.2f} ms. The fresh Sky control '
+            f'recorded {control_ns / 1e6:.2f} ms, separating build and load changes '
+            'from the paired World light delta.')
+    orbit = next(value for name, value in named.items() if name.endswith('cloud sky overlay'))
+    if orbit > 50_000:
+        investigation['overlay_budget'] = (
+            f'The overlay averages {orbit / 1e6:.3f} ms against the 0.05 ms tripwire. '
+            'The tracer writes six strips through the coarse cloud field and reads cached Sun paths. '
+            'The name covers that trace alone, without diffuse integration or GGX filtering.')
+    return {'commit': revision, 'dirty': bool(status), 'machine': platform.platform(),
+            'build': 'release, capture off, portable Metal', 'load': {'before': load, 'after': os.getloadavg()},
+            'wp7_overcast': {'commit': prior['commit'], 'record': str(FIXTURES['decks'].relative_to(ROOT)),
+                             'arm': prior_arm}, 'runs': [control, lit],
+            'world_light_pass_gpu_ns': named, 'investigation': investigation}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('command', choices=['record', 'check', 'refuse', 'cadence', 'hold'])
-    parser.add_argument('--scene', choices=[*FIXTURES, 'wind', 'scripted'], required=True)
+    parser.add_argument('--scene', choices=[*FIXTURES, 'overcast-lit', 'wind', 'scripted'], required=True)
     parser.add_argument('--previous', type=Path, help='previous renderer cost record at the same low-Sun view')
     parser.add_argument('--output', type=Path, help='write a cost record to an alternate destination')
     parser.add_argument('--resume', action='store_true',
@@ -341,6 +407,13 @@ def main():
     if args.command in ('cadence', 'hold') and args.scene == 'wind':
         from cloud_cadence_capture import run_wind
         return run_wind(args.command, args.output, resume=args.resume)
+    if args.scene == 'overcast-lit' and args.command in ('check', 'record'):
+        report = json.dumps(overcast_lit(), indent=2)
+        if args.output:
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(report + '\n')
+        print(report)
+        return
     if args.scene not in FIXTURES or args.command in ('cadence', 'hold'):
         parser.error('cadence requires wind; hold requires wind or scripted')
     destination = args.output or FIXTURES[args.scene]

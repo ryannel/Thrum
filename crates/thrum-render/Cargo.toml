@@ -387,3 +387,12 @@ required-features = ["creation-counters"]
 [[test]]
 name = "prepared_paths"
 required-features = ["creation-counters"]
+
+# CLOUDS WP8.1 and WP8.2 name these public seam targets.
+[[test]]
+name = "sky_overlay_gpu"
+path = "tests/sky_overlay_gpu.rs"
+
+[[test]]
+name = "haze_scale_gpu"
+path = "tests/haze_scale_gpu.rs"

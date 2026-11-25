@@ -29,6 +29,21 @@ pub(crate) fn chart_of_owner(owner: u64) -> Option<Chart> {
     .find(|chart| LUT_OWNER_BASE + chart.owner_offset() == owner)
 }
 
+pub(crate) fn overlay_reads(
+    graph: &FrameGraph,
+    transmittance: &ResourceId,
+    uniform: &ResourceId,
+) -> Result<[Access; 3], crate::error::RenderError> {
+    let sky = graph
+        .persistent(LUT_OWNER_BASE + Chart::SkyView.owner_offset())
+        .ok_or(crate::error::RenderError::GraphPassMismatch)?;
+    Ok([
+        Access::new(sky, 0..1, AccessKind::SampledRead),
+        Access::new(transmittance.clone(), 0..1, AccessKind::SampledRead),
+        Access::new(uniform.clone(), 0..UNIFORM_BYTES, AccessKind::UniformRead),
+    ])
+}
+
 impl AtmospherePrepared {
     pub(crate) fn terminal_read(&self, graph: &FrameGraph) -> Option<Access> {
         self.view_volume.as_ref()?;
@@ -104,19 +119,17 @@ impl AtmospherePrepared {
             ));
             self.declare_stage(graph, keys, stage, accesses);
         }
-        let diffuse = AtmosphereStage::Diffuse;
-        let mut accesses = vec![Access::new(
-            uniform.clone(),
-            0..UNIFORM_BYTES,
-            AccessKind::UniformRead,
-        )];
-        accesses.extend(chart_reads(diffuse, &resources));
-        accesses.push(Access::new(
-            environment_light,
-            0..crate::light::ENVIRONMENT_BYTES,
-            AccessKind::StorageWrite,
-        ));
-        self.declare_stage(graph, keys, diffuse, accesses);
+        if self.overlay.is_none() {
+            self.append_diffuse(
+                graph,
+                keys,
+                &uniform,
+                &resources,
+                environment_light,
+                None,
+                Vec::new(),
+            );
+        }
         let aerial = self
             .aerial_textures
             .iter()
@@ -167,7 +180,9 @@ impl AtmospherePrepared {
         if self.view_volume.is_none() {
             self.declare_stage(graph, keys, stage, accesses);
         }
-        self.append_reflection(graph, keys, &uniform, &resources, forward_accesses)?;
+        if self.overlay.is_none() {
+            self.append_reflection(graph, keys, &uniform, &resources, forward_accesses, None)?;
+        }
         forward_accesses.push(Access::new(
             uniform.clone(),
             0..UNIFORM_BYTES,
@@ -188,6 +203,74 @@ impl AtmospherePrepared {
             ));
         }
         Ok((resources.transmittance.clone(), uniform))
+    }
+
+    pub(crate) fn append_overlay_lighting(
+        &self,
+        graph: &mut FrameGraph,
+        keys: &mut BTreeSet<PipelineKey>,
+        forward: &mut Vec<Access>,
+        uniform: &ResourceId,
+        environment_light: &ResourceId,
+        produced: Option<Access>,
+        sun_reads: Vec<Access>,
+    ) -> Result<(), crate::error::RenderError> {
+        let overlay = self
+            .overlay
+            .as_ref()
+            .ok_or(crate::error::RenderError::GraphPassMismatch)?;
+        let charts = Charts::try_from_fn(|chart: Chart| {
+            graph
+                .persistent(LUT_OWNER_BASE + chart.owner_offset())
+                .ok_or(crate::error::RenderError::GraphPassMismatch)
+        })?;
+        let read = if let Some(produced) = produced {
+            produced
+        } else {
+            let resource = graph.resource(
+                ResourceDescriptor::of_texture(&overlay.texture),
+                ResourceScope::Imported { initialized: true },
+            )?;
+            Access::new(resource, 0..6, AccessKind::SampledRead)
+        };
+        self.append_diffuse(
+            graph,
+            keys,
+            uniform,
+            &charts,
+            environment_light.clone(),
+            Some(read.clone()),
+            sun_reads,
+        );
+        self.append_reflection(graph, keys, uniform, &charts, forward, Some(&read))?;
+        Ok(())
+    }
+
+    fn append_diffuse(
+        &self,
+        graph: &mut FrameGraph,
+        keys: &mut BTreeSet<PipelineKey>,
+        uniform: &ResourceId,
+        charts: &Charts<ResourceId>,
+        environment_light: ResourceId,
+        overlay: Option<Access>,
+        mut sun_reads: Vec<Access>,
+    ) {
+        let diffuse = AtmosphereStage::Diffuse;
+        let mut accesses = vec![Access::new(
+            uniform.clone(),
+            0..UNIFORM_BYTES,
+            AccessKind::UniformRead,
+        )];
+        accesses.extend(chart_reads(diffuse, charts));
+        accesses.extend(overlay);
+        accesses.append(&mut sun_reads);
+        accesses.push(Access::new(
+            environment_light,
+            0..crate::light::ENVIRONMENT_BYTES,
+            AccessKind::StorageWrite,
+        ));
+        self.declare_stage(graph, keys, diffuse, accesses);
     }
 
     pub(crate) fn append_view_volume(
@@ -286,6 +369,7 @@ impl AtmospherePrepared {
         uniform: &ResourceId,
         charts: &Charts<ResourceId>,
         forward: &mut Vec<Access>,
+        overlay: Option<&Access>,
     ) -> Result<(), GraphError> {
         let resources = [
             (&self.reflection.dfg, DFG_SIZE, 1, 1, self.generation),
@@ -340,6 +424,7 @@ impl AtmospherePrepared {
             ]
             .into_iter()
             .chain(chart_reads(stage, charts))
+            .chain(overlay.cloned())
             .chain([Access::new(
                 resources[1].clone(),
                 u64::from(mip * 6)..u64::from((mip + 1) * 6),

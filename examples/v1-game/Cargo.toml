@@ -236,3 +236,8 @@ required-features = ["proving"]
 [[example]]
 name = "font_cost"
 required-features = ["proving"]
+
+# CLOUDS WP8.3 names the incident-meter proof on the game path.
+[[test]]
+name = "clouds_meter_gpu"
+path = "tests/clouds_meter_gpu.rs"

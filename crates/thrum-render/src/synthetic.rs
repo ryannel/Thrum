@@ -141,6 +141,8 @@ pub struct SyntheticScene {
     /// Optional Sun-path optical-depth provider. Presence is fixed at prepare
     /// time. Metadata and same-sized contents may change on the live frame.
     pub sun_optical_depth: Option<SunOpticalDepth>,
+    /// Allocate a world-space cloud sky overlay for a scene contribution.
+    pub sky_overlay: bool,
     /// Nonempty storage-buffer material table.
     pub materials: Vec<MaterialRecord>,
     /// Nonempty indexed draw instances.
@@ -247,6 +249,7 @@ impl SyntheticScene {
             lamp_shadows: false,
             ambient_occlusion_radius: None,
             sun_optical_depth: None,
+            sky_overlay: false,
             materials: Vec::new(),
             instances: Vec::new(),
             local_lights: Vec::new(),
@@ -308,6 +311,7 @@ impl SyntheticScene {
             .collect();
         Ok(Self {
             sun_optical_depth: None,
+            sky_overlay: false,
             materials,
             instances,
             local_lights: Vec::new(),
@@ -1371,7 +1375,13 @@ impl PreparedSynthetic {
         } else {
             scene.view
         };
-        if self.atmosphere.is_some() != matches!(lighting, FrameLighting::Atmosphere(_)) {
+        if self.atmosphere.is_some() != matches!(lighting, FrameLighting::Atmosphere(_))
+            || scene.sky_overlay
+                != self
+                    .atmosphere
+                    .as_ref()
+                    .is_some_and(AtmospherePrepared::has_overlay)
+        {
             return Err(RenderError::InvalidLighting);
         }
         if let (Some(atmosphere), FrameLighting::Atmosphere(frame)) = (&self.atmosphere, lighting)

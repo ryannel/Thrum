@@ -14,6 +14,7 @@ use thrum_render::{
 #[cfg(test)]
 pub(crate) mod diagnostic;
 mod light;
+mod overlay;
 mod prepare;
 mod temporal;
 
@@ -104,6 +105,7 @@ pub(crate) struct Layer {
     compose: wgpu::RenderPipeline,
     trace_group: wgpu::BindGroup,
     compose_group: wgpu::BindGroup,
+    overlay: Option<overlay::Overlay>,
 }
 
 impl Layer {
@@ -220,6 +222,18 @@ impl Layer {
             self.params.size(),
             AccessKind::UniformRead,
         ));
+        if let Some(overlay) = &self.overlay {
+            let overlay_reads = reads
+                .iter()
+                .filter(|read| {
+                    !matches!(read.kind, AccessKind::StorageWrite)
+                        && read.resource != ambient
+                        && read.resource != detail
+                })
+                .cloned()
+                .collect();
+            overlay.append_graph(graph, epoch, overlay_reads);
+        }
         let mut trace = declaration(TRACE, AfterOpaqueKind::Compute, reads);
         trace.cadence = EffectCadence::TimeSliced;
         graph.after_opaque.push(trace);
@@ -379,7 +393,30 @@ impl Layer {
         };
         self.queue
             .write_buffer(&self.params, 0, bytemuck::bytes_of(&uniform));
+        if let Some(overlay) = &mut self.overlay {
+            overlay.upload(&self.queue, frame);
+        }
         Ok(())
+    }
+
+    pub(crate) fn encode_overlay(
+        &self,
+        pass: &mut wgpu::ComputePass<'_>,
+        shapes: Option<&crate::shapes::Shapes>,
+    ) {
+        if let Some(overlay) = &self.overlay {
+            overlay.encode(pass, &self.environment, &self.trace_group, shapes);
+        }
+    }
+
+    pub(crate) fn overlay_submitted(&mut self) {
+        if let Some(overlay) = &mut self.overlay {
+            overlay.submitted();
+        }
+    }
+
+    pub(crate) fn has_overlay(&self) -> bool {
+        self.overlay.is_some()
     }
 
     pub(crate) fn encode(
@@ -464,6 +501,13 @@ impl Layer {
                 self.lighting.ambient.size(),
             ),
         ]);
+        if let Some(overlay) = &self.overlay {
+            resources.push((
+                "cloud sky overlay".into(),
+                u64::from(overlay.texture.width()) * u64::from(overlay.texture.height()) * 48,
+            ));
+            resources.push(("cloud overlay rows".into(), 16));
+        }
         resources
     }
 

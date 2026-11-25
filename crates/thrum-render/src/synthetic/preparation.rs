@@ -413,7 +413,7 @@ impl PreparedSynthetic {
         });
         let exposure_samples = ExposureResolve::allocate_samples(device);
         let mut atmosphere = match lighting {
-            FrameLighting::Atmosphere(frame) => Some(AtmospherePrepared::new(
+            FrameLighting::Atmosphere(frame) => Some(AtmospherePrepared::prepare(
                 device,
                 queue,
                 generation,
@@ -421,9 +421,13 @@ impl PreparedSynthetic {
                 &scene.view,
                 &environment_light,
                 &exposure_samples,
+                scene.sky_overlay.then_some((&directional, cloud.as_ref())),
             )),
             _ => None,
         };
+        if scene.sky_overlay && atmosphere.is_none() {
+            return Err(RenderError::GraphPassMismatch);
+        }
         if let Some(air) = &mut atmosphere {
             air.prepare_view_volume(
                 device,
@@ -700,6 +704,7 @@ impl PreparedSynthetic {
             shadow_selection,
             (soft_sun.is_some(), ambient.is_some()),
             fail_traced_pipeline,
+            atmosphere.as_ref(),
         );
         let vertex_entry = camera_culling::vertex_entry(camera_mode);
         let opaque_targets = [
@@ -867,13 +872,13 @@ impl PreparedSynthetic {
             }
             _ => None,
         };
-        let exposure_resolve = ExposureResolve::new(
+        let exposure_resolve = ExposureResolve::prepare(
             device,
             &directional,
             &environment_light,
             history.serial_buffer(),
             exposure_samples,
-            cloud.as_ref().zip(atmosphere.as_ref()),
+            (cloud.as_ref(), atmosphere.as_ref()),
         );
         exposure_resolve.update(
             queue,

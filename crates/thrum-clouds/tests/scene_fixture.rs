@@ -99,8 +99,32 @@ pub(crate) async fn prepare_view(
     view: &SyntheticView,
     view_volume: bool,
 ) -> FrameHost<World, Source> {
+    prepare_view_with_overlay(
+        caps,
+        queue,
+        ground,
+        config,
+        sun,
+        source_tick,
+        view,
+        (view_volume, false),
+    )
+    .await
+}
+
+pub(crate) async fn prepare_view_with_overlay(
+    caps: &DeviceCapabilities,
+    queue: &wgpu::Queue,
+    ground: Option<u32>,
+    config: FrameConfig,
+    sun: [f32; 3],
+    source_tick: u64,
+    view: &SyntheticView,
+    (view_volume, overlay): (bool, bool),
+) -> FrameHost<World, Source> {
     let mut scene = SyntheticScene::grid(1).expect("fixture scene");
     scene.view = *view;
+    scene.sky_overlay = overlay;
     let light = if let Some(ground) = ground {
         scene.sun_optical_depth =
             Some(SunOpticalDepth::gpu_target([ground; 2], 1).expect("ground target"));

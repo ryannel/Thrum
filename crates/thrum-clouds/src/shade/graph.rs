@@ -155,6 +155,7 @@ pub(super) fn declaration(
                 access(7, 0..mapping.size(), A::UniformRead),
             ],
             view_volume_media: Vec::new(),
+            sky_overlays: Vec::new(),
             sun_paths: vec![SunPathResources {
                 optical_depth: 6,
                 mapping: 7,

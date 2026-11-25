@@ -661,6 +661,7 @@ impl GameScene {
             }
             scene.sun_optical_depth = Some(test_bank::sun_path()?);
         }
+        scene.sky_overlay = setup.clouds == crate::CloudSelection::WorldLight;
         if setup.clouds != crate::CloudSelection::Off {
             scene.sun_optical_depth = Some(thrum_render::atmosphere::SunOpticalDepth::gpu_target(
                 [crate::clouds::GROUND_SIZE; 2],

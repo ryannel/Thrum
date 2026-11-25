@@ -113,7 +113,7 @@ For Weather and Shade, `THRUM_CLOUDS=shade` selects the real game contribution.
 `THRUM_CLOUD_WIND` sets initial X wind in m/s and `THRUM_CLOUD_TIME_SCALE` sets
 weather speed (1–60), both validated before world construction. With the cooked
 valley, `THRUM_CAMERA_HEIGHT` selects the camera's absolute height in metres.
-`THRUM_CAMERA_Z` optionally moves that elevated camera along the valley's Z axis.
+`THRUM_CAMERA_X` and `THRUM_CAMERA_Z` optionally move that elevated camera in the valley.
 `--case clouds-still --mode fixed` retains one held submitted checkpoint;
 `--case clouds-drift --mode realtime` holds the view, runs the ordinary world
 from one to 21 seconds, then pauses for a final hold. Its explicit 4,096-record
@@ -130,6 +130,13 @@ full procedural cloud lifetime in a held view. The four-minute takes admit
 output-byte bound stay the same. Use a small extent for these longer takes.
 For Chrome, a cloud view can supply `preset`, `weather_rate` and `wind`, plus
 `duration_seconds` between 1 and 60 for an elapsed-time take.
+
+Select `THRUM_CLOUDS=world-light` for the sky overlay in reflections and diffuse light,
+and for cloud-scaled aerial in-scatter in scenes without the view volume. The
+incident meter retains the actual lux at the camera. Its display gain adapts
+over submitted frames and preserves part of the change in daylight. With this
+selection, use `clouds-light-cycle` and `THRUM_CLOUD_SEQUENCE=coverage-sweep` for
+a minute of increasing deck coverage followed by a minute of clearing.
 
 The ordinary V1 window runs until closed and reports submitted frame counts,
 CPU times and the refresh account on exit. The account counts an opportunity

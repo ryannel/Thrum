@@ -175,17 +175,19 @@ pub(super) fn create(
         bindings.pop();
         group
     });
-    let mut shader_source = if atmosphere.view_volume.is_some() {
-        library_with_volume(far_aerial, true)
-    } else if far_aerial {
-        crate::shaders::Shader::EnvironmentProductsFar
-            .source()
-            .into_owned()
-    } else {
-        crate::shaders::Shader::EnvironmentProducts
-            .source()
-            .into_owned()
-    };
+    let lighting = atmosphere.overlay_lighting();
+    let mut shader_source =
+        if atmosphere.view_volume.is_some() || lighting != super::overlay::Lighting::Clear {
+            library_with_volume(far_aerial, atmosphere.view_volume.is_some(), lighting)
+        } else if far_aerial {
+            crate::shaders::Shader::EnvironmentProductsFar
+                .source()
+                .into_owned()
+        } else {
+            crate::shaders::Shader::EnvironmentProducts
+                .source()
+                .into_owned()
+        };
     if let Some(cloud) = cloud {
         shader_source.push_str(&cloud.variant().sampling_source_for(0, "atmosphere"));
     }
@@ -197,12 +199,18 @@ pub(super) fn create(
 }
 
 pub(crate) fn library(far_aerial: bool) -> String {
-    library_with_volume(far_aerial, false)
+    library_with_volume(far_aerial, false, super::overlay::Lighting::Clear)
 }
 
-fn library_with_volume(far_aerial: bool, view_volume: bool) -> String {
+fn library_with_volume(
+    far_aerial: bool,
+    view_volume: bool,
+    lighting: super::overlay::Lighting,
+) -> String {
     let far_sky = if view_volume {
         wgsl!("atmosphere/products_terminal.wgsl")
+    } else if lighting == super::overlay::Lighting::OverlayAndHaze {
+        wgsl!("atmosphere/overlay_aerial_terminal.wgsl")
     } else {
         "fn environment_far_sky(direction: vec3<f32>, uv: vec2<f32>) -> vec3<f32> {
             return environment_sky_radiance(direction);
@@ -222,7 +230,7 @@ fn library_with_volume(far_aerial: bool, view_volume: bool) -> String {
         wgsl!("environment_light.wgsl"),
         wgsl!("atmosphere/products.wgsl"),
         far,
-        wgsl!("atmosphere/products_reflection.wgsl")
+        super::overlay::reflection_product(lighting)
     );
     // Reuse the receiver Sun and cumulative aerial arithmetic verbatim. Only
     // the resource declarations and active-frame name differ in this group.
@@ -238,7 +246,7 @@ fn library_with_volume(far_aerial: bool, view_volume: bool) -> String {
             wgsl!(@bytes "synthetic_aerial_decode.wgsl"),
         )
     } else {
-        wgsl!("synthetic_aerial.wgsl")
+        super::overlay::aerial_source(lighting)
     };
     let sample = aerial
         .split_once("// Cumulative")
@@ -256,7 +264,7 @@ fn library_with_volume(far_aerial: bool, view_volume: bool) -> String {
     } else {
         String::new()
     };
-    format!(
+    let source = format!(
         "{}\n{}\n{}\n{}\n{}\n{}\n// Cumulative{}\n// Decode{}\n{}",
         wgsl!("atmosphere/storage.wgsl"),
         wgsl!("atmosphere/geometry.wgsl"),
@@ -267,7 +275,12 @@ fn library_with_volume(far_aerial: bool, view_volume: bool) -> String {
         sample,
         decode.replace("aerial_frame", "atmosphere"),
         grid
-    )
+    );
+    if lighting == super::overlay::Lighting::Clear {
+        source
+    } else {
+        super::overlay::with_reflection_gain(&source)
+    }
 }
 
 #[cfg(test)]

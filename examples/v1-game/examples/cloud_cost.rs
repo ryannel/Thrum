@@ -82,6 +82,7 @@ async fn measure(
         setup.prepare(&device, &queue, &caps, config).await?
     };
     let content = v1_game::attach_cooked_scene(&mut host)?;
+    host.set_timing_requested(true);
     let view_angles = if low_sun {
         let elevation = 10.0_f32.to_radians();
         let hour_angle = (elevation.sin() * std::f32::consts::SQRT_2).acos();

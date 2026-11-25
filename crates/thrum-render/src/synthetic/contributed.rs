@@ -58,6 +58,7 @@ impl super::SyntheticTargetInputs {
         accesses: &mut Vec<Access>,
         prepared_keys: &mut BTreeSet<PipelineKey>,
         mesh: &[Access; 2],
+        overlay_inputs: &[Access],
     ) -> Result<(crate::contribution::EffectResources, Option<ResourceId>), RenderError> {
         let passes = self.contribution_passes;
         let token = |graph: &mut FrameGraph, usage| {
@@ -136,7 +137,9 @@ impl super::SyntheticTargetInputs {
                 AccessKind::IndirectRead,
             ));
         }
-        let resources = self.effect_graph.append(graph, self.key, prepared_keys)?;
+        let resources = self
+            .effect_graph
+            .append(graph, self.key, prepared_keys, overlay_inputs)?;
         self.effect_graph.validate_tick_texture_support(
             self.capabilities.limits(),
             self.capabilities.features(),

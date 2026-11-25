@@ -86,6 +86,7 @@ impl SceneContribution for Effect {
         EffectGraph {
             tick_passes: Vec::new(),
             view_volume_media: Vec::new(),
+            sky_overlays: Vec::new(),
             sun_paths: Vec::new(),
             resources: vec![
                 (texture(), S::Transient),

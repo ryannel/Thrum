@@ -214,14 +214,18 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
         Err(std::env::VarError::NotPresent) | Ok("off") => crate::CloudSelection::Off,
         Ok("shade") => crate::CloudSelection::Shade,
         Ok("sky") => crate::CloudSelection::Sky,
-        _ => return Err("THRUM_CLOUDS must be off, shade or sky".to_owned()),
+        Ok("world-light") => crate::CloudSelection::WorldLight,
+        _ => return Err("THRUM_CLOUDS must be off, shade, sky or world-light".to_owned()),
     };
     #[cfg(feature = "proving")]
     let cloud_sequence = match launch_value("THRUM_CLOUD_SEQUENCE").as_deref() {
         Err(std::env::VarError::NotPresent) => crate::clouds::WeatherSequence::Held,
+        Ok("coverage-sweep") => crate::clouds::WeatherSequence::CoverageSweep,
         Ok("presets") => crate::clouds::WeatherSequence::Presets,
         Ok("wind-turn") => crate::clouds::WeatherSequence::WindTurn,
-        _ => return Err("THRUM_CLOUD_SEQUENCE must be presets or wind-turn".into()),
+        _ => {
+            return Err("THRUM_CLOUD_SEQUENCE must be presets, coverage-sweep or wind-turn".into());
+        }
     };
     Ok(crate::GameSetup {
         #[cfg(feature = "proving")]
@@ -655,6 +659,9 @@ fn attach_selected(
         eye[1] = height
             .parse()
             .map_err(|_| "THRUM_CAMERA_HEIGHT must be metres")?;
+        if let Ok(x) = launch_value("THRUM_CAMERA_X") {
+            eye[0] = x.parse().map_err(|_| "THRUM_CAMERA_X must be metres")?;
+        }
         if let Ok(z) = launch_value("THRUM_CAMERA_Z") {
             eye[2] = z.parse().map_err(|_| "THRUM_CAMERA_Z must be metres")?;
         }

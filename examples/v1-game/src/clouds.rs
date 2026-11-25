@@ -63,6 +63,8 @@ pub enum WeatherSequence {
     Held,
     /// Ease through clear, fair, broken, overcast and clear over four minutes.
     Presets,
+    /// Ease the coverage of the deck from clear to closed and back in two minutes.
+    CoverageSweep,
     /// Turn the selected wind 90 degrees after ten seconds.
     WindTurn,
 }
@@ -80,6 +82,14 @@ impl WeatherSequence {
                 },
                 ..initial
             },
+            Self::CoverageSweep => {
+                let t = (1.0 - (seconds / 60.0 - 1.0).abs()).clamp(0.0, 1.0);
+                Parameters {
+                    coverage: t * t * (3.0 - 2.0 * t),
+                    kind: 0.0,
+                    ..initial
+                }
+            }
             Self::Presets => {
                 let (from, to, start) = match seconds {
                     t if t < 60.0 => (WeatherPreset::Clear, WeatherPreset::Fair, 0.0),
@@ -139,11 +149,13 @@ pub enum CloudSelection {
     Shade,
     /// Weather, shade and the visible cloud layer.
     Sky,
+    /// Weather, shade, visible clouds and world lighting through the sky overlay.
+    WorldLight,
 }
 
 impl CloudSelection {
     pub(crate) fn sky_profile(self, extent: [u32; 2]) -> Option<thrum_clouds::SkyProfile> {
-        (self == Self::Sky).then_some(thrum_clouds::SkyProfile {
+        matches!(self, Self::Sky | Self::WorldLight).then_some(thrum_clouds::SkyProfile {
             extent,
             step: 15.0,
             light_samples: 3,

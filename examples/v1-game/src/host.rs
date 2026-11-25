@@ -478,7 +478,7 @@ impl GameSetup {
             crate::CloudSelection::Shade => {
                 return Err(FrameError::InvalidState("2D scene refuses cloud shade"));
             }
-            crate::CloudSelection::Sky => {
+            crate::CloudSelection::Sky | crate::CloudSelection::WorldLight => {
                 return Err(FrameError::InvalidState("2D scene refuses cloud sky"));
             }
         }

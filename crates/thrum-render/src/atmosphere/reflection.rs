@@ -47,11 +47,22 @@ pub(super) struct ReflectionPrepared {
 }
 
 impl ReflectionPrepared {
+    #[cfg(test)]
     pub(super) fn new(
         device: &crate::runtime::DeviceSite,
         uniform: &wgpu::Buffer,
         charts: &[wgpu::BindGroupEntry<'_>],
         sky_sampler: &wgpu::Sampler,
+    ) -> Self {
+        Self::prepare(device, uniform, charts, sky_sampler, None)
+    }
+
+    pub(super) fn prepare(
+        device: &crate::runtime::DeviceSite,
+        uniform: &wgpu::Buffer,
+        charts: &[wgpu::BindGroupEntry<'_>],
+        sky_sampler: &wgpu::Sampler,
+        overlay: Option<&wgpu::TextureView>,
     ) -> Self {
         let cube = texture(device, "atmosphere specular cube", CUBE_SIZE, 6, MIP_COUNT);
         let dfg = texture(device, "atmosphere DFG", DFG_SIZE, 1, 1);
@@ -74,12 +85,16 @@ impl ReflectionPrepared {
             lod_max_clamp: (MIP_COUNT - 1) as f32,
             ..Default::default()
         });
-        let cube_pipeline = pipeline(
-            device,
-            "atmosphere sky specular prefilter",
-            "reflection_main",
-            crate::shaders::Shader::AtmosphereReflection,
-        );
+        let cube_pipeline = if overlay.is_some() {
+            super::overlay::prepare_reflection(device)
+        } else {
+            pipeline(
+                device,
+                "atmosphere sky specular prefilter",
+                "reflection_main",
+                crate::shaders::Shader::AtmosphereReflection,
+            )
+        };
         let cube_layout = cube_pipeline.get_bind_group_layout(0);
         let cube_groups = std::array::from_fn(|mip| {
             let output = cube.create_view(&wgpu::TextureViewDescriptor {
@@ -111,6 +126,10 @@ impl ReflectionPrepared {
                 ]
                 .into_iter()
                 .chain(charts.iter().cloned())
+                .chain(overlay.map(|view| wgpu::BindGroupEntry {
+                    binding: 5,
+                    resource: wgpu::BindingResource::TextureView(view),
+                }))
                 .collect::<Vec<_>>(),
             })
         });
@@ -244,6 +263,12 @@ fn pipeline(
 }
 
 pub(crate) fn cube_source() -> String {
+    cube_source_with(
+        wgsl!(@reflection_integrate "            radiance+=prepared.w*textureSampleLevel(reflection_sky,reflection_sampler,uv,0.0);\n"),
+    )
+}
+
+pub(super) fn cube_source_with(integrate: &str) -> String {
     let constants = shader_constants();
     format!(
         "{constants}\n{}\n{}\n{}",
@@ -257,7 +282,7 @@ pub(crate) fn cube_source() -> String {
             )
         ),
         wgsl!("atmosphere/brdf.wgsl"),
-        wgsl!("atmosphere/reflection.wgsl")
+        integrate
     )
 }
 

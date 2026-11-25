@@ -41,6 +41,20 @@ fn transport_textures(device: &wgpu::Device, extent: [u32; 2]) -> [wgpu::Texture
     })
 }
 
+fn prepare_detail_noise(
+    device: &thrum_render::runtime::DeviceSite,
+    seed: u32,
+    accepted: Option<&Layer>,
+) -> (Noise, Option<wgpu::CommandBuffer>) {
+    if let Some(layer) = accepted {
+        (layer.detail_noise.clone(), None)
+    } else {
+        let noise = Noise::new(device, DETAIL_SIZE, "cloud detail noise");
+        let command = noise.prepare(device, seed, "detail");
+        (noise, Some(command))
+    }
+}
+
 impl Layer {
     pub(crate) fn new(
         surface: &SceneSurface<'_>,
@@ -53,13 +67,7 @@ impl Layer {
     ) -> Result<(Self, Option<wgpu::CommandBuffer>), Error> {
         validate_profile(profile, surface.limits.max_texture_dimension_2d)?;
         let device = surface.device;
-        let (detail_noise, initialization) = if let Some(layer) = accepted {
-            (layer.detail_noise.clone(), None)
-        } else {
-            let noise = Noise::new(device, DETAIL_SIZE, "cloud detail noise");
-            let command = noise.prepare(device, weather.seed(), "detail");
-            (noise, Some(command))
-        };
+        let (detail_noise, initialization) = prepare_detail_noise(device, weather.seed(), accepted);
         let environment = surface.environment_products().ok_or(Error::Unsupported(
             "cloud Sky requires the physical environment",
         ))?;
@@ -195,22 +203,14 @@ impl Layer {
             immediate_size: 0,
         });
         let source = if shapes.is_some() {
-            shaped_trace_shader(&environment)
+            shaped_trace_shader
         } else {
-            trace_shader(&environment)
-        };
-        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some(TRACE),
-            source: wgpu::ShaderSource::Wgsl(source.into()),
+            trace_shader
+        }(&environment);
+        let overlay = surface.sky_overlay_target().map(|target| {
+            super::overlay::Overlay::new(surface, target, &environment, &trace_layout, shapes)
         });
-        let trace = device.compute(&wgpu::ComputePipelineDescriptor {
-            label: Some(TRACE),
-            layout: Some(&pipeline_layout),
-            module: &shader,
-            entry_point: Some("trace"),
-            compilation_options: wgpu::PipelineCompilationOptions::default(),
-            cache: None,
-        });
+        let trace = trace_pipeline(device, &source, &pipeline_layout);
         let (compose, compose_group, compose_layout) = compose(
             surface,
             &params,
@@ -244,28 +244,59 @@ impl Layer {
                 compose,
                 trace_group,
                 compose_group,
+                overlay,
             },
             initialization,
         ))
     }
 }
 
-pub(super) fn trace_shader(environment: &thrum_render::atmosphere::EnvironmentProducts) -> String {
-    trace_with_placed_source(
-        environment,
-        "fn cloud_placed(point: vec3<f32>, footprint: f32) -> vec4<f32> { return vec4(0.0); }",
-    )
+fn trace_pipeline(
+    device: &thrum_render::runtime::DeviceSite,
+    source: &str,
+    pipeline_layout: &wgpu::PipelineLayout,
+) -> wgpu::ComputePipeline {
+    let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+        label: Some(TRACE),
+        source: wgpu::ShaderSource::Wgsl(source.into()),
+    });
+    device.compute(&wgpu::ComputePipelineDescriptor {
+        label: Some(TRACE),
+        layout: Some(pipeline_layout),
+        module: &shader,
+        entry_point: Some("trace"),
+        compilation_options: wgpu::PipelineCompilationOptions::default(),
+        cache: None,
+    })
 }
 
-fn trace_with_placed_source(
+const UNPLACED: &str =
+    "fn cloud_placed(point: vec3<f32>, footprint: f32) -> vec4<f32> { return vec4(0.0); }";
+const TRACE_SHADER: &str = concat!(
+    include_str!("../layer.wgsl"),
+    "@group(1) @binding(0) var scene_depth:texture_depth_2d;\n",
+    include_str!("trace_library.wgsl"),
+    include_str!("trace.wgsl"),
+);
+const OVERLAY_SHADER: &str = concat!(
+    include_str!("../layer.wgsl"),
+    include_str!("trace_library.wgsl"),
+    include_str!("overlay.wgsl"),
+);
+
+pub(super) fn trace_shader(environment: &thrum_render::atmosphere::EnvironmentProducts) -> String {
+    trace_source(environment, TRACE_SHADER, UNPLACED)
+}
+
+fn trace_source(
     environment: &thrum_render::atmosphere::EnvironmentProducts,
+    trace: &str,
     placed: &str,
 ) -> String {
     format!(
-        "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{placed}",
+        "{}\n{}\n{trace}\n{}\n{}\n{}\n{}\n{}\n{placed}",
         environment.shader_source,
         include_str!("params.wgsl"),
-        include_str!("../layer.wgsl"),
         include_str!("light.wgsl"),
         include_str!("scattering.wgsl"),
         include_str!("transport.wgsl"),
@@ -275,14 +306,40 @@ fn trace_with_placed_source(
 }
 
 fn shaped_trace_shader(environment: &thrum_render::atmosphere::EnvironmentProducts) -> String {
-    trace_with_placed_source(
+    trace_source(
         environment,
+        TRACE_SHADER,
         &format!(
             "{}\n{}",
             crate::shapes::shader(3),
-            include_str!("placed.wgsl"),
+            concat!(
+                include_str!("placed_column.wgsl"),
+                include_str!("placed.wgsl")
+            )
         ),
     )
+}
+
+pub(super) fn overlay_source(
+    environment: &thrum_render::atmosphere::EnvironmentProducts,
+    shapes: bool,
+) -> String {
+    if shapes {
+        trace_source(
+            environment,
+            OVERLAY_SHADER,
+            &format!(
+                "{}\n{}",
+                crate::shapes::shader(3),
+                concat!(
+                    include_str!("placed_column.wgsl"),
+                    "    return vec4(density, sample.y * above, sample.y * (1.0 - above), top);\n}\n"
+                ),
+            ),
+        )
+    } else {
+        trace_source(environment, OVERLAY_SHADER, UNPLACED)
+    }
 }
 
 fn compose(

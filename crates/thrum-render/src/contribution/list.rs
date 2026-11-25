@@ -184,6 +184,12 @@ impl SceneContributions {
                         ground_band: input.ground_band.map(|index| index + offset),
                     }
                 }));
+            graph.sky_overlays.extend(
+                declaration
+                    .sky_overlays
+                    .into_iter()
+                    .map(|index| index + offset),
+            );
             graph.passes.extend(declaration.passes);
             graph.tick_passes.extend(declaration.tick_passes);
             let after_count = declaration.after_opaque.len();
@@ -678,6 +684,7 @@ mod tests {
                 read(1, AccessKind::UniformRead, 0..mapping_bytes),
             ],
             view_volume_media: Vec::new(),
+            sky_overlays: Vec::new(),
             sun_paths: vec![SunPathResources {
                 optical_depth: 0,
                 mapping: 1,

@@ -383,10 +383,57 @@ impl super::SyntheticTargetInputs {
             atmosphere_inputs,
             mut late_uniforms,
         } = self.append_frame_environment(&mut graph, &mut prepared_keys, &mut accesses)?;
+        let overlay_inputs = self
+            .atmosphere
+            .as_ref()
+            .zip(atmosphere_inputs.as_ref())
+            .filter(|(atmosphere, _)| atmosphere.has_overlay())
+            .map(|(_, (transmittance, uniform))| {
+                crate::atmosphere::overlay_reads(&graph, transmittance, uniform)
+            })
+            .transpose()?;
         let contribution_start = accesses.len();
-        let (effect_resources, ray_structure) =
-            self.append_contribution(&mut graph, &mut accesses, &mut prepared_keys, &mesh)?;
+        let (effect_resources, ray_structure) = self.append_contribution(
+            &mut graph,
+            &mut accesses,
+            &mut prepared_keys,
+            &mesh,
+            overlay_inputs
+                .as_ref()
+                .map_or(&[], |inputs| inputs.as_slice()),
+        )?;
         let contribution_reads = accesses[contribution_start..].to_vec();
+        if let (Some(atmosphere), Some((_, uniform))) = (&self.atmosphere, &atmosphere_inputs)
+            && atmosphere.has_overlay()
+        {
+            let mut sun_reads = Vec::new();
+            if atmosphere.uses_haze_scale() {
+                sun_reads.push(Access::new(
+                    light[0].clone(),
+                    0..DIRECTIONAL_BYTES,
+                    AccessKind::UniformRead,
+                ));
+                if let Some(cloud) = &self.cloud {
+                    cloud.append_reads(
+                        &mut graph,
+                        &mut sun_reads,
+                        effect_resources.sun_path_reads.as_ref(),
+                        effect_resources.ground_band_read.as_ref(),
+                    )?;
+                }
+            }
+            let start = accesses.len();
+            atmosphere.append_overlay_lighting(
+                &mut graph,
+                &mut prepared_keys,
+                &mut accesses,
+                uniform,
+                &light[1],
+                effect_resources.sky_overlay_read.clone(),
+                sun_reads,
+            )?;
+            late_uniforms.extend(accesses[start..].iter().cloned());
+        }
         let shadow = self.append_shadow_passes(
             &mut graph,
             &instance,
@@ -467,7 +514,11 @@ impl super::SyntheticTargetInputs {
             .transpose()?;
         let mut incident_sun = Vec::new();
         if let (Some(cloud), Some((_, observer))) = (&self.cloud, &atmosphere_inputs)
-            && cloud.band.is_some()
+            && (cloud.band.is_some()
+                || self
+                    .atmosphere
+                    .as_ref()
+                    .is_some_and(crate::atmosphere::AtmospherePrepared::has_overlay))
         {
             cloud.append_reads(
                 &mut graph,
@@ -481,11 +532,18 @@ impl super::SyntheticTargetInputs {
                 AccessKind::UniformRead,
             ));
         }
-        let exposure_sample = ExposureResolve::append_graph(
+        let exposure_history = self
+            .atmosphere
+            .as_ref()
+            .filter(|air| air.uses_haze_scale())
+            .map(|_| ExposureResolve::history_sample(&mut graph, self.key.device_generation, true))
+            .transpose()?;
+        let exposure_sample = ExposureResolve::append_with_adaptation(
             &mut graph,
             self.exposure_key(),
             light.clone(),
             incident_sun,
+            exposure_history.as_ref(),
         )?;
         accesses.push(Access::new(
             exposure_sample.clone(),
@@ -601,7 +659,7 @@ impl super::SyntheticTargetInputs {
             &mut graph,
             &mut prepared_keys,
             attachments,
-            &exposure_sample,
+            (&exposure_sample, exposure_history.as_ref()),
             [width, height],
         )?;
         let use_native_reconstruction = self.view_sample.requests_metalfx();

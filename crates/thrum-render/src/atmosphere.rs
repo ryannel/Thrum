@@ -13,6 +13,7 @@ pub(crate) mod graph;
 pub(crate) mod ground_band;
 mod model;
 mod night;
+pub(crate) mod overlay;
 pub(crate) mod products;
 pub(crate) mod reflection;
 pub(crate) mod spectrum;
@@ -23,6 +24,7 @@ pub use cloud::{GpuSunMapping, SunOpticalDepth};
 pub use environment::{EnvironmentEpoch, EnvironmentFrame, SurfaceSun, TrueSun};
 pub use gpu::medium::ViewVolumeMediumTarget;
 pub(crate) use gpu::{AtmospherePrepared, SecondaryAerial};
+pub(crate) use graph::overlay_reads;
 pub use ground_band::{GroundBand, GroundBandMapping};
 pub use products::EnvironmentProducts;
 

@@ -732,7 +732,9 @@ fn contribution_passes(
         keys.insert(key);
         ordered.push(graph.declare(PassKey::ContributionCompute, body(Some(key), Vec::new())));
     }
-    let effects = prepared.effects.append(graph, prepared.sprites.key, keys)?;
+    let effects = prepared
+        .effects
+        .append(graph, prepared.sprites.key, keys, &[])?;
     if let Some(&last) = ordered.last() {
         for &simulate in &effects.simulate {
             graph.dependency(last, simulate)?;

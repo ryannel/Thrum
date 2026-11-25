@@ -31,7 +31,27 @@ pub(super) const VIEW_ENTRY: wgpu::BindGroupLayoutEntry = binding::texture(
 
 /// The forward shader's aerial perspective: terrain-shadowed with the heights, clear without
 /// them, or none without atmosphere lighting.
-pub(super) fn aerial_source(atmosphere: bool, shadowed: bool) -> &'static str {
+pub(super) fn aerial_source(
+    atmosphere: bool,
+    shadowed: bool,
+    lighting: crate::atmosphere::overlay::Lighting,
+) -> std::borrow::Cow<'static, str> {
+    if lighting == crate::atmosphere::overlay::Lighting::OverlayAndHaze {
+        let aerial = crate::atmosphere::overlay::aerial_source(lighting);
+        let end = if shadowed {
+            concat!(
+                wgsl!("synthetic_aerial_visibility.wgsl"),
+                wgsl!("synthetic_aerial_camera_shadowed.wgsl")
+            )
+        } else {
+            wgsl!("synthetic_aerial_clear.wgsl")
+        };
+        return format!("{aerial}\n{end}").into();
+    }
+    clear_aerial_source(atmosphere, shadowed).into()
+}
+
+fn clear_aerial_source(atmosphere: bool, shadowed: bool) -> &'static str {
     match (atmosphere, shadowed) {
         (true, true) => concat!(
             wgsl!("synthetic_aerial.wgsl"),

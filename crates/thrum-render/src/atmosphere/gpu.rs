@@ -78,6 +78,7 @@ pub(crate) struct AtmospherePrepared {
     pending_sky: Option<(SyntheticView, [f32; 3])>,
     sky_pipeline: wgpu::RenderPipeline,
     sky_groups: [wgpu::BindGroup; 2],
+    pub(super) overlay: Option<super::overlay::Target>,
     diffuse_pipeline: wgpu::ComputePipeline,
     diffuse_group: wgpu::BindGroup,
     aerial_pipeline: wgpu::ComputePipeline,
@@ -148,6 +149,7 @@ impl AtmospherePrepared {
         self.aerial_textures.each_ref()
     }
 
+    #[cfg(test)]
     pub(crate) fn new(
         device: &crate::runtime::DeviceSite,
         queue: &wgpu::Queue,
@@ -156,6 +158,28 @@ impl AtmospherePrepared {
         view: &SyntheticView,
         environment_light: &wgpu::Buffer,
         exposure_samples: &[wgpu::Buffer; 2],
+    ) -> Self {
+        Self::prepare(
+            device,
+            queue,
+            generation,
+            frame,
+            view,
+            environment_light,
+            exposure_samples,
+            None,
+        )
+    }
+
+    pub(crate) fn prepare(
+        device: &crate::runtime::DeviceSite,
+        queue: &wgpu::Queue,
+        generation: u64,
+        frame: AtmosphereFrame,
+        view: &SyntheticView,
+        environment_light: &wgpu::Buffer,
+        exposure_samples: &[wgpu::Buffer; 2],
+        world_light: Option<(&wgpu::Buffer, Option<&super::CloudPrepared>)>,
     ) -> Self {
         let uniform = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("atmosphere frame"),
@@ -238,33 +262,17 @@ impl AtmospherePrepared {
             aerosol::write(queue, &buffer, sample);
             buffer
         });
-        let make_charts = |aerosol| {
-            let shader = aerosol::compile(
+        let chart_stages = prepare_charts(device, &uniform, &views, &sampler, &night, None);
+        let aerosol_chart_stages = aerosol.as_ref().map(|buffer| {
+            Box::new(prepare_charts(
                 device,
-                crate::shaders::Shader::AtmosphereLuts,
-                "atmosphere LUT integration",
-                aerosol,
-            );
-            Charts::from_fn(|chart| {
-                let stage = AtmosphereStage::ORDER
-                    .into_iter()
-                    .find(|stage| stage.chart_output() == Some(chart))
-                    .expect("every chart has its stage");
-                prepare_compute(
-                    device,
-                    stage,
-                    &uniform,
-                    &views,
-                    &sampler,
-                    &shader,
-                    (&night, aerosol),
-                )
-            })
-        };
-        let chart_stages = make_charts(None);
-        let aerosol_chart_stages = aerosol
-            .as_ref()
-            .map(|buffer| Box::new(make_charts(Some(buffer))));
+                &uniform,
+                &views,
+                &sampler,
+                &night,
+                Some(buffer),
+            ))
+        });
         let sky_motion = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("sky submitted motion"),
             size: SKY_MOTION_BYTES,
@@ -285,8 +293,22 @@ impl AtmospherePrepared {
                 ],
             ),
         );
+        let overlay =
+            world_light.map(|_| super::overlay::Target::new(device, queue, frame.view_volume()));
         let (diffuse_pipeline, diffuse_group) =
-            prepare_diffuse(device, &uniform, &views, &sampler, environment_light);
+            if let Some((inputs, target)) = world_light.zip(overlay.as_ref()) {
+                super::overlay::prepare_diffuse(
+                    device,
+                    &uniform,
+                    &views.sky_view,
+                    &sampler,
+                    environment_light,
+                    target,
+                    inputs,
+                )
+            } else {
+                prepare_diffuse(device, &uniform, &views, &sampler, environment_light)
+            };
         let (aerial_pipeline, aerial_group) = prepare_aerial(
             device,
             &uniform,
@@ -296,11 +318,12 @@ impl AtmospherePrepared {
             &night,
             aerosol.as_ref(),
         );
-        let reflection = ReflectionPrepared::new(
+        let reflection = ReflectionPrepared::prepare(
             device,
             &uniform,
             &chart_entries(AtmosphereStage::Reflection(0), &views),
             &sampler,
+            overlay.as_ref().map(|overlay| &overlay.view),
         );
         let mut result = Self {
             frame,
@@ -322,6 +345,7 @@ impl AtmospherePrepared {
             pending_sky: None,
             sky_pipeline,
             sky_groups,
+            overlay,
             diffuse_pipeline,
             diffuse_group,
             aerial_pipeline,
@@ -350,6 +374,24 @@ impl AtmospherePrepared {
         };
         result.update(queue, frame, view, [1, 1], None);
         result
+    }
+
+    pub(crate) fn overlay_lighting(&self) -> super::overlay::Lighting {
+        self.overlay
+            .as_ref()
+            .map_or(super::overlay::Lighting::Clear, |overlay| overlay.lighting)
+    }
+
+    pub(crate) fn has_overlay(&self) -> bool {
+        self.overlay.is_some()
+    }
+
+    pub(crate) fn uses_haze_scale(&self) -> bool {
+        self.overlay_lighting() == super::overlay::Lighting::OverlayAndHaze
+    }
+
+    pub(crate) fn overlay_target(&self) -> Option<wgpu::Texture> {
+        self.overlay.as_ref().map(|overlay| overlay.texture.clone())
     }
 
     pub(crate) fn prepare_view_volume(
@@ -424,6 +466,9 @@ impl AtmospherePrepared {
         if self.validity & SKY_VALID == 0 || diffuse_dependencies != self.diffuse_dependencies {
             self.validity &= !DIFFUSE_VALID;
             self.diffuse_dependencies = diffuse_dependencies;
+        }
+        if self.overlay.is_some() {
+            self.validity &= !(DIFFUSE_VALID | REFLECTION_VALID);
         }
         let (previous, sun) = self.submitted_sky.unwrap_or((*view, frame.toward_sun));
         let prior = glam::Mat4::from_cols_array_2d(&previous.view_proj_columns());
@@ -618,6 +663,37 @@ impl AtmospherePrepared {
         pass.set_bind_group(0, &self.sky_groups[exposure_side], &[]);
         pass.draw(0..3, 0..1);
     }
+}
+
+fn prepare_charts(
+    device: &crate::runtime::DeviceSite,
+    uniform: &wgpu::Buffer,
+    views: &Charts<wgpu::TextureView>,
+    sampler: &wgpu::Sampler,
+    night: &NightProfile,
+    aerosol: Option<&wgpu::Buffer>,
+) -> Charts<(wgpu::ComputePipeline, wgpu::BindGroup)> {
+    let shader = aerosol::compile(
+        device,
+        crate::shaders::Shader::AtmosphereLuts,
+        "atmosphere LUT integration",
+        aerosol,
+    );
+    Charts::from_fn(|chart| {
+        let stage = AtmosphereStage::ORDER
+            .into_iter()
+            .find(|stage| stage.chart_output() == Some(chart))
+            .expect("every chart has its stage");
+        prepare_compute(
+            device,
+            stage,
+            uniform,
+            views,
+            sampler,
+            &shader,
+            (night, aerosol),
+        )
+    })
 }
 
 fn prepare_diffuse(

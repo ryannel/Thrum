@@ -272,7 +272,7 @@ impl super::SyntheticTargetInputs {
         graph: &mut FrameGraph,
         keys: &mut BTreeSet<PipelineKey>,
         inputs: [&ResourceId; 4],
-        exposure: &ResourceId,
+        (exposure, previous_exposure): (&ResourceId, Option<&ResourceId>),
         extent: [u32; 2],
     ) -> Result<Option<(ResourceId, PassBody)>, RenderError> {
         let Some(taau) = &self.taau else {
@@ -347,19 +347,14 @@ impl super::SyntheticTargetInputs {
                 0..super::exposure::SAMPLE_BYTES,
                 AccessKind::UniformRead,
             ));
-            let previous_exposure = graph.resource(
-                ResourceDescriptor::Buffer {
-                    bytes: super::exposure::SAMPLE_BYTES,
-                    usage: wgpu::BufferUsages::STORAGE
-                        | wgpu::BufferUsages::UNIFORM
-                        | wgpu::BufferUsages::COPY_SRC,
-                },
-                ResourceScope::History {
-                    owner: 2,
-                    epoch: self.key.device_generation,
-                    initialized: true,
-                },
-            )?;
+            let previous_exposure = match previous_exposure {
+                Some(previous) => previous.clone(),
+                None => super::exposure::ExposureResolve::history_sample(
+                    graph,
+                    self.key.device_generation,
+                    true,
+                )?,
+            };
             accesses.push(Access::new(
                 previous_exposure,
                 0..super::exposure::SAMPLE_BYTES,
