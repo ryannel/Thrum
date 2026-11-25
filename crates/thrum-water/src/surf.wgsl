@@ -268,6 +268,8 @@ struct SurfPoint {
     lip: f32,
     short_weight: f32,
     swash_rates: vec4<f32>, // slope xz, upward velocity, height change per metre of depth
+    section_throw: vec2<f32>,
+    phase_step: f32,
 }
 
 fn breaking_strength(sample: SurfPoint) -> f32 {
@@ -339,10 +341,12 @@ fn surf_forward(
     let phase_step = gradient_length / max(dot(field, field), 1.0e-20);
     var height = field.x;
     var lip = 0.0;
+    var section_throw = vec2(0.0);
     if fade > 0.0 && index > 0.0 {
         let section = surf_section(phase, index);
         height = mix(height, section.x * amplitude, fade);
-        horizontal += section.y * amplitude * fade * direction;
+        section_throw = section.y * amplitude * fade * direction;
+        horizontal += section_throw;
         // Project the front-face tangent along its local direction of travel.
         // A forward departure alone also occurs on sections that never fold.
         let tangent = 1.0 + phase_step * amplitude * scale *
@@ -356,9 +360,11 @@ fn surf_forward(
     var height_dt = scale * ordinary.rate.x;
     height *= scale;
     horizontal *= scale;
+    section_throw *= scale;
     var short_weight = 1.0;
     if support > 0.0 {
         horizontal *= 1.0 - inner;
+        section_throw *= 1.0 - inner;
         if inner > 0.0 {
             let q = contour_phase(moments[1], swash);
             let factor = SWASH_C * (depth + swash);
@@ -384,5 +390,5 @@ fn surf_forward(
     }
     return SurfPoint(vec3(horizontal.x, height, horizontal.y), index, phase,
         variance * (1.0 - scale * scale), variance, direction, fade, lip, short_weight,
-        vec4(slope, height_dt, height_per_depth));
+        vec4(slope, height_dt, height_per_depth), section_throw, phase_step);
 }

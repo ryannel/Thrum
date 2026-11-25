@@ -40,7 +40,8 @@ pub struct SurfWitness {
     pub nodes: wgpu::Buffer,
     /// Displacement xyz and 1 plus breaking-face weight (0 outside the bed), then previous
     /// displacement xyz and long-wave variance before the depth limit, then
-    /// the current and previous short-wave geometry weight with two padding words.
+    /// the current and previous short-wave geometry weights and two packed pairs
+    /// of horizontal throw removed by the renderer at coarse spacing.
     /// Only the prefix with one sample per rest node is part of the mesh witness.
     pub samples: wgpu::Buffer,
     /// World x/z used to place the camera-relative sea nodes.
@@ -63,7 +64,8 @@ struct CacheSettings {
 struct CacheSample {
     current: [f32; 4],
     previous: [f32; 4],
-    short_weights: [f32; 4],
+    short_weights: [f32; 2],
+    unresolved_throw: [u32; 2],
 }
 
 pub(crate) struct Cache {

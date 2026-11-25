@@ -9,7 +9,8 @@ struct CacheSettings {
 struct CacheSample {
     current: vec4<f32>,
     previous: vec4<f32>,
-    short_weights: vec4<f32>,
+    short_weights: vec2<f32>,
+    unresolved_throw: vec2<u32>,
 }
 @group(0) @binding(0) var<uniform> cache_settings: CacheSettings;
 @group(0) @binding(1) var<storage, read> mesh: array<vec4<f32>>;
@@ -31,6 +32,13 @@ fn cache_sample(point: vec2<f32>, body: u32, dt: f32, previous: bool) -> SurfPoi
         cache_settings.chop_dt.x, cache_settings.heights, cache_settings.components);
 }
 
+fn unresolved_throw(sample: SurfPoint, spacing: f32) -> vec2<f32> {
+    // When one cell spans much of the pitching phase, its triangle can
+    // bridge the fold as a blade. Retain the steep height profile and its
+    // whitewater while fading the horizontal throw that the mesh cannot resolve.
+    return sample.section_throw * smoothstep(0.25, 0.65, spacing * sample.phase_step);
+}
+
 fn cache_shore_face(i: u32) {
     let size = cache_settings.shore_size;
     let count = size.x * size.y;
@@ -38,7 +46,7 @@ fn cache_shore_face(i: u32) {
     if node > count || count == 0u { return; }
     var result: CacheSample;
     if node == count {
-        result.short_weights = vec4(0.0, 0.0, vec2<f32>(size));
+        result.unresolved_throw = size;
     } else {
         let uv = vec2<f32>(vec2(node % size.x, node / size.x)) / vec2<f32>(size - 1u);
         let span = vec2<f32>(map.size_count_sea.xy - 1u) * map.origin_spacing_margin.z;
@@ -82,12 +90,15 @@ fn fill_surf_cache(@builtin(global_invocation_id) id: vec3<u32>) {
         var now = cache_sample(point, body, 0.0, false);
         var before = cache_sample(point, body, -dt, true);
         var face = breaking_face(now);
+        let spacing = select(0.0, vertex.z, sea);
+        var throw_now = unresolved_throw(now, spacing);
+        var throw_before = unresolved_throw(before, spacing);
         if sea && max(abs(local.x), abs(local.y)) >= f32(sea_grid_radius(vertex.z)) {
             let transition = 2.0;
             let coarse = local / transition;
-            let spacing = transition * vertex.z;
-            let a = anchor + floor(coarse) * spacing;
-            let b = anchor + ceil(coarse) * spacing;
+            let coarse_spacing = transition * vertex.z;
+            let a = anchor + floor(coarse) * coarse_spacing;
+            let b = anchor + ceil(coarse) * coarse_spacing;
             let fraction = fract(coarse);
             let blend = max(fraction.x, fraction.y);
             let now_a = cache_sample(a, body, 0.0, false);
@@ -95,14 +106,19 @@ fn fill_surf_cache(@builtin(global_invocation_id) id: vec3<u32>) {
             now.displacement = mix(now_a.displacement, now_b.displacement, blend);
             now.variance = mix(now_a.variance, now_b.variance, blend);
             face = mix(breaking_face(now_a), breaking_face(now_b), blend);
+            throw_now = mix(unresolved_throw(now_a, coarse_spacing),
+                unresolved_throw(now_b, coarse_spacing), blend);
             now.short_weight = mix(now_a.short_weight, now_b.short_weight, blend);
             let before_a = cache_sample(a, body, -dt, true);
             let before_b = cache_sample(b, body, -dt, true);
             before.displacement = mix(before_a.displacement, before_b.displacement, blend);
             before.short_weight = mix(before_a.short_weight, before_b.short_weight, blend);
+            throw_before = mix(unresolved_throw(before_a, coarse_spacing),
+                unresolved_throw(before_b, coarse_spacing), blend);
         }
         result = CacheSample(vec4(now.displacement, 1.0 + face), vec4(before.displacement, now.variance),
-            vec4(now.short_weight, before.short_weight, 0.0, 0.0));
+            vec2(now.short_weight, before.short_weight),
+            vec2(pack2x16float(throw_now), pack2x16float(throw_before)));
     }
     cache[i] = result;
 }

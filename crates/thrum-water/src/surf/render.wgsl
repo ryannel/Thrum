@@ -1,12 +1,27 @@
-struct SurfVertexSample { current: vec4<f32>, previous: vec4<f32>, short_weights: vec4<f32>, }
+struct SurfVertexSample {
+    current: vec4<f32>,
+    previous: vec4<f32>,
+    short_weights: vec2<f32>,
+    unresolved_throw: vec2<u32>,
+}
 @group(3) @binding(13) var<storage, read> surf_cache: array<SurfVertexSample>;
-fn surf_current(index: u32) -> vec4<f32> { return surf_cache[index].current; }
-fn surf_previous(index: u32) -> vec4<f32> { return surf_cache[index].previous; }
-fn surf_short_weights(index: u32) -> vec2<f32> { return surf_cache[index].short_weights.xy; }
+fn visible_surf_sample(sample: vec4<f32>, packed_throw: u32) -> vec4<f32> {
+    let shift = unpack2x16float(packed_throw);
+    return sample - vec4(shift.x, 0.0, shift.y, 0.0);
+}
+fn surf_current(index: u32) -> vec4<f32> {
+    let sample = surf_cache[index];
+    return visible_surf_sample(sample.current, sample.unresolved_throw.x);
+}
+fn surf_previous(index: u32) -> vec4<f32> {
+    let sample = surf_cache[index];
+    return visible_surf_sample(sample.previous, sample.unresolved_throw.y);
+}
+fn surf_short_weights(index: u32) -> vec2<f32> { return surf_cache[index].short_weights; }
 
 fn surf_shore_face(point: vec2<f32>) -> f32 {
     let end = arrayLength(&surf_cache) - 1u;
-    let size = vec2<u32>(surf_cache[end].short_weights.zw);
+    let size = surf_cache[end].unresolved_throw;
     let span = vec2<f32>(map.size_count_sea.xy - 1u) * map.origin_spacing_margin.z;
     let uv = (point - map.origin_spacing_margin.xy) / span;
     if any(uv < vec2(0.0)) || any(uv > vec2(1.0)) { return 0.0; }
