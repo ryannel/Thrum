@@ -1956,9 +1956,26 @@ pub struct OffscreenTarget {
     frame_revision: u64,
 }
 
+#[cfg(not(test))]
+mod target_allocation {
+    pub(super) fn started() {}
+}
+
 #[cfg(test)]
-std::thread_local! {
-    pub(crate) static OFFSCREEN_TARGET_ALLOCATION_STARTS: std::cell::Cell<u32> = const { std::cell::Cell::new(0) };
+pub(crate) mod target_allocation {
+    use std::cell::Cell;
+
+    thread_local! {
+        static STARTS: Cell<u32> = const { Cell::new(0) };
+    }
+
+    pub(super) fn started() {
+        STARTS.set(STARTS.get() + 1);
+    }
+
+    pub(crate) fn starts() -> u32 {
+        STARTS.get()
+    }
 }
 
 impl OffscreenTarget {
@@ -2051,8 +2068,7 @@ impl OffscreenTarget {
             .capabilities
             .recipe()
             .map_err(RenderError::Recipe)?;
-        #[cfg(test)]
-        OFFSCREEN_TARGET_ALLOCATION_STARTS.with(|count| count.set(count.get() + 1));
+        target_allocation::started();
         let day_depth = compiled.prepare_day_depth(device, recipe, width, height);
         let scene_graph::CompiledScene {
             day,

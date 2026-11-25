@@ -550,7 +550,7 @@ fn native_provider_crop_changes_inside_one_generation_and_owns_timing() {
             host.disable_submitted_capture();
 
             // This allowance fits 64×64 SDR, but not the provider's 96×64 SDR.
-            let allocations = crate::synthetic::OFFSCREEN_TARGET_ALLOCATION_STARTS.get();
+            let allocations = crate::synthetic::target_allocation::starts();
             let tight = CaptureLimits {
                 byte_allowance: 40_000,
                 ..limits
@@ -561,17 +561,14 @@ fn native_provider_crop_changes_inside_one_generation_and_owns_timing() {
                     "capture pixel-byte allowance exhausted"
                 ))
             ));
-            assert_eq!(
-                crate::synthetic::OFFSCREEN_TARGET_ALLOCATION_STARTS.get(),
-                allocations
-            );
+            assert_eq!(crate::synthetic::target_allocation::starts(), allocations);
             assert_eq!(
                 host.slots[0].target.capture_source(),
                 CaptureSource::SceneLinear
             );
             host.enable_submitted_capture_from(3, limits, CaptureSource::Sdr)
                 .unwrap();
-            assert!(crate::synthetic::OFFSCREEN_TARGET_ALLOCATION_STARTS.get() > allocations);
+            assert!(crate::synthetic::target_allocation::starts() > allocations);
             assert!(
                 record(host, SECOND)
                     .submit(Some(&surface))

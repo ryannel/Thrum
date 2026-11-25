@@ -999,17 +999,14 @@ fn linear_capture_allowance_is_validated_before_target_replacement() {
             cpu_buffers: 1,
             byte_allowance: 30_000,
         };
-        let allocations = crate::synthetic::OFFSCREEN_TARGET_ALLOCATION_STARTS.get();
+        let allocations = crate::synthetic::target_allocation::starts();
         assert!(matches!(
             host.enable_submitted_capture_from(1, limits, CaptureSource::SceneLinear),
             Err(super::super::FrameError::InvalidState(
                 "capture pixel-byte allowance exhausted"
             ))
         ));
-        assert_eq!(
-            crate::synthetic::OFFSCREEN_TARGET_ALLOCATION_STARTS.get(),
-            allocations
-        );
+        assert_eq!(crate::synthetic::target_allocation::starts(), allocations);
         assert_eq!(host.slots[0].target.capture_source(), CaptureSource::Sdr);
         assert!(host.submitted_capture.is_none());
         host.enable_submitted_capture_with_limits(2, limits)
