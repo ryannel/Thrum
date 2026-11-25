@@ -1406,6 +1406,42 @@
         "by": "plan",
         "task": "Unblock WATERS WP13 again (handoff .orchestrate/evidence/WATERS/WP13-handoff.md; candidate 3f55f5cdf on build/waters). E",
         "at": "2026-11-25T02:43:09Z"
+      },
+      "ready_for_review": {
+        "commit": "1dec5ede321b4931fef3ebd635b55648431b6fb5",
+        "checked": "1dec5ede321b4931fef3ebd635b55648431b6fb5",
+        "at": "2026-11-25T02:55:28Z",
+        "reused": [
+          "WP13.1",
+          "WP13.2",
+          "WP13.3",
+          "WP13.6",
+          "WP13.9",
+          "WP13.10",
+          "WP13.12",
+          "WP13.14"
+        ],
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.171.0-alpha.13",
+        "path": "headless",
+        "usage": {
+          "input": 3344443,
+          "cached": 271974144,
+          "output": 476500,
+          "turns": 11
+        },
+        "session_usage": {
+          "input": 3344443,
+          "cached": 271974144,
+          "output": 476500,
+          "turns": 11
+        }
       }
     },
     "WP15": {
