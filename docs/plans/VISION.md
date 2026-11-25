@@ -32,6 +32,12 @@ That is the build plan's purpose, as it stood on 10 November 2026. Later stateme
 - **15 November 2026.** On transport's timing, the owner: "it can come before V1 if we have space for it, but it's
   not urgent". Decision 1 read "transport stays after V1" until then. Transport is still no part of the V1 exit;
   [the module list](ARCHITECTURE.md#transports-timing) builds it when a builder slot is free.
+- **25 November 2026.** The owner asked for a game SDK: "a high end, intuitive, expressive, readable, SDK that game
+  developers can use to build new games. this should be what V1 uses ideally and what we will use to build the swarm
+  game. It's VITAL that we get this right as it's the entire interface that developers and coding agents will use to
+  build a variety of games. It's the front of the product we're building. So it needs to be as intuitive, well
+  documented and easy to use as possible." Their decisions: "V1 first, Rust only, I'll approve the design." The V1
+  exit does not wait for the SDK; the showcase moves onto it afterwards, and the swarm game is built on it.
 
 ## Why
 
