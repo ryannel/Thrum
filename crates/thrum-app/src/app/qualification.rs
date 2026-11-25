@@ -17,7 +17,8 @@ use std::{
 };
 use thrum_controls::{Controls, Value, macos::MacPanel};
 use thrum_render::runtime::{
-    CaptureLimits, FrameError, FrameExtent, FrameHost, FrameWorld, SceneSource, SubmittedImage,
+    CaptureLimits, FrameError, FrameExtent, FrameHost, FrameSample, FrameWorld, SceneSource,
+    SubmittedImage,
 };
 use thrum_render::synthetic::CaptureSource;
 
@@ -161,6 +162,9 @@ pub struct WindowQualification {
     pub control_column: &'static str,
     /// Signpost boundaries in elapsed seconds; the last ends the run.
     pub boundaries: [f64; 4],
+    /// Use the two interior boundaries as the start and end of the refresh measurement.
+    /// The outer signposts calibrate the witness and leave room for bracketing submissions.
+    pub account_refreshes: bool,
     /// Control value in display units at the given elapsed seconds.
     /// With no sample function, observe the control without driving the panel.
     pub sample: Option<fn(f64) -> f64>,
@@ -190,6 +194,16 @@ impl Pan {
             requests: Vec::with_capacity(RECORDS),
             signposts: Vec::with_capacity(4),
         }
+    }
+
+    pub(super) fn measured_interval(&self) -> Option<(f64, f64)> {
+        let [_, start, end, _] = self.options.boundaries;
+        if !self.options.account_refreshes {
+            return None;
+        }
+        self.signposts
+            .get(1)
+            .map(|&(_, before, after)| (f64::midpoint(before, after), end - start))
     }
 
     pub(super) fn step(
@@ -237,7 +251,12 @@ impl Pan {
             requested.unwrap_or(accepted),
             accepted,
         ));
-        Ok(elapsed >= boundaries[3])
+        let witness_tail = if self.options.account_refreshes {
+            0.25
+        } else {
+            0.0
+        };
+        Ok(elapsed >= boundaries[3] + witness_tail)
     }
     pub(super) fn request(
         &mut self,
@@ -628,6 +647,42 @@ impl Observer {
         Ok(())
     }
 }
+pub(super) fn write_cadence_samples(
+    output: &std::path::Path,
+    samples: &[FrameSample],
+) -> std::io::Result<()> {
+    let mut frames = BufWriter::new(File::create(output.join("cadence-frames.tsv"))?);
+    let mut passes = BufWriter::new(File::create(output.join("cadence-passes.tsv"))?);
+    writeln!(
+        frames,
+        "submission_id\ttick\tdisplay_phase\tpresented\ttiming_requested\ttiming_fault"
+    )?;
+    writeln!(passes, "submission_id\tpass\tnanoseconds")?;
+    for sample in samples {
+        writeln!(
+            frames,
+            "{}\t{}\t{}\t{}\t{}\t{}",
+            sample.submission_order,
+            sample.tick,
+            sample.display_phase,
+            sample.surface_presented,
+            sample.timing_requested,
+            sample.timing_fault,
+        )?;
+        if let Some(timings) = &sample.gpu_pass_ns {
+            for pass in timings.passes() {
+                writeln!(
+                    passes,
+                    "{}\t{}\t{}",
+                    sample.submission_order, pass.name, pass.nanoseconds,
+                )?;
+            }
+        }
+    }
+    frames.flush()?;
+    passes.flush()
+}
+
 fn unix_ns() -> Result<u128, String> {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)

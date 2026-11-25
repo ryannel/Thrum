@@ -10,6 +10,7 @@ mod profile_recording;
 mod qualification;
 mod qualification_signpost;
 mod recovery;
+mod refresh_account;
 mod render_actor;
 
 pub use display::{DisplayOverride, DisplayOverrideError, WindowDisplayOptions};
@@ -20,14 +21,14 @@ pub use qualification::{
 
 use std::{
     sync::{
-        Arc,
+        Arc, Mutex,
         atomic::{AtomicBool, AtomicU64, Ordering},
     },
     time::{Duration, Instant},
 };
 
 use device::WindowDevice;
-use display_link::{PREFERRED_REFRESH_HZ, SubmissionCadence, ViewDisplayLink};
+use display_link::ViewDisplayLink;
 use edit_flow::EditFlow;
 use recovery::Recovery;
 use render_actor::{
@@ -133,8 +134,9 @@ struct App<G: Game> {
     device_losses: u64,
     world_tick: u64,
     render_in_flight: Option<u64>,
-    render_target: f64,
-    cadence: SubmissionCadence,
+    refresh_account: Arc<Mutex<refresh_account::Account>>,
+    window_occlusions: u64,
+    thermal_states: [bool; 4],
     counters: FrameCounters,
     /// The game's controls are shared by keys and the panel. Edits travel to the render
     /// owner in the next frame request.
@@ -249,8 +251,9 @@ impl<G: WindowGame + 'static> App<G> {
             device_losses: 0,
             world_tick: 0,
             render_in_flight: None,
-            render_target: 0.0,
-            cadence: SubmissionCadence::default(),
+            refresh_account: Arc::default(),
+            window_occlusions: 0,
+            thermal_states: [false; 4],
             counters: FrameCounters::default(),
             game,
             panel: None,
@@ -650,6 +653,7 @@ impl<G: WindowGame + 'static> App<G> {
             panel.show(None);
         }
         self.panel = Some(panel);
+        self.thermal_states[thermal_state() as usize] = true;
         self.display_link = Some(ViewDisplayLink::start(
             self.window.as_ref().ok_or("window missing")?,
             wake.clone(),
@@ -675,6 +679,7 @@ impl<G: WindowGame + 'static> App<G> {
                 .as_ref()
                 .map(|observer| &observer.options),
             self.display_options.as_ref(),
+            Arc::clone(&self.refresh_account),
         )?);
         // Baseline the watched files before the first load, so no later save is missed.
         self.watch = self.start_watch(wake);
@@ -795,13 +800,6 @@ impl<G: WindowGame + 'static> App<G> {
         match reply.platform.surface_status {
             SurfaceStatus::Presented => {
                 self.presented += 1;
-                if reply.target_status == Some(TargetLeadStatus::Future) {
-                    self.cadence.presented(
-                        reply.sequence,
-                        self.render_target,
-                        PREFERRED_REFRESH_HZ,
-                    );
-                }
                 if self.surface_configuration_error.take().is_some() {
                     self.refresh_title();
                 }
@@ -998,7 +996,6 @@ impl<G: WindowGame + 'static> App<G> {
             }
         }
         self.render_in_flight = Some(self.edits.submitted());
-        self.render_target = target;
         if self.run_deadline.is_some_and(|deadline| now >= deadline) {
             return Err(self.deadline_error());
         }
@@ -1151,10 +1148,8 @@ impl<G: WindowGame + 'static> App<G> {
         let shadows = presented.last().map(|sample| sample.shadow_selection);
         let culling =
             format!("{culling}; culling_selection={selection:?}; shadow_selection={shadows:?}");
-        let (cadence_start, cadence_end) = self.cadence.longest();
-        let refresh = PREFERRED_REFRESH_HZ;
         Ok(format!(
-            "adapter={}; surface={:?} {}x{}; presented={}; callbacks={}; display_link_callbacks={}; longest_{refresh:.0}hz_submission_interval={cadence_start:.6}..{cadence_end:.6}s; late_target_evaluations={}; invalid_target_evaluations={}; clamped_target_evaluations={}; committed_ticks={}; unavailable={}; occluded={}; surface_faults={}; dropped_surface={}; dropped_views={}; dropped_stale_views={}; dropped_reports={}; callback wall p50/p95={:.3}/{:.3} ms; render-worker wall p50/p95={:.3}/{:.3} ms; drawable-acquire wall p50/p95={:.3}/{:.3} ms; tick CPU p50/p95={:.3}/{:.3} us; live-view CPU p50/p95={:.3}/{:.3} us; upload CPU p50/p95={:.3}/{:.3} us; encode CPU p50/p95={:.3}/{:.3} us; upload+encode CPU p50/p95={:.3}/{:.3} us; {gpu}; {culling}; device_losses={}; world_overloads={}; overload_refused_ticks={}; final_drain_device_lost={final_device_loss}; retained_presented_profiles={}; missing_presented_profiles={missing}; profiles describe retained samples",
+            "adapter={}; surface={:?} {}x{}; presented={}; callbacks={}; display_link_callbacks={}; late_target_evaluations={}; invalid_target_evaluations={}; clamped_target_evaluations={}; committed_ticks={}; unavailable={}; occluded={}; surface_faults={}; dropped_surface={}; dropped_views={}; dropped_stale_views={}; dropped_reports={}; callback wall p50/p95={:.3}/{:.3} ms; render-worker wall p50/p95={:.3}/{:.3} ms; drawable-acquire wall p50/p95={:.3}/{:.3} ms; tick CPU p50/p95={:.3}/{:.3} us; live-view CPU p50/p95={:.3}/{:.3} us; upload CPU p50/p95={:.3}/{:.3} us; encode CPU p50/p95={:.3}/{:.3} us; upload+encode CPU p50/p95={:.3}/{:.3} us; {gpu}; {culling}; device_losses={}; world_overloads={}; overload_refused_ticks={}; final_drain_device_lost={final_device_loss}; retained_presented_profiles={}; missing_presented_profiles={missing}; profiles describe retained samples",
             self.adapter_name,
             self.surface_format.ok_or("surface format missing")?,
             self.surface_extent[0],
@@ -1379,6 +1374,11 @@ impl<G: WindowGame + 'static> ApplicationHandler<UserEvent> for App<G> {
                 callback,
                 number,
             } => {
+                let period = target - callback;
+                {
+                    let mut account = self.refresh_account.lock().expect("refresh account lock");
+                    account.callback(target, period);
+                }
                 self.display_tick = number;
                 self.governor_display.interval =
                     Duration::try_from_secs_f64(target - callback).unwrap_or_default();
@@ -1402,6 +1402,12 @@ impl<G: WindowGame + 'static> ApplicationHandler<UserEvent> for App<G> {
                         .and_then(|panel| pan.step(panel, self.game.controls_mut()));
                     match result {
                         Ok(done) => {
+                            if let Some((start, length)) = pan.measured_interval() {
+                                self.refresh_account
+                                    .lock()
+                                    .expect("refresh account lock")
+                                    .measure(start, length);
+                            }
                             if let Err(error) = self.controls_edited() {
                                 self.error = Some(error);
                                 event_loop.exit();
@@ -1441,7 +1447,10 @@ impl<G: WindowGame + 'static> ApplicationHandler<UserEvent> for App<G> {
                 self.edits.request();
             }
             UserEvent::DisplayParametersChanged => self.refresh_display_record(),
-            UserEvent::ThermalState(state) => self.governor_display.thermal = state,
+            UserEvent::ThermalState(state) => {
+                self.governor_display.thermal = state;
+                self.thermal_states[state as usize] = true;
+            }
             UserEvent::WorldAdvanced => {
                 if let Err(error) = self.reconcile_pause() {
                     self.error = Some(error);
@@ -1535,6 +1544,7 @@ impl<G: WindowGame + 'static> ApplicationHandler<UserEvent> for App<G> {
                 if std::mem::replace(&mut self.window_visibility, visibility) == visibility {
                     Ok(())
                 } else {
+                    self.window_occlusions += u64::from(occluded);
                     self.invalidate_surface()
                 }
             }
@@ -1683,15 +1693,12 @@ pub fn run_with_qualification_and_display<G: WindowGame + 'static, E: std::error
     display: Option<WindowDisplayOptions>,
     game: impl FnOnce() -> Result<G, E>,
 ) {
-    run_with(
-        config,
-        RunMode::Bounded,
-        None,
-        None,
-        Some(observer),
-        display,
-        game,
-    );
+    let mode = if observer.account_refreshes {
+        RunMode::Ordinary
+    } else {
+        RunMode::Bounded
+    };
+    run_with(config, mode, None, None, Some(observer), display, game);
 }
 
 /// Run the ordinary window and retain one submitted image with its extent witnesses.
@@ -1841,7 +1848,7 @@ fn run_with<G: WindowGame + 'static, E: std::error::Error>(
     {
         app.error = Some(error);
     }
-    let result = app.error.take().map_or_else(
+    let mut result = app.error.take().map_or_else(
         || {
             app.qualification_report
                 .take()
@@ -1849,10 +1856,44 @@ fn run_with<G: WindowGame + 'static, E: std::error::Error>(
         },
         Err,
     );
+    if result.is_ok() {
+        let mut account = app.refresh_account.lock().expect("refresh account lock");
+        account.finish();
+        if prints_report(mode, requested_report.as_deref()) {
+            println!("{}", account.counts());
+        }
+        if let Some(observer) = &app.qualification {
+            let output = &observer.options.output;
+            let write = account.write(output).and_then(|()| {
+                let [nominal, fair, serious, critical] = app.thermal_states;
+                std::fs::write(
+                    output.join("refresh-window.txt"),
+                    format!(
+                        "occluded_window_events={}\noccluded_surface_attempts={}\nthermal_nominal={nominal}\nthermal_fair={fair}\nthermal_serious={serious}\nthermal_critical={critical}\n",
+                        app.window_occlusions, app.occluded
+                    ),
+                )
+            });
+            if let Err(error) = write {
+                result = Err(format!("refresh account: {error}"));
+            }
+        }
+    }
     if let Some(observer) = &app.qualification {
-        let path = observer.options.output.join("gpu-samples.txt");
-        if let Err(error) = std::fs::write(path, format!("{:#?}\n", app.samples)) {
+        let output = &observer.options.output;
+        let samples = if observer.options.account_refreshes {
+            qualification::write_cadence_samples(output, &app.samples)
+        } else {
+            std::fs::write(
+                output.join("gpu-samples.txt"),
+                format!("{:#?}\n", app.samples),
+            )
+        };
+        if let Err(error) = samples {
             eprintln!("{}: sample record: {error}", config.name);
+            if observer.options.account_refreshes && result.is_ok() {
+                result = Err(format!("cadence samples: {error}"));
+            }
         }
     }
     match result {

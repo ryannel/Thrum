@@ -142,31 +142,35 @@ fn window_qualification() -> Result<Option<thrum_app::WindowQualification>, Stri
         Ok("off") => false,
         _ => return Err("qualification requires THRUM_MAC_TAP=on or off".to_owned()),
     };
-    let held_wind = match std::env::var("THRUM_MAC_QUALIFY_MODE").as_deref() {
-        Err(std::env::VarError::NotPresent) | Ok("pan") => false,
-        Ok("wind") if !capture => true,
-        Ok("wind") => return Err("wind qualification requires THRUM_MAC_TAP=off".to_owned()),
-        _ => return Err("THRUM_MAC_QUALIFY_MODE must be pan or wind".to_owned()),
+    let (boundaries, sample, account_refreshes): ([f64; 4], Option<fn(f64) -> f64>, bool) =
+        match std::env::var("THRUM_MAC_QUALIFY_MODE").as_deref() {
+            Err(std::env::VarError::NotPresent) | Ok("pan") => (
+                [3.0, 4.0, 6.0, 7.1],
+                Some(|elapsed| ((elapsed - 4.0) / 2.0).clamp(0.0, 1.0) * 36.0),
+                false,
+            ),
+            Ok("wind") if !capture => ([3.0, 10.0, 16.0, 23.1], None, false),
+            Ok("cadence") if !capture => ([0.25, 1.0, 21.0, 22.0], None, true),
+            Ok("wind" | "cadence") => {
+                return Err("wind and cadence qualification require THRUM_MAC_TAP=off".to_owned());
+            }
+            _ => return Err("THRUM_MAC_QUALIFY_MODE must be pan, wind or cadence".to_owned()),
+        };
+    let gpu_timestamps = match std::env::var("THRUM_MAC_CADENCE_TIMING").as_deref() {
+        Err(std::env::VarError::NotPresent) => sample.is_some(),
+        Ok("1") if account_refreshes => true,
+        _ => return Err("THRUM_MAC_CADENCE_TIMING=1 requires cadence qualification".to_owned()),
     };
     Ok(Some(thrum_app::WindowQualification {
         output: output.into(),
         control: "camera.yaw",
         control_column: "yaw_degrees",
-        // Both modes warm up for three seconds. Wind keeps the camera fixed
-        // for at least 20 seconds. Pan drives the control for two seconds.
-        boundaries: if held_wind {
-            [3.0, 10.0, 16.0, 23.1]
-        } else {
-            [3.0, 4.0, 6.0, 7.1]
-        },
-        sample: if held_wind {
-            None
-        } else {
-            Some(|elapsed| ((elapsed - 4.0) / 2.0).clamp(0.0, 1.0) * 36.0)
-        },
+        boundaries,
+        account_refreshes,
+        sample,
         accepted: |radians| f64::from(radians.to_degrees()),
         capture,
-        gpu_timestamps: !held_wind,
+        gpu_timestamps,
         replace_surface: std::env::var("THRUM_MAC_REPLACE").as_deref() == Ok("1"),
     }))
 }

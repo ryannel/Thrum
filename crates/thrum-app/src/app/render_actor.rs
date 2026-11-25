@@ -3,12 +3,13 @@ use super::{
     UserEvent,
     device::{PlatformGpu, WindowDevice},
     qualification::TransitionProof,
+    refresh_account::{Account, Place},
 };
 use crate::{Game, frame::SAMPLE_SLOTS};
 use objc2_quartz_core::CACurrentMediaTime;
 use std::{
     sync::{
-        Arc,
+        Arc, Mutex,
         atomic::{AtomicBool, AtomicU64, Ordering},
     },
     time::{Duration, Instant},
@@ -169,6 +170,7 @@ struct Actor<G: Game> {
     extent_capture: Option<super::qualification::ExtentCapture>,
     profile_minimum: u64,
     profile_revision: u64,
+    refresh_account: Arc<Mutex<Account>>,
 }
 pub(super) type RenderWorker<G> =
     FrameWorker<RenderJob<<G as Game>::Edits>, RenderReply<<G as Game>::Readback>>;
@@ -190,6 +192,7 @@ pub(super) fn start<G: Game<World: Send, Scene: Send> + 'static>(
     proof: Option<&super::WindowTransitionProof>,
     qualification: Option<&super::WindowQualification>,
     display: Option<&super::WindowDisplayOptions>,
+    refresh_account: Arc<Mutex<Account>>,
 ) -> Result<RenderWorker<G>, String> {
     const {
         assert!(FrameHost::<G::World, G::Scene>::MAX_IN_FLIGHT == SAMPLE_SLOTS);
@@ -216,6 +219,7 @@ pub(super) fn start<G: Game<World: Send, Scene: Send> + 'static>(
         extent_capture,
         profile_minimum: 0,
         profile_revision: 0,
+        refresh_account,
         host,
         gpu,
         recipe,
@@ -270,7 +274,25 @@ impl<G: Game> Actor<G> {
                     request.platform.backing_scale,
                     request.platform.governor_display,
                 ));
-                let frame = self.frame(&request, &mut reply);
+                self.refresh_account
+                    .lock()
+                    .expect("refresh account lock")
+                    .begin(request.target_media_seconds, CACurrentMediaTime());
+                let mut drawable_late = false;
+                let mut present_call = None;
+                let frame = self.frame(&request, &mut reply, &mut drawable_late, &mut present_call);
+                let place = match reply.platform.surface_status {
+                    SurfaceStatus::FrameSlotsOccupied => Place::FrameSlot,
+                    SurfaceStatus::DrawableTimeout
+                    | SurfaceStatus::Occluded
+                    | SurfaceStatus::NeedsReconfigure => Place::Drawable,
+                    _ if drawable_late => Place::Drawable,
+                    _ => Place::EncodeSubmit,
+                };
+                self.refresh_account
+                    .lock()
+                    .expect("refresh account lock")
+                    .complete(place, present_call);
                 if let Some(proof) = &mut self.transition_proof {
                     proof.stage("collecting frame completions and reply");
                 }
@@ -358,6 +380,8 @@ impl<G: Game> Actor<G> {
         &mut self,
         request: &FrameRequest<G::Edits>,
         reply: &mut RenderReply<G::Readback>,
+        drawable_late: &mut bool,
+        present_call: &mut Option<(f64, u64)>,
     ) -> Result<DriveReport, FrameError> {
         if request.device_generation != self.gpu.watch.generation {
             return Err(FrameError::InvalidState("stale frame device generation"));
@@ -487,7 +511,10 @@ impl<G: Game> Actor<G> {
         if let Some(proof) = &mut self.transition_proof {
             proof.stage("acquiring a drawable");
         }
+        let acquired_at = CACurrentMediaTime();
         let acquired = self.recipe.surface.get_current_texture();
+        *drawable_late = acquired_at < request.target_media_seconds
+            && request.target_media_seconds <= CACurrentMediaTime();
         reply.acquire_wall = Some(acquire.elapsed());
         if let Some(proof) = &mut self.transition_proof {
             proof.stage("handling drawable acquisition");
@@ -541,6 +568,13 @@ impl<G: Game> Actor<G> {
         let report = encoded.submit(Some(&output))?;
         ensure_device(&self.gpu.watch)?;
         if report.surface_presented {
+            let submission = self.host.last_submission().expect("presented submission");
+            {
+                let mut account = self.refresh_account.lock().expect("refresh account lock");
+                let time = CACurrentMediaTime();
+                account.present(time, submission);
+                *present_call = Some((time, submission));
+            }
             self.gpu.queue.present(frame);
             self.host.governor_present_called();
             if let Some(proof) = &mut self.transition_proof {

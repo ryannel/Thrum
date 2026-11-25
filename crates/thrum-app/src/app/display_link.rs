@@ -24,39 +24,6 @@ use super::UserEvent;
 
 pub(super) const PREFERRED_REFRESH_HZ: f32 = 120.0;
 
-/// The longest uninterrupted run of surface submissions at the requested display cadence.
-#[derive(Default)]
-pub(super) struct SubmissionCadence {
-    first: Option<f64>,
-    previous: Option<(u64, f64)>,
-    start: f64,
-    longest: (f64, f64),
-}
-
-impl SubmissionCadence {
-    pub(super) fn presented(&mut self, sequence: u64, target: f64, refresh_hz: f32) {
-        let origin = *self.first.get_or_insert(target);
-        let period = 1.0 / f64::from(refresh_hz);
-        if self
-            .previous
-            .is_none_or(|(previous_sequence, previous_target)| {
-                sequence != previous_sequence + 1
-                    || (target - previous_target - period).abs() > 0.000_25
-            })
-        {
-            self.start = target;
-        }
-        if target - self.start > self.longest.1 - self.longest.0 {
-            self.longest = (self.start - origin, target - origin);
-        }
-        self.previous = Some((sequence, target));
-    }
-
-    pub(super) fn longest(&self) -> (f64, f64) {
-        self.longest
-    }
-}
-
 struct LinkIvars {
     wake: EventLoopProxy<UserEvent>,
     callbacks: Cell<u64>,
@@ -261,18 +228,4 @@ pub(super) fn window_number(window: &Window) -> Result<isize, String> {
     let native = native.ok_or("view has no AppKit window")?;
     // SAFETY: windowNumber is an NSInteger-returning selector on NSWindow.
     Ok(unsafe { msg_send![&*native, windowNumber] })
-}
-
-#[cfg(test)]
-mod tests {
-    use super::SubmissionCadence;
-
-    #[test]
-    fn missing_submissions_and_display_callbacks_break_the_interval() {
-        let mut cadence = SubmissionCadence::default();
-        for (sequence, tick) in [(1, 0), (2, 1), (4, 3), (5, 4), (6, 6), (7, 7), (8, 8)] {
-            cadence.presented(sequence, f64::from(tick) / 120.0, 120.0);
-        }
-        assert_eq!(cadence.longest(), (6.0 / 120.0, 8.0 / 120.0));
-    }
 }

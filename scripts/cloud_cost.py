@@ -326,11 +326,19 @@ def investigate_decks(rows, tripwires):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command', choices=['record', 'check', 'refuse'])
-    parser.add_argument('--scene', choices=FIXTURES, required=True)
+    parser.add_argument('command', choices=['record', 'check', 'refuse', 'cadence', 'hold'])
+    parser.add_argument('--scene', choices=[*FIXTURES, 'wind', 'scripted'], required=True)
     parser.add_argument('--previous', type=Path, help='previous renderer cost record at the same low-Sun view')
     parser.add_argument('--output', type=Path, help='write a cost record to an alternate destination')
     args = parser.parse_args()
+    if args.command == 'hold' and args.scene == 'scripted':
+        from cloud_cadence import scripted_hold
+        return scripted_hold()
+    if args.command in ('cadence', 'hold') and args.scene == 'wind':
+        from cloud_cadence_capture import run_wind
+        return run_wind(args.command, args.output)
+    if args.scene not in FIXTURES or args.command in ('cadence', 'hold'):
+        parser.error('cadence requires wind; hold requires wind or scripted')
     destination = args.output or FIXTURES[args.scene]
     if args.command == 'refuse':
         if args.scene != 'first-frame':
@@ -413,4 +421,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    raise SystemExit(main())
