@@ -1,10 +1,10 @@
 {
   "module": "EFFECT-GRAPH",
   "design": {
-    "verdict": "ok",
+    "verdict": "changes",
     "review": ".orchestrate/evidence/EFFECT-GRAPH/design-review.md",
-    "commit": "b67c49cfec853ba86d6027c904893e13cbf05914",
-    "hash": "dd6f646ce8f1168d6eb0ba322c821f43342d0119a384fc06778460dbe9160ec4",
+    "commit": "e4a94b9841b0dce4b0d1bfe12595920368a09e3c",
+    "hash": "cbf9dc691f46e5b0e8d869cc9b6cd7a340cb3c294c4a15a7639714bc624301cb",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",
@@ -16,15 +16,12 @@
     "cli": "codex-cli 0.171.0-alpha.13",
     "path": "headless",
     "usage": {
-      "input": 67803,
-      "cached": 1093760,
-      "output": 4039,
+      "input": 106574,
+      "cached": 2434944,
+      "output": 8771,
       "turns": 1
     },
-    "at": "2026-11-23T22:12:38Z",
-    "items_owed": [
-      "WP6"
-    ]
+    "at": "2026-11-25T12:02:03Z"
   },
   "work_packages": {
     "WP1": {
@@ -738,6 +735,32 @@
       "at": "2026-11-17T02:26:47Z",
       "items_owed": [
         "WP5"
+      ]
+    },
+    {
+      "verdict": "ok",
+      "review": ".orchestrate/evidence/EFFECT-GRAPH/design-review-8.md",
+      "commit": "b67c49cfec853ba86d6027c904893e13cbf05914",
+      "hash": "dd6f646ce8f1168d6eb0ba322c821f43342d0119a384fc06778460dbe9160ec4",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6.2-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6.2-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.171.0-alpha.13",
+      "path": "headless",
+      "usage": {
+        "input": 67803,
+        "cached": 1093760,
+        "output": 4039,
+        "turns": 1
+      },
+      "at": "2026-11-23T22:12:38Z",
+      "items_owed": [
+        "WP6"
       ]
     }
   ]
