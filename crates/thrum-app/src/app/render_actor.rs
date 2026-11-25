@@ -413,17 +413,16 @@ impl<G: Game> Actor<G> {
             .governor_display(display, self.transition.holds_governor());
         self.host
             .governor_display_tick(now, request.platform.display_tick);
-        let lead = display_target_lead(request.target_media_seconds, CACurrentMediaTime());
+        let mut lead = display_target_lead(request.target_media_seconds, CACurrentMediaTime());
         if ready && !self.host.has_free_slot() {
             // A callback can arrive while an older packet is retiring. Give
             // it the part of this opportunity that encoding can spare.
             let deadline = Instant::now() + lead.duration.saturating_sub(Duration::from_millis(3));
             let mut samples = reply.samples.iter_mut();
-            while !self.host.has_free_slot() && Instant::now() < deadline {
+            while !self.host.has_free_slot() && Instant::now() < deadline && samples.len() != 0 {
                 ensure_running(&self.stopped)?;
                 if let Some(completed) = self.host.poll_completed()? {
-                    let Some(sample) = samples.next() else { break };
-                    *sample = Some(completed);
+                    *samples.next().expect("space for a completed sample") = Some(completed);
                 } else if !self.host.has_free_slot() {
                     std::thread::sleep(
                         Duration::from_micros(250)
@@ -431,8 +430,8 @@ impl<G: Game> Actor<G> {
                     );
                 }
             }
+            lead = display_target_lead(request.target_media_seconds, CACurrentMediaTime());
         }
-        let lead = display_target_lead(request.target_media_seconds, CACurrentMediaTime());
         reply.target_status = Some(lead.status);
         self.host.set_presentation_lead(lead.duration);
         if !ready {
