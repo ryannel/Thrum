@@ -225,9 +225,11 @@ def validate_sample(log, cfg, *, bounded_rate=True, minimum_frames=600):
             jump = True
         elif event == "advance":
             latest = row
-        elif event == "frame" and row["tick"] > 4:
-            assert latest and latest["tick"] == row["tick"], (row, latest)
+        elif event == "frame":
             assert row["due_ns"] is None or row["due_ns"] <= row["observation_ns"], row
+            if row["tick"] <= 4:
+                continue
+            assert latest and latest["tick"] == row["tick"], (row, latest)
             frames += 1
             assert 0 <= row["alpha"] <= 1
             elapsed = max(0, row["display_us"] - latest["playout_us"])
@@ -332,8 +334,8 @@ def validate_capture(peer, capture, output):
     assert len(images) == capture["frames"] > 120
     assert all(row["extent"] == list(EXTENT) and row["draws"] == 1 and row["presented"] for row in images)
     submitted = {row["submission"]: row for row in peer.log.events("frame")}
-    assert all(row["tick"] == submitted[row["submission"]]["tick"]
-               and row["alpha"] == submitted[row["submission"]]["alpha"] for row in images)
+    assert all(all(row[key] == submitted[row["submission"]][key]
+                   for key in ("tick", "alpha", "observation_ns")) for row in images)
     images_by_id = {row["submission"]: row for row in images}
     assert len(images_by_id) == len(images)
     assert set(range(min(images_by_id), max(images_by_id) + 1)) == images_by_id.keys(), "missing T2 submissions"
