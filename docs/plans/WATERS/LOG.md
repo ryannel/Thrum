@@ -1225,3 +1225,9 @@
   body's point, and a body of weight 1 saves only the march beyond it. WP8.9 judges the Sun's glitter at noon
   and low Sun, and the night sea for the sky's glow and dark water, on a list of ten lines.
   [What changed for each finding](../../../.orchestrate/evidence/WATERS/design-revision-9c0730b.md).
+- 2026-11-26 WP8 reflection composition. The mapped bank and a depth hit resolve to a single
+  validated scene source. Scenery and the first registered body blend in ray-depth order.
+  A Metal test verifies a nearer unregistered panel covers a registered body visible to the
+  camera. The dawn screen-edge seam is gone at native frame size. The Metal and hardware
+  Chrome retakes show the shore and pines fading into the sky across the updated inspection views.
+  [Target evidence](../../../.orchestrate/evidence/WATERS/WP8/composed-reflections/README.md).
