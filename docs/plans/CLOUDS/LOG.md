@@ -778,8 +778,9 @@
 
 - The merged cadence check rejected a clouds-absent run after one occluded Metal surface acquisition.
   AppKit reported zero window occlusion events and the panel stayed awake and unlocked. The default cadence
-  command now keeps each rejected attempt and starts a whole new series after occlusion, up to three
-  attempts in total. The CPU tests cover a fresh restart, the retry limit and propagation of other failures.
+  command now keeps each rejected attempt and starts a whole new series after occlusion or an Instruments
+  recording timeout, up to three attempts in total. The CPU tests cover fresh restarts, the retry limit
+  and propagation of other failures.
   [Retained arm replay](../../../.orchestrate/evidence/CLOUDS/WP19/occlusion-replay.log)
 
 - The review replay joins each lost refresh to the next shown drawable and its present call. The original

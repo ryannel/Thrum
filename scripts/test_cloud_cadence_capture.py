@@ -150,6 +150,19 @@ class WindRecovery(unittest.TestCase):
         self.assertEqual(collect.call_count, 3)
         self.assertEqual(len({call.args[0] for call in collect.call_args_list}), 3)
 
+    def test_cadence_restarts_after_a_recorder_timeout(self):
+        with (
+            patch.object(capture, 'series', side_effect=[
+                capture.RecordingTimeout('02-off'), {'cloud_runs': []},
+            ]) as collect,
+            redirect_stderr(StringIO()),
+            redirect_stdout(StringIO()),
+        ):
+            self.assertEqual(capture.run_wind('cadence', None), 0)
+        first, second = collect.call_args_list
+        self.assertNotEqual(first.args[0], second.args[0])
+        self.assertFalse(second.kwargs['resume'])
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -30,6 +30,11 @@ INSTRUMENT = ROOT / 'scripts/host_witness/presented_time.instrpkg'
 INSTRUMENT_PACKAGE = SCRATCH / 'ThrumPresentedTime.instrdst'
 TRACE_TEMPLATE = SCRATCH / 'PresentedTime.tracetemplate'
 
+
+class RecordingTimeout(InvalidMeasurement):
+    """Instruments timed out before providing its witness."""
+
+
 def prepare():
     require_unlocked_panel(wake=True)
     subprocess.run(['cargo', 'build', '--release', '--locked', '--offline',
@@ -214,6 +219,18 @@ def collect(arm, store, wind, *, diagnostic=False):
                        on_start=launched)
         if code or not (arm / 'refresh-account.tsv').is_file():
             raise InvalidMeasurement(f'{arm.name}: window did not finish the cadence record (exit {code})')
+    except RuntimeError as error:
+        if diagnostic or not isinstance(error.__cause__, subprocess.TimeoutExpired):
+            raise
+        try:
+            raw = kernel_recording(candidates)
+        except InvalidMeasurement:
+            pass
+        else:
+            save(arm / 'interrupted-scratch.json', {'path': str(raw), 'recorder_pid': recorder_pid,
+                 'owned_device': raw.stat().st_dev, 'owned_inode': raw.stat().st_ino})
+            kernel_recording(candidates).unlink()
+        raise RecordingTimeout(f'{arm.name}: {error}') from error
     finally:
         if power.poll() is None:
             power.terminate()
@@ -381,7 +398,7 @@ def series(output, *, diagnostics, resume=False):
 def run_wind(command, output, *, resume=False):
     diagnostics = command == 'cadence'
     work_package = 'WP19' if diagnostics else 'WP20'
-    # The shared-load cadence check can encounter transient occlusion. Preserve a
+    # The shared-load cadence check can encounter transient recording faults. Preserve a
     # rejected attempt and start at the first arm again. Explicit destinations
     # and the attended hold sitting keep their single-attempt behavior.
     attempts = 3 if diagnostics and output is None and not resume else 1
@@ -390,7 +407,7 @@ def run_wind(command, output, *, resume=False):
         destination = (output or WORKING / work_package / f'{command}-{stamp}').resolve()
         try:
             record = series(destination, diagnostics=diagnostics, resume=resume)
-        except OccludedMeasurement as error:
+        except (OccludedMeasurement, RecordingTimeout) as error:
             if attempt == attempts:
                 raise
             print(f'{error}. Rejected series: {destination / "series.json"}. '
