@@ -33,7 +33,12 @@ def ancestor_locks():
     report = json.loads(subprocess.check_output(
         [sys.executable, orchestration_script(), "locks", "--worktree", ROOT, "--json"],
         text=True, timeout=5))
-    processes = subprocess.check_output(["ps", "-axo", "pid=,ppid="], text=True, timeout=3)
+    command = ["ps", "-axo", "pid=,ppid="]
+    try:
+        processes = subprocess.check_output(command, text=True, timeout=3)
+    except subprocess.TimeoutExpired:
+        # Simulator startup can delay a process-table walk on a busy host.
+        processes = subprocess.check_output(command, text=True, timeout=12)
     parents = {int(pid): int(parent) for pid, parent in (line.split() for line in processes.splitlines())}
     ancestors = set()
     parent = os.getppid()

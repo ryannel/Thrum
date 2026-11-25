@@ -41,6 +41,32 @@ class SimulatedDevice:
         return self.invoke(list(argv), **kwargs)
 
 
+class SimulatorAdmission(unittest.TestCase):
+    def test_process_table_timeout_retries_and_verifies_the_ancestor(self):
+        command = ["ps", "-axo", "pid=,ppid="]
+        report = json.dumps({"locks": [{"lock": "simulator", "holders": [
+            {"pid": 55, "held_s": 100}, {"pid": 77, "held_s": 10}
+        ]}], "hold_limit_s": 1800})
+        with (patch.object(simulator, "orchestration_script", return_value="agent_loop.py"),
+              patch.object(simulator.os, "getppid", return_value=56),
+              patch.object(simulator.subprocess, "check_output", side_effect=[
+                  report, subprocess.TimeoutExpired(command, 3), "56 55\n55 1\n77 1\n"
+              ]) as check_output):
+            self.assertEqual(simulator.admission(), ({"pid": 55, "held_s": 100}, 1800))
+        self.assertEqual(check_output.call_count, 3)
+
+    def test_repeated_process_table_timeout_fails_closed(self):
+        command = ["ps", "-axo", "pid=,ppid="]
+        with (patch.object(simulator, "orchestration_script", return_value="agent_loop.py"),
+              patch.object(simulator.subprocess, "check_output", side_effect=[
+                  '{"locks": []}', subprocess.TimeoutExpired(command, 3),
+                  subprocess.TimeoutExpired(command, 12)
+              ]) as check_output):
+            with self.assertRaises(subprocess.TimeoutExpired):
+                simulator.admission()
+        self.assertEqual(check_output.call_count, 3)
+
+
 class SimulatorLifecycle(unittest.TestCase):
     def setUp(self):
         self.device = SimulatedDevice()
