@@ -75,3 +75,8 @@
   the JavaScript and Wasm facade allowlists. The three kit proof bundles exported the
   capture methods. The exact-baseline verifier repair still requires the ruling above.
   [Browser evidence](../../../.orchestrate/evidence/GAME-SPLIT/WP3/round-4/README.md)
+- 2026-11-25 WP3 rechecked the five items after the planner's ruling. The game-only Mac
+  tests and Wasm build passed. Both cooked tests and the pinned clear-sky test passed
+  on Metal, and the game-name check found zero violations. The browser and simulator
+  boundary evidence records which qualification hooks each build exposes.
+  [WP3 proof](../../../.orchestrate/evidence/GAME-SPLIT/WP3/resumed/README.md)
