@@ -930,7 +930,7 @@
     {
       "id": "WP7",
       "name": "The sky runs from clear through fair and broken to overcast and back, and its clouds drift, form, grow and thin",
-      "status": "not_started",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 1,
@@ -942,8 +942,8 @@
           "statement": "Under each of the four presets, from 2 m and from 40 m, at noon and at a 15\u00b0 Sun, the sky reads as that sky to the horizon: clear has no cloud; fair has scattered cumulus; broken has connected lumpy banks with irregular gaps and bright gap edges; overcast is a continuous low ceiling with soft relief and the Sun hidden.",
           "inspect": "Capture `fixed` stills for each preset, height and Sun. Judge contact sheets by preset, then native-size crops overhead, in the middle distance and at the horizon.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP7/fix/WP7.1-metal-appearance.md",
           "verdict": "",
           "review": ""
         },
@@ -953,8 +953,8 @@
           "check": "cargo test --locked --offline -p v1-game --test clouds_clear_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP7/display-time/WP7.2.stdout.txt",
           "verdict": "",
           "review": ""
         },
@@ -963,8 +963,8 @@
           "statement": "As the weather moves from clear to fair, to broken, to overcast and back to clear, a minute each, the sky changes with no pop, step or restart. No cloud switches on or off; a deck closes by thickening and by its gaps closing.",
           "inspect": "Capture a `realtime` sequence of the four changes from 40 m at noon. Judge consecutive frames at 1x across each change, whole and in native-size crops overhead.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP7/fix/phase-cycle-opinion.md",
           "verdict": "",
           "review": ""
         },
@@ -973,8 +973,8 @@
           "statement": "At 1\u00d7, in still air, at 10 m/s and at 40 m/s, and at 60\u00d7 at 40 m/s, clouds drift in world space at the wind's speed with their shade under them, and no texture slides inside a cloud's shape. Each submitted frame puts the clouds where its own display time has them: in a steady wind the travel between two frames is in proportion to the display time between them, so frames one refresh apart in display time take equal steps, and where a late frame makes the display time between two frames longer or shorter, the step is longer or shorter with it. Through a change of wind direction the clouds keep travelling and their path bends without a jump.",
           "inspect": "Capture `realtime` sequences of 20 seconds at each wind and rate and one across a 90\u00b0 change of direction, each with every frame's tick and display phase, which give its display time. Follow one cloud and its shade through consecutive frames, whole and in native-size crops. 1. In still air the cloud and its shade stay over the same ground. 2. At 10 m/s and at 40 m/s they travel together downwind, further each second at 40, and further again at 60\u00d7. 3. The relief inside the cloud stays attached to its outline. 4. In a steady wind, over six or more consecutive frames, each step of the cloud is in proportion to the display time between its two frames: equal steps where the frames are one refresh apart in display time, and a longer or shorter step only where the display time between them is longer or shorter. 5. Through the change of direction the cloud keeps travelling: from frame to frame its step changes gradually in length and heading, towards the new direction, with no jump, no step back and no frame that holds it still. A step that is longer or shorter because the display time between its two frames is, is no fault there either. A refresh the capture skipped is no fault in this item: whether the player sees a new frame at every refresh is WP20's claim.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP7/display-time/README.md",
           "verdict": "",
           "review": ""
         },
@@ -983,8 +983,8 @@
           "statement": "At 8x and at 60x, a cloud followed through its life is born, rises and thins away. Nothing reappears where it stood on a beat, a deck's gaps do not open and close in step, and nothing pops.",
           "inspect": "Capture `realtime` sequences at 8x and at 60x under the fair and the broken presets, from 40 m, each long enough to hold whole lives. Judge consecutive frames, following at least three clouds from birth to death, and then the whole frame for any rhythm.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP7/fix/WP7.5-metal-lifetimes.md",
           "verdict": "",
           "review": ""
         },
@@ -994,8 +994,8 @@
           "check": "cargo test --locked --offline -p thrum-clouds --test weather_range_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP7/display-time/WP7.6.stderr.txt",
           "verdict": "",
           "review": ""
         },
@@ -1004,8 +1004,8 @@
           "statement": "In Chrome the four presets at noon pass WP7.1's list, and a 60x sequence passes WP7.5's.",
           "inspect": "Capture the noon `fixed` stills and one `realtime` 60x sequence in Chrome. Judge them by those lists.",
           "target": "chrome-webgpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP7/fix/WP7.7-chrome.md",
           "verdict": "",
           "review": ""
         },
@@ -1015,8 +1015,8 @@
           "check": "python3 scripts/cloud_cost.py check --scene decks",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP7/display-time/WP7.8.stdout.txt",
           "verdict": "",
           "review": ""
         }

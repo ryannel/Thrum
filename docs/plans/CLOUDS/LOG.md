@@ -745,3 +745,11 @@
   from the account's rows, which stay bounded by the measured interval.
 - Assumption extended (WP20's line in PLAN.md): the stall limit, and only a run's longest stall is compared,
   not how many it has. WP19.4 and the witness's records are in the design, not in WP19's note.
+
+## WP7 cloud motion at display time
+
+- 2026-11-25 Five realtime Metal takes verify WP7.4 under the revised inspection. The cloud and its shade
+  hold in still air, travel together in wind, and bend without a jump through the 90° turn. At 60× the outline
+  travels about twice as far across a double display interval as across adjacent single intervals. The
+  three WP7 item commands passed on Metal. The previously inspected appearance, transitions and lifetimes
+  retain their Metal and Chrome evidence. [Builder evidence](../../../.orchestrate/evidence/CLOUDS/WP7/display-time/README.md)
