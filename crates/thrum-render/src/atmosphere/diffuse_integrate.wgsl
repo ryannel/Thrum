@@ -1,3 +1,4 @@
+
 @compute @workgroup_size(64)
 fn diffuse_main(@builtin(local_invocation_index) index: u32) {
     // Preserve the existing horizontal incident meter, including sample order

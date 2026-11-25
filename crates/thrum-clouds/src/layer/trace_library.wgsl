@@ -215,4 +215,3 @@ fn cloud_bank_light(source:vec3<f32>,solar:vec3<f32>,point:vec3<f32>,sigma:f32,
     let glare=1.0-0.70*smoothstep(0.72,0.96,sun_alignment);
     return mix(source,source*shade*glare+solar*rim,bank);
 }
-

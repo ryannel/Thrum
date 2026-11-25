@@ -1,3 +1,4 @@
+
 @compute @workgroup_size(8,8)
 fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
     let size=textureDimensions(transport);
