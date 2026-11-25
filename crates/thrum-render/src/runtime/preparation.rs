@@ -1,6 +1,9 @@
 //! One preparation body for initial and replacement scene resources.
 
-use super::{DeferredFrameTiming, FrameError, FrameSlot, FrameTimingBatch, IN_FLIGHT, SlotState};
+use super::{
+    CaptureLimits, DeferredFrameTiming, FrameError, FrameSlot, FrameTimingBatch, IN_FLIGHT,
+    SlotState, submitted_capture::validate_capture_budget,
+};
 #[cfg(not(target_arch = "wasm32"))]
 use crate::contribution::ContributionCandidate;
 use crate::contribution::SceneContribution;
@@ -722,7 +725,8 @@ pub(super) fn prepare_capture_slots(
     profile: Option<SurfaceProfile>,
     source: CaptureSource,
 ) -> Result<Vec<FrameSlot>, FrameError> {
-    TargetPreparation::new(prepared).prepare_slots(queue, extent, surface, profile, source, None)
+    TargetPreparation::new(prepared)
+        .prepare_slots(queue, extent, surface, profile, source, None, None)
 }
 
 impl TargetPreparation {
@@ -734,6 +738,7 @@ impl TargetPreparation {
         profile: Option<SurfaceProfile>,
         source: CaptureSource,
         cancel: Option<&AtomicBool>,
+        capture_limits: Option<CaptureLimits>,
     ) -> Result<Vec<FrameSlot>, FrameError> {
         let capabilities = &self.capabilities;
         let mut targets: Vec<(FrameTarget, _, u32)> = Vec::with_capacity(IN_FLIGHT);
@@ -743,12 +748,18 @@ impl TargetPreparation {
             }
             let (target, timing_layout, passes) = match &self.inputs {
                 TargetInputs::ThreeD(prepared) => {
-                    let mut target = OffscreenTarget::with_target_inputs(
+                    let compiled = prepared
+                        .compile_graph(extent[0], extent[1], source, None)
+                        .map_err(|error| FrameError::gpu("scene target", error))?;
+                    if let Some(limits) = capture_limits {
+                        validate_capture_budget(compiled.capture_extent(), source, limits)?;
+                    }
+                    let mut target = OffscreenTarget::from_compiled_graph(
                         capabilities.device(),
                         prepared,
-                        extent[0],
-                        extent[1],
+                        extent,
                         source,
+                        compiled,
                     )
                     .map_err(|error| FrameError::gpu("scene target", error))?;
                     if let Some((first, _, _)) = targets.first() {
@@ -763,6 +774,9 @@ impl TargetPreparation {
                     (FrameTarget::ThreeD(Box::new(target)), timing_layout, passes)
                 }
                 TargetInputs::TwoD(prepared) => {
+                    if let Some(limits) = capture_limits {
+                        validate_capture_budget(extent, source, limits)?;
+                    }
                     let target = SpriteTarget::prepare(prepared, extent, source, profile)
                         .map_err(|error| FrameError::gpu("sprite target", error))?;
                     (

@@ -1955,6 +1955,12 @@ pub struct OffscreenTarget {
     capture_layout: readback::CaptureLayout,
     frame_revision: u64,
 }
+
+#[cfg(test)]
+std::thread_local! {
+    pub(crate) static OFFSCREEN_TARGET_ALLOCATION_STARTS: std::cell::Cell<u32> = const { std::cell::Cell::new(0) };
+}
+
 impl OffscreenTarget {
     /// Air-shadow height field, when CPU readback was requested at preparation.
     #[cfg(all(feature = "creation-counters", target_os = "macos"))]
@@ -2019,34 +2025,34 @@ impl OffscreenTarget {
         height: u32,
         capture_source: CaptureSource,
     ) -> Result<Self, RenderError> {
-        Self::with_target_inputs(
-            device,
-            &prepared.target_inputs(),
-            width,
-            height,
-            capture_source,
-        )
+        let inputs = prepared.target_inputs();
+        if !inputs.capabilities.matches(device) {
+            return Err(RenderError::StaleTarget);
+        }
+        let compiled = inputs.compile_graph(width, height, capture_source, None)?;
+        Self::from_compiled_graph(device, &inputs, [width, height], capture_source, compiled)
     }
 
     #[expect(
         clippy::too_many_lines,
         reason = "prepares the scene attachments in dependency order"
     )]
-    pub(crate) fn with_target_inputs(
+    pub(crate) fn from_compiled_graph(
         device: &wgpu::Device,
         prepared: &SyntheticTargetInputs,
-        width: u32,
-        height: u32,
+        [width, height]: [u32; 2],
         capture_source: CaptureSource,
+        compiled: scene_graph::CompiledScene,
     ) -> Result<Self, RenderError> {
         if !prepared.capabilities.matches(device) {
             return Err(RenderError::StaleTarget);
         }
-        let compiled = prepared.compile_graph(width, height, capture_source, None)?;
         let recipe = prepared
             .capabilities
             .recipe()
             .map_err(RenderError::Recipe)?;
+        #[cfg(test)]
+        OFFSCREEN_TARGET_ALLOCATION_STARTS.with(|count| count.set(count.get() + 1));
         let day_depth = compiled.prepare_day_depth(device, recipe, width, height);
         let scene_graph::CompiledScene {
             day,

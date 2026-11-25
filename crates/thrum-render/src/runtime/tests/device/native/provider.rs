@@ -540,8 +540,38 @@ fn native_provider_crop_changes_inside_one_generation_and_owns_timing() {
         let mut sdr = Vec::new();
         for host in [&mut metal, &mut twin] {
             host.disable_submitted_capture();
-            host.enable_submitted_capture_from(2, CaptureLimits::default(), CaptureSource::Sdr)
+            let limits = CaptureLimits {
+                staging_slots: 1,
+                cpu_buffers: 1,
+                byte_allowance: 70_000,
+            };
+            host.enable_submitted_capture_from(2, limits, CaptureSource::SceneLinear)
+                .expect("scene-linear uses the 64×64 scene grid");
+            host.disable_submitted_capture();
+
+            // This allowance fits 64×64 SDR, but not the provider's 96×64 SDR.
+            let allocations = crate::synthetic::OFFSCREEN_TARGET_ALLOCATION_STARTS.get();
+            let tight = CaptureLimits {
+                byte_allowance: 40_000,
+                ..limits
+            };
+            assert!(matches!(
+                host.enable_submitted_capture_from(3, tight, CaptureSource::Sdr),
+                Err(FrameError::InvalidState(
+                    "capture pixel-byte allowance exhausted"
+                ))
+            ));
+            assert_eq!(
+                crate::synthetic::OFFSCREEN_TARGET_ALLOCATION_STARTS.get(),
+                allocations
+            );
+            assert_eq!(
+                host.slots[0].target.capture_source(),
+                CaptureSource::SceneLinear
+            );
+            host.enable_submitted_capture_from(3, limits, CaptureSource::Sdr)
                 .unwrap();
+            assert!(crate::synthetic::OFFSCREEN_TARGET_ALLOCATION_STARTS.get() > allocations);
             assert!(
                 record(host, SECOND)
                     .submit(Some(&surface))

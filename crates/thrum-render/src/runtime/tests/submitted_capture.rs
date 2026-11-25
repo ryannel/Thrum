@@ -992,20 +992,31 @@ fn linear_capture_allowance_is_validated_before_target_replacement() {
         return;
     };
     pollster::block_on(async {
-        let (mut host, _output) =
+        let (mut host, output) =
             Box::pin(host_and_output(&test_gpu, wgpu::TextureFormat::Rgba8Unorm)).await;
         let limits = crate::runtime::CaptureLimits {
             staging_slots: 1,
             cpu_buffers: 1,
             byte_allowance: 30_000,
         };
-        assert!(
-            host.enable_submitted_capture_from(1, limits, CaptureSource::SceneLinear)
-                .is_err()
+        let allocations = crate::synthetic::OFFSCREEN_TARGET_ALLOCATION_STARTS.get();
+        assert!(matches!(
+            host.enable_submitted_capture_from(1, limits, CaptureSource::SceneLinear),
+            Err(super::super::FrameError::InvalidState(
+                "capture pixel-byte allowance exhausted"
+            ))
+        ));
+        assert_eq!(
+            crate::synthetic::OFFSCREEN_TARGET_ALLOCATION_STARTS.get(),
+            allocations
         );
         assert_eq!(host.slots[0].target.capture_source(), CaptureSource::Sdr);
         assert!(host.submitted_capture.is_none());
         host.enable_submitted_capture_with_limits(2, limits)
             .unwrap();
+        submit(&mut host, &output);
+        let captured = image(&mut host);
+        assert_eq!(captured.pixel_source, CaptureSource::Sdr);
+        assert_eq!(captured.rgba.len(), 65 * 37 * 4);
     });
 }

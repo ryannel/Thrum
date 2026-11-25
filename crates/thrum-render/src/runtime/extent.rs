@@ -81,6 +81,7 @@ impl ExtentPrepareInputs {
                 Some(presenter.profile()),
                 self.source,
                 Some(cancel),
+                None,
             )?;
             if cancel.load(Ordering::Acquire) {
                 return Ok(None);

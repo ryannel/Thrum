@@ -491,6 +491,8 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             || source == CaptureSource::Edr
             || self.slots[0].target.capture_source() == source
         {
+            let extent = capture_extent(source, &self.slots[0].target, self.presenter.as_ref());
+            validate_capture_budget(extent, source, limits)?;
             None
         } else {
             if self.pending_frames() != 0 {
@@ -498,14 +500,16 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                     "capture stage change requires retired frames",
                 ));
             }
-            let mut slots = super::preparation::prepare_capture_slots(
-                &self.prepared,
-                &self.queue,
-                self.render_extent,
-                self.presenter.is_some(),
-                self.presenter.as_ref().map(SurfacePresenter::profile),
-                source,
-            )?;
+            let mut slots = super::preparation::TargetPreparation::new(&self.prepared)
+                .prepare_slots(
+                    &self.queue,
+                    self.render_extent,
+                    self.presenter.is_some(),
+                    self.presenter.as_ref().map(SurfacePresenter::profile),
+                    source,
+                    None,
+                    Some(limits),
+                )?;
             super::preparation::bind_presenter(
                 &self.prepared,
                 &mut slots,
@@ -522,7 +526,6 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         };
         let target = &replacement.as_ref().unwrap_or(&self.slots)[0].target;
         let extent = capture_extent(source, target, self.presenter.as_ref());
-        validate_capture_budget(extent, source, spec.limits)?;
         let mut tap = Tap::empty(spec, source, limits, self.generation, extent);
         tap.spare_timers = CopyTiming::prepare(
             self.prepared.capabilities(),
@@ -775,7 +778,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     }
 }
 
-fn validate_capture_budget(
+pub(super) fn validate_capture_budget(
     extent: [u32; 2],
     source: CaptureSource,
     limits: CaptureLimits,

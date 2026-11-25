@@ -15,7 +15,7 @@ use crate::pass_key::{PassKey, PipelineRole};
 use crate::visibility::VisibilityPrepared;
 use std::collections::BTreeSet;
 
-pub(super) struct CompiledScene {
+pub(crate) struct CompiledScene {
     pub(super) capture_layout: super::readback::CaptureLayout,
     pub(super) day: SceneGraphs<CompiledGraph>,
     pub(super) night: Option<SceneGraphs<CompiledGraph>>,
@@ -23,6 +23,10 @@ pub(super) struct CompiledScene {
 }
 
 impl CompiledScene {
+    pub(crate) fn capture_extent(&self) -> [u32; 2] {
+        self.capture_layout.extent
+    }
+
     /// The most timestamped passes any variant records.
     pub(super) fn pipeline_pass_count(&self) -> usize {
         [Some(&self.day), self.night.as_ref()]
@@ -344,7 +348,7 @@ impl super::SyntheticTargetInputs {
         clippy::too_many_lines,
         reason = "graph assembly follows the full frame's dependency order"
     )]
-    pub(super) fn compile_graph(
+    pub(crate) fn compile_graph(
         &self,
         width: u32,
         height: u32,
