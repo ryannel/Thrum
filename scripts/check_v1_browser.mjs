@@ -82,11 +82,11 @@ class Cdp {
       this.pending.clear();
     });
   }
-  call(method, params = {}, sessionId) {
+  call(method, params = {}, sessionId, timeoutMs = 15000) {
     return new Promise((resolve, reject) => {
       if (this.socket.readyState !== WebSocket.OPEN) { reject(new Error(`CDP connection is not open: ${method}`)); return; }
       const id = ++this.next;
-      const timer = setTimeout(() => { this.pending.delete(id); reject(new Error(`CDP timeout: ${method}`)); }, 15000);
+      const timer = setTimeout(() => { this.pending.delete(id); reject(new Error(`CDP timeout: ${method}`)); }, timeoutMs);
       this.pending.set(id, { resolve, reject, timer });
       try { this.socket.send(JSON.stringify({ id, method, params, ...(sessionId ? { sessionId } : {}) })); }
       catch (error) { clearTimeout(timer); this.pending.delete(id); reject(error); }
@@ -105,10 +105,12 @@ async function assets(directory) {
 
 async function qualifyGovernor(cdp, origin, output, wasm) {
   const arms = [];
-  // An occasional missed callback does not trigger the animation-frame policy.
-  // The pass must sustain long intervals even with the faster Metal queue.
-  const rounds = 12288;
+  const deadlineMs = 24000;
+  const readIntervalMs = 2000;
   for (const timestamps of [true, false]) {
+    // Timestamp queries reveal GPU pressure before it produces consecutive
+    // long animation-frame intervals. The fallback needs more GPU work.
+    const rounds = timestamps ? 8192 : 12288;
     const { targetId } = await cdp.call('Target.createTarget', { url: 'about:blank' });
     const { sessionId } = await cdp.call('Target.attachToTarget', { targetId, flatten: true });
     try {
@@ -128,23 +130,28 @@ async function qualifyGovernor(cdp, origin, output, wasm) {
           const rows = [];
           const trace = await new Promise((resolve, reject) => {
             let start;
-            let nextRead = 4000;
+            let nextRead = ${readIntervalMs};
             const tick = now => {
               try {
                 start ??= now;
                 const elapsed = now - start;
                 frames.push(elapsed);
                 game.frame(now);
-                // The host retains a bounded number of rows. Read before it fills
-                // so the entire recovery window survives even at higher refresh rates.
+                // Drain the bounded trace while waiting for a full, sustained recovery.
                 if (elapsed >= nextRead) {
                   const trace = JSON.parse(game.take_trace());
                   rows.push(...trace.rows);
-                  if (elapsed >= 12000) {
-                    resolve({ ...trace, rows });
+                  const baseline = rows.findLast(row => row.tick < trace.load_start);
+                  const latest = rows.at(-1);
+                  const reduced = baseline && rows.findLastIndex(row => row.scale < baseline.scale);
+                  const restored = reduced >= 0 && rows[reduced + 1];
+                  const settled = restored && restored.tick >= trace.load_end &&
+                    latest.time_ms - restored.time_ms >= 1000;
+                  if (settled || elapsed >= ${deadlineMs}) {
+                    resolve({ ...trace, rows, settled: Boolean(settled) });
                     return;
                   }
-                  nextRead += 4000;
+                  nextRead += ${readIntervalMs};
                 }
                 requestAnimationFrame(tick);
               } catch (error) { reject(error); }
@@ -155,7 +162,7 @@ async function qualifyGovernor(cdp, origin, output, wasm) {
           return { ...trace, frames };
         })()`,
         returnByValue: true, awaitPromise: true,
-      }, sessionId);
+      }, sessionId, deadlineMs + 10000);
       if (reply.exceptionDetails) throw new Error(JSON.stringify(reply.exceptionDetails));
       const trace = reply.result.value;
       const source = timestamps ? 'Gpu' : 'AnimationFrame';
@@ -166,19 +173,19 @@ async function qualifyGovernor(cdp, origin, output, wasm) {
       const minimum = Math.min(...loaded.map(row => row.scale));
       const recovery = drop && trace.rows.find(row =>
         row.tick >= trace.load_end && row.reason === 'Recovery' && row.scale > minimum);
-      if (prior?.source !== source || !drop || !recovery ||
+      if (prior?.source !== source || !drop || !recovery || !trace.settled ||
           trace.rows.at(-1)?.scale < prior.scale || drop.source !== source ||
           (timestamps && !loaded.some(row => row.debug_load_ns > 0)) ||
           (!timestamps && trace.rows.some(row => row.debug_load_ns !== null))) {
         throw new Error(`Governor did not lower and recover on ${source} (before: ${prior?.scale}, loaded: ${minimum}, final: ${trace.rows.at(-1)?.scale}), see ${output}`);
       }
-      arms.push({ source, drop, recovery, presented: trace.presented });
+      arms.push({ source, rounds, drop, recovery, settled: trace.rows.at(-1), presented: trace.presented });
     } finally {
       await cdp.call('Target.closeTarget', { targetId });
     }
   }
   const record = {
-    case: 'governor', target: 'chrome-webgpu', arms, rounds, wasm: wasm.sha256,
+    case: 'governor', target: 'chrome-webgpu', arms, wasm: wasm.sha256,
     commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repo, encoding: 'utf8' }).trim(),
   };
   await fs.writeFile(path.join(output, 'governor.json'), JSON.stringify(record, null, 2));
