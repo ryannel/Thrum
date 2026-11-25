@@ -896,3 +896,9 @@
   patch is already 39–42% neutral bright before the expected onset and about 43% across it. In the
   surface shader the breaker face has to exceed the overlapping transported lace to change coverage.
   [Submitted-pixel diagnostic](../../../.orchestrate/evidence/WATERS/WP13/gale-onset-brightness.log).
+
+- 2026-11-25 WP13.5 passed on retained portable Metal motion under the revised checklist. The lip
+  pitches and peels into a connected bore and retreating swash. At 1 km in both winds, successive
+  fronts start at different distances and run in. The cut and regular-wave checks support the shared
+  wet edge and retained run-up and draw-back.
+  [Breaker inspection and receipts](../../../.orchestrate/evidence/WATERS/WP13/breaker-motion-inspection.md).
