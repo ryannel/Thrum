@@ -694,7 +694,7 @@
         {
           "verdict": "fail",
           "commit": "5c71e09c278acc525d72da53abd3e2e2bd4c594e",
-          "review": ".orchestrate/evidence/APPLE-TILE/WP13-review.md",
+          "review": ".orchestrate/evidence/APPLE-TILE/WP13-review-2.md",
           "items": {
             "D13.1": "pass",
             "D13.2": "pass"
@@ -721,6 +721,31 @@
             "turns": 1
           },
           "at": "2026-11-25T15:46:17Z"
+        },
+        {
+          "verdict": "pass",
+          "commit": "e6d68d4209a261401fc0ade3fa4c225ca9fb2a09",
+          "review": ".orchestrate/evidence/APPLE-TILE/WP13-review.md",
+          "items": {
+            "D13.1": "pass",
+            "D13.2": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 89349,
+            "cached": 1018112,
+            "output": 4153,
+            "turns": 1
+          },
+          "at": "2026-11-25T16:08:46Z"
         }
       ],
       "authorised": {
@@ -758,6 +783,13 @@
           "output": 111969,
           "turns": 3
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "e6d68d4209a261401fc0ade3fa4c225ca9fb2a09",
+        "review": ".orchestrate/evidence/APPLE-TILE/WP13-review.md",
+        "checked": "f7c1623cb8a653b33693e65f64c2f31795857c78",
+        "at": "2026-11-25T16:08:46Z"
       }
     }
   },
