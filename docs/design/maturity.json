@@ -7,11 +7,11 @@
   "render_2d": {
     "scope": "RENDER-2D sprite scenes and the retained Crowd replay",
     "implementation": "2D hosts prepare the sprite and display-output graph on the drawable pixel grid. Embedded and cooked sheets feed one ordered draw. World rows use adjacent immutable tick endpoints. Frame rows use the first strict sort crossing on their layer.",
-    "functional_validation": "Metal readbacks exercise aligned texels, interpolation and slot reuse, exact and retained order, mixed world and frame rows, and sheet lease transitions. Chrome exercises portable WebGPU submission and cooked-sheet changes. The V1 sprite scene on the iPhone 18 Pro simulator presents 10,000 world rows and an exact registration card through rotation, background and foreground.",
-    "experienced_quality": "Submitted SDR engine captures cover the reference Crowd at 10,000 bodies and the V1 sprite registration card. Simulator UI inspection uses held portrait and landscape frames.",
+    "functional_validation": "Metal readbacks exercise aligned texels, interpolation and slot reuse, exact and retained order, mixed world and frame rows, and sheet lease transitions. Chrome exercises portable WebGPU submission and cooked-sheet changes. The V1 sprite scene on the iPhone 18 Pro simulator presents 10,000 world rows and an exact registration card through rotation, background and foreground. The complete retained Crowd replay at 2,000, 5,000 and 10,000 bodies matched every checkpoint and its timeline fold on Metal and Chrome WebGPU, with one sprite draw per publication.",
+    "experienced_quality": "Elapsed SDR engine captures cover the 10,000-body Crowd at 1920\u00d71080 in both the whole and following views on Metal and Chrome. Held Metal stills cover 3456\u00d72234. Simulator UI inspection uses held portrait and landscape frames.",
     "platform_cost_baselines": {
-      "mac-metal": "Packed Crowd release takes at 1920\u00d71080 and 3456\u00d72234 are measured under shared load.",
-      "chrome-webgpu": "Packed Crowd release takes at 1920\u00d71080 are measured under shared load.",
+      "mac-metal": "Packed Crowd release takes at 1920\u00d71080 and 3456\u00d72234 were measured under shared load. One 10,000-body take at 3456\u00d72234 flagged the 120 Hz tripwire at 8.498 ms by the sum of CPU wall and GPU span p95 values.",
+      "chrome-webgpu": "Packed Crowd release takes at 1920\u00d71080 were measured under shared load. The local cost profile uses a fixed Metal timestamp conversion period and full-precision counters.",
       "ios-sim": "Function only on the iPhone 18 Pro simulator."
     },
     "not_run": [

@@ -308,3 +308,19 @@
   drew all three submitted art generations.
   [Metal motion and ordering](../../../.orchestrate/evidence/RENDER-2D/WP4/review-repair/mac/inspection.md) ·
   [Guide proof](../../../.orchestrate/evidence/RENDER-2D/WP4/review-repair/guide/inspection.md)
+
+## WP5 Crowd view, simulator and creator guide
+
+- 2026-11-25 Added the Crowd view on the shared window and browser shells. It consumes immutable
+  SIM-2D body components and their checked previous poses. All retained checkpoints and timeline folds
+  matched on Metal and Chrome at 2,000, 5,000 and 10,000 bodies with one sprite draw per tick.
+  The independent overlap sweep selected the 0.06 band and verified all 9,014 near-pair rank changes.
+- The packed release takes matched both timed checkpoints. One full-size Metal take crossed the
+  120 Hz tripwire under shared load. Metal and Chrome captures retained over twenty seconds in each
+  view. The violet projectile and gold hit flash follow the retained Crowd events. Crops and the
+  worst geometric ordering pair accompany the inspection.
+- The V1 sprite card matched the CPU texels on the iPhone 18 Pro simulator in portrait and landscape.
+  Drawing resumed after rotation and backgrounding. The Metal checks cover mixed-row ordering and
+  independent sprite passes in one submission. A fresh reader exercised the creator guide and the
+  revised walkthrough produced a viewable submitted still.
+  [Target evidence](../../../.orchestrate/evidence/RENDER-2D/WP5/README.md)

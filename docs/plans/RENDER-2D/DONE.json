@@ -572,10 +572,10 @@
           "ask": "Does the view depend on SIM-2D's rule package and draw through the public sprite interface only? Does the run report slots reused and rows that skipped interpolation, each above zero? Is the retained digest file SIM-2D's own, unchanged?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP5/mac-replay.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP5.2",
@@ -583,10 +583,10 @@
           "check": "python3 scripts/render2d.py crowd --target chrome-webgpu",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP5/chrome-replay-final.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP5.3",
@@ -594,10 +594,10 @@
           "check": "python3 scripts/render2d.py band --target mac-metal",
           "ask": "Is the band the crowd view uses the value the record derives, with the reasoning stated? Are the counts taken over pairs that overlap on screen? Is the pair rule checked across the whole run by code that does not share the order's own update? Are the out-of-order figures recorded as measured, with none treated as a pass mark?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP5/band.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP5.4",
@@ -606,10 +606,10 @@
           "ask": "Do the cost takes draw the retained Crowd trace through the crowd view at its normal packing and sprite size? Can the check reject V1 field samples and samples from a run other than the measured replay, even when the row counts and timing fields match? Is the pass based on workload identity and record completeness, with reported times used as tripwires?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP5/mac-costs-art.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP5.5",
@@ -617,30 +617,30 @@
           "check": "python3 scripts/render2d.py crowd-costs --target chrome-webgpu",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP5/chrome-costs-art.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP5.6",
           "statement": "In real time on the Mac the crowd of 10,000 reads clearly: players, enemies and projectiles can be told apart at a glance, the horde moves as one smooth mass, nothing flickers where bodies overlap, a body clearly lower on the screen is in front of the one it overlaps, a spawn and a death are clean, and a hit flash and a projectile's glow show in the thick of it.",
           "inspect": "Capture the crowd view at 10,000 with T2 engine capture: in `realtime` mode at 1920\u00d71080, at least twenty seconds from a view of the whole crowd and twenty from a view close on one player, and `fixed` stills of both views at 3456\u00d72234. Judge consecutive frames at 1x and the stills, whole and in native-size crops of the densest overlap, a player, and a projectile hit.",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP5/mac-capture/inspection.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP5.7",
           "statement": "In real time in Chrome the crowd of 10,000 reads clearly, moves smoothly and does not flicker where bodies overlap.",
           "inspect": "Capture the crowd view at 10,000 in Chrome with T2 engine capture in `realtime` mode: at least twenty seconds from a view of the whole crowd and twenty from a view close on one player. Judge consecutive frames at 1x, whole and in native-size crops of the densest overlap and a player.",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP5/chrome-capture/inspection.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP5.8",
@@ -648,50 +648,50 @@
           "check": "python3 scripts/render2d_sim.py",
           "lock": "simulator",
           "target": "ios-sim",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP5/ios-final/report.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP5.9",
           "statement": "On the simulator's screen the sprite scene is upright in both orientations and inside the screen's bounds, with the card's texels square.",
           "inspect": "Take `simctl` screenshots in portrait and in landscape, beside the engine's capture of the same held frames. Judge each whole and in native-size crops of the card. Function only.",
           "target": "ios-sim",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP5/ios-final/inspection.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP5.10",
           "statement": "The engine crates name no game's type, both proof scenes draw through the public sprite interface alone, and the sprite pass can run a second time in a frame with another target, view and row list.",
           "ask": "Does `thrum-render`, `thrum-asset`, `thrum-asset-gpu` or `thrum-cook` name a type, constant or sheet of the V1 game, the crowd or SWARM? Do the sprite scene and the crowd view reach the pass only through the interfaces the design lists? Does the pass take its target, view and rows as inputs, with no state that assumes one instance a frame?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP5/code-audit/inspection.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP5.11",
           "statement": "A guide linked from the creator guide shows how to declare a 2D scene, provide sheets, map components to world rows, supply a view and frame rows, choose layers and a band, and pick a scale for a window. It explains linear-light blending and the eight-sheet limit. The guide and public row documentation give the zero-band tie rule, frame-row placement in a banded inversion and higher-layer placement for marks that must cover a body.",
           "ask": "Do the guide's commands and code run at the claimed commit? Do the guide and public row documentation give the same frame-row placement as mechanism 4 for both zero band and its A, B, F example?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP5/guide/inspection.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP5.12",
           "statement": "The maturity ledger says what this module proved and what it did not.",
           "ask": "Do the ledger's rows for 2D keep implementation, correctness, visuals and device results apart? Do they name as not run: motion measured on the built-in panel itself, how values above white look on an EDR display, a physical iPhone, a Mac window on a display of density 1, Android, and any browser other than Chrome?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP5/code-audit/maturity.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP5.14",
@@ -699,10 +699,10 @@
           "check": "THRUM_REQUIRE_GPU=1 cargo test --locked --offline -p thrum-render --test sprite_order",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP5/order-target.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         }
       ],
       "failed_reviews": 0,
