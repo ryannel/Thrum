@@ -723,7 +723,7 @@ impl TargetPreparation {
         cancel: Option<&AtomicBool>,
     ) -> Result<Vec<FrameSlot>, FrameError> {
         let capabilities = &self.capabilities;
-        let mut slots: Vec<FrameSlot> = Vec::with_capacity(IN_FLIGHT);
+        let mut targets: Vec<(FrameTarget, _, u32)> = Vec::with_capacity(IN_FLIGHT);
         for _ in 0..IN_FLIGHT {
             if cancel.is_some_and(|flag| flag.load(Ordering::Acquire)) {
                 return Err(FrameError::InvalidState("target preparation cancelled"));
@@ -738,8 +738,8 @@ impl TargetPreparation {
                         source,
                     )
                     .map_err(|error| FrameError::gpu("scene target", error))?;
-                    if let Some(first) = slots.first() {
-                        target.share_view_history(prepared, &first.target);
+                    if let Some((first, _, _)) = targets.first() {
+                        target.share_view_history(prepared, first);
                     }
                     let timing_layout = self.timing.map(|layout| layout.with_stars(&target));
                     let passes = target.timed_pass_count();
@@ -755,16 +755,22 @@ impl TargetPreparation {
                     )
                 }
             };
-            let timings = GpuTimings::new(capabilities, queue, passes + u32::from(surface))
-                .map_err(|error| FrameError::gpu("scene timings", error))?;
-            // Native 3D can release the render target when its GPU work
-            // completes, while a second prepared batch maps its timestamps.
+            targets.push((target, timing_layout, passes + u32::from(surface)));
+        }
+        let timings = GpuTimings::for_slots(
+            capabilities,
+            queue,
+            std::array::from_fn::<_, IN_FLIGHT, _>(|index| targets[index].2),
+        )
+        .map_err(|error| FrameError::gpu("scene timings", error))?;
+        let mut slots = Vec::with_capacity(IN_FLIGHT);
+        for ((target, timing_layout, _), timings) in targets.into_iter().zip(timings) {
+            // Native 3D releases the render slot while a separate batch maps.
             let deferred_timing = if cfg!(not(target_arch = "wasm32"))
                 && timings.is_enabled()
                 && matches!(&target, FrameTarget::ThreeD(_))
             {
-                let queries = GpuTimings::new(capabilities, queue, timings.capacity())
-                    .map_err(|error| FrameError::gpu("deferred scene timings", error))?;
+                let queries = timings.spare_readback(capabilities.device());
                 Some(DeferredFrameTiming {
                     batch: FrameTimingBatch {
                         queries,

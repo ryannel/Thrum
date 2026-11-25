@@ -2880,7 +2880,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         // Inspect every completed native segment before resolving any slot's
         // queries: a later failed slot must also forbid earlier readback work.
         self.check_native_completion()?;
-        self.collect_frame_timings()?;
+        self.collect_frame_timings();
         for slot in self.slots.iter_mut().chain(&mut self.retired_slots) {
             let state = std::mem::replace(&mut slot.state, SlotState::Free);
             match state {
@@ -2926,8 +2926,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                         Err(error) => {
                             slot.timing
                                 .refuse_timing(&mut sample, &mut self.timing_stats, error);
-                            slot.timing
-                                .recover_timings(self.prepared.capabilities(), &self.queue)?;
+                            slot.timing.queries.recover_readback(&self.device);
                             if let Some(governor) = &mut self.governor {
                                 governor.observe(&sample);
                             }

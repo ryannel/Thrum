@@ -12,6 +12,14 @@ use std::{
 
 use crate::capabilities::DeviceCapabilities;
 
+mod query_sets;
+pub use query_sets::create_timestamp_query_set;
+#[cfg(all(
+    feature = "creation-counters",
+    any(target_os = "macos", target_os = "ios")
+))]
+pub use query_sets::{TimestampQueryRequestStage, with_timestamp_query_request_probe};
+
 /// The timing bucket a pass declares. Every graph pass names one, and the frame
 /// timing feed sums each bucket by it, never by a pass's name, so a renamed pass
 /// keeps its bucket and a new pass cannot be left out of every bucket.
@@ -439,6 +447,10 @@ impl FrameCounters {
 pub enum TimingError {
     /// Zero/overflowing query count or invalid timestamp period.
     InvalidCapacity,
+    /// The enabled device has no timestamp counter set.
+    TimestampQueriesUnavailable,
+    /// Metal has no room for the requested timestamp query sets in this process.
+    TimestampQuerySetsExhausted,
     /// All reserved pass pairs are used.
     Capacity,
     /// Pending readback cannot be overwritten or resolved twice.
@@ -462,6 +474,10 @@ impl std::fmt::Display for TimingError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::InvalidCapacity => f.write_str("Timestamp query capacity or period is invalid"),
+            Self::TimestampQueriesUnavailable => f.write_str("Timestamp queries are unavailable"),
+            Self::TimestampQuerySetsExhausted => {
+                f.write_str("Metal process ran out of timestamp query sets")
+            }
             Self::Capacity => f.write_str("All timestamp query pairs are in use"),
             Self::Busy => f.write_str("A timestamp readback is already pending"),
             Self::MapFailed => f.write_str("Timestamp readback mapping failed"),
@@ -481,7 +497,6 @@ impl std::fmt::Display for TimingError {
 impl std::error::Error for TimingError {}
 
 struct Enabled {
-    query: wgpu::QuerySet,
     resolve: wgpu::Buffer,
     readback: wgpu::Buffer,
     period: f64,
@@ -496,6 +511,35 @@ struct Enabled {
 }
 
 impl Enabled {
+    fn new(device: &wgpu::Device, capacity: u32, period: f64) -> Self {
+        let size = u64::from(capacity) * 2 * u64::from(wgpu::QUERY_SIZE);
+        let resolve = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("thrum timestamp resolve"),
+            size,
+            usage: wgpu::BufferUsages::QUERY_RESOLVE | wgpu::BufferUsages::COPY_SRC,
+            mapped_at_creation: false,
+        });
+        let readback = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("thrum timestamp readback"),
+            size,
+            usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
+            mapped_at_creation: false,
+        });
+        Self {
+            resolve,
+            readback,
+            period,
+            capacity,
+            names: PassNames::with_capacity(capacity as usize),
+            frame: None,
+            results: Vec::with_capacity(capacity as usize),
+            preceding_gaps: Vec::with_capacity(capacity as usize),
+            timed_pass_span: None,
+            completion: Completion::new(),
+            phase: Phase::Recording,
+        }
+    }
+
     fn map_readback(&mut self, encoder: &mut wgpu::CommandEncoder, bytes: u64) {
         let mut ticket = self.completion.arm();
         self.phase = Phase::Mapping;
@@ -614,6 +658,7 @@ impl PassNames {
 /// are collected. Disabled batches produce `None` rather than fake zero timings.
 pub struct GpuTimings {
     generation: u64,
+    query: Option<wgpu::QuerySet>,
     enabled: Option<Enabled>,
     last_counter: u64,
 }
@@ -655,68 +700,80 @@ impl GpuTimings {
     ///
     /// # Errors
     ///
-    /// Returns an error if the query count or timestamp period is invalid.
+    /// Returns an error if the query count or timestamp period is invalid, or
+    /// if the device cannot allocate its timestamp query set.
     pub fn new(
         capabilities: &DeviceCapabilities,
         queue: &wgpu::Queue,
         max_passes: u32,
     ) -> Result<Self, TimingError> {
+        let [timings] = Self::for_slots(capabilities, queue, [max_passes])?;
+        Ok(timings)
+    }
+
+    // Admit all slots together: a refused host leaves no query sets behind.
+    pub(crate) fn for_slots<const N: usize>(
+        capabilities: &DeviceCapabilities,
+        queue: &wgpu::Queue,
+        max_passes: [u32; N],
+    ) -> Result<[Self; N], TimingError> {
+        let generation = capabilities.generation();
         if !capabilities
             .features()
             .contains(wgpu::Features::TIMESTAMP_QUERY)
         {
-            return Ok(Self {
-                generation: capabilities.generation(),
+            return Ok(max_passes.map(|_| Self {
+                generation,
+                query: None,
                 enabled: None,
                 last_counter: 0,
-            });
+            }));
         }
-        let device = capabilities.device();
-        let count = max_passes
-            .checked_mul(2)
-            .filter(|n| *n > 0 && *n <= wgpu::QUERY_SET_MAX_QUERIES)
-            .ok_or(TimingError::InvalidCapacity)?;
         let period = f64::from(queue.get_timestamp_period());
         if !period.is_finite() || period <= 0.0 {
             return Err(TimingError::InvalidCapacity);
         }
-        let size = u64::from(count) * u64::from(wgpu::QUERY_SIZE);
-        let query = device.create_query_set(&wgpu::QuerySetDescriptor {
-            label: Some("thrum pass timestamps"),
-            ty: wgpu::QueryType::Timestamp,
-            count,
-        });
-        let resolve = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("thrum timestamp resolve"),
-            size,
-            usage: wgpu::BufferUsages::QUERY_RESOLVE | wgpu::BufferUsages::COPY_SRC,
-            mapped_at_creation: false,
-        });
-        let readback = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("thrum timestamp readback"),
-            size,
-            usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-            mapped_at_creation: false,
-        });
-        Ok(Self {
-            generation: capabilities.generation(),
-            last_counter: 0,
-            enabled: Some(Enabled {
-                query,
-                resolve,
-                readback,
+        let counts = max_passes.map(|passes| passes.checked_mul(2).unwrap_or(0));
+        let device = capabilities.device();
+        let queries = query_sets::allocate(device, "thrum pass timestamps", counts)?;
+        let mut capacities = max_passes.into_iter();
+        Ok(queries.map(|query| Self {
+            generation,
+            query: Some(query),
+            enabled: Some(Enabled::new(
+                device,
+                capacities.next().expect("one capacity per query set"),
                 period,
-                capacity: max_passes,
-                names: PassNames::with_capacity(max_passes as usize),
-                frame: None,
-                results: Vec::with_capacity(max_passes as usize),
-                preceding_gaps: Vec::with_capacity(max_passes as usize),
-                timed_pass_span: None,
-                completion: Completion::new(),
-                phase: Phase::Recording,
-            }),
-        })
+            )),
+            last_counter: 0,
+        }))
     }
+
+    /// A spare readback for a native frame slot. It has no query set of its own.
+    pub(crate) fn spare_readback(&self, device: &wgpu::Device) -> Self {
+        Self {
+            generation: self.generation,
+            query: None,
+            enabled: self
+                .enabled
+                .as_ref()
+                .map(|batch| Enabled::new(device, batch.capacity, batch.period)),
+            last_counter: 0,
+        }
+    }
+
+    /// Rotate only the readback resources after submitting the resolve. The
+    /// next render reuses the same queries, ordered after the resolve on the queue.
+    pub(crate) fn swap_readback(&mut self, spare: &mut Self) {
+        std::mem::swap(&mut self.enabled, &mut spare.enabled);
+    }
+
+    pub(crate) fn recover_readback(&mut self, device: &wgpu::Device) {
+        if let Some(batch) = &mut self.enabled {
+            *batch = Enabled::new(device, batch.capacity, batch.period);
+        }
+    }
+
     fn check_generation(&self, generation: u64) -> Result<(), TimingError> {
         if self.generation != generation {
             return Err(TimingError::StaleGeneration);
@@ -818,8 +875,9 @@ impl GpuTimings {
         if index >= enabled.capacity {
             return Err(TimingError::Capacity);
         }
+        let query = self.query.as_ref().ok_or(TimingError::Busy)?;
         enabled.names.push(name, category, own);
-        Ok(Some((&enabled.query, index)))
+        Ok(Some((query, index)))
     }
     /// Release pass reservations after dropping their unsubmitted encoder.
     /// Call before `finish_render`; submitted work must complete and be collected
@@ -942,7 +1000,8 @@ impl GpuTimings {
             .and_then(|n| n.checked_mul(2))
             .ok_or(TimingError::InvalidCapacity)?;
         let bytes = u64::from(count) * u64::from(wgpu::QUERY_SIZE);
-        encoder.resolve_query_set(&enabled.query, 0..count, &enabled.resolve, 0);
+        let query = self.query.as_ref().ok_or(TimingError::Busy)?;
+        encoder.resolve_query_set(query, 0..count, &enabled.resolve, 0);
         encoder.copy_buffer_to_buffer(&enabled.resolve, 0, &enabled.readback, 0, bytes);
         enabled.map_readback(encoder, bytes);
         Ok(true)

@@ -1,17 +1,13 @@
 //! Frame-slot ownership and publication of delayed GPU timestamp batches.
 
 use super::{
-    FrameError, FrameHost, FrameSample, FrameSlot, FrameTarget, FrameTimingBatch, FrameWorld,
-    SceneSource, SlotState, retain_sample,
+    FrameHost, FrameSample, FrameSlot, FrameTarget, FrameTimingBatch, FrameWorld, SceneSource,
+    SlotState, retain_sample,
 };
 use crate::{
-    capabilities::DeviceCapabilities,
     sprite::graph::validate_sprite_timings,
     synthetic::validate_pass_timings,
-    timing::{
-        FrameCounters, GpuTimings, TimingError, TimingFrame, TimingRecords, TimingRefusal,
-        TimingStats,
-    },
+    timing::{FrameCounters, TimingError, TimingFrame, TimingRecords, TimingRefusal, TimingStats},
 };
 
 impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
@@ -62,7 +58,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 .submit(order, oldest_floor, pending_capacity);
     }
 
-    pub(super) fn collect_frame_timings(&mut self) -> Result<(), FrameError> {
+    pub(super) fn collect_frame_timings(&mut self) {
         // The queue submits frames in order. Callback delivery and slot order
         // can differ. Validate the earlier batch first so that if a pair
         // appears twice, it is the later submission that refuses it.
@@ -93,14 +89,14 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 (&mut slot.timing, sample)
             };
             if !batch.collect_or_refuse(
-                self.prepared.capabilities(),
-                &self.queue,
+                &self.device,
+                self.generation,
                 &slot.target,
                 &mut slot.timing_records,
                 sample,
                 &mut self.timing_stats,
                 &mut self.frame_counters,
-            )? {
+            ) {
                 break;
             }
             let sample = if deferred {
@@ -121,7 +117,6 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             }
             retain_sample(&mut self.completed, &mut self.dropped_reports, sample);
         }
-        Ok(())
     }
 }
 
@@ -149,12 +144,20 @@ impl FrameSlot {
     }
 
     // Render and native completion are already known. Rotate the prepared
-    // query batches so mapping can finish independently of target reuse.
+    // readback batches so mapping can finish independently of target reuse.
     pub(super) fn defer_timing(&mut self, sample: FrameSample) {
         if let Some(deferred) = &mut self.deferred_timing
             && deferred.sample.is_none()
         {
-            std::mem::swap(&mut self.timing, &mut deferred.batch);
+            self.timing
+                .queries
+                .swap_readback(&mut deferred.batch.queries);
+            std::mem::swap(&mut self.timing.layout, &mut deferred.batch.layout);
+            std::mem::swap(&mut self.timing.readback, &mut deferred.batch.readback);
+            std::mem::swap(
+                &mut self.timing.counter_floor,
+                &mut deferred.batch.counter_floor,
+            );
             deferred.sample = Some(sample);
         } else {
             self.state = SlotState::Resolving(sample);
@@ -202,29 +205,22 @@ impl FrameTimingBatch {
     )]
     fn collect_or_refuse(
         &mut self,
-        capabilities: &DeviceCapabilities,
-        queue: &wgpu::Queue,
+        device: &wgpu::Device,
+        generation: u64,
         target: &FrameTarget,
         records: &mut TimingRecords,
         sample: &mut FrameSample,
         stats: &mut TimingStats,
         counters: &mut FrameCounters,
-    ) -> Result<bool, FrameError> {
-        match self.collect_timing(
-            capabilities.generation(),
-            target,
-            records,
-            sample,
-            stats,
-            counters,
-        ) {
-            Ok(ready) => Ok(ready),
+    ) -> bool {
+        match self.collect_timing(generation, target, records, sample, stats, counters) {
+            Ok(ready) => ready,
             Err(error) => {
                 self.refuse_timing(sample, stats, error);
                 if !matches!(error, TimingError::InvalidTimestamp { .. }) {
-                    self.recover_timings(capabilities, queue)?;
+                    self.queries.recover_readback(device);
                 }
-                Ok(true)
+                true
             }
         }
     }
@@ -252,16 +248,6 @@ impl FrameTimingBatch {
         self.queries.clear_frame();
         stats.refuse(reason);
         sample.timing_fault = true;
-    }
-
-    pub(super) fn recover_timings(
-        &mut self,
-        capabilities: &DeviceCapabilities,
-        queue: &wgpu::Queue,
-    ) -> Result<(), FrameError> {
-        self.queries = GpuTimings::new(capabilities, queue, self.queries.capacity())
-            .map_err(|error| FrameError::gpu("GPU timing recovery", error))?;
-        Ok(())
     }
 
     fn collect_timing(

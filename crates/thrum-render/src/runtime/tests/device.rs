@@ -196,7 +196,7 @@ fn timing_replay_across_slots_and_after_a_refusal_never_publishes() {
                 (3, 0) => [base + 501, base + 500],
                 _ => pairs(base + 500, index),
             });
-            host.collect_frame_timings().unwrap();
+            host.collect_frame_timings();
             assert!(host.completed.is_empty());
             assert_eq!(host.timing_stats().pending, 2);
             let before = host.timing_stats();
@@ -205,7 +205,7 @@ fn timing_replay_across_slots_and_after_a_refusal_never_publishes() {
                 (3, 0) => [u64::MAX, base],
                 _ => pairs(base, index),
             });
-            host.collect_frame_timings().unwrap();
+            host.collect_frame_timings();
             let mut observed = before;
             for (index, reason) in expected.into_iter().enumerate() {
                 let sample = host.poll_completed().unwrap().unwrap();

@@ -137,6 +137,12 @@ impl RayBuildProbe {
         mesh: String,
         build: &wgpu::BlasBuildEntry<'_>,
     ) {
+        let Ok(queries) =
+            crate::timing::create_timestamp_query_set(&self.0.device, "ray mesh build bracket", 4)
+        else {
+            encoder.build_acceleration_structures([build], []);
+            return;
+        };
         let triangles = match &build.geometry {
             wgpu::BlasGeometries::TriangleGeometries(geometry) => geometry
                 .iter()
@@ -144,11 +150,6 @@ impl RayBuildProbe {
                 .sum(),
             wgpu::BlasGeometries::AabbGeometries(_) => 0,
         };
-        let queries = self.0.device.create_query_set(&wgpu::QuerySetDescriptor {
-            label: Some("ray mesh build bracket"),
-            ty: wgpu::QueryType::Timestamp,
-            count: 4,
-        });
         let mut tlas = super::create_tlas(&self.0.device, 1);
         tlas[0] = Some(wgpu::TlasInstance::new(
             build.blas,
