@@ -293,17 +293,19 @@ fn two_x_colour_crossing_beside_transparency_is_continuous() {
         );
         // Probe the projected edge, both ends of the shoulder, and the
         // authored samples on either side.
+        let half_width = 0.5 / 384.0;
+        let endpoint_step = 0.000_005;
         let samples = [
             0.75,
-            1.0 - 0.00135,
-            1.0 - 0.00127,
+            1.0 - half_width - endpoint_step,
+            1.0 - half_width + endpoint_step,
             1.0 - 0.00065,
             1.0 - 0.000_015,
             1.0,
             1.0 + 0.000_015,
             1.0 + 0.00065,
-            1.0 + 0.00127,
-            1.0 + 0.00135,
+            1.0 + half_width - endpoint_step,
+            1.0 + half_width + endpoint_step,
             1.25,
         ]
         .map(|u| {
@@ -325,6 +327,10 @@ fn two_x_colour_crossing_beside_transparency_is_continuous() {
         });
         assert_eq!(samples[0], [255, 0, 0, 255]);
         assert_eq!(samples[10], [0, 0, 255, 255]);
+        assert!(
+            samples[5][0] >= 250 && samples[5][2] <= 24,
+            "{recipe}: the edge tie lost its dominant texel: {samples:?}"
+        );
         assert!(
             samples[3][0] > samples[5][0]
                 && samples[5][0] > samples[7][0]

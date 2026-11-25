@@ -267,3 +267,9 @@
   destruction before navigating away. The exact Chrome check passed both DPRs in a fresh
   checkout, recorded eight device retirements and exited with code 0.
   [Chrome shutdown evidence](../../../.orchestrate/evidence/RENDER-2D/WP3/chrome-shutdown/README.md)
+- 2026-11-25 WP3.8 reconstructs the 2× colour phase from the sprite projection at the output pixel
+  centre. Straight edges cross together, and the blend retains the dominant texel at an exact tie.
+  The six Metal takes show straight stripes, joined ground tiles and clean rotating outlines.
+  Each 2× repeat retained 570 frames. Eight isolated crossing blends held for 7.6–8.8 ms.
+  All seven automated item checks passed. [Metal motion](../../../.orchestrate/evidence/RENDER-2D/WP3/tie-crossings/motion.md) ·
+  [Sampling, timing and checks](../../../.orchestrate/evidence/RENDER-2D/WP3/tie-crossings/sampling.md)

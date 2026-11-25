@@ -320,7 +320,7 @@
           "statement": "On both Metal recipes and Chrome WebGPU, the existing sprite draw at the output extent applies the widened pixel filter near 1.5\u00d7 and a frame-local spatial reconstruction through the off-grid 2\u00d7 edge crossings. At aligned 2\u00d7 it selects the authored texels. Record the before-and-after sprite-pass timings for the 1920\u00d71080 1.5\u00d7 scroll on Metal and Chrome, with recipe, device, shaded pixels, overdraw and load.",
           "ask": "At 1.5\u00d7 does the shader combine premultiplied scene-linear RGBA with normalized, nonnegative weights within mechanism 6's support? At 2\u00d7 does it use continuous projected texel coordinates through single-axis and two-axis texel-edge crossings and converge to the authored sample at alignment? Do the standalone quad margin and transparent gutter cover the chosen footprint, and do tiles use their own extruded edges with unchanged shared-edge ownership?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/RENDER-2D/WP3/projected-crossings/sampling.md",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP3/tie-crossings/sampling.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/RENDER-2D/WP3-review.md",
           "builder_result": "pass"
@@ -400,10 +400,10 @@
           "statement": "On Metal through a slow diagonal pan and a fast scroll at 1.5\u00d7, 2\u00d7 and 2.37\u00d7, the test card's original one-texel stripes and checker remain distinct with no visible contrast pulse or crawl at normal size and speed. Ground seams stay closed and rotating outlines stay clean.",
           "inspect": "Capture the existing 1920\u00d71080 card, ground and rotating field with T2 engine capture in realtime mode, at 0.05 and 3 output pixels per simulation tick in X with the 0.53 diagonal Y component at each scale. Watch the original-speed whole frames and native-size crops through several subpixel cycles. Check that (1) both stripe orientations and the checker stay distinct and show no repeated fading, apparent thickening or sparkle, (2) no ground seam opens, and (3) rotating outlines stay clean. Use the first review's 1.5\u00d7 take to locate the offending patches.",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP3/tie-crossings/motion.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/RENDER-2D/WP3-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP3.9",

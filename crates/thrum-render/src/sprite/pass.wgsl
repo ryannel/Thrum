@@ -189,7 +189,13 @@ fn reconstruct_two_x(sheet: u32, frame: SpriteFrameRecord, texel: vec2<f32>, foo
     // Centre the narrow colour blend on the projected edge everywhere
     // along its length. Coverage alpha still uses the full footprint.
     let shoulder = footprint / 384.0;
-    let weight = smoothstep(-shoulder, shoulder, phase);
+    let blend = smoothstep(-shoulder, shoulder, phase);
+    // Prefer the lower texel when the pixel centre lands on the edge.
+    // A centred blend can soften every mark at once when a scroll lands
+    // on that exact phase. Keep the support and its endpoints continuous.
+    let blend_squared = blend * blend;
+    let blend_fourth = blend_squared * blend_squared;
+    let weight = blend_fourth * blend_fourth;
     if all(weight == round(weight)) {
         let sample = nearest(sheet, origin + cell + vec2<i32>(weight), page);
         return vec4(coverage.rgb * (1.0 - sample.a) + coverage.a * sample.rgb, coverage.a);
