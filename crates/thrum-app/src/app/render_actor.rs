@@ -287,8 +287,14 @@ impl<G: Game> Actor<G> {
                 let place = match reply.platform.surface_status {
                     SurfaceStatus::FrameSlotsOccupied => Place::FrameSlot,
                     SurfaceStatus::DrawableTimeout
+                    | SurfaceStatus::WindowExtentEmpty
+                    | SurfaceStatus::SurfaceConfigurationPending
+                    | SurfaceStatus::SurfaceConfigurationBlocked
+                    | SurfaceStatus::SurfacePreparationBusy
                     | SurfaceStatus::Occluded
-                    | SurfaceStatus::NeedsReconfigure => Place::Drawable,
+                    | SurfaceStatus::NeedsReconfigure
+                    | SurfaceStatus::SurfaceEpochChanged
+                    | SurfaceStatus::ConfigurationRefused(_) => Place::Drawable,
                     _ if drawable_late => Place::Drawable,
                     _ => Place::EncodeSubmit,
                 };

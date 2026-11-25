@@ -186,9 +186,11 @@ def wind_at(wind, frames, missing):
             # The game selects the direction from the committed weather tick at 60 Hz.
             ticks = [int(left['tick']), int(right['tick'])]
             state['bracketing_ticks'] = ticks
-            state['direction'] = '+X' if ticks[1] < 600 else '+Y' if ticks[0] >= 600 else 'turn at tick 600'
+            state['target_direction'] = (
+                '+X' if ticks[1] < 600 else '+Y' if ticks[0] >= 600 else 'changes at tick 600'
+            )
         else:
-            state['direction'] = 'turn at tick 600; one bracketing frame sample missing'
+            state['target_direction'] = 'turn at tick 600; one bracketing frame sample missing'
     return state
 
 

@@ -5,6 +5,7 @@ from decimal import Decimal
 import gzip
 import json
 import os
+import plistlib
 from pathlib import Path
 import re
 import shutil
@@ -21,6 +22,7 @@ SCRATCH = ROOT / 'tmp/clouds-wp19'
 BIN = ROOT / 'target/release/v1-game'
 INSTRUMENT = ROOT / 'scripts/host_witness/presented_time.instrpkg'
 INSTRUMENT_PACKAGE = SCRATCH / 'ThrumPresentedTime.instrdst'
+TRACE_TEMPLATE = SCRATCH / 'PresentedTime.tracetemplate'
 TRACE_TABLES = {
     'signposts.xml': "contains(@schema, 'signpost')",
     'presented.xml': '@schema="ca-client-presented-handler"',
@@ -53,9 +55,20 @@ def instrument_packages():
 
 
 def prepare_instrument():
-    subprocess.run(['xcrun', 'instrumentbuilder', '-L', instrument_packages(), '-l', 'GPU',
+    packages = instrument_packages()
+    subprocess.run(['xcrun', 'instrumentbuilder', '-L', packages, '-l', 'GPU',
                     '-i', INSTRUMENT, '-o', INSTRUMENT_PACKAGE],
                    cwd=ROOT, check=True, timeout=30)
+    blank = packages / 'Base.instrdst/Contents/Templates/Blank.tracetemplate'
+    archive = plistlib.loads(blank.read_bytes())
+    objects = archive['$objects']
+    command = objects[archive['$top']['templateRunCommand'].data]
+    configuration = objects[command['$3'].data]
+    if not configuration['supportsImmediateMode'] or configuration['recordingMode'] != 2:
+        raise InvalidMeasurement('unrecognized Xcode Blank trace recording configuration')
+    # Use the installed template with Immediate mode and no rolling window.
+    configuration['recordingMode'] = 1
+    TRACE_TEMPLATE.write_bytes(plistlib.dumps(archive, fmt=plistlib.FMT_BINARY, sort_keys=False))
 
 
 def console_unlocked():
@@ -92,13 +105,12 @@ def collect(arm, store, wind, *, diagnostic=False):
         env.update(settings)
         command += [str(BIN)]
     else:
-        blank = instrument_packages() / 'Base.instrdst/Contents/Templates/Blank.tracetemplate'
         options = arm / 'recording-options.json'
         save(options, {'Points of Interest': {'excludeOSLogs': True}})
-        command += ['xcrun', 'xctrace', 'record', '--no-prompt', '--template', str(blank),
+        command += ['xcrun', 'xctrace', 'record', '--no-prompt', '--template', str(TRACE_TEMPLATE),
                     '--recording-options', str(options), '--package', str(INSTRUMENT_PACKAGE),
                     '--instrument', 'Thrum Presented Time', '--instrument', 'Points of Interest',
-                    '--time-limit', '29s', '--window', '32s', '--output', str(trace),
+                    '--time-limit', '36s', '--output', str(trace),
                     '--target-stdout', str(game)]
         for key, value in settings.items():
             command += ['--env', f'{key}={value}']
@@ -115,10 +127,8 @@ def collect(arm, store, wind, *, diagnostic=False):
         def observe():
             if power.poll() is not None:
                 return
-            if not diagnostic and recorder.exists() and any(
-                line in recorder.read_text(errors='replace') for line in (
-                    'Target app exited, ending recording', 'Recording completed. Saving output file',
-                )
+            if (arm / 'refresh-counts.txt').exists() or (
+                not diagnostic and recorder.exists() and 'ending recording' in recorder.read_text(errors='replace')
             ):
                 power.terminate()
             else:

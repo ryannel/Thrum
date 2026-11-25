@@ -145,12 +145,25 @@ impl Account {
     }
 
     pub(super) fn begin(&mut self, target: f64, arrived: f64) {
+        let closed = self
+            .latest_closed
+            .filter(|closed| closed.row.target.to_bits() == target.to_bits())
+            .or_else(|| {
+                let measurement = self.measurement.as_ref()?;
+                let index = measurement
+                    .rows
+                    .binary_search_by(|row| row.target.total_cmp(&target))
+                    .ok()?;
+                Some(Closed {
+                    row: measurement.rows[index],
+                    start: measurement.start,
+                    index: Some(index),
+                })
+            });
         self.request = Some(Request {
             target,
             late: arrived >= target,
-            closed: self
-                .latest_closed
-                .filter(|closed| closed.row.target.to_bits() == target.to_bits()),
+            closed,
         });
     }
 
@@ -439,6 +452,22 @@ mod tests {
         let rows = account.measurement.unwrap().rows;
         assert_eq!(rows[0].interval_present.unwrap().submission, 3);
         assert_eq!(rows[0].requested_present.unwrap().submission, 3);
+    }
+
+    #[test]
+    fn an_old_request_records_its_present_against_the_original_target() {
+        let mut account = Account::default();
+        account.measure(0.0, 1.0);
+        for tick in 1..=4 {
+            account.callback(f64::from(tick) * PERIOD, PERIOD);
+        }
+        call(&mut account, PERIOD, 0.41, 0.42);
+        account.finish();
+        assert_eq!(account.served, 1);
+        let rows = account.measurement.unwrap().rows;
+        assert_eq!(rows[0].requested_present.unwrap().submission, 1);
+        assert_eq!(rows[0].unserved(), Some(Place::LateRequest));
+        assert_eq!(rows[3].interval_present.unwrap().submission, 1);
     }
 
     #[test]
