@@ -238,8 +238,12 @@ pub fn client(
     capture_control: Option<PathBuf>,
 ) -> Result<(), GameError> {
     let peer = Peer::Replica(Box::new(Replica::connect(ticket)?));
+    let mut config = config("Crowd Match Client", 400);
+    // Leave time for this small sprite scene to encode while keeping more of
+    // the interval between observations available for committing due ticks.
+    config.frame_budget = Some(Duration::from_micros(1_100));
     run(
-        config("Crowd Match Client", 400),
+        config,
         peer,
         Output::new(output, capture_control).map_err(rejected)?,
     );

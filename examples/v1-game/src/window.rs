@@ -200,6 +200,7 @@ pub fn run_window(
         render_thread: "thrum-v1-render",
         panel_title: "Thrum demo",
         window_position: None,
+        frame_budget: None,
         #[cfg(feature = "proving")]
         window_size: if display
             .as_ref()

@@ -116,9 +116,11 @@ scene reads.
   `client.advance_with_step_budget(now_us, cap, sample_controls)` and drain results as above. Pass the
   driver's cap as a `u8` or use a smaller budget. After that advance, read `client.playout(now_us)` and
   `client.settings().tick_us`. Before playout starts, hold the current endpoint.
-- For an inline client, call `host.set_presentation_lead_limit(Duration::ZERO)` when preparing the frame
-  host. The frame samples at the observation, when its committed pair is due. A later platform target can
-  cross a playout tick boundary, before that tick is eligible for this observation.
+- The frame host samples the driver's clock at the runner's display time. An inline driver admits ticks at
+  the frame observation. If the display target crosses the end of the committed pair, the picture holds
+  at the newest committed endpoint. After a surface submission, pass its consumed display timestamp from
+  `FrameHost::last_submitted_clock()` to `client.playout` once, before the next advance. The client's clock
+  accounts for time spent at the committed endpoint when it resumes.
 - In the listen host's driver, drain accepted links, stage local inputs, then call
   `host.advance(now_us, current_tick + cap)` and read `host.playout(now_us)`. The host applies its own
   negotiated catch-up cap as well.
@@ -146,7 +148,9 @@ let presentation = ClockSample::driven(sample_at, fraction, ticks_per_second, ti
 Ok(DrivenAdvance { completed_ticks, presentation, next_due })
 ```
 
-Run the native game through `thrum_app::run_until_closed`. In the browser, call `web::create_game`, forward
+Run the native game through `thrum_app::run_until_closed`. A light native scene can set `Config::frame_budget`
+to reserve measured CPU time before the display target, so the driver can admit due ticks closer to that target.
+The native Crowd client uses this option. In the browser, call `web::create_game`, forward
 animation-frame timestamps to `WebShell::frame_game`, and pass actual visibility changes to
 `WebShell::set_visible`. A hidden tab stops polling its driver. When it is shown, the session can resume,
 skip the backlog or install a repair baseline. Show `take_stall` and `take_skip` records as appropriate in the

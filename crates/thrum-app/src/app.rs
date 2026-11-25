@@ -684,7 +684,7 @@ impl<G: WindowGame + 'static> App<G> {
         self.surface_extent = [gpu.config.width, gpu.config.height];
         self.observed_extent = self.surface_extent;
         self.render = Some(render_actor::start::<G>(
-            self.config.render_thread,
+            self.config,
             host,
             gpu,
             recipe,

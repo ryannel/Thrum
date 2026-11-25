@@ -18,6 +18,7 @@ use thrum_render::{
         SpriteContributionSurface,
     },
     extract::{ExtractReport, RenderExtractor, SourceTick},
+    frame::TargetLeadStatus,
     present::SurfaceProfile,
     runtime::{
         FrameConfig, FrameError, FrameHost, SceneFrame, SceneSource, SpriteSceneRequests,
@@ -234,6 +235,10 @@ fn frame_host_samples_the_driver_at_each_display_target() {
                 host.world_mut().resume();
             }
             host.set_presentation_lead(Duration::from_millis(lead));
+            let target = Duration::from_millis(now + lead);
+            if lead > 0 {
+                host.set_presentation_target(target, TargetLeadStatus::Future);
+            }
             let report = host
                 .drive(
                     Duration::from_millis(now),
@@ -246,6 +251,8 @@ fn frame_host_samples_the_driver_at_each_display_target() {
             assert!(report.surface_presented);
             let sample = host.last_submitted_clock().expect("submitted phase");
             assert_eq!(sample.tick, tick);
+            assert_eq!(sample.display_time, target);
+            assert_eq!(sample.platform_target, (lead > 0).then_some(target));
             let (scene_tick, scene_alpha) = host.source().0.get().expect("sampled sprite view");
             assert_eq!(scene_tick, tick);
             assert!((scene_alpha - expected).abs() < f32::EPSILON);

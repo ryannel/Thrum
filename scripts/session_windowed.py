@@ -136,7 +136,8 @@ def run_events(match, peer, scenario, motion):
     is_chrome = peer.target == sockets.CHROME
     if not is_chrome and not scenario:
         return
-    match.wait("240 authority ticks and settled playout", lambda: match.tick() >= 240, 15)
+    if not (is_chrome and motion):
+        match.wait("240 authority ticks and settled playout", lambda: match.tick() >= 240, 15)
     if motion:
         peer.command("record")
         match.wait("first T2 image", lambda: peer.log.events("capture"), 10)
@@ -150,6 +151,9 @@ def run_events(match, peer, scenario, motion):
         match.wait("document visibility became visible", lambda: len(peer.log.events("visibility")) >= 3
                    and not peer.log.events("visibility")[-1]["hidden"], 15)
         match.wait("3 seconds of resumed presentation", lambda: match.tick() >= 900, 15)
+        if motion:
+            match.wait("replica draws its last committed tick", lambda: any(
+                row["tick"] == TICKS for row in peer.log.events("frame")), 75)
     else:
         match.wait("settled playout before buffered cut", lambda: match.tick() >= 360, 15)
         match.cut(peer, "buffered", 18)
@@ -188,7 +192,8 @@ def validate(match, peer, scenario):
     analysis = {
         "digests": len(digest_ticks), "committed_ticks_per_peer": TICKS,
         "relay": relay, "host": validate_sample(match.host, cfg, bounded_rate=False, minimum_frames=host_frames),
-        "client": validate_sample(peer.log, cfg),
+        "client": validate_sample(peer.log, cfg, native_target=peer.target == sockets.MAC,
+                                  require_clamp=scenario == "playout"),
     }
     if scenario == "playout":
         analysis["cut_cases"] = validate_cuts(match, peer, relay["cut_windows"])
@@ -209,11 +214,13 @@ def frame_position(row):
     return max(0, row["tick"] - 1) + row["alpha"] if row["tick"] else 0.0
 
 
-def validate_sample(log, cfg, *, bounded_rate=True, minimum_frames=600):
+def validate_sample(log, cfg, *, bounded_rate=True, minimum_frames=600, native_target=False,
+                    require_clamp=False):
     latest = None
     previous = None
     frames = 0
     worst_ratio = 0.0
+    target_samples = {}
     jump = False
     for row in log.read():
         event = row["event"]
@@ -229,10 +236,26 @@ def validate_sample(log, cfg, *, bounded_rate=True, minimum_frames=600):
             frames += 1
             assert 0 <= row["alpha"] <= 1
             elapsed = max(0, row["display_us"] - latest["playout_us"])
-            expected = min(row["tick"], max(row["tick"] - 1, latest["position"]) +
-                           elapsed * latest["rate"] / cfg["tick_us"])
+            if native_target:
+                target_ns = row["platform_target_ns"]
+                assert target_ns is not None, ("missing Mac display target", row)
+                assert latest["playout_us"] == row["observation_ns"] // 1000, (row, latest)
+                lead_ns = min(50_000_000, max(0, target_ns - row["observation_ns"]))
+                expected_display_ns = row["observation_ns"] + lead_ns
+                assert abs(row["display_us"] * 1000 - expected_display_ns) < 1000, row
+                elapsed = lead_ns / 1000
+            unclamped = max(row["tick"] - 1, latest["position"]) + elapsed * latest["rate"] / cfg["tick_us"]
+            expected = min(row["tick"], unclamped)
             position = frame_position(row)
             assert abs(expected - position) < 0.001, (expected, position, row, latest)
+            if (native_target and row["tick"] >= 240 and elapsed > 100 and latest["rate"] > 0
+                    and row["tick"] - latest["position"] > 0.001):
+                delta = unclamped - row["tick"]
+                if delta > 0.001 or (delta < -0.001 and latest["rate"] == 1.0):
+                    assert row["due_ns"] is not None, row
+                    case = "interpolated" if delta < 0 else "clamped"
+                    target_samples.setdefault(case, {"frame": row, "driver": latest,
+                                                      "unclamped_position": unclamped})
             if previous:
                 elapsed = row["display_us"] - previous["display_us"]
                 distance = position - frame_position(previous)
@@ -243,8 +266,12 @@ def validate_sample(log, cfg, *, bounded_rate=True, minimum_frames=600):
                     assert distance <= limit + 0.002, (previous, row, limit, distance)
             previous, jump = row, False
     assert frames >= minimum_frames, f"insufficient actual surface submissions in {log.path}: {frames}"
+    if native_target:
+        assert "interpolated" in target_samples, target_samples
+    if require_clamp:
+        assert "clamped" in target_samples, target_samples
     return {"frames": frames, "highest_unskipped_rate": worst_ratio if bounded_rate else None,
-            "stalls": log.events("stall"), "skips": log.events("skip")}
+            "stalls": log.events("stall"), "skips": log.events("skip"), "target_samples": target_samples}
 
 
 def validate_cuts(match, peer, relay_edges):
@@ -268,7 +295,13 @@ def validate_cuts(match, peer, relay_edges):
         bursts = [row for row in peer.log.events("burst") if applied_open["wall_us"] <= row["wall_us"] <= end]
         if name == "buffered":
             assert bursts and not stalls and not skips, (name, bursts, stalls, skips)
-            assert all(row["rate"] == before["rate"] for row in window), (name, before, window)
+            # Check the rate through the first recovered burst and two more
+            # ticks. Later A0 arrivals can independently change the buffer.
+            burst_end = bursts[0]["wall_us"] + 2 * match.config["tick_us"]
+            burst_window = [row for row in window if row["wall_us"] <= burst_end]
+            assert any(row["wall_us"] >= bursts[0]["wall_us"] for row in burst_window), bursts[0]
+            assert all(row["rate"] == before["rate"] for row in burst_window), (name, before, burst_window)
+            bursts = bursts[:1]
         elif name == "stall":
             assert stalls and not skips, (name, stalls, skips)
             assert any(sum(abs(frame_position(frame) - stall["position"]) < 0.001

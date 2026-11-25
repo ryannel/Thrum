@@ -1,4 +1,4 @@
-/// Text the shell shows on the game's behalf: window titles, diagnostics and thread names.
+/// The game's window settings, worker name and diagnostic labels.
 #[derive(Clone, Copy, Debug)]
 pub struct Config {
     /// Prefix of every standard-error diagnostic, for example the binary name.
@@ -19,6 +19,9 @@ pub struct Config {
     pub window_size: [u32; 2],
     /// Initial Mac window position in logical screen coordinates, when specified.
     pub window_position: Option<[i32; 2]>,
+    /// Mac time reserved before the display target for advancing and drawing.
+    /// When unset, the render owner starts as soon as the frame is ready.
+    pub frame_budget: Option<std::time::Duration>,
 }
 
 impl Config {
@@ -36,6 +39,7 @@ impl Config {
             panel_title: title,
             window_size: [1600, 900],
             window_position: None,
+            frame_budget: None,
         }
     }
 }

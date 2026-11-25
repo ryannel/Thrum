@@ -3793,7 +3793,7 @@
       },
       "current_priority": "The deterministic session drives the headless and windowed Crowd. The snapshot and delta profile remains parked.",
       "deterministic_session": {
-        "implementation": "Caller-clocked host and client over the message link. Includes full-world baseline restore, post-commit set delivery, redundant timed frames, ordered commands, adaptive lead, bounded result retention, roster and match lifecycle, confirmed playout and optional local-controller prediction. A driven world in the native and browser app shells takes a bounded advance from its game-owned driver at the frame observation. The inline Crowd replica samples playout at that observation.",
+        "implementation": "Caller-clocked host and client over the message link. Includes full-world baseline restore, post-commit set delivery, redundant timed frames, ordered commands, adaptive lead, bounded result retention, roster and match lifecycle, confirmed playout and optional local-controller prediction. A driven world in the native and browser app shells takes a bounded advance from its game-owned driver at the frame observation. The renderer evaluates the committed pair at display time and clamps sprites at the committed endpoint.",
         "correctness": "On A0 and harsh in-memory profiles, four 10,000-body replicas each matched the authority at all 1,200 digest ticks over 36,000 ticks. The A0 socket match also matched all 1,200 on each of four independent clients. Other proofs cover late join, disconnect and rejoin, repair, slow or frozen peers, and an independent integer rule set with timed actions, ordered commands and roster events. Each independent windowed reference Crowd replica matched all 120 digest ticks over 3,600 ticks under the A0 relay. The Mac receipt records the buffered burst, hold, sustained catch-up in submitted positions, and named skip. Chrome proves a hidden tab returning through named skips without duplicate commits or overload. The dependency closure also covers the standalone Crowd view.",
         "visuals": "T2 realtime motion at 640×360 compares a 2,000-body joined Crowd with the standalone view on both targets. The retained motion records cover the Mac burst, stall and skip and the Chrome visibility return.",
         "device": {
@@ -3814,7 +3814,7 @@
           "../../.orchestrate/evidence/SESSION/M2.md",
           "../../.orchestrate/evidence/SESSION/M5/README.md",
           "../../.orchestrate/evidence/SESSION/WP6/README.md",
-          "../../.orchestrate/evidence/SESSION/WP7/README.md"
+          "../../.orchestrate/evidence/SESSION/WP7/display-target/README.md"
         ]
       },
       "transport_message_link": {

@@ -524,6 +524,8 @@ pub struct SubmittedFrameClock {
     pub submission_order: u64,
     /// Monotonic display time consumed when evaluating the world clock.
     pub display_time: Duration,
+    /// Runner's requested target in the host-clock origin, when supplied.
+    pub platform_target: Option<Duration>,
     /// Host observation that admitted the committed endpoint.
     pub observation: Duration,
     /// Host due time of the committed endpoint while interpolating.
@@ -1044,7 +1046,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     }
 
     /// Bound the display lead consumed by this host. A zero limit samples at
-    /// the observation, as needed by a driver that admits pairs at that time.
+    /// the observation.
     pub fn set_presentation_lead_limit(&mut self, limit: Duration) {
         self.presentation_lead_limit = limit;
         self.set_presentation_lead(self.presentation_lead);
@@ -2515,6 +2517,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             presentation_alpha: sample.presentation_alpha,
             submission_order: sample.submission_order,
             display_time: sample.observation.saturating_add(sample.presentation_lead),
+            platform_target: sample.platform_target,
             observation: sample.observation,
             tick_due_time: sample.tick_due_time,
             surface_presented,

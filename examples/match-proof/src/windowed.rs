@@ -59,7 +59,6 @@ impl Game for WindowMatch {
             .driver
             .take()
             .ok_or_else(|| rejected("driver already prepared"))?;
-        let replica = matches!(driver.peer, Peer::Replica(_));
         driver.record(json!({
             "event":"renderer", "backend":format!("{:?}", gpu.capabilities.adapter().backend),
             "adapter":gpu.capabilities.adapter().name, "extent":gpu.surface.extent,
@@ -73,9 +72,6 @@ impl Game for WindowMatch {
             ORDER_BAND,
         )
         .await?;
-        if replica {
-            host.set_presentation_lead_limit(Duration::ZERO);
-        }
         host.set_timing_requested(false);
         Ok(Prepared::inline(host))
     }
@@ -133,10 +129,17 @@ fn record_frame(host: &mut Host) -> Result<(), GameError> {
     }
     driver.last_frame = Some(sample.submission_order);
     let display_us = micros(sample.display_time);
+    #[cfg(target_os = "macos")]
+    if let Peer::Replica(replica) = &driver.peer {
+        // Let the playout clock account for time spent at the committed edge
+        // before it admits the next pair. Only submitted frames count.
+        let _ = replica.session.playout(display_us);
+    }
     driver.record(json!({
         "event": "frame", "submission": sample.submission_order, "tick": sample.tick,
         "alpha": sample.presentation_alpha, "display_us": display_us,
         "observation_ns": sample.observation.as_nanos(),
+        "platform_target_ns": sample.platform_target.map(|target| target.as_nanos()),
         "due_ns": sample.tick_due_time.map(|due| due.as_nanos()),
         "wall_us": crate::sockets::unix_us(),
     }))

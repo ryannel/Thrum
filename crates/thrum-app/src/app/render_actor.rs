@@ -5,7 +5,7 @@ use super::{
     qualification::TransitionProof,
     refresh_account::{Account, Place},
 };
-use crate::{Game, frame::SAMPLE_SLOTS};
+use crate::{Config, Game, frame::SAMPLE_SLOTS};
 use objc2_quartz_core::CACurrentMediaTime;
 use std::{
     sync::{
@@ -16,7 +16,7 @@ use std::{
 };
 use thrum_render::{
     capabilities::{DeviceWatch, retry_surface_configuration},
-    frame::{FrameWorker, display_target_lead},
+    frame::{FrameWorker, TargetLeadStatus, display_target_lead},
     present::SurfaceProfile,
     runtime::{
         DriveReport, EncodedFrame, ExtentRequest, ExtentTransition, FrameError, FrameHost,
@@ -165,6 +165,7 @@ struct Actor<G: Game> {
     display_proof: Option<super::display::proof::DisplayProof>,
     refused_surface_generation: Option<u64>,
     origin: Instant,
+    frame_budget: Option<Duration>,
     wake: EventLoopProxy<UserEvent>,
     observer: Option<super::qualification::Observer>,
     extent_capture: Option<super::qualification::ExtentCapture>,
@@ -179,7 +180,7 @@ pub(super) type RenderWorker<G> =
     reason = "the render owner takes every platform handle it serializes in one move"
 )]
 pub(super) fn start<G: Game<World: Send, Scene: Send> + 'static>(
-    name: &str,
+    config: Config,
     mut host: FrameHost<G::World, G::Scene>,
     gpu: PlatformGpu,
     recipe: WindowDevice,
@@ -229,10 +230,11 @@ pub(super) fn start<G: Game<World: Send, Scene: Send> + 'static>(
         needs_reconfigure: false,
         refused_surface_generation: None,
         origin,
+        frame_budget: config.frame_budget,
         wake: wake.clone(),
     };
     FrameWorker::start(
-        name,
+        config.render_thread,
         move |job| actor.work(job),
         move || {
             let _ = signal.send_event(UserEvent::RenderDone);
@@ -385,6 +387,33 @@ impl<G: Game> Actor<G> {
         }
         reply
     }
+    fn observe_display_target(
+        &mut self,
+        target_media_seconds: f64,
+        ready: bool,
+    ) -> (Duration, TargetLeadStatus) {
+        if ready && let Some(budget) = self.frame_budget {
+            let lead = display_target_lead(target_media_seconds, CACurrentMediaTime());
+            let delay = lead.duration.saturating_sub(budget);
+            if lead.status == TargetLeadStatus::Future && !delay.is_zero() {
+                // Reserve time to encode and observe the world closer to the
+                // deadline. The AppKit target still determines sampling.
+                std::thread::sleep(delay);
+            }
+        }
+        let observation = self.origin.elapsed();
+        let media_now = CACurrentMediaTime();
+        let lead = display_target_lead(target_media_seconds, media_now);
+        self.host.set_presentation_lead(lead.duration);
+        let target_seconds = observation.as_secs_f64() + (target_media_seconds - media_now);
+        if lead.status != TargetLeadStatus::Invalid
+            && let Ok(target) = Duration::try_from_secs_f64(target_seconds)
+        {
+            self.host.set_presentation_target(target, lead.status);
+        }
+        (observation, lead.status)
+    }
+
     fn frame(
         &mut self,
         request: &FrameRequest<G::Edits>,
@@ -446,10 +475,10 @@ impl<G: Game> Actor<G> {
             .governor_display(display, self.transition.holds_governor());
         self.host
             .governor_display_tick(now, request.platform.display_tick);
-        let mut lead = display_target_lead(request.target_media_seconds, CACurrentMediaTime());
         if ready && !self.host.has_free_slot() {
             // A callback can arrive while an older packet is retiring. Give
             // it the part of this opportunity that encoding can spare.
+            let lead = display_target_lead(request.target_media_seconds, CACurrentMediaTime());
             let deadline = Instant::now() + lead.duration.saturating_sub(Duration::from_millis(3));
             wait_for_frame_slot(
                 &mut self.host,
@@ -458,10 +487,10 @@ impl<G: Game> Actor<G> {
                 || deadline.saturating_duration_since(Instant::now()),
                 std::thread::sleep,
             )?;
-            lead = display_target_lead(request.target_media_seconds, CACurrentMediaTime());
         }
-        reply.target_status = Some(lead.status);
-        self.host.set_presentation_lead(lead.duration);
+        let (observation, status) =
+            self.observe_display_target(request.target_media_seconds, ready);
+        reply.target_status = Some(status);
         if !ready {
             if matches!(reply.platform.surface_status, SurfaceStatus::NotAttempted) {
                 reply.platform.surface_status = if !current {
@@ -480,12 +509,12 @@ impl<G: Game> Actor<G> {
                     SurfaceStatus::SurfaceConfigurationPending
                 };
             }
-            return self.host.drive(now, None);
+            return self.host.drive(observation, None);
         }
         if let Some(proof) = &mut self.transition_proof {
             proof.stage("advancing the world and polling GPU completions");
         }
-        let advanced = self.host.advance(self.origin.elapsed())?;
+        let advanced = self.host.advance(observation)?;
         if !advanced.can_acquire_serial() {
             let report = advanced.submit(None)?;
             reply.platform.surface_status = if report.overload.is_some() {

@@ -348,6 +348,8 @@ impl<W: World, Codec: ActionWire<W::Action>, P: PredictedController<W>> Client<W
 
     /// Sample the playout position between advances, including the final
     /// interval after a clean end reaches its committed endpoint.
+    /// Sample at the consumed display time after a frame is submitted so the
+    /// next advance accounts for time that frame spent at the committed edge.
     pub fn playout(&self, now: u64) -> Option<Playout> {
         Some(
             self.clock

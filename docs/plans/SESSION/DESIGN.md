@@ -761,7 +761,9 @@ adapt holds all of them. The floor catches a collapse and is no target.
   the buffer, an underrun and a fall behind, beside the policy that commits every set held, which must fail.
   In WP7 the same three are made on a real link by cutting the path at the relay for a time, so that the sets
   lost in the cut arrive together in the next datagram. The frame record is checked against
-  [the promise](#6-the-playout-clock), and a reviewer watches the three places.
+  [the promise](#6-the-playout-clock), and a reviewer watches the three places. On the Mac, the record
+  also compares the submitted alpha with the runner's target, including samples inside the pair and
+  targets beyond its committed endpoint. Each interpolating tick must have been due by its observation.
 - **Equal digests** are read from each peer's own record of the digests it took, never from one process on
   another's behalf.
 - **Costs never stop the build.** A row that trips a tripwire is recorded as measured, with what was found.
