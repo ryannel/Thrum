@@ -34,6 +34,7 @@ pub(crate) struct SyntheticTargetInputs {
     pub(super) bucket_route: Option<mesh_route::TargetMembers>,
     pub(super) caster_culling: Option<CasterCulling>,
     pub(super) display: SdrToneStage,
+    pub(super) interface_inputs: Option<crate::sprite::interface::SpriteInputs>,
     pub(super) view_layout: wgpu::BindGroupLayout,
     pub(super) view_buffer: wgpu::Buffer,
     pub(super) view_sample: SyntheticView,
@@ -90,6 +91,7 @@ impl PreparedSynthetic {
                 .as_ref()
                 .map(|(culling, _)| culling.clone()),
             display: self.display.clone(),
+            interface_inputs: self.interface_inputs.clone(),
             view_layout: self.view_layout.clone(),
             view_buffer: self.view_buffer.clone(),
             view_sample: self.view_sample,

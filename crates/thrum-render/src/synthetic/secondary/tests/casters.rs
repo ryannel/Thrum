@@ -140,6 +140,7 @@ impl Gpu {
                 Some(asks),
                 None,
                 &mut Vec::new(),
+                None,
             )
             .expect("frame");
         let colours: Vec<_> = prepared

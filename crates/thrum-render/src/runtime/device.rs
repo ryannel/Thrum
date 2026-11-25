@@ -4,11 +4,13 @@ use super::{
     FrameError, FrameHost, FrameWorld, SceneSource,
     creation::{CreationPhase, Ledger},
     preparation::{self, PreparedRenderer, PreparedScene, prepare_scene, prepare_sprites},
+    prepare_interface,
 };
 use crate::{
     capabilities::DeviceCapabilities,
     contribution::ContributionPasses,
     present::{SurfacePresenter, SurfaceProfile},
+    sprite::{InterfaceConfig, interface::PreparedInterface},
     synthetic::{FrameLighting, SyntheticScene},
 };
 use std::sync::Arc;
@@ -21,6 +23,7 @@ pub struct DevicePrepareInputs {
     base_generation: u64,
     owner: Arc<()>,
     scene: RetainedScene,
+    interface: Option<InterfaceConfig>,
     render_extent: [u32; 2],
 }
 
@@ -45,6 +48,7 @@ pub struct PreparedDevice {
     capabilities: DeviceCapabilities,
     queue: wgpu::Queue,
     scene: Option<PreparedScene>,
+    interface: Option<Box<PreparedInterface>>,
     presenter: Option<SurfacePresenter>,
     creations: Ledger,
     render_extent: [u32; 2],
@@ -134,6 +138,7 @@ impl DevicePrepareInputs {
         }
         let creations = capabilities.device().ledger();
         let build = creations.region(CreationPhase::Build, "device");
+        let interface = prepare_interface(capabilities, queue, self.interface.as_ref()).await?;
         let (scene, presenter, render_extent) = match self.scene {
             RetainedScene::ThreeD(inputs) => {
                 let extent = self.render_extent;
@@ -156,6 +161,7 @@ impl DevicePrepareInputs {
                                 crate::contribution::EffectGraph::default(),
                                 None,
                                 selection,
+                                interface.as_deref().map(PreparedInterface::inputs),
                             )
                             .await?;
                             let presenter =
@@ -170,8 +176,15 @@ impl DevicePrepareInputs {
             }
             RetainedScene::TwoD(sprites) => {
                 let extent = surface.map_or(self.render_extent, |profile| profile.extent);
-                let mut scene =
-                    prepare_sprites(capabilities, queue, sprites, extent, surface).await?;
+                let mut scene = prepare_sprites(
+                    capabilities,
+                    queue,
+                    sprites,
+                    extent,
+                    surface,
+                    interface.as_deref().map(PreparedInterface::inputs),
+                )
+                .await?;
                 let presenter = prepare_presenter(capabilities, extent, surface).await?;
                 scene.bind_presenter(presenter.as_ref())?;
                 (scene, presenter, extent)
@@ -184,6 +197,7 @@ impl DevicePrepareInputs {
             capabilities: capabilities.clone(),
             queue: queue.clone(),
             scene: Some(scene),
+            interface,
             presenter,
             creations,
             render_extent,
@@ -246,6 +260,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             base_generation: self.generation,
             owner: Arc::clone(&self.visual_owner),
             scene,
+            interface: self.interface.as_deref().map(PreparedInterface::config),
             render_extent: self.render_extent,
         })
     }
@@ -353,6 +368,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.completed.clear();
         self.device = wgpu::Device::clone(candidate.capabilities.device());
         self.queue = candidate.queue.clone();
+        self.interface = candidate.interface.take();
         self.generation = candidate.capabilities.generation();
         self.submitted_clock = None;
         self.native_failed_generation = None;

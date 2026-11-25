@@ -4,10 +4,12 @@ use std::sync::Arc;
 
 mod cooked;
 pub(crate) mod graph;
+pub(crate) mod interface;
 mod pass;
 mod world;
 pub use cooked::{CookedSpriteSheet, SpriteSheetPage, SpriteSheetPublication, SpriteSheetSource};
 pub(crate) use graph::{PreparedSprites, SpriteTarget};
+pub use interface::{InterfaceConfig, InterfaceFrameStats, PaintList};
 pub use world::{SpritePose, SpriteSink};
 
 pub(crate) use thrum_asset::layout::{SHEET_GUTTER, SHEET_MAX_MIP};

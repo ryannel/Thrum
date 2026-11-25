@@ -177,7 +177,9 @@ pub(crate) fn validate_pass_timings(
     let mut stages = Some(AtmosphereStage::ORDER.into_iter());
     let mut surface = None;
     for pass in passes {
-        if pass.category == TimingCategory::Temporal {
+        if pass.category == TimingCategory::Temporal
+            || pass.name.as_ref() == crate::sprite::interface::PASS
+        {
             continue;
         }
         if matches!(

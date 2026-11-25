@@ -98,6 +98,7 @@ impl EdrTone {
         output: GraphColorAttachment<'_>,
         timings: Option<&mut GpuTimings>,
         (presenter, binding): (&SurfacePresenter, &PresentationBinding),
+        overlay: Option<&crate::sprite::interface::PreparedInterface>,
     ) -> Result<(), RenderError> {
         if output.view.texture().format() != wgpu::TextureFormat::Rgba16Float {
             return Err(RenderError::TargetExtent);
@@ -111,6 +112,9 @@ impl EdrTone {
         pass.set_bind_group(1, &self.group, &[]);
         presenter.set_viewport(&mut pass, binding);
         pass.draw(0..3, 0..1);
+        if let Some(overlay) = overlay {
+            overlay.draw_float(&mut pass, presenter.profile().extent);
+        }
         Ok(())
     }
 }

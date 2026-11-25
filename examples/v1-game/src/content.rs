@@ -166,7 +166,13 @@ impl std::error::Error for CloudQualityError {
 pub fn selected_setup() -> Result<crate::GameSetup, String> {
     let scene = launch_value("THRUM_SCENE");
     #[cfg(feature = "proving")]
-    let sprite_scale = if scene.as_deref() == Ok("sprites") {
+    let interface = scene.as_deref() == Ok("interface");
+    #[cfg(feature = "proving")]
+    let (interface_scale, interface_rows) = selected_interface(interface)?;
+    #[cfg(feature = "proving")]
+    let scene = scene_with_interface_background(scene);
+    #[cfg(feature = "proving")]
+    let sprite_scale = if matches!(scene.as_deref(), Ok("sprites" | "interface")) {
         validate_sprite_launch()?;
         Some(match launch_value("THRUM_SPRITE_SCALE") {
             Ok(scale) => scale
@@ -179,7 +185,10 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
         None
     };
     #[cfg(not(feature = "proving"))]
-    if matches!(scene.as_deref(), Ok("field" | "sprites" | "diagnostic")) {
+    if matches!(
+        scene.as_deref(),
+        Ok("field" | "sprites" | "interface" | "diagnostic")
+    ) {
         return Err("the selected scene requires the proving build".into());
     }
     let content = match scene.as_deref() {
@@ -226,6 +235,10 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
     };
     Ok(crate::GameSetup {
         #[cfg(feature = "proving")]
+        interface_scale,
+        #[cfg(feature = "proving")]
+        interface_rows,
+        #[cfg(feature = "proving")]
         sprite_scale,
         #[cfg(feature = "proving")]
         route_scale_props: false,
@@ -247,7 +260,7 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
                         .parse::<u32>()
                         .map_err(|_| "THRUM_SPRITE_ROWS must be a whole number")?,
                 ),
-                Err(std::env::VarError::NotPresent) => None,
+                Err(std::env::VarError::NotPresent) => interface.then_some(10_000),
                 Err(error) => return Err(error.to_string()),
             }
         } else {
@@ -459,6 +472,47 @@ pub fn attach_cooked_scene_with_probe(
     )
 }
 
+#[cfg(feature = "proving")]
+fn scene_with_interface_background(
+    scene: Result<String, std::env::VarError>,
+) -> Result<String, std::env::VarError> {
+    if scene.as_deref() == Ok("interface")
+        && launch_value("THRUM_INTERFACE_BACKGROUND").as_deref() == Ok("valley")
+    {
+        Ok("valley".into())
+    } else {
+        scene
+    }
+}
+
+#[cfg(feature = "proving")]
+fn selected_interface(enabled: bool) -> Result<(Option<u8>, Option<u32>), String> {
+    if !enabled {
+        return Ok((None, None));
+    }
+    let scale = match launch_value("THRUM_INTERFACE_SCALE") {
+        Err(std::env::VarError::NotPresent) => 1,
+        Ok(value) => value
+            .parse::<u8>()
+            .ok()
+            .filter(|scale| (1..=3).contains(scale))
+            .ok_or("THRUM_INTERFACE_SCALE must be an integer from 1 to 3")?,
+        Err(error) => return Err(error.to_string()),
+    };
+    let rows = match launch_value("THRUM_INTERFACE_ROWS") {
+        Err(std::env::VarError::NotPresent) => None,
+        Ok(value) => Some(
+            value
+                .parse::<u32>()
+                .ok()
+                .filter(|rows| matches!(rows, 0 | 2000))
+                .ok_or("THRUM_INTERFACE_ROWS must be 0 or 2000")?,
+        ),
+        Err(error) => return Err(error.to_string()),
+    };
+    Ok((Some(scale), rows))
+}
+
 fn attach_selected(
     host: &mut Host,
     path: thrum_asset_gpu::CookedDrawPath,
@@ -467,11 +521,13 @@ fn attach_selected(
     ) -> Result<thrum_asset_gpu::CookedAssets, String>,
 ) -> Result<Option<Arc<Mutex<CookedStats>>>, String> {
     let scene = launch_value("THRUM_SCENE");
+    #[cfg(feature = "proving")]
+    let scene = scene_with_interface_background(scene);
     if scene.as_deref() == Ok("field") {
         return Ok(None);
     }
     let store = std::env::var_os("THRUM_ASSET_STORE");
-    if scene.as_deref() == Ok("sprites") {
+    if matches!(scene.as_deref(), Ok("sprites" | "interface")) {
         if store.is_some() {
             return Err("2D scene refuses cooked placements through THRUM_ASSET_STORE".into());
         }

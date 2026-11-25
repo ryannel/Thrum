@@ -148,6 +148,8 @@ pub(crate) enum PipelineRole {
     Opaque,
     /// The 2D scene's sprite draw, in its own closure.
     Sprites,
+    /// The interface sprite draw on the 8-bit display image.
+    Interface,
     /// The display tone stage.
     Display,
     /// Near Sun cascade.
@@ -229,6 +231,7 @@ impl PipelineRole {
             Self::Stars => 9,
             Self::Atmosphere(stage) => ATMOSPHERE_BASE + atmosphere_slot(stage),
             Self::ContributionCompute => 1000,
+            Self::Interface => 1001,
             Self::Effect(index) => EFFECT_BASE + index,
             Self::AfterOpaque(index) => AFTER_OPAQUE_BASE + index,
             Self::Secondary { view, stage } => {
@@ -368,6 +371,7 @@ pub(crate) enum PassKey {
     NativeProvider(&'static str),
     /// The 2D scene's sprite draw.
     Sprites,
+    Interface,
     /// Output readback copy.
     Readback,
     /// The surface present blit.
@@ -424,6 +428,7 @@ impl PassKey {
             Self::RayStructureBuild => "ray structure build",
             Self::NativeProviderBefore(name) | Self::NativeProvider(name) => name,
             Self::Sprites => "sprites",
+            Self::Interface => "interface stage",
             Self::Readback => "output readback",
             Self::Surface => "V1 surface present",
             Self::Effect(_) | Self::AfterOpaque(_) | Self::Secondary { .. } => return None,
@@ -470,7 +475,7 @@ impl PassKey {
             | Self::AmbientReceiver
             | Self::CombinedVisibility => TimingCategory::Effects,
             Self::Secondary { .. } => TimingCategory::SecondaryViews,
-            Self::Sprites => TimingCategory::Sprites,
+            Self::Sprites | Self::Interface => TimingCategory::Sprites,
             Self::Surface => TimingCategory::Surface,
             Self::CullingStats
             | Self::ContributionUpload
@@ -488,6 +493,7 @@ impl PassKey {
         Some(match self {
             Self::Opaque => PipelineRole::Opaque,
             Self::Sprites => PipelineRole::Sprites,
+            Self::Interface => PipelineRole::Interface,
             Self::Display | Self::DisplayReferred => PipelineRole::Display,
             Self::ShadowNear => PipelineRole::ShadowNear,
             Self::ShadowFar => PipelineRole::ShadowFar,

@@ -363,6 +363,8 @@ fn omit_mirror(overlay: scene::RouteOverlay) -> bool {
 /// the engine's frame host samples for each frame.
 pub struct GameScene {
     #[cfg(feature = "proving")]
+    interface: Option<crate::interface_card::Card>,
+    #[cfg(feature = "proving")]
     sprite_scale: Option<u16>,
     #[cfg(feature = "proving")]
     sprite_probe: Option<crate::sprite_probe::Scene>,
@@ -515,6 +517,10 @@ impl GameScene {
                     .expect("checked-in temporal fixture")
             });
         Self {
+            #[cfg(feature = "proving")]
+            interface: setup
+                .interface_scale
+                .map(|scale| crate::interface_card::Card::new(scale, setup.interface_rows)),
             #[cfg(feature = "proving")]
             sprite_scale: setup.sprite_scale,
             #[cfg(feature = "proving")]
@@ -709,6 +715,18 @@ impl GameScene {
 }
 
 impl SceneSource<PublishedPage> for GameScene {
+    #[cfg(feature = "proving")]
+    fn interface_config(&self) -> Option<thrum_ui::InterfaceConfig> {
+        self.interface
+            .as_ref()
+            .map(crate::interface_card::Card::config)
+    }
+
+    #[cfg(feature = "proving")]
+    fn paint_list(&mut self, extent: [u32; 2]) -> Option<thrum_ui::PaintList> {
+        self.interface.as_mut().map(|card| card.paint(extent))
+    }
+
     #[cfg(feature = "proving")]
     fn extract_sprites(
         &self,
@@ -1141,6 +1159,8 @@ mod tests {
         .unwrap();
         let [camera_pitch, camera_yaw] = camera.orientation();
         let policy = GameScene {
+            #[cfg(feature = "proving")]
+            interface: None,
             #[cfg(feature = "proving")]
             haze: None,
             #[cfg(feature = "proving")]

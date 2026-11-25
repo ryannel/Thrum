@@ -954,6 +954,22 @@ impl GraphTextures {
         graph: &CompiledGraph,
         recipe: crate::capabilities::Recipe,
     ) -> Self {
+        Self::with_srgb_view(device, graph, recipe, None)
+    }
+
+    pub(crate) fn with_srgb_view(
+        device: &wgpu::Device,
+        graph: &CompiledGraph,
+        recipe: crate::capabilities::Recipe,
+        srgb: Option<&ResourceId>,
+    ) -> Self {
+        let srgb_slot = srgb.and_then(|resource| {
+            graph
+                .lifetimes
+                .iter()
+                .find(|life| life.resource == *resource)?
+                .transient_slot
+        });
         let mut slots: Vec<Option<wgpu::Texture>> =
             (0..graph.transient_slots).map(|_| None).collect();
         let mut resource_slots = vec![None; graph.resources.len()];
@@ -1007,7 +1023,11 @@ impl GraphTextures {
                     dimension: dimension.physical(),
                     format,
                     usage,
-                    view_formats: &[],
+                    view_formats: if srgb_slot == Some(slot) {
+                        &[wgpu::TextureFormat::Rgba8UnormSrgb]
+                    } else {
+                        &[]
+                    },
                 }));
             }
         }

@@ -376,3 +376,7 @@ required-features = ["creation-counters"]
 [[test]]
 name = "metalfx_reset"
 required-features = ["creation-counters"]
+
+[[test]]
+name = "interface_absent"
+required-features = ["creation-counters"]

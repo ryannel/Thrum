@@ -57,6 +57,7 @@ impl PreparedRenderer {
 // scene can still be submitted independently when one of those checks fails.
 pub(super) fn encode_surface_pass(
     prepared: &PreparedRenderer,
+    interface: Option<&crate::sprite::interface::PreparedInterface>,
     presenter: Option<&SurfacePresenter>,
     slot: &mut FrameSlot,
     surface: Option<&SurfaceOutput<'_>>,
@@ -71,10 +72,10 @@ pub(super) fn encode_surface_pass(
             let timings = timing_requested.then_some(&mut slot.timing.queries);
             let encoded = match (prepared, &slot.target) {
                 (PreparedRenderer::ThreeD(scene), FrameTarget::ThreeD(target)) => {
-                    scene.encode_surface(target, encoder, surface, timings, readback)
+                    scene.encode_surface(target, encoder, surface, timings, readback, interface)
                 }
                 (PreparedRenderer::TwoD(scene), FrameTarget::TwoD(target)) => {
-                    scene.present(encoder, target, timings, readback, surface)
+                    scene.present(encoder, target, timings, readback, surface, interface)
                 }
                 _ => Err(RenderError::StaleTarget),
             };

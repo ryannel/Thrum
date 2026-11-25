@@ -583,6 +583,7 @@ pub struct PreparedSynthetic {
     /// The arena cube's checked index range and base vertex.
     cube_draw: (std::ops::Range<u32>, i32),
     display: SdrToneStage,
+    pub(crate) interface_inputs: Option<crate::sprite::interface::SpriteInputs>,
     view_layout: wgpu::BindGroupLayout,
     view_buffer: wgpu::Buffer,
     view_stride: u32,
@@ -645,6 +646,7 @@ type LateSurface<'a> = (
 );
 
 struct SceneContext<'a> {
+    interface: Option<&'a crate::sprite::interface::PreparedInterface>,
     native: Option<&'a NativeFrame>,
     segments: Option<&'a mut Vec<wgpu::CommandBuffer>>,
     surface: Option<LateSurface<'a>>,
@@ -909,6 +911,26 @@ impl SceneContext<'_> {
                 resource: &self.target.ids.output,
                 view: &self.target.view,
                 exposure_side: self.exposure_side,
+            },
+            self.timings.as_deref_mut(),
+        )
+    }
+
+    fn interface(&mut self, pass: &CompiledPass) -> Result<(), RenderError> {
+        let interface = self.interface.ok_or(RenderError::GraphPassMismatch)?;
+        let view = self
+            .target
+            .interface_view
+            .as_ref()
+            .ok_or(RenderError::GraphPassMismatch)?;
+        interface.encode_sdr(
+            self.encoder,
+            pass,
+            GraphColorAttachment {
+                resource: &self.target.ids.output,
+                range: 0..1,
+                view,
+                clear: wgpu::Color::BLACK,
             },
             self.timings.as_deref_mut(),
         )
@@ -1671,7 +1693,9 @@ impl PreparedSynthetic {
         target: &OffscreenTarget,
         timings: Option<&mut GpuTimings>,
     ) -> Result<(), RenderError> {
-        self.encode_inner(encoder, generation, target, timings, None, None, None, None)
+        self.encode_inner(
+            encoder, generation, target, timings, None, None, None, None, None,
+        )
     }
 
     /// Encode the scene with an engine contribution drawn at the end of its forward pass, and
@@ -1688,6 +1712,7 @@ impl PreparedSynthetic {
         contribution: Option<&mut (dyn SceneContribution + 'static)>,
         native: Option<&NativeFrame>,
         segments: &mut Vec<wgpu::CommandBuffer>,
+        interface: Option<&crate::sprite::interface::PreparedInterface>,
     ) -> Result<(), RenderError> {
         if let Some(readback) = readback.as_deref() {
             readback.check_target(target)?;
@@ -1701,6 +1726,7 @@ impl PreparedSynthetic {
             contribution,
             native,
             Some(segments),
+            interface,
         )
     }
 
@@ -1726,6 +1752,7 @@ impl PreparedSynthetic {
             None,
             None,
             None,
+            None,
         )
     }
 
@@ -1746,6 +1773,7 @@ impl PreparedSynthetic {
         surface: LateSurface<'_>,
         timings: Option<&mut GpuTimings>,
         readback: bool,
+        interface: Option<&crate::sprite::interface::PreparedInterface>,
     ) -> Result<(), RenderError> {
         self.check_target(target)?;
         target
@@ -1753,6 +1781,7 @@ impl PreparedSynthetic {
             .execute_after_acquire(&mut SceneContext {
                 native: None,
                 segments: None,
+                interface,
                 surface: Some(surface),
                 prepared: self,
                 target,
@@ -1777,6 +1806,7 @@ impl PreparedSynthetic {
         contribution: Option<&'a mut (dyn SceneContribution + 'static)>,
         native: Option<&'a NativeFrame>,
         segments: Option<&'a mut Vec<wgpu::CommandBuffer>>,
+        interface: Option<&'a crate::sprite::interface::PreparedInterface>,
     ) -> Result<(), RenderError> {
         self.check_target(target)?;
         if generation != self.key.device_generation {
@@ -1802,6 +1832,7 @@ impl PreparedSynthetic {
         graph.execute_before_acquire(&mut SceneContext {
             native,
             segments,
+            interface,
             surface: None,
             prepared: self,
             target,
@@ -1935,6 +1966,7 @@ pub struct OffscreenTarget {
     textures: GraphTextures,
     ids: TargetResources,
     view: wgpu::TextureView,
+    interface_view: Option<wgpu::TextureView>,
     scene_view: wgpu::TextureView,
     motion_view: wgpu::TextureView,
     reactive_view: wgpu::TextureView,
@@ -2084,7 +2116,12 @@ impl OffscreenTarget {
             capture_layout,
         } = compiled;
         // The night capture extends scene and output lifetimes.
-        let textures = GraphTextures::new(device, &night.as_ref().unwrap_or(&day).readback, recipe);
+        let textures = GraphTextures::with_srgb_view(
+            device,
+            &night.as_ref().unwrap_or(&day).readback,
+            recipe,
+            prepared.interface_inputs.as_ref().map(|_| &ids.output),
+        );
         let texture_view = |id: &ResourceId| {
             textures
                 .texture(id)
@@ -2092,6 +2129,10 @@ impl OffscreenTarget {
                 .map(|t| t.create_view(&wgpu::TextureViewDescriptor::default()))
         };
         let view = texture_view(&ids.output)?;
+        let interface_view = prepared
+            .interface_inputs
+            .as_ref()
+            .map(|_| crate::sprite::interface::sdr_view(view.texture()));
         let depth = texture_view(&ids.depth)?;
         let scene_view = texture_view(&ids.scene)?;
         let motion_view = texture_view(&ids.motion)?;
@@ -2251,6 +2292,7 @@ impl OffscreenTarget {
             textures,
             ids,
             view,
+            interface_view,
             scene_view,
             motion_view,
             reactive_view,

@@ -6,6 +6,7 @@ import { prepareMeshRows } from './check_mesh_rows_browser.mjs';
 import { checkContentEdits, loadContentEdits } from './check_content_edits_browser.mjs';
 import { qualifyTemporal } from './check_temporal_browser.mjs';
 import { qualifySpriteCrisp, qualifySpriteField, qualifySprites } from './check_sprites_browser.mjs';
+import { qualifyInterface } from './check_interface_browser.mjs';
 import { installWasmReceipt, readWasmReceipt } from './wasm_receipt.mjs';
 import { qualifyEnvironment, qualifyEnvironmentParity, qualifyEnvironmentCost } from './check_environment_browser.mjs';
 import { cloudCases, cloudObserver, preparePlacedClouds, qualifyClouds } from './check_clouds_browser.mjs';
@@ -26,6 +27,7 @@ cases.push('effect-after-opaque', 'effect-tick');
 cases.push('exit-scene', 'exit-sweep', 'exit-stops', 'extent');
 cases.push('route-diagnostic', 'scale', 'governor');
 cases.push('shipping-boundary');
+cases.push('interface-stage', 'interface-stage-cost');
 cases.push('sprites-2d', 'sprites-2d-cost', 'sprites-field', 'sprites-field-cost', 'sprites-crisp', 'sprite-sheets');
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -2570,7 +2572,7 @@ async function main() {
     // `all` checks the default page; `material` needs the development page, so it runs on its own.
     const modes = [];
     // The moving route is its own run: it needs route.html and makes a separate evidence record.
-    for (const mode of args.case === 'all' ? cases.filter(mode => mode !== 'mesh-rows' && mode !== 'material' && mode !== 'shipping-boundary' && mode !== 'sprites-2d-cost' && mode !== 'sprites-crisp' && mode !== 'sprite-sheets' && mode !== 'route-diagnostic' && mode !== 'scale' && mode !== 'governor' && !mode.startsWith('sprites-field') && !mode.startsWith('moving-route') && !mode.startsWith('environment-') && !mode.startsWith('exit-')) : [args.case]) {
+    for (const mode of args.case === 'all' ? cases.filter(mode => mode !== 'mesh-rows' && mode !== 'material' && mode !== 'shipping-boundary' && mode !== 'sprites-2d-cost' && mode !== 'sprites-crisp' && mode !== 'sprite-sheets' && mode !== 'route-diagnostic' && mode !== 'scale' && mode !== 'governor' && !mode.startsWith('interface-stage') && !mode.startsWith('sprites-field') && !mode.startsWith('moving-route') && !mode.startsWith('environment-') && !mode.startsWith('exit-')) : [args.case]) {
       modes.push(...(mode === 'moving-route-controls' ? Object.keys(movingControls).map(control => `moving-route-${control}`) : mode === 'field-oracle' ? ['field-oracle-direct', 'field-oracle-frustum', 'field-oracle-occlusion'] : mode === 'route' || mode === 'exit-stops' ? (await routeStops(files, directory)).map(stop => mode === 'exit-stops' ? stop.replace(/^route-/, 'exit-stop-') : stop) : [mode]));
     }
     if (modes.some(mode => mode === 'scale' || mode.startsWith('moving-route'))) {
@@ -2595,6 +2597,11 @@ async function main() {
       else if (mode === 'sprites-crisp') results.push(await qualifySpriteCrisp({
         cdp, origin: serving.origin, output, timeout: args['timeout-ms'],
         wasm: files.get('/v1_game_bg.wasm'), existingGame, waitFor, releaseGameGraphics, unloadGamePage,
+        commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repo, encoding: 'utf8' }).trim(),
+      }));
+      else if (mode.startsWith('interface-stage')) results.push(await qualifyInterface({
+        cdp, origin: serving.origin, output, mode, timeout: args['timeout-ms'],
+        wasm: files.get('/v1_game_bg.wasm'), existingGame, destroyActualDevice, waitFor,
         commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repo, encoding: 'utf8' }).trim(),
       }));
       else if (mode === 'sprites-2d' || mode === 'sprites-2d-cost') results.push(await qualifySprites({

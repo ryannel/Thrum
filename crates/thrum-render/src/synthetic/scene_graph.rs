@@ -12,6 +12,7 @@ use crate::graph::{
 };
 use crate::graph_record::{ExecutableGraph, RecordBinding};
 use crate::pass_key::{PassKey, PipelineRole};
+use crate::sprite::interface;
 use crate::visibility::VisibilityPrepared;
 use std::collections::BTreeSet;
 
@@ -54,6 +55,7 @@ impl SceneGraphs<CompiledGraph> {
         capabilities: &crate::capabilities::DeviceCapabilities,
         keys: &BTreeSet<PipelineKey>,
         capture: CaptureSource,
+        interface_pass: Option<usize>,
         surface: Option<&(ResourceId, PassBody)>,
         consumers: impl IntoIterator<Item = Option<usize>>,
     ) -> Result<Option<Self>, RenderError> {
@@ -69,7 +71,11 @@ impl SceneGraphs<CompiledGraph> {
             readback,
             capabilities.generation(),
             keys,
-            (capture == CaptureSource::SceneLinear).then_some(stars),
+            match capture {
+                CaptureSource::SceneLinear => Some(stars),
+                CaptureSource::Sdr => interface_pass,
+                _ => None,
+            },
             surface,
         )?))
     }
@@ -657,6 +663,25 @@ impl super::SyntheticTargetInputs {
         if let Some(ambient) = ambient {
             graph.dependency(ambient.filter, display_pass)?;
         }
+        let generation = self.key.device_generation;
+        let interface_reads = self
+            .interface_inputs
+            .as_ref()
+            .map(|inputs| inputs.reads(&mut graph))
+            .transpose()?;
+        let interface_pass = if let Some(reads) = &interface_reads {
+            Some(interface::append_sdr(
+                &mut graph,
+                &mut prepared_keys,
+                &output,
+                reads.clone(),
+                generation,
+                display_pass,
+                profile.is_none_or(|profile| profile.format != wgpu::TextureFormat::Rgba16Float),
+            )?)
+        } else {
+            None
+        };
         let source = Self::capture_input(capture_source, &output, &scene, native.as_ref())?;
         let Some(ResourceDescriptor::Texture { width, height, .. }) = graph.descriptor(source)
         else {
@@ -668,7 +693,6 @@ impl super::SyntheticTargetInputs {
             self.capabilities.limits(),
         )?;
         let readback = Self::readback_pass(&mut graph, source, &exposure_sample, capture_layout)?;
-        let generation = self.key.device_generation;
         let surface = Self::surface_pass(
             &mut graph,
             &output,
@@ -676,6 +700,7 @@ impl super::SyntheticTargetInputs {
             generation,
             &mut prepared_keys,
             profile,
+            interface_reads.as_deref().unwrap_or_default(),
         )?;
         graph.validate_capabilities(&self.capabilities)?;
         let day = SceneGraphs::compile(
@@ -683,7 +708,11 @@ impl super::SyntheticTargetInputs {
             readback.clone(),
             generation,
             &prepared_keys,
-            (capture_source == CaptureSource::SceneLinear).then_some(late.colour),
+            match capture_source {
+                CaptureSource::SceneLinear => Some(late.colour),
+                CaptureSource::Sdr => interface_pass,
+                _ => None,
+            },
             surface.as_ref(),
         )?;
         let stars = if early_stars.is_some() {
@@ -704,6 +733,7 @@ impl super::SyntheticTargetInputs {
             &self.capabilities,
             &prepared_keys,
             capture_source,
+            interface_pass,
             surface.as_ref(),
             [
                 native.as_ref().map(|native| native.pass),
@@ -844,6 +874,7 @@ impl super::SyntheticTargetInputs {
         generation: u64,
         prepared_keys: &mut BTreeSet<PipelineKey>,
         profile: Option<crate::present::SurfaceProfile>,
+        interface_reads: &[Access],
     ) -> Result<Option<(ResourceId, PassBody)>, GraphError> {
         profile
             .map(|profile| {
@@ -861,6 +892,7 @@ impl super::SyntheticTargetInputs {
                             AccessKind::UniformRead,
                         ),
                     ]);
+                    pass.accesses.extend_from_slice(interface_reads);
                 }
                 Ok((surface, pass))
             })
@@ -1415,6 +1447,7 @@ impl super::SyntheticTargetInputs {
                             },
                             frame.timings.as_deref_mut(),
                             (presenter, binding),
+                            frame.interface,
                         );
                 }
                 presenter
@@ -1461,6 +1494,7 @@ impl super::SyntheticTargetInputs {
         Ok(match key {
             PassKey::Opaque => B::new(id, PassKind::Render, |frame, pass| frame.opaque(pass)),
             PassKey::Display => B::new(id, PassKind::Render, |frame, pass| frame.tone(pass)),
+            PassKey::Interface => B::new(id, PassKind::Render, |frame, pass| frame.interface(pass)),
             PassKey::ShadowNear | PassKey::ShadowFar | PassKey::HorizonHeights => {
                 let index = match key {
                     PassKey::ShadowNear => 0,

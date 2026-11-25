@@ -26,6 +26,8 @@ mod host;
 #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
 mod hosted;
 #[cfg(feature = "proving")]
+mod interface_card;
+#[cfg(feature = "proving")]
 pub mod lent;
 mod scene;
 mod showcase;
@@ -62,7 +64,7 @@ pub use browser::{BrowserLightProbe, create_light_list_probe};
 #[cfg(all(target_arch = "wasm32", feature = "proving"))]
 pub use browser::{
     GovernorBrowser, create_cooked_sprite_game, create_field_game, create_governor_game,
-    create_placed_browser_game, create_sprite_game, create_sprite_probe,
+    create_interface_game, create_placed_browser_game, create_sprite_game, create_sprite_probe,
     qualify_effect_after_opaque, qualify_effect_state, qualify_effect_tick, qualify_lent_products,
 };
 pub use camera::{CameraRoute, RouteCheckpoint, RouteKey, RoutePose, SceneCamera};

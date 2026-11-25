@@ -3386,6 +3386,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "thrum-ui"
+version = "0.1.0"
+dependencies = [
+ "half",
+ "pollster",
+ "thrum-core",
+ "thrum-render",
+ "thrum-test-support",
+ "wgpu",
+]
+
+[[package]]
 name = "thrum-water"
 version = "0.1.0"
 dependencies = [
@@ -3663,6 +3675,7 @@ dependencies = [
  "thrum-fixtures",
  "thrum-render",
  "thrum-test-support",
+ "thrum-ui",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",

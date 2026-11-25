@@ -82,3 +82,7 @@
   has no float display mode, no float capture and no change of mode, so WP1.1, WP1.2 and WP1.5 cannot be met
   over the sprite scene. The missing part is planned as `RENDER-2D:WP6` under that module's seam ruling 1, and
   WP1 now waits for it in place of `RENDER-2D:WP5`. No item and no mechanism here changed.
+- 2026-11-25 Resumed WP1 after RENDER-2D WP6 passed review. The interface uses the sprite pass after
+  the 8-bit transform and inside the float present pass. The before graph snapshot came from Metal on
+  `cbb05f15b`, with the float prerequisite landed. Metal and Chrome qualification and timing records
+  are in the [WP1 working folder](../../../.orchestrate/evidence/GAME-UI/WP1/).

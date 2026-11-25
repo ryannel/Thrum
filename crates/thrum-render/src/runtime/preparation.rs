@@ -11,7 +11,7 @@ use crate::{
     capabilities::{DeviceCapabilities, RayStructureSelection},
     contribution::ContributionPasses,
     present::{SurfacePresenter, SurfaceProfile},
-    sprite::{PreparedSprites, SpriteTarget},
+    sprite::{PreparedSprites, SpriteTarget, interface::SpriteInputs},
     synthetic::{
         CaptureSource, FrameLighting, OffscreenTarget, PreparedSynthetic, RetainedRayMeshes,
         SceneTimingLayout, SyntheticScene, SyntheticTargetInputs,
@@ -221,7 +221,8 @@ impl PreparedRenderer {
         match self {
             Self::ThreeD(_) => 0,
             Self::TwoD(scene) => {
-                2 + u32::from(scene.contribution_passes.compute)
+                2 + u32::from(scene.interface_inputs.is_some())
+                    + u32::from(scene.contribution_passes.compute)
                     + u32::try_from(scene.effects.passes.len()).unwrap_or(u32::MAX - 3)
             }
         }
@@ -579,6 +580,7 @@ impl<W: super::FrameWorld, V: super::SceneSource<W::Page>> super::FrameHost<W, V
                                 None
                             },
                             selection,
+                            self.interface_inputs(),
                         )
                         .await
                     })
@@ -661,6 +663,7 @@ pub(super) async fn prepare_scene(
     effect_graph: crate::contribution::EffectGraph,
     retained_ray_meshes: Option<RetainedRayMeshes>,
     selection: RayStructureSelection,
+    interface: Option<SpriteInputs>,
 ) -> Result<PreparedScene, FrameError> {
     let mut prepared = PreparedSynthetic::prepare_host_candidate(
         capabilities,
@@ -673,6 +676,7 @@ pub(super) async fn prepare_scene(
     )
     .await
     .map_err(|error| FrameError::gpu("scene prepare", error))?;
+    prepared.interface_inputs = interface;
     prepared.set_contribution_passes(contribution_passes);
     prepared.set_effect_graph(effect_graph);
     let prepared = PreparedRenderer::ThreeD(Box::new(prepared));
@@ -686,10 +690,12 @@ pub(super) async fn prepare_sprites(
     scene: crate::sprite::SpriteScene,
     extent: [u32; 2],
     profile: Option<SurfaceProfile>,
+    interface: Option<SpriteInputs>,
 ) -> Result<PreparedScene, FrameError> {
-    let scene = PreparedSprites::prepare(capabilities, queue, scene)
+    let mut scene = PreparedSprites::prepare(capabilities, queue, scene)
         .await
         .map_err(|error| FrameError::gpu("sprite scene prepare", error))?;
+    scene.interface_inputs = interface;
     let prepared = PreparedRenderer::TwoD(Box::new(scene));
     let slots = prepare_slots(&prepared, queue, extent, profile)?;
     Ok(PreparedScene { prepared, slots })

@@ -1,0 +1,34 @@
+[package]
+name = "thrum-ui"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+autotests = false
+description = "Paint lists for Thrum's in-frame game interface"
+
+[lints]
+workspace = true
+
+[dependencies]
+thrum-render = { path = "../thrum-render" }
+
+[dev-dependencies]
+thrum-core = { path = "../thrum-core" }
+thrum-render = { path = "../thrum-render", features = ["creation-counters"] }
+thrum-test-support = { path = "../thrum-test-support", features = ["render"] }
+half = { version = "=2.7.1", default-features = false }
+pollster = "=1.0.1"
+wgpu = { version = "=30.0.1", default-features = false, features = ["std", "metal"] }
+
+[[test]]
+name = "stage_exact"
+
+[[test]]
+name = "stage_display_modes"
+
+[[test]]
+name = "stage_lifecycle"
+
+[[test]]
+name = "stage_rows"

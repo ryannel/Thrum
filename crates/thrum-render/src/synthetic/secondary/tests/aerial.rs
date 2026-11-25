@@ -92,6 +92,7 @@ fn plane_volume_matches_every_channel_of_the_ordinary_observer() {
                             Some(&mut asker),
                             None,
                             &mut Vec::new(),
+                            None,
                         )
                         .expect("view graph");
                     queue.submit([encoder.finish()]);

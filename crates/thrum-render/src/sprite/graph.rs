@@ -4,6 +4,7 @@ use std::{collections::BTreeSet, sync::Arc};
 
 use super::{
     SpriteFrame, SpriteFrameStats, SpriteScene, SpriteSink,
+    interface::{self, PreparedInterface, SpriteInputs},
     pass::{self, SpriteBindings, SpritePass},
     world::SpriteWorld,
 };
@@ -40,6 +41,7 @@ pub(crate) struct PreparedSprites {
     world: SpriteWorld,
     ordering: std::time::Duration,
     tone: DisplayReferredStage,
+    pub(crate) interface_inputs: Option<SpriteInputs>,
 }
 
 pub(crate) struct SpriteTarget {
@@ -53,6 +55,8 @@ pub(crate) struct SpriteTarget {
     sdr: ResourceId,
     scene_view: wgpu::TextureView,
     sdr_view: Option<wgpu::TextureView>,
+    interface_view: Option<wgpu::TextureView>,
+    has_interface: bool,
     float_sdr: Option<OutputGraphs>,
     sprites: SpriteBindings,
     tone_input: wgpu::BindGroup,
@@ -93,6 +97,7 @@ impl RecordFamily for SpriteGraph {
 
 struct RecordContext<'a> {
     scene: &'a PreparedSprites,
+    interface: Option<&'a PreparedInterface>,
     target: &'a SpriteTarget,
     encoder: &'a mut wgpu::CommandEncoder,
     stats: Option<&'a mut SpriteFrameStats>,
@@ -125,6 +130,7 @@ impl PreparedSprites {
             world: SpriteWorld::new(0),
             ordering: std::time::Duration::ZERO,
             tone: self.tone.clone(),
+            interface_inputs: self.interface_inputs.clone(),
         }
     }
 
@@ -141,6 +147,8 @@ impl PreparedSprites {
             queue,
             &scene,
             PipelineRole::Sprites.pipeline_key(capabilities.generation(), 0),
+            SCENE_FORMAT,
+            pass::PASS,
         )?;
         let tone = DisplayReferredStage::new(device);
         if let Some(error) = scope.pop().await {
@@ -155,6 +163,7 @@ impl PreparedSprites {
             effects: EffectGraph::default(),
             sprites,
             tone,
+            interface_inputs: None,
         })
     }
 
@@ -229,6 +238,7 @@ impl PreparedSprites {
         contribution: Option<&'a mut (dyn SceneContribution + 'static)>,
         stats: Option<&'a mut SpriteFrameStats>,
         time: EffectTime,
+        interface: Option<&'a PreparedInterface>,
     ) -> Result<(), RenderError> {
         let frame = contribution
             .is_some()
@@ -242,6 +252,7 @@ impl PreparedSprites {
         }
         graph.execute_before_acquire(&mut RecordContext {
             scene: self,
+            interface,
             target,
             encoder,
             stats,
@@ -265,11 +276,13 @@ impl PreparedSprites {
             &wgpu::TextureView,
             [u32; 2],
         ),
+        interface: Option<&PreparedInterface>,
     ) -> Result<(), RenderError> {
         target
             .graph(readback)
             .execute_after_acquire(&mut RecordContext {
                 scene: self,
+                interface,
                 target,
                 encoder,
                 stats: None,
@@ -378,17 +391,28 @@ impl SpriteTarget {
         let tone = PipelineRole::Display.key(key);
         let mut keys = BTreeSet::from([key, tone]);
         let contributions = contribution_passes(prepared, &mut graph, &mut keys)?;
-        let mut accesses = sprite_inputs(&mut graph, &prepared.sprites)?;
+        let mut accesses = SpriteInputs::new(&prepared.sprites).reads(&mut graph)?;
         accesses.push(store(&scene));
         let sprites = graph.declare(PassKey::Sprites, body(Some(key), accesses));
         for contribution in contributions {
             graph.dependency(contribution, sprites)?;
         }
+        let interface_reads = prepared
+            .interface_inputs
+            .as_ref()
+            .map(|inputs| inputs.reads(&mut graph))
+            .transpose()?;
         let surface = surface_profile
             .map(|profile| {
                 keys.insert(present::pipeline_key(generation));
                 let input = if float { &scene } else { &sdr };
-                present::surface_pass(&mut graph, input, profile, generation)
+                let (output, mut pass) =
+                    present::surface_pass(&mut graph, input, profile, generation)?;
+                if float {
+                    pass.accesses
+                        .extend(interface_reads.iter().flatten().cloned());
+                }
+                Ok::<_, RenderError>((output, pass))
             })
             .transpose()?;
         let float_output = if float {
@@ -414,6 +438,13 @@ impl SpriteTarget {
                 ],
             ),
         );
+        let display_end = if let Some(reads) = interface_reads {
+            interface::append_sdr(
+                &mut graph, &mut keys, &sdr, reads, generation, tone_pass, true,
+            )?
+        } else {
+            tone_pass
+        };
         graph.validate_capabilities(capabilities)?;
         let checkpoint = if !float && source == CaptureSource::SceneLinear {
             &scene
@@ -429,17 +460,26 @@ impl SpriteTarget {
             generation,
             &keys,
             surface.clone(),
-            Some((checkpoint, tone_pass)),
+            Some((
+                checkpoint,
+                if checkpoint == &sdr {
+                    display_end
+                } else {
+                    tone_pass
+                },
+            )),
             if float { sdr_bytes } else { readback_bytes },
         )?;
         let (output, float_sdr) = match float_output {
             Some(output) => (output, Some(sdr_output)),
             None => (sdr_output, None),
         };
-        let textures = GraphTextures::new(
+        let has_interface = prepared.interface_inputs.is_some();
+        let textures = GraphTextures::with_srgb_view(
             device,
             output.select(true).plan(),
             capabilities.recipe().map_err(RenderError::Recipe)?,
+            has_interface.then_some(&sdr),
         );
         let make_view = |resource| {
             textures
@@ -449,6 +489,10 @@ impl SpriteTarget {
         };
         let scene_view = make_view(&scene)?;
         let sdr_view = if float { None } else { Some(make_view(&sdr)?) };
+        let interface_view = sdr_view
+            .as_ref()
+            .filter(|_| has_interface)
+            .map(|view| interface::sdr_view(view.texture()));
         let tone_input = prepared.tone.bind(device, &scene_view);
         let mut target = Self {
             extent,
@@ -459,6 +503,8 @@ impl SpriteTarget {
             sdr,
             scene_view,
             sdr_view,
+            interface_view,
+            has_interface,
             sprite_rows_bytes: prepared.sprites.rows.size(),
             sprite_order_bytes: prepared.sprites.order.size(),
             sprites: prepared.sprites.bind(device),
@@ -507,13 +553,19 @@ impl SpriteTarget {
             dimension: wgpu::TextureDimension::D2,
             format: OUTPUT_FORMAT,
             usage: colour_usage(),
-            view_formats: &[],
+            view_formats: if self.has_interface {
+                &[interface::SDR_VIEW]
+            } else {
+                &[]
+            },
         });
+        self.interface_view = self.has_interface.then(|| interface::sdr_view(&texture));
         self.sdr_view = Some(texture.create_view(&wgpu::TextureViewDescriptor::default()));
     }
 
     pub(crate) fn release_sdr(&mut self) {
         if self.is_float() {
+            self.interface_view = None;
             self.sdr_view = None;
         }
     }
@@ -655,46 +707,6 @@ pub(crate) fn validate_sprite_timings(
     (present.is_some() == presented).then(|| (present, get(crate::synthetic::CONTRIBUTION_COMPUTE)))
 }
 
-fn sprite_inputs(graph: &mut FrameGraph, sprites: &SpritePass) -> Result<Vec<Access>, RenderError> {
-    let mut accesses = Vec::with_capacity(4 + sprites.sheets.len());
-    for (bytes, usage, kind) in [
-        (
-            pass::VIEW_BYTES,
-            wgpu::BufferUsages::UNIFORM,
-            AccessKind::UniformRead,
-        ),
-        (
-            sprites.rows.size(),
-            wgpu::BufferUsages::STORAGE,
-            AccessKind::StorageRead,
-        ),
-        (
-            sprites.order.size(),
-            wgpu::BufferUsages::STORAGE,
-            AccessKind::StorageRead,
-        ),
-        (
-            sprites.frames.size(),
-            wgpu::BufferUsages::STORAGE,
-            AccessKind::StorageRead,
-        ),
-    ] {
-        let id = graph.resource(
-            ResourceDescriptor::Buffer { bytes, usage },
-            ResourceScope::Imported { initialized: true },
-        )?;
-        accesses.push(Access::new(id, 0..bytes, kind));
-    }
-    for (sheet, _) in &sprites.sheets {
-        let id = graph.resource(
-            ResourceDescriptor::of_texture(sheet),
-            ResourceScope::Imported { initialized: true },
-        )?;
-        accesses.push(Access::new(id, 0..1, AccessKind::SampledRead));
-    }
-    Ok(accesses)
-}
-
 fn contribution_passes(
     prepared: &PreparedSprites,
     graph: &mut FrameGraph,
@@ -823,6 +835,7 @@ fn bind(plan: CompiledGraph) -> Result<ExecutableGraph<SpriteGraph>, RenderError
             let (kind, record): (PassKind, Callback) = match key {
                 PassKey::Sprites => (PassKind::Render, record_sprites),
                 PassKey::DisplayReferred => (PassKind::Render, record_tone),
+                PassKey::Interface => (PassKind::Render, record_interface),
                 PassKey::Surface => (PassKind::Render, record_present),
                 PassKey::Readback => (PassKind::Copy, record_capture),
                 PassKey::ContributionUpload => (PassKind::Copy, record_upload),
@@ -911,6 +924,26 @@ fn record_tone(frame: &mut RecordContext<'_>, pass: &CompiledPass) -> Result<(),
     )
 }
 
+fn record_interface(frame: &mut RecordContext<'_>, pass: &CompiledPass) -> Result<(), RenderError> {
+    let interface = frame.interface.ok_or(RenderError::GraphPassMismatch)?;
+    let view = frame
+        .target
+        .interface_view
+        .as_ref()
+        .ok_or(RenderError::GraphPassMismatch)?;
+    interface.encode_sdr(
+        frame.encoder,
+        pass,
+        GraphColorAttachment {
+            resource: &frame.target.sdr,
+            range: 0..1,
+            view,
+            clear: wgpu::Color::BLACK,
+        },
+        frame.timings.as_deref_mut(),
+    )
+}
+
 fn record_capture(frame: &mut RecordContext<'_>, _: &CompiledPass) -> Result<(), RenderError> {
     let readback = frame.readback.as_deref_mut().ok_or(RenderError::Readback)?;
     let view = if frame.target.capture_source() == CaptureSource::SceneLinear {
@@ -953,6 +986,7 @@ fn record_present(frame: &mut RecordContext<'_>, pass: &CompiledPass) -> Result<
                 },
                 frame.timings.as_deref_mut(),
                 (presenter, binding),
+                frame.interface,
             );
     }
     presenter

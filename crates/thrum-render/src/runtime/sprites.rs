@@ -153,6 +153,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 uploaded_rows: upload.rows,
                 uploaded_bytes: upload.bytes,
                 sprites: Some(upload.stats),
+                interface: None,
                 moving: upload.moving,
                 dropped_presentation: upload.dropped,
                 dropped_light_references: 0,
@@ -169,6 +170,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         &mut self,
         readback: bool,
     ) -> Result<(Option<PixelReadback>, wgpu::SubmissionIndex), FrameError> {
+        self.update_interface(Some(self.render_extent), None);
         let source = self.world.source();
         let snapshot = self.world.publication()?;
         if super::publication_source(&snapshot) != source {
@@ -215,6 +217,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 self.contribution.as_deref_mut(),
                 None,
                 time,
+                self.interface.as_deref(),
             )
             .map_err(|error| FrameError::gpu("capture sprite encode", error))?;
         let submitted = self.queue.submit([encoder.finish()]);

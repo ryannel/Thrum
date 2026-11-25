@@ -282,6 +282,33 @@ pub async fn create_sprite_game(
     .await
 }
 
+/// Prepare the panel card over the moving sprite field in the ordinary WebGPU canvas.
+#[cfg(feature = "proving")]
+#[wasm_bindgen]
+pub async fn create_interface_game(
+    canvas: HtmlCanvasElement,
+    scale: u8,
+    sprite_rows: u32,
+    paint_rows: Option<u32>,
+) -> Result<BrowserGame, JsValue> {
+    if !(1..=3).contains(&scale) || paint_rows.is_some_and(|rows| !matches!(rows, 0 | 2000)) {
+        return Err(js_error(
+            "interface scale must be 1..3 and the measured row count 0 or 2000",
+        ));
+    }
+    create_game(
+        canvas,
+        crate::GameSetup {
+            sprite_scale: Some(2),
+            sprite_rows: Some(sprite_rows),
+            interface_scale: Some(scale),
+            interface_rows: paint_rows,
+            ..crate::GameSetup::default()
+        },
+    )
+    .await
+}
+
 /// Open the moving sprite field with the fetched sheet store.
 ///
 /// # Errors

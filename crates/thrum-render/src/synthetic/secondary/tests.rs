@@ -179,6 +179,7 @@ fn render(
             Some(asker),
             None,
             &mut Vec::new(),
+            None,
         )
         .expect("encode");
     let colour = &prepared.secondary_handles[0].colour;

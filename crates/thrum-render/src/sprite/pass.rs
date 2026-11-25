@@ -10,7 +10,6 @@ use crate::{
     extract::SourceTick,
     graph::{CompiledPass, GraphColorAttachment, PipelineKey, ResourceId},
     records::{SpriteFrameRecord as GpuRect, SpriteRow as GpuRow, SpriteView as GpuView},
-    render_config::SCENE_FORMAT,
     runtime::Instant,
     timing::GpuTimings,
 };
@@ -45,7 +44,7 @@ mod tests;
 
 pub(super) struct SpritePass {
     pub(super) key: PipelineKey,
-    pipeline: wgpu::RenderPipeline,
+    pub(super) pipeline: wgpu::RenderPipeline,
     pub(super) rows: wgpu::Buffer,
     pub(super) order: wgpu::Buffer,
     pub(super) frames: wgpu::Buffer,
@@ -67,8 +66,8 @@ pub(super) struct SpritePass {
 
 pub(super) struct SpriteBindings {
     pub(super) view: wgpu::Buffer,
-    group: wgpu::BindGroup,
-    count: u32,
+    pub(super) group: wgpu::BindGroup,
+    pub(super) count: u32,
     sheet_revision: u64,
 }
 
@@ -105,6 +104,8 @@ impl SpritePass {
         queue: &wgpu::Queue,
         scene: &SpriteScene,
         key: PipelineKey,
+        format: wgpu::TextureFormat,
+        label: &str,
     ) -> Result<Self, RenderError> {
         if let Some(excess) = scene.sheets.get(SHEET_SLOTS) {
             return Err(RenderError::SpriteSheetLimit {
@@ -198,35 +199,7 @@ impl SpritePass {
             u64::from(total) * 4,
             wgpu::BufferUsages::STORAGE,
         );
-        let shader = crate::shaders::Shader::Sprite.compile(device, PASS);
-        let pipeline = device.render(&wgpu::RenderPipelineDescriptor {
-            label: Some(PASS),
-            layout: None,
-            vertex: wgpu::VertexState {
-                module: &shader,
-                entry_point: Some("vertex"),
-                compilation_options: wgpu::PipelineCompilationOptions::default(),
-                buffers: &[],
-            },
-            primitive: wgpu::PrimitiveState {
-                topology: wgpu::PrimitiveTopology::TriangleStrip,
-                ..wgpu::PrimitiveState::default()
-            },
-            depth_stencil: None,
-            multisample: wgpu::MultisampleState::default(),
-            fragment: Some(wgpu::FragmentState {
-                module: &shader,
-                entry_point: Some("fragment"),
-                compilation_options: wgpu::PipelineCompilationOptions::default(),
-                targets: &[Some(wgpu::ColorTargetState {
-                    format: SCENE_FORMAT,
-                    blend: Some(wgpu::BlendState::PREMULTIPLIED_ALPHA_BLENDING),
-                    write_mask: wgpu::ColorWrites::ALL,
-                })],
-            }),
-            multiview_mask: None,
-            cache: None,
-        });
+        let pipeline = Self::pipeline(device, format, label);
         Ok(Self {
             key,
             pipeline,
@@ -250,11 +223,55 @@ impl SpritePass {
         })
     }
 
+    pub(super) fn pipeline(
+        device: &crate::runtime::DeviceSite,
+        format: wgpu::TextureFormat,
+        label: &str,
+    ) -> wgpu::RenderPipeline {
+        let shader = crate::shaders::Shader::Sprite.compile(device, label);
+        device.render(&wgpu::RenderPipelineDescriptor {
+            label: Some(label),
+            layout: None,
+            vertex: wgpu::VertexState {
+                module: &shader,
+                entry_point: Some("vertex"),
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
+                buffers: &[],
+            },
+            primitive: wgpu::PrimitiveState {
+                topology: wgpu::PrimitiveTopology::TriangleStrip,
+                ..wgpu::PrimitiveState::default()
+            },
+            depth_stencil: None,
+            multisample: wgpu::MultisampleState::default(),
+            fragment: Some(wgpu::FragmentState {
+                module: &shader,
+                entry_point: Some("fragment"),
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
+                targets: &[Some(wgpu::ColorTargetState {
+                    format,
+                    blend: Some(wgpu::BlendState::PREMULTIPLIED_ALPHA_BLENDING),
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
+            }),
+            multiview_mask: None,
+            cache: None,
+        })
+    }
+
     pub(super) fn forget_world_source(&mut self) {
         self.world_source = None;
     }
 
     pub(super) fn bind(&self, device: &wgpu::Device) -> SpriteBindings {
+        self.bind_for_pipeline(device, &self.pipeline)
+    }
+
+    pub(super) fn bind_for_pipeline(
+        &self,
+        device: &wgpu::Device,
+        pipeline: &wgpu::RenderPipeline,
+    ) -> SpriteBindings {
         let view = buffer(
             device,
             "sprite view",
@@ -262,7 +279,7 @@ impl SpritePass {
             wgpu::BufferUsages::UNIFORM,
         );
         SpriteBindings {
-            group: self.bind_group(device, &view, 0),
+            group: self.bind_group(device, &view, 0, pipeline),
             view,
             count: 0,
             sheet_revision: 0,
@@ -274,6 +291,7 @@ impl SpritePass {
         device: &wgpu::Device,
         view: &wgpu::Buffer,
         cooked_slots: usize,
+        pipeline: &wgpu::RenderPipeline,
     ) -> wgpu::BindGroup {
         let frames = self.cooked.buffer.as_ref().unwrap_or(&self.frames);
         let placeholder = &self.sheets.last().expect("at least one bound sheet").1;
@@ -307,7 +325,7 @@ impl SpritePass {
         });
         device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("sprite inputs"),
-            layout: &self.pipeline.get_bind_group_layout(0),
+            layout: &pipeline.get_bind_group_layout(0),
             entries: &entries,
         })
     }
@@ -329,8 +347,12 @@ impl SpritePass {
             &self.embedded_frames,
         )?;
         if bindings.sheet_revision != self.cooked.revision {
-            bindings.group =
-                self.bind_group(capabilities.site(), &bindings.view, scene.cooked.len());
+            bindings.group = self.bind_group(
+                capabilities.site(),
+                &bindings.view,
+                scene.cooked.len(),
+                &self.pipeline,
+            );
             bindings.sheet_revision = self.cooked.revision;
         }
         let same_tick = self.world_source == world.source();
@@ -353,6 +375,72 @@ impl SpritePass {
             self.cooked
                 .frame(row.sheet as usize - scene.sheets.len(), row.frame)
         }
+    }
+
+    pub(super) fn initialize_paint_order(&self, queue: &wgpu::Queue) {
+        let order: Vec<u32> =
+            (0..u32::try_from(self.row_capacity).expect("prepared row capacity")).collect();
+        queue.write_buffer(&self.order, 0, bytemuck::cast_slice(&order));
+    }
+
+    pub(super) fn upload_paint_rows(
+        &mut self,
+        queue: &wgpu::Queue,
+        scene: &SpriteScene,
+        rows: &[SpriteRow],
+        bindings: &mut SpriteBindings,
+    ) -> (usize, u32) {
+        let mut bytes = 0;
+        let mut count = 0;
+        let mut changed = None;
+        for &row in rows.iter().take(self.row_capacity) {
+            let Some(row) = paint_row(row) else {
+                continue;
+            };
+            if world::describe(scene, row, true, 0).is_none() {
+                continue;
+            }
+            let Ok(input) = self.resolve(scene, row) else {
+                continue;
+            };
+            let gpu = pack(input, row, row.into());
+            if bytemuck::bytes_of(&self.cpu_rows[count]) == bytemuck::bytes_of(&gpu) {
+                if let Some(first) = changed.take() {
+                    bytes += write_rows(queue, &self.rows, &self.cpu_rows, first, count);
+                }
+            } else {
+                self.cpu_rows[count] = gpu;
+                changed.get_or_insert(count);
+            }
+            count += 1;
+        }
+        if let Some(first) = changed {
+            bytes += write_rows(queue, &self.rows, &self.cpu_rows, first, count);
+        }
+        bindings.count = u32::try_from(count).expect("prepared row capacity");
+        let dropped = u32::try_from(rows.len() - count).unwrap_or(u32::MAX);
+        (bytes, dropped)
+    }
+
+    pub(super) fn write_view(
+        queue: &wgpu::Queue,
+        bindings: &SpriteBindings,
+        view: super::SpriteView,
+        clip_scale: [f32; 2],
+        alpha: f32,
+    ) {
+        let [x, y, x_low, y_low] = split(view.centre);
+        queue.write_buffer(
+            &bindings.view,
+            0,
+            bytemuck::bytes_of(&GpuView {
+                clip_per_world: clip_scale,
+                centre_high: [x, y],
+                centre_low: [x_low, y_low],
+                alpha,
+                pixels_per_unit: view.pixels_per_unit,
+            }),
+        );
     }
 
     pub(super) fn upload(
@@ -477,18 +565,7 @@ impl SpritePass {
             stats.order_upload_bytes = bytes.len();
         }
         self.uploaded_order.clone_from(&self.current_order);
-        let [x, y, x_low, y_low] = split(frame.view.centre);
-        queue.write_buffer(
-            &bindings.view,
-            0,
-            bytemuck::bytes_of(&GpuView {
-                clip_per_world: clip_scale,
-                centre_high: [x, y],
-                centre_low: [x_low, y_low],
-                alpha,
-                pixels_per_unit: frame.view.pixels_per_unit,
-            }),
-        );
+        Self::write_view(queue, bindings, frame.view, clip_scale, alpha);
 
         bindings.count =
             u32::try_from(self.current_order.len()).map_err(|_| RenderError::SpriteRowCapacity)?;
@@ -572,11 +649,38 @@ impl SpritePass {
                 timings,
             )?
             .ok_or(RenderError::GraphPassMismatch)?;
-        pass.set_pipeline(&self.pipeline);
-        pass.set_bind_group(0, &bindings.group, &[]);
-        pass.draw(0..4, 0..bindings.count);
+        Self::draw_rows(&mut pass, &self.pipeline, &bindings.group, bindings.count);
         Ok(1)
     }
+
+    pub(super) fn draw_rows(
+        pass: &mut wgpu::RenderPass<'_>,
+        pipeline: &wgpu::RenderPipeline,
+        group: &wgpu::BindGroup,
+        count: u32,
+    ) {
+        pass.set_pipeline(pipeline);
+        pass.set_bind_group(0, group, &[]);
+        pass.draw(0..4, 0..count);
+    }
+}
+
+fn paint_row(mut row: SpriteRow) -> Option<SpriteRow> {
+    if !row.tint.into_iter().all(f32::is_finite)
+        || !row.flash.into_iter().all(f32::is_finite)
+        || !row.additive.is_finite()
+        || row.sort.is_some_and(|value| !value.is_finite())
+    {
+        return None;
+    }
+    // Pixel positions start at the top left. The sprite pass uses Y-up world
+    // coordinates and measures its camera from the centre.
+    row.position[1] = -row.position[1];
+    row.sort = Some(0.0);
+    row.tint = row.tint.map(|value| value.clamp(0.0, 1.0));
+    row.flash = [0.0; 4];
+    row.additive = 0.0;
+    Some(row)
 }
 
 fn buffer(

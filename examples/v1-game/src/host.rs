@@ -87,6 +87,12 @@ pub enum GameReconstruction {
     reason = "independent opt-in presentation selections"
 )]
 pub struct GameSetup {
+    /// Whole-number output scale of the panel card, when selected.
+    #[cfg(feature = "proving")]
+    pub interface_scale: Option<u8>,
+    /// Use the empty or measured paint list in place of the panel card.
+    #[cfg(feature = "proving")]
+    pub interface_rows: Option<u32>,
     /// Select the sprite test card at this integer output scale.
     #[cfg(feature = "proving")]
     pub sprite_scale: Option<u16>,
@@ -169,6 +175,10 @@ impl GameSetup {
 impl Default for GameSetup {
     fn default() -> Self {
         Self {
+            #[cfg(feature = "proving")]
+            interface_scale: None,
+            #[cfg(feature = "proving")]
+            interface_rows: None,
             #[cfg(feature = "proving")]
             sprite_scale: None,
             #[cfg(feature = "proving")]

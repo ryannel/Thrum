@@ -76,6 +76,7 @@ fn two_sprite_passes_record_independent_targets_in_one_submission() {
                 None,
                 Some(&mut upload.stats),
                 time,
+                None,
             )
             .expect("record sprite invocation and its readback");
         assert_eq!(upload.stats.draws, 1);

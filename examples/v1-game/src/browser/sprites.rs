@@ -46,6 +46,16 @@ impl BrowserGame {
                     "render_cpu_ns": sample.render_cpu.as_nanos(),
                     "wall_ns": sample.wall.as_nanos(),
                     "pass_ns": timings.values(),
+                    "interface": sample.interface.map(|stats| serde_json::json!({
+                        "upload_cpu_ns": stats.upload_cpu.as_nanos(),
+                        "encode_cpu_ns": stats.encode_cpu.as_nanos(),
+                        "uploaded_bytes": stats.uploaded_bytes,
+                        "dropped_rows": stats.dropped_rows,
+                        "extent_mismatch": stats.extent_mismatch,
+                        "gpu_ns": timings.passes().iter()
+                            .find(|pass| pass.name.as_ref() == "interface stage")
+                            .map(|pass| pass.nanoseconds),
+                    })),
                     "present_ns": present,
                     "gpu_span_ns": timings.timed_pass_span_nanoseconds(),
                     "rows": sample.uploaded_rows,

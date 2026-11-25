@@ -972,6 +972,7 @@ impl PreparedSynthetic {
             caster_culling,
             cube_draw,
             display,
+            interface_inputs: None,
             view_layout,
             view_buffer,
             view_stride,

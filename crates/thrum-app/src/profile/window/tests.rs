@@ -46,6 +46,7 @@ fn sample(order: u64) -> FrameSample {
         },
         camera_culling: None,
         sprites: None,
+        interface: None,
         uploaded_rows: 0,
         uploaded_bytes: 0,
         moving: 0,

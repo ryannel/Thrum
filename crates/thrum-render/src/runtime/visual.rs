@@ -18,6 +18,7 @@ use std::sync::Arc;
 pub struct VisualPrepareInputs {
     pub(super) supports_candidates: bool,
     pub(super) kind: super::SceneKind,
+    pub(super) interface_inputs: Option<crate::sprite::interface::SpriteInputs>,
     pub(super) queue: wgpu::Queue,
     pub(super) capabilities: DeviceCapabilities,
     pub(super) scene: SyntheticScene,
@@ -94,6 +95,7 @@ impl VisualPrepareInputs {
                     graph,
                     self.retained_ray_meshes.clone(),
                     selection,
+                    self.interface_inputs.clone(),
                 )
                 .await?;
                 let presenter = if let Some(profile) = surface_profile {
