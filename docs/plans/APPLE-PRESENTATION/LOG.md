@@ -545,3 +545,9 @@
   texture-only build produced all six paired T2 sequences. The native-size bright-star crop varies by 2.979%
   with MetalFX and 0.159% with TAAU. I inspected sequential native crops and samples from 1× decoding.
   Continuous viewing remains open. [Retakes and measurements](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP8/texture-selected-previews/README.md)
+
+- 2026-11-25 WP8. D8.8 passed the builder’s motion inspection on Mac Metal. I read captured consecutive
+  native-size frames across all six pairs under the design’s motion-review convention. The bright-star
+  luminance varied more with MetalFX, including a 2.26% single-frame step, without visible added shimmer in
+  the inspected native crops. The evidence names the submissions and records the governor timing.
+  [Motion inspection](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP8/texture-selected-previews/README.md)

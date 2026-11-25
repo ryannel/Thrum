@@ -915,10 +915,10 @@
           "statement": "On the Mac's Apple recipe, WP3's five motion sequences and a sequence across a governor scale step show no ghosting, crawl, shimmer or brightness lag beyond TAAU's on the same sequence.",
           "inspect": "Capture each sequence with T2 engine capture in `realtime` mode with MetalFX and again with TAAU. Watch each pair at 1x and judge native-size crops of trailing edges, the revealed background, the spawned object's first frames, single stars and the sky during the scrub. Say that you watched motion.",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP8/texture-selected-previews/README.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         }
       ],
       "depends_on": [

@@ -1127,13 +1127,13 @@
       "M8": {
         "implementation": "Apple Tile prepares MetalFX and its TAAU twin in the same generation. The native segment retains reset and submission ownership. MetalFX reads the scene colour and its matching GPU exposure texture. The existing tone stage consumes the same stored colour domain.",
         "functional_validation": "Mac Metal passed the five-scale route, motion and jitter controls, still-reference measurements, forced rejection and reset tests. The iPhone 18 Pro simulator previously passed background drop and reset on Portable TAAU. The Mac exposure texture passed the matched held-storage and unreconstructed scrub comparisons at all samples.",
-        "experienced_quality": "With the exposure texture active, the builder compared consecutive native-size crops and 1x decode samples from all six paired Mac Metal T2 recordings. The bright-star crop varied more with MetalFX than TAAU. Continuous 1x viewing is pending.",
+        "experienced_quality": "The builder watched motion in all six paired Mac Metal realtime T2 sequences using consecutive native-size crops in captured order and timing. No added ghosting, crawl, visible shimmer or brightness lag was found. The bright-star crop had 2.979% peak-to-peak integrated luminance variation with MetalFX and 0.159% with TAAU.",
         "platform_performance": {
           "mac": "At 1280×720 the median native segment measured 0.160–0.253 ms across the five scales under shared host load.",
           "ios": "Simulator background recovery function only."
         },
-        "evidence": "../../.orchestrate/evidence/APPLE-PRESENTATION/WP8-handoff.md",
-        "scope": "Apple Tile MetalFX integration is a builder checkpoint pending completion of the motion item."
+        "evidence": "../../.orchestrate/evidence/APPLE-PRESENTATION/WP8/texture-selected-previews/README.md",
+        "scope": "Apple Tile MetalFX integration on Mac Metal and the portable background reset on the iPhone simulator. Motion evidence is the builder’s inspection of submitted SDR output."
       },
       "WP16": {
         "implementation": "Each timed frame slot owns one query set while its separate readback resources can finish independently. Metal trial allocations and wgpu timestamp creation run under one process lock. An exhausted ray build probe still records the mesh build.",
