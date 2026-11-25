@@ -582,6 +582,7 @@ impl SceneContribution for Water {
                 self.profile.waves.choppiness,
                 self.layer_heights,
                 &map,
+                p.map.as_ref(),
                 p.interaction.as_ref(),
             );
         }

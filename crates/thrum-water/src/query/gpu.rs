@@ -12,9 +12,13 @@ use bytemuck::{Pod, Zeroable};
 use coarse::CoarsePlan;
 use correction::{CascadeSample, MapPrediction};
 pub(super) use correction::{Correction, ReadyBody};
-use std::sync::{
-    Arc,
-    atomic::{AtomicBool, Ordering},
+use std::{
+    collections::HashMap,
+    sync::{
+        Arc,
+        atomic::{AtomicBool, Ordering},
+    },
+    time::Duration,
 };
 use thrum_render::binding;
 use thrum_render::contribution::{EffectAccess, EffectGraph, EffectState, EffectTime, TickPass};
@@ -276,6 +280,7 @@ pub(crate) struct Readback {
     recorded_map: Option<Arc<Map>>,
     committed_map: Option<Arc<Map>>,
     surf_map: Option<MapGpu>,
+    bed_ranges: HashMap<[i32; 2], [f64; 2]>,
 }
 
 fn buffer(
@@ -433,6 +438,7 @@ impl Readback {
             recorded_map: None,
             committed_map: None,
             surf_map: surf.map(|(map, _)| map),
+            bed_ranges: HashMap::new(),
         }
     }
 
@@ -493,6 +499,7 @@ impl Readback {
         chop: f64,
         heights: [f32; 4],
         map: &Map,
+        frame_map: Option<&MapGpu>,
         wake: Option<&Interaction>,
     ) {
         self.pending.clear();
@@ -521,7 +528,7 @@ impl Readback {
         let maps = state.maps.clone();
         drop(state);
         if let Some((gpu, committed)) = self.surf_map.as_mut().zip(self.committed_map.as_ref()) {
-            gpu.record_query(queue, committed);
+            gpu.record_query(queue, committed, frame_map.expect("surf frame map"));
         }
         let seconds = thrum_sea::display_seconds(time);
         let step = time.tick_duration.as_secs_f64();
@@ -588,6 +595,7 @@ impl Readback {
                     profile.cut,
                     max_bytes / COARSE_RECORD_BYTES,
                     limits.max_compute_workgroups_per_dimension,
+                    &mut self.bed_ranges,
                 );
                 let scratch = buffers.coarse.as_mut().expect("surf scratch");
                 let bytes = plan.records * COARSE_RECORD_BYTES;
@@ -596,6 +604,11 @@ impl Readback {
                 }
                 if !plan.jobs.is_empty() {
                     queue.write_buffer(&scratch.buffer, 0, bytemuck::cast_slice(&plan.jobs));
+                    queue.write_buffer(
+                        &scratch.buffer,
+                        plan.jobs.len() as u64 * COARSE_RECORD_BYTES,
+                        bytemuck::cast_slice(&plan.masks),
+                    );
                 }
                 if plan.fine_groups != 0 {
                     queue.write_buffer(&scratch.count, 0, bytemuck::bytes_of(&0_u32));
@@ -844,7 +857,6 @@ impl Batch {
             }
             let mut cut_nodes = [0; 2];
             let step = self.frame.tick_duration;
-            let frame_offset = (1.0 - f64::from(self.frame.alpha)) * step.as_secs_f64();
             let (points, predictions) = body
                 .points
                 .into_iter()
@@ -866,9 +878,8 @@ impl Batch {
                     if raw.body_flags[3] & 16 != 0 {
                         sources[4] = self.wake_tick.map(|tick| tick as f64 * step.as_secs_f64());
                     }
-                    let cascade_ticks = (frame_offset
-                        + seconds_between(point.use_tick, self.frame.tick, step))
-                        / step.as_secs_f64();
+                    let cascade_ticks = 1.0 - f64::from(self.frame.alpha)
+                        + seconds_between(point.use_tick, self.frame.tick, Duration::from_secs(1));
                     let mut supported = sources.map(|source| source.is_some());
                     for flag in &mut supported[1..4] {
                         *flag &= cascade_ticks.abs() <= CARRY_TICKS;

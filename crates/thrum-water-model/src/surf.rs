@@ -767,6 +767,23 @@ impl ThrowReach<'_> {
         if let Some(&bound) = self.ceilings.get(&key) {
             return bound;
         }
+        let bound = self.depth_ceiling(depth, f64::INFINITY);
+        self.ceilings.insert(key, bound);
+        bound
+    }
+
+    /// Bound displacement over a cell with a known interval of still depths.
+    /// Use an infinite upper depth for a cell that reaches beyond the bed.
+    pub fn cell_bound(&self, depths: [f64; 2]) -> f64 {
+        if depths[1] + self.swash <= 0.0 {
+            return 0.0;
+        }
+        let floor = self.surf.profile.lag_floor;
+        self.depth_ceiling(depths[0].max(floor), depths[1].max(floor))
+            .0
+    }
+
+    fn depth_ceiling(&self, depth: f64, deepest: f64) -> (f64, bool) {
         // Within each depth band, shoaling is bounded by its shallow edge
         // and the limiter and section's amplitude cap by its deep edge.
         // The limiter's 4σ uses the same amplitudes as the horizontal sum,
@@ -775,10 +792,11 @@ impl ThrowReach<'_> {
         let mut reach: f64 = 0.0;
         let mut throws = false;
         for &(lower, upper, amplitude) in &self.depth_bands {
-            if upper < depth {
+            if upper < depth || lower > deepest {
                 continue;
             }
             let lower = lower.max(depth);
+            let upper = upper.min(deepest);
             let limited = if upper.is_infinite() {
                 amplitude
             } else {
@@ -793,9 +811,7 @@ impl ThrowReach<'_> {
             }
             reach = reach.max(self.chop.mul_add(limited, departure));
         }
-        let bound = (reach, throws);
-        self.ceilings.insert(key, bound);
-        bound
+        (reach, throws)
     }
 
     /// Return the reach in metres and whether any crest can be thrown into the column.

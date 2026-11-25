@@ -280,9 +280,12 @@ impl MapGpu {
         self.recorded = Some(recorded);
     }
 
-    pub(crate) fn record_query(&mut self, queue: &wgpu::Queue, map: &Map) {
-        let stages = stages(map);
-        self.upload(queue, map, stages, stages);
+    pub(crate) fn record_query(&mut self, queue: &wgpu::Queue, map: &Map, frame: &Self) {
+        let authored = stages(map);
+        let displayed = frame
+            .submitted
+            .map_or(authored, |endpoint| endpoint.stages());
+        self.upload(queue, map, authored, displayed);
     }
 
     pub(crate) fn commit(&mut self) {

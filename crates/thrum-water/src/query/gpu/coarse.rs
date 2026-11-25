@@ -42,6 +42,7 @@ struct Grid {
 
 pub(super) struct CoarsePlan {
     pub(super) jobs: Vec<[u32; 4]>,
+    pub(super) masks: Vec<[u32; 4]>,
     pub(super) records: u64,
     pub(super) coarse_nodes: u32,
     pub(super) fine_groups: u32,
@@ -71,6 +72,7 @@ impl CoarsePlan {
         cut: CutConfig,
         max_records: u64,
         max_groups: u32,
+        bed_ranges: &mut HashMap<[i32; 2], [f64; 2]>,
     ) -> Self {
         let mut sheets: HashMap<SheetKey, Vec<usize>> = HashMap::new();
         let mut grids: Vec<Grid> = Vec::new();
@@ -124,6 +126,7 @@ impl CoarsePlan {
 
         let mut plan = Self {
             jobs: Vec::new(),
+            masks: Vec::new(),
             records: 0,
             coarse_nodes: 0,
             fine_groups: 0,
@@ -145,6 +148,27 @@ impl CoarsePlan {
             let width = grid.bounds.width();
             let count = u32::try_from(nodes).expect("coarse storage fits a storage binding");
             let unshared_owner = one_sea_owner(map, points[grid.members[0]].body, grid.bounds, cut);
+            let begin = plan.masks.len();
+            plan.masks.resize(begin + count as usize, [0, 0, 0, 3]);
+            let masks = &mut plan.masks[begin..];
+            if unshared_owner {
+                let stations = grid
+                    .members
+                    .iter()
+                    .map(|&i| points[i].position.map(f64::from));
+                mask_cells(
+                    masks,
+                    grid.bounds,
+                    cut,
+                    stations,
+                    f64::from(points[grid.members[0]].level_current_bed[0]),
+                    map,
+                    reach,
+                    bed_ranges,
+                );
+            }
+            let evaluated = u32::try_from(masks.iter().filter(|record| record[3] & 2 != 0).count())
+                .expect("coarse node count");
             for start in (0..count).step_by(GROUP_WIDTH as usize) {
                 plan.jobs.push([first, start, offset, count]);
             }
@@ -160,7 +184,7 @@ impl CoarsePlan {
                     point.flags &= !super::QUERY_ONE_SHEET;
                 }
                 point.surf_stage[1] = f32::from_bits(first);
-                point.surf_stage[2] = f32::from_bits(count);
+                point.surf_stage[2] = f32::from_bits(evaluated);
             }
             plan.records += nodes + groups;
             if cut.coarse_cells <= 8 && grid.members.len() >= 2 {
@@ -202,6 +226,61 @@ impl CoarsePlan {
             plan.records += fine_records;
         }
         plan
+    }
+}
+
+fn mask_cells(
+    masks: &mut [[u32; 4]],
+    bounds: Rect,
+    cut: CutConfig,
+    stations: impl Iterator<Item = [f64; 2]> + Clone,
+    level: f64,
+    map: &Map,
+    reach: &ThrowReach<'_>,
+    bed_ranges: &mut HashMap<[i32; 2], [f64; 2]>,
+) {
+    let cell = cut.cell * f64::from(cut.coarse_cells);
+    let width = bounds.width() as usize;
+    let pyramid = map.surf_bed_pyramid().expect("prepared surf");
+    let (origin, spacing, size) = map.bed().lattice();
+    let end: [f64; 2] =
+        std::array::from_fn(|axis| origin[axis] + (size[axis] - 1) as f64 * spacing);
+    // Bound cache reuse is spatial. Moving fleets can accumulate different
+    // coarse rectangles, so keep only a bounded working set.
+    if bed_ranges.len() > 65_536 {
+        bed_ranges.clear();
+    }
+    masks.fill([0; 4]);
+    for z in bounds.lo[1]..bounds.hi[1] {
+        for x in bounds.lo[0]..bounds.hi[0] {
+            let lo = [f64::from(x) * cell, f64::from(z) * cell];
+            let hi = lo.map(|metres| metres + cell);
+            let centre = lo.map(|metres| metres + 0.5 * cell);
+            let [low_bed, high_bed] = *bed_ranges.entry([x, z]).or_insert_with(|| {
+                // Keep neighbouring bed samples at a floating-point boundary.
+                let [low, high] = pyramid
+                    .range(centre, 0.5 * cell + 0.001)
+                    .unwrap_or([f64::NEG_INFINITY; 2]);
+                if (0..2).any(|axis| lo[axis] < origin[axis] || hi[axis] > end[axis]) {
+                    [f64::NEG_INFINITY, high]
+                } else {
+                    [low, high]
+                }
+            });
+            let bound = reach.cell_bound([level - high_bed, level - low_bed]) + 0.01;
+            let admits = stations.clone().any(|point| {
+                (0..2)
+                    .all(|axis| lo[axis] - bound <= point[axis] && point[axis] <= hi[axis] + bound)
+            });
+            if admits {
+                let index = (z - bounds.lo[1]) as usize * width + (x - bounds.lo[0]) as usize;
+                // Bit one marks a possible cell, bit two marks each of its four nodes.
+                masks[index][3] |= 3;
+                for at in [index + 1, index + width, index + width + 1] {
+                    masks[at][3] |= 2;
+                }
+            }
+        }
     }
 }
 

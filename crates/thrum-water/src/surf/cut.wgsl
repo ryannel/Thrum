@@ -67,13 +67,16 @@ fn sample_coarse(@builtin(workgroup_id) group: vec3<u32>, @builtin(local_invocat
     let job = coarse_lattice[group.x];
     let index = job.y + lane;
     if index >= job.w { return; }
+    let at = settings.coarse_jobs.x + job.z + index;
+    let mask = coarse_lattice[at].w;
+    if (mask & 2u) == 0u { return; }
     let point = points[job.x];
     let grid = point.coarse_grid;
     let width = u32(grid.z);
     let coord = grid.xy + vec2(i32(index % width), i32(index / width));
     let rest = vec2<f32>(coord) * (surf.coarse.x * surf.controls.z);
     let displacement = surf_displacement(point, rest);
-    coarse_lattice[settings.coarse_jobs.x + job.z + index] = bitcast<vec4<u32>>(vec4(displacement, 0.0));
+    coarse_lattice[at] = vec4(bitcast<vec3<u32>>(displacement), mask);
 }
 
 fn coarse_corner(point: QueryPoint, coord: vec2<i32>, cached: bool) -> vec2<f32> {
@@ -143,8 +146,12 @@ fn select_fine(@builtin(workgroup_id) group: vec3<u32>, @builtin(local_invocatio
     if bitcast<u32>(sheet.surf_stage.w) == 0u ||
         index + width >= job.w || u32(local.x) + 1u >= width { return; }
     let coarse = sheet.coarse_grid.xy + local;
-    let box = landing_box(sheet, coarse, true);
     var owner = 0xffffffffu;
+    if (coarse_lattice[settings.coarse_jobs.x + job.z + index].w & 1u) == 0u {
+        coarse_lattice[owners_offset() + job.z + index] = vec4(owner, 0u, 0u, 0u);
+        return;
+    }
+    let box = landing_box(sheet, coarse, true);
     for (var i = 0u; i < settings.count; i++) {
         let point = points[i];
         let bounds = coarse_bounds(point.fine_bounds);
@@ -208,6 +215,10 @@ fn find_kept(
     var evaluations = 0u;
     for (var i = start + lane; i < end; i += QUERY_WIDTH) {
         let coord = lo + vec2(i32(i % width), i32(i / width));
+        if point.coarse_grid.z != 0 {
+            let index = u32(point.coarse_grid.w) + coarse_index(point, coord);
+            if (coarse_lattice[settings.coarse_jobs.x + index].w & 1u) == 0u { continue; }
+        }
         if bitcast<u32>(point.surf_stage.w) != 0u {
             let owner = coarse_lattice[owners_offset() + u32(point.coarse_grid.w) + coarse_index(point, coord)].x;
             if owner == 0xffffffffu { continue; }
