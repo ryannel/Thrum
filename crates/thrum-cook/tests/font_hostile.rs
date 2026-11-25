@@ -168,3 +168,117 @@ fn font_addition_and_edits_keep_sibling_bindings_and_the_grid_stays_private() {
     assert_eq!(check_siblings(), revised);
     println!("font add, edit and refusal retain the sibling mesh and every PNG profile");
 }
+
+#[test]
+fn refused_grid_rename_preserves_the_last_manifest_even_after_reopen() {
+    let scratch = Scratch::new("font-grid-rename");
+    let source = scratch.join("source");
+    let store = scratch.join("store");
+    let folder = source.join("hud");
+    font_support::copy(&font_support::fixture("pixel"), &folder);
+    let description = folder.join("font.json");
+    let original = std::fs::read_to_string(&description).expect("font description");
+    let renamed = original.replace("grid.png", "icon.png");
+    let icon = folder.join("icon.png");
+    thrum_cook::demo::write_checker_png(&icon, 4, [20, 40, 80]).expect("standalone icon");
+    let badge = folder.join("badge.png");
+    thrum_cook::demo::write_checker_png(&badge, 4, [80, 40, 20]).expect("standalone badge");
+    let mut cooker = font_support::cooker(source.clone(), store.clone());
+    let head = cooker
+        .cook_all()
+        .expect("first cook")
+        .published
+        .expect("initial head");
+    let original_manifest = cooker
+        .store()
+        .load_manifest(&head)
+        .expect("initial manifest");
+    for profile in Profile::ALL {
+        assert!(original_manifest.resolve("hud/icon", &[profile]).is_some());
+        assert!(original_manifest.resolve("hud/grid", &[profile]).is_none());
+    }
+
+    std::fs::write(&description, &renamed).expect("try the icon as a grid");
+    for reopen in [false, true] {
+        if reopen {
+            drop(cooker);
+            cooker = font_support::cooker(source.clone(), store.clone());
+        }
+        let report = cooker.cook_all().expect("report refused font");
+        assert!(report.failed.iter().any(|(name, reason)| {
+            name == "hud" && reason.contains("pixel font cells must divide the image")
+        }));
+        assert_eq!(
+            report.published, None,
+            "a refused edit must keep every binding"
+        );
+        assert_eq!(
+            cooker.store().read_head().expect("HEAD after refusal"),
+            Some(head)
+        );
+    }
+
+    thrum_cook::demo::write_checker_png(&icon, 4, [20, 80, 40]).expect("still an invalid grid");
+    thrum_cook::demo::write_checker_png(&badge, 4, [80, 20, 40]).expect("independent badge edit");
+    let badge_head = cooker
+        .cook_all()
+        .expect("independent edit can still publish")
+        .published
+        .expect("badge publication");
+    let badge_manifest = cooker
+        .store()
+        .load_manifest(&badge_head)
+        .expect("badge manifest");
+    for profile in Profile::ALL {
+        let product = |manifest: &thrum_asset::Manifest, name| {
+            manifest
+                .resolve(name, &[profile])
+                .expect("published binding")
+                .product
+        };
+        assert_eq!(
+            product(&badge_manifest, "hud/icon"),
+            product(&original_manifest, "hud/icon")
+        );
+        assert_ne!(
+            product(&badge_manifest, "hud/badge"),
+            product(&original_manifest, "hud/badge")
+        );
+        assert!(badge_manifest.resolve("hud/grid", &[profile]).is_none());
+    }
+
+    let mut pixels = image::open(folder.join("grid.png"))
+        .expect("old grid")
+        .into_rgba8();
+    pixels.get_pixel_mut(0, 0).0[3] ^= 255;
+    pixels
+        .save(&icon)
+        .expect("replace icon with a valid edited grid");
+    let new_head = cooker
+        .cook_all()
+        .expect("valid edit")
+        .published
+        .expect("new head");
+    assert_eq!(new_head.generation, badge_head.generation + 1);
+    let current = cooker
+        .store()
+        .load_manifest(&new_head)
+        .expect("new manifest");
+    for profile in Profile::ALL {
+        assert!(current.resolve("hud/icon", &[profile]).is_none());
+        assert!(current.resolve("hud/grid", &[profile]).is_some());
+    }
+    assert_ne!(
+        current
+            .resolve("hud", &[Profile::Portable])
+            .unwrap()
+            .product,
+        original_manifest
+            .resolve("hud", &[Profile::Portable])
+            .unwrap()
+            .product
+    );
+    println!(
+        "refusal kept HEAD and all icon profiles across reopen; an independent badge edit published; a valid rename published the font and binding changes together"
+    );
+}

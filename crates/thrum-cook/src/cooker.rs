@@ -74,6 +74,20 @@ struct Product {
 
 type Binding = (String, Profile);
 
+#[derive(Default)]
+struct CookPlan {
+    jobs: Vec<Job>,
+    failed: Vec<(String, String)>,
+    retry: bool,
+    fonts: BTreeMap<PathBuf, FontBindings>,
+}
+
+/// The input a font may claim and the PNG bindings that discovery may expose.
+struct FontBindings {
+    input: Option<PathBuf>,
+    unpublished_pngs: Vec<String>,
+}
+
 /// One cook job: produce `profile`'s product for an asset from these inputs.
 struct Job {
     name: String,
@@ -273,7 +287,12 @@ impl Cooker {
             ..CookReport::default()
         };
         let start = Instant::now();
-        let (jobs, mut failed, mut retry) = self.plan();
+        let CookPlan {
+            jobs,
+            mut failed,
+            mut retry,
+            fonts,
+        } = self.plan();
         let mut products = BTreeMap::new();
         let mut misses = Vec::new();
         let mut refused = BTreeMap::new();
@@ -350,6 +369,7 @@ impl Cooker {
         if !failed_sheets.is_empty() {
             products.retain(|(name, _), _| !failed_sheets.contains(name));
         }
+        self.retain_refused_font_bindings(&mut products, fonts);
         // Keep serving the last good products of any asset that failed to plan or cook, except
         // those its current source refuses.
         for (name, _) in &failed {
@@ -382,12 +402,51 @@ impl Cooker {
         Ok(report)
     }
 
-    fn plan(&mut self) -> (Vec<Job>, Vec<(String, String)>, bool) {
+    fn retain_refused_font_bindings(
+        &self,
+        products: &mut BTreeMap<Binding, (ProductKind, Product)>,
+        fonts: BTreeMap<PathBuf, FontBindings>,
+    ) {
+        for (folder, bindings) in fonts {
+            if products
+                .get(&(logical_name(&folder), Profile::Portable))
+                .is_some_and(|(kind, _)| *kind == ProductKind::Font)
+            {
+                continue;
+            }
+            // HEAD records which PNGs were public. A newly discovered PNG could be the
+            // old font input, so defer exposing it until the new font can take ownership.
+            for name in bindings.unpublished_pngs {
+                for &profile in &self.config.profiles {
+                    let binding = (name.clone(), profile);
+                    if products
+                        .get(&binding)
+                        .is_some_and(|(kind, _)| *kind == ProductKind::Texture)
+                    {
+                        products.remove(&binding);
+                    }
+                }
+            }
+            if let Some(input) = bindings.input
+                && let Some((name, ProductKind::Texture, _)) = classify(&input)
+            {
+                // Discovery hid the proposed input. Only a successful font may take its
+                // previously public bindings away, even if the input bytes also changed.
+                for (binding, previous) in self
+                    .published
+                    .range((name.clone(), Profile::Portable)..)
+                    .take_while(|((n, _), _)| n == &name)
+                    .filter(|(_, (kind, _))| *kind == ProductKind::Texture)
+                {
+                    products.insert(binding.clone(), *previous);
+                }
+            }
+        }
+    }
+
+    fn plan(&mut self) -> CookPlan {
         let files = self.stat.files();
-        let mut jobs = Vec::new();
-        let mut failed = Vec::new();
-        let mut retry = false;
-        let mut font_inputs = BTreeMap::new();
+        let mut plan = CookPlan::default();
         let mut sheet_images = BTreeMap::<&Path, Vec<(PathBuf, ContentHash)>>::new();
         for (path, hash) in &files {
             if let Some(parent) = path.parent() {
@@ -400,20 +459,27 @@ impl Cooker {
                             font::input_path(path, &bytes)
                         }
                         _ => {
-                            retry = true;
+                            plan.retry = true;
                             None
                         }
                     };
-                    font_inputs.insert(parent, input);
+                    plan.fonts.insert(
+                        parent.to_path_buf(),
+                        FontBindings {
+                            input,
+                            unpublished_pngs: Vec::new(),
+                        },
+                    );
                 }
             }
         }
         let mut sources = BTreeMap::<String, Vec<_>>::new();
         for (path, hash) in &files {
             if let Some(parent) = path.parent() {
-                if font_inputs
+                if plan
+                    .fonts
                     .get(parent)
-                    .is_some_and(|input| input.as_ref() == Some(path))
+                    .is_some_and(|font| font.input.as_ref() == Some(path))
                 {
                     continue;
                 }
@@ -425,18 +491,20 @@ impl Cooker {
                 }
             }
             if let Some((name, kind, linear)) = classify(path) {
-                // A broken description cannot identify its grid. Keep existing public textures
-                // and defer newly discovered PNGs until the font can declare its input again.
                 if kind == ProductKind::Texture
                     && sheet::is_png(path)
-                    && path.parent().and_then(|parent| font_inputs.get(parent)) == Some(&None)
+                    && let Some(font) = path.parent().and_then(|parent| plan.fonts.get_mut(parent))
                     && !self
-                        .config
-                        .profiles
-                        .iter()
-                        .any(|&profile| self.published.contains_key(&(name.clone(), profile)))
+                        .published
+                        .range((name.clone(), Profile::Portable)..)
+                        .take_while(|((published, _), _)| published == &name)
+                        .any(|(_, (kind, _))| *kind == ProductKind::Texture)
                 {
-                    continue;
+                    // A malformed description has no proposed input and cannot cook at all.
+                    if font.input.is_none() {
+                        continue;
+                    }
+                    font.unpublished_pngs.push(name.clone());
                 }
                 sources
                     .entry(name)
@@ -450,7 +518,7 @@ impl Cooker {
                     .iter()
                     .map(|(path, ..)| path.display().to_string())
                     .collect();
-                failed.push((
+                plan.failed.push((
                     name,
                     format!(
                         "several sources map to one logical name: {}",
@@ -468,7 +536,7 @@ impl Cooker {
                     inputs.extend(images.iter().cloned());
                 }
                 if kind == ProductKind::Font
-                    && let Some(Some(input)) = font_inputs.get(parent)
+                    && let Some(input) = plan.fonts.get(parent).and_then(|font| font.input.as_ref())
                     && let Some(input_hash) = files.get(input)
                 {
                     inputs.push((input.clone(), *input_hash));
@@ -485,13 +553,13 @@ impl Cooker {
                             }
                         }
                         if let Some(buffer) = missing {
-                            failed
+                            plan.failed
                                 .push((name, format!("missing glTF buffer {}", buffer.display())));
                             continue;
                         }
                     }
                     Err(error) => {
-                        failed.push((name, error.to_string()));
+                        plan.failed.push((name, error.to_string()));
                         continue;
                     }
                 }
@@ -503,7 +571,7 @@ impl Cooker {
             };
             for profile in profiles {
                 let key = action_key(kind, profile, self.config.quality, linear, &inputs);
-                jobs.push(Job {
+                plan.jobs.push(Job {
                     name: name.clone(),
                     kind,
                     profile,
@@ -513,7 +581,7 @@ impl Cooker {
                 });
             }
         }
-        (jobs, failed, retry)
+        plan
     }
 
     fn mesh_buffers(&mut self, path: &Path, hash: ContentHash) -> Result<Vec<PathBuf>, CookError> {
