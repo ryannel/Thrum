@@ -984,7 +984,7 @@ async fn record(
         // A frame can retire after this request becomes due and still leave
         // time to encode before the same display target. Keep that bounded
         // interval available for completions without changing the clock.
-        let slot_wait = if target_wind && !driver.host().has_free_slot() {
+        let slot_wait = if (target_wind || governed) && !driver.host().has_free_slot() {
             let started = Instant::now();
             while !driver.host().has_free_slot()
                 && opportunity.target.saturating_duration_since(Instant::now())
