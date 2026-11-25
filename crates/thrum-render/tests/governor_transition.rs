@@ -129,6 +129,10 @@ fn prove(
     worker_started
         .recv_timeout(Duration::from_secs(4))
         .expect("resize started");
+    host.governor_display(DISPLAY, transition.holds_governor());
+    for (at, tick) in [(50, 2), (70, 3), (90, 4)] {
+        host.governor_display_tick(Duration::from_millis(at), tick);
+    }
     let held = present(&mut host, &output, transition.holds_governor(), 110, 5);
     assert_eq!(
         held.render_extent, OLD,
@@ -154,8 +158,10 @@ fn prove(
     let hold = stuck_hold_control || transition.holds_governor();
     let resumed = present(&mut host, &output, hold, 130, 6);
     assert_eq!(resumed.render_extent, OLD);
-    // Force render-side load through the display opportunity feed. The drawable
-    // still presents at the next opportunity, but three callbacks were missed.
+    // Deliver three consecutive render opportunities without a present.
+    for (at, tick) in [(180, 7), (230, 8), (280, 9)] {
+        host.governor_display_tick(Duration::from_millis(at), tick);
+    }
     let loaded = present(&mut host, &output, hold, 330, 10);
     let dropped = loaded.governor.expect("loaded frame").state.scale == RenderScale::Percent85;
     let mut recovered = false;
