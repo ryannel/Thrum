@@ -412,7 +412,7 @@ def measure_surf_running(arm_name=None):
         assert len(arm['views']) == arm['frames_submitted']
         assert sum('completed_s' in view for view in arm['views']) == arm['frames_completed']
         counts = [0] * (record['maximum_age'] + 1)
-        late = dict(queue=0, device=0, drain=0)
+        late = dict(before_submission=0, between_submission_and_publication=0, after_publication=0)
         refusals = {event['tick']: event for event in arm['tick_refusals']}
         for index, batch in enumerate(batches):
             posted = batch['posted']
@@ -428,11 +428,17 @@ def measure_surf_running(arm_name=None):
                     assert published is not None and delivered >= published
                     counts[delivered - posted] += 6
                 if delivered is None or delivered - posted > 2:
-                    waiting = ('queue' if submitted != posted else
-                               'device' if published is None or published >= posted + 2 else 'drain')
-                    late[waiting] += 6
+                    # Publication records the latest tick whose drain had begun.
+                    if submitted != posted:
+                        interval = 'before_submission'
+                    elif published is None or published >= posted + 2:
+                        interval = 'between_submission_and_publication'
+                    else:
+                        interval = 'after_publication'
+                    late[interval] += 6
         assert counts == arm['age']
-        arm['late_stations_by_wait'] = late
+        assert sum(late.values()) == 48 * arm['ticks'] - sum(counts[1:3])
+        arm['late_stations_by_interval'] = late
         record['problems'] = problems
         path = WORKING / 'WP21/surf-running-open-water.json'
         save_surf_record(record, path)

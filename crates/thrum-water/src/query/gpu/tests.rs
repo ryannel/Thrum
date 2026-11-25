@@ -95,7 +95,7 @@ mod held_answer {
         );
     }
 
-    fn check(mailbox: &QueryMailbox, tick: u64, posted: u64, height: f64, held: bool) {
+    fn check_reply(mailbox: &QueryMailbox, tick: u64, posted: u64, height: f64, held: bool) {
         let replies = mailbox.drain(endpoint(tick), STEP);
         assert_eq!(replies.len(), 1);
         assert_eq!(replies[0].posted, posted);
@@ -103,9 +103,42 @@ mod held_answer {
         let surface = &replies[0].points[0].surface;
         assert!((surface.sample.height - height).abs() < f64::EPSILON);
         assert_eq!(surface.wet, height > 0.0);
+    }
+
+    fn check_empty_drain(mailbox: &QueryMailbox, tick: u64) {
         let stats = mailbox.stats();
         assert!(mailbox.drain(endpoint(tick), STEP).is_empty());
         assert_eq!(mailbox.stats(), stats);
+    }
+
+    fn check(mailbox: &QueryMailbox, tick: u64, posted: u64, height: f64, held: bool) {
+        check_reply(mailbox, tick, posted, height, held);
+        check_empty_drain(mailbox, tick);
+    }
+
+    #[test]
+    fn held_answer_allows_an_undelivered_result_on_a_repeated_drain() {
+        for publish_before_first_drain in [false, true] {
+            let mailbox = mailbox();
+            publish(&mailbox, 1, 0, 2.0);
+            if publish_before_first_drain {
+                publish(&mailbox, 2, 0, 3.0);
+            }
+            check_reply(&mailbox, 3, 1, 1.5, false);
+            let first = mailbox.stats();
+            assert_eq!([first.age_one, first.age_two, first.held_points], [0, 1, 0]);
+
+            if !publish_before_first_drain {
+                publish(&mailbox, 2, 0, 3.0);
+            }
+            check_reply(&mailbox, 3, 2, 3.0, false);
+            let second = mailbox.stats();
+            assert_eq!(
+                [second.age_one, second.age_two, second.held_points],
+                [1, 1, 0]
+            );
+            check_empty_drain(&mailbox, 3);
+        }
     }
 
     #[test]
