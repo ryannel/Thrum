@@ -143,7 +143,9 @@ fn sea_surf_normal(index:u32, local:vec2<f32>, spacing:f32)->vec3<f32> {
     var clip=view.view_proj*vec4(world,1.0);clip.z=max(clip.z,0.0000001);
     let current=view.unjittered_view_proj*vec4(world,1.0);
     let previous=view.previous_view_proj*vec4(world-f.velocity.xyz*water.level_dt_reset.y-surf_motion-vec3(0.0,row.level-row.previous_level,0.0),1.0);
-    let resolved_face = 1.0 - smoothstep(0.5, 4.0, vertex.z);
+    // A coarsely drawn crest still carries its breaking-face cue over the
+    // foam-window blend. Fade it once the mesh also loses the crest itself.
+    let resolved_face = 1.0 - smoothstep(2.0, 16.0, vertex.z);
     return VertexOut(clip,world,rest,f.velocity.xyz,current,previous,body,surf_weight,
         vec4(surf_normal, surf_variance), resolved_face * max(0.0, transformed.w - 1.0));
 }

@@ -841,3 +841,8 @@
   take recorded 116 submitted frames over 11.98 s of advancing engine time on hardware WebGPU, with zero
   omissions and faults. WP13.11 still depends on passing the matching Metal and Chrome visual inspections.
   [Chrome receipt](../../../.orchestrate/evidence/WATERS/WP13/required-extent-chrome-overhead-receipt.json).
+
+- 2026-11-25 WP13.4 passed on portable Metal with the 6.5 s trade swell and the 105 m approach view.
+  The 2 m sequence shows a crest rise and steepen. The elevated sequence shows three ridges together
+  and their direction and spacing change toward the break. A separate fresh inspection agreed.
+  [Inspection and receipts](../../../.orchestrate/evidence/WATERS/WP13/short-swell-approach-inspection.md).

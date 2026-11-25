@@ -87,6 +87,7 @@ fn foam_surface(point: vec3<f32>, row: SurfaceRow, footprint: f32, jacobian: f32
         far = vec4(sea + (vec3(1.0) - sea) * shore_stocks, 0.0);
     }
     var stocks = foam_at(point.xz, far);
+    let fresh_front = stocks.y;
     // Dense shallow-water foam still leaves gaps between groups of bubbles.
     // Weight the coarse breakup by depth-limited power so offshore caps
     // and the hull's own film keep their contact profile.
@@ -98,8 +99,8 @@ fn foam_surface(point: vec3<f32>, row: SurfaceRow, footprint: f32, jacobian: f32
         let shallow = mix(1.0, porous, shore_mix);
         // Aged wash opens first. Fresh film at the breaker still bleaches
         // the face before it spreads into the receding sheet.
-        let cover = stocks.yz * select(vec2(shallow), vec2(mix(1.0, porous, 0.35 * shore_mix),
-            shallow * mix(1.0, 0.72, shore_mix)), SURF_CACHE_ENABLED);
+        let cover = stocks.yz * select(vec2(shallow), vec2(mix(1.0, porous, 0.55 * shore_mix),
+            shallow * mix(1.0, 0.55, shore_mix)), SURF_CACHE_ENABLED);
         stocks = vec4(stocks.x, cover, stocks.w);
     }
     // The stern ribbon carries submerged air alongside fresh film. In
@@ -126,7 +127,7 @@ fn foam_surface(point: vec3<f32>, row: SurfaceRow, footprint: f32, jacobian: f32
     var front = 0.0;
     if SURF_CACHE_ENABLED && face > 0.0 {
         let churned_front = 0.65 * foam_noise(point.xz * 1.7) + 0.35 * foam_noise(point.xz * 5.3 + 29.0);
-        front = smoothstep(0.0, 0.70, face) * smoothstep(0.01, 0.14, stocks.y) *
+        front = smoothstep(0.0, 0.70, face) * smoothstep(0.01, 0.14, fresh_front) *
             mix(0.42, 0.88, smoothstep(0.18, 0.83, churned_front));
     }
     return vec4(air, max(lace, front), stocks.zw);
@@ -200,7 +201,9 @@ fn shore_is_wet(point: vec2<f32>, gains: vec4<f32>, depth: f32) -> bool {
     // The depth already on screen must belong to the ground. A hull, a hill
     // in front of the beach, or the visible sheet above the bed masks the film.
     if abs(ground.y - row.bed) > 0.06 { discard; }
-    if shore_is_wet(ground.xz, row.gains, -above) { discard; }
+    // Surf draws its displaced sheet over the beach film in the next pass.
+    // Only the plain surface uses the iteration to mask the film in advance.
+    if !SURF_CACHE_ENABLED && shore_is_wet(ground.xz, row.gains, -above) { discard; }
     // The ground's optical weight depends on elevation. Stranded foam is
     // patterned separately so a dense stock cannot paint a solid white sheet.
     let sheen = (1.0 - smoothstep(0.0, reach, above)) * smoothstep(seaward_fade, -0.10 * row.swash, above);
