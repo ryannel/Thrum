@@ -1123,13 +1123,19 @@ fallback already gives from the game's own map.
 - **A post asked before that view** is not dropped. It waits in the mailbox as a post does for any batch
   not yet made, and the first asking after its world's view answers it with the rest, carried as any late
   question is. If it passes the maximum age first it expires and is counted.
-- **The former timeline.** The mailbox serves one world epoch and timeline, the latest post's. A post on
-  another makes the mailbox drop what it holds of the former: posts no batch has taken, and results
-  published and not yet drained. A batch of the former still in flight is dropped when its map completes.
-  None of them reaches the game, whatever its age, because age is the wrong test here: the result of a
-  timeline abandoned this tick is zero ticks old and is another world's water. A drain hands the game only
-  answers whose world epoch and timeline are the ones it drains on, which is C02's check before a result
-  is published.
+- **The former timeline.** The drain is the gate. A game drains on the endpoint of the tick it is
+  advancing, which it has from its world as it has for a post, and a drain hands the game only answers
+  whose world epoch and timeline are that endpoint's, which is C02's check made where the game takes the
+  result. The drain does not wait for a post to tell it the timeline changed. The island drains,
+  integrates its floats from what it drained and only then posts, so the first drain of a restored
+  timeline comes before that timeline's first post. A result of the former timeline published a tick
+  earlier is young, and its body ID and generation can still be live. That drain hands it to no one, and
+  the floats take the fallback on that tick. Age is the wrong test here: the result of a timeline
+  abandoned this tick is zero or one tick old and is another world's water. The mailbox serves one world
+  epoch and timeline, the one it was last drained or posted on. A drain or a post on another makes it
+  drop what it holds of the former: posts no batch has taken, and results published and not yet drained.
+  A batch of the former still in flight is dropped when its map completes. None of them reaches the game
+  at any later drain.
 
 Results come back through a ring of mapped buffers one to two ticks later. A result older than the declared
 maximum is unavailable, and the game falls back to the conformance model in `thrum-water-model` (the map, and the long waves at the body's gain:
@@ -2107,6 +2113,12 @@ decides nothing. [WP19](#a-surf-query-a-running-game-can-use-wp19) uses it.
     submitted frame before it is repaired, on the target and in the view and wind that show it, so a cue
     seen only in Chrome is read in Chrome. A cue can have more than one cause at the same pixels, as when
     foam shows up a branch that wrongly wins depth, and its diagnosis names each cause its frames support.
+    A repair that changes which surface wins depth is held on the target where it changes the winner,
+    at a cue whose diagnosis there named depth. On Metal that is a case in `surf_frame_gpu` that fails
+    without the repair. That test opens Metal, so it cannot fail for a branch only the browser draws: in
+    Chrome the evidence is the diagnosis's own depth reading taken again on the repaired build, at the
+    same view, engine time and pixels, now at the model's nearest surface. A repair that changes the
+    winner only in Chrome owes no Metal case. WP13.9's frame contract is checked on Metal either way.
 19. **The lag shows**: a step in the swell where the bed begins, or a jump as the tide crosses a sampled
     stage. Early sign: WP13's tide sequence. The designed remedies are a wider border at the bed's edge and
     closer stage samples. The wrong fix is holding the lag at one stage. In a lake the same sign is a crease
@@ -2347,7 +2359,11 @@ holds whatever they become. WP13 keeps the regular-wave run-up and draw-back and
   gale test posts before the first water view, discards that view and reads supported cascades from the
   first view submitted. On the stage both askings come before that view and find no state, so the post
   waits with no batch made, and the test's cascade comparison moves to a post answered after the view has
-  seeded the state. The posts take their endpoint from the fixed update, as `EFFECT-GRAPH` WP6 hands it.
+  seeded the state. The posts and the drains take their endpoint from the fixed update, as `EFFECT-GRAPH`
+  WP6 hands it. WP19.6's restore drains on the new endpoint before it posts, as the island does, with a
+  former result one tick old whose body is still live, and that drain must hand over nothing: a mailbox
+  that drops the former timeline's results only when the new one posts has already moved the float by
+  the old wake.
   The running run submits a view before its first measured post, as its first record did, so its count of
   fallbacks starts on a seeded timeline.
 - **The cost record** is taken again as WP13.12's was, beside it.

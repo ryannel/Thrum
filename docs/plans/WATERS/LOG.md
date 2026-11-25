@@ -1015,3 +1015,18 @@
   to repair. Risk 18 says the same.
 - 2026-11-25 Suggestion taken: the design says a batch in a skipped view's tick is on the device in that tick
   except at the host's bound on outstanding tick submissions, where the host counts the refusal and asks again.
+- 2026-11-25 Second design review of the tick-stage revision asked for changes, two Must Fix and no
+  suggestion ([review](../../../.orchestrate/evidence/WATERS/design-review.md)). The two entries below
+  settle them. It was the second in a row, so the plan is approved as left.
+- 2026-11-25 Must Fix 1, WP19.6 passed a mailbox that drops the former timeline's results only when the new
+  timeline posts, and the island drains and integrates before it posts: [the drain is now the
+  gate](DESIGN.md#bodies-and-the-query). A drain is made on its tick's endpoint and hands over only that
+  epoch and timeline's answers. WP19.6's restore case holds a former result one tick old with its body
+  still live, drains on the new endpoint before the first post and gets no answer, so the float is on the
+  fallback. Its checks on the in-flight result and the first answer from the reset wake stand.
+- 2026-11-25 Must Fix 2, a depth repair only Chrome needs could not fail `surf_frame_gpu`, which opens Metal:
+  a repair that changes which surface wins depth is now held on the target where it changes the winner
+  ([risk 18](DESIGN.md#risks)). On Metal WP20.2 still asks for a `surf_frame_gpu` case that fails without
+  it. In Chrome WP20.3 takes WP20.4's depth reading again on the repaired build, at the same view, engine
+  time and pixels. A repair that changes the winner only in Chrome owes no Metal case. WP13.9's Metal
+  check stays in WP20.2.
