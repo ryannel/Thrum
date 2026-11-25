@@ -287,19 +287,25 @@ def mac_governor_capture(output, binary, env, route):
             raise ValueError(f"incomplete realtime capture in {directory}")
         quality = runtime["governor"]
         loaded = [row for row in quality if LOAD[0] <= row["tick"] < LOAD[1]]
-        initial = next(row["scale"] for row in reversed(quality) if row["tick"] < LOAD[0])
-        if not loaded or min(row["scale"] for row in loaded) >= initial:
+        initial = next((row["scale"] for row in reversed(quality) if row["tick"] < LOAD[0]), None)
+        if initial is None or not loaded or min(row["scale"] for row in loaded) >= initial:
             raise ValueError(f"real-time governor did not lower under load in {directory}")
         restored = next((row for row in quality if row["tick"] >= LOAD[1]
                          and row["scale"] >= initial), None)
         if restored is None:
             raise ValueError(f"real-time governor did not recover in {directory}")
         motion_end = restored["tick"] + 60
-        motion = [row for row in runtime["opportunities"] if LOAD[0] <= row["tick"] < motion_end]
-        if (runtime["opportunities"][-1]["tick"] < motion_end
-                or any(not row["submitted"] or row["skipped_before"] for row in motion)):
+        opportunities = runtime["opportunities"]
+        bounds = [next((index for index, row in enumerate(opportunities)
+                        if row["tick"] is not None and row["tick"] >= tick), None)
+                  for tick in (LOAD[0], motion_end)]
+        first, until = bounds
+        motion = opportunities[first:until]
+        if first is None or until is None or not motion or any(
+                not row["submitted"] or row["skipped_before"] for row in motion):
             raise ValueError(f"missing render opportunities through load and recovery in {directory}")
-        timings = [row for row in runtime["opportunities"] if 330 <= row["tick"] < 420]
+        timings = [row for row in opportunities if row["tick"] is not None
+                   and 330 <= row["tick"] < 420 and row["submitted"]]
         arms[name] = dict(
             directory=str(directory), submitted=len(quality), captured=len(manifest["records"]),
             motion_ticks=[LOAD[0], motion_end], motion_opportunities=len(motion),
