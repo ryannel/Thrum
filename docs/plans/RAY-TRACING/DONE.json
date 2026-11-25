@@ -524,7 +524,7 @@
     {
       "id": "WP5",
       "name": "Props and terrain are grounded: sky light is dimmed in creases and where things stand close together",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "failed_reviews": 3,
       "failed_reviews_with_repeat": 0,
       "depends_on": [
