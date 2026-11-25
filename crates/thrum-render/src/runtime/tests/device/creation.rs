@@ -684,7 +684,10 @@ fn contribution_rebuilds_and_compile_thread_reloads_and_restores_are_declared() 
         let report = host.creation_report();
         assert_eq!((report.generation, report.violations), (8, 0), "{report}");
         let rebuild = pipeline_row(&report.pipelines, "publish-device").expect("rebuild");
-        assert_eq!((rebuild.phase, rebuild.compute), (CreationPhase::Build, 1));
+        assert_eq!(
+            (rebuild.phase, rebuild.compute),
+            (CreationPhase::Recovery, 1)
+        );
         let restore = pipeline_row(&report.pipelines, "material-restore").expect("restore");
         assert_eq!(
             (restore.phase, restore.thread.as_str(), restore.compute),
