@@ -213,7 +213,7 @@
         {
           "verdict": "fail",
           "commit": "578af4aaaae14330e4cb69ecf622805d2a4aadab",
-          "review": ".orchestrate/evidence/GAME-UI/WP2-review.md",
+          "review": ".orchestrate/evidence/GAME-UI/WP2-review-2.md",
           "items": {
             "WP2.1": "pass",
             "WP2.2": "pass",
@@ -253,6 +253,48 @@
             "turns": 1
           },
           "at": "2026-11-25T22:36:09Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "3a8b34e6fae6c33086879f2a3e5e080deef71764",
+          "review": ".orchestrate/evidence/GAME-UI/WP2-review.md",
+          "items": {
+            "WP2.1": "pass",
+            "WP2.2": "pass",
+            "WP2.3": "pass",
+            "WP2.4": "pass",
+            "WP2.5": "pass",
+            "WP2.6": "pass",
+            "WP2.7": "pass",
+            "WP2.8": "pass",
+            "WP2.9": "pass",
+            "WP2.10": "pass",
+            "WP2.11": "pass",
+            "WP2.12": "pass",
+            "WP2.13": "pass"
+          },
+          "findings": [
+            {
+              "name": "A refused font blocks publication of an independent new sibling PNG",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 95495,
+            "cached": 2827264,
+            "output": 7392,
+            "turns": 1
+          },
+          "at": "2026-11-25T23:09:22Z"
         }
       ],
       "authorised": {
