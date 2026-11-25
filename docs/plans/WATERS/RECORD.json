@@ -1525,7 +1525,7 @@
         {
           "verdict": "fail",
           "commit": "71c44e7a17eda2b1d476f5505f76c966e9ea467e",
-          "review": ".orchestrate/evidence/WATERS/WP13-review.md",
+          "review": ".orchestrate/evidence/WATERS/WP13-review-3.md",
           "items": {
             "WP13.1": "pass",
             "WP13.2": "pass",
@@ -1563,6 +1563,48 @@
             "turns": 1
           },
           "at": "2026-11-25T07:03:14Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "4d39d599bb36c85c53671a8c05cfd61ef1395c63",
+          "review": ".orchestrate/evidence/WATERS/WP13-review.md",
+          "items": {
+            "WP13.1": "pass",
+            "WP13.2": "pass",
+            "WP13.3": "pass",
+            "WP13.4": "pass",
+            "WP13.5": "pass",
+            "WP13.6": "pass",
+            "WP13.7": "pass",
+            "WP13.8": "pass",
+            "WP13.9": "pass",
+            "WP13.10": "pass",
+            "WP13.11": "pass",
+            "WP13.12": "pass",
+            "WP13.14": "pass"
+          },
+          "findings": [
+            {
+              "name": "A camera change exposes the previous foam window across the breakers",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 214384,
+            "cached": 21227136,
+            "output": 26713,
+            "turns": 1
+          },
+          "at": "2026-11-25T08:11:09Z"
         }
       ],
       "authorised": {
