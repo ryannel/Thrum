@@ -31,6 +31,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - APPLE-PRESENTATION assumes: the governor drops scale after three frames over budget, recovers at most one step per second, ([plan](APPLE-PRESENTATION/PLAN.md))
 - APPLE-PRESENTATION assumes: at full window size the frame rate may dip until the governor lands in WP7. Record times for ([plan](APPLE-PRESENTATION/PLAN.md))
 - APPLE-PRESENTATION assumes: WP10 pins wgpu-hal 30.0.1 for the Metal library loader. WP12 adds the archive to that copy. ([plan](APPLE-PRESENTATION/PLAN.md))
+- APPLE-PRESENTATION assumes: WP16 keeps the device safe for timestamp query sets created at the engine's one call site. Code ([plan](APPLE-PRESENTATION/PLAN.md))
 - ATMOSPHERE assumes: WP3 ends with a CPU diagnosis. The authored-spur replay and an in-game correction remain open under G3s. A later proposal needs the original inputs and the fixed and realtime captures specified in the design. ([plan](ATMOSPHERE/PLAN.md))
 - ATMOSPHERE assumes: WP4 compares the reconstructed geometry cases in one bounded CPU trial. The original ray inputs and exact finite-disk match remain open under G3s. ([plan](ATMOSPHERE/PLAN.md))
 - BASELINE-GUARD assumes: the key-narrowing work of the earlier WP2, nine commits on the branch `build/baseline-guard`, is set aside and not merged. No proof is asked before a merge now, so a proof that survives more rebases saves nothing. The branch is kept as the record. ([plan](BASELINE-GUARD/PLAN.md))
@@ -305,7 +306,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Now and next
 
-- APPLE-PRESENTATION's design: Design Changes Requested · [design](APPLE-PRESENTATION/DESIGN.md) · [plan](APPLE-PRESENTATION/PLAN.md)
+- The long tests pass again, and running out of GPU timers is a named error, not a lost device (APPLE-PRESENTATION WP16): Not Started · [plan](APPLE-PRESENTATION/PLAN.md)
 - EFFECT-GRAPH's design: Design Ready for Review · [design](EFFECT-GRAPH/DESIGN.md) · [plan](EFFECT-GRAPH/PLAN.md)
 - WATERS's design: Design Ready for Review · [design](WATERS/DESIGN.md) · [plan](WATERS/PLAN.md)
 - While clouds drift, the game can say where each lost refresh went, and the losses the clouds cause are fixed (CLOUDS WP19): In Progress · [plan](CLOUDS/PLAN.md)
@@ -433,7 +434,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 4 | COOKED-DRAW | Cooked scenes draw on devices that cannot run GPU-driven draws, such as the iPhone simulator | PLATFORM-RUNTIME-IOS WP7 | Done 9 Nov |
 | 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE WP0 and WP1, PLATFORM-RUNTIME-MAC WP1, COOKED-DRAW WP1 | Done 17 Nov |
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE WP3 | Done 24 Nov |
-| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE WP0, WP2, WP3, WP11 and WP12 | Design Changes Requested |
+| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE WP0, WP2, WP3, WP11 and WP12 | WP16 of 17 · Not Started |
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | CONTENT-LOOP WP4 for its WP9 to pass the full check; APPLE-PRESENTATION WP3 and SHOWCASE WP9 for its WP6 | Done 25 Nov |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is found on main within about two hours and traced to the commit that made it |  | Done 25 Nov |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE WP2, BASELINE-GUARD WP1 | Done 17 Nov |
