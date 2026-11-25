@@ -34,21 +34,21 @@ that work on this Mac.
 
 [review](../../../.orchestrate/evidence/RAY-TRACING/WP2-review.md)
 
-## WP3 The Sun and lamps cast ray-traced shadows in the valley on the Mac: right at contact and at any distance, with hard edges
+## WP3 The Sun and lamps cast ray-traced shadows in the valley on the Mac: right at contact and at any distance, with hard edges: done
 
-The shadow shaders, proving-ground selections, timed-pass span and [terminator passage](DESIGN.md#a-rounded-meshs-own-facets)
-are built. `thrum-render/src/runtime/preparation.rs` owns 3D preparation, and `contribution/list.rs` dispatches
-to members. The constructor binds its presenter in `runtime.rs`. The detached visual, device and extent
-operations are in `runtime/visual.rs`, `runtime/device.rs` and `runtime/extent.rs`. The detached extent job
-already stages secondary view bindings. `CookedAssets::rebuild_inner` currently validates one member and
-then installs its live state. [The retained probe](../../../.orchestrate/evidence/RAY-TRACING/WP3-review/c7cbfaf/composed-retry.diff)
-shows the two-member failure. `ObserveView` and `Fault` in the existing `ray_tracing_gpu` proof need the
-opt-in to reach their traced cases. Keep the CPU guard in `thrum-render`'s library tests and the Metal
-guard in `thrum-asset-gpu`'s `it` binary. WP5 owns the cloud provider's opt-in.
+[review](../../../.orchestrate/evidence/RAY-TRACING/WP3-review.md)
 
-## WP4 Sun shadows soften with distance from what casts them, and the Sun dims smoothly as it sets behind a ridge
+## WP4 Sun shadows soften with distance from what casts them, and the Sun dims smoothly as it sets behind a ridge: done
 
-The FidelityFX Shadow Denoiser's source may be ported, with its licence recorded under `docs/provenance`. `synthetic/after_opaque.rs` and `history_gpu.rs` show a pass after opaque geometry and a history that only a submitted frame commits. If `APPLE-PRESENTATION` WP4 has landed, the history follows its extent transitions; if not, its builder keeps WP4.7's test passing. WP4.4 needs a caster the valley may not have, low and fast enough that its shadow outruns its own edge: add one to the proving ground behind a selection that is off by default. For WP4.11, [WP3's hit identities](../../../.orchestrate/evidence/RAY-TRACING/WP3/review-fixes.md#sun-stills) name three balloons that take another balloon's shadow from over 600 m at the fixed low-Sun stops; if none of those edges crosses a terminator band, place a caster the same way. Its open shell and panel are new: add them to the proving ground behind a selection that is off by default, as one mesh and as two. [The fourth probe](../../../.orchestrate/evidence/RAY-TRACING/planning-probe/SOFT.md) has the shell, the panel and both soft values on the CPU.
+[review](../../../.orchestrate/evidence/RAY-TRACING/WP4-review.md)
+
+## WP7 The renderer's tests type-check for Linux and Windows again with its counters on, so the cross-target check on main passes
+
+Built before WP5. In `crates/thrum-render/tests/ray_structure_lifecycle_gpu.rs`, `mod metal` compiles wherever
+`creation-counters` is on and imports `super::ray_support`, which is declared only on macOS. The other ray tests
+put a macOS condition on that import. `TEST-SUPPORT`'s `whole-file-gpu-gate` rule refuses an OS condition on
+the module as a whole. `v1-game`'s dev-dependency that turns the feature on is `GAME-SPLIT`'s and stays.
+[The log](LOG.md) has the cause.
 
 ## WP5 Props and terrain are grounded: sky light is dimmed in creases and where things stand close together
 

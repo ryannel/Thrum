@@ -217,3 +217,11 @@
   and its native crop stayed byte-identical across 32 held submissions. The seven-stop capture,
   motion and fixed-view controls, and timing investigation are in the
   [penumbra proof](../../../.orchestrate/evidence/RAY-TRACING/WP4/penumbra-filter/README.md).
+- 2026-11-25 Added WP7 before WP5. The main-branch check `cross-target` has failed on both targets since
+  `GAME-SPLIT` WP3's `e08dfd68e` gave `v1-game` a dev-dependency on `thrum-render` with `creation-counters`.
+  A workspace-wide build then compiles `ray_structure_lifecycle_gpu`'s `mod metal` on Linux and Windows,
+  where the `ray_support` module it imports is not declared. The mismatch dates from WP1 and no other test
+  file has it: the check's log at `939c2a566` shows this one error for each target. WP7.1 type-checks the
+  package for both targets with the feature on, and WP7.2 keeps the Metal test running.
+- 2026-11-25 Plan file trimmed: WP3 and WP4 are Done, so their builder notes left `PLAN.md` for their
+  reviews and git history (`0930746ab` holds the last copy).
