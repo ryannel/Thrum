@@ -121,6 +121,35 @@ fn receiving_rectangles_hold_rays_whose_surface_pixel_is_outside_the_source() {
 }
 
 #[test]
+fn a_raised_panel_has_separate_source_and_reflected_regions() {
+    let frame = frame(2.0);
+    let config = Optics::default();
+    let low = Vec3::new(-1.0, 1.25, 12.0);
+    let high = Vec3::new(1.0, 2.65, 12.25);
+    let body = BodyBounds::new(low.to_array(), high.to_array()).expect("test box");
+    let inputs = Shallows::default().inputs(config, &frame, None, &[body], 0.0, 0.0, 0.0);
+    let eye = Vec3::from_array(frame.camera);
+    for x in [low.x, high.x] {
+        for y in [low.y, high.y] {
+            for z in [low.z, high.z] {
+                let real = Vec3::new(x, y, z);
+                let virtual_point = Vec3::new(x, -y, z);
+                let receiver = eye.lerp(virtual_point, eye.y / (eye.y + y));
+                let source = bits(&inputs, &frame, real).expect("raised panel is on screen");
+                let reflection =
+                    bits(&inputs, &frame, receiver).expect("reflected panel is on screen");
+                assert_ne!(source & SOURCE, 0);
+                assert_eq!(
+                    reflection & (SOURCE | 1),
+                    1,
+                    "receiver {receiver} for {real}"
+                );
+            }
+        }
+    }
+}
+
+#[test]
 fn see_through_admission_tracks_sight_depth_and_leaves_deep_map_tiles_uncopied() {
     use thrum_water_model::{Bed, Body, Stage};
 
@@ -162,4 +191,13 @@ fn see_through_admission_tracks_sight_depth_and_leaves_deep_map_tiles_uncopied()
     let deep_bits = bits(&inputs, &view, deep).expect("deep sight point");
     assert_eq!(shallow_bits & (SOURCE | SHALLOW), SOURCE | SHALLOW);
     assert_eq!(deep_bits & (SOURCE | SHALLOW), 0);
+    let clear = Optics {
+        extinction: [0.06; 3],
+        ..profile
+    };
+    let clear_inputs = Shallows::default().inputs(clear, &view, Some(&map), &[], 0.0, 0.2, 0.45);
+    assert_eq!(
+        bits(&clear_inputs, &view, deep).expect("depth on screen") & (SOURCE | SHALLOW),
+        SOURCE | SHALLOW
+    );
 }
