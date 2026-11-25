@@ -376,7 +376,3 @@ required-features = ["creation-counters"]
 [[test]]
 name = "metalfx_reset"
 required-features = ["creation-counters"]
-
-[[test]]
-name = "metalfx_motion"
-required-features = ["creation-counters"]

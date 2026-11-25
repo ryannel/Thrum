@@ -35,7 +35,7 @@ thrum-render features=creation-counters
 thrum-asset-gpu features=draw-probe error_types
 # draw-probe already enables the renderer's creation counters. Name the
 # dependency feature explicitly for the view-volume witnesses' manifest gates.
-v1-game features=draw-probe,thrum-render/creation-counters lib ray_tracing_gpu cooked_assets_gpu view_volume_shadow_gpu view_volume_sky_gpu view_volume_history_gpu view_volume_medium_gpu ground_band_receivers_gpu view_volume_handover_gpu
+v1-game features=draw-probe,creation-counters,thrum-render/creation-counters lib ray_tracing_gpu cooked_assets_gpu view_volume_shadow_gpu view_volume_sky_gpu view_volume_history_gpu view_volume_medium_gpu ground_band_receivers_gpu view_volume_handover_gpu
 thrum-asset-gpu features=fault-probe cooked_fault_gpu
 
 # Not run: a binary behind a feature that failed when it was listed. It runs in no tier until the

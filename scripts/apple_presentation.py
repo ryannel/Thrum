@@ -546,7 +546,8 @@ def mac_metalfx_motion(output):
     log = output / "motion.log"
     with log.open("w") as stream:
         subprocess.run(["cargo", "test", "--locked", "--offline", "-p", "thrum-render",
-                        "--features", "creation-counters", "--test", "metalfx_motion"],
+                        "--features", "creation-counters", "--test", "metalfx_reset",
+                        "metalfx_motion_and_jitter_signs_match_translating_edges"],
                        cwd=ROOT, stdout=stream, stderr=subprocess.STDOUT,
                        env=dict(os.environ, THRUM_REQUIRE_GPU="1", RUST_TEST_NOCAPTURE="1",
                                 MTL_DEBUG_LAYER="1"), check=True, timeout=300)
