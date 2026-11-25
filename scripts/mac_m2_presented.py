@@ -72,7 +72,7 @@ def calibration(arm):
 
 
 def presented_rows(path, pid):
-    if path.suffix != '.xml':
+    if path.suffix != '.xml' and path.suffixes[-2:] != ['.xml', '.gz']:
         return table(path)
     root, resolve = xml(path)
     rows = []
@@ -154,8 +154,9 @@ def analyse(rows, surface, requests, low, high, markers, numer=125, denom=3, hz=
                           'presented_trace_ns':b['presented_trace_ns'],'yaw':b['yaw']})
     whole_start,pan_start,pan_end,whole_end = markers
     expected = [i for i,r in by_id.items() if whole_start <= D(r['media_seconds'])*NS-offset <= whole_end]
+    joined_by_id = {v['drawable']: v for v in values}
     for i in expected:
-        if not any(v['drawable']==i for v in values):
+        if i not in joined_by_id:
             unmatched.append({'drawable':i,'reason':'whole-interval submission has no presented row'})
     retained = [int(r['handler_trace_ns']) for r in rows]
     coverage = bool(retained and values and min(retained)<=whole_start and max(retained)>=whole_end
@@ -171,7 +172,7 @@ def analyse(rows, surface, requests, low, high, markers, numer=125, denom=3, hz=
         if not outside:
             affecting.append(missing)
     for interval in intervals:
-        a = next(v for v in values if v['drawable']==interval['from'])
+        a = joined_by_id[interval['from']]
         interval['overlaps_whole'] = a['presented_trace_ns']<=whole_end and interval['presented_trace_ns']>=whole_start
     lag = [r['handler_lag_ms'] for r in values]
     # A bad scale/offset must not be accepted merely because intervals look regular.

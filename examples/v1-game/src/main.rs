@@ -134,6 +134,11 @@ fn window_display_options()
 
 #[cfg(all(target_os = "macos", feature = "proving"))]
 fn window_qualification() -> Result<Option<thrum_app::WindowQualification>, String> {
+    type QualificationRoute = (
+        [f64; 4],
+        Option<fn(f64) -> f64>,
+        Option<std::time::Duration>,
+    );
     let Some(output) = std::env::var_os("THRUM_MAC_QUALIFY") else {
         return Ok(None);
     };
@@ -142,15 +147,19 @@ fn window_qualification() -> Result<Option<thrum_app::WindowQualification>, Stri
         Ok("off") => false,
         _ => return Err("qualification requires THRUM_MAC_TAP=on or off".to_owned()),
     };
-    let (boundaries, sample, account_refreshes): ([f64; 4], Option<fn(f64) -> f64>, bool) =
+    let (boundaries, sample, refresh_measurement): QualificationRoute =
         match std::env::var("THRUM_MAC_QUALIFY_MODE").as_deref() {
             Err(std::env::VarError::NotPresent) | Ok("pan") => (
                 [3.0, 4.0, 6.0, 7.1],
                 Some(|elapsed| ((elapsed - 4.0) / 2.0).clamp(0.0, 1.0) * 36.0),
-                false,
+                None,
             ),
-            Ok("wind") if !capture => ([3.0, 10.0, 16.0, 23.1], None, false),
-            Ok("cadence") if !capture => ([0.25, 1.0, 21.0, 22.0], None, true),
+            Ok("wind") if !capture => ([3.0, 10.0, 16.0, 23.1], None, None),
+            Ok("cadence") if !capture => (
+                [0.25, 1.0, 21.0, 22.0],
+                None,
+                Some(std::time::Duration::from_secs(20)),
+            ),
             Ok("wind" | "cadence") => {
                 return Err("wind and cadence qualification require THRUM_MAC_TAP=off".to_owned());
             }
@@ -158,7 +167,7 @@ fn window_qualification() -> Result<Option<thrum_app::WindowQualification>, Stri
         };
     let gpu_timestamps = match std::env::var("THRUM_MAC_CADENCE_TIMING").as_deref() {
         Err(std::env::VarError::NotPresent) => sample.is_some(),
-        Ok("1") if account_refreshes => true,
+        Ok("1") if refresh_measurement.is_some() => true,
         _ => return Err("THRUM_MAC_CADENCE_TIMING=1 requires cadence qualification".to_owned()),
     };
     Ok(Some(thrum_app::WindowQualification {
@@ -166,7 +175,7 @@ fn window_qualification() -> Result<Option<thrum_app::WindowQualification>, Stri
         control: "camera.yaw",
         control_column: "yaw_degrees",
         boundaries,
-        account_refreshes,
+        refresh_measurement,
         sample,
         accepted: |radians| f64::from(radians.to_degrees()),
         capture,

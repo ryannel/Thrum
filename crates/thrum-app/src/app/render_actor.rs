@@ -243,6 +243,13 @@ pub(super) fn start<G: Game<World: Send, Scene: Send> + 'static>(
 impl<G: Game> Actor<G> {
     fn work(&mut self, job: RenderJob<G::Edits>) -> RenderReply<G::Readback> {
         let start = Instant::now();
+        if let RenderJob::Frame(request) = &job {
+            let arrived = CACurrentMediaTime();
+            self.refresh_account
+                .lock()
+                .expect("refresh account lock")
+                .begin(request.target_media_seconds, arrived);
+        }
         let mut reply = RenderReply {
             sequence: 0,
             device_generation: self.gpu.watch.generation,
@@ -274,10 +281,6 @@ impl<G: Game> Actor<G> {
                     request.platform.backing_scale,
                     request.platform.governor_display,
                 ));
-                self.refresh_account
-                    .lock()
-                    .expect("refresh account lock")
-                    .begin(request.target_media_seconds, CACurrentMediaTime());
                 let mut drawable_late = false;
                 let mut present_call = None;
                 let frame = self.frame(&request, &mut reply, &mut drawable_late, &mut present_call);
@@ -568,15 +571,7 @@ impl<G: Game> Actor<G> {
         let report = encoded.submit(Some(&output))?;
         ensure_device(&self.gpu.watch)?;
         if report.surface_presented {
-            let submission = self.host.last_submission().expect("presented submission");
-            {
-                let mut account = self.refresh_account.lock().expect("refresh account lock");
-                let time = CACurrentMediaTime();
-                account.present(time, submission);
-                *present_call = Some((time, submission));
-            }
-            self.gpu.queue.present(frame);
-            self.host.governor_present_called();
+            *present_call = Some(self.present(frame));
             if let Some(proof) = &mut self.transition_proof {
                 proof.presented(frame_extent);
             }
@@ -591,6 +586,19 @@ impl<G: Game> Actor<G> {
         }
         self.observe_submission(request, report)?;
         Ok(report)
+    }
+
+    fn present(&mut self, frame: wgpu::SurfaceTexture) -> (f64, u64) {
+        let submission = self.host.last_submission().expect("presented submission");
+        let time = {
+            let mut account = self.refresh_account.lock().expect("refresh account lock");
+            let time = CACurrentMediaTime();
+            account.present(time, submission);
+            time
+        };
+        self.gpu.queue.present(frame);
+        self.host.governor_present_called();
+        (time, submission)
     }
 
     fn observe_submission(

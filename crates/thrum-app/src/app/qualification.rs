@@ -162,9 +162,9 @@ pub struct WindowQualification {
     pub control_column: &'static str,
     /// Signpost boundaries in elapsed seconds; the last ends the run.
     pub boundaries: [f64; 4],
-    /// Use the two interior boundaries as the start and end of the refresh measurement.
+    /// Measure refreshes for this duration starting at the second signpost.
     /// The outer signposts calibrate the witness and leave room for bracketing submissions.
-    pub account_refreshes: bool,
+    pub refresh_measurement: Option<Duration>,
     /// Control value in display units at the given elapsed seconds.
     /// With no sample function, observe the control without driving the panel.
     pub sample: Option<fn(f64) -> f64>,
@@ -197,13 +197,10 @@ impl Pan {
     }
 
     pub(super) fn measured_interval(&self) -> Option<(f64, f64)> {
-        let [_, start, end, _] = self.options.boundaries;
-        if !self.options.account_refreshes {
-            return None;
-        }
+        let length = self.options.refresh_measurement?.as_secs_f64();
         self.signposts
             .get(1)
-            .map(|&(_, before, after)| (f64::midpoint(before, after), end - start))
+            .map(|&(_, before, after)| (f64::midpoint(before, after), length))
     }
 
     pub(super) fn step(
@@ -251,7 +248,7 @@ impl Pan {
             requested.unwrap_or(accepted),
             accepted,
         ));
-        let witness_tail = if self.options.account_refreshes {
+        let witness_tail = if self.options.refresh_measurement.is_some() {
             0.25
         } else {
             0.0

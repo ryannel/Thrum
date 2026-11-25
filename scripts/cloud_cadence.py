@@ -28,32 +28,23 @@ class InvalidMeasurement(ValueError):
 
 
 def losses(presented, start, end, period):
-    """Index nominal refreshes between the OS-presented frames bracketing the run."""
-    presented = sorted(presented)
+    """A stall is the unfilled refresh periods between two OS-presented frames."""
     if not presented or presented[0] > start or presented[-1] < end:
         raise InvalidMeasurement('presented times do not bracket the measured interval')
-    anchor = max(time for time in presented if time <= start)
-
-    def boundary(time):
-        return int(((time - anchor) / period).to_integral_value(rounding=ROUND_CEILING))
-
-    begin, finish = boundary(start), boundary(end)
-    shown = set()
-    for time in presented:
-        offset = (time - anchor) / period
-        index = int(offset.to_integral_value())
-        if begin <= index < finish:
-            if abs(offset - index) >= Decimal('0.45'):
-                raise InvalidMeasurement('presented times cannot be placed on the refresh grid')
-            shown.add(index)
-    lost = [anchor + period * index for index in range(begin, finish) if index not in shown]
     stalls = []
-    for time in lost:
-        if stalls and abs(time - stalls[-1][-1] - period) < Decimal('0.001'):
-            stalls[-1].append(time)
-        else:
-            stalls.append([time])
-    return lost, stalls
+    for left, right in zip(presented, presented[1:]):
+        if right <= left:
+            raise InvalidMeasurement('presented times are out of drawable order')
+        if right < start or left >= end:
+            continue
+        # Use the same interval rounding as the platform witness. Re-anchor at
+        # each presented frame so a phase change does not shift the rest of the run.
+        periods = int(((right - left) / period).to_integral_value())
+        first = max(1, int(((start - left) / period).to_integral_value(rounding=ROUND_CEILING)))
+        last = min(periods, int(((end - left) / period).to_integral_value(rounding=ROUND_CEILING)))
+        if first < last:
+            stalls.append([left + period * index for index in range(first, last)])
+    return [time for stall in stalls for time in stall], stalls
 
 
 def measure(presented, start, end, period):

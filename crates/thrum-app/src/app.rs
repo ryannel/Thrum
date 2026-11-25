@@ -111,6 +111,7 @@ struct App<G: Game> {
     display: Option<display::MacDisplay>,
     display_options: Option<WindowDisplayOptions>,
     display_link: Option<ViewDisplayLink>,
+    refresh_period: Option<f64>,
     window: Option<Arc<Window>>,
     display_target: Option<f64>,
     governor_display: thrum_render::governor::DisplayRecord,
@@ -184,6 +185,16 @@ struct App<G: Game> {
 }
 
 impl<G: WindowGame + 'static> App<G> {
+    fn refresh_monitor_period(&mut self) {
+        self.refresh_period = self
+            .window
+            .as_ref()
+            .and_then(|window| window.current_monitor())
+            .and_then(|monitor| monitor.refresh_rate_millihertz())
+            .filter(|&rate| rate > 0)
+            .map(|rate| 1000.0 / f64::from(rate));
+    }
+
     fn refresh_display_record(&mut self) {
         if let (Some(display), Some(window)) = (&mut self.display, &self.window) {
             display.sample(self.target_sequence, window.scale_factor());
@@ -225,6 +236,7 @@ impl<G: WindowGame + 'static> App<G> {
             display: None,
             display_options: None,
             display_link: None,
+            refresh_period: None,
             window: None,
             display_target: None,
             governor_display: thrum_render::governor::DisplayRecord {
@@ -640,6 +652,7 @@ impl<G: WindowGame + 'static> App<G> {
         }
         let backing_scale = window.scale_factor().to_bits();
         self.window = Some(window);
+        self.refresh_monitor_period();
         let panel_wake = wake.clone();
         let panel = MacPanel::new(
             self.game.controls(),
@@ -1377,7 +1390,7 @@ impl<G: WindowGame + 'static> ApplicationHandler<UserEvent> for App<G> {
                 let period = target - callback;
                 {
                     let mut account = self.refresh_account.lock().expect("refresh account lock");
-                    account.callback(target, period);
+                    account.callback(target, self.refresh_period.unwrap_or(period));
                 }
                 self.display_tick = number;
                 self.governor_display.interval =
@@ -1446,7 +1459,10 @@ impl<G: WindowGame + 'static> ApplicationHandler<UserEvent> for App<G> {
                 self.pending_display_target = true;
                 self.edits.request();
             }
-            UserEvent::DisplayParametersChanged => self.refresh_display_record(),
+            UserEvent::DisplayParametersChanged => {
+                self.refresh_monitor_period();
+                self.refresh_display_record();
+            }
             UserEvent::ThermalState(state) => {
                 self.governor_display.thermal = state;
                 self.thermal_states[state as usize] = true;
@@ -1530,6 +1546,10 @@ impl<G: WindowGame + 'static> ApplicationHandler<UserEvent> for App<G> {
                 let result = self.invalidate_surface();
                 event_loop.exit();
                 result
+            }
+            WindowEvent::Moved(_) => {
+                self.refresh_monitor_period();
+                Ok(())
             }
             WindowEvent::Resized(size) => {
                 self.observed_extent = [size.width, size.height];
@@ -1693,7 +1713,7 @@ pub fn run_with_qualification_and_display<G: WindowGame + 'static, E: std::error
     display: Option<WindowDisplayOptions>,
     game: impl FnOnce() -> Result<G, E>,
 ) {
-    let mode = if observer.account_refreshes {
+    let mode = if observer.refresh_measurement.is_some() {
         RunMode::Ordinary
     } else {
         RunMode::Bounded
@@ -1881,7 +1901,7 @@ fn run_with<G: WindowGame + 'static, E: std::error::Error>(
     }
     if let Some(observer) = &app.qualification {
         let output = &observer.options.output;
-        let samples = if observer.options.account_refreshes {
+        let samples = if observer.options.refresh_measurement.is_some() {
             qualification::write_cadence_samples(output, &app.samples)
         } else {
             std::fs::write(
@@ -1891,7 +1911,7 @@ fn run_with<G: WindowGame + 'static, E: std::error::Error>(
         };
         if let Err(error) = samples {
             eprintln!("{}: sample record: {error}", config.name);
-            if observer.options.account_refreshes && result.is_ok() {
+            if observer.options.refresh_measurement.is_some() && result.is_ok() {
                 result = Err(format!("cadence samples: {error}"));
             }
         }

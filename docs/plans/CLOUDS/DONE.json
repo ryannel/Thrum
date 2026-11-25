@@ -1035,8 +1035,8 @@
           "check": "cargo nextest run --locked --offline -p thrum-app --lib -E 'test(/refresh_account::/)' --no-tests=fail",
           "ask": "Is a frame placed by the time its present call was made, never by a status sampled before encoding? In a run until closed that asked for no measured interval, does anything the account keeps grow with the run? Is any other count of served or consecutive refreshes left in the window or the game? Are the timing policy, the frame samples and the report lines that `scripts/apple_governor_proof.py`, `scripts/host_overload.py` and the profiler read as they were?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP19/refresh-account-tests.log",
           "verdict": "",
           "review": ""
         },
@@ -1076,8 +1076,8 @@
           "check": "python3 scripts/cloud_cost.py hold --scene scripted",
           "ask": "Do the scripted cases go through the same code that judges a recorded wind series in `hold --scene wind`?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP19/scripted-hold.log",
           "verdict": "",
           "review": ""
         }

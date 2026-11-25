@@ -16,9 +16,11 @@ from mac_m2_presented import table
 from qualify_mac_m2 import ROOT, bounded, panel_witness, save
 from t2_load import LoadRecord
 
-WORKING = ROOT / '.orchestrate/evidence/CLOUDS/WP19'
+WORKING = ROOT / '.orchestrate/evidence/CLOUDS'
 SCRATCH = ROOT / 'tmp/clouds-wp19'
 BIN = ROOT / 'target/release/v1-game'
+INSTRUMENT = ROOT / 'scripts/host_witness/presented_time.instrpkg'
+INSTRUMENT_PACKAGE = SCRATCH / 'ThrumPresentedTime.instrdst'
 TRACE_TABLES = {
     'signposts.xml': "contains(@schema, 'signpost')",
     'presented.xml': '@schema="ca-client-presented-handler"',
@@ -41,7 +43,19 @@ def prepare():
     subprocess.run([ROOT / 'target/release/thrum-cook', 'cook',
                     ROOT / 'examples/v1-game/assets/showcase', store],
                    cwd=ROOT, check=True, timeout=180)
+    prepare_instrument()
     return store
+
+
+def instrument_packages():
+    developer = subprocess.check_output(['xcode-select', '-p'], text=True, timeout=5).strip()
+    return Path(developer).parent / 'Applications/Instruments.app/Contents/Packages'
+
+
+def prepare_instrument():
+    subprocess.run(['xcrun', 'instrumentbuilder', '-L', instrument_packages(), '-l', 'GPU',
+                    '-i', INSTRUMENT, '-o', INSTRUMENT_PACKAGE],
+                   cwd=ROOT, check=True, timeout=30)
 
 
 def console_unlocked():
@@ -72,39 +86,56 @@ def collect(arm, store, wind, *, diagnostic=False):
     env = {key: value for key, value in os.environ.items() if not key.startswith('THRUM_')}
     game = arm / 'game.log'
     trace = arm / 'cadence.trace'
-    command = ['/usr/bin/caffeinate', '-d', '-i', '-u']
+    command = []
     if diagnostic:
         settings['THRUM_MAC_CADENCE_TIMING'] = '1'
         env.update(settings)
         command += [str(BIN)]
     else:
-        developer = subprocess.check_output(['xcode-select', '-p'], text=True, timeout=5).strip()
-        blank = Path(developer).parent / (
-            'Applications/Instruments.app/Contents/Packages/Base.instrdst/Contents/Templates/Blank.tracetemplate'
-        )
+        blank = instrument_packages() / 'Base.instrdst/Contents/Templates/Blank.tracetemplate'
         options = arm / 'recording-options.json'
         save(options, {'Points of Interest': {'excludeOSLogs': True}})
         command += ['xcrun', 'xctrace', 'record', '--no-prompt', '--template', str(blank),
-                    '--recording-options', str(options), '--instrument', 'Metal Application',
-                    '--instrument', 'Display', '--instrument', 'Points of Interest',
-                    '--time-limit', '29s', '--output', str(trace), '--target-stdout', str(game)]
+                    '--recording-options', str(options), '--package', str(INSTRUMENT_PACKAGE),
+                    '--instrument', 'Thrum Presented Time', '--instrument', 'Points of Interest',
+                    '--time-limit', '29s', '--window', '32s', '--output', str(trace),
+                    '--target-stdout', str(game)]
         for key, value in settings.items():
             command += ['--env', f'{key}={value}']
         command += ['--launch', '--', str(BIN)]
     save(arm / 'launch.json', {'command': command, 'settings': settings, 'diagnostic': diagnostic})
-    # Wake before the panel preflight and hold it only during the recording.
-    subprocess.run(['/usr/bin/caffeinate', '-u', '-t', '2'], check=True, timeout=4)
-    observe_panel = panel_witness(arm)
-    observe_panel()
-    load = LoadRecord(arm)
+    # Wake before the panel preflight and release the display assertion when
+    # the game exits. Export and Instruments finalization need no active panel.
+    recorder = game if diagnostic else arm / 'recorder.log'
+    power = subprocess.Popen(['/usr/bin/caffeinate', '-d', '-i', '-u'])
+    load = None
     try:
-        code = bounded(command, game if diagnostic else arm / 'recorder.log',
-                       100 if not diagnostic else 33, environment=env, observe=observe_panel,
-                       finalization_seconds=None if diagnostic else 70)
+        observe_panel = panel_witness(arm)
+
+        def observe():
+            if power.poll() is not None:
+                return
+            if not diagnostic and recorder.exists() and any(
+                line in recorder.read_text(errors='replace') for line in (
+                    'Target app exited, ending recording', 'Recording completed. Saving output file',
+                )
+            ):
+                power.terminate()
+            else:
+                observe_panel()
+
+        observe_panel()
+        load = LoadRecord(arm)
+        code = bounded(command, recorder, 155 if not diagnostic else 33, environment=env,
+                       observe=observe, finalization_seconds=None if diagnostic else 125)
         if code or not (arm / 'refresh-account.tsv').is_file():
             raise InvalidMeasurement(f'{arm.name}: window did not finish the cadence record (exit {code})')
     finally:
-        save(arm / 'load.json', load.finish())
+        if power.poll() is None:
+            power.terminate()
+        power.wait(timeout=3)
+        if load:
+            save(arm / 'load.json', load.finish())
 
     identity = (arm / 'window.txt').read_text()
     if not re.search(r'^extent=1920x1080$', identity, re.MULTILINE) or f'Some({HZ}000)))' not in identity:
@@ -112,8 +143,14 @@ def collect(arm, store, wind, *, diagnostic=False):
     if diagnostic:
         return
     export(trace, arm / 'toc.xml', ['--toc'])
+    toc = (arm / 'toc.xml').read_text()
+    exported = []
     for filename, predicate in TRACE_TABLES.items():
+        schemas = re.findall(r'@schema="([^"]+)"', predicate)
+        if schemas and not any(f'schema="{schema}"' in toc for schema in schemas):
+            continue
         export(trace, arm / filename, ['--xpath', f'/trace-toc/run/data/table[{predicate}]'])
+        exported.append(filename)
     witness = ['python3', str(ROOT / 'scripts/mac_m2_presented.py'), '--input',
                str(arm / 'presented.xml'), '--arm', str(arm), '--output', str(arm / 'witness.json')]
     # The witness's qualification also asks for no unmatched rows. The wind
@@ -121,7 +158,7 @@ def collect(arm, store, wind, *, diagnostic=False):
     if bounded(witness, arm / 'witness.log', 40) not in (0, 2) or not (arm / 'witness.json').is_file():
         raise InvalidMeasurement(f'{arm.name}: presented-time witness did not produce a result')
     result = analyze_arm(arm, wind)
-    for filename in ('toc.xml', *TRACE_TABLES):
+    for filename in ('toc.xml', *exported):
         source = arm / filename
         with source.open('rb') as original, gzip.open(source.with_suffix('.xml.gz'), 'wb') as retained:
             shutil.copyfileobj(original, retained)
@@ -172,8 +209,12 @@ def series(output, *, diagnostics):
     output.mkdir(parents=True, exist_ok=False)
     head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
     dirty = subprocess.check_output(['git', 'status', '--porcelain'], cwd=ROOT, text=True).splitlines()
-    record = {'revision': head, 'binary_sha256': digest(BIN), 'started': datetime.now(timezone.utc).isoformat(),
-              'dirty': dirty, 'runs': [], 'cloud_runs': []}
+    record = {
+        'revision': head, 'binary_sha256': digest(BIN), 'started': datetime.now(timezone.utc).isoformat(),
+        'dirty': dirty, 'cooked_root': (store / 'HEAD').read_text().strip(),
+        'xcode': subprocess.check_output(['xcodebuild', '-version'], cwd=ROOT, text=True).splitlines(),
+        'instrument_sha256': digest(INSTRUMENT), 'runs': [], 'cloud_runs': [],
+    }
     destination = output / 'series.json'
     try:
         for index, wind in enumerate(ARMS):
@@ -204,7 +245,8 @@ def series(output, *, diagnostics):
 
 def run_wind(command, output):
     stamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S.%fZ')
-    output = (output or WORKING / f'{command}-{stamp}').resolve()
+    work_package = 'WP19' if command == 'cadence' else 'WP20'
+    output = (output or WORKING / work_package / f'{command}-{stamp}').resolve()
     record = series(output, diagnostics=command == 'cadence')
     print(output / 'series.json')
     for run in record['cloud_runs']:

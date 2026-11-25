@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<package>
+    <id>org.thrum.presented-time</id>
+    <title>Thrum Presented Time</title>
+    <owner><name>Thrum</name></owner>
+    <import-schema>ca-client-presented-handler</import-schema>
+    <instrument>
+        <id>org.thrum.presented-time.witness</id>
+        <title>Thrum Presented Time</title>
+        <category>Graphics</category>
+        <purpose>Records the OS-reported presented times of Metal drawables.</purpose>
+        <icon>Generic</icon>
+        <create-table>
+            <id>presented-drawables</id>
+            <schema-ref>ca-client-presented-handler</schema-ref>
+        </create-table>
+        <list>
+            <title>Presented drawables</title>
+            <table-ref>presented-drawables</table-ref>
+            <column>timestamp</column>
+            <column>drawable-id</column>
+            <column>at-time</column>
+            <column>process</column>
+        </list>
+    </instrument>
+</package>

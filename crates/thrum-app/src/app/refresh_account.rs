@@ -72,10 +72,17 @@ struct Measurement {
     rows: Vec<Opportunity>,
 }
 
+#[derive(Clone, Copy)]
+struct Closed {
+    row: Opportunity,
+    start: f64,
+    index: Option<usize>,
+}
+
 struct Request {
     target: f64,
     late: bool,
-    closed: Option<(Opportunity, Option<usize>)>,
+    closed: Option<Closed>,
 }
 
 /// Only the render owner starts, completes and presents a request. The event loop adds
@@ -85,6 +92,7 @@ struct Request {
 pub(super) struct Account {
     current: Option<Opportunity>,
     previous_end: Option<f64>,
+    latest_closed: Option<Closed>,
     presents: [Option<Present>; 2],
     request: Option<Request>,
     measurement: Option<Measurement>,
@@ -116,7 +124,14 @@ impl Account {
             self.close(previous);
             // A target gap contains the nominal deadlines the link did not send.
             // Anchor them to the new target so a small change in phase cannot drift.
-            let periods = ((target - previous.target) / period).round() as u64;
+            // A half-period phase change is possible with variable refresh.
+            // Count a missing slot only near an entire additional period.
+            #[expect(
+                clippy::cast_possible_truncation,
+                clippy::cast_sign_loss,
+                reason = "a nonnegative elapsed period count, rounded before conversion"
+            )]
+            let periods = ((target - previous.target) / period + 0.25).floor() as u64;
             for gap in (1..periods).rev() {
                 self.close(Opportunity::new(
                     target - gap as f64 * period,
@@ -133,12 +148,29 @@ impl Account {
         self.request = Some(Request {
             target,
             late: arrived >= target,
-            closed: None,
+            closed: self
+                .latest_closed
+                .filter(|closed| closed.row.target.to_bits() == target.to_bits()),
         });
     }
 
     pub(super) fn present(&mut self, time: f64, submission: u64) {
         let present = Present { time, submission };
+        if let Some(mut closed) = self.latest_closed
+            && (closed.start..closed.row.target).contains(&time)
+        {
+            // A new callback can be delivered just before the prior target's
+            // deadline. A present in that last sliver still belongs to it.
+            let before = closed.row.unserved();
+            closed.row.multiple |= closed.row.interval_present.replace(present).is_some();
+            self.revise(closed, before);
+            if let Some(request) = &mut self.request
+                && request.target.to_bits() == closed.row.target.to_bits()
+            {
+                request.closed = Some(closed);
+            }
+            return;
+        }
         if let Some(slot) = self.presents.iter_mut().find(|slot| slot.is_none()) {
             *slot = Some(present);
         } else {
@@ -163,28 +195,49 @@ impl Account {
             }
         };
         if let Some(row) = &mut self.current
-            && row.target == request.target
+            && row.target.to_bits() == request.target.to_bits()
         {
             update(row);
-        } else if let Some((mut row, index)) = request.closed {
-            let before = row.unserved();
-            update(&mut row);
-            if let (Some(before), Some(after)) = (before, row.unserved()) {
-                self.unserved[before as usize] -= 1;
-                self.unserved[after as usize] += 1;
-            }
-            if let (Some(measurement), Some(index)) = (&mut self.measurement, index) {
-                measurement.rows[index] = row;
-            }
+        } else if let Some(mut closed) = request.closed {
+            let before = closed.row.unserved();
+            update(&mut closed.row);
+            self.revise(closed, before);
+        }
+    }
+
+    fn revise(&mut self, closed: Closed, before: Option<Place>) {
+        if let Some(before) = before {
+            self.unserved[before as usize] -= 1;
+        } else {
+            self.served -= 1;
+        }
+        self.count(closed.row);
+        if let (Some(measurement), Some(index)) = (&mut self.measurement, closed.index) {
+            measurement.rows[index] = closed.row;
+        }
+        if self
+            .latest_closed
+            .is_some_and(|last| last.row.target.to_bits() == closed.row.target.to_bits())
+        {
+            self.latest_closed = Some(closed);
+        }
+    }
+
+    fn count(&mut self, row: Opportunity) {
+        if let Some(place) = row.unserved() {
+            self.unserved[place as usize] += 1;
+        } else {
+            self.served += 1;
         }
     }
 
     fn close(&mut self, mut row: Opportunity) {
+        let start = self.previous_end.expect("tracked interval start");
         for slot in &mut self.presents {
             if let Some(present) = *slot
                 && present.time < row.target
             {
-                if self.previous_end.is_some_and(|start| present.time >= start) {
+                if present.time >= start {
                     row.multiple |= row.interval_present.replace(present).is_some();
                 }
                 *slot = None;
@@ -192,21 +245,19 @@ impl Account {
         }
         self.previous_end = Some(row.target);
         self.opportunities += 1;
-        if let Some(place) = row.unserved() {
-            self.unserved[place as usize] += 1;
-        } else {
-            self.served += 1;
-        }
+        self.count(row);
         let index = self.measurement.as_mut().and_then(|measurement| {
             (measurement.start <= row.target && row.target < measurement.end).then(|| {
                 measurement.rows.push(row);
                 measurement.rows.len() - 1
             })
         });
+        let closed = Closed { row, start, index };
+        self.latest_closed = Some(closed);
         if let Some(request) = &mut self.request
-            && row.target == request.target
+            && row.target.to_bits() == request.target.to_bits()
         {
-            request.closed = Some((row, index));
+            request.closed = Some(closed);
         }
     }
 
@@ -371,6 +422,23 @@ mod tests {
         assert_eq!(rows.len(), 8);
         assert_eq!(rows[0].target, 2.0);
         assert_eq!(rows[7].target, 3.0 - PERIOD);
+    }
+
+    #[test]
+    fn an_early_callback_does_not_lose_a_present_in_the_previous_interval() {
+        let mut account = Account::default();
+        account.measure(0.0, 1.0);
+        account.callback(PERIOD, PERIOD);
+        account.begin(PERIOD, 0.04);
+        account.callback(PERIOD * 2.0, PERIOD);
+        account.present(0.12, 3);
+        account.complete(Place::EncodeSubmit, Some((0.12, 3)));
+        account.finish();
+        assert_eq!(account.served, 1);
+        assert_eq!(account.unserved[Place::LateRequest as usize], 1);
+        let rows = account.measurement.unwrap().rows;
+        assert_eq!(rows[0].interval_present.unwrap().submission, 3);
+        assert_eq!(rows[0].requested_present.unwrap().submission, 3);
     }
 
     #[test]
