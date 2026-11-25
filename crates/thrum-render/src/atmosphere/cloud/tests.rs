@@ -6,10 +6,7 @@ fn gpu_mapping_layout_matches_both_plain_and_atlas_shader() {
     use wgpu::naga;
     let source = format!(
         "@group(1) @binding(0) var aerial_sampler:sampler;\n{}\n@compute @workgroup_size(1) fn main() {{ let factor=cloud_factor(vec3<f32>(0.0)); }}",
-        concat!(
-            include_str!("../cloud_gpu.wgsl"),
-            include_str!("../cloud_factor.wgsl")
-        )
+        crate::shaders::CloudVariant::Gpu.sampling_source()
     );
     let module = naga::front::wgsl::parse_str(&source).expect("GPU cloud-factor source");
     naga::valid::Validator::new(

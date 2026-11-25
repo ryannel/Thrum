@@ -6,8 +6,6 @@ struct GpuSunMapping {
     near: vec4<f32>,
     middle: vec4<f32>,
 };
-@group(1) @binding(13) var cloud_optical_depth: texture_2d<f32>;
-@group(1) @binding(14) var<uniform> cloud_field: GpuSunMapping;
 
 fn cloud_path_supported() -> bool {
     return cloud_field.plane_drift.w != 0.0;

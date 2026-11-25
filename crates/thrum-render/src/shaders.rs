@@ -307,17 +307,42 @@ impl CloudVariant {
     }
 
     pub(crate) fn sampling_source(self) -> String {
-        let plane = if self.gpu() {
-            wgsl!("atmosphere/cloud_gpu.wgsl")
+        self.sampling_source_for(1, "aerial_frame")
+    }
+
+    pub(crate) fn sampling_source_for(self, group: u32, atmosphere: &str) -> String {
+        let (plane, mapping) = if self.gpu() {
+            (wgsl!("atmosphere/cloud_gpu.wgsl"), "GpuSunMapping")
         } else {
-            wgsl!("atmosphere/cloud.wgsl")
+            (wgsl!("atmosphere/cloud.wgsl"), "CloudField")
         };
-        let factor = if self.ground() {
-            wgsl!("atmosphere/ground_band.wgsl")
+        let mut source = format!(
+            "@group({group}) @binding(13) var cloud_optical_depth: texture_2d<f32>;
+             @group({group}) @binding(14) var<uniform> cloud_field: {mapping};
+"
+        );
+        if !self.gpu() {
+            use std::fmt::Write as _;
+            writeln!(
+                source,
+                "fn cloud_sun_direction() -> vec3<f32> {{ return {atmosphere}.sun_lux.xyz; }}"
+            )
+            .expect("write cloud source");
+        }
+        source.push_str(plane);
+        if self.ground() {
+            use std::fmt::Write as _;
+            writeln!(
+                source,
+                "@group({group}) @binding(22) var ground_band: texture_3d<f32>;
+                 @group({group}) @binding(23) var<uniform> ground_band_mapping: GroundBandMapping;"
+            )
+            .expect("write ground-band source");
+            source.push_str(wgsl!("atmosphere/ground_band.wgsl"));
         } else {
-            wgsl!("atmosphere/cloud_factor.wgsl")
-        };
-        format!("{plane}{factor}")
+            source.push_str(wgsl!("atmosphere/cloud_factor.wgsl"));
+        }
+        source
     }
 }
 

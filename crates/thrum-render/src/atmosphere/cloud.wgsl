@@ -3,17 +3,15 @@ struct CloudField {
     plane_drift: vec4<f32>, // plane Y, displacement XZ, lowest valid Sun sine
     validity: vec4<f32>,
 }
-@group(1) @binding(13) var cloud_optical_depth: texture_2d<f32>;
-@group(1) @binding(14) var<uniform> cloud_field: CloudField;
 
 fn cloud_path_supported() -> bool {
-    return cloud_field.validity.x != 0.0 && aerial_frame.sun_lux.y >= cloud_field.plane_drift.w;
+    return cloud_field.validity.x != 0.0 && cloud_sun_direction().y >= cloud_field.plane_drift.w;
 }
 
 // One factor for every direct-Sun path. Field values already describe optical
 // depth along the true Sun ray, so no second obliquity correction is applied.
 fn cloud_plane_factor(world_point: vec3<f32>) -> f32 {
-    let sun=aerial_frame.sun_lux.xyz;
+    let sun=cloud_sun_direction();
     if !cloud_path_supported() || world_point.y>=cloud_field.plane_drift.x { return 1.0; }
     let distance=(cloud_field.plane_drift.x-world_point.y)/sun.y;
     let point=world_point.xz+sun.xz*distance-cloud_field.plane_drift.yz;

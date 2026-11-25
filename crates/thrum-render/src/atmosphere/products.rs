@@ -187,13 +187,7 @@ pub(super) fn create(
             .into_owned()
     };
     if let Some(cloud) = cloud {
-        shader_source.push_str(
-            &cloud
-                .variant()
-                .sampling_source()
-                .replace("@group(1)", "@group(0)")
-                .replace("aerial_frame", "atmosphere"),
-        );
+        shader_source.push_str(&cloud.variant().sampling_source_for(0, "atmosphere"));
     }
     EnvironmentProducts {
         layout,

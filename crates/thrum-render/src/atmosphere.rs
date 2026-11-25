@@ -41,6 +41,12 @@ pub const VIEW_VOLUME_SETTLE_FRAMES: u32 = 8;
 
 /// Cloud sampling source shared by the synthetic and cooked draw shader assemblies.
 pub const CLOUD_SHADER_SOURCE: &str = concat!(
+    "@group(1) @binding(13) var cloud_optical_depth: texture_2d<f32>;
+",
+    "@group(1) @binding(14) var<uniform> cloud_field: CloudField;
+",
+    "fn cloud_sun_direction() -> vec3<f32> { return aerial_frame.sun_lux.xyz; }
+",
     wgsl!("atmosphere/cloud.wgsl"),
     wgsl!("atmosphere/cloud_factor.wgsl")
 );

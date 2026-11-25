@@ -1,14 +1,15 @@
 //! Metal's stored panel and bed contributions across exposure and air changes.
-#![cfg(target_os = "macos")]
-#[path = "support/optics.rs"]
-mod optics;
 mod support;
 
-use optics::{EXTENT, Panel, Rig, attach, camera, sun, water};
+#[cfg(target_os = "macos")]
+use support::optics::{EXTENT, Panel, Rig, attach, camera, sun, water};
 
+#[cfg(target_os = "macos")]
 const AEROSOL: [f32; 2] = [0.0, 0.000_55];
+#[cfg(target_os = "macos")]
 const SCALE: [f32; 2] = [1.0 / 32768.0, 1.0 / 2048.0];
 
+#[cfg(target_os = "macos")]
 fn arm(
     gpu: &thrum_test_support::Gpu,
     reflection: bool,
@@ -42,6 +43,7 @@ fn arm(
     rig.scene_colour()
 }
 
+#[cfg(target_os = "macos")]
 fn isolated(
     gpu: &thrum_test_support::Gpu,
     reflection: bool,
@@ -59,6 +61,7 @@ fn isolated(
         .collect()
 }
 
+#[cfg(target_os = "macos")]
 fn peak(values: &[f32], rows: std::ops::Range<u32>) -> f32 {
     values[(rows.start * EXTENT[0]) as usize..(rows.end * EXTENT[0]) as usize]
         .iter()

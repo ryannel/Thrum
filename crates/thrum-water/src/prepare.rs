@@ -255,9 +255,10 @@ pub(super) fn new(
     let environment = surface
         .environment_products_with_cloud()
         .ok_or("water needs the scene's physical environment")?;
+    let library = environment.shader_source.replace("@group(0)", "@group(2)");
     let gather = profile
         .optics
-        .map(|profile| Gather::new(surface, &environment, profile));
+        .map(|profile| Gather::new(surface, &environment, profile, &library));
     let parameters = device.create_buffer(&wgpu::BufferDescriptor {
         label: Some("water parameters"),
         size: size_of::<Parameters>() as u64,
@@ -343,6 +344,7 @@ pub(super) fn new(
         surface,
         &layout,
         &environment,
+        &library,
         mapped,
         interaction.as_ref(),
         foam.as_ref(),
@@ -490,6 +492,7 @@ fn surface_pipelines(
     surface: &SceneSurface<'_>,
     layout: &wgpu::BindGroupLayout,
     environment: &EnvironmentProducts,
+    library: &str,
     mapped: bool,
     interaction: Option<&Interaction>,
     foam: Option<&Foam>,
@@ -499,7 +502,7 @@ fn surface_pipelines(
 ) -> (wgpu::RenderPipeline, Option<wgpu::RenderPipeline>) {
     let source = shader_source(
         surface,
-        environment,
+        library,
         mapped,
         interaction.is_some(),
         foam,
@@ -527,7 +530,7 @@ fn surface_pipelines(
 
 fn shader_source(
     surface: &SceneSurface<'_>,
-    environment: &EnvironmentProducts,
+    library: &str,
     mapped: bool,
     wake: bool,
     foam: Option<&Foam>,
@@ -540,7 +543,7 @@ fn shader_source(
     };
     format!(
         "{}\n{sun}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}",
-        environment.shader_source.replace("@group(0)", "@group(2)"),
+        library,
         super::VIEW_RECORDS,
         include_str!("fresnel.wgsl"),
         include_str!("sampling.wgsl"),

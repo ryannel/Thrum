@@ -1,10 +1,8 @@
 //! Water admission on the Metal frame graph, with and without an opaque body.
-#![cfg(target_os = "macos")]
-#[path = "support/optics.rs"]
-mod optics;
 mod support;
 
-use optics::{Panel, Rig, attach, camera, sun, water};
+#[cfg(target_os = "macos")]
+use support::optics::{Panel, Rig, attach, camera, sun, water};
 
 thrum_test_support::macos_gpu_test! {
 fn gather_admits_visible_bodies_and_preserves_the_waterless_graph() {

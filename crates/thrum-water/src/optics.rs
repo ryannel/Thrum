@@ -166,6 +166,7 @@ impl Gather {
         surface: &SceneSurface<'_>,
         environment: &EnvironmentProducts,
         profile: Optics,
+        library: &str,
     ) -> Self {
         let device = surface.device;
         let buffer = device.create_buffer(&wgpu::BufferDescriptor {
@@ -194,7 +195,7 @@ impl Gather {
             ],
             immediate_size: 0,
         });
-        let source = environment.shader_source.replace("@group(0)", "@group(2)")
+        let source = library.to_owned()
             + super::VIEW_RECORDS
             + include_str!("optics/regions.wgsl")
             + include_str!("optics/gather.wgsl");

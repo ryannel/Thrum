@@ -3,6 +3,7 @@
     reason = "shared public-seam fixture supports several focused GPU tests"
 )]
 pub(crate) mod island;
+pub(crate) mod optics;
 pub(crate) mod surf;
 pub(crate) mod surf_frame;
 use std::time::Duration;

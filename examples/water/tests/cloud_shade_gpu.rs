@@ -1,12 +1,12 @@
 //! Test the water's direct Sun separately from its sky illumination on Metal.
-#![cfg(target_os = "macos")]
-#[path = "support/optics.rs"]
-mod optics;
 mod support;
 
-use optics::{EXTENT, Rig, attach, camera, sun, water};
+#[cfg(target_os = "macos")]
+use support::optics::{EXTENT, Rig, attach, camera, sun, water};
+#[cfg(target_os = "macos")]
 use thrum_render::atmosphere::SunOpticalDepth;
 
+#[cfg(target_os = "macos")]
 fn capture(gpu: &thrum_test_support::Gpu, tau: Option<f32>, optics: bool) -> Vec<[f32; 3]> {
     let provider = tau.map(|tau| {
         SunOpticalDepth::new(
