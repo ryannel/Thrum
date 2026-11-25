@@ -283,6 +283,9 @@ pub async fn create_sprite_game(
 }
 
 /// Prepare the panel card over the moving sprite field in the ordinary WebGPU canvas.
+///
+/// # Errors
+/// Refuses unsupported scales or paint row counts and reports WebGPU preparation failures.
 #[cfg(feature = "proving")]
 #[wasm_bindgen]
 pub async fn create_interface_game(

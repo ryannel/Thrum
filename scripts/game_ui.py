@@ -190,12 +190,12 @@ def costs_native(destination, revision, scratch):
     }
 
 
-def costs_chrome(destination, revision, target):
+def costs_chrome(destination, revision, target, scratch):
     web = target / "v1-game-web-proving"
     run(["sh", GAME / "web/build.sh", "--proving"],
         env={**FIXED_ENV, "CARGO_TARGET_DIR": str(target)})
     for index in (1, 2):
-        directory = destination / f"chrome-{index}"
+        directory = scratch / f"chrome-{index}"
         before = load()
         run(["node", "scripts/check_v1_browser.mjs", "--case", "interface-stage-cost",
              "--web-root", web, "--output", directory])
@@ -216,7 +216,10 @@ def costs_chrome(destination, revision, target):
                         raise ValueError("incomplete Chrome timestamp record")
                 measure_upload(case, lambda sample: sample["interface"]["uploaded_bytes"])
         record.update(load_before=before, load_after=after, profile="release")
-        write(directory / "interface-stage-cost.json", record)
+        retained = destination / directory.name
+        retained.mkdir(exist_ok=True)
+        write(retained / "interface-stage-cost.json", record)
+        shutil.copy2(directory / "browser-gpu.json", retained / "browser-gpu.json")
     return {"target": "chrome-webgpu", "commit": revision,
             "runs": [f"chrome-{index}/interface-stage-cost.json" for index in (1, 2)]}
 
@@ -238,7 +241,7 @@ def main():
         if args.target == "mac-metal":
             record = costs_native(destination, revision, Path(work))
         else:
-            record = costs_chrome(destination, revision, target)
+            record = costs_chrome(destination, revision, target, Path(work))
     write(destination / "summary.json", record)
     print(destination / "summary.json")
 
