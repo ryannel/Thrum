@@ -853,7 +853,56 @@
     },
     "WP5": {
       "definitions": "79f6464b82787ae7ccd4cd72cd9696b7d1f5c2ac731944e4a9000c836a2c835c",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "24dd5018b9e8d1dc0384cb9f3d3900e042b98286",
+          "review": ".orchestrate/evidence/RAY-TRACING/WP5-review.md",
+          "items": {
+            "WP5.2": "pass",
+            "WP5.3": "pass",
+            "WP5.4": "pass",
+            "WP5.5": "fail",
+            "WP5.6": "pass",
+            "WP5.7": "pass"
+          },
+          "findings": [
+            {
+              "name": "Ambient rays step over supported caster separations",
+              "repeat": false
+            },
+            {
+              "name": "Settled ambient occlusion leaves grain on a flat face",
+              "item": "WP5.5",
+              "repeat": false
+            },
+            {
+              "name": "Ambient tracing adds a separate visibility pass alongside soft Sun",
+              "repeat": false
+            },
+            {
+              "name": "Portable forward shader includes ambient-occlusion code",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 182752,
+            "cached": 12829440,
+            "output": 25325,
+            "turns": 1
+          },
+          "at": "2026-11-25T11:41:10Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",

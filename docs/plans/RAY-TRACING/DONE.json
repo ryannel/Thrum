@@ -524,8 +524,8 @@
     {
       "id": "WP5",
       "name": "Props and terrain are grounded: sky light is dimmed in creases and where things stand close together",
-      "status": "ready_for_review",
-      "failed_reviews": 0,
+      "status": "in_progress",
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "depends_on": [
         "CLOUDS:WP7"
@@ -540,8 +540,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RAY-TRACING/WP5/checks/final-metal.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RAY-TRACING/WP5-review.md"
         },
         {
           "id": "WP5.3",
@@ -551,8 +551,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RAY-TRACING/WP5/README.md#wp53-contacts-and-cloud-composition",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RAY-TRACING/WP5-review.md"
         },
         {
           "id": "WP5.4",
@@ -561,18 +561,18 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RAY-TRACING/WP5/README.md#wp54-silhouettes-and-a-camera-turn",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RAY-TRACING/WP5-review.md"
         },
         {
           "id": "WP5.5",
           "statement": "Occlusion shows no grain at rest. When an occluder moves away from a still receiver, once in view and once from off screen, the receiver's darkening is gone once the occlusion's settle length and one more frame have passed. The evidence names the frame the occluder moved and states the settle length.",
           "inspect": "`realtime` sequences at rest and of an occluder leaving a named still receiver, in view and from off screen: the consecutive native-size frames from the one before it moves to two past the settle length, each numbered.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RAY-TRACING/WP5/README.md#wp55-rest-and-departure",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/RAY-TRACING/WP5-review.md"
         },
         {
           "id": "WP5.6",
@@ -582,8 +582,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RAY-TRACING/WP5/checks/final-metal.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RAY-TRACING/WP5-review.md"
         },
         {
           "id": "WP5.7",
@@ -593,8 +593,27 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RAY-TRACING/WP5/cost-notes.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RAY-TRACING/WP5-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "name": "Ambient rays step over supported caster separations",
+          "repeat": false
+        },
+        {
+          "name": "Settled ambient occlusion leaves grain on a flat face",
+          "item": "WP5.5",
+          "repeat": false
+        },
+        {
+          "name": "Ambient tracing adds a separate visibility pass alongside soft Sun",
+          "repeat": false
+        },
+        {
+          "name": "Portable forward shader includes ambient-occlusion code",
+          "repeat": false
         }
       ]
     },
