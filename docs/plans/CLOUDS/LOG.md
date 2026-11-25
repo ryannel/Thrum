@@ -633,3 +633,9 @@
   refusals. The four longest submission intervals still sampled adjacent future targets, and neighboring
   originals show even cloud and shade travel. The loaded comparisons preserve the remaining misses.
   [Wind qualification](../../../.orchestrate/evidence/CLOUDS/WP7/wind-qualified.md).
+
+## WP7 review repair checkpoint
+
+- 2026-11-25 Mixed weather banks now vary in altitude within each type's authored height range. The shared field carries that shape into the visible sky, Sun paths and the cloud column queries. Fresh Metal and Chrome fixed captures show the connected broken banks, irregular openings and lit edges at both heights. [Metal](../../../.orchestrate/evidence/CLOUDS/WP7/fix/WP7.1-metal-appearance.md) · [Chrome](../../../.orchestrate/evidence/CLOUDS/WP7/fix/WP7.7-chrome.md)
+- Thinning cumulus rises as its density fades. The fresh four-minute Metal sequence preserves the same clouds and opens and closes the deck without a reset. The Chrome sequence shows three staggered lives and retains the observer's note about one shape that contracts through a similar contour. [Metal weather cycle](../../../.orchestrate/evidence/CLOUDS/WP7/fix/lift-cycle-opinion.md) · [Chrome motion observation](../../../.orchestrate/evidence/CLOUDS/WP7/fix/lift-web-life-opinion.md)
+- The paired cost check writes an investigation using the passes, work and resource records from its own measurement. The latest run passed beside the clear identity and CPU-to-GPU weather and column checks. [Item receipt](../../../.orchestrate/evidence/CLOUDS/WP7/fix/lift-item-checks.json) · [Paired cost record](../../../.orchestrate/evidence/CLOUDS/WP7/fix/WP7.8-current-pair.json)
