@@ -31,7 +31,7 @@ Criteria: D2.1–D2.5 in the done-when file.
 
 ## WP3 G4 can replace the pre-tone linear input without changing SDR output
 
-Criteria: D3.1–D3.5 in the done-when file.
+Criteria: D3.1–D3.4 in the done-when file. D3.5 moved to WP10 as D10.5 on 14 November 2026.
 
 - [x] Settle review MF1 with fresh both-recipe OS-window observations on the exact reviewed binary in an unlocked session, retaining matched paused references, input, resize and replacement recovery.
 - [x] Expose one colour/exposure input with exact identity substitution; keep tone/intermediate/present arithmetic. Migrate pass-name timing and prove attended window function.
@@ -39,7 +39,7 @@ Criteria: D3.1–D3.5 in the done-when file.
 
 ## WP10 A stateful native segment composes inside one submission
 
-Criteria: D10.1–D10.4 in the done-when file.
+Criteria: D10.1–D10.5 in the done-when file.
 
 - [ ] Start with exact same-submit copy/select fixture and twin. Then prove route/history, held lifetime, discard/reset and diagnostic simulator background race.
 - [ ] Retain actual target proof and run scoped checks plus `./dev check` before claiming.
@@ -67,11 +67,13 @@ in `crates/thrum-render/src/apple_tile.rs`, and their callers in `runtime.rs` an
 native outcome and the witness's report are read by the governor, submitted capture, `thrum-app`'s qualification,
 the game's capture and the iOS shell: keep each working. `APPLE-PRESENTATION` WP8's unmerged checkpoint
 (`build/apple-presentation` at `2252c56af`) changes `examples/v1-game-ios/src/ios/render.rs` and `witness.rs`, so
-change there only what a rename forces. D13.2's second provider is test data: make it as small as its four cases
-allow, and keep it out of ordinary builds where the code lets you.
+change there only what a rename forces. D13.2's second provider is test data: make it as small as its five cases
+allow, and keep it out of ordinary builds where the code lets you. The witness's twin resets after every dropped
+candidate today and must go on doing so, by the declaration the design gives it, while the second provider's
+twin keeps its history through a refused acquisition.
 
 Stop rules, for every work package:
-- D2.5, D3.5 and D12.3 need attended setup: an unlocked active Mac session and Screen Recording permission for the
+- D2.5, D10.5 and D12.3 need attended setup: an unlocked active Mac session and Screen Recording permission for the
   OS capture process. Missing setup leaves those rows open while unblocked work proceeds; never automate a grant.
 - WP12's cooked simulator scene waits on `COOKED-DRAW`; never build a substitute.
 - Never silently refresh a baseline, and never widen a comparison metric in place of exact bytes.

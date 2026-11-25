@@ -90,7 +90,7 @@ already-done `PLATFORM-RUNTIME-MAC:WP1` loss boundary. Simulator rows before WP1
 WP12 alone needs `COOKED-DRAW:WP1` for cooked simulator function. No row requires `T2-CAPTURE:WP2`.
 
 Mac WP2 qualifies the current surface path after T2 WP0, independently of this module. Mac WP3 waits for Mac WP2
-(module order) and `APPLE-TILE:WP3`: T2 WP0/WP1 → G3t WP0–WP3, including the attended real-window rows at WP2/WP3 and
+(module order) and `APPLE-TILE:WP3`: T2 WP0/WP1 → G3t WP0–WP3, including the attended real-window row D2.5 and
 simulator diagnostic lifecycle checks. Chrome capture is delivered; simulator cooked draw/capture is absent from
 this chain. Mac WP3 reruns its complete runtime-motion/capture-OFF panel-cadence and windowed-tap/tooling protocols
 on the changed build; earlier results qualify only their recorded build. There is no reverse Mac dependency.
@@ -245,10 +245,26 @@ for what C06 gives one. WP13 separates the two, changing no behaviour that D10.1
 about a frame that carries native work:
 
 - *The candidate.* A provider has at most one candidate frame at a time. A candidate that is dropped without a
-  successful submission, for any reason, invalidates the provider's history and counts a discard.
-- *The reset decision.* A candidate is a reset when it is the provider's first, on a cut, after a discard, a
-  failed submission, a completion error or a rejection, and on a new generation. The segment decides this and
-  hands it to the provider as one flag. It does not know how a provider resets.
+  successful submission counts a discard. Whether the drop invalidates the provider's history depends on which
+  side was recorded and on what dropped the frame:
+
+  | Recorded | What dropped the frame | History afterwards |
+  | --- | --- | --- |
+  | Native commands | Anything | Invalid. Recording may already have advanced state the provider keeps to itself, as encoding advances MetalFX's scaler, so C06 resets it before reuse |
+  | The twin | A healthy acquisition refusal: the frame is cancelled before any submission, with the device healthy and the lease in the foreground | Kept at the last submitted sample, which the next candidate takes as its predecessor. Commands that were never submitted wrote nothing, and C07 commits a history sample only at a successful submission |
+  | The twin | A failed submission, a lost device or a background cancellation on iOS | Invalid, as C07 says of every history |
+
+  So with TAAU as the twin, submitting A, dropping B on a refused acquisition and submitting C leaves C reading
+  A's history. A provider declares at construction whether its twin instead follows the native side through
+  a drop, and then a dropped twin candidate invalidates as a dropped native one does. The witness declares it,
+  because its twin equals its native side to the byte through every discard: that is how WP10 built it and what
+  D13.1's tests hold it to. A reconstructor does not. The two kinds of discard are counted apart.
+- *The reset decision.* A candidate is a reset when it is the provider's first, on a cut, after a discard that
+  invalidated history, a failed submission, a completion error or a rejection, on a change of side, and on a
+  new generation. The segment decides this and hands it to whichever side records, as one flag. It does not know
+  how a provider resets. Where a twin's history already has an owner under C07, as TAAU's has, the twin rows
+  above are that owner's own rules. The flag and the owner then agree on every frame, and the owner stays the
+  one authority for that history.
 - *Native or twin.* The twin records when the recipe is portable, when the provider's preparation refused, and
   after the provider is rejected. The choice is made for a whole candidate before any command is recorded, and
   a change of side is a reset. Both sides are prepared before the provider is ready, so a rejection during play
@@ -256,7 +272,11 @@ about a frame that carries native work:
 - *The encoder split.* For native work the segment closes the wgpu encoder being recorded, opens a dedicated
   wgpu-owned encoder, gives the provider that encoder's raw Metal command buffer to record into, and resumes a
   fresh wgpu encoder. All three go on the coordinator's ordered list for its one submission. A provider is given
-  no queue, no surface and no way to end, commit or submit a command buffer.
+  no queue and no surface. The raw command buffer is Metal's own object, which MetalFX's encode call needs in
+  hand, and Metal lets its holder commit it. So no type stops a provider, and the recording contract does: a
+  provider creates and ends only its own encoders on that buffer, and never commits, enqueues or waits on it.
+  The coordinator alone submits (C06). Each provider's review reads its recording for this, as the witness's
+  did.
 - *Submission and completion.* Only a successful submission advances a provider's history. Completion is
   delivered to a mailbox that carries the device generation and the submission order. It reads the raw command
   buffer's status and GPU start and end times after the queue completes. An error there invalidates the
@@ -266,7 +286,8 @@ about a frame that carries native work:
 - *Retention.* The provider and every native handle it recorded with stay alive until that completion is
   delivered, across a generation replacement.
 - *Counters.* Encoded, submitted, discarded, reset and completed candidates, and the side that ran with the
-  reason for a twin, are counted for each provider in one report shape.
+  reason for a twin, are counted for each provider in one report shape. Of the discards, those that kept
+  history are also counted on their own.
 
 **A provider** is the feature that runs in the segment. It implements `NativeProvider`, which the segment
 defines, and supplies only what is particular to it:
@@ -278,19 +299,22 @@ defines, and supplies only what is particular to it:
   the reset flag and the provider's own values for that frame;
 - its twin: portable passes that write the same declared outputs. They may be passes the scene already owns.
   MetalFX's twin is TAAU. A twin need not match its native side to the byte, and the segment compares nothing:
-  the witness promises exact bytes, and a reconstructor does not.
+  the witness promises exact bytes, and a reconstructor does not. The provider also declares whether its twin
+  follows the native side through a dropped candidate, which the candidate rule above reads.
 
 The copy/select witness becomes the first provider. Its blits, kernel, textures, WGSL twin and omission controls
 stay its own, and its output, history, counters and timing rows are as WP10 and WP11 left them.
 
 **Range.** These are what `APPLE-PRESENTATION` WP8 needs, and the witness alone exercises none of the first
-three:
+four:
 
 - inputs and outputs of any number, each with its own format and extent, so an output may be larger than the
   inputs it is made from;
 - values that change from frame to frame inside one generation, such as the rectangle of an input that holds
   content;
 - history a provider keeps inside itself, which the graph does not declare and only the reset flag reaches;
+- a twin whose history advances at submission and so survives a healthy acquisition refusal, where the
+  witness's twin follows its native side;
 - the native side on Metal under the Apple recipe, and the twin on every backend. The interface and the twin
   compile on every target the renderer builds for, and only raw recording is Apple-only;
 - one provider in a view at a time: the witness in a diagnostic run, a reconstructor otherwise. Two providers in
@@ -316,7 +340,9 @@ segment's seven duties above where they are.
    bind the actual surface and present, then submit once. Only successful
    submitted work advances image history; completion retires slot/generation resources.
 4. If acquire fails after native encoding, drop the view, perform only the healthy upload flush and mark the provider
-   reset before reuse. If loss was observed, abandon without queue calls instead. If iOS suspended, refuse submission
+   reset before reuse. If the twin was recorded instead, its history stays at the last submitted sample, as
+   [the segment's discard rule](#the-native-segment-and-its-providers-wp13) says. If loss was observed, abandon
+   without queue calls instead. If iOS suspended, refuse submission
    under its lease. Retained world/input/cooked source continues under its existing owner.
 5. During generation replacement, prepare registry/resources/providers and fallback off the rendering critical path,
    publish at the existing safe boundary, reset incompatible histories and retire old resources after completion.
@@ -374,7 +400,8 @@ for host-time engine motion. Chrome WP1's implemented adapter uses `fixed` check
 remains endpoint/no-history, not temporal proof. Simulator `simctl` images/video prove function/UI/lifecycle within
 recorded coverage only; simulator submitted/runtime-motion proof stays with T2 WP2. GPU runs hold the `gpu` lock.
 
-D2.5/D3.5 and final window proof use OS capture of the actual game window (PID/window ID), requiring **attended
+D2.5, D10.5 (WP3's window proof, which the owner moved to WP10 on 14 November 2026 as it stood) and the final
+window proof use OS capture of the actual game window (PID/window ID), requiring **attended
 setup**: unlocked active Mac session plus Screen Recording permission for the capturing process. Do not request or
 change grants by automation. Record capture tool/version, clock and inclusion limits. Compare settled OS window
 frames against T2 `still`/`fixed` reference images at the same paused-world controls, camera, content, recipe and
@@ -410,7 +437,7 @@ win with preserved quality; inconclusive candidates remain unpromoted with prepa
 - Native initialization/lifetimes differ from wgpu assumptions: same-submit stateful twin, discard/reset, held slot,
   extent replacement and generation loss witnesses precede MetalFX.
 - Quiet timings, physical traffic and real display cadence may be unavailable. Keep their evidence limits explicit;
-  none is supplied by docs checks. Functional real-window runs at WP2/WP3 cannot be replaced by offscreen output;
+  none is supplied by docs checks. Functional real-window runs (D2.5, D10.5) cannot be replaced by offscreen output;
   without an unlocked active-display slot those items stay open. WP12 records cadence/physical-device rows still owed,
   and Mac WP3 must qualify the post-G3t-M3 surface path rather than inherit old results.
 
@@ -426,13 +453,18 @@ through the shared tap. WP2 also names delivered `PLATFORM-RUNTIME-MAC:WP1`. Bef
 Mac and Chrome same-target portable baselines using their qualified target taps and pinned source/cooked inputs.
 
 Mac WP2 qualifies the current path after T2 WP0 independently. Mac WP3 needs Mac WP2 by module order and
-`APPLE-TILE:WP3`: T2 WP0/WP1, then G3t WP0–WP3, including attended D2.5/D3.5 and simulator diagnostic
-function checks. **Neither COOKED-DRAW WP1 nor T2 simulator WP2 is on that chain.** Mac WP3 reruns its complete
+`APPLE-TILE:WP3`: T2 WP0/WP1, then G3t WP0–WP3, including attended D2.5 and simulator diagnostic
+function checks. WP3's attended window proof is D10.5 since 14 November 2026, in WP10, and Mac WP3 does not
+wait for it. **Neither COOKED-DRAW WP1 nor T2 simulator WP2 is on that chain.** Mac WP3 reruns its complete
 runtime-motion and capture-OFF built-in-panel cadence protocols plus real-window tap/tooling preflight on the changed
 build. G3t never waits back on Mac WP2/WP3; old results qualify only their recorded builds.
 
 G4 receives WP0 proof tools, WP1 eligibility, WP3 pre-tone linear input/exposure binding and WP11 native
-provider lifetime/reset/timing, which WP13 offers to any provider. G4 reconstruction inserts before the retained SDR tone stage; G4 owns the later EDR
+provider lifetime/reset/timing, which WP13 offers to any provider. The native handoff is to G4 WP8, which
+depends on WP11 and WP13 and writes MetalFX as a provider. G4 WP11 is the paired proof, not the handoff, and
+depends on WP12. WP13 follows WP12 in this module's order only because it was added after WP12 was Done: what
+the interface needs is WP10 and WP11, and nothing of WP12's. Where D12.3 and D12.5, both Done, say D3.5 or call
+G4 WP11 the native handoff, read D10.5 and G4 WP8; their words are left as judged. G4 reconstruction inserts before the retained SDR tone stage; G4 owns the later EDR
 branch and its display semantics. WP11 bounded extent fixtures and WP12 fixed extents/current readers do not wait for
 G4; G4 later reruns actual reconstruction-reader/scale-transition proofs. Full G4 JSON migration remains its own commission.
 
@@ -461,7 +493,7 @@ claims simulator exact submitted output or elapsed-time engine motion; those sta
 must wait on its owner COOKED-DRAW, never build a substitute. New commands are documented only when implemented.
 Run GPU work under `gpu` exclusivity; no GPU or screen automation is part of this planning turn.
 
-D2.5/D3.5/D12.3 declare **attended setup** in JSON: unlocked active Mac session and Screen Recording permission for
+D2.5/D10.5/D12.3 declare **attended setup** in JSON: unlocked active Mac session and Screen Recording permission for
 the chosen OS capture process. Record actual window/PID/tool and compare settled OS
 window evidence to T2 `still`/`fixed` reference images at matching paused-world controls/content/extent. Inspect content
 and letterbox in content-pixel coordinates; these are matched states, not the same submission. Mac WP2.3 owns separate

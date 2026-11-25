@@ -565,3 +565,9 @@
   The module list gives this module the native segment, so WP13 was added to separate the segment from its
   providers, with the witness as the first and a small second provider as the proof that the interface carries
   what MetalFX needs. No Done item changed. [WP8 handoff](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP8-handoff.md)
+- 2026-11-25 Planner: revised WP13 after [the design review](../../../.orchestrate/evidence/APPLE-TILE/design-review.md).
+  Must Fix 1: a dropped twin candidate keeps its history after a healthy acquisition refusal, a dropped native
+  one never does, the witness's twin still follows its native side, and D13.2 proves both discards. Must Fix 2:
+  D13.2 requires the second frame's output to hold content only its own rectangle has. Suggestions 3 and 4
+  taken in the design and plan file; no Done item changed.
+  [Full entry](../../../.orchestrate/evidence/APPLE-TILE/log-entries.md#entry-7).
