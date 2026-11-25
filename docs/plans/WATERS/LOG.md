@@ -851,3 +851,18 @@
   the lee laps with short waves, and the fixed views show swell turning around the point and growing
   downwind. A fresh inspection agreed at the submitted tide samples.
   [Inspection and receipts](../../../.orchestrate/evidence/WATERS/WP13/tide-motion-inspection.md).
+
+- 2026-11-25 WP13.7 passed on portable Metal. Foam follows the wet face into the bore and stranded lace
+  fades before rewetting. Breaking fronts remain visible at 1 km and cross the documented coarse-window
+  edge. The calm shore stays clean. Ten Metal foam checks passed, including the craft trail in 8.140 s.
+  [Inspection and receipts](../../../.orchestrate/evidence/WATERS/WP13/whitewater-motion-inspection.md).
+
+- 2026-11-25 WP13.5 reached the three-look stop. After the bed-lattice and narrow-lens changes, two full
+  1 km sets show different break positions and shoreward travel. Relative crest heights remain ambiguous
+  at those visual break onsets, despite the larger crests breaking farther out in the cross-shore cuts.
+  [Three looks and compared onsets](../../../.orchestrate/evidence/WATERS/WP13/break-distance-inspection.md).
+
+- 2026-11-25 Repeated the paired 1440p gale cost record with the bed-lattice read accounting. The cache uses
+  13,849,632 bytes. The surf cut used 47,425,760 nodes over 48 stations and took 18,117.774 ms. The paired
+  surf-disabled query took 0.311 ms. The investigation is recorded for WP19.
+  [Metal cost and tripwires](../../../.orchestrate/evidence/WATERS/WP13/surf-cost.json).

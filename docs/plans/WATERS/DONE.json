@@ -1202,8 +1202,8 @@
           "statement": "Whitewater follows the breaking lip and face into the spreading bore and thins as the swash carries it up the sand. The retreat leaves fading lace. Surf remains visible at the exposed beach from 1 km offshore. A breaking front crosses the coarse foam window's outer edge without a visible seam. The calm shoreline makes no surf foam.",
           "inspect": "Use `fixed` stills and `realtime` sequences in trade wind and gale at 2 m on the sand, at 40 m above, at 1 km offshore and at the separate handoff view described in the design. Include a calm control of the same beach. 1. From 2 m and 40 m, whitewater follows the lip and wet breaking face into the lowering bore, with no detached ribbon across dry sand. 2. Foam spreads and thins as the connected swash runs up. Lace stays on the bared sand and fades during retreat. 3. From 1 km offshore, the exposed beach still shows a line of surf beyond the foam windows. 4. In the handoff view, follow one breaking front visible on both sides of the recorded outer edge of the coarse window, through the blend into the distant estimate. There is no seam or abrupt change in foam cover fixed to the grid. 5. The calm shoreline makes no surf foam.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP13/whitewater-motion-inspection.md",
           "verdict": "",
           "review": ""
         },
