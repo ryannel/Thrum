@@ -557,3 +557,7 @@
   route now starts with fresh game and XCTest runner installations by clearing both bundles after
   boot. The simulator SDK also lacks MetalFX, so simulator builds decline native scaler preparation
   and omit the framework link. [Simulator replay and diagnosis](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP8/D8.7-replay.md)
+
+- 2026-11-25 WP8. The repaired build installed on the simulator. The launch control stayed on the
+  Apple logo and also timed out opening Settings. Waking the display and restarting the guest's
+  IconServices and SpringBoard did not bring up the Home Screen. [Launch diagnosis](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP8/D8.7-replay.md)
