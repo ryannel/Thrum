@@ -250,8 +250,15 @@ fn reflected_sky(slope:vec2<f32>,covariance:vec3<f32>,v:vec3<f32>)->vec4<f32> {
             row.loss = mix(row.loss, row.loss_without_long, input.surf_weight)
                 + long_loss;
         }
-        whitewater=foam_surface(input.world,row,max(length(dx),length(dy)),determinant,
-            input.breaking_face_weight);
+        var face = input.breaking_face_weight;
+        if SURF_SHORE_GRID_ENABLED {
+            let distance = abs(input.world.xz - view.camera_xyz_time.xz);
+            let blend = smoothstep(80.0, 140.0, max(distance.x, distance.y));
+            if blend > 0.0 {
+                face = mix(face, surf_shore_face(input.world.xz), blend);
+            }
+        }
+        whitewater=foam_surface(input.world,row,max(length(dx),length(dy)),determinant,face);
         covariance*=1.0-0.65*whitewater.w;
     }
     let variance=max(0.0,covariance.x+covariance.z);

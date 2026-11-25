@@ -83,7 +83,9 @@ fn foam_surface(point: vec3<f32>, row: SurfaceRow, footprint: f32, jacobian: f32
         let air_birth = 0.22 * birth;
         let air = air_birth / (air_birth + 1.0 / 2.4);
         let film = clamp((birth + 0.60 * air / 2.4) / (birth + 1.0 / 19.0), 0.0, 1.0);
-        let shore_stocks = vec3(air, film * (6.0 / 19.0), film * (13.0 / 19.0));
+        // The distant estimate gives the visible film a porous mean. The
+        // phase-resolved face supplies the brighter line moving through it.
+        let shore_stocks = vec3(air, film * 0.42 * vec2(6.0 / 19.0, 13.0 / 19.0));
         far = vec4(sea + (vec3(1.0) - sea) * shore_stocks, 0.0);
     }
     var stocks = foam_at(point.xz, far);

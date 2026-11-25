@@ -204,6 +204,7 @@ pub(super) fn new(
                 surf,
                 &mesh,
                 count,
+                whitewater.as_ref().map(|_| map.bed().lattice().2),
             )
         })
         .transpose()
@@ -327,7 +328,7 @@ pub(super) fn new(
         entries: &bindings,
     });
     let source = shader_source(&environment, mapped, interaction.is_some(), foam.is_some())
-        + &Cache::source(surf_cache.is_some());
+        + &Cache::source(surf_cache.as_ref());
     let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some(SURFACE_PASS),
         source: wgpu::ShaderSource::Wgsl(source.into()),

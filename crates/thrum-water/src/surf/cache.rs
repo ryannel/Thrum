@@ -18,6 +18,7 @@ pub(crate) const PASS: &str = "surf field cache";
 const OUTPUT_BINDING: u32 = 13;
 const COMPUTE_SURF_BINDING: u32 = 7;
 const GROUP_WIDTH: u32 = 64;
+const MAX_SHORE_GRID_SIDE: u32 = 384;
 
 /// Opt-in readback handle for the most recent submitted surf field.
 #[derive(Clone, Default)]
@@ -40,6 +41,7 @@ pub struct SurfWitness {
     /// Displacement xyz and 1 plus breaking-face weight (0 outside the bed), then previous
     /// displacement xyz and long-wave variance before the depth limit, then
     /// the current and previous short-wave geometry weight with two padding words.
+    /// Only the prefix with one sample per rest node is part of the mesh witness.
     pub samples: wgpu::Buffer,
     /// World x/z used to place the camera-relative sea nodes.
     pub anchor: [f32; 2],
@@ -52,7 +54,8 @@ struct CacheSettings {
     count: u32,
     components: u32,
     heights: [f32; 4],
-    chop_dt: [f32; 4],
+    chop_dt: [f32; 2],
+    shore_size: [u32; 2],
 }
 
 #[repr(C)]
@@ -70,6 +73,8 @@ pub(crate) struct Cache {
     group: wgpu::BindGroup,
     pipeline: wgpu::ComputePipeline,
     count: u32,
+    dispatch_count: u32,
+    shore_size: [u32; 2],
     recorded_anchor: [f32; 2],
 }
 
@@ -80,14 +85,30 @@ impl Cache {
         surf: &SurfGpu,
         mesh: &wgpu::Buffer,
         count: u32,
+        shore_lattice: Option<[usize; 2]>,
     ) -> Result<Self, WaterError> {
         use wgpu::BufferUsages as Usage;
-        let bytes = u64::from(count) * size_of::<CacheSample>() as u64;
-        if bytes.max(mesh.size()) > device.limits().max_storage_buffer_binding_size {
+        let stride = size_of::<CacheSample>() as u64;
+        let sample_limit = device.limits().max_storage_buffer_binding_size;
+        let mesh_bytes = u64::from(count) * stride;
+        if mesh_bytes.max(mesh.size()) > sample_limit {
             return Err(WaterError::UnsupportedMap(
                 "surf field cache exceeds storage binding limits",
             ));
         }
+        let shore_size = shore_lattice
+            .map(|size| {
+                size.map(|side| {
+                    u32::try_from(side)
+                        .unwrap_or(u32::MAX)
+                        .min(MAX_SHORE_GRID_SIDE)
+                })
+            })
+            .filter(|[w, h]| mesh_bytes + u64::from(w * h + 1) * stride <= sample_limit)
+            .unwrap_or_default();
+        let shore_count = shore_size[0] * shore_size[1];
+        let dispatch_count = count + shore_count + u32::from(shore_count > 0);
+        let bytes = u64::from(dispatch_count) * stride;
         let buffer = |label, size, usage| {
             device.create_buffer(&wgpu::BufferDescriptor {
                 label: Some(label),
@@ -161,6 +182,8 @@ impl Cache {
             group,
             pipeline,
             count,
+            dispatch_count,
+            shore_size,
             recorded_anchor: [0.0; 2],
         })
     }
@@ -220,7 +243,8 @@ impl Cache {
                 count: self.count,
                 components: count,
                 heights,
-                chop_dt: [chop as f32, dt as f32, 0.0, 0.0],
+                chop_dt: [chop as f32, dt as f32],
+                shore_size: self.shore_size,
             }),
         );
         if !spectrum.long.is_empty() {
@@ -235,7 +259,7 @@ impl Cache {
     pub(crate) fn encode(&self, pass: &mut wgpu::ComputePass<'_>) {
         pass.set_pipeline(&self.pipeline);
         pass.set_bind_group(0, &self.group, &[]);
-        pass.dispatch_workgroups(self.count.div_ceil(GROUP_WIDTH), 1, 1);
+        pass.dispatch_workgroups(self.dispatch_count.div_ceil(GROUP_WIDTH), 1, 1);
     }
 
     pub(super) fn compute_source() -> String {
@@ -266,21 +290,25 @@ impl Cache {
         )
     }
 
-    pub(crate) fn source(enabled: bool) -> String {
+    pub(crate) fn source(cache: Option<&Self>) -> String {
+        let enabled = cache.is_some();
+        let shore = cache.is_some_and(|cache| cache.shore_size[0] > 0);
         Self::ring_source(enabled)
+            + &format!("const SURF_SHORE_GRID_ENABLED: bool = {shore};\n")
             + if enabled {
                 include_str!("render.wgsl")
             } else {
                 "fn surf_current(_index: u32) -> vec4<f32> { return vec4(0.0); }
                  fn surf_previous(_index: u32) -> vec4<f32> { return vec4(0.0); }
-                 fn surf_short_weights(_index: u32) -> vec2<f32> { return vec2(1.0); }"
+                 fn surf_short_weights(_index: u32) -> vec2<f32> { return vec2(1.0); }
+                 fn surf_shore_face(_point: vec2<f32>) -> f32 { return 0.0; }"
             }
     }
 
     pub(crate) fn surface_binding(&self) -> wgpu::BindGroupLayoutEntry {
         binding::storage(
             OUTPUT_BINDING,
-            wgpu::ShaderStages::VERTEX,
+            wgpu::ShaderStages::VERTEX_FRAGMENT,
             true,
             self.samples.size(),
         )

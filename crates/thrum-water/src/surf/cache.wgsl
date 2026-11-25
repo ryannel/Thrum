@@ -3,7 +3,8 @@ struct CacheSettings {
     count: u32,
     components: u32,
     heights: vec4<f32>,
-    chop_dt: vec4<f32>,
+    chop_dt: vec2<f32>,
+    shore_size: vec2<u32>,
 }
 struct CacheSample {
     current: vec4<f32>,
@@ -30,10 +31,43 @@ fn cache_sample(point: vec2<f32>, body: u32, dt: f32, previous: bool) -> SurfPoi
         cache_settings.chop_dt.x, cache_settings.heights, cache_settings.components);
 }
 
+fn cache_shore_face(i: u32) {
+    let size = cache_settings.shore_size;
+    let count = size.x * size.y;
+    let node = i - cache_settings.count;
+    if node > count || count == 0u { return; }
+    var result: CacheSample;
+    if node == count {
+        result.short_weights = vec4(0.0, 0.0, vec2<f32>(size));
+    } else {
+        let uv = vec2<f32>(vec2(node % size.x, node / size.x)) / vec2<f32>(size - 1u);
+        let span = vec2<f32>(map.size_count_sea.xy - 1u) * map.origin_spacing_margin.z;
+        let point = map.origin_spacing_margin.xy + uv * span;
+        let distance = abs(point - cache_settings.anchor);
+        if max(distance.x, distance.y) > 76.0 {
+            let answer = map_sample(point);
+            if answer.body != NO_BODY && answer.has_bed {
+                let sample = cache_sample(point, answer.body, 0.0, false);
+                let face = breaking_face(sample);
+                if face > 0.0 {
+                    let displaced_bed = map_cell(point + sample.displacement.xz);
+                    if displaced_bed.inside && answer.row.water.x + sample.displacement.y > displaced_bed.bed {
+                        result.current.x = face;
+                    }
+                }
+            }
+        }
+    }
+    cache[i] = result;
+}
+
 @compute @workgroup_size(64)
 fn fill_surf_cache(@builtin(global_invocation_id) id: vec3<u32>) {
     let i = id.x;
-    if i >= cache_settings.count { return; }
+    if i >= cache_settings.count {
+        cache_shore_face(i);
+        return;
+    }
     let vertex = mesh[i];
     let sea = vertex.w == 0.0;
     let body = select(u32(vertex.w) - 1u, map.size_count_sea.w, sea);
