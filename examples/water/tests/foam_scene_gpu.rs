@@ -483,14 +483,6 @@ fn measure_shore_power(
             let columns =
                 shore_queries(&previous, &map.lock().expect("shore map"), u64::from(tick));
             assert!(!columns.is_empty());
-            probes.query.post(
-                fixture.endpoint(u64::from(tick - 4)),
-                vec![BodyQuery {
-                    id: 33,
-                    generation: 1,
-                    points: columns.iter().map(|(_, point)| *point).collect(),
-                }],
-            );
             columns
         } else {
             Vec::new()
@@ -501,6 +493,16 @@ fn measure_shore_power(
             let stocks = support::foam_stocks(fixture, &witness);
             let parcels: Vec<[[f32; 4]; 2]> = support::foam_buffer(fixture, &witness.parcels);
             if !columns.is_empty() {
+                // Sample the same submitted frame whose foam is being inspected.
+                probes.query.post(
+                    fixture.endpoint(u64::from(tick - 4)),
+                    vec![BodyQuery {
+                        id: 33,
+                        generation: 1,
+                        points: columns.iter().map(|(_, point)| *point).collect(),
+                    }],
+                );
+                fixture.finish_tick_queries();
                 let answers = probes.query.drain(
                     fixture.endpoint(u64::from(tick - 3)),
                     std::time::Duration::from_nanos(16_666_667),
@@ -674,6 +676,7 @@ fn film_depth_and_query(gpu: &thrum_test_support::Gpu) {
         }
     }
     drop(map);
+    fixture.frame_without_timings(8.000_000_16);
     probes.query.post(
         fixture.endpoint(479),
         vec![BodyQuery {
@@ -682,7 +685,7 @@ fn film_depth_and_query(gpu: &thrum_test_support::Gpu) {
             points,
         }],
     );
-    fixture.frame_without_timings(8.000_000_16);
+    fixture.finish_tick_queries();
     let answer = probes.query.drain(
         fixture.endpoint(481),
         std::time::Duration::from_nanos(16_666_667),

@@ -173,6 +173,7 @@ pub(super) fn new(
     profile: Profile,
     map: &thrum_water_model::Map,
     mapped: bool,
+    long_components: usize,
     mailbox: Option<QueryMailbox>,
     interaction: Option<interaction::Mailbox>,
     previous_interaction: Option<interaction::Report>,
@@ -230,6 +231,8 @@ pub(super) fn new(
             mailbox,
             interaction.as_ref(),
             query_map,
+            long_components,
+            map.body(1).is_none(),
         ))
     } else {
         None

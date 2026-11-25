@@ -211,6 +211,13 @@ impl Fixture {
             view_formats: &[],
         }
     }
+    pub(crate) fn finish_tick_queries(&mut self) {
+        self.host.ask_tick_stage().expect("tick queries");
+        self.device
+            .poll(wgpu::PollType::wait_indefinitely())
+            .expect("query completion in the test driver");
+    }
+
     pub(crate) fn frame(&mut self, seconds: f64) -> FrameSample {
         self.submit_frame(seconds, true)
     }

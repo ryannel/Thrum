@@ -30,11 +30,6 @@ fn cut_node(query: QueryPoint, rest: vec2<f32>, dt: f32) -> SurfPoint {
         settings.lengths_chop.w, settings.heights, settings.components);
 }
 
-fn node(query: QueryPoint, offset: vec2<f32>) -> CutNode {
-    let p = cut_node(query, query.position + offset, query.dt).displacement;
-    return CutNode(offset + p.xz, p.y);
-}
-
 fn triangle(a: CutNode, b: CutNode, c: CutNode, cell: vec2<f32>, sign: f32, hit: CutHit) -> CutHit {
     let u = a.horizontal - c.horizontal;
     let v = b.horizontal - c.horizontal;
@@ -159,10 +154,15 @@ fn coarse_corner(point: QueryPoint, coord: vec2<i32>, cached: bool) -> vec2<f32>
 
 fn landing_box(point: QueryPoint, coord: vec2<i32>, cached: bool) -> vec4<f32> {
     let cell = surf.coarse.x * surf.controls.z;
-    let a = coarse_corner(point, coord, cached);
-    let b = coarse_corner(point, coord + vec2(1, 0), cached);
-    let c = coarse_corner(point, coord + vec2(1, 1), cached);
-    let d = coarse_corner(point, coord + vec2(0, 1), cached);
+    let offsets = array(vec2(0, 0), vec2(1, 0), vec2(1, 1), vec2(0, 1));
+    var corners: array<vec2<f32>, 4>;
+    for (var i = 0u; i < 4u; i++) {
+        corners[i] = coarse_corner(point, coord + offsets[i], cached);
+    }
+    let a = corners[0];
+    let b = corners[1];
+    let c = corners[2];
+    let d = corners[3];
     let spread = sqrt(max(max(max(dot(a-b, a-b), dot(a-c, a-c)), max(dot(a-d, a-d), dot(b-c, b-c))),
         max(dot(b-d, b-d), dot(c-d, c-d))));
     let margin = surf.coarse.y + surf.coarse.z * spread;
@@ -416,58 +416,66 @@ fn cut_cells(point: QueryPoint, station: u32, lane: u32) -> CutResult {
     return part;
 }
 
-fn sheet_jacobian(query: QueryPoint, rest: vec2<f32>, h: f32) -> mat2x3<f32> {
-    let x = vec2(h, 0.0);
-    let z = x.yx;
-    let dx = (cut_node(query, query.position + (rest + x), query.dt).displacement -
-        cut_node(query, query.position + (rest - x), query.dt).displacement) / (2.0 * h);
-    let dz = (cut_node(query, query.position + (rest + z), query.dt).displacement -
-        cut_node(query, query.position + (rest - z), query.dt).displacement) / (2.0 * h);
-    return mat2x3(dx + vec3(1.0, 0.0, 0.0), dz + vec3(0.0, 0.0, 1.0));
-}
-
 fn surf_query(point: QueryPoint, cut: CutResult) -> QueryWave {
     let hit = cut.hit;
     var rest = hit.rest;
     var height = hit.height;
-    if hit.valid {
-        for (var i = 0u; i < 16u; i++) {
-            let v = node(point, rest);
-            if length(v.horizontal) <= surf.controls.w {
-                height = v.height;
-                break;
+    var finished = false;
+    var slope = vec2(0.0);
+    var velocity = vec3(0.0);
+    // Keep one forward-sheet evaluation site for the centre, spatial
+    // stencil and time samples. Expanding a separate evaluator at every
+    // stencil offset makes the Metal compiler repeat the entire shore model.
+    for (var iteration = 0u; iteration <= 256u; iteration++) {
+        let h = select(max(surf.controls.z * 1e-3, 0.001), 0.001, finished);
+        let offsets = array(vec3(0.0), vec3(h, 0.0, 0.0), vec3(-h, 0.0, 0.0),
+            vec3(0.0, h, 0.0), vec3(0.0, -h, 0.0), vec3(0.0, 0.0, h), vec3(0.0, 0.0, -h));
+        var samples: array<vec3<f32>, 7>;
+        var count = select(1u, 7u, finished);
+        for (var j = 0u; j < count; j++) {
+            let offset = offsets[j];
+            samples[j] = cut_node(point, point.position + (rest + offset.xy), point.dt + offset.z).displacement;
+            if j == 0u && hit.valid && !finished &&
+                length(rest + samples[0].xz) > surf.controls.w {
+                count = 5u;
             }
-            let derivative = sheet_jacobian(point, rest, max(surf.controls.z * 1e-3, 0.001));
-            let x = derivative[0].xz;
-            let z = derivative[1].xz;
-            let det = x.x * z.y - x.y * z.x;
-            if abs(det) < 1e-6 { rest = hit.rest; break; }
-            let next = rest - mat2x2(vec2(z.y, -x.y), vec2(-z.x, x.x)) * v.horizontal / det;
-            if any(next < hit.cell) || any(next > hit.cell + surf.controls.z) {
-                rest = hit.rest;
-                break;
-            }
-            rest = next;
         }
-    } else {
-        for (var i = 0u; i < 256u; i++) {
-            let next = -cut_node(point, point.position + rest, point.dt).displacement.xz;
+        if finished {
+            if !hit.valid { height = samples[0].y; }
+            velocity = (samples[5] - samples[6]) / (2.0 * h);
+        } else if !hit.valid {
+            let next = -samples[0].xz;
             let error = length(next - rest);
             rest = next;
-            // The fixed point is only needed to the column's declared tolerance.
-            if error <= 0.25 * surf.controls.w { break; }
+            finished = error <= 0.25 * surf.controls.w || iteration == 255u;
+            continue;
+        } else if count == 1u {
+            height = samples[0].y;
+            finished = true;
+            continue;
         }
-        height = node(point, rest).height;
+        let x = (samples[1] - samples[2]) / (2.0 * h) + vec3(1.0, 0.0, 0.0);
+        let z = (samples[3] - samples[4]) / (2.0 * h) + vec3(0.0, 0.0, 1.0);
+        let det = x.x * z.z - x.z * z.x;
+        if finished {
+            slope = vec2(x.y * z.z - z.y * x.z, z.y * x.x - x.y * z.x)
+                / select(det, select(-1e-6, 1e-6, det >= 0.0), abs(det) < 1e-6);
+            break;
+        }
+        if abs(det) < 1e-6 {
+            rest = hit.rest;
+            finished = true;
+            continue;
+        }
+        let next = rest - mat2x2(vec2(z.z, -x.z), vec2(-z.x, x.x)) * (rest + samples[0].xz) / det;
+        if any(next < hit.cell) || any(next > hit.cell + surf.controls.z) {
+            rest = hit.rest;
+            finished = true;
+        } else {
+            rest = next;
+            finished = iteration == 15u;
+        }
     }
-    let h = 0.001;
-    let derivative = sheet_jacobian(point, rest, h);
-    let x = derivative[0];
-    let z = derivative[1];
-    let det = x.x * z.z - x.z * z.x;
-    let slope = vec2(x.y * z.z - z.y * x.z, z.y * x.x - x.y * z.x)
-        / select(det, select(-1e-6, 1e-6, det >= 0.0), abs(det) < 1e-6);
-    let velocity = (cut_node(point, point.position + rest, point.dt + h).displacement -
-        cut_node(point, point.position + rest, point.dt - h).displacement) / (2.0 * h);
     return QueryWave(Wave(vec3(0.0, height, 0.0), slope, vec3(0.0), velocity), cut.fine_nodes, cut.coarse_nodes);
 }
 

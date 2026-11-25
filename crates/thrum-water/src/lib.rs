@@ -421,6 +421,7 @@ impl SceneContribution for Water {
                 self.profile,
                 &map,
                 self.mapped,
+                self.spectrum.long.len(),
                 self.query.clone(),
                 self.interaction.clone(),
                 interaction,

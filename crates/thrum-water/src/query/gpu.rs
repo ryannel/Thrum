@@ -212,8 +212,8 @@ struct CoarseGpu {
     device: wgpu::Device,
     layout: wgpu::BindGroupLayout,
     select: wgpu::ComputePipeline,
-    general: SurfPipelines,
-    single_sheet: SurfPipelines,
+    general: Option<SurfPipelines>,
+    single_sheet: Option<SurfPipelines>,
 }
 
 struct SurfPipelines {
@@ -309,6 +309,8 @@ impl Readback {
         mailbox: QueryMailbox,
         wake: Option<&Interaction>,
         surf: Option<(MapGpu, &SurfGpu)>,
+        components: usize,
+        only_one_body: bool,
     ) -> Self {
         let count = u64::from(mailbox.limits.points);
         let surf_source = if surf.is_some() {
@@ -414,16 +416,22 @@ impl Readback {
             fine: make_pipeline("water query fine lattice", fine, &[]),
             answer: make_pipeline(QUERY_PASS, "sample_query", constants),
         };
+        // A small spectrum leaves most wave lanes idle. A map with a single
+        // body cannot enter the multi-owner shader.
+        let use_wave_lanes = components >= 2 * QUERY_WAVE_LANES as usize;
         let coarse = coarse_layout.map(|layout| CoarseGpu {
             device: (**device).clone(),
             layout,
             select: make_pipeline("water query select fine cells", "select_fine", &[]),
-            general: make_surf("sample_coarse", "sample_fine", &[]),
-            single_sheet: make_surf(
-                "sample_coarse_wide",
-                "sample_fine_wide",
-                &[("single_sheet", 1.0)],
-            ),
+            general: (!use_wave_lanes || !only_one_body)
+                .then(|| make_surf("sample_coarse", "sample_fine", &[])),
+            single_sheet: use_wave_lanes.then(|| {
+                make_surf(
+                    "sample_coarse_wide",
+                    "sample_fine_wide",
+                    &[("single_sheet", 1.0)],
+                )
+            }),
         });
         let slots = std::array::from_fn(|_| {
             Slot::new(
@@ -664,11 +672,12 @@ impl Readback {
                 fine_width: map
                     .surf_profile()
                     .map_or(0, |profile| profile.cut.coarse_cells + 1),
-                single_sheet: points.iter().all(|point| {
-                    point.body == u32::MAX
-                        || point.flags & 1 == 0
-                        || point.flags & QUERY_ONE_SHEET != 0
-                }),
+                single_sheet: map.body(1).is_none()
+                    || points.iter().all(|point| {
+                        point.body == u32::MAX
+                            || point.flags & 1 == 0
+                            || point.flags & QUERY_ONE_SHEET != 0
+                    }),
             });
         }
     }
@@ -730,14 +739,13 @@ impl Readback {
                     &slot.coarse.as_ref().expect("surf scratch").group,
                     &[],
                 );
-                let pipelines = if batch.single_sheet {
-                    &cut.single_sheet
-                } else {
-                    &cut.general
-                };
+                let isolated = cut.single_sheet.as_ref().filter(|_| batch.single_sheet);
+                let pipelines = isolated
+                    .or(cut.general.as_ref())
+                    .expect("prepared surf pipeline");
                 if batch.coarse_groups != 0 {
                     pass.set_pipeline(&pipelines.coarse);
-                    let wide = if batch.single_sheet {
+                    let wide = if isolated.is_some() {
                         GROUP_WIDTH / NODES_PER_GROUP
                     } else {
                         1
@@ -753,7 +761,7 @@ impl Readback {
                         .limits()
                         .max_compute_workgroups_per_dimension
                         .min(256);
-                    let wide = if batch.single_sheet {
+                    let wide = if isolated.is_some() {
                         batch.fine_width.pow(2).div_ceil(NODES_PER_GROUP)
                     } else {
                         1
