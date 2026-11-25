@@ -899,7 +899,7 @@ impl PreparedSynthetic {
         } else {
             None
         };
-        let temporal = temporal::TemporalInputs::new(device, scene.view.metalfx_normalizes());
+        let temporal = temporal::TemporalInputs::new(device);
         let taau = scene
             .view
             .reconstruction()

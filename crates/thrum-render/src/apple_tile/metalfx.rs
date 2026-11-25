@@ -39,9 +39,6 @@ pub enum MetalFxProbe {
     /// Reverse only the vertical sampling offset.
     #[cfg(feature = "creation-counters")]
     ReverseJitterY,
-    /// Pass the original storage color and matching GPU exposure to MetalFX.
-    #[cfg(feature = "creation-counters")]
-    ExposureTextureOnly,
     /// Suppress resets after the first native encode.
     #[cfg(feature = "creation-counters")]
     SkipReset,
@@ -151,17 +148,9 @@ impl NativeProvider for Factory {
             0..1,
             AccessKind::SampledRead,
         ));
-        let mut attachments = inputs.attachments;
-        if let Some(normalized) = inputs.normalized_colour {
-            body.accesses.push(Access::new(
-                normalized.clone(),
-                0..1,
-                AccessKind::SampledRead,
-            ));
-            attachments[0] = normalized;
-        }
         let pass = graph.declare_native(PassKey::MetalFx, body);
-        let bindings = attachments
+        let bindings = inputs
+            .attachments
             .into_iter()
             .chain([inputs.exposure])
             .cloned()

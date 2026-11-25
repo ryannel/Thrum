@@ -115,7 +115,6 @@ pub(crate) struct NativeFrameValues {
 pub(crate) struct NativeGraphInputs<'a> {
     pub(crate) attachments: [&'a ResourceId; 4],
     pub(crate) exposure: &'a ResourceId,
-    pub(crate) normalized_colour: Option<&'a ResourceId>,
     pub(crate) reconstruction_twin: Option<(ResourceId, PassBody)>,
 }
 
@@ -362,10 +361,6 @@ pub(crate) struct NativeFrame {
 }
 
 impl NativeFrame {
-    pub(crate) fn content_extent(&self) -> [u32; 2] {
-        self.values.content_extent
-    }
-
     pub(crate) fn uses_twin(&self) -> bool {
         self.twin
     }

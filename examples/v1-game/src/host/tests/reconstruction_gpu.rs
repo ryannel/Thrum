@@ -584,74 +584,40 @@ fn metalfx_exposure_on_submitted_game_frames() {
             "../../../params/showcase-sunset-clear-sun.params.json"
         ))
         .unwrap();
-        let linear = std::env::var_os("THRUM_METALFX_EXPOSURE_LINEAR").is_some();
-        for mode in ["off", "repeat", "taau", "metalfx"] {
-            let mut log = std::fs::File::create(output.join(format!("{mode}.jsonl"))).unwrap();
-            for arm in ["scrub", "storage-step"] {
-                let (mut host, _) = host(
-                    &device,
-                    &queue,
-                    &caps,
-                    match (mode, linear) {
-                        ("taau", true) => "metalfx",
-                        ("repeat", _) => "off",
-                        _ => mode,
-                    },
-                    &preset,
-                )
-                .await;
-                if linear {
-                    use thrum_render::synthetic::CaptureSource;
-                    host.disable_submitted_capture();
-                    if mode == "taau" {
-                        assert!(host.reject_native_provider());
-                    }
-                    let stage = if matches!(mode, "taau" | "metalfx") {
-                        CaptureSource::NativeOutput
-                    } else {
-                        CaptureSource::SceneLinear
-                    };
-                    host.enable_submitted_capture_from(1, CaptureLimits::default(), stage)
-                        .expect("true scene-linear exposure input tap");
-                }
-                if matches!(mode, "taau" | "metalfx")
-                    && std::env::var_os("THRUM_METALFX_EXPOSURE_SCALE_67").is_some()
-                {
-                    host.set_render_scale(RenderScale::Percent67)
-                        .expect("normal Apple route scale");
-                }
-                for index in 0_u16..36 {
-                    if arm == "scrub" {
-                        // An edit of the light itself exercises the scaler's
-                        // history without using the public cut entry point.
-                        let hour = 16.8 + 1.8 * (f32::from(index.min(29)) / 29.0);
-                        scrub_haze_sun(&mut host, hour / 24.0).unwrap();
-                    } else {
-                        host.continuous_source_mut().forced_storage_scale =
-                            Some(if index < 16 { 0.5 } else { 2.0 });
-                    }
-                    let (pixels, sample, exposure) = submitted(&mut host, &device, &surface);
-                    let value = serde_json::json!({
-                        "arm": arm, "index": index, "reconstructor": format!("{:?}", host.reconstruction()),
-                        "mean_luminance": if linear {
-                            let matching = if mode == "metalfx" { 0.25 } else {
-                                f32::from_bits(exposure[0]) * f32::from_bits(exposure[1])
-                            };
-                            mean_linear_luminance(&pixels, matching)
-                        } else { mean_luminance(&pixels) },
-                        "exposure": exposure, "history":sample.history_identity,
-                        "normalization_ns":sample.gpu_pass_ns.as_ref().and_then(|timing| timing.get("MetalFX exposure normalization")),
-                    });
-                    writeln!(log, "{value}").unwrap();
-                }
-                if mode == "metalfx" {
-                    let counts = host.metalfx_repairs_for_probe().expect("repair totals");
-                    std::fs::write(
-                        output.join(format!("{arm}-repairs.json")),
-                        serde_json::to_vec(&counts).unwrap(),
-                    )
-                    .unwrap();
-                }
+        for (name, mode, scrub) in [
+            ("scrub-off", "off", true),
+            ("scrub-native", "metalfx", true),
+            ("storage-held", "metalfx", false),
+            ("storage-step", "metalfx", false),
+        ] {
+            let mut log = std::fs::File::create(output.join(format!("{name}.jsonl"))).unwrap();
+            let (mut host, _) = host(&device, &queue, &caps, mode, &preset).await;
+            for index in 0_u16..36 {
+                let hour = if scrub {
+                    let hour = 16.8 + 1.8 * (f32::from(index.min(29)) / 29.0);
+                    scrub_haze_sun(&mut host, hour / 24.0).unwrap();
+                    Some(hour)
+                } else {
+                    host.continuous_source_mut().forced_storage_scale =
+                        Some(if name == "storage-step" && index >= 16 {
+                            2.0
+                        } else {
+                            0.5
+                        });
+                    None
+                };
+                let (pixels, sample, exposure) = submitted(&mut host, &device, &surface);
+                assert_eq!(pixels.len(), (EXTENT[0] * EXTENT[1] * 4) as usize);
+                let value = serde_json::json!({
+                    "index": index,
+                    "solar_hour": hour,
+                    "reconstructor": format!("{:?}", host.reconstruction()),
+                    "mean_luminance": mean_luminance(&pixels),
+                    "exposure": exposure,
+                    "history": sample.history_identity,
+                    "jitter_phase": sample.jitter_phase,
+                });
+                writeln!(log, "{value}").unwrap();
             }
         }
     });
@@ -675,21 +641,6 @@ fn mean_luminance(pixels: &[u8]) -> f64 {
             0.2126 * decode[usize::from(pixel[0])]
                 + 0.7152 * decode[usize::from(pixel[1])]
                 + 0.0722 * decode[usize::from(pixel[2])]
-        })
-        .sum::<f64>()
-        / f64::from(EXTENT[0] * EXTENT[1])
-}
-
-#[cfg(feature = "creation-counters")]
-fn mean_linear_luminance(pixels: &[u8], matching: f32) -> f64 {
-    pixels
-        .as_chunks::<8>()
-        .0
-        .iter()
-        .map(|pixel| {
-            let channel =
-                |index| f64::from(half(u16::from_le_bytes([pixel[index], pixel[index + 1]])));
-            (0.2126 * channel(0) + 0.7152 * channel(2) + 0.0722 * channel(4)) / f64::from(matching)
         })
         .sum::<f64>()
         / f64::from(EXTENT[0] * EXTENT[1])

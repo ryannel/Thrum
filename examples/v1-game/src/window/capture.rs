@@ -1273,7 +1273,11 @@ fn write_runtime_report(
                 .collect::<Vec<_>>()
         );
     }
-    result["reconstruction"] = json!(format!("{:?}", driver.host().reconstruction()));
+    let reconstruction = driver.host().reconstruction();
+    result["reconstruction"] = json!(format!("{reconstruction:?}"));
+    if reconstruction == thrum_render::synthetic::Reconstruction::MetalFx {
+        result["exposure_path"] = json!("exposure-texture");
+    }
     if let Some(provider) = driver.host().native_provider_report() {
         result["native_provider"] = json!(format!("{provider:?}"));
     }

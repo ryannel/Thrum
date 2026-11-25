@@ -53,11 +53,7 @@ impl OffscreenTarget {
                     &self.scene_view
                 },
                 motion: &self.motion_view,
-                exposure: self
-                    .temporal
-                    .normalized
-                    .as_ref()
-                    .map_or(&prepared.exposure_samples, |target| &target.exposure),
+                exposure: &prepared.exposure_samples,
             },
         )?;
         self.ids = compiled.ids;
@@ -98,10 +94,7 @@ impl super::SyntheticTargetInputs {
                     scene
                 },
                 motion,
-                exposure: temporal
-                    .normalized
-                    .as_ref()
-                    .map_or(&self.exposure_samples, |target| &target.exposure),
+                exposure: &self.exposure_samples,
             },
         )
     }

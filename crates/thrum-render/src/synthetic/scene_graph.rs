@@ -587,7 +587,7 @@ impl super::SyntheticTargetInputs {
             &mut graph,
             &mut prepared_keys,
             [&depth, &motion, &reactive],
-            (&scene, &exposure_sample),
+            &exposure_sample,
             [width, height],
         )?;
         let attachments = [&scene, &depth, &motion, &reactive];
@@ -608,10 +608,6 @@ impl super::SyntheticTargetInputs {
                     crate::apple_tile::NativeGraphInputs {
                         attachments,
                         exposure: &temporal.exposure,
-                        normalized_colour: temporal
-                            .normalized
-                            .as_ref()
-                            .map(|target| &target.colour),
                         reconstruction_twin: if use_native_reconstruction {
                             reconstruction.take()
                         } else {
@@ -636,7 +632,6 @@ impl super::SyntheticTargetInputs {
         late.order_consumers(
             &mut graph,
             [
-                temporal.normalized.as_ref().map(|target| target.pass),
                 native.as_ref().map(|native| native.pass),
                 taau.as_ref()
                     .filter(|_| !use_native_reconstruction)
@@ -644,14 +639,7 @@ impl super::SyntheticTargetInputs {
             ],
         )?;
         let pre_tone = self.pre_tone_input(
-            (
-                &scene,
-                &motion,
-                temporal
-                    .normalized
-                    .as_ref()
-                    .map_or(&exposure_sample, |target| &target.exposure),
-            ),
+            (&scene, &motion, &exposure_sample),
             &temporal,
             taau.as_ref(),
             native.as_ref(),
@@ -718,7 +706,6 @@ impl super::SyntheticTargetInputs {
             capture_source,
             surface.as_ref(),
             [
-                temporal.normalized.as_ref().map(|target| target.pass),
                 native.as_ref().map(|native| native.pass),
                 Some(display_pass),
                 temporal.witness_pass,
@@ -1566,9 +1553,6 @@ impl super::SyntheticTargetInputs {
             }),
             PassKey::CombinedVisibility => B::new(id, PassKind::Compute, |frame, pass| {
                 frame.soft_sun(super::raytrace::soft::Stage::Trace, pass)
-            }),
-            PassKey::MetalFxNormalize => B::new(id, PassKind::Compute, |frame, pass| {
-                frame.normalize_metalfx(pass)
             }),
             PassKey::MetalFx => B::new(id, PassKind::Native, |frame, pass| {
                 let native = frame.native.ok_or(RenderError::GraphPassMismatch)?;

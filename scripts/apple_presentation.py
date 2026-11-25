@@ -512,7 +512,8 @@ def mac_metalfx(output):
             "Metal", "Ok(AppleTile)", "MetalFx"):
         raise ValueError(f"wrong MetalFX target: {header}")
     selected = json.loads((capture / "native-provider.json").read_text())
-    if (selected["native_instrumentation"] != "Counted"
+    if (selected["exposure_path"] != "exposure-texture"
+            or selected["native_instrumentation"] != "Counted"
             or selected["native_creations"] != {"build": 1, "transition": 0, "play": 0}
             or selected["pipeline_creations_in_play"] != 0 or selected["twin_reason"] is not None
             or selected["completed"] != selected["submitted"] or selected["discards"]):
@@ -557,46 +558,47 @@ def mac_metalfx_motion(output):
 def mac_metalfx_exposure(output):
     _, env, _ = scale_environment(output, counters=True)
     frames = output / "frames"
-    for option in ("THRUM_METALFX_EXPOSURE_LINEAR", "THRUM_METALFX_EXPOSURE_SCALE_67"):
-        if option in os.environ:
-            env[option] = os.environ[option]
     with (output / "exposure.log").open("w") as log:
         subprocess.run(["cargo", "test", "--locked", "--offline", "--release", "-p", "v1-game",
                         "--features", "creation-counters", "--lib",
                         "metalfx_exposure_on_submitted_game_frames", "--", "--ignored", "--nocapture"],
                        cwd=ROOT / "examples/v1-game", stdout=log, stderr=subprocess.STDOUT,
-                       env=dict(env, THRUM_REQUIRE_GPU="1", THRUM_RECONSTRUCTION_OUTPUT=str(frames)),
+                       env=dict(env, THRUM_REQUIRE_GPU="1", MTL_DEBUG_LAYER="1",
+                                THRUM_RECONSTRUCTION_OUTPUT=str(frames)),
                        check=True, timeout=900)
-    off = read_rows(frames / "off.jsonl")
-    repeat = read_rows(frames / "repeat.jsonl")
-    grain = max(abs(a["mean_luminance"] - b["mean_luminance"])
-                for a, b in zip(off, repeat, strict=True))
-    (output / "noise-floor.json").write_text(json.dumps(dict(max_abs_mean_luminance=grain), indent=2))
-    taau = read_rows(frames / "taau.jsonl")
-    metalfx = read_rows(frames / "metalfx.jsonl")
     rows = []
-    for a, b, c in zip(off, taau, metalfx, strict=True):
-        if len({(row["arm"], row["index"], tuple(row["exposure"][:4]))
-                for row in (a, b, c)}) != 1 or c["reconstructor"] != "MetalFx":
-            raise ValueError(f"mismatched exposure arm: {a}, {b}, {c}")
-        observed = [row["mean_luminance"] for row in (a, b, c)]
-        portable = abs(observed[0] - observed[1])
-        native = abs(observed[0] - observed[2])
-        rows.append(dict(arm=a["arm"], index=a["index"], means=observed,
-                         taau_error=portable, metalfx_error=native,
-                         metalfx_excess=native - portable, history=c["history"],
-                         normalization_ns=c["normalization_ns"]))
-    if {row["exposure"][0] for row in off if row["arm"] == "storage-step"} != {1056964608, 1073741824}:
-        raise ValueError("the GPU sample did not record both forced storage scales")
-    repairs = {arm: json.loads((frames / f"{arm}-repairs.json").read_text())
-               for arm in ("scrub", "storage-step")}
-    if not all(row["normalization_ns"] and row["normalization_ns"] > 0 for row in rows):
-        raise ValueError("normalization GPU cost is missing")
-    receipt = dict(target="mac-metal", exposure_path="normalized-scene-linear",
-                   noise=grain, repairs_by_arm=repairs, rows=rows)
-    (output / "comparison.json").write_text(json.dumps(receipt, indent=2))
-    if any(row["metalfx_excess"] > grain for row in rows):
-        raise ValueError("MetalFX normalization exceeds TAAU outside the measured noise floor")
+    for name, reference, witness, expected_mode in (
+        ("scrub", "scrub-off", "scrub-native", "Off"),
+        ("storage-step", "storage-held", "storage-step", "MetalFx"),
+    ):
+        expected = read_rows(frames / f"{reference}.jsonl")
+        actual = read_rows(frames / f"{witness}.jsonl")
+        if len(expected) != 36 or len(actual) != 36:
+            raise ValueError(f"{name} must include all 36 submitted samples")
+        for index, (a, b) in enumerate(zip(expected, actual, strict=True)):
+            if (a["index"] != index or b["index"] != index or a["solar_hour"] != b["solar_hour"]
+                    or a["reconstructor"] != expected_mode or b["reconstructor"] != "MetalFx"):
+                raise ValueError(f"mismatched {name} sample: {a}, {b}")
+            if name == "storage-step":
+                held_scale, stepped_scale = 1056964608, 1073741824
+                if (a["exposure"][0] != held_scale
+                        or b["exposure"][0] != (held_scale if index < 16 else stepped_scale)
+                        or a["exposure"][1:4] != b["exposure"][1:4]
+                        or a["jitter_phase"] != b["jitter_phase"]
+                        or (a["history"][1] == 0) != (b["history"][1] == 0)):
+                    raise ValueError(f"storage scale arms differ beyond the step: {a}, {b}")
+            elif a["exposure"][:4] != b["exposure"][:4]:
+                raise ValueError(f"scrub exposure mismatch: {a}, {b}")
+            mean = a["mean_luminance"]
+            difference = abs(mean - b["mean_luminance"])
+            rows.append(dict(arm=name, index=index, reference_mean=mean,
+                             metalfx_mean=b["mean_luminance"], difference=difference,
+                             limit=0.01 * mean, reference_exposure=a["exposure"],
+                             metalfx_exposure=b["exposure"], jitter_phase=b["jitter_phase"]))
+    receipt = dict(target="mac-metal", exposure_path="exposure-texture", rows=rows)
+    (output / "comparison.json").write_text(json.dumps(receipt, indent=2) + "\n")
+    if any(row["difference"] > row["limit"] for row in rows):
+        raise ValueError("MetalFX exposure texture exceeded the 1% luminance bound")
     return receipt
 
 

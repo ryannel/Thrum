@@ -357,7 +357,7 @@ pub(super) fn record(
             directory.join("native-provider.json"),
             serde_json::json!({
                 "pass": provider.pass, "resolved": format!("{:?}", driver.host().reconstruction()),
-                "exposure_path": "normalized-scene-linear",
+                "exposure_path": (driver.host().reconstruction() == thrum_render::synthetic::Reconstruction::MetalFx).then_some("exposure-texture"),
                 "native_creations": {"build": native[0], "transition": native[1], "play": native[2]},
                 "native_instrumentation": format!("{:?}", report.native),
                 "pipeline_creations_in_play": report.pipeline_events(Play),

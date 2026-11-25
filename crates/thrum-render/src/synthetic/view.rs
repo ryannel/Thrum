@@ -441,14 +441,6 @@ impl SyntheticView {
         self.metalfx_probe
     }
 
-    pub(super) fn metalfx_normalizes(&self) -> bool {
-        #[cfg(feature = "creation-counters")]
-        if self.metalfx_probe == super::MetalFxProbe::ExposureTextureOnly {
-            return false;
-        }
-        self.requests_metalfx()
-    }
-
     pub(super) fn requests_metalfx(&self) -> bool {
         self.reconstruction == Reconstruction::MetalFx
     }
