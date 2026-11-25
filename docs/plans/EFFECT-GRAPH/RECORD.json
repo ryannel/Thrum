@@ -508,7 +508,7 @@
         {
           "verdict": "fail",
           "commit": "39702cf8562ede51fd95005effc94554de32945d",
-          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP6-review.md",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP6-review-1.md",
           "items": {
             "WP6.1": "pass",
             "WP6.2": "pass",
@@ -546,6 +546,43 @@
             "turns": 1
           },
           "at": "2026-11-25T13:28:03Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "6a3cad869895caca576f1bb1a84c5e71344e5633",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP6-review.md",
+          "items": {
+            "WP6.1": "pass",
+            "WP6.2": "pass",
+            "WP6.3": "pass",
+            "WP6.4": "pass",
+            "WP6.5": "pass",
+            "WP6.6": "pass",
+            "WP6.7": "pass",
+            "WP6.8": "pass"
+          },
+          "findings": [
+            {
+              "name": "Tick preparation skips device storage texture validation",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 99678,
+            "cached": 1644544,
+            "output": 5366,
+            "turns": 1
+          },
+          "at": "2026-11-25T14:15:34Z"
         }
       ],
       "authorised": {
