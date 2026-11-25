@@ -11,7 +11,7 @@
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
+      "status": "done",
       "quality_bar": "An overlay as exact as a pixel-art game's status display at a whole-number scale, such as Celeste's: every texel a clean block of its authored colour, and steady over a moving scene. As free when unused as Bevy's interface is when its plugin is left out: a game without one runs no pass and holds no resource for it.",
       "items": [
         {
@@ -46,7 +46,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/GAME-UI/WP1/review-graph-coverage.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/GAME-UI/WP1-review.md",
           "builder_result": "pass"
         },
@@ -141,13 +141,6 @@
           "verdict": "pass",
           "review": ".orchestrate/evidence/GAME-UI/WP1-review.md",
           "builder_result": "pass"
-        }
-      ],
-      "findings": [
-        {
-          "name": "The no-interface graph comparison omits the V1 MetalFX variant",
-          "item": "WP1.3",
-          "repeat": false
         }
       ]
     },
