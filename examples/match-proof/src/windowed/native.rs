@@ -188,6 +188,7 @@ fn config(name: &'static str, x: i32) -> Config {
     let mut config = Config::new("match-proof", name);
     config.window_size = [640, 360];
     config.window_position = Some([x, 64]);
+    config.window_always_on_top = true;
     config
 }
 

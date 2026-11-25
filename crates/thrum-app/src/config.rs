@@ -19,6 +19,8 @@ pub struct Config {
     pub window_size: [u32; 2],
     /// Initial Mac window position in logical screen coordinates, when specified.
     pub window_position: Option<[i32; 2]>,
+    /// Keep the Mac window above normal windows for the lifetime of the run.
+    pub window_always_on_top: bool,
     /// Mac time reserved before the display target for advancing and drawing.
     /// When unset, the render owner starts as soon as the frame is ready.
     pub frame_budget: Option<std::time::Duration>,
@@ -39,6 +41,7 @@ impl Config {
             panel_title: title,
             window_size: [1600, 900],
             window_position: None,
+            window_always_on_top: false,
             frame_budget: None,
         }
     }

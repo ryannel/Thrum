@@ -158,7 +158,9 @@ def run_events(match, peer, scenario, motion):
         match.wait("settled playout before buffered cut", lambda: match.tick() >= 360, 15)
         match.cut(peer, "buffered", 18)
         match.wait("steady period before stall cut", lambda: match.tick() >= 600, 15)
-        match.cut(peer, "stall", 230)
+        # Leave room for sustained recovery on a late display callback without
+        # cutting long enough to reach the 30-tick behind threshold.
+        match.cut(peer, "stall", 290)
         match.wait("steady period before backlog cut", lambda: match.tick() >= 900, 15)
         match.cut(peer, "skip", 1080)
         match.wait("3 seconds after skips", lambda: match.tick() >= 1170, 15)

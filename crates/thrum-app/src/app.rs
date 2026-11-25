@@ -564,7 +564,7 @@ impl<G: WindowGame + 'static> App<G> {
             .transition_proof
             .as_ref()
             .is_some_and(|proof| proof.governor.is_some());
-        let attributes = if governor_proof {
+        let attributes = if governor_proof || self.config.window_always_on_top {
             attributes.with_window_level(winit::window::WindowLevel::AlwaysOnTop)
         } else {
             attributes
