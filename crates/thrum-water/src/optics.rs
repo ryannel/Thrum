@@ -122,6 +122,7 @@ struct Inputs {
     dispatch: [u32; 4],
     mask: [[[u32; 4]; GRID_WIDTH / 4]; GRID_HEIGHT],
     bodies: [BodyBounds; BODY_CAPACITY],
+    sources: [[u32; 4]; BODY_CAPACITY],
 }
 
 pub(super) struct Gather {
@@ -291,7 +292,8 @@ mod tests {
                     reach_slope_scene,
                     dispatch,
                     mask,
-                    bodies
+                    bodies,
+                    sources
                 ),
             ],
         );

@@ -59,7 +59,7 @@ impl View {
         if near_clip {
             return Some(Rectangle {
                 low: UVec2::ZERO,
-                high: self.grid,
+                high: self.extent,
             });
         }
         // Include the nearest-neighbour depth and colour filter's footprint.
@@ -69,11 +69,18 @@ impl View {
         if low.cmpge(Vec2::ONE).any() || high.cmple(Vec2::ZERO).any() {
             return None;
         }
-        let grid = self.grid.as_vec2();
+        let extent = self.extent.as_vec2();
         Some(Rectangle {
-            low: (low.max(Vec2::ZERO) * grid).floor().as_uvec2(),
-            high: (high.min(Vec2::ONE) * grid).ceil().as_uvec2(),
+            low: (low.max(Vec2::ZERO) * extent).floor().as_uvec2(),
+            high: (high.min(Vec2::ONE) * extent).ceil().as_uvec2(),
         })
+    }
+
+    fn coarse(&self, rectangle: Rectangle) -> Rectangle {
+        Rectangle {
+            low: rectangle.low * self.grid / self.extent,
+            high: (rectangle.high - UVec2::ONE) * self.grid / self.extent + UVec2::ONE,
+        }
     }
 }
 
@@ -236,10 +243,13 @@ impl Shallows {
                     |sample| sampled_level(sample.row.level),
                 );
             packed.bodies[index] = record;
-            mark(&mut packed.mask, source, SOURCE);
+            packed.sources[index] = [source.low.x, source.low.y, source.high.x, source.high.y];
+            packed.reach_slope_scene[3] =
+                f32::from(u8::try_from(index + 1).expect("bounded body count"));
+            mark(&mut packed.mask, view.coarse(source), SOURCE);
             for area in receiving(body, body_level, amplitude, theta, profile.reflection_reach) {
                 if let Some(rect) = view.project(area) {
-                    mark(&mut packed.mask, rect, 1u32 << index);
+                    mark(&mut packed.mask, view.coarse(rect), 1u32 << index);
                 }
             }
         }
@@ -249,7 +259,7 @@ impl Shallows {
             for &tile in &self.tiles {
                 if let Some(rect) = view.project(tile) {
                     shallow_visible = true;
-                    mark(&mut packed.mask, rect, SOURCE | SHALLOW);
+                    mark(&mut packed.mask, view.coarse(rect), SOURCE | SHALLOW);
                 }
             }
             // An unbounded sea with an empty bed never requests a scene mirror.

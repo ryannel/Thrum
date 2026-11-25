@@ -23,7 +23,7 @@ fn empty_hit() -> GatherHit {
 fn gather_at(uv: vec2<f32>) -> GatherHit {
     if any(uv < vec2(0.0)) || any(uv >= vec2(1.0)) { return empty_hit(); }
     let pixel = vec2<u32>(uv * view_aux.viewport_inv_viewport.xy);
-    if (optics_mask(pixel) & GATHER_SOURCE) == 0u { return empty_hit(); }
+    if !optics_source(pixel) { return empty_hit(); }
     let distance = textureLoad(gathered_distance, pixel, 0).x;
     if distance <= 0.0 { return empty_hit(); }
     let near_point = view_aux.inverse_view_proj * optics_ndc(optics_uv(pixel), 1.0);

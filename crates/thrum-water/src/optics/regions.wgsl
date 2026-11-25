@@ -9,6 +9,7 @@ struct OpticsInputs {
     dispatch: vec4<u32>,
     mask: array<vec4<u32>, 144>,
     bodies: array<OpticsBody, 16>,
+    sources: array<vec4<u32>, 16>,
 }
 @group(3) @binding(14) var<uniform> optics: OpticsInputs;
 
@@ -24,6 +25,20 @@ fn optics_mask(pixel: vec2<u32>) -> u32 {
     let extent = optics_extent();
     let cell = pixel * min(extent, vec2(32u, 18u)) / extent;
     return optics.mask[cell.y * 8u + cell.x / 4u][cell.x % 4u];
+}
+
+fn optics_source(pixel: vec2<u32>) -> bool {
+    let mask = optics_mask(pixel);
+    if (mask & GATHER_SOURCE) == 0u { return false; }
+    if (mask & GATHER_SHALLOW) != 0u || optics.reach_slope_scene.z != 0.0 {
+        return true;
+    }
+    let body_count = u32(optics.reach_slope_scene.w);
+    for (var index = 0u; index < body_count; index++) {
+        let source = optics.sources[index];
+        if all(pixel >= source.xy) && all(pixel < source.zw) { return true; }
+    }
+    return false;
 }
 
 fn optics_uv(pixel: vec2<u32>) -> vec2<f32> {

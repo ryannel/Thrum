@@ -7,7 +7,7 @@
 fn gather(@builtin(global_invocation_id) id: vec3<u32>) {
     if any(id.xy >= optics.dispatch.zw) { return; }
     let pixel = optics.dispatch.xy + id.xy;
-    if (optics_mask(pixel) & GATHER_SOURCE) == 0u { return; }
+    if !optics_source(pixel) { return; }
     let address = vec2<i32>(pixel);
     let raw_depth = textureLoad(opaque_depth, address, 0);
     var radiance = vec3(0.0);
