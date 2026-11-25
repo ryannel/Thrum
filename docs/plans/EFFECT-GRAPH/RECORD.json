@@ -516,12 +516,12 @@
       }
     },
     "WP6": {
-      "definitions": "63b51bd45ce19ab93965b914b871d2242545480b45ade6f8428cd58af172853f",
+      "definitions": "7a47f2468672f4df51d0e7e73c86d11e53addbee03cd61a42b07563532540034",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "WATERS WP19 is Blocked: Needs Dependency. WP19.3 (crest height reaches the island game's floats within two ticks for 90%",
-        "at": "2026-11-25T11:30:31Z"
+        "task": "The design review of EFFECT-GRAPH at .orchestrate/evidence/EFFECT-GRAPH/design-review.md asked for changes, with its 6 M",
+        "at": "2026-11-25T12:17:26Z"
       },
       "ends_stretch": true
     }
@@ -566,11 +566,15 @@
     {
       "task": "WATERS WP19 is Blocked: Needs Dependency. WP19.3 (crest height reaches the island game's floats within two ticks for 90% of stations) fails because the water query is recorded only in Water::encode_upload and mapped after the frame submits; when the frame host skips a view under GPU backpressure, the query waits for the next admitted frame (open water 69% within two ticks, breakers 0%). The handoff (.orchestrate/evidence/WATERS/WP19-handoff.md, work on build/waters at 3110457e6) asks for the frame host and WATERS owners to decide how a tick query is admitted and completed independently of presentation slots, with the same use-tick semantics. Decide which module owns that (frame host vs WATERS), check it against the C4 contracts, and plan it as that module's next work package, ordered ahead of WATERS WP19.",
       "at": "2026-11-25T11:30:31Z"
+    },
+    {
+      "task": "The design review of EFFECT-GRAPH at .orchestrate/evidence/EFFECT-GRAPH/design-review.md asked for changes, with its 6 Must Fix findings.",
+      "at": "2026-11-25T12:17:26Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-25T11:30:31Z"
+    "at": "2026-11-25T12:17:26Z"
   },
   "design_history": [
     {
