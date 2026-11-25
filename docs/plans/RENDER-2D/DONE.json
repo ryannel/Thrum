@@ -739,7 +739,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": "",
-          "builder_result": "open"
+          "builder_result": "open",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP6.3",
@@ -748,7 +750,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": "",
-          "builder_result": "open"
+          "builder_result": "open",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP6.4",
@@ -757,7 +761,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": "",
-          "builder_result": "open"
+          "builder_result": "open",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP6.5",
@@ -766,7 +772,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": "",
-          "builder_result": "open"
+          "builder_result": "open",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP6.6",
@@ -775,7 +783,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": "",
-          "builder_result": "open"
+          "builder_result": "open",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP6.7",
@@ -796,7 +806,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": "",
-          "builder_result": "open"
+          "builder_result": "open",
+          "verdict": "",
+          "review": ""
         }
       ],
       "failed_reviews": 0,

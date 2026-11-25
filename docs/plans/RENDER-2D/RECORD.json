@@ -976,12 +976,12 @@
       }
     },
     "WP6": {
-      "definitions": "9977622947f53aca88d4b82838ab862ee3d61531adf747bddf04e3596506970b",
+      "definitions": "7d411c4c8bb5dd024d5dbf893041b5afcba9f9a6edc118c45a65fce05e8bd320",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "GAME-UI WP1 needs something no plan provides yet. The builder wrote: Land shared EDR display and submitted half-float ca",
-        "at": "2026-11-25T12:58:58Z"
+        "task": "The design review of RENDER-2D at .orchestrate/evidence/RENDER-2D/design-review.md asked for changes, with its 3 Must Fi",
+        "at": "2026-11-25T13:16:19Z"
       },
       "ends_stretch": true
     }
@@ -1026,11 +1026,15 @@
     {
       "task": "GAME-UI WP1 needs something no plan provides yet. The builder wrote: Land shared EDR display and submitted half-float capture support for the 2D renderer before WP1. The builder's handoff, .orchestrate/evidence/GAME-UI/WP1-handoff.md, says what is finished, what was tried and what to do first. Its work is on branch build/game-ui at 83e96a63d6d2, which isn't merged; read it with `git show`. A plan you keep ends with `KEEP GAME-UI WP1: builder: <where the plan provides it>`.",
       "at": "2026-11-25T12:58:58Z"
+    },
+    {
+      "task": "The design review of RENDER-2D at .orchestrate/evidence/RENDER-2D/design-review.md asked for changes, with its 3 Must Fix findings.",
+      "at": "2026-11-25T13:16:19Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-25T12:58:58Z"
+    "at": "2026-11-25T13:16:19Z"
   },
   "design_history": [
     {
