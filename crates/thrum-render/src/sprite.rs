@@ -2,14 +2,15 @@
 
 use std::sync::Arc;
 
+mod cooked;
 pub(crate) mod graph;
 mod pass;
 mod world;
+pub use cooked::{CookedSpriteSheet, SpriteSheetPage, SpriteSheetPublication, SpriteSheetSource};
 pub(crate) use graph::{PreparedSprites, SpriteTarget};
 pub use world::{SpritePose, SpriteSink};
 
-pub(crate) const SHEET_MAX_MIP: u32 = 2;
-pub(crate) const SHEET_GUTTER: u32 = 1 << SHEET_MAX_MIP;
+pub(crate) use thrum_asset::layout::{SHEET_GUTTER, SHEET_MAX_MIP};
 pub(crate) const PIXEL_FILTER_RADIUS: f32 = 1.25;
 
 /// One frame's 2D camera. The host supplies the drawable's physical extent.
@@ -76,6 +77,8 @@ pub struct SpriteScene {
     pub row_capacity: u32,
     /// World-space tolerance for exchanges between nearby world rows.
     pub order_band: f64,
+    cooked: Vec<CookedSpriteSheet>,
+    lease: Option<Arc<dyn SpriteSheetSource>>,
 }
 
 impl SpriteScene {
@@ -84,10 +87,50 @@ impl SpriteScene {
     pub fn new(sheet: EmbeddedSheet, row_capacity: u32) -> Self {
         Self {
             sheets: vec![NamedSheet::pixel("default", sheet)],
+            ..Self::empty(row_capacity)
+        }
+    }
+
+    /// Prepare an empty scene to which cooked sheets can be added.
+    #[must_use]
+    pub fn empty(row_capacity: u32) -> Self {
+        Self {
+            sheets: Vec::new(),
+            cooked: Vec::new(),
+            lease: None,
             world_capacity: 0,
             row_capacity,
             order_band: 0.0,
         }
+    }
+
+    /// Bind a read-only publication source for all cooked sheets in this scene.
+    pub fn set_sheet_source(&mut self, source: impl SpriteSheetSource + 'static) {
+        self.lease = Some(Arc::new(source));
+    }
+
+    /// Register a cooked sheet by its manifest name. Add embedded sheets first.
+    ///
+    /// # Errors
+    /// At most eight sheets may be registered, including embedded sheets.
+    pub fn add_cooked_sheet(
+        &mut self,
+        name: impl Into<String>,
+    ) -> Result<CookedSpriteSheet, crate::error::RenderError> {
+        let name = name.into();
+        let slot = self.sheets.len() + self.cooked.len();
+        if slot >= pass::SHEET_SLOTS {
+            return Err(crate::error::RenderError::SpriteSheetLimit {
+                name,
+                limit: pass::SHEET_SLOTS,
+            });
+        }
+        let sheet = CookedSpriteSheet::new(
+            name,
+            u32::try_from(slot).map_err(|_| crate::error::RenderError::SpriteFrameCapacity)?,
+        );
+        self.cooked.push(sheet.clone());
+        Ok(sheet)
     }
 }
 
@@ -135,6 +178,14 @@ pub struct SpriteFrameStats {
     pub world_rows: u32,
     /// Accepted frame rows.
     pub frame_rows: u32,
+    /// Rows with no resident cooked sheet.
+    pub pending_sheet_rows: u32,
+    /// Rows whose registered frame name is absent from the resident sheet.
+    pub missing_frame_rows: u32,
+    /// Store generation used by cooked sheets in this recording.
+    pub sheet_generation: Option<u64>,
+    /// World point at the centre of the submitted view.
+    pub view_centre: [f64; 2],
     /// World row records written to the queue.
     pub world_upload_rows: u32,
     /// Payload of world row writes, in bytes.
@@ -149,10 +200,10 @@ pub struct SpriteFrameStats {
     pub draws: u32,
 }
 
-/// One frame row, with a top-left pivot and signed scale for flipping each axis.
+/// One sprite row, with signed scale for flipping each axis.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct SpriteRow {
-    /// Embedded sheet slot.
+    /// Embedded or cooked sheet slot.
     pub sheet: u32,
     /// Layers draw in increasing order.
     pub layer: i32,
@@ -162,9 +213,9 @@ pub struct SpriteRow {
     pub flash: [f32; 4],
     /// Fraction of source alpha suppressed after shading.
     pub additive: f32,
-    /// Rectangle index in the sheet's frame table.
+    /// Embedded rectangle index or cooked frame name handle.
     pub frame: u32,
-    /// World position of the top-left pivot.
+    /// World position of the authored pivot (top-left for embedded frames).
     pub position: [f64; 2],
     /// Counterclockwise rotation about that pivot, in radians.
     pub rotation: f32,

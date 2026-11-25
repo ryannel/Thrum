@@ -28,6 +28,7 @@ mod manifest;
 mod mesh;
 mod profile;
 mod remote;
+mod sheet;
 mod store;
 
 pub use bytes::ProductBytes;
@@ -43,4 +44,5 @@ pub use profile::{ProductKind, Profile, preferred_profiles};
 #[cfg(target_arch = "wasm32")]
 pub use remote::BrowserFetch;
 pub use remote::{DevClient, Fetch, FetchReply, RemoteGeneration};
+pub use sheet::{SheetKind, SheetProduct};
 pub use store::{AssetStore, HeadWatcher};

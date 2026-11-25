@@ -67,6 +67,7 @@ wasm-bindgen-futures = "=0.4.79"
 web-sys = { version = "=0.3.106", features = ["HtmlCanvasElement", "console"] }
 
 [dev-dependencies]
+thrum-asset-gpu = { path = "../../crates/thrum-asset-gpu", features = ["fault-probe"] }
 # The view-volume witnesses need counters when Cargo runs their named test targets.
 thrum-render = { path = "../../crates/thrum-render", features = ["creation-counters"] }
 bytemuck = "=1.25.2"
@@ -214,3 +215,7 @@ path = "tests/view_volume/ground_band_receivers_gpu.rs"
 [[test]]
 name = "view_volume_handover_gpu"
 path = "tests/view_volume/view_volume_handover_gpu.rs"
+
+# RENDER-2D WP4 names this Metal residency and placement check.
+[[test]]
+name = "sprite_sheets_gpu"

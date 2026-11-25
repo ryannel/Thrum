@@ -7,6 +7,7 @@ import { spawn, execFileSync } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
 import { promisify } from 'node:util';
 import { gunzip, gzip } from 'node:zlib';
+import { checkSheetFrame, checkSheetSwitch } from './check_sprite_sheets_browser.mjs';
 import { captureReceiver } from './browser_capture_receiver.mjs';
 import { finalizeBrowserCapture, openLauncherControl } from './browser_capture_shutdown.mjs';
 import { Cdp, assets, serve, serveCooked, hardware, waitFor, closeBrowserConnections, cookedHead, movingRouteFiles, destroyActualDevice } from './check_v1_browser.mjs';
@@ -33,9 +34,10 @@ for (let i = 2; i < process.argv.length; i += 2) {
 }
 if (!['fixed', 'realtime'].includes(args.mode) || !['ordinary', 'stall', 'saturation', 'resize', 'loss', 'slow', 'off'].includes(args.control)) throw new Error('Invalid mode/control');
 if (!['sdr', 'scene-linear'].includes(args.source) || (args.source === 'scene-linear' && args.control !== 'ordinary')) throw new Error('Unsupported capture source/control');
-if (!['day', 'night', 'noon', 'exit', 'sprites-field', 'sprites-scroll'].includes(args.scene)) throw new Error('Unknown route scene');
+if (!['day', 'night', 'noon', 'exit', 'sprites-field', 'sprites-scroll', 'sprites-sheets'].includes(args.scene)) throw new Error('Unknown route scene');
 const spriteScroll = args.scene === 'sprites-scroll';
-const spriteField = args.scene === 'sprites-field' || spriteScroll;
+const spriteSheets = args.scene === 'sprites-sheets';
+const spriteField = args.scene === 'sprites-field' || spriteScroll || spriteSheets;
 const spriteDpr = Number(args.dpr);
 if (spriteScroll && (!['1.5', '2', '2.37'].includes(args['sprite-scale']) ||
     !['0.05', '0.3', '3'].includes(args['sprite-speed']) || ![1, 2].includes(spriteDpr))) {
@@ -142,8 +144,29 @@ const spoolPath = path.join(output, 'frames.rgba');
 const rawSpool = spoolRaw ? await fs.open(spoolPath, 'wx+') : undefined;
 const { receive, pending } = captureReceiver(output, frameBytes, manifest, error => { failure ??= error; }, { slow: args.control === 'slow', rawSpool });
 try {
-  ({ server, origin: manifest.origin } = await serve(files, receive));
-  let cookedOrigin;
+  let cookedOrigin, spriteSource, sheetEdit;
+  const requests = [];
+  const serveCapture = (request, response) => {
+    if (!spriteSheets || request.method !== 'POST' || request.url !== '/sprite-sheet-edit') {
+      return receive(request, response);
+    }
+    if (sheetEdit || !spriteSource) { response.writeHead(409).end(); return true; }
+    sheetEdit = fs.rename(path.join(output, 'edits/recolour.png'), path.join(spriteSource, 'field/walk.png'))
+      .then(() => response.writeHead(200, { 'Content-Type': 'application/json' })
+        .end(JSON.stringify({ rename_monotonic_ns: String(process.hrtime.bigint()) })))
+      .catch(error => { failure ??= error; response.writeHead(500).end(); });
+    return true;
+  };
+  ({ server, origin: manifest.origin } = await serve(files, serveCapture));
+  if (spriteSheets) {
+    const source = path.join(output, 'fixture-source');
+    execFileSync('python3', ['scripts/sprite_sheet_fixture.py', source, path.join(output, 'edits')]);
+    const serving = await serveCooked({ ...args, 'assets-source': source }, output);
+    cook = serving.cook;
+    cookedOrigin = serving.origin;
+    spriteSource = serving.source;
+    manifest.cooked = await cookedHead(output);
+  }
   if (!spriteField) {
     const serving = await serveCooked(args, output); cook = serving.cook;
     cookedOrigin = serving.origin;
@@ -191,13 +214,18 @@ try {
   if (spriteField) await cdp.call('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: output });
   const completionSignal = (spriteField || args.scene === 'exit' || args.clouds !== 'off' || args.atmosphere !== 'off') && args.mode === 'realtime' &&
     (args.control === 'ordinary' || args.control === 'off');
+  if (spriteSheets) await cdp.call('Network.enable', {}, sessionId);
   let captureDone = false;
   if (completionSignal) {
     await cdp.call('Target.activateTarget', { targetId });
     await cdp.call('Runtime.enable', {}, sessionId);
     await cdp.call('Runtime.addBinding', { name: 'thrumCaptureDone' }, sessionId);
     cdp.event = event => {
-      if (event.sessionId === sessionId && event.method === 'Runtime.bindingCalled' &&
+      if (event.sessionId === sessionId && event.method === 'Network.requestWillBeSent' &&
+          event.params.request.method === 'GET' && event.params.request.url.startsWith(`${cookedOrigin}/cas/`)) {
+        requests.push({ hash: event.params.request.url.split('/').at(-1), timestamp_s: event.params.timestamp });
+      }
+      if (event.sessionId === sessionId && event.method === 'Runtime.bindingCalled'  &&
           event.params.name === 'thrumCaptureDone') captureDone = true;
     };
   }
@@ -290,6 +318,7 @@ try {
           } else {
             raw = await decompress(await fs.readFile(path.join(output, row.file)));
           }
+          if (spriteSheets) checkSheetFrame(raw, row);
           const digest = sha(raw);
           if (raw.length !== frameBytes || digest !== row.rgba_sha256) {
             throw new Error(`Lossless round-trip failed for submission ${row.submission_id}`);
@@ -308,6 +337,11 @@ try {
         }
       } finally {
         await spriteSpool?.close();
+      }
+      if (spriteSheets) {
+        await sheetEdit;
+        manifest.sprite_sheets = await checkSheetSwitch(output, record, manifest.records,
+          manifest.cooked, await cookedHead(output), requests);
       }
       const syncStart = performance.now();
       if (spriteField) {

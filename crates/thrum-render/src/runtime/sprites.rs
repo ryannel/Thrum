@@ -219,6 +219,9 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
 }
 
 fn check_stages(contribution: &dyn SceneContribution) -> Result<(), FrameError> {
+    if let Some(reason) = contribution.sprite_stage_refusal() {
+        return Err(FrameError::Scene(reason));
+    }
     if let Some(stage) = contribution.draw_stages().first() {
         return Err(FrameError::InvalidState(match stage {
             crate::contribution::SceneDrawStage::Shadow => {

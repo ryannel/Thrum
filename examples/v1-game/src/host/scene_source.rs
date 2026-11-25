@@ -368,6 +368,10 @@ pub struct GameScene {
     sprite_probe: Option<crate::sprite_probe::Scene>,
     #[cfg(feature = "proving")]
     sprite_rows: Option<u32>,
+    #[cfg(feature = "proving")]
+    pub(super) field_sheets: Option<crate::sprite_field::FieldSheets>,
+    #[cfg(feature = "proving")]
+    pub(super) sheet_stats: Option<std::sync::Arc<std::sync::Mutex<thrum_asset_gpu::CookedStats>>>,
     pub(super) cloud_input: Option<thrum_clouds::WeatherInput>,
     pub(super) cloud_sky: Option<thrum_clouds::SkyProfile>,
     pub(super) cloud_shapes: Option<crate::PlacedSky>,
@@ -493,6 +497,14 @@ impl GameScene {
             .map(|route| route.origin_tick)
     }
 
+    /// Residency observations for the optional cooked sprite field.
+    #[cfg(feature = "proving")]
+    pub fn sprite_sheet_stats(
+        &self,
+    ) -> Option<std::sync::Arc<std::sync::Mutex<thrum_asset_gpu::CookedStats>>> {
+        self.sheet_stats.clone()
+    }
+
     pub(super) fn new(setup: GameSetup) -> Self {
         #[cfg(feature = "proving")]
         let temporal: Option<serde_json::Value> =
@@ -507,6 +519,10 @@ impl GameScene {
             sprite_probe: setup.sprite_probe.map(crate::sprite_probe::Scene::new),
             #[cfg(feature = "proving")]
             sprite_rows: setup.sprite_rows,
+            #[cfg(feature = "proving")]
+            field_sheets: None,
+            #[cfg(feature = "proving")]
+            sheet_stats: None,
             cloud_input: None,
             cloud_sky: None,
             cloud_shapes: None,
@@ -701,7 +717,7 @@ impl SceneSource<PublishedPage> for GameScene {
                 },
             );
         } else if self.sprite_rows.is_some() {
-            crate::sprite_field::extract(into, page);
+            crate::sprite_field::extract(into, page, self.field_sheets.as_ref());
         }
     }
 
@@ -716,7 +732,7 @@ impl SceneSource<PublishedPage> for GameScene {
         Ok(if let Some(probe) = &self.sprite_probe {
             probe.frame(source, alpha)
         } else if self.sprite_rows.is_some() {
-            crate::sprite_field::frame(extent)
+            crate::sprite_field::frame(extent, self.field_sheets.map(|_| (source.tick, alpha)))
         } else {
             crate::sprite_card::frame(scale, extent)
         })
@@ -1113,6 +1129,10 @@ mod tests {
             sprite_probe: None,
             #[cfg(feature = "proving")]
             sprite_rows: None,
+            #[cfg(feature = "proving")]
+            field_sheets: None,
+            #[cfg(feature = "proving")]
+            sheet_stats: None,
             cloud_input: None,
             cloud_sky: None,
             cloud_shapes: None,

@@ -17,6 +17,7 @@ creation-counters = ["wgpu/counters", "dep:profiling"]
 test-support = []
 
 [dependencies]
+thrum-asset = { path = "../thrum-asset" }
 thrum-core = { path = "../thrum-core" }
 bytemuck = { version = "=1.25.2", features = ["derive"] }
 glam = { version = "=0.33.12", default-features = false, features = ["std"] }

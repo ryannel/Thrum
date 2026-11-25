@@ -240,8 +240,7 @@ records! {
         flash: [f32; 4],
         additive: f32,
         padding0: u32,
-        padding1: u32,
-        padding2: u32,
+        trim_from_pivot: [f32; 2],
     }
     SpriteFrameRecord {
         origin: [u32; 2], size: [u32; 2], page: u32, kind: u32, tile: u32, padding: u32,

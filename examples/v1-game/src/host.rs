@@ -273,6 +273,21 @@ impl GameSetup {
         capabilities: &DeviceCapabilities,
         config: FrameConfig,
     ) -> Result<Runtime, String> {
+        #[cfg(all(feature = "proving", not(target_arch = "wasm32")))]
+        if self.sprite_scale.is_some()
+            && let Some(store) = std::env::var_os("THRUM_SPRITE_SHEETS_STORE")
+        {
+            return self
+                .prepare_with_sheet_source(
+                    device,
+                    queue,
+                    capabilities,
+                    config,
+                    std::path::PathBuf::from(store).into(),
+                )
+                .await
+                .map_err(|error| error.to_string());
+        }
         self.prepare_with_rows(device, queue, capabilities, config, None)
             .await
             .map_err(|error| error.to_string())
@@ -306,7 +321,7 @@ impl GameSetup {
         config: FrameConfig,
         rows: Option<thrum_asset_gpu::rows::CookedRows>,
     ) -> Result<Runtime, runtime::FrameError> {
-        Box::pin(self.prepare_scene(device, queue, capabilities, config, rows, None)).await
+        Box::pin(self.prepare_scene(device, queue, capabilities, config, rows, None, None)).await
     }
 
     /// Prepare the same scene with the game's opt-in placed sky.
@@ -321,7 +336,162 @@ impl GameSetup {
         config: FrameConfig,
         sky: crate::PlacedSky,
     ) -> Result<Runtime, runtime::FrameError> {
-        Box::pin(self.prepare_scene(device, queue, capabilities, config, None, Some(sky))).await
+        Box::pin(self.prepare_scene(device, queue, capabilities, config, None, Some(sky), None))
+            .await
+    }
+
+    /// Prepare the moving sprite field with cooked art followed through a content lease.
+    ///
+    /// # Errors
+    /// Refuses an incompatible scene or any failure opening the renderer or attaching residency.
+    #[cfg(feature = "proving")]
+    pub async fn prepare_with_sheet_source(
+        self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        capabilities: &DeviceCapabilities,
+        config: FrameConfig,
+        source: thrum_asset_gpu::CookedSource,
+    ) -> Result<Runtime, runtime::FrameError> {
+        Box::pin(self.prepare_scene(
+            device,
+            queue,
+            capabilities,
+            config,
+            None,
+            None,
+            Some(source),
+        ))
+        .await
+    }
+
+    #[cfg(feature = "proving")]
+    async fn prepare_sprite_scene(
+        self,
+        queue: &wgpu::Queue,
+        capabilities: &DeviceCapabilities,
+        config: FrameConfig,
+        scale: u16,
+        has_cooked_rows: bool,
+        sheet_source: Option<thrum_asset_gpu::CookedSource>,
+    ) -> Result<Runtime, runtime::FrameError> {
+        use runtime::FrameError;
+        let setup = self;
+        if setup.sprite_probe.is_some() && setup.sprite_rows.is_some() {
+            return Err(FrameError::InvalidState(
+                "a sprite sampling probe and a sprite field cannot be selected together",
+            ));
+        }
+        let temporal_sampling = match setup.display_overlay {
+            DisplayOverlay::Off | DisplayOverlay::Undithered => false,
+            DisplayOverlay::TemporalInputs => true,
+            DisplayOverlay::TracedGeometry => {
+                return Err(FrameError::InvalidState(
+                    "2D scene refuses traced geometry view (THRUM_TRACED_VIEW=on)",
+                ));
+            }
+            DisplayOverlay::Motion => {
+                return Err(FrameError::InvalidState("2D scene refuses motion view"));
+            }
+            DisplayOverlay::ExposureZones => {
+                return Err(FrameError::InvalidState(
+                    "2D scene refuses exposure zones view",
+                ));
+            }
+        };
+        if setup.sun_shadow_method == SunShadowMethod::Traced {
+            return Err(FrameError::InvalidState(
+                "2D scene refuses traced sun shadows",
+            ));
+        }
+        if setup.lamp_shadows {
+            return Err(FrameError::InvalidState("2D scene refuses lamp shadows"));
+        }
+        if has_cooked_rows || setup.cooked_mesh_rows == MeshRowSource::Cooked {
+            return Err(FrameError::InvalidState(
+                "2D scene refuses cooked placements",
+            ));
+        }
+        match setup.clouds {
+            crate::CloudSelection::Off => {}
+            crate::CloudSelection::Shade => {
+                return Err(FrameError::InvalidState("2D scene refuses cloud shade"));
+            }
+            crate::CloudSelection::Sky => {
+                return Err(FrameError::InvalidState("2D scene refuses cloud sky"));
+            }
+        }
+        for (requested, message) in [
+            (
+                setup.diagnostic_clouds,
+                "2D scene refuses diagnostic clouds",
+            ),
+            (setup.valley_stars, "2D scene refuses valley stars"),
+            (
+                setup.field_meshes,
+                "2D scene refuses field or valley meshes",
+            ),
+            (
+                setup.content == GameContent::Field,
+                "2D scene refuses the flythrough field",
+            ),
+            (
+                setup.content == GameContent::Exit,
+                "2D scene refuses the exit scene",
+            ),
+            (
+                setup.route_overlay != RouteOverlay::Off,
+                "2D scene refuses the route overlay",
+            ),
+        ] {
+            if requested {
+                return Err(FrameError::InvalidState(message));
+            }
+        }
+        let world = GameWorld(WorldPort::Inline(Box::new(
+            match setup.sprite_rows {
+                Some(count) => WorldDriver::sprite_field(count),
+                None => WorldDriver::new(setup.content, RouteOverlay::Off),
+            }
+            .map_err(FrameError::World)?,
+        )));
+        let mut game = GameScene::new(setup);
+        let mut scene = match (setup.sprite_probe, setup.sprite_rows) {
+            (Some(probe), _) => crate::sprite_probe::assets(probe),
+            (None, Some(count)) => crate::sprite_field::scene(count),
+            (None, None) => crate::sprite_card::scene(scale)?,
+        };
+        let assets = if let Some(source) = sheet_source {
+            if setup.sprite_rows.is_none() {
+                return Err(FrameError::InvalidState(
+                    "cooked sprite sheets require the moving sprite field",
+                ));
+            }
+            let (sheets, assets) = crate::sprite_field::cooked_sheets(&mut scene, source)?;
+            game.field_sheets = Some(sheets);
+            game.sheet_stats = Some(assets.stats());
+            Some(assets)
+        } else {
+            None
+        };
+        let mut inner = Runtime::new_2d(
+            capabilities,
+            queue,
+            config,
+            world,
+            game,
+            scene,
+            runtime::SpriteSceneRequests {
+                temporal_sampling,
+                culling: (setup.camera_culling != CullMode::Direct).then_some(setup.camera_culling),
+                reconstruction: setup.reconstruction,
+            },
+        )
+        .await?;
+        if let Some(assets) = assets {
+            inner.set_scene_contribution(Box::new(assets))?;
+        }
+        Ok(inner)
     }
 
     async fn prepare_scene(
@@ -332,6 +502,7 @@ impl GameSetup {
         config: FrameConfig,
         rows: Option<thrum_asset_gpu::rows::CookedRows>,
         shapes: Option<crate::PlacedSky>,
+        sheet_source: Option<thrum_asset_gpu::CookedSource>,
     ) -> Result<Runtime, runtime::FrameError> {
         use runtime::FrameError;
         let setup = self;
@@ -339,6 +510,11 @@ impl GameSetup {
         let sprites = setup.sprite_scale.is_some();
         #[cfg(not(feature = "proving"))]
         let sprites = false;
+        if sheet_source.is_some() && !sprites {
+            return Err(FrameError::InvalidState(
+                "cooked sprite sheets require a 2D scene",
+            ));
+        }
         if shapes.is_some()
             && (setup.clouds == crate::CloudSelection::Off
                 || setup.content == GameContent::Exit
@@ -356,104 +532,16 @@ impl GameSetup {
         }
         #[cfg(feature = "proving")]
         if let Some(scale) = setup.sprite_scale {
-            if setup.sprite_probe.is_some() && setup.sprite_rows.is_some() {
-                return Err(FrameError::InvalidState(
-                    "a sprite sampling probe and a sprite field cannot be selected together",
-                ));
-            }
-            let temporal_sampling = match setup.display_overlay {
-                DisplayOverlay::Off | DisplayOverlay::Undithered => false,
-                DisplayOverlay::TemporalInputs => true,
-                DisplayOverlay::TracedGeometry => {
-                    return Err(FrameError::InvalidState(
-                        "2D scene refuses traced geometry view (THRUM_TRACED_VIEW=on)",
-                    ));
-                }
-                DisplayOverlay::Motion => {
-                    return Err(FrameError::InvalidState("2D scene refuses motion view"));
-                }
-                DisplayOverlay::ExposureZones => {
-                    return Err(FrameError::InvalidState(
-                        "2D scene refuses exposure zones view",
-                    ));
-                }
-            };
-            if setup.sun_shadow_method == SunShadowMethod::Traced {
-                return Err(FrameError::InvalidState(
-                    "2D scene refuses traced sun shadows",
-                ));
-            }
-            if setup.lamp_shadows {
-                return Err(FrameError::InvalidState("2D scene refuses lamp shadows"));
-            }
-            if rows.is_some() || setup.cooked_mesh_rows == MeshRowSource::Cooked {
-                return Err(FrameError::InvalidState(
-                    "2D scene refuses cooked placements",
-                ));
-            }
-            match setup.clouds {
-                crate::CloudSelection::Off => {}
-                crate::CloudSelection::Shade => {
-                    return Err(FrameError::InvalidState("2D scene refuses cloud shade"));
-                }
-                crate::CloudSelection::Sky => {
-                    return Err(FrameError::InvalidState("2D scene refuses cloud sky"));
-                }
-            }
-            for (requested, message) in [
-                (
-                    setup.diagnostic_clouds,
-                    "2D scene refuses diagnostic clouds",
-                ),
-                (setup.valley_stars, "2D scene refuses valley stars"),
-                (
-                    setup.field_meshes,
-                    "2D scene refuses field or valley meshes",
-                ),
-                (
-                    setup.content == GameContent::Field,
-                    "2D scene refuses the flythrough field",
-                ),
-                (
-                    setup.content == GameContent::Exit,
-                    "2D scene refuses the exit scene",
-                ),
-                (
-                    setup.route_overlay != RouteOverlay::Off,
-                    "2D scene refuses the route overlay",
-                ),
-            ] {
-                if requested {
-                    return Err(FrameError::InvalidState(message));
-                }
-            }
-            let world = GameWorld(WorldPort::Inline(Box::new(
-                match setup.sprite_rows {
-                    Some(count) => WorldDriver::sprite_field(count),
-                    None => WorldDriver::new(setup.content, RouteOverlay::Off),
-                }
-                .map_err(FrameError::World)?,
-            )));
-            let inner = Runtime::new_2d(
-                capabilities,
-                queue,
-                config,
-                world,
-                GameScene::new(setup),
-                match (setup.sprite_probe, setup.sprite_rows) {
-                    (Some(probe), _) => crate::sprite_probe::assets(probe),
-                    (None, Some(count)) => crate::sprite_field::scene(count),
-                    (None, None) => crate::sprite_card::scene(scale)?,
-                },
-                runtime::SpriteSceneRequests {
-                    temporal_sampling,
-                    culling: (setup.camera_culling != CullMode::Direct)
-                        .then_some(setup.camera_culling),
-                    reconstruction: setup.reconstruction,
-                },
-            )
-            .await?;
-            return Ok(inner);
+            return setup
+                .prepare_sprite_scene(
+                    queue,
+                    capabilities,
+                    config,
+                    scale,
+                    rows.is_some(),
+                    sheet_source,
+                )
+                .await;
         }
         let mut scene = GameScene::scene(config.render_extent, setup)?;
         #[cfg(not(target_arch = "wasm32"))]

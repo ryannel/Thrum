@@ -122,7 +122,7 @@ allowed_workspace_dependencies = ["thrum-asset", "thrum-asset-gpu", "thrum-core"
 
 [packages.thrum-render]
 manifest = "crates/thrum-render/Cargo.toml"
-allowed_workspace_dependencies = ["thrum-core", "thrum-test-support", "thrum-fixtures"]
+allowed_workspace_dependencies = ["thrum-asset", "thrum-core", "thrum-test-support", "thrum-fixtures"]
 implicit_dependencies = { profiling = "Enable native wgpu resource-creation spans for the opt-in creation counter proof" }
 
 [packages.thrum-fixtures]
@@ -234,8 +234,8 @@ target_cost = "Already locked through web-transport-quinn; link-proof's native b
 [external_dependencies.serde]
 requirement = "=1.0.229"
 license = "MIT OR Apache-2.0"
-purpose = "Typed game-authored showcase scene description, decoded once before activation"
-target_cost = "Native game scene data only; derive-generated schema validation, no serialization in the tick or frame path"
+purpose = "Typed showcase scene and sprite-sheet descriptions, decoded at activation or cook time"
+target_cost = "Native scene parsing and the authoring-only cooker; derive-generated schema validation off the tick and frame path"
 
 [external_dependencies.serde_json]
 requirement = "=1.0.154"

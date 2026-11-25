@@ -1,5 +1,7 @@
 //! Constant-time structural validation of a Thrum container's header and section table.
 
+use std::ops::Range;
+
 use bytemuck::Pod;
 
 use crate::AssetError;
@@ -62,6 +64,11 @@ impl<'a> Container<'a> {
 
     /// Typed slice of the unique section `tag`, whose element size must equal `size_of::<T>()`.
     pub(crate) fn slice<T: Pod>(&self, tag: [u8; 4]) -> Result<&'a [T], AssetError> {
+        bytemuck::try_cast_slice(&self.bytes[self.range::<T>(tag)?])
+            .map_err(|_| AssetError::Malformed("section alignment"))
+    }
+
+    pub(crate) fn range<T: Pod>(&self, tag: [u8; 4]) -> Result<Range<usize>, AssetError> {
         let mut found = self.sections.iter().filter(|section| section.tag == tag);
         let section = found
             .next()
@@ -77,8 +84,7 @@ impl<'a> Container<'a> {
             usize::try_from(section.offset).map_err(|_| AssetError::Malformed("section offset"))?;
         let count =
             usize::try_from(section.count).map_err(|_| AssetError::Malformed("section count"))?;
-        let bytes = &self.bytes[start..start + count * size_of::<T>()];
-        bytemuck::try_cast_slice(bytes).map_err(|_| AssetError::Malformed("section alignment"))
+        Ok(start..start + count * size_of::<T>())
     }
 
     /// The single element of section `tag`.

@@ -88,10 +88,9 @@ pub(super) fn describe(
     frame_row: bool,
     identity: u128,
 ) -> Option<OrderedRow> {
-    let source = &scene.sheets.get(row.sheet as usize)?.sheet;
-    let rect = source.frames.get(row.frame as usize)?;
+    let (density, size) = geometry_input(scene, row)?;
     let sort = row.sort.unwrap_or(-row.position[1]);
-    let ([x, y], radius) = SpritePose::from(row).geometry(source.texels_per_unit, rect.size)?;
+    let ([x, y], radius) = SpritePose::from(row).geometry(density, size)?;
     let (sin, cos) = f64::from(row.rotation).sin_cos();
     let centre = [
         row.position[0] + x * cos + y * sin,
@@ -119,6 +118,20 @@ pub(super) fn describe(
         centre,
         radius,
     })
+}
+
+fn geometry_input(scene: &SpriteScene, row: SpriteRow) -> Option<(f32, [u32; 2])> {
+    let slot = row.sheet as usize;
+    if let Some(sheet) = scene.sheets.get(slot) {
+        let rect = sheet.sheet.frames.get(row.frame as usize)?;
+        return Some((sheet.sheet.texels_per_unit, rect.size));
+    }
+    // Keep pending rows and their previous poses. Their real bounds are resolved
+    // from the offered publication immediately before recording.
+    scene
+        .cooked
+        .get(slot - scene.sheets.len())
+        .map(|_| (1.0, [1, 1]))
 }
 
 #[derive(Clone, Copy)]
@@ -219,11 +232,9 @@ impl SpriteSink<'_> {
                 .filter(|old| old.source.tick.checked_add(1) == Some(self.source.tick))
                 .map(|old| old.current.into()),
             PreviousPose::Published(previous) => previous.filter(|pose| {
-                let sheet = &self.scene.sheets[row.sheet as usize].sheet;
+                let (density, size) = geometry_input(self.scene, row).expect("admitted sprite row");
                 same_timeline.is_some_and(|source| source.tick < self.source.tick)
-                    && pose
-                        .geometry(sheet.texels_per_unit, sheet.frames[row.frame as usize].size)
-                        .is_some()
+                    && pose.geometry(density, size).is_some()
             }),
         }
         .unwrap_or_else(|| row.into());
@@ -295,6 +306,41 @@ impl SpriteWorld {
         self.slots[slot as usize]
             .as_ref()
             .expect("only extracted slots enter the order")
+    }
+
+    pub(super) fn refresh_cooked(
+        &mut self,
+        scene: &SpriteScene,
+        same_tick: bool,
+        resolve: impl Fn(SpriteRow) -> Option<super::pass::FrameInput>,
+    ) {
+        for &slot in &self.visited {
+            let row = self.slots[slot as usize]
+                .as_mut()
+                .expect("visited sprite row");
+            row.has_history |= same_tick;
+            if (row.current.sheet as usize) < scene.sheets.len() {
+                continue;
+            }
+            row.ordered.centre = row.current.position;
+            row.ordered.radius = 0.0;
+            let Some(input) = resolve(row.current) else {
+                continue;
+            };
+            let Some(([x, y], radius)) =
+                SpritePose::from(row.current).geometry(input.density, input.size)
+            else {
+                continue;
+            };
+            let [dx, dy] = [0, 1].map(|axis| {
+                f64::from(input.offset[axis]) * f64::from(row.current.scale[axis] / input.density)
+            });
+            let (sin, cos) = f64::from(row.current.rotation).sin_cos();
+            row.ordered.centre[0] += (x + dx) * cos + (y + dy) * sin;
+            row.ordered.centre[1] += (x + dx) * sin - (y + dy) * cos;
+            row.ordered.radius = radius;
+        }
+        self.order_tick(scene.order_band);
     }
 
     pub(super) fn order_tick(&mut self, band: f64) {

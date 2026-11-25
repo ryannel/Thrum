@@ -14,6 +14,7 @@ mod cooker;
 pub mod demo;
 mod mesh;
 mod server;
+mod sheet;
 mod stat_cache;
 mod texture;
 pub mod tripwire;

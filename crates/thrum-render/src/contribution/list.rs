@@ -419,6 +419,12 @@ impl SceneContribution for SceneContributions {
             .collect()
     }
 
+    fn sprite_stage_refusal(&self) -> Option<String> {
+        self.entries
+            .iter()
+            .find_map(|entry| entry.sprite_stage_refusal())
+    }
+
     fn rebuild_2d(
         &mut self,
         surface: &super::SpriteContributionSurface<'_>,

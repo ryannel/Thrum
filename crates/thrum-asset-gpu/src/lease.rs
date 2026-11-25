@@ -3,6 +3,7 @@
 use std::sync::{Arc, Mutex};
 
 use thrum_asset::{ContentHash, Profile};
+use thrum_render::sprite::{SpriteSheetPage, SpriteSheetPublication, SpriteSheetSource};
 
 /// One product a consumer needs. Names and dimensions are fixed before preparation.
 #[derive(Clone, Debug)]
@@ -32,6 +33,8 @@ pub struct LentProduct {
     pub view: wgpu::TextureView,
     /// Description of the sampled texture.
     pub texture: wgpu::Texture,
+    /// Validated frame table from the exact product that supplied the page array.
+    pub sheet: Option<Arc<thrum_asset::SheetProduct>>,
 }
 
 /// A whole set selected for the next frame, never a partially uploaded publication.
@@ -55,7 +58,14 @@ pub struct ProductLease(Arc<Mutex<LeaseState>>);
 #[derive(Debug, Default)]
 struct LeaseState {
     offered: Option<Arc<LentSet>>,
+    sheets: Option<Arc<SpriteSheetPublication>>,
     serial: u64,
+}
+
+impl SpriteSheetSource for ProductLease {
+    fn sheet_publication(&self) -> Option<Arc<SpriteSheetPublication>> {
+        self.0.lock().ok().and_then(|state| state.sheets.clone())
+    }
 }
 
 impl ProductLease {
@@ -67,6 +77,7 @@ impl ProductLease {
     pub(crate) fn clear(&self) {
         if let Ok(mut set) = self.0.lock() {
             set.offered = None;
+            set.sheets = None;
         }
     }
 
@@ -88,6 +99,26 @@ impl ProductLease {
                     state.serial
                 };
             }
+            let sheets: Vec<_> = products
+                .iter()
+                .filter_map(|entry| {
+                    Some(SpriteSheetPage {
+                        name: entry.name.clone(),
+                        view: entry.view.clone(),
+                        product: entry.sheet.clone()?,
+                    })
+                })
+                .collect();
+            state.sheets = products
+                .first()
+                .filter(|_| !sheets.is_empty())
+                .map(|first| {
+                    Arc::new(SpriteSheetPublication {
+                        generation,
+                        device_generation: first.device_generation,
+                        sheets,
+                    })
+                });
             state.offered = Some(Arc::new(LentSet {
                 generation,
                 products,

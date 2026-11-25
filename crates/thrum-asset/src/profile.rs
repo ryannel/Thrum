@@ -7,6 +7,8 @@ pub enum ProductKind {
     Texture,
     /// Three-dimensional KTX2 texture, such as baked cloud density.
     Volume,
+    /// Packed sprite frames and their array texture.
+    SpriteSheet,
 }
 
 impl ProductKind {
@@ -16,6 +18,7 @@ impl ProductKind {
             Self::Mesh => 1,
             Self::Texture => 2,
             Self::Volume => 3,
+            Self::SpriteSheet => 4,
         }
     }
 
@@ -25,6 +28,7 @@ impl ProductKind {
             1 => Some(Self::Mesh),
             2 => Some(Self::Texture),
             3 => Some(Self::Volume),
+            4 => Some(Self::SpriteSheet),
             _ => None,
         }
     }
@@ -85,10 +89,11 @@ pub fn preferred_profiles(
     sliced_bc: bool,
 ) -> Vec<Profile> {
     let mut order = Vec::new();
-    if kind == ProductKind::Texture && astc {
+    let colour_texture = matches!(kind, ProductKind::Texture | ProductKind::SpriteSheet);
+    if colour_texture && astc {
         order.push(Profile::AppleAstc);
     }
-    if bc && (kind == ProductKind::Texture || kind == ProductKind::Volume && sliced_bc) {
+    if bc && (colour_texture || kind == ProductKind::Volume && sliced_bc) {
         order.push(Profile::DesktopBc);
     }
     order.push(Profile::Portable);

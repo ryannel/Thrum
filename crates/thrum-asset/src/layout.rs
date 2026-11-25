@@ -198,3 +198,60 @@ pub struct ManifestRecord {
     /// Zero.
     pub reserved: [u8; 8],
 }
+
+/// Container magic for a sprite-sheet product.
+pub const SHEET_MAGIC: [u8; 8] = *b"THRMSHET";
+/// Last stored mip level of a sprite sheet.
+pub const SHEET_MAX_MIP: u32 = 2;
+/// Base-level gutter, one full texel at the smallest stored mip.
+pub const SHEET_GUTTER: u32 = 1 << SHEET_MAX_MIP;
+
+/// Sprite-sheet container sections.
+pub mod sheet_tag {
+    /// One metadata record.
+    pub const META: [u8; 4] = *b"META";
+    /// One record per named frame.
+    pub const FRAMES: [u8; 4] = *b"FRAM";
+    /// UTF-8 frame names, addressed by their byte ranges.
+    pub const NAMES: [u8; 4] = *b"NAME";
+    /// Array texture in KTX2 form.
+    pub const PAGES: [u8; 4] = *b"PAGE";
+}
+
+/// Fixed sprite-sheet metadata.
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Pod, Zeroable)]
+pub struct SheetMeta {
+    /// Sampling kind (0 pixel, 1 smooth).
+    pub kind: u32,
+    /// Source texels per world unit.
+    pub density: f32,
+    /// Number of array layers.
+    pub pages: u32,
+    /// Number of frame records.
+    pub frames: u32,
+}
+
+/// A packed frame and its original coordinate system.
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Pod, Zeroable, PartialEq)]
+pub struct SheetFrame {
+    /// Byte offset in the names section.
+    pub name_offset: u32,
+    /// Name length in bytes.
+    pub name_len: u32,
+    /// Array layer.
+    pub page: u32,
+    /// Packed rectangle origin.
+    pub origin: [u32; 2],
+    /// Packed rectangle extent.
+    pub size: [u32; 2],
+    /// Trimmed rectangle origin in the original image or grid cell.
+    pub trim: [u32; 2],
+    /// Original image or grid cell extent.
+    pub source_size: [u32; 2],
+    /// Anchor in original frame texels, X right and Y down.
+    pub pivot: [f32; 2],
+    /// Tile with extruded edges (1), or standalone frame (0).
+    pub tile: u32,
+}

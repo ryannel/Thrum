@@ -17,8 +17,7 @@ struct SpriteRow {
     flash: vec4<f32>,
     additive: f32,
     padding0: u32,
-    padding1: u32,
-    padding2: u32,
+    trim_from_pivot: vec2<f32>,
 }
 struct SpriteFrameRecord {
     origin: vec2<u32>,
@@ -73,7 +72,7 @@ fn sprite_pivot(row: SpriteRow) -> vec2<f32> {
     let filter_margin = select(1.0, SPRITE_PIXEL_FILTER_RADIUS, frame.kind == SPRITE_PIXEL);
     let margin = select(clamp(max(footprint.x, footprint.y), filter_margin, SPRITE_GUTTER), 0.0, frame.tile != 0u);
     let texel = corner * (size + 2.0 * margin) - margin;
-    let local = texel * scale * vec2(1.0, -1.0);
+    let local = (texel + row.trim_from_pivot) * scale * vec2(1.0, -1.0);
     let sin_angle = sin(angle);
     let cos_angle = cos(angle);
     let world = pivot + mat2x2(vec2(cos_angle, sin_angle), vec2(-sin_angle, cos_angle)) * local;
@@ -190,7 +189,7 @@ fn reconstruct_two_x(row: SpriteRow, frame: SpriteFrameRecord, position: vec2<f3
     let axes = sign(mix(row.scales.xy, row.scales.zw, view.alpha)) * vec2(1.0, -1.0);
     let texels_per_pixel = axes * footprint;
     let delta = pixels - sprite_pivot(row) * view.pixels_per_unit;
-    let texel = (transpose(rotation) * delta) * texels_per_pixel;
+    let texel = (transpose(rotation) * delta) * texels_per_pixel - row.trim_from_pivot;
     let cell = vec2<i32>(floor(texel - vec2(0.5)));
     let edge = vec2<f32>(cell) + vec2(1.0);
     var phase = texel - edge;
@@ -205,7 +204,7 @@ fn reconstruct_two_x(row: SpriteRow, frame: SpriteFrameRecord, position: vec2<f3
         // their simultaneous blend to a small fraction of an output pixel.
         // Work relative to the nearest edge and keep the pivot's low part
         // until after the fused subtraction so the blend is still resolved.
-        let at_edge = pixels - rotation * (edge / texels_per_pixel);
+        let at_edge = pixels - rotation * ((edge + row.trim_from_pivot) / texels_per_pixel);
         let previous = pixel_distance_from_pivot(at_edge, row.previous);
         let current = pixel_distance_from_pivot(at_edge, row.current);
         let edge_phase = (transpose(rotation) * mix(previous, current, view.alpha)) * texels_per_pixel;

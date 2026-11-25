@@ -87,6 +87,11 @@ impl BrowserGame {
         if let Some(stats) = image.sample.sprites {
             metadata["sprite_movers"] = image.sample.moving.into();
             metadata["sprite_draws"] = stats.draws.into();
+            metadata["sprite_world_rows"] = stats.world_rows.into();
+            metadata["sheet_generation"] = serde_json::json!(stats.sheet_generation);
+            metadata["pending_sheet_rows"] = stats.pending_sheet_rows.into();
+            metadata["missing_frame_rows"] = stats.missing_frame_rows.into();
+            metadata["sprite_view_centre"] = serde_json::json!(stats.view_centre);
         }
         let pixels = if let Some(reuse) =
             reuse.filter(|buffer| buffer.length() as usize == image.rgba.len())

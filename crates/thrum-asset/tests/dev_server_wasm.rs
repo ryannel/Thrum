@@ -42,6 +42,9 @@ async fn loads_a_publication_then_long_polls_the_next_one() {
             ProductKind::Texture | ProductKind::Volume => {
                 Ktx2::open(bytes).expect("ktx2");
             }
+            ProductKind::SpriteSheet => {
+                thrum_asset::SheetProduct::open(bytes).expect("sprite sheet");
+            }
         }
     }
     let opened = opened.len();

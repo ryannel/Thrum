@@ -197,7 +197,7 @@ pub fn encode_volume(width: u32, height: u32, depth: u32, voxels: &[u8]) -> Vec<
     out
 }
 
-fn srgb_to_linear(value: u8) -> f32 {
+pub(crate) fn srgb_to_linear(value: u8) -> f32 {
     let c = f32::from(value) / 255.0;
     if c <= 0.040_45 {
         c / 12.92
@@ -211,11 +211,11 @@ fn srgb_to_linear(value: u8) -> f32 {
     clippy::cast_sign_loss,
     reason = "clamped to [0, 255] before conversion"
 )]
-fn to_u8(value: f32) -> u8 {
+pub(crate) fn to_u8(value: f32) -> u8 {
     (value.clamp(0.0, 1.0) * 255.0).round() as u8
 }
 
-fn linear_to_srgb(value: f32) -> u8 {
+pub(crate) fn linear_to_srgb(value: f32) -> u8 {
     let c = value.clamp(0.0, 1.0);
     to_u8(if c <= 0.003_130_8 {
         c * 12.92
@@ -278,7 +278,7 @@ fn mip_chain(width: u32, height: u32, rgba: Vec<u8>, srgb: bool) -> Vec<(u32, u3
 
 /// ARM's reference ASTC encoder, 4×4 blocks. Strips of 32 rows encode in parallel, each with a
 /// single-threaded encoder context reused per worker.
-fn compress_astc(
+pub(crate) fn compress_astc(
     width: u32,
     height: u32,
     rgba: &[u8],
@@ -329,7 +329,7 @@ fn compress_astc(
 }
 
 /// Pad to whole 4×4 blocks by edge replication, then encode 4-row strips in parallel.
-fn compress_rgba(
+pub(crate) fn compress_rgba(
     width: u32,
     height: u32,
     rgba: &[u8],

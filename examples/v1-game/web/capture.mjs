@@ -1,6 +1,6 @@
 // A separate capture driver. The deterministic route page keeps its original refusals.
 import init, * as bindings from './v1_game.js';
-const { create_route_game, create_sprite_game, create_sprite_probe, fetch_cooked_valley } = bindings;
+const { create_route_game, create_sprite_game, create_sprite_probe, create_cooked_sprite_game, fetch_cooked_valley } = bindings;
 import { startCaptureUploadWorker, uploadCapture } from './capture_upload.mjs';
 const record = { done: false, complete: false, opportunities: [], images: [], actions: [], export_peak: 0 };
 window.thrumCapture = record;
@@ -10,7 +10,8 @@ const control = query.get('control');
 const source = query.get('source') ?? 'sdr';
 const scene = query.get('scene') ?? 'day';
 const spriteScroll = scene === 'sprites-scroll';
-const spriteField = scene === 'sprites-field' || spriteScroll;
+const spriteSheets = scene === 'sprites-sheets';
+const spriteField = scene === 'sprites-field' || spriteScroll || spriteSheets;
 const witness = query.get('witness') ?? 'off';
 const atmosphere = query.get('atmosphere') ?? 'off';
 const heldSetup = witness !== 'off' || atmosphere !== 'off';
@@ -24,7 +25,7 @@ const useUploadWorker = mode === 'realtime' && control === 'ordinary' &&
   (spriteField || scene === 'exit' || heldSetup || clouds !== 'off');
 const useAnimationFrame = (scene === 'exit' || atmosphereMotion || clouds !== 'off') && mode === 'realtime' &&
   (control === 'ordinary' || control === 'off');
-if (!['day', 'night', 'noon', 'exit', 'sprites-field', 'sprites-scroll'].includes(scene)) throw new Error('Unknown route scene');
+if (!['day', 'night', 'noon', 'exit', 'sprites-field', 'sprites-scroll', 'sprites-sheets'].includes(scene)) throw new Error('Unknown route scene');
 if (!['sdr', 'scene-linear'].includes(source)) throw new Error('Unknown capture source');
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 let hidden = document.hidden;
@@ -335,6 +336,7 @@ async function captureSpriteField() {
   const canvas = document.querySelector('canvas');
   const extent = [1920, 1080];
   [canvas.width, canvas.height] = extent;
+  let store;
   if (spriteScroll) {
     canvas.style.width = `${extent[0] / devicePixelRatio}px`;
     canvas.style.height = `${extent[1] / devicePixelRatio}px`;
@@ -342,6 +344,9 @@ async function captureSpriteField() {
     const bounds = canvas.getBoundingClientRect();
     record.device_pixel_ratio = devicePixelRatio;
     record.css_extent = [bounds.width, bounds.height];
+  } else if (spriteSheets) {
+    store = await fetch_cooked_valley(query.get('assets'));
+    game = await create_cooked_sprite_game(canvas, store, 500);
   } else {
     game = await create_sprite_game(canvas, 2, 10000);
   }
@@ -358,6 +363,13 @@ async function captureSpriteField() {
     if (performance.now() > deadline) fail('sprite field warmup deadline');
     game.frame(0);
     await wait(2);
+  }
+  if (store) {
+    while (game.presented() < 8n) {
+      if (performance.now() > deadline) fail('sprite sheet warmup deadline');
+      game.frame(0);
+      await wait(3);
+    }
   }
   record.initial_report = JSON.parse(game.route_report(0));
   record.graph = JSON.parse(game.sprite_scene_report()).passes;
@@ -376,10 +388,24 @@ async function captureSpriteField() {
   game.set_paused(false, 0);
   const period = 1000 / 45;
   let next = 0;
-  while (performance.now() - start < (spriteScroll ? 4400 : 22400)) {
+  let save;
+  let polling;
+  while (performance.now() - start < (spriteSheets ? 4600 : spriteScroll ? 4400 : 22400)) {
     if (hidden) fail('sprite capture page became hidden');
     drain();
     const elapsed = performance.now() - start;
+    if (store && !save && elapsed >= 1600) {
+      const requested = performance.now();
+      save = fetch('/sprite-sheet-edit', { method: 'POST' }).then(async response => {
+        if (!response.ok) fail('sprite sheet save failed');
+        record.actions.push({ kind: 'sheet-save', requested_ms: requested,
+          acknowledged_ms: performance.now(), ...(await response.json()) });
+      }).catch(error => { exportError = String(error); });
+      polling = store.next_publication().then(changed => {
+        if (!changed) fail('sprite sheet publication not fetched');
+        record.actions.push({ kind: 'sheet-fetched', at_ms: performance.now() });
+      }).catch(error => { exportError = String(error); });
+    }
     if (elapsed < next) {
       await wait(Math.min(3, next - elapsed));
       continue;
@@ -399,6 +425,7 @@ async function captureSpriteField() {
     });
     await wait(0);
   }
+  await Promise.all([save, polling]);
   const drainUntil = performance.now() + 10000;
   for (;;) {
     drain();
@@ -414,7 +441,7 @@ async function captureSpriteField() {
   if (record.renderer_omissions || record.export_omissions || exportError || !record.images.length) {
     fail(`incomplete sprite capture: renderer=${record.renderer_omissions}, export=${record.export_omissions ?? 0}, error=${exportError}`);
   }
-  if (record.images.at(-1).submit_ms - record.images[0].submit_ms < (spriteScroll ? 3500 : 20000)) fail('sprite capture interval was too short');
+  if (record.images.at(-1).submit_ms - record.images[0].submit_ms < (spriteSheets || spriteScroll ? 3500 : 20000)) fail('sprite capture interval was too short');
   record.spool_bytes = await uploadWorker.seal();
   const directory = await navigator.storage.getDirectory();
   const entry = await directory.getFileHandle('sprite-capture.rgba');

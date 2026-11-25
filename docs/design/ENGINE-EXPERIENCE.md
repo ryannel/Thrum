@@ -148,6 +148,8 @@ For a module integrating cooked content, use these public entry points.
   `CookedConfig::leased`, pass `CookedAssets::lease()` to the contribution, and sample the offered views during
   that frame. Follow the lease's device identity, serial and submission rules when retaining bindings or history.
   [Sampling cooked products](../COOKED-LEASES.md)
+- **Sprite sheets.** Cook a folder of PNGs and register its name with the 2D scene through the
+  content lease. Keep frame handles by name through live edits. [Cooking sprite sheets](../SPRITE-SHEETS.md)
 
 ## Four things to understand
 

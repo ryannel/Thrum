@@ -3,6 +3,7 @@
 mod admission;
 mod native_recovery;
 pub(super) mod scene;
+mod sheet_edits;
 
 use super::{RuntimeCaptureOutput, WindowGame};
 use crate::host::haze_capture::HazeTake;
@@ -86,6 +87,7 @@ pub(super) fn run(
             | "sprites-field"
             | "sprites-field-cost"
             | "sprites-scroll"
+            | "sprites-sheets"
     ) {
         return Err("unknown runtime capture scenario".to_owned());
     }
@@ -299,6 +301,7 @@ impl Trace {
             "pixel_source":format!("{:?}",image.pixel_source),"exposure_gpu_words":image.exposure_gpu_words,
             "visual_revision":image.sample.visual_revision,"device_generation":image.device_generation,"surface_generation":image.presenter_generation,
             "presentation_lead_ns":image.presentation_lead.as_nanos(),"readback_copy_gpu_bracket_ns":image.copy_gpu_ns,
+            "sprites":crate::sprite_field::sample_stats(&image.sample),
             "submit_ns":image.submitted_at.saturating_duration_since(origin).as_nanos(),
             "map_observed_ns":origin.elapsed().as_nanos()}));
         if let Some(image) = writer.submit(image) {
@@ -631,6 +634,7 @@ fn world_moves(scenario: &str) -> bool {
                 | "sprites-field"
                 | "sprites-field-cost"
                 | "sprites-scroll"
+                | "sprites-sheets"
         )
 }
 
@@ -645,6 +649,7 @@ fn applies_yaw(scenario: &str, active_world: bool) -> bool {
                 | "exit-stop"
                 | "sprites-field"
                 | "sprites-field-cost"
+                | "sprites-sheets"
                 | "atmosphere-scrub"
                 | "atmosphere-ground-pan"
                 | "sun-settle"
@@ -857,6 +862,9 @@ async fn record(
     };
     let mut trace = Trace::for_route(route.as_ref(), preview)?;
     let origin = trace.prime(output, &mut driver, writer.as_ref())?;
+    let sheet_saves = (scenario == "sprites-sheets")
+        .then(|| sheet_edits::start(origin))
+        .transpose()?;
     let timebase = if mode == "fixed" {
         Timebase::Fixed
     } else {
@@ -1122,6 +1130,9 @@ async fn record(
     if governed {
         result["governor"] = json!(quality_trace);
     }
+    if let Some(saves) = sheet_saves {
+        result["sheet_saves"] = json!(saves.join().map_err(|_| "sheet-save thread panicked")??);
+    }
     result["observer_only"] = json!(observer_only);
     result["world_overload_recoveries"] = json!(trace.world_overload_recoveries);
     result["interval_complete"] = json!(interval_complete);
@@ -1140,6 +1151,7 @@ fn is_motion_capture(scenario: &str) -> bool {
         || matches!(
             scenario,
             "exit-route"
+                | "sprites-sheets"
                 | "sun-settle"
                 | "sun-cut"
                 | "sun-motion"
@@ -1172,10 +1184,10 @@ fn capture_game(
     Ok((game, preview))
 }
 
-fn write_runtime_report<G: Game>(
+fn write_runtime_report(
     output: &Path,
     mut result: Value,
-    driver: &Offscreen<G>,
+    driver: &Offscreen<HostedGame<WindowGame>>,
     capabilities: &DeviceCapabilities,
     admission: &admission::Admission,
     parity_checkpoint: bool,
@@ -1204,6 +1216,19 @@ fn write_runtime_report<G: Game>(
         );
         result["present_target_bytes"] = json!(present_target_bytes);
         result["storage"] = json!(storage);
+        if let Some(stats) = driver.host().source().sprite_sheet_stats()
+            && let Ok(stats) = stats.lock()
+        {
+            result["cooked_sheets"] = json!({
+                "drawn": stats.drawn,
+                "errors": stats.errors,
+                "swaps": stats.swaps.iter().map(|swap| json!({
+                    "generation": swap.generation,
+                    "uploaded_bytes": swap.uploaded_bytes,
+                    "upload_frames": swap.upload_frames,
+                })).collect::<Vec<_>>(),
+            });
+        }
     }
     if !capabilities.hardware().is_empty() {
         result["hardware"] = json!(
@@ -1427,7 +1452,10 @@ fn drain_fixed<G: Game>(
 }
 
 fn sprite_motion(scenario: &str) -> bool {
-    matches!(scenario, "sprites-field" | "sprites-scroll")
+    matches!(
+        scenario,
+        "sprites-field" | "sprites-scroll" | "sprites-sheets"
+    )
 }
 
 fn held_sample(scenario: &str) -> bool {
@@ -1441,6 +1469,7 @@ fn scenario_bounds(scenario: &str, recovery: super::NativeRecovery) -> (f64, f64
     match scenario {
         "sprites-field-cost" => (11.5, 10.0, 10.0),
         "sprites-scroll" => (5.5, 4.75, 4.25),
+        "sprites-sheets" => (7.25, 6.25, 6.0),
         "clouds-drift" => (22.5, 22.0, 21.0),
         "clouds-wind" => (22.5, 22.0, 22.0),
         "clouds-cycle" | "clouds-life" => (244.0, 243.0, 243.0),
@@ -1505,6 +1534,7 @@ fn capture_mode(scenario: &str) -> Result<String, String> {
                     | "atmosphere-scrub"
                     | "atmosphere-ground-pan"
                     | "sprites-scroll"
+                    | "sprites-sheets"
             ))
     {
         return Err("running-world and diagnostic controls require actual elapsed time".to_owned());

@@ -528,9 +528,10 @@ pub(crate) struct Filler {
 }
 
 impl Filler {
-    /// Fill every chunk that is free now, without waiting.
-    pub(crate) fn fill_available(&mut self) -> Progress {
-        while self.next < self.chunks {
+    /// Fill up to `limit` free chunks now, without waiting.
+    pub(crate) fn fill_available(&mut self, limit: usize) -> Progress {
+        let end = self.chunks.min(self.next.saturating_add(limit));
+        while self.next < end {
             let Some(stream) = self.stream.upgrade() else {
                 return Progress::Stopped;
             };
@@ -542,7 +543,11 @@ impl Filler {
             }
             self.next += 1;
         }
-        Progress::Done
+        if self.next == self.chunks {
+            Progress::Done
+        } else {
+            Progress::Waiting
+        }
     }
 
     /// Fill chunks, waiting for free ones, until done, dropped, `stop`, or `deadline` passes
@@ -833,7 +838,7 @@ fn plan_texture(
         let padded = row.next_multiple_of(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT);
         let rows = level.rows_per_image(format);
         let physical_width = level.width.next_multiple_of(block_width);
-        let depth = if texture.is_3d() { level.depth } else { 1 };
+        let depth = level.depth.max(texture.array_layers());
         for region in regions(depth, rows, u64::from(padded)) {
             let (chunk, offset) = packer.place(region.bytes)?;
             copies.push(Copy {

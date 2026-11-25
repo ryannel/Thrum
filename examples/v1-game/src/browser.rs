@@ -282,6 +282,30 @@ pub async fn create_sprite_game(
     .await
 }
 
+/// Open the moving sprite field with the fetched sheet store.
+///
+/// # Errors
+/// Refuses an invalid sprite field configuration or unavailable WebGPU scene.
+#[cfg(feature = "proving")]
+#[wasm_bindgen]
+pub async fn create_cooked_sprite_game(
+    canvas: HtmlCanvasElement,
+    store: &CookedValley,
+    rows: u32,
+) -> Result<BrowserGame, JsValue> {
+    create_game_with_content(
+        canvas,
+        crate::GameSetup {
+            sprite_scale: Some(2),
+            sprite_rows: Some(rows),
+            ..crate::GameSetup::default()
+        },
+        None,
+        Some(store.feed.clone()),
+    )
+    .await
+}
+
 /// Open the example's directed sky with its two volume products served by the cooker.
 ///
 /// # Errors
@@ -345,6 +369,22 @@ async fn create_game_with_shapes(
     setup: crate::GameSetup,
     shapes: Option<crate::PlacedSky>,
 ) -> Result<BrowserGame, JsValue> {
+    create_game_with_content(
+        canvas,
+        setup,
+        shapes,
+        #[cfg(feature = "proving")]
+        None,
+    )
+    .await
+}
+
+async fn create_game_with_content(
+    canvas: HtmlCanvasElement,
+    setup: crate::GameSetup,
+    shapes: Option<crate::PlacedSky>,
+    #[cfg(feature = "proving")] sprite_store: Option<RemoteFeed>,
+) -> Result<BrowserGame, JsValue> {
     std::panic::set_hook(Box::new(|info| {
         web_sys::console::error_1(&JsValue::from_str(&info.to_string()));
     }));
@@ -353,6 +393,8 @@ async fn create_game_with_shapes(
         demo: GameControls::new().map_err(js_error)?,
         setup,
         shapes,
+        #[cfg(feature = "proving")]
+        sprite_store,
         initial_downlevel: String::new(),
     });
     let page = PageGame::new(
@@ -363,6 +405,8 @@ async fn create_game_with_shapes(
     )
     .await
     .map_err(js_error)?;
+    #[cfg(feature = "proving")]
+    let cooked = page.shell.host().source().sprite_sheet_stats();
     Ok(BrowserGame {
         content: setup.content,
         #[cfg(feature = "proving")]
@@ -374,6 +418,9 @@ async fn create_game_with_shapes(
         haze_take: None,
         #[cfg(feature = "proving")]
         cloud_observation: None,
+        #[cfg(feature = "proving")]
+        cooked,
+        #[cfg(not(feature = "proving"))]
         cooked: None,
         #[cfg(feature = "proving")]
         content_preview: None,

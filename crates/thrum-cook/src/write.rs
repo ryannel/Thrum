@@ -75,6 +75,17 @@ pub(crate) fn ktx2(
     depth: u32,
     levels: &[impl AsRef<[u8]>],
 ) -> Vec<u8> {
+    ktx2_layers(format, width, height, depth, 0, levels)
+}
+
+pub(crate) fn ktx2_layers(
+    format: Ktx2Format,
+    width: u32,
+    height: u32,
+    depth: u32,
+    layers: u32,
+    levels: &[impl AsRef<[u8]>],
+) -> Vec<u8> {
     let dfd = data_format_descriptor(format);
     let index_end = HEADER_LEN + levels.len() * LEVEL_INDEX_LEN;
     let dfd_offset = index_end.next_multiple_of(4);
@@ -96,7 +107,7 @@ pub(crate) fn ktx2(
         width,
         height,
         depth,
-        0,
+        layers,
         1,
         level_count,
         0,

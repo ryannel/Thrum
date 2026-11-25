@@ -33,8 +33,7 @@ fn sprite_abi_matches_wgsl_layout() {
                 offset_of!(GpuRow, flash),
                 offset_of!(GpuRow, additive),
                 offset_of!(GpuRow, padding0),
-                offset_of!(GpuRow, padding1),
-                offset_of!(GpuRow, padding2),
+                offset_of!(GpuRow, trim_from_pivot),
             ][..],
         ),
         (
@@ -117,23 +116,48 @@ fn covered_pixels_include_the_pixel_filter_margin() {
         1,
     );
     let row = SpriteRow::new(0, [0.0; 2]);
-    let gpu = pack(&scene, &[0], row, row.into());
+    let gpu = pack(
+        super::embedded(&scene, &[0], row).expect("embedded frame"),
+        row,
+        row.into(),
+    );
     let view = SpriteView {
         centre: [0.0; 2],
         pixels_per_unit: 1.5,
     };
     assert_eq!(
-        coverage_at(&scene, &gpu, 0, view, [128; 2], 1.0, true),
+        coverage_at(
+            super::embedded(&scene, &[0], row).expect("embedded frame"),
+            &gpu,
+            view,
+            [128; 2],
+            1.0,
+            true
+        ),
         Some(52.0 * 52.0)
     );
     scene.sheets[0].sampling = SpriteSampling::Smooth;
     assert_eq!(
-        coverage_at(&scene, &gpu, 0, view, [128; 2], 1.0, true),
+        coverage_at(
+            super::embedded(&scene, &[0], row).expect("embedded frame"),
+            &gpu,
+            view,
+            [128; 2],
+            1.0,
+            true
+        ),
         Some(51.0 * 51.0)
     );
     scene.sheets[0].tiles.push(0);
     assert_eq!(
-        coverage_at(&scene, &gpu, 0, view, [128; 2], 1.0, true),
+        coverage_at(
+            super::embedded(&scene, &[0], row).expect("embedded frame"),
+            &gpu,
+            view,
+            [128; 2],
+            1.0,
+            true
+        ),
         Some(48.0 * 48.0)
     );
 }

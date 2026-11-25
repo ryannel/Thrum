@@ -160,7 +160,9 @@ impl PreparedSprites {
         self.world.extract(&self.scene, source, visit);
         let extraction = start.elapsed();
         let order_start = crate::runtime::Instant::now();
-        self.world.order_tick(self.scene.order_band);
+        if self.scene.cooked.is_empty() {
+            self.world.order_tick(self.scene.order_band);
+        }
         self.ordering = order_start.elapsed();
         extraction
     }
@@ -173,6 +175,12 @@ impl PreparedSprites {
         alpha: f32,
         measure_coverage: bool,
     ) -> Result<SpriteUpload, RenderError> {
+        self.sprites.sync_sheets(
+            &self.capabilities,
+            &self.scene,
+            &mut self.world,
+            &mut target.sprites,
+        )?;
         let mut upload = self.sprites.upload(
             queue,
             &self.scene,

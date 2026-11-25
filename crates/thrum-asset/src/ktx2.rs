@@ -1,8 +1,10 @@
 //! Minimal validated KTX2 reader for the formats Thrum cooks.
 //!
-//! Supports single-face, non-array 2D and 3D textures without supercompression. Every level's
+//! Supports single-face 2D textures, 2D arrays and 3D textures without supercompression. Every level's
 //! offset, alignment and exact byte length are checked against the format's block size, so a
 //! level slice can be handed straight to a GPU texture upload.
+
+use std::ops::Range;
 
 use crate::{AssetError, ProductBytes};
 
@@ -141,12 +143,14 @@ impl Ktx2Level {
 }
 
 /// A validated KTX2 product that owns its (usually mapped) bytes.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Ktx2 {
     bytes: ProductBytes,
     format: Ktx2Format,
     levels: Vec<Ktx2Level>,
     dimension_3d: bool,
+    layers: u32,
+    range: Range<usize>,
 }
 
 impl Ktx2 {
@@ -160,12 +164,22 @@ impl Ktx2 {
     /// # Errors
     /// Refuses malformed headers, unsupported shapes or formats, and inexact level ranges.
     pub fn open(bytes: ProductBytes) -> Result<Self, AssetError> {
-        let (format, levels, dimension_3d) = parse(&bytes)?;
+        let end = bytes.len();
+        Self::open_section(bytes, 0..end)
+    }
+
+    pub(crate) fn open_section(
+        bytes: ProductBytes,
+        range: Range<usize>,
+    ) -> Result<Self, AssetError> {
+        let (format, levels, dimension_3d, layers) = parse_shape(&bytes[range.clone()])?;
         Ok(Self {
             bytes,
             format,
             levels,
             dimension_3d,
+            layers,
+            range,
         })
     }
 
@@ -179,6 +193,11 @@ impl Ktx2 {
         self.dimension_3d
     }
 
+    /// Array layer count, or zero for a non-array texture.
+    pub fn array_layers(&self) -> u32 {
+        self.layers
+    }
+
     /// Levels, largest first.
     pub fn levels(&self) -> &[Ktx2Level] {
         &self.levels
@@ -189,7 +208,7 @@ impl Ktx2 {
         // Ranges were checked against the file length in `parse`.
         let start = usize::try_from(level.offset).unwrap_or(usize::MAX);
         let len = usize::try_from(level.len).unwrap_or(usize::MAX);
-        self.bytes
+        self.bytes[self.range.clone()]
             .get(start..start.saturating_add(len))
             .unwrap_or_default()
     }
@@ -208,6 +227,14 @@ fn read_u64(bytes: &[u8], at: usize) -> u64 {
 /// # Errors
 /// As [`Ktx2::open`].
 pub fn parse(bytes: &[u8]) -> Result<(Ktx2Format, Vec<Ktx2Level>, bool), AssetError> {
+    let (format, levels, is_3d, layers) = parse_shape(bytes)?;
+    if layers > 1 {
+        return Err(AssetError::UnsupportedTexture("array texture"));
+    }
+    Ok((format, levels, is_3d))
+}
+
+fn parse_shape(bytes: &[u8]) -> Result<(Ktx2Format, Vec<Ktx2Level>, bool, u32), AssetError> {
     if bytes.len() < HEADER_LEN || bytes[..12] != IDENTIFIER {
         return Err(AssetError::Malformed("KTX2 identifier"));
     }
@@ -223,7 +250,7 @@ pub fn parse(bytes: &[u8]) -> Result<(Ktx2Format, Vec<Ktx2Level>, bool), AssetEr
         level_count,
         supercompression,
     ] = std::array::from_fn(|index| read_u32(bytes, 16 + 4 * index));
-    if type_size != 1 || layers > 1 || faces != 1 || supercompression != 0 {
+    if type_size != 1 || (layers != 0 && depth != 0) || faces != 1 || supercompression != 0 {
         return Err(AssetError::UnsupportedTexture(
             "type size, arrays, cube faces or supercompression",
         ));
@@ -260,7 +287,7 @@ pub fn parse(bytes: &[u8]) -> Result<(Ktx2Format, Vec<Ktx2Level>, bool), AssetEr
         let extent = |size: u32| (size >> level).max(1);
         let (level_width, level_height) = (extent(width), extent(height));
         let level_depth = if depth == 0 { 1 } else { extent(depth) };
-        let expected = format.level_bytes(level_width, level_height, level_depth);
+        let expected = format.level_bytes(level_width, level_height, level_depth.max(layers));
         let in_file = offset
             .checked_add(len)
             .is_some_and(|end| end <= bytes.len() as u64);
@@ -280,5 +307,5 @@ pub fn parse(bytes: &[u8]) -> Result<(Ktx2Format, Vec<Ktx2Level>, bool), AssetEr
             len,
         });
     }
-    Ok((format, levels, depth > 0))
+    Ok((format, levels, depth > 0, layers))
 }

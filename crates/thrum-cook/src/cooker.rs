@@ -12,7 +12,7 @@ use crate::cas::{Cas, Durability};
 use crate::stat_cache::{ScanCounts, StatCache};
 use crate::texture::Quality;
 use crate::write::ContainerWriter;
-use crate::{CookError, mesh, texture};
+use crate::{CookError, mesh, sheet, texture};
 
 /// Version of every cooker's output; bump to invalidate all cached actions.
 /// 3: mirrored glTF nodes keep front-face winding and outward normals.
@@ -89,6 +89,7 @@ enum PreparedSource {
     Mesh(Vec<u8>),
     Texture(texture::TextureMips),
     Volume(texture::VolumeMips),
+    Sheet(sheet::PreparedSheet),
 }
 
 /// Incremental cooker owning one store.
@@ -305,6 +306,7 @@ impl Cooker {
         // A source can change after hashing but before cooking. Retry even if its next stable
         // hash equals the cached hash: no new revision would otherwise trigger that job.
         let mut retry = false;
+        let mut failed_sheets = HashSet::new();
         for (jobs, outcomes) in outcomes {
             let outcomes = match outcomes {
                 Ok(outcomes) => outcomes,
@@ -312,6 +314,9 @@ impl Cooker {
                     let job = &jobs[0];
                     retry |= self.retry_failure(job, &error);
                     failed.push((job.name.clone(), error.to_string()));
+                    if job.kind == ProductKind::SpriteSheet {
+                        failed_sheets.insert(job.name.clone());
+                    }
                     continue;
                 }
             };
@@ -333,9 +338,17 @@ impl Cooker {
                         // I/O or inputs that moved during the import need another unchanged sweep.
                         retry |= self.retry_failure(job, &error);
                         failed.push((job.name.clone(), error.to_string()));
+                        if job.kind == ProductKind::SpriteSheet {
+                            failed_sheets.insert(job.name.clone());
+                        }
                     }
                 }
             }
+        }
+        // Every encoding of a sheet describes the same frame table; retain the whole previous
+        // product family if one encoding failed after another profile had succeeded or hit cache.
+        if !failed_sheets.is_empty() {
+            products.retain(|(name, _), _| !failed_sheets.contains(name));
         }
         // Keep serving the last good products of any asset that failed to plan or cook, except
         // those its current source refuses.
@@ -373,20 +386,34 @@ impl Cooker {
         let files = self.stat.files();
         let mut jobs = Vec::new();
         let mut failed = Vec::new();
-        let mut sources: BTreeMap<String, Vec<&PathBuf>> = BTreeMap::new();
-        for path in files.keys() {
-            if let Some((name, _, _)) = classify(path) {
-                sources.entry(name).or_default().push(path);
+        let mut sheet_images = BTreeMap::<&Path, Vec<(PathBuf, ContentHash)>>::new();
+        for path in files.keys().filter(|path| sheet::is_description(path)) {
+            if let Some(parent) = path.parent() {
+                sheet_images.insert(parent, Vec::new());
             }
         }
+        let mut sources = BTreeMap::<String, Vec<_>>::new();
         for (path, hash) in &files {
-            let Some((name, kind, linear)) = classify(path) else {
+            if sheet::is_png(path)
+                && let Some(images) = path
+                    .parent()
+                    .and_then(|parent| sheet_images.get_mut(parent))
+            {
+                images.push((path.clone(), *hash));
                 continue;
-            };
-            if let Some(paths) = sources.get(&name).filter(|paths| paths.len() > 1) {
+            }
+            if let Some((name, kind, linear)) = classify(path) {
+                sources
+                    .entry(name)
+                    .or_default()
+                    .push((path, hash, kind, linear));
+            }
+        }
+        for (name, paths) in sources {
+            let [(path, hash, kind, linear)] = paths.as_slice() else {
                 let list: Vec<String> = paths
                     .iter()
-                    .map(|path| path.display().to_string())
+                    .map(|(path, ..)| path.display().to_string())
                     .collect();
                 failed.push((
                     name,
@@ -396,10 +423,16 @@ impl Cooker {
                     ),
                 ));
                 continue;
+            };
+            let (path, hash, kind, linear) = (*path, **hash, *kind, *linear);
+            let mut inputs = vec![(path.clone(), hash)];
+            if kind == ProductKind::SpriteSheet
+                && let Some(images) = path.parent().and_then(|parent| sheet_images.get(parent))
+            {
+                inputs.extend(images.iter().cloned());
             }
-            let mut inputs = vec![(path.clone(), *hash)];
             if kind == ProductKind::Mesh {
-                match self.mesh_buffers(path, *hash) {
+                match self.mesh_buffers(path, hash) {
                     Ok(buffers) => {
                         let mut missing = None;
                         for buffer in buffers {
@@ -545,6 +578,17 @@ impl Cooker {
             ProductKind::Volume => {
                 texture::prepare_volume(&read_verified()?).map(PreparedSource::Volume)
             }
+            ProductKind::SpriteSheet => {
+                let description = read_verified()?;
+                let images = job.inputs[1..].iter().map(|(path, hash)| {
+                    let bytes = std::fs::read(self.config.source.join(path))?;
+                    if ContentHash::of(&bytes) != *hash {
+                        return Err(changed());
+                    }
+                    Ok((path.as_path(), bytes))
+                });
+                sheet::prepare(&description, images).map(PreparedSource::Sheet)
+            }
         }
     }
 
@@ -554,6 +598,10 @@ impl Cooker {
             PreparedSource::Mesh(bytes) => bytes.as_slice(),
             PreparedSource::Texture(texture) => {
                 encoded = texture.encode(job.profile, self.config.quality)?;
+                &encoded
+            }
+            PreparedSource::Sheet(sheet) => {
+                encoded = sheet.encode(job.profile, self.config.quality)?;
                 &encoded
             }
             PreparedSource::Volume(volume) => {
@@ -591,6 +639,10 @@ impl Cooker {
 
 /// Logical name, kind and linear flag for a source path, or `None` if it is not an asset root.
 fn classify(path: &Path) -> Option<(String, ProductKind, bool)> {
+    if sheet::is_description(path) {
+        let directory = path.parent()?;
+        return Some((logical_name(directory), ProductKind::SpriteSheet, false));
+    }
     let extension = path.extension()?.to_str()?.to_ascii_lowercase();
     let kind = match extension.as_str() {
         "gltf" | "glb" => ProductKind::Mesh,
@@ -603,12 +655,14 @@ fn classify(path: &Path) -> Option<(String, ProductKind, bool)> {
         Some(infix) if infix == "linear" => (stem.with_extension(""), true),
         _ => (stem, false),
     };
-    let name = stem
-        .components()
+    Some((logical_name(&stem), kind, linear))
+}
+
+fn logical_name(stem: &Path) -> String {
+    stem.components()
         .map(|component| component.as_os_str().to_string_lossy())
         .collect::<Vec<_>>()
-        .join("/");
-    Some((name, kind, linear))
+        .join("/")
 }
 
 fn action_key(
@@ -641,9 +695,12 @@ fn validate(kind: ProductKind, bytes: &[u8]) -> Result<(), CookError> {
     let bytes = thrum_asset::ProductBytes::copy_from(bytes);
     match kind {
         ProductKind::Mesh => thrum_asset::MeshProduct::open(bytes)?.validate_references()?,
+        ProductKind::SpriteSheet => {
+            thrum_asset::SheetProduct::open(bytes)?;
+        }
         ProductKind::Texture | ProductKind::Volume => {
             let texture = thrum_asset::Ktx2::open(bytes)?;
-            if texture.is_3d() != (kind == ProductKind::Volume) {
+            if texture.is_3d() != (kind == ProductKind::Volume) || texture.array_layers() > 1 {
                 return Err(CookError::Source(
                     "texture dimension does not match product kind".into(),
                 ));

@@ -486,6 +486,11 @@ pub trait SceneContribution: wgpu::WasmNotSend + std::any::Any {
         vec![SceneDrawStage::Opaque]
     }
 
+    /// Name a configured input that the contribution must refuse in a 2D scene.
+    fn sprite_stage_refusal(&self) -> Option<String> {
+        None
+    }
+
     /// Prepare generation-bound upload/simulate resources for a sprite scene.
     /// # Errors
     /// Refuses a contribution that cannot prepare with the supplied capabilities.

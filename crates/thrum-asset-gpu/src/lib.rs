@@ -176,8 +176,17 @@ impl Remote {
                         .prepare_remote(&generation, &self.confirmed, mailbox, stop);
             }
         }
-        // No thread here: fill whatever staging is free now, never waiting for more.
-        let progress = self.filler.as_mut().map(staging::Filler::fill_available);
+        // Keep the browser's sprite loop moving while a large sheet is staged.
+        // The legacy 3D path still fills every free chunk in one call.
+        let limit = if self.loader.config.sheet_leases.is_empty() {
+            usize::MAX
+        } else {
+            1
+        };
+        let progress = self
+            .filler
+            .as_mut()
+            .map(|filler| filler.fill_available(limit));
         match progress {
             None | Some(staging::Progress::Waiting) => {}
             Some(staging::Progress::Failed(reason)) => {
@@ -221,6 +230,7 @@ pub struct CookedConfig {
     pub fault: Option<FaultProbe>,
     /// Additional sampled products, resident under the same publication and upload budget.
     pub leased: Vec<LeaseRequest>,
+    sheet_leases: std::collections::BTreeSet<String>,
     /// Where the cooked products come from: a store folder written by `thrum-cook` (a
     /// `PathBuf` converts), or a fetched remote feed.
     pub source: CookedSource,
@@ -263,12 +273,24 @@ impl CookedConfig {
             #[cfg(feature = "fault-probe")]
             fault: None,
             leased: Vec::new(),
+            sheet_leases: std::collections::BTreeSet::new(),
             source: source.into(),
             meshes,
             volume: None,
             upload_budget: DEFAULT_UPLOAD_BUDGET,
             poll_interval: Duration::from_millis(20),
             texture_preference: None,
+        }
+    }
+
+    /// Request the page array and frame table of one cooked sprite sheet.
+    pub fn lease_sheet(&mut self, name: impl Into<String>) {
+        let name = name.into();
+        if self.sheet_leases.insert(name.clone()) {
+            self.leased.push(LeaseRequest {
+                name,
+                dimension: wgpu::TextureDimension::D2,
+            });
         }
     }
 }
@@ -422,6 +444,8 @@ pub struct CookedStats {
     pub staged: Option<u64>,
     /// Frames this contribution recorded into, submitted or not.
     pub recorded_frames: u64,
+    /// Publication whose last copy this frame recorded, before submission or discard.
+    pub recorded_last_copy: Option<u64>,
     /// Recorded frames whose encoder was submitted.
     pub submitted_frames: u64,
     /// Whether the most recent submitted frame drew its meshes with valid motion history
@@ -484,10 +508,10 @@ struct Live {
     /// Newest staged set not yet taken by the render thread.
     mailbox: Arc<load::Mailbox>,
     resident_tx: Sender<Arc<load::ResidentSet>>,
-    pipelines: draw::Pipelines,
+    pipelines: Option<draw::Pipelines>,
     secondary_views: Vec<thrum_render::contribution::SecondaryViewFrame>,
     pending: Option<Pending>,
-    current: Option<(Arc<load::ResidentSet>, draw::Bound)>,
+    current: Option<(Arc<load::ResidentSet>, Option<draw::Bound>)>,
     readback: Option<Readback>,
     /// What this frame's encoder recorded, committed only by `submitted`.
     tentative: Option<Tentative>,
@@ -626,6 +650,10 @@ impl Drop for Live {
 }
 
 impl Live {
+    fn draw_pipelines(&self) -> &draw::Pipelines {
+        self.pipelines.as_ref().expect("bound 3D draw pipelines")
+    }
+
     /// The set this frame draws, including a pending publication at its switch.
     fn drawn(&self) -> Option<&draw::Bound> {
         if self.tentative.is_some_and(|tentative| tentative.swap) {
@@ -633,7 +661,7 @@ impl Live {
                 .as_ref()
                 .and_then(|pending| pending.bound.as_ref())
         } else {
-            self.current.as_ref().map(|(_, bound)| bound)
+            self.current.as_ref().and_then(|(_, bound)| bound.as_ref())
         }
     }
 
@@ -759,17 +787,30 @@ impl CookedAssets {
         surface: &SceneSurface<'_>,
         pipelines: &draw::Pipelines,
     ) -> load::Loader {
+        let mut loader = self.texture_loader(surface.device);
+        loader.ray_demand = surface.ray_demand;
+        #[cfg(all(feature = "draw-probe", target_os = "macos"))]
+        {
+            loader.ray_build_probe.clone_from(&surface.ray_build_probe);
+        }
+        loader.indirect = pipelines.indexed_path == CookedDrawPath::Indirect
+            || (!surface.secondary_surfaces.is_empty()
+                && CookedDrawPath::select(surface.downlevel) == CookedDrawPath::Indirect);
+        loader.mesh_stage_limits = pipelines.uses_mesh_stages().then(|| surface.limits.clone());
+        loader
+    }
+
+    fn texture_loader(&self, device: &wgpu::Device) -> load::Loader {
+        let features = device.features();
         load::Loader {
-            ray_demand: surface.ray_demand,
+            ray_demand: false,
             #[cfg(all(feature = "draw-probe", target_os = "macos"))]
-            ray_build_probe: surface.ray_build_probe.clone(),
-            indirect: pipelines.indexed_path == CookedDrawPath::Indirect
-                || (!surface.secondary_surfaces.is_empty()
-                    && CookedDrawPath::select(surface.downlevel) == CookedDrawPath::Indirect),
-            mesh_stage_limits: pipelines.uses_mesh_stages().then(|| surface.limits.clone()),
-            device: wgpu::Device::clone(surface.device),
+            ray_build_probe: None,
+            indirect: false,
+            mesh_stage_limits: None,
+            device: device.clone(),
             ring: staging::StagingRing::new(
-                surface.device,
+                device,
                 self.config.upload_budget,
                 Arc::clone(&self.stats),
                 #[cfg(feature = "fault-probe")]
@@ -777,10 +818,9 @@ impl CookedAssets {
             ),
             config: self.config.clone(),
             texture_profiles: self.config.texture_preference.clone().map_or_else(
-                || texture_profiles(surface.features),
+                || texture_profiles(features),
                 |preferred| {
-                    // A preference never selects a format the device cannot sample.
-                    let supported = texture_profiles(surface.features);
+                    let supported = texture_profiles(features);
                     preferred
                         .into_iter()
                         .filter(|profile| supported.contains(profile))
@@ -788,21 +828,22 @@ impl CookedAssets {
                         .collect()
                 },
             ),
-            volume_profiles: volume_profiles(surface.features),
+            volume_profiles: volume_profiles(features),
             stats: Arc::clone(&self.stats),
         }
     }
 
-    fn start(&self, loader: load::Loader, prepared: PreparedCooked) -> Live {
-        let PreparedCooked {
-            generation,
-            ray_queue,
-            pipelines,
-            secondary_count,
-            current,
-            readback,
-            ..
-        } = prepared;
+    fn start(&self, loader: load::Loader, generation: u64, draw: Option<PreparedCooked>) -> Live {
+        let (ray_queue, pipelines, secondary_count, current, readback) =
+            draw.map_or((None, None, 0, None, None), |draw| {
+                (
+                    draw.ray_queue,
+                    Some(draw.pipelines),
+                    draw.secondary_count,
+                    draw.current.map(|(set, bound)| (set, Some(bound))),
+                    draw.readback,
+                )
+            });
         // Only accepted preparations may start consuming loader or upload progress.
         let mailbox = Arc::new(load::Mailbox::default());
         let posting = Arc::clone(&mailbox);
@@ -889,7 +930,10 @@ impl CookedAssets {
         let stages = pipelines.uses_mesh_stages();
         let reuse = self.live.as_ref().filter(|live| {
             live.generation == surface.generation
-                && live.pipelines.uses_mesh_stages() == stages
+                && live
+                    .pipelines
+                    .as_ref()
+                    .is_some_and(|pipelines| pipelines.uses_mesh_stages() == stages)
                 && (!surface.ray_demand || live.ray_queue.is_some())
         });
         let retiring_rays =
@@ -999,8 +1043,8 @@ impl CookedAssets {
             // Same device: the scene shader or layouts may have changed; resources stay, history
             // restarts with the new bindings.
             live.readback = prepared.readback;
-            live.pipelines = prepared.pipelines;
-            live.current = prepared.current;
+            live.pipelines = Some(prepared.pipelines);
+            live.current = prepared.current.map(|(set, bound)| (set, Some(bound)));
             live.secondary_views = Vec::with_capacity(secondary_count);
             live.tentative = None;
             #[cfg(feature = "draw-probe")]
@@ -1052,15 +1096,16 @@ impl CookedAssets {
             drop(old);
             self.live = Some(self.start(
                 prepared.loader.take().expect("staged cooked loader"),
-                prepared,
+                generation,
+                Some(prepared),
             ));
         }
         #[cfg(feature = "draw-probe")]
         if let Some(live) = &self.live
-            && let Some((set, bound)) = &live.current
+            && let Some((set, Some(bound))) = &live.current
             && let Ok(mut stats) = self.stats.lock()
         {
-            stats.draw_residency = live.pipelines.draw_residency(
+            stats.draw_residency = live.draw_pipelines().draw_residency(
                 bound,
                 set,
                 live.readback.as_ref().map(|readback| &readback.buffer),
@@ -1098,6 +1143,7 @@ fn offer_leases(
                 serial: 0, // Assigned by the lease's lifetime counter at offer.
                 view: texture.view.clone(),
                 texture: texture.texture.clone(),
+                sheet: texture.sheet.clone(),
             },
         )
         .collect();
@@ -1142,7 +1188,9 @@ impl SceneContribution for CookedAssets {
     ) {
         if let Some(live) = self.live_for(frame) {
             live.secondary_views.extend_from_slice(views);
-            live.pipelines.stage_views(views);
+            if let Some(pipelines) = &live.pipelines {
+                pipelines.stage_views(views);
+            }
         }
     }
 
@@ -1150,7 +1198,7 @@ impl SceneContribution for CookedAssets {
         if let Some(live) = &self.live
             && let Some(bound) = live.drawn()
         {
-            live.pipelines
+            live.draw_pipelines()
                 .draw_view(bound, pass, index, live.mesh_override());
         }
     }
@@ -1164,14 +1212,76 @@ impl SceneContribution for CookedAssets {
         if let Some(live) = &self.live
             && let Some(bound) = live.drawn()
         {
-            live.pipelines.draw_view_shadow(bound, pass, index, cascade);
+            live.draw_pipelines()
+                .draw_view_shadow(bound, pass, index, cascade);
         }
+    }
+
+    fn draw_stages(&self) -> Vec<thrum_render::contribution::SceneDrawStage> {
+        if self.config.meshes.is_empty()
+            && self.config.volume.is_none()
+            && self.config.rows.is_none()
+        {
+            return Vec::new();
+        }
+        vec![thrum_render::contribution::SceneDrawStage::Opaque]
+    }
+
+    fn sprite_stage_refusal(&self) -> Option<String> {
+        if let Some(placement) = self.config.meshes.first() {
+            return Some(format!(
+                "2D scene refuses mesh placement '{}'",
+                placement.mesh
+            ));
+        }
+        if let Some(placement) = &self.config.volume {
+            return Some(format!(
+                "2D scene refuses volume placement '{}'",
+                placement.name
+            ));
+        }
+        self.config
+            .rows
+            .as_ref()
+            .and_then(|rows| rows.names.first())
+            .map(|name| format!("2D scene refuses cooked mesh row '{name}'"))
+    }
+
+    fn rebuild_2d(
+        &mut self,
+        surface: &thrum_render::contribution::SpriteContributionSurface<'_>,
+    ) -> Result<(), thrum_render::runtime::FrameError> {
+        if let Some(reason) = self.sprite_stage_refusal() {
+            return Err(thrum_render::runtime::FrameError::Scene(reason));
+        }
+        let generation = surface.capabilities.generation();
+        if self
+            .live
+            .as_ref()
+            .is_some_and(|live| live.generation == generation)
+        {
+            return Ok(());
+        }
+        let device = surface.capabilities.site();
+        let loader = self.texture_loader(device);
+        self.lease.clear();
+        self.live = None;
+        if let Ok(mut stats) = self.stats.lock() {
+            stats.drawn = None;
+            stats.drawn_device_generation = None;
+            stats.draw_path = None;
+        }
+        self.live = Some(self.start(loader, generation, None));
+        Ok(())
     }
 
     fn passes(&self) -> ContributionPasses {
         ContributionPasses {
             upload: true,
-            compute: true,
+            compute: self
+                .live
+                .as_ref()
+                .is_none_or(|live| live.pipelines.is_some()),
         }
     }
 
@@ -1312,8 +1422,11 @@ impl SceneContribution for CookedAssets {
                     && pending.set.upload.completes(recorded);
                 tentative.recorded = Some(recorded);
             }
-            if tentative.swap && pending.bound.is_none() {
-                pending.bound = Some(live.pipelines.bind(&pending.set.set, meshes, volume));
+            if tentative.swap
+                && pending.bound.is_none()
+                && let Some(pipelines) = &live.pipelines
+            {
+                pending.bound = Some(pipelines.bind(&pending.set.set, meshes, volume));
             }
         }
         live.tentative = Some(tentative);
@@ -1335,7 +1448,7 @@ impl SceneContribution for CookedAssets {
                     history_reset: frame.history_reset || tentative.material,
                     ..*frame
                 };
-                live.pipelines.history(bound, &frame)
+                live.draw_pipelines().history(bound, &frame)
             });
         if let Some(tentative) = live.tentative.as_mut() {
             tentative.meshed = meshed;
@@ -1343,6 +1456,11 @@ impl SceneContribution for CookedAssets {
         }
         if let Ok(mut stats) = self.stats.lock() {
             stats.recorded_frames += 1;
+            stats.recorded_last_copy = tentative.recorded.and_then(|recorded| {
+                let pending = live.pending.as_ref()?;
+                (recorded.bytes > 0 && pending.set.upload.completes(recorded))
+                    .then_some(pending.set.set.generation)
+            });
             #[cfg(feature = "draw-probe")]
             {
                 stats.recorded_material = live
@@ -1365,8 +1483,8 @@ impl SceneContribution for CookedAssets {
         if let Some(live) = self.live_for(frame)
             && let Some(bound) = live.drawn()
         {
-            live.pipelines.cull(bound, pass, frame);
-            live.pipelines
+            live.draw_pipelines().cull(bound, pass, frame);
+            live.draw_pipelines()
                 .cull_views(bound, pass, &live.secondary_views);
         }
     }
@@ -1397,7 +1515,7 @@ impl SceneContribution for CookedAssets {
             && let Some(bound) = live.drawn()
         {
             let view_offset = live.tentative.map_or(0, |record| record.view_offset);
-            live.pipelines
+            live.draw_pipelines()
                 .draw(bound, pass, live.mesh_override(), view_offset);
         }
     }
@@ -1410,7 +1528,7 @@ impl SceneContribution for CookedAssets {
         if let Some(live) = &self.live
             && let Some(bound) = live.drawn()
         {
-            let draws = live.pipelines.draw_shadow(bound, pass);
+            let draws = live.draw_pipelines().draw_shadow(bound, pass);
             #[cfg(not(feature = "draw-probe"))]
             let _ = draws;
             #[cfg(feature = "draw-probe")]
@@ -1495,7 +1613,6 @@ impl SceneContribution for CookedAssets {
         }
         if tentative.swap
             && let Some(pending) = live.pending.take()
-            && let Some(bound) = pending.bound
         {
             let set = Arc::new(pending.set.set);
             live.resident_tx.send(Arc::clone(&set)).ok();
@@ -1507,12 +1624,12 @@ impl SceneContribution for CookedAssets {
                     stats.failures_before_first_draw = stats.failures;
                 }
                 #[cfg(feature = "draw-probe")]
-                {
+                if let Some(bound) = &pending.bound {
                     stats.probe_commands = bound.probe_commands();
                     stats.probe_resources = bound.probe_resources();
                     stats.probe_resources.1 |= live.readback.is_some();
-                    stats.draw_residency = live.pipelines.draw_residency(
-                        &bound,
+                    stats.draw_residency = live.draw_pipelines().draw_residency(
+                        bound,
                         &set,
                         live.readback.as_ref().map(|readback| &readback.buffer),
                     );
@@ -1543,11 +1660,11 @@ impl SceneContribution for CookedAssets {
             {
                 shown.clone_from(&set.rows);
             }
-            live.current = Some((set, bound));
+            live.current = Some((set, pending.bound));
         }
         // Whatever this frame drew is now in the scene's previous frame, unless the frame was a
         // capture, which leaves view history where it was.
-        if history_advanced && let Some((_, bound)) = &live.current {
+        if history_advanced && let Some((_, Some(bound))) = &live.current {
             bound.continued.set(true);
         }
         // A material is installed only once a submitted frame recorded a resident mesh with it;
@@ -1557,10 +1674,12 @@ impl SceneContribution for CookedAssets {
             && tentative.meshed
             && let Some(eligible) = live.material.take()
         {
-            live.pipelines.install_mesh(eligible.pipeline.clone());
+            if let Some(pipelines) = &mut live.pipelines {
+                pipelines.install_mesh(eligible.pipeline.clone());
+            }
             self.material.promote(eligible);
             // A capture does not become the previous frame: the next frame restarts history.
-            if !history_advanced && let Some((_, bound)) = &live.current {
+            if !history_advanced && let Some((_, Some(bound))) = &live.current {
                 bound.continued.set(false);
             }
         }

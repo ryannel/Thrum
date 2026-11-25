@@ -87,6 +87,8 @@ pub(crate) struct PageGame {
     pub(crate) demo: GameControls,
     pub(crate) setup: GameSetup,
     pub(crate) shapes: Option<crate::PlacedSky>,
+    #[cfg(feature = "proving")]
+    pub(crate) sprite_store: Option<thrum_asset_gpu::RemoteFeed>,
     pub(crate) initial_downlevel: String,
 }
 
@@ -115,6 +117,21 @@ impl RuntimeSetup for PageGame {
             render_extent: gpu.surface.extent,
             surface: Some(gpu.surface),
         };
+        #[cfg(feature = "proving")]
+        if let Some(store) = self.sprite_store.take() {
+            let host = self
+                .setup
+                .prepare_with_sheet_source(
+                    gpu.device,
+                    gpu.queue,
+                    gpu.capabilities,
+                    config,
+                    thrum_asset_gpu::CookedSource::Remote(store),
+                )
+                .await
+                .map_err(|error| error.to_string())?;
+            return Ok(thrum_app::Prepared::inline(host));
+        }
         let host = if let Some(shapes) = self.shapes.take() {
             self.setup
                 .prepare_placed(gpu.device, gpu.queue, gpu.capabilities, config, shapes)

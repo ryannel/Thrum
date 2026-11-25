@@ -117,17 +117,55 @@ pub(crate) fn scene(count: u32) -> SpriteScene {
     scene
 }
 
-pub(crate) fn frame(extent: [u32; 2]) -> SpriteFrame<'static> {
+#[derive(Clone, Copy)]
+pub(crate) struct FieldSheets {
+    slot: u32,
+    frames: [u32; 3],
+}
+
+pub(crate) fn cooked_sheets(
+    scene: &mut SpriteScene,
+    source: thrum_asset_gpu::CookedSource,
+) -> Result<(FieldSheets, thrum_asset_gpu::CookedAssets), thrum_render::runtime::FrameError> {
+    const SHEET: &str = "field";
+    let mut config = thrum_asset_gpu::CookedConfig::new(source, Vec::new());
+    config.lease_sheet(SHEET);
+    config.upload_budget = thrum_asset_gpu::COPY_UNIT;
+    let assets = thrum_asset_gpu::CookedAssets::new(config)
+        .map_err(|error| thrum_render::runtime::FrameError::Scene(error.to_string()))?;
+    scene.set_sheet_source(assets.lease());
+    let sheet = scene.add_cooked_sheet(SHEET)?;
+    Ok((
+        FieldSheets {
+            slot: sheet.slot(),
+            frames: ["walk.0", "walk.1", "walk.2"].map(|name| sheet.frame(name)),
+        },
+        assets,
+    ))
+}
+
+pub(crate) fn frame(extent: [u32; 2], moving: Option<(u64, f32)>) -> SpriteFrame<'static> {
+    let centre = moving.map_or([0.0; 2], |(tick, alpha)| {
+        let phase = (f64::from(u32::try_from(tick % 360).expect("bounded phase"))
+            + f64::from(alpha))
+            * std::f64::consts::TAU
+            / 360.0;
+        [0.24 * phase.sin(), 0.10 * (2.0 * phase).sin()]
+    });
     SpriteFrame {
         view: SpriteView {
-            centre: [0.0; 2],
+            centre,
             pixels_per_unit: extent[1] as f32 * 0.455,
         },
         rows: &MARK,
     }
 }
 
-pub(crate) fn extract(into: &mut SpriteSink<'_>, page: &PublishedPage) {
+pub(crate) fn extract(
+    into: &mut SpriteSink<'_>,
+    page: &PublishedPage,
+    cooked: Option<&FieldSheets>,
+) {
     const TINTS: [[f32; 4]; 4] = [
         [0.24, 0.80, 0.69, 1.0],
         [0.24, 0.40, 0.76, 1.0],
@@ -155,6 +193,13 @@ pub(crate) fn extract(into: &mut SpriteSink<'_>, page: &PublishedPage) {
         } else if handle.slot % 67 == 0 {
             row.frame = 3;
             row.additive = 1.0;
+        }
+        if let Some(cooked) = cooked {
+            row.sheet = cooked.slot;
+            row.frame = cooked.frames[animation as usize];
+            row.tint = [1.0; 4];
+            row.flash = [0.0; 4];
+            row.additive = 0.0;
         }
         // Every field entity is seeded with a visual for its entire lifetime.
         // The tick page guards the previous position by identity and generation.
@@ -207,6 +252,10 @@ pub(crate) fn sample_stats(
     let sprites = sample.sprites?;
     Some(serde_json::json!({
         "world_rows": sprites.world_rows,
+        "sheet_generation": sprites.sheet_generation,
+        "pending_sheet_rows": sprites.pending_sheet_rows,
+        "missing_frame_rows": sprites.missing_frame_rows,
+        "view_centre": sprites.view_centre,
         "frame_rows": sprites.frame_rows,
         "world_upload_rows": sprites.world_upload_rows,
         "world_upload_bytes": sprites.world_upload_bytes,

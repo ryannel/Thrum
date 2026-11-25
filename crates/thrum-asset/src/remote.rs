@@ -83,7 +83,7 @@ impl RemoteGeneration {
 pub struct DevClient<F> {
     fetch: F,
     base: String,
-    preferences: [Vec<Profile>; 3],
+    preferences: [Vec<Profile>; 4],
     /// Epoch and generation of the last generation returned.
     resident: Option<(u32, u64)>,
     /// Generation the next long poll waits beyond; `None` asks for the current record at once.
@@ -219,6 +219,7 @@ fn kind_index(kind: ProductKind) -> usize {
         ProductKind::Mesh => 0,
         ProductKind::Texture => 1,
         ProductKind::Volume => 2,
+        ProductKind::SpriteSheet => 3,
     }
 }
 
@@ -256,7 +257,7 @@ fn accept_product(
 /// The product each logical name resolves to under `preferences`, with its manifest length.
 fn wanted_products(
     manifest: &Manifest,
-    preferences: &[Vec<Profile>; 3],
+    preferences: &[Vec<Profile>; 4],
 ) -> HashMap<ContentHash, u64> {
     let mut wanted = HashMap::new();
     let mut previous = None;

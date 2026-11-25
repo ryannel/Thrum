@@ -1,19 +1,16 @@
 //! Camera-relative admission and projected coverage accounting.
 
-use super::{GpuRow, SpriteRect, SpriteScene};
+use super::{FrameInput, GpuRow};
 use crate::sprite::{PIXEL_FILTER_RADIUS, SHEET_GUTTER, SpriteSampling, SpriteView};
 
 pub(super) fn coverage_at(
-    scene: &SpriteScene,
+    input: FrameInput,
     row: &GpuRow,
-    frame: u32,
     view: SpriteView,
     extent: [u32; 2],
     alpha: f32,
     measure: bool,
 ) -> Option<f64> {
-    let sheet = &scene.sheets[row.sheet as usize];
-    let rect = sheet.sheet.frames[frame as usize];
     let project = |high: f32, low: f32, axis: usize| {
         (f64::from(high) - view.centre[axis] + f64::from(low)) * f64::from(view.pixels_per_unit)
     };
@@ -29,11 +26,14 @@ pub(super) fn coverage_at(
     {
         return None;
     }
-    let [w, h] = dimensions(rect, row, view.pixels_per_unit, alpha);
+    let [w, h] = dimensions(input.size, row, view.pixels_per_unit, alpha);
     // The quad can extend four source texels on each side.
-    let [sx, sy] = [w / f64::from(rect.size[0]), h / f64::from(rect.size[1])];
+    let [sx, sy] = [w / f64::from(input.size[0]), h / f64::from(input.size[1])];
     let gutter = f64::from(SHEET_GUTTER);
-    if (w.abs() + h.abs()) + 2.0 * gutter * (sx.abs() + sy.abs()) > limit {
+    let dx = f64::from(input.offset[0]) * sx;
+    let dy = f64::from(input.offset[1]) * sy;
+    let span = w.abs() + h.abs() + dx.abs() + dy.abs() + 2.0 * gutter * (sx.abs() + sy.abs());
+    if !span.is_finite() || span > limit {
         return None;
     }
     if !measure {
@@ -44,18 +44,18 @@ pub(super) fn coverage_at(
         position[0] + f64::from(extent[0]) * 0.5,
         -position[1] + f64::from(extent[1]) * 0.5,
     ];
-    let margin = if sheet.tiles.contains(&frame) {
+    let margin = if input.tile {
         0.0
     } else {
-        let filter_margin = match sheet.sampling {
+        let filter_margin = match input.sampling {
             SpriteSampling::Pixel => f64::from(PIXEL_FILTER_RADIUS),
             SpriteSampling::Smooth => 1.0,
         };
         sx.abs().min(sy.abs()).recip().clamp(filter_margin, gutter)
     };
     let (sin, cos) = f64::from(angle).sin_cos();
-    pivot[0] -= margin * (sx * cos + sy * sin);
-    pivot[1] -= margin * (-sx * sin + sy * cos);
+    pivot[0] += (dx - margin * sx) * cos + (dy - margin * sy) * sin;
+    pivot[1] += -(dx - margin * sx) * sin + (dy - margin * sy) * cos;
     let w = w + 2.0 * margin * sx;
     let h = h + 2.0 * margin * sy;
     if angle == 0.0 {
@@ -79,10 +79,10 @@ fn axis_aligned_pixels(start: f64, length: f64, extent: u32) -> f64 {
     last - first
 }
 
-fn dimensions(rect: SpriteRect, row: &GpuRow, pixels_per_unit: f32, alpha: f32) -> [f64; 2] {
+fn dimensions(size: [u32; 2], row: &GpuRow, pixels_per_unit: f32, alpha: f32) -> [f64; 2] {
     [0, 1].map(|axis| {
         let scale = row.scales[axis] + (row.scales[axis + 2] - row.scales[axis]) * alpha;
-        f64::from(scale) * f64::from(rect.size[axis]) * f64::from(pixels_per_unit)
+        f64::from(scale) * f64::from(size[axis]) * f64::from(pixels_per_unit)
     })
 }
 

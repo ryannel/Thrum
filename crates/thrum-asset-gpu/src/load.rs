@@ -11,8 +11,8 @@ use std::time::Instant;
 use web_time::Instant;
 
 use thrum_asset::{
-    AssetError, ContentHash, Head, Ktx2, ManifestEntry, MeshProduct, ProductBytes, Profile,
-    RemoteGeneration,
+    AssetError, ContentHash, Head, Ktx2, ManifestEntry, MeshProduct, ProductBytes, ProductKind,
+    Profile, RemoteGeneration, SheetProduct,
 };
 #[cfg(not(target_arch = "wasm32"))]
 use thrum_asset::{AssetStore, HeadWatcher, Manifest};
@@ -99,6 +99,7 @@ pub(crate) struct GpuTexture {
     pub(crate) mapped: bool,
     pub(crate) texture: wgpu::Texture,
     pub(crate) view: wgpu::TextureView,
+    pub(crate) sheet: Option<Arc<SheetProduct>>,
 }
 
 /// Every product one publication draws.
@@ -224,9 +225,28 @@ pub(crate) struct Loader {
 
 /// Products a set needs, before upload.
 struct Opened {
-    leased: Vec<(ContentHash, ContentHash, Profile, Option<Ktx2>)>,
-    meshes: Vec<(ContentHash, Option<MeshProduct>, ContentHash, Option<Ktx2>)>,
-    volume: Option<(ContentHash, Option<Ktx2>)>,
+    leased: Vec<(ContentHash, ContentHash, Profile, Option<OpenedTexture>)>,
+    meshes: Vec<(
+        ContentHash,
+        Option<MeshProduct>,
+        ContentHash,
+        Option<OpenedTexture>,
+    )>,
+    volume: Option<(ContentHash, Option<OpenedTexture>)>,
+}
+
+enum OpenedTexture {
+    Image(Ktx2),
+    Sheet(Arc<SheetProduct>),
+}
+
+impl OpenedTexture {
+    fn texture(&self) -> &Ktx2 {
+        match self {
+            Self::Image(texture) => texture,
+            Self::Sheet(sheet) => sheet.texture(),
+        }
+    }
 }
 
 /// Newest-value hand-over from the loader to the render thread.
@@ -432,26 +452,32 @@ impl Loader {
         source: Source<'_>,
         confirmed: &Confirmed,
         hash: &ContentHash,
-        volume: bool,
-    ) -> Result<Option<Ktx2>, AssetError> {
+        kind: ProductKind,
+    ) -> Result<Option<OpenedTexture>, AssetError> {
+        let volume = kind == ProductKind::Volume;
+        let sheet = kind == ProductKind::SpriteSheet;
+        let wrong_kind =
+            || AssetError::Malformed("texture dimension or kind does not match its use");
         if let Some(texture) = confirmed.textures.get(hash) {
             let dimension = if volume {
                 wgpu::TextureDimension::D3
             } else {
                 wgpu::TextureDimension::D2
             };
-            if texture.texture.dimension() != dimension {
-                return Err(AssetError::Malformed(
-                    "texture dimension does not match its use",
-                ));
+            if texture.texture.dimension() != dimension || texture.sheet.is_some() != sheet {
+                return Err(wrong_kind());
             }
             return Ok(None);
         }
-        let product = Ktx2::open(source.map(hash)?)?;
-        if product.is_3d() != volume {
-            return Err(AssetError::Malformed(
-                "texture dimension does not match its use",
-            ));
+        let bytes = source.map(hash)?;
+        let opened = if sheet {
+            OpenedTexture::Sheet(Arc::new(SheetProduct::open(bytes)?))
+        } else {
+            OpenedTexture::Image(Ktx2::open(bytes)?)
+        };
+        let product = opened.texture();
+        if product.is_3d() != volume || (!sheet && product.array_layers() > 1) {
+            return Err(wrong_kind());
         }
         let base = product.levels()[0];
         let limits = self.device.limits();
@@ -460,9 +486,11 @@ impl Loader {
         } else {
             limits.max_texture_dimension_2d
         };
-        if base.width.max(base.height).max(base.depth) > limit {
+        if base.width.max(base.height).max(base.depth) > limit
+            || product.array_layers() > limits.max_texture_array_layers
+        {
             return Err(AssetError::UnsupportedTexture(
-                "extent exceeds this device's texture limit",
+                "extent or page count exceeds this device's texture limits",
             ));
         }
         if !self
@@ -474,7 +502,7 @@ impl Loader {
                 "format not enabled on this device",
             ));
         }
-        Ok(Some(product))
+        Ok(Some(opened))
     }
 
     fn open(
@@ -504,7 +532,8 @@ impl Loader {
                 let product = MeshProduct::open(source.map(&mesh)?)?;
                 Some(product)
             };
-            let texture_product = self.open_texture(source, confirmed, &texture.product, false)?;
+            let texture_product =
+                self.open_texture(source, confirmed, &texture.product, ProductKind::Texture)?;
             opened
                 .meshes
                 .push((mesh, mesh_product, texture.product, texture_product));
@@ -515,18 +544,22 @@ impl Loader {
                 .resolve(&placement.name, &self.volume_profiles)
                 .ok_or_else(missing)?;
             volume_profile = Some(entry.profile);
-            let product = self.open_texture(source, confirmed, &entry.product, true)?;
+            let product =
+                self.open_texture(source, confirmed, &entry.product, ProductKind::Volume)?;
             opened.volume = Some((entry.product, product));
         }
         for request in &self.config.leased {
-            let volume = match request.dimension {
-                wgpu::TextureDimension::D2 => false,
-                wgpu::TextureDimension::D3 => true,
+            let kind = match request.dimension {
+                wgpu::TextureDimension::D2 if self.config.sheet_leases.contains(&request.name) => {
+                    ProductKind::SpriteSheet
+                }
+                wgpu::TextureDimension::D2 => ProductKind::Texture,
+                wgpu::TextureDimension::D3 => ProductKind::Volume,
                 wgpu::TextureDimension::D1 => {
                     return Err(AssetError::UnsupportedTexture("leases require D2 or D3"));
                 }
             };
-            let profiles = if volume {
+            let profiles = if kind == ProductKind::Volume {
                 &self.volume_profiles
             } else {
                 &self.texture_profiles
@@ -537,8 +570,14 @@ impl Loader {
                     request.name
                 )))
             })?;
+            if entry.kind != kind {
+                return Err(AssetError::Io(std::io::Error::other(format!(
+                    "lease {}: expected {kind:?}, found {:?}",
+                    request.name, entry.kind
+                ))));
+            }
             let product = self
-                .open_texture(source, confirmed, &entry.product, volume)
+                .open_texture(source, confirmed, &entry.product, kind)
                 .map_err(|error| {
                     AssetError::Io(std::io::Error::other(format!(
                         "lease {}: {error}",
@@ -644,7 +683,7 @@ impl Loader {
                 gpu
             };
             let gpu_texture = match texture {
-                Some(texture) => Arc::new(self.stage_texture(&mut plan, Arc::new(texture))),
+                Some(texture) => Arc::new(self.stage_texture(&mut plan, texture)),
                 None => Arc::clone(
                     confirmed
                         .textures
@@ -657,7 +696,7 @@ impl Loader {
         }
         if let Some((hash, product)) = opened.volume {
             set.volume = Some(match product {
-                Some(volume) => Arc::new(self.stage_texture(&mut plan, Arc::new(volume))),
+                Some(volume) => Arc::new(self.stage_texture(&mut plan, volume)),
                 None => Arc::clone(confirmed.textures.get(&hash).ok_or("lost volume")?),
             });
             set.products.push(hash);
@@ -673,9 +712,7 @@ impl Loader {
             {
                 Arc::clone(texture)
             } else {
-                Arc::new(
-                    self.stage_texture(&mut plan, Arc::new(product.ok_or("lost leased texture")?)),
-                )
+                Arc::new(self.stage_texture(&mut plan, product.ok_or("lost leased texture")?))
             };
             if texture.texture.dimension() != request.dimension {
                 return Err(format!(
@@ -820,14 +857,18 @@ impl Loader {
         Ok(gpu)
     }
 
-    fn stage_texture(&self, plan: &mut StagingPlan, product: Arc<Ktx2>) -> GpuTexture {
+    fn stage_texture(&self, plan: &mut StagingPlan, opened: OpenedTexture) -> GpuTexture {
+        let (product, sheet) = match opened {
+            OpenedTexture::Image(product) => (Arc::new(product), None),
+            OpenedTexture::Sheet(sheet) => (Arc::new(sheet.texture().clone()), Some(sheet)),
+        };
         let base = product.levels()[0];
         let texture = self.device.create_texture(&wgpu::TextureDescriptor {
             label: Some("cooked texture"),
             size: wgpu::Extent3d {
                 width: base.width,
                 height: base.height,
-                depth_or_array_layers: base.depth,
+                depth_or_array_layers: base.depth.max(product.array_layers()),
             },
             mip_level_count: u32::try_from(product.levels().len()).unwrap_or(1),
             sample_count: 1,
@@ -841,12 +882,17 @@ impl Loader {
             view_formats: &[],
         });
         let mapped = product.is_mapped();
+        let dimension = sheet.as_ref().map(|_| wgpu::TextureViewDimension::D2Array);
         plan.texture(product, texture.clone());
-        let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let view = texture.create_view(&wgpu::TextureViewDescriptor {
+            dimension,
+            ..Default::default()
+        });
         GpuTexture {
             mapped,
             texture,
             view,
+            sheet,
         }
     }
 }
