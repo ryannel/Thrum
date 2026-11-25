@@ -458,3 +458,7 @@
   tap on and off. Both arms stepped to 85% at tick 303 and returned to 100% at 363. I inspected the
   native-pixel sequences across both changes. The blind viewer found the authored cut and could not
   identify either scale-step frame. [D7.8 evidence](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP7/motion-repair/README.md)
+
+  The deferred readback path applies to governed offscreen rendering. The numbered display-link
+  path retains its previous admission behavior. The scoped live check passed at 120 Hz with 0/120
+  settled misses unloaded, 0/119 governed and 56/119 governor-off. Its unloaded route held 100%.
