@@ -1122,7 +1122,7 @@
     {
       "id": "WP13",
       "name": "Swell turns to face the beach, rises and breaks into white water that runs up the sand, on the Mac and in Chrome",
-      "status": "not_started",
+      "status": "blocked",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -1271,7 +1271,17 @@
           "verdict": "",
           "review": ""
         }
-      ]
+      ],
+      "blocked": {
+        "reason": "needs_context",
+        "what": "Planner approval to refine the offshore mesh and repeat the 1 km visual comparison would unblock both items.",
+        "work": {
+          "commit": "8ca083d6dcb6afd6f246abd5f52d1a1ce3bc1e8d",
+          "branch": "build/waters",
+          "pushed": false
+        },
+        "handoff": ".orchestrate/evidence/WATERS/WP13-handoff.md"
+      }
     },
     {
       "id": "WP19",
