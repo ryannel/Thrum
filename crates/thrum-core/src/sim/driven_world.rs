@@ -111,11 +111,15 @@ pub struct DrivenWorld<D: WorldDriver> {
 
 impl<D: WorldDriver> DrivenWorld<D> {
     /// Start at the existing endpoint, holding there until the first driver sample.
-    pub fn new(driver: D, cap: NonZeroU32) -> Self {
+    ///
+    /// # Panics
+    ///
+    /// Panics if the initial authoritative timestep is zero.
+    pub fn new(driver: D, cap: NonZeroU32, tick_duration: Duration) -> Self {
         Self {
             driver,
             cap,
-            sample: ClockSample::held(Duration::ZERO, 1.0),
+            sample: ClockSample::held(Duration::ZERO, tick_duration),
             now: Duration::ZERO,
             paused: false,
             next_due: Some(Duration::ZERO),
@@ -177,9 +181,31 @@ impl<D: WorldDriver> DrivenWorld<D> {
         self.sample.alpha_at(self.now.saturating_add(lead))
     }
 
-    /// Stop calling the driver. The next observation freezes the current phase.
+    /// Sample effect phase at the same target without clamping to the newest endpoint.
+    pub fn display_phase_at(&self, lead: Duration) -> f32 {
+        self.sample.display_phase_at(self.now.saturating_add(lead))
+    }
+
+    /// Authoritative timestep of the retained clock sample.
+    pub fn tick_duration(&self) -> Duration {
+        self.sample.tick_duration()
+    }
+
+    /// Whether the retained clock consumes a target.
+    pub fn is_interpolating(&self) -> bool {
+        self.sample.is_interpolating()
+    }
+
+    /// The retained clock's host due time while interpolating.
+    pub fn tick_due_time(&self) -> Option<Duration> {
+        self.sample.tick_due_time()
+    }
+
+    /// Stop calling the driver and show the current committed endpoint.
     pub fn pause(&mut self) {
         self.paused = true;
+        self.sample = ClockSample::held(self.now, self.sample.tick_duration());
+        self.next_due = None;
     }
 
     /// Allow the driver to run again at the next observation.
@@ -215,8 +241,6 @@ impl<D: WorldDriver> DrivenWorld<D> {
         }
         self.now = now;
         let completed_ticks = if self.paused {
-            self.sample = ClockSample::held(now, self.sample.alpha_at(now));
-            self.next_due = None;
             0
         } else {
             let advance = match display_at {

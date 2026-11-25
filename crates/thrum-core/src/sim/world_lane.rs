@@ -542,6 +542,11 @@ impl<T: WorldTask> WorldLane<T> {
         self.snapshot.clock.is_interpolating()
     }
 
+    /// Authoritative timestep from the clock/page pair selected by the last poll.
+    pub fn tick_duration(&self) -> Duration {
+        self.snapshot.clock.tick_duration()
+    }
+
     /// Host due time from the clock/page pair selected by the last poll.
     pub fn tick_due_time(&self) -> Option<Duration> {
         self.snapshot.clock.tick_due_time()

@@ -17,8 +17,8 @@ by [TRANSPORT](#transport-and-overload).
 
 The reference match ran over in-memory A0 and harsh profiles and over A0-conditioned sockets on this Mac's
 loopback. Socket replicas ran on the Mac, in Chrome and on the iPhone simulator. The simulator qualifies
-function. Windowed presentation is the next SESSION work package. A physical iPhone, Safari, Firefox,
-another machine, a non-loopback path and a public host are unqualified. Host migration, whole-world
+function. The reference Crowd also ran [in Mac windows and a Chrome page](#deterministic-matches-in-a-window-or-on-a-page).
+A physical iPhone, Safari, Firefox, another machine, a non-loopback path and a public host are unqualified. Host migration, whole-world
 rollback, access accounts and matchmaking are outside the built profile.
 
 The snapshot-and-delta profile below preserves the wider N1 design and its historical evidence.

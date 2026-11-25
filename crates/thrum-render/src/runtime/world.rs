@@ -60,6 +60,10 @@ impl<D: WorldDriver> FrameWorld for DrivenWorld<D> {
         }
     }
 
+    fn tick_duration(&self) -> Duration {
+        self.tick_duration()
+    }
+
     fn has_current_page(&self) -> bool {
         self.has_current_page()
     }
@@ -93,14 +97,14 @@ impl<D: WorldDriver> FrameWorld for DrivenWorld<D> {
     }
 
     fn display_phase_at(&self, lead: Duration) -> f32 {
-        self.presentation_alpha_at(lead)
+        self.display_phase_at(lead)
     }
 
     fn is_interpolating(&self) -> bool {
-        true
+        self.is_interpolating()
     }
 
     fn tick_due_time(&self) -> Option<Duration> {
-        None
+        self.tick_due_time()
     }
 }

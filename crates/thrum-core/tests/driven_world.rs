@@ -6,6 +6,8 @@ use thrum_core::{
     sim::{DrivenAdvance, DrivenWorld, SnapshotId, WorldDriver, WorldPublication, WorldTask},
 };
 
+const TICK: Duration = Duration::from_millis(40);
+
 #[derive(Default)]
 struct Script {
     tick: u64,
@@ -50,7 +52,7 @@ impl WorldDriver for Script {
         }
         Ok(DrivenAdvance {
             completed_ticks,
-            presentation: ClockSample::driven(now, fraction, rate).expect("script phase"),
+            presentation: ClockSample::driven(now, fraction, rate, TICK).expect("script phase"),
             next_due: Duration::from_millis(5),
         })
     }
@@ -67,14 +69,16 @@ impl WorldDriver for Script {
 
 #[test]
 fn only_the_driver_admits_ticks_and_supplies_the_phase() {
-    let mut world = DrivenWorld::new(Script::default(), NonZeroU32::new(3).expect("cap"));
+    let mut world = DrivenWorld::new(Script::default(), NonZeroU32::new(3).expect("cap"), TICK);
     let initial = WorldTask::initial(&mut world).expect("initial publication");
     assert_eq!(initial.publication.expect("tick zero").id.tick, 0);
-    for (time, completed, tick, alpha) in [
-        (10, 0, 0, 0.75),
-        (11, 1, 1, 0.5),
-        (12, 3, 4, 0.6),
-        (4_000, 0, 4, 0.75),
+    assert_eq!(initial.clock.tick_duration(), TICK);
+    assert!(!initial.clock.is_interpolating());
+    for (time, completed, tick, alpha, due_ms) in [
+        (10, 0, 0, 0.75, None),
+        (11, 1, 1, 0.5, Some(10_950)),
+        (12, 3, 4, 0.6, Some(11_750)),
+        (4_000, 0, 4, 0.75, None),
     ] {
         let now = Duration::from_secs(time);
         let update = WorldTask::advance(&mut world, now).expect("scripted advance");
@@ -88,29 +92,39 @@ fn only_the_driver_admits_ticks_and_supplies_the_phase() {
         );
         let at = now + Duration::from_millis(50);
         assert!((update.clock.alpha_at(at) - alpha).abs() < f32::EPSILON);
+        assert_eq!(update.clock.tick_duration(), TICK);
+        assert_eq!(update.clock.is_interpolating(), due_ms.is_some());
+        assert_eq!(
+            update.clock.tick_due_time(),
+            due_ms.map(Duration::from_millis)
+        );
     }
 }
 
 #[test]
 fn pausing_holds_the_pair_and_stops_polling_the_driver() {
-    let mut world = DrivenWorld::new(Script::default(), NonZeroU32::MIN);
+    let mut world = DrivenWorld::new(Script::default(), NonZeroU32::MIN, TICK);
     world.advance(Duration::from_secs(11)).expect("first tick");
     world.pause();
     let paused = Duration::from_millis(11_050);
     let update = WorldTask::advance(&mut world, paused).expect("pause");
     assert_eq!(update.tick, 1);
     assert_eq!(update.next_due, None);
-    assert!((update.clock.alpha_at(Duration::from_secs(90)) - 0.5).abs() < f32::EPSILON);
+    assert!(!update.clock.is_interpolating());
+    assert_eq!(update.clock.tick_due_time(), None);
+    assert_eq!(update.clock.tick_duration(), TICK);
+    assert!((update.clock.alpha_at(Duration::from_secs(90)) - 1.0).abs() < f32::EPSILON);
+    assert!((update.clock.display_phase_at(paused) - 1.0).abs() < f32::EPSILON);
     assert_eq!(
         world.advance(Duration::from_secs(12)).expect("paused").tick,
         1
     );
     world.resume();
+    let resumed = WorldTask::advance(&mut world, Duration::from_secs(12)).expect("resumed");
+    assert_eq!(resumed.tick, 2);
+    assert!(resumed.clock.is_interpolating());
     assert_eq!(
-        world
-            .advance(Duration::from_secs(12))
-            .expect("resumed")
-            .tick,
-        2
+        resumed.clock.tick_due_time(),
+        Some(Duration::from_millis(11_750))
     );
 }

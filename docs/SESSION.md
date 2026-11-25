@@ -106,7 +106,7 @@ ticks of history and returns to the confirmed character when that span is exhaus
 ## Drive a world in a window or on a page
 
 Keep the session and its authority runtime together in the game-owned driver. Implement
-`thrum_core::sim::WorldDriver` and give the driver to `DrivenWorld::new(driver, catch_up_cap)` in
+`thrum_core::sim::WorldDriver` and give the driver to `DrivenWorld::new(driver, catch_up_cap, initial_tick_duration)` in
 `Game::prepare`. Supply that world to `FrameHost` and return `Prepared::inline(host)`. The renderer
 leases `WorldPublication` from the driver and uses its actual epoch, tick and timeline. When installing a
 baseline, publish it in a fresh world epoch. Configure the runtime to publish both body endpoints that the
@@ -125,9 +125,11 @@ scene reads.
   `host.advance(now_us, current_tick + cap)` and read `host.playout(now_us)`. The host applies its own
   negotiated catch-up cap as well.
 - Return the actual number of successful rule steps since the preceding advance. A restored endpoint
-  establishes a new pair without adding to that count. Pass the playout fraction, rate and timestamp in
-  `DrivenAdvance`. Set `next_due` to the delay you want between polls if you put your driver on a
-  resident `WorldLane`.
+  establishes a new pair without adding to that count. Pass the sample in `DrivenAdvance`. Its tick
+  duration comes from the negotiated settings. The rate describes presentation, including holds and
+  catch-up. Set `next_due` to the delay you want between polls if you put your driver on a resident
+  `WorldLane`. A resident frame observer reads the lane's phase, tick duration and due time from the
+  retained clock and page pair.
 
 The runner supplies monotonic `Duration` values in its own origin. Convert them to microseconds for every call to
 the session and keep the sample's original `Duration` as `sample_at`. The interval ends at the current tick.
@@ -140,7 +142,8 @@ let fraction = if tick == 0 {
     (playout.position - (tick - 1) as f64).clamp(0.0, 1.0)
 };
 let ticks_per_second = playout.rate * 1_000_000.0 / f64::from(tick_us);
-let presentation = ClockSample::driven(sample_at, fraction, ticks_per_second)
+let tick_duration = Duration::from_micros(u64::from(tick_us));
+let presentation = ClockSample::driven(sample_at, fraction, ticks_per_second, tick_duration)
     .ok_or(DriverError::InvalidPlayoutSample)?;
 Ok(DrivenAdvance { completed_ticks, presentation, next_due })
 ```
@@ -149,7 +152,9 @@ Run the native game through `thrum_app::run_until_closed`. In the browser, call 
 animation-frame timestamps to `WebShell::frame_game`, and pass actual visibility changes to
 `WebShell::set_visible`. A hidden tab stops polling its driver. When it is shown, the session can resume,
 skip the backlog or install a repair baseline. Show `take_stall` and `take_skip` records as appropriate in the
-game. The frame host evaluates the sample at display time and clamps it at the latest committed endpoint.
+game. The frame host evaluates the sample at display time. Sprites clamp at the latest committed
+endpoint. Effects receive the authoritative timestep and a phase that can extend past that endpoint by
+up to 50 ms of world time. An interpolating frame also records the host due time implied by the sample.
 A stall can come from a missing set or an exhausted step budget. `take_stall` reports its duration and sets
 `work_cap` when the step budget held playout, including when the driver chose a smaller cap than the match.
 

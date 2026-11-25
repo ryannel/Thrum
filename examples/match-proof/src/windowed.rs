@@ -17,7 +17,7 @@ use thrum_core::{
     ClockSample,
     sim::{DrivenAdvance, DrivenWorld, PublicationPage, SnapshotId, WorldDriver, WorldPublication},
 };
-use thrum_network::session::{Client, ClientState, Playout, World};
+use thrum_network::session::{Client, ClientState, Playout, Settings, World};
 use thrum_render::runtime::FrameHost;
 use thrum_transport::{Profile, Ticket};
 
@@ -64,7 +64,7 @@ impl Game for WindowMatch {
         }))?;
         let mut host = prepare_crowd(
             gpu,
-            DrivenWorld::new(driver, CAP),
+            DrivenWorld::new(driver, CAP, tick_duration(Settings::default().tick_us)),
             BODIES,
             false,
             ORDER_BAND,
@@ -104,6 +104,10 @@ impl Game for WindowMatch {
 
 fn rejected(error: impl std::fmt::Display) -> GameError {
     GameError::Rejected(error.to_string())
+}
+
+fn tick_duration(tick_us: u32) -> Duration {
+    Duration::from_micros(u64::from(tick_us))
 }
 
 fn micros(now: Duration) -> u64 {
@@ -316,6 +320,7 @@ impl Driver {
             anchor,
             fraction,
             1_000_000.0 * playout.rate / f64::from(period),
+            tick_duration(period),
         )
         .ok_or_else(|| rejected("invalid session phase"))?;
         Ok(DrivenAdvance {
