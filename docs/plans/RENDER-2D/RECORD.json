@@ -1,27 +1,14 @@
 {
   "module": "RENDER-2D",
   "design": {
-    "verdict": "changes",
-    "review": ".orchestrate/evidence/RENDER-2D/design-review.md",
-    "commit": "53b1df4d17127fc7d46f48552dcbc42fd9f92dbd",
-    "hash": "1e41d707b1f551ce8079ac4784e6a11e354593b2b7dcf6a0255093fb4b425429",
-    "by": "review",
-    "host": "codex",
-    "model": "gpt-6.2-astra",
-    "effort": "high",
-    "observed": {
-      "model": "gpt-6.2-astra",
-      "effort": "high"
-    },
-    "cli": "codex-cli 0.171.0-alpha.13",
-    "path": "headless",
-    "usage": {
-      "input": 84356,
-      "cached": 1067648,
-      "output": 5309,
-      "turns": 1
-    },
-    "at": "2026-11-25T13:19:25Z"
+    "verdict": "ok",
+    "by": "review_limit",
+    "hash": "c31070802042269a81fd6211eca1af26f3900c332e254c2323db0651b3e43ab1",
+    "after": [
+      ".orchestrate/evidence/RENDER-2D/design-review-8.md",
+      ".orchestrate/evidence/RENDER-2D/design-review.md"
+    ],
+    "at": "2026-11-25T13:26:19Z"
   },
   "work_packages": {
     "WP1": {
@@ -976,12 +963,12 @@
       }
     },
     "WP6": {
-      "definitions": "7d411c4c8bb5dd024d5dbf893041b5afcba9f9a6edc118c45a65fce05e8bd320",
+      "definitions": "208d91f1429054256490bf4eec089368a27ca5c3211c0181e437c80d41e86473",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of RENDER-2D at .orchestrate/evidence/RENDER-2D/design-review.md asked for changes, with its 3 Must Fi",
-        "at": "2026-11-25T13:16:19Z"
+        "task": "The design review of RENDER-2D at .orchestrate/evidence/RENDER-2D/design-review.md asked for changes, with its 2 Must Fi",
+        "at": "2026-11-25T13:26:19Z"
       },
       "ends_stretch": true
     }
@@ -1030,11 +1017,15 @@
     {
       "task": "The design review of RENDER-2D at .orchestrate/evidence/RENDER-2D/design-review.md asked for changes, with its 3 Must Fix findings.",
       "at": "2026-11-25T13:16:19Z"
+    },
+    {
+      "task": "The design review of RENDER-2D at .orchestrate/evidence/RENDER-2D/design-review.md asked for changes, with its 2 Must Fix findings. That makes 2 design reviews in a row that asked for changes, so the script approves the design you leave without another review, and building starts from it.",
+      "at": "2026-11-25T13:26:19Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-25T13:16:19Z"
+    "at": "2026-11-25T13:26:19Z"
   },
   "design_history": [
     {
@@ -1233,6 +1224,29 @@
         "turns": 1
       },
       "at": "2026-11-25T13:06:02Z"
+    },
+    {
+      "verdict": "changes",
+      "review": ".orchestrate/evidence/RENDER-2D/design-review.md",
+      "commit": "53b1df4d17127fc7d46f48552dcbc42fd9f92dbd",
+      "hash": "1e41d707b1f551ce8079ac4784e6a11e354593b2b7dcf6a0255093fb4b425429",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6.2-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6.2-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.171.0-alpha.13",
+      "path": "headless",
+      "usage": {
+        "input": 84356,
+        "cached": 1067648,
+        "output": 5309,
+        "turns": 1
+      },
+      "at": "2026-11-25T13:19:25Z"
     }
   ]
 }
