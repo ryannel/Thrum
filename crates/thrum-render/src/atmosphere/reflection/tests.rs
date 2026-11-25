@@ -42,7 +42,7 @@ fn ambient_irradiance(n: vec3<f32>, world_position: vec3<f32>, pixel_position: v
         *aerial_frame.sun_lux.w*aerial_frame.colour_pre_exposure.rgb;
 }
 ",
-    include_str!("../../synthetic_environment.wgsl"),
+    crate::shaders::wgsl!("synthetic_environment.wgsl"),
     r"
 @group(0) @binding(0) var<storage,read> queries: array<vec4<f32>>;
 @group(0) @binding(1) var<storage,read_write> output: array<vec4<f32>>;

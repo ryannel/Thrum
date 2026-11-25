@@ -88,7 +88,7 @@ fn shipping_atmosphere_shader_layouts_keep_mapping_and_view_aux_separate() {
                 "\n",
                 include_str!("../../synthetic_sun.wgsl"),
                 "\n",
-                include_str!("../../synthetic_environment.wgsl")
+                crate::shaders::wgsl!("synthetic_environment.wgsl")
             )
         ),
         format!(
@@ -117,7 +117,7 @@ fn shipping_atmosphere_shader_layouts_keep_mapping_and_view_aux_separate() {
                 "\n",
                 include_str!("../../synthetic_sun.wgsl"),
                 "\n",
-                include_str!("../../synthetic_environment.wgsl")
+                crate::shaders::wgsl!("synthetic_environment.wgsl")
             )
         ),
     ] {

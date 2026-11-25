@@ -236,3 +236,9 @@
   dusk and the overcast sky, including occlusion from an offscreen caster and clearing within the settle window.
   [Metal proof and captures](../../../.orchestrate/evidence/RAY-TRACING/WP5/README.md) ·
   [Contended route cost](../../../.orchestrate/evidence/RAY-TRACING/WP5/cost-notes.md).
+- 2026-11-25 WP5 review repair. The shared trace writes Sun and ambient samples in one dispatch.
+  Metal verified the common origin against a 5 mm caster at 100 m, identical Sun samples, live extent
+  and exact portable fallback WGSL. Revised native captures show a smooth held face, visible contact
+  with Shade active and clearance within 16 submissions plus one both in view and off screen.
+  [Metal evidence](../../../.orchestrate/evidence/RAY-TRACING/WP5/README.md) ·
+  [Paired route timings](../../../.orchestrate/evidence/RAY-TRACING/WP5/cost-notes.md).

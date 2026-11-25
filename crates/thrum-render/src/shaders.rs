@@ -104,6 +104,15 @@ macro_rules! wgsl {
         )
     };
     ("synthetic.wgsl") => {
+        $crate::shaders::wgsl!(@opaque_forward
+            "        + indirect_radiance(surface_base,metalness,roughness,n,v,orm.r,input.world_position,input.position)\n")
+    };
+    (@ambient_opaque_forward) => {
+        $crate::shaders::wgsl!(@opaque_forward
+            "        + ambient_indirect(surface_base,metalness,roughness,n,v,orm.r,input.world_position,input.position,ambient_contact(input))\n")
+    };
+    // One opaque surface body, specialized only at the indirect term.
+    (@opaque_forward $indirect:literal) => {
         concat!(
             $crate::shaders::wgsl!(@lighting_constants),
             include_str!(concat!(env!("OUT_DIR"), "/cluster.wgsl")),
@@ -116,7 +125,27 @@ macro_rules! wgsl {
             $crate::shaders::wgsl!(@file "records/history.wgsl"),
             $crate::shaders::wgsl!(@file "records/shadow_cascades.wgsl"),
             $crate::shaders::wgsl!(@file "records/cluster_head.wgsl"),
-            $crate::shaders::wgsl!(@file "synthetic.wgsl"),
+            "\n// thrum-wgsl-source: synthetic.wgsl\n",
+            $crate::shaders::wgsl!(@bytes "synthetic.wgsl"),
+            $indirect,
+            $crate::shaders::wgsl!(@bytes "synthetic/forward/opaque_output.wgsl"),
+            "\n// thrum-wgsl-end\n",
+        )
+    };
+    ("synthetic_environment.wgsl") => {
+        concat!(
+            "\n// thrum-wgsl-source: synthetic_environment.wgsl\n",
+            $crate::shaders::wgsl!(@bytes "synthetic_environment.wgsl"),
+            $crate::shaders::wgsl!(@bytes "synthetic/forward/environment_terms.wgsl"),
+            "    return diffuse+ao*environment*ess;\n}\n",
+            "\n// thrum-wgsl-end\n",
+        )
+    };
+    (@ambient_environment) => {
+        concat!(
+            $crate::shaders::wgsl!(@bytes "synthetic/raytrace/ambient_environment_entry.wgsl"),
+            $crate::shaders::wgsl!(@bytes "synthetic/forward/environment_terms.wgsl"),
+            $crate::shaders::wgsl!(@bytes "synthetic/raytrace/ambient_environment_result.wgsl"),
         )
     };
     ("synthetic/air_shadow.wgsl") => {

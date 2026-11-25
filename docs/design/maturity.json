@@ -188,9 +188,9 @@
       ]
     },
     "RAY_TRACING_WP5": {
-      "implementation": "Opt-in Apple tile ambient occlusion uses a radius-bounded cosine ray, finite submitted visibility history and depth-aware filtering. The live extent controls reuse prepared resources. The cooked valley and cloud Shade prepare and publish together through the candidate boundary.",
-      "functional_validation": "Metal proofs verified direct-light byte parity, the declared radius, the runtime off and extent controls, stable allocations and the reported fallback when ray queries are missing.",
-      "experienced_quality": "Fixed Metal pairs show contact at the props, grounded cooked balloon basket and lookout ramp fold, including the prop under the visible overcast sky. Fixed camera turns and realtime receiver sequences show offscreen occlusion, stable held output and clearing after the 16-frame settle interval and one more submission.",
+      "implementation": "Opt-in Apple tile ambient occlusion shares the soft Sun trace dispatch when both run. It uses the common ray origin, radius-bounded cosine rays, finite submitted history and receiving-plane filtering. Live extent changes reuse prepared resources. Cooked valley geometry and cloud Shade publish through the same candidate boundary.",
+      "functional_validation": "Metal proofs verified direct-light and soft Sun sample parity, the declared radius, a 5 mm sheet at 100 m, runtime extent switches, steady allocations and reported fallback. Portable forward WGSL matches the prior source exactly.",
+      "experienced_quality": "Fixed Metal pairs show contact at the props, grounded cooked balloon basket and lookout ramp fold, including the prop under the visible overcast sky. Fixed turns and numbered realtime sequences show offscreen occlusion, a smooth settled face at native size and clearing after 16 submitted frames plus one.",
       "platform_performance": {
         "mac_apple_tile": "Contended paired route records contain ambient visibility pass times, timed-pass spans and frame CPU times at off, half and full, with investigation of the observed tripwires.",
         "browser": "Ray ambient occlusion is unqualified. The portable recipe resolves it off.",

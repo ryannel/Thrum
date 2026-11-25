@@ -154,16 +154,22 @@ fn apply_providers(source: String, cloud: bool, shadowed: SunShadows) -> String 
 }
 
 /// The forward WGSL for a scene with or without the atmosphere and its aerial shadow.
-pub(super) fn compose(atmosphere: bool, air_shadow: bool) -> String {
+pub(super) fn compose(atmosphere: bool, air_shadow: bool, ambient: bool) -> String {
     compose_aerial(
         atmosphere,
         air_shadow::aerial_source(atmosphere, air_shadow),
+        ambient,
     )
 }
 
-fn compose_aerial(atmosphere: bool, aerial: &str) -> String {
+fn compose_aerial(atmosphere: bool, aerial: &str, ambient: bool) -> String {
+    let surface = if ambient {
+        wgsl!(@ambient_opaque_forward)
+    } else {
+        wgsl!("synthetic.wgsl")
+    };
     format!(
-        "{}\n{}\n{}",
+        "{}{}\n{}\n{}",
         concat!(
             wgsl!("atmosphere/storage.wgsl"),
             "\n",
@@ -174,9 +180,9 @@ fn compose_aerial(atmosphere: bool, aerial: &str) -> String {
             wgsl!("directional_light.wgsl"),
             "\n",
             wgsl!("environment_light.wgsl"),
-            "\n",
-            wgsl!("synthetic.wgsl")
+            "\n"
         ),
+        surface,
         aerial,
         if atmosphere {
             concat!(
@@ -189,46 +195,6 @@ fn compose_aerial(atmosphere: bool, aerial: &str) -> String {
         } else {
             ""
         }
-    )
-}
-
-/// Add the admitted effect to the opaque closure while preserving the
-/// ordinary indirect entry used by contribution fragments.
-fn ambient_indirect(mut source: String, atmosphere: bool) -> String {
-    const CALL: &str = "indirect_radiance(surface_base,metalness,roughness,n,v,orm.r,input.world_position,input.position)";
-    let call = source.find(CALL).expect("opaque indirect closure");
-    source.replace_range(call..call + CALL.len(),
-        "ambient_indirect(surface_base,metalness,roughness,n,v,orm.r,input.world_position,input.position,ambient_contact(input))");
-    let start = source
-        .find("fn indirect_radiance(")
-        .expect("indirect operation");
-    let end = start
-        + source[start..]
-            .find("\n}")
-            .expect("end of indirect operation")
-        + 2;
-    let closure = source[start..end]
-        .replace("fn indirect_radiance(", "fn ambient_indirect(")
-        .replace(
-            "pixel_position: vec4<f32>)",
-            "pixel_position: vec4<f32>, traced: f32)",
-        );
-    let closure = if atmosphere {
-        closure.replace(
-            "return diffuse+ao*environment*ess;",
-            r"
-    if traced == 1.0 { return diffuse+ao*environment*ess; }
-    let combined = ao * traced;
-    let specular = clamp(pow(nov + combined, exp2(-16.0 * r - 1.0)) - 1.0 + combined, 0.0, 1.0);
-    return diffuse*traced + min(ao, specular)*environment*ess;",
-        )
-    } else {
-        closure.replace("return ao*", "return (ao*traced)*")
-    };
-    format!(
-        "{source}\n{closure}\n{}{}",
-        wgsl!("synthetic/raytrace/ambient_common.wgsl"),
-        wgsl!("synthetic/raytrace/ambient_forward.wgsl"),
     )
 }
 
@@ -259,7 +225,7 @@ pub(super) fn secondary(
         ),
         _ => wgsl!("synthetic_plain.wgsl"),
     };
-    let source = apply_providers(compose_aerial(atmosphere, aerial), cloud, shadows);
+    let source = apply_providers(compose_aerial(atmosphere, aerial, false), cloud, shadows);
     if shadows == SunShadows::Enabled {
         // Cascades are view-local; only the distant top-down height layer is
         // sampled from the scene's array. Keep the default source untouched.
@@ -286,7 +252,7 @@ pub(crate) fn main_source(variant: crate::shaders::SceneVariant) -> String {
             wgsl!("synthetic_aerial_clear.wgsl"),
         );
         apply_providers(
-            compose_aerial(true, &aerial),
+            compose_aerial(true, &aerial, variant.ambient),
             variant.cloud.present(),
             variant.shadows,
         )
@@ -295,13 +261,23 @@ pub(crate) fn main_source(variant: crate::shaders::SceneVariant) -> String {
             compose(
                 variant.atmosphere.present(),
                 variant.atmosphere.air_shadow(),
+                variant.ambient,
             ),
             variant.cloud.present(),
             variant.shadows,
         )
     };
     let source = if variant.ambient {
-        ambient_indirect(source, variant.atmosphere.present())
+        let closure = if variant.atmosphere.present() {
+            wgsl!(@ambient_environment)
+        } else {
+            wgsl!(@bytes "synthetic/raytrace/ambient_plain.wgsl")
+        };
+        format!(
+            "{source}\n{closure}{}{}",
+            wgsl!("synthetic/raytrace/ambient_common.wgsl"),
+            wgsl!("synthetic/raytrace/ambient_forward.wgsl"),
+        )
     } else {
         source
     };
@@ -338,7 +314,7 @@ mod tests {
                 let selection =
                     ShadowSelection::resolve(sun, lamps, RayStructureSelection::Enabled);
                 let source = super::traced(
-                    apply_providers(compose(true, true), false, shadows),
+                    apply_providers(compose(true, true, false), false, shadows),
                     shadows,
                     selection,
                     sun == SunShadowMethod::Traced,
@@ -361,7 +337,7 @@ mod tests {
         for atmosphere in [false, true] {
             for shadowed in [false, true] {
                 let source = apply_providers(
-                    compose(atmosphere, atmosphere && shadowed),
+                    compose(atmosphere, atmosphere && shadowed, false),
                     false,
                     SunShadows::from(shadowed),
                 );
@@ -430,7 +406,7 @@ mod tests {
     fn every_forward_variant_holds_the_material_hook_point_once_in_shade() {
         for atmosphere in [false, true] {
             for air_shadow in [false, true] {
-                let source = compose(atmosphere, air_shadow);
+                let source = compose(atmosphere, air_shadow, false);
                 let variant = format!("atmosphere {atmosphere}, air shadow {air_shadow}");
                 let point = material_hook_point(&source)
                     .unwrap_or_else(|error| panic!("{variant}: {error}"));
