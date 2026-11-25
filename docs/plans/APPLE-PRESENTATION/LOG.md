@@ -539,3 +539,9 @@
   differences were 0.0707% for the matched storage-step arm and 0.4551% for the scrub. The unused
   normalising pre-pass and its counters were removed. The rerun also confirmed the five-scale native
   route and its motion controls. [Mac target evidence](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP8/target-exposure-texture/README.md)
+
+- 2026-11-25 WP8. Mac Metal replays passed the still checkpoints and the prepared fallback and reset checks
+  after the pre-pass removal. Both APPLE-TILE WP13 seam tests and the repository gate passed. The final
+  texture-only build produced all six paired T2 sequences. The native-size bright-star crop varies by 2.979%
+  with MetalFX and 0.159% with TAAU. I inspected sequential native crops and samples from 1× decoding.
+  Continuous viewing remains open. [Retakes and measurements](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP8/texture-selected-previews/README.md)

@@ -1127,7 +1127,7 @@
       "M8": {
         "implementation": "Apple Tile prepares MetalFX and its TAAU twin in the same generation. The native segment retains reset and submission ownership. MetalFX reads the scene colour and its matching GPU exposure texture. The existing tone stage consumes the same stored colour domain.",
         "functional_validation": "Mac Metal passed the five-scale route, motion and jitter controls, still-reference measurements, forced rejection and reset tests. The iPhone 18 Pro simulator previously passed background drop and reset on Portable TAAU. The Mac exposure texture passed the matched held-storage and unreconstructed scrub comparisons at all samples.",
-        "experienced_quality": "The builder compared consecutive native-size crops from paired Mac Metal T2 recordings of pan, reveal, spawn, stars, sky scrub and governor steps. Continuous 1x viewing is pending.",
+        "experienced_quality": "With the exposure texture active, the builder compared consecutive native-size crops and 1x decode samples from all six paired Mac Metal T2 recordings. The bright-star crop varied more with MetalFX than TAAU. Continuous 1x viewing is pending.",
         "platform_performance": {
           "mac": "At 1280×720 the median native segment measured 0.160–0.253 ms across the five scales under shared host load.",
           "ios": "Simulator background recovery function only."
