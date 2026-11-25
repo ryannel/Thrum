@@ -1198,3 +1198,10 @@
   scenery hit at or beyond those crossings. Native Metal stills cover dawn and noon at two heights,
   and the pan and breeze replays each retain 112 submissions with zero omissions.
   [Target evidence](../../../.orchestrate/evidence/WATERS/WP8/bank-visibility/README.md).
+- 2026-11-25 WP8 lake reflection transition. The mapped bank uses a depth-only estimate of
+  foreground silhouette coverage to fade to sky. Occluded rays use a subdued sky lookup, including
+  upper-sky light at low Sun. A genuine depth hit in front of the bank still contributes its own
+  radiance. Metal and Chrome show the bank and joined tree reflections at both heights without the
+  hard sky cutouts. The Chrome observer found no bank or later depth contribution at hidden crossings.
+  The paired 1440p-cost record includes the extra silhouette work and the concurrent load.
+  [Target evidence](../../../.orchestrate/evidence/WATERS/WP8/lake-transition/README.md).

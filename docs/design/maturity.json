@@ -3260,9 +3260,9 @@
         "experienced_quality": "builder_inspected_review_owed",
         "scope": "WATERS WP8: screen-space reflections for registered bodies and still water, shallow refraction, waterline fades, direct Sun and sky lighting. The off-screen mirror view belongs to WP14.",
         "correctness": "Metal target tests cover gather admission, empty and off-screen cases, waterless graph behaviour, 16× exposure invariance, 3 km aerial transport, and direct cloud attenuation of glitter, water and transported foam. CPU ray witnesses cover source and receiving regions. The Chrome depth observer found sky at hidden bank crossings and no bank or later depth-trace contribution there.",
-        "visuals": "Builder-inspected Metal fixed and elapsed-time views and Chrome hardware stills. The visible lake bank and ridge reflect at both heights. The sky shows at occluded crossings, and the pan and breeze show the reflection fading. The checked sea views retain glint cores without clipping.",
+        "visuals": "Builder-inspected Metal and Chrome hardware stills show the lake bank and ridge reflecting at both heights with a soft transition to sky where foreground silhouettes obscure the bank. Metal pan and breeze replays show the reflection fading. The checked sea views retain glint cores without clipping.",
         "device": "Apple M3 Max, native and portable Metal and hardware Chrome WebGPU. The paired 1440p Metal cost record is a concurrent-load tripwire.",
-        "evidence": "../../.orchestrate/evidence/WATERS/WP8/bank-visibility/README.md"
+        "evidence": "../../.orchestrate/evidence/WATERS/WP8/lake-transition/README.md"
       },
       "waters_cpu_model": {
         "implementation": "partial",
