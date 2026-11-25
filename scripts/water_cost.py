@@ -408,7 +408,7 @@ def measure_surf():
         for label, elapsed in treatment['passes_ms'].items():
             for baseline, row in (('surf-disabled', paired), ('M7', old)):
                 before = row['passes_ms'].get(label, 0)
-                if before > 0.05 and elapsed >= 1.25 * before:
+                if before > 0 and elapsed >= 1.25 * before:
                     investigations.append({
                         'wire': '25 percent pass increase', 'phase': phase, 'pass': label,
                         'baseline': baseline, 'before_ms': before, 'current_ms': elapsed,
