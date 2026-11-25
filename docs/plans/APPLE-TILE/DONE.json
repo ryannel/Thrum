@@ -455,7 +455,7 @@
     {
       "id": "WP13",
       "name": "The native Metal step runs any provider through one interface, and the copy/select witness is the first",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "quality_bar": "A production renderer boundary: one owner, prepared fallback, deterministic visible semantics and explicit adverse-case evidence, as in the public wgpu/Metal lifecycle model.",
       "items": [
         {
