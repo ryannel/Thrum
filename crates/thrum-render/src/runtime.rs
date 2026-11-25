@@ -470,6 +470,8 @@ pub struct FrameSample {
     pub culling_selection: crate::synthetic::CullingSelection,
     /// Requested and resolved direct-light shadow methods.
     pub shadow_selection: crate::synthetic::ShadowSelection,
+    /// Requested and admitted traced ambient occlusion.
+    pub ambient_occlusion: crate::capabilities::AmbientOcclusionSelection,
     /// Instances camera culling drew, read back on completion without
     /// timestamps. `None` for Direct, which lists nothing, and when the
     /// readback failed.
@@ -2094,6 +2096,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         if let Some(scene) = self.prepared.three_d_mut() {
             scene.commit_aerial_quality();
             scene.commit_sun_penumbra_quality();
+            scene.commit_ambient_quality();
         }
         if self.contribution.as_mut().is_some_and(|entry| {
             entry.commit_quality_knobs() == crate::contribution::QualityInvalidation::ViewHistory
@@ -2196,6 +2199,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 culling_mode: self.prepared.camera_culling(),
                 culling_selection: self.prepared.culling_selection(),
                 shadow_selection: self.prepared.shadow_selection(),
+                ambient_occlusion: self.prepared.ambient_occlusion_selection(),
                 camera_culling: None,
                 sprites: None,
                 uploaded_rows: u32::try_from(uploaded.changed_rows).unwrap_or(u32::MAX),

@@ -86,6 +86,7 @@ impl Lighting {
             None,
             None,
             None,
+            None,
         );
         Ok(Self {
             groups,

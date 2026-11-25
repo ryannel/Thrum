@@ -81,6 +81,7 @@ pub struct SunPath {
     groups: Vec<wgpu::BindGroup>,
     pub(crate) shape_noise: Noise,
     noise_preparation: Option<wgpu::CommandBuffer>,
+    ground_needs_refresh: bool,
     clock: EffectState,
     origins: [[f64; 2]; 3],
     pending_origins: [[f64; 2]; 3],
@@ -143,16 +144,7 @@ impl SunPath {
             texture("cloud Sun path", profile.size, profile.levels[i].slices / 4)
         });
         let (ground, mapping) = if let Some((ground, mapping)) = target {
-            if ground.width() != profile.ground_size
-                || ground.height() != profile.ground_size
-                || ground.format() != wgpu::TextureFormat::Rgba16Float
-            {
-                return Err(Error::Unsupported(
-                    "registered ground-field dimensions or format",
-                ));
-            }
-            SunOpticalDepth::from_gpu(ground.clone(), mapping.clone(), 0)
-                .map_err(|_| Error::Unsupported("registered ground-field usage"))?;
+            validate_target(&profile, &ground, &mapping)?;
             (ground, mapping)
         } else {
             (
@@ -213,16 +205,7 @@ impl SunPath {
                 })
             })
             .collect();
-        let product_views: Vec<_> = products
-            .iter()
-            .map(|t| {
-                t.create_view(&wgpu::TextureViewDescriptor {
-                    dimension: Some(wgpu::TextureViewDimension::D2Array),
-                    ..Default::default()
-                })
-            })
-            .collect();
-        let ground_view = ground.create_view(&wgpu::TextureViewDescriptor::default());
+        let product_views = products.each_ref().map(product_view);
         let mut groups = Vec::new();
         for i in 0..3 {
             groups.push(device.create_bind_group(&wgpu::BindGroupDescriptor {
@@ -253,47 +236,14 @@ impl SunPath {
                 ],
             }));
         }
-        let entries = [
-            wgpu::BindGroupEntry {
-                binding: 0,
-                resource: params[3].as_entire_binding(),
-            },
-            wgpu::BindGroupEntry {
-                binding: 4,
-                resource: wgpu::BindingResource::TextureView(&product_views[0]),
-            },
-            wgpu::BindGroupEntry {
-                binding: 5,
-                resource: wgpu::BindingResource::TextureView(&product_views[1]),
-            },
-            wgpu::BindGroupEntry {
-                binding: 6,
-                resource: wgpu::BindingResource::TextureView(&product_views[2]),
-            },
-            wgpu::BindGroupEntry {
-                binding: 7,
-                resource: wgpu::BindingResource::TextureView(&ground_view),
-            },
-        ];
-        groups.push(device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("cloud ground composition"),
-            layout: &pipelines[1].get_bind_group_layout(0),
-            entries: &entries,
-        }));
-        groups.push(device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("cloud far transmittance"),
-            layout: &pipelines[2].get_bind_group_layout(0),
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 6,
-                    resource: wgpu::BindingResource::TextureView(&product_views[2]),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 8,
-                    resource: mapping.as_entire_binding(),
-                },
-            ],
-        }));
+        groups.extend(ground_groups(
+            device,
+            &pipelines,
+            &params[3],
+            &product_views,
+            &ground,
+            &mapping,
+        ));
         let size = profile.size as usize;
         Ok(Self {
             profile,
@@ -305,6 +255,7 @@ impl SunPath {
             groups,
             shape_noise,
             noise_preparation,
+            ground_needs_refresh: false,
             clock: EffectState::new(0),
             origins: [[0.0; 2]; 3],
             pending_origins: [[0.0; 2]; 3],
@@ -319,8 +270,43 @@ impl SunPath {
         })
     }
 
+    pub(crate) fn prepare_target(
+        &self,
+        device: &DeviceSite,
+        (ground, mapping): (wgpu::Texture, wgpu::Buffer),
+    ) -> Result<SunTarget, Error> {
+        validate_target(&self.profile, &ground, &mapping)?;
+        let views = self.products.each_ref().map(product_view);
+        let groups = ground_groups(
+            device,
+            &self.pipelines,
+            &self.params[3],
+            &views,
+            &ground,
+            &mapping,
+        );
+        Ok(SunTarget {
+            ground,
+            mapping,
+            groups,
+        })
+    }
+
+    pub(crate) fn install_target(&mut self, target: SunTarget) {
+        self.ground_needs_refresh |= self.ground != target.ground || self.mapping != target.mapping;
+        self.ground = target.ground;
+        self.mapping = target.mapping;
+        let [ground, far] = target.groups;
+        self.groups[3] = ground;
+        self.groups[4] = far;
+    }
+
+    pub(crate) fn take_initialization(&mut self) -> Option<wgpu::CommandBuffer> {
+        self.noise_preparation.take()
+    }
+
     pub(crate) fn prepare_noise(&mut self, queue: &wgpu::Queue) {
-        if let Some(command) = self.noise_preparation.take() {
+        if let Some(command) = self.take_initialization() {
             queue.submit([command]);
         }
     }
@@ -421,7 +407,8 @@ impl SunPath {
         // Map dirtiness survives recordings that wrote inputs but never submitted.
         let placed_changed = shapes.is_some_and(crate::shapes::Shapes::history_invalid)
             || (step == EffectStep::Keep && placed_map_dirty);
-        self.runs = step != EffectStep::Keep
+        self.runs = self.ground_needs_refresh
+            || step != EffectStep::Keep
             || placed_changed
             || jumped
             || (shapes.is_some() && !time.capture && moved.contains(&true));
@@ -627,6 +614,7 @@ impl SunPath {
             self.direction = self.pending_direction;
             std::mem::swap(&mut self.stamps, &mut self.pending_stamps);
             self.last_weather_time = self.pending_time;
+            self.ground_needs_refresh = false;
         }
         self.runs = false;
     }
@@ -750,4 +738,88 @@ fn validate_profile(
         return Err(Error::DeviceLimit("Sun path texture limits"));
     }
     Ok(())
+}
+
+pub(crate) struct SunTarget {
+    pub(crate) ground: wgpu::Texture,
+    pub(crate) mapping: wgpu::Buffer,
+    groups: [wgpu::BindGroup; 2],
+}
+
+fn validate_target(
+    profile: &SunProfile,
+    ground: &wgpu::Texture,
+    mapping: &wgpu::Buffer,
+) -> Result<(), Error> {
+    if ground.width() != profile.ground_size
+        || ground.height() != profile.ground_size
+        || ground.format() != wgpu::TextureFormat::Rgba16Float
+    {
+        return Err(Error::Unsupported(
+            "registered ground-field dimensions or format",
+        ));
+    }
+    SunOpticalDepth::from_gpu(ground.clone(), mapping.clone(), 0)
+        .map_err(|_| Error::Unsupported("registered ground-field usage"))?;
+    Ok(())
+}
+
+fn product_view(texture: &wgpu::Texture) -> wgpu::TextureView {
+    texture.create_view(&wgpu::TextureViewDescriptor {
+        dimension: Some(wgpu::TextureViewDimension::D2Array),
+        ..Default::default()
+    })
+}
+
+fn ground_groups(
+    device: &DeviceSite,
+    pipelines: &[wgpu::ComputePipeline; 3],
+    params: &wgpu::Buffer,
+    product_views: &[wgpu::TextureView; 3],
+    ground: &wgpu::Texture,
+    mapping: &wgpu::Buffer,
+) -> [wgpu::BindGroup; 2] {
+    let ground_view = ground.create_view(&wgpu::TextureViewDescriptor::default());
+    let entries = [
+        wgpu::BindGroupEntry {
+            binding: 0,
+            resource: params.as_entire_binding(),
+        },
+        wgpu::BindGroupEntry {
+            binding: 4,
+            resource: wgpu::BindingResource::TextureView(&product_views[0]),
+        },
+        wgpu::BindGroupEntry {
+            binding: 5,
+            resource: wgpu::BindingResource::TextureView(&product_views[1]),
+        },
+        wgpu::BindGroupEntry {
+            binding: 6,
+            resource: wgpu::BindingResource::TextureView(&product_views[2]),
+        },
+        wgpu::BindGroupEntry {
+            binding: 7,
+            resource: wgpu::BindingResource::TextureView(&ground_view),
+        },
+    ];
+    let ground_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+        label: Some("cloud ground composition"),
+        layout: &pipelines[1].get_bind_group_layout(0),
+        entries: &entries,
+    });
+    let far_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+        label: Some("cloud far transmittance"),
+        layout: &pipelines[2].get_bind_group_layout(0),
+        entries: &[
+            wgpu::BindGroupEntry {
+                binding: 6,
+                resource: wgpu::BindingResource::TextureView(&product_views[2]),
+            },
+            wgpu::BindGroupEntry {
+                binding: 8,
+                resource: mapping.as_entire_binding(),
+            },
+        ],
+    });
+    [ground_group, far_group]
 }

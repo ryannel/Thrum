@@ -27,6 +27,7 @@ impl LightBindings<'_> {
         structure: Option<&wgpu::Tlas>,
         lamps: Option<&super::super::raytrace::LampShadows>,
         soft: Option<(&super::super::raytrace::soft::SoftTarget, usize)>,
+        ambient: Option<(&super::super::raytrace::ambient::Target, usize)>,
     ) -> [wgpu::BindGroup; 2] {
         let mut entries = vec![
             wgpu::BindGroupEntry {
@@ -111,6 +112,9 @@ impl LightBindings<'_> {
             });
         }
         if let Some((target, side)) = soft {
+            entries.extend(target.light_bindings(side));
+        }
+        if let Some((target, side)) = ambient {
             entries.extend(target.light_bindings(side));
         }
         if let Some(lamps) = lamps {

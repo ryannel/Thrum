@@ -259,12 +259,68 @@ def soft(output):
         output.write_text(rendered)
 
 
+def ambient(output):
+    machine = command("system_profiler", "SPHardwareDataType", "SPDisplaysDataType")
+    before = os.getloadavg()
+    rows = run_test("shadow_cost", release=True, extra_env={"THRUM_RAY_AMBIENT_COST": "1"})
+    stages = ("traced ambient visibility", "traced ambient visibility filter")
+    figures = ("timed_pass_span_ns", "frame_cpu_ns")
+    arms = {0: {}, 1: {}, 2: {}}
+    for row in rows:
+        extent = row["ambient_extent"]
+        timings = row["passes_ns"]
+        if row["method"] != "Traced" or not row["penumbra"] or row["recipe"] != "AppleTile":
+            raise ValueError(f"incorrect traced preparation: {row}")
+        if not all((stage in timings) == (extent > 0) for stage in stages):
+            raise ValueError(f"incorrect ambient visibility stages: {row}")
+        values = [row[key] for key in figures]
+        values.extend(timings[stage] for stage in stages if extent > 0)
+        if not all(math.isfinite(value) and value > 0 for value in values):
+            raise ValueError(f"missing timing in {row}")
+        arms[extent][row["tick"]] = row
+    if not arms[0] or not arms[0].keys() == arms[1].keys() == arms[2].keys():
+        raise ValueError("all ambient extent arms must cover the same route ticks")
+
+    names = ("off", "half", "full")
+    summary = {
+        name: {
+            **{key: median(row[key] for row in arms[extent].values()) for key in figures},
+            **{stage: median(row["passes_ns"][stage] for row in arms[extent].values())
+               for stage in stages if extent > 0},
+        }
+        for extent, name in enumerate(names)
+    }
+    record = {
+        "revision": command("git", "rev-parse", "HEAD"),
+        "target": "mac-metal",
+        "machine": [line.strip() for line in machine.splitlines() if line.strip().startswith(
+            ("Chip:", "Total Number of Cores:", "Memory:"))],
+        "os": command("sw_vers", "-productVersion"),
+        "load_average_before": before,
+        "load_average_after": os.getloadavg(),
+        "timed_pass_span_scope": (
+            "Contended. First timed pass through surface consumer, including the scene structure "
+            "build. Queue writes to view, instance, light, cluster, caster heights, and the soft "
+            "Sun and ambient frame uniforms precede that interval in all three arms. Frame CPU "
+            "time includes these writes."
+        ),
+        "median_ns": summary,
+        "pairs": [{"tick": tick, **{name: arms[extent][tick] for extent, name in enumerate(names)}}
+                  for tick in sorted(arms[0])],
+    }
+    rendered = json.dumps(record, indent=2) + "\n"
+    print(rendered, end="")
+    if output:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(rendered)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("profile", choices=["structure", "valley", "shadows", "soft"])
+    parser.add_argument("profile", choices=["structure", "valley", "shadows", "soft", "ambient"])
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
-    {"structure": structure, "valley": valley, "shadows": shadows, "soft": soft}[args.profile](args.output)
+    {"structure": structure, "valley": valley, "shadows": shadows, "soft": soft, "ambient": ambient}[args.profile](args.output)
 
 
 if __name__ == "__main__":

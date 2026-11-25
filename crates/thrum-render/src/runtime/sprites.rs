@@ -142,6 +142,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 culling_mode: CullMode::Direct,
                 culling_selection: self.culling_selection(),
                 shadow_selection: ShadowSelection::default(),
+                ambient_occlusion: crate::capabilities::AmbientOcclusionSelection::default(),
                 camera_culling: None,
                 uploaded_rows: upload.rows,
                 uploaded_bytes: upload.bytes,

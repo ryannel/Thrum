@@ -4,7 +4,7 @@
 
 fn indirect_radiance(base: vec3<f32>, metalness: f32, roughness: f32,
                      n: vec3<f32>, v: vec3<f32>, ao: f32,
-                     world_position: vec3<f32>, pixel_position: vec4<f32>) -> vec3<f32> {
+                     world_position: vec3<f32>, pixel_position: vec4<f32>, traced: f32) -> vec3<f32> {
     let nov=dot(n,v);
     // Match the direct BRDF's outward hemisphere. Negative view cosines are
     // not a grazing endpoint, including two-sided raster fallback fragments.
@@ -25,5 +25,9 @@ fn indirect_radiance(base: vec3<f32>, metalness: f32, roughness: f32,
     let diffuse=ao*(1.0-metalness)*base*(vec3(1.0)-ess)*ambient_irradiance(n,world_position,pixel_position)/3.14159265359;
     // Single-scatter GGX energy loss is retained; aerial and pre-exposure are
     // applied once by the caller after direct, indirect and emissive combine.
-    return diffuse+ao*environment*ess;
+    if traced == 1.0 { return diffuse+ao*environment*ess; }
+    // Lagarde specular occlusion uses the product of material and traced visibility.
+    let combined = ao * traced;
+    let specular = clamp(pow(nov + combined, exp2(-16.0 * r - 1.0)) - 1.0 + combined, 0.0, 1.0);
+    return diffuse*traced + min(ao, specular)*environment*ess;
 }

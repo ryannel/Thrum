@@ -14,6 +14,7 @@ use crate::graph::{
 };
 use crate::graph_record::RecordBinding;
 
+pub(super) mod ambient;
 pub(super) mod soft;
 mod view;
 pub(super) use view::TracedView;
@@ -167,6 +168,7 @@ struct SceneInstances {
     traced_group: Option<wgpu::BindGroup>,
     light_groups: Option<[wgpu::BindGroup; 2]>,
     soft_group: Option<wgpu::BindGroup>,
+    ambient_group: Option<wgpu::BindGroup>,
     #[cfg(all(feature = "creation-counters", target_os = "macos"))]
     mesh_rows: Vec<u32>,
 }
@@ -191,6 +193,7 @@ impl SceneStructure {
                 traced_group: None,
                 light_groups: None,
                 soft_group: None,
+                ambient_group: None,
                 #[cfg(all(feature = "creation-counters", target_os = "macos"))]
                 mesh_rows: Vec::with_capacity(slots as usize),
             }),
@@ -242,6 +245,7 @@ impl SceneStructure {
             traced_group,
             light_groups,
             soft_group,
+            ambient_group,
             #[cfg(all(feature = "creation-counters", target_os = "macos"))]
             mesh_rows,
         } = &mut *state;
@@ -278,10 +282,19 @@ impl SceneStructure {
             *traced_group = None;
             *light_groups = None;
             *soft_group = None;
+            *ambient_group = None;
         }
         if let Some(soft) = &scene.soft_sun {
             soft_group.get_or_insert_with(|| {
                 soft.pipelines
+                    .bind_structure(scene.capabilities.device(), tlas)
+            });
+        }
+
+        if let Some(ambient) = &scene.ambient {
+            ambient_group.get_or_insert_with(|| {
+                ambient
+                    .pipelines
                     .bind_structure(scene.capabilities.device(), tlas)
             });
         }
@@ -379,8 +392,9 @@ impl PreparedSynthetic {
         &self,
         tlas: &wgpu::Tlas,
         soft: Option<(&soft::SoftTarget, usize)>,
+        ambient: Option<(&ambient::Target, usize)>,
     ) -> Option<[wgpu::BindGroup; 2]> {
-        self.uses_shadow_rays().then(|| {
+        (self.uses_shadow_rays() || ambient.is_some()).then(|| {
             super::forward::LightBindings {
                 directional: &self.directional_buffer,
                 environment_light: &self.environment_light,
@@ -395,11 +409,24 @@ impl PreparedSynthetic {
                 self.capabilities.device(),
                 &self.surface.light_layout,
                 &self.exposure.samples,
-                Some(tlas),
+                self.uses_shadow_rays().then_some(tlas),
                 self.lamp_shadows.as_ref(),
                 soft,
+                ambient,
             )
         })
+    }
+
+    pub(super) fn ambient_structure_group(&self) -> Result<wgpu::BindGroup, RenderError> {
+        self.ray_structure
+            .as_ref()
+            .ok_or(RenderError::GraphPassMismatch)?
+            .state
+            .lock()
+            .map_err(|_| RenderError::GraphPassMismatch)?
+            .ambient_group
+            .clone()
+            .ok_or(RenderError::GraphPassMismatch)
     }
 
     pub(super) fn soft_structure_group(&self) -> Result<wgpu::BindGroup, RenderError> {
@@ -440,11 +467,20 @@ impl PreparedSynthetic {
         let SceneInstances {
             light_groups, tlas, ..
         } = &mut *state;
+        if let Some(ambient) = &target.ambient {
+            return ambient.light_group(
+                tlas,
+                self,
+                target.soft_sun.as_ref(),
+                1 - self.history.write_side(),
+                side,
+            );
+        }
         if let Some(soft) = &target.soft_sun {
             return soft.light_group(tlas, self, 1 - self.history.write_side(), side);
         }
         if light_groups.is_none() {
-            *light_groups = self.create_ray_light_groups(tlas, None);
+            *light_groups = self.create_ray_light_groups(tlas, None, None);
         }
         light_groups
             .as_ref()

@@ -28,7 +28,7 @@ pub(super) fn prepare(
     cloud: Option<&crate::atmosphere::SunOpticalDepth>,
     shadowed: SunShadows,
     selection: ShadowSelection,
-    soft_sun: bool,
+    (soft_sun, ambient): (bool, bool),
     fail_pipeline: bool,
 ) -> (String, wgpu::ShaderModule, &'static str) {
     let shader = crate::shaders::Shader::Scene(crate::shaders::SceneVariant {
@@ -38,6 +38,7 @@ pub(super) fn prepare(
         sun: selection.sun,
         traced_lamps: selection.lamps,
         soft_sun,
+        ambient,
     });
     let (source, module) =
         shader.compile_with_source(device, "prepared synthetic shader ABI2", fail_pipeline);
@@ -134,6 +135,7 @@ pub(super) fn cloud_variant(source: String, variant: crate::shaders::CloudVarian
     }
 }
 
+#[cfg(test)]
 fn compose_with_cloud(
     atmosphere: bool,
     air_shadow: bool,
@@ -162,16 +164,26 @@ fn apply_providers(source: String, cloud: bool, shadowed: SunShadows) -> String 
 }
 
 /// The forward WGSL for a scene with or without the atmosphere and its aerial shadow.
+#[cfg(test)]
 pub(super) fn compose(atmosphere: bool, air_shadow: bool) -> String {
     compose_aerial(
         atmosphere,
         air_shadow::aerial_source(atmosphere, air_shadow),
+        false,
     )
 }
 
-fn compose_aerial(atmosphere: bool, aerial: &str) -> String {
+fn compose_aerial(atmosphere: bool, aerial: &str, ambient: bool) -> String {
+    let ambient = if ambient {
+        concat!(
+            wgsl!("synthetic/raytrace/ambient_common.wgsl"),
+            wgsl!("synthetic/raytrace/ambient_forward.wgsl"),
+        )
+    } else {
+        wgsl!("synthetic/raytrace/ambient_disabled.wgsl")
+    };
     format!(
-        "{}\n{}\n{}",
+        "{}\n{}\n{}\n{ambient}",
         concat!(
             wgsl!("atmosphere/storage.wgsl"),
             "\n",
@@ -183,7 +195,7 @@ fn compose_aerial(atmosphere: bool, aerial: &str) -> String {
             "\n",
             wgsl!("environment_light.wgsl"),
             "\n",
-            wgsl!("synthetic.wgsl")
+            wgsl!(@synthetic)
         ),
         aerial,
         if atmosphere {
@@ -227,7 +239,7 @@ pub(super) fn secondary(
         ),
         _ => wgsl!("synthetic_plain.wgsl"),
     };
-    let source = apply_providers(compose_aerial(atmosphere, aerial), cloud, shadows);
+    let source = apply_providers(compose_aerial(atmosphere, aerial, false), cloud, shadows);
     if shadows == SunShadows::Enabled {
         // Cascades are view-local; only the distant top-down height layer is
         // sampled from the scene's array. Keep the default source untouched.
@@ -254,14 +266,15 @@ pub(crate) fn main_source(variant: crate::shaders::SceneVariant) -> String {
             wgsl!("synthetic_aerial_clear.wgsl"),
         );
         apply_providers(
-            compose_aerial(true, &aerial),
+            compose_aerial(true, &aerial, variant.ambient),
             variant.cloud.present(),
             variant.shadows,
         )
     } else {
-        compose_with_cloud(
-            variant.atmosphere.present(),
-            variant.atmosphere.air_shadow(),
+        let atmosphere = variant.atmosphere.present();
+        let aerial = air_shadow::aerial_source(atmosphere, variant.atmosphere.air_shadow());
+        apply_providers(
+            compose_aerial(atmosphere, aerial, variant.ambient),
             variant.cloud.present(),
             variant.shadows,
         )

@@ -16,6 +16,7 @@ use thrum_render::{
 mod graph;
 #[cfg(target_arch = "wasm32")]
 mod observation;
+mod preparation;
 #[cfg(target_arch = "wasm32")]
 pub use observation::CloudSubmission;
 #[cfg(test)]
@@ -252,10 +253,31 @@ impl SceneContribution for Shade {
             compute: false,
         }
     }
+    #[cfg(not(target_arch = "wasm32"))]
+    fn supports_candidate_preparation(&self) -> bool {
+        true
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    fn prepare_candidate(
+        &self,
+        surface: &SceneSurface<'_>,
+    ) -> Result<thrum_render::contribution::ContributionCandidate, FrameError> {
+        let mut staged = self.stage(surface)?;
+        let graph = staged.graph(self);
+        let initialization = std::mem::take(&mut staged.initialization);
+        Ok(thrum_render::contribution::ContributionCandidate::new(
+            self.passes(),
+            graph,
+            move |shade: &mut Self| staged.install(shade),
+        )
+        .with_initialization(initialization))
+    }
+
     fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), FrameError> {
-        let target = surface.sun_path_target().ok_or(FrameError::InvalidState(
-            "cloud Shade requires the scene's GPU Sun-path target",
-        ))?;
+        let target = surface
+            .sun_path_target()
+            .ok_or(preparation::MISSING_TARGET)?;
         if let Some(gpu) = &self.gpu
             && self.generation == surface.generation
             && gpu.sun.ground() == &target.0
@@ -263,143 +285,24 @@ impl SceneContribution for Shade {
         {
             return Ok(());
         }
-        let mut weather = if self.generation == surface.generation {
-            match self.gpu.take() {
-                Some(gpu) => gpu.weather,
-                None => WeatherMap::new(
-                    surface.device,
-                    self.config.seed,
-                    self.config.model,
-                    self.config.types.clone(),
-                    self.config.weather.clone(),
-                )
-                .map_err(|error| frame_prepare_error(&error))?,
-            }
-        } else {
-            WeatherMap::new(
-                surface.device,
-                self.config.seed,
-                self.config.model,
-                self.config.types.clone(),
-                self.config.weather.clone(),
-            )
-            .map_err(|error| frame_prepare_error(&error))?
-        };
-        weather.rebuild(surface.generation, 1);
-        let shapes = self
-            .shapes
-            .clone()
-            .map(|config| Shapes::new(surface.device, config, &weather).map(Box::new))
-            .transpose()
-            .map_err(|error| frame_prepare_error(&error))?;
-        let placed_map = shapes.as_ref().map(|shapes| {
-            crate::shapes::map::ShapeMap::new(surface.device, weather.profile(), shapes)
-        });
-        let mut sun = SunPath::new_with_shapes(
-            surface.device,
-            &weather,
-            self.config.sun.clone(),
-            Some(target),
-            shapes.as_deref(),
-        )
-        .map_err(|error| frame_prepare_error(&error))?;
-        sun.rebuild(surface.generation, 1);
-        sun.prepare_noise(surface.queue);
-        let sky = self
-            .sky
-            .map(|profile| {
-                crate::layer::Layer::new(surface, &weather, &sun, profile, shapes.as_deref())
-            })
-            .transpose()
-            .map_err(|error| frame_prepare_error(&error))?;
-        let mut resources: Vec<_> = weather
-            .textures()
-            .iter()
-            .chain(sun.products())
-            .chain(std::iter::once(sun.ground()))
-            .enumerate()
-            .map(|(i, texture)| {
-                (
-                    format!("cloud texture {i} {:?}", texture.format()),
-                    u64::from(texture.width())
-                        * u64::from(texture.height())
-                        * u64::from(texture.depth_or_array_layers())
-                        * u64::from(texture.format().block_copy_size(None).unwrap_or(0)),
-                )
-            })
-            .collect();
-        resources.push(("cloud shape noise".into(), sun.shape_noise.bytes()));
-        if let Some(map) = &placed_map {
-            resources.extend([
-                (
-                    "cloud placed weather map".into(),
-                    u64::from(map.texture.width()) * u64::from(map.texture.height()) * 64,
-                ),
-                ("cloud placed weather windows".into(), map.params.size()),
-            ]);
+        let mut staged = self.stage(surface)?;
+        if !staged.initialization.is_empty() {
+            surface
+                .queue
+                .submit(std::mem::take(&mut staged.initialization));
         }
-        resources.extend(
-            weather
-                .uniforms()
-                .iter()
-                .chain(sun.uniforms())
-                .chain(weather.axes())
-                .chain(std::iter::once(sun.mapping()))
-                .enumerate()
-                .map(|(i, b)| (format!("cloud buffer {i}"), b.size())),
-        );
-        if let Some(layer) = &sky {
-            resources.extend(layer.resource_bytes());
-        }
-        self.input
-            .0
-            .lock()
-            .map_err(|_| frame_prepare_error(&Error::InputUnavailable))?
-            .resources = resources;
-        self.input
-            .0
-            .lock()
-            .map_err(|_| frame_prepare_error(&Error::InputUnavailable))?
-            .ground = Some((sun.ground().clone(), sun.mapping().clone()));
-        self.generation = surface.generation;
-        self.gpu = Some(Box::new(Prepared {
-            shapes,
-            placed_map,
-            recorded_placed_state: None,
-            sky,
-            weather,
-            sun,
-            queue: surface.queue.clone(),
-            #[cfg(target_arch = "wasm32")]
-            device: wgpu::Device::clone(surface.device),
-            #[cfg(target_arch = "wasm32")]
-            ground_reference: None,
-        }));
+        staged.install(self);
         Ok(())
     }
+
     fn effect_graph(&self) -> EffectGraph {
         self.gpu.as_ref().map_or_else(EffectGraph::default, |gpu| {
-            let (mut graph, shape_noise) = graph::declaration(gpu, self.generation);
-            if let Some(sky) = &gpu.sky {
-                sky.append_graph(
-                    &mut graph,
-                    self.generation,
-                    gpu.sun.shape_noise.read(shape_noise),
-                );
-            }
-            if let Some(shapes) = &gpu.shapes {
-                let reads = shapes.append_reads(&mut graph);
-                for pass in &mut graph.passes[1..4] {
-                    pass.accesses.extend(reads.iter().cloned());
-                }
-                if let Some(trace) = graph.after_opaque.get_mut(1) {
-                    trace.accesses.extend(reads.iter().cloned());
-                }
-                if let Some(map) = &gpu.placed_map {
-                    graph::append_placed_map(&mut graph, map, reads, self.generation);
-                }
-            }
-            graph
+            gpu.declaration(
+                self.generation,
+                gpu.sky.as_ref(),
+                gpu.sun.ground(),
+                gpu.sun.mapping(),
+            )
         })
     }
     fn encode_upload(&mut self, _encoder: &mut wgpu::CommandEncoder, frame: &ContributionFrame) {

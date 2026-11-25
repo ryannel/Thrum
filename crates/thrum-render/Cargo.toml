@@ -355,3 +355,11 @@ required-features = ["creation-counters"]
 [[test]]
 name = "driven_world_observer"
 path = "tests/driven_world_observer.rs"
+
+[[test]]
+name = "ray_ambient_only_gpu"
+required-features = ["creation-counters"]
+
+[[test]]
+name = "ray_ambient_knob_gpu"
+required-features = ["creation-counters"]

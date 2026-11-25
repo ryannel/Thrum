@@ -287,16 +287,24 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
         #[cfg(feature = "proving")]
         sun_proof_geometry: match launch_value("THRUM_SUN_PROOF_GEOMETRY").as_deref() {
             Err(std::env::VarError::NotPresent) | Ok("off") => crate::SunProofGeometry::Off,
+            Ok("ambient") if content == crate::GameContent::Exit => crate::SunProofGeometry::Ambient,
             Ok("fast") if content == crate::GameContent::Exit => crate::SunProofGeometry::Fast,
             Ok("joined") if content == crate::GameContent::Exit => crate::SunProofGeometry::Joined,
             Ok("separate") if content == crate::GameContent::Exit => crate::SunProofGeometry::Separate,
-            _ => return Err("THRUM_SUN_PROOF_GEOMETRY requires off or an exit scene selection: fast, joined or separate".to_owned()),
+            _ => return Err("THRUM_SUN_PROOF_GEOMETRY requires off or an exit scene selection: fast, ambient, joined or separate".to_owned()),
         },
         #[cfg(feature = "proving")]
         lamp_shadows: match launch_value("THRUM_LAMP_SHADOWS").as_deref() {
             Err(std::env::VarError::NotPresent) | Ok("off") => false,
             Ok("on") => true,
             _ => return Err("THRUM_LAMP_SHADOWS must be off or on".to_owned()),
+        },
+        #[cfg(feature = "proving")]
+        ambient_occlusion_radius: match launch_value("THRUM_AMBIENT_OCCLUSION").as_deref() {
+            Err(std::env::VarError::NotPresent) | Ok("off") => None,
+            Ok(value) => Some(value.parse::<f32>().ok().filter(|radius| radius.is_finite() && *radius > 0.0)
+                .ok_or("THRUM_AMBIENT_OCCLUSION must be off or a positive radius in metres")?),
+            Err(error) => return Err(error.to_string()),
         },
         #[cfg(feature = "proving")]
         diagnostic_clouds: launch_value("THRUM_DIAGNOSTIC_CLOUDS").as_deref() == Ok("on"),

@@ -18,24 +18,30 @@ impl Temporal {
         params: &wgpu::Buffer,
         fresh: &[wgpu::Texture; 2],
         compose_layout: &wgpu::BindGroupLayout,
+        accepted: Option<&Self>,
     ) -> Self {
         let device = surface.device;
-        let textures = std::array::from_fn(|_| {
-            std::array::from_fn(|_| {
-                device.create_texture(&wgpu::TextureDescriptor {
-                    label: Some("cloud layer history"),
-                    size: fresh[0].size(),
-                    mip_level_count: 1,
-                    sample_count: 1,
-                    dimension: wgpu::TextureDimension::D2,
-                    format: wgpu::TextureFormat::Rgba16Float,
-                    usage: wgpu::TextureUsages::TEXTURE_BINDING
-                        | wgpu::TextureUsages::STORAGE_BINDING
-                        | wgpu::TextureUsages::COPY_SRC,
-                    view_formats: &[],
+        let textures = accepted.map_or_else(
+            || {
+                std::array::from_fn(|_| {
+                    std::array::from_fn(|_| {
+                        device.create_texture(&wgpu::TextureDescriptor {
+                            label: Some("cloud layer history"),
+                            size: fresh[0].size(),
+                            mip_level_count: 1,
+                            sample_count: 1,
+                            dimension: wgpu::TextureDimension::D2,
+                            format: wgpu::TextureFormat::Rgba16Float,
+                            usage: wgpu::TextureUsages::TEXTURE_BINDING
+                                | wgpu::TextureUsages::STORAGE_BINDING
+                                | wgpu::TextureUsages::COPY_SRC,
+                            view_formats: &[],
+                        })
+                    })
                 })
-            })
-        });
+            },
+            |temporal| temporal.textures.clone(),
+        );
         let mut entries = vec![binding::uniform(
             0,
             wgpu::ShaderStages::COMPUTE,

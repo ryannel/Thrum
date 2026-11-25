@@ -461,6 +461,14 @@ impl super::SyntheticTargetInputs {
             &light[0],
             ray_structure.as_ref(),
         )?;
+        let ambient = self.append_ambient_visibility(
+            &mut graph,
+            &mut prepared_keys,
+            &mut accesses,
+            [width, height],
+            [&depth, &motion],
+            ray_structure.as_ref(),
+        )?;
         let forward = graph.declare(
             PassKey::Opaque,
             PassBody {
@@ -509,6 +517,12 @@ impl super::SyntheticTargetInputs {
                 graph.dependency(passes[3], first)?;
             }
         }
+        if let Some([trace, filter]) = ambient {
+            graph.dependency(forward, trace)?;
+            if let Some(first) = late.first {
+                graph.dependency(filter, first)?;
+            }
+        }
         let temporal = self.append_temporal(
             &mut graph,
             &mut prepared_keys,
@@ -550,6 +564,9 @@ impl super::SyntheticTargetInputs {
         late.order_consumers(&mut graph, [Some(display_pass), temporal.witness_pass])?;
         if let Some((_, passes)) = &soft_sun {
             graph.dependency(passes[3], display_pass)?;
+        }
+        if let Some([_, filter]) = ambient {
+            graph.dependency(filter, display_pass)?;
         }
         let source = Self::capture_input(capture_source, &output, &scene, native.as_ref())?;
         let readback =
@@ -702,6 +719,7 @@ impl super::SyntheticTargetInputs {
                 self.stars.is_some()
                     || self.temporal_inputs
                     || self.soft_sun.is_some()
+                    || self.ambient.is_some()
                     || self.effect_graph.after_opaque.iter().any(|pass| pass.depth),
             )?,
             attachment(SCENE_FORMAT, AttachmentUse::Scene, false)?,
@@ -1417,6 +1435,9 @@ impl super::SyntheticTargetInputs {
                 })
             }
             PassKey::RayStructureBuild => super::raytrace::binding(id),
+            PassKey::Ambient(stage) => B::new(id, PassKind::Compute, move |frame, pass| {
+                frame.ambient_visibility(stage, pass)
+            }),
             PassKey::SoftSun(stage) => B::new(id, PassKind::Compute, move |frame, pass| {
                 frame.soft_sun(stage, pass)
             }),

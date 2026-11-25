@@ -105,6 +105,12 @@ macro_rules! wgsl {
     };
     ("synthetic.wgsl") => {
         concat!(
+            $crate::shaders::wgsl!(@synthetic),
+            $crate::shaders::wgsl!(@file "synthetic/raytrace/ambient_disabled.wgsl"),
+        )
+    };
+    (@synthetic) => {
+        concat!(
             $crate::shaders::wgsl!(@lighting_constants),
             include_str!(concat!(env!("OUT_DIR"), "/cluster.wgsl")),
             include_str!(concat!(env!("OUT_DIR"), "/scene_shadows.wgsl")),
@@ -326,6 +332,7 @@ pub(crate) struct SceneVariant {
     pub(crate) sun: SunShadowMethod,
     pub(crate) traced_lamps: bool,
     pub(crate) soft_sun: bool,
+    pub(crate) ambient: bool,
 }
 
 macro_rules! shader_catalog {
@@ -382,6 +389,7 @@ shader_catalog! {
     RayBuild => wgsl!("synthetic/raytrace/build_probe.wgsl");
     RayView => wgsl!("synthetic/raytrace/view.wgsl");
     SoftSun => crate::synthetic::soft_sun_shader();
+    AmbientVisibility => crate::synthetic::ambient_visibility_shader();
     CopyMarker => wgsl!("synthetic/readback/copy_marker.wgsl");
     Visibility => visibility_source();
     Pyramid => concat!(
@@ -600,6 +608,7 @@ pub fn composed_sources() -> Vec<(&'static str, Cow<'static, str>)> {
                     sun: SunShadowMethod::Maps,
                     traced_lamps: false,
                     soft_sun: false,
+                    ambient: false,
                 };
                 sources.push(("SecondaryScene", Shader::SecondaryScene(variant).source()));
                 for sun in [SunShadowMethod::Maps, SunShadowMethod::Traced] {
@@ -612,13 +621,16 @@ pub fn composed_sources() -> Vec<(&'static str, Cow<'static, str>)> {
                             traced_lamps,
                             ..variant
                         };
-                        sources.push(("Scene", Shader::Scene(variant).source()));
-                        if sun == SunShadowMethod::Traced {
-                            let soft = SceneVariant {
-                                soft_sun: true,
-                                ..variant
-                            };
-                            sources.push(("Scene soft Sun", Shader::Scene(soft).source()));
+                        for ambient in [false, true] {
+                            let variant = SceneVariant { ambient, ..variant };
+                            sources.push(("Scene", Shader::Scene(variant).source()));
+                            if sun == SunShadowMethod::Traced {
+                                let soft = SceneVariant {
+                                    soft_sun: true,
+                                    ..variant
+                                };
+                                sources.push(("Scene soft Sun", Shader::Scene(soft).source()));
+                            }
                         }
                     }
                 }

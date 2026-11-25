@@ -617,6 +617,7 @@ impl GameScene {
         scene.sun_shadow_method = setup.sun_shadow_method;
         scene.sun_penumbra = setup.sun_penumbra;
         scene.lamp_shadows = setup.lamp_shadows;
+        scene.ambient_occlusion_radius = setup.ambient_occlusion_radius;
         scene.camera_culling = setup.camera_culling;
         #[cfg(feature = "proving")]
         if setup.test_bank {

@@ -323,7 +323,7 @@ impl PreparedScene {
         let surface = self
             .prepared
             .scene_surface_with_views(queue, contribution.secondary_views_enabled());
-        let candidate = contribution.prepare_candidate(&surface)?;
+        let mut candidate = contribution.prepare_candidate(&surface)?;
         candidate
             .graph
             .validate()
@@ -339,6 +339,9 @@ impl PreparedScene {
             presenter.map(SurfacePresenter::profile),
         )?;
         self.bind_presenter(presenter)?;
+        if !candidate.initialization.is_empty() {
+            queue.submit(std::mem::take(&mut candidate.initialization));
+        }
         Ok(candidate)
     }
 

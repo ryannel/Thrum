@@ -51,6 +51,28 @@ pub enum SunShadowMethod {
     Traced,
 }
 
+/// Requested and admitted traced ambient occlusion for one scene preparation.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct AmbientOcclusionSelection {
+    /// Maximum distance requested, in metres.
+    pub requested_radius: Option<f32>,
+    /// Admitted maximum distance, in metres. The runtime extent knob can disable tracing.
+    pub radius: Option<f32>,
+    /// Reason a requested effect could not prepare.
+    pub fallback: Option<RayStructureSelection>,
+}
+
+impl AmbientOcclusionSelection {
+    pub(crate) fn resolve(requested_radius: Option<f32>, admission: RayStructureSelection) -> Self {
+        let admitted = admission == RayStructureSelection::Enabled;
+        Self {
+            requested_radius,
+            radius: requested_radius.filter(|_| admitted),
+            fallback: (!admitted && requested_radius.is_some()).then_some(admission),
+        }
+    }
+}
+
 /// Selection of the scene's direct-light shadow methods for one preparation.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct ShadowSelection {

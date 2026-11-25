@@ -9,6 +9,14 @@ use super::{RuntimeCaptureOutput, WindowGame};
 use crate::host::haze_capture::HazeTake;
 use crate::{GameHost, hosted::HostedGame};
 
+fn ambient_selection(selection: thrum_render::capabilities::AmbientOcclusionSelection) -> Value {
+    json!({
+        "requested_radius": selection.requested_radius,
+        "radius": selection.radius,
+        "fallback": selection.fallback.map(|reason| format!("{reason:?}")),
+    })
+}
+
 fn shadow_selection(selection: thrum_render::synthetic::ShadowSelection) -> Value {
     json!({
         "requested_sun": format!("{:?}", selection.requested_sun),
@@ -288,6 +296,7 @@ impl Trace {
         );
         self.images.push(json!({"submission_id":image.sample.submission_order,"tick":image.sample.tick,
             "shadow_selection":shadow_selection(image.sample.shadow_selection),
+            "ambient_occlusion":ambient_selection(image.sample.ambient_occlusion),
             "drawn_extent":image.sample.render_extent,"history":image.sample.history_identity,
             "jitter_phase":image.sample.jitter_phase,
             "epoch":image.source.epoch,"timeline":image.source.timeline,
@@ -393,6 +402,7 @@ impl Trace {
                 json!({"submission_id":sample.submission_order,"tick":sample.tick,
                 "culling_selection":format!("{:?}",sample.culling_selection),
                 "shadow_selection":shadow_selection(sample.shadow_selection),
+                "ambient_occlusion":ambient_selection(sample.ambient_occlusion),
                 "timed_pass_span_ns":sample.gpu_pass_ns.as_ref().and_then(thrum_render::timing::SceneGpuTimings::timed_pass_span_nanoseconds),
                 "gpu_effect_boundary_ns":sample.gpu_pass_ns.as_ref().and_then(thrum_render::timing::SceneGpuTimings::effect_boundary_nanoseconds),
                 "gpu_not_run":sample.gpu_pass_ns.as_ref().map(thrum_render::timing::SceneGpuTimings::not_run_passes),
@@ -514,6 +524,9 @@ pub(super) fn prepare_parity_content(
 ) -> Result<(), String> {
     if !renderer_parity_requested() {
         return Ok(());
+    }
+    if crate::content::launch_value("THRUM_CAPTURE_START_PAUSED").as_deref() == Ok("1") {
+        host.world_mut().pause()?;
     }
     // Submit endpoint draws until the valley is resident. These draws do not
     // commit view history or consume any of the held reconstruction warmup.
@@ -1125,6 +1138,15 @@ async fn record(
             "history_bytes": driver.host().sun_penumbra_history_bytes(),
         });
     }
+    if let Some(knob) = penumbra
+        .iter()
+        .find(|knob| knob.name == "Ambient occlusion extent")
+    {
+        result["ambient_occlusion"] = json!({
+            "extent": knob.value,
+            "settle_frames": penumbra.iter().find(|knob| knob.name == "Ambient occlusion settle length").map(|knob| knob.value),
+        });
+    }
     result["display_phase_counts"] = phase_counts;
     result["gpu_pass_timing"] = json!(governed || measure_passes);
     if governed {
@@ -1198,7 +1220,16 @@ fn write_runtime_report(
     result["admission_diagnostic"] = admission.diagnostic();
     result["max_sampled_textures_per_shader_stage"] =
         json!(capabilities.limits().max_sampled_textures_per_shader_stage);
-    result["diagnostic_clouds"] = json!(crate::selected_setup()?.diagnostic_clouds);
+    let setup = crate::selected_setup()?;
+    result["diagnostic_clouds"] = json!(setup.diagnostic_clouds);
+    if setup.clouds != crate::CloudSelection::Off {
+        result["cloud_selection"] = json!({
+            "mode": format!("{:?}", setup.clouds),
+            "coverage": setup.cloud_weather.coverage,
+            "kind": setup.cloud_weather.kind,
+            "resource_bytes": driver.host().cloud_resource_bytes(),
+        });
+    }
     if parity_checkpoint {
         let host = driver.host();
         result["renderer_signature"] = json!({

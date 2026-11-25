@@ -57,6 +57,7 @@ fn sample(tick: u64) -> FrameSample {
         timing_requested: true,
         culling_mode: crate::synthetic::CullMode::Direct,
         shadow_selection: crate::synthetic::ShadowSelection::default(),
+        ambient_occlusion: crate::capabilities::AmbientOcclusionSelection::default(),
         culling_selection: crate::synthetic::CullingSelection {
             requested: crate::synthetic::CullMode::Direct,
             resolved: crate::synthetic::CullMode::Direct,

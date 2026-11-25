@@ -115,6 +115,7 @@ pub struct ContributionCandidate {
     pub(crate) passes: ContributionPasses,
     pub(crate) graph: EffectGraph,
     commit: PublishSecondary,
+    pub(crate) initialization: Vec<wgpu::CommandBuffer>,
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -132,6 +133,7 @@ impl ContributionCandidate {
         Self {
             passes,
             graph,
+            initialization: Vec::new(),
             commit: Box::new(move |owner| {
                 commit(
                     owner
@@ -140,6 +142,14 @@ impl ContributionCandidate {
                 );
             }),
         }
+    }
+
+    /// Add one-time initialization that writes only this candidate's own resources.
+    /// The host submits this work inside the preparation attempt's GPU error scopes.
+    #[must_use]
+    pub fn with_initialization(mut self, commands: Vec<wgpu::CommandBuffer>) -> Self {
+        self.initialization.extend(commands);
+        self
     }
 
     /// Forward a wrapped member's candidate through an adapter.
@@ -152,8 +162,10 @@ impl ContributionCandidate {
             passes,
             graph,
             commit,
+            initialization,
         } = self;
         Self::new(passes, graph, move |owner| commit(member(owner)))
+            .with_initialization(initialization)
     }
 
     pub(crate) fn commit(self, owner: &mut dyn SceneContribution) {

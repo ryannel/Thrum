@@ -61,6 +61,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         if let Some(scene) = self.prepared.three_d() {
             knobs.extend_from_slice(scene.lamp_quality());
             knobs.extend_from_slice(scene.sun_penumbra_quality());
+            knobs.extend_from_slice(scene.ambient_occlusion_quality());
         }
         if self.governor.is_some()
             && let Some(aerial) = self
@@ -96,6 +97,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             && let Some(result) = scene
                 .set_lamp_quality(name, value)
                 .or_else(|| scene.set_sun_penumbra_quality(name, value))
+                .or_else(|| scene.set_ambient_quality(name, value))
         {
             return result;
         }

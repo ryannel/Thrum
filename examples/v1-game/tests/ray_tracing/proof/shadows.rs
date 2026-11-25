@@ -15,11 +15,12 @@ fn valley(
     extent: [u32; 2],
     hour: f32,
     route_overlay: v1_game::RouteOverlay,
-    penumbra: bool,
+    (penumbra, ambient_occlusion_radius): (bool, Option<f32>),
 ) -> (Host, Stats) {
     let setup = GameSetup {
         sun_shadow_method: method,
         sun_penumbra: penumbra,
+        ambient_occlusion_radius,
         lamp_shadows: lamps,
         valley_stars: true,
         route_overlay,
@@ -108,7 +109,7 @@ pub(crate) fn prove_sun_out() {
             EXTENT,
             0.0,
             v1_game::RouteOverlay::Off,
-            false,
+            (false, None),
         );
         host.enable_submitted_capture_from(
             1,
@@ -172,19 +173,26 @@ pub(crate) fn measure_shadows() {
         .manifest
         .to_string();
     let profile_soft = std::env::var_os("THRUM_RAY_SOFT_COST").is_some();
-    let selections: &[_] = if profile_soft {
+    let profile_ambient = std::env::var_os("THRUM_RAY_AMBIENT_COST").is_some();
+    let selections: &[_] = if profile_ambient {
         &[
-            (SunShadowMethod::Traced, false, false),
-            (SunShadowMethod::Traced, false, true),
+            (SunShadowMethod::Traced, false, true, Some(0)),
+            (SunShadowMethod::Traced, false, true, Some(1)),
+            (SunShadowMethod::Traced, false, true, Some(2)),
+        ]
+    } else if profile_soft {
+        &[
+            (SunShadowMethod::Traced, false, false, None),
+            (SunShadowMethod::Traced, false, true, None),
         ]
     } else {
         &[
-            (SunShadowMethod::Maps, false, false),
-            (SunShadowMethod::Traced, false, false),
-            (SunShadowMethod::Traced, true, false),
+            (SunShadowMethod::Maps, false, false, None),
+            (SunShadowMethod::Traced, false, false, None),
+            (SunShadowMethod::Traced, true, false, None),
         ]
     };
-    for &(method, lamps, penumbra) in selections {
+    for &(method, lamps, penumbra, ambient_extent) in selections {
         let (mut host, stats) = valley(
             &store,
             &metal,
@@ -193,11 +201,15 @@ pub(crate) fn measure_shadows() {
             extent,
             17.3,
             v1_game::RouteOverlay::Proof,
-            profile_soft,
+            (profile_soft || profile_ambient, ambient_extent.map(|_| 3.0)),
         );
         if profile_soft {
             host.set_quality_knob("Sun penumbra", u32::from(penumbra))
                 .expect("prepared Sun penumbra");
+        }
+        if let Some(extent) = ambient_extent {
+            host.set_quality_knob("Ambient occlusion extent", extent)
+                .expect("prepared ambient occlusion");
         }
         let history_bytes = host.sun_penumbra_history_bytes();
         let mut input: Value = serde_json::from_str(ROUTE).expect("authored moving route");
@@ -260,6 +272,9 @@ pub(crate) fn measure_shadows() {
             assert_eq!(sample.tick, route.origin_tick + tick);
             assert_eq!(sample.shadow_selection.sun, method);
             assert_eq!(sample.shadow_selection.lamps, lamps);
+            if profile_ambient {
+                assert_eq!(sample.ambient_occlusion.radius, Some(3.0));
+            }
             if (profile_soft && tick == 180)
                 || ![0, 90, 180, 230, 290, 340, 360]
                     .iter()
@@ -282,7 +297,7 @@ pub(crate) fn measure_shadows() {
             let dive_limit = knob("Sun penumbra dive limit");
             let rim_rays = knob("Sun penumbra rim rays");
             report(
-                &json!({"method":format!("{method:?}"),"lamps":lamps,"penumbra":penumbra,"dive_limit_degrees":dive_limit,"rim_rays":rim_rays,"history_bytes":history_bytes,"tick":tick,"timed_pass_span_ns":span,
+                &json!({"method":format!("{method:?}"),"lamps":lamps,"penumbra":penumbra,"dive_limit_degrees":dive_limit,"rim_rays":rim_rays,"history_bytes":history_bytes,"ambient_extent":ambient_extent,"tick":tick,"timed_pass_span_ns":span,
                 "frame_cpu_ns":(sample.upload_cpu+sample.encode_cpu).as_nanos(),"passes_ns":passes,
                 "upload_cpu_ns":sample.upload_cpu.as_nanos(),"encode_cpu_ns":sample.encode_cpu.as_nanos(),
                 "recipe":"AppleTile","cooked_root":cooked_root,"resolved_draw_path":format!("{:?}",stats.lock().expect("stats").draw_path)}),

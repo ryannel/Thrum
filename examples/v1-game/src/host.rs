@@ -117,6 +117,8 @@ pub struct GameSetup {
     pub sun_proof_geometry: crate::SunProofGeometry,
     /// Trace hard shadows from the main view's local lights.
     pub lamp_shadows: bool,
+    /// Maximum ambient occlusion ray distance in metres.
+    pub ambient_occlusion_radius: Option<f32>,
     /// Opt-in analytic Sun-path optical depth, a diagnostic cloud-shade stand-in.
     #[cfg(feature = "proving")]
     pub diagnostic_clouds: bool,
@@ -184,6 +186,7 @@ impl Default for GameSetup {
             #[cfg(feature = "proving")]
             sun_proof_geometry: crate::SunProofGeometry::Off,
             lamp_shadows: false,
+            ambient_occlusion_radius: None,
             #[cfg(feature = "proving")]
             diagnostic_clouds: false,
             #[cfg(feature = "proving")]

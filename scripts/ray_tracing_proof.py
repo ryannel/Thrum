@@ -281,7 +281,7 @@ def soft_capture(argv):
     parser.add_argument("--eye", type=float, nargs=3)
     parser.add_argument("--yaw", type=float, default=0)
     parser.add_argument("--pitch", type=float, default=0)
-    parser.add_argument("--geometry", choices=("off", "fast", "joined", "separate"), default="off")
+    parser.add_argument("--geometry", choices=("off", "fast", "ambient", "joined", "separate"), default="off")
     capture_soft(parser.parse_args(argv))
 
 

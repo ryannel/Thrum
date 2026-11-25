@@ -20,6 +20,7 @@ pub(crate) fn bank_noise(origin: [f64; 2], deck: f64) -> [f32; 4] {
     ]
 }
 
+#[derive(Clone)]
 pub(crate) struct Noise {
     texture: wgpu::Texture,
     view: wgpu::TextureView,

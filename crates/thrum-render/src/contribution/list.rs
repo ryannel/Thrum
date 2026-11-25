@@ -75,7 +75,7 @@ impl SceneContributions {
             &dyn SceneContribution,
         ) -> Result<super::ContributionCandidate, FrameError>,
     ) -> Result<super::ContributionCandidate, FrameError> {
-        let candidates = self
+        let mut candidates = self
             .entries
             .iter()
             .map(|member| prepare(member.as_ref()))
@@ -88,10 +88,12 @@ impl SceneContributions {
                 passes
             });
         let graph = Self::combined_graph(candidates.iter().map(|member| member.graph.clone()));
-        Ok(super::ContributionCandidate::new(
-            passes,
-            graph,
-            move |owner: &mut Self| {
+        let initialization = candidates
+            .iter_mut()
+            .flat_map(|candidate| std::mem::take(&mut candidate.initialization))
+            .collect();
+        Ok(
+            super::ContributionCandidate::new(passes, graph, move |owner: &mut Self| {
                 owner.pass_counts.clear();
                 owner.after_counts.clear();
                 for (entry, candidate) in owner.entries.iter_mut().zip(candidates) {
@@ -99,8 +101,9 @@ impl SceneContributions {
                     owner.after_counts.push(candidate.graph.after_opaque.len());
                     candidate.commit(entry.as_mut());
                 }
-            },
-        ))
+            })
+            .with_initialization(initialization),
+        )
     }
 
     fn combined_graph(

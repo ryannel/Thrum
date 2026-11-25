@@ -52,6 +52,9 @@ mod native_witness;
 mod preparation;
 mod raytrace;
 pub(crate) use raytrace::RetainedRayMeshes;
+pub(crate) use raytrace::ambient::{
+    Stage as AmbientStage, shader_source as ambient_visibility_shader,
+};
 pub(crate) use raytrace::soft::{Stage as SoftSunStage, shader_source as soft_sun_shader};
 #[cfg(all(feature = "creation-counters", target_os = "macos"))]
 pub use raytrace::{RayBuildProbe, RayBuildSample, RayStructureInstance};
@@ -147,6 +150,8 @@ pub struct SyntheticScene {
     pub sun_penumbra: bool,
     /// Ask for hard shadows from the main view's local lights.
     pub lamp_shadows: bool,
+    /// Maximum traced ambient occlusion distance in metres.
+    pub ambient_occlusion_radius: Option<f32>,
     /// Camera opaque draw: the direct oracle or GPU frustum compaction.
     pub camera_culling: CullMode,
     /// Optional immutable unit equatorial directions with incident lux in w.
@@ -220,7 +225,8 @@ impl SyntheticScene {
             self.ray_structure
                 || self.view.traced_geometry()
                 || self.sun_shadow_method == SunShadowMethod::Traced
-                || self.lamp_shadows,
+                || self.lamp_shadows
+                || self.ambient_occlusion_radius.is_some(),
         )
     }
 
@@ -231,6 +237,7 @@ impl SyntheticScene {
             sun_shadow_method: SunShadowMethod::Maps,
             sun_penumbra: false,
             lamp_shadows: false,
+            ambient_occlusion_radius: None,
             sun_optical_depth: None,
             materials: Vec::new(),
             instances: Vec::new(),
@@ -301,6 +308,7 @@ impl SyntheticScene {
             sun_shadow_method: SunShadowMethod::Maps,
             sun_penumbra: false,
             lamp_shadows: false,
+            ambient_occlusion_radius: None,
             camera_culling: CullMode::Direct,
             star_catalogue: None,
             meshes: None,
@@ -549,6 +557,8 @@ pub struct PreparedSynthetic {
     shadow_selection: ShadowSelection,
     lamp_shadows: Option<raytrace::LampShadows>,
     soft_sun: Option<raytrace::soft::SoftSun>,
+    ambient: Option<raytrace::ambient::Ambient>,
+    ambient_selection: crate::capabilities::AmbientOcclusionSelection,
     row_updates: Option<mesh_rows::LiveRows>,
     /// Scenes that select meshes draw per bucket; others keep the legacy
     /// single-pipeline route.
@@ -1411,6 +1421,15 @@ impl PreparedSynthetic {
                 packed_light_direction(&light_data),
             );
         }
+        if let Some((ambient, target)) = self.ambient.as_mut().zip(target.ambient.as_ref()) {
+            ambient.update(
+                queue,
+                target,
+                (&view, &self.view_sample),
+                drawn,
+                self.history.candidate_identity(view.history_reset())[1] != 0,
+            );
+        }
         let next_revision = self.frame_revision.wrapping_add(1);
         let view_offset = self.view_stride * u32::from(next_revision & 1 != 0);
         let mut record = view.view_record(&self.view_sample, f32::from_bits(self.exposure_bits));
@@ -1533,6 +1552,9 @@ impl PreparedSynthetic {
             self.history.submitted();
             if let Some(soft) = self.soft_sun.as_mut() {
                 soft.submitted();
+            }
+            if let Some(ambient) = &mut self.ambient {
+                ambient.submitted();
             }
         }
     }
@@ -1887,6 +1909,7 @@ pub struct OffscreenTarget {
     pub(crate) native: Option<Arc<native_witness::Binding>>,
     effects: after_opaque::TargetEffects,
     soft_sun: Option<raytrace::soft::SoftTarget>,
+    ambient: Option<raytrace::ambient::Target>,
     capture_source: CaptureSource,
     device: wgpu::Device,
     prepared_owner: Arc<()>,
@@ -1990,6 +2013,10 @@ impl OffscreenTarget {
         )
     }
 
+    #[expect(
+        clippy::too_many_lines,
+        reason = "prepares the scene attachments in dependency order"
+    )]
     pub(crate) fn with_target_inputs(
         device: &wgpu::Device,
         prepared: &SyntheticTargetInputs,
@@ -2027,6 +2054,8 @@ impl OffscreenTarget {
             &motion_view,
             [width, height],
         )?;
+        let ambient =
+            prepared.prepare_ambient_target(device, &depth, &motion_view, [width, height]);
         let temporal = prepared.temporal.target(
             device,
             &textures,
@@ -2156,6 +2185,7 @@ impl OffscreenTarget {
             capture_source,
             effects,
             soft_sun,
+            ambient,
             device: device.clone(),
             prepared_owner: Arc::clone(&prepared.owner),
             day_graphs,
@@ -2243,12 +2273,18 @@ impl OffscreenTarget {
     pub(crate) fn texture_allocation(&self) -> (u32, u64) {
         let (count, bytes) = self.textures.allocation();
         let extra = u64::from(self.day_depth.is_some());
-        let soft_textures = 4 * u32::from(self.soft_sun.is_some());
+        let soft_textures =
+            4 * (u32::from(self.soft_sun.is_some()) + u32::from(self.ambient.is_some()));
         (
             count + u32::from(self.day_depth.is_some()) + soft_textures,
             bytes
                 + extra * u64::from(self.width) * u64::from(self.height) * 4
-                + self.sun_penumbra_history_bytes(),
+                + self.sun_penumbra_history_bytes()
+                + if self.ambient.is_some() {
+                    u64::from(self.width) * u64::from(self.height) * 48
+                } else {
+                    0
+                },
         )
     }
 

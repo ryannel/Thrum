@@ -107,7 +107,7 @@ struct SoftHistory {
     samples: [wgpu::TextureView; 2],
 }
 
-fn sampled(
+pub(super) fn sampled(
     slot: u32,
     stage: wgpu::ShaderStages,
     ty: wgpu::TextureSampleType,
@@ -115,7 +115,7 @@ fn sampled(
     binding::texture(slot, stage, ty, wgpu::TextureViewDimension::D2)
 }
 
-fn write(slot: u32, format: wgpu::TextureFormat) -> wgpu::BindGroupLayoutEntry {
+pub(super) fn write(slot: u32, format: wgpu::TextureFormat) -> wgpu::BindGroupLayoutEntry {
     binding::storage_texture(
         slot,
         COMPUTE,
@@ -125,7 +125,7 @@ fn write(slot: u32, format: wgpu::TextureFormat) -> wgpu::BindGroupLayoutEntry {
     )
 }
 
-fn view_entry(slot: u32, view: &wgpu::TextureView) -> wgpu::BindGroupEntry<'_> {
+pub(super) fn view_entry(slot: u32, view: &wgpu::TextureView) -> wgpu::BindGroupEntry<'_> {
     wgpu::BindGroupEntry {
         binding: slot,
         resource: wgpu::BindingResource::TextureView(view),
@@ -464,7 +464,7 @@ impl SoftTarget {
                 tlas.clone(),
                 std::array::from_fn(|side| {
                     scene
-                        .create_ray_light_groups(tlas, Some((self, side)))
+                        .create_ray_light_groups(tlas, Some((self, side)), None)
                         .expect("traced Sun lights")
                 }),
             ));
@@ -473,7 +473,10 @@ impl SoftTarget {
     }
 }
 
-fn descriptor([width, height]: [u32; 2], format: wgpu::TextureFormat) -> ResourceDescriptor {
+pub(super) fn descriptor(
+    [width, height]: [u32; 2],
+    format: wgpu::TextureFormat,
+) -> ResourceDescriptor {
     ResourceDescriptor::Texture {
         dimension: TextureKind::D2,
         width,
@@ -486,7 +489,7 @@ fn descriptor([width, height]: [u32; 2], format: wgpu::TextureFormat) -> Resourc
     }
 }
 
-fn history_views(
+pub(super) fn history_views(
     device: &wgpu::Device,
     label: &str,
     [width, height]: [u32; 2],

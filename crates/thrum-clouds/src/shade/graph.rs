@@ -4,13 +4,18 @@ use thrum_render::{
     graph::{AccessKind as A, ResourceDescriptor as D, ResourceScope as S, TextureKind as K},
 };
 
-pub(super) fn declaration(gpu: &Prepared, epoch: u64) -> (EffectGraph, usize) {
+pub(super) fn declaration(
+    gpu: &Prepared,
+    epoch: u64,
+    ground: &wgpu::Texture,
+    mapping: &wgpu::Buffer,
+) -> (EffectGraph, usize) {
     let textures: Vec<_> = gpu
         .weather
         .textures()
         .iter()
         .chain(gpu.sun.products())
-        .chain(std::iter::once(gpu.sun.ground()))
+        .chain(std::iter::once(ground))
         .collect();
     let mut resources: Vec<_> = textures
         .iter()
@@ -37,8 +42,8 @@ pub(super) fn declaration(gpu: &Prepared, epoch: u64) -> (EffectGraph, usize) {
         .collect();
     resources.push((
         D::Buffer {
-            bytes: gpu.sun.mapping().size(),
-            usage: gpu.sun.mapping().usage(),
+            bytes: mapping.size(),
+            usage: mapping.usage(),
         },
         S::Persistent {
             owner: 7,
@@ -146,7 +151,7 @@ pub(super) fn declaration(gpu: &Prepared, epoch: u64) -> (EffectGraph, usize) {
             passes,
             opaque_reads: vec![
                 access(6, 0..1, A::SampledRead),
-                access(7, 0..gpu.sun.mapping().size(), A::UniformRead),
+                access(7, 0..mapping.size(), A::UniformRead),
             ],
             view_volume_media: Vec::new(),
             sun_paths: vec![SunPathResources {

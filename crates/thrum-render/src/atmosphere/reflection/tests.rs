@@ -51,7 +51,7 @@ fn check_consumer(@builtin(global_invocation_id) id: vec3<u32>) {
     if id.x>=arrayLength(&queries) { return; }
     let q=queries[id.x];
     let view=vec3(sqrt(max(0.0,1.0-q.w*q.w)),0.0,q.w);
-    output[id.x]=vec4(indirect_radiance(vec3(q.x),q.y,q.z,vec3(0.0,0.0,1.0),view,1.0,vec3(0.0),vec4(0.0)),1.0);
+    output[id.x]=vec4(indirect_radiance(vec3(q.x),q.y,q.z,vec3(0.0,0.0,1.0),view,1.0,vec3(0.0),vec4(0.0),1.0),1.0);
 }
 "
 );

@@ -107,6 +107,10 @@ pub(crate) struct Layer {
 }
 
 impl Layer {
+    pub(crate) fn inherit_history(&mut self, accepted: &mut Self) {
+        std::mem::swap(&mut self.temporal.clock, &mut accepted.temporal.clock);
+    }
+
     pub(crate) fn append_graph(
         &self,
         graph: &mut EffectGraph,

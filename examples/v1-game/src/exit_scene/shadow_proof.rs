@@ -16,6 +16,8 @@ pub enum SunProofGeometry {
     Off,
     /// A low opaque caster on a short, fast drift.
     Fast,
+    /// A low caster that clears a still ambient receiver for the rest of the take.
+    Ambient,
     /// An open shell and a panel in one mesh.
     Joined,
     /// The same open shell and panel in separate instances.
@@ -38,21 +40,28 @@ impl SunProofGeometry {
     }
 
     pub(crate) fn drift(self, index: usize, authored: Option<Drift>) -> Option<Drift> {
-        if self == Self::Fast && index == FAST_SLOT {
-            Some(Drift([-0.8, 241.4, -13.4], [2.8, 0.0, 0.45], 42, 0))
-        } else {
-            authored
+        if index != FAST_SLOT {
+            return authored;
+        }
+        match self {
+            Self::Fast => Some(Drift([-0.8, 241.4, -13.4], [2.8, 0.0, 0.45], 42, 0)),
+            Self::Ambient => Some(Drift([-29.0, 241.4, -13.4], [31.0, 0.0, 0.0], 360, 0)),
+            _ => authored,
         }
     }
 
     pub(crate) fn prepare(self, scene: &mut SyntheticScene) {
-        if self == Self::Fast {
+        if matches!(self, Self::Fast | Self::Ambient) {
             let mut caster = instance(scene, FAST_SLOT);
             for (axis, value) in [0.30_f32, 0.14, 0.24].into_iter().enumerate() {
                 caster.current[axis][axis] = value;
                 caster.normal[axis][axis] = value.recip();
             }
-            let position = self.drift(FAST_SLOT, None).expect("fast drift").at(0).0;
+            let position = self
+                .drift(FAST_SLOT, None)
+                .expect("authored proof drift")
+                .at(0)
+                .0;
             #[expect(
                 clippy::cast_possible_truncation,
                 reason = "authored valley positions fit f32"

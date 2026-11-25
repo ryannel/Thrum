@@ -20,17 +20,46 @@ fn validate_profile(profile: SkyProfile, max_extent: u32) -> Result<(), Error> {
     Ok(())
 }
 
+fn transport_textures(device: &wgpu::Device, extent: [u32; 2]) -> [wgpu::Texture; 2] {
+    std::array::from_fn(|_| {
+        device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("cloud layer transport"),
+            size: wgpu::Extent3d {
+                width: extent[0].div_ceil(2),
+                height: extent[1].div_ceil(2),
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Rgba16Float,
+            usage: wgpu::TextureUsages::STORAGE_BINDING
+                | wgpu::TextureUsages::TEXTURE_BINDING
+                | wgpu::TextureUsages::COPY_SRC,
+            view_formats: &[],
+        })
+    })
+}
+
 impl Layer {
     pub(crate) fn new(
         surface: &SceneSurface<'_>,
         weather: &WeatherMap,
         sun: &crate::SunPath,
+        mapping: &wgpu::Buffer,
         profile: SkyProfile,
         shapes: Option<&crate::shapes::Shapes>,
-    ) -> Result<Self, Error> {
+        accepted: Option<&Self>,
+    ) -> Result<(Self, Option<wgpu::CommandBuffer>), Error> {
         validate_profile(profile, surface.limits.max_texture_dimension_2d)?;
         let device = surface.device;
-        let detail_noise = Noise::new(device, DETAIL_SIZE, "cloud detail noise");
+        let (detail_noise, initialization) = if let Some(layer) = accepted {
+            (layer.detail_noise.clone(), None)
+        } else {
+            let noise = Noise::new(device, DETAIL_SIZE, "cloud detail noise");
+            let command = noise.prepare(device, weather.seed(), "detail");
+            (noise, Some(command))
+        };
         let environment = surface.environment_products().ok_or(Error::Unsupported(
             "cloud Sky requires the physical environment",
         ))?;
@@ -41,24 +70,10 @@ impl Layer {
             mapped_at_creation: false,
         });
         let lighting = super::light::Lighting::new(surface, weather, &environment)?;
-        let textures = std::array::from_fn(|_| {
-            device.create_texture(&wgpu::TextureDescriptor {
-                label: Some("cloud layer transport"),
-                size: wgpu::Extent3d {
-                    width: profile.extent[0].div_ceil(2),
-                    height: profile.extent[1].div_ceil(2),
-                    depth_or_array_layers: 1,
-                },
-                mip_level_count: 1,
-                sample_count: 1,
-                dimension: wgpu::TextureDimension::D2,
-                format: wgpu::TextureFormat::Rgba16Float,
-                usage: wgpu::TextureUsages::STORAGE_BINDING
-                    | wgpu::TextureUsages::TEXTURE_BINDING
-                    | wgpu::TextureUsages::COPY_SRC,
-                view_formats: &[],
-            })
-        });
+        let textures = accepted.map_or_else(
+            || transport_textures(device, profile.extent),
+            |layer| layer.textures.clone(),
+        );
         let uniform_entry = binding::uniform(
             0,
             wgpu::ShaderStages::COMPUTE | wgpu::ShaderStages::FRAGMENT,
@@ -146,7 +161,7 @@ impl Layer {
         }));
         entries.push(wgpu::BindGroupEntry {
             binding: 8,
-            resource: sun.mapping().as_entire_binding(),
+            resource: mapping.as_entire_binding(),
         });
         entries.push(wgpu::BindGroupEntry {
             binding: 9,
@@ -204,28 +219,34 @@ impl Layer {
             |binding, storage| texture_entry(binding, storage, false),
             &input,
         );
-        let temporal = super::temporal::Temporal::new(surface, &params, &textures, &compose_layout);
-        surface
-            .queue
-            .submit([detail_noise.prepare(device, weather.seed(), "detail")]);
-        Ok(Self {
-            profile,
-            environment,
-            lighting,
-            temporal,
-            committed: None,
-            pending: None,
-            ordinal: 0,
-            trace_stride: 1,
-            params,
-            queue: surface.queue.clone(),
-            textures,
-            detail_noise,
-            trace,
-            compose,
-            trace_group,
-            compose_group,
-        })
+        let temporal = super::temporal::Temporal::new(
+            surface,
+            &params,
+            &textures,
+            &compose_layout,
+            accepted.map(|layer| &layer.temporal),
+        );
+        Ok((
+            Self {
+                profile,
+                environment,
+                lighting,
+                temporal,
+                committed: accepted.and_then(|layer| layer.committed),
+                pending: None,
+                ordinal: accepted.map_or(0, |layer| layer.ordinal),
+                trace_stride: accepted.map_or(1, |layer| layer.trace_stride),
+                params,
+                queue: surface.queue.clone(),
+                textures,
+                detail_noise,
+                trace,
+                compose,
+                trace_group,
+                compose_group,
+            },
+            initialization,
+        ))
     }
 }
 

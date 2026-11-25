@@ -412,6 +412,7 @@ impl OffscreenTarget {
         first: &Self,
     ) {
         self.share_soft_history(prepared, first);
+        self.share_ambient_history(prepared, first);
         if let (Some(taau), Some(target), Some(source)) =
             (&prepared.taau, &mut self.taau, &first.taau)
         {

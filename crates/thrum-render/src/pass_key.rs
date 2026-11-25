@@ -186,6 +186,7 @@ pub(crate) enum PipelineRole {
     Taau,
     /// One stage of traced Sun visibility.
     SoftSun(u32),
+    Ambient(u32),
     /// The surface present blit.
     Surface,
     /// The scene contribution's compute pass.
@@ -236,6 +237,7 @@ impl PipelineRole {
             Self::TemporalWitness => 0x5441,
             Self::Taau => 0x5450,
             Self::SoftSun(stage) => 0x5355 + stage,
+            Self::Ambient(stage) => 0x414f + stage,
             Self::Surface => 0x5052,
             Self::CasterCull => 0x5343,
             Self::CameraVisibility => 0x5649,
@@ -333,6 +335,7 @@ pub(crate) enum PassKey {
     Taau,
     /// One stage of traced Sun visibility.
     SoftSun(crate::synthetic::SoftSunStage),
+    Ambient(crate::synthetic::AmbientStage),
     /// The scene contribution's upload stage.
     ContributionUpload,
     /// The scene contribution's compute pass.
@@ -404,6 +407,7 @@ impl PassKey {
             Self::TemporalWitness => "temporal input witness",
             Self::Taau => "portable TAAU",
             Self::SoftSun(stage) => stage.name(),
+            Self::Ambient(stage) => stage.name(),
             Self::ContributionUpload => "contribution upload",
             Self::ContributionCompute => "contribution compute",
             Self::AfterOpaqueCopy => "effect refraction copy",
@@ -448,7 +452,9 @@ impl PassKey {
             Self::Exposure | Self::Display | Self::DisplayReferred => TimingCategory::Tone,
             Self::Atmosphere(stage) => stage.timing(),
             Self::TemporalExposure | Self::TemporalWitness | Self::Taau => TimingCategory::Temporal,
-            Self::Effect(_) | Self::AfterOpaque(_) | Self::SoftSun(_) => TimingCategory::Effects,
+            Self::Effect(_) | Self::AfterOpaque(_) | Self::SoftSun(_) | Self::Ambient(_) => {
+                TimingCategory::Effects
+            }
             Self::Secondary { .. } => TimingCategory::SecondaryViews,
             Self::Sprites => TimingCategory::Sprites,
             Self::Surface => TimingCategory::Surface,
@@ -487,6 +493,7 @@ impl PassKey {
             Self::TemporalWitness => PipelineRole::TemporalWitness,
             Self::Taau => PipelineRole::Taau,
             Self::SoftSun(stage) => PipelineRole::SoftSun(stage as u32),
+            Self::Ambient(stage) => PipelineRole::Ambient(stage as u32),
             Self::ContributionCompute => PipelineRole::ContributionCompute,
             Self::Effect(index) => PipelineRole::Effect(index),
             Self::AfterOpaque(index) => PipelineRole::AfterOpaque(index),

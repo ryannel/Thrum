@@ -92,8 +92,19 @@ impl PreparedSynthetic {
             scene.lamp_shadows,
             ray_structure_selection,
         );
+        if scene
+            .ambient_occlusion_radius
+            .is_some_and(|radius| !radius.is_finite() || radius <= 0.0)
+        {
+            return Err(RenderError::InvalidLighting);
+        }
+        let ambient_selection = crate::capabilities::AmbientOcclusionSelection::resolve(
+            scene.ambient_occlusion_radius,
+            ray_structure_selection,
+        );
         let trace_sun = shadow_enabled && shadow_selection.sun == SunShadowMethod::Traced;
         let trace_lights = trace_sun || shadow_selection.lamps;
+        let traced_forward = trace_lights || ambient_selection.radius.is_some();
         let soft_sun_enabled = trace_sun && scene.sun_penumbra;
         let gpu_clusters = (1..=cluster::GPU_MAX_SOURCES).contains(&scene.local_lights.len());
         let clusters = if gpu_clusters {
@@ -124,6 +135,7 @@ impl PreparedSynthetic {
                         + u32::from(scene.sun_optical_depth.is_some())
                         + u32::from(has_ground_band)
                         + 2 * u32::from(soft_sun_enabled)
+                        + u32::from(ambient_selection.radius.is_some())
                     || limits.max_samplers_per_shader_stage < 3 + u32::from(shadow_enabled))
         {
             return Err(AbiError::DeviceLimits.into());
@@ -175,7 +187,7 @@ impl PreparedSynthetic {
             packed_materials.extend_from_slice(&material.pack(&classes)?);
         }
         let packed_instances = PackedInstances::new(&scene.instances, material_count)?;
-        let needs_structure = trace_lights || scene.ray_structure || scene.view.traced_geometry();
+        let needs_structure = traced_forward || scene.ray_structure || scene.view.traced_geometry();
         let ray_structure_selection = if needs_structure {
             ray_structure_selection
         } else if ray_structure_selection == RayStructureSelection::Enabled {
@@ -352,11 +364,19 @@ impl PreparedSynthetic {
             .lamps
             .then(|| raytrace::LampShadows::new(device, queue));
         let soft_sun = soft_sun_enabled.then(|| raytrace::soft::SoftSun::new(device));
-        let light_layout = if trace_lights {
-            light_entries.push(binding::acceleration_structure(
-                15,
-                wgpu::ShaderStages::FRAGMENT,
-            ));
+        let ambient = ambient_selection
+            .radius
+            .map(|radius| raytrace::ambient::Ambient::new(device, radius));
+        let light_layout = if traced_forward {
+            if trace_lights {
+                light_entries.push(binding::acceleration_structure(
+                    15,
+                    wgpu::ShaderStages::FRAGMENT,
+                ));
+            }
+            if ambient.is_some() {
+                light_entries.extend(raytrace::ambient::Ambient::light_entries());
+            }
             if soft_sun.is_some() {
                 light_entries.extend(raytrace::soft::SoftPipelines::light_entries());
             }
@@ -455,6 +475,7 @@ impl PreparedSynthetic {
             device,
             &map_light_layout,
             &exposure_samples,
+            None,
             None,
             None,
             None,
@@ -648,7 +669,7 @@ impl PreparedSynthetic {
             bind_group_layouts: &bind_group_layouts,
             immediate_size: 0,
         });
-        let depth_layout = (trace_lights && camera_mode == CullMode::Occlusion).then(|| {
+        let depth_layout = (traced_forward && camera_mode == CullMode::Occlusion).then(|| {
             device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("synthetic depth prepass"),
                 bind_group_layouts: &[
@@ -661,7 +682,7 @@ impl PreparedSynthetic {
             })
         });
         #[cfg(feature = "creation-counters")]
-        let fail_traced_pipeline = trace_lights && capabilities.fail_traced_pipeline;
+        let fail_traced_pipeline = traced_forward && capabilities.fail_traced_pipeline;
         #[cfg(not(feature = "creation-counters"))]
         let fail_traced_pipeline = false;
         let (shader_source, shader, fragment_entry) = scene_source::prepare(
@@ -674,7 +695,7 @@ impl PreparedSynthetic {
             scene.sun_optical_depth.as_ref(),
             scene_source::SunShadows::from(shadow.is_some()),
             shadow_selection,
-            soft_sun.is_some(),
+            (soft_sun.is_some(), ambient.is_some()),
             fail_traced_pipeline,
         );
         let vertex_entry = camera_culling::vertex_entry(camera_mode);
@@ -871,7 +892,7 @@ impl PreparedSynthetic {
             pipeline_error = scope.pop().await.or(pipeline_error);
         }
         #[cfg(feature = "creation-counters")]
-        if trace_lights && capabilities.fail_traced_pipeline_internal {
+        if traced_forward && capabilities.fail_traced_pipeline_internal {
             let description = String::from("injected native traced pipeline linkage failure");
             pipeline_error = Some(wgpu::Error::Internal {
                 source: Box::new(std::io::Error::other(description.clone())),
@@ -914,6 +935,8 @@ impl PreparedSynthetic {
             shadow_selection,
             lamp_shadows,
             soft_sun,
+            ambient,
+            ambient_selection,
             bucket_route,
             caster_boxes,
             shadow_members,

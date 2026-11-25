@@ -493,7 +493,7 @@ fn shade(input: VertexOutput, receiver: ShadowReceiver, front_facing: bool, shad
     let colour = direct_brdf(surface_base,metalness,roughness,n,
             light.direction_to_light.xyz,v,sun_irradiance(input.world_position)*sun_factor,h,fresnel_power)
         + local_radiance(surface_base,metalness,roughness,n,v,input.world_position,input.position)
-        + indirect_radiance(surface_base,metalness,roughness,n,v,orm.r,input.world_position,input.position)
+        + indirect_radiance(surface_base,metalness,roughness,n,v,orm.r,input.world_position,input.position,ambient_contact(input))
         + material.emissive_cutoff.rgb*emissive.rgb;
     // Keep scene radiance above one. Repair unsupported presentation arithmetic
     // before pre-exposure and bound only to the finite fp16 storage envelope.
