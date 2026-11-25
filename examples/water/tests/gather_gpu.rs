@@ -42,3 +42,34 @@ fn gather_admits_visible_bodies_and_preserves_the_waterless_graph() {
     assert_eq!(rig.host.storage_report(), storage);
 }
 }
+
+thrum_test_support::macos_gpu_test! {
+fn scenery_in_front_of_a_registered_reflection_stays_in_front() {
+    let Some(gpu) = thrum_test_support::gpu("reflection layering", Some(wgpu::Backend::Metal)) else {
+        return;
+    };
+    let view = camera([0.0, 2.0, 0.0], [0.0, 0.0, 8.0], 0.7, 1.0 / 1024.0);
+    // The centre ray reflects from z=8. Its slope is 1:4, so it meets
+    // the low unregistered panel before the registered panel. The direct
+    // camera ray to the taller panel passes above the low one.
+    let near = Panel { centre: [0.0, 0.5, 10.0], half_size: [1.5, 0.16, 0.06], radiant: false };
+    let far = Panel { centre: [0.0, 1.0, 12.0], half_size: [1.2, 0.35, 0.06], radiant: true };
+    let reflected_radiance = |panels: &[Panel]| {
+        let mut rig = Rig::new(&gpu, &view, sun(2.0, 0.000_01), panels, None);
+        let bodies = attach(&mut rig, water(Some((-0.5, [-16.0, -2.0], 32.0)), true));
+        assert!(bodies.publish(&[far.bounds()]));
+        let (scale, image) = rig.scene_colour();
+        let [width, height] = support::optics::EXTENT.map(|size| usize::try_from(size).expect("extent"));
+        image[(height / 2) * width + width / 2][0] / scale
+    };
+    let mut dark = far;
+    dark.radiant = false;
+    let unobstructed = reflected_radiance(&[far]) - reflected_radiance(&[dark]);
+    let obstructed = reflected_radiance(&[near, far]) - reflected_radiance(&[near, dark]);
+    assert!(unobstructed > 100.0, "registered panel signal: {unobstructed}");
+    assert!(
+        obstructed.abs() < 0.15 * unobstructed,
+        "nearer scenery must cover the registered reflection: {obstructed} of {unobstructed}"
+    );
+}
+}
