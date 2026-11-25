@@ -1135,6 +1135,17 @@
         "evidence": "../../.orchestrate/evidence/APPLE-PRESENTATION/WP8/texture-selected-previews/README.md",
         "scope": "Apple Tile MetalFX integration on Mac Metal and the portable background reset on the iPhone simulator. Motion evidence is the builder’s inspection of submitted SDR output."
       },
+      "WP9": {
+        "implementation": "The creation ledger separates initial device preparation, recovery preparation, extent generation builds and play. The launch witness records Naga translation, Metal library and pipeline-state calls, and synchronous MetalFX creation.",
+        "functional_validation": "Mac Metal passed all five prepared paths. Portable TAAU and Apple Tile MetalFX each completed the full moving route with zero shader or pipeline creations after readiness. One deliberately late pipeline registered. Hardware Chrome WebGPU completed the route with zero device shader or pipeline calls after readiness.",
+        "experienced_quality": "The proof records shader and pipeline creation across readiness and transitions.",
+        "platform_performance": {
+          "mac": "Two isolated cold Metal cache launches reached readiness in 4.46 and 4.90 s. The paired warm launches reached readiness in 0.37 and 0.38 s. These instrumented offscreen V1 measurements were taken under shared load and serve as preparation baselines.",
+          "browser": "Hardware WebGPU function and device creation counts."
+        },
+        "evidence": "../../.orchestrate/evidence/APPLE-PRESENTATION/WP9/README.md",
+        "scope": "Offscreen launch and route creation, and Mac Metal renderer transition checks with forced display inputs."
+      },
       "WP16": {
         "implementation": "Each timed frame slot owns one query set while its separate readback resources can finish independently. Metal trial allocations and wgpu timestamp creation run under one process lock. An exhausted ray build probe still records the mesh build.",
         "functional_validation": "All six WP16 items passed on Apple M3 Max Metal. The four named binaries each passed five consecutive runs at 16 test threads.",

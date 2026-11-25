@@ -571,3 +571,9 @@
   byte for byte. The scaler received `setReset: true`. A temporary mutation suppressing the actual
   first-encode reset failed the test while the coordinator still counted one reset.
   [D8.6 target proof](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP8/D8.6-replacement.md)
+
+- 2026-11-25 WP9. Mac Metal passed all five prepared paths and both recipes completed the moving route
+  without shader-module or pipeline creation after readiness. The late pipeline control registered.
+  Hardware Chrome completed the route with zero after-ready device calls to create shaders or pipelines.
+  Two cold and two warm offscreen launch baselines record the Naga, Metal and synchronous MetalFX stages
+  under shared load. [Target evidence](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP9/README.md)
