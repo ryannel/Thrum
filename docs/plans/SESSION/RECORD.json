@@ -898,7 +898,46 @@
     },
     "WP7": {
       "definitions": "fc1317c308d28fb25d89951b1dad597610f5c321ee6f8d29ddb0c69635c32bb9",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "250713d896f995984b004f692cb3d7e733930b35",
+          "review": ".orchestrate/evidence/SESSION/WP7-review.md",
+          "items": {
+            "WP7.1": "pass",
+            "WP7.2": "pass",
+            "WP7.3": "pass",
+            "WP7.4": "pass",
+            "WP7.5": "pass",
+            "WP7.6": "fail",
+            "WP7.7": "pass",
+            "WP7.8": "pass"
+          },
+          "findings": [
+            {
+              "name": "The Mac client does not regain lost playout time after a stall",
+              "item": "WP7.6",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 128794,
+            "cached": 5219712,
+            "output": 14653,
+            "turns": 1
+          },
+          "at": "2026-11-25T09:19:29Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
