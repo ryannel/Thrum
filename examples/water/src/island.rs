@@ -266,7 +266,9 @@ fn island_breaker_section() -> Result<BreakerSection, Box<dyn Error>> {
             // Leave a shared row between the pre-break lift and the throw.
             // Interpolated pitching rows must have one throw at each height.
             let crest_lift = 0.28 * smooth(index / 0.48) * smooth((0.8 - index) / 0.22);
-            let throw = 6.0 * smooth((index - 0.8) / 0.4) * smooth((BORE - index) / 0.85);
+            // Ramp the throw gradually across neighboring sections so the crest ends
+            // stay connected as adjacent parts steepen or settle into the bore.
+            let throw = 4.8 * smooth((index - 0.8) / 0.5) * smooth((BORE - index) / 0.95);
             (0..SAMPLES)
                 .map(|i| {
                     let phase = std::f64::consts::TAU * f64::from(i) / f64::from(SAMPLES);
