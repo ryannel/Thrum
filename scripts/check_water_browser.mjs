@@ -672,10 +672,11 @@ try {
     }
   } else {
     // Page's own RAF timestamps drive the ordinary scene loop; each image is the frame it submitted.
-    const duration=surfInspection?12000:1000;
-    const spacing=surfInspection?100:0;
+    const view=Number(process.env.THRUM_WATER_ISLAND_CAMERA??'0');
+    const offshore=surfInspection&&view===2;
+    const duration=offshore?22000:surfInspection?12000:1000;
+    const spacing=offshore?200:surfInspection?100:0;
     if(surfInspection){
-      const view=Number(process.env.THRUM_WATER_ISLAND_CAMERA??'0');
       assert(Number.isInteger(view)&&view>=0&&view<=8,'invalid surf camera');
       await evaluate(`game.edit_control('camera.island',${view})`);
       result.surf_camera=view;
@@ -721,7 +722,8 @@ try {
       const first=result.frames[0]?.observation_seconds;
       assert(result.frames.every((frame,index)=>index===0||frame.observation_seconds>
         result.frames[index-1].observation_seconds),'surf presentation clock stalled');
-      assert(result.frames.at(-1)?.observation_seconds-first>=10.0,'surf motion covers less than ten seconds');
+      const minimumCoverage=offshore?20:10;
+      assert(result.frames.at(-1)?.observation_seconds-first>=minimumCoverage,'surf motion has incomplete engine time coverage');
       for(const frame of result.frames)frame.elapsed=frame.observation_seconds-first;
     }
     const ids=result.frames.map(f=>Number(/submission=([0-9]+)/.exec(f.frame)[1]));

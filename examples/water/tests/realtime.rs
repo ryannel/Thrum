@@ -31,6 +31,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
     let whitewater = super::whitewater();
     let surf = super::surf_route();
     let route = std::env::var("THRUM_WATER_ROUTE").unwrap_or_default();
+    let island_view = std::env::var("THRUM_WATER_ISLAND_CAMERA").unwrap_or_else(|_| "0".into());
     let mut fleet = None;
     let (game, report) = if let Some(floating) = floating {
         let scene = super::floating_game(floating, true, true, whitewater);
@@ -39,7 +40,10 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
     } else {
         super::proof_game(true)
     };
-    let (extent, interval, opportunities, max_submissions) = if surf {
+    let (extent, interval, opportunities, max_submissions) = if surf && island_view == "2" {
+        // A complete set of unequal breaks takes longer than a nearshore take.
+        ([2560, 1440], 22.0, 5.0, MAX_SUBMISSIONS)
+    } else if surf {
         ([2560, 1440], 12.0, 10.0, MAX_SUBMISSIONS)
     } else if whitewater && route == "stop" {
         ([1280, 720], 72.0, 10.0, 740)
@@ -55,7 +59,6 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
     let mut runtime =
         Offscreen::new(game, &device, &caps, &queue, extent).expect("ordinary game runtime");
     // The island's camera index is a meaning only this capture needs, so it has a variable of its own.
-    let island_view = std::env::var("THRUM_WATER_ISLAND_CAMERA").unwrap_or_else(|_| "0".into());
     if island.is_some() {
         runtime
             .parameters(&format!(r#"{{"camera.island":{island_view}}}"#))
