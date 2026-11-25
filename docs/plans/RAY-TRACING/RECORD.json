@@ -729,7 +729,7 @@
         {
           "verdict": "fail",
           "commit": "b57647e0eda6144a95de4d4cbd0c5f852e328934",
-          "review": ".orchestrate/evidence/RAY-TRACING/WP4-review.md",
+          "review": ".orchestrate/evidence/RAY-TRACING/WP4-review-2.md",
           "items": {
             "WP4.2": "pass",
             "WP4.3": "fail",
@@ -765,6 +765,38 @@
             "turns": 1
           },
           "at": "2026-11-24T23:44:18Z"
+        },
+        {
+          "verdict": "pass",
+          "commit": "168f34792a227de66c4e0996c392c55171b2010a",
+          "review": ".orchestrate/evidence/RAY-TRACING/WP4-review.md",
+          "items": {
+            "WP4.2": "pass",
+            "WP4.3": "pass",
+            "WP4.4": "pass",
+            "WP4.5": "pass",
+            "WP4.6": "pass",
+            "WP4.7": "pass",
+            "WP4.8": "pass",
+            "WP4.9": "pass",
+            "WP4.11": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 123191,
+            "cached": 6016512,
+            "output": 13084,
+            "turns": 1
+          },
+          "at": "2026-11-25T00:34:00Z"
         }
       ],
       "authorised": {
@@ -797,6 +829,13 @@
           "output": 279685,
           "turns": 5
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "168f34792a227de66c4e0996c392c55171b2010a",
+        "review": ".orchestrate/evidence/RAY-TRACING/WP4-review.md",
+        "checked": "38077e1ab2153939362ca6495a74a2a5c1736d0f",
+        "at": "2026-11-25T00:34:00Z"
       }
     },
     "WP5": {
