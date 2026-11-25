@@ -61,6 +61,14 @@ impl Manifest {
         self.generation
     }
 
+    /// Opaque font input metadata for the cooker. Runtime bindings do not use it.
+    pub fn font_inputs(&self) -> Option<&[u8]> {
+        Container::parse(&self.bytes, MANIFEST_MAGIC)
+            .ok()?
+            .slice(manifest_tag::FONT_INPUTS)
+            .ok()
+    }
+
     /// Every entry in key order.
     pub fn entries(&self) -> impl Iterator<Item = ManifestEntry<'_>> {
         let (records, strings) = self.sections();

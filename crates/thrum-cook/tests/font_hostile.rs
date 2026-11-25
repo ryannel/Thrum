@@ -170,6 +170,64 @@ fn font_addition_and_edits_keep_sibling_bindings_and_the_grid_stays_private() {
 }
 
 #[test]
+fn refused_outline_size_allows_a_new_sibling_texture_after_reopen() {
+    let scratch = Scratch::new("font-outline-sibling");
+    let source = scratch.join("source");
+    let store = scratch.join("store");
+    let folder = source.join("hud");
+    font_support::copy(&font_support::fixture("type"), &folder);
+    let description = folder.join("font.json");
+    let outline = |points| {
+        format!(
+            r#"{{"kind":"outline","file":"Roboto-Regular.ttf","sizes":[{{"points":{points}}}],"characters":"AV"}}"#
+        )
+    };
+    std::fs::write(&description, outline(12)).unwrap();
+    let cook = || {
+        let mut cooker = font_support::cooker(source.clone(), store.clone());
+        cooker.cook_all().unwrap()
+    };
+    let head = cook().published.unwrap();
+    let reader = thrum_asset::AssetStore::new(store.clone());
+    let font_hash = |manifest: &thrum_asset::Manifest| {
+        manifest
+            .resolve("hud", &[Profile::Portable])
+            .unwrap()
+            .product
+    };
+    let original = font_hash(&reader.load_manifest(&head).unwrap());
+    std::fs::write(&description, outline(0)).unwrap();
+    let refused = |report: &thrum_cook::CookReport| {
+        assert!(report.failed.iter().any(|(name, reason)| {
+            name == "hud" && reason.contains("font size must be positive")
+        }));
+    };
+    let report = cook();
+    refused(&report);
+    assert!(report.published.is_none());
+
+    thrum_cook::demo::write_checker_png(&folder.join("badge.png"), 4, [80, 40, 20]).unwrap();
+    let report = cook();
+    refused(&report);
+    let next = report
+        .published
+        .expect("the new badge publishes during refusal");
+    assert_eq!(reader.read_head().unwrap(), Some(next));
+    let manifest = reader.load_manifest(&next).unwrap();
+    assert_eq!(font_hash(&manifest), original);
+    for profile in Profile::ALL {
+        assert!(manifest.resolve("hud/badge", &[profile]).is_some());
+    }
+    std::fs::write(&description, outline(12)).unwrap();
+    let report = cook();
+    assert!(report.failed.is_empty());
+    assert!(
+        report.published.is_none(),
+        "both products are already published"
+    );
+}
+
+#[test]
 fn refused_grid_rename_preserves_the_last_manifest_even_after_reopen() {
     let scratch = Scratch::new("font-grid-rename");
     let source = scratch.join("source");
@@ -220,6 +278,10 @@ fn refused_grid_rename_preserves_the_last_manifest_even_after_reopen() {
 
     thrum_cook::demo::write_checker_png(&icon, 4, [20, 80, 40]).expect("still an invalid grid");
     thrum_cook::demo::write_checker_png(&badge, 4, [80, 20, 40]).expect("independent badge edit");
+    thrum_cook::demo::write_checker_png(&folder.join("new.png"), 4, [40, 80, 20])
+        .expect("independent new texture");
+    drop(cooker);
+    let mut cooker = font_support::cooker(source, store);
     let badge_head = cooker
         .cook_all()
         .expect("independent edit can still publish")
@@ -245,6 +307,7 @@ fn refused_grid_rename_preserves_the_last_manifest_even_after_reopen() {
             product(&original_manifest, "hud/badge")
         );
         assert!(badge_manifest.resolve("hud/grid", &[profile]).is_none());
+        assert!(badge_manifest.resolve("hud/new", &[profile]).is_some());
     }
 
     let mut pixels = image::open(folder.join("grid.png"))

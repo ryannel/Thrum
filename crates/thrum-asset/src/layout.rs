@@ -163,6 +163,8 @@ pub mod manifest_tag {
     pub const ENTRIES: [u8; 4] = *b"ENTR";
     /// UTF-8 logical names referenced by entries.
     pub const STRINGS: [u8; 4] = *b"STRS";
+    /// Optional cooker metadata for the font inputs committed with these entries.
+    pub const FONT_INPUTS: [u8; 4] = *b"FINS";
 }
 
 /// Manifest-wide facts.

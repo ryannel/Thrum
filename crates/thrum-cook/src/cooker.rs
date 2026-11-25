@@ -82,11 +82,17 @@ struct CookPlan {
     fonts: BTreeMap<PathBuf, FontBindings>,
 }
 
-/// The input a font may claim and the PNG bindings that discovery may expose.
+/// The input a font may claim and the private PNG bindings discovery may expose.
 struct FontBindings {
     input: Option<PathBuf>,
-    unpublished_pngs: Vec<String>,
+    private_pngs: Vec<String>,
 }
+
+/// A font's last published private texture binding, or None for a non-texture input.
+/// A font missing from the map was published by a cooker that did not record this information.
+type FontInputs = BTreeMap<String, Option<String>>;
+
+type Products = BTreeMap<Binding, (ProductKind, Product)>;
 
 /// One cook job: produce `profile`'s product for an asset from these inputs.
 struct Job {
@@ -116,7 +122,8 @@ pub struct Cooker {
     /// Action keys a profile refused, with the reason, so unchanged sources are not re-decoded.
     refusals: HashMap<ContentHash, String>,
     gltf_buffers: HashMap<ContentHash, Vec<String>>,
-    published: BTreeMap<Binding, (ProductKind, Product)>,
+    published: Products,
+    published_font_inputs: FontInputs,
     /// Products whose bytes this process has verified against their names.
     verified: HashSet<ContentHash>,
     generation: u64,
@@ -146,6 +153,7 @@ impl Cooker {
             refusals: HashMap::new(),
             gltf_buffers: HashMap::new(),
             published: BTreeMap::new(),
+            published_font_inputs: BTreeMap::new(),
             verified: HashSet::new(),
             generation: 0,
             retry: false,
@@ -203,6 +211,27 @@ impl Cooker {
             .collect();
         self.verified
             .extend(self.published.values().map(|(_, product)| product.hash));
+        self.published_font_inputs = manifest
+            .font_inputs()
+            .and_then(|bytes| serde_json::from_slice(bytes).ok())
+            .unwrap_or_default();
+        // A legacy outline product identifies itself in its metrics. Only legacy grid
+        // fonts need the conservative fallback until a successful cook records the input.
+        for ((name, _), (_, product)) in self
+            .published
+            .iter()
+            .filter(|(_, (kind, _))| *kind == ProductKind::Font)
+        {
+            if !self.published_font_inputs.contains_key(name)
+                && store
+                    .map(&product.hash)
+                    .ok()
+                    .and_then(|bytes| thrum_asset::FontProduct::open(bytes).ok())
+                    .is_some_and(|font| font.sizes()[0].pixel == 0)
+            {
+                self.published_font_inputs.insert(name.clone(), None);
+            }
+        }
     }
 
     /// Current publication generation (zero before the first publish).
@@ -369,7 +398,7 @@ impl Cooker {
         if !failed_sheets.is_empty() {
             products.retain(|(name, _), _| !failed_sheets.contains(name));
         }
-        self.retain_refused_font_bindings(&mut products, fonts);
+        let mut font_inputs = self.resolve_font_bindings(&mut products, fonts);
         // Keep serving the last good products of any asset that failed to plan or cook, except
         // those its current source refuses.
         for (name, _) in &failed {
@@ -383,11 +412,13 @@ impl Cooker {
                 }
             }
         }
+        font_inputs.retain(|name, _| has_font(&products, name));
         report.cook_time = start.elapsed();
         let start = Instant::now();
-        if products != self.published {
-            report.published = Some(self.publish(&products)?);
+        if products != self.published || font_inputs != self.published_font_inputs {
+            report.published = Some(self.publish(&products, &font_inputs)?);
             self.published = products;
+            self.published_font_inputs = font_inputs;
         }
         self.stat.save(&self.config.store.join("stat-cache.bin"))?;
         report.publish_time = start.elapsed();
@@ -402,21 +433,24 @@ impl Cooker {
         Ok(report)
     }
 
-    fn retain_refused_font_bindings(
+    fn resolve_font_bindings(
         &self,
-        products: &mut BTreeMap<Binding, (ProductKind, Product)>,
+        products: &mut Products,
         fonts: BTreeMap<PathBuf, FontBindings>,
-    ) {
+    ) -> FontInputs {
+        let mut font_inputs = self.published_font_inputs.clone();
         for (folder, bindings) in fonts {
-            if products
-                .get(&(logical_name(&folder), Profile::Portable))
-                .is_some_and(|(kind, _)| *kind == ProductKind::Font)
-            {
+            let input = bindings
+                .input
+                .as_deref()
+                .and_then(classify)
+                .and_then(|(name, kind, _)| (kind == ProductKind::Texture).then_some(name));
+            let name = logical_name(&folder);
+            if has_font(products, &name) {
+                font_inputs.insert(name, input);
                 continue;
             }
-            // HEAD records which PNGs were public. A newly discovered PNG could be the
-            // old font input, so defer exposing it until the new font can take ownership.
-            for name in bindings.unpublished_pngs {
+            for name in bindings.private_pngs {
                 for &profile in &self.config.profiles {
                     let binding = (name.clone(), profile);
                     if products
@@ -427,9 +461,7 @@ impl Cooker {
                     }
                 }
             }
-            if let Some(input) = bindings.input
-                && let Some((name, ProductKind::Texture, _)) = classify(&input)
-            {
+            if let Some(name) = input {
                 // Discovery hid the proposed input. Only a successful font may take its
                 // previously public bindings away, even if the input bytes also changed.
                 for (binding, previous) in self
@@ -442,6 +474,7 @@ impl Cooker {
                 }
             }
         }
+        font_inputs
     }
 
     fn plan(&mut self) -> CookPlan {
@@ -467,7 +500,7 @@ impl Cooker {
                         parent.to_path_buf(),
                         FontBindings {
                             input,
-                            unpublished_pngs: Vec::new(),
+                            private_pngs: Vec::new(),
                         },
                     );
                 }
@@ -493,18 +526,16 @@ impl Cooker {
             if let Some((name, kind, linear)) = classify(path) {
                 if kind == ProductKind::Texture
                     && sheet::is_png(path)
-                    && let Some(font) = path.parent().and_then(|parent| plan.fonts.get_mut(parent))
+                    && let Some(parent) = path.parent()
+                    && let Some(font) = plan.fonts.get_mut(parent)
+                    && self.could_be_private_font_input(parent, &name)
                     && !self
                         .published
                         .range((name.clone(), Profile::Portable)..)
                         .take_while(|((published, _), _)| published == &name)
                         .any(|(_, (kind, _))| *kind == ProductKind::Texture)
                 {
-                    // A malformed description has no proposed input and cannot cook at all.
-                    if font.input.is_none() {
-                        continue;
-                    }
-                    font.unpublished_pngs.push(name.clone());
+                    font.private_pngs.push(name.clone());
                 }
                 sources
                     .entry(name)
@@ -582,6 +613,16 @@ impl Cooker {
             }
         }
         plan
+    }
+
+    fn could_be_private_font_input(&self, folder: &Path, texture: &str) -> bool {
+        let font = logical_name(folder);
+        match self.published_font_inputs.get(&font) {
+            Some(input) => input.as_deref() == Some(texture),
+            // Older grid publications did not record their input. Until a valid cook
+            // identifies it, an unpublished PNG could still belong to that font.
+            None => has_font(&self.published, &font),
+        }
     }
 
     fn mesh_buffers(&mut self, path: &Path, hash: ContentHash) -> Result<Vec<PathBuf>, CookError> {
@@ -734,10 +775,11 @@ impl Cooker {
 
     fn publish(
         &mut self,
-        products: &BTreeMap<Binding, (ProductKind, Product)>,
+        products: &Products,
+        font_inputs: &FontInputs,
     ) -> Result<Head, CookError> {
         let generation = self.generation + 1;
-        let bytes = encode_manifest(generation, products)?;
+        let bytes = encode_manifest(generation, products, font_inputs)?;
         // Prove the runtime accepts it before anyone can select it.
         Manifest::parse(thrum_asset::ProductBytes::copy_from(&bytes))?;
         let manifest = self.cas.put(&bytes)?;
@@ -750,6 +792,12 @@ impl Cooker {
         self.generation = generation;
         Ok(head)
     }
+}
+
+fn has_font(products: &Products, name: &str) -> bool {
+    products
+        .get(&(name.to_owned(), Profile::Portable))
+        .is_some_and(|(kind, _)| *kind == ProductKind::Font)
 }
 
 /// Logical name, kind and linear flag for a source path, or `None` if it is not an asset root.
@@ -836,7 +884,8 @@ fn validate(kind: ProductKind, bytes: &[u8]) -> Result<(), CookError> {
 
 fn encode_manifest(
     generation: u64,
-    products: &BTreeMap<Binding, (ProductKind, Product)>,
+    products: &Products,
+    font_inputs: &FontInputs,
 ) -> Result<Vec<u8>, CookError> {
     let mut strings = Vec::new();
     let mut offsets: HashMap<&str, (u32, u16)> = HashMap::new();
@@ -874,11 +923,16 @@ fn encode_manifest(
         entry_count: u32::try_from(records.len()).unwrap_or(u32::MAX),
         reserved: [0; 13],
     };
-    Ok(ContainerWriter::new(MANIFEST_MAGIC)
+    let mut writer = ContainerWriter::new(MANIFEST_MAGIC)
         .section(manifest_tag::META, &[meta])
         .section(manifest_tag::ENTRIES, &records)
-        .section(manifest_tag::STRINGS, &strings)
-        .finish())
+        .section(manifest_tag::STRINGS, &strings);
+    if !font_inputs.is_empty() {
+        let bytes = serde_json::to_vec(font_inputs)
+            .map_err(|error| CookError::Source(format!("font inputs: {error}")))?;
+        writer = writer.section(manifest_tag::FONT_INPUTS, &bytes);
+    }
+    Ok(writer.finish())
 }
 
 /// Highest generation among manifests still in the store; used only when `HEAD` is unreadable.
