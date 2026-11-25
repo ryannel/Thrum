@@ -203,13 +203,13 @@ impl NativePreparation {
         &mut self,
         site: &crate::runtime::DeviceSite,
         counted: bool,
-        prepare: impl FnOnce() -> Result<T, E>,
+        prepare: impl FnOnce() -> Result<(T, std::time::Duration), E>,
     ) -> Option<T> {
         if self.twin.is_some() {
             return None;
         }
-        if let Ok(provider) = prepare() {
-            site.native_prepared(counted);
+        if let Ok((provider, elapsed)) = prepare() {
+            site.native_prepared(counted, elapsed);
             Some(provider)
         } else {
             self.twin = Some(TwinReason::PreparationRefused);

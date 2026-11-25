@@ -18,8 +18,8 @@ from t2_load import LoadRecord
 RECONSTRUCTION = {"portable": ("taau", "Taau"), "apple-tile": ("metalfx", "MetalFx")}
 STAGES = ("wgsl_parse", "wgsl_validate", "wgsl_specialize", "wgsl_to_msl",
           "msl_compile", "pipeline_state", "shader_module", "metalfx")
-READY = re.compile(r"^THRUM_METAL_READY (\d+) (\d+)$")
-FINISHED = re.compile(r"^THRUM_METAL_FINISHED (\d+) (\d+)$")
+READY = re.compile(r"^THRUM_METAL_READY (\d+) (\d+) (\d+) (\d+)$")
+FINISHED = re.compile(r"^THRUM_METAL_FINISHED (\d+) (\d+) (\d+)$")
 STAGE = re.compile(r"^THRUM_METAL_STAGE (\w+) (\d+)$")
 CACHE = re.compile(r"^THRUM_METAL_CACHE (.+)$")
 
@@ -53,7 +53,7 @@ def witness(output, binary, env, recipe, proof, cache=None):
     select, expected = RECONSTRUCTION[recipe]
     launch = dict(env, THRUM_RECIPE=recipe, THRUM_RECONSTRUCTION=select,
                   THRUM_CAPTURE_SCENE=str(capture), THRUM_CAPTURE_ROUTE=str(MOVING_ROUTE),
-                  THRUM_CREATION_PROOF=proof, THRUM_METAL_STAGE_RECORD="1")
+                  THRUM_CREATION_PROOF=proof)
     if cache:
         library, directory = cache
         launch.update(DYLD_INSERT_LIBRARIES=str(library), THRUM_METAL_CACHE_PATH=str(directory))
@@ -81,7 +81,7 @@ def witness(output, binary, env, recipe, proof, cache=None):
              if (match := READY.fullmatch(line))]
     if len(ready) != 1:
         raise ValueError(f"expected one host readiness marker in {output}")
-    boundary, now, generation = ready[0]
+    boundary, now, generation, metalfx_calls, metalfx_ns = ready[0]
     rows = [(index, match[1], int(match[2])) for index, line in enumerate(lines)
             if (match := STAGE.fullmatch(line))]
     before = {stage: [ns for index, name, ns in rows if index < boundary and name == stage]
@@ -91,16 +91,20 @@ def witness(output, binary, env, recipe, proof, cache=None):
         raise ValueError("unknown Metal boundary event")
     if any(not before[stage] for stage in STAGES if stage != "metalfx"):
         raise ValueError(f"missing startup stage in {output}: {list(map(len, before.values()))}")
-    if len(before["metalfx"]) != int(recipe == "apple-tile"):
-        raise ValueError(f"MetalFX did not run in its selected launch arm: {before['metalfx']}")
+    if metalfx_calls != int(recipe == "apple-tile"):
+        raise ValueError(f"MetalFX count did not match the selected launch arm: {metalfx_calls}")
     finished = [list(map(int, match.groups())) for line in lines
                 if (match := FINISHED.fullmatch(line))]
+    if len(finished) == 1:
+        after["metalfx"] += finished[0][2]
+    stage_totals = {stage: {"calls": len(times), "ns": sum(times)} for stage, times in before.items()}
+    stage_totals["metalfx"] = {"calls": metalfx_calls, "ns": metalfx_ns}
     reported_cache = [match[1] for line in lines if (match := CACHE.fullmatch(line))]
     if cache and reported_cache != [str(cache[1])]:
         raise ValueError(f"Metal did not attest the selected cache: {reported_cache} vs {cache[1]}")
     return dict(pid=process.pid, host_launch_epoch_ns=started, ready_epoch_ns=now,
                 launch_to_ready_ns=now - started, device_generation=generation, header=header,
-                stages={stage: {"calls": len(times), "ns": sum(times)} for stage, times in before.items()},
+                stages=stage_totals,
                 wgsl_translation_ns=sum(sum(times) for stage, times in before.items() if stage.startswith("wgsl_")),
                 after_ready=dict.fromkeys(STAGES, 0) | dict(after), finished=finished,
                 cache_path=reported_cache[0] if reported_cache else None, load=observed_load,

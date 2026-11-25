@@ -8,6 +8,7 @@ use objc2::{
     sel,
 };
 use objc2_metal::MTLPixelFormat;
+use std::time::Duration;
 
 // The iOS Simulator SDK omits MetalFX. Keep the prepared TAAU path linkable.
 #[cfg(not(target_abi = "sim"))]
@@ -48,7 +49,7 @@ impl Scaler {
         device: &wgpu::Device,
         [width, height]: [u32; 2],
         probe: MetalFxProbe,
-    ) -> Result<Self, ()> {
+    ) -> Result<(Self, Duration), ()> {
         #[cfg(not(feature = "creation-counters"))]
         let _ = probe;
         if cfg!(target_abi = "sim") {
@@ -91,21 +92,25 @@ impl Scaler {
             let _: () = msg_send![&*descriptor, setInputContentMinScale: 1.0_f32];
             let _: () = msg_send![&*descriptor, setInputContentMaxScale: 2.0_f32];
             #[cfg(feature = "creation-counters")]
-            let started =
-                std::env::var_os("THRUM_METAL_STAGE_RECORD").map(|_| std::time::Instant::now());
+            let started = std::time::Instant::now();
             let scaler: Option<Retained<AnyObject>> =
                 msg_send![&*descriptor, newTemporalScalerWithDevice: &**metal];
             #[cfg(feature = "creation-counters")]
-            if let Some(started) = started {
-                eprintln!("THRUM_METAL_STAGE metalfx {}", started.elapsed().as_nanos());
-            }
+            let elapsed = started.elapsed();
+            #[cfg(not(feature = "creation-counters"))]
+            let elapsed = Duration::ZERO;
             scaler
-                .map(|inner| Self {
-                    inner,
-                    #[cfg(feature = "creation-counters")]
-                    probe,
-                    #[cfg(feature = "creation-counters")]
-                    last_reset: None,
+                .map(|inner| {
+                    (
+                        Self {
+                            inner,
+                            #[cfg(feature = "creation-counters")]
+                            probe,
+                            #[cfg(feature = "creation-counters")]
+                            last_reset: None,
+                        },
+                        elapsed,
+                    )
                 })
                 .ok_or(())
         }

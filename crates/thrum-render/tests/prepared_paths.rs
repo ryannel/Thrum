@@ -1,5 +1,4 @@
 //! Mac Metal preparation, with platform facts forced at their renderer boundary.
-#![cfg(target_os = "macos")]
 mod support;
 
 use std::{io::Write, sync::atomic::AtomicBool, time::Duration};
@@ -26,7 +25,10 @@ fn lighting() -> FrameLighting {
     FrameLighting::Diagnostic(SyntheticLight::default())
 }
 
-fn open(name: &str) -> Opened {
+fn open(name: &str) -> Option<Opened> {
+    if !cfg!(target_os = "macos") {
+        return None;
+    }
     let mut gpu = thrum_test_support::open(
         name,
         Some(wgpu::Backend::Metal),
@@ -38,7 +40,7 @@ fn open(name: &str) -> Opened {
         .capabilities
         .with_recipe_override("apple-tile")
         .expect("Apple tile");
-    gpu
+    Some(gpu)
 }
 
 fn ready(gpu: &Opened) -> support::Host {
@@ -90,7 +92,9 @@ fn unchanged_creations(before: &CreationReport, after: &CreationReport) {
 
 #[test]
 fn replaced_drawable_reuses_ready_scene_and_history() {
-    let gpu = open("surface replacement");
+    let Some(gpu) = open("surface replacement") else {
+        return;
+    };
     // AppKit's same-extent lease replacement supplies a new drawable. The
     // renderer consumes the new binding at encode time.
     let old = support::drawable(&gpu.device, FORMAT, EXTENT);
@@ -110,7 +114,9 @@ fn replaced_drawable_reuses_ready_scene_and_history() {
 
 #[test]
 fn forced_refresh_changes_the_budget_and_keeps_render_quality() {
-    let gpu = open("refresh change");
+    let Some(gpu) = open("refresh change") else {
+        return;
+    };
     let output = support::drawable(&gpu.device, FORMAT, EXTENT);
     let mut host = ready(&gpu);
     let display = DisplayRecord {
@@ -143,7 +149,9 @@ fn forced_refresh_changes_the_budget_and_keeps_render_quality() {
 
 #[test]
 fn forced_display_move_updates_only_headroom() {
-    let gpu = open("display move");
+    let Some(gpu) = open("display move") else {
+        return;
+    };
     let output = support::drawable(&gpu.device, FORMAT, EXTENT);
     let mut host = ready(&gpu);
     assert!(host.is_edr());
@@ -172,7 +180,9 @@ fn forced_display_move_updates_only_headroom() {
 
 #[test]
 fn metalfx_resize_builds_only_on_the_extent_worker() {
-    let gpu = open("MetalFX resize");
+    let Some(gpu) = open("MetalFX resize") else {
+        return;
+    };
     let old = support::drawable(&gpu.device, FORMAT, EXTENT);
     let output = support::drawable(&gpu.device, FORMAT, RESIZED);
     let mut host = ready(&gpu);
@@ -220,7 +230,9 @@ fn metalfx_resize_builds_only_on_the_extent_worker() {
 
 #[test]
 fn lost_device_rebuilds_a_separate_generation_before_play() {
-    let gpu = open("device recovery");
+    let Some(gpu) = open("device recovery") else {
+        return;
+    };
     let mut host = ready(&gpu);
     let output = support::drawable(&gpu.device, FORMAT, EXTENT);
     draw(&mut host, &output, EXTENT);

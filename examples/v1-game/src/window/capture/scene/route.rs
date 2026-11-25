@@ -144,6 +144,8 @@ pub(super) fn record(
         }),
     )?;
     #[cfg(feature = "creation-counters")]
+    let mut native_creations_at_ready = 0;
+    #[cfg(feature = "creation-counters")]
     if let Some(arm) = request.creation_proof {
         let report = driver.host().creation_checkpoint();
         if !report.ready || report.frames == 0 {

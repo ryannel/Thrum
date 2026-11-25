@@ -188,6 +188,8 @@ pub struct NativeCreationRow {
     pub label: &'static str,
     /// Successful native provider creations.
     pub count: u64,
+    /// Cumulative time inside the synchronous provider creation call.
+    pub elapsed: std::time::Duration,
 }
 
 /// A live-object delta row: one window owner, phase and region.
@@ -424,7 +426,7 @@ impl DeviceSite {
     }
 
     #[cfg(any(target_os = "macos", target_os = "ios"))]
-    pub(crate) fn native_prepared(&self, counted: bool) {
+    pub(crate) fn native_prepared(&self, counted: bool, elapsed: std::time::Duration) {
         if let Some(ledger) = &self.0.ledger {
             let scope = event_scope(ledger);
             let mut state = ledger.lock();
@@ -438,12 +440,14 @@ impl DeviceSite {
                     .find(|row| row.thread == thread && row.phase == phase && row.label == label)
                 {
                     row.count += 1;
+                    row.elapsed += elapsed;
                 } else {
                     rows.push(NativeCreationRow {
                         thread,
                         phase,
                         label,
                         count: 1,
+                        elapsed,
                     });
                 }
                 if state.report.native == NativeSites::Absent {

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Instrument the locked wgpu-hal Naga/Metal boundaries in a disposable build."""
+"""Instrument the locked wgpu-core and wgpu-hal boundaries in a disposable build."""
 import os
 from pathlib import Path
 import shutil
@@ -19,12 +19,12 @@ def bracket(source, first, last, kind):
     return source[:start] + f'thrum_probe("{kind}", || {body})' + source[end:]
 
 
-TIMER = ''' 
+TIMER = '''
 fn thrum_probe<T>(stage: &str, call: impl FnOnce() -> T) -> T {
     let start = std::time::Instant::now();
     let result = call();
     let elapsed = start.elapsed().as_nanos();
-    eprintln!("THRUM_METAL_STAGE {stage} {elapsed}");
+    std::eprintln!("THRUM_METAL_STAGE {stage} {elapsed}");
     result
 }
 '''

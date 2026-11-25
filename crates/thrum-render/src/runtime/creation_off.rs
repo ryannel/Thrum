@@ -38,7 +38,7 @@ impl DeviceSite {
     }
 
     #[cfg(any(target_os = "macos", target_os = "ios"))]
-    pub(crate) fn native_prepared(&self, _counted: bool) {
+    pub(crate) fn native_prepared(&self, _counted: bool, _elapsed: std::time::Duration) {
         let _ = &self.0;
     }
 
