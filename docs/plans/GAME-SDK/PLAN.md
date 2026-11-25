@@ -8,15 +8,16 @@ A developer or an agent builds a 2D, a 3D or an online game in plain Rust agains
 first, Rust only, I'll approve the design." A design review that returns Design Approved is not that approval;
 the lead starts WP1 when the owner has said yes.
 
+Decided by the owner, 25 November 2026 ("Planner's default"): the first release has 2D queries and sprite
+animation, and no rigid bodies, skeletal animation or audio
+([the design](DESIGN.md#physics-animation-and-audio)).
+
 Read [the game at a glance](DESIGN.md#the-game-at-a-glance), [the worked examples](DESIGN.md#worked-examples),
 [Mechanisms](DESIGN.md#mechanisms), [what a builder may change](DESIGN.md#what-a-builder-may-change) and
 [the seam rulings](../ARCHITECTURE.md#seam-rulings-for-game-sdk) before any work package.
 
 ## Open for the user
 
-- Assumption: the first release has no rigid-body physics. It has 2D touching, nearest and sweep queries, which carry the swarm game and most arcade games; rigid bodies, joints and any 3D collision wait for a physics module planned after it. You can ask for physics in the first release, and its engine module is then built first.
-- Assumption: the first release animates sprites by frame and has no skeletal animation, which needs skinning in the renderer and clips in the cooker, a module of its own.
-- Assumption: the first release has no audio. The engine has none, and no agent can hear a result, so every sound would wait for you. The SDK keeps the place where a sound is played.
 - Assumption: SDK work packages start as soon as you approve the design and are built beside the road to V1, taking a builder only when no V1 work package is waiting for one. The other reading of "V1 first" starts no SDK builder until the exit closes, which leaves the swarm game waiting for the SDK after V1.
 - Assumption: every game's rules use numbers that give the same result on every device, a game played alone included, so turning multiplayer on rewrites nothing. The price is that rules use the SDK's number types and not `f32`, and a game played online cannot use an outside maths or physics library in its rules.
 - Assumption: a game that can be played online keeps its rules in a crate of their own, so they can be checked. A game played alone is one crate.
@@ -24,11 +25,13 @@ Read [the game at a glance](DESIGN.md#the-game-at-a-glance), [the worked example
 - Assumption: the first release leaves out multiplayer for 3D games, gamepads, saved games, entities attached to other entities, scene files and an editor, and a changed rule rebuilds and restarts the game. Sea, clouds and weather join the SDK when their own modules close.
 - Assumption: the starter, stones and the lighthouse are rewritten on the SDK and the sky kit they use is then removed, so there is one way to make a game. That replaces the route milestone G6 delivered.
 - Assumption: three fresh agents prove the documentation, one each for a 2D, a 3D and an online game, each in about 100 game lines, the bar G6 set.
-- Assumption: a game writes one line, `scene.component::<T>()`, for a component it only ever spawns and never names in a rule's or a frame function's parameters. Every other component is found with nothing written. Forgetting the line is reported at the first such spawn, not at startup.
+- Assumption: a game writes one line, `scene.component::<T>()`, for a component it only ever spawns and never names in a rule's or a frame function's parameters. Every other component is found with nothing written. Forgetting the line is reported at the first such spawn, not at startup. A game with multiplayer on also writes it for a component that only a frame function names, and forgetting that one is reported at startup.
 - Assumption: in a match the local player's own character answers at once only when its whole movement is a per-player rule, which reads that character, that player's input and the tick. A character whose movement must read more of the world, such as walls, is shown as the host confirms it.
 - Assumption: a rule that panics cannot be recovered in Chrome, where the game stops with the rule, the tick and the message shown. On the Mac, the iPhone simulator and in a test it is reported with the world intact. A returned error is handled the same everywhere.
 - Assumption: the check of a rule crate guards against ordinary mistakes (a file, a socket, a clock, a raw float, an outside crate) and is not a sandbox. A single-crate game's rules are not checked.
 - Assumption: a nearest query with no radius looks at every collider on the layer it asks, so a game gives a radius on a crowded layer.
+- Assumption: in the first release a 3D model that a rule can move has a colour and a material and no texture. A textured mesh is scenery, which a scene places once and nothing moves, as the showcase's valley is. Textures on models that move need engine work, planned after the first release; you can ask for it sooner.
+- Assumption: when the display cannot take a picture the engine has prepared, the game's code for that picture is not run a second time. An effect started in it is shown in the next picture; something drawn for that one picture only is lost.
 - Assumption: models that turn or change size between ticks need a change to the engine's 3D drawing. It waits for the V1 work packages that hold that code, so the SDK's 3D part can land after its 2D part.
 
 ## WP1 An agent writes a game's entities and rules in plain Rust against one crate, and proves them in an ordinary test with no window
@@ -65,6 +68,9 @@ claimed commit. The input frame's limits are in [the session guide](../../SESSIO
 here so that WP5 can hand it to `SESSION`'s predicted controller unchanged: its function is the character's
 whole movement step, as `PlayerMovement::step` is in the reference crowd, and takes nothing but its character's
 components, its player's input and the tick.
+
+Every package under `examples/crowd-sdk`, a runner of its own included, names `thrum` and no other engine
+crate, because [WP8's guard](DESIGN.md#1-one-crate-two-halves) will cover it.
 
 The conformance runner takes Chrome's lock and the simulator's turns itself, so run WP2.6 and WP2.7 under no
 lock. Register `crowd-sdk`'s witnesses in its conformance entry as `crowd-2d`'s are.

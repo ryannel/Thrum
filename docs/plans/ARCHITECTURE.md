@@ -2759,8 +2759,8 @@ No work package on the road to the exit waits on this module: none of `APPLE-PRE
 
 **Priority.** A `GAME-SDK` work package takes a builder only when no V1 work package is waiting for one, as
 track 5's do. **Shared files.** No `GAME-SDK` work package edits `thrum-render`'s frame runtime, the 3D scene's
-instance passes or `examples/v1-game` while a work package named above is open; where one would have to, it
-waits for that work package. `GAME-SDK`'s planner writes WP4's `depends_on` from this rule when it gives WP4
+instance passes, `thrum-asset-gpu` or `examples/v1-game` while a work package named above is open; where one
+would have to, it waits for that work package. `GAME-SDK`'s planner writes WP4's `depends_on` from this rule when it gives WP4
 its items. Elsewhere its builder integrates on what has landed and keeps the other's tests passing.
 
 ### Seam rulings for GAME-SDK
@@ -2785,8 +2785,11 @@ baseline stays exact. Once built, each belongs to its owner.
    rule, stated to game makers.
 3. **The shells and the tool** (`thrum-app`, which is `CREATOR`'s, `HOST`'s and the platform modules';
    `tools/xtask` and `./dev`). Built in WP3, WP4 and WP7. Whatever the window, the page and the phone shell
-   still assume of the V1 game or the sky kit is made general, so that a game with neither runs. The game
-   commands are added to `./dev`. The sky kit, `./dev starter` and `./dev scene` keep working until WP10.
+   still assume of the V1 game or the sky kit is made general, so that a game with neither runs. The SDK
+   learns whether each picture it encoded was submitted or dropped from the game contract's readback of the
+   frame host, which holds the last submission, with the contract as built; where that falls short on a
+   target, the builder writes a proposal in `HOST`'s log and a planner settles it here. The game commands are
+   added to `./dev`. The sky kit, `./dev starter` and `./dev scene` keep working until WP10.
    This replaces `SWARM`'s rulings 1 and 2: the swarm game changes no engine file.
 4. **The interface and the match** (`GAME-UI`'s `thrum-ui`, `SESSION`'s `thrum-network`). The SDK uses their
    public interfaces as built, in WP5 and WP6. Where one falls short, the builder writes a proposal in that
@@ -2794,12 +2797,26 @@ baseline stays exact. Once built, each belongs to its owner.
 5. **The guard** (`scripts/repo_check.py`, `.config/architecture.toml`, `REPO-RULES`' shape rules,
    `GAME-SPLIT`'s `boundary`). WP1 registers `thrum`. WP2 lets `boundary` admit a path between two packages of
    one game, so a game may keep its rules in a rule crate of its own; a path that leaves the game still has to
-   reach a registered package under the engine's `crates/`. WP8 adds a shape rule through `REPO-RULES`' engine:
-   **a package that names `thrum` names no other engine crate**, in the games repository, the kit games and
-   the templates alike. The rule reaches a game when that game moves onto the SDK and not before. So the
-   showcase passes `boundary` on today's API in `GAME-SPLIT` WP4 whether WP8 has landed or not, and is held to
-   the rule from WP9, the landing that rewrites it. The kit scenes still on the old kit, and the proving
-   ground, name no `thrum` and are untouched by it; no baseline of allowances is kept.
+   reach a registered package under the engine's `crates/`. WP8 adds a shape rule through `REPO-RULES`' engine
+   and `boundary`: **every package of a game, a kit game or a template names no engine crate but `thrum`.**
+   - *Covered:* every package in a games repository, every package under the engine's `templates/` and every
+     package under the engine's `examples/`, a game's rule crate and helper packages included. Coverage comes
+     from where a package is and never from what it names, so a package cannot leave the rule by dropping
+     `thrum`.
+   - *The rule:* none of a covered package's dependencies (ordinary, development, build or for one target,
+     under any alias, from a path, a git address or a registry) is a package registered under the engine's
+     `crates/`, other than `thrum`, and a path of its that leaves its game reaches `thrum` and nothing else.
+   - *Not covered:* the packages `.config/architecture.toml` marks as written on the engine's own API, each
+     with its reason. When WP8 lands: the proving ground and its iPhone app, which keep the engine's API for
+     good, under whatever name `GAME-SPLIT` WP5 gives them; the engine's own proofs under `examples/`
+     (`crowd-2d`, `crowd-2d-run`, `crowd-2d-view`, `link-proof`, `match-proof`, `mirror`, `water`); the old
+     starter, stones and lighthouse, until WP10 removes them and their entries; and the showcase in the games
+     repository, with its iPhone app if that has followed it, named by their folders there, until WP9. A module that adds a proof of its own engine API under
+     `examples/` marks it where it registers it. A game made for game makers is never marked.
+
+   The showcase is on the list whether it has moved or not, so it passes `boundary` on today's API in
+   `GAME-SPLIT` WP4 whichever of that and WP8 lands first. WP9 removes its entry in the landing that rewrites
+   it, and it is held to the rule from then.
 6. **The creator's kit and docs** (`CREATOR`). WP4 writes the starter, stones and the lighthouse on the SDK
    as new kit games and leaves the old ones as built. WP10 removes the old ones with `./dev starter` and
    `./dev scene`, and `thrum_app::sky` if no other module's example uses it, or keeps it and names it in the
@@ -2807,11 +2824,21 @@ baseline stays exact. Once built, each belongs to its owner.
 7. **The showcase in the games repository** (`SHOWCASE`, `GAME-SPLIT`). Built in WP9, in
    `thrum-games/v1-game` only. The exit record is `SHOWCASE`'s and gains a dated note. Nothing of the proving
    ground or the frozen qualification content changes.
-8. **Models that turn and scale** (`thrum-render`: the extraction columns, the entity-row adapter, and every
-   pass that places an instance of the 3D scene, which are `CULLING`'s, `RAY-TRACING`'s and the scene's other
-   owners'). Built in WP4. Today a row carries a position for each of the two ticks and the passes interpolate
-   only that, so a model that turns in place does not move between ticks. The producer side: the extraction
-   and the adapter carry each row's turn and scale at both ticks. The renderer side: the scene's vertex stage,
+8. **Models that turn and scale** (`thrum-render`: the extraction columns, the entity-row adapter, the 3D
+   scene's mesh selection, and every pass that places an entity row of the 3D scene, which are `CULLING`'s,
+   `RAY-TRACING`'s and the scene's other owners'; and `CONTENT-LOOP`'s cooked mesh rows in `thrum-asset-gpu`).
+   Built in WP4. **The path.** An entity's `Model` is drawn as an entity row of the 3D scene and by no other
+   route: its cooked mesh is in the scene's mesh arena through `CONTENT-LOOP`'s cooked mesh rows, as the
+   showcase's 10,000 entities are, and its `Transform3d` is the row's placement. The SDK makes no cooked
+   placement for an entity. The cooked placement (`thrum-asset-gpu`'s `MeshPlacement` record, with one matrix
+   and no tick, and `COOKED-DRAW`'s and `MESH-SHADING`'s draw paths, shadows, culls and ray instances that
+   read it) is used as built for the SDK's scenery, which a scene places once and nothing moves, and is not
+   changed. So the starter's cooked rock, written on the SDK, turns through the rows this ruling changes, and
+   WP4 is judged on that rock and not on a built-in cube. Today a row carries a position for each of the two
+   ticks and the passes interpolate only that, so a model that turns in place does not move between ticks.
+   The producer side: the extraction and the adapter carry each row's turn and scale at both ticks, and a
+   row's mesh is chosen by name when its entity is spawned, where a slot's mesh is fixed when the scene is
+   prepared today. The renderer side: the scene's vertex stage,
    for positions and normals; the shadow caster; the culling bounds for the camera and for the shadow; motion
    vectors; and the ray-traced instances where ray tracing is on, all from one interpolated placement, with
    position and scale linear and the turn by the shorter way. A row whose turn and scale are the same at both
@@ -2833,8 +2860,9 @@ baseline stays exact. Once built, each belongs to its owner.
 Planned on 25 November 2026: [design](GAME-SDK/DESIGN.md), [plan](GAME-SDK/PLAN.md). Ten work packages, the
 first two with items. Its planner settled the shape of game code (plain-data components and rule functions
 that run in the order written, with frame functions kept apart from rules by type), that looks are components,
-that every game's rules use the profile's numbers, and that the interface is described each frame. It left to
-the owner whether physics, animation and audio are in the first release. Three findings bind later planners:
+that every game's rules use the profile's numbers, and that the interface is described each frame. The owner
+decided on 25 November 2026 that 2D queries and sprite animation are in the first release and rigid bodies,
+skeletal animation and audio are not ("Planner's default"). Three findings bind later planners:
 spawns and despawns land when a tick ends, because that is when the engine resolves structural edits; a game
 that can be played online keeps its rules in a rule crate; and a work package's surface arrives with its
 reference documentation, because WP1's guard holds every later one to an example on each public item.
@@ -2944,9 +2972,10 @@ For [track 7](#track-7-the-game-sdk), each recorded as an assumption in
 37. **The SDK's design.** The owner approves [it](GAME-SDK/DESIGN.md) before any builder starts, by reading
     [its worked examples](GAME-SDK/DESIGN.md#worked-examples). The owner, 25 November 2026: "V1 first, Rust
     only, I'll approve the design."
-38. **Physics, animation and audio.** Whether each is in the SDK's first release. The plan assumes 2D queries
-    and sprite animation are in, and rigid bodies, skeletal animation and audio are out, each waiting for an
-    engine module of its own ([the table](GAME-SDK/DESIGN.md#physics-animation-and-audio)).
+38. **Physics, animation and audio: decided, and no longer open.** The owner, 25 November 2026, asked whether
+    the first release should keep the planner's default or add physics and audio: "Planner's default". 2D
+    queries and sprite animation are in; rigid bodies, skeletal animation and audio are out, each waiting for
+    an engine module of its own ([the table](GAME-SDK/DESIGN.md#physics-animation-and-audio)).
 39. **When SDK builders start.** The plan reads "V1 first" as: beside the road to V1, behind every V1
     work package for a builder. The owner can hold them until the exit closes.
 40. **Numbers that agree on every device, in every game.** A game played alone pays for it in the number types
@@ -3506,6 +3535,13 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   starts: its mechanism 1 says the stage draws into both outputs of such a frame, and WP1 gains the comparison
   of a recording with a visible overlay against the 8-bit mode's frame. No interface row, no other module's
   item or dependency, and no exact baseline changed.
+- 2026-11-25 Track 7's rulings revised after `GAME-SDK`'s design review 2, in track 7's section only: ruling 3
+  says where the SDK reads whether an encoded picture was submitted, with the game contract as built; ruling 5 covers every package of a game, a
+  kit game or a template by where it is, with the registry's list of packages on the engine's own API, so a
+  package cannot leave the SDK-only rule by not naming `thrum`; ruling 8 names the path an entity's `Model`
+  is drawn by, the 3D scene's entity rows with `CONTENT-LOOP`'s cooked mesh rows, and leaves the cooked
+  placement as built for scenery. Owner decision 38 is recorded as decided. No other module's section, item,
+  dependency or interface row changed.
 - 2026-11-25 Track 7's rulings revised after `GAME-SDK`'s design review 1, in track 7's section only: ruling 1
   gains the profile's refusals of files, sockets, processes and standard input and a check of a game's own
   rule crate; ruling 5 lets a game hold a rule crate of its own and keys the SDK-only rule on naming `thrum`,

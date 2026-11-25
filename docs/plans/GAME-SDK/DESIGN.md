@@ -1,14 +1,14 @@
 # Game SDK: one crate a game is written against
 
-25 November 2026, revised the same day after [design review 1](LOG.md). [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
+25 November 2026, revised the same day after [design reviews 1 and 2](LOG.md). [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
 [module list](../ARCHITECTURE.md#track-7-the-game-sdk) · [glossary](../GLOSSARY.md) ·
 [the creator guide](../../design/ENGINE-EXPERIENCE.md), whose ambition this module builds ·
 [the performance policy](../../design/AI-PERFORMANCE.md#performance-investment-from-the-first-design) ·
 [the hardware-native decision](../../design/decisions/HARDWARE-NATIVE-ENGINE.md)
 
 **The owner approves this design before any builder starts.** A design review that returns Design Approved is
-not that approval. The owner judges the API by reading [the worked examples](#worked-examples), and decides
-[what the first release leaves out](#physics-animation-and-audio).
+not that approval. The owner judges the API by reading [the worked examples](#worked-examples). The owner has
+decided [what the first release leaves out of physics, animation and audio](#physics-animation-and-audio).
 
 ## The request
 
@@ -51,7 +51,7 @@ of the product, not conveniences.
 **First release.** What is commissioned here:
 
 1. The game structure: game, scenes, entities, components, resources, rules, frame functions.
-2. 2D and 3D under that one structure: sprites and shapes; cooked models, sky, Sun, ground and lights.
+2. 2D and 3D under that one structure: sprites and shapes; cooked models, scenery, sky, Sun, ground and lights.
 3. Input actions, commands and players.
 4. Assets by name with live edits; settings on the tuning panel; the profiler.
 5. The interface: status displays, menus and modal choices.
@@ -62,8 +62,11 @@ of the product, not conveniences.
 
 **Not in the first release**, each said where it bears on a game maker:
 
-- Rigid-body physics, skeletal animation and audio. [The owner decides](#physics-animation-and-audio); this plan
-  assumes they are left out.
+- Rigid-body physics, skeletal animation and audio.
+  [The owner decided this](#physics-animation-and-audio) on 25 November 2026: 2D queries and sprite animation
+  are in, and these three are out.
+- A texture on a model that an entity carries. An entity's `Model` has a colour and a material. A textured
+  mesh is [scenery](#7-looks-what-is-drawn), which stands still.
 - Water, clouds and weather. `WATERS` and `CLOUDS` are still building. The words `scene.water(..)` and
   `scene.weather(..)` are kept free for them.
 - Multiplayer for 3D games. The structure allows it and the first release proves it in 2D only, as the swarm
@@ -102,7 +105,7 @@ Twelve words carry the whole SDK. Each means the same thing in a 2D game, a 3D g
 | **Rule** | A function that moves the world on by one tick. Rules are the only code that changes the world | `fn fall(mut rocks: Query<(&Rock, &mut Transform2d)>, tick: Tick)` |
 | **Frame function** | A function that runs once for each picture: it reads the world as shown and sets what only this player sees | `fn follow_my_hero(mut camera: Local<Camera2d>, ..)` |
 | **Action** | A named thing a player can do, bound to keys, pointer and touch | `const MOVE: Stick = Stick::new("move");` |
-| **Command** | A message a player sends once, such as a menu choice. One that is taken reaches the rules once, in the order sent, and never twice | `send.command(Choice::Upgrade(upgrade))` |
+| **Command** | A message a player sends once, such as a menu choice. One that is admitted reaches the rules once, after the same player's earlier ones, and never twice. `send` says when one is not taken, and one on its way when a link drops may be lost | `send.command(Choice::Upgrade { wave, upgrade })` |
 | **Player** | Who an input came from. A game played alone has one | `inputs.of(player).stick(MOVE)` |
 | **Look** | A component the engine draws: `Sprite`, `Shape2d`, `Model`, `Light` | `Sprite::new("enemies/bat")` |
 | **Setting** | A named value on the tuning panel | `#[slider(-8.0..=60.0)] elevation: f32` |
@@ -294,8 +297,9 @@ fn move_sun(mut sky: Local<Sky>, sun: Local<Sun>) {
 
 The sky, the Sun's light and shadows, exposure, tone mapping, reconstruction and the governor are the engine's
 defaults. The two sliders appear in the Mac panel and on the Chrome page, a parameter file sets them, and the
-profiler is a toggle beside them. The rock turns smoothly between ticks, and its shadow turns with it
-([looks](#7-looks-what-is-drawn)). The sliders move the sky on this screen only: no rule reads them, so they are
+profiler is a toggle beside them. The rock is an entity, so it is drawn as one of the 3D scene's entity rows:
+it turns smoothly between ticks, and its shadow turns with it ([looks](#7-looks-what-is-drawn)). The sliders
+move the sky on this screen only: no rule reads them, so they are
 [local settings](#10-settings-and-the-panel).
 
 ### C. A slice of the V1 showcase
@@ -328,16 +332,13 @@ struct Tour {
 
 fn valley(scene: &mut Scene) {
     scene.sky(Sky::clear());
+    scene.scenery(Scenery::new("showcase/valley").texture("showcase/ground")); // stands still, so not an entity
     scene.camera(STOPS[0].camera());
     scene.bind(NEXT_STOP, (Key::Tab, Touch::tap()));
     scene.resource(Tour::default());
-    scene.on_enter((place_terrain, populate));
+    scene.on_enter(populate);
     scene.rules((drift, tour));
     scene.each_frame((sun_follows_hour, fly_to_stop));
-}
-
-fn place_terrain(mut entities: Entities) {
-    entities.spawn(Model::new("showcase/valley").texture("showcase/ground"));
 }
 
 fn populate(mut entities: Entities, mut random: Random) {
@@ -378,9 +379,11 @@ fn fly_to_stop(mut camera: Local<Camera3d>, tour: Res<Tour>, frame: Frame) {
 }
 ```
 
-`STOPS` and `layout` are the game's own data. The 8,500 props that no rule writes cost nothing after they are
-placed, and `par_each` spreads the movers over the engine's worker threads. GPU culling, cooked mesh rows, the
-recipe for this Mac and the Chrome build are not in the game's code at all.
+`STOPS` and `layout` are the game's own data. The valley is scenery: a textured mesh the scene places once,
+drawn by the engine's cooked placement as the showcase draws it today. The props are entities, drawn as entity
+rows. The 8,500 that no rule writes cost nothing after they are placed, and `par_each` spreads the movers over
+the engine's worker threads. GPU culling, cooked mesh rows, the recipe for this Mac and the Chrome build are
+not in the game's code at all.
 
 ### D. The swarm game's core loop
 
@@ -440,9 +443,10 @@ pub struct EnemyDied {
     pub at: Vec2,
 }
 
+/// A choice answers one offer, and says which: the wave whose intermission showed the cards.
 #[derive(Command)]
 pub enum Choice {
-    Upgrade(Upgrade),
+    Upgrade { wave: u32, upgrade: Upgrade },
 }
 
 #[derive(Data)]
@@ -520,7 +524,7 @@ fn heroes_join_and_leave(
 
 /// A hero walks where its own player steers. This is the hero's whole movement: a per-player rule is given
 /// its player's character, that player's input and the tick, and nothing else, so in a match the engine can
-/// run it ahead for the local player and their hero answers at once.
+/// run it ahead for the local player and their hero answers at once. The tick is the one every rule sees.
 fn move_hero(at: &mut Transform2d, input: &Input, tick: Tick) {
     at.position = (at.position + input.stick(MOVE) * 6.0 * tick.dt()).clamp_to(ARENA);
 }
@@ -640,12 +644,13 @@ fn end_wave(
     }
 }
 
-/// A hero takes one upgrade in each intermission. A second choice in the same one changes nothing, so a
-/// choice made twice, or made again after a lost connection, is safe.
+/// A hero takes one upgrade in each intermission. A choice counts only for the offer it answers: one that
+/// arrives late, in a later intermission, names an earlier wave and changes nothing. A second choice for the
+/// same offer changes nothing either, so a choice made twice, or made again after a lost connection, is safe.
 fn take_choices(choices: Commands<Choice>, run: Res<Run>, mut heroes: Query<(&Player, &mut Hero, &mut Health)>) {
-    for (player, Choice::Upgrade(upgrade)) in choices.read() {
+    for (player, Choice::Upgrade { wave, upgrade }) in choices.read() {
         for (owner, mut hero, mut health) in &mut heroes {
-            if *owner != player || hero.chose_in_wave == run.wave {
+            if *owner != player || wave != run.wave || hero.chose_in_wave == run.wave {
                 continue;
             }
             hero.chose_in_wave = run.wave;
@@ -712,11 +717,12 @@ fn upgrade_cards(mut ui: Ui, run: Res<Run>, heroes: Query<(&Player, &Hero)>, me:
         return;
     }
     // The cards are offered from what the world says, not from what was sent. They stay until the choice has
-    // landed, so a choice lost on the way is made again, and `take_choices` ignores one that lands twice.
+    // landed, so a choice lost on the way is made again. The choice names the wave it was offered in, so
+    // `take_choices` ignores one that lands twice or lands in a later intermission.
     ui.modal("Choose an upgrade", |ui| {
         for upgrade in [Upgrade::FasterFire, Upgrade::MoreDamage, Upgrade::Heal] {
             if ui.card(upgrade.name(), upgrade.blurb()).chosen() {
-                send.command(Choice::Upgrade(upgrade));
+                send.command(Choice::Upgrade { wave: run.wave, upgrade });
             }
         }
     });
@@ -797,7 +803,8 @@ fn gather(mut ui: Ui, mut session: Session, mut scenes: Go) {
 ```
 
 What made this possible is in the rules already: heroes are spawned from `PlayerJoined`, every rule reads
-`inputs.of(player)`, the upgrade choice is a command, and the numbers agree on every device. A game played
+`inputs.of(player)`, the upgrade choice is a command that names its offer, and the numbers agree on every
+device. A game played
 alone is the same game with one player, who joins at the first tick.
 
 The lobby keeps nobody back. A scene is given `PlayerJoined` at its first tick for every player already in the
@@ -885,6 +892,27 @@ of the engine's own types is re-exported under `thrum`'s names, and the rest sta
 
 How the two halves are laid out in crates is the builder's, registered in `.config/architecture.toml`. The
 rule that binds: a crate that names `thrum` with default features off gets the rules half and compiles alone.
+
+**Which packages are held to `thrum` alone.** The repository's guard holds it, from WP8
+([ruling 5](../ARCHITECTURE.md#seam-rulings-for-game-sdk)), and it does not hang on a package naming `thrum`:
+
+- **Covered:** every package in a games repository, every package under the engine's `templates/` and every
+  package under the engine's `examples/`. That is each game's main package and every package the game keeps
+  beside it, such as its rule crate or a helper.
+- **The rule:** a covered package names no engine crate but `thrum`. None of its dependencies (ordinary,
+  development, build or for one target, under any alias, from a path, a git address or a registry) is a
+  package registered under the engine's `crates/`, other than `thrum`. A path of its that leaves its game
+  reaches `thrum` and nothing else. So a helper package that names `thrum-render`, and a game that names
+  `thrum-app` and no `thrum`, are both refused.
+- **Not covered:** the packages the registry marks as written on the engine's own API, each with its reason.
+  When WP8 lands those are the proving ground and its iPhone app; the engine's own proofs under `examples/`
+  (`crowd-2d`, `crowd-2d-run`, `crowd-2d-view`, `link-proof`, `match-proof`, `mirror` and `water`); the old
+  starter, stones and lighthouse, until WP10 removes them; and the showcase in the games repository, with
+  its iPhone app if that has followed it, named by their folders there, until WP9 rewrites it. A package is marked where it is registered, by the module that owns
+  it, and a game made for game makers is never marked.
+
+The showcase is on the list whether or not it has moved yet, so `GAME-SPLIT` WP4 and WP8 may land in either
+order. WP9 takes it off the list in the landing that rewrites it, and from then it is held like any game.
 
 ### 2. The world: entities, components, resources
 
@@ -977,8 +1005,11 @@ What checks the contract:
 
 **A per-player rule is a character's whole movement step.** `per_player(f)` runs `f` once a tick for each
 player's character: the one entity that carries that `Player` and the components `f` names. `f` may take `&T`
-and `&mut T` for components of that entity, `&Input` for that player's input, and `Tick`. Nothing else: no
-query, resource, `Space2d`, `Entities` or `Random`, each of which is a compile error there. So the function
+and `&mut T` for components of that entity, `&Input` for that player's input, and `Tick`. `Tick` there is
+the whole of what it is in any rule: the number of the world's tick being stepped, `dt()`, `every`, `after`
+and `reached`. A character that moves on every other tick is therefore a per-player rule like any other.
+Nothing else: no query, resource, `Space2d`, `Entities` or `Random`, each of which is a compile error there.
+So the function
 writes the pose itself, as example D's `move_hero` writes its hero's `Transform2d`, and does not leave a
 velocity for a later rule to apply. A per-player rule stands at the top level of a scene's rule list and runs
 in every tick of that scene. Putting one under `when` is a startup error, because whether it ran would then
@@ -1013,8 +1044,8 @@ browser target aborts on a panic and cannot unwind:
 
 | Target | When a rule panics |
 |---|---|
-| The Mac, the iPhone simulator and `Game::test()` | The panic is caught and reported as a returned error is, with the previous world intact |
-| Chrome (`wasm32-unknown-unknown`) | The game's program stops. Before it does, the SDK's panic hook puts the rule, the tick and the message on the page and in the console. Nothing is rolled back, because nothing runs afterwards |
+| The Mac and the iPhone simulator, in `run()` and in `Game::test()` | The panic is caught and reported as a returned error is, with the previous world intact |
+| The browser target (`wasm32-unknown-unknown`), in Chrome and in a `Game::test()` built for it | The game's program stops. Before it does, the SDK's panic hook puts the rule, the tick and the message on the page and in the console. Nothing is rolled back, because nothing runs afterwards |
 
 So a rule that can fail in play returns an error, and the guides say so. A build of the browser target that
 unwinds is not on the stable toolchain, and the SDK does not depend on one.
@@ -1024,7 +1055,8 @@ ceiling". Speeds are written per second and multiplied by `tick.dt()`.
 
 ### 4. Frame functions, and the frame
 
-A frame function runs once for each picture, when the engine samples the scene for that picture. For every
+A frame function runs once for each picture the engine encodes, when the engine samples the scene for that
+picture. For every
 picture the engine chooses a pair of adjacent published ticks and how far between them the picture stands
 ([C02](../../design/CONTRACTS.md#c02-time-and-committed-state--f1-coordinator-w1-world)). On the Mac that pair
 can be older than the newest one published. The engine hands the SDK that pair and that fraction, the frame
@@ -1043,10 +1075,10 @@ A frame function writes only what belongs to this player's screen.
 | Parameter | What it gives |
 |---|---|
 | `Query<D, F>`, `Res<T>` | The world as shown, read-only |
-| `Events<T>` | The events of every tick shown since the last picture, each once, in tick order. `missed()` counts any that were dropped |
+| `Events<T>` | The events of every tick since this function last ran, each once, in tick order. `missed()` counts any that were dropped |
 | `Local<T>` | State of this screen: the camera, the sky, the game's own menu state. Never part of the world |
 | `Ui` | The interface for this frame |
-| `Draw2d` | Sprites and shapes for this frame only, drawn among the world's |
+| `Draw2d` | Sprites and shapes for this picture only, drawn among the world's. `burst` starts a short effect that the SDK keeps and plays out over the pictures that follow |
 | `Send` | `command(..)`: the one way a frame function affects the world. It says whether the command was taken |
 | `Me`, `Session` | Which player this screen is, and the match |
 | `Frame` | The frame's time and its `dt()` |
@@ -1058,15 +1090,41 @@ publishes that tick's events for the frame functions that read them, in a ring t
 ticks: at least one second of them, the size the builder's to choose and document. Each `Events<T>` of a frame
 function keeps a cursor, the last tick it has delivered.
 
-- A picture whose newer tick is `n` delivers the events of every tick after the cursor, up to `n`, and moves
-  the cursor to `n`. A tick that fell between two pictures loses nothing: the death that happened in it
-  flashes in the next picture.
-- A picture held on the same pair delivers nothing a second time.
+- A run of the frame functions whose newer tick is `n` delivers the events of every tick after the cursor,
+  up to `n`, and moves the cursor to `n`. A tick that fell between two pictures loses nothing: the death that
+  happened in it is delivered with the next.
+- A run on the same pair as the last delivers nothing a second time.
 - When more ticks have passed than the ring holds, as after a hitch or a hidden tab, the oldest are dropped
   and `missed()` says how many. These events are for show, so nothing in the world hangs on them.
 - A rewind, a resync and a change of scene reset the cursor to the tick the world then stands at. Events still
   waiting are dropped. A tick stepped again after a rewind delivers its events again, because the second run
   is the one that stands.
+
+**A picture that is never shown.** The engine runs the frame functions when it encodes a picture, and only
+afterwards asks the display for somewhere to put it. Sometimes there is nowhere: the drawable times out, the
+window is covered or the surface changed. The engine then drops what it encoded, and the SDK reads that from
+the frame host's record of what it last submitted. The frame functions still ran, once, and nothing runs them
+again for that picture:
+
+- **Everything a frame function does happens once, in the run where it does it.** An event is delivered to
+  one run. A click is handed to one run. A command sent, a `go_to` and a call on `Session` take effect when
+  they are made, whether that run's picture is shown or not, so a choice is sent once and never again for a
+  picture that had to be made twice. `Local<T>` keeps what the run wrote.
+- **What must be seen does not hang on one picture.** A `burst` is not part of the picture it was started in.
+  The SDK keeps it as this screen's state, timed by the frame's clock from the run that started it, and draws
+  it in every picture until it ends. One that has not been in a submitted picture when its time runs out is
+  kept for the next picture the engine submits, and dropped after a second with none. So the death at tick 41
+  whose picture was dropped flashes in the next picture that is shown, though that picture's run was given no
+  event. A flash a game times itself is the same: it sets a time in `Local<T>` in the run that reads the
+  event, and draws from that in the runs that follow.
+- **What is drawn for one picture goes with that picture.** A sprite or a shape that a frame function draws
+  with `Draw2d`, and the interface it describes, belong to the run's own picture and are drawn again by the
+  next run. A one-picture drawing made only in the run that reads an event is lost when that picture is
+  dropped, which is why the guides start a burst there.
+
+Considered: moving the cursor only when a picture is submitted, and giving the same events to the next run.
+That shows a one-picture drawing, and it makes every frame function that counts events, eases a camera or
+sends on an event do so twice on a dropped picture, a fault that shows only when a drawable times out.
 
 Interpolation between ticks is the engine's, on the GPU, for every look. A game writes none. A component is
 published to frame functions only if one names it, which the SDK knows from their signatures, so a component
@@ -1123,6 +1181,11 @@ can rely on:
   ([the session guide](../../SESSION.md)). So a game offers a choice from what the world says and makes a
   repeated choice harmless, as example D's upgrade does: the cards stay until the hero's own state shows the
   choice, and the rule ignores a second one.
+- An admitted command is read at the tick the host had room for it, which can be later than the player
+  meant: `SESSION`'s ordered commands carry no tick they expire at. So a command that answers an offer names
+  the offer, and the rule that reads it checks the offer still stands. Example D's choice carries the wave
+  whose intermission showed the cards, and `take_choices` drops one whose wave is not the current one, so an
+  answer that arrives in a later intermission cannot spend that intermission's choice.
 
 **Players.** A player is a slot, and who is in the game is world state. `PlayerJoined` is an event a scene's
 rules read at the tick a player enters the game, and at a scene's first tick for every player already in it,
@@ -1151,24 +1214,44 @@ component.
 | | 2D | 3D |
 |---|---|---|
 | Where | `Transform2d`: position, turn, scale | `Transform3d`: position, rotation, scale |
-| What | `Sprite` (a frame of a sheet, by name: layer, tint, flash, glow, animation), `Shape2d` (a circle, a box, a line, with no asset) | `Model` (a cooked mesh by name, its texture and material; `Model::cube()` and `Model::sphere()` with no asset), `Light` |
+| What | `Sprite` (a frame of a sheet, by name: layer, tint, flash, glow, animation), `Shape2d` (a circle, a box, a line, with no asset) | `Model` (a cooked mesh by name, with a colour and a material; `Model::cube()` and `Model::sphere()` with no asset), `Light` |
 | Camera | `Camera2d`: a centre and how much of the world is shown | `Camera3d`: an eye, a target and a field of view |
-| Around it | `scene.background(colour)` | `scene.sky(..)`, `scene.ground(..)` |
+| Around it | `scene.background(colour)` | `scene.sky(..)`, `scene.ground(..)`, `scene.scenery(..)` |
 | Touching | `Collider2d` and `Space2d` | Not in the first release |
 
 - Extraction is the SDK's, written once: it maps the looks of entities whose rows changed to
-  `RENDER-2D`'s sprite rows and to the 3D scene's instance rows, and the engine interpolates on the GPU. An
+  `RENDER-2D`'s sprite rows and to the 3D scene's entity rows, and the engine interpolates on the GPU. An
   entity no rule writes is extracted once.
-- **In 3D the whole placement is interpolated: position, turn and scale.** The 3D scene's rows carry only a
-  position for each of the two ticks today, and its passes interpolate only that, so a model that turned or
-  grew in place would stand still between ticks. WP4 adds the turn and the scale at both ticks to the
-  extraction and to the row ([ruling 8](../ARCHITECTURE.md#seam-rulings-for-game-sdk)), and every pass that
-  places an instance uses the one interpolated placement: the scene's vertices and normals, the shadow caster,
-  the culling bounds for the camera and for the shadow, motion vectors, and the ray-traced instances where ray
-  tracing is on. Position and scale go linearly, and the turn takes the shorter way round. A row whose turn
-  and scale are the same at both ticks is placed exactly as it is today, so no exact image of the engine's
-  changes. The case that tells this from a drifting prop is a lopsided model that stays in one place and
-  turns: its lit faces and its shadow turn together, smoothly, between ticks.
+- **An entity's `Model` is drawn by one route: the 3D scene's entity rows.** The engine draws a cooked mesh
+  in two ways. An *entity row* is one instance of a mesh in the scene's mesh arena, with its placement at two
+  ticks, culled on the GPU and interpolated: the route the showcase's 10,000 entities take. A *cooked
+  placement* (`thrum-asset-gpu`'s `MeshPlacement`, which the old starter's rock uses) is one textured mesh
+  with one matrix and no tick, culled a meshlet at a time. A `Model` on an entity always takes the first: the
+  SDK admits the cooked product's geometry to the mesh arena through `CONTENT-LOOP`'s cooked mesh rows, the
+  entity's `Transform3d` at the pair's two ticks is the row's placement, and its colour and material are the
+  row's material. The SDK makes no cooked placement for an entity, so nothing an entity carries is drawn from
+  a record that cannot move. `.on_ground()` lifts the row by the mesh's lowest point, read from the cooked
+  product, when the row is extracted; it is not world state. A saved mesh is redrawn live, as cooked mesh rows
+  are today. `Model::cube()` and `Model::sphere()` are rows of meshes the SDK brings.
+- **In 3D the whole placement is interpolated: position, turn and scale.** The entity rows carry only a
+  position for each of the two ticks today, and the scene's passes interpolate only that, so a model that
+  turned or grew in place would stand still between ticks. WP4 adds the turn and the scale at both ticks to
+  the extraction and to the row ([ruling 8](../ARCHITECTURE.md#seam-rulings-for-game-sdk)), and every pass
+  that places an entity row uses the one interpolated placement: the scene's vertices and normals, the shadow
+  caster, the culling bounds for the camera and for the shadow, motion vectors, and the ray-traced instances
+  where ray tracing is on. Position and scale go linearly, and the turn takes the shorter way round. A row
+  whose turn and scale are the same at both ticks is placed exactly as it is today, so no exact image of the
+  engine's changes. The case that tells this from a drifting prop, and from a built-in cube, is example B's
+  rock: a lopsided **cooked** model that stays in one place and turns. Its lit faces and its shadow turn
+  together, smoothly, between ticks, and WP4 is judged on it.
+- **Scenery is a textured mesh that stands still.** `scene.scenery(Scenery::new("showcase/valley")
+  .texture("showcase/ground"))` places a cooked mesh once, with its texture, material, place, turn and size.
+  It is the engine's cooked placement as built: textured, culled a meshlet at a time, shadowed, live when the
+  asset is saved. It is part of the scene's description, like the ground, and not an entity: no rule reads or
+  moves it. An entity's `Model` has no texture in the first release, because the 3D scene's entity materials
+  take none today; the type has no `texture` method, and the reference says to use scenery or a colour. *It
+  would change* when the entity rows' materials take a texture, which is engine work planned after the first
+  release; `Model` then gains the method and no game changes.
 - Draw order in 2D is layer, then lower on the screen in front, then identity, which `RENDER-2D` keeps stable.
 - The camera, sky and background belong to the screen (`Local<..>`), not the world, so two players of one match
   can look at different places.
@@ -1273,10 +1356,20 @@ events, and the driven world. A game writes none of the steps of [the session gu
   crowd is shown at the confirmed tick, and a peer too slow is dropped.
 - **The local player's own character answers at once** when its movement is
   [a per-player rule](#3-rules-and-the-tick). The SDK gives that function to `SESSION`'s predicted controller
-  as the controller's step. The controller's state is the components the function names, read from the
-  player's character at the confirmed tick and compared by their encoded bits. Its input is the player's own
-  input as the wire carries it, and its constant is the length of a tick. The function is the whole step, so
-  running it ahead moves the pose and not only a velocity.
+  as the controller's step. The controller's state is the components the function names and the number of
+  the tick they stand at, read from the player's character and the world at the confirmed tick, and compared
+  by their encoded bits. Its input is the player's own input as the wire carries it, and its constant is the
+  length of a tick. The function is the whole step, so running it ahead moves the pose and not only a
+  velocity.
+- **The predicted step sees the tick the host's step sees.** `SESSION`'s controller hands a step its state,
+  its input and its constants, and no tick. The SDK carries the tick in the state: the step from a state at
+  tick `n` hands the function `Tick` number `n + 1` and returns the new components at `n + 1`. The
+  controller steps one tick at a time from the confirmed state, in prediction and when it replays after a
+  correction, so the number the function is handed is always the tick the host will commit that step at. A
+  player who joins a running match starts from a baseline whose state holds that baseline's tick, so this
+  holds from any tick, not only from zero. A per-player rule that uses `tick.every(..)`, `after` or `reached`
+  is therefore predicted as the host steps it, with `SESSION` as built and the function WP2 accepted
+  unchanged.
 - **What the local player's screen shows.** Their own character is shown from the controller: the components
   the per-player function names are at the predicted pose, interpolated between predicted ticks, both in a
   frame function's query and in the draw. `follow_my_hero` and the hero's sprite therefore move together as
@@ -1322,6 +1415,7 @@ work package that builds its surface:
 | Running | A rule returns an error, or panics | The rule, the tick and the error, [as each target allows](#3-rules-and-the-tick) |
 | Running, on screen | An entity with a look in a scene with no camera, or a 3D look under a 2D camera and the reverse | Once: the scene, the look and `scene.camera(..)`. The look is not drawn and the game goes on |
 | Running, on screen | An asset name that matches nothing | The name, the rule and the nearest names |
+| Running, on screen | An entity's `Model` names a mesh the scene's mesh arena refuses | Once: the name, the arena's reason and, for a mesh that stands still, `scene.scenery(..)`. The placeholder is drawn |
 | Running, on screen | A session is refused or closed | `SESSION`'s reason, in words a player can read |
 
 `send.command` when the queue is full is not a mistake that stops a game: it returns `Busy` to the frame
@@ -1390,13 +1484,13 @@ The game's `main` is the same file on every target. The SDK supplies each platfo
 | The frame, the recipe, reconstruction, EDR, the governor | `APPLE-TILE`, `APPLE-PRESENTATION` | None. A game gets them by default |
 | Sprite rows, sheets, the 2D scene | `RENDER-2D` | Maps `Sprite`, `Shape2d` and `Transform2d` to rows |
 | Sky, Sun, air | `ATMOSPHERE` | `Sky` sets its inputs |
-| Cooked products and live edits | `CONTENT-LOOP`, `COOKED-DRAW` | Resolves names; maps `Model` to cooked rows |
-| The 3D scene's instance rows and the passes that place them | `thrum-render` (`CULLING`, `RAY-TRACING` and the scene's other owners) | Maps `Transform3d` to a row's placement at both ticks |
+| Cooked products and live edits | `CONTENT-LOOP`, `COOKED-DRAW` | Resolves names; gives an entity's `Model` its cooked mesh row, and gives `Scenery` to the cooked placement as built |
+| The 3D scene's entity rows and the passes that place them | `thrum-render` (`CULLING`, `RAY-TRACING` and the scene's other owners) | Maps an entity's `Model` and `Transform3d` to a row, with its placement at both ticks |
 | Typed controls, parameter files, the profiler | `CREATOR` | `Settings` declares controls |
 | The interface tree, events, fonts | `GAME-UI` | `Ui` keeps the tree |
 | The device, pause, recovery, the game contract | `HOST` | Implements the game contract once, for every game |
 | The match, the roster, prediction | `SESSION`, over `TRANSPORT` | Implements the session's world once, and gives a per-player rule to the predicted controller as its step |
-| Events for the frame | The SDK, as a presentation product published beside each tick page, which C02 allows. It is not world state and is in no digest | The ring of recent ticks' events and each frame function's cursor |
+| Events for the frame, and effects under way | The SDK, as a presentation product published beside each tick page, which C02 allows. It is not world state and is in no digest | The ring of recent ticks' events, each frame function's cursor, and the bursts still playing on this screen |
 | The shells | `PLATFORM-RUNTIME-*`, `CREATOR`, `GAME-UI` WP6 | `run()` picks the one for the target |
 | The game's scenes, rules, looks and content | The game | — |
 
@@ -1410,7 +1504,7 @@ The game's `main` is the same file on every target. The SDK supplies each platfo
 5. The engine resolves spawns and despawns, checks every number is finite, and commits. A refused tick leaves
    the world as it was.
 6. The tick page is published, and with it the tick's events for the frame functions that read them. Only the
-   rows that changed are extracted to sprite and instance rows.
+   rows that changed are extracted to sprite and entity rows.
 
 ### A frame, walked
 
@@ -1421,6 +1515,9 @@ The game's `main` is the same file on every target. The SDK supplies each platfo
 3. The interface is reconciled with last frame's and laid out only if a box could have moved.
 4. The engine draws from the same pair at the same fraction: the scene's passes for its kind, interpolating on
    the GPU, then exposure, tone, the interface stage and present.
+5. The SDK reads whether the picture was submitted or dropped. A dropped picture runs nothing again; a burst
+   it would have shown first is kept for the next
+   ([frame functions](#4-frame-functions-and-the-frame)).
 
 Rules run on the world's own thread where the shell has one, as today. Frame functions never wait for them:
 they read published pages, on the thread that samples the scene.
@@ -1452,13 +1549,18 @@ order and C13's authority are what the mechanisms above stand on.
 2. **The registered simulation** (core): queries over more than two components with filters, where the SDK
    cannot build them from columns as they are.
 3. **The shells and the tool** (`CREATOR`, `HOST`, `GAME-UI`): what the window, the page and the phone shell
-   still assume of the V1 game or the sky kit; the game commands in `./dev`.
+   still assume of the V1 game or the sky kit; the game commands in `./dev`. Whether each encoded picture
+   was submitted or dropped is read from the game contract's readback of the frame host, as built.
 4. **The repository guard** (`REPO-RULES`, `GAME-SPLIT`): `thrum` registered; the external game check admits a
-   path between two packages of one game; and a rule that a package which names `thrum` names no other engine
-   crate. That rule reaches a game when the game moves onto the SDK, so the showcase is held to it from WP9
-   and passes the external game check on today's API until then, whichever of the move and WP8 lands first.
-5. **The 3D scene's instance placement** (`thrum-render`): the turn and the scale at both ticks, in the
-   extraction and the row, interpolated by every pass that places an instance.
+   path between two packages of one game; and [the rule](#1-one-crate-two-halves) that every package of a
+   game, a kit game or a template names no engine crate but `thrum`, with the registry's list of packages on
+   the engine's own API. The showcase is on that list until WP9, so it passes the external game check on
+   today's API whichever of the move and WP8 lands first.
+5. **The 3D scene's entity rows** (`thrum-render`, and `CONTENT-LOOP`'s cooked mesh rows): the turn and the
+   scale at both ticks, in the extraction and the row, interpolated by every pass that places an entity row;
+   and a row's mesh chosen by name when its entity is spawned, where a slot's mesh is fixed when the scene is
+   prepared today. The cooked placement and its draw paths are used as built, for scenery, and are not
+   changed.
 
 ## Cost
 
@@ -1490,16 +1592,18 @@ Tuning belongs to the performance phase the brief puts after the exit.
 
 ## Physics, animation and audio
 
-The owner decides this. The plan assumes the recommendation, as [assumptions](PLAN.md#open-for-the-user).
+Decided. The owner, 25 November 2026, asked whether the first release should keep the planner's default (2D
+queries and sprite animation in; rigid bodies, skeletal animation and audio out) or add physics and audio,
+answered: "Planner's default". So the third column is what is built, and nothing here is left open.
 
-| | In the engine today | Recommendation for the first release |
+| | In the engine today | The first release |
 |---|---|---|
 | **Physics** | 2D overlap, nearest and sweep queries (`SIM-2D`). No rigid bodies, no joints, no 3D collision | **Queries in, rigid bodies out.** `Collider2d` and `Space2d` carry the swarm game and most arcade games. A rigid-body module has to be deterministic on three targets to work with a match, which rules out wrapping an existing library as it stands; it is its own module, planned after the first release. 3D collision queries come with it |
 | **Animation** | Sprite frames by name (`RENDER-2D`). No skeletons, no clips; the showcase's entities do not animate | **Sprite animation in** (`Sprite::animated(..)`, timed from the tick). **Skeletal animation out**: it needs skinning in the renderer and clips in the cooker, a module of its own |
 | **Audio** | Nothing. A1 is a design | **Out.** It needs an engine module first, and no agent can hear its result, so every item would wait for the owner. The SDK keeps the place for it: a sound is played from a frame function on an event, as `flash_where_enemies_die` draws |
 
-Bringing any of the three in changes the order: its engine module is planned and built before the SDK's work
-package that surfaces it.
+Each of the three that is out comes after the first release, as an engine module of its own, planned and built
+before the SDK work package that surfaces it.
 
 ## The work packages
 
@@ -1511,19 +1615,33 @@ items of the first two.
 | WP1 | Mechanisms 2, 3 and 5 with no window, for [the headless subset](#what-wp1-compiles): components, resources, rules, entities, events, scenes, the test harness; the surface and documentation checks | Nothing |
 | WP2 | Mechanisms 6 and 8, `Space2d` and `per_player`; the profile's refusals of files and sockets and the check of a game's own rule crate; the crowd on the SDK, equal on three targets, with its cost | `SIM-2D:WP3`, Done |
 | WP3 | 2D on screen: mechanisms 4, 7 (2D), 9, 14 and 16 for the Mac and Chrome, with the first `run()` and its startup checks beside `test()`'s; Rockfall, whose score and result text arrive with WP6 | Nothing still open |
-| WP4 | 3D on screen: mechanism 7 (3D), with models that turn and scale between ticks ([ruling 8](../ARCHITECTURE.md#seam-rulings-for-game-sdk)), and mechanism 10. The starter, stones and the lighthouse are written on the SDK as new kit games, and the old ones stay beside them until WP10 | For its change to the instance passes, the V1 work packages that hold them, which [the module list](../ARCHITECTURE.md#off-the-v1-path-track-7) names |
+| WP4 | 3D on screen: mechanism 7 (3D), with entities' models drawn as entity rows that turn and scale between ticks ([ruling 8](../ARCHITECTURE.md#seam-rulings-for-game-sdk)), scenery, and mechanism 10. The starter, stones and the lighthouse are written on the SDK as new kit games, and the old ones stay beside them until WP10 | For its change to the instance passes, the V1 work packages that hold them, which [the module list](../ARCHITECTURE.md#off-the-v1-path-track-7) names |
 | WP5 | Mechanism 12: the crowd hosted and joined | `SESSION:WP7` |
 | WP6 | Mechanism 11 | `GAME-UI:WP4` |
 | WP7 | The iPhone simulator | `GAME-UI:WP6` |
-| WP8 | Mechanism 15, the guard that a package which names `thrum` names no other engine crate, and three fresh agents | Its own WP1 to WP7 |
-| WP9 | The showcase on the SDK, in the games repository, where it comes under that guard | `GAME-SPLIT:WP4`, which follows the V1 exit |
-| WP10 | The old creator route removed: the old starter, stones and lighthouse, the sky kit, `./dev starter` and `./dev scene`. The engine's pointers and the maturity ledger | Its own WP9 |
+| WP8 | Mechanism 15, [the guard](#1-one-crate-two-halves) that every package of a game, a kit game or a template names no engine crate but `thrum`, and three fresh agents | Its own WP1 to WP7 |
+| WP9 | The showcase on the SDK, in the games repository, and taken off the guard's list in the same landing | `GAME-SPLIT:WP4`, which follows the V1 exit |
+| WP10 | The old creator route removed: the old starter, stones and lighthouse with their entries on the guard's list, the sky kit, `./dev starter` and `./dev scene`. The engine's pointers and the maturity ledger | Its own WP9 |
 
 Each work package's surface arrives with its reference documentation and its rows of
 [the mistakes table](#13-mistakes-that-explain-themselves), because WP1's guard holds every later one to them.
 A work package is compared with the worked examples only for the surface it builds: WP1 for the subset below,
 WP2 for example D's rules, WP3 for example A, WP4 for examples B and C, WP5 for example E and WP6 for the
 interface in A, D and E.
+
+What the planner who gives a later work package its items carries into them, from the design reviews:
+
+- **WP3:** a picture the engine encodes and drops, with an event delivered to its run and a command sent in
+  it. The burst started there is in the next submitted picture, the command is admitted once, and the event
+  is delivered to no later run.
+- **WP4:** example B's cooked rock, captured in motion: an entity whose `Model` names a cooked mesh, standing
+  in one place and turning, with its lit faces and its cast shadow turning together between ticks. A built-in
+  cube does not stand in for it.
+- **WP5:** a per-player rule that moves its character only on every other tick, predicted for a player who
+  joined at a tick other than zero, with the predicted pose equal to the host's at every confirmed tick.
+- **WP8:** the guard refuses a game whose main package names `thrum` and whose helper package names
+  `thrum-render`, and a kit game that names `thrum-app` and no `thrum`; it passes the proving ground and,
+  until WP9, the showcase on today's API.
 
 ### What WP1 compiles
 
@@ -1563,7 +1681,8 @@ numbers' literals are WP2's. Looks, cameras, frame functions and the parity of `
    check.
 7. **Turning models change passes the V1 exit stands on.** Early sign: an exact image that moves in WP4. A
    row that does not turn is placed exactly as today, and WP4's change to those passes waits for the V1
-   work packages that hold them.
+   work packages that hold them. A second sign: the turn is proved on a built-in cube while the cooked rock
+   is drawn another way and stands still, which is why WP4 is judged on the cooked rock.
 8. **A wrong substitute for K7:** a fresh agent that succeeds because it read the examples' source in the
    engine checkout. Its brief allows the guides, the one file and the template, and its record lists every file
    it opened.
@@ -1609,4 +1728,6 @@ keeps reading as what is true.
   WP5 reports what the profile's lints can do on a module.
 - **How the rule-set identity is derived with no line of game code.** `SESSION` hashes the rule sources in a
   build script of the game, and a rule crate may have none. WP5 settles where the template carries it.
-- **3D collision queries** wait for the physics decision.
+- **3D collision queries** come with the physics module, after the first release.
+- **Whether the showcase needs a textured model that moves.** The exit scene's entities have none today.
+  WP9 reports any it finds, and textures on entity rows are then planned as engine work.

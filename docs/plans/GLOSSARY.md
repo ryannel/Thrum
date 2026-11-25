@@ -103,6 +103,16 @@ A component the engine draws: a sprite, a shape, a model, a light.
 
 Proposed: the planner chose the name.
 
+### Scenery
+
+In a 3D game written on the game SDK, a textured cooked mesh that a scene places once and nothing moves, such
+as a valley or a building. It is part of the scene's description and not an entity. A model that an entity
+carries can move and has no texture in the first release.
+
+- **Source** — the field's term (static mesh in Unreal, static body in Godot), in plain words.
+
+Proposed: the planner chose the name.
+
 ### Setting
 
 A named value a game shows on the tuning panel, in the Mac window and on the Chrome page: a slider, a toggle, a

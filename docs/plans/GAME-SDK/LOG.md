@@ -40,3 +40,31 @@
 - 2026-11-25 Suggestions, all three taken: WP1.5 asks about the loop inside a rule and allows one call for each
   rule through the engine's callback; mechanism 11 gives a repeated control a key; WP4 writes the kit games on
   the SDK and WP10 removes the old route (ruling 6).
+- 2026-11-25 Owner, asked whether the first release should keep the planner's default (2D queries and sprite
+  animation in; rigid bodies, skeletal animation and audio out) or add physics and audio: "Planner's default".
+  Written into the design and the plan as decided, and taken off the list of what is left for the owner
+  (owner decision 38 in the module list).
+- 2026-11-25 Design review 2 asked for changes, with 5 Must Fix findings
+  ([the review](../../../.orchestrate/evidence/GAME-SDK/design-review.md)). It was the second in a row, so no
+  review reads these fixes before the owner does.
+- 2026-11-25 Review 2, finding 1 (the cooked rock's draw): mechanism 7 and ruling 8 now name the one path an
+  entity's `Model` is drawn by, the 3D scene's entity rows with `CONTENT-LOOP`'s cooked mesh rows, so the
+  rock turns through the rows WP4 changes. The cooked placement stays as built and draws `Scenery`, a new
+  scene-level textured mesh that stands still (example C's valley). An entity's `Model` has no texture in the
+  first release, because entity rows' materials take none. WP4 is judged on the cooked rock.
+- 2026-11-25 Review 2, finding 2 (the predictor's tick): the controller's state carries the tick number, so a
+  predicted or replayed step hands the per-player function the tick the host commits it at, from a baseline
+  at any tick, with `SESSION` unchanged (mechanisms 3 and 12). WP2.1 proves the function is handed the tick
+  the other rules see.
+- 2026-11-25 Review 2, finding 3 (reaching round `thrum`): the guard covers every package of a game, a kit
+  game or a template by where it is, whatever it names, across path, git and registry dependencies, with a
+  registry list of packages on the engine's own API (mechanism 1, ruling 5). The showcase is listed until
+  WP9 and the proving ground for good.
+- 2026-11-25 Review 2, finding 4 (a dropped picture): frame functions run once for each encoded picture and
+  are never run again for a dropped one, so everything they do happens once. A `burst` is kept by the SDK and
+  shown in the next submitted picture (mechanism 4). Moving the cursor at submission was turned down: it runs
+  game code twice on the same events.
+- 2026-11-25 Review 2, finding 5 (a late upgrade): the glance table gives mechanism 6's guarantee, and
+  example D's choice names the wave it answers, which `take_choices` checks.
+- 2026-11-25 Review 2's suggestions, both taken: the plan's `scene.component` assumption gives the multiplayer
+  exception, and the panic table names `Game::test()` by target.
