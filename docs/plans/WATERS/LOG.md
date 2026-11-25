@@ -1155,3 +1155,8 @@
   The Metal cache guard, paired 1440p cost check and Chrome surf guard passed again. The rendering
   sources still match the result used for the 12 Metal and Chrome still pairs, which were reviewed again.
   [Updated target records](../../../.orchestrate/evidence/WATERS/WP21/README.md).
+- 2026-11-25 WP21.4 review follow-up. The paired 1440p Metal record puts the old per-component
+  read accounting with the pre-change ablations and records the current dispatch's instrumented
+  work. The checker requires a measured cache time for both phases from each comparison.
+  The fresh capture passed. Replaying it with either WP19 timing null or absent failed before
+  writing a record. [Metal record and replay](../../../.orchestrate/evidence/WATERS/WP21/cost-review-fix.md).
