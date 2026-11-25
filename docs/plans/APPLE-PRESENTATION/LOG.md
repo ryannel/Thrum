@@ -498,3 +498,15 @@
   all 17 misses. D8.3 now judges the forced step against a matched held run and the scrub against the
   un-reconstructed frame, each within 1% of mean luminance, and the builder judges the exposure texture alone first.
   [Reasons and numbers](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP8-plan/README.md)
+
+- 2026-11-25 WP8 D8.7 passed on the iPhone 18 Pro simulator. Background revocation discarded one encoded
+  TAAU frame with a valid predecessor. The first resumed submission reused its order with invalid history
+  and completed on the same device generation.
+  [Simulator receipt](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP8/simulator-resumed-checkpoint/reset.json)
+
+  The standalone Mac MetalFX probe completed all five scales under Metal validation. The merged native
+  lifecycle serves the copy/select fixture. The planner can assign the reusable `NativeProvider` interface
+  to APPLE-TILE or place the extraction in WP8 under seam 8, preserving the frame coordinator's submission
+  and completion authority.
+  [Hardware probe](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP8/descriptor-probe.md) ·
+  [WP8 handoff](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP8-handoff.md)
