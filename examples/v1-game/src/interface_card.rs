@@ -53,6 +53,7 @@ impl Card {
         );
         sheet.tiles = (0..7).collect();
         InterfaceConfig {
+            cooked: None,
             sheets: vec![sheet],
             row_capacity: self.load_rows.unwrap_or(32).max(1),
         }

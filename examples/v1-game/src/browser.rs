@@ -312,6 +312,44 @@ pub async fn create_interface_game(
     .await
 }
 
+/// Prepare a cooked-font card over the ordinary browser sprite field.
+///
+/// # Errors
+/// Refuses an unknown card, an unsupported scale or an unavailable graphics device.
+#[cfg(feature = "proving")]
+#[wasm_bindgen]
+pub async fn create_interface_text_game(
+    canvas: HtmlCanvasElement,
+    store: &CookedValley,
+    scale: u8,
+    card: &str,
+    rows: u32,
+) -> Result<BrowserGame, JsValue> {
+    let mode = match card {
+        "type" => crate::InterfaceText::Type,
+        "counting" => crate::InterfaceText::Counting,
+        "specimen" => crate::InterfaceText::Specimen,
+        _ => {
+            return Err(js_error(
+                "interface text card must be type, counting or specimen",
+            ));
+        }
+    };
+    create_game_with_content(
+        canvas,
+        crate::GameSetup {
+            sprite_scale: Some(2),
+            sprite_rows: Some(rows),
+            interface_scale: Some(scale),
+            interface_text: Some(mode),
+            ..crate::GameSetup::default()
+        },
+        None,
+        Some(store.feed.clone()),
+    )
+    .await
+}
+
 /// Open the moving sprite field with the fetched sheet store.
 ///
 /// # Errors

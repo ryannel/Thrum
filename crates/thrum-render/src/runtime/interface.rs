@@ -34,20 +34,34 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         &mut self,
         sdr_extent: Option<[u32; 2]>,
         float_extent: Option<[u32; 2]>,
-    ) -> Option<crate::sprite::InterfaceFrameStats> {
-        let interface = self.interface.as_mut()?;
+    ) -> Result<Option<crate::sprite::InterfaceFrameStats>, FrameError> {
+        let Some(interface) = self.interface.as_mut() else {
+            return Ok(None);
+        };
         let extent = float_extent
             .or(sdr_extent)
             .expect("prepared display target");
-        let paint = self.source.paint_list(extent);
-        Some(interface.upload(&self.queue, paint.as_ref(), sdr_extent, float_extent))
+        let [paint, prepared] = self.source.paint_lists(extent);
+        interface
+            .upload(
+                &self.queue,
+                self.prepared.capabilities(),
+                paint.as_ref(),
+                prepared.as_ref(),
+                sdr_extent,
+                float_extent,
+            )
+            .map(Some)
+            .map_err(|error| FrameError::gpu("interface paint", error))
     }
 
     pub(super) fn sample_interface(
         &mut self,
         slot_index: usize,
-    ) -> Option<crate::sprite::InterfaceFrameStats> {
-        self.interface.as_ref()?;
+    ) -> Result<Option<crate::sprite::InterfaceFrameStats>, FrameError> {
+        if self.interface.is_none() {
+            return Ok(None);
+        }
         let float_extent = self
             .presenter
             .as_ref()

@@ -50,6 +50,10 @@ impl CookedFrames {
         self.offer.as_ref().map(|offer| offer.generation)
     }
 
+    pub(super) fn paint_stamp(&self) -> Option<crate::sprite::PaintStamp> {
+        self.offer.as_ref().and_then(|offer| offer.paint_stamp)
+    }
+
     pub(super) fn update(
         &mut self,
         scene: &SpriteScene,
@@ -109,11 +113,23 @@ impl CookedFrames {
                     SheetKind::Pixel => crate::sprite::SpriteSampling::Pixel,
                     SheetKind::Smooth => crate::sprite::SpriteSampling::Smooth,
                 };
-                let by_name: HashMap<_, _> = page.product.frames().collect();
-                let frames = names
-                    .iter()
-                    .map(|name| {
-                        let Some(frame) = by_name.get(name.as_str()) else {
+                let by_name: HashMap<_, _>;
+                let frames: Vec<_> = if sheet.indexed {
+                    page.product
+                        .frames()
+                        .map(|(_, frame)| Some(frame))
+                        .collect()
+                } else {
+                    by_name = page.product.frames().collect();
+                    names
+                        .iter()
+                        .map(|name| by_name.get(name.as_str()).copied())
+                        .collect()
+                };
+                let frames = frames
+                    .into_iter()
+                    .map(|frame| {
+                        let Some(frame) = frame else {
                             return Ok(None);
                         };
                         let index = u32::try_from(table.len())

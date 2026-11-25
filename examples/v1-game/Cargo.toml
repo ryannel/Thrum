@@ -228,3 +228,11 @@ required-features = ["proving"]
 [[example]]
 name = "interface_cost"
 required-features = ["proving"]
+
+[[test]]
+name = "interface_text_gpu"
+required-features = ["proving"]
+
+[[example]]
+name = "font_cost"
+required-features = ["proving"]

@@ -182,6 +182,7 @@ pub(crate) fn interface(capacity: u32) -> InterfaceConfig {
     );
     sheet.tiles = vec![0, 1];
     InterfaceConfig {
+        cooked: None,
         sheets: vec![sheet],
         row_capacity: capacity,
     }

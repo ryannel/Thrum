@@ -1,0 +1,204 @@
+{
+  "kind": "pixel",
+  "file": "grid.png",
+  "cell": [
+    8,
+    8
+  ],
+  "baseline": 7,
+  "outline": true,
+  "characters": [
+    {
+      "character": "0",
+      "cell": [
+        0,
+        0
+      ],
+      "advance": 8
+    },
+    {
+      "character": "1",
+      "cell": [
+        1,
+        0
+      ],
+      "advance": 8
+    },
+    {
+      "character": "2",
+      "cell": [
+        2,
+        0
+      ],
+      "advance": 8
+    },
+    {
+      "character": "3",
+      "cell": [
+        3,
+        0
+      ],
+      "advance": 8
+    },
+    {
+      "character": "4",
+      "cell": [
+        4,
+        0
+      ],
+      "advance": 8
+    },
+    {
+      "character": "5",
+      "cell": [
+        5,
+        0
+      ],
+      "advance": 8
+    },
+    {
+      "character": "6",
+      "cell": [
+        6,
+        0
+      ],
+      "advance": 8
+    },
+    {
+      "character": "7",
+      "cell": [
+        7,
+        0
+      ],
+      "advance": 8
+    },
+    {
+      "character": "8",
+      "cell": [
+        8,
+        0
+      ],
+      "advance": 8
+    },
+    {
+      "character": "9",
+      "cell": [
+        9,
+        0
+      ],
+      "advance": 8
+    },
+    {
+      "character": "A",
+      "cell": [
+        10,
+        0
+      ],
+      "advance": 8
+    },
+    {
+      "character": "B",
+      "cell": [
+        11,
+        0
+      ],
+      "advance": 8
+    },
+    {
+      "character": "G",
+      "cell": [
+        12,
+        0
+      ],
+      "advance": 8
+    },
+    {
+      "character": "R",
+      "cell": [
+        13,
+        0
+      ],
+      "advance": 8
+    },
+    {
+      "character": "I",
+      "cell": [
+        14,
+        0
+      ],
+      "advance": 8
+    },
+    {
+      "character": "D",
+      "cell": [
+        15,
+        0
+      ],
+      "advance": 8
+    },
+    {
+      "character": "P",
+      "cell": [
+        16,
+        0
+      ],
+      "advance": 8
+    },
+    {
+      "character": "X",
+      "cell": [
+        17,
+        0
+      ],
+      "advance": 8
+    },
+    {
+      "character": "E",
+      "cell": [
+        18,
+        0
+      ],
+      "advance": 8
+    },
+    {
+      "character": "L",
+      "cell": [
+        19,
+        0
+      ],
+      "advance": 8
+    },
+    {
+      "character": "-",
+      "cell": [
+        20,
+        0
+      ],
+      "advance": 8
+    },
+    {
+      "character": ".",
+      "cell": [
+        21,
+        0
+      ],
+      "advance": 8
+    },
+    {
+      "character": "…",
+      "cell": [
+        22,
+        0
+      ],
+      "advance": 8
+    },
+    {
+      "character": " ",
+      "cell": [
+        23,
+        0
+      ],
+      "advance": 4
+    }
+  ]
+}

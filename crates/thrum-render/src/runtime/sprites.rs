@@ -170,7 +170,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         &mut self,
         readback: bool,
     ) -> Result<(Option<PixelReadback>, wgpu::SubmissionIndex), FrameError> {
-        self.update_interface(Some(self.render_extent), None);
+        self.update_interface(Some(self.render_extent), None)?;
         let source = self.world.source();
         let snapshot = self.world.publication()?;
         if super::publication_source(&snapshot) != source {

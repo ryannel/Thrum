@@ -1,0 +1,9 @@
+{
+  "kind": "outline",
+  "file": "Roboto-Regular.ttf",
+  "sizes": [
+    {"points": 12},
+    {"points": 16, "outline": 1},
+    {"points": 24}
+  ]
+}

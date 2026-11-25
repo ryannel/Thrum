@@ -329,7 +329,7 @@ pub(super) fn row(sheet: u32, frame: u32, point: [i32; 2]) -> SpriteRow {
     }
 }
 
-pub(super) struct World(u64);
+pub(super) struct World(pub(super) u64);
 
 impl FrameWorld for World {
     type Page = SourceTick;

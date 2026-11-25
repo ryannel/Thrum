@@ -13,6 +13,7 @@ use bytemuck::{Pod, Zeroable};
 #[derive(Clone)]
 pub struct ProductBytes {
     inner: Inner,
+    range: std::ops::Range<usize>,
 }
 
 #[derive(Clone)]
@@ -21,7 +22,6 @@ enum Inner {
     Mapped(Arc<memmap2::Mmap>),
     Owned {
         blocks: Arc<[Align64]>,
-        len: usize,
     },
 }
 
@@ -44,7 +44,8 @@ impl ProductBytes {
         let slice = Arc::get_mut(&mut blocks).expect("a fresh allocation has one owner");
         write(&mut bytemuck::cast_slice_mut::<Align64, u8>(slice)[..len]);
         Self {
-            inner: Inner::Owned { blocks, len },
+            inner: Inner::Owned { blocks },
+            range: 0..len,
         }
     }
 
@@ -69,8 +70,17 @@ impl ProductBytes {
         // mapping valid on POSIX). Mapped bytes are only read through `&[u8]`.
         let map = unsafe { memmap2::Mmap::map(file)? };
         Ok(Self {
+            range: 0..map.len(),
             inner: Inner::Mapped(Arc::new(map)),
         })
+    }
+
+    pub(crate) fn section(&self, range: std::ops::Range<usize>) -> Self {
+        debug_assert!(range.end <= self.len());
+        Self {
+            inner: self.inner.clone(),
+            range: self.range.start + range.start..self.range.start + range.end,
+        }
     }
 
     /// Whether the bytes are a file mapping rather than an owned copy.
@@ -87,11 +97,12 @@ impl Deref for ProductBytes {
     type Target = [u8];
 
     fn deref(&self) -> &[u8] {
-        match &self.inner {
+        let bytes = match &self.inner {
             #[cfg(not(target_arch = "wasm32"))]
             Inner::Mapped(map) => map,
-            Inner::Owned { blocks, len } => &bytemuck::cast_slice::<Align64, u8>(blocks)[..*len],
-        }
+            Inner::Owned { blocks } => bytemuck::cast_slice::<Align64, u8>(blocks),
+        };
+        &bytes[self.range.clone()]
     }
 }
 

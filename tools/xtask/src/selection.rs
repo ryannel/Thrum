@@ -52,11 +52,28 @@ pub(crate) struct Edge {
     pub(crate) reader: &'static str,
 }
 
-pub(crate) const DECLARED_EDGES: &[Edge] = &[Edge {
-    path: "crates/thrum-asset-gpu/src/",
-    package: "thrum-render",
-    reader: "every_cooked_pipeline_goes_through_the_seam_and_escapes_nothing scans that folder",
-}];
+pub(crate) const DECLARED_EDGES: &[Edge] = &[
+    Edge {
+        path: "crates/thrum-asset-gpu/src/",
+        package: "thrum-render",
+        reader: "every_cooked_pipeline_goes_through_the_seam_and_escapes_nothing scans that folder",
+    },
+    Edge {
+        path: "tests/fixtures/game-ui/font-source/",
+        package: "thrum-cook",
+        reader: "font_cook and font_hostile read the original V1 font sources",
+    },
+    Edge {
+        path: "tests/fixtures/game-ui/font-source/",
+        package: "thrum-ui",
+        reader: "text_runs lays out the cooked V1 font sources",
+    },
+    Edge {
+        path: "tests/fixtures/game-ui/font-source/",
+        package: "v1-game",
+        reader: "interface_text_gpu reads the font sources",
+    },
+];
 
 /// One workspace package: its folder relative to the workspace root, and the workspace packages it
 /// depends on, as any kind of dependency.

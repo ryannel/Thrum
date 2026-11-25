@@ -9,7 +9,7 @@ mod pass;
 mod world;
 pub use cooked::{CookedSpriteSheet, SpriteSheetPage, SpriteSheetPublication, SpriteSheetSource};
 pub(crate) use graph::{PreparedSprites, SpriteTarget};
-pub use interface::{InterfaceConfig, InterfaceFrameStats, PaintList};
+pub use interface::{InterfaceConfig, InterfaceFrameStats, InterfaceSheets, PaintList, PaintStamp};
 pub use world::{SpritePose, SpriteSink};
 
 pub(crate) use thrum_asset::layout::{SHEET_GUTTER, SHEET_MAX_MIP};
@@ -119,7 +119,26 @@ impl SpriteScene {
         &mut self,
         name: impl Into<String>,
     ) -> Result<CookedSpriteSheet, crate::error::RenderError> {
-        let name = name.into();
+        self.register_sheet(name.into(), false)
+    }
+
+    /// Register a cooked sheet addressed by validated frame-table indices. Its world rows
+    /// must be sampled from the same publication; interface rows carry a paint stamp.
+    ///
+    /// # Errors
+    /// At most eight sheets may be registered, including embedded sheets.
+    pub fn add_indexed_sheet(
+        &mut self,
+        name: impl Into<String>,
+    ) -> Result<CookedSpriteSheet, crate::error::RenderError> {
+        self.register_sheet(name.into(), true)
+    }
+
+    fn register_sheet(
+        &mut self,
+        name: String,
+        indexed: bool,
+    ) -> Result<CookedSpriteSheet, crate::error::RenderError> {
         let slot = self.sheets.len() + self.cooked.len();
         if slot >= pass::SHEET_SLOTS {
             return Err(crate::error::RenderError::SpriteSheetLimit {
@@ -130,6 +149,7 @@ impl SpriteScene {
         let sheet = CookedSpriteSheet::new(
             name,
             u32::try_from(slot).map_err(|_| crate::error::RenderError::SpriteFrameCapacity)?,
+            indexed,
         );
         self.cooked.push(sheet.clone());
         Ok(sheet)

@@ -377,6 +377,35 @@ impl SpritePass {
         }
     }
 
+    pub(super) fn sync_paint_sheets(
+        &mut self,
+        capabilities: &DeviceCapabilities,
+        scene: &SpriteScene,
+    ) -> Result<Option<super::PaintStamp>, RenderError> {
+        self.cooked.update(
+            scene,
+            capabilities.site(),
+            capabilities.generation(),
+            &self.embedded_frames,
+        )?;
+        Ok(self.cooked.paint_stamp())
+    }
+
+    pub(super) fn bind_paint_sheets(
+        &self,
+        device: &wgpu::Device,
+        scene: &SpriteScene,
+        bindings: &mut SpriteBindings,
+        pipeline: &wgpu::RenderPipeline,
+    ) -> bool {
+        if bindings.sheet_revision == self.cooked.revision {
+            return false;
+        }
+        bindings.group = self.bind_group(device, &bindings.view, scene.cooked.len(), pipeline);
+        bindings.sheet_revision = self.cooked.revision;
+        true
+    }
+
     pub(super) fn initialize_paint_order(&self, queue: &wgpu::Queue) {
         let order: Vec<u32> =
             (0..u32::try_from(self.row_capacity).expect("prepared row capacity")).collect();

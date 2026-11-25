@@ -87,6 +87,7 @@ fn unchanged_graphs_are_the_main_prerequisite_and_only_the_control_allocates_int
         let source = Active(
             fixture::Scene::new(Vec::new(), 1),
             InterfaceConfig {
+                cooked: None,
                 sheets: vec![NamedSheet::pixel("interface control", sheet())],
                 row_capacity: 1,
             },

@@ -12,7 +12,7 @@ use crate::cas::{Cas, Durability};
 use crate::stat_cache::{ScanCounts, StatCache};
 use crate::texture::Quality;
 use crate::write::ContainerWriter;
-use crate::{CookError, mesh, sheet, texture};
+use crate::{CookError, font, mesh, sheet, texture};
 
 /// Version of every cooker's output; bump to invalidate all cached actions.
 /// 3: mirrored glTF nodes keep front-face winding and outward normals.
@@ -90,6 +90,7 @@ enum PreparedSource {
     Texture(texture::TextureMips),
     Volume(texture::VolumeMips),
     Sheet(sheet::PreparedSheet),
+    Font(Vec<u8>),
 }
 
 /// Incremental cooker owning one store.
@@ -387,20 +388,32 @@ impl Cooker {
         let mut jobs = Vec::new();
         let mut failed = Vec::new();
         let mut sheet_images = BTreeMap::<&Path, Vec<(PathBuf, ContentHash)>>::new();
-        for path in files.keys().filter(|path| sheet::is_description(path)) {
+        for path in files
+            .keys()
+            .filter(|path| sheet::is_description(path) || font::is_description(path))
+        {
             if let Some(parent) = path.parent() {
                 sheet_images.insert(parent, Vec::new());
             }
         }
         let mut sources = BTreeMap::<String, Vec<_>>::new();
         for (path, hash) in &files {
-            if sheet::is_png(path)
-                && let Some(images) = path
-                    .parent()
-                    .and_then(|parent| sheet_images.get_mut(parent))
+            if let Some(parent) = path.parent()
+                && let Some(images) = sheet_images.get_mut(parent)
             {
-                images.push((path.clone(), *hash));
-                continue;
+                if parent.join("font.json").as_path() != path
+                    && files.contains_key(&parent.join("font.json"))
+                {
+                    if font::is_input(path) {
+                        images.push((path.clone(), *hash));
+                    }
+                    if !sheet::is_description(path) {
+                        continue;
+                    }
+                } else if sheet::is_png(path) {
+                    images.push((path.clone(), *hash));
+                    continue;
+                }
             }
             if let Some((name, kind, linear)) = classify(path) {
                 sources
@@ -426,7 +439,7 @@ impl Cooker {
             };
             let (path, hash, kind, linear) = (*path, **hash, *kind, *linear);
             let mut inputs = vec![(path.clone(), hash)];
-            if kind == ProductKind::SpriteSheet
+            if matches!(kind, ProductKind::SpriteSheet | ProductKind::Font)
                 && let Some(images) = path.parent().and_then(|parent| sheet_images.get(parent))
             {
                 inputs.extend(images.iter().cloned());
@@ -453,7 +466,7 @@ impl Cooker {
                     }
                 }
             }
-            let profiles = if kind == ProductKind::Mesh {
+            let profiles = if matches!(kind, ProductKind::Mesh | ProductKind::Font) {
                 vec![Profile::Portable]
             } else {
                 self.config.profiles.clone()
@@ -578,7 +591,7 @@ impl Cooker {
             ProductKind::Volume => {
                 texture::prepare_volume(&read_verified()?).map(PreparedSource::Volume)
             }
-            ProductKind::SpriteSheet => {
+            ProductKind::SpriteSheet | ProductKind::Font => {
                 let description = read_verified()?;
                 let images = job.inputs[1..].iter().map(|(path, hash)| {
                     let bytes = std::fs::read(self.config.source.join(path))?;
@@ -587,7 +600,11 @@ impl Cooker {
                     }
                     Ok((path.as_path(), bytes))
                 });
-                sheet::prepare(&description, images).map(PreparedSource::Sheet)
+                if job.kind == ProductKind::Font {
+                    font::cook(&description, images).map(PreparedSource::Font)
+                } else {
+                    sheet::prepare(&description, images).map(PreparedSource::Sheet)
+                }
             }
         }
     }
@@ -595,7 +612,7 @@ impl Cooker {
     fn run(&self, job: &Job, prepared: &PreparedSource) -> Result<Product, CookError> {
         let encoded;
         let bytes = match prepared {
-            PreparedSource::Mesh(bytes) => bytes.as_slice(),
+            PreparedSource::Mesh(bytes) | PreparedSource::Font(bytes) => bytes.as_slice(),
             PreparedSource::Texture(texture) => {
                 encoded = texture.encode(job.profile, self.config.quality)?;
                 &encoded
@@ -639,9 +656,15 @@ impl Cooker {
 
 /// Logical name, kind and linear flag for a source path, or `None` if it is not an asset root.
 fn classify(path: &Path) -> Option<(String, ProductKind, bool)> {
-    if sheet::is_description(path) {
-        let directory = path.parent()?;
-        return Some((logical_name(directory), ProductKind::SpriteSheet, false));
+    let folder_kind = if sheet::is_description(path) {
+        Some(ProductKind::SpriteSheet)
+    } else if font::is_description(path) {
+        Some(ProductKind::Font)
+    } else {
+        None
+    };
+    if let Some(kind) = folder_kind {
+        return Some((logical_name(path.parent()?), kind, false));
     }
     let extension = path.extension()?.to_str()?.to_ascii_lowercase();
     let kind = match extension.as_str() {
@@ -697,6 +720,9 @@ fn validate(kind: ProductKind, bytes: &[u8]) -> Result<(), CookError> {
         ProductKind::Mesh => thrum_asset::MeshProduct::open(bytes)?.validate_references()?,
         ProductKind::SpriteSheet => {
             thrum_asset::SheetProduct::open(bytes)?;
+        }
+        ProductKind::Font => {
+            thrum_asset::FontProduct::open(bytes)?;
         }
         ProductKind::Texture | ProductKind::Volume => {
             let texture = thrum_asset::Ktx2::open(bytes)?;

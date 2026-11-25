@@ -93,6 +93,9 @@ pub struct GameSetup {
     /// Use the empty or measured paint list in place of the panel card.
     #[cfg(feature = "proving")]
     pub interface_rows: Option<u32>,
+    /// Select a cooked-font card in the interface scene.
+    #[cfg(feature = "proving")]
+    pub interface_text: Option<crate::InterfaceText>,
     /// Select the sprite test card at this integer output scale.
     #[cfg(feature = "proving")]
     pub sprite_scale: Option<u16>,
@@ -179,6 +182,8 @@ impl Default for GameSetup {
             interface_scale: None,
             #[cfg(feature = "proving")]
             interface_rows: None,
+            #[cfg(feature = "proving")]
+            interface_text: None,
             #[cfg(feature = "proving")]
             sprite_scale: None,
             #[cfg(feature = "proving")]
@@ -290,7 +295,12 @@ impl GameSetup {
     ) -> Result<Runtime, String> {
         #[cfg(all(feature = "proving", not(target_arch = "wasm32")))]
         if self.sprite_scale.is_some() {
-            match crate::content::launch_value("THRUM_SPRITE_SHEETS_STORE") {
+            let store = if self.interface_text.is_some() {
+                "THRUM_FONT_STORE"
+            } else {
+                "THRUM_SPRITE_SHEETS_STORE"
+            };
+            match crate::content::launch_value(store) {
                 Ok(store) => {
                     return self
                         .prepare_with_sheet_source(
@@ -303,7 +313,7 @@ impl GameSetup {
                         .await
                         .map_err(|error| error.to_string());
                 }
-                Err(std::env::VarError::NotPresent) => {}
+                Err(std::env::VarError::NotPresent) if self.interface_text.is_none() => {}
                 Err(error) => return Err(error.to_string()),
             }
         }
@@ -484,7 +494,19 @@ impl GameSetup {
         if setup.sprite_rows.is_some() && setup.sprite_probe.is_none() {
             crate::sprite_card::add_to_mobile_field(&mut scene)?;
         }
-        let assets = if let Some(source) = sheet_source {
+        let assets = if let Some(mode) = setup.interface_text {
+            let source = sheet_source.ok_or(FrameError::InvalidState(
+                "interface text needs a cooked font store",
+            ))?;
+            let (card, assets) = crate::interface_text::FontCard::attach(
+                source,
+                mode,
+                setup.interface_scale.unwrap_or(1),
+            )?;
+            game.font_card = Some(Box::new(card));
+            game.sheet_stats = Some(assets.stats());
+            Some(assets)
+        } else if let Some(source) = sheet_source {
             if setup.sprite_rows.is_none() {
                 return Err(FrameError::InvalidState(
                     "cooked sprite sheets require the moving sprite field",

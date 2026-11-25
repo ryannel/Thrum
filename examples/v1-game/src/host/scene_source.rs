@@ -365,6 +365,10 @@ pub struct GameScene {
     #[cfg(feature = "proving")]
     interface: Option<crate::interface_card::Card>,
     #[cfg(feature = "proving")]
+    pub(super) font_card: Option<Box<crate::interface_text::FontCard>>,
+    #[cfg(feature = "proving")]
+    font_tick: std::cell::Cell<u64>,
+    #[cfg(feature = "proving")]
     sprite_scale: Option<u16>,
     #[cfg(feature = "proving")]
     sprite_probe: Option<crate::sprite_probe::Scene>,
@@ -509,6 +513,14 @@ impl GameScene {
         self.sheet_stats.clone()
     }
 
+    /// Request a different cooked interface scale.
+    #[cfg(feature = "proving")]
+    pub fn set_interface_scale(&self, scale: u32) -> bool {
+        self.font_card
+            .as_ref()
+            .is_some_and(|card| card.set_scale(scale))
+    }
+
     pub(super) fn new(setup: GameSetup) -> Self {
         #[cfg(feature = "proving")]
         let temporal: Option<serde_json::Value> =
@@ -517,6 +529,10 @@ impl GameScene {
                     .expect("checked-in temporal fixture")
             });
         Self {
+            #[cfg(feature = "proving")]
+            font_card: None,
+            #[cfg(feature = "proving")]
+            font_tick: std::cell::Cell::new(0),
             #[cfg(feature = "proving")]
             interface: setup.interface_scale.map(|scale| {
                 crate::interface_card::Card::new(
@@ -721,14 +737,20 @@ impl GameScene {
 impl SceneSource<PublishedPage> for GameScene {
     #[cfg(feature = "proving")]
     fn interface_config(&self) -> Option<thrum_ui::InterfaceConfig> {
+        if let Some(card) = &self.font_card {
+            return Some(card.config());
+        }
         self.interface
             .as_ref()
             .map(crate::interface_card::Card::config)
     }
 
     #[cfg(feature = "proving")]
-    fn paint_list(&mut self, extent: [u32; 2]) -> Option<thrum_ui::PaintList> {
-        self.interface.as_mut().map(|card| card.paint(extent))
+    fn paint_lists(&mut self, extent: [u32; 2]) -> [Option<thrum_ui::PaintList>; 2] {
+        if let Some(card) = &mut self.font_card {
+            return card.paint(extent, self.font_tick.get());
+        }
+        [self.interface.as_mut().map(|card| card.paint(extent)), None]
     }
 
     #[cfg(feature = "proving")]
@@ -758,6 +780,9 @@ impl SceneSource<PublishedPage> for GameScene {
         alpha: f32,
         extent: [u32; 2],
     ) -> Result<thrum_render::sprite::SpriteFrame<'_>, FrameError> {
+        if self.font_card.is_some() {
+            self.font_tick.set(source.tick);
+        }
         let scale = self.sprite_scale.ok_or(RenderError::MissingSpriteSource)?;
         Ok(if let Some(probe) = &self.sprite_probe {
             probe.frame(source, alpha, extent)
@@ -1163,6 +1188,10 @@ mod tests {
         .unwrap();
         let [camera_pitch, camera_yaw] = camera.orientation();
         let policy = GameScene {
+            #[cfg(feature = "proving")]
+            font_card: None,
+            #[cfg(feature = "proving")]
+            font_tick: std::cell::Cell::new(0),
             #[cfg(feature = "proving")]
             interface: None,
             #[cfg(feature = "proving")]

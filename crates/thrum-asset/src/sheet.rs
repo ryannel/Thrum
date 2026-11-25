@@ -124,6 +124,12 @@ impl SheetProduct {
         &self.texture
     }
 
+    /// Look up a frame by its table index.
+    pub fn frame_at(&self, index: u32) -> Option<&SheetFrame> {
+        let frames: &[SheetFrame] = bytemuck::cast_slice(&self.bytes[self.table.clone()]);
+        frames.get(index as usize)
+    }
+
     /// Authored names and placement records.
     #[expect(
         clippy::missing_panics_doc,

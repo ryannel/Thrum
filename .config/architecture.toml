@@ -133,7 +133,7 @@ implicit_dependencies = { profiling = "Enable native wgpu resource-creation span
 
 [packages.thrum-ui]
 manifest = "crates/thrum-ui/Cargo.toml"
-allowed_workspace_dependencies = ["thrum-render", "thrum-core", "thrum-test-support"]
+allowed_workspace_dependencies = ["thrum-asset", "thrum-render", "thrum-core", "thrum-test-support", "thrum-cook"]
 
 [packages.thrum-fixtures]
 manifest = "crates/thrum-fixtures/Cargo.toml"
@@ -461,3 +461,27 @@ requirement = "=2.7.1"
 license = "MIT OR Apache-2.0"
 purpose = "Encode the registered Sun-path optical-depth field for portable filtered R16Float sampling"
 target_cost = "Native and Wasm renderer setup or source replacement only, one conversion per field texel, no conversion on the fragment or per-frame metadata path"
+
+[external_dependencies.harfrust]
+requirement = "=0.12.0"
+license = "MIT"
+purpose = "Extract outline font kerning through OpenType shaping"
+target_cost = "Authoring-only during font cooking"
+
+[external_dependencies.skrifa]
+requirement = "=0.44.0"
+license = "MIT OR Apache-2.0"
+purpose = "Read outline metrics and draw light-hinted glyph paths"
+target_cost = "Authoring-only during font cooking"
+
+[external_dependencies.zeno]
+requirement = "=0.3.3"
+license = "Apache-2.0 OR MIT"
+purpose = "Rasterise glyph paths and their strokes to coverage masks"
+target_cost = "Authoring-only during font cooking"
+
+[external_dependencies.unicode-normalization]
+requirement = "=0.1.26"
+license = "(MIT OR Apache-2.0) AND Unicode-3.0"
+purpose = "Build a font's canonical composition table"
+target_cost = "Authoring-only during font cooking"

@@ -261,3 +261,33 @@ impl PreparedSheet {
         ))
     }
 }
+
+/// Pack generated raster frames through the same page and mip path as imported sprites.
+pub(crate) fn pack_font(images: Vec<(RgbaImage, [f32; 2])>) -> Result<PreparedSheet, CookError> {
+    let description = Description {
+        kind: Sampling::Pixel,
+        density: 1.0,
+        page_size: 2048,
+        grids: BTreeMap::new(),
+        pivots: BTreeMap::new(),
+        tiles: BTreeSet::new(),
+    };
+    let mut frames = Vec::with_capacity(images.len());
+    let mut bitmaps = Vec::with_capacity(images.len());
+    for (index, (image, pivot)) in images.into_iter().enumerate() {
+        let size = [image.width(), image.height()];
+        frames.push(Frame {
+            name: format!("glyph.{index}"),
+            image: index,
+            cell: [0, 0],
+            rect: SheetFrame {
+                pivot,
+                size,
+                source_size: size,
+                ..bytemuck::Zeroable::zeroed()
+            },
+        });
+        bitmaps.push(image);
+    }
+    pages::pack(&description, frames, &bitmaps)
+}

@@ -49,7 +49,7 @@
     <script type="module">
       import init, { create_browser_game, fetch_cooked_valley } from "./v1_game.js";
       // @proving
-      import { create_placed_browser_game, create_field_game, create_interface_game, create_sprite_game, create_sprite_probe, create_cooked_sprite_game } from "./v1_game.js";
+      import { create_placed_browser_game, create_field_game, create_interface_game, create_interface_text_game, create_sprite_game, create_sprite_probe, create_cooked_sprite_game } from "./v1_game.js";
       // @end
       import { bindControls } from "./thrum-controls.js";
       import { mountPage } from "./host-page.js";
@@ -139,19 +139,24 @@
           throw new Error("Sprite sampling probes require the ordinary 2D path without a sprite field");
         }
         let spriteStore = null;
-        if (sprites && cooked) {
+        const textCard = interfaceScene && probe.get("text-card");
+        if ((sprites || textCard) && cooked) {
           if (probe.has("sprite-probe") || probe.has("culling") || ![null, "off"].includes(probe.get("reconstruction"))) {
             throw new Error("Cooked sheets require the moving sprite field");
           }
           status.textContent = "Fetching cooked sprite sheets…";
           spriteStore = await fetch_cooked_valley(probe.get("assets"));
         }
-        const game = spriteStore
+        if (textCard && !spriteStore) throw new Error("The text card requires a cooked font store");
+        const interfaceScale = Math.min(3, Math.max(1, Math.round(devicePixelRatio)));
+        const game = textCard
+          ? await create_interface_text_game(canvas, spriteStore, interfaceScale, textCard, spriteRows ?? 10000)
+          : spriteStore
           ? await create_cooked_sprite_game(canvas, spriteStore, spriteRows ?? 1000)
           : placed
           ? await create_placed_browser_game(canvas, placed)
           : interfaceScene
-          ? await create_interface_game(canvas, Math.min(3, Math.max(1, Math.round(devicePixelRatio))), spriteRows ?? 10000, probe.has("paint-rows") ? Number(probe.get("paint-rows")) : undefined)
+          ? await create_interface_game(canvas, interfaceScale, spriteRows ?? 10000, probe.has("paint-rows") ? Number(probe.get("paint-rows")) : undefined)
           : sprites
           ? probe.has("sprite-probe")
             ? await create_sprite_probe(canvas, probe.get("sprite-probe"))

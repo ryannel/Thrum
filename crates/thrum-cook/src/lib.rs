@@ -12,6 +12,7 @@ pub use error::{OriginError, TextureEncodeError, TripwireError};
 mod cas;
 mod cooker;
 pub mod demo;
+mod font;
 mod mesh;
 mod server;
 mod sheet;

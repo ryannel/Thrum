@@ -69,7 +69,7 @@ pub use drawn::{
     AwaitDrawnError, DRAWN_DEADLINE, Drawn, Progress, await_content, await_drawn,
     await_drawn_on_surface, cooked_failure_baseline, cooked_progress, draw_endpoint,
 };
-pub use lease::{LeaseRequest, LentProduct, LentSet, ProductLease};
+pub use lease::{FontCandidate, FontScale, LeaseRequest, LentProduct, LentSet, ProductLease};
 pub use material::{
     MaterialDiagnostic, MaterialHook, MaterialOutcome, MaterialReadError, MaterialReload,
     ReloadTiming,
@@ -157,7 +157,7 @@ struct Remote {
     loader: load::Loader,
     feed: RemoteFeed,
     /// Feed serial and drawn generation last considered for preparation.
-    seen: Option<(u64, Option<thrum_asset::Head>)>,
+    seen: Option<(u64, Option<thrum_asset::Head>, u32, u32)>,
     /// Products of the drawn set, reused by later generations.
     confirmed: load::Confirmed,
     /// Staging of the newest prepared generation, filled as chunks free up.
@@ -166,19 +166,33 @@ struct Remote {
 
 impl Remote {
     fn prepare_newest(&mut self, mailbox: &load::Mailbox, stop: &AtomicBool) {
+        let scale = self.loader.config.font_scale();
         if let Some((serial, generation)) = self.feed.latest()
-            && Some((serial, self.confirmed.head)) != self.seen
+            && Some((
+                serial,
+                self.confirmed.head,
+                self.confirmed.font_scale,
+                scale,
+            )) != self.seen
         {
-            self.seen = Some((serial, self.confirmed.head));
-            if Some(generation.head()) != self.confirmed.head {
+            self.seen = Some((
+                serial,
+                self.confirmed.head,
+                self.confirmed.font_scale,
+                scale,
+            ));
+            if Some(generation.head()) != self.confirmed.head || self.confirmed.font_scale != scale
+            {
                 self.filler =
                     self.loader
-                        .prepare_remote(&generation, &self.confirmed, mailbox, stop);
+                        .prepare_remote(&generation, scale, &self.confirmed, mailbox, stop);
             }
         }
         // Keep the browser's sprite loop moving while a large sheet is staged.
         // The legacy 3D path still fills every free chunk in one call.
-        let limit = if self.loader.config.sheet_leases.is_empty() {
+        let limit = if self.loader.config.sheet_leases.is_empty()
+            && self.loader.config.font_leases.is_empty()
+        {
             usize::MAX
         } else {
             1
@@ -231,6 +245,8 @@ pub struct CookedConfig {
     /// Additional sampled products, resident under the same publication and upload budget.
     pub leased: Vec<LeaseRequest>,
     sheet_leases: std::collections::BTreeSet<String>,
+    font_leases: std::collections::BTreeSet<String>,
+    font_scale: FontScale,
     /// Where the cooked products come from: a store folder written by `thrum-cook` (a
     /// `PathBuf` converts), or a fetched remote feed.
     pub source: CookedSource,
@@ -274,6 +290,8 @@ impl CookedConfig {
             fault: None,
             leased: Vec::new(),
             sheet_leases: std::collections::BTreeSet::new(),
+            font_leases: std::collections::BTreeSet::new(),
+            font_scale: FontScale::default(),
             source: source.into(),
             meshes,
             volume: None,
@@ -291,6 +309,30 @@ impl CookedConfig {
                 name,
                 dimension: wgpu::TextureDimension::D2,
             });
+        }
+    }
+
+    /// Lease the named font's pixel sheet at the interface's requested scale.
+    pub fn lease_font(&mut self, name: impl Into<String>) {
+        let name = name.into();
+        if self.font_leases.insert(name.clone()) {
+            self.leased.push(LeaseRequest {
+                name,
+                dimension: wgpu::TextureDimension::D2,
+            });
+        }
+    }
+
+    /// Shared scale request for this scene's font reader.
+    pub fn font_scale_request(&self) -> FontScale {
+        self.font_scale.clone()
+    }
+
+    fn font_scale(&self) -> u32 {
+        if self.font_leases.is_empty() {
+            0
+        } else {
+            self.font_scale.get()
         }
     }
 }
@@ -400,6 +442,8 @@ pub struct CookedStats {
     pub staging_peak_bytes: u64,
     /// Generation currently drawn.
     pub drawn: Option<u64>,
+    /// Bytes of the committed font sheet textures, including their mips.
+    pub resident_font_bytes: u64,
     /// Device generation on which the drawn content was submitted.
     pub drawn_device_generation: Option<u64>,
     /// Path selected at the latest rebuild.
@@ -1079,6 +1123,7 @@ impl CookedAssets {
                 }
                 if let Ok(mut stats) = self.stats.lock() {
                     stats.drawn = None;
+                    stats.resident_font_bytes = 0;
                     stats.drawn_device_generation = None;
                     stats.last_frame_history = None;
                     stats.mesh_stage_exclusions.clear();
@@ -1123,6 +1168,26 @@ impl CookedAssets {
     }
 }
 
+fn font_stamp(set: &load::ResidentSet) -> Option<thrum_render::sprite::PaintStamp> {
+    (set.font_scale != 0).then_some(thrum_render::sprite::PaintStamp {
+        head: set.head,
+        scale: set.font_scale,
+    })
+}
+
+fn font_candidate(requests: &[LeaseRequest], set: &load::ResidentSet) -> Option<FontCandidate> {
+    Some(FontCandidate {
+        stamp: font_stamp(set)?,
+        fonts: requests
+            .iter()
+            .zip(&set.leased)
+            .filter_map(|(request, (_, _, _, texture))| {
+                Some((request.name.clone(), texture.font.clone()?))
+            })
+            .collect(),
+    })
+}
+
 fn offer_leases(
     lease: &ProductLease,
     requests: &[LeaseRequest],
@@ -1147,7 +1212,7 @@ fn offer_leases(
             },
         )
         .collect();
-    lease.offer(set.generation, products);
+    lease.offer(set.generation, products, font_stamp(set));
 }
 
 impl SceneContribution for CookedAssets {
@@ -1268,6 +1333,7 @@ impl SceneContribution for CookedAssets {
         self.live = None;
         if let Ok(mut stats) = self.stats.lock() {
             stats.drawn = None;
+            stats.resident_font_bytes = 0;
             stats.drawn_device_generation = None;
             stats.draw_path = None;
         }
@@ -1327,7 +1393,12 @@ impl SceneContribution for CookedAssets {
             // when the switch is submitted, on both native and remote feeds.
             live.pending = set
                 .ok()
-                .filter(|set| set.base_head == live.current.as_ref().map(|(set, _)| set.head))
+                .filter(|set| {
+                    set.base_head == live.current.as_ref().map(|(set, _)| set.head)
+                        && set.base_font_scale
+                            == live.current.as_ref().map_or(0, |(set, _)| set.font_scale)
+                        && set.set.font_scale == self.config.font_scale()
+                })
                 .map(|set| Pending {
                     ready: false,
                     initial_ray_completion: None,
@@ -1336,6 +1407,13 @@ impl SceneContribution for CookedAssets {
                     frames: 0,
                     bound: None,
                 });
+            if !self.config.font_leases.is_empty() {
+                self.lease.prepare_font(
+                    live.pending
+                        .as_ref()
+                        .and_then(|pending| font_candidate(&self.config.leased, &pending.set.set)),
+                );
+            }
             if let (Some(rows), Some(pending)) = (&self.config.rows, &live.pending) {
                 // The entity arena already holds these rows, even before
                 // the first set of placements becomes resident on this device.
@@ -1390,6 +1468,26 @@ impl SceneContribution for CookedAssets {
             rows.updates.cancel(pending.set.set.generation);
             live.pending = None;
         }
+        if let Some(pending) = live.pending.as_ref()
+            && !pending.ready
+            && !self.config.font_leases.is_empty()
+        {
+            let stamp = font_stamp(&pending.set.set);
+            let refusal = self.lease.font_refusal(stamp);
+            if refusal.is_some() || pending.set.set.font_scale != self.config.font_scale() {
+                if let Some(reason) = refusal
+                    && let Ok(mut stats) = self.stats.lock()
+                {
+                    stats.errors.push(reason);
+                    stats.failures += 1;
+                }
+                if let Some(rows) = &self.config.rows {
+                    rows.updates.cancel(pending.set.set.generation);
+                }
+                live.pending = None;
+                self.lease.prepare_font(None);
+            }
+        }
         // A set whose staging could not be filled never completes; the loader reported why.
         if live
             .pending
@@ -1400,6 +1498,7 @@ impl SceneContribution for CookedAssets {
                 rows.updates.cancel(pending.set.set.generation);
             }
             live.pending = None;
+            self.lease.prepare_font(None);
         }
         #[cfg(feature = "draw-probe")]
         live.sun_caster_draws.get_mut().clear();
@@ -1599,6 +1698,7 @@ impl SceneContribution for CookedAssets {
             pending.set.upload.commit(recorded);
             if !tentative.swap
                 && pending.set.upload.completes(recorded)
+                && self.lease.font_ready(font_stamp(&pending.set.set))
                 && pending.initial_ray_upload_completed(initial_ray_queue)
                 && self
                     .config
@@ -1629,6 +1729,7 @@ impl SceneContribution for CookedAssets {
             && let Some(pending) = live.pending.take()
         {
             let set = Arc::new(pending.set.set);
+            self.lease.commit_font(font_stamp(&set));
             live.resident_tx.send(Arc::clone(&set)).ok();
             if let Some(remote) = live.remote.as_mut() {
                 remote.confirmed = load::Loader::confirm(&set);
@@ -1649,6 +1750,12 @@ impl SceneContribution for CookedAssets {
                     );
                 }
                 stats.drawn = Some(set.generation);
+                stats.resident_font_bytes = set
+                    .leased
+                    .iter()
+                    .filter(|(_, _, _, texture)| texture.font.is_some())
+                    .map(|(_, _, _, texture)| texture.bytes)
+                    .sum();
                 set.report_mesh_storage(&self.config.meshes, &mut stats);
                 stats.drawn_device_generation = Some(live.generation);
                 stats.swaps.push(SwapRecord {

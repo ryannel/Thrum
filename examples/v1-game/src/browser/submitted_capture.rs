@@ -93,6 +93,12 @@ impl BrowserGame {
             metadata["missing_frame_rows"] = stats.missing_frame_rows.into();
             metadata["sprite_view_centre"] = serde_json::json!(stats.view_centre);
         }
+        if let Some(stats) = image.sample.interface {
+            metadata["paint_generation"] =
+                serde_json::json!(stats.stamp.map(|stamp| stamp.head.generation));
+            metadata["paint_scale"] = serde_json::json!(stats.stamp.map(|stamp| stamp.scale));
+            metadata["paint_stamp_mismatch"] = stats.stamp_mismatch.into();
+        }
         let pixels = if let Some(reuse) =
             reuse.filter(|buffer| buffer.length() as usize == image.rgba.len())
         {

@@ -9,6 +9,8 @@ pub enum ProductKind {
     Volume,
     /// Packed sprite frames and their array texture.
     SpriteSheet,
+    /// Font metrics and the pixel sheet for each cooked scale.
+    Font,
 }
 
 impl ProductKind {
@@ -19,6 +21,7 @@ impl ProductKind {
             Self::Texture => 2,
             Self::Volume => 3,
             Self::SpriteSheet => 4,
+            Self::Font => 5,
         }
     }
 
@@ -29,6 +32,7 @@ impl ProductKind {
             2 => Some(Self::Texture),
             3 => Some(Self::Volume),
             4 => Some(Self::SpriteSheet),
+            5 => Some(Self::Font),
             _ => None,
         }
     }

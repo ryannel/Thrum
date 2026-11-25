@@ -11,8 +11,8 @@ use std::time::Instant;
 use web_time::Instant;
 
 use thrum_asset::{
-    AssetError, ContentHash, Head, Ktx2, ManifestEntry, MeshProduct, ProductBytes, ProductKind,
-    Profile, RemoteGeneration, SheetProduct,
+    AssetError, ContentHash, FontProduct, Head, Ktx2, ManifestEntry, MeshProduct, ProductBytes,
+    ProductKind, Profile, RemoteGeneration, SheetProduct,
 };
 #[cfg(not(target_arch = "wasm32"))]
 use thrum_asset::{AssetStore, HeadWatcher, Manifest};
@@ -100,6 +100,8 @@ pub(crate) struct GpuTexture {
     pub(crate) texture: wgpu::Texture,
     pub(crate) view: wgpu::TextureView,
     pub(crate) sheet: Option<Arc<SheetProduct>>,
+    pub(crate) font: Option<Arc<FontProduct>>,
+    pub(crate) bytes: u64,
 }
 
 /// Every product one publication draws.
@@ -110,6 +112,7 @@ pub(crate) struct ResidentSet {
         thrum_render::synthetic::mesh_rows::MeshRowGeometry,
     )>,
     pub(crate) head: Head,
+    pub(crate) font_scale: u32,
     pub(crate) leased: Vec<(ContentHash, ContentHash, Profile, Arc<GpuTexture>)>,
     pub(crate) generation: u64,
     pub(crate) meshes: Vec<(Arc<GpuMesh>, Arc<GpuTexture>)>,
@@ -193,6 +196,7 @@ impl ResidentSet {
 pub(crate) struct PendingSet {
     /// Drawn generation whose resources this upload reuses.
     pub(crate) base_head: Option<Head>,
+    pub(crate) base_font_scale: u32,
     pub(crate) set: ResidentSet,
     pub(crate) upload: StagedUpload,
     pub(crate) head_seen: Instant,
@@ -204,6 +208,8 @@ pub(crate) struct PendingSet {
 pub(crate) struct Confirmed {
     rows: HashMap<ContentHash, thrum_render::synthetic::mesh_rows::MeshRowGeometry>,
     pub(crate) head: Option<Head>,
+    pub(crate) font_scale: u32,
+    fonts: HashMap<ContentHash, Arc<GpuTexture>>,
     meshes: HashMap<ContentHash, Arc<GpuMesh>>,
     textures: HashMap<ContentHash, Arc<GpuTexture>>,
 }
@@ -238,13 +244,14 @@ struct Opened {
 enum OpenedTexture {
     Image(Ktx2),
     Sheet(Arc<SheetProduct>),
+    Font(Arc<FontProduct>, Arc<SheetProduct>),
 }
 
 impl OpenedTexture {
     fn texture(&self) -> &Ktx2 {
         match self {
             Self::Image(texture) => texture,
-            Self::Sheet(sheet) => sheet.texture(),
+            Self::Sheet(sheet) | Self::Font(_, sheet) => sheet.texture(),
         }
     }
 }
@@ -307,11 +314,14 @@ impl Loader {
         };
         let mut watcher = HeadWatcher::new(AssetStore::new(store));
         let mut latest = None;
+        let mut scale = self.config.font_scale();
         // The newest posted upload still being filled. HEAD is polled between bounded fill
         // slices, so a newer publication supersedes it instead of waiting for it to finish.
         let mut filling: Option<Filler> = None;
         while !stop.load(Ordering::Relaxed) {
-            let mut prepare = false;
+            let requested = self.config.font_scale();
+            let mut prepare = requested != scale;
+            scale = requested;
             while let Ok(set) = resident.try_recv() {
                 confirmed = Self::confirm(&set);
                 // A newer HEAD may have been prepared behind this publication while it
@@ -328,11 +338,11 @@ impl Loader {
             }
             if prepare
                 && let Some((head, seen)) = &latest
-                && Some(*head) != confirmed.head
+                && (Some(*head) != confirmed.head || scale != confirmed.font_scale)
             {
                 let store = watcher.store();
                 let prepared = store_manifest(store, head).and_then(|manifest| {
-                    self.prepare(Source::Store(store, &manifest), head, &confirmed)
+                    self.prepare(Source::Store(store, &manifest), head, scale, &confirmed)
                 });
                 match prepared {
                     Ok((set, upload, filler)) => {
@@ -341,6 +351,7 @@ impl Loader {
                         });
                         let pending = PendingSet {
                             base_head: confirmed.head,
+                            base_font_scale: confirmed.font_scale,
                             set,
                             upload,
                             head_seen: *seen,
@@ -379,19 +390,21 @@ impl Loader {
     pub(crate) fn prepare_remote(
         &self,
         generation: &RemoteGeneration,
+        scale: u32,
         confirmed: &Confirmed,
         mailbox: &Mailbox,
         stop: &AtomicBool,
     ) -> Option<Filler> {
         let head = generation.head();
         let seen = Instant::now();
-        match self.prepare(Source::Remote(generation), &head, confirmed) {
+        match self.prepare(Source::Remote(generation), &head, scale, confirmed) {
             Ok((set, upload, filler)) => {
                 report(&self.stats, stop, |stats| {
                     stats.staged = Some(head.generation);
                 });
                 mailbox.post(PendingSet {
                     base_head: confirmed.head,
+                    base_font_scale: confirmed.font_scale,
                     set,
                     upload,
                     head_seen: seen,
@@ -429,6 +442,7 @@ impl Loader {
         let mut next = Confirmed {
             rows: set.rows.iter().cloned().collect(),
             head: Some(set.head),
+            font_scale: set.font_scale,
             ..Confirmed::default()
         };
         let mut products = set.products.iter();
@@ -442,7 +456,12 @@ impl Loader {
             next.textures.insert(*hash, Arc::clone(volume));
         }
         for (hash, _, _, texture) in &set.leased {
-            next.textures.insert(*hash, Arc::clone(texture));
+            let cache = if texture.font.is_some() {
+                &mut next.fonts
+            } else {
+                &mut next.textures
+            };
+            cache.insert(*hash, Arc::clone(texture));
         }
         next
     }
@@ -474,6 +493,48 @@ impl Loader {
         } else {
             OpenedTexture::Image(Ktx2::open(bytes)?)
         };
+        self.check_texture(&opened, volume, sheet)?;
+        Ok(Some(opened))
+    }
+
+    fn open_font(
+        &self,
+        source: Source<'_>,
+        confirmed: &Confirmed,
+        hash: &ContentHash,
+        scale: u32,
+    ) -> Result<Option<OpenedTexture>, AssetError> {
+        let old = confirmed.fonts.get(hash);
+        if let Some(texture) = old
+            && (scale == confirmed.font_scale
+                || texture
+                    .font
+                    .as_ref()
+                    .is_some_and(|font| font.sizes()[0].pixel == 1))
+        {
+            return Ok(None);
+        }
+        let font = old
+            .and_then(|texture| texture.font.clone())
+            .map_or_else(|| FontProduct::open(source.map(hash)?).map(Arc::new), Ok)?;
+        let sheet_scale = if font.sizes()[0].pixel == 1 { 1 } else { scale };
+        let sheet = font.sheet(sheet_scale).cloned().ok_or_else(|| {
+            AssetError::Io(std::io::Error::other(format!(
+                "font scale {scale} was not cooked"
+            )))
+        })?;
+        let opened = OpenedTexture::Font(font, sheet);
+        self.check_texture(&opened, false, true)?;
+        Ok(Some(opened))
+    }
+
+    fn check_texture(
+        &self,
+        opened: &OpenedTexture,
+        volume: bool,
+        sheet: bool,
+    ) -> Result<(), AssetError> {
+        let wrong_kind = || AssetError::Malformed("texture dimension does not match its use");
         let product = opened.texture();
         if product.is_3d() != volume || (!sheet && product.array_layers() > 1) {
             return Err(wrong_kind());
@@ -504,12 +565,13 @@ impl Loader {
                 "format not enabled on this device",
             ));
         }
-        Ok(Some(opened))
+        Ok(())
     }
 
     fn open(
         &self,
         source: Source<'_>,
+        scale: u32,
         confirmed: &Confirmed,
     ) -> Result<(Opened, Option<Profile>, Option<Profile>), AssetError> {
         let missing = || AssetError::Malformed("asset unavailable in the requested profiles");
@@ -552,6 +614,9 @@ impl Loader {
         }
         for request in &self.config.leased {
             let kind = match request.dimension {
+                wgpu::TextureDimension::D2 if self.config.font_leases.contains(&request.name) => {
+                    ProductKind::Font
+                }
                 wgpu::TextureDimension::D2 if self.config.sheet_leases.contains(&request.name) => {
                     ProductKind::SpriteSheet
                 }
@@ -578,14 +643,17 @@ impl Loader {
                     request.name, entry.kind
                 ))));
             }
-            let product = self
-                .open_texture(source, confirmed, &entry.product, kind)
-                .map_err(|error| {
-                    AssetError::Io(std::io::Error::other(format!(
-                        "lease {}: {error}",
-                        request.name
-                    )))
-                })?;
+            let product = if kind == ProductKind::Font {
+                self.open_font(source, confirmed, &entry.product, scale)
+            } else {
+                self.open_texture(source, confirmed, &entry.product, kind)
+            }
+            .map_err(|error| {
+                AssetError::Io(std::io::Error::other(format!(
+                    "lease {}: {error}",
+                    request.name
+                )))
+            })?;
             let portable_hash = source.portable_hash(&request.name).ok_or_else(|| {
                 AssetError::Io(std::io::Error::other(format!(
                     "lease {}: portable product unavailable",
@@ -603,10 +671,11 @@ impl Loader {
         &self,
         source: Source<'_>,
         head: &Head,
+        scale: u32,
         confirmed: &Confirmed,
     ) -> Result<(ResidentSet, StagedUpload, Filler), String> {
         let (opened, texture_profile, volume_profile) = self
-            .open(source, confirmed)
+            .open(source, scale, confirmed)
             .map_err(|error| error.to_string())?;
         let mut plan = StagingPlan::new(
             #[cfg(all(feature = "draw-probe", target_os = "macos"))]
@@ -615,6 +684,7 @@ impl Loader {
         let mut set = ResidentSet {
             rows: Vec::new(),
             head: *head,
+            font_scale: scale,
             leased: Vec::new(),
             generation: head.generation,
             meshes: Vec::new(),
@@ -708,13 +778,23 @@ impl Loader {
         for ((hash, portable_hash, profile, product), request) in
             opened.leased.into_iter().zip(&self.config.leased)
         {
-            let texture = if let Some(texture) = textures
-                .get(&hash)
-                .or_else(|| confirmed.textures.get(&hash))
-            {
-                Arc::clone(texture)
-            } else {
-                Arc::new(self.stage_texture(&mut plan, product.ok_or("lost leased texture")?))
+            let texture = match product {
+                Some(OpenedTexture::Font(_, _)) => {
+                    Arc::new(self.stage_texture(&mut plan, product.ok_or("lost font")?))
+                }
+                Some(product) => textures
+                    .get(&hash)
+                    .cloned()
+                    .unwrap_or_else(|| Arc::new(self.stage_texture(&mut plan, product))),
+                None if self.config.font_leases.contains(&request.name) => {
+                    Arc::clone(confirmed.fonts.get(&hash).ok_or("lost leased font")?)
+                }
+                None => Arc::clone(
+                    textures
+                        .get(&hash)
+                        .or_else(|| confirmed.textures.get(&hash))
+                        .ok_or("lost leased texture")?,
+                ),
             };
             if texture.texture.dimension() != request.dimension {
                 return Err(format!(
@@ -722,7 +802,9 @@ impl Loader {
                     request.name
                 ));
             }
-            textures.insert(hash, Arc::clone(&texture));
+            if texture.font.is_none() {
+                textures.insert(hash, Arc::clone(&texture));
+            }
             set.leased.push((hash, portable_hash, profile, texture));
         }
         let (upload, filler) = plan.finish(&self.ring)?;
@@ -860,9 +942,12 @@ impl Loader {
     }
 
     fn stage_texture(&self, plan: &mut StagingPlan, opened: OpenedTexture) -> GpuTexture {
-        let (product, sheet) = match opened {
-            OpenedTexture::Image(product) => (Arc::new(product), None),
-            OpenedTexture::Sheet(sheet) => (Arc::new(sheet.texture().clone()), Some(sheet)),
+        let (product, sheet, font) = match opened {
+            OpenedTexture::Image(product) => (Arc::new(product), None, None),
+            OpenedTexture::Sheet(sheet) => (Arc::new(sheet.texture().clone()), Some(sheet), None),
+            OpenedTexture::Font(font, sheet) => {
+                (Arc::new(sheet.texture().clone()), Some(sheet), Some(font))
+            }
         };
         let base = product.levels()[0];
         let texture = self.device.create_texture(&wgpu::TextureDescriptor {
@@ -885,6 +970,17 @@ impl Loader {
         });
         let mapped = product.is_mapped();
         let dimension = sheet.as_ref().map(|_| wgpu::TextureViewDimension::D2Array);
+        let bytes = product
+            .levels()
+            .iter()
+            .map(|level| {
+                product.format().level_bytes(
+                    level.width,
+                    level.height,
+                    level.depth.max(product.array_layers()),
+                )
+            })
+            .sum();
         plan.texture(product, texture.clone());
         let view = texture.create_view(&wgpu::TextureViewDescriptor {
             dimension,
@@ -895,6 +991,8 @@ impl Loader {
             texture,
             view,
             sheet,
+            font,
+            bytes,
         }
     }
 }

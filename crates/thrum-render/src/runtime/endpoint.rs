@@ -134,7 +134,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 display_phase: 1.0,
                 capture: true,
             });
-        self.update_interface(Some(self.render_extent), None);
+        self.update_interface(Some(self.render_extent), None)?;
         let mut pixels = readback.then(|| target.readback(&self.device));
         let mut encoder = self
             .device

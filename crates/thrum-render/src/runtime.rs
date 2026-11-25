@@ -155,6 +155,11 @@ pub trait SceneSource<P> {
         None
     }
 
+    /// Active and prepared paint lists, in that order, sampled with the same values.
+    fn paint_lists(&mut self, extent: [u32; 2]) -> [Option<crate::sprite::PaintList>; 2] {
+        [self.paint_list(extent), None]
+    }
+
     /// Sample positions/intensities into the prepared local-light slice using
     /// the same committed endpoint and alpha as the view. Keep the prepared
     /// capacity and valid photometric values; the source remains their owner.
@@ -2278,7 +2283,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         mut prepared: PreparedSample,
     ) -> Result<RecordedScene, FrameError> {
         self.refresh_capture_capacity();
-        prepared.sample.interface = self.sample_interface(slot_index);
+        prepared.sample.interface = self.sample_interface(slot_index)?;
         let start = Instant::now();
         let mut encoder = self
             .device

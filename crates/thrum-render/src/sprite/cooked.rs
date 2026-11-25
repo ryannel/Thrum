@@ -22,6 +22,8 @@ pub struct SpriteSheetPublication {
     pub device_generation: u64,
     /// Named sheets from this publication.
     pub sheets: Vec<SpriteSheetPage>,
+    /// Stamp required by interface lists laid out from this publication.
+    pub paint_stamp: Option<super::PaintStamp>,
 }
 
 /// Read-only connection to residency, installed by the game.
@@ -35,14 +37,16 @@ pub trait SpriteSheetSource: std::fmt::Debug + wgpu::WasmNotSendSync {
 pub struct CookedSpriteSheet {
     pub(super) name: String,
     pub(super) slot: u32,
+    pub(super) indexed: bool,
     pub(super) names: Arc<RwLock<Vec<String>>>,
 }
 
 impl CookedSpriteSheet {
-    pub(super) fn new(name: String, slot: u32) -> Self {
+    pub(super) fn new(name: String, slot: u32, indexed: bool) -> Self {
         Self {
             name,
             slot,
+            indexed,
             names: Arc::default(),
         }
     }

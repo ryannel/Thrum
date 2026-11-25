@@ -20,6 +20,7 @@ compile_error!("Thrum cooked products are little-endian");
 mod bytes;
 mod container;
 mod error;
+mod font;
 mod hash;
 mod head;
 pub mod ktx2;
@@ -35,6 +36,7 @@ pub use bytes::ProductBytes;
 pub use error::AssetError;
 #[cfg(target_arch = "wasm32")]
 pub use error::BrowserTransportError;
+pub use font::{FontProduct, FontStrike};
 pub use hash::ContentHash;
 pub use head::Head;
 pub use ktx2::{Ktx2, Ktx2Format, Ktx2Level};

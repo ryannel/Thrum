@@ -3,7 +3,7 @@
 use std::{cell::Cell, collections::BTreeSet, sync::Arc, time::Duration};
 
 use super::{
-    NamedSheet, SpriteRow, SpriteScene, SpriteView,
+    NamedSheet, SpriteRow, SpriteScene, SpriteSheetSource, SpriteView,
     pass::{SpriteBindings, SpritePass, VIEW_BYTES},
 };
 use crate::{
@@ -27,8 +27,28 @@ pub(crate) const SDR_VIEW: wgpu::TextureFormat = wgpu::TextureFormat::Rgba8Unorm
 pub struct InterfaceConfig {
     /// Named sheets used by the paint list.
     pub sheets: Vec<NamedSheet>,
+    /// Leased sheets in slot order after embedded sheets.
+    pub cooked: Option<InterfaceSheets>,
     /// Maximum number of rows considered from each paint list.
     pub row_capacity: u32,
+}
+
+/// Indexed cooked sheets and the source that lends their views.
+#[derive(Clone, Debug)]
+pub struct InterfaceSheets {
+    /// Manifest names in slot order after embedded sheets.
+    pub names: Vec<String>,
+    /// The residency lease which lends the exact sheets for a recording.
+    pub source: Arc<dyn SpriteSheetSource>,
+}
+
+/// Identity of the publication and interface scale used to lay out a paint list.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct PaintStamp {
+    /// Store and manifest publication.
+    pub head: thrum_asset::Head,
+    /// Interface scale requested for this publication.
+    pub scale: u32,
 }
 
 /// Immutable sprite rows in paint order, with positions in output pixels from the top left.
@@ -36,6 +56,8 @@ pub struct InterfaceConfig {
 pub struct PaintList {
     /// Output extent used to lay out these rows.
     pub extent: [u32; 2],
+    /// Required cooked sheets; embedded-only lists have no stamp.
+    pub stamp: Option<PaintStamp>,
     /// The first row is drawn first. Sprite layer, sort, flash and additive effects are unused.
     pub rows: Arc<[SpriteRow]>,
 }
@@ -49,6 +71,10 @@ pub struct InterfaceFrameStats {
     pub dropped_rows: u32,
     /// The paint list was laid out for a different extent.
     pub extent_mismatch: bool,
+    /// Publication of the drawn list, if it used cooked sheets.
+    pub stamp: Option<PaintStamp>,
+    /// No list matched the publication lent to this frame.
+    pub stamp_mismatch: bool,
     /// Time spent preparing the stage's uploads for the frame.
     pub upload_cpu: Duration,
     /// CPU time to encode the interface pass or append its draw.
@@ -157,6 +183,7 @@ struct FloatStage {
 
 pub(crate) struct PreparedInterface {
     scene: SpriteScene,
+    cooked: Option<InterfaceSheets>,
     sprites: SpritePass,
     bindings: SpriteBindings,
     float: Option<FloatStage>,
@@ -174,6 +201,12 @@ impl PreparedInterface {
     ) -> Result<Self, RenderError> {
         let mut scene = SpriteScene::empty(config.row_capacity);
         scene.sheets.clone_from(&config.sheets);
+        if let Some(cooked) = &config.cooked {
+            for name in &cooked.names {
+                scene.add_indexed_sheet(name)?;
+            }
+            scene.lease = Some(Arc::clone(&cooked.source));
+        }
         let device = capabilities.site();
         let scope = device.push_error_scope(wgpu::ErrorFilter::Validation);
         let sprites = SpritePass::prepare(
@@ -200,6 +233,7 @@ impl PreparedInterface {
                 });
             Self {
                 scene,
+                cooked: config.cooked.clone(),
                 sprites,
                 bindings,
                 float,
@@ -218,6 +252,7 @@ impl PreparedInterface {
     pub(crate) fn config(&self) -> InterfaceConfig {
         InterfaceConfig {
             sheets: self.scene.sheets.clone(),
+            cooked: self.cooked.clone(),
             row_capacity: self.scene.row_capacity,
         }
     }
@@ -256,20 +291,50 @@ impl PreparedInterface {
     pub(crate) fn upload(
         &mut self,
         queue: &wgpu::Queue,
+        capabilities: &DeviceCapabilities,
         paint: Option<&PaintList>,
+        prepared: Option<&PaintList>,
         sdr_extent: Option<[u32; 2]>,
         float_extent: Option<[u32; 2]>,
-    ) -> InterfaceFrameStats {
+    ) -> Result<InterfaceFrameStats, RenderError> {
         let start = Instant::now();
         self.encode_cpu.set(Duration::ZERO);
-        let Some(paint) = paint else {
+        let stamp = if self.cooked.is_some() {
+            let stamp = self.sprites.sync_paint_sheets(capabilities, &self.scene)?;
+            let device = capabilities.site();
+            if self.sprites.bind_paint_sheets(
+                device,
+                &self.scene,
+                &mut self.bindings,
+                &self.sprites.pipeline,
+            ) {
+                self.paint_list = None;
+            }
+            if let Some(float) = &mut self.float {
+                self.sprites.bind_paint_sheets(
+                    device,
+                    &self.scene,
+                    &mut float.bindings,
+                    &float.pipeline,
+                );
+            }
+            stamp
+        } else {
+            None
+        };
+        let selected = prepared
+            .into_iter()
+            .chain(paint)
+            .find(|list| list.stamp == stamp);
+        let Some(paint) = selected else {
             self.paint_list = None;
             self.bindings.count = 0;
             self.dropped_rows = 0;
-            return InterfaceFrameStats {
+            return Ok(InterfaceFrameStats {
+                stamp_mismatch: stamp.is_some(),
                 upload_cpu: start.elapsed(),
                 ..InterfaceFrameStats::default()
-            };
+            });
         };
         let mut uploaded_bytes = 0;
         if self
@@ -289,13 +354,15 @@ impl PreparedInterface {
                     update_view(queue, &float.bindings, &mut float.extent, float_extent);
             }
         }
-        InterfaceFrameStats {
+        Ok(InterfaceFrameStats {
             uploaded_bytes,
+            stamp,
+            stamp_mismatch: false,
             dropped_rows: self.dropped_rows,
             extent_mismatch: Some(paint.extent) != float_extent.or(sdr_extent),
             upload_cpu: start.elapsed(),
             encode_cpu: Duration::ZERO,
-        }
+        })
     }
 
     pub(crate) fn encode_cpu(&self) -> Duration {

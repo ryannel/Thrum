@@ -224,21 +224,56 @@ def costs_chrome(destination, revision, target, scratch):
             "runs": [f"chrome-{index}/interface-stage-cost.json" for index in (1, 2)]}
 
 
+def font_costs(destination, revision, target, scratch):
+    run([*BASE_CARGO, "-p", "v1-game", "--example", "font_cost"],
+        env={**FIXED_ENV, "CARGO_TARGET_DIR": str(target)})
+    binary = target / "release/examples/font_cost"
+    records = []
+    for index in (1, 2):
+        before = load()
+        record = json.loads(output([binary, scratch / f"run-{index}"], env=FIXED_ENV))
+        record.update(run=index, commit=revision, profile="release", binary_sha256=digest(binary),
+                      load_before=before, load_after=load())
+        if [font["font"] for font in record["products"]] != ["type", "pixel"]:
+            raise ValueError("incomplete font record")
+        for font in record["products"]:
+            if (not isinstance(font["cook_ns"], int) or font["table_bytes"] <= 0
+                    or len(font["sheet_bytes"]) != 3 or font["sheet_bytes"][0] <= 0):
+                raise ValueError("missing font cook or byte accounting")
+            if ([arm["glyphs"] for arm in font["layout"]] != [10, 100, 1000]
+                    or not all(len(arm["raw_cpu_ns"]) == 32
+                               and all(finite(ns) for ns in arm["raw_cpu_ns"])
+                               for arm in font["layout"])):
+                raise ValueError("missing CPU layout timings")
+        if ([row["scale"] for row in record["resident"]] != [1, 2, 3]
+                or not all(row["bytes"] > 0 and row["drawn"] == 1 for row in record["resident"])):
+            raise ValueError("incomplete committed font residency")
+        filename = f"font-metal-{index}.json"
+        write(destination / filename, record)
+        records.append(filename)
+    return {"target": "mac-metal", "commit": revision, "runs": records}
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("mode", choices=["costs"])
     parser.add_argument("--target", required=True, choices=["mac-metal", "chrome-webgpu"])
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--fonts", action="store_true")
     args = parser.parse_args()
     revision = output(["git", "rev-parse", "HEAD"])
-    scratch = ROOT / "tmp/game-ui-wp1"
+    if args.fonts and args.target != "mac-metal":
+        parser.error("--fonts requires --target mac-metal")
+    package = "WP2" if args.fonts else "WP1"
+    scratch = ROOT / f"tmp/game-ui-{package.lower()}"
     scratch.mkdir(parents=True, exist_ok=True)
-    destination = args.output or Path(".orchestrate/evidence/GAME-UI/WP1") / f"costs-{args.target}"
+    destination = args.output or Path(".orchestrate/evidence/GAME-UI") / package / f"costs-{args.target}"
     destination = destination.resolve()
     destination.mkdir(parents=True, exist_ok=True)
     target = ROOT / "target"
     with tempfile.TemporaryDirectory(prefix="cost-", dir=scratch) as work:
-        if args.target == "mac-metal":
+        if args.fonts:
+            record = font_costs(destination, revision, target, Path(work))
+        elif args.target == "mac-metal":
             record = costs_native(destination, revision, Path(work))
         else:
             record = costs_chrome(destination, revision, target, Path(work))

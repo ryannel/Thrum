@@ -229,6 +229,8 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
         #[cfg(feature = "proving")]
         interface_rows,
         #[cfg(feature = "proving")]
+        interface_text: selected_interface_text(interface)?,
+        #[cfg(feature = "proving")]
         sprite_scale,
         #[cfg(feature = "proving")]
         route_scale_props: false,
@@ -489,6 +491,20 @@ fn selected_sprite_scale(enabled: bool) -> Result<Option<u16>, String> {
         Err(error) => return Err(error.to_string()),
     };
     Ok(Some(scale))
+}
+
+#[cfg(feature = "proving")]
+fn selected_interface_text(enabled: bool) -> Result<Option<crate::InterfaceText>, String> {
+    if !enabled {
+        return Ok(None);
+    }
+    match launch_value("THRUM_INTERFACE_TEXT").as_deref() {
+        Err(std::env::VarError::NotPresent) => Ok(None),
+        Ok("type") => Ok(Some(crate::InterfaceText::Type)),
+        Ok("counting") => Ok(Some(crate::InterfaceText::Counting)),
+        Ok("specimen") => Ok(Some(crate::InterfaceText::Specimen)),
+        _ => Err("THRUM_INTERFACE_TEXT must be type, counting or specimen".into()),
+    }
 }
 
 #[cfg(feature = "proving")]

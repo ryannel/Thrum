@@ -11,9 +11,11 @@ description = "Paint lists for Thrum's in-frame game interface"
 workspace = true
 
 [dependencies]
+thrum-asset = { path = "../thrum-asset" }
 thrum-render = { path = "../thrum-render" }
 
 [dev-dependencies]
+thrum-cook = { path = "../thrum-cook" }
 thrum-core = { path = "../thrum-core" }
 thrum-render = { path = "../thrum-render", features = ["creation-counters"] }
 thrum-test-support = { path = "../thrum-test-support", features = ["render"] }
@@ -32,3 +34,6 @@ name = "stage_lifecycle"
 
 [[test]]
 name = "stage_rows"
+
+[[test]]
+name = "text_runs"
