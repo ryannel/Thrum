@@ -1288,7 +1288,7 @@
       }
     },
     "WP8": {
-      "definitions": "9f773dafe0aa596d420f526313bc2748f56a99131bed457d97fb3b4fbde73b58",
+      "definitions": "4e2daca499a78a0652d7c3bbe692fd36de648b9b929a45a1a235368f6e868423",
       "reviews": [
         {
           "verdict": "fail",
@@ -1503,8 +1503,8 @@
       ],
       "authorised": {
         "by": "plan",
-        "task": "Diagnose WATERS WP8. It has failed review 4 times, 3 of them on an item or a finding an earlier review had failed, so th",
-        "at": "2026-11-25T23:08:03Z"
+        "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 3 Must Fix find",
+        "at": "2026-11-25T23:18:10Z"
       }
     },
     "WP9": {
@@ -2528,11 +2528,15 @@
     {
       "task": "Diagnose WATERS WP8. It has failed review 4 times, 3 of them on an item or a finding an earlier review had failed, so the same items keep failing: the fixes aren't holding, or each fix meets a new defect in an item that may ask for more than the vision and scope document does. Its reviews, oldest first: .orchestrate/evidence/WATERS/WP8-review-1.md, .orchestrate/evidence/WATERS/WP8-review-2.md, .orchestrate/evidence/WATERS/WP8-review-3.md, .orchestrate/evidence/WATERS/WP8-review.md. What failed in each review: review 1 (2026-11-25): Sky-coloured holes break the reflected bank beneath the trees (WP8.5), new; An off-screen body crossing the camera plane triggers a full-screen gather (WP8.7), new; The calm-water Sun reflection clips to flat white (WP8.1), new; Chrome leaves sky-coloured holes in the noon reflected bank (WP8.9), new; Chrome clips the calm noon glint to flat white (WP8.9), new; The zero-body cost view contains a visible unregistered float (WP8.10), new; Editing the Sun abruptly pitches the optics camera (outside the items), new | review 2 (2026-11-25): Hidden lake-bank sources borrow neighbouring terrain colour (WP8.5), new; Chrome reflects neighbouring terrain where the noon bank is hidden (WP8.9), new | review 3 (2026-11-25): Sky-coloured holes break the reflected bank beneath the trees (WP8.5), repeated; Chrome leaves sky-coloured holes in the noon reflected bank (WP8.9), repeated | review 4 (2026-11-25): The reflected hillside has a straight seam in its screen-edge fade (WP8.5), new; Chrome shows a straight seam in the noon lake screen-edge fade (WP8.9), new. A plan you keep ends with `KEEP WATERS WP8: ...`. Lead's steer: the owner's bar is a shipped high-end game's look and speed; references and pixel measurements diagnose, they never gate. Across four reviews each fix met a new screen-space reflection edge defect (hidden-bank borrowing, sky cutouts at the pines, now a straight seam in the screen-edge fade where scene_reflection drops the bank at hit.edge 0.995 while scene_fade still blends). Decide whether the reflection's edge handling needs one coherent design (a single continuous confidence weight shared by every contribution) rather than another local patch, and write that into the work package so the next builder fixes the class, not the instance. Keep items that a player would see at normal viewing; a defect visible only by pixel stepping at the frame edge is not a reason to keep failing. Do not void a running build.",
       "at": "2026-11-25T23:08:03Z"
+    },
+    {
+      "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 3 Must Fix findings.",
+      "at": "2026-11-25T23:18:10Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-25T23:08:03Z"
+    "at": "2026-11-25T23:18:10Z"
   },
   "design_history": [
     {
