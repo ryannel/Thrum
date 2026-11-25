@@ -2,9 +2,9 @@
 
 use std::collections::BTreeSet;
 
-use harfrust::{
-    Direction, Feature, ShapeOptions, ShapePlan, Shaper, ShaperData, UnicodeBuffer, script,
-};
+use std::sync::Arc;
+
+use harfrust::{Buffer, Direction, Feature, Script, ShapeOptions, ShapePlan, ShaperFont, shape};
 use image::{Rgba, RgbaImage};
 use skrifa::instance::{LocationRef, Size as RasterSize};
 use skrifa::outline::{DrawSettings, HintingInstance, OutlinePen, SmoothMode, Target};
@@ -24,12 +24,13 @@ const PUNCTUATION: &str = "–—‘’“”…•×−€←↑→↓";
 )]
 pub(super) fn cook(
     output: &mut Font,
-    bytes: &[u8],
+    bytes: Vec<u8>,
     sizes: &[Size],
     scales: &[u32],
     characters: Option<&str>,
 ) -> Result<(), CookError> {
-    let face = FontRef::new(bytes)
+    let bytes: Arc<dyn AsRef<[u8]> + Send + Sync> = Arc::new(bytes);
+    let face = FontRef::new(bytes.as_ref().as_ref())
         .map_err(|error| invalid(format!("font file does not parse: {error}")))?;
     if sizes.is_empty() || sizes.len() > 32 {
         return Err(invalid("expected one to 32 font sizes"));
@@ -67,7 +68,9 @@ pub(super) fn cook(
     if glyphs.len() > 2048 {
         return Err(invalid("font character list exceeds 2048 characters"));
     }
-    let pairs = kern_pairs(&face, &glyphs)?;
+    let shaping_face = harfrust::Font::new(Arc::clone(&bytes), 0)
+        .ok_or_else(|| invalid("font file does not parse for shaping"))?;
+    let pairs = kern_pairs(&face, &shaping_face, &glyphs)?;
     for scale in unique_scales {
         for size in sizes {
             let pixels = size.points * scale as f32;
@@ -88,30 +91,27 @@ fn repertoire(characters: Option<&str>) -> BTreeSet<char> {
         .collect()
 }
 
-fn shape_plan(shaper: &Shaper<'_>, features: &[Feature]) -> ShapePlan {
-    ShapePlan::new(
-        shaper,
-        Direction::LeftToRight,
-        Some(script::LATIN),
-        None,
-        features,
-    )
-}
-
 fn kern_pairs(
     face: &FontRef<'_>,
+    shaping_face: &harfrust::Font,
     glyphs: &[(char, GlyphId)],
 ) -> Result<Vec<([u32; 2], f32)>, CookError> {
-    let data = ShaperData::new(face);
-    let shaper = data.shaper(face).build();
+    let shaper = ShaperFont::new(shaping_face);
     let features = [
         Feature::new(Tag::new(b"liga"), 0, ..),
         Feature::new(Tag::new(b"clig"), 0, ..),
         Feature::new(Tag::new(b"kern"), 1, ..),
     ];
-    let plan = shape_plan(&shaper, &features);
-    let mut buffer = UnicodeBuffer::new();
-    let units = u16::try_from(shaper.units_per_em()).map_err(invalid)?;
+    let script = Some(Script::LATIN);
+    let plan = ShapePlan::new(
+        shaping_face,
+        Direction::LeftToRight,
+        script,
+        None,
+        &features,
+    );
+    let mut buffer = Buffer::new();
+    let units = shaping_face.units_per_em();
     if units == 0 {
         return Err(invalid("font has zero units per em"));
     }
@@ -132,17 +132,19 @@ fn kern_pairs(
     for (first_index, &(first, first_id)) in glyphs.iter().enumerate() {
         for (second_index, &(second, second_id)) in glyphs.iter().enumerate() {
             buffer.set_direction(Direction::LeftToRight);
-            buffer.set_script(script::LATIN);
-            buffer.add(first, 0);
-            buffer.add(second, 1);
-            let shaped = shaper.shape(
-                buffer,
+            buffer.set_script(script);
+            buffer.push(u32::from(first), 0);
+            buffer.push(u32::from(second), 1);
+            shape(
+                &shaper,
+                &mut buffer,
                 ShapeOptions::new().features(&features).plan(Some(&plan)),
-            );
-            if let [left, right] = shaped.glyph_infos()
+            )
+            .map_err(invalid)?;
+            if let [left, right] = buffer.glyph_infos()
                 && left.glyph_id == first_id.to_u32()
                 && right.glyph_id == second_id.to_u32()
-                && let [left, right] = shaped.glyph_positions()
+                && let [left, right] = buffer.glyph_positions()
             {
                 let adjustment = (left.x_advance + right.x_advance) as f32
                     - widths[first_index]
@@ -154,7 +156,7 @@ fn kern_pairs(
                     ));
                 }
             }
-            buffer = shaped.clear();
+            buffer.clear();
         }
     }
     Ok(pairs)

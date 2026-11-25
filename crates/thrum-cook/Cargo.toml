@@ -26,8 +26,8 @@ notify = { version = "=8.2.1", default-features = false, features = ["macos_fsev
 rayon = "=1.12.0"
 serde = { version = "=1.0.229", features = ["derive"] }
 serde_json = "=1.0.154"
-harfrust = "=0.12.0"
-skrifa = "=0.44.0"
+harfrust = "=0.16.0"
+skrifa = "=0.50.0"
 unicode-normalization = "=0.1.26"
 zeno = "=0.3.3"
 thrum-asset = { path = "../thrum-asset" }

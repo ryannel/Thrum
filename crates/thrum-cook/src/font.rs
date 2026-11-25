@@ -171,7 +171,7 @@ pub(crate) fn cook<'a>(
             characters,
             ..
         } => {
-            outline::cook(&mut font, &bytes, &sizes, &scales, characters.as_deref())?;
+            outline::cook(&mut font, bytes, &sizes, &scales, characters.as_deref())?;
         }
         Description::Pixel {
             cell,

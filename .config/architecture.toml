@@ -463,13 +463,13 @@ purpose = "Encode the registered Sun-path optical-depth field for portable filte
 target_cost = "Native and Wasm renderer setup or source replacement only, one conversion per field texel, no conversion on the fragment or per-frame metadata path"
 
 [external_dependencies.harfrust]
-requirement = "=0.12.0"
+requirement = "=0.16.0"
 license = "MIT"
 purpose = "Extract outline font kerning through OpenType shaping"
 target_cost = "Authoring-only during font cooking"
 
 [external_dependencies.skrifa]
-requirement = "=0.44.0"
+requirement = "=0.50.0"
 license = "MIT OR Apache-2.0"
 purpose = "Read outline metrics and draw light-hinted glyph paths"
 target_cost = "Authoring-only during font cooking"

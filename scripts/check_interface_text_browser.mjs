@@ -196,24 +196,34 @@ export async function qualifyInterfaceText({ cdp, origin, fontOrigin, source, ou
       let previousSubmission = null;
       const frame = async () => {
         assert.equal(await game.invoke('return window.stepFontFrame();'), 1);
-        const captured = await waitFor(() => game.invoke(`
+        const metadata = await waitFor(() => game.invoke(`
           const take = game.next_submitted_image();
           if (!take) return null;
-          return { metadata: JSON.parse(take.metadata), base64: take.pixels.toBase64() };
+          window.fontImage = take.pixels;
+          return JSON.parse(take.metadata);
         `), timeout, 'engine-submitted font capture');
-        const { metadata } = captured;
         assert(metadata.surface_presented && metadata.pixel_source === 'Sdr', JSON.stringify(metadata));
         assert.equal(metadata.paint_stamp_mismatch, false, JSON.stringify(metadata));
         if (previousSubmission !== null) assert.equal(metadata.submission_id, previousSubmission + 1);
         previousSubmission = metadata.submission_id;
-        const rgba = Buffer.from(captured.base64, 'base64');
-        assert.equal(rgba.length, width * height * 4);
-        return { metadata, rgba };
+        return { metadata };
+      };
+      const pixels = async take => {
+        const size = await game.invoke('return window.fontImage.length;');
+        assert.equal(size, width * height * 4);
+        const chunks = [];
+        for (let offset = 0; offset < size; offset += 256 * 1024) {
+          const base64 = await game.invoke('return window.fontImage.subarray(args[0], args[1]).toBase64();',
+            [offset, offset + 256 * 1024]);
+          chunks.push(Buffer.from(base64, 'base64'));
+        }
+        await game.invoke('delete window.fontImage;');
+        return { ...take, rgba: Buffer.concat(chunks) };
       };
       let initial;
       for (let step = 0; step < 200 && !initial; step++) {
         const take = await frame();
-        if (take.metadata.paint_generation === before.generation) initial = take;
+        if (take.metadata.paint_generation === before.generation) initial = await pixels(take);
       }
       assert(initial, 'initial font became resident');
       assert.equal(initial.metadata.paint_scale, dpr);
@@ -235,7 +245,7 @@ export async function qualifyInterfaceText({ cdp, origin, fontOrigin, source, ou
       let last;
       let switched = false;
       for (let step = 0; step < 220 && (!switched || step < switched + 3); step++) {
-        const take = await frame();
+        const take = await pixels(await frame());
         const tick = take.metadata.source_tick;
         const oldDiff = compare(take.rgba, width, reference(before, dpr, tick, false));
         const newDiff = compare(take.rgba, width, reference(after, dpr, tick, true));
