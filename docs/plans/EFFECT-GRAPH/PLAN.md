@@ -21,6 +21,8 @@ Read [Shared files and exact baselines](DESIGN.md#shared-files-and-exact-baselin
 - Assumption: a frame on a world with its own thread shows a tick that was due by the frame's observation. So a delayed frame in the Mac window, a Mac capture or the iPhone app shows an earlier tick than it did before WP4, with a lead or without, where WP4's first plan said no frame without a lead would change. The other choice keeps every frame's tick and leaves those frames' display time wrong by up to the delay.
 - Assumption: the phase describes the target the clock consumes, which is the frame's observed time plus its lead. WP4 makes the offscreen capture runner measure that lead from the same clock read it gives the world, so its captures consume the platform's target exactly. The Mac window and the iPhone keep reading two clocks a frame, so there the two targets differ by the time between the reads, which nobody has measured. The other choice pairs the two clocks once in both platforms' frame loops, with no WP4 item able to prove it.
 - Assumption: the tick stage answers questions from the state frames leave, and steps no simulation of its own. Wakes, foam and clouds still advance only in drawn frames, so they stand still while a window is hidden. The other choice steps effect state every tick with no frame drawn, which nothing has asked for.
+- Assumption: after a restore, a new world or a replaced device, an effect's answers to a game say they had no state to answer from, or do not come, until the first frame of that world is drawn. While frames are being skipped that lasts as long as the skipping. The other choice resets an effect's state with no frame drawn, which is the same work as stepping it there and which nothing has asked for.
+- Assumption: WP6 proves the iPhone's part, that no tick pass is submitted outside the foreground lease, by tests of the lease that run on the Mac and a reviewer's reading of the render owner. It does not run a tick pass on the iPhone simulator, because no scene the iPhone app runs has one yet. The other choice adds a simulator route with a backgrounding step to WP6.
 - Assumption: after a pause or an overload, the first moving frame steps display time forward once, by the time its tick took to arrive plus the lead: 38 ms in the planner's run with a 30 ms lead. Alpha has always waited for the first tick after a resume, and WP4 leaves that. The other choice interpolates through that wait, which changes when every reader of alpha starts moving after a pause.
 
 ## WP1 An engine module can declare volume, cube and mipped-array textures in the frame, and wrong declarations are refused: done
@@ -48,6 +50,12 @@ The body query on main shows the shape a consumer has today: `crates/thrum-water
 inputs in `encode_upload`, dispatches in a `simulate` pass, copies in `encode_effect_readback` and starts its
 map in `submitted`. Leave it there. Moving it is WP19's, on its own candidate, and `thrum-water` builds and
 passes its tests unchanged when you land.
+
+Two shells change, each in one place, and nothing else in either:
+[the Mac's render actor](DESIGN.md#the-tick-stage-wp6) makes the asking before its wait for a frame slot, and
+the iPhone's render owner gives its host a submission permission made of its lease. Leave the wait's length,
+the lead, the lease's protocol and every call into the host as they are. A game states a post's endpoint, so
+the test contribution's posts and the diagnostic effect's carry one.
 
 `runtime/tests/without_rendering.rs` holds `advance_without_rendering` to touching no device, and those tests
 stand. `APPLE-PRESENTATION` WP16 is not built and will hold a host to one timestamp query set for each frame

@@ -253,3 +253,8 @@
   that reaches the device. `WATERS` could not own it, since C06 gives submission to the one executor. No
   contract's words, Done item or exact baseline changes.
   [Handoff](../../../.orchestrate/evidence/WATERS/WP19-handoff.md).
+- 2026-11-25 Planner: WP6's design revised after [its review](../../../.orchestrate/evidence/EFFECT-GRAPH/design-review.md)
+  asked for six changes: who may submit a tick pass and when its caller asks, whose world an answer comes
+  from, when it is delivered, and two refused declarations. WP6.1 to WP6.4 rewritten, WP6.5 to WP6.7 added,
+  and [the ruling](../ARCHITECTURE.md#seam-ruling-for-effect-graph-wp6) now covers one place in two shells.
+  [Each finding and its change](../../../.orchestrate/evidence/EFFECT-GRAPH/WP6-design-fixes.md).

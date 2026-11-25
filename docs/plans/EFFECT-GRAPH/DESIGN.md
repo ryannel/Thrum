@@ -12,7 +12,10 @@ time that day, after WP4's first review ([review](../../../.orchestrate/evidence
 review ([review](../../../.orchestrate/evidence/EFFECT-GRAPH/WP4-review.md)): [the timing model](#the-timing-model), which
 states every rule about a frame's time as one set, with display time on the world's time. Revised
 25 November 2026: a sixth work package adds [the tick stage](#the-tick-stage-wp6), after `WATERS` WP19 found
-that a query recorded with a view waits for the next view the frame host admits.
+that a query recorded with a view waits for the next view the frame host admits. Revised again that day after
+that revision's review ([review](../../../.orchestrate/evidence/EFFECT-GRAPH/design-review.md)): who may submit
+a tick pass and when its caller asks for one, whose world an answer comes from, when an answer is delivered,
+and two declarations the stage refuses.
 
 ## The request
 
@@ -102,7 +105,7 @@ existing passes or descriptors (they keep their exact output); real async-comput
 | **N6 Survive resize and device replacement** | Mid-run, with state in flight | Reusing an old generation's texture. Rejected by generation checks and exact state after re-seed |
 | **N7 Cost nothing when absent** | Every existing scene and variant | A seam that adds an empty pass or a copy. Rejected by identical compiled pass lists and the exact baselines |
 | **N8 Show motion that is a function of time at the display's time** (WP4) | Consumed targets up to 50 ms ahead of the observation; expired and clamped platform targets; a display faster or slower than the tick; a tick whose commit lands late; a frame on a world on its own thread that polls after a tick due later than its observation was committed, once or frame after frame; a clock that starts at any host time on any tick; pause, overload, the hold after a resume, queued ticks and a rewind, each of which leaves stopped time out of display time; capture frames | The interpolation alpha, which stops at the committed tick: the motion then takes a short step and a long one in turn. Rejected by display times worked out from scripted observations and leads, across a tick's commit and on frames whose alpha is 1. Or a phase taken at the platform target while alpha is taken at the consumed one. Rejected by alpha being the phase held to 1 in every frame, and by a frame whose target had expired. Or a tick due after the frame's observation, which no phase from 0 up describes. Rejected by a delayed frame's display time, and by a run of delayed polls that must keep advancing. Or display time written as a host's time, which holds until the clock first stops. Rejected by frames after a pause partway through a tick, held to due times a script gives |
-| **N9 Answer a game's question every tick, from the state frames have left** (WP6) | An advance that submits a view; one whose view is skipped for want of a frame slot or a drawable; a frame dropped before it is recorded; a recording discarded; several ticks in one advance; a pause; a host that may not touch the device; device replacement | A pass in the frame, which waits for the next admitted view. Rejected by results that return from advances that submit no view. Or a pass that reads what a discarded recording staged. Rejected by exact comparison with the last submitted frame's state after a discard. Or a contribution that submits for itself. Rejected by C06 and the reviewer's question |
+| **N9 Answer a game's question every tick, from the state frames have left** (WP6) | An advance that submits a view; one whose view is skipped for want of a frame slot or a drawable; a caller that waits for a frame slot before it advances; a frame dropped before it is recorded; a recording discarded; several ticks in one advance, with a question on each; a pause; a host that may not touch the device; a caller whose platform has taken away its right to submit; a world restored or replaced since the last submitted frame; device replacement | A pass in the frame, which waits for the next admitted view. Rejected by answers a game drains from advances that submit no view. Or a pass that reads what a discarded recording staged. Rejected by exact comparison with the last submitted frame's state after a discard. Or a contribution that submits for itself. Rejected by C06 and the reviewer's question. Or an answer for the new world read from the old world's state. Rejected by the first answer after a restore, which must say it had no state. Or one answer for an advance of two ticks. Rejected by two questions with different use ticks |
 
 This is internal work: its outcomes are properties measured through the diagnostic effect, with inspected items
 where a picture is the evidence.
@@ -180,7 +183,7 @@ ordered set:
 | `shadow` | Draw | Inside the Sun cascade passes | Exists |
 | `opaque` | Draw | End of the forward opaque pass | Exists |
 | `after-opaque` | Render or compute | After opaque geometry, sky and stars; before the pre-tone input | New (WP3) |
-| `tick` | Compute | Not in the frame: in a submission of its own, after the world advances and before any view of that advance is recorded | New (WP6), [below](#the-tick-stage-wp6) |
+| `tick` | Compute | Not in the frame: in a submission of its own, after the world advances and before any view of that advance is recorded, and before a caller's wait for a frame slot | New (WP6), [below](#the-tick-stage-wp6) |
 
 Compute in `simulate` therefore always precedes the fragment passes that read it, by graph order, not by
 convention. All of an effect's pipelines are prepared in `rebuild`, before readiness. Its passes are timed under
@@ -673,75 +676,149 @@ arrived within two ticks and none within one
 late, is a contract (C09). A view is optional (C02). So the query cannot ride a view.
 
 The **tick stage** is a sixth stage, `tick`, for compute that answers the game and not the picture. A **tick
-pass** is a pass declared in it, and a **tick submission** is the host's submission of an advance's tick
-passes. The stage is not part of the frame.
+pass** is a pass declared in it, and a **tick submission** is the host's submission of tick passes. A **post**
+is one question a game has put to an effect, which the effect holds until it is submitted or expires. The
+stage is not part of the frame.
 
-1. **Admitted by the tick.** In every advance of the frame host that reaches the device, which is `advance`
-   and so `drive`, the host asks each effect that declared a tick pass whether it has work. It asks once, after
-   the world has advanced and before any view of that advance is recorded. If one has, the host records those
-   passes into an encoder of their own and submits it at once, as its own submission on the scene's queue.
-   What becomes of the advance's view changes nothing: submitted, skipped for want of a frame slot or a
-   drawable, dropped with its token, refused under overload, or recorded and discarded. An advance in which no
-   pass has work makes no encoder and no submission. Several ticks completed in one advance are one asking
-   and at most one tick submission, as a frame's several ticks are one execution.
+1. **Asked for by the tick, ahead of anything optional.** The host has one step for the stage, the
+   **asking**. It asks each effect that declared a tick pass whether it has work. If one has, the host
+   records those passes into an encoder of their own and submits it at once, as its own submission on the
+   scene's queue. `advance`, and so `drive`, makes the asking once in every advance that reaches the device,
+   after the world has advanced and before any view of that advance is recorded. What becomes of the
+   advance's view changes nothing: submitted, skipped for want of a frame slot or a drawable, dropped with
+   its token, refused under overload, or recorded and discarded.
+   - **A caller that waits asks first.** The asking is also an entry of the host that a caller makes by
+     itself, and a caller that waits for something optional before it advances makes it before that wait.
+     The Mac's render actor is the one such caller: with its surface ready and every frame slot held it
+     polls and sleeps, for up to its display lead, before it calls `advance` (`render_actor.rs`), and a
+     world on its own thread has posted by then. The render actor asks before that wait, and its advance
+     asks again for what was posted meanwhile. The browser page and the iPhone's render owner wait for
+     nothing before `advance`. The asking reads no clock and takes no pair (rule 10 of
+     [the timing model](#the-timing-model)), so the observation, the lead and the pair of the advance that
+     follows are what they would have been.
+   - **One asking, every post.** An asking in which no pass has work makes no encoder and no submission. An
+     asking takes up every post its effect holds that has not expired and that the effect's capacity
+     allows, whichever ticks they were posted on. Several ticks completed in one advance are therefore one
+     asking and at most one tick submission, as a frame's several ticks are one execution, and each post in
+     it keeps its own identity through to its answer: two posts for two ticks are two answers.
 2. **It reads what frames have committed and writes only its own.** Submissions execute in queue order, and
    the encoded-frame token still borrows the host, so no frame is recorded and unsubmitted while a tick pass
    is recorded. The tick pass therefore sees GPU state as the last submitted frame left it, and the view of
-   its own advance comes after it. It may read its effect's persistent resources and the committed side of
-   its histories. It writes only resources the frame graph does not hold: the effect's own, which no frame
-   pass reads or writes. So the compiled frame graph, its storage and every drawn byte are the same with a
-   tick pass declared as without one. One thing a frame stages is not committed state: a `queue.write_*` made
-   while recording reaches the device even when that recording is discarded. A tick pass takes frame state
-   only from what frame passes wrote, and stages its own parameters in its own recording.
-3. **Its time is the tick.** The host gives a tick pass the advance's newest authoritative tick, its timeline
-   and the tick duration, and no alpha, phase or host time. The effect knows the tick and the display time
-   its committed state holds, because it committed them, and brings what it reads to the tick the game asked
-   about.
-4. **It completes alone.** A tick submission takes no frame slot, counts no view and advances no history.
-   Once it is submitted the host calls the effect back, once, as `submitted` does for a frame, and the effect
-   commits what it staged and starts its readback's map there. A recording that fails gets no call. The map
-   resolves at the host's device poll, which every such advance makes before the world advances, so a result
-   the GPU finished before an advance is in the game's hands for that advance's ticks. Nothing waits: there
-   is no blocking poll and no blocking map on the path.
+   its own advance comes after it. It may read its effect's persistent resources, and its histories by
+   `previous` alone. Outside a frame that is the one binding that names the committed side: `next` is the
+   side a frame is free to write, and `result` follows a mark that a recording sets when its producer runs
+   and that a discarded recording leaves set (`EffectState::side`). It writes only resources the frame graph
+   does not hold: the effect's own, which no frame pass reads or writes. So the compiled frame graph, its
+   storage and every drawn byte are the same with a tick pass declared as without one. One thing a frame
+   stages is not committed state: a `queue.write_*` made while recording reaches the device even when that
+   recording is discarded. A tick pass takes frame state only from what frame passes wrote, and stages its
+   own parameters in its own recording.
+3. **Its time and its world are the question's.** A post carries the world endpoint it was asked on, which
+   is the world epoch, the timeline and the tick, the three fields a frame's effect time carries, and the
+   tick its answer is for. The game states them when it posts. The host cannot: on a world with its own
+   thread it has not yet observed the tick a post was made on, and at an asking before a wait it has
+   observed nothing since its last advance. The host gives a tick pass the tick duration, and no tick of
+   its own, alpha, phase or host time.
+   - **Whose state.** An effect's committed state has an endpoint too: the one its last submitted frame
+     committed, by rule 1 of [state and time](#state-time-and-the-tentative-frame-wp2). A post is answered
+     from that state only when the state exists and its world epoch and timeline are the post's. The seam's
+     state record makes that comparison, so every effect makes the same one. Where it holds, the effect
+     brings what it reads to the tick the answer is for: it knows the tick and the display time its
+     committed state holds, because it committed them.
+   - **No state to answer from.** Otherwise the state is another world's, another branch's of this world,
+     or not yet seeded. That is so after a restore, a new world or a replaced device, until a view of the
+     post's world has been submitted and has seeded or reset the state, and the first asking after such a
+     change comes before that view. For such a post the effect makes its answer without the state and
+     marks it so, or makes none and lets the post age out. Which of the two, and what a marked answer still
+     holds, is the effect's design. It never returns an answer that claims the state.
+   - **On delivery.** Every answer carries the endpoint its post was asked on, the tick it is for and that
+     mark. C02's check before a result is published compares the answer's endpoint with the game's own, as
+     it does today. The mark is what that check cannot give: an answer for the new world that was read from
+     the old world's state passes it.
+   - **Ticks are not compared.** On one timeline a post can be older than the state it is answered from,
+     when the bound held it over a view. That is a late question, and the effect carries its answer as it
+     carries any. A tick does not go backwards on one timeline here: a world begins a timeline whenever it
+     restores (`sim/runtime.rs`).
+4. **It completes alone, and it is delivered at a drain.** A tick submission takes no frame slot, counts no
+   view and advances no history. Once it is submitted the host calls the effect back, once, as `submitted`
+   does for a frame, and the effect commits what it staged and starts its readback's map there. A recording
+   that fails gets no call. A result is **published** when its map's callback runs. On Metal that is inside
+   a device poll of the host, which every advance that reaches the device makes and every `poll_completed`
+   makes. In Chrome it is when the browser's event loop runs the callback, between two calls of the page and
+   never inside one (the contract on `FrameHost::poll_completed`). A game takes results at a **drain**: the
+   place in its tick where it reads what its effect has published, which touches no device. A published
+   result is in the game's hands at the game's first drain after its publication. Which tick that is, no
+   rule here says. In Chrome an inline world can run a fixed update in the call that made the submission,
+   before the callback has had its turn. On the Mac a world on its own thread can run a tick between the GPU
+   finishing and the render actor's next poll. Nothing from a post to its drain needs a view: not the
+   asking, the submission, the publication or the drain. Nothing waits: there is no blocking poll and no
+   blocking map on the path. How old answers are in a running game is measured where the game is, by
+   `WATERS` WP19.3.
 5. **Bounded.** The host holds at most a declared number of tick submissions outstanding, the frame slots'
-   count to start with. At the bound, an advance with tick work records none, counts one refused tick
-   submission in its report and asks again at the next advance. That is C02's explicit backpressure. Work an
-   effect could not submit stays the effect's to keep or to age out.
-6. **Lifecycle.** The frame host submits and nothing else does: a contribution still holds no device and
-   submits nothing (C06). `advance_without_rendering` is the advance of a host that must not touch the device,
-   after a loss or without a foreground lease, and it runs no tick pass. The effect's answers then age out and
-   its game falls back, as that effect's design says. A capture runs no tick pass. A tick submission belongs
-   to the device generation that recorded it: after a replacement its result is never delivered, and tick
-   passes run again only after `rebuild`. The render owner makes tick submissions as it makes frames, so a
-   surface switch excludes them the same way.
+   count to start with. At the bound, an asking with work records none, counts one tick submission refused
+   at the bound and is made again at the next advance. That is C02's explicit backpressure. Work an effect
+   could not submit stays the effect's to keep or to age out.
+6. **Permission and lifecycle.** The frame host submits and nothing else does: a contribution still holds no
+   device and submits nothing (C06).
+   - **Permission is the shell's, held through the queue call.** A platform that can take away the right to
+     submit states it to the host as a **submission permission**. The shell gives it to the host once. The
+     host enters it before the first queue call of a tick submission and leaves it after that submission's
+     submit returns, and the permission either holds the platform's right for that long or refuses. The
+     host makes no tick submission outside it. Refused, the asking records nothing, leaves the posts with
+     the effect and counts one tick submission refused for want of permission, a count apart from the
+     bound's. The effect's answers then age out and its game falls back, as that effect's design says.
+   - **The iPhone.** The render owner's permission is its surface lease: a lease section, which refuses when
+     the lease is revoked, when no surface is installed or when the app is going to the background. That is
+     how its device publication already runs (`recover` in `examples/v1-game-ios/src/ios/render.rs`). A
+     suspend sets the background flag before it revokes, and cannot take the surface while a section holds
+     it, so no tick submission lands in the background, which C06 forbids. The render owner calls the host
+     in three places: `advance` before its present section, `advance` to drain an old grid, and `drive`
+     with no surface, after the configure section returned `NoLease` or the platform denied a present. With the permission each is safe as it stands, where
+     without it a posted pass would be submitted outside the lease in all three. None of the three is
+     inside a lease section, so the permission's section does not nest.
+   - **A healthy host with no drawable is not a refused one.** In the foreground with its lease, a host
+     that is given no drawable has its permission, and its tick submission is made. This is the case the
+     stage exists for.
+   - **The other shells.** The Mac window, the browser page, the offscreen runner and tests have no such
+     platform rule. They give no permission and the host submits freely. A render owner makes a surface
+     switch at a frame boundary, on the thread that makes its askings and its frames
+     (`runtime/surface_switch.rs`), so a switch excludes tick submissions as it excludes frames.
+   - **Lifecycle.** `advance_without_rendering` is the advance of a host that must not touch the device,
+     as after a loss, and it runs no tick pass. A capture runs no tick pass. A tick submission belongs to
+     the device generation that recorded it: after a replacement its result is never delivered, and tick
+     passes run again only after `rebuild`.
 7. **Timing.** While timing is requested, a tick pass's GPU time is reported under its own name in the frame
    timing feed, at least for an advance that also submits a view. With the switch off it writes no timestamp.
    The stage creates no timestamp query set of its own: Metal allows a process 32, and `APPLE-PRESENTATION`
    WP16 holds a host to one for each frame slot.
-8. **Refused at preparation, by name:** a tick pass that writes a transient, persistent or history resource or
-   an attachment; a tick pass that reads a transient or an attachment; and a tick pass declared in a 2D
-   scene, which has no consumer yet.
+8. **Refused at preparation, by name:** a tick pass that reads a history by `next` or by `result`; a tick
+   pass that writes a transient, persistent or history resource or an attachment; a tick pass that reads a
+   transient or an attachment; and a tick pass declared in a 2D scene, which has no consumer yet.
 
 **What it gives, and what it does not.** wgpu has one queue on Metal and WebGPU, so a tick submission does not
 overtake work already submitted. Its result is late by the device time left in the frames ahead of it, of
-which there are at most the frame slots' count, plus its own device time. It is never late by a view that was
-not admitted, which is what `WATERS` WP19 measured. Stepping simulation state every tick with no frame
+which there are at most the frame slots' count, plus its own device time, and then by the wait for the game's
+next drain. It is never late by a view that was not admitted, which is what `WATERS` WP19 measured, nor on the
+Mac by the render actor's wait for a frame slot. Stepping simulation state every tick with no frame
 drawn is a different need and is not built: a tick pass steps nothing a frame reads.
 [Async-compute eligibility](#async-compute-eligibility) stays a flag for a recipe with a second queue.
 
-**Checked against the contracts.** C06: one executor owns submission and no feature submits outside the
-coordinator's lifecycle, which rules 1 and 6 keep. C02: a view is optional and a tick is never lost with one,
-a required reader has explicit backpressure (rule 5), and an asynchronous result is checked against its epoch
-before it is published, which stays the effect's check on delivery. C09: a water query reads GPU state through
+**Checked against the contracts.** C06: one executor owns submission, no feature submits outside the
+coordinator's lifecycle, and the iPhone's foreground lease forbids background submission, which rules 1 and 6
+keep. C02: a view is optional and a tick is never lost with one, a required reader has explicit backpressure
+(rule 5), and an asynchronous result is checked against its epoch before it is published, which stays the
+effect's check on delivery and which rule 3 gives the endpoint for. C09: a water query reads GPU state through
 an asynchronous batched query; the stage changes when that batch is submitted and nothing it answers. C07: no
-history is advanced or read from an uncommitted side. No contract's words change.
+history is advanced or read from an uncommitted side, which rule 8 now refuses by name. No contract's words
+change.
 
 **The proof effect** is small: an integer field that each submitted frame steps, as the diagnostic's trail
-is, and a tick pass that reads the field at posted points into a buffer the test reads back, so a CPU oracle
-gives every expected value exactly. On the Mac it is a test contribution in `thrum-render`'s own tests, the
-smallest world that shows what the host admits. In Chrome the V1 game's diagnostic effect gains the same tick
-pass behind the selection it already has. `WATERS` WP19 is the first real consumer and moves its body query
-to the stage.
+is, and a tick pass that reads the field at posted points into a buffer its game drains, so a CPU oracle
+gives every expected value exactly. Each of its answers carries its post's endpoint and use tick, and an
+answer made with no state to answer from carries the mark and no value of the field. On the Mac it is a test
+contribution in `thrum-render`'s own tests, the smallest world that shows what the host admits, and the test
+is its game. In Chrome the V1 game's diagnostic effect gains the same tick pass behind the selection it
+already has. `WATERS` WP19 is the first real consumer and moves its body query to the stage.
 
 ### Check that it can work
 
@@ -768,6 +845,23 @@ to the stage.
 - **Committed state for a tick pass.** A discarded encoder executes nothing, so what frame passes wrote is the
   last submitted frame's. Staged queue writes are the exception, and rule 2 of
   [the tick stage](#the-tick-stage-wp6) keeps a tick pass off them.
+- **The committed side outside a frame.** `EffectState::begin` clears each pair's producer mark, `produced`
+  sets it and `submitted` clears it. A discarded recording clears nothing, so until the next frame begins,
+  `result` resolves to the side that recording wrote and never submitted, and `next` always resolves to the
+  uncommitted side. `previous` reads the committed side whatever was recorded. So rule 8 refuses the other
+  two in a tick pass, and no tick pass can be declared that reads an uncommitted side.
+- **Whose state.** The seam's state record already holds the endpoint the last submitted frame committed,
+  with its world epoch and timeline, and already resets on a change of either when a frame begins. Rule 3
+  makes the same comparison for a post, before that frame exists.
+- **Permission through the queue call.** The iPhone's lease is a lock the render owner holds for a section,
+  and the shell removes a surface only with a try-lock after advancing the epoch
+  (`examples/v1-game-ios/src/lease.rs`). The render owner already publishes a replacement device inside a
+  section that first reads the background flag. A tick submission made the same way has the same guarantee,
+  and the render owner calls `advance` and `drive` outside every section, so the lock is not taken twice.
+- **The asking before the wait.** The render actor's wait touches the host through `has_free_slot` and
+  `poll_completed` alone, and it begins only when the surface is ready and the device is checked. An asking
+  placed before it is one more call on the same thread. A tick submission takes no frame slot, so it does
+  not lengthen the wait it precedes.
 
 ## The system as it runs
 
@@ -776,8 +870,12 @@ to the stage.
 | Descriptor kinds, validation, allocation, pass order, load and store | `thrum-render::graph` (`APPLE-TILE` owns the split and the storage derivation; this module extends the descriptor) |
 | The contribution list, stages, the tentative-commit protocol, the anchor, knobs | This module (`contribution.rs`, `synthetic/{contributed,scene_graph}.rs`, the frame host's list) |
 | The frame's effect time: tick, timeline, tick duration, alpha and the display phase | This module states it; the world's clock in `thrum-core` and the frame host produce it |
-| Tick passes: when they are asked and recorded, the tick submission, its bound and its completion call | This module states them; the frame host makes the submission ([ruling](../ARCHITECTURE.md#seam-ruling-for-effect-graph-wp6)) |
-| What a tick pass computes, its inputs, its readback and what it delivers to a game | The effect's module (`WATERS`' body query) |
+| Tick passes: when they are asked for and recorded, the tick submission, its bound and its completion call | This module states them; the frame host makes the submission ([ruling](../ARCHITECTURE.md#seam-ruling-for-effect-graph-wp6)) |
+| Permission to make a tick submission | The shell that holds the platform's right: the iPhone's render owner, from its surface lease. The frame host enters it and never judges it |
+| The asking ahead of a caller's own wait | The caller that waits: the Mac's render actor |
+| A post's endpoint and the tick its answer is for | The game that posts |
+| Whether an effect's committed state is the post's world's | The seam's state record, from the endpoint the last submitted frame committed |
+| What a tick pass computes, its inputs, its readback, its drain, and what an answer holds when there was no state to answer from | The effect's module (`WATERS`' body query) |
 | The due time of a frame's tick, and so its span and origin | The world's clock; the pair's clock sample carries it and the frame host records it |
 | The observation and the lead a frame consumes | The host that drives the frame; the frame host records them |
 | An effect's resources, epoch, state tick and shaders | The effect's module (`SEA`, `CLOUDS`) |
@@ -818,9 +916,12 @@ edited.
 
 WP6 edits `contribution.rs`, the graph's declaration checks and the frame host (`runtime.rs`, its tokens and its
 timing files) under [the module list's ruling](../ARCHITECTURE.md#seam-ruling-for-effect-graph-wp6), and the V1
-game's diagnostic effect with its browser qualification. It changes no shell: the Mac's render actor, the
-page and the iPhone's render owner already call `advance`. `advance_without_rendering` keeps its contract, and
-the tests that hold it there keep passing.
+game's diagnostic effect with its browser qualification. It edits two shells, each in one place. The Mac's
+render actor (`crates/thrum-app/src/app/render_actor.rs`) makes the asking before its wait for a frame slot.
+The iPhone's render owner (`examples/v1-game-ios`) gives its host a submission permission made of its lease.
+Nothing else in either changes: not the wait's length, the lead, the lease's protocol or any call into the
+host. The browser page is not edited. `advance_without_rendering` keeps its contract, and the tests that hold
+it there keep passing.
 
 [The module list](../ARCHITECTURE.md#exact-baselines) says how a change that alters another module's exact images
 is caught. This module must move none, on the Mac or in Chrome: with no effect attached, every existing scene
@@ -872,7 +973,19 @@ on the valley route with no effect attached.
    outstanding.
 8. **A tick pass reads state a discarded recording staged.** Early sign: WP6.2's case after a discard. Rule 2
    is the remedy, and it is the consumer's to follow: a staged uniform a frame writes is never a tick pass's
-   input.
+   input. `WATERS` WP19 meets it at once. Its candidate at `3110457e6` binds the water map's array texture
+   and its info buffer in the surf query, and `MapGpu::record` updates both by queue writes while a frame is
+   recorded, spatial support included when a stage changes. Those two bindings are staged frame state, and
+   the query moved to the stage has to stage its own copy of what it reads from them.
+9. **A shell that needs a submission permission gives none.** The host cannot tell: with none given it
+   submits freely. Only the iPhone has the rule today, and WP6.7 and its reviewer's question hold its render
+   owner to it. A later shell on a platform that can revoke the right to submit gives one before it hosts a
+   scene with a tick pass.
+10. **The first answers after a restore say they had no state.** A game sees marked answers, or none, from
+    the restore until the first view of the restored world is submitted. Under a run of skipped views that
+    lasts as long as the run. Early sign: a consumer's fallback count after a restore. It is the same wait
+    the effect's own state has for its reset, and stepping or resetting state with no frame drawn is the
+    need this stage does not build.
 
 ## Proof and builder handoff
 
@@ -896,11 +1009,17 @@ on the valley route with no effect attached.
   each change of origin instead of failing on them. No WP4 item drives a window, so none needs an attended
   display.
 - **WP6.** The stage's rules about what a pass may declare are CPU tests. What the host admits, submits and
-  completes needs a device and is two small Metal tests of a test contribution, with every expected value from
-  a CPU oracle of the integer field and none read from the engine. A test arranges a held frame slot or a
-  missing drawable itself, so none depends on how busy the machine is, and none makes a timing claim: how late
-  an answer is belongs to `WATERS` WP19.3. Chrome gets one function case, because only a browser shows that a
-  submission and a map outside the frame complete there.
+  completes needs a device and is three small Metal tests of a test contribution, with every expected value
+  from a CPU oracle of the integer field and none read from the engine. A test arranges a held frame slot, a
+  missing drawable, a refusing permission, a restore or a new world itself, so none depends on how busy the
+  machine is, and none makes a timing claim: how late an answer is belongs to `WATERS` WP19.3. The test is
+  the effect's game: it posts with an endpoint and drains, and "delivered" in an item means drained.
+  Chrome gets one function case, because only a browser shows that a submission and a map outside the frame
+  complete there and reach a drain through its event loop with no view drawn. The two shells are proved
+  where their claim is. The render actor's is an order of calls, which a CPU test with a stand-in for the
+  host shows and no panel timing does. The render owner's is the lease's protocol, which CPU tests beside
+  the lease's own show on the Mac. No WP6 item runs the iPhone simulator: no scene the iPhone app runs
+  declares a tick pass yet.
 - **GPU.** Every GPU check holds the `gpu` lock. Scratch goes in `tmp/effect-graph-<work-package>/`; selected evidence
   in `.orchestrate/evidence/EFFECT-GRAPH/`.
 - **Maturity.** A ledger row for the seam is added at WP3, with implementation, correctness and device results kept

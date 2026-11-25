@@ -424,9 +424,16 @@ interface. So [the tick stage](EFFECT-GRAPH/DESIGN.md#the-tick-stage-wp6) is `EF
 by that builder in `contribution.rs` and the graph's declaration checks, in the frame host (`runtime.rs`, its
 tokens and its timing files, `APPLE-TILE`'s and `APPLE-PRESENTATION`'s), and in the V1 game's diagnostic
 effect with its browser qualification, with the behaviour that design defines. `advance_without_rendering`
-keeps its contract and its tests. No shell changes, no item of `APPLE-TILE`, `APPLE-PRESENTATION`, `HOST` or
-`CREATOR` changes, and no exact baseline moves: a scene with no tick pass makes the submissions it makes
-today, and one with a tick pass compiles the same frame graph. C02, C06, C07 and C09 hold as written, and
+keeps its contract and its tests. After [the design's review](../../.orchestrate/evidence/EFFECT-GRAPH/design-review.md)
+two shells change too, each in one place and by the same builder. The Mac's render actor
+(`crates/thrum-app/src/app/render_actor.rs`, `PLATFORM-RUNTIME-MAC`'s and `HOST`'s) asks the host for tick
+work before its wait for a frame slot, so a posted pass is not charged that wait. The iPhone's render owner
+(`examples/v1-game-ios`, `PLATFORM-RUNTIME-IOS`'s) gives its host a submission permission made of its
+surface lease, which the host holds through a tick submission's queue call, so none is made in the background
+or after the lease is revoked (C06). The wait's length, the lead, the lease's protocol and every call into
+the host stay as they are, and the browser page is not edited. No item of `APPLE-TILE`, `APPLE-PRESENTATION`,
+`HOST`, `CREATOR`, `PLATFORM-RUNTIME-MAC` or `PLATFORM-RUNTIME-IOS` changes, and no exact baseline moves: a
+scene with no tick pass makes the submissions it makes today, and one with a tick pass compiles the same frame graph. C02, C06, C07 and C09 hold as written, and
 [the design](EFFECT-GRAPH/DESIGN.md#the-tick-stage-wp6) says how. Once built, the tick submission belongs to
 the frame runtime and the stage to `EFFECT-GRAPH`'s seam: later work there keeps their tests passing.
 `WATERS` WP19 then moves the body query to the stage in its own crate. The other route in the builder's
@@ -3273,3 +3280,8 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   `BLOCKED needs_dependency`: its body query rode the frame and waited for an admitted view. `WATERS` WP19 now
   depends on it, with its items unchanged, and `WATERS`' design says the query is admitted by the tick. No
   contract's words, no other module's dependency or open item, and no exact baseline changed.
+- 2026-11-25 [The seam ruling for `EFFECT-GRAPH` WP6](#seam-ruling-for-effect-graph-wp6) now covers one place
+  in each of two shells, after the design's review found a tick pass submitted outside the iPhone's lease and
+  held behind the Mac's wait for a frame slot: the render actor asks before that wait, and the render owner
+  gives its host a permission made of its lease. The tick-pass interface row, every other module's item and
+  dependency, and every exact baseline stand.

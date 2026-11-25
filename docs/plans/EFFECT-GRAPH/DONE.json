@@ -417,7 +417,7 @@
     },
     {
       "id": "WP5",
-      "name": "The world lane\u2019s resume origin is proved without real-time pacing",
+      "name": "The world lane’s resume origin is proved without real-time pacing",
       "status": "done",
       "quality_bar": "Keep the original regression coverage with the smallest fixture that exposes it and ample headroom in the fast tier.",
       "items": [
@@ -444,7 +444,7 @@
       "items": [
         {
           "id": "WP6.1",
-          "statement": "A contribution declares tick passes beside its frame passes, and preparation holds the stage's rules. It accepts a tick pass that reads its effect's persistent resources and the committed side of its histories. It refuses each of these with a named error: a tick pass that writes a transient, persistent or history resource or an attachment; a tick pass that reads a transient or an attachment; and a tick pass declared in a 2D scene. Guard: CPU tests of the declaration checks in `thrum-render`.",
+          "statement": "A contribution declares tick passes beside its frame passes, and preparation holds the stage's rules. It accepts a tick pass that reads its effect's persistent resources and reads its histories by `previous`. It refuses each of these with a named error: a tick pass that reads a history by `next`; one that reads a history by `result`; a tick pass that writes a transient, persistent or history resource or an attachment; a tick pass that reads a transient or an attachment; and a tick pass declared in a 2D scene. Guard: CPU tests of the declaration checks in `thrum-render`.",
           "check": "cargo nextest run --locked --offline -p thrum-render -E 'test(/tick_stage_rules/)' --no-tests=fail",
           "target": "mac-metal",
           "builder_result": "open",
@@ -454,9 +454,9 @@
         },
         {
           "id": "WP6.2",
-          "statement": "On Metal a test effect's tick pass answers from the state the last submitted frame left, whether or not a view is drawn. The effect keeps an integer field that each submitted frame steps, and its tick pass reads the field at posted points into a buffer the test reads back. In one scripted run the results equal a CPU oracle of the field exactly in each of these advances: one that also submits a view, where the result is the state before that view; one that finds every frame slot held; one whose host has a presenter and is given no drawable; one whose admitted frame is dropped before it is recorded; and the advance after a view was recorded and discarded. In the three advances that submit no view the result still returns, with no view submitted between its post and its delivery, and the host's count of dropped views rises as it does today. An advance with nothing posted makes no submission. Declaring the tick pass leaves the scene's compiled frame graph as it was, in its passes and its storage. Guard: a small Metal test in `thrum-render`, since only a device shows what a submission executes and when its readback maps.",
+          "statement": "On Metal a test effect's tick pass answers from the state the last submitted frame left, whether or not a view is drawn, and each answer is delivered at a drain that needs no view. The effect keeps an integer field that each submitted frame steps. The test is its game: it posts points, each with the world endpoint it is asked on and the tick its answer is for, the tick pass reads the field at them, and the test drains the answers. In one scripted run the drained answers equal a CPU oracle of the field exactly in each of these advances: one that also submits a view, where the answer is the state before that view; one that finds every frame slot held; one whose host has a presenter and is given no drawable; one whose admitted frame is dropped before it is recorded; and the advance after a view was recorded and discarded. In the three advances that submit no view the answer is drained with no view submitted between its post and that drain, and the host's count of dropped views rises as it does today. In an advance that completes two ticks, with a point posted on each at different places, capacity for both and neither expired, the host makes one tick submission and two answers are drained, each carrying its own use tick and each the oracle's value at its own point. An advance with nothing posted makes no submission. Declaring the tick pass leaves the scene's compiled frame graph as it was, in its passes and its storage. Guard: a small Metal test in `thrum-render`, since only a device shows what a submission executes and when its readback maps.",
           "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render -E 'test(/tick_stage_admission/)' --no-tests=fail",
-          "ask": "Are the expected values worked out by a CPU oracle of the field and never read from the engine? In the advances that submit no view, would the test fail if the tick pass were recorded with the next view instead? Is the frame host the only code that submits a tick pass's encoder, with a contribution given no device or queue submission of its own?",
+          "ask": "Are the expected values worked out by a CPU oracle of the field and never read from the engine? In the advances that submit no view, would the test fail if the tick pass were recorded with the next view, or if its answer reached the drain only after the next view? In the advance of two ticks, would the test fail if only the newer tick's post were answered? Is the frame host the only code that submits a tick pass's encoder, with a contribution given no device or queue submission of its own?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -466,9 +466,9 @@
         },
         {
           "id": "WP6.3",
-          "statement": "A tick submission is bounded, follows the device's lifecycle and is timed. On Metal, with the test effect of WP6.2: at the host's declared bound of outstanding tick submissions, an advance with work posted records none, counts one refused tick submission in its report and returns without waiting, and a later advance submits the work once a submission has completed. `advance_without_rendering` with work posted makes no tick submission and leaves the work posted. A capture runs no tick pass. After device replacement a result outstanding on the old generation is never delivered, and the first result on the new generation equals the oracle of the re-seeded field. With timing requested, an advance that makes a tick submission and submits a view reports the tick pass's GPU time under its own name, and with the switch off the pass writes no timestamp. Guard: a small Metal test in `thrum-render`, since only a device shows a submission's completion, a replaced generation and a timestamp.",
+          "statement": "A tick submission is bounded, needs its caller's permission, follows the device's lifecycle and is timed. On Metal, with the test effect of WP6.2: at the host's declared bound of outstanding tick submissions, an advance with work posted records none, counts one tick submission refused at the bound and returns without waiting, and a later advance submits the work once a submission has completed. With a submission permission that refuses, as a revoked lease does, an advance with work posted makes no tick submission, leaves the work posted and counts one tick submission refused for want of permission, in a count apart from the bound's. With a permission that grants, on a host that has a presenter and is given no drawable, the tick submission is made and its answer is drained, and the permission is entered before that submission's first queue call and left after its submit returns, as a test permission that records both observes. `advance_without_rendering` with work posted makes no tick submission and leaves the work posted. A capture runs no tick pass. After device replacement a result outstanding on the old generation is never delivered. With timing requested, an advance that makes a tick submission and submits a view reports the tick pass's GPU time under its own name, and with the switch off the pass writes no timestamp. Guard: a small Metal test in `thrum-render`, since only a device shows a submission's completion, a replaced generation and a timestamp.",
           "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render -E 'test(/tick_stage_lifecycle/)' --no-tests=fail",
-          "ask": "Is there no blocking poll and no blocking map between a post and its delivery? Does the tick stage create no timestamp query set of its own? Do the tests that hold `advance_without_rendering` to touching no device still stand as they were?",
+          "ask": "Is there no blocking poll and no blocking map between a post and its drain? Is there any path on which the frame host makes a tick submission's queue call outside the permission it was given? Does the tick stage create no timestamp query set of its own? Do the tests that hold `advance_without_rendering` to touching no device still stand as they were?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
@@ -478,10 +478,43 @@
         },
         {
           "id": "WP6.4",
-          "statement": "In Chrome the V1 game's diagnostic effect has a tick pass that reads its trail field at posted points, and its results equal the CPU oracle exactly: in advances that submit a view, in advances whose admitted frame is dropped before it is recorded, and on the replacement device after a device loss and recovery. Guard: one browser case, since only Chrome shows that a submission and a map outside the frame complete on WebGPU.",
+          "statement": "In Chrome the V1 game's diagnostic effect has a tick pass that reads its trail field at posted points, and the game drains its answers with no view drawn. The drained answers equal the CPU oracle exactly in three cases: in advances that submit a view; for a point posted in an advance whose admitted frame is dropped before it is recorded, drained while the case goes on dropping every frame, with the host's count of submitted views at that drain equal to its count at the post; and on the replacement device after a device loss and recovery, for a point posted once a view has been submitted there. Guard: one browser case, since only Chrome shows that a submission and a map outside the frame complete on WebGPU and reach a drain through the browser's event loop.",
           "check": "node scripts/check_v1_browser.mjs --case effect-tick",
           "lock": "chrome",
           "target": "chrome-webgpu",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP6.5",
+          "statement": "An answer never comes from another world's state. On Metal, with the test effect of WP6.2, after a frame has committed the field, in each of three changes: the world restores onto another timeline at the same tick; a new world epoch reuses the tick and the timeline; and the device is replaced. A point posted on the changed world, and asked for before any view of it has been submitted, is drained carrying its post's endpoint and the mark of an answer made with no state, and holds no value of the field. In the first two changes the point is one where the committed field and the reset field differ, so an answer read from the old state would show. Once a view of the changed world has been submitted, a point posted there is drained with the oracle's value of the re-seeded field and without the mark. Guard: a small Metal test in `thrum-render`, since only a device shows what a submission read.",
+          "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render -E 'test(/tick_stage_world_change/)' --no-tests=fail",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP6.6",
+          "statement": "On the Mac a posted tick pass does not wait for a frame slot. With its surface ready and every frame slot held, the render actor makes the host's asking before the first poll or sleep of its wait for a slot, and it has made it whether a slot frees before the deadline or none does. Guard: a CPU test of the render actor's wait in `thrum-app` against a stand-in for the host that records the order of its calls, since the order is the claim and no panel timing is.",
+          "check": "cargo nextest run --locked --offline -p thrum-app -E 'test(/tick_work_before_slot_wait/)' --no-tests=fail",
+          "ask": "In `crates/thrum-app/src/app/render_actor.rs`, is there any path on which the render actor polls or sleeps for a frame slot before the host's asking has been made? Does the tested wait run in the render actor's frame path, and not only in the test? Are the wait's deadline, the lead it measures afterwards and the `advance` that follows unchanged?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP6.7",
+          "statement": "The iPhone's render owner gives the frame host a submission permission made of its surface lease. Run against the lease with a stand-in surface, the permission runs the submission it is given while a surface is installed under the current epoch and the app is in the foreground. It refuses, and runs nothing, in each of three states: no surface installed; the lease revoked; and the background flag set. A removal of the surface attempted while the submission runs finds the lease busy until the submission returns. Guard: CPU tests beside the lease's own in `v1-game-ios`, which run on the Mac.",
+          "check": "cargo nextest run --locked --offline -p v1-game-ios -E 'test(/tick_permission/)' --no-tests=fail",
+          "ask": "Does every host the iPhone's render owner drives hold this permission from before its first advance, and keep it through a device recovery? Is each of the render owner's calls to `advance` and `drive` outside every lease section, so the permission's section cannot nest? Is the tested permission the one the render owner gives the host?",
+          "target": "stand_in:ios-sim",
           "builder_result": "open",
           "evidence": "",
           "verdict": "",
