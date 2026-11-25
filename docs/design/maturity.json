@@ -3579,9 +3579,9 @@
         "C13"
       ],
       "next_design_package": null,
-      "next_construction_package": "SESSION WP7 driven world and windowed reference match. The broader I2n snapshot and delta profile remains parked.",
+      "next_construction_package": "The broader I2n snapshot and delta profile remains parked.",
       "remaining_detailed_design": "For the broader snapshot and delta profile, event identity and deduplication, authenticated admission, 60-to-20 Hz mandatory cadence and simultaneous R4 burst remain open. Streamed servers, richer prediction and online services require separate recipes.",
-      "qualification": "The deterministic profile has headless match correctness evidence on this Mac, with separate Mac, Chrome and iPhone simulator replicas over loopback. The integrated snapshot and delta profile remains unqualified.",
+      "qualification": "The deterministic profile has headless match correctness evidence on this Mac, with separate Mac, Chrome and iPhone simulator replicas over loopback. The windowed Crowd has functional and submitted-motion evidence on Mac Metal and Chrome WebGPU. The integrated snapshot and delta profile remains unqualified.",
       "existing_candidate": {
         "status": "not_inventoried"
       },
@@ -3743,14 +3743,14 @@
         "scope": "Physical storage oracle only. External sequence numbers are model inputs, not one production allocator; no integration with the outstanding ordinary/rejected ledger, BaselineAck mandatory-identity coverage, supersession, transport or replica. The immutable 256 KiB image and sync closure remain separate simultaneous owners.",
         "evidence": "../../.orchestrate/evidence/integration/N1-BASELINE-PHYSICAL-STAGING-2026-11-03.md"
       },
-      "current_priority": "The deterministic session is built headless. The snapshot and delta profile remains parked.",
+      "current_priority": "The deterministic session drives the headless and windowed Crowd. The snapshot and delta profile remains parked.",
       "deterministic_session": {
-        "implementation": "Caller-clocked host and client over the message link. Includes full-world baseline restore, post-commit set delivery, redundant timed frames, ordered commands, adaptive lead, bounded result retention, roster and match lifecycle, confirmed playout and optional local-controller prediction.",
-        "correctness": "On A0 and harsh in-memory profiles, four 10,000-body replicas each matched the authority at all 1,200 digest ticks over 36,000 ticks. The A0 socket match also matched all 1,200 on each of four independent clients. Other proofs cover late join, disconnect and rejoin, repair, slow or frozen peers, and an independent integer rule set with timed actions, ordered commands and roster events. The dependency closure check covers the V1 game, starter, creator scenes and the in-memory proof package.",
-        "visuals": "Headless proof. Windowed presentation belongs to SESSION WP7.",
+        "implementation": "Caller-clocked host and client over the message link. Includes full-world baseline restore, post-commit set delivery, redundant timed frames, ordered commands, adaptive lead, bounded result retention, roster and match lifecycle, confirmed playout and optional local-controller prediction. A driven world in the native and browser app shells takes a bounded advance and display-time sample from its game-owned driver.",
+        "correctness": "On A0 and harsh in-memory profiles, four 10,000-body replicas each matched the authority at all 1,200 digest ticks over 36,000 ticks. The A0 socket match also matched all 1,200 on each of four independent clients. Other proofs cover late join, disconnect and rejoin, repair, slow or frozen peers, and an independent integer rule set with timed actions, ordered commands and roster events. Each independent windowed reference Crowd replica matched all 120 digest ticks over 3,600 ticks under the A0 relay. The Mac receipt proves the buffered burst, hold and named skip. Chrome proves a hidden tab returning through named skips without duplicate commits or overload. The dependency closure also covers the standalone Crowd view.",
+        "visuals": "T2 realtime motion at 640×360 compares a 2,000-body joined Crowd with the standalone view on both targets. The retained motion records cover the Mac burst, stall and skip and the Chrome visibility return.",
         "device": {
-          "mac-metal": "Apple M3 Max: headless authority and two independently running native clients over conditioned loopback, plus the virtual-clock rehearsal.",
-          "chrome-webgpu": "Headless Chrome Wasm client over WebTransport to the same Mac's loopback relay. The proof does not open a GPU device.",
+          "mac-metal": "Apple M3 Max: headless authority and two independently running native clients over conditioned loopback, plus the virtual-clock rehearsal and two Metal windows in separate native processes.",
+          "chrome-webgpu": "Headless Chrome Wasm client over WebTransport to the same Mac's loopback relay. The windowed proof renders the joined Crowd in a real WebGPU canvas.",
           "ios-sim": "iPhone 18 Pro simulator client over native QUIC on the Mac. Function only. No simulator speed claimed."
         },
         "performance": "See the separate SESSION M4 and M5 headless records for Mac and Chrome cost observations under load.",
@@ -3765,7 +3765,8 @@
         "evidence": [
           "../../.orchestrate/evidence/SESSION/M2.md",
           "../../.orchestrate/evidence/SESSION/M5/README.md",
-          "../../.orchestrate/evidence/SESSION/WP6/README.md"
+          "../../.orchestrate/evidence/SESSION/WP6/README.md",
+          "../../.orchestrate/evidence/SESSION/WP7/README.md"
         ]
       },
       "transport_message_link": {

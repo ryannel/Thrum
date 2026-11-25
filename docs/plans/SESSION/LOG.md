@@ -268,3 +268,9 @@
   Playing on the same link, epoch and slot. It reached the closing tick with every digest equal.
   The seeded-input check now accepts those Playing transitions and verifies their identity before
   comparing the sampled input. [Closing checks](../../../.orchestrate/evidence/SESSION/WP6/steady-recovery/README.md)
+
+## WP7 driven Crowd windows
+
+- The game-owned driver supplies bounded committed advances and a display-time sample. The native and browser Crowd proofs use the shared renderer and the standalone view keeps its fixed clock.
+- Verified 120 equal digests across 3,600 ticks in each A0 socket run. The Mac relay recorded a buffered burst, a hold and a skip. Chrome returned from a hidden tab through named skips. Both 640×360 realtime captures were complete and reviewed against the standalone view.
+- The guide covers wiring a driver into both shells. The rendered checks record function and motion on one Mac. [Proofs and motion](../../../.orchestrate/evidence/SESSION/WP7/README.md)
