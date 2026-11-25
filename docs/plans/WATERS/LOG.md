@@ -1192,3 +1192,9 @@
   sea views retain glint gradients and show no pure-white or pure-black water pixels. Sun elevation
   and camera pitch now vary independently. The corrected 1440p record verifies the visible body
   counts and keeps the caster out of frame. [Target evidence](../../../.orchestrate/evidence/WATERS/WP8/review-fix/README.md).
+- 2026-11-25 WP8 hidden bank sources. The lake lookup checks opaque depth at the mapped crossing
+  and drops a scenery hit past a hidden crossing. Adjacent depths feather the visible edge of the
+  bank reflection. The Chrome witness found sky where the bank was hidden and no bank colour or
+  scenery hit at or beyond those crossings. Native Metal stills cover dawn and noon at two heights,
+  and the pan and breeze replays each retain 112 submissions with zero omissions.
+  [Target evidence](../../../.orchestrate/evidence/WATERS/WP8/bank-visibility/README.md).
