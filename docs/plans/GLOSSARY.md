@@ -36,3 +36,76 @@ What one agent session is asked to do. A builder's task names the work package t
 sessions also receive tasks.
 
 - **Source** — orchestrate glossary.
+
+### Game SDK
+
+The public interface a game is written against: the crate `thrum`, its commands, guides and templates. A game
+depends on it and on no other engine crate. Planned by the [GAME-SDK](GAME-SDK/DESIGN.md) module.
+
+- **Source** — the owner's request of 25 November 2026; the field's term (software development kit).
+
+Proposed: the planner chose the name and the crate's name, `thrum`.
+
+### Scene
+
+In a game written on the game SDK, one part of the game with its own setup, rules and look, such as a level, a
+menu or a match. One scene runs at a time. Inside the engine, "scene" also names what the renderer draws (the 2D
+and 3D scene kinds); say "render scene" for that when the two could be confused.
+
+- **Source** — the field's term (Godot, Unity).
+
+Proposed: the planner chose this meaning for game code.
+
+### Rule
+
+A function that moves a game's world on by one tick. Rules are the only code that changes the world, and a
+scene's rules run in the order the scene lists them. Other engines call it a system. A rule crate is a crate
+that holds only rules and passes the deterministic rules profile.
+
+- **Source** — Thrum's own use since `SIM-2D` (rule package, rule set).
+
+Proposed: the planner chose "rule" over "system" and "behaviour" for game code.
+
+### Frame function
+
+A function that runs once for each picture drawn. It reads the world as shown and sets what only this player
+sees: the camera, the interface, effects. It cannot change the world.
+
+- **Source** — coined for the game SDK; other engines split the same way (Godot's `_process`, Unity's `Update`).
+
+Proposed: the planner chose the name.
+
+### Action
+
+A named thing a player can do, such as move or dash, bound to keys, the pointer and touch. Rules read actions
+for each player and never read a key.
+
+- **Source** — the field's term (Godot's input map, Unreal's input actions).
+
+Proposed: the planner chose it for the game SDK.
+
+### Command
+
+A message a player sends once, such as a menu choice. It reaches the rules exactly once, in order. In a match
+it is the session's ordered command. It is not a deferred spawn, which other engines call a command.
+
+- **Source** — `SESSION`'s term.
+
+Proposed: the planner carried it into the game SDK.
+
+### Look
+
+A component the engine draws: a sprite, a shape, a model, a light.
+
+- **Source** — coined for the game SDK.
+
+Proposed: the planner chose the name.
+
+### Setting
+
+A named value a game shows on the tuning panel, in the Mac window and on the Chrome page: a slider, a toggle, a
+text or a readout. `CREATOR` calls the same thing a typed control.
+
+- **Source** — the field's term.
+
+Proposed: the planner chose "setting" for game code, and keeps "action" for what a player does.

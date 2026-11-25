@@ -1,0 +1,231 @@
+{
+  "module": "GAME-SDK",
+  "work_packages": [
+    {
+      "id": "WP1",
+      "name": "An agent writes a game's entities and rules in plain Rust against one crate, and proves them in an ordinary test with no window",
+      "status": "not_started",
+      "quality_bar": "Game code that reads as plainly as Bevy's `breakout` example with less ceremony: a scene's rule list reads as a description of play, and no line names engine plumbing. Compiler and startup messages as useful as Rust's own, each naming the object, the cause and the next step. Correctness held as `SIM-2D` holds it: one trace, one digest. The reference for how game code reads is the design's worked examples, which the owner approved.",
+      "items": [
+        {
+          "id": "WP1.1",
+          "statement": "In a game with no window, built from `thrum` alone: a scene's rules run once a tick in the order the scene lists them; a rule reads what earlier rules of the same tick wrote to components and resources; an entity spawned in a tick is first visited in the next tick; an entity despawned in a tick is still visited by later rules of that tick and by none after it, and a second `despawn` of it in that tick returns false; a query visits entities in the same order on every run; a query's `With` and `Without` filters select as written; a look-free bundle function spawns what it returns; an event sent by a rule is read by later rules of that tick and by none in the next; a rule or group under `when` runs only in ticks where its condition holds; `par_each` leaves the world as the serial loop does; `go_to` changes scene when the tick ends, after which the entities of the scene left are gone, its resources remain, and the first scene given to `Game` is where a game starts. Guard: CPU tests on worlds of a few entities, in `./dev check`.",
+          "check": "cargo test --locked --offline -p thrum --test it rules::",
+          "reads": [
+            "crates/",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "WP1.2",
+          "statement": "A scripted run of a test game that spawns, despawns, writes components and resources and draws from `Random` gives one world digest when run twice, when rewound to a tick inside the run and replayed, and when the same game is built again from its scene functions. `Random` gives the same draws for the same seed, tick and request, and other draws for another seed. A rule that returns an error and a rule that panics each refuse their tick: the digest afterwards is the digest of the tick before, and the error names the rule and the tick. Guard: CPU tests on small worlds, in `./dev check`.",
+          "check": "cargo test --locked --offline -p thrum --test it replay::",
+          "reads": [
+            "crates/",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "WP1.3",
+          "statement": "Each of these mistakes is refused with a message that names the object, the cause and the next step, and leaves the world unchanged where a world exists. At compile time: a component or resource with a `Vec`, a `String`, a reference or a raw float field. At startup, from `run()` and from `test()` alike, before any tick: two parameters of one rule that write the same component; a rule that reads a resource no scene provides. While running: `go_to` a scene the game was not given; a spawn past the world's size; a rule that fails or panics. The tests hold each message's object, cause and next step by its text. Guard: in `./dev check`.",
+          "check": "cargo test --locked --offline -p thrum --test it mistakes::",
+          "reads": [
+            "crates/",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "WP1.4",
+          "statement": "No public item of `thrum` names a type of `wgpu`, `winit` or another engine crate by that crate's path. Every public item of `thrum` has a doc comment with an example, and every example runs as a doc test. A package that names `thrum` with default features off builds alone and has no renderer, window, GPU, network or platform crate in its dependency closure. `thrum` and any crate it is built from are registered in `.config/architecture.toml`. Guard: the surface check and the doc tests run in `./dev check` from this landing, so every later work package's additions are held to them.",
+          "check": "python3 scripts/sdk_surface.py check && cargo test --locked --offline -p thrum --doc",
+          "reads": [
+            "crates/",
+            "scripts/sdk_surface.py",
+            ".config/architecture.toml",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "WP1.5",
+          "statement": "The SDK is a layer over the engine's simulation and adds no second one.",
+          "ask": "Read `thrum`'s rules half and the tests' games. 1. Is world state held anywhere but `thrum-core`'s registered simulation: is there a second store, clock, undo or publication? 2. Is a rule reached each tick by a direct call to a monomorphised function, with no boxed call and no allocation for each entity or each tick once warm? 3. Does a component's schema identity come from its name and fields, and never from a Rust type ID? 4. Are the changes made in `thrum-core` additions only, with its existing tests unedited and passing? 5. Does any test's game name a crate other than `thrum`, or a schema number, permit, executor, page or device?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP1.6",
+          "statement": "Game code is written as the design's worked examples write it. Every difference between the built API and the examples is a line in the module's log, and none is a change of shape as the design defines one: a concept added that a game maker must learn, one of the twelve words removed, a change to what a rule sees or to when spawns land, plumbing moved into game code, or a game made to name an engine crate.",
+          "ask": "Set the tests' games beside example A's and example D's rules in the design, and the rule parameters beside mechanism 3's table. List each difference in how a game maker writes the same thing. Is each one in the log as a spelling? Is any a change of shape? A change of shape that is not the owner's own fails this item.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
+    },
+    {
+      "id": "WP2",
+      "name": "A crowd of 10,000 written on the SDK, steered by four players, steps identically on the Mac, in Chrome and on the iPhone simulator, and costs what the hand-written crowd does",
+      "status": "not_started",
+      "depends_on": [
+        "SIM-2D:WP3"
+      ],
+      "quality_bar": "Determinism as Factorio holds it: the same inputs give the same world on every machine, checked by digest. Speed as the engine's own reference crowd: the layer is not what a tick is spent on. Rules that read as example D of the design does.",
+      "items": [
+        {
+          "id": "WP2.1",
+          "statement": "Input reaches rules in three forms and no other. A scripted player's held and pressed actions are read through `inputs.of(player)` as `held`, `pressed`, `axis` and `stick` at the tick they are admitted, with `pressed` true for one tick; a command sent for a player is read by `Commands<T>` at one tick, once, in the order sent, with who sent it; `PlayerJoined`, `PlayerLeft`, `PlayerAway` and `PlayerBack` are read as events at the tick of each, and a game stepped with no roster script has one player who joins at the first tick. A `per_player` rule is given only its player's entity and that player's input. Guard: CPU tests on small worlds, in `./dev check`.",
+          "check": "cargo test --locked --offline -p thrum --test it input::",
+          "reads": [
+            "crates/",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "WP2.2",
+          "statement": "`Space2d` over entities with a `Collider2d`: `touching`, `within`, `nearest` and `sweep` return what `thrum-sim2d`'s queries return for the same circles, boxes and capsules, filtered by layer and by `except`, in that index's fixed order; they answer from where colliders stood when the tick began; a scene's cell size is part of its rule set. Guard: CPU tests on small worlds, in `./dev check`.",
+          "check": "cargo test --locked --offline -p thrum --test it space::",
+          "reads": [
+            "crates/",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "WP2.3",
+          "statement": "The profile's additions for the SDK are exactly rounded and change nothing that was retained: constructing a number from a literal, `Angle` and its direction, turning a `Vec2` and a `Vec3`, and `Quat` products have conformance vectors beside the profile's own; the profile check passes with `thrum`'s rules half as a dependency a rule crate may have and refuses a rule crate that names `thrum` with its play half; the reference crowd's retained digests are unchanged. Guard: the vectors and the profile check run in `./dev check`.",
+          "check": "cargo test --locked --offline -p thrum --test it numbers:: && python3 scripts/sim2d_profile.py check && python3 scripts/sim2d_profile.py controls && cargo test --locked --offline -p crowd-2d --test retained_slice",
+          "reads": [
+            "crates/",
+            "examples/crowd-2d/",
+            "examples/crowd-sdk/",
+            "scripts/sim2d_profile.py",
+            ".config/",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "WP2.4",
+          "statement": "Each of these mistakes is refused with a message that names the object, the cause and the next step. At compile time: reading a `Button` as a stick or an axis, and the like for each kind of action. At startup: a game whose declared actions and commands do not fit an input frame, with the counts and the limit; a `per_player` rule whose parameters reach beyond its player's entity and input. The tests hold each message's object, cause and next step by its text. Guard: in `./dev check`.",
+          "check": "cargo test --locked --offline -p thrum --test it mistakes_input::",
+          "reads": [
+            "crates/",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "WP2.5",
+          "statement": "On the Mac, `crowd-sdk` gives the digests its retained trace holds. `crowd-sdk` is a rule crate that names only `thrum`: four players moved by their input through a `per_player` rule, enemies that chase the nearest player and keep apart with `par_each`, shots at the nearest enemy that sweep, hits, deaths and respawns, and a body that turns by an `Angle` each tick, at 10,000 bodies. Record: the Mac arm of the three-target conformance run. A slice of the trace stays as a CPU test in `./dev check`.",
+          "check": "python3 scripts/sim2d_conformance.py run --package crowd-sdk --target mac-metal && cargo test --locked --offline -p crowd-sdk --test it retained::",
+          "reads": [
+            "crates/",
+            "examples/crowd-sdk/",
+            "scripts/sim2d_conformance.py",
+            ".config/architecture.toml",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "WP2.6",
+          "statement": "In Chrome, `crowd-sdk` gives the digests its retained trace holds. Record: the Chrome arm of the three-target conformance run.",
+          "check": "python3 scripts/sim2d_conformance.py run --package crowd-sdk --target chrome-webgpu",
+          "lock": "chrome",
+          "reads": [
+            "crates/",
+            "examples/crowd-sdk/",
+            "scripts/sim2d_conformance.py",
+            ".config/architecture.toml",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "chrome-webgpu",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "WP2.7",
+          "statement": "On the iPhone simulator, `crowd-sdk` gives the digests its retained trace holds. Function only. Record: the simulator arm of the three-target conformance run.",
+          "check": "python3 scripts/sim2d_conformance.py run --package crowd-sdk --target ios-sim",
+          "lock": "simulator",
+          "reads": [
+            "crates/",
+            "examples/crowd-sdk/",
+            "scripts/sim2d_conformance.py",
+            ".config/architecture.toml",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "ios-sim",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "WP2.8",
+          "statement": "On the Mac, two release takes each of `crowd-sdk` and of the reference crowd at 10,000 bodies report the cost of a tick, of a rewind and of a replay, and the allocations of a warmed tick, side by side, with the build and the load on the machine. The record flags for investigation a `crowd-sdk` tick more than about 25% above the reference's, and any allocation in a warmed `crowd-sdk` tick. The check fails only on a missing measurement. The record also names the default number of entities a world holds and why. Record: SDK rule cost beside the hand-written reference, taken under load.",
+          "check": "python3 scripts/sim2d_conformance.py costs --package crowd-sdk --target mac-metal",
+          "reads": [
+            "crates/",
+            "examples/crowd-sdk/",
+            "examples/crowd-2d/",
+            "scripts/sim2d_conformance.py",
+            ".config/architecture.toml",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "WP2.9",
+          "statement": "`crowd-sdk` reads as example D of the design does, and what the SDK added to the engine for it belongs to the engine's owners.",
+          "ask": "1. Read `crowd-sdk`'s rules beside example D. Does each rule read as one thing the game does? Does the package hold a helper file that hides plumbing a game maker would have to write: registration, encoding, scheduling, index building? Count every file of the package as game lines. 2. Is each difference from the design's examples in the log as a spelling, and is none a change of shape? 3. Are the profile's additions in `thrum-core`'s profile, with no platform maths call, and do the reference crowd's rules and retained traces stand unedited? 4. Does `Space2d` build `thrum-sim2d`'s index once a tick and keep its storage between ticks?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
+    }
+  ]
+}

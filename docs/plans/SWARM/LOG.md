@@ -94,3 +94,4 @@
   a re-plan onto the gate is owed before M2 starts ([module list](../ARCHITECTURE.md#the-proving-ground-and-where-a-game-lives)).
 
 - 2026-11-20 Planner, from the cleanup review (L8-07): M1.1, M1.2 and M8.10 named files under `docs/evidence`, which the merge refuses; they now name this milestone's evidence. Nothing else changed, and the re-plan onto the games repository is still owed.
+- 2026-11-25 Owner, on the game SDK: "this should be what V1 uses ideally and what we will use to build the swarm game." Planner: WP2, WP3, WP5 and WP6 gained edges to `GAME-SDK` WP3, WP6, WP5 and WP7. No item changed. The design and the items are still written against the engine's own API; the re-plan onto the SDK and the games repository is owed before WP2 starts, after the owner approves the SDK's design ([module list](../ARCHITECTURE.md#track-7-the-game-sdk)).

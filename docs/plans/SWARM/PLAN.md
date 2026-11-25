@@ -9,6 +9,10 @@ Read [Mechanisms](DESIGN.md#mechanisms), [Proof and builder handoff](DESIGN.md#p
 [Exact baselines](../ARCHITECTURE.md#exact-baselines) before landing. The design was written before any of the
 five engine modules was built, so start each work package by reading what they left.
 
+**The game is written on [the game SDK](../GAME-SDK/DESIGN.md).** WP2, WP3, WP5 and WP6 wait for its WP3, WP6,
+WP5 and WP7. This plan still describes the engine's own API, and is re-planned onto the SDK before WP2 starts
+([module list](../ARCHITECTURE.md#track-7-the-game-sdk)).
+
 ## Open for the human
 
 - Assumption: SWARM waits for the V1 exit, as you said on 14 November, and that includes its first work package, your pick of a concept. The engine modules it stands on no longer wait.

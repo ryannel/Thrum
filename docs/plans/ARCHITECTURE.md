@@ -26,7 +26,7 @@
 | 22 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | EFFECT-GRAPH WP3 and APPLE-PRESENTATION WP3 to start; SIM-2D WP1 for its fifth work package; APPLE-PRESENTATION WP6 for its sixth |
 | 23 | SESSION | Two to four players share one run and keep seeing the same crowd, and a windowed game is stepped by its match | SIM-2D WP3 to start; TRANSPORT WP1 for its second work package and TRANSPORT WP2 for its socket work packages; RENDER-2D WP5 for its last |
 | 24 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame, and one iPhone shell for every game | RENDER-2D WP6 and APPLE-PRESENTATION WP6 |
-| 25 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SHOWCASE WP8 to start, with the owner's pick of a concept; SIM-2D WP3, SESSION WP1, RENDER-2D WP5 and GAME-SPLIT WP4 for the first slice; GAME-UI WP4 for the whole run alone and GAME-UI WP6 for the iPhone simulator; SESSION WP4 for a rehearsed match and SESSION WP7 for co-op on sockets |
+| 25 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SHOWCASE WP8 to start, with the owner's pick of a concept; SIM-2D WP3, SESSION WP1, RENDER-2D WP5, GAME-SPLIT WP4 and GAME-SDK WP3 for the first slice; GAME-UI WP4 and GAME-SDK WP6 for the whole run alone; GAME-UI WP6 and GAME-SDK WP7 for the iPhone simulator; SESSION WP4 and GAME-SDK WP5 for a rehearsed match and SESSION WP7 for co-op on sockets |
 | 26 | REPO-RULES | `./dev check` refuses the code shapes the code review found, bulk media leaves the checkout, and names and layout are put right once | Nothing to start; every other track 4 module's fixes, and track 6's, for the rename and the tidy-up |
 | 27 | REVIEW-ENGINE | The review's findings in the simulation, the sea, cooked assets and the cooker are fixed, and the iPhone app gets the textures and buffers its hardware has | Nothing to start; REPO-RULES WP1 for its errors |
 | 28 | TEST-SUPPORT | Engine tests get a GPU device and shared fixtures from one place, and a test that needs a GPU says so and is skipped with a reason where there is none | REPO-RULES WP1 to start; HOST WP1, GAME-SPLIT WP2, ATMOSPHERE WP9, APPLE-TILE WP10, APPLE-PRESENTATION WP3, EFFECT-GRAPH WP3 and CULLING WP3 for the renderer's tests; GATE-TIME WP2 and WP6, DEAD-CODE WP2 and REVIEW-RENDER WP2 for adopting the test kit; nothing for the small target and the block on writing a test |
@@ -38,9 +38,10 @@
 | 34 | GATE-TIME | A merge's check takes about five minutes where it took fifty: it runs only the fast tests its change can reach, side by side and each once, and the long tests and the whole workspace run on main after the merge | Nothing to start; TEST-SUPPORT WP2 for the runs that happen twice; TEST-SUPPORT WP6 for the guard rules; WATERS WP7 for the water scene's slow tests; REVIEW-RENDER WP2 for the reference tests; DEAD-TOOLS WP2 for the contributor guide |
 | 35 | DEAD-TOOLS | Scripts, benches and records that nothing runs or reads are gone and the check refuses new ones, no tool writes into `docs/evidence`, and each module's record of what it copied is tracked in Git | Nothing to start; TEST-SUPPORT WP2 for its last work package |
 | 36 | DEAD-CODE | Engine code that nothing calls is gone, and a scene contribution no longer writes empty methods | GATE-TIME WP1 to start; GATE-TIME WP6 for the contribution's defaults; WATERS WP7 for the water scene's settings; HOST WP3 for the game's projection; REVIEW-RENDER WP3 and GATE-TIME WP6 for the two helpers |
+| 37 | GAME-SDK | A developer or an agent builds a 2D, a 3D or an online game in plain Rust against one documented crate, and the showcase and the swarm game are written on it | The owner's approval of its design to start; SESSION WP7 for a game played online; GAME-UI WP4 for menus and status displays and GAME-UI WP6 for the iPhone simulator; GAME-SPLIT WP4 for the showcase on the SDK |
 
 Modules are in build order. Rows 1 to 13 are the road to the V1 exit, 14 to 19 are water and clouds, 20 to 24
-are the 2D and online engine work, which is built beside V1, `TRANSPORT` last and only when a builder slot is free, and 25 is the swarm game, which starts after V1. Rows 26 to 31 are [track 4](#track-4-the-code-review-and-the-games-separation), the code review's fixes and the game's separation, built beside the rest. Rows 32 and 33 are [track 5](#track-5-ray-tracing-and-mesh-shaders-on-the-mac), ray tracing and mesh shaders on the Mac, built beside the rest and never ahead of a V1 work package. Rows 34 to 36 are [track 6](#track-6-the-cleanup-of-20-november), the cleanup of 20 November, built beside the rest by Claude builders. `Needs` names the work packages a module waits on in other modules; each work package's `depends_on` in
+are the 2D and online engine work, which is built beside V1, `TRANSPORT` last and only when a builder slot is free, and 25 is the swarm game, which starts after V1. Rows 26 to 31 are [track 4](#track-4-the-code-review-and-the-games-separation), the code review's fixes and the game's separation, built beside the rest. Rows 32 and 33 are [track 5](#track-5-ray-tracing-and-mesh-shaders-on-the-mac), ray tracing and mesh shaders on the Mac, built beside the rest and never ahead of a V1 work package. Rows 34 to 36 are [track 6](#track-6-the-cleanup-of-20-november), the cleanup of 20 November, built beside the rest by Claude builders. Row 37 is [track 7](#track-7-the-game-sdk), the game SDK, which no builder starts before the owner approves its design and which is built beside the rest and never ahead of a V1 work package. `Needs` names the work packages a module waits on in other modules; each work package's `depends_on` in
 its done-when file is the authority. Where each module stands is on [the status page](STATUS.md), which the
 script writes.
 
@@ -116,7 +117,7 @@ is the game and starts when the exit is reached. The exit has no dependency on t
 | `BASELINE-GUARD` | T2 | The exact-baseline registry, the verifier that the main-branch check `exact-images` runs, and the reference guard in `./dev check`. Retained references stay with each baseline's owner | [Design](BASELINE-GUARD/DESIGN.md) |
 | `CULLING` | G3c | Instance visibility lists, occlusion history, the culling mode and its resolution, the mesh-bucket route and Sun-caster culling | [Design](CULLING/DESIGN.md) |
 | `CONTENT-LOOP` | G5 | Cooked products, the manifest, runtime mapping and GPU residency of cooked meshes, textures and volumes; leases of resident products to other modules; the geometry of cooked mesh rows | [Design](CONTENT-LOOP/DESIGN.md) |
-| `CREATOR` | G6 | The typed controls model and its views, parameter files, the app runner, sky kit and starter, the creator docs, the profile window and profiler rows | [Design](CREATOR/DESIGN.md) |
+| `CREATOR` | G6 | The typed controls model and its views, parameter files, the app runner, sky kit and starter, the creator docs, the profile window and profiler rows. The sky kit, the starter and the creator docs pass to `GAME-SDK` at its WP10 ([track 7](#track-7-the-game-sdk)) | [Design](CREATOR/DESIGN.md) |
 | `SHOWCASE` | G7 | The valley's source in `examples/v1-game/assets/showcase` and the six stop presets, by [ruling](#ruling-on-the-valley-fix); the exit scene in `examples/v1-game` (its content, layout and generator, prop sources and mover rule), the routes, the exit configuration, the launcher `scripts/run_v1_showcase.py`, the V1 exit record | [Design](SHOWCASE/DESIGN.md) |
 | `EFFECT-GRAPH` | track 2 | Graph resource kinds and cadence that simulated effects need; how an engine module declares its own passes; the list of contributions a scene holds; the tick stage, in which a pass answers the game every tick outside the frame | [Design](EFFECT-GRAPH/DESIGN.md) |
 | `SEA` | track 2 | The wave model and its f64 oracle (`thrum-sea-model`); the wave field on the GPU: long-wave phases, spectral cascades and the field cache, evaluated each frame (`thrum-sea`). After its last work package both crates are `WATERS`' to extend | [Design](SEA/DESIGN.md); [Module brief](SEA/BRIEF.md) |
@@ -2685,6 +2686,136 @@ Each of these needs a design of its own, or a decision, before it is planned.
 | **Layout entries**: `thrum_render::binding`, and a graph resource declared from a texture | `DEAD-CODE:WP6` → every crate that creates a bind-group layout or declares a graph texture | [DEAD-CODE](DEAD-CODE/DESIGN.md#mechanisms) |
 | **The test kit**: readback, the prologue, waits, scratch folders and the record reflection check | `TEST-SUPPORT:WP5`, `WP3` and `WP4` → every GPU test under `crates/` and in the kit scenes | [TEST-SUPPORT](TEST-SUPPORT/DESIGN.md#the-kit) |
 
+## Track 7: the game SDK
+
+Added 25 November 2026 from the owner's request that day: "What I would like you to plan is a high end,
+intuitive, expressive, readable, SDK that game developers can use to build new games. this should be what V1
+uses ideally and what we will use to build the swarm game. It's VITAL that we get this right as it's the entire
+interface that developers and coding agents will use to build a variety of games. It's the front of the product
+we're building. So it needs to be as intuitive, well documented and easy to use as possible." And the owner's
+decisions: "V1 first, Rust only, I'll approve the design." One module, row 37. It is no part of the V1 exit.
+
+### Why a new module
+
+Every engine module has a public API of its own, and a game written against them is mostly plumbing: the crowd
+view is about 1,100 lines with no rule in it. `CREATOR` gave a newcomer a still scene from a kit, which closed
+milestone G6. `HOST` gave a game one contract to be hosted through. `GAME-SPLIT` put a game outside the engine.
+None of them owns how a game's code is written: its entities, rules, input, scenes and what a player sees, the
+same for 2D and 3D, alone and online. That is one design, read by game makers and not by engine builders, and
+the owner approves it by reading game code. So it is one module, with [a design](GAME-SDK/DESIGN.md) of its own.
+
+### What `GAME-SDK` owns, and what it does not
+
+| Module | Owns (state and code) | Expected code home |
+|---|---|---|
+| `GAME-SDK` | The crate a game depends on, `thrum`: the game structure (game, scene, entity, component, resource, rule, frame function), actions, commands and players, the look components and their extraction, the maths a game writes in, settings, the interface description, the multiplayer opt-in, the test harness and the errors a game maker sees. The game commands (`cargo play`, `./dev new`), the templates, the kit games (Rockfall, the crowd on the SDK, the starter), the SDK guides and the one-file reference. It holds no world state, no device and no clock: each stays with [its owner](GAME-SDK/DESIGN.md#state-and-owners) | A new crate `crates/thrum`, with a derive crate beside it; `examples/crowd-sdk`, `examples/rockfall` and the rewritten starter; `templates/`; `docs/sdk/` |
+
+**Reconciled with the modules it overlaps.**
+
+- **`CREATOR`** (Done) keeps the typed controls model and its views, parameter files, the profile window and
+  the profiler rows, which the SDK's settings use as they are. Its sky kit, its starter and its creator docs
+  were the public way to make a scene. They stay as built until `GAME-SDK` WP10, which rewrites the starter,
+  stones and the lighthouse on the SDK, removes the kit where nothing else uses it, and points the creator guide
+  at the SDK's. G6 stays reached: it was closed on what `CREATOR` built.
+- **`HOST`** (Done) keeps the device recipe, the lifecycle policy and the game contract. A game no longer
+  implements that contract: the SDK implements it once, for every game. The proving ground still does, because
+  it tests the engine's own API.
+- **`GAME-SPLIT`** keeps the external game check, the games repository's layout and the move of the showcase.
+  Its WP4 moves the game as V1 left it, on today's API. `GAME-SDK` WP9 then rewrites the game's code on the
+  SDK, in the games repository, proved through the external game check. The proving ground stays in Thrum on
+  the engine's own API and is not rewritten.
+- **`SWARM`** is written on the SDK from its first line. Its work packages wait for the SDK's (the table
+  below), and its design, which is written against the engine's own API, is re-planned onto the SDK once the
+  owner has approved the SDK's design. That is the same re-plan [track 4](#the-proving-ground-and-where-a-game-lives)
+  already asks for, and `SWARM`'s rulings 1 and 2 are overtaken by ruling 3 below.
+- **`SIM-2D`, `RENDER-2D`, `SESSION`, `TRANSPORT` and `GAME-UI`** keep everything they own. The SDK is a game
+  maker's way in to each, and their guides ([the session guide](../SESSION.md),
+  [sprite scenes](../SPRITE-SCENES.md), [portable rules](../SIM2D-RULES.md)) stay as the reference for what
+  is under it.
+
+### Off the V1 path (track 7)
+
+No work package on the road to the exit waits on this module: none of `APPLE-PRESENTATION` WP8 to WP12,
+`SHOWCASE` WP7 and WP8, `RAY-TRACING` WP6, `GAME-SPLIT` WP4 or `MESH-SHADING` WP3 has, or gains, an edge to it.
+
+| `GAME-SDK` work package | Waits for | Because |
+|---|---|---|
+| WP1, WP2 | The owner's approval of the design; `SIM-2D:WP3`, Done | New crates, with additions in `thrum-core` and the rules profile. No V1 builder works there |
+| WP3, WP4 | Nothing still open | They use `RENDER-2D`, `CONTENT-LOOP`, `ATMOSPHERE`, `CREATOR` and `HOST` as built |
+| WP5 | `SESSION:WP7` | A game in a match is stepped by a driven world |
+| WP6 | `GAME-UI:WP4` | Menus and a modal choice |
+| WP7 | `GAME-UI:WP6` | The one iPhone shell for every game |
+| WP8 | Its own WP1 to WP7 | The guides teach only what is built |
+| WP9 | `GAME-SPLIT:WP4`, which waits for `SHOWCASE:WP8` | V1 lands on today's API, and the game moves before it is rewritten |
+
+| `SWARM` work package | Now also waits for |
+|---|---|
+| WP2, the first slice | `GAME-SDK:WP3` |
+| WP3, the whole run with its screens | `GAME-SDK:WP6` |
+| WP5, a rehearsed match | `GAME-SDK:WP5` |
+| WP6, the iPhone simulator | `GAME-SDK:WP7` |
+
+**Priority.** A `GAME-SDK` work package takes a builder only when no V1 work package is waiting for one, as
+track 5's do. **Shared files.** No `GAME-SDK` work package edits `thrum-render`'s frame runtime or
+`examples/v1-game` while a work package named above is open; where one would have to, it waits for that
+work package. Elsewhere its builder integrates on what has landed and keeps the other's tests passing.
+
+### Seam rulings for GAME-SDK
+
+Each change below is built by `GAME-SDK`'s builder inside state another module owns, on what that module has
+landed. No item, test assertion or retained reference of the owning module changes, and every registered
+baseline stays exact. Once built, each belongs to its owner.
+
+1. **The rules profile** (`SIM-2D`; `thrum-core`'s profile, `.config/sim2d-profile`, the profile and
+   conformance scripts). Built in WP2. Additions only: a number made from a literal; angles, their directions
+   and turning in 2D and 3D, from the profile's exactly rounded operations with no platform maths call, each
+   with conformance vectors on the three targets; and `thrum`'s rules half, with its derive crate, as
+   dependencies a rule crate may have. The profile's refusals of raw-float arithmetic and methods, of hash
+   order, clocks, threads and outside crates stand. `crowd-2d`'s retained digests do not change.
+2. **The registered simulation** (core, G2S). Built in WP1 and WP2. Additions only, such as a query over
+   several components with filters. Nothing of the existing API changes and G2S's tests pass unedited. When
+   structural edits resolve does not change: the SDK's rule that spawns land when a tick ends is this module's
+   rule, stated to game makers.
+3. **The shells and the tool** (`thrum-app`, which is `CREATOR`'s, `HOST`'s and the platform modules';
+   `tools/xtask` and `./dev`). Built in WP3, WP4 and WP7. Whatever the window, the page and the phone shell
+   still assume of the V1 game or the sky kit is made general, so that a game with neither runs. The game
+   commands are added to `./dev`. The sky kit, `./dev starter` and `./dev scene` keep working until WP10.
+   This replaces `SWARM`'s rulings 1 and 2: the swarm game changes no engine file.
+4. **The interface and the match** (`GAME-UI`'s `thrum-ui`, `SESSION`'s `thrum-network`). The SDK uses their
+   public interfaces as built, in WP5 and WP6. Where one falls short, the builder writes a proposal in that
+   module's log and a planner settles it here.
+5. **The guard** (`scripts/repo_check.py`, `.config/architecture.toml`, `REPO-RULES`' shape rules,
+   `GAME-SPLIT`'s `boundary`). WP1 registers `thrum`. WP8 adds a shape rule through `REPO-RULES`' engine: a
+   game in the games repository, a kit game and a template name `thrum` and no other engine crate. The kit
+   scenes still on the old kit are in its baseline until WP10. The proving ground is exempt, because it tests
+   engine crates directly.
+6. **The creator's kit and docs** (`CREATOR`). Built in WP10: the starter, stones and the lighthouse are
+   rewritten on the SDK, and `thrum_app::sky` is removed if no other module's example uses it, or kept and
+   named in the log if one does. A name an open item's check uses keeps working.
+7. **The showcase in the games repository** (`SHOWCASE`, `GAME-SPLIT`). Built in WP9, in
+   `thrum-games/v1-game` only. The exit record is `SHOWCASE`'s and gains a dated note. Nothing of the proving
+   ground or the frozen qualification content changes.
+
+### Interfaces (track 7)
+
+| Interface | Provider → consumers | Defined in |
+|---|---|---|
+| **The `thrum` crate**: what a game is written against, in two halves. The rules half builds with no renderer, window, GPU, network or platform crate | `GAME-SDK` → `SWARM`, the showcase after WP9, every game, the kit games and templates | [GAME-SDK](GAME-SDK/DESIGN.md#mechanisms) |
+| **The game commands**: `cargo play` for the Mac, Chrome and the iPhone simulator, a picture with no screen, the rule crate's check; `./dev new` | `GAME-SDK` → every game | [GAME-SDK](GAME-SDK/DESIGN.md#16-running-a-game) |
+| **The SDK guides and the one-file reference** | `GAME-SDK` → game makers and their agents | [GAME-SDK](GAME-SDK/DESIGN.md#15-documentation-guides-and-templates) |
+| The game contract, the typed controls, the interface tree, the session, sprite rows, cooked rows, the rules profile | Their owners → `GAME-SDK`, which is now the consumer a game was | Unchanged, as their rows above define them |
+
+### Module planning input (track 7)
+
+Planned on 25 November 2026: [design](GAME-SDK/DESIGN.md), [plan](GAME-SDK/PLAN.md). Ten work packages, the
+first two with items. Its planner settled the shape of game code (plain-data components and rule functions
+that run in the order written, with frame functions kept apart from rules by type), that looks are components,
+that every game's rules use the profile's numbers, and that the interface is described each frame. It left to
+the owner whether physics, animation and audio are in the first release. Three findings bind later planners:
+spawns and despawns land when a tick ends, because that is when the engine resolves structural edits; a game
+that can be played online keeps its rules in a rule crate; and a work package's surface arrives with its
+reference documentation, because WP1's guard holds every later one to an example on each public item.
+
 ## Owner decisions
 
 Nothing below is decided by this plan.
@@ -2783,6 +2914,26 @@ For [track 5](#track-5-ray-tracing-and-mesh-shaders-on-the-mac), each recorded a
     exit is the lead's; the owner can set it.
 36. **wgpu's experimental features.** Both modules depend on them. A fault in wgpu waits for
     `APPLE-PRESENTATION` WP10's pinned copy, and nothing is reported upstream without the owner.
+
+For [track 7](#track-7-the-game-sdk), each recorded as an assumption in
+[GAME-SDK's plan](GAME-SDK/PLAN.md#open-for-the-user):
+
+37. **The SDK's design.** The owner approves [it](GAME-SDK/DESIGN.md) before any builder starts, by reading
+    [its worked examples](GAME-SDK/DESIGN.md#worked-examples). The owner, 25 November 2026: "V1 first, Rust
+    only, I'll approve the design."
+38. **Physics, animation and audio.** Whether each is in the SDK's first release. The plan assumes 2D queries
+    and sprite animation are in, and rigid bodies, skeletal animation and audio are out, each waiting for an
+    engine module of its own ([the table](GAME-SDK/DESIGN.md#physics-animation-and-audio)).
+39. **When SDK builders start.** The plan reads "V1 first" as: beside the road to V1, behind every V1
+    work package for a builder. The owner can hold them until the exit closes.
+40. **Numbers that agree on every device, in every game.** A game played alone pays for it in the number types
+    its rules use, so that multiplayer is never a rewrite.
+41. **The names.** The crate `thrum`, the command `cargo play`, and the words proposed in
+    [the glossary](GLOSSARY.md).
+42. **One way to make a game.** The sky kit and the route milestone G6 delivered are replaced by the SDK at its
+    WP10, and `SWARM` is re-planned onto the SDK.
+43. **The vision and scope document** says game makers come "later" and does not carry the SDK request.
+    Adding it is the owner's page.
 
 For [track 3](#track-3-the-swarm-survival-game-after-v1):
 
@@ -3332,3 +3483,8 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   starts: its mechanism 1 says the stage draws into both outputs of such a frame, and WP1 gains the comparison
   of a recording with a visible overlay against the 8-bit mode's frame. No interface row, no other module's
   item or dependency, and no exact baseline changed.
+- 2026-11-25 Track 7 added from the owner's request for a game SDK, quoted in its section: one module,
+  `GAME-SDK`, row 37, with its design, plan and done-when file, ten work packages named and the first two with
+  items. No builder starts it before the owner approves its design. No work package on the road to the V1 exit
+  gained an edge. `SWARM` WP2, WP3, WP5 and WP6 gained edges to it and `SWARM` is to be re-planned onto the SDK;
+  `CREATOR`'s kit and docs pass to it at its WP10. Owner decisions 37 to 43 added.
