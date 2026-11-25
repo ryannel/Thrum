@@ -1173,3 +1173,16 @@
   Chrome hardware WebGPU reproduces the shoreline colour, submerged hull tint, crest glow and lake mirror
   in the target stills. The formal visual review remains open.
   [WP8 evidence](../../../.orchestrate/evidence/WATERS/WP8/README.md).
+- 2026-11-25 Planner, the `cross-target` main-branch check, failing since `8af523d28` (WP8's first commit).
+  It declared `mod support;` for every platform in `examples/water/tests/proof_gpu.rs` (the Mac's condition
+  moved onto `optics_cost`, which now has two) and in the new `gather_gpu.rs`, `cloud_shade_gpu.rs` and
+  `optics_once_gpu.rs`. `support.rs` calls the sky game's `prepare`, `poll_status`, `controls_mut`,
+  `take_edits` and `apply`, which `thrum-app` has for the Mac and the browser only: E0599 five times in each
+  of the four targets, for Linux and for Windows, and no other error in the workspace. New WP23, after WP8,
+  whose items are unchanged, with the type-check as its one item. Main's `cross-target` fails until it merges.
+- 2026-11-25 Planner, stopping the third. WP19 and WP8 each left a Mac-only helper declared for every
+  platform, and a merge's check builds for the Mac alone. `whole-file-gpu-gate` refuses a condition on a
+  whole test file, so no layout removes the mistake; only the type-check shows it. The plan file now tells
+  every builder to run it after changing the water scene's tests. The design is unchanged, so WP8's build
+  is not held for a design review. For the lead: the type-check in a merge's check is `TEST-SUPPORT`'s and
+  `GATE-TIME`'s to plan (20 to 85 s warm in today's runs; three breaks since 24 November).

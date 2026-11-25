@@ -3,7 +3,8 @@
 [Design](DESIGN.md), [done-when file](DONE.json), [log](LOG.md), [module list](../ARCHITECTURE.md)
 
 First read [Proof and builder handoff](DESIGN.md#proof-and-builder-handoff) and
-[Exact baselines](../ARCHITECTURE.md#exact-baselines). Build in order.
+[Exact baselines](../ARCHITECTURE.md#exact-baselines). Build in order. Merges build for the Mac
+alone: after changing `examples/water/tests/`, run `bash scripts/check_cross_target.sh`.
 
 ## Open for the human
 
@@ -77,18 +78,17 @@ First read [Proof and builder handoff](DESIGN.md#proof-and-builder-handoff) and
 
 ## WP22 The water scene's tests compile for Linux and Windows again
 
-`build/waters`' unmerged commits merge with this.
-
 ## WP21 With surf in view, a float gets the sea's height within two ticks and rides a hitch on its last answer
 
-[Measure before changing the pass](DESIGN.md#a-surf-view-a-running-game-can-afford-wp21), and take WP21.6's reference stills first.
+[Review](../../../.orchestrate/evidence/WATERS/WP21-review.md)
 
 ## WP19 Floats in a gale's breaking surf get the height of the crest they ride in time to ride it, with the game running
 
-Resume from the [handoff](../../../.orchestrate/evidence/WATERS/WP19-handoff.md).
-[After WP21](DESIGN.md#a-surf-query-a-running-game-can-use-wp19) says what a failing control means.
+[Review](../../../.orchestrate/evidence/WATERS/WP19-review.md)
 
 ## WP8 Water reflects the sky, the Sun, its shores and the craft, shows the ground and hulls beneath it, glitters and dims under a cloud's shade, from dawn to night
+
+## WP23 The water's reflection and shade tests compile for Linux and Windows too
 
 ## WP9 Water runs down a channel from the lake to the sea: its surface follows the slope, its ripples and foam travel with the current, and a float is carried down to the sea
 
