@@ -124,6 +124,8 @@ pub struct Cooker {
     gltf_buffers: HashMap<ContentHash, Vec<String>>,
     published: Products,
     published_font_inputs: FontInputs,
+    /// Keep the legacy action's input snapshot until a manifest records the recovered binding.
+    recovered_grid_input: bool,
     /// Products whose bytes this process has verified against their names.
     verified: HashSet<ContentHash>,
     generation: u64,
@@ -154,6 +156,7 @@ impl Cooker {
             gltf_buffers: HashMap::new(),
             published: BTreeMap::new(),
             published_font_inputs: BTreeMap::new(),
+            recovered_grid_input: false,
             verified: HashSet::new(),
             generation: 0,
             retry: false,
@@ -215,23 +218,77 @@ impl Cooker {
             .font_inputs()
             .and_then(|bytes| serde_json::from_slice(bytes).ok())
             .unwrap_or_default();
-        // A legacy outline product identifies itself in its metrics. Only legacy grid
-        // fonts need the conservative fallback until a successful cook records the input.
+        self.recover_legacy_font_inputs();
+    }
+
+    fn recover_legacy_font_inputs(&mut self) {
+        let mut files = None;
         for ((name, _), (_, product)) in self
             .published
             .iter()
             .filter(|(_, (kind, _))| *kind == ProductKind::Font)
         {
-            if !self.published_font_inputs.contains_key(name)
-                && store
-                    .map(&product.hash)
-                    .ok()
-                    .and_then(|bytes| thrum_asset::FontProduct::open(bytes).ok())
-                    .is_some_and(|font| font.sizes()[0].pixel == 0)
-            {
+            if self.published_font_inputs.contains_key(name) {
+                continue;
+            }
+            let Some(font) = self
+                .store()
+                .map(&product.hash)
+                .ok()
+                .and_then(|bytes| thrum_asset::FontProduct::open(bytes).ok())
+            else {
+                continue;
+            };
+            if font.sizes()[0].pixel == 0 {
                 self.published_font_inputs.insert(name.clone(), None);
+            } else if let Some(input) = self.legacy_grid_input(
+                name,
+                *product,
+                files.get_or_insert_with(|| self.stat.files()),
+            ) {
+                self.published_font_inputs.insert(name.clone(), Some(input));
+                self.recovered_grid_input = true;
             }
         }
+    }
+
+    fn legacy_grid_input(
+        &self,
+        name: &str,
+        product: Product,
+        files: &BTreeMap<PathBuf, ContentHash>,
+    ) -> Option<String> {
+        // The saved stat cache may predate a refused edit. Accept a candidate only if
+        // its exact description and PNG paths and hashes reproduce the published action.
+        let description = Path::new(name).join("font.json");
+        let folder = description.parent()?;
+        let description_hash = *files.get(&description)?;
+        let mut inputs = [
+            (description.clone(), description_hash),
+            (PathBuf::new(), description_hash),
+        ];
+        let mut matches = files
+            .range(folder.to_path_buf()..)
+            .take_while(|(path, _)| path.starts_with(folder))
+            .filter(|(path, _)| path.parent() == Some(folder) && sheet::is_png(path))
+            .filter(|(path, hash)| {
+                inputs[1] = ((*path).clone(), **hash);
+                [Quality::Fast, Quality::Final].into_iter().any(|quality| {
+                    let key = action_key(
+                        ProductKind::Font,
+                        Profile::Portable,
+                        quality,
+                        false,
+                        &inputs,
+                    );
+                    self.read_action(&key) == Some(product)
+                })
+            });
+        let (path, _) = matches.next()?;
+        if matches.next().is_some() {
+            return None;
+        }
+        classify(path).map(|(name, _, _)| name)
     }
 
     /// Current publication generation (zero before the first publish).
@@ -419,8 +476,13 @@ impl Cooker {
             report.published = Some(self.publish(&products, &font_inputs)?);
             self.published = products;
             self.published_font_inputs = font_inputs;
+            self.recovered_grid_input = false;
         }
-        self.stat.save(&self.config.store.join("stat-cache.bin"))?;
+        // A refusal must leave HEAD alone. Keep the snapshot that proved ownership so
+        // reopening can recover the input again until the next actual publication.
+        if !self.recovered_grid_input {
+            self.stat.save(&self.config.store.join("stat-cache.bin"))?;
+        }
         report.publish_time = start.elapsed();
         failed.sort();
         failed.dedup();
@@ -655,14 +717,11 @@ impl Cooker {
     }
 
     fn cached_action(&mut self, key: &ContentHash) -> Option<Product> {
-        let product = if let Some(product) = self.actions.get(key) {
-            *product
-        } else {
-            let bytes = std::fs::read(self.config.store.join("actions").join(key.to_hex())).ok()?;
-            let hash = ContentHash::from_bytes(bytes.get(..32)?.try_into().ok()?);
-            let len = u64::from_le_bytes(bytes.get(32..40)?.try_into().ok()?);
-            Product { hash, len }
-        };
+        let product = self
+            .actions
+            .get(key)
+            .copied()
+            .or_else(|| self.read_action(key))?;
         if !self.verified.contains(&product.hash) {
             // A record can outlive damage to its product (power loss under process durability);
             // check the bytes once per process before trusting the record.
@@ -681,6 +740,13 @@ impl Cooker {
         }
         self.actions.insert(*key, product);
         Some(product)
+    }
+
+    fn read_action(&self, key: &ContentHash) -> Option<Product> {
+        let bytes = std::fs::read(self.config.store.join("actions").join(key.to_hex())).ok()?;
+        let hash = ContentHash::from_bytes(bytes.get(..32)?.try_into().ok()?);
+        let len = u64::from_le_bytes(bytes.get(32..40)?.try_into().ok()?);
+        Some(Product { hash, len })
     }
 
     fn remember_action(&mut self, key: ContentHash, product: Product) {
@@ -1002,6 +1068,94 @@ mod tests {
         assert!(repaired.published.is_some());
         assert!(cooker.sweep(now).expect("unchanged sweep").is_none());
         drop(cooker);
+    }
+
+    #[test]
+    fn legacy_grid_refusal_keeps_the_font_private_and_publishes_new_siblings() {
+        for rename in [false, true] {
+            let root = thrum_test_support::Scratch::new("legacy-grid");
+            let source = root.join("source");
+            let folder = source.join("hud");
+            std::fs::create_dir_all(&folder).expect("font folder");
+            let grid = folder.join("grid.png");
+            let icon = folder.join("icon.png");
+            crate::demo::write_checker_png(&grid, 8, [200, 20, 40]).expect("grid");
+            crate::demo::write_checker_png(&icon, 4, [20, 200, 40]).expect("public icon");
+            let description = folder.join("font.json");
+            let original = r#"{"kind":"pixel","file":"grid.png","cell":[4,4],"baseline":3,"characters":[{"character":"A","cell":[0,0],"advance":4}]}"#;
+            std::fs::write(&description, original).expect("font description");
+            let open = || {
+                Cooker::open(CookConfig {
+                    source: source.clone(),
+                    store: root.join("store"),
+                    profiles: Profile::ALL.to_vec(),
+                    quality: Quality::Fast,
+                    durability: Durability::Process,
+                })
+                .expect("open store")
+            };
+            let mut cooker = open();
+            assert!(cooker.cook_all().expect("initial cook").failed.is_empty());
+            // Select a legacy manifest with the same products and original cook records.
+            let products = cooker.published.clone();
+            let legacy = cooker.publish(&products, &FontInputs::new()).unwrap();
+            let reader = cooker.store().clone();
+            let before = reader.load_manifest(&legacy).unwrap();
+            assert!(before.font_inputs().is_none());
+            drop(cooker);
+
+            let edit = if rename {
+                original
+                    .replace("grid.png", "icon.png")
+                    .replace("[4,4]", "[3,3]")
+            } else {
+                original.replace("[4,4]", "[3,3]")
+            };
+            std::fs::write(&description, edit).expect("refused edit");
+            if rename {
+                crate::demo::write_checker_png(&icon, 4, [40, 200, 20])
+                    .expect("edit proposed input");
+            }
+            let refused = |report: &CookReport| {
+                assert!(report.failed.iter().any(|(name, reason)| {
+                    name == "hud" && reason.contains("pixel font cells must divide the image")
+                }));
+            };
+            let report = open().cook_all().expect("refuse font");
+            refused(&report);
+            assert!(report.published.is_none());
+            assert_eq!(reader.read_head().unwrap(), Some(legacy));
+
+            crate::demo::write_checker_png(&folder.join("badge.png"), 4, [20, 40, 200])
+                .expect("add an independent sibling in a later save");
+            let report = open().cook_all().expect("reopen and cook the badge");
+            refused(&report);
+            let next = report.published.expect("badge publishes during refusal");
+            let after = reader.load_manifest(&next).unwrap();
+            assert_eq!(
+                after.resolve("hud", &[Profile::Portable]),
+                before.resolve("hud", &[Profile::Portable])
+            );
+            assert_eq!(
+                after.font_inputs(),
+                Some(br#"{"hud":"hud/grid"}"#.as_slice())
+            );
+            assert!(!after.entries().any(|entry| entry.name == "hud/grid"));
+            for profile in Profile::ALL {
+                assert!(
+                    after
+                        .entries()
+                        .any(|entry| entry.name == "hud/badge" && entry.profile == profile)
+                );
+                assert_eq!(
+                    after.resolve("hud/icon", &[profile]),
+                    before.resolve("hud/icon", &[profile])
+                );
+            }
+            let report = open().cook_all().expect("reopen the migrated manifest");
+            refused(&report);
+            assert!(report.published.is_none());
+        }
     }
 
     #[test]
