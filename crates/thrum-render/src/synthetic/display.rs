@@ -160,7 +160,7 @@ pub(crate) struct SdrToneStage {
 
 /// Graph-bound colour, motion and matching exposure for the retained SDR stage.
 /// Colour is pre-exposed scene-linear RGBA16F at `extent`, with the existing
-/// source-pixel coordinate convention. Motion shares that grid. The exposure
+/// source-pixel coordinate convention. Motion remains on the scene render grid. The exposure
 /// sample carries its GPU-resolved submitted/sample identity (C07).
 #[derive(Clone, Debug)]
 pub(crate) struct PreToneInput {
@@ -168,6 +168,8 @@ pub(crate) struct PreToneInput {
     pub colour: ResourceId,
     /// Motion for the diagnostic overlay, in current source pixels.
     pub motion: ResourceId,
+    /// Render grid on which the motion vectors were written.
+    pub motion_extent: [u32; 2],
     /// Matching resolved exposure sample; never an independently derived gain.
     pub exposure: ResourceId,
     /// Source/output grid for this identity-preserving SDR stage.
@@ -182,7 +184,7 @@ pub(crate) struct PreToneInput {
 pub(crate) struct PreToneViews<'a> {
     /// Colour on the declared source grid.
     pub colour: &'a wgpu::TextureView,
-    /// Motion on that grid.
+    /// Motion on the scene render grid.
     pub motion: &'a wgpu::TextureView,
     /// Resolved exposure buffers, selected by the submitted frame's write side.
     pub exposure: &'a [wgpu::Buffer; 2],
@@ -297,12 +299,12 @@ impl SdrToneStage {
         input: PreToneInput,
         views: PreToneViews<'_>,
     ) -> Result<PreparedPreToneInput, RenderError> {
-        for (view, format) in [
-            (views.colour, super::SCENE_FORMAT),
-            (views.motion, super::MOTION_FORMAT),
+        for (view, format, extent) in [
+            (views.colour, super::SCENE_FORMAT, input.extent),
+            (views.motion, super::MOTION_FORMAT, input.motion_extent),
         ] {
             let texture = view.texture();
-            if [texture.width(), texture.height()] != input.extent
+            if [texture.width(), texture.height()] != extent
                 || texture.format() != format
                 || texture.sample_count() != 1
                 || !texture
@@ -343,9 +345,9 @@ impl SdrToneStage {
         ray_structure: Option<ResourceId>,
     ) -> Result<(ResourceId, usize), RenderError> {
         let [width, height] = input.extent;
-        for (id, format) in [
-            (&input.colour, super::SCENE_FORMAT),
-            (&input.motion, super::MOTION_FORMAT),
+        for (id, format, [width, height]) in [
+            (&input.colour, super::SCENE_FORMAT, input.extent),
+            (&input.motion, super::MOTION_FORMAT, input.motion_extent),
         ] {
             if !matches!(graph.descriptor(id), Some(ResourceDescriptor::Texture { dimension: crate::graph::TextureKind::D2, width: w, height: h, layers: 1, mips: 1, samples: 1, format: f, usage }) if *w == width && *h == height && *f == format && usage.contains(wgpu::TextureUsages::TEXTURE_BINDING))
             {

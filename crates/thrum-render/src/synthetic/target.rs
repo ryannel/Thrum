@@ -17,13 +17,11 @@ impl OffscreenTarget {
         prepared: &super::SyntheticTargetInputs,
         profile: crate::present::SurfaceProfile,
     ) -> Result<(), RenderError> {
-        let compiled = prepared.compile_graph(
-            self.width,
-            self.height,
-            self.row_bytes,
-            self.capture_source,
-            Some(profile),
-        )?;
+        let compiled =
+            prepared.compile_graph(self.width, self.height, self.capture_source, Some(profile))?;
+        if self.capture_layout != compiled.capture_layout {
+            return Err(RenderError::GraphPassMismatch);
+        }
         self.textures
             .rebind(
                 self.night_graphs

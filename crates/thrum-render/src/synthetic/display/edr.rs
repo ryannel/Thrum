@@ -2,7 +2,7 @@
 use crate::{
     binding,
     graph::{CompiledPass, GraphColorAttachment},
-    present::SurfacePresenter,
+    present::{PresentationBinding, SurfacePresenter},
     runtime::DeviceSite,
     synthetic::RenderError,
     timing::GpuTimings,
@@ -97,7 +97,7 @@ impl EdrTone {
         input: (u64, &wgpu::BindGroup),
         output: GraphColorAttachment<'_>,
         timings: Option<&mut GpuTimings>,
-        presenter: &SurfacePresenter,
+        (presenter, binding): (&SurfacePresenter, &PresentationBinding),
     ) -> Result<(), RenderError> {
         if output.view.texture().format() != wgpu::TextureFormat::Rgba16Float {
             return Err(RenderError::TargetExtent);
@@ -109,7 +109,7 @@ impl EdrTone {
         pass.set_pipeline(&self.pipeline);
         pass.set_bind_group(0, group, &[]);
         pass.set_bind_group(1, &self.group, &[]);
-        presenter.set_viewport(&mut pass);
+        presenter.set_viewport(&mut pass, binding);
         pass.draw(0..3, 0..1);
         Ok(())
     }

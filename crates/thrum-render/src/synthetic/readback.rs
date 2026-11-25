@@ -33,6 +33,39 @@ impl CaptureSource {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) struct CaptureLayout {
+    pub(super) extent: [u32; 2],
+    pub(super) row_bytes: u32,
+}
+
+impl CaptureLayout {
+    pub(super) fn new(
+        extent: [u32; 2],
+        source: CaptureSource,
+        limits: &wgpu::Limits,
+    ) -> Result<Self, RenderError> {
+        let [width, height] = extent;
+        let alignment = wgpu::COPY_BYTES_PER_ROW_ALIGNMENT;
+        if width == 0 || height == 0 || width.max(height) > limits.max_texture_dimension_2d {
+            return Err(RenderError::TargetExtent);
+        }
+        let row_bytes = width
+            .checked_mul(source.bytes_per_pixel())
+            .and_then(|value| value.checked_add(alignment - 1))
+            .map(|value| value / alignment * alignment)
+            .ok_or(RenderError::TargetExtent)?;
+        if u64::from(row_bytes)
+            .checked_mul(u64::from(height))
+            .and_then(|bytes| bytes.checked_add(super::exposure::SAMPLE_BYTES))
+            .is_none_or(|bytes| bytes > limits.max_buffer_size)
+        {
+            return Err(RenderError::TargetExtent);
+        }
+        Ok(Self { extent, row_bytes })
+    }
+}
+
 /// One bounded asynchronous raw pixel readback slot, reusable after collection.
 /// The prepared source determines the stored format and bytes per pixel.
 pub struct PixelReadback {
@@ -70,7 +103,8 @@ impl PixelReadback {
             return Err(RenderError::Readback);
         }
         if self.generation != target.generation
-            || self.extent != target.extent()
+            || self.extent != target.capture_extent()
+            || self.row_bytes != target.capture_layout.row_bytes
             || self.source != target.capture_source
         {
             return Err(RenderError::StaleTarget);
@@ -113,6 +147,9 @@ impl PixelReadback {
         texture: &wgpu::Texture,
         exposure: Option<&wgpu::Buffer>,
     ) -> Result<(), RenderError> {
+        if self.extent != [texture.width(), texture.height()] {
+            return Err(RenderError::TargetExtent);
+        }
         let mut timer = self
             .copy_timing
             .as_mut()

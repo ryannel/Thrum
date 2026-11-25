@@ -75,6 +75,7 @@ impl std::error::Error for PresentError {
 /// Bound source texture retained by one host frame slot. A new surface texture
 /// does not change this binding; the source is generation-bound and reused.
 pub(crate) struct PresentationBinding {
+    source_extent: [u32; 2],
     group: wgpu::BindGroup,
     owner: Arc<()>,
 }
@@ -131,7 +132,7 @@ fn record_present_resource(
         .ok_or(PresentError::GraphPassMismatch)?;
     pass.set_pipeline(&presenter.pipeline);
     pass.set_bind_group(0, &frame.binding.group, &[]);
-    presenter.set_viewport(&mut pass);
+    presenter.set_viewport(&mut pass, frame.binding);
     pass.draw(0..3, 0..1);
     Ok(())
 }
@@ -161,8 +162,12 @@ impl SurfacePresenter {
         clippy::cast_precision_loss,
         reason = "validated GPU texture dimensions fit exactly in f32 viewport coordinates on supported devices"
     )]
-    pub(crate) fn set_viewport(&self, pass: &mut wgpu::RenderPass<'_>) {
-        let (_, [x, y, width, height]) = self.source_viewport();
+    pub(crate) fn set_viewport(
+        &self,
+        pass: &mut wgpu::RenderPass<'_>,
+        binding: &PresentationBinding,
+    ) {
+        let (_, [x, y, width, height]) = self.source_viewport(binding);
         pass.set_viewport(x as f32, y as f32, width as f32, height as f32, 0.0, 1.0);
         pass.set_scissor_rect(x, y, width, height);
     }
@@ -286,7 +291,7 @@ impl SurfacePresenter {
         if !target.belongs_to_device(device) {
             return Err(PresentError::StaleTarget);
         }
-        self.bind_output(device, target.device_generation(), target.output_view())
+        self.bind_source(device, target.device_generation(), target.output_view())
     }
 
     pub(crate) fn bind_output(
@@ -296,13 +301,26 @@ impl SurfacePresenter {
         output: &wgpu::TextureView,
     ) -> Result<PresentationBinding, PresentError> {
         let texture = output.texture();
-        if self.device != *device
-            || generation != self.generation
-            || [texture.width(), texture.height()] != self.source_extent
-        {
+        if [texture.width(), texture.height()] != self.source_extent {
             return Err(PresentError::StaleTarget);
         }
+        self.bind_source(device, generation, output)
+    }
+
+    fn bind_source(
+        &self,
+        device: &wgpu::Device,
+        generation: u64,
+        output: &wgpu::TextureView,
+    ) -> Result<PresentationBinding, PresentError> {
+        if self.device != *device || generation != self.generation {
+            return Err(PresentError::StaleTarget);
+        }
+        let texture = output.texture();
+        let source_extent = [texture.width(), texture.height()];
+        check_extent(self.extent_limit, source_extent)?;
         Ok(PresentationBinding {
+            source_extent,
             group: device.create_bind_group(&wgpu::BindGroupDescriptor {
                 label: Some("V1 surface source"),
                 layout: &self.layout,
@@ -384,11 +402,9 @@ impl PresenterInputs {
 
 impl SurfacePresenter {
     /// Source grid and viewport used by the presentation pass.
-    pub(crate) fn source_viewport(&self) -> ([u32; 2], [u32; 4]) {
-        (
-            self.source_extent,
-            letterbox(self.source_extent, self.profile.extent),
-        )
+    pub(crate) fn source_viewport(&self, binding: &PresentationBinding) -> ([u32; 2], [u32; 4]) {
+        let source = binding.source_extent;
+        (source, letterbox(source, self.profile.extent))
     }
 
     /// Current configured surface extent.

@@ -579,3 +579,10 @@
   a refused acquisition, rejection to the named twin and provider-specific completion timing.
   [D13.1](../../../.orchestrate/evidence/APPLE-TILE/WP13/D13.1.md) ·
   [D13.2](../../../.orchestrate/evidence/APPLE-TILE/WP13/D13.2.md).
+
+- 2026-11-25 Builder, WP13 review fixes. The witness report reads the prepared binding across capture-stage
+  rebuilds. The tone stage and tap use the provider output grid, and the presenter fits that grid to the drawable.
+  Mac Metal passed the eight existing witness cases, the new report regression and the three provider cases.
+  The expanded case compares complete 96×64 native and SDR captures on both recipes, including a marker beyond
+  the 64×64 render grid. [D13.1](../../../.orchestrate/evidence/APPLE-TILE/WP13/review-fix/D13.1.md) ·
+  [D13.2](../../../.orchestrate/evidence/APPLE-TILE/WP13/review-fix/D13.2.md).

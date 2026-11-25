@@ -465,8 +465,8 @@
           "lock": "gpu",
           "ask": "Read the segment and the witness. Is each of the seven duties the design lists (the candidate, the reset decision, native or twin, the encoder split, submission and completion, retention, the counters) written once, in the segment, and does the witness reach the frame host and the scene graph only through `NativeProvider`? Does the segment name no witness type, and assume no number, format or extent of textures?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/APPLE-TILE/WP13/review-fix/D13.1.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/APPLE-TILE/WP13-review.md"
         },
@@ -477,7 +477,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/APPLE-TILE/WP13/D13.2.md",
+          "evidence": ".orchestrate/evidence/APPLE-TILE/WP13/review-fix/D13.2.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/APPLE-TILE/WP13-review.md"
         }

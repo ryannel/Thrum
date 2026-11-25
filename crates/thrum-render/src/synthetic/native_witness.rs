@@ -75,16 +75,12 @@ impl NativeWitnessReport {
         } else {
             requested
         };
-        let preparation_refused = matches!(
-            report.twin.map(|selection| selection.reason),
-            Some(TwinReason::UnsupportedBackend | TwinReason::PreparationRefused)
-        );
         Self {
             selection,
             encoded: report.encoded,
             submitted: report.submitted,
             discarded: report.discarded,
-            resets: if requested == NativeWitness::NoReset && !preparation_refused {
+            resets: if requested == NativeWitness::NoReset {
                 0
             } else {
                 report.resets
@@ -459,7 +455,18 @@ impl PreparedProvider for Binding {
     fn history(&self) -> Option<&wgpu::Texture> {
         Some(&self.provider.histories[1 - self.side()])
     }
+}
 
+pub(super) fn report(binding: &NativeBinding) -> Option<NativeWitnessReport> {
+    let witness = binding.prepared::<Binding>()?;
+    Some(NativeWitnessReport::from_provider(
+        binding.report(),
+        witness.provider.factory.selection,
+        witness.resident_bytes(),
+    ))
+}
+
+impl Binding {
     fn resident_bytes(&self) -> u64 {
         let provider = &self.provider;
         u64::from(provider.extent[0])
@@ -468,9 +475,7 @@ impl PreparedProvider for Binding {
             * (3 + u64::from(provider.stale.is_some()))
             + 8
     }
-}
 
-impl Binding {
     fn side(&self) -> usize {
         self.provider.side.load(Ordering::Relaxed)
     }

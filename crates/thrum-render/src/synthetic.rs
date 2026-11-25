@@ -1079,7 +1079,7 @@ impl PreparedSynthetic {
     /// frame host's slots read the count from their targets' compiled graphs.
     pub fn scene_pass_count(&self) -> u32 {
         self.target_inputs()
-            .compile_graph(1, 1, 256, CaptureSource::Sdr, None)
+            .compile_graph(1, 1, CaptureSource::Sdr, None)
             .ok()
             .and_then(|compiled| u32::try_from(compiled.pipeline_pass_count()).ok())
             .unwrap_or(0)
@@ -1916,7 +1916,6 @@ struct SceneGraphs<G> {
 pub struct OffscreenTarget {
     secondary: Vec<wgpu::BindGroup>,
     pub(crate) native: Option<Arc<NativeBinding>>,
-    witness: NativeWitness,
     effects: after_opaque::TargetEffects,
     soft_sun: Option<raytrace::soft::SoftTarget>,
     ambient: Option<raytrace::ambient::Target>,
@@ -1953,7 +1952,7 @@ pub struct OffscreenTarget {
     width: u32,
     height: u32,
     generation: u64,
-    row_bytes: u32,
+    capture_layout: readback::CaptureLayout,
     frame_revision: u64,
 }
 impl OffscreenTarget {
@@ -1993,14 +1992,7 @@ impl OffscreenTarget {
     /// Diagnostic provider outcomes for this extent/generation, when enabled.
     #[must_use]
     pub fn native_witness_report(&self) -> Option<NativeWitnessReport> {
-        let native = self.native.as_ref()?;
-        (self.witness != NativeWitness::Off).then(|| {
-            NativeWitnessReport::from_provider(
-                native.report(),
-                self.witness,
-                native.resident_bytes(),
-            )
-        })
+        self.native.as_deref().and_then(native_witness::report)
     }
     /// Allocate a nonempty bounded target and display bind group from
     /// one prepared view's generation, on the executor's device. The
@@ -2047,14 +2039,21 @@ impl OffscreenTarget {
         height: u32,
         capture_source: CaptureSource,
     ) -> Result<Self, RenderError> {
-        let row_bytes = prepared.target_row_bytes(device, [width, height], capture_source)?;
-        let compiled = prepared.compile_graph(width, height, row_bytes, capture_source, None)?;
+        if !prepared.capabilities.matches(device) {
+            return Err(RenderError::StaleTarget);
+        }
+        let compiled = prepared.compile_graph(width, height, capture_source, None)?;
         let recipe = prepared
             .capabilities
             .recipe()
             .map_err(RenderError::Recipe)?;
         let day_depth = compiled.prepare_day_depth(device, recipe, width, height);
-        let scene_graph::CompiledScene { day, night, ids } = compiled;
+        let scene_graph::CompiledScene {
+            day,
+            night,
+            ids,
+            capture_layout,
+        } = compiled;
         // The night capture extends scene and output lifetimes.
         let textures = GraphTextures::new(device, &night.as_ref().unwrap_or(&day).readback, recipe);
         let texture_view = |id: &ResourceId| {
@@ -2210,7 +2209,6 @@ impl OffscreenTarget {
         Ok(Self {
             secondary,
             native,
-            witness: prepared.view_sample.native_witness(),
             capture_source,
             effects,
             soft_sun,
@@ -2254,7 +2252,7 @@ impl OffscreenTarget {
             width,
             height,
             generation: prepared.key.device_generation,
-            row_bytes,
+            capture_layout,
             frame_revision: prepared.frame_revision,
         })
     }
@@ -2286,6 +2284,10 @@ impl OffscreenTarget {
 
     pub(crate) fn capture_source(&self) -> CaptureSource {
         self.capture_source
+    }
+
+    pub(crate) fn capture_extent(&self) -> [u32; 2] {
+        self.capture_layout.extent
     }
 
     fn set_drawn_viewport(&self, pass: &mut wgpu::RenderPass<'_>) {
@@ -2348,9 +2350,9 @@ impl OffscreenTarget {
         PixelReadback::new(
             device,
             self.generation,
-            self.extent(),
+            self.capture_layout.extent,
             self.capture_source,
-            self.row_bytes,
+            self.capture_layout.row_bytes,
             "synthetic pixel readback",
         )
     }

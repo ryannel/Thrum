@@ -4,7 +4,10 @@ use crate::{
     error::RenderError,
     graph::{FrameGraph, GraphTextures, ResourceId},
 };
-use std::sync::{Arc, Mutex};
+use std::{
+    any::Any,
+    sync::{Arc, Mutex},
+};
 
 /// Prepared twin selection, independent of any provider's diagnostic controls.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -126,7 +129,7 @@ pub(crate) trait NativeProvider: wgpu::WasmNotSendSync {
 /// Prepared resources for one slot. A recording hook may only record on the
 /// supplied encoder. In particular, native code ends only its own encoders
 /// and never commits, enqueues or waits on the raw command buffer.
-pub(crate) trait PreparedProvider: wgpu::WasmNotSendSync {
+pub(crate) trait PreparedProvider: wgpu::WasmNotSendSync + Any {
     fn record_before_native(&self, _encoder: &mut wgpu::CommandEncoder, _reset: bool) {}
 
     fn record_twin(
@@ -147,7 +150,6 @@ pub(crate) trait PreparedProvider: wgpu::WasmNotSendSync {
     fn history(&self) -> Option<&wgpu::Texture> {
         None
     }
-    fn resident_bytes(&self) -> u64;
 }
 
 #[derive(Clone, Copy)]
@@ -290,8 +292,8 @@ impl NativeBinding {
         self.provider.output_view()
     }
 
-    pub(crate) fn resident_bytes(&self) -> u64 {
-        self.provider.resident_bytes()
+    pub(crate) fn prepared<T: PreparedProvider>(&self) -> Option<&T> {
+        (self.provider.as_ref() as &dyn Any).downcast_ref()
     }
 
     pub(crate) fn inject_completion_error(&self) {

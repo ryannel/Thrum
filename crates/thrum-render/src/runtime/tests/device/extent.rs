@@ -129,7 +129,10 @@ fn coupled_extent_changes_real_targets_projection_and_history_atomically() {
         assert_eq!(host.render_extent, [96, 48]);
         assert_eq!(host.slots[0].target.attachment_extents(), [[96, 48]; 4]);
         assert_eq!(
-            host.presenter.as_ref().unwrap().source_viewport(),
+            host.presenter
+                .as_ref()
+                .unwrap()
+                .source_viewport(host.slots[0].presentation.as_ref().unwrap()),
             ([96, 48], [0, 36, 48, 24])
         );
     });

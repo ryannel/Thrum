@@ -227,7 +227,10 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> EncodedFrame<'_, W, V> {
         let ready = self.ready.as_ref()?;
         let host = &ready.host;
         let presenter = host.presenter.as_ref()?;
-        let (source, viewport) = presenter.source_viewport();
+        let binding = host.slots[ready.recorded.slot_index]
+            .presentation
+            .as_ref()?;
+        let (source, viewport) = presenter.source_viewport(binding);
         if let super::FrameTarget::TwoD(target) = &host.slots[ready.recorded.slot_index].target {
             let (target_textures, target_bytes) = target.allocation();
             return Some(super::FrameExtent {

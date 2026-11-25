@@ -88,7 +88,15 @@ impl ExtentPrepareInputs {
             self.targets.bind_presenter(&mut slots, &presenter)?;
             let capture = self
                 .capture
-                .map(|spec| Tap::prepare_extent(spec, self.format, self.generation, self.extent))
+                .map(|spec| {
+                    let source = spec.source_for_format(Some(self.format));
+                    let extent = super::submitted_capture::capture_extent(
+                        source,
+                        &slots[0].target,
+                        Some(&presenter),
+                    );
+                    Tap::prepare_extent(spec, self.format, self.generation, extent)
+                })
                 .transpose()?;
             Ok(Some(PreparedExtent {
                 capture,

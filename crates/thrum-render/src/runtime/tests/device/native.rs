@@ -52,6 +52,10 @@ fn drain(host: &mut Host) {
 }
 
 fn image(host: &mut Host) -> Vec<u8> {
+    image_with_extent(host).1
+}
+
+fn image_with_extent(host: &mut Host) -> ([u32; 2], Vec<u8>) {
     thrum_test_support::wait::until("native tap timed out", Duration::from_secs(10), || {
         host.device
             .poll(wgpu::PollType::Wait {
@@ -62,10 +66,10 @@ fn image(host: &mut Host) -> Vec<u8> {
         let image = host
             .try_submitted_image()
             .expect("submitted native image")?;
-        let bytes = image.rgba.clone();
+        let pixels = (image.extent, image.rgba.clone());
         host.recycle_submitted_image(image);
         drain(host);
-        Some(bytes)
+        Some(pixels)
     })
 }
 

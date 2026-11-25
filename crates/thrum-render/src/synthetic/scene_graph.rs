@@ -16,6 +16,7 @@ use crate::visibility::VisibilityPrepared;
 use std::collections::BTreeSet;
 
 pub(super) struct CompiledScene {
+    pub(super) capture_layout: super::readback::CaptureLayout,
     pub(super) day: SceneGraphs<CompiledGraph>,
     pub(super) night: Option<SceneGraphs<CompiledGraph>>,
     pub(super) ids: TargetResources,
@@ -347,10 +348,10 @@ impl super::SyntheticTargetInputs {
         &self,
         width: u32,
         height: u32,
-        row_bytes: u32,
         capture_source: CaptureSource,
         profile: Option<crate::present::SurfaceProfile>,
     ) -> Result<CompiledScene, RenderError> {
+        self.validate_target_extent([width, height])?;
         let mut graph = FrameGraph::default();
         let (material, instance) = self.instance_material_resources(&mut graph)?;
         let (history_read, history_write, history_bytes) = self.history_resources(&mut graph)?;
@@ -624,8 +625,16 @@ impl super::SyntheticTargetInputs {
             graph.dependency(ambient.filter, display_pass)?;
         }
         let source = Self::capture_input(capture_source, &output, &scene, native.as_ref())?;
-        let readback =
-            Self::readback_pass(&mut graph, source, &exposure_sample, height, row_bytes)?;
+        let Some(ResourceDescriptor::Texture { width, height, .. }) = graph.descriptor(source)
+        else {
+            return Err(RenderError::GraphPassMismatch);
+        };
+        let capture_layout = super::readback::CaptureLayout::new(
+            [*width, *height],
+            capture_source,
+            self.capabilities.limits(),
+        )?;
+        let readback = Self::readback_pass(&mut graph, source, &exposure_sample, capture_layout)?;
         let generation = self.key.device_generation;
         let surface = Self::surface_pass(
             &mut graph,
@@ -671,6 +680,7 @@ impl super::SyntheticTargetInputs {
             ],
         )?;
         Ok(CompiledScene {
+            capture_layout,
             day,
             night,
             ids: TargetResources {
@@ -738,6 +748,7 @@ impl super::SyntheticTargetInputs {
         Ok(PreToneInput {
             colour,
             motion: motion.clone(),
+            motion_extent: extent,
             exposure: exposure.clone(),
             extent: native.map_or(extent, |provider| provider.extent),
         })
@@ -948,10 +959,10 @@ impl super::SyntheticTargetInputs {
         graph: &mut FrameGraph,
         output: &ResourceId,
         exposure: &ResourceId,
-        height: u32,
-        row_bytes: u32,
+        layout: super::readback::CaptureLayout,
     ) -> Result<PassBody, RenderError> {
-        let bytes = u64::from(row_bytes) * u64::from(height) + exposure::SAMPLE_BYTES;
+        let bytes =
+            u64::from(layout.row_bytes) * u64::from(layout.extent[1]) + exposure::SAMPLE_BYTES;
         let destination = graph.resource(
             ResourceDescriptor::Buffer {
                 bytes,
@@ -1367,7 +1378,7 @@ impl super::SyntheticTargetInputs {
                                 clear: wgpu::Color::BLACK,
                             },
                             frame.timings.as_deref_mut(),
-                            presenter,
+                            (presenter, binding),
                         );
                 }
                 presenter

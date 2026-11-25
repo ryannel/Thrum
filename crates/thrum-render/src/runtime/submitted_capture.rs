@@ -408,9 +408,9 @@ impl Tap {
     }
 }
 
-fn capture_extent(
+pub(super) fn capture_extent(
     source: CaptureSource,
-    render_extent: [u32; 2],
+    target: &super::preparation::FrameTarget,
     presenter: Option<&SurfacePresenter>,
 ) -> [u32; 2] {
     if source == CaptureSource::Edr
@@ -418,7 +418,7 @@ fn capture_extent(
     {
         return presenter.extent();
     }
-    render_extent
+    target.capture_extent()
 }
 
 impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
@@ -478,8 +478,6 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             limits,
         };
         let source = spec.source_for_format(self.presenter.as_ref().map(|p| p.profile().format));
-        let extent = capture_extent(source, self.render_extent, self.presenter.as_ref());
-        validate_capture_budget(extent, source, spec.limits)?;
         let _region = self
             .creations
             .region(super::CreationPhase::Transition, "capture-stage");
@@ -522,6 +520,9 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             }
             Some(slots)
         };
+        let target = &replacement.as_ref().unwrap_or(&self.slots)[0].target;
+        let extent = capture_extent(source, target, self.presenter.as_ref());
+        validate_capture_budget(extent, source, spec.limits)?;
         let mut tap = Tap::empty(spec, source, limits, self.generation, extent);
         tap.spare_timers = CopyTiming::prepare(
             self.prepared.capabilities(),
@@ -534,7 +535,6 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 crate::error::RenderError::from(error),
             )
         })?;
-        let target = &replacement.as_ref().unwrap_or(&self.slots)[0].target;
         tap.grow(
             tap.limits.staging_slots,
             tap.limits.cpu_buffers,
@@ -574,7 +574,8 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             return Err(FrameError::InvalidState("no capture session"));
         };
         if tap.generation != self.generation
-            || tap.extent != capture_extent(tap.source, self.render_extent, self.presenter.as_ref())
+            || tap.extent
+                != capture_extent(tap.source, &self.slots[0].target, self.presenter.as_ref())
         {
             return Err(FrameError::InvalidState("retired capture generation"));
         }
@@ -622,7 +623,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
 
     pub(super) fn resize_drawable_capture(&mut self) {
         let replacement = self.submitted_capture.as_ref().and_then(|tap| {
-            let extent = capture_extent(tap.source, self.render_extent, self.presenter.as_ref());
+            let extent = capture_extent(tap.source, &self.slots[0].target, self.presenter.as_ref());
             ((tap.source == CaptureSource::Edr
                 || (self.is_edr() && matches!(self.prepared, super::PreparedRenderer::TwoD(_))))
                 && tap.generation == self.generation
@@ -676,7 +677,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         let Some(tap) = self.submitted_capture.as_mut() else {
             return;
         };
-        let extent = capture_extent(tap.source, self.render_extent, self.presenter.as_ref());
+        let extent = capture_extent(tap.source, &self.slots[0].target, self.presenter.as_ref());
         let mut available = tap.limits;
         self.retired_capture.retain_mut(|retired| {
             retired.trim_retired(&mut tap.spare_timers);

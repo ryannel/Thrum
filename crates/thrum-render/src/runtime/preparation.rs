@@ -252,6 +252,13 @@ impl FrameTarget {
         }
     }
 
+    pub(super) fn capture_extent(&self) -> [u32; 2] {
+        match self {
+            Self::ThreeD(target) => target.capture_extent(),
+            Self::TwoD(target) => target.extent,
+        }
+    }
+
     pub(super) fn readback(&self, device: &wgpu::Device) -> crate::synthetic::PixelReadback {
         match self {
             Self::ThreeD(target) => target.readback(device),

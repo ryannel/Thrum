@@ -951,7 +951,7 @@ fn record_present(frame: &mut RecordContext<'_>, pass: &CompiledPass) -> Result<
                     clear: wgpu::Color::BLACK,
                 },
                 frame.timings.as_deref_mut(),
-                presenter,
+                (presenter, binding),
             );
     }
     presenter

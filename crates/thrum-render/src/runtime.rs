@@ -2247,7 +2247,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         let capture = submitted_capture::reserve(
             &mut self.submitted_capture,
             self.generation,
-            self.render_extent,
+            slot.target.capture_extent(),
             slot.target.capture_source(),
             timing_requested,
         );

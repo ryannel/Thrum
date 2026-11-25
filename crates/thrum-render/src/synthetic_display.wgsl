@@ -91,7 +91,13 @@ fn exposure_zone(stored: vec3<f32>, storage_inverse_gain: f32) -> vec3<f32> {
 }
 fn sdr_pixel(position: vec4<f32>) -> vec4<f32> {
     if (exposure.metadata.w >> DISPLAY_OVERLAY_SHIFT) == OVERLAY_MOTION {
-        let velocity = textureLoad(motion, vec2<i32>(position.xy), 0).xy;
+        let motion_extent = textureDimensions(motion);
+        let colour_extent = textureDimensions(scene);
+        var motion_pixel = vec2<i32>(position.xy);
+        if any(motion_extent != colour_extent) {
+            motion_pixel = vec2<i32>(position.xy * vec2<f32>(motion_extent) / vec2<f32>(colour_extent));
+        }
+        let velocity = textureLoad(motion, motion_pixel, 0).xy;
         if any(abs(velocity) >= vec2(MAX_FINITE_HALF)) { return vec4(1.0, 0.0, 1.0, 1.0); }
         return vec4(clamp(vec2(0.5) + velocity / 16.0, vec2(0.0), vec2(1.0)),
             clamp(length(velocity) / 16.0, 0.0, 1.0), 1.0);

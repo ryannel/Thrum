@@ -356,3 +356,67 @@ fn metal_native_rejection_is_exact_twin_and_completion_error_requires_rebuild() 
         );
     });
 }
+
+#[test]
+fn metal_native_witness_report_uses_the_prepared_binding_after_capture_rebind() {
+    pollster::block_on(async {
+        let Some(test_gpu) = thrum_test_support::gpu(
+            "metal_native_witness_report_uses_the_prepared_binding_after_capture_rebind",
+            Some(wgpu::Backend::Metal),
+        ) else {
+            return;
+        };
+        let (capabilities, queue) = gpu(&test_gpu, 7).await;
+        let mut host = host(
+            &capabilities,
+            &queue,
+            Policy {
+                native: NativeWitness::Metal,
+                empty: true,
+                ..Policy::default()
+            },
+        )
+        .await;
+        // The selection belongs to preparation. The submitted camera can use
+        // the default without disabling the bound diagnostic.
+        host.source.native = NativeWitness::Off;
+        let view = output(capabilities.device(), [64, 64]);
+        let surface = SurfaceOutput {
+            view: &view,
+            extent: [64, 64],
+        };
+        host.advance(Duration::ZERO)
+            .unwrap()
+            .encode_scene()
+            .unwrap()
+            .submit(Some(&surface))
+            .unwrap();
+        drain(&mut host);
+        let before = host.native_witness_report().unwrap();
+        assert_eq!(before.selection, NativeWitness::Metal);
+        assert_eq!(before.submitted, 1);
+        host.enable_submitted_capture_from(
+            1,
+            CaptureLimits::default(),
+            CaptureSource::NativeOutput,
+        )
+        .unwrap();
+        assert_eq!(host.native_witness_report(), Some(before));
+        assert_eq!(
+            host.native_provider_report().unwrap().pass,
+            crate::synthetic::native_witness::PASS
+        );
+        assert!(host.reject_native_provider());
+        host.advance(Duration::ZERO)
+            .unwrap()
+            .encode_scene()
+            .unwrap()
+            .submit(Some(&surface))
+            .unwrap();
+        assert_eq!(image(&mut host).len(), 64 * 64 * 8);
+        let after = host.native_witness_report().unwrap();
+        assert_eq!(after.selection, NativeWitness::Wgsl);
+        assert_eq!(after.submitted, 2);
+        assert_eq!(after.resident_bytes, before.resident_bytes);
+    });
+}

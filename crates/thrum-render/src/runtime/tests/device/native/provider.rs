@@ -22,11 +22,14 @@ use std::sync::atomic::AtomicUsize;
 const PASS: &str = "native crop and private history";
 const TWIN: &str = "portable crop and private history";
 const INPUT: [u32; 2] = [4, 2];
-const OUTPUT: [u32; 2] = [64, 64];
+const SURFACE: [u32; 2] = [64, 64];
+const OUTPUT: [u32; 2] = [96, 64];
+const OUTPUT_PIXELS: usize = OUTPUT[0] as usize * OUTPUT[1] as usize;
 const ZERO: [u32; 2] = [0, 0];
 const FIRST: [u32; 2] = [1, 0];
 const SECOND: [u32; 2] = [2, 0];
 const MARKER: [u32; 2] = [2, 0];
+const FAR_MARKER: [u32; 2] = [OUTPUT[0] - 1, OUTPUT[1] - 1];
 const FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba16Float;
 const USAGE: wgpu::TextureUsages = wgpu::TextureUsages::COPY_SRC
     .union(wgpu::TextureUsages::COPY_DST)
@@ -108,7 +111,7 @@ impl Factory {
             .chain([0x4800; 4])
             .collect::<Vec<_>>();
         let source = texture(device, queue, INPUT, &row.repeat(2));
-        let output = texture(device, queue, OUTPUT, &vec![0; 64 * 64 * 4]);
+        let output = texture(device, queue, OUTPUT, &vec![0; OUTPUT_PIXELS * 4]);
         let output_view = output.create_view(&wgpu::TextureViewDescriptor::default());
         let history = std::array::from_fn(|_| texture(device, queue, [1, 1], &[0x3800; 4]));
         let zero = texture(device, queue, [1, 1], &[0; 4]);
@@ -216,7 +219,7 @@ fn copies<'a, T>(
     previous: &'a T,
     next: &'a T,
     values: NativeFrameValues,
-) -> [Copy<'a, T>; 3] {
+) -> [Copy<'a, T>; 4] {
     assert_eq!(values.content_extent, [2, 2]);
     assert!(values.content_origin[0] + values.content_extent[0] <= INPUT[0]);
     assert_eq!(values.content_origin[1], 0);
@@ -227,6 +230,15 @@ fn copies<'a, T>(
             source_origin: values.content_origin,
             destination_origin: ZERO,
             extent: values.content_extent,
+        },
+        // Prove readback reaches the final texel, outside both the render
+        // width and the first row of the provider output.
+        Copy {
+            from: source,
+            to: output,
+            source_origin: [values.content_origin[0] + 1, 1],
+            destination_origin: FAR_MARKER,
+            extent: [1, 1],
         },
         Copy {
             from: previous,
@@ -334,10 +346,6 @@ impl PreparedProvider for Crop {
     fn output_view(&self) -> &wgpu::TextureView {
         &self.output_view
     }
-
-    fn resident_bytes(&self) -> u64 {
-        (64 * 64 + 4 * 2 + 3) * 8
-    }
 }
 
 type TestGpu = thrum_test_support::Gpu;
@@ -433,7 +441,13 @@ fn submit(
     surface: &SurfaceOutput<'_>,
     origin: [u32; 2],
 ) -> (Vec<u8>, NativeSegment) {
-    record(host, origin).submit(Some(surface)).unwrap();
+    let encoded = record(host, origin);
+    let frame = encoded.frame_extent().unwrap();
+    assert_eq!(frame.attachments, [SURFACE, SURFACE, SURFACE, OUTPUT]);
+    assert_eq!(frame.source, OUTPUT);
+    assert_eq!(frame.destination, SURFACE);
+    assert_eq!(frame.viewport, [0, 11, 64, 42]);
+    assert!(encoded.submit(Some(surface)).unwrap().surface_presented);
     let segment = host
         .slots
         .iter()
@@ -446,7 +460,9 @@ fn submit(
     assert_eq!(segment.submission, host.last_submission().unwrap());
     assert_eq!(segment.generation, host.generation);
     assert_eq!(segment.pass_name(), PASS);
-    (image(host), segment)
+    let (extent, pixels) = image_with_extent(host);
+    assert_eq!(extent, OUTPUT);
+    (pixels, segment)
 }
 
 fn texel(image: &[u8], x: usize) -> [u8; 8] {
@@ -464,10 +480,10 @@ fn native_provider_crop_changes_inside_one_generation_and_owns_timing() {
         };
         let (native, queue) = device(&test_gpu, 71, "apple-tile").await;
         let portable = native.clone().with_recipe_override("portable").unwrap();
-        let drawable = output(native.device(), OUTPUT);
+        let drawable = output(native.device(), SURFACE);
         let surface = SurfaceOutput {
             view: &drawable,
-            extent: OUTPUT,
+            extent: SURFACE,
         };
         let mut metal = fixture(&native, &queue, false).await;
         let mut twin = fixture(&portable, &queue, false).await;
@@ -489,7 +505,9 @@ fn native_provider_crop_changes_inside_one_generation_and_owns_timing() {
         let (b_twin, twin_segment) = submit(&mut twin, &surface, SECOND);
         assert_eq!(a, a_twin);
         assert_eq!(b, b_twin);
-        assert_eq!(b.len(), 64 * 64 * 8);
+        assert_eq!(b.len(), OUTPUT_PIXELS * 8);
+        assert_eq!(texel(&a, OUTPUT_PIXELS - 1), [0, 0x44].repeat(4).as_slice());
+        assert_eq!(texel(&b, OUTPUT_PIXELS - 1), [0, 0x48].repeat(4).as_slice());
         assert_eq!(texel(&a, 1), [0, 0x44].repeat(4).as_slice());
         assert_eq!(
             texel(&b, 1),
@@ -516,6 +534,27 @@ fn native_provider_crop_changes_inside_one_generation_and_owns_timing() {
             b_segment.pass_name(),
             b_segment.outcome()
         );
+
+        // Changing the tap stage must now use the display grid too. Compare
+        // both 96-wide SDR images and require a toned marker on the last row.
+        let mut sdr = Vec::new();
+        for host in [&mut metal, &mut twin] {
+            host.disable_submitted_capture();
+            host.enable_submitted_capture_from(2, CaptureLimits::default(), CaptureSource::Sdr)
+                .unwrap();
+            assert!(
+                record(host, SECOND)
+                    .submit(Some(&surface))
+                    .unwrap()
+                    .surface_presented
+            );
+            let (extent, pixels) = image_with_extent(host);
+            assert_eq!(extent, OUTPUT);
+            assert_eq!(pixels.len(), OUTPUT_PIXELS * 4);
+            assert!(pixels[(OUTPUT_PIXELS - 1) * 4] > 0);
+            sdr.push(pixels);
+        }
+        assert_eq!(sdr[0], sdr[1]);
     });
 }
 
@@ -529,10 +568,10 @@ fn native_provider_native_discard_and_rejection_reset_private_history() {
             return;
         };
         let (native, queue) = device(&test_gpu, 72, "apple-tile").await;
-        let drawable = output(native.device(), OUTPUT);
+        let drawable = output(native.device(), SURFACE);
         let surface = SurfaceOutput {
             view: &drawable,
-            extent: OUTPUT,
+            extent: SURFACE,
         };
         let mut metal = fixture(&native, &queue, false).await;
         let mut control = fixture(&native, &queue, true).await;
@@ -583,10 +622,10 @@ fn native_provider_native_discard_and_rejection_reset_private_history() {
         );
 
         let (replacement, queue2) = device(&test_gpu.fresh_adapter(), 73, "apple-tile").await;
-        let drawable = output(replacement.device(), OUTPUT);
+        let drawable = output(replacement.device(), SURFACE);
         let surface = SurfaceOutput {
             view: &drawable,
-            extent: OUTPUT,
+            extent: SURFACE,
         };
         metal.disable_submitted_capture();
         let inputs = metal.device_prepare_inputs().unwrap();
@@ -618,10 +657,10 @@ fn native_provider_twin_history_only_advances_on_submission() {
             return;
         };
         let (portable, queue) = device(&test_gpu, 74, "portable").await;
-        let drawable = output(portable.device(), OUTPUT);
+        let drawable = output(portable.device(), SURFACE);
         let surface = SurfaceOutput {
             view: &drawable,
-            extent: OUTPUT,
+            extent: SURFACE,
         };
         let mut direct = fixture(&portable, &queue, false).await;
         let mut dropped = fixture(&portable, &queue, false).await;

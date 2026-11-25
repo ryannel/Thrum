@@ -3,15 +3,10 @@ use super::{DEPTH_FORMAT, OffscreenTarget, scene_graph::CompiledScene};
 use crate::capabilities::Recipe;
 
 impl super::SyntheticTargetInputs {
-    pub(super) fn target_row_bytes(
+    pub(super) fn validate_target_extent(
         &self,
-        device: &wgpu::Device,
         [width, height]: [u32; 2],
-        source: super::CaptureSource,
-    ) -> Result<u32, super::RenderError> {
-        if !self.capabilities.matches(device) {
-            return Err(super::RenderError::StaleTarget);
-        }
+    ) -> Result<(), super::RenderError> {
         let limits = self.capabilities.limits();
         if width == 0
             || height == 0
@@ -21,19 +16,7 @@ impl super::SyntheticTargetInputs {
         {
             return Err(super::RenderError::TargetExtent);
         }
-        let row_bytes = width
-            .checked_mul(source.bytes_per_pixel())
-            .and_then(|value| value.checked_add(255))
-            .map(|value| value / 256 * 256)
-            .ok_or(super::RenderError::TargetExtent)?;
-        if u64::from(row_bytes)
-            .checked_mul(u64::from(height))
-            .and_then(|bytes| bytes.checked_add(super::exposure::SAMPLE_BYTES))
-            .is_none_or(|bytes| bytes > limits.max_buffer_size)
-        {
-            return Err(super::RenderError::TargetExtent);
-        }
-        Ok(row_bytes)
+        Ok(())
     }
 }
 

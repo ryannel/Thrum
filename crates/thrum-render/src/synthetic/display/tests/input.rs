@@ -176,6 +176,7 @@ fn prepared_reconstruction_texture_uses_declared_copy_to_tone_hazard_and_same_sd
         let input = PreToneInput {
             colour: colour.clone(),
             motion,
+            motion_extent: [65, 37],
             exposure,
             extent: [65, 37],
         };
