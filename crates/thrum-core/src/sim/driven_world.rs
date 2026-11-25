@@ -45,6 +45,19 @@ pub trait WorldDriver {
     /// # Errors
     /// Returns the driver's authority failure.
     fn advance(&mut self, now: Duration, cap: NonZeroU32) -> Result<DrivenAdvance, Self::Error>;
+    /// Advance an inline world for an upcoming display target on the same clock.
+    /// A driver may admit buffered ticks through `display_at` and anchor its
+    /// sample there. By default it advances and anchors at `now`.
+    /// # Errors
+    /// Returns the driver's authority failure.
+    fn advance_for_display(
+        &mut self,
+        now: Duration,
+        _display_at: Duration,
+        cap: NonZeroU32,
+    ) -> Result<DrivenAdvance, Self::Error> {
+        self.advance(now, cap)
+    }
     /// Lease the actual committed page, or report that publication is busy.
     /// # Errors
     /// Returns the publication failure.
@@ -70,9 +83,8 @@ impl<E: Error> fmt::Display for DrivenWorldError<E> {
             Self::Driver(error) => write!(formatter, "world driver: {error}"),
             Self::CatchUpCap => formatter.write_str("world driver exceeded its catch-up cap"),
             Self::NonMonotonicTime => formatter.write_str("driven world time went backwards"),
-            Self::PresentationSample => {
-                formatter.write_str("driver sample must be anchored to the current advance")
-            }
+            Self::PresentationSample => formatter
+                .write_str("driver sample must be anchored to the observation or display target"),
         }
     }
 }
@@ -179,6 +191,25 @@ impl<D: WorldDriver> DrivenWorld<D> {
     /// # Errors
     /// Returns a backwards timestamp, exceeded cap, invalid sample, or driver failure.
     pub fn advance(&mut self, now: Duration) -> Result<WorldAdvance, DrivenWorldError<D::Error>> {
+        self.advance_inner(now, None)
+    }
+
+    /// Advance an inline world for the upcoming display target.
+    /// # Errors
+    /// Returns a backwards observation, exceeded cap, invalid sample, or driver failure.
+    pub fn advance_for_display(
+        &mut self,
+        now: Duration,
+        lead: Duration,
+    ) -> Result<WorldAdvance, DrivenWorldError<D::Error>> {
+        self.advance_inner(now, Some(now.saturating_add(lead)))
+    }
+
+    fn advance_inner(
+        &mut self,
+        now: Duration,
+        display_at: Option<Duration>,
+    ) -> Result<WorldAdvance, DrivenWorldError<D::Error>> {
         if now < self.now {
             return Err(DrivenWorldError::NonMonotonicTime);
         }
@@ -188,14 +219,17 @@ impl<D: WorldDriver> DrivenWorld<D> {
             self.next_due = None;
             0
         } else {
-            let advance = self
-                .driver
-                .advance(now, self.cap)
-                .map_err(DrivenWorldError::Driver)?;
+            let advance = match display_at {
+                Some(at) => self.driver.advance_for_display(now, at, self.cap),
+                None => self.driver.advance(now, self.cap),
+            }
+            .map_err(DrivenWorldError::Driver)?;
             if advance.completed_ticks > self.cap.get() {
                 return Err(DrivenWorldError::CatchUpCap);
             }
-            if !advance.presentation.is_driven_at(now) {
+            if !advance.presentation.is_driven_at(now)
+                && !display_at.is_some_and(|at| advance.presentation.is_driven_at(at))
+            {
                 return Err(DrivenWorldError::PresentationSample);
             }
             self.sample = advance.presentation;

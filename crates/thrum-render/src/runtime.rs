@@ -128,6 +128,16 @@ pub trait FrameWorld {
     /// # Errors
     /// Returns an authoritative clock, game or lane failure.
     fn advance(&mut self, now: Duration) -> Result<WorldAdvance, FrameError>;
+    /// Admit work for a frame. Inline driven worlds may consume the display lead.
+    /// # Errors
+    /// Returns an authoritative clock, game or lane failure.
+    fn advance_for_display(
+        &mut self,
+        now: Duration,
+        _lead: Duration,
+    ) -> Result<WorldAdvance, FrameError> {
+        self.advance(now)
+    }
     /// Lease a page with its actual committed identity.
     /// # Errors
     /// Returns a publication failure without changing authority.
@@ -1055,8 +1065,8 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.visual_lighting
     }
 
-    /// Set the lead to the platform's next display target. Simulation still
-    /// advances only to the callback's observed monotonic time.
+    /// Set the lead to the platform's next display target. Fixed-clock worlds
+    /// still advance only to the callback's observed monotonic time.
     pub fn set_presentation_lead(&mut self, lead: Duration) {
         self.presentation_lead = lead;
         self.platform_target = None;
@@ -1891,7 +1901,10 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.governor_boundary(now);
         self.poll_gpu()?;
         self.commit_governor(now)?;
-        let (report, advanced) = self.admit_world(now)?;
+        let advanced = self
+            .world
+            .advance_for_display(now, self.presentation_lead)?;
+        let report = self.record_world_advance(&advanced);
         Ok(AdvancedFrame {
             host: Some(self),
             report: Some(report),
@@ -1922,6 +1935,10 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
 
     fn admit_world(&mut self, now: Duration) -> Result<(DriveReport, WorldAdvance), FrameError> {
         let advanced = self.world.advance(now)?;
+        Ok((self.record_world_advance(&advanced), advanced))
+    }
+
+    fn record_world_advance(&mut self, advanced: &WorldAdvance) -> DriveReport {
         let report = DriveReport {
             tick: advanced.tick,
             overload: advanced.overload,
@@ -1938,7 +1955,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.dropped_views = self
             .dropped_views
             .saturating_add(advanced.skipped_publications);
-        Ok((report, advanced))
+        report
     }
 
     fn skip_advance(&mut self, report: &mut DriveReport, recovered_publication: bool) {

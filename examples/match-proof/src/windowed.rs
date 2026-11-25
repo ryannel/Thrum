@@ -123,8 +123,6 @@ fn record_frame(host: &mut Host) -> Result<(), GameError> {
     }
     driver.last_frame = Some(sample.submission_order);
     let display_us = micros(sample.display_time);
-    // Feed the submitted edge into the playout clock before its next advance.
-    driver.peer.observe_display(display_us);
     driver.record(json!({
         "event": "frame", "submission": sample.submission_order, "tick": sample.tick,
         "alpha": sample.presentation_alpha, "display_us": display_us,
@@ -157,6 +155,7 @@ impl Replica {
     fn advance(
         &mut self,
         now: u64,
+        display_at: u64,
         cap: NonZeroU32,
         rows: &mut Vec<Value>,
     ) -> Result<(Playout, u32), GameError> {
@@ -164,9 +163,13 @@ impl Replica {
 
         let held = self.session.held();
         self.session
-            .advance_with_step_budget(now, u8::try_from(cap.get()).unwrap_or(u8::MAX), |tick| {
-                Input::axes(crate::seeded_axes(71, 1, tick))
-            })
+            .advance_for_display(
+                now,
+                display_at,
+                u8::try_from(cap.get()).unwrap_or(u8::MAX),
+                |tick| Input::axes(crate::seeded_axes(71, 1, tick)),
+                |_| {},
+            )
             .map_err(rejected)?;
         while self.session.result().is_some() {}
 
@@ -198,7 +201,7 @@ impl Replica {
         }
         let playout = self
             .session
-            .playout(now)
+            .playout(display_at)
             .unwrap_or_else(|| held_playout(endpoint.tick));
         if self.session.held() > held + 1 {
             rows.push(
@@ -229,16 +232,6 @@ enum Peer {
 }
 
 impl Peer {
-    fn observe_display(&self, display_us: u64) {
-        match self {
-            #[cfg(target_os = "macos")]
-            Self::Authority(_) => {}
-            Self::Replica(replica) => {
-                replica.session.playout(display_us);
-            }
-        }
-    }
-
     fn world(&self) -> &CrowdWorld {
         match self {
             #[cfg(target_os = "macos")]
@@ -279,6 +272,65 @@ impl Driver {
         self.rows.get_mut().push(row);
         Ok(())
     }
+
+    #[expect(
+        clippy::cast_precision_loss,
+        reason = "the proof uses a few thousand ticks"
+    )]
+    fn advance_at(
+        &mut self,
+        now: Duration,
+        display_at: Duration,
+        cap: NonZeroU32,
+    ) -> Result<DrivenAdvance, GameError> {
+        let clock_us = micros(now);
+        let wall_us = crate::sockets::unix_us();
+        let mut rows = Vec::new();
+        let (playout, period, anchor) = match &mut self.peer {
+            #[cfg(target_os = "macos")]
+            Peer::Authority(authority) => {
+                let (playout, period) = authority.advance(clock_us, cap, &mut rows)?;
+                (playout, period, now)
+            }
+            Peer::Replica(replica) => {
+                let (playout, period) =
+                    replica.advance(clock_us, micros(display_at), cap, &mut rows)?;
+                (playout, period, display_at)
+            }
+        };
+        let world = self.peer.world();
+        let tick = world.tick();
+        let steps = world.window_steps();
+        let completed_ticks = u32::try_from(steps.len()).expect("bounded commits");
+        let digests = std::mem::take(&mut *world.digests.borrow_mut());
+        let fraction = if tick == 0 {
+            1.0
+        } else {
+            (playout.position - (tick - 1) as f64).clamp(0.0, 1.0)
+        };
+        rows.push(
+            json!({"event":"advance", "clock_us":clock_us, "playout_us":micros(anchor), "tick":tick,
+                         "steps":steps, "position":playout.position, "rate":playout.rate}),
+        );
+        for (tick, digest) in digests {
+            rows.push(json!({"event":"digest","tick":tick,"digest":digest.to_string(),"clock_us":clock_us}));
+        }
+        for mut row in rows {
+            row["wall_us"] = json!(wall_us);
+            self.record(row)?;
+        }
+        let presentation = ClockSample::driven(
+            anchor,
+            fraction,
+            1_000_000.0 * playout.rate / f64::from(period),
+        )
+        .ok_or_else(|| rejected("invalid session phase"))?;
+        Ok(DrivenAdvance {
+            completed_ticks,
+            presentation,
+            next_due: Duration::from_millis(2),
+        })
+    }
 }
 
 impl WorldDriver for Driver {
@@ -300,49 +352,17 @@ impl WorldDriver for Driver {
         self.peer.world().window_endpoint()
     }
 
-    #[expect(
-        clippy::cast_precision_loss,
-        reason = "the proof uses a few thousand ticks"
-    )]
     fn advance(&mut self, now: Duration, cap: NonZeroU32) -> Result<DrivenAdvance, Self::Error> {
-        let clock_us = micros(now);
-        let wall_us = crate::sockets::unix_us();
-        let mut rows = Vec::new();
-        let (playout, period) = match &mut self.peer {
-            #[cfg(target_os = "macos")]
-            Peer::Authority(authority) => authority.advance(clock_us, cap, &mut rows)?,
-            Peer::Replica(replica) => replica.advance(clock_us, cap, &mut rows)?,
-        };
-        let world = self.peer.world();
-        let tick = world.tick();
-        let steps = world.window_steps();
-        let completed_ticks = u32::try_from(steps.len()).expect("bounded commits");
-        let digests = std::mem::take(&mut *world.digests.borrow_mut());
-        let fraction = if tick == 0 {
-            1.0
-        } else {
-            (playout.position - (tick - 1) as f64).clamp(0.0, 1.0)
-        };
-        rows.push(json!({"event":"advance", "clock_us":clock_us, "tick":tick,
-                         "steps":steps, "position":playout.position, "rate":playout.rate}));
-        for (tick, digest) in digests {
-            rows.push(json!({"event":"digest","tick":tick,"digest":digest.to_string(),"clock_us":clock_us}));
-        }
-        for mut row in rows {
-            row["wall_us"] = json!(wall_us);
-            self.record(row)?;
-        }
-        let presentation = ClockSample::driven(
-            now,
-            fraction,
-            1_000_000.0 * playout.rate / f64::from(period),
-        )
-        .ok_or_else(|| rejected("invalid session phase"))?;
-        Ok(DrivenAdvance {
-            completed_ticks,
-            presentation,
-            next_due: Duration::from_millis(2),
-        })
+        self.advance_at(now, now, cap)
+    }
+
+    fn advance_for_display(
+        &mut self,
+        now: Duration,
+        display_at: Duration,
+        cap: NonZeroU32,
+    ) -> Result<DrivenAdvance, Self::Error> {
+        self.advance_at(now, display_at, cap)
     }
 
     fn publication(&mut self) -> Result<Option<WorldPublication<Self::Page>>, Self::Error> {

@@ -488,6 +488,26 @@ impl<W: World, Codec: ActionWire<W::Action>, P: PredictedController<W>> Client<W
         self.advance_with_prediction_events(now, budget, sample, |_| {})
     }
 
+    /// Poll the link at `now` and admit buffered replica steps through `display_at`.
+    /// Both times use the client's monotonic clock in microseconds. Input and
+    /// arrival timing use `now`. Sample [`Self::playout`] at `display_at` for
+    /// the frame's fraction. An earlier target cannot rewind committed playout.
+    /// Prediction events are reported synchronously, as in
+    /// [`Self::advance_with_prediction_events`].
+    ///
+    /// # Errors
+    /// Locally sampled controls are unencodable in a single timed frame.
+    pub fn advance_for_display(
+        &mut self,
+        now: u64,
+        display_at: u64,
+        budget: u8,
+        sample: impl FnMut(u64) -> Controls<W::Action>,
+        observe: impl FnMut(PredictionEvent<P::State>),
+    ) -> Result<(), SessionError> {
+        self.poll(now, display_at.max(now), budget, sample, observe)
+    }
+
     /// Advance as usual and report each bit comparison and correction
     /// synchronously. A game can use corrected endpoints to smooth presentation.
     ///
@@ -496,6 +516,17 @@ impl<W: World, Codec: ActionWire<W::Action>, P: PredictedController<W>> Client<W
     pub fn advance_with_prediction_events(
         &mut self,
         now: u64,
+        budget: u8,
+        sample: impl FnMut(u64) -> Controls<W::Action>,
+        observe: impl FnMut(PredictionEvent<P::State>),
+    ) -> Result<(), SessionError> {
+        self.poll(now, now, budget, sample, observe)
+    }
+
+    fn poll(
+        &mut self,
+        now: u64,
+        display_at: u64,
         budget: u8,
         mut sample: impl FnMut(u64) -> Controls<W::Action>,
         mut observe: impl FnMut(PredictionEvent<P::State>),
@@ -552,7 +583,7 @@ impl<W: World, Codec: ActionWire<W::Action>, P: PredictedController<W>> Client<W
         // deadline and the independent socket clock keep moving.
         self.author_and_report(now, send_time, settings, &mut sample)?;
         if self.baseline.is_none() && !self.awaiting_repair {
-            self.step(now, prior, settings, budget, &mut observe);
+            self.step(now, display_at, prior, settings, budget, &mut observe);
         }
         if let Some(fault) = self.replica.fault.take() {
             self.request_repair(fault);
@@ -1005,6 +1036,7 @@ impl<W: World, Codec: ActionWire<W::Action>, P: PredictedController<W>> Client<W
     fn step(
         &mut self,
         now: u64,
+        display_at: u64,
         prior: u64,
         settings: Settings,
         mut budget: u8,
@@ -1028,7 +1060,7 @@ impl<W: World, Codec: ActionWire<W::Action>, P: PredictedController<W>> Client<W
             if self.held > prior {
                 clock.observe(self.held, now, settings);
             }
-            clock.advance(now, stepped, self.held, settings, || {
+            clock.advance(display_at, stepped, self.held, settings, || {
                 if budget == 0 {
                     return false;
                 }
@@ -1047,7 +1079,7 @@ impl<W: World, Codec: ActionWire<W::Action>, P: PredictedController<W>> Client<W
                 }
             }
         } else if self.held - stepped >= INITIAL_BUFFER || self.ending.is_some() {
-            self.clock = Some(Clock::new(stepped, now));
+            self.clock = Some(Clock::new(stepped, display_at));
             self.state = ClientState::Playing;
         }
         if self.state == ClientState::Playing

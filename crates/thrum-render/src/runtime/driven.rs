@@ -31,6 +31,15 @@ impl<D: WorldDriver> FrameWorld for DrivenWorld<D> {
             .map_err(|error| FrameError::World(error.to_string()))
     }
 
+    fn advance_for_display(
+        &mut self,
+        now: Duration,
+        lead: Duration,
+    ) -> Result<WorldAdvance, FrameError> {
+        self.advance_for_display(now, lead)
+            .map_err(|error| FrameError::World(error.to_string()))
+    }
+
     fn publication(&mut self) -> Result<WorldPublication<Self::Page>, FrameError> {
         self.publication()
             .map_err(|error| FrameError::World(error.to_string()))?

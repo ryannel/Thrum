@@ -219,7 +219,7 @@ def validate_sample(log, cfg, *, bounded_rate=True, minimum_frames=600):
             assert latest and latest["tick"] == row["tick"], (row, latest)
             frames += 1
             assert 0 <= row["alpha"] <= 1
-            elapsed = max(0, row["display_us"] - latest["clock_us"])
+            elapsed = max(0, row["display_us"] - latest["playout_us"])
             expected = min(row["tick"], max(row["tick"] - 1, latest["position"]) +
                            elapsed * latest["rate"] / cfg["tick_us"])
             position = frame_position(row)
@@ -269,7 +269,49 @@ def validate_cuts(match, peer, relay_edges):
             assert skips and all(row["first"] <= row["last"] for row in skips), (name, skips)
         result[name] = {"cut": cut, "open": opened, "relay": [applied_cut, applied_open],
                         "bursts": bursts, "stalls": stalls, "skips": skips}
+    stall = result["stall"]["stalls"][-1]
+    next_cut = result["skip"]["relay"][0]["wall_us"]
+    result["stall"]["recovery"] = validate_recovery(peer.log, match.config, stall["wall_us"], next_cut)
     return result
+
+
+def validate_recovery(log, cfg, resumed, next_cut):
+    """Require sustained progress on the submitted timeline while catch-up is requested."""
+    catch_up = cfg["playout_catch_up"] / 1000
+    intervals = []
+    first = last = None
+    catching_up = False
+    for row in log.read():
+        wall_us = row.get("wall_us", 0)
+        if wall_us < resumed:
+            continue
+        if wall_us >= next_cut:
+            break
+        event = row["event"]
+        if event in ("stall", "skip", "restore"):
+            catching_up = False
+        elif event == "advance":
+            catching_up = row["rate"] == catch_up
+        if not catching_up:
+            if first is not None:
+                intervals.append((first, last))
+            first = last = None
+        elif event == "frame":
+            if first is None:
+                first = row
+            last = row
+    if first is not None:
+        intervals.append((first, last))
+    assert intervals, "no submitted catch-up frames between the short and long cuts"
+    first, last = max(intervals, key=lambda pair: pair[1]["display_us"] - pair[0]["display_us"])
+    elapsed = last["display_us"] - first["display_us"]
+    assert elapsed >= 500_000, ("no sustained catch-up interval", first, last)
+    travel = frame_position(last) - frame_position(first)
+    measured_rate = travel * cfg["tick_us"] / elapsed
+    assert measured_rate >= 1 + 0.8 * (catch_up - 1), ("submitted positions did not catch up", measured_rate)
+    return {"first_submission": first["submission"], "last_submission": last["submission"],
+            "elapsed_us": elapsed, "travel_ticks": travel, "requested_rate": catch_up,
+            "submitted_rate": measured_rate, "regained_ticks": travel - elapsed / cfg["tick_us"]}
 
 
 def validate_capture(peer, capture, output):

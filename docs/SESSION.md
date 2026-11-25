@@ -116,6 +116,11 @@ scene reads.
   `client.advance_with_step_budget(now_us, cap, sample_controls)` and drain results as above. Pass the
   driver's cap as a `u8` or use a smaller budget. After that advance, read `client.playout(now_us)` and
   `client.settings().tick_us`. Before playout starts, hold the current endpoint.
+- For an inline client, implement `WorldDriver::advance_for_display(now, display_at, cap)` as well.
+  Call `client.advance_for_display(now_us, display_us, cap, sample_controls, on_prediction)`, drain results,
+  then read `client.playout(display_us)`. Anchor the returned `ClockSample` to `display_at`. This lets the
+  client commit the buffered endpoint its upcoming frame needs while link timing and input authoring use
+  `now`. Use `|_| {}` if the game has no prediction or ignores correction events.
 - In the listen host's driver, drain accepted links, stage local inputs, then call
   `host.advance(now_us, current_tick + cap)` and read `host.playout(now_us)`. The host applies its own
   negotiated catch-up cap as well.
@@ -124,8 +129,8 @@ scene reads.
   `DrivenAdvance`. Set `next_due` to the delay you want between polls if you put your driver on a
   resident `WorldLane`.
 
-The runner supplies a monotonic `Duration` in its own origin. Convert it to microseconds for every call to
-the session and keep the original `Duration` for the render sample. The interval ends at the current tick.
+The runner supplies monotonic `Duration` values in its own origin. Convert them to microseconds for every call to
+the session and keep the sample's original `Duration` as `sample_at`. The interval ends at the current tick.
 For tick zero or when playout is unavailable, use a held sample with fraction one and rate zero.
 
 ```rust
@@ -135,7 +140,7 @@ let fraction = if tick == 0 {
     (playout.position - (tick - 1) as f64).clamp(0.0, 1.0)
 };
 let ticks_per_second = playout.rate * 1_000_000.0 / f64::from(tick_us);
-let presentation = ClockSample::driven(now, fraction, ticks_per_second)
+let presentation = ClockSample::driven(sample_at, fraction, ticks_per_second)
     .ok_or(DriverError::InvalidPlayoutSample)?;
 Ok(DrivenAdvance { completed_ticks, presentation, next_due })
 ```
@@ -145,8 +150,6 @@ animation-frame timestamps to `WebShell::frame_game`, and pass actual visibility
 `WebShell::set_visible`. A hidden tab stops polling its driver. When it is shown, the session can resume,
 skip the backlog or install a repair baseline. Show `take_stall` and `take_skip` records as appropriate in the
 game. The frame host evaluates the sample at display time and clamps it at the latest committed endpoint.
-On an inline client, you can report an edge that a future display target already reached by sampling
-`client.playout` again at the host's `last_submitted_clock().display_time` before the next advance.
 
 The reference runs on Mac and Chrome with A0 relay conditioning and shares the standalone Crowd scene.
 The standalone view keeps its ordinary clock. [Reference driver](../examples/match-proof/src/windowed.rs)

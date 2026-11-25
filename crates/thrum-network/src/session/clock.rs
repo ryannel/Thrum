@@ -122,6 +122,7 @@ impl Clock {
         settings: Settings,
         mut commit: impl FnMut() -> bool,
     ) {
+        let now = now.max(self.at);
         let elapsed = now.saturating_sub(self.at);
         let drawn_edge = self
             .drawn_edge

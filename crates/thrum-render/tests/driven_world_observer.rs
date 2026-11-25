@@ -50,7 +50,7 @@ impl WorldDriver for Script {
             0 => (1, 0.125, 25.0),
             10 => (0, 0.375, 25.0),
             20 => (0, 0.625, 25.0),
-            30 => (2, 0.5, 0.0),
+            30 => (2, 0.5, 25.0),
             _ => unreachable!("script timestamp"),
         };
         self.0 += u64::from(completed_ticks);
@@ -59,6 +59,20 @@ impl WorldDriver for Script {
             presentation: ClockSample::driven(now, fraction, rate).expect("phase"),
             next_due: Duration::from_millis(10),
         })
+    }
+
+    fn advance_for_display(
+        &mut self,
+        now: Duration,
+        display_at: Duration,
+        cap: NonZeroU32,
+    ) -> Result<DrivenAdvance, Self::Error> {
+        let mut advance = self.advance(now, cap)?;
+        if now == Duration::from_millis(30) {
+            assert_eq!(display_at, Duration::from_millis(35));
+            advance.presentation = ClockSample::driven(display_at, 0.5, 25.0).expect("phase");
+        }
+        Ok(advance)
     }
 
     fn publication(&mut self) -> Result<Option<WorldPublication<()>>, Self::Error> {
