@@ -351,6 +351,20 @@ impl Fixture {
         self.query.as_ref().expect("query fixture")
     }
 
+    pub(super) fn endpoint(&self, tick: u64) -> SourceTick {
+        SourceTick {
+            tick,
+            ..self.host.world().source()
+        }
+    }
+
+    pub(super) fn ask_query(&mut self) {
+        self.host.ask_tick_stage().expect("tick stage");
+        self.device
+            .poll(wgpu::PollType::wait_indefinitely())
+            .expect("query completion");
+    }
+
     pub(super) fn draw(&mut self, tick: u64) {
         let output = SurfaceOutput {
             view: &self.target,

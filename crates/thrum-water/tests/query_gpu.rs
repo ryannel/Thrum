@@ -80,7 +80,7 @@ fn mailbox_samples_the_gale_at_its_use_tick() {
         use_tick: 2,
     };
     mailbox.post(
-        1,
+        host.world().endpoint(1),
         vec![
             BodyQuery {
                 id: 9,
@@ -117,13 +117,18 @@ fn mailbox_samples_the_gale_at_its_use_tick() {
             .expect("submitted")
             .submitted
     );
-    assert!(mailbox.drain(1, step).is_empty());
+    assert!(mailbox.drain(host.world().endpoint(1), step).is_empty());
     // This wait is in the test driver only; the mailbox is callable beforehand.
     device
         .poll(wgpu::PollType::wait_indefinitely())
         .expect("test completion");
+    assert_eq!(mailbox.stats().dispatches, 0, "the first view only seeds");
+    host.ask_tick_stage().expect("first asking after seeding");
+    device
+        .poll(wgpu::PollType::wait_indefinitely())
+        .expect("first tick readback");
     mailbox.post(
-        2,
+        host.world().endpoint(2),
         vec![
             BodyQuery {
                 id: 1,
@@ -142,7 +147,7 @@ fn mailbox_samples_the_gale_at_its_use_tick() {
             },
         ],
     );
-    let mut answer = mailbox.drain(2, step);
+    let mut answer = mailbox.drain(host.world().endpoint(2), step);
     assert_eq!(
         answer.iter().map(|body| body.id).collect::<Vec<_>>(),
         [1, 5]
@@ -159,6 +164,11 @@ fn mailbox_samples_the_gale_at_its_use_tick() {
     drop(domain);
     check_delay(&mut host, &device, &surface, &mailbox, step);
 
+    host.drive(9 * step, Some(&surface))
+        .expect("seed recent cascades");
+    device
+        .poll(wgpu::PollType::wait_indefinitely())
+        .expect("recent cascades ready");
     let point = QueryPoint {
         position: [22.0, 0.0],
         radius: 0.5,
@@ -167,7 +177,7 @@ fn mailbox_samples_the_gale_at_its_use_tick() {
     let position = point.position.map(f64::from);
     assert!(map.lock().expect("beach").sample(position).is_none());
     mailbox.post(
-        10,
+        host.world().endpoint(10),
         vec![BodyQuery {
             id: 1,
             generation: 7,
@@ -186,7 +196,7 @@ fn mailbox_samples_the_gale_at_its_use_tick() {
         .expect("beach")
         .set_stage(0, 3.0)
         .expect("rise after dispatch");
-    let flooded = mailbox.drain(12, step);
+    let flooded = mailbox.drain(host.world().endpoint(12), step);
     assert_eq!(flooded.len(), 1);
     let domain = map.lock().expect("beach");
     check_flooded_waves(&flooded[0].points[0], &domain, &spectrum, &oracle, step);
@@ -287,12 +297,12 @@ fn chart_queries_keep_both_tick_pages_and_sample_their_own_stage() {
             }],
         }]
     };
-    mailbox.post(7, request(7));
+    mailbox.post(host.world().endpoint(7), request(7));
     map.lock()
         .expect("chart")
         .set_stage(0, 0.10)
         .expect("stage at tick 8");
-    mailbox.post(8, request(10));
+    mailbox.post(host.world().endpoint(8), request(10));
     drop(
         host.advance(8 * step)
             .expect("tentative frame")
@@ -305,10 +315,11 @@ fn chart_queries_keep_both_tick_pages_and_sample_their_own_stage() {
             .expect("submit")
             .submitted
     );
+    host.ask_tick_stage().expect("first asking after seeding");
     device
         .poll(wgpu::PollType::wait_indefinitely())
         .expect("both test readbacks complete");
-    let results = mailbox.drain(9, step);
+    let results = mailbox.drain(host.world().endpoint(9), step);
     assert_eq!(mailbox.stats().dispatches, 2);
     assert_eq!(results.len(), 1);
     assert_eq!(results[0].posted, 7);
@@ -345,7 +356,7 @@ fn chart_queries_keep_both_tick_pages_and_sample_their_own_stage() {
         .expect("chart")
         .set_stage(0, 0.20)
         .expect("stage at tick 9");
-    mailbox.post(9, request(10));
+    mailbox.post(host.world().endpoint(9), request(10));
     assert!(
         host.drive(9 * step + step / 4, Some(&output))
             .expect("quarter-alpha stage frame")
@@ -356,7 +367,7 @@ fn chart_queries_keep_both_tick_pages_and_sample_their_own_stage() {
     device
         .poll(wgpu::PollType::wait_indefinitely())
         .expect("stage result");
-    let second = mailbox.drain(10, step);
+    let second = mailbox.drain(host.world().endpoint(10), step);
     assert_eq!(second.len(), 1);
     assert_eq!(second[0].posted, 8);
     assert_eq!(second[0].points[0].point.use_tick, 10);
@@ -366,7 +377,7 @@ fn chart_queries_keep_both_tick_pages_and_sample_their_own_stage() {
         .expect("chart")
         .set_stage(0, 0.30)
         .expect("stage at tick 11");
-    let third = mailbox.drain(11, step);
+    let third = mailbox.drain(host.world().endpoint(11), step);
     assert_eq!(third.len(), 1);
     assert_eq!(third[0].posted, 9);
     check(&third[0].points[0], 0.20);
@@ -375,7 +386,7 @@ fn chart_queries_keep_both_tick_pages_and_sample_their_own_stage() {
     // A hitch can make three pages ready together. Keep the two timely
     // replies rather than getting stuck one tick late as new pages arrive.
     for tick in 12..=14 {
-        mailbox.post(tick, request(tick + 2));
+        mailbox.post(host.world().endpoint(tick), request(tick + 2));
     }
     device
         .poll(wgpu::PollType::wait_indefinitely())
@@ -389,8 +400,8 @@ fn chart_queries_keep_both_tick_pages_and_sample_their_own_stage() {
         .poll(wgpu::PollType::wait_indefinitely())
         .expect("catch-up replies");
     assert_eq!(mailbox.stats().dispatches, 6);
-    assert_eq!(mailbox.drain(15, step)[0].posted, 13);
-    assert_eq!(mailbox.drain(16, step)[0].posted, 14);
+    assert_eq!(mailbox.drain(host.world().endpoint(15), step)[0].posted, 13);
+    assert_eq!(mailbox.drain(host.world().endpoint(16), step)[0].posted, 14);
     assert_eq!(mailbox.stats().age_older, 0);
 }
 
@@ -415,7 +426,7 @@ fn check_flooded_waves(
     ];
     let gains = thrum_water_model::limit(row.row, row.depth, variances, map.profile()).gains;
     let time = 12.0 * step.as_secs_f64();
-    let frame = 10.0 * step.as_secs_f64();
+    let frame = 9.0 * step.as_secs_f64();
     assert_eq!(answer.surface.body, Some(0));
     assert!((answer.surface.depth - row.depth).abs() < 0.000_002);
     assert_eq!(
@@ -430,8 +441,14 @@ fn check_flooded_waves(
     assert!((f64::from(answer.wave_heights[0]) - long.height).abs() < 0.002);
     let mut height = row.row.level + long.height;
     for (band, cascade) in spectrum.cascades.iter().enumerate() {
-        let expected =
-            gains[band + 1] * filtered_height(cascade, position, 0.5, frame, time - frame);
+        let expected = gains[band + 1]
+            * filtered_height(
+                cascade,
+                position,
+                0.5,
+                frame,
+                (time - frame).min(5.0 * step.as_secs_f64()),
+            );
         let error = (f64::from(answer.wave_heights[band + 1]) - expected).abs();
         assert!(
             error / cascade.variance().sqrt() < 0.0004,
@@ -468,7 +485,7 @@ fn check_delay(
             ],
         }]
     };
-    mailbox.post(3, request(4));
+    mailbox.post(host.world().endpoint(3), request(4));
     assert!(
         host.drive(3 * step, Some(surface))
             .expect("new pass")
@@ -482,7 +499,7 @@ fn check_delay(
     device
         .poll(wgpu::PollType::wait_indefinitely())
         .expect("test releases stalled observation");
-    let answer = mailbox.drain(5, step);
+    let answer = mailbox.drain(host.world().endpoint(5), step);
     assert_eq!(answer.len(), 1);
     assert_eq!(answer[0].posted, 3);
     assert_eq!(answer[0].points[0].point.use_tick, 4);
@@ -491,10 +508,10 @@ fn check_delay(
     assert_eq!(mailbox.stats().age_two, 1);
     assert_eq!(mailbox.stats().late, 2);
     assert!(
-        mailbox.drain(5, step).is_empty(),
+        mailbox.drain(host.world().endpoint(5), step).is_empty(),
         "a result can be carried once"
     );
-    mailbox.post(6, request(7));
+    mailbox.post(host.world().endpoint(6), request(7));
     assert!(
         host.drive(6 * step, Some(surface))
             .expect("third pass")
@@ -503,7 +520,7 @@ fn check_delay(
     device
         .poll(wgpu::PollType::wait_indefinitely())
         .expect("test completes expired result");
-    assert!(mailbox.drain(10, step).is_empty());
+    assert!(mailbox.drain(host.world().endpoint(10), step).is_empty());
     assert_eq!(mailbox.stats().unavailable, 1);
     assert_eq!(mailbox.stats().blocking_reads, 0);
 }
@@ -575,4 +592,314 @@ fn filtered_height(cascade: &Cascade, p: [f64; 2], radius: f64, time: f64, dt: f
     };
     let low = at_mip(base);
     (at_mip(2.0 * base) - low).mul_add(lod.fract(), low)
+}
+
+fn tick_stage_gale() -> Spectrum {
+    let mut spectrum = Spectrum::build(&Forcing {
+        wind_speed: 25.0,
+        wind_direction: 0.0,
+        fetch: 100_000.0,
+        swells: Vec::new(),
+    })
+    .expect("gale");
+    spectrum.cascades = [160.0, 37.0, 9.0].map(|length| {
+        Cascade::new(length, &[(11, 7, 0.0001, 0.8), (-21, 13, 0.000_065, 1.9)]).expect("band")
+    });
+    spectrum
+}
+
+fn station(position: [f32; 2], use_tick: u64) -> Vec<BodyQuery> {
+    vec![BodyQuery {
+        id: 17,
+        generation: 7,
+        points: vec![QueryPoint {
+            position,
+            radius: 0.0,
+            use_tick,
+        }],
+    }]
+}
+
+#[test]
+fn tick_stage_carry_uses_the_last_submitted_gale_view() {
+    let Some(thrum_test_support::Opened {
+        device,
+        queue,
+        capabilities,
+        ..
+    }) = thrum_test_support::open(
+        "tick stage carry",
+        Some(wgpu::Backend::Metal),
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
+    )
+    else {
+        return;
+    };
+    let (mut host, target) = query_host(
+        &device,
+        &queue,
+        &capabilities,
+        Clock::new(true),
+        QUERY_EXTENT,
+    );
+    let output = SurfaceOutput {
+        view: &target,
+        extent: QUERY_EXTENT,
+    };
+    let spectrum = tick_stage_gale();
+    let oracle = LongWaves::new(spectrum.long.clone(), 0.2).expect("long model");
+    let mut profile = Profile {
+        query: Some(QueryLimits {
+            points: 1,
+            max_age: 8,
+        }),
+        ..Profile::default()
+    };
+    profile.waves.choppiness = 0.2;
+    let water = Water::mapped(
+        Arc::new(Mutex::new(swash_gpu::beach(0.7, 3.0))),
+        spectrum.clone(),
+        profile,
+    )
+    .expect("gale water");
+    let mailbox = water.query_mailbox().expect("gale query");
+    host.set_scene_contribution(Box::new(water))
+        .expect("gale contribution");
+    let step = Duration::from_secs_f64(1.0 / 60.0);
+    let position = [-70.0, 4.0];
+    let world = position.map(f64::from);
+    for (c, skipped, alpha, carry) in [
+        (4_u32, 0_u32, 0.0, 4.0),
+        (12, 0, 0.5, 3.5),
+        (20, 1, 0.0, 5.0),
+        (28, 2, 0.0, 6.0),
+    ] {
+        let last_view = c - skipped - 1;
+        assert!(
+            host.drive(step * last_view + step.mul_f64(alpha), Some(&output))
+                .expect("submit previous view")
+                .submitted
+        );
+        for tick in last_view + 1..c {
+            assert!(!host.drive(step * tick, None).expect("skip view").submitted);
+        }
+        let endpoint = host.world().endpoint(u64::from(c));
+        let use_tick = endpoint.tick + 2;
+        let before = host.tick_submission_stats().submitted;
+        mailbox.post(endpoint, station(position, use_tick));
+        // The advance's tick submission must complete with no view submitted for C.
+        assert!(!host.drive(step * c, None).expect("tick pass").submitted);
+        assert_eq!(host.tick_submission_stats().submitted, before + 1);
+        device
+            .poll(wgpu::PollType::wait_indefinitely())
+            .expect("tick result");
+        let replies = mailbox.drain(host.world().endpoint(use_tick), step);
+        assert_eq!(replies.len(), 1);
+        assert_eq!(replies[0].endpoint, endpoint);
+        let answer = &replies[0].points[0];
+        let seconds = step.as_secs_f64();
+        let display = (f64::from(last_view) - 1.0 + alpha) * seconds;
+        let time = use_tick as f64 * seconds;
+        assert_eq!(answer.sources[0], Some(time));
+        assert!(answer.supported[0]);
+        let long = oracle.evaluate(world, time).expect("long waves").height;
+        assert!((f64::from(answer.wave_heights[0]) - long).abs() < 0.002);
+        for (band, model) in spectrum.cascades.iter().enumerate() {
+            assert!((answer.sources[band + 1].expect("cascade time") - display).abs() < 1e-8);
+            assert_eq!(answer.supported[band + 1], carry <= 5.0, "carry {carry}");
+            let expected =
+                filtered_height(model, world, 0.0, display, f64::min(carry, 5.0) * seconds);
+            let error = (f64::from(answer.wave_heights[band + 1]) - expected).abs();
+            assert!(
+                error / model.variance().sqrt() < 0.0004,
+                "carry {carry}, band {band}: {error}"
+            );
+        }
+    }
+}
+
+#[test]
+fn tick_stage_world_waits_for_its_view_and_rejects_old_timeline_results() {
+    use thrum_water::interaction::Limits;
+    use thrum_water_model::Impulse;
+    let Some(thrum_test_support::Opened {
+        device,
+        queue,
+        capabilities,
+        ..
+    }) = thrum_test_support::open(
+        "tick stage world",
+        Some(wgpu::Backend::Metal),
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
+    )
+    else {
+        return;
+    };
+    let (mut host, target) = query_host(
+        &device,
+        &queue,
+        &capabilities,
+        Clock::new(true),
+        QUERY_EXTENT,
+    );
+    let output = SurfaceOutput {
+        view: &target,
+        extent: QUERY_EXTENT,
+    };
+    let spectrum = tick_stage_gale();
+    let water = Water::mapped(
+        Arc::new(Mutex::new(swash_gpu::beach(0.7, 3.0))),
+        spectrum.clone(),
+        Profile {
+            query: Some(QueryLimits {
+                points: 2,
+                max_age: 8,
+            }),
+            interaction: Some(Limits::default()),
+            ..Profile::default()
+        },
+    )
+    .expect("gale water");
+    let mailbox = water.query_mailbox().expect("query");
+    let wake = water.interaction_mailbox().expect("wake");
+    host.set_scene_contribution(Box::new(water))
+        .expect("contribution");
+    let step = Duration::from_secs_f64(1.0 / 60.0);
+    let point = [-8.0, 0.0];
+    mailbox.post(host.world().endpoint(0), station(point, 2));
+    drop(
+        host.advance(Duration::ZERO)
+            .expect("advance")
+            .encode_scene()
+            .expect("discarded view"),
+    );
+    assert_eq!(mailbox.stats().dispatches, 0);
+    assert!(
+        !host
+            .drive(step, None)
+            .expect("advance after discard")
+            .submitted
+    );
+    assert_eq!(mailbox.stats().dispatches, 0);
+    assert!(mailbox.drain(host.world().endpoint(1), step).is_empty());
+    assert!(
+        host.drive(step, Some(&output))
+            .expect("first seed")
+            .submitted
+    );
+    assert_eq!(mailbox.stats().dispatches, 0);
+    host.ask_tick_stage().expect("asking after first view");
+    device
+        .poll(wgpu::PollType::wait_indefinitely())
+        .expect("waiting result");
+    let waiting = mailbox.drain(host.world().endpoint(2), step);
+    assert_eq!(waiting.len(), 1);
+    assert_eq!(waiting[0].endpoint, host.world().endpoint(0));
+
+    let offshore = [-70.0, 4.0];
+    mailbox.post(host.world().endpoint(2), station(offshore, 4));
+    host.ask_tick_stage().expect("post after seed");
+    device
+        .poll(wgpu::PollType::wait_indefinitely())
+        .expect("supported result");
+    let reply = mailbox.drain(host.world().endpoint(4), step);
+    for (band, model) in spectrum.cascades.iter().enumerate() {
+        let answer = &reply[0].points[0];
+        assert_eq!(answer.sources[band + 1], Some(0.0));
+        assert!(answer.supported[band + 1]);
+        let expected = filtered_height(
+            model,
+            offshore.map(f64::from),
+            0.0,
+            0.0,
+            4.0 * step.as_secs_f64(),
+        );
+        assert!(
+            (f64::from(answer.wave_heights[band + 1]) - expected).abs() / model.variance().sqrt()
+                < 0.0004
+        );
+    }
+
+    wake.post_impulse(Impulse {
+        id: 1,
+        tick: 2,
+        place: point.map(f64::from),
+        radius: 0.8,
+        vertical: -900.0,
+    });
+    assert!(
+        host.drive(step * 2, Some(&output))
+            .expect("submit wake")
+            .submitted
+    );
+    device
+        .poll(wgpu::PollType::wait_indefinitely())
+        .expect("wake state");
+    // Confirm what an identical old-world query reads, then leave the next
+    // answer published and a further answer in flight across the restore.
+    mailbox.post(host.world().endpoint(3), station(point, 4));
+    assert!(
+        !host
+            .drive(step * 3, None)
+            .expect("sample the wake")
+            .submitted
+    );
+    device
+        .poll(wgpu::PollType::wait_indefinitely())
+        .expect("witness wake");
+    let old = mailbox.drain(host.world().endpoint(4), step);
+    assert!(
+        old[0].points[0].wake_height > 0.001,
+        "{:?}",
+        old[0].points[0]
+    );
+    mailbox.post(host.world().endpoint(4), station(point, 4));
+    assert!(!host.drive(step * 4, None).expect("old result").submitted);
+    device
+        .poll(wgpu::PollType::wait_indefinitely())
+        .expect("published old result");
+    mailbox.post(host.world().endpoint(5), station(point, 5));
+    assert!(
+        !host
+            .drive(step * 5, None)
+            .expect("old result in flight")
+            .submitted
+    );
+    let before = mailbox.stats().dispatches;
+    assert_eq!(before, 5);
+
+    let old_endpoint = host.world().endpoint(5);
+    host.world_mut().restore();
+    let endpoint = host.world().endpoint(5);
+    assert_eq!(old_endpoint.tick, endpoint.tick);
+    assert_ne!(old_endpoint.timeline, endpoint.timeline);
+    assert!(
+        mailbox.drain(endpoint, step).is_empty(),
+        "first restore drain precedes any new post"
+    );
+    mailbox.post(endpoint, station(point, 7));
+    host.ask_tick_stage()
+        .expect("asking before restored water exists");
+    assert_eq!(mailbox.stats().dispatches, before);
+    device
+        .poll(wgpu::PollType::wait_indefinitely())
+        .expect("old in-flight result returns");
+    assert!(mailbox.drain(host.world().endpoint(6), step).is_empty());
+    assert!(
+        host.drive(step * 5, Some(&output))
+            .expect("submit restored view")
+            .submitted
+    );
+    assert_eq!(mailbox.stats().dispatches, before);
+    host.ask_tick_stage().expect("asking after restored water");
+    device
+        .poll(wgpu::PollType::wait_indefinitely())
+        .expect("restored answer");
+    let replies = mailbox.drain(host.world().endpoint(7), step);
+    assert_eq!(replies.len(), 1);
+    assert_eq!(replies[0].endpoint, endpoint);
+    assert_eq!(replies[0].points[0].wake_height, 0.0);
+    assert!(mailbox.drain(host.world().endpoint(8), step).is_empty());
 }

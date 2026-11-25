@@ -15,14 +15,27 @@ use thrum_render::{
 pub(crate) struct Clock {
     tick: u64,
     interpolate: bool,
+    timeline: u64,
     now: Duration,
 }
 
 impl Clock {
+    pub(crate) fn endpoint(&self, tick: u64) -> SourceTick {
+        SourceTick {
+            tick,
+            ..self.source()
+        }
+    }
+
+    pub(crate) fn restore(&mut self) {
+        self.timeline += 1;
+    }
+
     pub(crate) fn new(interpolate: bool) -> Self {
         Self {
             tick: 0,
             interpolate,
+            timeline: 1,
             now: Duration::ZERO,
         }
     }
@@ -34,7 +47,7 @@ impl FrameWorld for Clock {
         SourceTick {
             epoch: 1,
             tick: self.tick,
-            timeline: 1,
+            timeline: self.timeline,
         }
     }
     fn has_current_page(&self) -> bool {
@@ -67,7 +80,7 @@ impl FrameWorld for Clock {
                 epoch: WorldEpoch(1),
                 tick: self.tick,
             },
-            timeline: 1,
+            timeline: self.timeline,
             page: self.source(),
         })
     }

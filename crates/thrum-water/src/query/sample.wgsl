@@ -7,6 +7,7 @@ struct QueryPoint {
     surf_stage: vec4<f32>,
     fine_bounds: vec4<i32>,
     coarse_grid: vec4<i32>,
+    carry: vec4<f32>,
 }
 struct Settings {
     origin: vec2<f32>, count: u32, components: u32,
@@ -97,13 +98,14 @@ fn write_answer(index: u32, point: QueryPoint, gains: vec4<f32>, result: QueryWa
                 let band_slope = world_slope(Wave(wave.displacement, gain * wave.slope, gain * wave.differential, wave.velocity));
                 // The cascades are sampled at a fixed column in their periodic lattice.
                 let band_rate = gain * wave.velocity.y;
-                out.layers[band + 1u] = gain * wave.displacement.y + point.dt * band_rate;
+                out.layers[band + 1u] = gain * wave.displacement.y + point.carry.x * band_rate;
                 slope += band_slope;
                 velocity += gain * wave.velocity;
                 rate += band_rate;
             }
         }
-        out.wake = wake_at(point.position, point.dt) + point.dent;
+        out.wake = wake_at(point.position, min(point.carry.y, 0.0)) + point.dent;
+        out.wake.x += max(point.carry.y, 0.0) * out.wake.w;
         if any(out.wake != vec4(0.0)) { out.body_flags.w |= 16u; }
         let height = row.x + dot(out.layers, vec4(1.0)) + out.wake.x;
         slope += out.wake.yz;

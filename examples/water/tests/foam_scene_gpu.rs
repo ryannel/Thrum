@@ -484,7 +484,7 @@ fn measure_shore_power(
                 shore_queries(&previous, &map.lock().expect("shore map"), u64::from(tick));
             assert!(!columns.is_empty());
             probes.query.post(
-                u64::from(tick - 4),
+                fixture.endpoint(u64::from(tick - 4)),
                 vec![BodyQuery {
                     id: 33,
                     generation: 1,
@@ -502,7 +502,7 @@ fn measure_shore_power(
             let parcels: Vec<[[f32; 4]; 2]> = support::foam_buffer(fixture, &witness.parcels);
             if !columns.is_empty() {
                 let answers = probes.query.drain(
-                    u64::from(tick - 3),
+                    fixture.endpoint(u64::from(tick - 3)),
                     std::time::Duration::from_nanos(16_666_667),
                 );
                 assert_eq!(answers.len(), 1, "submitted midpoint query");
@@ -675,7 +675,7 @@ fn film_depth_and_query(gpu: &thrum_test_support::Gpu) {
     }
     drop(map);
     probes.query.post(
-        479,
+        fixture.endpoint(479),
         vec![BodyQuery {
             id: 9,
             generation: 1,
@@ -683,9 +683,10 @@ fn film_depth_and_query(gpu: &thrum_test_support::Gpu) {
         }],
     );
     fixture.frame_without_timings(8.000_000_16);
-    let answer = probes
-        .query
-        .drain(481, std::time::Duration::from_nanos(16_666_667));
+    let answer = probes.query.drain(
+        fixture.endpoint(481),
+        std::time::Duration::from_nanos(16_666_667),
+    );
     let output = fixture.witness();
     let image = fixture.image();
     assert_eq!(answer.len(), 1, "submitted public shoreline query");

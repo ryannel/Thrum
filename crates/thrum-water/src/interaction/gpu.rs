@@ -52,7 +52,7 @@ struct Patch {
 
 #[repr(C)]
 #[derive(Clone, Copy, Pod, Zeroable)]
-struct SampleSettings {
+pub(crate) struct SampleSettings {
     origins: [[f32; 4]; 4],
     clocks: [f32; 4],
     bases: [u32; 4],
@@ -168,6 +168,22 @@ impl Interaction {
                 resource: self.sample.as_entire_binding(),
             },
         ]
+    }
+
+    pub(crate) fn query_entries<'a>(
+        &'a self,
+        settings: &'a wgpu::Buffer,
+    ) -> [wgpu::BindGroupEntry<'a>; 2] {
+        let mut entries = self.sample_entries(5);
+        entries[1].resource = settings.as_entire_binding();
+        entries
+    }
+
+    pub(crate) fn query_settings(&self) -> Option<(u64, SampleSettings)> {
+        let frame = self.committed?;
+        let tick = frame.endpoint[1].tick;
+        let settings = Self::sample_settings(frame.endpoint, frame.time, 1.0);
+        Some((tick, settings))
     }
 
     pub(crate) fn declare(&self, graph: &mut EffectGraph) -> EffectAccess {
@@ -657,7 +673,7 @@ impl Interaction {
     }
 
     pub(crate) fn dent(&self, tick: u64, body: u32, point: [f32; 2]) -> [f32; 4] {
-        let Some(frame) = self.recorded.or(self.committed) else {
+        let Some(frame) = self.committed else {
             return [0.0; 4];
         };
         let [previous, current] = frame.endpoint;
@@ -667,8 +683,6 @@ impl Interaction {
         let tick = tick.clamp(previous.tick, current.tick);
         let pressures = if tick == previous.tick {
             &self.committed_pressures[previous.bank as usize]
-        } else if self.recorded.is_some() {
-            &self.recorded_pressures
         } else {
             &self.committed_pressures[current.bank as usize]
         };
@@ -762,7 +776,13 @@ impl Interaction {
         } else {
             ((from_previous - 1.0 + time.alpha) / interval).clamp(0.0, 1.0)
         };
-        let settings = SampleSettings {
+        let settings = Self::sample_settings(endpoint, time, blend);
+        queue.write_buffer(&self.sample, 0, bytemuck::bytes_of(&settings));
+    }
+
+    fn sample_settings(endpoint: [Endpoint; 2], time: EffectTime, blend: f32) -> SampleSettings {
+        let interval = (endpoint[1].tick - endpoint[0].tick) as f32;
+        SampleSettings {
             origins: std::array::from_fn(|i| {
                 let metres = CELL_METRES[i % 2];
                 let [x, z] = endpoint[i / 2].origins[i % 2];
@@ -771,8 +791,7 @@ impl Interaction {
             clocks: [blend, interval * time.tick_duration.as_secs_f32(), 1.0, 0.0],
             bases: [0_u32, 1, 2, 3]
                 .map(|i| (endpoint[(i / 2) as usize].bank * LEVELS + i % LEVELS) * GRID_CELLS),
-        };
-        queue.write_buffer(&self.sample, 0, bytemuck::bytes_of(&settings));
+        }
     }
 }
 

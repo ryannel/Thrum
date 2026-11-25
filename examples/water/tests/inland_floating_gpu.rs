@@ -156,9 +156,10 @@ fn lake_remains_sheltered_in_the_gale_and_settles_in_calm() {
         let field = lake_field(&spectrum);
         let mut float = Body::new(1, Hull::Float, [0.0; 2], LAKE_LEVEL, 0.0);
         let (mut fixture, mailbox) = query_scene(&gpu, map.clone(), spectrum);
-        mailbox.post(0, vec![float.request(0, STEP)]);
+        mailbox.post(fixture.endpoint(0), vec![float.request(0, STEP)]);
         fixture.frame_without_timings(0.0);
-        let answers = mailbox.drain(2, STEP);
+        fixture.frame_without_timings(STEP.as_secs_f64());
+        let answers = mailbox.drain(fixture.endpoint(2), STEP);
         assert_eq!(answers.len(), 1, "{wind:?}");
         assert_eq!(mailbox.stats().age_two, 1);
         for answer in &answers[0].points {
@@ -259,9 +260,10 @@ fn query_current_carries_a_float_and_the_dry_bank_stops_it() {
     let mut stream = Body::new(0, Hull::Float, [1.5, 2.0], 1.0, 0.0);
     let mut landing = Body::new(1, Hull::Float, [10.75, 2.0], 1.0, 0.0);
     landing.velocity.x = 1.0;
-    mailbox.post(0, vec![stream.request(0, STEP), landing.request(0, STEP)]);
+    mailbox.post(fixture.endpoint(0), vec![stream.request(0, STEP), landing.request(0, STEP)]);
     fixture.frame_without_timings(0.0);
-    let answers = mailbox.drain(2, STEP);
+    fixture.frame_without_timings(STEP.as_secs_f64());
+    let answers = mailbox.drain(fixture.endpoint(2), STEP);
     assert_eq!(answers.len(), 2);
     assert_eq!(answers[0].id, 0);
     assert_eq!(answers[1].id, 1);

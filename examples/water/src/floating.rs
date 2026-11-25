@@ -335,7 +335,7 @@ pub fn sample_answer(
 /// Advance every body at the world tick and return the deliveries for diagnostics.
 fn advance_fleet(
     bodies: &mut [Body],
-    tick: u64,
+    endpoint: thrum_render::extract::SourceTick,
     step: Duration,
     mailbox: &QueryMailbox,
     map: &std::sync::Mutex<thrum_water_model::Map>,
@@ -343,10 +343,11 @@ fn advance_fleet(
     mut observe: Option<&mut (dyn FnMut(BodyStep) + Send + 'static)>,
 ) -> Vec<BodyAnswers> {
     let dt = step.as_secs_f64();
+    let tick = endpoint.tick;
     let answers = if tick == 0 {
         Vec::new()
     } else {
-        mailbox.drain(tick, step)
+        mailbox.drain(endpoint, step)
     };
     if tick != 0 {
         let map = map.lock().expect("water map");

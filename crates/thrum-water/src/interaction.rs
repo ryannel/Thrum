@@ -228,4 +228,4 @@ impl WitnessTap {
     }
 }
 
-pub(crate) use gpu::Interaction;
+pub(crate) use gpu::{Interaction, SampleSettings};

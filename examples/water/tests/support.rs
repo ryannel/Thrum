@@ -12,8 +12,9 @@ use thrum_app::{
 };
 use thrum_render::{
     capabilities::DeviceCapabilities,
+    extract::SourceTick,
     present::SurfaceProfile,
-    runtime::{FrameHost, FrameSample, SurfaceOutput},
+    runtime::{FrameHost, FrameSample, FrameWorld, SurfaceOutput},
     synthetic::OUTPUT_FORMAT,
 };
 
@@ -44,6 +45,13 @@ pub(crate) struct Fixture {
     witness: Option<wgpu::Texture>,
 }
 impl Fixture {
+    pub(crate) fn endpoint(&self, tick: u64) -> SourceTick {
+        SourceTick {
+            tick,
+            ..self.host.world().source()
+        }
+    }
+
     pub(crate) fn signal(
         &mut self,
         amplitude: f64,

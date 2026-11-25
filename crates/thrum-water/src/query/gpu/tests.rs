@@ -37,6 +37,7 @@ fn query_records_match_the_shader_layout() {
                 surf_stage,
                 fine_bounds,
                 coarse_grid,
+                carry,
             ),
             record!(
                 Component,

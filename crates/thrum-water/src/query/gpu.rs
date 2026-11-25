@@ -4,7 +4,7 @@ mod correction;
 use super::{BodyAnswers, BodyQuery, QueryAnswer, QueryLimits, QueryMailbox, seconds_between};
 use crate::{
     column::{COMPONENT_LIMIT, Component},
-    interaction::Interaction,
+    interaction::{Interaction, SampleSettings},
     map_gpu::{self, MapGpu},
     surf::{QUERY_ONE_SHEET, SurfGpu},
 };
@@ -17,15 +17,16 @@ use std::sync::{
     atomic::{AtomicBool, Ordering},
 };
 use thrum_render::binding;
-use thrum_render::contribution::{
-    EffectAccess, EffectCadence, EffectGraph, EffectPass, EffectTime,
-};
+use thrum_render::contribution::{EffectAccess, EffectGraph, EffectState, EffectTime, TickPass};
+use thrum_render::{extract::SourceTick, graph::ResourceScope};
 use thrum_sea_model::{Sample, Spectrum};
 use thrum_water_model::{Map, Surface};
 
 #[cfg(test)]
 mod tests;
 
+const QUERY_PASS: &str = "water body query";
+const CARRY_TICKS: f64 = 5.0;
 const SLOT_COUNT: usize = 4;
 const GROUP_WIDTH: u32 = 64;
 const SURF_GROUP: u32 = 1;
@@ -59,6 +60,7 @@ struct Point {
     surf_stage: [f32; 4],
     fine_bounds: [i32; 4],
     coarse_grid: [i32; 4],
+    carry: [f32; 4],
 }
 
 #[repr(C)]
@@ -97,6 +99,7 @@ struct Slot {
     buffer: wgpu::Buffer,
     busy: Arc<AtomicBool>,
     coarse: Option<CoarseScratch>,
+    wake: Option<wgpu::Buffer>,
 }
 
 struct CoarseScratch {
@@ -151,10 +154,11 @@ impl CoarseScratch {
 
 struct Batch {
     slot: usize,
-    tick: u64,
+    endpoint: SourceTick,
     epoch: u64,
     frame: EffectTime,
     seconds: f64,
+    wake_tick: Option<u64>,
     count: u32,
     bodies: Vec<BodyQuery>,
     map_revisions: Vec<u64>,
@@ -169,7 +173,10 @@ pub(crate) struct Readback {
     coarse: Option<CoarseGpu>,
     slots: [Slot; SLOT_COUNT],
     pending: Vec<Batch>,
-    submitted: Option<(u128, u64, u64)>,
+    frame: EffectState,
+    recorded_map: Option<Arc<Map>>,
+    committed_map: Option<Arc<Map>>,
+    surf_map: Option<MapGpu>,
 }
 
 fn buffer(
@@ -192,7 +199,7 @@ impl Readback {
         ambient: &thrum_sea::Ambient,
         mailbox: QueryMailbox,
         wake: Option<&Interaction>,
-        surf: Option<(&MapGpu, &SurfGpu)>,
+        surf: Option<(MapGpu, &SurfGpu)>,
     ) -> Self {
         use wgpu::BufferUsages as Usage;
         let count = u64::from(mailbox.limits.points);
@@ -240,7 +247,7 @@ impl Readback {
             label: Some("water query bindings"),
             entries: &layout,
         });
-        let surf_layout = surf.map(|_| {
+        let surf_layout = surf.as_ref().map(|_| {
             let mut entries = map_gpu::bindings(visibility).to_vec();
             entries.extend(SurfGpu::layout(SURF_BINDING, visibility));
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -248,7 +255,7 @@ impl Readback {
                 entries: &entries,
             })
         });
-        let coarse_layout = surf.map(|_| {
+        let coarse_layout = surf.as_ref().map(|_| {
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
                 label: Some("water query coarse lattice"),
                 entries: &[
@@ -265,16 +272,19 @@ impl Readback {
             bind_group_layouts: &groups,
             immediate_size: 0,
         });
-        let surf = surf.zip(surf_layout.as_ref()).map(|((map, surf), layout)| {
-            let view = map.view();
-            let mut entries = map.entries(&view).to_vec();
-            entries.extend(surf.entries(SURF_BINDING));
-            device.create_bind_group(&wgpu::BindGroupDescriptor {
-                label: Some("water query surf"),
-                layout,
-                entries: &entries,
-            })
-        });
+        let surf_group = surf
+            .as_ref()
+            .zip(surf_layout.as_ref())
+            .map(|((map, surf), layout)| {
+                let view = map.view();
+                let mut entries = map.entries(&view).to_vec();
+                entries.extend(surf.entries(SURF_BINDING));
+                device.create_bind_group(&wgpu::BindGroupDescriptor {
+                    label: Some("water query surf"),
+                    layout,
+                    entries: &entries,
+                })
+            });
         let pipeline = device.compute(&wgpu::ComputePipelineDescriptor {
             label: Some("water body query"),
             layout: Some(&pipeline_layout),
@@ -353,8 +363,16 @@ impl Readback {
                     resource: wgpu::BindingResource::TextureView(&ambient.filtered_views()[0]),
                 },
             ];
-            if let Some(wake) = wake {
-                entries.extend(wake.sample_entries(5));
+            let wake_settings = wake.map(|_| {
+                buffer(
+                    device,
+                    "query wake settings",
+                    size_of::<SampleSettings>() as u64,
+                    Usage::UNIFORM | Usage::COPY_DST,
+                )
+            });
+            if let Some((wake, settings)) = wake.zip(wake_settings.as_ref()) {
+                entries.extend(wake.query_entries(settings));
             }
             let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
                 label: Some("water query bindings"),
@@ -369,6 +387,7 @@ impl Readback {
                 answers,
                 buffer: staging,
                 busy: Arc::default(),
+                wake: wake_settings,
                 coarse: coarse
                     .as_ref()
                     .map(|gpu| CoarseScratch::new(gpu, COARSE_RECORD_BYTES)),
@@ -378,11 +397,14 @@ impl Readback {
         Self {
             mailbox,
             pipeline,
-            surf,
+            surf: surf_group,
             coarse,
             slots,
             pending: Vec::with_capacity(SLOT_COUNT),
-            submitted: None,
+            frame: EffectState::new(0),
+            recorded_map: None,
+            committed_map: None,
+            surf_map: surf.map(|(map, _)| map),
         }
     }
 
@@ -391,19 +413,45 @@ impl Readback {
         graph: &mut EffectGraph,
         wake: Option<EffectAccess>,
     ) {
-        graph.passes.push(EffectPass {
-            name: "water body query".into(),
-            // The graph has no retained read of this output. The contribution
-            // itself controls execution and the staging copy as one operation.
-            cadence: EffectCadence::Skippable,
-            async_eligible: false,
-            accesses: ambient
-                .filtered_accesses()
-                .into_iter()
-                .take(1)
-                .chain(wake)
-                .collect(),
+        let cascade = ambient.filtered_accesses().remove(0);
+        // The cascade texture is allocated by Ambient and retained across views.
+        graph.resources[cascade.resource].1 = ResourceScope::Persistent {
+            owner: 0x7761_7465,
+            epoch: 0,
+            initialized: false,
+        };
+        graph.tick_passes.push(TickPass {
+            name: QUERY_PASS.into(),
+            reads: std::iter::once(cascade).chain(wake).collect(),
         });
+    }
+
+    pub(crate) fn record_frame(&mut self, time: EffectTime, map: &Map) {
+        self.frame.begin(time, u64::MAX, [0; 2]);
+        if !time.capture && self.surf_map.is_some() {
+            let snapshot = self
+                .committed_map
+                .as_ref()
+                .filter(|old| old.spatial_revision() == map.spatial_revision());
+            self.recorded_map = Some(snapshot.map_or_else(|| Arc::new(map.clone()), Arc::clone));
+        }
+    }
+
+    pub(crate) fn submit_frame(&mut self) {
+        self.frame.submitted();
+        self.committed_map = self.recorded_map.take();
+    }
+
+    pub(crate) fn has_work(&self) -> bool {
+        let state = self.mailbox.state.lock().expect("water query mailbox");
+        state
+            .pages
+            .front()
+            .is_some_and(|page| self.frame.committed_for(page.endpoint).is_some())
+            && self
+                .slots
+                .iter()
+                .any(|slot| !slot.busy.load(Ordering::Acquire))
     }
 
     #[expect(
@@ -413,24 +461,13 @@ impl Readback {
     pub(crate) fn record(
         &mut self,
         queue: &wgpu::Queue,
-        time: EffectTime,
         spectrum: &Spectrum,
         chop: f64,
         heights: [f32; 4],
         map: &Map,
         wake: Option<&Interaction>,
     ) {
-        // A recording that never reached submit did not start a map.
         self.pending.clear();
-        if time.capture {
-            return;
-        }
-        if self.submitted.is_some_and(|(epoch, timeline, tick)| {
-            epoch != time.epoch || timeline != time.timeline || tick > time.tick
-        }) {
-            self.mailbox.reset_readback();
-            self.submitted = None;
-        }
         let mut state = self.mailbox.state.lock().expect("water query mailbox");
         let slots = self
             .slots
@@ -438,28 +475,30 @@ impl Readback {
             .enumerate()
             .filter(|(_, slot)| !slot.busy.load(Ordering::Acquire))
             .map(|(index, _)| index);
-        while state.pages.front().is_some_and(|page| {
-            page.tick < time.tick && time.tick - page.tick >= u64::from(self.mailbox.limits.max_age)
-        }) {
-            let page = state.pages.pop_front().expect("expired query page");
-            state.stats.unavailable += page.bodies.len() as u64;
-        }
-        let mut pages = state.pages.iter().take_while(|page| page.tick <= time.tick);
-        let work: Vec<_> = slots
-            .zip(&mut pages)
-            .map(|(slot, page)| (slot, page.tick, page.bodies.clone()))
-            .collect();
-        if pages.next().is_some() {
-            state.stats.busy += 1;
-        }
-        if work.is_empty() {
+        let Some(time) = state
+            .pages
+            .front()
+            .and_then(|page| self.frame.committed_for(page.endpoint))
+        else {
             return;
+        };
+        let work: Vec<_> = slots
+            .zip(&state.pages)
+            .map(|(slot, page)| (slot, page.endpoint, page.bodies.clone()))
+            .collect();
+        if work.len() < state.pages.len() {
+            state.stats.busy += 1;
         }
         let epoch = state.epoch;
         let maps = state.maps.clone();
         drop(state);
+        if let Some((gpu, committed)) = self.surf_map.as_mut().zip(self.committed_map.as_ref()) {
+            gpu.record_query(queue, committed);
+        }
         let seconds = thrum_sea::display_seconds(time);
-        let frame_offset = (1.0 - f64::from(time.alpha)) * time.tick_duration.as_secs_f64();
+        let step = time.tick_duration.as_secs_f64();
+        let frame_offset = (1.0 - f64::from(time.alpha)) * step;
+        let wake_settings = wake.and_then(Interaction::query_settings);
         let lengths_chop = std::array::from_fn(|i| {
             spectrum
                 .cascades
@@ -468,7 +507,7 @@ impl Readback {
         });
         let profile = map.profile();
         let mut reach = map.surf_throw_reach(&spectrum.long, chop);
-        for (slot, tick, bodies) in work {
+        for (slot, endpoint, bodies) in work {
             let origin = bodies[0].points[0].position;
             let components: Vec<_> = spectrum
                 .long
@@ -482,23 +521,29 @@ impl Readback {
                 .map(|(id, point)| {
                     let dt = frame_offset
                         + seconds_between(point.use_tick, time.tick, time.tick_duration);
+                    let bound = CARRY_TICKS * step;
                     // A future use tick holds the latest authored stage. A
                     // known past tick uses its saved stage and connectivity.
                     let index = maps.partition_point(|(tick, _)| *tick <= point.use_tick);
-                    let domain = if point.use_tick < time.tick && index > 0 {
-                        &maps[index - 1].1
-                    } else {
-                        map
-                    };
+                    let domain = if index > 0 { &maps[index - 1].1 } else { map };
                     let mut input = Point::new(point, dt, domain);
-                    if let Some(wake) = wake {
-                        input.dent = wake.dent(point.use_tick.min(time.tick), id, point.position);
+                    input.carry[0] = dt.clamp(-bound, bound) as f32;
+                    if let Some((wake_tick, _)) = wake_settings {
+                        let wake_dt =
+                            seconds_between(point.use_tick, wake_tick, time.tick_duration);
+                        input.carry[1] = wake_dt.clamp(-bound, bound) as f32;
+                        input.dent =
+                            wake.expect("wake settings")
+                                .dent(wake_tick, id, point.position);
                     }
                     (input, domain.spatial_revision())
                 })
                 .unzip();
             let count = u32::try_from(points.len()).expect("points admitted by query capacity");
             let buffers = &mut self.slots[slot];
+            if let Some((settings, (_, sample))) = buffers.wake.as_ref().zip(wake_settings) {
+                queue.write_buffer(settings, 0, bytemuck::bytes_of(&sample));
+            }
             let (coarse_groups, coarse_nodes, fine_groups) = if let Some((gpu, (reach, profile))) =
                 self.coarse
                     .as_ref()
@@ -556,10 +601,11 @@ impl Readback {
             }
             self.pending.push(Batch {
                 slot,
-                tick,
+                endpoint,
                 epoch,
                 frame: time,
                 seconds,
+                wake_tick: wake_settings.map(|(tick, _)| tick),
                 count,
                 bodies,
                 map_revisions,
@@ -569,17 +615,18 @@ impl Readback {
         }
     }
 
-    pub(crate) fn pending(&self) -> bool {
-        !self.pending.is_empty()
-    }
-
     pub(crate) fn resource_bytes(&self) -> Vec<(String, u64)> {
         let mut bytes = vec![
             (
                 "water query inputs".into(),
                 self.slots
                     .iter()
-                    .map(|slot| slot.settings.size() + slot.components.size() + slot.points.size())
+                    .map(|slot| {
+                        slot.settings.size()
+                            + slot.components.size()
+                            + slot.points.size()
+                            + slot.wake.as_ref().map_or(0, wgpu::Buffer::size)
+                    })
                     .sum(),
             ),
             (
@@ -600,6 +647,16 @@ impl Readback {
                     .map(|scratch| scratch.buffer.size() + scratch.count.size())
                     .sum(),
             ));
+        }
+        if let Some(map) = &self.surf_map {
+            let size = map.texture.size();
+            bytes.push((
+                "water query map lattice".into(),
+                16 * u64::from(size.width)
+                    * u64::from(size.height)
+                    * u64::from(size.depth_or_array_layers),
+            ));
+            bytes.push(("water query map records".into(), map.info.size()));
         }
         bytes
     }
@@ -654,14 +711,13 @@ impl Readback {
         let Some(last) = self.pending.last() else {
             return;
         };
-        self.submitted = Some((last.frame.epoch, last.frame.timeline, last.frame.tick));
         {
             let mut state = self.mailbox.state.lock().expect("water query mailbox");
             if state.epoch == last.epoch {
                 while state
                     .pages
                     .front()
-                    .is_some_and(|page| page.tick <= last.tick)
+                    .is_some_and(|page| page.endpoint.tick <= last.endpoint.tick)
                 {
                     state.pages.pop_front();
                 }
@@ -752,6 +808,8 @@ impl Batch {
                 continue;
             }
             let mut cut_nodes = [0; 2];
+            let step = self.frame.tick_duration;
+            let frame_offset = (1.0 - f64::from(self.frame.alpha)) * step.as_secs_f64();
             let (points, predictions) = body
                 .points
                 .into_iter()
@@ -771,24 +829,32 @@ impl Batch {
                         }
                     }
                     if raw.body_flags[3] & 16 != 0 {
-                        sources[4] = Some(
-                            point.use_tick.min(self.frame.tick) as f64
-                                * self.frame.tick_duration.as_secs_f64(),
-                        );
+                        sources[4] = self.wake_tick.map(|tick| tick as f64 * step.as_secs_f64());
                     }
+                    let cascade_ticks = (frame_offset
+                        + seconds_between(point.use_tick, self.frame.tick, step))
+                        / step.as_secs_f64();
+                    let mut supported = sources.map(|source| source.is_some());
+                    for flag in &mut supported[1..4] {
+                        *flag &= cascade_ticks.abs() <= CARRY_TICKS;
+                    }
+                    supported[4] &= self
+                        .wake_tick
+                        .is_some_and(|tick| point.use_tick.abs_diff(tick) as f64 <= CARRY_TICKS);
                     (
-                        raw.decode(index, point, sources),
+                        raw.decode(index, point, sources, supported),
                         MapPrediction::new(revision, raw.cascades, raw.wake),
                     )
                 })
                 .unzip();
             state.ready.insert(
-                (body.id, self.tick),
+                (body.id, self.endpoint.tick),
                 ReadyBody {
                     answers: BodyAnswers {
                         id: body.id,
                         generation: body.generation,
-                        posted: self.tick,
+                        endpoint: self.endpoint,
+                        posted: self.endpoint.tick,
                         cut_nodes,
                         points,
                     },
@@ -810,6 +876,7 @@ impl Answer {
         index: usize,
         point: super::QueryPoint,
         sources: [Option<f64>; 5],
+        supported: [bool; 5],
     ) -> QueryAnswer {
         let [body, wet, has_bed, _] = self.body_flags;
         let [height, sx, sz, height_dt] = self.height_slope_rate.map(f64::from);
@@ -819,6 +886,8 @@ impl Answer {
             index,
             point,
             sources,
+            supported,
+            wake_height: self.wake[0],
             wave_heights: self.layers,
             bed: (has_bed != 0).then_some(bed),
             surface: Surface {

@@ -680,6 +680,10 @@ pub struct ThrowReach<'a> {
     chop: f64,
     minimum_level: f64,
     first: f64,
+    depth_bands: Vec<(f64, f64, f64)>,
+    section_bands: Vec<(f64, f64, f64)>,
+    depth_scale: f64,
+    swash: f64,
     ceilings: HashMap<u64, (f64, bool)>,
 }
 
@@ -697,8 +701,37 @@ impl Map {
             chop,
             minimum_level: self.minimum_level(),
             first: 0.0,
+            depth_bands: Vec::with_capacity(12),
+            section_bands: surf
+                .profile
+                .section
+                .rows()
+                .zip(surf.profile.section.rows().skip(1))
+                .map(|((lo, a), (hi, b))| {
+                    let departure = a
+                        .iter()
+                        .chain(b)
+                        .map(|point| point.throw)
+                        .fold(0.0, f64::max);
+                    (lo, hi, departure)
+                })
+                .filter(|&(_, _, departure)| departure > 0.0)
+                .collect(),
+            depth_scale: 0.15 * (2.0 * components.len() as f64).sqrt(),
+            swash: self.profile().margin_height,
             ceilings: HashMap::new(),
         };
+        let mut lower = surf.profile.lag_floor;
+        for _ in 0..11 {
+            let upper = 2.0 * lower;
+            reach
+                .depth_bands
+                .push((lower, upper, reach.amplitude_ceiling(lower)));
+            lower = upper;
+        }
+        reach
+            .depth_bands
+            .push((lower, f64::INFINITY, reach.amplitude_ceiling(lower)));
         reach.first = reach.ceiling(surf.profile.lag_floor).0;
         Some(reach)
     }
@@ -719,33 +752,48 @@ impl Map {
 }
 
 impl ThrowReach<'_> {
-    fn ceiling(&mut self, depth: f64) -> (f64, bool) {
-        let key = depth.to_bits();
-        if let Some(&bound) = self.ceilings.get(&key) {
-            return bound;
-        }
-        let amplitude: f64 = self
-            .components
+    fn amplitude_ceiling(&self, depth: f64) -> f64 {
+        self.components
             .iter()
             .map(|c| {
                 let k0 = c.wave_vector[0].hypot(c.wave_vector[1]);
                 c.amplitude * shoaling(k0, depth).max(1.0)
             })
-            .sum();
-        let throws = self
-            .surf
-            .profile
-            .section
-            .throws_below(2.0 * amplitude / (self.surf.profile.breaker_ratio * depth));
-        let bound = (
-            amplitude
-                * (if throws {
-                    self.surf.profile.section.maximum_throw()
-                } else {
-                    0.0
-                } + self.chop),
-            throws,
-        );
+            .sum()
+    }
+
+    fn ceiling(&mut self, depth: f64) -> (f64, bool) {
+        let key = depth.to_bits();
+        if let Some(&bound) = self.ceilings.get(&key) {
+            return bound;
+        }
+        // Within each depth band, shoaling is bounded by its shallow edge
+        // and the limiter and section's amplitude cap by its deep edge.
+        // The limiter's 4σ uses the same amplitudes as the horizontal sum,
+        // so by Cauchy–Schwarz the sum divided by σ is at most sqrt(2N).
+        let ratio = self.surf.profile.breaker_ratio * 0.5;
+        let mut reach: f64 = 0.0;
+        let mut throws = false;
+        for &(lower, upper, amplitude) in &self.depth_bands {
+            if upper < depth {
+                continue;
+            }
+            let lower = lower.max(depth);
+            let limited = if upper.is_infinite() {
+                amplitude
+            } else {
+                amplitude.min(self.depth_scale * (upper + self.swash))
+            };
+            let mut departure: f64 = 0.0;
+            for &(lo, hi, relative) in &self.section_bands {
+                if amplitude > lo * ratio * lower {
+                    throws = true;
+                    departure = departure.max(limited.min(hi * ratio * upper) * relative);
+                }
+            }
+            reach = reach.max(self.chop.mul_add(limited, departure));
+        }
+        let bound = (reach, throws);
         self.ceilings.insert(key, bound);
         bound
     }

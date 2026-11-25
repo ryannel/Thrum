@@ -37,6 +37,7 @@ fn float_queries_match_the_breaker_and_swash() {
         .host
         .set_scene_contribution(Box::new(water))
         .expect("surf contribution");
+    fixture.frame_without_timings(0.0);
     let mut float = Body::new(1, Hull::Float, [0.0; 2], 0.0, 0.0);
     let mut largest_error = 0.0_f64;
     let station = float.station(0);
@@ -50,11 +51,11 @@ fn float_queries_match_the_breaker_and_swash() {
         float.position.x = position[0] - station.x;
         float.position.z = position[1] - station.z;
         let request = float.request(u64::from(tick), STEP);
-        mailbox.post(u64::from(tick), vec![request]);
+        mailbox.post(fixture.endpoint(u64::from(tick)), vec![request]);
         let frame = fixture.frame_without_timings((STEP * tick + STEP / 4).as_secs_f64());
         assert_eq!(frame.tick, u64::from(tick));
         let use_tick = tick + 2;
-        let replies = mailbox.drain(u64::from(use_tick), STEP);
+        let replies = mailbox.drain(fixture.endpoint(u64::from(use_tick)), STEP);
         assert_eq!(
             replies.len(),
             1,

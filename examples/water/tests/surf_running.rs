@@ -6,7 +6,7 @@ use std::{
     time::{Duration, Instant},
 };
 use thrum_app::sky::Camera;
-use thrum_render::runtime::SurfaceOutput;
+use thrum_render::{extract::SourceTick, runtime::SurfaceOutput};
 use thrum_water::query::{BodyAnswers, QueryMailbox};
 use water_scene::{
     floating::{Body, fallback},
@@ -47,14 +47,15 @@ impl Default for GameTick {
 }
 
 impl GameTick {
-    fn tick(&mut self, query: &QueryMailbox, fleet: &[Body], tick: u64, step: Duration) {
+    fn tick(&mut self, query: &QueryMailbox, fleet: &[Body], endpoint: SourceTick, step: Duration) {
         let Some(begin) = self.begin else {
             return;
         };
+        let tick = endpoint.tick;
         let sequence = self.ticks;
         self.ticks += 1;
         let measured = begin + u64::from(WARM_TICKS);
-        for reply in query.drain(tick, step) {
+        for reply in query.drain(endpoint, step) {
             if let Some(index) = reply
                 .posted
                 .checked_sub(measured)
@@ -87,7 +88,7 @@ impl GameTick {
         }
         if sequence < WARM_TICKS + MEASURE_TICKS {
             query.post(
-                tick,
+                endpoint,
                 fleet.iter().map(|body| body.request(tick, step)).collect(),
             );
         }
@@ -100,14 +101,14 @@ fn arm(gpu: &thrum_test_support::Gpu, extent: [u32; 2], fleet: Vec<Body>) -> Gam
     let stats = Arc::new(Mutex::new(GameTick::default()));
     let game = game
         .with_presentation_camera(|_| CAMERA)
-        .with_fixed_update({
+        .with_fixed_update_endpoint({
             let stats = Arc::clone(&stats);
             let query = query.clone();
-            move |tick, step| {
+            move |endpoint, step| {
                 stats
                     .lock()
                     .expect("game tick")
-                    .tick(&query, &fleet, tick, step);
+                    .tick(&query, &fleet, endpoint, step);
             }
         });
     let mut fixture = Fixture::from_game(gpu, extent, game, report);
@@ -159,7 +160,8 @@ fn arm(gpu: &thrum_test_support::Gpu, extent: [u32; 2], fleet: Vec<Body>) -> Gam
             last_draw = Some(opportunity);
             fixture.host.drive(start + elapsed, Some(&output))
         } else {
-            fixture.host.advance_without_rendering(start + elapsed)
+            // An advance that can reach the device still asks for tick work.
+            fixture.host.drive(start + elapsed, None)
         }
         .expect("running scene");
         assert!(drive.overload.is_none(), "{drive:?}");

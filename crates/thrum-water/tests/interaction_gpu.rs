@@ -56,8 +56,9 @@ fn moving_pressure_answers_from_its_submitted_endpoints() {
                 .mailbox()
                 .post_bodies(tick, Some(1), vec![pressure(1, place, heading)]);
         }
+        fixture.draw(tick);
         fixture.query().post(
-            tick - 1,
+            fixture.endpoint(tick - 1),
             vec![BodyQuery {
                 id: 99,
                 generation: 1,
@@ -70,13 +71,13 @@ fn moving_pressure_answers_from_its_submitted_endpoints() {
                     .to_vec(),
             }],
         );
-        fixture.draw(tick);
+        fixture.ask_query();
         let witness = fixture.read();
         assert_eq!(
             witness.endpoint.endpoints.map(|endpoint| endpoint.tick),
             [tick - 8, tick]
         );
-        let answers = fixture.query().drain(tick, Fixture::STEP);
+        let answers = fixture.query().drain(fixture.endpoint(tick), Fixture::STEP);
         for (answer, point) in answers[0].points.iter().zip(probes) {
             let actual = answer.surface.sample.height;
             let expected = f64::from(witness.height(point));
@@ -142,7 +143,7 @@ fn barrier_keeps_disconnected_water_at_exact_rest_and_counts_refused_sources() {
         vec![pressure(1, [-4.0, 0.0], 0.0), pressure(2, [6.0, 0.0], 0.0)],
     );
     fixture.query().post(
-        0,
+        fixture.endpoint(0),
         vec![BodyQuery {
             id: 2,
             generation: 1,
@@ -165,7 +166,7 @@ fn barrier_keeps_disconnected_water_at_exact_rest_and_counts_refused_sources() {
     assert_eq!(report.regions, [2, 2]);
     assert_eq!(report.solves, [3, 2]);
     let witness = fixture.read();
-    let answer = &fixture.query().drain(1, Fixture::STEP)[0].points[0].surface;
+    let answer = &fixture.query().drain(fixture.endpoint(1), Fixture::STEP)[0].points[0].surface;
     assert!(answer.wet, "the refused body must be over water");
     assert_eq!(answer.sample.height.to_bits(), 0);
     eprintln!(

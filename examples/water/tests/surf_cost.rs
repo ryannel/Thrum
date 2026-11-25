@@ -2,6 +2,7 @@
 use std::time::Duration;
 
 use serde_json::{Value, json};
+use thrum_render::{extract::SourceTick, runtime::FrameWorld};
 use thrum_test_support::Gpu;
 use thrum_water::query::BodyQuery;
 use thrum_water_model::Sheet;
@@ -99,14 +100,26 @@ pub(super) fn run(gpu: &Gpu) -> Value {
         for index in 0..32_u32 {
             if water && index == 14 {
                 eprintln!("submitting eight floats at tick {QUERY_TICK}, surf={surf}");
-                query.post(u64::from(QUERY_TICK), fleet.clone());
+                query.post(
+                    SourceTick {
+                        tick: u64::from(QUERY_TICK),
+                        ..fixture.host.world().source()
+                    },
+                    fleet.clone(),
+                );
             }
             let sample = fixture.frame(1.000_001 + f64::from(index) / 120.0);
             let mut frame = sample_json(&sample);
             frame["completion_upper_ms"] = json!(fixture.last_elapsed.as_secs_f64() * 1000.0);
             if water && index == 14 {
                 assert_eq!(sample.tick, u64::from(QUERY_TICK));
-                let replies = query.drain(u64::from(QUERY_TICK + 2), STEP);
+                let replies = query.drain(
+                    SourceTick {
+                        tick: u64::from(QUERY_TICK + 2),
+                        ..fixture.host.world().source()
+                    },
+                    STEP,
+                );
                 assert_eq!(replies.len(), fleet.len());
                 assert!(replies.iter().all(|reply| reply.points.len() == 6));
                 let stats = query.stats();

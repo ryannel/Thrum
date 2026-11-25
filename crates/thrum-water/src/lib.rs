@@ -493,15 +493,7 @@ impl SceneContribution for Water {
         }
         self.invalid |= p.record_pattern(&self.foam_pattern, frame.generation);
         if let Some(query) = &mut p.query {
-            query.record(
-                &p.queue,
-                frame.time,
-                &self.spectrum,
-                self.profile.waves.choppiness,
-                self.layer_heights,
-                &map,
-                p.interaction.as_ref(),
-            );
+            query.record_frame(frame.time, &map);
         }
         drop(map);
         self.recorded = (now, frame.time.tick, row.level);
@@ -539,10 +531,6 @@ impl SceneContribution for Water {
                 && let Some(interaction) = &p.interaction
             {
                 interaction.pending()
-            } else if index == p.query_index()
-                && let Some(query) = &p.query
-            {
-                query.pending()
             } else if index == p.surf_cache_index() && p.surf_cache.is_some() {
                 true
             } else {
@@ -563,10 +551,6 @@ impl SceneContribution for Water {
                 && let Some(interaction) = &p.interaction
             {
                 interaction.encode(pass);
-            } else if index == p.query_index()
-                && let Some(query) = &p.query
-            {
-                query.encode(pass);
             } else if index == p.surf_cache_index()
                 && let Some(cache) = &p.surf_cache
             {
@@ -576,12 +560,45 @@ impl SceneContribution for Water {
             }
         }
     }
-    fn encode_effect_readback(&mut self, index: usize, encoder: &mut wgpu::CommandEncoder) {
-        if let Some(p) = &self.prepared
-            && index == p.query_index()
-            && let Some(query) = &p.query
+    fn tick_has_work(&self, _index: usize) -> bool {
+        self.prepared
+            .as_ref()
+            .and_then(|p| p.query.as_ref())
+            .is_some_and(query::Readback::has_work)
+    }
+    fn encode_tick_upload(
+        &mut self,
+        _index: usize,
+        _encoder: &mut wgpu::CommandEncoder,
+        _step: std::time::Duration,
+    ) {
+        if let Some(p) = &mut self.prepared
+            && let Some(query) = &mut p.query
         {
+            let map = self.map.lock().expect("water map lock");
+            query.record(
+                &p.queue,
+                &self.spectrum,
+                self.profile.waves.choppiness,
+                self.layer_heights,
+                &map,
+                p.interaction.as_ref(),
+            );
+        }
+    }
+    fn encode_tick(&mut self, _index: usize, pass: &mut wgpu::ComputePass<'_>) {
+        if let Some(query) = self.prepared.as_ref().and_then(|p| p.query.as_ref()) {
+            query.encode(pass);
+        }
+    }
+    fn encode_tick_readback(&mut self, _index: usize, encoder: &mut wgpu::CommandEncoder) {
+        if let Some(query) = self.prepared.as_ref().and_then(|p| p.query.as_ref()) {
             query.copy(encoder);
+        }
+    }
+    fn tick_submitted(&mut self, _passes: &[usize]) {
+        if let Some(query) = self.prepared.as_mut().and_then(|p| p.query.as_mut()) {
+            query.submit();
         }
     }
     fn draw_after_opaque(
@@ -638,7 +655,7 @@ impl SceneContribution for Water {
                 map.commit();
             }
             if let Some(query) = self.prepared.as_mut().and_then(|p| p.query.as_mut()) {
-                query.submit();
+                query.submit_frame();
             }
             if let Some(interaction) = self.prepared.as_mut().and_then(|p| p.interaction.as_mut()) {
                 self.report.lock().expect("water report").interaction = interaction.submit();

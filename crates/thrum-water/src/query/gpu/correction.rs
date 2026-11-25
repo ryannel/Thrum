@@ -86,6 +86,7 @@ impl Correction {
                 let dt =
                     ready.frame_offset + seconds_between(use_tick, ready.frame_tick, ready.step);
                 let time = use_tick as f64 * ready.step.as_secs_f64();
+                let carry_bound = ready.step.as_secs_f64() * super::CARRY_TICKS;
                 *answer = self.recompose(
                     *answer,
                     prediction.cascades,
@@ -93,6 +94,7 @@ impl Correction {
                     map,
                     time,
                     dt,
+                    carry_bound,
                     ready.frame_seconds,
                 )?;
             }
@@ -112,6 +114,7 @@ impl Correction {
         map: &Map,
         time: f64,
         dt: f64,
+        carry_bound: f64,
         frame_seconds: f64,
     ) -> Option<QueryAnswer> {
         let point = answer.point.position.map(f64::from);
@@ -119,6 +122,8 @@ impl Correction {
         let bed = row.map_or_else(|| map.bed().height(point), |row| row.bed);
         let mut corrected = QueryAnswer {
             sources: [None; 5],
+            supported: [false; 5],
+            wake_height: 0.0,
             wave_heights: [0.0; 4],
             bed: bed.map(|bed| bed as f32),
             surface: Surface::default(),
@@ -148,8 +153,9 @@ impl Correction {
                     .ok()?
             } else {
                 corrected.sources[layer] = Some(frame_seconds);
-                cascades[layer - 1].with_gain(gain, dt)
+                cascades[layer - 1].with_gain(gain, dt.clamp(-carry_bound, carry_bound))
             };
+            corrected.supported[layer] = layer == 0 || dt.abs() <= carry_bound;
             corrected.wave_heights[layer] = wave.height as f32;
             sample.height += wave.height;
             sample.height_dt += wave.height_dt;
@@ -162,6 +168,8 @@ impl Correction {
         }
         if row.depth > 0.0 {
             corrected.sources[4] = answer.sources[4];
+            corrected.supported[4] = answer.supported[4];
+            corrected.wake_height = wake[0];
             sample.height += f64::from(wake[0]);
             sample.slope[0] += f64::from(wake[1]);
             sample.slope[1] += f64::from(wake[2]);

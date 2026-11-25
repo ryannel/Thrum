@@ -10,6 +10,7 @@ use std::{
     sync::{Arc, Mutex},
     time::Duration,
 };
+use thrum_render::extract::SourceTick;
 use thrum_sea_model::LongWaves;
 use thrum_water_model::{Map, Surface};
 
@@ -56,6 +57,10 @@ pub struct QueryAnswer {
     pub surface: Surface,
     /// Source times in seconds for long waves, three cascades and wake.
     pub sources: [Option<f64>; 5],
+    /// Whether each layer is supported at the requested use tick.
+    pub supported: [bool; 5],
+    /// Height contributed by the interaction waves.
+    pub wake_height: f32,
     /// Heights contributed by the long waves and each cascade.
     pub wave_heights: [f32; 4],
     /// Ground height, if the map has a bed here.
@@ -69,6 +74,8 @@ pub struct BodyAnswers {
     pub id: u32,
     /// Game body generation.
     pub generation: u32,
+    /// World endpoint on which this batch was posted.
+    pub endpoint: SourceTick,
     /// Game tick at which this batch was posted.
     pub posted: u64,
     /// Coarse and fine node evaluations charged to this body.
@@ -111,6 +118,7 @@ struct State {
     pages: VecDeque<Page>,
     maps: VecDeque<(u64, Arc<Map>)>,
     last_post: Option<u64>,
+    world: Option<(u128, u64)>,
     ready: BTreeMap<(u32, u64), ReadyBody>,
     generations: BTreeMap<u32, u32>,
     epoch: u64,
@@ -118,6 +126,30 @@ struct State {
 }
 
 impl State {
+    fn enter_world(&mut self, endpoint: SourceTick) {
+        let world = (endpoint.epoch, endpoint.timeline);
+        if self.world != Some(world) {
+            self.pages.clear();
+            self.maps.clear();
+            self.ready.clear();
+            self.generations.clear();
+            self.last_post = None;
+            self.epoch += 1;
+            self.world = Some(world);
+        }
+    }
+
+    fn expire_pages(&mut self, oldest: u64) {
+        while self
+            .pages
+            .front()
+            .is_some_and(|page| page.endpoint.tick < oldest)
+        {
+            let page = self.pages.pop_front().expect("expired query page");
+            self.stats.unavailable += page.bodies.len() as u64;
+        }
+    }
+
     fn remember_map(&mut self, tick: u64, map: &Map, max_age: u32) {
         let index = self.maps.partition_point(|(previous, _)| *previous < tick);
         let same_tick = self
@@ -143,7 +175,7 @@ impl State {
 }
 
 struct Page {
-    tick: u64,
+    endpoint: SourceTick,
     bodies: Vec<BodyQuery>,
 }
 
@@ -175,34 +207,20 @@ impl QueryMailbox {
     /// same tick are immutable once posted. Call after releasing the water map lock.
     /// # Panics
     /// Panics if a thread panicked while mutating the mailbox.
-    pub fn post(&self, tick: u64, mut bodies: Vec<BodyQuery>) {
+    pub fn post(&self, endpoint: SourceTick, mut bodies: Vec<BodyQuery>) {
+        let tick = endpoint.tick;
         let map = self.map.lock().expect("water query map");
         let mut state = self.state.lock().expect("water query mailbox");
-        if let Some(previous) = state.last_post {
-            if previous == tick {
-                return;
-            }
-            if previous > tick {
-                state.pages.clear();
-                state.maps.clear();
-                state.ready.clear();
-                state.epoch += 1;
-            }
+        state.enter_world(endpoint);
+        if state.last_post.is_some_and(|previous| previous >= tick) {
+            return;
         }
-        // Static maps share one snapshot, even across a frame that catches up
-        // multiple ticks. A changed revision keeps its own connectivity and rows.
+        // Static maps share one snapshot. A changed revision keeps its own connectivity and rows.
         state.remember_map(tick, &map, self.limits.max_age);
         state.last_post = Some(tick);
         drop(map);
         let oldest_page = tick.saturating_sub(u64::from(self.limits.max_age));
-        while state
-            .pages
-            .front()
-            .is_some_and(|page| page.tick < oldest_page)
-        {
-            let page = state.pages.pop_front().expect("expired query page");
-            state.stats.unavailable += page.bodies.len() as u64;
-        }
+        state.expire_pages(oldest_page);
         bodies.sort_by_key(|body| (body.id, Reverse(body.generation)));
         let submitted = bodies.len();
         bodies.dedup_by_key(|body| body.id);
@@ -246,7 +264,7 @@ impl QueryMailbox {
         });
         state.stats.refused += refused;
         if !bodies.is_empty() {
-            state.pages.push_back(Page { tick, bodies });
+            state.pages.push_back(Page { endpoint, bodies });
         }
     }
 
@@ -257,9 +275,12 @@ impl QueryMailbox {
     /// Call after releasing the water map lock, once this tick's stage is known.
     /// # Panics
     /// Panics if a thread panicked while mutating the mailbox.
-    pub fn drain(&self, tick: u64, step: Duration) -> Vec<BodyAnswers> {
+    pub fn drain(&self, endpoint: SourceTick, step: Duration) -> Vec<BodyAnswers> {
+        let tick = endpoint.tick;
         let map = self.map.lock().expect("water query map");
         let mut state = self.state.lock().expect("water query mailbox");
+        state.enter_world(endpoint);
+        state.expire_pages(tick.saturating_sub(u64::from(self.limits.max_age)));
         state.remember_map(tick, &map, self.limits.max_age);
         let mut answers: Vec<BodyAnswers> = Vec::new();
         let mut ready = std::mem::take(&mut state.ready).into_iter().peekable();

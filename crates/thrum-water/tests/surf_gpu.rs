@@ -140,6 +140,14 @@ fn surf_tick_and_repeat_queries_match_the_model() {
     host.set_scene_contribution(Box::new(water))
         .expect("contribution");
     let step = Duration::from_secs_f64(1.0 / 60.0);
+    assert!(
+        host.drive(Duration::ZERO, Some(&output))
+            .expect("seed water")
+            .submitted
+    );
+    device
+        .poll(wgpu::PollType::wait_indefinitely())
+        .expect("seed completion");
     let mut largest_error = 0.0_f64;
     let mut largest_plain = 0.0_f64;
     let mut counted = [0; 2];
@@ -175,7 +183,7 @@ fn surf_tick_and_repeat_queries_match_the_model() {
             })
             .collect();
         mailbox.post(
-            tick,
+            host.world().endpoint(tick),
             vec![BodyQuery {
                 id: 8,
                 generation: 1,
@@ -206,7 +214,7 @@ fn surf_tick_and_repeat_queries_match_the_model() {
         device
             .poll(wgpu::PollType::wait_indefinitely())
             .expect("completion");
-        let mut replies = mailbox.drain(use_tick, step);
+        let mut replies = mailbox.drain(host.world().endpoint(use_tick), step);
         let replies = replies.pop().expect("query reply");
         assert_eq!(replies.points.len(), 2048);
         for got in replies.points {
@@ -498,6 +506,14 @@ fn many_component_metal_cut_matches_the_model_with_grouped_or_single_stations() 
             use_tick,
         })
         .collect();
+    assert!(
+        host.drive(Duration::ZERO, Some(&output))
+            .expect("seed water")
+            .submitted
+    );
+    device
+        .poll(wgpu::PollType::wait_indefinitely())
+        .expect("seed completion");
     let mut grouped = Vec::new();
     let mut maximum_error = 0.0_f64;
     for (tick, stride) in [(1_u32, 6), (2, 1)] {
@@ -510,7 +526,7 @@ fn many_component_metal_cut_matches_the_model_with_grouped_or_single_stations() 
                 points: points.to_vec(),
             })
             .collect();
-        mailbox.post(u64::from(tick), bodies);
+        mailbox.post(host.world().endpoint(u64::from(tick)), bodies);
         let frame = host
             .drive(step * tick + step / 4, Some(&output))
             .expect("Metal submission");
@@ -523,7 +539,7 @@ fn many_component_metal_cut_matches_the_model_with_grouped_or_single_stations() 
             .poll(wgpu::PollType::wait_indefinitely())
             .expect("fixture completion");
         while host.poll_completed().expect("frame completion").is_some() {}
-        let drain = mailbox.drain(use_tick + u64::from(tick == 2), step);
+        let drain = mailbox.drain(host.world().endpoint(use_tick + u64::from(tick == 2)), step);
         assert_eq!(drain.len(), 48 / stride);
         assert!(drain.iter().map(|reply| reply.cut_nodes[0]).sum::<u64>() > 0);
         assert!(drain.iter().map(|reply| reply.cut_nodes[1]).sum::<u64>() > 0);

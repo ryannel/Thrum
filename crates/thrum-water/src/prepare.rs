@@ -133,12 +133,8 @@ impl Prepared {
         })
     }
 
-    pub(super) fn query_index(&self) -> usize {
-        self.ambient_passes + usize::from(self.interaction.is_some())
-    }
-
     pub(super) fn surf_cache_index(&self) -> usize {
-        self.query_index() + usize::from(self.query.is_some())
+        self.ambient_passes + usize::from(self.interaction.is_some())
     }
 
     pub(super) fn graph(&self) -> EffectGraph {
@@ -223,12 +219,17 @@ pub(super) fn new(
             surf.is_some(),
             interaction.is_some(),
         )?;
+        let query_map = surf
+            .as_ref()
+            .map(|surf| MapGpu::new(device, surface.queue, map).map(|map| (map, surf)))
+            .transpose()
+            .map_err(|error| error.to_string())?;
         Some(Readback::new(
             device,
             &ambient,
             mailbox,
             interaction.as_ref(),
-            map_gpu.as_ref().zip(surf.as_ref()),
+            query_map,
         ))
     } else {
         None

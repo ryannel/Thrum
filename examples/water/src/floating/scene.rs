@@ -421,7 +421,8 @@ fn build_scene(
         }
         camera
     })
-    .with_fixed_update(move |number, step| {
+    .with_fixed_update_endpoint(move |endpoint, step| {
+        let number = endpoint.tick;
         let mut fleet = world_fleet.lock().expect("floating fleet");
         let fleet = &mut *fleet;
         fleet.craft_present = craft_present.load(Ordering::Relaxed);
@@ -440,7 +441,7 @@ fn build_scene(
         let active = &mut fleet.current[first..];
         let answers = advance_fleet(
             active,
-            number,
+            endpoint,
             step,
             &world_mailbox,
             &map,
@@ -481,7 +482,7 @@ fn build_scene(
             }
         }
         world_mailbox.post(
-            number,
+            endpoint,
             active
                 .iter()
                 .map(|body| body.request(number, step))

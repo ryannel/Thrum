@@ -180,12 +180,6 @@ impl BreakerSection {
             .fold(0.0, f64::max)
     }
 
-    pub(crate) fn throws_below(&self, index: f64) -> bool {
-        self.indices.windows(2).enumerate().any(|(i, w)| {
-            index > w[0] && self.rows[i..=i + 1].iter().flatten().any(|p| p.throw > 0.0)
-        })
-    }
-
     /// Conservative largest throw for every envelope up to `amplitude` at a depth.
     /// `ratio_depth` is the breaking ratio times the floored still depth.
     pub fn throw_ceiling(&self, amplitude: f64, ratio_depth: f64) -> f64 {

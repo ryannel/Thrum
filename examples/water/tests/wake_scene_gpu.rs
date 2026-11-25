@@ -223,7 +223,7 @@ fn moored_strip_draft(
             }],
         );
         queries.post(
-            u64::from(tick - 1),
+            fixture.endpoint(u64::from(tick - 1)),
             vec![BodyQuery {
                 id: 1,
                 generation: 0,
@@ -240,7 +240,7 @@ fn moored_strip_draft(
             }],
         );
         fixture.frame_without_timings((step * tick).as_secs_f64());
-        let answers = queries.drain(u64::from(tick), step);
+        let answers = queries.drain(fixture.endpoint(u64::from(tick)), step);
         assert_eq!(answers.len(), 1, "query response at tick {tick}");
         craft.advance(step.as_secs_f64(), |i, _| {
             (answers[0].points[i].surface, Some(bed_at(0)))
@@ -382,7 +382,7 @@ fn the_island_lake_wake_leaves_the_pond_and_sea_at_rest() {
         }
         let use_tick = u64::from(tick) + 1;
         queries.post(
-            u64::from(tick),
+            fixture.endpoint(u64::from(tick)),
             vec![BodyQuery {
                 id: 99,
                 generation: 1,
@@ -396,7 +396,7 @@ fn the_island_lake_wake_leaves_the_pond_and_sea_at_rest() {
             }],
         );
         fixture.frame_without_timings((step * tick).as_secs_f64());
-        let reply = queries.drain(use_tick, step);
+        let reply = queries.drain(fixture.endpoint(use_tick), step);
         let heights: Vec<_> = reply[0]
             .points
             .iter()
