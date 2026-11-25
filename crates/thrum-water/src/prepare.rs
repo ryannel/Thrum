@@ -44,7 +44,7 @@ pub(super) struct Prepared {
     pub(super) surf_cache: Option<Cache>,
     pub(super) bodies: Vec<(String, u32)>,
     pub(super) indices: Option<wgpu::Buffer>,
-    pub(super) draws: Vec<Range<u32>>,
+    pub(super) draws: Vec<WaterDraw>,
 }
 struct Pattern {
     device: DeviceSite,
@@ -586,12 +586,68 @@ fn create_pipeline(
     })
 }
 
+pub(super) struct WaterDraw {
+    pub(super) indices: Range<u32>,
+    offshore: Option<OffshoreRing>,
+}
+
+struct OffshoreRing {
+    radius: f32,
+    levels: [f32; 2],
+    bed: [[f32; 2]; 2],
+}
+
+impl WaterDraw {
+    pub(super) fn visible(
+        &self,
+        frame: &thrum_render::contribution::ContributionFrame,
+        waves: [f32; 2],
+    ) -> bool {
+        let Some(sea) = &self.offshore else {
+            return true;
+        };
+        let [x, _, z] = frame.camera;
+        let centre = [x.floor(), z.floor()];
+        // Every node in the ring must be outside the prepared bed. On
+        // the bed, the surf sheet has additional displacement and swash.
+        if !(0..2).any(|axis| {
+            centre[axis] + sea.radius < sea.bed[0][axis]
+                || centre[axis] - sea.radius > sea.bed[1][axis]
+        }) {
+            return true;
+        }
+        let radius = sea.radius + waves[0];
+        let lo = glam::Vec3::new(
+            centre[0] - radius,
+            sea.levels[0] - waves[1],
+            centre[1] - radius,
+        );
+        let hi = glam::Vec3::new(
+            centre[0] + radius,
+            sea.levels[1] + waves[1],
+            centre[1] + radius,
+        );
+        let matrix = glam::Mat4::from_cols_array_2d(&frame.view_proj);
+        let [x, y, _, w] = std::array::from_fn(|row| matrix.row(row));
+        // The horizon shader clamps z. Reject only outside the raster's
+        // horizontal and vertical planes, using the frame's jittered view.
+        ![w + x, w - x, w + y, w - y].iter().any(|plane| {
+            let axis = plane.truncate();
+            let high = (lo * axis).max(hi * axis).element_sum();
+            let guard = 16.0
+                * f32::EPSILON
+                * (lo.abs().max(hi.abs()).dot(axis.abs()) + plane.w.abs() + 1.0);
+            high + plane.w < -guard
+        })
+    }
+}
+
 #[derive(Default)]
 struct Geometry {
     vertices: Vec<[f32; 4]>,
     indices: Vec<u32>,
     bodies: Vec<(String, u32)>,
-    draws: Vec<Range<u32>>,
+    draws: Vec<WaterDraw>,
 }
 
 #[expect(
@@ -612,8 +668,13 @@ fn surface_mesh(map: Option<&thrum_water_model::Map>) -> Geometry {
             break;
         };
         let first = geometry.vertices.len() as u32;
-        let first_index = geometry.indices.len() as u32;
         if matches!(declaration.kind, thrum_water_model::BodyKind::Sea) {
+            let (origin, step, extent) = map.bed().lattice();
+            let upper: [f64; 2] =
+                std::array::from_fn(|a| origin[a] + (extent[a] - 1) as f64 * step);
+            let bed = [origin, upper].map(|p| p.map(|v| v as f32));
+            let levels = [declaration.stage.min, declaration.stage.max]
+                .map(|offset| (declaration.level + offset) as f32);
             let mut previous_half_width = 0;
             for level in 0..17 {
                 let half_width = match (surf, level) {
@@ -626,14 +687,25 @@ fn surface_mesh(map: Option<&thrum_water_model::Map>) -> Geometry {
                     (true, 5) => SURF_EIGHT_METRE_RING_HALF_WIDTH,
                     _ => SEA_RING_HALF_WIDTH,
                 };
+                let first_index = geometry.indices.len() as u32;
+                let spacing = 0.25 * 2.0_f32.powi(level);
                 geometry.grid(
                     [-half_width; 2],
                     [half_width; 2],
-                    0.25 * 2.0_f32.powi(level),
+                    spacing,
                     0.0,
                     previous_half_width / 2,
                     surf,
                 );
+                let radius = half_width as f32 * spacing;
+                geometry.draws.push(WaterDraw {
+                    indices: first_index..geometry.indices.len() as u32,
+                    offshore: (radius < 524_288.0).then_some(OffshoreRing {
+                        radius,
+                        levels,
+                        bed,
+                    }),
+                });
                 previous_half_width = half_width;
             }
         } else if let Some([min, max]) = map.surface_bounds(body) {
@@ -643,15 +715,17 @@ fn surface_mesh(map: Option<&thrum_water_model::Map>) -> Geometry {
             let spacing = 0.5_f32.max((span / 1024.0) as f32);
             let start = min.map(|x| (x / f64::from(spacing)).floor() as i32);
             let end = max.map(|x| (x / f64::from(spacing)).ceil() as i32);
+            let first_index = geometry.indices.len() as u32;
             geometry.grid(start, end, spacing, (body + 1) as f32, 0, surf);
+            geometry.draws.push(WaterDraw {
+                indices: first_index..geometry.indices.len() as u32,
+                offshore: None,
+            });
         }
         geometry.bodies.push((
             declaration.name.clone(),
             geometry.vertices.len() as u32 - first,
         ));
-        geometry
-            .draws
-            .push(first_index..geometry.indices.len() as u32);
     }
     geometry
 }

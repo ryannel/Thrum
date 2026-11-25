@@ -18,6 +18,7 @@ name = "surf_gpu"
 workspace = true
 
 [dependencies]
+glam = { version = "=0.33.12", default-features = false, features = ["std"] }
 bytemuck = { version = "=1.25.2", features = ["derive"] }
 thrum-asset-gpu = { path = "../thrum-asset-gpu" }
 thrum-render = { path = "../thrum-render" }
@@ -29,7 +30,6 @@ wgpu = { version = "=30.0.1", default-features = false, features = ["std", "wgsl
 
 [dev-dependencies]
 thrum-fixtures = { path = "../thrum-fixtures" }
-glam = { version = "=0.33.12", default-features = false, features = ["std"] }
 pollster = "=1.0.1"
 thrum-core = { path = "../thrum-core" }
 thrum-test-support = { path = "../thrum-test-support", features = ["render"] }

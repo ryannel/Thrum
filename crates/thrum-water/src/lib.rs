@@ -106,6 +106,7 @@ pub struct Water {
     long_variances: [[f32; 4]; 8],
     height_rms: f32,
     layer_heights: [f32; 4],
+    offshore_displacement: [f32; 2],
     profile: Profile,
     query: Option<query::QueryMailbox>,
     interaction: Option<interaction::Mailbox>,
@@ -194,6 +195,7 @@ impl Water {
             return Err(WaterError::InvalidLevel);
         }
         let layer_heights = records::layer_heights(&spectrum);
+        let offshore_displacement = offshore_bound(&spectrum, profile.waves.choppiness);
         Ok(Self {
             report: Arc::default(),
             map: Arc::clone(&map),
@@ -202,6 +204,7 @@ impl Water {
             long_variances: records::long_variances(&spectrum),
             height_rms: records::height_rms(&spectrum),
             layer_heights,
+            offshore_displacement,
             spectrum,
             profile,
             query: profile
@@ -317,6 +320,27 @@ impl Water {
         })
     }
 }
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "round outward to GPU world metres"
+)]
+fn offshore_bound(spectrum: &Spectrum, chop: f64) -> [f32; 2] {
+    let amplitude = spectrum
+        .long
+        .iter()
+        .chain(
+            spectrum
+                .cascades
+                .iter()
+                .flat_map(thrum_sea_model::Cascade::components),
+        )
+        .map(|component| component.amplitude)
+        .sum::<f64>();
+    // All gain and filter weights on these open-water vertices are at
+    // most one. Leave margin for FFT, half storage and reconstruction.
+    [chop, 1.0].map(|scale| ((amplitude * scale).mul_add(1.05, 0.05) as f32).next_up())
+}
+
 impl SceneContribution for Water {
     fn passes(&self) -> ContributionPasses {
         ContributionPasses {
@@ -533,9 +557,12 @@ impl SceneContribution for Water {
             pass.set_vertex_buffer(0, p.mesh.slice(..));
             if let Some(indices) = &p.indices {
                 pass.set_index_buffer(indices.slice(..), wgpu::IndexFormat::Uint32);
-                for range in &p.draws {
-                    if !range.is_empty() {
-                        pass.draw_indexed(range.clone(), 0, 0..1);
+                for draw in &p.draws {
+                    if !draw.indices.is_empty()
+                        && (self.interaction.is_some()
+                            || draw.visible(frame, self.offshore_displacement))
+                    {
+                        pass.draw_indexed(draw.indices.clone(), 0, 0..1);
                     }
                 }
             } else {

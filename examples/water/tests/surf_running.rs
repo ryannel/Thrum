@@ -193,7 +193,7 @@ struct GameArm {
 }
 
 pub(super) fn run(gpu: &thrum_test_support::Gpu) -> Value {
-    let extent = [256, 144];
+    let extent = [192, 108];
     let (breakers, _) = breaker_fleet();
     let open = (0..8)
         .map(|id| {
