@@ -338,10 +338,10 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Now and next
 
-- Surface, device and display changes create nothing during play, and launch-to-ready time is on record (APPLE-PRESENTATION WP9): Not Started · [plan](APPLE-PRESENTATION/PLAN.md)
+- Surface, device and display changes create nothing during play, and launch-to-ready time is on record (APPLE-PRESENTATION WP9): In Progress · [plan](APPLE-PRESENTATION/PLAN.md)
 - Water reflects the sky, the Sun, its shores and the craft, shows the ground and hulls beneath it, glitters and dims under a cloud's shade, from dawn to night (WATERS WP8): In Progress · [plan](WATERS/PLAN.md) · [latest review](../../.orchestrate/evidence/WATERS/WP8-review.md)
 - With clouds drifting, the player sees a new frame as steadily as in the same game without them, in its ordinary window on the Mac (CLOUDS WP20): Not Started · [plan](CLOUDS/PLAN.md)
-- Text is drawn from a cooked font, every glyph crisp at 1×, 2× and 3×, and an edited font shows in the running game (GAME-UI WP2): In Progress · [plan](GAME-UI/PLAN.md) · [latest review](../../.orchestrate/evidence/GAME-UI/WP2-review.md)
+- Text is drawn from a cooked font, every glyph crisp at 1×, 2× and 3×, and an edited font shows in the running game (GAME-UI WP2): Ready for Review · [plan](GAME-UI/PLAN.md) · [latest review](../../.orchestrate/evidence/GAME-UI/WP2-review.md)
 - GATE-TIME WP5 The post-rollout record shows a five-minute median for Rust landings: Blocked: Needs Context: WP5.1 needs 17 more qualifying ordinary Rust landings before the fixed window can be judged. The lead finds the missing fact, or asks you for it
 - An agent writes a game's entities and rules in plain Rust against one crate, and proves them in an ordinary test with no window (GAME-SDK WP1): Not Started · [plan](GAME-SDK/PLAN.md)
 
@@ -458,7 +458,6 @@ A planner or the lead chose each of these where your words left it open. Each st
 - The valley is populated: 10,000 props drawn from cooked meshes, 1,500 of them adrift, on Mac and in Chrome (SHOWCASE WP5), 18 Nov · [review](../../.orchestrate/evidence/SHOWCASE/WP5-review.md)
 - A running crowd of 10,000 is copied into a fresh process on the Mac, in Chrome and on the iPhone simulator, and carries on in step (SESSION WP1), 18 Nov · [review](../../.orchestrate/evidence/SESSION/WP1-review.md)
 - TAAU reconstructs the valley at native scale in the game, on the Mac and in Chrome (APPLE-PRESENTATION WP3), 18 Nov · [review](../../.orchestrate/evidence/APPLE-PRESENTATION/WP3-review.md)
-- The valley's terrain and cooked meshes draw through the object and mesh stages in the main view and the Sun's shadow maps, through edits and device loss, with the cost of both paths on record (MESH-SHADING WP2), 18 Nov · [review](../../.orchestrate/evidence/MESH-SHADING/WP2-review.md)
 
 ## All modules
 
@@ -470,7 +469,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 4 | COOKED-DRAW | Cooked scenes draw on devices that cannot run GPU-driven draws, such as the iPhone simulator | PLATFORM-RUNTIME-IOS WP7 | Done 9 Nov |
 | 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE WP0 and WP1, PLATFORM-RUNTIME-MAC WP1, COOKED-DRAW WP1 | Done 25 Nov |
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE WP3 | Done 24 Nov |
-| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE WP0, WP2, WP3, WP11, WP12 and WP13 | WP9 of 17 · Not Started |
+| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE WP0, WP2, WP3, WP11, WP12 and WP13 | WP9 of 17 · In Progress |
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | CONTENT-LOOP WP4 for its WP9 to pass the full check; APPLE-PRESENTATION WP3 and SHOWCASE WP9 for its WP6 | Done 25 Nov |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is found on main within about two hours and traced to the commit that made it |  | Done 25 Nov |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE WP2, BASELINE-GUARD WP1 | Done 17 Nov |
@@ -487,7 +486,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 21 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser |  | Done 16 Nov |
 | 22 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | EFFECT-GRAPH WP3 and APPLE-PRESENTATION WP3 to start; SIM-2D WP1 for its fifth work package; APPLE-PRESENTATION WP6 for its sixth | Done 25 Nov |
 | 23 | SESSION | Two to four players share one run and keep seeing the same crowd, and a windowed game is stepped by its match | SIM-2D WP3 to start; TRANSPORT WP1 for its second work package and TRANSPORT WP2 for its socket work packages; RENDER-2D WP5 for its last | Done 25 Nov |
-| 24 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame, and one iPhone shell for every game | RENDER-2D WP6 and APPLE-PRESENTATION WP6 | WP2 of 6 · In Progress |
+| 24 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame, and one iPhone shell for every game | RENDER-2D WP6 and APPLE-PRESENTATION WP6 | WP2 of 6 · Ready for Review |
 | 25 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SHOWCASE WP8 to start, with the owner's pick of a concept; SIM-2D WP3, SESSION WP1, RENDER-2D WP5, GAME-SPLIT WP4 and GAME-SDK WP3 for the first slice; GAME-UI WP4 and GAME-SDK WP6 for the whole run alone; GAME-UI WP6 and GAME-SDK WP7 for the iPhone simulator; SESSION WP4 and GAME-SDK WP5 for a rehearsed match and SESSION WP7 for co-op on sockets | Waiting: On Dependency, SHOWCASE:WP8 |
 | 26 | REPO-RULES | `./dev check` refuses the code shapes the code review found, bulk media leaves the checkout, and names and layout are put right once | Nothing to start; every other track 4 module's fixes, and track 6's, for the rename and the tidy-up | Waiting: On Dependency, GATE-TIME:WP5 |
 | 27 | REVIEW-ENGINE | The review's findings in the simulation, the sea, cooked assets and the cooker are fixed, and the iPhone app gets the textures and buffers its hardware has | Nothing to start; REPO-RULES WP1 for its errors | Done 24 Nov |
