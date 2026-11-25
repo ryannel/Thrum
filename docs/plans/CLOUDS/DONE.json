@@ -930,9 +930,9 @@
     {
       "id": "WP7",
       "name": "The sky runs from clear through fair and broken to overcast and back, and its clouds drift, form, grow and thin",
-      "status": "ready_for_review",
-      "failed_reviews": 1,
-      "failed_reviews_with_repeat": 0,
+      "status": "in_progress",
+      "failed_reviews": 2,
+      "failed_reviews_with_repeat": 1,
       "diagnoses": 0,
       "depends_on": [],
       "quality_bar": "Weather as in Red Dead Redemption 2: each sky recognisable at a glance, turning into the next the way real weather does, with clouds that live and die and none that pops, slides or returns on a beat.",
@@ -944,7 +944,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP7/fix/WP7.1-metal-appearance.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP7-review.md"
         },
         {
@@ -973,8 +973,8 @@
           "statement": "At 1x, in still air, at 10 m/s and at 40 m/s, and at 60x at 40 m/s, clouds drift in world space at the wind's speed with their shade under them, by even steps from frame to frame at the display's refresh, and no texture slides inside a cloud's shape. A change of wind direction turns the drift and does not move a cloud.",
           "inspect": "Capture `realtime` sequences of 20 seconds at each wind and rate and one across a 90\u00b0 change of direction. Judge consecutive frames, following one cloud and its shade.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP7/fix/WP7.4-metal-wind.md",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/CLOUDS/WP7-review.md"
         },
@@ -994,9 +994,9 @@
           "check": "cargo test --locked --offline -p thrum-clouds --test weather_range_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP7/fix/WP7.6-metal.txt",
-          "verdict": "pass",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
           "review": ".orchestrate/evidence/CLOUDS/WP7-review.md"
         },
         {
@@ -1006,7 +1006,7 @@
           "target": "chrome-webgpu",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP7/fix/WP7.7-chrome.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP7-review.md"
         },
         {
@@ -1017,29 +1017,23 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP7/fix/WP7.8-current-pair.json",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP7-review.md"
         }
       ],
       "findings": [
         {
+          "name": "Broken banks cast shade from a different density than the visible sky",
+          "repeat": false
+        },
+        {
           "name": "Wind drift skips refresh targets at a normal game extent",
           "item": "WP7.4",
-          "repeat": false
+          "repeat": true
         },
         {
-          "name": "Broken banks lose their relief and bright gap edges on Metal",
-          "item": "WP7.1",
-          "repeat": false
-        },
-        {
-          "name": "Broken banks lose their relief and bright gap edges in Chrome",
-          "item": "WP7.7",
-          "repeat": false
-        },
-        {
-          "name": "Fresh cost report carries a different run\u2019s investigation",
-          "item": "WP7.8",
+          "name": "Weather range check misses the shipped broken preset",
+          "item": "WP7.6",
           "repeat": false
         }
       ]

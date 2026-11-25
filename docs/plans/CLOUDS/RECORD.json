@@ -836,7 +836,7 @@
         {
           "verdict": "fail",
           "commit": "4f96559dae78388ab77e1453140b22fa9c4725ba",
-          "review": ".orchestrate/evidence/CLOUDS/WP7-review.md",
+          "review": ".orchestrate/evidence/CLOUDS/WP7-review-1.md",
           "items": {
             "WP7.1": "fail",
             "WP7.2": "pass",
@@ -885,6 +885,53 @@
             "turns": 1
           },
           "at": "2026-11-24T22:58:03Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "8d224d071bbcc3b3caf3d5eeb2460173d92dd9a0",
+          "review": ".orchestrate/evidence/CLOUDS/WP7-review.md",
+          "items": {
+            "WP7.1": "pass",
+            "WP7.2": "pass",
+            "WP7.3": "pass",
+            "WP7.4": "fail",
+            "WP7.5": "pass",
+            "WP7.6": "fail",
+            "WP7.7": "pass",
+            "WP7.8": "pass"
+          },
+          "findings": [
+            {
+              "name": "Broken banks cast shade from a different density than the visible sky",
+              "repeat": false
+            },
+            {
+              "name": "Wind drift skips refresh targets at a normal game extent",
+              "item": "WP7.4",
+              "repeat": true
+            },
+            {
+              "name": "Weather range check misses the shipped broken preset",
+              "item": "WP7.6",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 301102,
+            "cached": 19121408,
+            "output": 45811,
+            "turns": 1
+          },
+          "at": "2026-11-25T01:47:59Z"
         }
       ],
       "authorised": {
