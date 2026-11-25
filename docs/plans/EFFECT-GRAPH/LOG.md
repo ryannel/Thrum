@@ -279,3 +279,8 @@
   for storage texture formats and per-pass counts. On Metal the public attachment probe accepted the supported
   read and rejected both the unsupported format and the over-limit pass, naming the tick pass in each error.
   All eight pinned target checks passed. [Target evidence](../../../.orchestrate/evidence/EFFECT-GRAPH/WP6/capability-fix/README.md)
+- 2026-11-25 Planner. `WATERS` WP19's second block asked the tick stage for a delivery path past a view
+  that is drawing. The stage is not reopened: it already says a tick submission does not overtake submitted
+  work on wgpu's one queue, and the view ahead of the batch held the device for 93 ms in the water's own
+  surf field cache, which `WATERS` WP21 brings down.
+  [WATERS' design](../WATERS/DESIGN.md#a-surf-view-a-running-game-can-afford-wp21)

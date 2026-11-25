@@ -2,30 +2,31 @@
 
 [Design](DESIGN.md) · [done-when file](DONE.json) · [log](LOG.md) · [module list](../ARCHITECTURE.md)
 
-Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-builder-handoff) and
-[Exact baselines](../ARCHITECTURE.md#exact-baselines). Work packages are built in the order below.
+First read [Proof and builder handoff](DESIGN.md#proof-and-builder-handoff) and
+[Exact baselines](../ARCHITECTURE.md#exact-baselines). Work packages are built in order.
 
 ## Open for the human
 
 - Assumption: a fast test aims for about 2 s, run alone on a quiet Mac.
-- Assumption: "thinking about water as a whole ... built cohesively" (14 November) is met by one design for all water, built by four modules: `SEA`, this module, `RIVERS` and `PUDDLES`.
-- Assumption: a river's flow is worked out once and stored. Floods, dam breaks and travelling levels are not planned, which sets aside the water decision's rule that all water simulation runs on the GPU.
-- Assumption: "breaking waves" (14 November) is met by the sea's own swell, which wave theory turns, shortens and raises over the bed and which takes a breaker's shape as each crest passes its breaking height, then by a bounded swash profile that swell drives at the still-water contour. It is neither baked nor a live solver. There is no spray or splash, no ride inside a barrel and no current from surf.
-- Assumption: the island's exposed beach gets a swell set for the look, with several lines showing at once and a period inside the surf cue's 6 s to 14 s.
-- Assumption: from 1 km the surf is judged for fronts that start at different distances and run in. That a set's taller crest breaks farther out is held on the model (WP12.4), not by eye: a known gap.
-- Assumption: how the pitching face is finished seen close (tabs and strands under the lip, bands on its white, blunt crest ends, the bend's gray patch) is not foundational to the breaker. WP13 passes with it as a known gap, and WP20 names each cause and repairs it before WP10's motion review.
-- Assumption: wet long-wave loss keeps WP7.5's distributed foam wherever no breaking face is available, including the swash. An eligible crest concentrates part of it on its face and under a resolved lip, and distant beaches take their steady cover from the same loss.
-- Assumption: as part of surf an island shelters its lee, so a lee beach laps with short waves only.
+- Assumption: "thinking about water as a whole ... built cohesively" (14 November) is met by one design for all water, built by `SEA`, this module, `RIVERS` and `PUDDLES`.
+- Assumption: a river's flow is worked out once and stored, with no floods, dam breaks or travelling levels, which sets aside the water decision's rule that all water simulation runs on the GPU.
+- Assumption: "breaking waves" (14 November) is met by the sea's own swell, turned, shortened and raised over the bed by wave theory and shaped as a breaker as each crest passes its breaking height, then by a bounded swash profile it drives at the still-water contour: neither baked nor a live solver, with no spray, splash, ride inside a barrel or current from surf.
+- Assumption: the island's exposed beach gets a swell set for the look: several lines at once, and a period inside the surf cue's 6 s to 14 s.
+- Assumption: from 1 km the surf is judged for fronts starting at different distances and running in; that a set's taller crest breaks farther out is held on the model (WP12.4), not by eye: a known gap.
+- Assumption: the pitching face's finish seen close (tabs and strands under the lip, bands on its white, blunt crest ends, the bend's gray patch) is not foundational: WP13 passed with it as a known gap, and WP20 names and repairs each cause before WP10's motion review.
+- Assumption: wet long-wave loss keeps WP7.5's distributed foam wherever no breaking face is available, swash included; an eligible crest concentrates part on its face and under a resolved lip; distant beaches take steady cover from the same loss.
+- Assumption: as part of surf an island shelters its lee: a lee beach laps with short waves only.
 - Assumption: the surf query's age is proved for the example's eight floats in a gale on the Mac (nine answers in ten within two ticks), not for 2,048 points in breakers or in Chrome; the coarse-cell rule is measured, not proved.
+- Assumption: two-tick answers are owed while a view takes the device under about a tick, and no second path past the view is built; through a tick with no new answer a float rides its last one, to the maximum age.
 - Assumption: surf on a lake is proved against the model, not by eye: the example's lake raises no long waves.
-- Assumption: "scenery reflections" is met by drawing the scene again from the camera's mirror image, for the two water levels with the most water in view; a third reflects only what is on screen.
-- Assumption: under water there are no drops on the lens, particles or bubbles, and the picture darkens with depth by a quarter of the light lost. One water surface in any column still holds.
+- Assumption: "scenery reflections" is met by drawing the scene again from the camera's mirror image for the two water levels with most water in view; a third reflects only what is on screen.
+- Assumption: under water there are no lens drops, particles or bubbles, and the picture darkens with depth by a quarter of the light lost. One water surface in any column still holds.
 - Assumption: only WP14 and the close wait for `SCENE-VIEWS`.
 - Assumption: the owner's "it should start from first principles", said of clouds, governs water too, and "bring that across when it makes sense" (13 November) lets work packages start once their dependencies are Done, even before G7.
 - Assumption: "you can copy that code out and reuse as is if it's useful" licenses what Broadsides' authors wrote; third-party material keeps its own licence, and nothing GPL or share-alike is copied.
 - Assumption: every part beyond open water (surf, the mirror, the underwater view) is a capability a scene can leave out at no cost.
 - Assumption: the three sea cues the 10 November spikes left open stay parked.
-- Assumption: "persists after the hull stops or turns" is met inside windows that follow the craft: short waves to about 30 m behind it, longer ones to about 250 m.
+- Assumption: "persists after the hull stops or turns" is met inside windows that follow the craft: short waves to about 30 m behind, longer ones to about 250 m.
 - Assumption: cost is recorded on the Mac only, at 2560×1440 until the showcase's extent exists; no timing figure decides an item (brief decision 3).
 - Assumption: the module closes only after `APPLE-PRESENTATION`'s governor and MetalFX work packages.
 - Assumption: under the owner's bar of 17 November, tests cover what a game reads, the frame contract and what one pass hands another; wakes, foam and underwater light are judged by eye.
@@ -74,18 +75,21 @@ Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-bu
 
 [Review](../../../.orchestrate/evidence/WATERS/WP13-review.md)
 
+## WP21 With surf in view, a float gets the sea's height within two ticks and rides a hitch on its last answer
+
+Build on `build/waters` at `ab950b5b9`, whose unmerged commits merge with this.
+[Measure before changing the pass](DESIGN.md#a-surf-view-a-running-game-can-afford-wp21).
+
 ## WP19 Floats in a gale's breaking surf get the height of the crest they ride in time to ride it, with the game running
 
-Resume `build/waters` from its [handoff](../../../.orchestrate/evidence/WATERS/WP19-handoff.md) at
-`3110457e6`. Move the body query to [the tick stage](DESIGN.md#a-surf-query-a-running-game-can-use-wp19),
-then take WP19.3 and WP19.4's record again. If open water is still under nine in ten on the stage, log the
-lateness and the frames ahead of the batch and end `BLOCKED`: that reopens the stage, not this work package.
+Resume from the [handoff](../../../.orchestrate/evidence/WATERS/WP19-handoff.md).
+[After WP21](DESIGN.md#a-surf-query-a-running-game-can-use-wp19) says what a failing control means.
 
 ## WP8 Water reflects the sky, the Sun, its shores and the craft, shows the ground and hulls beneath it, glitters and dims under a cloud's shade, from dawn to night
 
 ## WP9 Water runs down a channel from the lake to the sea: its surface follows the slope, its ripples and foam travel with the current, and a float is carried down to the sea
 
-If the window's mean current makes interaction waves visibly wrong in the example channel, log the case for the `RIVERS` planner.
+If the window's mean current makes interaction waves visibly wrong in the example channel, log it for the `RIVERS` planner.
 
 ## WP15 The camera goes under water: the waterline crosses the lens, and the surface overhead shows the sky through a bright window
 
@@ -93,8 +97,8 @@ If the window's mean current makes interaction waves visibly wrong in the exampl
 
 ## WP20 A pitching crest seen close is drawn whole, with no tabs, strands, bands or flashing patch on its face, on the Mac and in Chrome
 
-Begin with WP20.1 and WP20.4. [WP13's reading](LOG.md#wp13-face-finish-parked) is a lead: it read no depth,
-bend, crest end or Chrome. Repair only a stage a diagnosis names ([risk 18](DESIGN.md#risks)), taken on the
+Begin with WP20.1 and WP20.4. [WP13's reading](LOG.md#wp13-face-finish-parked) is a lead that read no depth,
+bend, crest end or Chrome. Repair only a stage a diagnosis names ([risk 18](DESIGN.md#risks)), on the
 target and in the wind that show the cue. Without one, or after three failed looks at a repair, end `BLOCKED`.
 
 ## WP10 A visitor takes the water from glassy calm to gale, raises and lowers the lake, and goes from dawn to night with the controls, and it holds up in motion, on the Mac and in Chrome
@@ -107,4 +111,4 @@ Ask `SCENE-VIEWS` through [its interface](../SCENE-VIEWS/DESIGN.md#what-the-cons
 
 ## WP11 On the Mac's Apple recipe the water runs with MetalFX and the governor, its cadence on the built-in display is measured, and the module is closed
 
-Run WP11.1's check first; if it fails, end `BLOCKED` with `needs_dependency`. WP11.6 needs the owner's attended sitting; do every other item first.
+Run WP11.1's check first; if it fails, end `BLOCKED needs_dependency`. WP11.6 needs the owner's attended sitting; do every other item first.

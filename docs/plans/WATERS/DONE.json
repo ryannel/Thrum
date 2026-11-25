@@ -1274,6 +1274,62 @@
       ]
     },
     {
+      "id": "WP21",
+      "name": "With surf in view, a float gets the sea's height within two ticks and rides a hitch on its last answer",
+      "status": "not_started",
+      "depends_on": [],
+      "quality_bar": "Water in a shipped game such as Sea of Thieves is a small part of its frame and never holds a float's answer up. Here, with the breakers in view from the sand: a view takes the device for less than a tick, so the body query keeps its one to two ticks; the surf drawn is the surf WP13 passed, node for node; and a float rides a hitch on the last answer it had and drops to the conformance model only past the declared maximum age.",
+      "items": [
+        {
+          "id": "WP21.1",
+          "statement": "The field cache holds the model's sheet at every node a triangle in view reads, in the first frame that reads it. On Metal, for a bed the test makes with surf in the profile and 16 long components or more, the cache's displaced surface at 1,024 rest nodes or more that triangles in view use, from deep water to the swash, agrees with `thrum-water-model` within WP13.1's tolerance in the first frame submitted after each of four changes made between two frames: the camera turns 180\u00b0 about the vertical where it stands; the camera moves 50 m along the beach; the stage moves from a stage sample to halfway to the next; and the wind changes so that every long component's amplitude does. In the first three the cache's displacement at the previous presentation agrees too, and after the stage's move it is the model's at the stage before the move. Guard: Metal tests beside WP13.1's on the smallest bed that shows the four, since only a device fills the cache; WP13.1's and WP13.9's guards run with them.",
+          "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-water --test surf_gpu -E 'test(/cache_first_frame/)' --no-tests=fail && cargo test --locked --offline -p thrum-water --test surf_gpu && cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test surf_frame_gpu",
+          "ask": "After the turn, do the compared nodes include nodes that were outside the view in the frame before? Would the tests fail if a node that came into view kept the sample it was last given, if the previous presentation's sheet were made at this frame's stage after the stage moved, and if a changed spectrum reached the sum one frame late? Is each expected value taken from `thrum-water-model` and not from the pass?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP21.2",
+          "statement": "A float keeps the answer it has through a tick that brings no newer one. On the CPU, through the query mailbox with a maximum age of 8 ticks and results the test publishes for one body whose ID and generation stay live, in five cases. A drain on a tick with no undelivered result hands the game the newest result already delivered for the body, each height carried from its use tick to the drained tick by its rate of change and wet or dry decided from the carried height. Three such drains in a row each carry from the result's own use tick, so the third is not the second carried again. A result published meanwhile is handed at the next drain in the held one's place, and the counts of answers aged one, two and older rise only at a result's first delivery, with held uses counted apart. At the first drain where the held result's post is more than 8 ticks behind, the drain hands nothing for the body and the unavailable count rises by one. And a drain on another timeline, or after the body's generation has changed, hands the held result to no one. Guard: a CPU test of the mailbox in the fast tier.",
+          "check": "cargo nextest run --locked --offline -p thrum-water -E 'test(/held_answer/)' --no-tests=fail",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "WP21.3",
+          "statement": "With the surf breaking in view from the sand, a float in open water gets its answers on time. On the island in a gale, drawn from the island's sand camera, ticks follow the wall clock at 60 Hz for 600 ticks or more while the scene draws and the eight floats, held in open water beyond every throw reach, post their 48 stations every tick and take their answers by the island's own rule from each tick's drain. Nine answers in ten or more are first handed to the game within two ticks of their post, no answer is unavailable against a declared maximum age of 8 ticks or fewer, no station is sent to the conformance model, and the blocking-read count is zero. The record gives the share of answers first delivered one, two and more ticks after their post, the station uses served by a held answer, each view's completion time, the extent drawn and the machine's load. Record: the open-water arm of `water_cost.py running`, taken by itself on Metal.",
+          "check": "python3 scripts/water_cost.py running --scene surf --arm open-water",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "WP21.4",
+          "statement": "With surf running at the beach in a gale, the paired cost record is taken again at 2560\u00d71440 at WP13.12's view, and holds four things: the surf field cache's device time beside WP13.12's and beside that of WP19's review-fix record; the nodes the pass evaluates in a frame beside the nodes it holds; the table texels read at a node on the bed; and, as the cache's investigation, the pass's time with its table reads off, with its components halved and with its nodes halved, taken before the pass was changed, and what each change to the pass then removed. Each other tripwire the record trips has its investigation beside it. No figure in the record decides this item. Record: the surf cost record on Metal, which `water_cost.py check` refuses when it lacks any of the four.",
+          "check": "python3 scripts/water_cost.py check --scene surf",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        },
+        {
+          "id": "WP21.5",
+          "statement": "In Chrome the changed pass draws the surf with no validation error, inside the sampled textures and storage of the recorded capability record, and the transformed field agrees with the model at WP13.1's tolerance. Guard: WP13.10's Chrome case.",
+          "check": "node scripts/check_water_browser.mjs --case surf",
+          "lock": "chrome",
+          "target": "chrome-webgpu",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ]
+    },
+    {
       "id": "WP19",
       "name": "Floats in a gale's breaking surf get the height of the crest they ride in time to ride it, with the game running",
       "status": "blocked",

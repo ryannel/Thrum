@@ -1047,3 +1047,18 @@
   measured batches. Open water delivered 100% within two ticks and the breakers delivered 99.33%, with
   zero unavailable replies, fallbacks or blocking reads in either arm. The 1440p surf tick pass took 1.565 ms
   under shared load. [Metal proof](../../../.orchestrate/evidence/WATERS/WP19/delivery-proof.md)
+- 2026-11-25 Planner, WP19's second block: "a delivery path that meets the two-tick requirement while the
+  island's sand view draws". The stage is not the cause and is not reopened. wgpu has one queue, and the surf
+  field cache held the device for 93 ms of every view at any extent (97 ms in WP13.12), so no order of
+  submission delivers inside 33 ms. The cost is this module's. New WP21, ahead of WP19: the cache does each
+  kind of work as often as it changes, and the control arm from the sand proves it.
+  [Design](DESIGN.md#a-surf-view-a-running-game-can-afford-wp21).
+- 2026-11-25 Planner, the held answer. The mailbox handed a result once and the island fell back on a drain
+  with none, so one hitch failed WP19.3's "no float falls back": 528 station uses in the reviewer's healthy
+  run. The contract's maximum age already says a hitch ages answers, so the mailbox hands the last result
+  again, carried, until that age (WP21.2). WP19's items are unchanged, and its block stays recorded until
+  WP21 is Done.
+- 2026-11-25 Planner, for the lead. Every surf cost record from WP13's first tripped the refresh-interval
+  wire, with the cache at 22, 40, 45, 97, 130 and 93 ms, and each passed on a sentence `water_cost.py` writes
+  for every record. WP21.4 asks for measurements as the cache's investigation. The plan file's assumptions
+  were reworded to stay inside its word limit; none was removed.
