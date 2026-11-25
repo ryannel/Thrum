@@ -309,34 +309,33 @@ impl GameSetup {
         shapes: Option<crate::PlacedSky>,
     ) -> Result<Runtime, String> {
         #[cfg(all(feature = "proving", not(target_arch = "wasm32")))]
-        if self.sprite_scale.is_some() {
+        let sheet_source = if self.sprite_scale.is_some() {
             let store = if self.interface_text.is_some() {
                 "THRUM_FONT_STORE"
             } else {
                 "THRUM_SPRITE_SHEETS_STORE"
             };
             match crate::content::launch_value(store) {
-                Ok(store) => {
-                    return self
-                        .prepare_scene(
-                            device,
-                            queue,
-                            capabilities,
-                            config,
-                            None,
-                            shapes,
-                            Some(std::path::PathBuf::from(store).into()),
-                        )
-                        .await
-                        .map_err(|error| error.to_string());
-                }
-                Err(std::env::VarError::NotPresent) if self.interface_text.is_none() => {}
+                Ok(store) => Some(std::path::PathBuf::from(store).into()),
+                Err(std::env::VarError::NotPresent) if self.interface_text.is_none() => None,
                 Err(error) => return Err(error.to_string()),
             }
-        }
-        Box::pin(self.prepare_scene(device, queue, capabilities, config, None, shapes, None))
-            .await
-            .map_err(|error| error.to_string())
+        } else {
+            None
+        };
+        #[cfg(not(all(feature = "proving", not(target_arch = "wasm32"))))]
+        let sheet_source = None;
+        Box::pin(self.prepare_scene(
+            device,
+            queue,
+            capabilities,
+            config,
+            None,
+            shapes,
+            sheet_source,
+        ))
+        .await
+        .map_err(|error| error.to_string())
     }
 
     /// Prepare on a device whose first generation the caller opened, recording its

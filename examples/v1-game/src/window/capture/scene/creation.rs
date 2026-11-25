@@ -55,16 +55,6 @@ impl Ready {
         })
     }
 
-    pub(super) fn first_cooked_draw(&self, cooked_generation: Option<u64>) -> Result<(), String> {
-        let generation = cooked_generation.ok_or("creation proof requires a cooked draw")?;
-        let now = epoch_ns()?;
-        writeln!(
-            std::io::stderr().lock(),
-            "THRUM_METAL_COOKED_DRAW {now} {generation}"
-        )
-        .map_err(|error| error.to_string())
-    }
-
     pub(super) fn finish(
         self,
         site: &DeviceSite,
@@ -94,6 +84,16 @@ impl Ready {
         )
         .map_err(|error| error.to_string())
     }
+}
+
+pub(super) fn first_cooked_draw(cooked_generation: Option<u64>) -> Result<(), String> {
+    let generation = cooked_generation.ok_or("creation proof requires a cooked draw")?;
+    let now = epoch_ns()?;
+    writeln!(
+        std::io::stderr().lock(),
+        "THRUM_METAL_COOKED_DRAW {now} {generation}"
+    )
+    .map_err(|error| error.to_string())
 }
 
 fn epoch_ns() -> Result<u128, String> {

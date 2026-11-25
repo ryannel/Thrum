@@ -237,8 +237,8 @@ pub(in crate::window) async fn run(
         })
         .transpose()?;
     #[cfg(feature = "creation-counters")]
-    if let Some(ready) = &creation {
-        ready.first_cooked_draw(cooked_generation)?;
+    if creation.is_some() {
+        creation::first_cooked_draw(cooked_generation)?;
     }
     std::fs::create_dir_all(&output).map_err(|error| error.to_string())?;
     if let Some((text, _, _)) = &moving_route {

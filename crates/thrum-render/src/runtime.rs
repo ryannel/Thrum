@@ -734,9 +734,15 @@ pub struct FrameHost<W: FrameWorld, V: SceneSource<W::Page>> {
     contribution: Option<Box<dyn SceneContribution>>,
     contribution_error: Option<String>,
     creations: creation::Ledger,
-    initial_preparation_pending: bool,
+    initial_preparation: InitialPreparation,
     #[cfg(feature = "creation-counters")]
     retired_creations: Option<CreationReport>,
+}
+
+#[derive(PartialEq, Eq)]
+enum InitialPreparation {
+    Pending,
+    Ready,
 }
 
 impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
@@ -822,7 +828,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 "attach a scene contribution with no frames in flight",
             ));
         }
-        let phase = if self.initial_preparation_pending {
+        let phase = if self.initial_preparation == InitialPreparation::Pending {
             CreationPhase::Build
         } else {
             CreationPhase::Transition
@@ -1415,7 +1421,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             contribution: None,
             contribution_error: None,
             creations: capabilities.site().ledger(),
-            initial_preparation_pending: true,
+            initial_preparation: InitialPreparation::Pending,
             #[cfg(feature = "creation-counters")]
             retired_creations: None,
         }
@@ -1424,14 +1430,14 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     /// Declare the initial device generation ready once its required resources are prepared.
     /// Replacement device generations publish readiness through [Self::publish_device].
     pub fn finish_preparation(&mut self) {
-        if self.initial_preparation_pending {
+        if self.initial_preparation == InitialPreparation::Pending {
             self.creations.ready();
-            self.initial_preparation_pending = false;
+            self.initial_preparation = InitialPreparation::Ready;
         }
     }
 
     fn require_ready(&self) -> Result<(), FrameError> {
-        if self.initial_preparation_pending {
+        if self.initial_preparation == InitialPreparation::Pending {
             return Err(FrameError::InvalidState(
                 "initial generation is still preparing",
             ));

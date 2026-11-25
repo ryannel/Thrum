@@ -107,6 +107,7 @@ fn replaced_surface_lease_reuses_ready_scene_and_history() {
         unsafe_code,
         reason = "the retained CAMetalLayer outlives the wgpu surface"
     )]
+    // SAFETY: The pointer names a live CAMetalLayer retained until after the surface drops.
     let surface = unsafe {
         let layer = Retained::as_ptr(&layer).cast_mut().cast();
         gpu.gpu
