@@ -6,7 +6,7 @@ use crate::{
     column::{COMPONENT_LIMIT, Component},
     interaction::Interaction,
     map_gpu::{self, MapGpu},
-    surf::SurfGpu,
+    surf::{QUERY_ONE_SHEET, SurfGpu},
 };
 use bytemuck::{Pod, Zeroable};
 use coarse::CoarsePlan;
@@ -32,7 +32,6 @@ const SURF_GROUP: u32 = 1;
 const SURF_BINDING: u32 = 7;
 const COARSE_GROUP: u32 = 2;
 const COARSE_RECORD_BYTES: u64 = 16;
-const ONE_SHEET: u32 = 2;
 const PLAIN_QUERY: &str = "
 @compute @workgroup_size(QUERY_WIDTH)
 fn sample_query(@builtin(global_invocation_id) invocation: vec3<u32>) {
@@ -187,10 +186,6 @@ fn buffer(
     })
 }
 
-pub(crate) fn cut_source() -> String {
-    format!("const ONE_SHEET = {ONE_SHEET}u;\n") + include_str!("../surf/cut.wgsl")
-}
-
 impl Readback {
     pub(crate) fn new(
         device: &thrum_render::runtime::DeviceSite,
@@ -202,9 +197,7 @@ impl Readback {
         use wgpu::BufferUsages as Usage;
         let count = u64::from(mailbox.limits.points);
         let surf_source = if surf.is_some() {
-            map_gpu::declarations_at(SURF_GROUP)
-                + &SurfGpu::source(SURF_GROUP, SURF_BINDING)
-                + &cut_source()
+            map_gpu::declarations_at(SURF_GROUP) + &SurfGpu::query_source(SURF_GROUP, SURF_BINDING)
         } else {
             PLAIN_QUERY.to_owned()
         };

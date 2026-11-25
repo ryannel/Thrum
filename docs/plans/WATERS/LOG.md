@@ -1030,3 +1030,13 @@
   it. In Chrome WP20.3 takes WP20.4's depth reading again on the repaired build, at the same view, engine
   time and pixels. A repair that changes the winner only in Chrome owes no Metal case. WP13.9's Metal
   check stays in WP20.2.
+- 2026-11-25 WP19 builder candidate. The model and Metal dispatch cut the world-fixed lattice coarse to fine.
+  The dispatch shares coarse nodes among stations of the same sheet and compacts the retained fine cells.
+  WP19.1 and WP19.2 passed on the Mac. WP19.4 recorded 6,660 coarse and 4,050 fine nodes for the paired
+  1440p fleet. [Guard results](../../../.orchestrate/evidence/WATERS/WP19/target-checks.md)
+  [Paired cost](../../../.orchestrate/evidence/WATERS/WP19/surf-cost.json)
+- WP19.3 is still open. In the island's 600-tick Metal runs, 69.33% of the open-water stations and none of the
+  breakers stations arrived within two ticks. Fixed updates can post when the frame host skips a view, but
+  water records and submits its query only on admitted frames. The planner needs to settle query admission
+  and readback under render backpressure. [Running record](../../../.orchestrate/evidence/WATERS/WP19/surf-running.json)
+  [Handoff](../../../.orchestrate/evidence/WATERS/WP19-handoff.md)

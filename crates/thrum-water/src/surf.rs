@@ -18,6 +18,7 @@ const RUNGS: usize = 6;
 const LAG_LAYERS: usize = SECTORS * RUNGS / CHANNELS;
 const EXPOSURE_LAYERS: usize = SECTORS / CHANNELS;
 const BINDINGS: u32 = 5;
+pub(crate) const QUERY_ONE_SHEET: u32 = 2;
 
 #[repr(C)]
 #[derive(Clone, Copy, Pod, Zeroable)]
@@ -55,6 +56,12 @@ impl SurfGpu {
         ) + &shoaling::source()
             + include_str!("surf.wgsl")
             + include_str!("surf/shoaling.wgsl")
+    }
+
+    pub(crate) fn query_source(group: u32, first: u32) -> String {
+        Self::source(group, first)
+            + &format!("const ONE_SHEET = {QUERY_ONE_SHEET}u;\n")
+            + include_str!("surf/cut.wgsl")
     }
 
     #[expect(

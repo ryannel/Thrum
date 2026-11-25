@@ -2,8 +2,6 @@
 mod gpu;
 
 pub(super) use gpu::Readback;
-#[cfg(test)]
-pub(crate) use gpu::cut_source;
 pub(super) use gpu::validate;
 use gpu::{Correction, ReadyBody};
 use std::{

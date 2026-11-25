@@ -41,11 +41,10 @@ fn surf_records_match_the_cache_and_query() {
     validate(&cache);
     let query = map_gpu::declarations_at(1)
         + COMPONENT
-        + &SurfGpu::source(1, 7)
+        + &SurfGpu::query_source(1, 7)
         + include_str!("../column.wgsl")
         + &crate::interaction::Interaction::sample_source(0, 5, 6, true)
-        + include_str!("../query/sample.wgsl")
-        + &crate::query::cut_source();
+        + include_str!("../query/sample.wgsl");
     validate(&query);
 }
 

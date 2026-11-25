@@ -154,7 +154,7 @@ impl CoarsePlan {
                     i32::try_from(offset).expect("coarse storage fits a storage binding"),
                 ];
                 if unshared_owner {
-                    point.flags |= super::ONE_SHEET;
+                    point.flags |= super::QUERY_ONE_SHEET;
                 }
                 point.surf_stage[1] = f32::from_bits(first);
                 point.surf_stage[2] = f32::from_bits(count);

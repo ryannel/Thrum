@@ -1288,8 +1288,8 @@
           "check": "cargo nextest run --locked --offline -p thrum-water-model --test it -E 'test(/^surf_cut::.*coarse_to_fine/)' --no-tests=fail && cargo nextest run --locked --offline -p thrum-water-model --test it -E 'test(/^surf_cut::/)' --no-tests=fail && cargo nextest run --locked --offline -p water-scene --test it -E 'test(/coarse_to_fine/)' --no-tests=fail",
           "ask": "Does `surf_cut` hold the many-component sheet with 20 or more columns of three or more surfaces? In every comparison, is the expected height the cut-cell lattice over the whole reach with the public cut's refinement, and not the two passes themselves or a triangle's unrefined height? Does the island comparison fail with the bend factor at 0? Does the model's public cut, which the query and the conformance fallback use, make the two passes?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP19/target-checks.md",
           "verdict": "",
           "review": ""
         },
@@ -1300,8 +1300,8 @@
           "ask": "Does the target hold this case beside WP13.1's, and would it fail if the coarse pass kept no cell?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP19/target-checks.md",
           "verdict": "",
           "review": ""
         },
@@ -1323,8 +1323,8 @@
           "check": "python3 scripts/water_cost.py check --scene surf",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP19/surf-cost.json",
           "verdict": "",
           "review": ""
         },
