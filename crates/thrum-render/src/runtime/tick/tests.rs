@@ -195,7 +195,7 @@ impl Fixture {
                 due: 0,
                 points: Vec::new(),
             },
-            StaticScene::with_view(scene.view),
+            StaticScene::with_reconstruction(reconstruction),
             scene,
             1.0,
         )
@@ -558,7 +558,7 @@ fn tick_stage_lifecycle_permission_capture_without_rendering_and_timing() {
 
         assert!(f.host.enable_governor(crate::governor::DisplayRecord {
             interval: STEP,
-            thermal: Default::default(),
+            thermal: crate::governor::ThermalState::Nominal,
         }));
         for requested in [false, true] {
             f.host.set_timing_requested(requested);
@@ -568,7 +568,13 @@ fn tick_stage_lifecycle_permission_capture_without_rendering_and_timing() {
             let passes = governed
                 .gpu_pass_ns
                 .expect("governor still needs frame timings");
-            assert!(!passes.passes().is_empty());
+            assert!(
+                passes
+                    .passes()
+                    .iter()
+                    .any(|pass| pass.name.as_ref() != field::PASS),
+                "missing governed view timings: {passes:?}"
+            );
             assert_eq!(passes.get(field::PASS).is_some(), requested);
             f.expect_answers(&[oracle.answer(post)]);
             oracle.commit(post.endpoint.tick);
