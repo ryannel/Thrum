@@ -648,7 +648,7 @@
           "check": "python3 scripts/render2d_sim.py",
           "lock": "simulator",
           "target": "ios-sim",
-          "evidence": ".orchestrate/evidence/RENDER-2D/WP5/ios-final/report.json",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP5/ios-held/report.json",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -658,7 +658,7 @@
           "statement": "On the simulator's screen the sprite scene is upright in both orientations and inside the screen's bounds, with the card's texels square.",
           "inspect": "Take `simctl` screenshots in portrait and in landscape, beside the engine's capture of the same held frames. Judge each whole and in native-size crops of the card. Function only.",
           "target": "ios-sim",
-          "evidence": ".orchestrate/evidence/RENDER-2D/WP5/ios-final/inspection.md",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP5/ios-held/inspection.md",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
