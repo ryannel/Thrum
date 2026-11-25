@@ -259,6 +259,7 @@ def run(args):
 def tripwires(runs):
     flags = []
     previous = {}
+    previous_size = {}
     for run in runs:
         row = run["timings"]
         key = run["count"], tuple(run["extent"])
@@ -268,6 +269,14 @@ def tripwires(runs):
         if key in previous and ns > previous[key] * 1.25:
             flags.append(dict(take=run["take"], extent=run["extent"], count=run["count"], paired_p95_ratio=ns / previous[key]))
         previous[key] = ns
+        progression = run["take"], tuple(run["extent"])
+        if progression in previous_size:
+            prior_count, prior_shading, prior_ns = previous_size[progression]
+            expected_growth = (run["count"] / prior_count) * (row["shaded_pixels"]["p50"] / prior_shading)
+            if ns > prior_ns * expected_growth:
+                flags.append(dict(take=run["take"], extent=run["extent"], count=run["count"],
+                                  p95_cost_growth=ns / prior_ns, row_times_shading_growth=expected_growth))
+        previous_size[progression] = (run["count"], row["shaded_pixels"]["p50"], ns)
     return flags
 
 

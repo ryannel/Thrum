@@ -62,9 +62,11 @@ def worker(out):
         return dict(line.split("=", 1) for line in raw.splitlines() if "=" in line)
 
     def grab(label, session, observed):
+        prior_pauses = int(state()["pause_replies"])
         route["post"]("hold-world")
-        held = wait(state, lambda s: s.get("world_paused") == "true", "held photo endpoint")
-        held_tick = int(held["world_tick"])
+        held = wait(state, lambda s: s.get("world_paused") == "true"
+                    and int(s.get("pause_replies", 0)) > prior_pauses, "held photo endpoint")
+        held_tick = int(held["pause_tick"])
         route["post"]("capture-begin")
         source = temp / f"thrum-capture-{session}"
         wait(lambda: load(source / "pending.json"), lambda s: s.get("images", 0) > 0, "held submitted image")
@@ -74,6 +76,7 @@ def worker(out):
         receipt = wait(lambda: load(source / "runtime.json"), bool, "held session retirement", 40)
         validate_session(receipt)
         header = load(source / "identity.json")
+        (out / f"{label}-capture.json").write_text(json.dumps(receipt, indent=2))
         if header["passes"] != list(PASSES) or header["backend"] != "Metal":
             raise ValueError("the iOS sprite scene compiled a foreign pass")
         frames = receipt["images"]
@@ -98,7 +101,6 @@ def worker(out):
             subprocess.run(["ffmpeg", "-v", "error", "-i", str(image), "-vf",
                             "crop=" + ":".join(map(str, [*bounds[2:], *bounds[:2]])),
                             "-frames:v", "1", str(out / f"{label}-{name}-crop.png")], check=True, timeout=20)
-        (out / f"{label}-capture.json").write_text(json.dumps(receipt, indent=2))
         report["orientations"].append(dict(name=label, state=held, passes=header["passes"], bounds=bounds,
                                            image=frames[0], card_sha256=hashlib.sha256(expected).hexdigest(),
                                            simctl_sha256=digest(screen), engine_png_sha256=digest(png)))
