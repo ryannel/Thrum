@@ -1371,7 +1371,7 @@
     {
       "id": "WP19",
       "name": "Floats in a gale's breaking surf get the height of the crest they ride in time to ride it, with the game running",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "depends_on": [
         "EFFECT-GRAPH:WP6"
       ],
