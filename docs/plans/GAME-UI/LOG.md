@@ -111,3 +111,7 @@
   unrelated sibling products. Mac Metal proved the late refusal and exact opaque texels. Chrome WebGPU
   rejected both mixed metric and sheet references at every tested density, and both release cost runs
   recorded every cooked sheet. [Review fix evidence](../../../.orchestrate/evidence/GAME-UI/WP2/revision/index.md)
+- 2026-11-25 WP2.8 review fix. The cooker publishes a font's proposed PNG bindings only with an accepted
+  font product. A rejected grid rename leaves HEAD and the private grid intact across reopen. An independent
+  published texture edit still lands, and a later valid rename publishes its new bindings and font together.
+  The Mac Metal publication checks and all named WP2 checks passed. [Proof](../../../.orchestrate/evidence/GAME-UI/WP2/round3/index.md)
