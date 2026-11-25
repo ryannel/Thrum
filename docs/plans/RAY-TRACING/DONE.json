@@ -524,7 +524,7 @@
     {
       "id": "WP5",
       "name": "Props and terrain are grounded: sky light is dimmed in creases and where things stand close together",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 3,
       "failed_reviews_with_repeat": 0,
       "depends_on": [
@@ -595,12 +595,6 @@
           "evidence": ".orchestrate/evidence/RAY-TRACING/WP5/forward-contract/cost.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/RAY-TRACING/WP5-review.md"
-        }
-      ],
-      "findings": [
-        {
-          "name": "Ambient receiver export changes the three-target forward contributor interface",
-          "repeat": false
         }
       ]
     },
