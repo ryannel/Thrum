@@ -138,7 +138,7 @@ def median(record, key):
 def costs_native(destination, revision, scratch, target):
     old_tree = scratch / "before"
     snapshot_main(old_tree)
-    before = build_native(old_tree, target, scratch / "old-interface-cost")
+    before = build_native(old_tree, scratch / "before-target", scratch / "old-interface-cost")
     after = build_native(ROOT, target, scratch / "new-interface-cost")
     store = cook_store(scratch, target)
     builds = {"before": (before, BEFORE), "after": (after, revision)}
