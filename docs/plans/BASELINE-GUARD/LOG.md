@@ -271,3 +271,11 @@
   kept record; the capture script and `scripts/wasm_receipt.mjs` stay outside the pins; two assumptions were
   added to the plan; no owner's ruling was needed. The planning notes give the reasons.
 - 2026-11-25 WP2's section in the plan shrank to its heading and review link, as a Done work package's does.
+- 2026-11-25 WP3 made the verifier build one proving bundle and give it to all four Chrome captures. The
+  verifier compares each page's instantiated Wasm hash with the bundle it recorded and fails on a differing
+  or missing receipt. Tests drove both refusals through the verifier on the Mac. The clean
+  candidate `b4e953524` passed both native matrices and all four Chrome sets, 481 frames per set, with all
+  four receipts matching. The reference guard passed, and all 55 retained reference Git blobs matched.
+  [Run record](../../../.orchestrate/evidence/BASELINE-GUARD/WP3/record.json) ·
+  [Wasm identity tests](../../../.orchestrate/evidence/BASELINE-GUARD/WP3/wasm-identity.log) ·
+  [Reference guard](../../../.orchestrate/evidence/BASELINE-GUARD/WP3/reference-guard.log)

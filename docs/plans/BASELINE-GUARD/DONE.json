@@ -154,7 +154,7 @@
     {
       "id": "WP3",
       "name": "A passing exact-image record names the Wasm file that Chrome ran, and a run whose capture ran another fails",
-      "status": "not_started",
+      "status": "in_progress",
       "quality_bar": "A deployment pinned by digest, as `image@sha256:\u2026` is: the record names the executable by a hash taken where it was loaded, and a run that loaded anything else fails by name.",
       "items": [
         {
@@ -163,8 +163,8 @@
           "check": "python3 scripts/test_exact_baselines.py WasmIdentityTests",
           "ask": "Read the verifier, the capture and the tests. Is the hash a capture reports taken inside the page from the bytes handed to WebAssembly, and not from the file on disk or the served file's hash? Does the verifier itself compare it, for every registered Chrome baseline, with the hash it recorded from the folder it gave that capture? Do the tests drive the verifier's real `verify` (stand-in child processes are fine) through the three cases: all equal, one different, one missing? Is any build or hash of the normal bundle left in the verifier, or any flag, environment variable or exit 75 by which a run with a different or missing hash is not a failure?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/BASELINE-GUARD/WP3/wasm-identity.log",
           "verdict": "",
           "review": ""
         },
@@ -174,8 +174,8 @@
           "check": "python3 -c 'import json; r=json.load(open(\".orchestrate/evidence/BASELINE-GUARD/WP3/record.json\")); ids=[b[\"id\"] for b in json.load(open(\".config/exact-baselines.json\"))[\"baselines\"] if \"scene\" in b]; w=r[\"wasm_artifact_hashes\"][\"v1_game_bg.wasm\"]; assert r[\"passed\"] is True and len(r[\"baselines\"])==5 and len(ids)==4 and len(w)==64 and all(r[\"comparisons\"][i][\"instantiated_wasm_sha256\"]==w for i in ids)'",
           "ask": "Read the record and the logs kept with it. Is its revision a commit of this work package, on a clean tree? Do its commands show one Wasm build, of the proving bundle, and that folder given to each of the four captures? Is each comparison's instantiated hash the one its capture wrote, and not copied from the verifier's own hash of the file?",
           "target": "chrome-webgpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/BASELINE-GUARD/WP3/record.json",
           "verdict": "",
           "review": ""
         },
@@ -185,8 +185,8 @@
           "check": "python3 scripts/exact_baselines.py guard",
           "ask": "Read this work package's diff. Is every file under the registered references unchanged, and does the registry differ only in the five pins and refreshes? In `scripts/capture_v1_browser.mjs`, is reporting the instantiated hash the only change, and does a run that does not ask for it take the path it took before, with the same default bundle and the same manifest fields? In `scripts/test_capture_unjudged.py`, did only the stand-in for the verifier's web build change, with every assertion as it was? Are `examples/v1-game/web/build.sh`, `scripts/wasm_receipt.mjs`, the native matrices and the Chrome comparator untouched?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/BASELINE-GUARD/WP3/reference-guard.log",
           "verdict": "",
           "review": ""
         }
