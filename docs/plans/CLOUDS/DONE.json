@@ -943,7 +943,7 @@
           "inspect": "Capture `fixed` stills for each preset, height and Sun. Judge contact sheets by preset, then native-size crops overhead, in the middle distance and at the horizon.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP7/fix/WP7.1-metal-appearance.md",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP7/r3/fixed-weather.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP7-review.md"
         },
@@ -954,7 +954,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP7/fix/WP7.2-metal.txt",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP7/r3/item-checks.log",
           "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP7-review.md"
         },
@@ -964,7 +964,7 @@
           "inspect": "Capture a `realtime` sequence of the four changes from 40 m at noon. Judge consecutive frames at 1x across each change, whole and in native-size crops overhead.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP7/fix/phase-cycle-opinion.md",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP7/r3/WP7.3-metal-cycle.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP7-review.md"
         },
@@ -973,8 +973,8 @@
           "statement": "At 1x, in still air, at 10 m/s and at 40 m/s, and at 60x at 40 m/s, clouds drift in world space at the wind's speed with their shade under them, by even steps from frame to frame at the display's refresh, and no texture slides inside a cloud's shape. A change of wind direction turns the drift and does not move a cloud.",
           "inspect": "Capture `realtime` sequences of 20 seconds at each wind and rate and one across a 90\u00b0 change of direction. Judge consecutive frames, following one cloud and its shade.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP7/wind-qualified.md",
+          "builder_result": "open",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP7/WP7.4-panel-retake.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/CLOUDS/WP7-review.md"
         },
@@ -984,7 +984,7 @@
           "inspect": "Capture `realtime` sequences at 8x and at 60x under the fair and the broken presets, from 40 m, each long enough to hold whole lives. Judge consecutive frames, following at least three clouds from birth to death, and then the whole frame for any rhythm.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP7/fix/WP7.5-metal-lifetimes.md",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP7/r3/WP7.5-metal-lifetimes.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP7-review.md"
         },
@@ -995,7 +995,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP7/WP7.6-replanned-metal.txt",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP7/r3/WP7.6-metal.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/CLOUDS/WP7-review.md"
         },
@@ -1005,7 +1005,7 @@
           "inspect": "Capture the noon `fixed` stills and one `realtime` 60x sequence in Chrome. Judge them by those lists.",
           "target": "chrome-webgpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP7/fix/WP7.7-chrome.md",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP7/r3/fixed-weather.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP7-review.md"
         },
@@ -1016,7 +1016,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP7/fix/WP7.8-current-pair.json",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP7/r3/WP7.8-current-pair.json",
           "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP7-review.md"
         }
