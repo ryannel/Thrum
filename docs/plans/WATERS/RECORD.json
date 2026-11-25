@@ -1655,12 +1655,12 @@
       }
     },
     "WP20": {
-      "definitions": "f6810b60ab8a5a547d4f4504438a08a6ffd3b2eff2d1e711b56a02c30189ebbd",
+      "definitions": "332ffa55e58a77d119a14299054925e5d37bb6e24e4b36a22bb25949ca8a2e8c",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "WATERS WP13 is Blocked: a short gray straight-sided flap in the pitching face (native x~2200-2260, y~345-370, engine tim",
-        "at": "2026-11-25T04:04:31Z"
+        "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 1 Must Fix find",
+        "at": "2026-11-25T04:19:53Z"
       }
     }
   },
@@ -1780,11 +1780,15 @@
     {
       "task": "WATERS WP13 is Blocked: a short gray straight-sided flap in the pitching face (native x~2200-2260, y~345-370, engine time ~5.22 s, 40 m motion) survived three looks (refined bend, world-space normal, optical fold); the design's three-look stop applies. Everything else in WP13 passes. Lead's direction: don't spend a fourth blind look. Either (a) park the flap as a recorded known gap with a reproducible witness (fixed engine time, camera, the submitted branch/depth/face-weight diagnostic the handoff names) and give that diagnostic and fix to a later work package or spike, so WP13 can pass review on its remaining items; or (b) if you judge the flap foundational to the breaker look, make the next step that witness diagnostic as a bounded item rather than another visual trial. Choose and record which, as an assumption the owner can overturn. The bar is a shipped high-end game's look, judged in motion; references diagnose, never gate.",
       "at": "2026-11-25T04:04:31Z"
+    },
+    {
+      "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 1 Must Fix findings.",
+      "at": "2026-11-25T04:19:53Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-25T04:04:31Z"
+    "at": "2026-11-25T04:19:53Z"
   },
   "design_history": [
     {
