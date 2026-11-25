@@ -55,7 +55,10 @@ pub(crate) use raytrace::RetainedRayMeshes;
 pub(crate) use raytrace::ambient::{
     Stage as AmbientStage, shader_source as ambient_visibility_shader,
 };
-pub(crate) use raytrace::soft::{Stage as SoftSunStage, shader_source as soft_sun_shader};
+pub(crate) use raytrace::soft::{
+    COMBINED_TRACE, Stage as SoftSunStage, combined_shader_source as combined_visibility_shader,
+    shader_source as soft_sun_shader,
+};
 #[cfg(all(feature = "creation-counters", target_os = "macos"))]
 pub use raytrace::{RayBuildProbe, RayBuildSample, RayStructureInstance};
 pub(crate) mod readback;

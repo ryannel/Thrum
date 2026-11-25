@@ -5,6 +5,7 @@ use std::sync::{Arc, Mutex};
 use super::super::{
     PreparedSynthetic, RenderError, SceneContext, SyntheticTargetInputs, SyntheticView,
 };
+use super::ambient;
 use crate::binding;
 use crate::contribution::{QualityInvalidation, QualityKnob, QualitySettings};
 use crate::graph::{
@@ -68,6 +69,7 @@ pub(in crate::synthetic) struct SoftPipelines {
     pipelines: [wgpu::ComputePipeline; 4],
     inputs: [wgpu::BindGroupLayout; 4],
     structure: wgpu::BindGroupLayout,
+    combined: Option<wgpu::ComputePipeline>,
 }
 
 pub(in crate::synthetic) struct SoftSun {
@@ -133,7 +135,7 @@ pub(super) fn view_entry(slot: u32, view: &wgpu::TextureView) -> wgpu::BindGroup
 }
 
 impl SoftPipelines {
-    fn new(device: &DeviceSite) -> Self {
+    fn new(device: &DeviceSite, ambient: Option<&ambient::Pipelines>) -> Self {
         let uniform = binding::uniform(0, COMPUTE, FRAME_BYTES);
         let depth = sampled(1, COMPUTE, wgpu::TextureSampleType::Depth);
         let rays = sampled(4, COMPUTE, UINT);
@@ -188,10 +190,31 @@ impl SoftPipelines {
                 cache: None,
             })
         });
+        let combined = ambient.map(|ambient| {
+            let shader = crate::shaders::Shader::CombinedVisibility.compile(device, COMBINED_TRACE);
+            let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: Some(COMBINED_TRACE),
+                bind_group_layouts: &[
+                    Some(&inputs[Stage::Trace as usize]),
+                    Some(&structure),
+                    Some(ambient.trace_layout()),
+                ],
+                immediate_size: 0,
+            });
+            device.compute(&wgpu::ComputePipelineDescriptor {
+                label: Some(COMBINED_TRACE),
+                layout: Some(&layout),
+                module: &shader,
+                entry_point: Some("trace_sun_and_ambient"),
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
+                cache: None,
+            })
+        });
         Self {
             pipelines,
             inputs,
             structure,
+            combined,
         }
     }
 
@@ -272,12 +295,24 @@ impl SoftPipelines {
     }
 }
 
+pub(crate) const COMBINED_TRACE: &str = "traced Sun and ambient visibility trace";
+
+pub(crate) fn combined_shader_source() -> String {
+    format!(
+        "{}\n{}\n{}",
+        shader_source(),
+        ambient::trace_source(),
+        wgsl!("synthetic/raytrace/combined_visibility.wgsl")
+    )
+}
+
 pub(crate) fn shader_source() -> String {
     format!(
-        "enable wgpu_ray_query;\nconst SOFT_SUN_TILE: u32 = {TILE}u;\n{}\n{}\n{}\n{}",
+        "enable wgpu_ray_query;\nconst SOFT_SUN_TILE: u32 = {TILE}u;\n{}\n{}\n{}\n{}\n{}",
         wgsl!("directional_light.wgsl"),
         wgsl!("synthetic/raytrace/shadows.wgsl"),
         wgsl!("synthetic/raytrace/soft_common.wgsl"),
+        wgsl!("synthetic/raytrace/visibility_receiver.wgsl"),
         wgsl!("synthetic/raytrace/soft_visibility.wgsl"),
     )
 }
@@ -289,7 +324,10 @@ impl SoftSun {
     const DIVE: &str = "Sun penumbra dive limit";
     const RIM: &str = "Sun penumbra rim rays";
 
-    pub(in crate::synthetic) fn new(device: &DeviceSite) -> Self {
+    pub(in crate::synthetic) fn new(
+        device: &DeviceSite,
+        ambient: Option<&ambient::Pipelines>,
+    ) -> Self {
         let knob = |name: &str, effect, value, range| QualityKnob {
             name: name.into(),
             effect,
@@ -321,7 +359,7 @@ impl SoftSun {
         ])
         .expect("valid Sun penumbra controls");
         Self {
-            pipelines: SoftPipelines::new(device),
+            pipelines: SoftPipelines::new(device, ambient),
             settings,
             submitted: None,
             pending: None,
@@ -574,6 +612,7 @@ impl SyntheticTargetInputs {
         motion: &ResourceId,
         light: &ResourceId,
         structure: Option<&ResourceId>,
+        ambient: Option<Vec<Access>>,
     ) -> Result<Option<(SoftResources, [usize; 4])>, RenderError> {
         if self.soft_sun.is_none() {
             return Ok(None);
@@ -610,6 +649,7 @@ impl SyntheticTargetInputs {
             read(&history_samples),
             read(&history_values),
         ]);
+        let mut ambient = ambient;
         let passes = Stage::ALL.map(|stage| {
             let role = PipelineRole::SoftSun(stage as u32);
             let key = role.key(self.key);
@@ -637,8 +677,15 @@ impl SyntheticTargetInputs {
                 ],
                 Stage::Filter => vec![read(depth), read(&write_samples), write(&write_values)],
             });
+            let mut pass = PassKey::SoftSun(stage);
+            if stage == Stage::Trace
+                && let Some(access) = ambient.take()
+            {
+                accesses.extend(access);
+                pass = PassKey::CombinedVisibility;
+            }
             graph.declare(
-                PassKey::SoftSun(stage),
+                pass,
                 PassBody {
                     scope: PassScope::View(1),
                     pipeline: Some(key),
@@ -726,8 +773,21 @@ impl SceneContext<'_> {
             .as_ref()
             .zip(self.target.soft_sun.as_ref())
             .ok_or(RenderError::GraphPassMismatch)?;
+        let ambient = (stage == Stage::Trace)
+            .then(|| {
+                self.prepared
+                    .ambient
+                    .as_ref()
+                    .zip(self.target.ambient.as_ref())
+            })
+            .flatten()
+            .filter(|(ambient, _)| ambient.stride().is_some());
         if !soft.enabled() {
-            return Ok(());
+            return if ambient.is_some() {
+                self.ambient_visibility(ambient::Stage::Trace, compiled)
+            } else {
+                Ok(())
+            };
         }
         let structure = matches!(stage, Stage::Trace)
             .then(|| self.prepared.soft_structure_group())
@@ -735,8 +795,18 @@ impl SceneContext<'_> {
         let mut pass = compiled
             .begin_compute(self.encoder, self.generation, self.timings.as_deref_mut())?
             .ok_or(RenderError::GraphPassMismatch)?;
-        pass.set_pipeline(&soft.pipelines.pipelines[stage as usize]);
         let read = 1 - self.prepared.history.write_side();
+        if let Some((_, target)) = ambient {
+            let pipeline = soft
+                .pipelines
+                .combined
+                .as_ref()
+                .ok_or(RenderError::GraphPassMismatch)?;
+            pass.set_pipeline(pipeline);
+            pass.set_bind_group(2, target.trace_group(read), &[]);
+        } else {
+            pass.set_pipeline(&soft.pipelines.pipelines[stage as usize]);
+        }
         pass.set_bind_group(0, &target.groups[stage as usize][read], &[]);
         if let Some(structure) = &structure {
             pass.set_bind_group(1, structure, &[]);

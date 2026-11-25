@@ -451,6 +451,14 @@ impl super::SyntheticTargetInputs {
             &mut accesses,
             &mut late_uniforms,
         )?;
+        let mut ambient = self.append_ambient_visibility(
+            &mut graph,
+            &mut prepared_keys,
+            &mut accesses,
+            [width, height],
+            [&depth, &motion],
+            ray_structure.as_ref(),
+        )?;
         let soft_sun = self.append_soft_visibility(
             &mut graph,
             &mut prepared_keys,
@@ -460,14 +468,9 @@ impl super::SyntheticTargetInputs {
             &motion,
             &light[0],
             ray_structure.as_ref(),
-        )?;
-        let ambient = self.append_ambient_visibility(
-            &mut graph,
-            &mut prepared_keys,
-            &mut accesses,
-            [width, height],
-            [&depth, &motion],
-            ray_structure.as_ref(),
+            ambient
+                .as_mut()
+                .map(|ambient| std::mem::take(&mut ambient.combined_accesses)),
         )?;
         let forward = graph.declare(
             PassKey::Opaque,
@@ -510,6 +513,9 @@ impl super::SyntheticTargetInputs {
             early_stars.unwrap_or(forward),
         )?;
         if let Some((_, passes)) = &soft_sun {
+            if let Some(ambient) = &ambient {
+                graph.dependency(passes[0], ambient.filter)?;
+            }
             for pass in passes {
                 graph.dependency(forward, *pass)?;
             }
@@ -517,10 +523,12 @@ impl super::SyntheticTargetInputs {
                 graph.dependency(passes[3], first)?;
             }
         }
-        if let Some([trace, filter]) = ambient {
-            graph.dependency(forward, trace)?;
+        if let Some(ambient) = &ambient {
+            if let Some(trace) = ambient.trace {
+                graph.dependency(forward, trace)?;
+            }
             if let Some(first) = late.first {
-                graph.dependency(filter, first)?;
+                graph.dependency(ambient.filter, first)?;
             }
         }
         let temporal = self.append_temporal(
@@ -565,8 +573,8 @@ impl super::SyntheticTargetInputs {
         if let Some((_, passes)) = &soft_sun {
             graph.dependency(passes[3], display_pass)?;
         }
-        if let Some([_, filter]) = ambient {
-            graph.dependency(filter, display_pass)?;
+        if let Some(ambient) = ambient {
+            graph.dependency(ambient.filter, display_pass)?;
         }
         let source = Self::capture_input(capture_source, &output, &scene, native.as_ref())?;
         let readback =
@@ -1440,6 +1448,9 @@ impl super::SyntheticTargetInputs {
             }),
             PassKey::SoftSun(stage) => B::new(id, PassKind::Compute, move |frame, pass| {
                 frame.soft_sun(stage, pass)
+            }),
+            PassKey::CombinedVisibility => B::new(id, PassKind::Compute, |frame, pass| {
+                frame.soft_sun(super::raytrace::soft::Stage::Trace, pass)
             }),
             PassKey::NativeReset => Self::bind_native(id, false),
             PassKey::NativeWitness => Self::bind_native(id, true),

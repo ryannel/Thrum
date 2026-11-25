@@ -363,10 +363,12 @@ impl PreparedSynthetic {
         let lamp_shadows = shadow_selection
             .lamps
             .then(|| raytrace::LampShadows::new(device, queue));
-        let soft_sun = soft_sun_enabled.then(|| raytrace::soft::SoftSun::new(device));
         let ambient = ambient_selection
             .radius
             .map(|radius| raytrace::ambient::Ambient::new(device, radius));
+        let soft_sun = soft_sun_enabled.then(|| {
+            raytrace::soft::SoftSun::new(device, ambient.as_ref().map(|ambient| &ambient.pipelines))
+        });
         let light_layout = if traced_forward {
             if trace_lights {
                 light_entries.push(binding::acceleration_structure(

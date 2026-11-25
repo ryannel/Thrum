@@ -263,7 +263,8 @@ def ambient(output):
     machine = command("system_profiler", "SPHardwareDataType", "SPDisplaysDataType")
     before = os.getloadavg()
     rows = run_test("shadow_cost", release=True, extra_env={"THRUM_RAY_AMBIENT_COST": "1"})
-    stages = ("traced ambient visibility", "traced ambient visibility filter")
+    trace = "traced Sun and ambient visibility trace"
+    filter_stage = "traced ambient visibility filter"
     figures = ("timed_pass_span_ns", "frame_cpu_ns")
     arms = {0: {}, 1: {}, 2: {}}
     for row in rows:
@@ -271,10 +272,13 @@ def ambient(output):
         timings = row["passes_ns"]
         if row["method"] != "Traced" or not row["penumbra"] or row["recipe"] != "AppleTile":
             raise ValueError(f"incorrect traced preparation: {row}")
-        if not all((stage in timings) == (extent > 0) for stage in stages):
+        if (trace not in timings or (filter_stage in timings) != (extent > 0)
+                or "traced Sun visibility trace" in timings or "traced ambient visibility" in timings):
             raise ValueError(f"incorrect ambient visibility stages: {row}")
         values = [row[key] for key in figures]
-        values.extend(timings[stage] for stage in stages if extent > 0)
+        values.append(timings[trace])
+        if extent > 0:
+            values.append(timings[filter_stage])
         if not all(math.isfinite(value) and value > 0 for value in values):
             raise ValueError(f"missing timing in {row}")
         arms[extent][row["tick"]] = row
@@ -285,8 +289,9 @@ def ambient(output):
     summary = {
         name: {
             **{key: median(row[key] for row in arms[extent].values()) for key in figures},
-            **{stage: median(row["passes_ns"][stage] for row in arms[extent].values())
-               for stage in stages if extent > 0},
+            trace: median(row["passes_ns"][trace] for row in arms[extent].values()),
+            **({filter_stage: median(row["passes_ns"][filter_stage] for row in arms[extent].values())}
+               if extent > 0 else {}),
         }
         for extent, name in enumerate(names)
     }

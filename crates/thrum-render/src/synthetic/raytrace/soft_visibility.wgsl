@@ -11,33 +11,6 @@
 @group(0) @binding(10) var samples: texture_2d<u32>;
 @group(0) @binding(11) var values_out: texture_storage_2d<rgba16float, write>;
 
-fn world_at(pixel: vec2<i32>, z: f32) -> vec3<f32> {
-    let uv = (vec2<f32>(pixel) + 0.5) / vec2<f32>(frame.extent);
-    let h = frame.inverse * vec4(uv * vec2(2.0, -2.0) + vec2(-1.0, 1.0), z, 1.0);
-    return h.xyz / h.w;
-}
-
-fn plane_tangent(pixel: vec2<i32>, axis: vec2<i32>, z: f32, point: vec3<f32>) -> vec3<f32> {
-    let bounds = vec2<i32>(frame.extent) - 1;
-    let lo = max(pixel - axis, vec2(0));
-    let hi = min(pixel + axis, bounds);
-    let left = textureLoad(depth, lo, 0);
-    let right = textureLoad(depth, hi, 0);
-    if right > 0.0 && any(hi != pixel) &&
-        (left <= 0.0 || all(lo == pixel) || abs(right - z) < abs(left - z)) {
-        return world_at(hi, right) - point;
-    }
-    if left > 0.0 && any(lo != pixel) { return point - world_at(lo, left); }
-    return world_at(pixel + axis, z) - point;
-}
-
-fn hash(seed: u32) -> u32 {
-    var x = seed;
-    x = (x ^ (x >> 16u)) * 0x7feb352du;
-    x = (x ^ (x >> 15u)) * 0x846ca68bu;
-    return x ^ (x >> 16u);
-}
-
 fn sun_disc(pixel: vec2<u32>) -> vec3<f32> {
     let direction = sun.direction_to_light.xyz;
     let tangent = normalize(cross(direction, select(vec3(0.0, 1.0, 0.0), vec3(1.0, 0.0, 0.0), abs(direction.y) > 0.9)));
@@ -66,22 +39,19 @@ fn align_depth(point: vec3<f32>, distance: f32, footprint: f32) -> vec3<f32> {
 fn trace_sun(@builtin(global_invocation_id) id: vec3<u32>) {
     if any(id.xy >= frame.extent) { return; }
     let pixel = vec2<i32>(id.xy);
-    let z = textureLoad(depth, pixel, 0);
-    if z <= 0.0 {
-        textureStore(rays_out, pixel, vec4(0u));
-        return;
-    }
-    let point = world_at(pixel, z);
-    let tangent = plane_tangent(pixel, vec2(1, 0), z, point);
-    let bitangent = plane_tangent(pixel, vec2(0, 1), z, point);
-    let normal = cross(bitangent, tangent);
+    trace_sun_pixel(pixel, visibility_receiver(pixel, frame.extent, frame.inverse));
+}
+
+fn trace_sun_pixel(pixel: vec2<i32>, receiver: VisibilityReceiver) {
+    let point = receiver.point;
+    let normal = receiver.normal;
     let normal_length = length(normal);
     if normal_length == 0.0 {
         textureStore(rays_out, pixel, vec4(0u));
         return;
     }
     let outward = normal / normal_length;
-    let direction = sun_disc(id.xy);
+    let direction = sun_disc(vec2<u32>(pixel));
     let cosine = dot(outward, direction);
     // A sample outside the limit has no history and no influence on neighbours.
     if cosine < -frame.dive_cosine {
@@ -159,7 +129,7 @@ fn accumulate_sun(@builtin(global_invocation_id) id: vec3<u32>) {
             let old_pixel = soft_previous_pixel(vec2<f32>(pixel) + 0.5, shift, frame.jitter_delta);
             if soft_within(old_pixel, frame.extent) {
                 let old = textureLoad(previous, old_pixel, 0);
-                let clip = frame.previous * vec4(world_at(pixel, z) + frame.camera.xyz, 1.0);
+                let clip = frame.previous * vec4(world_at(pixel, z, frame.extent, frame.inverse) + frame.camera.xyz, 1.0);
                 if clip.w > 0.0 && soft_depth_matches(bitcast<f32>(old.z), clip.z / clip.w) {
                     prior = old;
                 }
@@ -236,10 +206,10 @@ fn filter_sun(@builtin(global_invocation_id) id: vec3<u32>) {
         return;
     }
     let z = bitcast<f32>(own.z);
-    let point = world_at(pixel, z);
-    let plane = normalize(cross(plane_tangent(pixel, vec2(0, 1), z, point),
-        plane_tangent(pixel, vec2(1, 0), z, point)));
-    let pixel_world = length(world_at(pixel + vec2(1, 0), z) - point);
+    let point = world_at(pixel, z, frame.extent, frame.inverse);
+    let plane = normalize(cross(plane_tangent(pixel, vec2(0, 1), z, point, frame.extent, frame.inverse),
+        plane_tangent(pixel, vec2(1, 0), z, point, frame.extent, frame.inverse)));
+    let pixel_world = length(world_at(pixel + vec2(1, 0), z, frame.extent, frame.inverse) - point);
     let variance = centre * (vec2(1.0) - centre);
     let fresh = min(own.w & 31u, (own.w >> 5u) & 31u) < 6u;
     // A dense footprint pools independent disc sequences without leaving
@@ -260,7 +230,7 @@ fn filter_sun(@builtin(global_invocation_id) id: vec3<u32>) {
             if !soft_within(at, frame.extent) { continue; }
             let neighbour = textureLoad(samples, at, 0);
             if neighbour.w == 0u { continue; }
-            let neighbour_point = world_at(at, bitcast<f32>(neighbour.z));
+            let neighbour_point = world_at(at, bitcast<f32>(neighbour.z), frame.extent, frame.inverse);
             let plane_distance = abs(dot(plane, neighbour_point - point));
             let tap = spatial * exp2(-4.0 * plane_distance / max(pixel_world, 1e-5));
             if tap < 1e-4 { continue; }

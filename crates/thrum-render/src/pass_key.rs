@@ -335,6 +335,7 @@ pub(crate) enum PassKey {
     Taau,
     /// One stage of traced Sun visibility.
     SoftSun(crate::synthetic::SoftSunStage),
+    CombinedVisibility,
     Ambient(crate::synthetic::AmbientStage),
     /// The scene contribution's upload stage.
     ContributionUpload,
@@ -407,6 +408,7 @@ impl PassKey {
             Self::TemporalWitness => "temporal input witness",
             Self::Taau => "portable TAAU",
             Self::SoftSun(stage) => stage.name(),
+            Self::CombinedVisibility => crate::synthetic::COMBINED_TRACE,
             Self::Ambient(stage) => stage.name(),
             Self::ContributionUpload => "contribution upload",
             Self::ContributionCompute => "contribution compute",
@@ -452,9 +454,11 @@ impl PassKey {
             Self::Exposure | Self::Display | Self::DisplayReferred => TimingCategory::Tone,
             Self::Atmosphere(stage) => stage.timing(),
             Self::TemporalExposure | Self::TemporalWitness | Self::Taau => TimingCategory::Temporal,
-            Self::Effect(_) | Self::AfterOpaque(_) | Self::SoftSun(_) | Self::Ambient(_) => {
-                TimingCategory::Effects
-            }
+            Self::Effect(_)
+            | Self::AfterOpaque(_)
+            | Self::SoftSun(_)
+            | Self::Ambient(_)
+            | Self::CombinedVisibility => TimingCategory::Effects,
             Self::Secondary { .. } => TimingCategory::SecondaryViews,
             Self::Sprites => TimingCategory::Sprites,
             Self::Surface => TimingCategory::Surface,
@@ -493,6 +497,7 @@ impl PassKey {
             Self::TemporalWitness => PipelineRole::TemporalWitness,
             Self::Taau => PipelineRole::Taau,
             Self::SoftSun(stage) => PipelineRole::SoftSun(stage as u32),
+            Self::CombinedVisibility => PipelineRole::SoftSun(0),
             Self::Ambient(stage) => PipelineRole::Ambient(stage as u32),
             Self::ContributionCompute => PipelineRole::ContributionCompute,
             Self::Effect(index) => PipelineRole::Effect(index),

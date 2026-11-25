@@ -105,12 +105,6 @@ macro_rules! wgsl {
     };
     ("synthetic.wgsl") => {
         concat!(
-            $crate::shaders::wgsl!(@synthetic),
-            $crate::shaders::wgsl!(@file "synthetic/raytrace/ambient_disabled.wgsl"),
-        )
-    };
-    (@synthetic) => {
-        concat!(
             $crate::shaders::wgsl!(@lighting_constants),
             include_str!(concat!(env!("OUT_DIR"), "/cluster.wgsl")),
             include_str!(concat!(env!("OUT_DIR"), "/scene_shadows.wgsl")),
@@ -389,6 +383,7 @@ shader_catalog! {
     RayBuild => wgsl!("synthetic/raytrace/build_probe.wgsl");
     RayView => wgsl!("synthetic/raytrace/view.wgsl");
     SoftSun => crate::synthetic::soft_sun_shader();
+    CombinedVisibility => crate::synthetic::combined_visibility_shader();
     AmbientVisibility => crate::synthetic::ambient_visibility_shader();
     CopyMarker => wgsl!("synthetic/readback/copy_marker.wgsl");
     Visibility => visibility_source();

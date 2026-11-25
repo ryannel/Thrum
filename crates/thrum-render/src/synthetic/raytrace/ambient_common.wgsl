@@ -26,3 +26,7 @@ fn ambient_depth_weight(stored: f32, expected: f32) -> f32 {
     if stored <= 0.0 || expected <= 0.0 { return 0.0; }
     return 1.0 - smoothstep(0.002, 0.018, abs(stored - expected) / expected);
 }
+
+fn ambient_sample_pixel(texel: vec2<i32>, frame: AmbientFrame) -> vec2<i32> {
+    return min(texel * i32(frame.stride) + i32(frame.stride / 2u), vec2<i32>(frame.extent) - 1);
+}

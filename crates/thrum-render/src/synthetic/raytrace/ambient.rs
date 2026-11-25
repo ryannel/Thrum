@@ -63,6 +63,7 @@ pub(in crate::synthetic) struct Pipelines {
     stages: [wgpu::ComputePipeline; 2],
     inputs: [wgpu::BindGroupLayout; 2],
     structure: wgpu::BindGroupLayout,
+    depth: wgpu::BindGroupLayout,
 }
 
 struct Sample {
@@ -88,18 +89,33 @@ struct History {
 
 type LightGroups = [[wgpu::BindGroup; 2]; 2];
 
+pub(in crate::synthetic) struct AmbientPasses {
+    pub trace: Option<usize>,
+    pub filter: usize,
+    pub combined_accesses: Vec<Access>,
+}
+
 pub(in crate::synthetic) struct Target {
     history: History,
     uniform: wgpu::Buffer,
+    depth: wgpu::BindGroup,
     groups: [[wgpu::BindGroup; 2]; 2],
     lights: Mutex<Option<(wgpu::Tlas, LightGroups)>>,
 }
 
+pub(super) fn trace_source() -> &'static str {
+    concat!(
+        wgsl!("synthetic/raytrace/ambient_common.wgsl"),
+        wgsl!("synthetic/raytrace/ambient_trace.wgsl"),
+    )
+}
+
 pub(crate) fn shader_source() -> String {
     format!(
-        "enable wgpu_ray_query;\nconst AMBIENT_TILE: u32 = {TILE}u;\n{}\n{}\n{}",
+        "enable wgpu_ray_query;\nconst AMBIENT_TILE: u32 = {TILE}u;\n{}\n{}\n{}\n{}",
         wgsl!("synthetic/raytrace/shadows.wgsl"),
-        wgsl!("synthetic/raytrace/ambient_common.wgsl"),
+        wgsl!("synthetic/raytrace/visibility_receiver.wgsl"),
+        trace_source(),
         wgsl!("synthetic/raytrace/ambient_visibility.wgsl"),
     )
 }
@@ -110,7 +126,6 @@ impl Pipelines {
         let entries = [
             vec![
                 uniform,
-                sampled(1, COMPUTE, wgpu::TextureSampleType::Depth),
                 sampled(2, COMPUTE, FLOAT),
                 sampled(3, COMPUTE, UINT),
                 write(4, SAMPLES),
@@ -123,16 +138,28 @@ impl Pipelines {
                 entries: &entries[stage as usize],
             })
         });
+        let depth = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("ambient receiver depth"),
+            entries: &[sampled(1, COMPUTE, wgpu::TextureSampleType::Depth)],
+        });
         let structure = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("traced ambient visibility structure"),
             entries: &[binding::acceleration_structure(15, COMPUTE)],
         });
         let shader = crate::shaders::Shader::AmbientVisibility.compile(device, Stage::Trace.name());
         let stages = Stage::ALL.map(|stage| {
-            let groups = [Some(&inputs[stage as usize]), Some(&structure)];
+            let trace = [
+                Some(&depth),
+                Some(&structure),
+                Some(&inputs[Stage::Trace as usize]),
+            ];
+            let filter = [Some(&inputs[Stage::Filter as usize])];
             let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some(stage.name()),
-                bind_group_layouts: &groups[..if stage == Stage::Trace { 2 } else { 1 }],
+                bind_group_layouts: match stage {
+                    Stage::Trace => &trace,
+                    Stage::Filter => &filter,
+                },
                 immediate_size: 0,
             });
             device.compute(&wgpu::ComputePipelineDescriptor {
@@ -148,7 +175,12 @@ impl Pipelines {
             stages,
             inputs,
             structure,
+            depth,
         }
+    }
+
+    pub(super) fn trace_layout(&self) -> &wgpu::BindGroupLayout {
+        &self.inputs[Stage::Trace as usize]
     }
 
     fn bind_inputs(
@@ -156,7 +188,6 @@ impl Pipelines {
         device: &wgpu::Device,
         uniform: &wgpu::Buffer,
         history: &History,
-        depth: &wgpu::TextureView,
         motion: &wgpu::TextureView,
     ) -> [[wgpu::BindGroup; 2]; 2] {
         Stage::ALL.map(|stage| {
@@ -168,7 +199,6 @@ impl Pipelines {
                 let write = 1 - read;
                 let trace = [
                     uniform.clone(),
-                    view_entry(1, depth),
                     view_entry(2, motion),
                     view_entry(3, &history.samples[read]),
                     view_entry(4, &history.samples[write]),
@@ -244,7 +274,7 @@ impl Ambient {
         }
     }
 
-    fn stride(&self) -> Option<u32> {
+    pub(super) fn stride(&self) -> Option<u32> {
         match self.settings.knobs()[0].value {
             0 => None,
             1 => Some(2),
@@ -313,6 +343,10 @@ impl Ambient {
 }
 
 impl Target {
+    pub(super) fn trace_group(&self, read: usize) -> &wgpu::BindGroup {
+        &self.groups[Stage::Trace as usize][read]
+    }
+
     pub(in crate::synthetic) fn light_bindings(
         &self,
         side: usize,
@@ -376,10 +410,16 @@ impl SyntheticTargetInputs {
             samples: history_views(device, "submitted ambient ray samples", extent, SAMPLES),
             filtered: history_views(device, "submitted ambient visibility", extent, VALUES),
         };
-        let groups = pipelines.bind_inputs(device, &uniform, &history, depth, motion);
+        let groups = pipelines.bind_inputs(device, &uniform, &history, motion);
+        let depth = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("ambient receiver depth"),
+            layout: &pipelines.depth,
+            entries: &[view_entry(1, depth)],
+        });
         Some(Target {
             history,
             uniform,
+            depth,
             groups,
             lights: Mutex::new(None),
         })
@@ -393,7 +433,7 @@ impl SyntheticTargetInputs {
         extent: [u32; 2],
         [depth, motion]: [&ResourceId; 2],
         structure: Option<&ResourceId>,
-    ) -> Result<Option<[usize; 2]>, RenderError> {
+    ) -> Result<Option<AmbientPasses>, RenderError> {
         if self.ambient.is_none() {
             return Ok(None);
         }
@@ -425,20 +465,15 @@ impl SyntheticTargetInputs {
         let write =
             |resource: &ResourceId| Access::new(resource.clone(), 0..1, AccessKind::StorageWrite);
         forward.extend([params.clone(), read(&previous_values)]);
-        let passes = Stage::ALL.map(|stage| {
+        let trace_accesses = vec![
+            params.clone(),
+            read(motion),
+            read(&previous_samples),
+            write(&samples),
+        ];
+        let mut declare = |stage, accesses| {
             let key = PipelineRole::Ambient(stage as u32).key(self.key);
             keys.insert(key);
-            let mut accesses = vec![params.clone()];
-            accesses.extend(match stage {
-                Stage::Trace => vec![
-                    read(depth),
-                    read(motion),
-                    read(&previous_samples),
-                    write(&samples),
-                    Access::new(structure.clone(), 0..1, AccessKind::RayQuery),
-                ],
-                Stage::Filter => vec![read(&samples), write(&values)],
-            });
             graph.declare(
                 PassKey::Ambient(stage),
                 PassBody {
@@ -448,8 +483,23 @@ impl SyntheticTargetInputs {
                     external_side_effect: true,
                 },
             )
-        });
-        Ok(Some(passes))
+        };
+        let (trace, combined_accesses) = if self.soft_sun.is_some() {
+            (None, trace_accesses)
+        } else {
+            let mut accesses = trace_accesses;
+            accesses.extend([
+                read(depth),
+                Access::new(structure.clone(), 0..1, AccessKind::RayQuery),
+            ]);
+            (Some(declare(Stage::Trace, accesses)), Vec::new())
+        };
+        let filter = declare(Stage::Filter, vec![params, read(&samples), write(&values)]);
+        Ok(Some(AmbientPasses {
+            trace,
+            filter,
+            combined_accesses,
+        }))
     }
 }
 
@@ -470,7 +520,6 @@ impl OffscreenTarget {
                 &self.device,
                 &target.uniform,
                 &target.history,
-                &self.depth,
                 &self.motion_view,
             );
         }
@@ -560,9 +609,12 @@ impl SceneContext<'_> {
             .ok_or(RenderError::GraphPassMismatch)?;
         pass.set_pipeline(&ambient.pipelines.stages[stage as usize]);
         let read = 1 - self.prepared.history.write_side();
-        pass.set_bind_group(0, &target.groups[stage as usize][read], &[]);
         if let Some(structure) = &structure {
+            pass.set_bind_group(0, &target.depth, &[]);
             pass.set_bind_group(1, structure, &[]);
+            pass.set_bind_group(2, target.trace_group(read), &[]);
+        } else {
+            pass.set_bind_group(0, &target.groups[stage as usize][read], &[]);
         }
         let [x, y] = self.target.drawn.map(|axis| axis.div_ceil(stride * TILE));
         pass.dispatch_workgroups(x, y, 1);

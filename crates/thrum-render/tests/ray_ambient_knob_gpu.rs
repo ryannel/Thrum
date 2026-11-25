@@ -52,10 +52,30 @@ fn ambient_extent_is_live_and_off_restores_the_prior_frame() {
         queue.submit([resolve.finish()]);
         support::wait(&device);
         let passes = timing.try_collect(1).unwrap().unwrap();
-        let ambient_passes = passes.iter().filter(|pass| pass.name.starts_with("traced ambient visibility")).count();
-        assert_eq!(ambient_passes, if extent == 0 { 0 } else { 2 });
+        let named = |name: &str| passes.iter().filter(|pass| pass.name.as_ref() == name).count();
+        assert_eq!(named("traced Sun and ambient visibility trace"), 1);
+        assert_eq!(named("traced Sun visibility trace"), 0);
+        assert_eq!(named("traced ambient visibility"), 0);
+        assert_eq!(named("traced ambient visibility filter"), usize::from(extent > 0));
         if extent == 0 {
             assert_eq!(bytes, expected, "off must restore the previous renderer's frame");
+        } else {
+            let read_sun = |target: &thrum_render::synthetic::OffscreenTarget| {
+                thrum_test_support::readback::texture(&device, &queue, target.sun_disc_witness().unwrap(),
+                    thrum_test_support::readback::Mip::level(0), ..)
+            };
+            assert_eq!(read_sun(&target), read_sun(&prior_target), "shared trace must preserve the Sun samples");
+            let samples = renderer.ambient_ray_samples_for_probe(&target).expect("submitted ray history");
+            let raw = thrum_test_support::readback::texture(
+                &device, &queue, samples, thrum_test_support::readback::Mip::level(0), ..,
+            );
+            let columns = fixture::EXTENT as usize;
+            let width = columns / if extent == 1 { 2 } else { 1 };
+            let count = |x: usize, y: usize| raw[(y * columns + x) * 16 + 4];
+            assert_eq!(count(width / 2, width / 2), 1, "shared trace must write ambient history");
+            if width < columns {
+                assert_eq!(count(width, width / 2), 0, "half extent must not trace past its last column");
+            }
         }
         drop(readback);
         let hal = device.get_internal_counters().hal;
@@ -67,7 +87,7 @@ fn ambient_extent_is_live_and_off_restores_the_prior_frame() {
             steady_counts = Some(counts);
         }
     }
-    println!("On/half/full/off: recorded visibility passes only while enabled, exact off bytes, stable GPU allocation counts");
+    println!("Soft Sun and ambient use one recorded trace, with ambient samples at the selected extent, exact off bytes and stable allocations");
 
     let (device, queue, caps) = support::device(&gpu, "", 2);
     let (fallback, target) = fixture::prepare(&device, &caps, &queue, &scene, lighting);
@@ -79,6 +99,17 @@ fn ambient_extent_is_live_and_off_restores_the_prior_frame() {
     assert_eq!(support::submit_bytes(&device, &queue, &fallback, &target).len(),
         fixture::EXTENT.pow(2) as usize * 4);
     println!("No ray-query device: {selection:?}, ready Maps frame");
+
+    let (device, queue, caps) = support::device(&gpu, "ray-query", 3);
+    let portable = caps.with_recipe_override("portable").unwrap();
+    let (control, _) = fixture::prepare(&device, &portable, &queue, &prior_scene, lighting);
+    let (declined, target) = fixture::prepare(&device, &portable, &queue, &scene, lighting);
+    assert_eq!(declined.ambient_occlusion_selection().fallback, Some(RayStructureSelection::UnsupportedRecipe));
+    assert_eq!(control.forward_source_for_probe(), declined.forward_source_for_probe());
+    assert!(!declined.forward_source_for_probe().contains("ambient_contact"));
+    assert_eq!(support::submit_bytes(&device, &queue, &declined, &target).len(),
+        fixture::EXTENT.pow(2) as usize * 4);
+    println!("Portable requested and ordinary Maps forward sources match byte for byte");
 }
 }
 
@@ -138,5 +169,63 @@ fn ambient_rays_stop_at_the_declared_radius() {
     assert_eq!(short, 0, "a ray shorter than the gap cannot hit the wall");
     assert!(long > 0, "longer rays must be able to reach the wall");
     println!("Receiver beside wall: 0.35 m {short}/144 blocked, 2.00 m {long}/144 blocked");
+}
+}
+
+#[cfg(feature = "creation-counters")]
+thrum_test_support::macos_gpu_test! {
+fn common_origin_sees_a_thin_sheet_at_one_hundred_metres() {
+    use glam::{Mat4, Vec3, Vec4};
+    use ray_shadow_support as fixture;
+    use ray_support::support;
+    use thrum_render::synthetic::SyntheticView;
+
+    let Some(gpu) = support::gate("ambient origin at the supported caster separation") else { return };
+    let (device, queue, caps) = support::device(&gpu, "ray-query", 1);
+    let view = SyntheticView::perspective(
+        [0.0, 100.0, 0.0], [0.0; 3], Vec3::Z.to_array(), 0.8, 1.0, 0.05, 400.0,
+    ).unwrap();
+    let raw_projection = Mat4::from_cols_array_2d(&view.view_proj_columns());
+    let projected = raw_projection * Vec4::W;
+    let z = projected.z / projected.w;
+    let width = fixture::EXTENT as f32;
+    let pixel = 0.5 + width / 2.0 + 1.0;
+    let point = raw_projection.inverse() * Vec4::new(2.0 * pixel / width - 1.0, 0.0, z, 1.0);
+    let x = point.x / point.w;
+    // Keep the selected receiver column visible just outside the sheet edge.
+    // The sheet stands 5 mm above the flat receiver and is 0.2 mm thick.
+    let sheet = fixture::box_at(1, Vec3::new(x + 1.0005, 0.0051, 0.0), Vec3::new(1.0, 0.0001, 1.8));
+    let lighting = fixture::sun(Vec3::Y, 0.0);
+    let votes = |casters: &[thrum_render::abi::InstanceRecord]| {
+        let mut scene = fixture::scene(Vec3::ZERO, casters);
+        scene.view = view;
+        scene.ambient_occlusion_radius = Some(2.0);
+        let (mut renderer, mut target) = fixture::prepare(&device, &caps, &queue, &scene, lighting);
+        for _ in 0..16 {
+            renderer.update_frame(&queue, &mut target, &scene, lighting, 1.0).unwrap();
+            drop(support::submit_bytes(&device, &queue, &renderer, &target));
+            renderer.commit_frame();
+        }
+        let samples = renderer.ambient_ray_samples_for_probe(&target).unwrap();
+        let raw = thrum_test_support::readback::texture(
+            &device, &queue, samples, thrum_test_support::readback::Mip::level(0), ..,
+        );
+        let columns = fixture::EXTENT as usize;
+        let centre = columns / 4;
+        (centre - 1..=centre + 1).map(|row| {
+            let start = (row * columns + centre) * 16;
+            let words: [u32; 4] = std::array::from_fn(|word| {
+                u32::from_le_bytes(raw[start + word * 4..start + word * 4 + 4].try_into().unwrap())
+            });
+            assert_eq!(words[1], 16);
+            assert!((f32::from_bits(words[2]) - z).abs() < z * 1e-5, "sample must see the receiver");
+            words[1] - words[0].count_ones()
+        }).sum::<u32>()
+    };
+    let clear = votes(&[]);
+    let blocked = votes(&[sheet]);
+    assert_eq!(clear, 0, "the ray must leave the flat receiver without self-hits");
+    assert!(blocked > 0, "the ray must reach the sheet above the supported separation");
+    println!("At 100 m: {clear}/48 hits on the open plane, {blocked}/48 hits with the 5 mm sheet");
 }
 }
