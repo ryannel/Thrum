@@ -80,12 +80,12 @@ fn shadow_pipelines_are_closed_when_each_generation_is_ready() {
         let ready = host.creation_report();
         assert!(ready.ready);
         assert_eq!(ready.generation, generation);
-        assert!(
-            ready
-                .pipelines
-                .iter()
-                .all(|row| row.phase == CreationPhase::Build)
-        );
+        let preparation = if generation == 1 {
+            CreationPhase::Build
+        } else {
+            CreationPhase::Recovery
+        };
+        assert!(ready.pipelines.iter().all(|row| row.phase == preparation));
         assert!(ready.pipelines.iter().any(|row| row.render > 0));
         let view = device
             .create_texture(&wgpu::TextureDescriptor {
