@@ -1406,6 +1406,32 @@
         "by": "plan",
         "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its 1 Must Fix find",
         "at": "2026-11-25T09:39:26Z"
+      },
+      "ready_for_review": {
+        "commit": "a59f6e135607a3d21f0c7385321d1ebd00024bf4",
+        "checked": "a59f6e135607a3d21f0c7385321d1ebd00024bf4",
+        "at": "2026-11-25T18:05:16Z",
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.171.0-alpha.13",
+        "path": "visible",
+        "usage": {
+          "input": 710355,
+          "cached": 105936256,
+          "output": 201537,
+          "turns": 3
+        },
+        "session_usage": {
+          "input": 710355,
+          "cached": 105936256,
+          "output": 201537,
+          "turns": 3
+        }
       }
     },
     "WP20": {
