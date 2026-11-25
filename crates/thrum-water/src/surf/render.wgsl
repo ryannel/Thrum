@@ -14,9 +14,14 @@ fn surf_shore_face(point: vec2<f32>) -> f32 {
     let first = min(vec2<u32>(grid), size - 2u);
     let f = grid - vec2<f32>(first);
     let base = end - size.x * size.y + first.y * size.x + first.x;
-    let a = surf_cache[base].current.x;
-    let b = surf_cache[base + 1u].current.x;
-    let c = surf_cache[base + size.x].current.x;
-    let d = surf_cache[base + size.x + 1u].current.x;
-    return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+    let a = surf_cache[base].current.xyz;
+    let b = surf_cache[base + 1u].current.xyz;
+    let c = surf_cache[base + size.x].current.xyz;
+    let d = surf_cache[base + size.x + 1u].current.xyz;
+    let wave = mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+    if wave.z < 1.0e-5 { return 0.0; }
+    // Filter the crest phase before applying the face profile so the narrow
+    // bright line can travel continuously between the bed lattice nodes.
+    let phase = atan2(wave.y, wave.x);
+    return wave.z * smoothstep(-0.20, 0.22, phase) * (1.0 - smoothstep(0.65, 1.12, phase));
 }

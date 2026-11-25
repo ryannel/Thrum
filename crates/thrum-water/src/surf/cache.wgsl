@@ -48,11 +48,11 @@ fn cache_shore_face(i: u32) {
             let answer = map_sample(point);
             if answer.body != NO_BODY && answer.has_bed {
                 let sample = cache_sample(point, answer.body, 0.0, false);
-                let face = breaking_face(sample);
-                if face > 0.0 {
+                let strength = breaking_strength(sample);
+                if strength > 0.0 {
                     let displaced_bed = map_cell(point + sample.displacement.xz);
                     if displaced_bed.inside && answer.row.water.x + sample.displacement.y > displaced_bed.bed {
-                        result.current.x = face;
+                        result.current = strength * vec4(cos(sample.phase), sin(sample.phase), 1.0, 0.0);
                     }
                 }
             }
