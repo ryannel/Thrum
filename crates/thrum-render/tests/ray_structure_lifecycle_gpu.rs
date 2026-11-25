@@ -4,6 +4,7 @@ pub mod ray_support;
 
 #[cfg(feature = "creation-counters")]
 mod metal {
+    #[cfg(target_os = "macos")]
     use super::ray_support::support;
     #[cfg(target_os = "macos")]
     use thrum_render::error::RenderError;
