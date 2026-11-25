@@ -89,8 +89,11 @@ fn foam_surface(point: vec3<f32>, row: SurfaceRow, footprint: f32, jacobian: f32
         // Feather that estimate into open-sea cover before the bed ends.
         let grid = vec2<f32>(bed.corners[0]) + bed.uv;
         let edge = min(grid, vec2<f32>(map.size_count_sea.xy - 1u) - grid);
-        let shore_support = smoothstep(0.0, 12.0, min(edge.x, edge.y));
-        let shore_stocks = shore_support * vec3(air, film * 0.42 * vec2(6.0 / 19.0, 13.0 / 19.0));
+        let shore_support = smoothstep(vec2(0.0), vec2(12.0), edge);
+        // At distance the openings in aged wash dominate its visible mean.
+        // Retain the fresh estimate used by the moving front.
+        let visible_film = film * 0.42 * vec2(6.0, 0.20 * 13.0) / 19.0;
+        let shore_stocks = shore_support.x * shore_support.y * vec3(air, visible_film);
         far = vec4(sea + (vec3(1.0) - sea) * shore_stocks, 0.0);
     }
     var stocks = foam_at(point.xz, far);
