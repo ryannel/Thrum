@@ -895,7 +895,7 @@
           "ask": "Read the test. Is each of the three causes driven through the host's own calls, with a control that skips the reset failing?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP8/D8.6-replacement.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP8-review.md",
           "builder_result": "pass"
         },
@@ -928,20 +928,8 @@
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
-      "quality_bar": "Upscaling as clean as MetalFX in a shipped Mac game, such as Resident Evil Village or Death Stranding: sharp at reduced scale, no ghosting behind moving things, no shimmer on stars or thin geometry, and no brightness lag as the time of day changes. At least as stable as this engine's own TAAU on the same sequences.",
-      "findings": [
-        {
-          "name": "Generation replacement lacks a skipped-reset control",
-          "item": "D8.6",
-          "repeat": false
-        },
-        {
-          "name": "Generation replacement lacks a portable drop comparison",
-          "item": "D8.6",
-          "repeat": false
-        }
-      ]
+      "status": "done",
+      "quality_bar": "Upscaling as clean as MetalFX in a shipped Mac game, such as Resident Evil Village or Death Stranding: sharp at reduced scale, no ghosting behind moving things, no shimmer on stars or thin geometry, and no brightness lag as the time of day changes. At least as stable as this engine's own TAAU on the same sequences."
     },
     {
       "id": "WP9",
