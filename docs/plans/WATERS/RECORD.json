@@ -1951,6 +1951,15 @@
         "task": "WATERS WP19 needs something no plan provides yet. The builder wrote: The tick stage needs a delivery path that meets the",
         "at": "2026-11-25T16:12:13Z"
       }
+    },
+    "WP22": {
+      "definitions": "dcbe99febb6e4f85c7dd23f3057fb30fa58635e74ee27f67ca7a40065b50ce6e",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "The main-branch check cross-target fails, and the script couldn't tell which commit broke it. Find what breaks it, and p",
+        "at": "2026-11-25T16:18:59Z"
+      }
     }
   },
   "tasks": [
@@ -2093,11 +2102,15 @@
     {
       "task": "WATERS WP19 needs something no plan provides yet. The builder wrote: The tick stage needs a delivery path that meets the two-tick requirement while the island's sand view draws. The builder's handoff, .orchestrate/evidence/WATERS/WP19-handoff.md, says what is finished, what was tried and what to do first. Its work is on branch build/waters at ab950b5b9a2c, which isn't merged; read it with `git show`. A plan you keep ends with `KEEP WATERS WP19: builder: <where the plan provides it>`.\n\nFrom the lead: this is WP19's second dependency block, after EFFECT-GRAPH WP6 added the tick stage. Look at the measured cost before planning another delivery path. The handoff records the surf field cache at about 93 ms a frame at 1440p and a median view completion of about 113 ms, against a two-tick window of about 33 ms at 60 Hz. No submission order delivers inside the window while the view itself takes three times longer, and a 93 ms surf pass is far outside what a shipped game spends on water. Decide whether the right fix is making the surf pass cheap enough (WATERS' own work), a delivery path that does not wait on the view, or both, and plan it where it belongs.",
       "at": "2026-11-25T16:12:13Z"
+    },
+    {
+      "task": "The main-branch check cross-target fails, and the script couldn't tell which commit broke it. Find what breaks it, and plan the fix in the module whose code it is, in its plan or as its next work package.\n\nFrom the lead: the log (.git/orchestrate/main-checks/cross-target/logs/20261125-170212-*) shows error E0432 in examples/water/tests/surf_running.rs: unresolved imports super::support and super::surf_cost. In examples/water/tests/proof_gpu.rs, realtime, support and surf_cost are gated #[cfg(target_os = \"macos\")] but `mod surf_running;` is not, so non-Mac targets fail to compile. It arrived with WATERS WP19 commits (for example f6617c977 / 8d8340e65). The fix is WATERS' and small; put it where a builder lands it soonest, without waiting on WP19's open delivery problem.",
+      "at": "2026-11-25T16:18:59Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-25T16:12:13Z"
+    "at": "2026-11-25T16:18:59Z"
   },
   "design_history": [
     {
