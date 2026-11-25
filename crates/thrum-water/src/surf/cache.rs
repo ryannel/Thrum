@@ -232,11 +232,13 @@ impl Cache {
         chop: f64,
     ) {
         self.recorded_anchor = anchor;
-        let count = u32::try_from(spectrum.long.len()).expect("validated spectrum");
+        let mut active = 0;
         let mut components = [Component::zeroed(); COMPONENT_LIMIT];
-        for (out, component) in components.iter_mut().zip(&spectrum.long) {
-            *out = Component::at(component, anchor, time);
+        for component in spectrum.long.iter().filter(|wave| wave.amplitude > 0.0) {
+            components[active] = Component::at(component, anchor, time);
+            active += 1;
         }
+        let count = u32::try_from(active).expect("validated spectrum");
         queue.write_buffer(
             &self.settings,
             0,
@@ -249,11 +251,11 @@ impl Cache {
                 shore_size: self.shore_size,
             }),
         );
-        if !spectrum.long.is_empty() {
+        if active != 0 {
             queue.write_buffer(
                 &self.components,
                 0,
-                bytemuck::cast_slice(&components[..spectrum.long.len()]),
+                bytemuck::cast_slice(&components[..active]),
             );
         }
     }

@@ -19,7 +19,7 @@ fn surf_records_match_the_cache_and_query() {
         &source,
         &[
             record!(ShoreBody, stages, base, count),
-            record!(SurfRecord, controls, bounds, coarse, bodies),
+            record!(SurfRecord, controls, bounds, coarse, bodies, shoaling),
         ],
     );
     validate(&super::cache::Cache::compute_source());

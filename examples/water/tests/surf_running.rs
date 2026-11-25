@@ -5,6 +5,7 @@ use std::{
     sync::{Arc, Mutex},
     time::{Duration, Instant},
 };
+use thrum_app::sky::Camera;
 use thrum_render::runtime::SurfaceOutput;
 use thrum_water::query::{BodyAnswers, QueryMailbox};
 use water_scene::{
@@ -19,6 +20,7 @@ const AGE: usize = 8;
 const DRAIN_TICKS: u32 = 8;
 const TOLERANCE: f64 = 0.015;
 const WITNESSES: [usize; 3] = [50, 300, 550];
+const CAMERA: Camera = Camera::look_at([-2776.0, 477.0, -54.0], [-126.0, 0.0, -54.0], 1.44);
 
 struct GameTick {
     begin: Option<u64>,
@@ -96,18 +98,19 @@ fn arm(gpu: &thrum_test_support::Gpu, extent: [u32; 2], fleet: Vec<Body>) -> Gam
     let (game, report, _, probes) = build_surf(Wind::Gale, true).expect("island gale");
     let query = probes.expect("island body query").query;
     let stats = Arc::new(Mutex::new(GameTick::default()));
-    let game = game.with_fixed_update({
-        let stats = Arc::clone(&stats);
-        let query = query.clone();
-        move |tick, step| {
-            stats
-                .lock()
-                .expect("game tick")
-                .tick(&query, &fleet, tick, step);
-        }
-    });
+    let game = game
+        .with_presentation_camera(|_| CAMERA)
+        .with_fixed_update({
+            let stats = Arc::clone(&stats);
+            let query = query.clone();
+            move |tick, step| {
+                stats
+                    .lock()
+                    .expect("game tick")
+                    .tick(&query, &fleet, tick, step);
+            }
+        });
     let mut fixture = Fixture::from_game(gpu, extent, game, report);
-    fixture.parameters(r#"{"camera.island":2}"#);
     fixture.warm_cooked();
     fixture.host.set_timing_requested(false);
     let view = fixture
@@ -173,7 +176,7 @@ fn arm(gpu: &thrum_test_support::Gpu, extent: [u32; 2], fleet: Vec<Body>) -> Gam
     .expect("game tick");
     GameArm {
         record: json!({
-            "extent":extent, "camera":2, "ticks":MEASURE_TICKS, "warm_ticks":WARM_TICKS, "wall_seconds":wall_seconds,
+            "extent":extent, "ticks":MEASURE_TICKS, "warm_ticks":WARM_TICKS, "wall_seconds":wall_seconds,
             "frames_submitted":submitted, "frames_completed":completed,
             "dropped_views":dropped, "age":stats.ages, "nodes":stats.nodes,
             "fallback":stats.fallback, "unavailable":mailbox.unavailable,
@@ -231,6 +234,8 @@ pub(super) fn run(gpu: &thrum_test_support::Gpu) -> Value {
             })
             .collect::<Vec<_>>();
     json!({"target":"mac-metal", "extent":extent, "step_hz":60, "maximum_age":AGE,
-        "tolerance_m":TOLERANCE, "open_water":open.record, "breakers":breakers.record,
+        "tolerance_m":TOLERANCE,
+        "camera":{"position":CAMERA.position, "target":CAMERA.target, "fov_degrees":CAMERA.vertical_fov_degrees},
+        "open_water":open.record, "breakers":breakers.record,
         "witness":witness})
 }

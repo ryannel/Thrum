@@ -1,5 +1,6 @@
 //! Immutable surf data, lent to the field cache, column query and whitewater.
 pub(crate) mod cache;
+mod shoaling;
 #[cfg(test)]
 mod tests;
 
@@ -33,6 +34,7 @@ struct SurfRecord {
     bounds: [f32; 4],
     coarse: [f32; 4],
     bodies: [ShoreBody; BODY_LIMIT],
+    shoaling: [[f32; 4]; shoaling::ROWS],
 }
 
 pub(crate) struct SurfGpu {
@@ -46,16 +48,13 @@ pub(crate) struct SurfGpu {
 
 impl SurfGpu {
     pub(crate) fn source(group: u32, first: u32) -> String {
-        Self::sheet_source(group, first)
-            + "\nfn wave_shoaling(k: f32, depth: f32) -> f32 { return surf_shoaling(k, depth); }\n"
-    }
-
-    pub(crate) fn sheet_source(group: u32, first: u32) -> String {
         format!(
             "const SURF_GROUP = {group}u; const SURF_FIRST = {first}u;\n\
              const SURF_SECTORS = {SECTORS}u; const SURF_RUNGS = {RUNGS}u;\n\
              const SURF_LAG_LAYERS = {LAG_LAYERS}u; const SURF_EXPOSURE_LAYERS = {EXPOSURE_LAYERS}u;\n"
-        ) + include_str!("surf.wgsl")
+        ) + &shoaling::source()
+            + include_str!("surf.wgsl")
+            + include_str!("surf/shoaling.wgsl")
     }
 
     #[expect(
@@ -199,6 +198,7 @@ impl SurfGpu {
                 0.0,
             ],
             bodies,
+            shoaling: shoaling::table(),
         };
         let settings = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("surf settings"),

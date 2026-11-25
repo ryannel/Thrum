@@ -8,6 +8,7 @@ struct SurfRecord {
     bounds: vec4<f32>, // max throw, first throw index, minimum body level, first contour plane
     coarse: vec4<f32>, // fine cells per coarse cell, margin floor, bend factor
     bodies: array<ShoreBody, BODY_LIMIT>,
+    shoaling: array<vec4<f32>, SHOALING_ROWS>,
 }
 @group(SURF_GROUP) @binding(SURF_FIRST) var<uniform> surf: SurfRecord;
 @group(SURF_GROUP) @binding(SURF_FIRST + 1u) var surf_lags: texture_2d_array<f32>;

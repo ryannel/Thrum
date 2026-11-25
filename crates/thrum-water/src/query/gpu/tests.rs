@@ -83,8 +83,7 @@ fn surf_query_passes_parse_with_all_shared_bindings() {
         + include_str!("../../column.wgsl")
         + include_str!("../sample.wgsl")
         + &crate::map_gpu::declarations_at(super::SURF_GROUP)
-        + &crate::surf::SurfGpu::sheet_source(super::SURF_GROUP, super::SURF_BINDING)
-        + &super::shoaling::source()
+        + &crate::surf::SurfGpu::source(super::SURF_GROUP, super::SURF_BINDING)
         + include_str!("../../surf/cut.wgsl");
     records::named("surf body query passes", &source, &[]);
 }

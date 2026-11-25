@@ -43,6 +43,8 @@ struct Grid {
 pub(super) struct CoarsePlan {
     pub(super) jobs: Vec<[u32; 4]>,
     pub(super) records: u64,
+    pub(super) coarse_nodes: u32,
+    pub(super) fine_groups: u32,
 }
 
 #[expect(
@@ -119,7 +121,10 @@ impl CoarsePlan {
         let mut plan = Self {
             jobs: Vec::new(),
             records: 0,
+            coarse_nodes: 0,
+            fine_groups: 0,
         };
+        let mut fine = Vec::new();
         for grid in grids {
             let nodes = grid.bounds.nodes();
             let groups = nodes.div_ceil(u64::from(GROUP_WIDTH));
@@ -138,7 +143,7 @@ impl CoarsePlan {
             for start in (0..count).step_by(GROUP_WIDTH as usize) {
                 plan.jobs.push([first, start, offset, count]);
             }
-            for index in grid.members {
+            for &index in &grid.members {
                 let point = &mut points[index];
                 point.coarse_grid = [
                     grid.bounds.lo[0],
@@ -150,6 +155,36 @@ impl CoarsePlan {
                 point.surf_stage[2] = f32::from_bits(count);
             }
             plan.records += nodes + groups;
+            if cut.coarse_cells <= 8 && grid.members.len() >= 2 {
+                fine.push((
+                    grid.members,
+                    nodes,
+                    plan.jobs.len() as u64 * u64::from(GROUP_WIDTH),
+                ));
+            }
+        }
+        plan.coarse_nodes = u32::try_from(plan.records - plan.jobs.len() as u64)
+            .expect("bounded coarse node count");
+        let mut fine_offset = 0_u64;
+        let per_cell = u64::from((cut.coarse_cells + 1).pow(2));
+        // Reserve at most 16 MiB of dense fine storage per ring slot.
+        // Small station groups and grids beyond that limit cut locally.
+        let fine_limit = (16 * 1024 * 1024) / 16;
+        for (members, nodes, groups) in fine {
+            let storage = nodes * per_cell;
+            if plan.records + storage > max_records
+                || groups > u64::from(max_groups)
+                || fine_offset + storage > fine_limit
+            {
+                continue;
+            }
+            for index in members {
+                points[index].surf_stage[3] =
+                    f32::from_bits(u32::try_from(fine_offset + 1).expect("fine storage offset"));
+            }
+            plan.fine_groups = u32::try_from(groups).expect("bounded fine group count");
+            plan.records += storage;
+            fine_offset += storage;
         }
         plan
     }
