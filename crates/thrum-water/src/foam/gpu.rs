@@ -100,7 +100,7 @@ fn buffer(device: &DeviceSite, label: &str, size: u64, usage: wgpu::BufferUsages
 }
 
 impl Foam {
-    pub(crate) fn source(surf: bool) -> String {
+    fn source(surf: bool) -> String {
         let [fine, coarse] = SPACING;
         let handoff_cells = if surf { 2 * CELLS } else { 1 };
         format!(
@@ -111,6 +111,10 @@ impl Foam {
         ) + include_str!("../column/records.wgsl")
             + include_str!("../column.wgsl")
             + include_str!("sample.wgsl")
+    }
+
+    pub(crate) fn sample_source(&self) -> String {
+        Self::source(self.prepare_shore_births.is_some())
     }
 
     pub(crate) fn sample_layout() -> [wgpu::BindGroupLayoutEntry; 2] {
