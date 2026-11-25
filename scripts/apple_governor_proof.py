@@ -1,7 +1,9 @@
 """Qualify the quality governor against the authored route on Mac Metal."""
 
+from contextlib import contextmanager
 import hashlib
 import json
+import os
 from pathlib import Path
 import subprocess
 from statistics import median
@@ -14,6 +16,7 @@ ROUNDS = 4600
 WINDOW_LOAD_ROUNDS = (ROUNDS, 6200)
 PRELOAD_TICKS = (200, LOAD[0])
 WINDOW_EXTENT = (960, 540)
+MISSED_OPPORTUNITY_TOLERANCE = 2
 CADENCE = "atmosphere.aerial cadence"
 
 
@@ -42,6 +45,19 @@ def sample_changes(samples):
     return [sample for _, sample in changes]
 
 
+@contextmanager
+def awake_display():
+    # Wake a sleeping display once and hold it across the arms and retries.
+    # Bind the assertion to this process so an interrupted proof also releases it.
+    keep_awake = subprocess.Popen(
+        ["/usr/bin/caffeinate", "-d", "-i", "-u", "-w", str(os.getpid())])
+    try:
+        yield
+    finally:
+        keep_awake.terminate()
+        keep_awake.wait()
+
+
 def window_arm(output, binary, env, route, name, *, enabled=True, load=0, thermal=False):
     directory = output / name
     directory.mkdir()
@@ -53,7 +69,7 @@ def window_arm(output, binary, env, route, name, *, enabled=True, load=0, therma
                   THRUM_MAC_TRANSITION=str(directory), THRUM_MAC_TRANSITION_ARM="baseline",
                   THRUM_V1_FRAMES="720" if enabled and load else "520")
     with (directory / "game.log").open("w") as log:
-        result = subprocess.run(["/usr/bin/caffeinate", "-d", "-i", "-u", str(binary)],
+        result = subprocess.run([str(binary)],
                                 cwd=ROOT, env=launch, stdout=log, stderr=subprocess.STDOUT,
                                 check=False, timeout=100)
     if result.returncode:
@@ -93,17 +109,27 @@ def miss_rate(arm, first, until):
 
 def exceeds_baseline(arm, baseline):
     # Two opportunities of measurement tolerance at window boundaries.
-    return arm["rate"] > baseline["rate"] + 2 / arm["ticks"]
+    return arm["rate"] > baseline["rate"] + MISSED_OPPORTUNITY_TOLERANCE / arm["ticks"]
 
 
-class PreloadMismatch(ValueError):
-    """The window arms were already delivering at different rates before load."""
+class InvalidDisplayEnvironment(ValueError):
+    """Unloaded display delivery could not support a forced-load comparison."""
+
+
+def steady_miss_rate(arm, first, until):
+    measured = miss_rate(arm, first, until)
+    if measured["missed"] > MISSED_OPPORTUNITY_TOLERANCE:
+        raise InvalidDisplayEnvironment(
+            f"{arm['directory']}: unloaded baseline missed too many opportunities "
+            f"at ticks {first}..{until}: {measured}")
+    return measured
 
 
 def matched_preload(arm, reference):
     measured = miss_rate(arm, *PRELOAD_TICKS)
     if exceeds_baseline(measured, reference) or exceeds_baseline(reference, measured):
-        raise PreloadMismatch(f"{arm['directory']}: unloaded delivery {measured} versus {reference}")
+        raise InvalidDisplayEnvironment(
+            f"{arm['directory']}: unloaded delivery {measured} versus {reference}")
     return measured
 
 
@@ -128,6 +154,14 @@ def validate_recovery(changes, *, scale=False):
 
 def mac_governor(output, *, steady=False, capture=False):
     binary, env, route = environment(output)
+    if capture and not steady:
+        return mac_governor_capture(output, binary, env, route)
+
+    with awake_display():
+        return measure_window(output, binary, env, route, steady=steady)
+
+
+def measure_window(output, binary, env, route, *, steady):
     if steady:
         arm = window_arm(output, binary, env, route, "steady")
         last_tick = route["origin_tick"] + route["keys"][-1]["tick"]
@@ -141,27 +175,25 @@ def mac_governor(output, *, steady=False, capture=False):
         return dict(target="mac-metal", scale_changes=count, display_hz=arm["display_hz"],
                     changes=changes, binary_sha256=digest(binary))
 
-    if capture:
-        return mac_governor_capture(output, binary, env, route)
-
     interrupted = []
     for number in range(1, 4):
         attempt = output / f"attempt-{number}"
         attempt.mkdir()
         try:
             report = compare_live_load(attempt, binary, env, route)
-        except PreloadMismatch as error:
+        except InvalidDisplayEnvironment as error:
             interrupted.append(str(error))
         else:
-            return dict(report, unmatched_preloads=interrupted)
-    raise ValueError(f"window arms did not match before forced load: {interrupted}")
+            return dict(report, invalid_display_attempts=interrupted)
+    raise InvalidDisplayEnvironment(
+        f"invalid display environment in all forced-load attempts: {interrupted}")
 
 
 def compare_live_load(output, binary, env, route):
     steady_arm = window_arm(output, binary, env, route, "steady")
     first = LOAD[0] + 30
-    baseline = miss_rate(steady_arm, first, LOAD[1])
-    preload = {"steady": miss_rate(steady_arm, *PRELOAD_TICKS)}
+    baseline = steady_miss_rate(steady_arm, first, LOAD[1])
+    preload = {"steady": steady_miss_rate(steady_arm, *PRELOAD_TICKS)}
     controls = {}
     # Select load strength using only the ungoverned run. A GPU that still
     # presents on time at the first setting cannot witness a return to rate.

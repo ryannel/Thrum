@@ -3,7 +3,9 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
+from apple_governor_proof import InvalidDisplayEnvironment, compare_live_load
 from apple_presentation import annotate_display_ticks
 
 
@@ -90,6 +92,23 @@ class DisplayTickTests(unittest.TestCase):
             [callback(1, 0, 0.001), callback(2, 0.008, 0.009)], [late], [call])
         self.assertEqual(ticks[0]["outcome"], "acquiring a drawable")
         self.assertEqual(ticks[0]["configure_calls"], [call])
+
+
+class GovernorProofTests(unittest.TestCase):
+    def test_missed_presents_in_unloaded_baseline_invalidate_attempt_before_load(self):
+        for miss_start, miss_end in ((200, 230), (260, 320)):
+            with self.subTest(miss_start=miss_start):
+                rows = [
+                    dict(world_tick=tick, sequence=tick, governor={
+                        "missed_present_proxy": min(max(tick - miss_start, 0), miss_end - miss_start),
+                    })
+                    for tick in range(200, 320)
+                ]
+                baseline = dict(directory="steady", rows=rows)
+                with patch("apple_governor_proof.window_arm", return_value=baseline) as arm:
+                    with self.assertRaisesRegex(InvalidDisplayEnvironment, "unloaded baseline"):
+                        compare_live_load(Path("."), Path("v1-game"), {}, {})
+                arm.assert_called_once_with(Path("."), Path("v1-game"), {}, {}, "steady")
 
 
 if __name__ == "__main__":
