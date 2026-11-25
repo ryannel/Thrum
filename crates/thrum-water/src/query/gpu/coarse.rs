@@ -160,7 +160,7 @@ impl CoarsePlan {
                     masks,
                     grid.bounds,
                     cut,
-                    stations,
+                    &stations,
                     f64::from(points[grid.members[0]].level_current_bed[0]),
                     map,
                     reach,
@@ -233,7 +233,7 @@ fn mask_cells(
     masks: &mut [[u32; 4]],
     bounds: Rect,
     cut: CutConfig,
-    stations: impl Iterator<Item = [f64; 2]> + Clone,
+    stations: &(impl Iterator<Item = [f64; 2]> + Clone),
     level: f64,
     map: &Map,
     reach: &ThrowReach<'_>,
@@ -251,8 +251,8 @@ fn mask_cells(
         bed_ranges.clear();
     }
     masks.fill([0; 4]);
-    for z in bounds.lo[1]..bounds.hi[1] {
-        for x in bounds.lo[0]..bounds.hi[0] {
+    for (row, z) in (bounds.lo[1]..bounds.hi[1]).enumerate() {
+        for (column, x) in (bounds.lo[0]..bounds.hi[0]).enumerate() {
             let lo = [f64::from(x) * cell, f64::from(z) * cell];
             let hi = lo.map(|metres| metres + cell);
             let centre = lo.map(|metres| metres + 0.5 * cell);
@@ -273,7 +273,7 @@ fn mask_cells(
                     .all(|axis| lo[axis] - bound <= point[axis] && point[axis] <= hi[axis] + bound)
             });
             if admits {
-                let index = (z - bounds.lo[1]) as usize * width + (x - bounds.lo[0]) as usize;
+                let index = row * width + column;
                 // Bit one marks a possible cell, bit two marks each of its four nodes.
                 masks[index][3] |= 3;
                 for at in [index + 1, index + width, index + width + 1] {
