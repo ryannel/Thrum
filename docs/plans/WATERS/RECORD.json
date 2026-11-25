@@ -1590,6 +1590,15 @@
         "checked": "f59f0a120beed8f3c91548d3e7167bf48122e168",
         "at": "2026-11-24T03:07:54Z"
       }
+    },
+    "WP19": {
+      "definitions": "11fcd4e75af55760325b31c3081bd5402c29cfe6681a9ad116790d9689031a2f",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 1 Must Fix find",
+        "at": "2026-11-25T00:25:06Z"
+      }
     }
   },
   "tasks": [
@@ -1688,11 +1697,15 @@
     {
       "task": "Unblock WATERS WP13. The builder wrote: after three Metal inspections could not follow two adjacent ridges through both turning and narrowing, the planner needs to authorize a revised shared-sheet approach or select the live-window fallback. The handoff, .orchestrate/evidence/WATERS/WP13-handoff.md, gives the evidence; the work is on build/waters, unmerged. This is the second block on WP13.4 today, after a planner chose the shared-sheet approach earlier, so the design's three-look rule applies.\n\nThe lead's view, which you may overturn with reason: prefer the design's live-window fallback unless you can name a specific change with a clear reason to expect it to pass where the last three looks failed; another open-ended attempt at the same cue is not worth it. The bar is the look of shipped high-end games, plausible rather than physically exact. If neither path can meet WP13.4 as written, say so plainly so the lead can take it to the owner. A plan you keep ends with `KEEP WATERS WP13: builder: <where the plan provides it>`.",
       "at": "2026-11-24T23:46:50Z"
+    },
+    {
+      "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 1 Must Fix findings.",
+      "at": "2026-11-25T00:25:06Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-24T23:46:50Z"
+    "at": "2026-11-25T00:25:06Z"
   },
   "design_history": [
     {
