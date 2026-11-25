@@ -1128,7 +1128,41 @@
         "task": "The design review of SESSION at .orchestrate/evidence/SESSION/design-review.md asked for changes, with its Must Fix find",
         "at": "2026-11-25T19:40:31Z"
       },
-      "ends_stretch": true
+      "ends_stretch": true,
+      "ready_for_review": {
+        "commit": "4494c5f2111d4ee08d1aca03bfbe179e1da08fce",
+        "checked": "4494c5f2111d4ee08d1aca03bfbe179e1da08fce",
+        "at": "2026-11-25T20:33:47Z",
+        "reused": [
+          "WP7.1",
+          "WP7.2",
+          "WP7.3",
+          "WP7.4",
+          "WP7.5",
+          "WP7.8"
+        ],
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.171.0-alpha.13.2",
+        "path": "visible",
+        "usage": {
+          "input": 831219,
+          "cached": 79669504,
+          "output": 131029,
+          "turns": 3
+        },
+        "session_usage": {
+          "input": 831219,
+          "cached": 79669504,
+          "output": 131029,
+          "turns": 3
+        }
+      }
     },
     "WP8": {
       "definitions": "f22a03e97bb4613a2dc6784c0b4029e6afb856eb7078022ed10fad545b7c01ad",
