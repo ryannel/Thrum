@@ -539,7 +539,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RAY-TRACING/WP5/review-fixes/checks/metal.log",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/WP5/receiver-fix/checks/metal.log",
           "verdict": "pass",
           "review": ".orchestrate/evidence/RAY-TRACING/WP5-review.md"
         },
@@ -580,8 +580,8 @@
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test ray_ambient_knob_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/WP5/receiver-fix/checks/metal.log",
           "verdict": "fail",
           "review": ".orchestrate/evidence/RAY-TRACING/WP5-review.md"
         },

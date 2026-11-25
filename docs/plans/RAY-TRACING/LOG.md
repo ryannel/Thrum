@@ -242,3 +242,10 @@
   with Shade active and clearance within 16 submissions plus one both in view and off screen.
   [Metal evidence](../../../.orchestrate/evidence/RAY-TRACING/WP5/README.md) ·
   [Paired route timings](../../../.orchestrate/evidence/RAY-TRACING/WP5/cost-notes.md).
+- 2026-11-25 WP5 receiver repair. The ambient trace reads the depth-tested world position and
+  uses one hemisphere query bounded by the visible receiver's radius. Metal verified thin receivers
+  and rear sheets at 100 m, plus raised sheets on either side of a 6 mm radius. Fresh valley and
+  motion pairs verified contact, open ground, grain and expiry. The paired route records include
+  the prepared receiver attachment's size and the shared dispatch timings.
+  [Metal proof](../../../.orchestrate/evidence/RAY-TRACING/WP5/README.md) ·
+  [Route timings](../../../.orchestrate/evidence/RAY-TRACING/WP5/cost-notes.md).
