@@ -98,3 +98,11 @@
   and transient slots match the untouched pre-interface parent `91d2cf288`. The named renderer check also
   matches the host's live buffer count, and the opt-in allocation control still passes.
   [Before-build provenance and target runs](../../../.orchestrate/evidence/GAME-UI/WP1/review-graph-coverage.md)
+- 2026-11-25 WP2 cooks Roboto Regular and an original pixel grid into validated font tables and pixel-kind sheets.
+  The interface and sprite passes draw whole-pixel runs from the leased sheet. The existing residency publication
+  waits for a prepared layout, and commits the matching stamp only on submission.
+- WP2 proved 1×, 2× and 3× on both Metal recipes and Chrome WebGPU, including live source edits, discarded switch
+  frames and last-good retention. Fixed and realtime inspections cleared the type and counting cards.
+  The combined committed font textures held 3,922,212, 9,298,212 and 16,394,532 bytes at the three scales. The cook
+  and layout measurements record both release runs and the machine load.
+  [Proof index](../../../.orchestrate/evidence/GAME-UI/WP2/index.md)

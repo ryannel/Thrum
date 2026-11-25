@@ -150,7 +150,7 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "not_started",
+      "status": "in_progress",
       "quality_bar": "Text as crisp as the system draws the same face at the same size: each glyph on screen is exactly the bitmap rasterised for that size and scale, as in Dear ImGui or a browser at 100% zoom, and never a resampled one. A pixel font as clean as the status text of Vampire Survivors or Celeste: square texels at a whole-number scale. Spacing as even and steady as a browser's: no pair collides or gapes, accents sit on their letters, and a number that counts never shivers.",
       "items": [
         {
@@ -159,30 +159,30 @@
           "check": "cargo test --locked --offline -p thrum-cook --test font_cook",
           "ask": "Read the test. Does it read advances, kerning and line metrics from the font file by a path the cooker does not use, and compare them with the table for each size and scale? Does it show each frame holds its whole glyph (the outline's bounds at that size lie inside it), that an asymmetric glyph is neither flipped nor mirrored, and that a kerned pair and an accented letter of Latin Extended-A are present?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP2/font-cook.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP2.2",
           "statement": "A font source with a grid image cooks a pixel font to one sheet and a table: texels as authored, each character in the cell the description gives it, advances as described, and an outline one texel wide when asked for.",
           "check": "cargo test --locked --offline -p thrum-cook --test font_cook",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP2/font-cook.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP2.3",
           "statement": "A malformed font product is refused before any of it is used, each with a named error: a truncated table, a character naming a frame its sheet lacks, a metric that is not finite, a size and scale listed twice, a sheet missing for a listed scale. A source that cannot be cooked is refused by name: a font file that does not parse, a size that is not above zero, a listed character the font lacks.",
           "check": "cargo test --locked --offline -p thrum-cook --test font_hostile",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP2/font-hostile.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP2.4",
@@ -190,10 +190,10 @@
           "check": "cargo test --locked --offline -p thrum-ui --test text_runs",
           "ask": "Read the test. Are the expected offsets worked out from the table's numbers by hand or by separate code, and not by the layout under test? Is each of the listed behaviours its own case, including a kerned pair, a wrap that falls on the last space that fits, and a box too small for one line?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP2/text-runs.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP2.5",
@@ -202,10 +202,10 @@
           "ask": "Is the reference composed on the CPU from the cooked sheet's texels and the table, without the renderer's shaders and without the layout's own output positions? Is a run scaled from another scale's sheet a control that the test fails?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP2/metal.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP2.6",
@@ -214,10 +214,10 @@
           "ask": "Does the test hold the new sheet's last copy unsubmitted and show the old scale still drawn? Is every submitted frame of the change compared with both fresh references, so that glyphs of one scale at the other's offsets would fail? Does it read resident bytes from residency's own account?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP2/metal.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP2.7",
@@ -225,10 +225,10 @@
           "check": "cargo test --locked --offline -p v1-game --test interface_text_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP2/metal.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP2.8",
@@ -237,10 +237,10 @@
           "ask": "Does the edit keep the cooked size and widen the advances, as from 8 to 12 pixels for two glyphs in a 16-pixel box, so that new glyphs at old offsets would overlap and leave the box? Is every submitted frame of the edit captured and compared with both fresh references, and not only the settled one, while a value in the text keeps changing? Does the test discard the switch frame once, and show that a refused publication leaves no prepared layout behind?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP2/metal.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP2.9",
@@ -248,10 +248,10 @@
           "check": "node scripts/check_v1_browser.mjs --case interface-text",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP2/chrome/interface-text.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP2.10",
@@ -260,40 +260,40 @@
           "ask": "Were both retained runs release builds of the claimed commit, with the load on the machine recorded? Does the command succeed or fail on the record being complete, and never on a time?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP2/costs-mac-metal/summary.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP2.11",
           "statement": "On the Mac, text at each cooked size and at scales of 1, 2 and 3 reads cleanly: letters are the right shapes, upright, on one baseline and evenly spaced; kerned pairs such as AV, To and r. neither collide nor gape; accents sit on their letters; outlines are even all round; nothing is clipped, fringed or haloed. The smallest size is clear at a scale of 1.",
           "inspect": "Capture `fixed` stills of the interface scene's type card with T2 engine capture at each scale: every cooked size of the outline font and the pixel font at 1 and 2 times its height, light on dark, dark on light and outlined over the sprite field, with a pangram, digits, punctuation and accented words in French, German, Polish and Czech. Judge each whole and in native-size crops. Set the same strings drawn by the system in the same face at the same pixel size beside them, as a reference for weight and spacing; the two need not match.",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP2/visual/review.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP2.12",
           "statement": "In Chrome, at device pixel ratios of 1 and 2, text reads as cleanly as on the Mac.",
           "inspect": "Capture `fixed` stills of the same type card in Chrome with T2 engine capture at each ratio. Judge each whole and in native-size crops of the smallest size, a kerned pair, an accented word and an outlined line.",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP2/visual/review.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP2.13",
           "statement": "In real time on the Mac, a right-aligned counter that grows digits, a timer with tabular digits and a label drifting by less than a pixel a frame keep their shapes: no gap between two glyphs ever changes, no digit shivers, and the label moves by whole pixels without its letters changing.",
           "inspect": "Capture the interface scene's counting card at 1920\u00d71080 with T2 engine capture in `realtime` mode at scales of 1 and 2, long enough for the counter to gain a digit and the label to cross several pixels. Judge consecutive frames at 1x, whole and in native-size crops of the counter, the timer and the label.",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP2/visual/review.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         }
       ]
     },

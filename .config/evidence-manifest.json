@@ -5195,6 +5195,22 @@
     },
     {
       "kind": "local",
+      "path": "docs/evidence/GAME-UI/WP2-counting-1.zst",
+      "size": 45858300,
+      "sha256": "ab5a2b560811ac54b73fbd3036c80e3411f75fccf3d56ba0d64c2c534ecf588e",
+      "date": "2026-11-25T21:26:31.737094+00:00",
+      "store": "/Users/ryannel/Workspace/thrum/.git/orchestrate/evidence/GAME-UI/WP2/bulk"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/GAME-UI/WP2-counting-2.zst",
+      "size": 47823082,
+      "sha256": "5ff20f197ba513357889b303892be0c11dfe9baece33c46e0fdc10fb85c32fb8",
+      "date": "2026-11-25T21:26:32.156120+00:00",
+      "store": "/Users/ryannel/Workspace/thrum/.git/orchestrate/evidence/GAME-UI/WP2/bulk"
+    },
+    {
+      "kind": "local",
       "path": "docs/evidence/MESH-SHADING/M2/realtime-low-sun-indexed.mp4",
       "size": 3517685,
       "sha256": "8398eeaa77472f1556ee92e44dca66f8f6175de36836c653daafcc3c0c490705",

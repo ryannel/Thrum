@@ -25,18 +25,23 @@ let dark = CGColor(red: 0.13, green: 0.17, blue: 0.22, alpha: 1)
 
 func line(_ text: String, points: Int, top: Int, colour: CGColor, outline: Bool = false) {
     let font = CTFontCreateWithGraphicsFont(face, CGFloat(points * scale), nil, nil)
-    var attributes: [NSAttributedString.Key: Any] = [
+    let attributes: [NSAttributedString.Key: Any] = [
         NSAttributedString.Key(kCTFontAttributeName as String): font,
         NSAttributedString.Key(kCTForegroundColorAttributeName as String): colour
     ]
-    if outline {
-        attributes[NSAttributedString.Key(kCTStrokeColorAttributeName as String)] = dark
-        attributes[NSAttributedString.Key(kCTStrokeWidthAttributeName as String)] = -12.5
-    }
-    let line = CTLineCreateWithAttributedString(NSAttributedString(string: text, attributes: attributes))
-    context.textPosition = CGPoint(x: 14 * scale,
+    let baseline = CGPoint(x: 14 * scale,
         y: (335 - top) * scale - Int(ceil(CTFontGetAscent(font))))
-    CTLineDraw(line, context)
+    if outline {
+        var stroke = attributes
+        stroke[NSAttributedString.Key(kCTStrokeColorAttributeName as String)] = dark
+        stroke[NSAttributedString.Key(kCTStrokeWidthAttributeName as String)] = 12.5
+        let edge = CTLineCreateWithAttributedString(NSAttributedString(string: text, attributes: stroke))
+        context.textPosition = baseline
+        CTLineDraw(edge, context)
+    }
+    let fill = CTLineCreateWithAttributedString(NSAttributedString(string: text, attributes: attributes))
+    context.textPosition = baseline
+    CTLineDraw(fill, context)
 }
 
 let pangram = "Sphinx of black quartz, judge my vow."
