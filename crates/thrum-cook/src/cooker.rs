@@ -1095,7 +1095,7 @@ mod tests {
                 .expect("open store")
             };
             let mut cooker = open();
-            assert!(cooker.cook_all().expect("initial cook").failed.is_empty());
+            assert_eq!(cooker.cook_all().expect("initial cook").failed, []);
             // Select a legacy manifest with the same products and original cook records.
             let products = cooker.published.clone();
             let legacy = cooker.publish(&products, &FontInputs::new()).unwrap();
