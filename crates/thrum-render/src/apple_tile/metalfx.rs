@@ -42,6 +42,9 @@ pub enum MetalFxProbe {
     /// Suppress resets after the first native encode.
     #[cfg(feature = "creation-counters")]
     SkipReset,
+    /// Suppress the reset on the first native encode of a new scaler.
+    #[cfg(feature = "creation-counters")]
+    SkipFirstReset,
 }
 
 pub(crate) struct Factory {
@@ -78,6 +81,18 @@ struct Binding {
 struct NativeTextures {
     inputs: [super::Texture; 5],
     output: super::Texture,
+}
+
+#[cfg(all(target_os = "macos", feature = "creation-counters"))]
+pub(crate) fn last_encoded_reset(binding: &NativeBinding) -> Option<bool> {
+    binding
+        .prepared::<Binding>()?
+        .extent
+        .scaler
+        .as_ref()?
+        .lock()
+        .expect("exclusive MetalFX recording")
+        .last_reset()
 }
 
 impl Factory {

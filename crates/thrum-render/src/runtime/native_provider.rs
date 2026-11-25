@@ -15,6 +15,15 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             .map(|binding| binding.report())
     }
 
+    /// Diagnostic reset argument passed to MetalFX on its most recent encode.
+    /// Returns `None` before the first native encode on the active scaler.
+    #[cfg(all(target_os = "macos", feature = "creation-counters"))]
+    #[must_use]
+    pub fn metalfx_last_encoded_reset(&self) -> Option<bool> {
+        let binding = self.slots.first()?.target.three_d()?.native.as_ref()?;
+        crate::apple_tile::metalfx::last_encoded_reset(binding)
+    }
+
     /// Outcomes of the optional labelled native copy/select diagnostic.
     #[must_use]
     pub fn native_witness_report(&self) -> Option<NativeWitnessReport> {

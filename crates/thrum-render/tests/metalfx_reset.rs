@@ -7,8 +7,14 @@ mod metalfx_reset_fixture;
 mod support;
 
 thrum_test_support::macos_gpu_test! {
-    fn acquisition_submission_and_device_replacement_reset_native_history() {
-        metalfx_reset_fixture::acquisition_submission_and_device_replacement_reset_native_history();
+    fn acquisition_and_submission_reset_native_history() {
+        metalfx_reset_fixture::acquisition_and_submission_reset_native_history();
+    }
+}
+
+thrum_test_support::macos_gpu_test! {
+    fn device_replacement_resets_native_history() {
+        metalfx_reset_fixture::device_replacement_resets_native_history();
     }
 }
 

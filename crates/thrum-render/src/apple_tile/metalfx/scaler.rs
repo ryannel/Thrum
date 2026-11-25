@@ -23,7 +23,7 @@ pub(super) struct Scaler {
     #[cfg(feature = "creation-counters")]
     probe: MetalFxProbe,
     #[cfg(feature = "creation-counters")]
-    encoded: bool,
+    last_reset: Option<bool>,
 }
 
 // SAFETY: the scaler is exclusively configured and encoded under its extent
@@ -98,10 +98,15 @@ impl Scaler {
                     #[cfg(feature = "creation-counters")]
                     probe,
                     #[cfg(feature = "creation-counters")]
-                    encoded: false,
+                    last_reset: None,
                 })
                 .ok_or(())
         }
+    }
+
+    #[cfg(all(target_os = "macos", feature = "creation-counters"))]
+    pub(super) fn last_reset(&self) -> Option<bool> {
+        self.last_reset
     }
 
     #[expect(
@@ -140,8 +145,12 @@ impl Scaler {
             } else {
                 jitter_y
             };
-            let reset = reset && !(self.encoded && self.probe == MetalFxProbe::SkipReset);
-            self.encoded = true;
+            let skip_reset = match self.probe {
+                MetalFxProbe::SkipReset => self.last_reset.is_some(),
+                MetalFxProbe::SkipFirstReset => self.last_reset.is_none(),
+                _ => false,
+            };
+            let reset = reset && !skip_reset;
             (motion_scale, jitter_x, jitter_y, reset)
         };
         let scaler = &*self.inner;
@@ -162,8 +171,13 @@ impl Scaler {
             let _: () = msg_send![scaler, setJitterOffsetY: jitter_y];
             let _: () = msg_send![scaler, setPreExposure: 1.0_f32];
             let _: () = msg_send![scaler, setDepthReversed: Bool::YES];
-            let _: () = msg_send![scaler, setReset: Bool::new(reset)];
+            let reset = Bool::new(reset);
+            let _: () = msg_send![scaler, setReset: reset];
             let _: () = msg_send![scaler, encodeToCommandBuffer: buffer];
+            #[cfg(feature = "creation-counters")]
+            {
+                self.last_reset = Some(reset.as_bool());
+            }
         }
     }
 }
