@@ -760,8 +760,8 @@
           "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render --features creation-counters --test scene_2d -E 'test(~float_mode)' --no-tests=fail",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
-          "builder_result": "open",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP6/idle-disable-metal.log",
+          "builder_result": "pass",
           "verdict": "fail",
           "review": ".orchestrate/evidence/RENDER-2D/WP6-review.md"
         },
