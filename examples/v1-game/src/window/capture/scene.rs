@@ -204,9 +204,13 @@ pub(in crate::window) async fn run(
         .as_ref()
         .and_then(|scene| scene.content.clone());
     driver.host_mut().world_mut().pause()?;
+    let warmup_on_surface = driver.host().native_provider_report().is_some();
+    #[cfg(feature = "creation-counters")]
+    // Both proof recipes mark readiness after drawing to the same output surface.
+    let warmup_on_surface = warmup_on_surface || request.creation_proof.is_some();
     let cooked_generation = content
         .map(|stats| {
-            if driver.host().native_provider_report().is_some() {
+            if warmup_on_surface {
                 let output = driver
                     .output()
                     .create_view(&wgpu::TextureViewDescriptor::default());
