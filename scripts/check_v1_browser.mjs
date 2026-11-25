@@ -2268,6 +2268,9 @@ async function checkShippingBoundary(cdp, origin, timeout, wasm) {
       return {
         module: Object.keys(bindings).sort(),
         browserGame: Object.getOwnPropertyNames(bindings.BrowserGame.prototype).sort(),
+        browserScene: Object.getOwnPropertyNames(bindings.BrowserScene.prototype).sort(),
+        cookedValley: Object.getOwnPropertyNames(bindings.CookedValley.prototype).sort(),
+        page: Object.getOwnPropertyNames(bindings.Page.prototype).sort(),
         globals: ['thrumExtentReport', 'thrumCloudCheck'].filter(name => name in window),
       };
     })()`);
@@ -2285,9 +2288,30 @@ async function checkShippingBoundary(cdp, origin, timeout, wasm) {
       'route_report', 'route_slot_ready', 'route_step_ms', 'set_camera_pitch', 'set_camera_yaw',
       'set_controls', 'set_paused', 'set_time_of_day', 'set_visible', 'time_of_day',
     ];
+    const shippingPage = [
+      '__destroy_into_raw', 'apply_parameters', 'apply_params', 'constructor', 'control_changes',
+      'controls_json', 'edit_control', 'focus_lost', 'frame', 'free', 'graphics_fault',
+      'graphics_recovery_error', 'key', 'paused', 'recover_graphics', 'recovering',
+      'request_graphics_recovery', 'set_paused', 'set_visible',
+    ];
+    const shippingScene = [...shippingPage, 'report', 'title'].sort();
+    const shippingValley = ['__destroy_into_raw', 'constructor', 'free', 'next_publication'];
+    const facades = {
+      browserGame: shippingGame, browserScene: shippingScene, cookedValley: shippingValley, page: shippingPage,
+    };
     if (exports.globals.length || JSON.stringify(exports.module) !== JSON.stringify(shippingModule) ||
-        JSON.stringify(exports.browserGame) !== JSON.stringify(shippingGame)) {
+        Object.entries(facades).some(([name, methods]) => JSON.stringify(exports[name]) !== JSON.stringify(methods))) {
       throw new Error(`The normal build's JavaScript exports differ from the shipping API: ${JSON.stringify(exports)}`);
+    }
+    const compiled = await WebAssembly.compile(wasm.bytes);
+    exports.wasm = WebAssembly.Module.exports(compiled).map(({ name }) => name).sort();
+    for (const [facade, methods] of Object.entries(facades)) {
+      const prefix = facade.toLowerCase() + '_';
+      const actual = exports.wasm.filter(name => name.startsWith(prefix)).map(name => name.slice(prefix.length));
+      const expected = methods.filter(name => !['__destroy_into_raw', 'constructor', 'free'].includes(name));
+      if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+        throw new Error(`The normal build's Wasm exports differ from the ${facade} shipping API: ${JSON.stringify(actual)}`);
+      }
     }
     const route = await evaluate("fetch('/route.html').then(response => response.text())");
     if (!route.includes('install_route') || /thrumRoute|thrumCheckpointPng|scale-proof|culling-proof|route_render_scale/.test(route)) {

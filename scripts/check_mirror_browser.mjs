@@ -30,7 +30,7 @@ if (mode === 'view') {
 const log = await fs.open(path.join(output, 'scene.log'), 'w+');
 const served = process.env.THRUM_MIRROR_URL;
 const scene = served ? null : spawn('./dev', ['scene', 'examples/mirror', '--web'], {
-  env: { ...process.env, THRUM_SCENE_OUTPUT: output },
+  env: { ...process.env, THRUM_SCENE_OUTPUT: output, THRUM_SCENE_WEB_CAPTURE: '1' },
   detached: true,
   stdio: ['ignore', log.fd, log.fd],
 });

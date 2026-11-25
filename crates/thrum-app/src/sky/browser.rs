@@ -120,31 +120,6 @@ crate::export_page_methods!(BrowserScene);
 
 #[wasm_bindgen]
 impl BrowserScene {
-    /// Device generation and the latest submitted clock on that device.
-    /// The clock fields are zero until the device submits its first frame.
-    pub fn frame_info(&self) -> String {
-        let status = self.page.shell.status();
-        let clock = self.page.shell.host().last_submitted_clock();
-        format!(
-            "generation={} recovered={} presented={} tick={} alpha={} submission={}",
-            status.generation,
-            status.recovered,
-            status.presented,
-            clock.map_or(0, |frame| frame.tick),
-            clock.map_or(0.0, |frame| frame.presentation_alpha),
-            clock.map_or(0, |frame| frame.submission_order),
-        )
-    }
-    /// Number of submitted images omitted by the bounded observer.
-    pub fn capture_omissions(&self) -> u32 {
-        u32::try_from(self.page.shell.host().submitted_capture_omissions()).unwrap_or(u32::MAX)
-    }
-    /// Drain GPU completion callbacks without advancing the scene clock.
-    /// # Errors
-    /// Reports a device polling fault.
-    pub fn frame_ready(&mut self) -> Result<bool, JsValue> {
-        self.page.shell.poll_completed().map_err(js)
-    }
     /// The scene title declared by its creator.
     pub fn title(&self) -> String {
         self.config.window_title.to_owned()
@@ -191,6 +166,36 @@ impl BrowserScene {
             "{content}. {refusal} {}",
             transport.as_deref().unwrap_or_default()
         )
+    }
+}
+
+#[cfg(feature = "browser-capture")]
+#[wasm_bindgen]
+impl BrowserScene {
+    /// Device generation and the latest submitted clock on that device.
+    /// The clock fields are zero until the device submits its first frame.
+    pub fn frame_info(&self) -> String {
+        let status = self.page.shell.status();
+        let clock = self.page.shell.host().last_submitted_clock();
+        format!(
+            "generation={} recovered={} presented={} tick={} alpha={} submission={}",
+            status.generation,
+            status.recovered,
+            status.presented,
+            clock.map_or(0, |frame| frame.tick),
+            clock.map_or(0.0, |frame| frame.presentation_alpha),
+            clock.map_or(0, |frame| frame.submission_order),
+        )
+    }
+    /// Number of submitted images omitted by the bounded observer.
+    pub fn capture_omissions(&self) -> u32 {
+        u32::try_from(self.page.shell.host().submitted_capture_omissions()).unwrap_or(u32::MAX)
+    }
+    /// Drain GPU completion callbacks without advancing the scene clock.
+    /// # Errors
+    /// Reports a device polling fault.
+    pub fn frame_ready(&mut self) -> Result<bool, JsValue> {
+        self.page.shell.poll_completed().map_err(js)
     }
     /// Enable the qualified submitted-output tap for a fixed capture.
     /// # Errors

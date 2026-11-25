@@ -78,7 +78,7 @@ const source = path.join(output,'assets');
 await fs.cp('examples/starter/assets',source,{ recursive:true });
 const serveLog = await fs.open(path.join(output,'command.log'),'w');
 const command = spawn('./dev',['starter','--web'],{
-  env:{ ...process.env,THRUM_SCENE_ASSETS:source,THRUM_SCENE_OUTPUT:output },stdio:['ignore',serveLog.fd,serveLog.fd],detached:true
+  env:{ ...process.env,THRUM_SCENE_ASSETS:source,THRUM_SCENE_OUTPUT:output,THRUM_SCENE_WEB_CAPTURE:'1' },stdio:['ignore',serveLog.fd,serveLog.fd],detached:true
 });
 let chrome, cdp, sid, failure;
 const results = { mode,command:'./dev starter --web',output };

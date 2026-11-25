@@ -8,6 +8,7 @@ description = "Application shells shared by Thrum games: the native macOS window
 autotests = false
 
 [features]
+browser-capture = []
 creation-counters = ["thrum-render/creation-counters"]
 
 [dependencies]

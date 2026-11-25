@@ -298,7 +298,7 @@ async function inspectIsland(evaluate, result) {
     classifications:seen,max_absolute_error:err,...{stages:report.stages,limits:report.limits,draws:report.draws}};
 }
 const log=await fs.open(path.join(output,'command.log'),'w');
-const command=spawn('./dev',['scene','examples/water','--web'],{env:{...process.env,THRUM_SCENE_OUTPUT:output},stdio:['ignore',log.fd,log.fd],detached:true});
+const command=spawn('./dev',['scene','examples/water','--web'],{env:{...process.env,THRUM_SCENE_OUTPUT:output,THRUM_SCENE_WEB_CAPTURE:'1'},stdio:['ignore',log.fd,log.fd],detached:true});
 let chrome,cdp,sid,failure;
 const result={mode,command:'./dev scene examples/water --web',commit:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),target:'chrome-webgpu',output,frames:[]};
 result.dirty_diff_sha256=hash(execFileSync('git',['diff','HEAD']));
