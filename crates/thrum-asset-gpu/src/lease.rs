@@ -60,30 +60,36 @@ pub struct ProductLease(Arc<Mutex<LeaseState>>);
 
 #[derive(Debug, Default)]
 struct LeaseState {
-    offered: Option<Arc<LentSet>>,
-    sheets: Option<Arc<SpriteSheetPublication>>,
+    offer: LeaseOffer,
+    previous_font_offer: Option<LeaseOffer>,
     serial: u64,
     font_candidate: Option<Arc<FontCandidate>>,
     font_committed: Option<Arc<FontCandidate>>,
     font_answer: Option<Result<(), String>>,
 }
 
+#[derive(Debug, Default)]
+struct LeaseOffer {
+    offered: Option<Arc<LentSet>>,
+    sheets: Option<Arc<SpriteSheetPublication>>,
+}
+
 impl SpriteSheetSource for ProductLease {
     fn sheet_publication(&self) -> Option<Arc<SpriteSheetPublication>> {
-        self.0.lock().ok().and_then(|state| state.sheets.clone())
+        self.0.lock().ok()?.offer.sheets.clone()
     }
 }
 
 impl ProductLease {
     /// Snapshot for this frame. Empty during first load and after device replacement.
     pub fn offered(&self) -> Option<Arc<LentSet>> {
-        self.0.lock().ok().and_then(|state| state.offered.clone())
+        self.0.lock().ok()?.offer.offered.clone()
     }
 
     pub(crate) fn clear(&self) {
         if let Ok(mut set) = self.0.lock() {
-            set.offered = None;
-            set.sheets = None;
+            set.offer = LeaseOffer::default();
+            set.previous_font_offer = None;
             set.font_candidate = None;
             set.font_committed = None;
             set.font_answer = None;
@@ -98,7 +104,7 @@ impl ProductLease {
     ) {
         if let Ok(mut state) = self.0.lock() {
             for product in &mut products {
-                let old = state.offered.as_ref().and_then(|set| {
+                let old = state.offer.offered.as_ref().and_then(|set| {
                     set.products.iter().find(|old| {
                         old.name == product.name
                             && old.hash == product.hash
@@ -124,7 +130,7 @@ impl ProductLease {
                     })
                 })
                 .collect();
-            state.sheets = products
+            let sheets = products
                 .first()
                 .filter(|_| !sheets.is_empty())
                 .map(|first| {
@@ -135,10 +141,25 @@ impl ProductLease {
                         paint_stamp,
                     })
                 });
-            state.offered = Some(Arc::new(LentSet {
-                generation,
-                products,
-            }));
+            let offer = LeaseOffer {
+                sheets,
+                offered: Some(Arc::new(LentSet {
+                    generation,
+                    products,
+                })),
+            };
+            if paint_stamp.is_some()
+                && state.font_candidate.as_ref().map(|font| font.stamp) == paint_stamp
+            {
+                if state.previous_font_offer.is_none() {
+                    state.previous_font_offer = Some(std::mem::replace(&mut state.offer, offer));
+                } else {
+                    state.offer = offer;
+                }
+            } else {
+                state.offer = offer;
+                state.previous_font_offer = None;
+            }
         }
     }
 }
@@ -199,21 +220,32 @@ impl ProductLease {
         self.0.lock().ok()?.font_committed.clone()
     }
 
-    /// Report that a prepared layout exists, or refuse the whole pending publication by name.
+    /// Report this frame's prepared layout, or refuse the pending publication by name.
+    ///
+    /// A refusal supersedes readiness and restores the committed offer before the frame
+    /// samples its sheet bindings. It holds until residency retires the candidate.
     pub fn answer_font(&self, stamp: PaintStamp, result: Result<(), String>) {
         if let Ok(mut state) = self.0.lock()
             && state
                 .font_candidate
                 .as_ref()
                 .is_some_and(|candidate| candidate.stamp == stamp)
-            && state.font_answer.is_none()
+            && !matches!(state.font_answer, Some(Err(_)))
         {
+            if result.is_err()
+                && let Some(previous) = state.previous_font_offer.take()
+            {
+                state.offer = previous;
+            }
             state.font_answer = Some(result);
         }
     }
 
     pub(crate) fn prepare_font(&self, candidate: Option<FontCandidate>) {
         if let Ok(mut state) = self.0.lock() {
+            if let Some(previous) = state.previous_font_offer.take() {
+                state.offer = previous;
+            }
             state.font_candidate = candidate.map(Arc::new);
             state.font_answer = None;
         }
@@ -255,6 +287,7 @@ impl ProductLease {
         {
             state.font_committed = state.font_candidate.take();
             state.font_answer = None;
+            state.previous_font_offer = None;
         }
     }
 }

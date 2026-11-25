@@ -33,7 +33,7 @@ async function loadFonts(origin) {
   const fonts = {};
   for (let index = 0; index < count; index++) {
     const row = bytes.subarray(index * size, (index + 1) * size);
-    assert.equal(row[54], 5);
+    if (row[54] !== 5) continue;
     const start = row.readUInt32LE(48);
     const name = names.toString('utf8', start, start + row.readUInt16LE(52));
     fonts[name] = sections(await get('/cas/' + row.toString('hex', 8, 40)), 'THRFONT1');
@@ -48,7 +48,7 @@ const decode = code => {
 const encode = linear => Math.round(255 * (linear <= 0.0031308
   ? linear * 12.92 : 1.055 * linear ** (1 / 2.4) - 0.055));
 
-function painter(arm, { fonts }, name, pointSize, scale, origin) {
+function painter(arm, { fonts }, name, pointSize, scale, origin, sheetFont = fonts[name]) {
   const pixel = name === 'pixel';
   const font = fonts[name];
   const sizes = font.get('SIZE');
@@ -70,7 +70,7 @@ function painter(arm, { fonts }, name, pointSize, scale, origin) {
     const pair = String.fromCodePoint(kerning.bytes.readUInt32LE(at), kerning.bytes.readUInt32LE(at + 4));
     pairs.set(pair, kerning.bytes.readInt32LE(at + 8));
   }
-  const sheet = sections(font.get('SHT' + (pixel ? 1 : scale)).bytes, 'THRMSHET');
+  const sheet = sections(sheetFont.get('SHT' + (pixel ? 1 : scale)).bytes, 'THRMSHET');
   const frames = sheet.get('FRAM');
   const pages = sheet.get('PAGE').bytes;
   const pageWidth = pages.readUInt32LE(20);
@@ -98,6 +98,7 @@ function painter(arm, { fonts }, name, pointSize, scale, origin) {
               const x = left + sx * block + dx, y = top + sy * block + dy;
               assert(x >= 0 && x < arm.width && y >= 0 && y < arm.height);
               const offset = 4 * (y * arm.width + x);
+              if (alpha > 0) arm.blended[offset / 4] = Number(alpha < 1);
               for (let channel = 0; channel < 3; channel++) {
                 arm.rgba[offset + channel] = encode(decode(texels[at + channel])
                   + (1 - alpha) * decode(arm.rgba[offset + channel]));
@@ -112,14 +113,14 @@ function painter(arm, { fonts }, name, pointSize, scale, origin) {
   };
 }
 
-function reference(fonts, scale, tick, edited) {
+function reference(fonts, scale, tick, edited, sheet = fonts) {
   const width = 128 * scale, height = 80 * scale;
   const rgba = Buffer.alloc(width * height * 4);
   for (let offset = 3; offset < rgba.length; offset += 4) rgba[offset] = 255;
-  const arm = { width, height, rgba };
+  const arm = { width, height, rgba, blended: Buffer.alloc(width * height) };
   const digit = Math.floor(tick / 4) % 10;
   painter(arm, fonts, 'type', 12, scale, 12)('AV To r. Éž', 12);
-  const grid = painter(arm, fonts, 'pixel', 8, scale, 12);
+  const grid = painter(arm, fonts, 'pixel', 8, scale, 12, sheet.fonts.pixel);
   // The two A's fill the first line by advance in the edited size. The middle
   // elision has room for one more prefix glyph with the original advances.
   grid('AA', 40);
@@ -134,7 +135,7 @@ function compare(frame, width, reference) {
       for (let channel = 0; channel < 4; channel++) {
         const actual = frame[4 * (y * width + x) + channel];
         const expected = reference.rgba[4 * (y * reference.width + x) + channel];
-        const tolerance = Number(channel < 3 && expected !== 0 && expected !== 255);
+        const tolerance = Number(channel < 3 && reference.blended[y * reference.width + x]);
         if (Math.abs(actual - expected) > tolerance) return { x, y, channel, actual, expected };
       }
     }
@@ -142,13 +143,10 @@ function compare(frame, width, reference) {
   return null;
 }
 
-export async function qualifyInterfaceText({ cdp, origin, fontOrigin, source, output, timeout, wasm, existingGame, waitFor, commit, visual }) {
+export async function qualifyInterfaceText({ cdp, origin, fontOrigin, source, output, timeout, wasm, existingGame, waitFor, commit, visual, decodePng, encodePng }) {
   const pixelFile = path.join(source, 'pixel', 'font.json');
   const original = await fs.readFile(pixelFile);
   const changed = JSON.parse(original);
-  for (const cell of changed.characters) {
-    if (cell.character === 'A' || cell.character === 'B') cell.advance = 12;
-  }
   const save = bytes => fs.writeFile(pixelFile, bytes);
   const awaitFonts = (after = 0) => waitFor(async () => {
     const font = await loadFonts(fontOrigin);
@@ -157,6 +155,26 @@ export async function qualifyInterfaceText({ cdp, origin, fontOrigin, source, ou
 
   const arms = [];
   let before = await awaitFonts();
+  if (!visual) {
+    const { width, height, rgba } = decodePng(await fs.readFile(path.join(source, 'pixel', changed.file)));
+    const [cellWidth, cellHeight] = changed.cell;
+    for (const glyph of changed.characters) {
+      if (glyph.character !== 'A' && glyph.character !== 'B') continue;
+      glyph.advance = 12;
+      const [column, row] = glyph.cell;
+      for (let y = row * cellHeight; y < (row + 1) * cellHeight; y++) {
+        for (let x = column * cellWidth; x < (column + 1) * cellWidth; x++) {
+          const offset = 4 * (y * width + x);
+          if (rgba[offset + 3] !== 0) rgba[offset] = 0;
+        }
+      }
+    }
+    // Stage the new grid first. Changing the description alone then selects its texels
+    // and metrics together in one cook, even if the watcher runs between writes.
+    changed.file = 'grid-edited.png';
+    await fs.writeFile(path.join(source, 'pixel', changed.file), encodePng(width, height, rgba));
+    before = await awaitFonts(before.generation);
+  }
   for (const dpr of visual ? [1, 2] : [1, 2, 3]) {
     const [width, height] = (visual ? [520, 416] : [144, 96]).map(side => side * dpr);
     const { targetId } = await cdp.call('Target.createTarget', { url: 'about:blank' });
@@ -241,6 +259,9 @@ export async function qualifyInterfaceText({ cdp, origin, fontOrigin, source, ou
       const first = await keep(initial, 'old');
       await save(JSON.stringify(changed));
       const after = await awaitFonts(before.generation);
+      const sheetHashes = [before, after].map(publication => createHash('sha256')
+        .update(publication.fonts.pixel.get('SHT1').bytes).digest('hex'));
+      assert.notEqual(...sheetHashes, 'the edited bitmap must change the cooked sheet');
       const frames = [];
       let last;
       let switched = false;
@@ -249,10 +270,13 @@ export async function qualifyInterfaceText({ cdp, origin, fontOrigin, source, ou
         const tick = take.metadata.source_tick;
         const oldDiff = compare(take.rgba, width, reference(before, dpr, tick, false));
         const newDiff = compare(take.rgba, width, reference(after, dpr, tick, true));
+        const oldMetricsNewSheet = compare(take.rgba, width, reference(before, dpr, tick, false, after));
+        const newMetricsOldSheet = compare(take.rgba, width, reference(after, dpr, tick, true, before));
         const old = take.metadata.paint_generation === before.generation;
         assert.equal(take.metadata.paint_scale, dpr);
         assert.equal(old ? oldDiff : newDiff, null, JSON.stringify({ ...take.metadata, oldDiff, newDiff }));
         assert.notEqual(old ? newDiff : oldDiff, null, 'both references must be distinguishable');
+        assert(oldMetricsNewSheet && newMetricsOldSheet, 'both mixed publications must differ');
         if (!old) {
           assert.equal(take.metadata.paint_generation, after.generation);
           if (switched === false) switched = step + 1;
@@ -260,12 +284,12 @@ export async function qualifyInterfaceText({ cdp, origin, fontOrigin, source, ou
         } else {
           assert.equal(switched, false, 'old font returned after the switch');
         }
-        frames.push({ ...take.metadata, reference: old ? 'old' : 'new' });
+        frames.push({ ...take.metadata, reference: old ? 'old' : 'new', oldMetricsNewSheet, newMetricsOldSheet });
       }
       assert(last, 'font edit reached the same page');
       assert(frames.some(frame => frame.reference === 'old') && frames.some(frame => frame.reference === 'new'));
       assert.equal(await game.invoke('return game.submitted_capture_omissions();'), 0);
-      arms.push({ dpr, width, height, build, first, frames, last: await keep(last, 'new') });
+      arms.push({ dpr, width, height, build, first, frames, sheetHashes, last: await keep(last, 'new') });
       if (dpr < 3) {
         await save(original);
         before = await awaitFonts(after.generation);

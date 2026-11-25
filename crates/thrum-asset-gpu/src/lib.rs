@@ -1469,12 +1469,13 @@ impl SceneContribution for CookedAssets {
             live.pending = None;
         }
         if let Some(pending) = live.pending.as_ref()
-            && !pending.ready
             && !self.config.font_leases.is_empty()
         {
             let stamp = font_stamp(&pending.set.set);
             let refusal = self.lease.font_refusal(stamp);
-            if refusal.is_some() || pending.set.set.font_scale != self.config.font_scale() {
+            if refusal.is_some()
+                || (!pending.ready && pending.set.set.font_scale != self.config.font_scale())
+            {
                 if let Some(reason) = refusal
                     && let Ok(mut stats) = self.stats.lock()
                 {

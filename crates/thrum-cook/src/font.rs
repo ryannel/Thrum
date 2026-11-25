@@ -1,6 +1,6 @@
 //! Cook font source folders into a validated table and ordinary pixel-kind sheets.
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use image::{Rgba, RgbaImage};
 use serde::Deserialize;
@@ -143,12 +143,23 @@ pub(crate) fn is_description(path: &Path) -> bool {
     path.file_name().is_some_and(|name| name == "font.json")
 }
 
-pub(crate) fn is_input(path: &Path) -> bool {
+fn is_input(path: &Path) -> bool {
     path.extension().is_some_and(|extension| {
         ["ttf", "otf", "png"]
             .iter()
             .any(|ext| extension.eq_ignore_ascii_case(ext))
     })
+}
+
+/// Read only the input name so an invalid strike or repertoire still owns its source file.
+pub(crate) fn input_path(path: &Path, description: &[u8]) -> Option<PathBuf> {
+    #[derive(Deserialize)]
+    struct Input {
+        file: String,
+    }
+    let input: Input = serde_json::from_slice(description).ok()?;
+    let name = Path::new(&input.file);
+    (name.file_name()? == name.as_os_str() && is_input(name)).then(|| path.with_file_name(name))
 }
 
 pub(crate) fn cook<'a>(

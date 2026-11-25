@@ -290,10 +290,18 @@ const gameState = '({report:game.report(),complete:game.complete?.() ?? false,pa
 
 // A 4x4 opaque RGB PNG of one colour.
 function solidPng(rgb) {
+  return encodePng(4, 4, Buffer.from(Array.from({ length: 16 }, () => rgb).flat()), 3);
+}
+
+function encodePng(width, height, pixels, channels = 4) {
   const crc = buffer => { let c = ~0; for (const byte of buffer) { c ^= byte; for (let k = 0; k < 8; k++) c = c & 1 ? (c >>> 1) ^ 0xedb88320 : c >>> 1; } return ~c >>> 0; };
   const chunk = (type, data) => { const body = Buffer.concat([Buffer.from(type), data]); const out = Buffer.alloc(body.length + 8); out.writeUInt32BE(data.length, 0); body.copy(out, 4); out.writeUInt32BE(crc(body), body.length + 4); return out; };
-  const header = Buffer.alloc(13); header.writeUInt32BE(4, 0); header.writeUInt32BE(4, 4); header[8] = 8; header[9] = 2;
-  const rows = Buffer.concat(Array.from({ length: 4 }, () => Buffer.from([0, ...rgb, ...rgb, ...rgb, ...rgb])));
+  const header = Buffer.alloc(13); header.writeUInt32BE(width, 0); header.writeUInt32BE(height, 4); header[8] = 8; header[9] = channels === 4 ? 6 : 2;
+  const stride = width * channels;
+  const rows = Buffer.alloc(height * (1 + stride));
+  for (let y = 0; y < height; y++) {
+    pixels.copy(rows, y * (1 + stride) + 1, y * stride, (y + 1) * stride);
+  }
   return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', header), chunk('IDAT', zlib.deflateSync(rows)), chunk('IEND', Buffer.alloc(0))]);
 }
 
@@ -2633,7 +2641,7 @@ async function main() {
         cdp, origin: serving.origin, fontOrigin: assetsOrigin, source: assetsSource, output,
         timeout: args['timeout-ms'], wasm: files.get('/v1_game_bg.wasm'), existingGame, waitFor,
         commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repo, encoding: 'utf8' }).trim(),
-        visual: mode === 'interface-text-visual',
+        visual: mode === 'interface-text-visual', decodePng, encodePng,
       }));
       else if (mode.startsWith('interface-stage')) results.push(await qualifyInterface({
         cdp, origin: serving.origin, output, mode, timeout: args['timeout-ms'],

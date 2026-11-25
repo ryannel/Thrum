@@ -273,7 +273,7 @@ impl Cooker {
             ..CookReport::default()
         };
         let start = Instant::now();
-        let (jobs, mut failed) = self.plan();
+        let (jobs, mut failed, mut retry) = self.plan();
         let mut products = BTreeMap::new();
         let mut misses = Vec::new();
         let mut refused = BTreeMap::new();
@@ -306,7 +306,6 @@ impl Cooker {
             .collect();
         // A source can change after hashing but before cooking. Retry even if its next stable
         // hash equals the cached hash: no new revision would otherwise trigger that job.
-        let mut retry = false;
         let mut failed_sheets = HashSet::new();
         for (jobs, outcomes) in outcomes {
             let outcomes = match outcomes {
@@ -383,39 +382,62 @@ impl Cooker {
         Ok(report)
     }
 
-    fn plan(&mut self) -> (Vec<Job>, Vec<(String, String)>) {
+    fn plan(&mut self) -> (Vec<Job>, Vec<(String, String)>, bool) {
         let files = self.stat.files();
         let mut jobs = Vec::new();
         let mut failed = Vec::new();
+        let mut retry = false;
+        let mut font_inputs = BTreeMap::new();
         let mut sheet_images = BTreeMap::<&Path, Vec<(PathBuf, ContentHash)>>::new();
-        for path in files
-            .keys()
-            .filter(|path| sheet::is_description(path) || font::is_description(path))
-        {
+        for (path, hash) in &files {
             if let Some(parent) = path.parent() {
-                sheet_images.insert(parent, Vec::new());
+                if sheet::is_description(path) {
+                    sheet_images.insert(parent, Vec::new());
+                } else if font::is_description(path) {
+                    let bytes = std::fs::read(self.config.source.join(path));
+                    let input = match bytes {
+                        Ok(bytes) if ContentHash::of(&bytes) == *hash => {
+                            font::input_path(path, &bytes)
+                        }
+                        _ => {
+                            retry = true;
+                            None
+                        }
+                    };
+                    font_inputs.insert(parent, input);
+                }
             }
         }
         let mut sources = BTreeMap::<String, Vec<_>>::new();
         for (path, hash) in &files {
-            if let Some(parent) = path.parent()
-                && let Some(images) = sheet_images.get_mut(parent)
-            {
-                if parent.join("font.json").as_path() != path
-                    && files.contains_key(&parent.join("font.json"))
+            if let Some(parent) = path.parent() {
+                if font_inputs
+                    .get(parent)
+                    .is_some_and(|input| input.as_ref() == Some(path))
                 {
-                    if font::is_input(path) {
-                        images.push((path.clone(), *hash));
-                    }
-                    if !sheet::is_description(path) {
-                        continue;
-                    }
-                } else if sheet::is_png(path) {
+                    continue;
+                }
+                if let Some(images) = sheet_images.get_mut(parent)
+                    && sheet::is_png(path)
+                {
                     images.push((path.clone(), *hash));
                     continue;
                 }
             }
             if let Some((name, kind, linear)) = classify(path) {
+                // A broken description cannot identify its grid. Keep existing public textures
+                // and defer newly discovered PNGs until the font can declare its input again.
+                if kind == ProductKind::Texture
+                    && sheet::is_png(path)
+                    && path.parent().and_then(|parent| font_inputs.get(parent)) == Some(&None)
+                    && !self
+                        .config
+                        .profiles
+                        .iter()
+                        .any(|&profile| self.published.contains_key(&(name.clone(), profile)))
+                {
+                    continue;
+                }
                 sources
                     .entry(name)
                     .or_default()
@@ -439,10 +461,18 @@ impl Cooker {
             };
             let (path, hash, kind, linear) = (*path, **hash, *kind, *linear);
             let mut inputs = vec![(path.clone(), hash)];
-            if matches!(kind, ProductKind::SpriteSheet | ProductKind::Font)
-                && let Some(images) = path.parent().and_then(|parent| sheet_images.get(parent))
-            {
-                inputs.extend(images.iter().cloned());
+            if let Some(parent) = path.parent() {
+                if kind == ProductKind::SpriteSheet
+                    && let Some(images) = sheet_images.get(parent)
+                {
+                    inputs.extend(images.iter().cloned());
+                }
+                if kind == ProductKind::Font
+                    && let Some(Some(input)) = font_inputs.get(parent)
+                    && let Some(input_hash) = files.get(input)
+                {
+                    inputs.push((input.clone(), *input_hash));
+                }
             }
             if kind == ProductKind::Mesh {
                 match self.mesh_buffers(path, hash) {
@@ -483,7 +513,7 @@ impl Cooker {
                 });
             }
         }
-        (jobs, failed)
+        (jobs, failed, retry)
     }
 
     fn mesh_buffers(&mut self, path: &Path, hash: ContentHash) -> Result<Vec<PathBuf>, CookError> {

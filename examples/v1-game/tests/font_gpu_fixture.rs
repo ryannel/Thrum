@@ -407,7 +407,7 @@ pub(super) fn resident_bytes(font: &FontProduct, scale: u32) -> u64 {
     clippy::cast_possible_truncation,
     reason = "known small cooked metrics use integer pen offsets"
 )]
-pub(super) fn outline_av(image: &mut [u8], strike: FontStrike<'_>, [x, y]: [i32; 2]) {
+pub(super) fn outline_av(image: &mut Reference, strike: FontStrike<'_>, [x, y]: [i32; 2]) {
     let a = strike.glyph('A').expect("A");
     let v = strike.glyph('V').expect("V");
     let kern = strike
@@ -424,7 +424,7 @@ pub(super) fn outline_av(image: &mut [u8], strike: FontStrike<'_>, [x, y]: [i32;
     clippy::cast_possible_truncation,
     reason = "reference scales and metrics are small integers"
 )]
-pub(super) fn outline_at_wrong_scale(image: &mut [u8], font: &FontProduct, scale: u32) {
+pub(super) fn outline_at_wrong_scale(image: &mut Reference, font: &FontProduct, scale: u32) {
     let strike = font.strike(12.0, 1).expect("unscaled sheet");
     let m = i32::try_from(scale).expect("small scale");
     let baseline = 4 + strike.metrics.ascent.ceil() as i32 * m;
@@ -446,7 +446,7 @@ pub(super) fn outline_at_wrong_scale(image: &mut [u8], font: &FontProduct, scale
 }
 
 pub(super) fn grid_rows(
-    image: &mut [u8],
+    image: &mut Reference,
     font: &FontProduct,
     scale: u32,
     edited: bool,
@@ -486,7 +486,7 @@ pub(super) fn grid_rows(
     reason = "bounded reference pixels and rounded sRGB codes"
 )]
 pub(super) fn glyph(
-    pixels: &mut [u8],
+    image: &mut Reference,
     strike: FontStrike<'_>,
     index: u32,
     pen: [i32; 2],
@@ -503,6 +503,9 @@ pub(super) fn glyph(
                 + x) as usize
                 * 4;
             let source = &texels[at..at + 4];
+            if source[3] == 0 {
+                continue;
+            }
             let alpha = f64::from(source[3]) / 255.0;
             let [left, top] = [x, y].map(|value| i32::try_from(value).expect("small frame"));
             let left = pen[0] + (left - frame.pivot[0] as i32) * block;
@@ -516,6 +519,8 @@ pub(super) fn glyph(
                         continue;
                     }
                     let index = (y * EXTENT[0] + x) as usize * 4;
+                    image.blended[index / 4] = source[3] != 255;
+                    let pixels = &mut image.rgba;
                     for channel in 0..3 {
                         let colour = decode(source[channel])
                             + decode(pixels[index + channel]) * (1.0 - alpha);
@@ -547,22 +552,28 @@ fn encode(linear: f64) -> f64 {
     }
 }
 
-pub(super) fn matches(actual: &[u8], expected: &[u8]) -> bool {
-    actual.len() == expected.len()
-        && actual
-            .iter()
-            .zip(expected)
-            .all(|(&actual, &expected)| actual.abs_diff(expected) <= 1)
+pub(super) struct Reference {
+    pub(super) rgba: Vec<u8>,
+    blended: Vec<bool>,
 }
 
-pub(super) fn compare(actual: &[u8], expected: &[u8], background: &[u8]) {
-    assert_eq!(actual.len(), expected.len());
-    for (at, ((&actual, &expected), &background)) in
-        actual.iter().zip(expected).zip(background).enumerate()
-    {
-        assert!(
-            actual.abs_diff(expected) <= u8::from(expected != background),
-            "byte {at}: actual {actual}, expected {expected}, background {background}"
-        );
+impl Reference {
+    pub(super) fn new(rgba: Vec<u8>) -> Self {
+        Self {
+            blended: vec![false; rgba.len() / 4],
+            rgba,
+        }
+    }
+
+    pub(super) fn first_difference(&self, actual: &[u8]) -> Option<usize> {
+        assert_eq!(actual.len(), self.rgba.len());
+        actual
+            .iter()
+            .zip(&self.rgba)
+            .enumerate()
+            .find_map(|(at, (&actual, &expected))| {
+                let allowed = u8::from(at % 4 != 3 && self.blended[at / 4]);
+                (actual.abs_diff(expected) > allowed).then_some(at)
+            })
     }
 }

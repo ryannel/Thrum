@@ -16,7 +16,7 @@ mod metal {
     use thrum_test_support::Scratch;
     use thrum_ui::TextRun;
 
-    use crate::rig::{self, EXTENT, Rig};
+    use crate::rig::{self, EXTENT, Reference, Rig};
 
     #[test]
     #[cfg_attr(
@@ -47,19 +47,38 @@ mod metal {
                     host.host.source_mut().origin = [x, 4.0];
                     host.host.source_mut().value = 0;
                     let frame = host.draw();
-                    let mut expected = background.clone();
+                    let mut expected = Reference::new(background.clone());
                     let strike = outline.strike(12.0, scale).expect("exact scale");
                     let snapped = 14 + i32::from(subpixel >= 32);
                     observed_starts[usize::from(subpixel >= 32)] = true;
                     rig::outline_av(&mut expected, strike, [snapped, 4]);
                     rig::grid_rows(&mut expected, &pixel, scale, false, 0);
-                    rig::compare(&frame.rgba, &expected, &background);
+                    if let Some(at) = expected.first_difference(&frame.rgba) {
+                        panic!(
+                            "byte {at}: actual {}, expected {}",
+                            frame.rgba[at], expected.rgba[at]
+                        );
+                    }
+                    if subpixel == 0 {
+                        let opaque = expected
+                            .rgba
+                            .chunks_exact(4)
+                            .zip(background.chunks_exact(4))
+                            .position(|(glyph, background)| {
+                                glyph == [255; 4] && glyph != background
+                            })
+                            .expect("opaque white glyph texel")
+                            * 4;
+                        let mut bad = expected.rgba.clone();
+                        bad[opaque] -= 1;
+                        assert_eq!(expected.first_difference(&bad), Some(opaque));
+                    }
                     if scale != 1 && subpixel == 0 {
-                        let mut wrong = background.clone();
+                        let mut wrong = Reference::new(background.clone());
                         rig::outline_at_wrong_scale(&mut wrong, &outline, scale);
                         rig::grid_rows(&mut wrong, &pixel, scale, false, 0);
                         assert!(
-                            !rig::matches(&frame.rgba, &wrong),
+                            wrong.first_difference(&frame.rgba).is_some(),
                             "a resampled strike must fail"
                         );
                     }
@@ -107,7 +126,7 @@ mod metal {
         host.host.source_mut().world_rows = rows;
         let image = host.draw();
         let [cx, cy] = EXTENT.map(|side| usize::try_from(side / 2).expect("extent"));
-        let mut expected = background;
+        let mut expected = Reference::new(background);
         let strike = font.strike(8.0, 1).expect("pixel strike");
         let glyph = strike.glyph('B').expect("B frame");
         rig::glyph(
@@ -123,10 +142,10 @@ mod metal {
         for y in cy..cy + 16 {
             for x in cx..cx + 16 {
                 let offset = (y * EXTENT[0] as usize + x) * 4;
-                expected[offset..offset + 4].copy_from_slice(&[255, 0, 0, 255]);
+                expected.rgba[offset..offset + 4].copy_from_slice(&[255, 0, 0, 255]);
             }
         }
-        assert_eq!(image.rgba, expected);
+        assert_eq!(image.rgba, expected.rgba);
     }
 
     #[test]
@@ -280,6 +299,76 @@ mod metal {
         assert!(host.lease.font_candidate().is_none());
         println!(
             "{before} submissions before edit, two after, one discarded switch, and named source, size and scale refusals"
+        );
+    }
+
+    #[test]
+    #[cfg_attr(
+        not(target_os = "macos"),
+        ignore = "requires Metal for its submitted image comparison"
+    )]
+    fn newly_visible_run_refuses_the_ready_edit_before_submit() {
+        let scratch = Scratch::new("interface-text-late-refusal");
+        let mut cooker = rig::cook(scratch.path(), false);
+        let gpu = rig::open("portable");
+        let mut host = Rig::new(&gpu, &cooker, 1);
+        host.ready();
+        let old = host.draw();
+        let committed = host.lease.sheet_publication().expect("original sheets");
+        host.host.source_mut().drawing = false;
+        let description = scratch.join("live/type/font.json");
+        let original = std::fs::read_to_string(&description).expect("font description");
+        let stripped = original.replace("{\"points\": 12},", "");
+        std::fs::write(&description, stripped).expect("remove hidden run's size");
+        assert!(cooker.cook_all().expect("cook edit").published.is_some());
+        thrum_test_support::wait::until(
+            "candidate sheets are ready",
+            Duration::from_secs(8),
+            || {
+                host.draw();
+                assert_eq!(host.stats.lock().expect("stats").drawn, Some(1));
+                (host
+                    .lease
+                    .sheet_publication()
+                    .expect("offered sheets")
+                    .generation
+                    == 2)
+                    .then_some(())
+            },
+        );
+        assert!(host.host.source().next.is_some());
+
+        host.host.source_mut().drawing = true;
+        let refused = host.draw();
+        assert_eq!(refused.rgba, old.rgba);
+        assert_eq!(
+            refused.sample.interface.unwrap().stamp,
+            committed.paint_stamp
+        );
+        let restored = host.lease.sheet_publication().expect("restored sheets");
+        assert!(std::sync::Arc::ptr_eq(&restored, &committed));
+        assert!(host.lease.font_candidate().is_none());
+        assert!(host.host.source().next.is_none());
+        for _ in 0..4 {
+            let submitted = host.draw();
+            assert_eq!(submitted.rgba, old.rgba);
+            assert_eq!(
+                submitted.sample.interface.unwrap().stamp,
+                Some(committed.paint_stamp.unwrap())
+            );
+        }
+        let stats = host.stats.lock().expect("stats");
+        assert_eq!(stats.drawn, Some(1));
+        assert_eq!(stats.failures, 1);
+        assert!(
+            stats
+                .errors
+                .iter()
+                .any(|reason| reason.contains("font size 12"))
+        );
+        assert!(!stats.swaps.iter().any(|swap| swap.generation == 2));
+        println!(
+            "ready generation 2 refused for newly visible size 12; generation 1 sheets and pixels retained"
         );
     }
 

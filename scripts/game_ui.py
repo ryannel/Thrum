@@ -236,9 +236,12 @@ def font_costs(destination, revision, target, scratch):
                       load_before=before, load_after=load())
         if [font["font"] for font in record["products"]] != ["type", "pixel"]:
             raise ValueError("incomplete font record")
-        for font in record["products"]:
+        for font, sheet_count in zip(record["products"], (3, 1), strict=True):
+            sheets = font["sheet_bytes"]
             if (not isinstance(font["cook_ns"], int) or font["table_bytes"] <= 0
-                    or len(font["sheet_bytes"]) != 3 or font["sheet_bytes"][0] <= 0):
+                    or len(sheets) != 3
+                    or not all(type(size) is int and (size > 0 if scale < sheet_count else size == 0)
+                               for scale, size in enumerate(sheets))):
                 raise ValueError("missing font cook or byte accounting")
             if ([arm["glyphs"] for arm in font["layout"]] != [10, 100, 1000]
                     or not all(len(arm["raw_cpu_ns"]) == 32
