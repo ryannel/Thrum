@@ -112,6 +112,15 @@ fn arm(gpu: &thrum_test_support::Gpu, extent: [u32; 2], fleet: Vec<Body>) -> Gam
         });
     let mut fixture = Fixture::from_game(gpu, extent, game, report);
     fixture.warm_cooked();
+    let warm_tick = fixture
+        .host
+        .last_submitted_clock()
+        .expect("warm clock")
+        .tick;
+    let warm_time = STEP * (u32::try_from(warm_tick).expect("warm tick") + 1);
+    let warm_frame = fixture.frame(warm_time.as_secs_f64());
+    let warm_profile = super::sample_json(&warm_frame);
+    let warm_wall_ms = fixture.last_elapsed.as_secs_f64() * 1000.0;
     fixture.host.set_timing_requested(false);
     let view = fixture
         .output
@@ -177,7 +186,7 @@ fn arm(gpu: &thrum_test_support::Gpu, extent: [u32; 2], fleet: Vec<Body>) -> Gam
     GameArm {
         record: json!({
             "extent":extent, "ticks":MEASURE_TICKS, "warm_ticks":WARM_TICKS, "wall_seconds":wall_seconds,
-            "render_in_flight":1, "frames_submitted":submitted, "frames_completed":completed,
+            "render_in_flight":1, "warm_profile":warm_profile, "warm_wall_ms":warm_wall_ms, "frames_submitted":submitted, "frames_completed":completed,
             "dropped_views":dropped, "age":stats.ages, "nodes":stats.nodes,
             "fallback":stats.fallback, "unavailable":mailbox.unavailable,
             "blocking_reads":mailbox.blocking_reads, "busy":mailbox.busy,
