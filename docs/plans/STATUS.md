@@ -4,7 +4,7 @@ The orchestrate script writes this page from the plan files and record files aft
 
 ## Overview
 
-23 of 36 modules done · 12 in progress · 1 to come
+23 of 37 modules done · 12 in progress · 2 to come
 
 ### Needs you now
 
@@ -310,6 +310,24 @@ A planner or the lead chose each of these where your words left it open. Each st
 - DEAD-CODE assumes: the simulation keeps no public query for what changed. WP1 removes the three that read the four-tick change history, and WP3 the one that reads each slot's change tick. Nothing calls any of them, but the simulation decision lists a change journal among the core's responsibilities. The other choice keeps the per-slot query, `visit_with_changes`, as the engine's change detection, which costs nothing per tick, and removes only the history. ([plan](DEAD-CODE/PLAN.md))
 - DEAD-CODE assumes: the serial transaction visits are deleted, about 190 lines. They are not copies of the chunked visit: they give a callback a mutable context in slot order and can visit a query that is not indexed. Nothing uses either ability. The other choice keeps one ordered mutable visit. ([plan](DEAD-CODE/PLAN.md))
 - DEAD-CODE assumes: the game's state projection, about 650 lines, and the crate `thrum-content-runtime`, about 180, are deleted once `HOST` WP3 has removed the host they sit in. The projection copies every committed page's changes for a reader that was never built, and the crate has no producer. The other choice keeps either for a reader you still expect. ([plan](DEAD-CODE/PLAN.md))
+- GAME-SDK assumes: the first release has no rigid-body physics. It has 2D touching, nearest and sweep queries, which carry the swarm game and most arcade games; rigid bodies, joints and any 3D collision wait for a physics module planned after it. You can ask for physics in the first release, and its engine module is then built first. ([plan](GAME-SDK/PLAN.md))
+- GAME-SDK assumes: the first release animates sprites by frame and has no skeletal animation, which needs skinning in the renderer and clips in the cooker, a module of its own. ([plan](GAME-SDK/PLAN.md))
+- GAME-SDK assumes: the first release has no audio. The engine has none, and no agent can hear a result, so every sound would wait for you. The SDK keeps the place where a sound is played. ([plan](GAME-SDK/PLAN.md))
+- GAME-SDK assumes: SDK work packages start as soon as you approve the design and are built beside the road to V1, taking a builder only when no V1 work package is waiting for one. The other reading of "V1 first" starts no SDK builder until the exit closes, which leaves the swarm game waiting for the SDK after V1. ([plan](GAME-SDK/PLAN.md))
+- GAME-SDK assumes: every game's rules use numbers that give the same result on every device, a game played alone included, so turning multiplayer on rewrites nothing. The price is that rules use the SDK's number types and not `f32`, and a game played online cannot use an outside maths or physics library in its rules. ([plan](GAME-SDK/PLAN.md))
+- GAME-SDK assumes: a game that can be played online keeps its rules in a crate of their own, so they can be checked. A game played alone is one crate. ([plan](GAME-SDK/PLAN.md))
+- GAME-SDK assumes: the crate a game depends on is named `thrum`, a game is run with `cargo play`, and the twelve words in the design are the SDK's vocabulary. They are proposed in the glossary for you to agree or change. ([plan](GAME-SDK/PLAN.md))
+- GAME-SDK assumes: the first release leaves out multiplayer for 3D games, gamepads, saved games, entities attached to other entities, scene files and an editor, and a changed rule rebuilds and restarts the game. Sea, clouds and weather join the SDK when their own modules close. ([plan](GAME-SDK/PLAN.md))
+- GAME-SDK assumes: the starter, stones and the lighthouse are rewritten on the SDK and the sky kit they use is then removed, so there is one way to make a game. That replaces the route milestone G6 delivered. ([plan](GAME-SDK/PLAN.md))
+- GAME-SDK assumes: three fresh agents prove the documentation, one each for a 2D, a 3D and an online game, each in about 100 game lines, the bar G6 set. ([plan](GAME-SDK/PLAN.md))
+- A name in the glossary waits for your agreement: Game SDK (the planner chose the name and the crate's name, `thrum`)
+- A name in the glossary waits for your agreement: Scene (the planner chose this meaning for game code)
+- A name in the glossary waits for your agreement: Rule (the planner chose "rule" over "system" and "behaviour" for game code)
+- A name in the glossary waits for your agreement: Frame function (the planner chose the name)
+- A name in the glossary waits for your agreement: Action (the planner chose it for the game SDK)
+- A name in the glossary waits for your agreement: Command (the planner carried it into the game SDK)
+- A name in the glossary waits for your agreement: Look (the planner chose the name)
+- A name in the glossary waits for your agreement: Setting (the planner chose "setting" for game code, and keeps "action" for what a player does)
 
 ### Now and next
 
@@ -318,6 +336,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - While clouds drift, the game can say where each lost refresh went, and the losses the clouds cause are fixed (CLOUDS WP19): In Progress · [plan](CLOUDS/PLAN.md) · [latest review](../../.orchestrate/evidence/CLOUDS/WP19-review.md)
 - Text is drawn from a cooked font, every glyph crisp at 1×, 2× and 3×, and an edited font shows in the running game (GAME-UI WP2): Not Started · [plan](GAME-UI/PLAN.md)
 - GATE-TIME WP5 The post-rollout record shows a five-minute median for Rust landings: Blocked: Needs Context: WP5.1 needs 17 more qualifying ordinary Rust landings before the fixed window can be judged. The lead finds the missing fact, or asks you for it
+- GAME-SDK's design: Design Ready for Review · [design](GAME-SDK/DESIGN.md) · [plan](GAME-SDK/PLAN.md)
 
 ### Recently done
 
@@ -460,7 +479,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 22 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | EFFECT-GRAPH WP3 and APPLE-PRESENTATION WP3 to start; SIM-2D WP1 for its fifth work package; APPLE-PRESENTATION WP6 for its sixth | Done 25 Nov |
 | 23 | SESSION | Two to four players share one run and keep seeing the same crowd, and a windowed game is stepped by its match | SIM-2D WP3 to start; TRANSPORT WP1 for its second work package and TRANSPORT WP2 for its socket work packages; RENDER-2D WP5 for its last | Done 25 Nov |
 | 24 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame, and one iPhone shell for every game | RENDER-2D WP6 and APPLE-PRESENTATION WP6 | WP2 of 6 · Not Started |
-| 25 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SHOWCASE WP8 to start, with the owner's pick of a concept; SIM-2D WP3, SESSION WP1, RENDER-2D WP5 and GAME-SPLIT WP4 for the first slice; GAME-UI WP4 for the whole run alone and GAME-UI WP6 for the iPhone simulator; SESSION WP4 for a rehearsed match and SESSION WP7 for co-op on sockets | Waiting: On Dependency, SHOWCASE:WP8 |
+| 25 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SHOWCASE WP8 to start, with the owner's pick of a concept; SIM-2D WP3, SESSION WP1, RENDER-2D WP5, GAME-SPLIT WP4 and GAME-SDK WP3 for the first slice; GAME-UI WP4 and GAME-SDK WP6 for the whole run alone; GAME-UI WP6 and GAME-SDK WP7 for the iPhone simulator; SESSION WP4 and GAME-SDK WP5 for a rehearsed match and SESSION WP7 for co-op on sockets | Waiting: On Dependency, SHOWCASE:WP8 |
 | 26 | REPO-RULES | `./dev check` refuses the code shapes the code review found, bulk media leaves the checkout, and names and layout are put right once | Nothing to start; every other track 4 module's fixes, and track 6's, for the rename and the tidy-up | Waiting: On Dependency, GATE-TIME:WP5 |
 | 27 | REVIEW-ENGINE | The review's findings in the simulation, the sea, cooked assets and the cooker are fixed, and the iPhone app gets the textures and buffers its hardware has | Nothing to start; REPO-RULES WP1 for its errors | Done 24 Nov |
 | 28 | TEST-SUPPORT | Engine tests get a GPU device and shared fixtures from one place, and a test that needs a GPU says so and is skipped with a reason where there is none | REPO-RULES WP1 to start; HOST WP1, GAME-SPLIT WP2, ATMOSPHERE WP9, APPLE-TILE WP10, APPLE-PRESENTATION WP3, EFFECT-GRAPH WP3 and CULLING WP3 for the renderer's tests; GATE-TIME WP2 and WP6, DEAD-CODE WP2 and REVIEW-RENDER WP2 for adopting the test kit; nothing for the small target and the block on writing a test | Done 22 Nov |
@@ -472,3 +491,4 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 34 | GATE-TIME | A merge's check takes about five minutes where it took fifty: it runs only the fast tests its change can reach, side by side and each once, and the long tests and the whole workspace run on main after the merge | Nothing to start; TEST-SUPPORT WP2 for the runs that happen twice; TEST-SUPPORT WP6 for the guard rules; WATERS WP7 for the water scene's slow tests; REVIEW-RENDER WP2 for the reference tests; DEAD-TOOLS WP2 for the contributor guide | WP5 of 15 · Blocked: Needs Context |
 | 35 | DEAD-TOOLS | Scripts, benches and records that nothing runs or reads are gone and the check refuses new ones, no tool writes into `docs/evidence`, and each module's record of what it copied is tracked in Git | Nothing to start; TEST-SUPPORT WP2 for its last work package | Done 21 Nov |
 | 36 | DEAD-CODE | Engine code that nothing calls is gone, and a scene contribution no longer writes empty methods | GATE-TIME WP1 to start; GATE-TIME WP6 for the contribution's defaults; WATERS WP7 for the water scene's settings; HOST WP3 for the game's projection; REVIEW-RENDER WP3 and GATE-TIME WP6 for the two helpers | Done 22 Nov |
+| 37 | GAME-SDK | A developer or an agent builds a 2D, a 3D or an online game in plain Rust against one documented crate, and the showcase and the swarm game are written on it | The owner's approval of its design to start; SESSION WP7 for a game played online; GAME-UI WP4 for menus and status displays and GAME-UI WP6 for the iPhone simulator; GAME-SPLIT WP4 for the showcase on the SDK | Design Ready for Review |
