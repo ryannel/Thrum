@@ -110,51 +110,6 @@ fn fine_node(point: QueryPoint, coord: vec2<i32>) -> CutNode {
     return CutNode((rest - point.position) + p.xz, p.y);
 }
 
-fn fine_cell(point: QueryPoint, coarse: vec2<i32>, result: CutResult) -> CutResult {
-    let step = i32(surf.coarse.x);
-    let lo = max(coarse * step, point.fine_bounds.xy);
-    let hi = min((coarse + 1) * step, point.fine_bounds.zw);
-    let width = u32(hi.x - lo.x + 1);
-    var row: array<CutNode, 33>;
-    for (var x = 0u; x < width; x++) {
-        row[x] = fine_node(point, vec2(lo.x + i32(x), lo.y));
-    }
-    var hit = result.hit;
-    for (var z = lo.y; z < hi.y; z++) {
-        var a = row[0];
-        var d = fine_node(point, vec2(lo.x, z + 1));
-        row[0] = d;
-        for (var x = 0u; x + 1u < width; x++) {
-            let coord = vec2(lo.x + i32(x), z);
-            let cell = vec2<f32>(coord) * surf.controls.z - point.position;
-            let b = row[x + 1u];
-            let c = fine_node(point, coord + 1);
-            hit = triangle(a, b, c, cell, 1.0, hit);
-            hit = triangle(a, c, d, cell, -1.0, hit);
-            row[x + 1u] = c;
-            a = b;
-            d = c;
-        }
-    }
-    return CutResult(hit, result.fine_nodes + width * u32(hi.y - lo.y + 1), result.coarse_nodes);
-}
-
-fn cut_cells(point: QueryPoint, lane: u32) -> CutResult {
-    let step = surf.coarse.x;
-    let lo = vec2<i32>(floor(vec2<f32>(point.fine_bounds.xy) / step));
-    let hi = vec2<i32>(ceil(vec2<f32>(point.fine_bounds.zw) / step));
-    let size = vec2<u32>(hi - lo);
-    var result: CutResult;
-    for (var i = lane; i < size.x * size.y; i += QUERY_WIDTH) {
-        let coord = lo + vec2(i32(i % size.x), i32(i / size.x));
-        if keeps_cell(point, coord) {
-            result = fine_cell(point, coord, result);
-        }
-        if point.coarse_grid.z == 0 { result.coarse_nodes += 4u; }
-    }
-    return result;
-}
-
 // One group cooperatively evaluates each retained fine cell. The common
 // eight-cell profile has 81 nodes and 64 fine cells. A lane samples up to
 // two nodes, and then cuts one fine cell using its four shared corners.
@@ -165,14 +120,12 @@ var<workgroup> kept_count: atomic<u32>;
 var<workgroup> kept_final: u32;
 var<workgroup> fine_lattice: array<CutNode, FINE_GRID_SIZE * FINE_GRID_SIZE>;
 
-fn find_kept(point: QueryPoint, lane: u32) -> u32 {
-    let step = surf.coarse.x;
-    let lo = vec2<i32>(floor(vec2<f32>(point.fine_bounds.xy) / step));
-    let hi = vec2<i32>(ceil(vec2<f32>(point.fine_bounds.zw) / step));
-    let size = vec2<u32>(hi - lo);
+fn find_kept(
+    point: QueryPoint, lane: u32, start: u32, end: u32, lo: vec2<i32>, width: u32,
+) -> u32 {
     var evaluations = 0u;
-    for (var i = lane; i < size.x * size.y; i += QUERY_WIDTH) {
-        let coord = lo + vec2(i32(i % size.x), i32(i / size.x));
+    for (var i = start + lane; i < end; i += QUERY_WIDTH) {
+        let coord = lo + vec2(i32(i % width), i32(i / width));
         if keeps_cell(point, coord) {
             let index = atomicAdd(&kept_count, 1u);
             if index < KEPT_CAPACITY { kept[index] = coord; }
@@ -182,12 +135,11 @@ fn find_kept(point: QueryPoint, lane: u32) -> u32 {
     return evaluations;
 }
 
-fn shared_fine_cell(point: QueryPoint, coarse: vec2<i32>, lane: u32, result: CutResult) -> CutResult {
-    let step = i32(surf.coarse.x);
-    let lo = max(coarse * step, point.fine_bounds.xy);
-    let hi = min((coarse + 1) * step, point.fine_bounds.zw);
-    let size = vec2<u32>(hi - lo) + 1u;
-    let area = size.x * size.y;
+fn shared_fine_tile(
+    point: QueryPoint, lo: vec2<i32>, hi: vec2<i32>, lane: u32, result: CutResult,
+) -> CutResult {
+    let size = vec2<u32>(max(hi - lo, vec2(0))) + 1u;
+    let area = select(0u, size.x * size.y, all(hi > lo));
     var nodes = result.fine_nodes;
     for (var i = lane; i < area; i += QUERY_WIDTH) {
         let coord = lo + vec2(i32(i % size.x), i32(i / size.x));
@@ -197,7 +149,7 @@ fn shared_fine_cell(point: QueryPoint, coarse: vec2<i32>, lane: u32, result: Cut
     workgroupBarrier();
     let width = size.x - 1u;
     var hit = result.hit;
-    if lane < width * (size.y - 1u) {
+    if area != 0u && lane < width * (size.y - 1u) {
         let x = lane % width;
         let z = lane / width;
         let i = z * size.x + x;
@@ -211,6 +163,47 @@ fn shared_fine_cell(point: QueryPoint, coarse: vec2<i32>, lane: u32, result: Cut
     }
     workgroupBarrier();
     return CutResult(hit, nodes, result.coarse_nodes);
+}
+
+var<workgroup> coarse_area: u32;
+
+fn cut_cells(point: QueryPoint, lane: u32) -> CutResult {
+    let step = i32(surf.coarse.x);
+    let lo = vec2<i32>(floor(vec2<f32>(point.fine_bounds.xy) / surf.coarse.x));
+    let hi = vec2<i32>(ceil(vec2<f32>(point.fine_bounds.zw) / surf.coarse.x));
+    let size = vec2<u32>(hi - lo);
+    if lane == 0u { coarse_area = size.x * size.y; }
+    let area = workgroupUniformLoad(&coarse_area);
+    var part: CutResult;
+    var chunk = area;
+    var start = 0u;
+    while start < area {
+        if lane == 0u { atomicStore(&kept_count, 0u); }
+        workgroupBarrier();
+        let end = min(start + chunk, area);
+        part.coarse_nodes += find_kept(point, lane, start, end, lo, size.x);
+        workgroupBarrier();
+        if lane == 0u { kept_final = atomicLoad(&kept_count); }
+        let count = workgroupUniformLoad(&kept_final);
+        if count > KEPT_CAPACITY {
+            // Retry very broad sheets in bounded chunks. Each coarse cell
+            // in a chunk can contribute at most one retained coordinate.
+            chunk = KEPT_CAPACITY;
+            continue;
+        }
+        for (var i = 0u; i < count; i++) {
+            let base = kept[i] * step;
+            for (var z = 0; z < step; z += 8) {
+                for (var x = 0; x < step; x += 8) {
+                    let tile = base + vec2(x, z);
+                    part = shared_fine_tile(point, max(tile, point.fine_bounds.xy),
+                        min(min(tile + 8, base + step), point.fine_bounds.zw), lane, part);
+                }
+            }
+        }
+        start = end;
+    }
+    return part;
 }
 
 fn sheet_jacobian(query: QueryPoint, rest: vec2<f32>, h: f32) -> mat2x3<f32> {
@@ -273,26 +266,7 @@ var<workgroup> cut_parts: array<CutResult, QUERY_WIDTH>;
 @compute @workgroup_size(QUERY_WIDTH)
 fn sample_query(@builtin(workgroup_id) group: vec3<u32>, @builtin(local_invocation_index) lane: u32) {
     let point = points[group.x];
-    var part: CutResult;
-    if surf.coarse.x <= 8.0 {
-        if lane == 0u { atomicStore(&kept_count, 0u); }
-        workgroupBarrier();
-        part.coarse_nodes = find_kept(point, lane);
-        workgroupBarrier();
-        if lane == 0u { kept_final = atomicLoad(&kept_count); }
-        let count = workgroupUniformLoad(&kept_final);
-        if count <= KEPT_CAPACITY {
-            for (var i = 0u; i < count; i++) {
-                part = shared_fine_cell(point, kept[i], lane, part);
-            }
-        } else {
-            let coarse_nodes = part.coarse_nodes;
-            part = cut_cells(point, lane);
-            part.coarse_nodes += coarse_nodes;
-        }
-    } else {
-        part = cut_cells(point, lane);
-    }
+    let part = cut_cells(point, lane);
     cut_parts[lane] = part;
     workgroupBarrier();
     if lane != 0u { return; }

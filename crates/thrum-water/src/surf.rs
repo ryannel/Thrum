@@ -46,6 +46,11 @@ pub(crate) struct SurfGpu {
 
 impl SurfGpu {
     pub(crate) fn source(group: u32, first: u32) -> String {
+        Self::sheet_source(group, first)
+            + "\nfn wave_shoaling(k: f32, depth: f32) -> f32 { return surf_shoaling(k, depth); }\n"
+    }
+
+    pub(crate) fn sheet_source(group: u32, first: u32) -> String {
         format!(
             "const SURF_GROUP = {group}u; const SURF_FIRST = {first}u;\n\
              const SURF_SECTORS = {SECTORS}u; const SURF_RUNGS = {RUNGS}u;\n\

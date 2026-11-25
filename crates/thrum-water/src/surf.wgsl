@@ -216,7 +216,7 @@ fn surf_moments(point: vec2<f32>, cell: Cell, stages: StageBlend, transformed: b
             if shore.valid {
                 lag = k0 * shore.lag;
                 if local {
-                    amplitude *= mix(1.0, surf_shoaling(k0, floor_depth), fade);
+                    amplitude *= mix(1.0, wave_shoaling(k0, floor_depth), fade);
                     vector += k0 * shore.gradient;
                 }
             }

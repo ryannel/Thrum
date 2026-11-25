@@ -2,7 +2,10 @@ use crate::{
     BedPyramid, BodyKind, BreakerSection, CutConfig, Field, Map, MapSample, Sheet, SheetPoint,
     ShoreConfig, ShoreTransform, Source, Surface, WaterError, cut, limit, shoaling,
 };
-use std::f64::consts::{FRAC_PI_4, TAU};
+use std::{
+    collections::HashMap,
+    f64::consts::{FRAC_PI_4, TAU},
+};
 use thrum_sea_model::Sample;
 
 const SWASH_C: f64 = 0.6 / (2.0 * std::f64::consts::SQRT_2);
@@ -677,6 +680,7 @@ pub struct ThrowReach<'a> {
     chop: f64,
     minimum_level: f64,
     first: f64,
+    ceilings: HashMap<u64, (f64, bool)>,
 }
 
 impl Map {
@@ -693,6 +697,7 @@ impl Map {
             chop,
             minimum_level: self.minimum_level(),
             first: 0.0,
+            ceilings: HashMap::new(),
         };
         reach.first = reach.ceiling(surf.profile.lag_floor).0;
         Some(reach)
@@ -714,7 +719,11 @@ impl Map {
 }
 
 impl ThrowReach<'_> {
-    fn ceiling(&self, depth: f64) -> (f64, bool) {
+    fn ceiling(&mut self, depth: f64) -> (f64, bool) {
+        let key = depth.to_bits();
+        if let Some(&bound) = self.ceilings.get(&key) {
+            return bound;
+        }
         let amplitude: f64 = self
             .components
             .iter()
@@ -728,7 +737,7 @@ impl ThrowReach<'_> {
             .profile
             .section
             .throws_below(2.0 * amplitude / (self.surf.profile.breaker_ratio * depth));
-        (
+        let bound = (
             amplitude
                 * (if throws {
                     self.surf.profile.section.maximum_throw()
@@ -736,17 +745,20 @@ impl ThrowReach<'_> {
                     0.0
                 } + self.chop),
             throws,
-        )
+        );
+        self.ceilings.insert(key, bound);
+        bound
     }
 
     /// Return the reach in metres and whether any crest can be thrown into the column.
-    pub fn at(&self, point: [f64; 2]) -> (f64, bool) {
+    pub fn at(&mut self, point: [f64; 2]) -> (f64, bool) {
         let floor = self.surf.profile.lag_floor;
+        let minimum_level = self.minimum_level;
+        let pyramid = &self.surf.pyramid;
         let depth = |reach| {
-            self.surf
-                .pyramid
+            pyramid
                 .range(point, reach)
-                .map_or(floor, |range| (self.minimum_level - range[1]).max(floor))
+                .map_or(floor, |range| (minimum_level - range[1]).max(floor))
         };
         let mut reach = self.first;
         for _ in 0..2 {

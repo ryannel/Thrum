@@ -64,7 +64,7 @@ fn fine_bounds(point: [f32; 2], reach: f64, cut: CutConfig) -> Option<Rect> {
 impl CoarsePlan {
     pub(super) fn new(
         points: &mut [Point],
-        reach: &ThrowReach<'_>,
+        reach: &mut ThrowReach<'_>,
         cut: CutConfig,
         max_records: u64,
         max_groups: u32,
