@@ -76,6 +76,9 @@ impl std::ops::Deref for DeviceSite {
 pub(crate) enum CreationPhase {
     Build,
     Transition,
+    Recovery,
+    #[cfg(not(target_arch = "wasm32"))]
+    GenerationBuild,
 }
 
 /// No ledger: holds no device, lock or report.

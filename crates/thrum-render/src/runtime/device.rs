@@ -72,7 +72,9 @@ impl PreparedDevice {
         {
             return self.resize_scene_surface(extent);
         }
-        let _region = self.creations.region(CreationPhase::Build, "device-resize");
+        let _region = self
+            .creations
+            .region(CreationPhase::Recovery, "device-resize");
         self.presenter
             .as_mut()
             .ok_or(FrameError::InvalidState(
@@ -96,7 +98,7 @@ impl PreparedDevice {
         }
         let _region = self
             .creations
-            .region(CreationPhase::Build, "device-scene-resize");
+            .region(CreationPhase::Recovery, "device-scene-resize");
         let presenter = presenter
             .refit(extent, extent)
             .map_err(|error| FrameError::gpu("replacement scene resize", error))?;
@@ -137,7 +139,7 @@ impl DevicePrepareInputs {
             ));
         }
         let creations = capabilities.device().ledger();
-        let build = creations.region(CreationPhase::Build, "device");
+        let build = creations.region(CreationPhase::Recovery, "device");
         let interface = prepare_interface(capabilities, queue, self.interface.as_ref()).await?;
         let (scene, presenter, render_extent) = match self.scene {
             RetainedScene::ThreeD(inputs) => {
@@ -285,7 +287,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             ));
         }
         let creations = candidate.creations.clone();
-        let build = creations.region(CreationPhase::Build, "publish-device");
+        let build = creations.region(CreationPhase::Recovery, "publish-device");
         let scene = candidate.scene.as_mut().ok_or(FrameError::InvalidState(
             "device replacement already published",
         ))?;

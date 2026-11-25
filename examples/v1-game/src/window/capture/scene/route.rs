@@ -16,6 +16,9 @@ use super::{
 };
 use crate::{CameraRoute, GameHost};
 
+#[cfg(feature = "creation-counters")]
+use super::CreationProof;
+
 /// Phase tolerance on the logged presentation alpha.
 const ALPHA_TOLERANCE: f32 = 1e-4;
 /// Budget input for the fixed offscreen thermal proof, which has no display link.
@@ -140,6 +143,28 @@ pub(super) fn record(
             "presentation_lead_ns": 0,
         }),
     )?;
+    #[cfg(feature = "creation-counters")]
+    if let Some(arm) = request.creation_proof {
+        let report = driver.host().creation_checkpoint();
+        if !report.ready || report.frames == 0 {
+            return Err("route readiness requires a prepared device and a cooked draw".to_owned());
+        }
+        let ready = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map_err(|error| error.to_string())?;
+        eprintln!(
+            "THRUM_METAL_READY {} {}",
+            ready.as_nanos(),
+            report.generation
+        );
+        if arm == CreationProof::Launch {
+            return Ok(());
+        }
+    }
+    // The creation proof drives the normal render path without opening a readback tap.
+    let capture_images = !request.governor_thermal;
+    #[cfg(feature = "creation-counters")]
+    let capture_images = capture_images && request.creation_proof.is_none();
     let last = route.origin_tick + last_route_tick;
     let mut checkpoints = route.checkpoints.clone().into_iter().peekable();
     driver.host_mut().world_mut().resume(Duration::ZERO)?;
@@ -210,7 +235,7 @@ pub(super) fn record(
                     .iter()
                     .any(|[first, last]| (*first..=*last).contains(&routed))
             });
-        let capture = thermal_proof.is_none()
+        let capture = capture_images
             && (window
                 || checkpoints
                     .peek()
@@ -349,6 +374,19 @@ pub(super) fn record(
         }
     }
     #[cfg(feature = "creation-counters")]
+    if let Some(arm) = request.creation_proof {
+        if arm == CreationProof::LatePipeline {
+            prepare_late_pipeline(device, driver.host());
+        }
+        let report = driver.host().creation_checkpoint();
+        std::fs::write(directory.join("creation.txt"), report.to_string())
+            .map_err(|error| error.to_string())?;
+        eprintln!(
+            "THRUM_METAL_FINISHED {} {}",
+            report.frames, report.violations
+        );
+    }
+    #[cfg(feature = "creation-counters")]
     if let Some(provider) = driver.host().native_provider_report() {
         use thrum_render::runtime::CreationPhase::{Build, Play, Transition};
         let report = driver.host().creation_report();
@@ -403,6 +441,27 @@ pub(super) fn record(
         return Err(format!("route ended before checkpoint {}", missed.name));
     }
     Ok(())
+}
+
+#[cfg(feature = "creation-counters")]
+fn prepare_late_pipeline(site: &thrum_render::runtime::DeviceSite, host: &crate::host::Runtime) {
+    let module = site.create_shader_module(wgpu::ShaderModuleDescriptor {
+        label: Some("late pipeline control"),
+        source: wgpu::ShaderSource::Wgsl("@compute @workgroup_size(1) fn main() {}".into()),
+    });
+    let pipeline = site.compute(&wgpu::ComputePipelineDescriptor {
+        label: Some("late pipeline control"),
+        layout: None,
+        module: &module,
+        entry_point: Some("main"),
+        compilation_options: Default::default(),
+        cache: None,
+    });
+    assert!(
+        host.creation_report().violations > 0,
+        "late control must register on the live generation"
+    );
+    drop(pipeline);
 }
 
 #[cfg(feature = "creation-counters")]

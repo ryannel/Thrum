@@ -60,7 +60,7 @@ use creation::CreationPhase;
 #[cfg(feature = "creation-counters")]
 pub use creation::{
     CreationCounts, CreationPhase, CreationReport, CreationRow, CreationViolation, Instrumentation,
-    NativeSites, PipelineKind, PipelineRow,
+    NativeCreationRow, NativeSites, PipelineKind, PipelineRow,
 };
 pub use creation::{CreationRegion, DeviceSite};
 pub use device::{DevicePrepareInputs, PreparedDevice};
@@ -1763,6 +1763,13 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     #[cfg(feature = "creation-counters")]
     pub fn creation_report(&self) -> CreationReport {
         self.creations.report()
+    }
+
+    /// Sample live-object deltas through this boundary on the render owner.
+    /// Keep this off the frame path; ordinary readers use `creation_report`.
+    #[cfg(feature = "creation-counters")]
+    pub fn creation_checkpoint(&self) -> CreationReport {
+        self.creations.checkpoint()
     }
 
     /// The final creation report of the device generation the last device

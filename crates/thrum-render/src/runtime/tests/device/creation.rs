@@ -517,7 +517,7 @@ fn a_replacement_device_starts_its_own_ledger_and_retires_the_old_one() {
             report
                 .pipelines
                 .iter()
-                .all(|row| row.phase == CreationPhase::Build && row.label != "unscoped"),
+                .all(|row| row.phase == CreationPhase::Recovery && row.label != "unscoped"),
             "{report}"
         );
         assert!(

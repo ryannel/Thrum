@@ -38,13 +38,17 @@ use std::{
 /// When a creation happened relative to its generation's readiness.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 pub enum CreationPhase {
-    /// Preparing a generation before it is ready.
+    /// Launch preparation before the initial device generation is ready.
     Build,
     /// Replacing resources of a ready generation (visual, surface, contribution
     /// or capture), outside the frame path.
     Transition,
     /// Ordinary frames of a ready generation.
     Play,
+    /// Preparing a replacement device generation before it can draw.
+    Recovery,
+    /// Building extent-dependent resources for a ready device on the worker.
+    GenerationBuild,
 }
 
 /// Net live-object changes of the counted kinds.
@@ -173,6 +177,19 @@ pub struct PipelineRow {
     pub mesh: u64,
 }
 
+/// Exact native provider creations, attributed at the call site.
+#[derive(Clone, Debug, PartialEq)]
+pub struct NativeCreationRow {
+    /// The creating thread.
+    pub thread: String,
+    /// The creating thread's phase.
+    pub phase: CreationPhase,
+    /// The region or unscoped label.
+    pub label: &'static str,
+    /// Successful native provider creations.
+    pub count: u64,
+}
+
 /// A live-object delta row: one window owner, phase and region.
 #[derive(Clone, Debug, PartialEq)]
 pub struct CreationRow {
@@ -212,7 +229,8 @@ pub struct CreationReport {
     pub instrumentation: Instrumentation,
     /// Native-object creation sites.
     pub native: NativeSites,
-    native_events: [u64; 3],
+    /// Exact native provider creations by thread and scope.
+    pub native_creations: Vec<NativeCreationRow>,
     /// The generation's build finished.
     pub ready: bool,
     /// Frames submitted on this generation.
@@ -236,7 +254,7 @@ impl CreationReport {
             generation: 0,
             instrumentation: Instrumentation::Untracked,
             native: NativeSites::Absent,
-            native_events: [0; 3],
+            native_creations: Vec::new(),
             ready: false,
             frames: 0,
             pipelines: Vec::new(),
@@ -260,7 +278,11 @@ impl CreationReport {
     /// Explicitly instrumented native provider creations in this phase.
     #[must_use]
     pub fn native_events(&self, phase: CreationPhase) -> u64 {
-        self.native_events[phase as usize]
+        self.native_creations
+            .iter()
+            .filter(|row| row.phase == phase)
+            .map(|row| row.count)
+            .sum()
     }
 
     /// Pipeline creation events of one phase over all threads and scopes.
@@ -292,6 +314,13 @@ impl fmt::Display for CreationReport {
                 f,
                 "; pipelines {:?}/{}@{}: render {} compute {} mesh {}",
                 row.phase, row.label, row.thread, row.render, row.compute, row.mesh
+            )?;
+        }
+        for row in &self.native_creations {
+            write!(
+                f,
+                "; native {:?}/{}@{}: {}",
+                row.phase, row.label, row.thread, row.count
             )?;
         }
         for row in &self.rows {
@@ -400,19 +429,23 @@ impl DeviceSite {
             let scope = event_scope(ledger);
             let mut state = ledger.lock();
             if counted {
-                let phase = scope
-                    .and_then(|id| state.open.iter().find(|item| item.id == id))
-                    .map_or_else(
-                        || {
-                            if state.report.ready {
-                                CreationPhase::Play
-                            } else {
-                                CreationPhase::Build
-                            }
-                        },
-                        |item| item.phase,
-                    );
-                state.report.native_events[phase as usize] += 1;
+                let (phase, label) =
+                    event_region(&state, scope).unwrap_or((CreationPhase::Play, "closed"));
+                let thread = thread_name();
+                let rows = &mut state.report.native_creations;
+                if let Some(row) = rows
+                    .iter_mut()
+                    .find(|row| row.thread == thread && row.phase == phase && row.label == label)
+                {
+                    row.count += 1;
+                } else {
+                    rows.push(NativeCreationRow {
+                        thread,
+                        phase,
+                        label,
+                        count: 1,
+                    });
+                }
                 if state.report.native == NativeSites::Absent {
                     state.report.native = NativeSites::Counted;
                 }
@@ -529,6 +562,12 @@ impl Ledger {
     }
 
     /// See [`CreationLedger::retire`].
+    pub(crate) fn checkpoint(&self) -> CreationReport {
+        self.0
+            .as_ref()
+            .map_or_else(CreationReport::untracked, |ledger| ledger.lock_checkpoint())
+    }
+
     pub(crate) fn retire(&self) -> CreationReport {
         self.0
             .as_ref()
@@ -630,6 +669,18 @@ fn thread_name() -> String {
         .map_or_else(|| format!("{:?}", current.id()), str::to_owned)
 }
 
+fn event_region(state: &State, scope: Option<u64>) -> Option<(CreationPhase, &'static str)> {
+    match scope {
+        Some(id) => state
+            .open
+            .iter()
+            .find(|open| open.id == id)
+            .map(|open| (open.phase, open.label)),
+        None if state.report.ready => Some((CreationPhase::Play, "unscoped")),
+        None => Some((CreationPhase::Build, "unscoped")),
+    }
+}
+
 impl CreationLedger {
     /// Start counting on `device` from the objects it holds now.
     #[cfg_attr(
@@ -652,7 +703,7 @@ impl CreationLedger {
                     generation,
                     instrumentation: Instrumentation::Pending,
                     native: NativeSites::Absent,
-                    native_events: [0; 3],
+                    native_creations: Vec::new(),
                     ready: false,
                     frames: 0,
                     pipelines: Vec::new(),
@@ -718,13 +769,8 @@ impl CreationLedger {
     /// Returns false, recording nothing, for a scope that has closed.
     fn event(&self, scope: Option<u64>, kind: PipelineKind) -> bool {
         let mut state = self.lock();
-        let (phase, label) = match scope {
-            Some(id) => match state.open.iter().find(|open| open.id == id) {
-                Some(open) => (open.phase, open.label),
-                None => return false,
-            },
-            None if state.report.ready => (CreationPhase::Play, "unscoped"),
-            None => (CreationPhase::Build, "unscoped"),
+        let Some((phase, label)) = event_region(&state, scope) else {
+            return false;
         };
         let thread = thread_name();
         if scope.is_none() && phase == CreationPhase::Play {
@@ -769,7 +815,10 @@ impl CreationLedger {
     fn ready(&self) {
         let mut state = self.lock();
         self.flush(&mut state);
-        state.report.instrumentation = if state.report.phase(CreationPhase::Build).pipelines() > 0 {
+        state.report.instrumentation = if (state.report.phase(CreationPhase::Build).pipelines()
+            + state.report.phase(CreationPhase::Recovery).pipelines())
+            > 0
+        {
             Instrumentation::Counted
         } else {
             Instrumentation::Uninstrumented
@@ -783,13 +832,17 @@ impl CreationLedger {
         self.frames.fetch_add(1, Ordering::Relaxed);
     }
 
-    /// Close the last window of a retired generation and return its report.
-    fn retire(&self) -> CreationReport {
+    fn lock_checkpoint(&self) -> CreationReport {
         let mut state = self.lock();
         self.flush(&mut state);
         let mut report = state.report.clone();
         report.frames = self.frames.load(Ordering::Relaxed);
         report
+    }
+
+    /// Close the last window of a retired generation and return its report.
+    fn retire(&self) -> CreationReport {
+        self.lock_checkpoint()
     }
 
     /// The counts through the last window boundary. Reading does not close a

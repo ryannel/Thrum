@@ -299,6 +299,14 @@ fn scene_capture_request() -> Result<v1_game::SceneCaptureRequest, String> {
         pan_to_degrees: text("THRUM_CAPTURE_PAN_TO_DEGREES")?,
         initial_params: path("THRUM_PARAMS"),
         route: path("THRUM_CAPTURE_ROUTE"),
+        #[cfg(feature = "creation-counters")]
+        creation_proof: match text("THRUM_CREATION_PROOF")?.as_deref() {
+            None => None,
+            Some("launch") => Some(v1_game::CreationProof::Launch),
+            Some("route") => Some(v1_game::CreationProof::Route),
+            Some("late-pipeline") => Some(v1_game::CreationProof::LatePipeline),
+            Some(_) => return Err("unknown THRUM_CREATION_PROOF arm".to_owned()),
+        },
         display_overlay: text("THRUM_CAPTURE_DISPLAY_OVERLAY")?,
         source: text("THRUM_CAPTURE_SOURCE")?,
         fixed_eye: text("THRUM_CAPTURE_FIXED_EYE")?

@@ -380,3 +380,7 @@ required-features = ["creation-counters"]
 [[test]]
 name = "interface_absent"
 required-features = ["creation-counters"]
+
+[[test]]
+name = "prepared_paths"
+required-features = ["creation-counters"]

@@ -38,9 +38,10 @@ def check_pixels(raw, extent):
     return hashlib.sha256(raw).hexdigest()
 
 
-def mac_binary(*, cook=False, counters=False, crowd=False):
+def mac_binary(*, cook=False, counters=False, crowd=False, build_env=None):
     env = {key: value for key, value in os.environ.items() if not key.startswith("THRUM_")}
     env.update(CARGO_TARGET_DIR=str(ROOT / "target"), RUSTC_WRAPPER="")
+    env.update(build_env or {})
     package = "crowd-2d-view" if crowd else "v1-game"
     targets = ["-p", package, "--bin", package]
     if counters:
@@ -50,7 +51,7 @@ def mac_binary(*, cook=False, counters=False, crowd=False):
         targets += ["-p", "thrum-cook", "--bin", "thrum-cook"]
     run("rustup", "run", "stable", "cargo", "build", "--locked", "--offline", "--release",
         *targets, env=env, timeout=900)
-    return ROOT / "target" / "release" / package, env
+    return Path(env["CARGO_TARGET_DIR"]) / "release" / package, env
 
 
 def mac_extent(output):
@@ -378,12 +379,12 @@ def ios_transition(output):
 SCALE_STEPS = {36: 85, 72: 75, 108: 67, 144: 50, 180: 67, 224: 75, 260: 85, 300: 100}
 
 
-def scale_environment(output, *, counters=False):
+def scale_environment(output, *, counters=False, build_env=None):
     from run_v1_showcase import MOVING_ROUTE, SOURCE, store_root
 
-    binary, env = mac_binary(cook=True, counters=counters)
+    binary, env = mac_binary(cook=True, counters=counters, build_env=build_env)
     store = output / "store"
-    run(str(ROOT / "target/release/thrum-cook"), "cook", str(SOURCE), str(store))
+    run(str(binary.with_name("thrum-cook")), "cook", str(SOURCE), str(store))
     route = json.loads(MOVING_ROUTE.read_text())
     root = store_root(store)
     if root != route["cooked_root"]:
@@ -705,7 +706,7 @@ def ios_reset(output):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("check", choices=["extent", "transition", "configure-fault", "transition-capture", "scale", "scale-costs", "edr", "edr-identity", "edr-modes", "edr-headroom", "edr-route", "governor", "governor-identity", "governor-thermal", "reset", "metalfx", "metalfx-quality", "metalfx-exposure", "metalfx-motion"])
+    parser.add_argument("check", choices=["launch", "no-compile", "extent", "transition", "configure-fault", "transition-capture", "scale", "scale-costs", "edr", "edr-identity", "edr-modes", "edr-headroom", "edr-route", "governor", "governor-identity", "governor-thermal", "reset", "metalfx", "metalfx-quality", "metalfx-exposure", "metalfx-motion"])
     parser.add_argument("--target", choices=["mac-metal", "ios-sim"], required=True)
     parser.add_argument("--output", type=Path)
     parser.add_argument("--steady", action="store_true", help="qualify the unloaded governor arm")
@@ -722,9 +723,13 @@ def main():
 
     from apple_governor_proof import mac_governor, mac_governor_identity, mac_governor_thermal
 
+    from apple_creation_proof import mac_launch, mac_no_compile
+
     if (args.steady or args.realtime_capture) and args.check != "governor":
         parser.error("governor options require the governor check")
-    checks = {("governor", "mac-metal"): lambda output: mac_governor(
+    checks = {("launch", "mac-metal"): mac_launch,
+              ("no-compile", "mac-metal"): mac_no_compile,
+              ("governor", "mac-metal"): lambda output: mac_governor(
                   output, steady=args.steady, capture=args.realtime_capture),
               ("governor-identity", "mac-metal"): mac_governor_identity,
               ("governor-thermal", "mac-metal"): mac_governor_thermal,("edr", "ios-sim"): ios_edr,

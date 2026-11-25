@@ -103,6 +103,12 @@ pub fn valley_config(
 ) -> Result<(SceneCamera, thrum_asset_gpu::CookedConfig), CookedValleyError> {
     showcase::valley_config(source)
 }
+#[cfg(all(
+    target_os = "macos",
+    feature = "proving",
+    feature = "creation-counters"
+))]
+pub use window::CreationProof;
 #[cfg(all(target_os = "macos", feature = "proving"))]
 pub use window::{
     CAPTURE_OBSERVER_VARIABLE, NATIVE_RECOVERY_VARIABLE, NativeRecovery, RenderScaleTrace,

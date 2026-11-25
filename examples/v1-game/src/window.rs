@@ -21,6 +21,8 @@ use crate::{
 
 #[cfg(feature = "proving")]
 mod capture;
+#[cfg(feature = "creation-counters")]
+pub use capture::scene::CreationProof;
 #[cfg(feature = "proving")]
 pub use capture::scene::{RenderScaleTrace, SceneCaptureRequest};
 

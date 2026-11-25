@@ -90,8 +90,15 @@ impl Scaler {
             let _: () = msg_send![&*descriptor, setInputContentPropertiesEnabled: Bool::YES];
             let _: () = msg_send![&*descriptor, setInputContentMinScale: 1.0_f32];
             let _: () = msg_send![&*descriptor, setInputContentMaxScale: 2.0_f32];
+            #[cfg(feature = "creation-counters")]
+            let started =
+                std::env::var_os("THRUM_METAL_STAGE_RECORD").map(|_| std::time::Instant::now());
             let scaler: Option<Retained<AnyObject>> =
                 msg_send![&*descriptor, newTemporalScalerWithDevice: &**metal];
+            #[cfg(feature = "creation-counters")]
+            if let Some(started) = started {
+                eprintln!("THRUM_METAL_STAGE metalfx {}", started.elapsed().as_nanos());
+            }
             scaler
                 .map(|inner| Self {
                     inner,

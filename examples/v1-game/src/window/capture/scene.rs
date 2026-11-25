@@ -47,6 +47,9 @@ pub struct SceneCaptureRequest {
     pub pan_to_degrees: Option<String>,
     /// `THRUM_PARAMS`: a parameter file applied before the motion sequence.
     pub initial_params: Option<PathBuf>,
+    /// Launch readiness or a full route counted at the Metal API boundary.
+    #[cfg(feature = "creation-counters")]
+    pub creation_proof: Option<CreationProof>,
     /// `THRUM_CAPTURE_ROUTE`: the moving proof route's file.
     pub route: Option<PathBuf>,
     /// `THRUM_CAPTURE_DISPLAY_OVERLAY`: the route's display diagnostic.
@@ -83,6 +86,18 @@ pub struct SceneCaptureRequest {
     pub omit_placement: Option<String>,
     /// `THRUM_G3T_OVERLAY_CONTROL` is set.
     pub overlay_control: bool,
+}
+
+/// Select how far the Metal creation witness runs.
+#[cfg(feature = "creation-counters")]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum CreationProof {
+    /// Stop at readiness, after the cooked generation is available.
+    Launch,
+    /// Drive every route tick without readback diagnostics.
+    Route,
+    /// Drive the route and deliberately build one late pipeline.
+    LatePipeline,
 }
 
 /// The offscreen driver holding the game prepared for a scene capture.

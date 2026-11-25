@@ -62,7 +62,7 @@ impl ExtentPrepareInputs {
         }
         let _region = self
             .creations
-            .region(CreationPhase::Transition, "prepare scene extent");
+            .region(CreationPhase::GenerationBuild, "prepare scene extent");
         let allocation = self.device.push_error_scope(wgpu::ErrorFilter::OutOfMemory);
         let validation = self.device.push_error_scope(wgpu::ErrorFilter::Validation);
         let result = (|| {
