@@ -771,14 +771,19 @@
 - Two complete eleven-run series on the built-in 120 Hz panel account for every lost refresh. The queue
   fix assigns pending present calls as soon as their interval becomes known. All ten refresh-account tests
   pass, including the regression from the rejected first attempt at the later series.
-- The accounting covers 17 entries from the first series. The five-refresh stall in the 10 m/s run did
-  not recur. Five entries were not reproduced, nine were not distinguished, and three went to the platform
-  proposal. Still air and the 90° turn again had excess losses after the present call. Pass timing did not
-  identify the work that delayed those presentations. The cloud workload is unchanged.
-  [Device evidence](../../../.orchestrate/evidence/CLOUDS/WP19/README.md)
+- The corrected accounting covers six entries from the first series. The five-refresh stall in the 10 m/s run
+  did not recur. Four first-series excess places recurred and their cause remains unresolved. One entry went
+  to the platform proposal. The cloud workload is unchanged.
+  [Device evidence](../../../.orchestrate/evidence/CLOUDS/WP19/review-fixed-accounting/README.md)
 
 - The merged cadence check rejected a clouds-absent run after one occluded Metal surface acquisition.
   AppKit reported zero window occlusion events and the panel stayed awake and unlocked. The default cadence
   command now keeps each rejected attempt and starts a whole new series after occlusion, up to three
   attempts in total. The CPU tests cover a fresh restart, the retry limit and propagation of other failures.
   [Retained arm replay](../../../.orchestrate/evidence/CLOUDS/WP19/occlusion-replay.log)
+
+- The review replay joins each lost refresh to the next shown drawable and its present call. The original
+  loss counts and stall times are unchanged. A missing OS observation that can affect the measured interval
+  withholds the cadence judgement. A later loss at a place establishes recurrence even when the paired count
+  is within the neighbours' range. The recorder verifies a writable descriptor's path and file identity
+  before it models or removes the scratch. [Review replay](../../../.orchestrate/evidence/CLOUDS/WP19/review-fixed-accounting/reviewer-replay.json)
