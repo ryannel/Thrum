@@ -107,7 +107,7 @@ pub struct Water {
     height_rms: f32,
     layer_heights: [f32; 4],
     offshore_displacement: [f32; 2],
-    surf_vertical_bounds: Option<[f32; 2]>,
+    surf_cache_bounds: Option<[f32; 3]>,
     profile: Profile,
     query: Option<query::QueryMailbox>,
     interaction: Option<interaction::Mailbox>,
@@ -192,8 +192,13 @@ impl Water {
         }
         let row = guard.row(body, [0.0; 2]);
         let offshore_displacement = offshore_bound(&spectrum, profile.waves.choppiness);
-        let surf_vertical_bounds = if profile.interaction.is_none() {
-            surf_vertical_bounds(&guard, &spectrum, offshore_displacement[1])
+        let surf_cache_bounds = if profile.interaction.is_none() {
+            surf_cache_bounds(
+                &guard,
+                &spectrum,
+                offshore_displacement,
+                profile.waves.choppiness,
+            )
         } else {
             None
         };
@@ -211,7 +216,7 @@ impl Water {
             height_rms: records::height_rms(&spectrum),
             layer_heights,
             offshore_displacement,
-            surf_vertical_bounds,
+            surf_cache_bounds,
             spectrum,
             profile,
             query: profile
@@ -277,6 +282,13 @@ impl Water {
     /// Observe the same surf cache the submitted geometry consumes.
     pub fn tap_surf(&mut self) -> SurfTap {
         self.surf_tap.get_or_insert_with(Default::default).clone()
+    }
+    /// Count work in a diagnostic surf cache dispatch. Attach before preparation
+    /// and read the counters after the witnessed frame finishes.
+    pub fn tap_surf_work(&mut self) -> SurfTap {
+        let tap = self.surf_tap.get_or_insert_with(Default::default);
+        tap.1 = true;
+        tap.clone()
     }
     /// Lend one cooked ranked 2D texture to the whitewater pass.
     pub fn lend_foam_pattern(&mut self, pattern: thrum_asset_gpu::ProductLease) {
@@ -352,7 +364,12 @@ fn offshore_bound(spectrum: &Spectrum, chop: f64) -> [f32; 2] {
     clippy::cast_possible_truncation,
     reason = "round outward to GPU world metres"
 )]
-fn surf_vertical_bounds(map: &Map, spectrum: &Spectrum, ambient: f32) -> Option<[f32; 2]> {
+fn surf_cache_bounds(
+    map: &Map,
+    spectrum: &Spectrum,
+    ambient: [f32; 2],
+    chop: f64,
+) -> Option<[f32; 3]> {
     let surf = map.surf_profile()?;
     let bodies = (0..).map_while(|index| map.body(index));
     let mut limits = [f64::INFINITY, f64::NEG_INFINITY];
@@ -378,7 +395,7 @@ fn surf_vertical_bounds(map: &Map, spectrum: &Spectrum, ambient: f32) -> Option<
             wave.amplitude * thrum_water_model::shoaling(x.hypot(z), surf.lag_floor).max(1.0)
         })
         .sum();
-    let wave_height = height_factor * amplitude * 1.05 + f64::from(ambient) + 1.0;
+    let wave_height = height_factor * amplitude * 1.05 + f64::from(ambient[1]) + 1.0;
     let swash = map.profile().margin_height;
     let highest_bed = map
         .bed()
@@ -390,7 +407,15 @@ fn surf_vertical_bounds(map: &Map, spectrum: &Spectrum, ambient: f32) -> Option<
     // overlap, the section and contour stay inside the wave and swash bounds.
     let lo = ((limits[0] - wave_height - swash) as f32).next_down();
     let hi = ((limits[1].max(highest_bed) + wave_height + swash) as f32).next_up();
-    (lo.is_finite() && hi.is_finite()).then_some([lo, hi])
+    // The phase vector is normalised for chop and throw, and every blend and
+    // depth limiter is bounded by one. Add the short-wave bound and round up.
+    let horizontal = ((chop + surf.section.maximum_throw()) * amplitude * 1.05
+        + f64::from(ambient[0])
+        + 0.05) as f32;
+    [lo, hi, horizontal]
+        .iter()
+        .all(|bound| bound.is_finite())
+        .then_some([lo, hi, horizontal.next_up()])
 }
 
 impl SceneContribution for Water {
@@ -428,6 +453,7 @@ impl SceneContribution for Water {
                 self.foam
                     .clone()
                     .map(|whitewater| (whitewater, foam.unwrap_or_default())),
+                self.surf_tap.as_ref().is_some_and(|tap| tap.1),
             )
             .map_err(thrum_render::runtime::FrameError::Scene)?,
         );
@@ -475,7 +501,7 @@ impl SceneContribution for Water {
                 &self.spectrum,
                 self.layer_heights,
                 frame,
-                self.surf_vertical_bounds,
+                self.surf_cache_bounds,
                 [now, now - previous, self.profile.waves.choppiness],
             );
         }

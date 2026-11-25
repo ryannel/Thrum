@@ -6,7 +6,10 @@ use std::{
     time::{Duration, Instant},
 };
 use thrum_app::sky::Camera;
-use thrum_render::{extract::SourceTick, runtime::SurfaceOutput};
+use thrum_render::{
+    extract::SourceTick,
+    runtime::{FrameWorld, SurfaceOutput},
+};
 use thrum_water::query::{BodyAnswers, QueryCutTap, QueryMailbox};
 use water_scene::{
     floating::{Body, fallback, sample_answer},
@@ -34,6 +37,15 @@ struct GameTick {
     nodes: Vec<Option<[u64; 2]>>,
     witness: Witnesses,
     fallback: usize,
+    batches: Vec<BatchTrace>,
+    held_points: usize,
+}
+
+#[derive(Default)]
+struct BatchTrace {
+    submitted: Option<u64>,
+    published: Option<u64>,
+    delivered: [Option<u64>; 8],
 }
 
 impl Default for GameTick {
@@ -45,6 +57,8 @@ impl Default for GameTick {
             nodes: vec![None; MEASURE_TICKS as usize],
             witness: std::array::from_fn(|_| std::array::from_fn(|_| Vec::new())),
             fallback: 0,
+            batches: (0..MEASURE_TICKS).map(|_| BatchTrace::default()).collect(),
+            held_points: 0,
         }
     }
 }
@@ -65,30 +79,19 @@ impl GameTick {
         let sequence = self.ticks;
         self.ticks += 1;
         let measured = begin + u64::from(WARM_TICKS);
-        for batch in cuts.drain() {
-            assert_eq!(batch.endpoint.epoch, endpoint.epoch);
-            assert_eq!(batch.endpoint.timeline, endpoint.timeline);
-            if let Some(index) = batch
-                .endpoint
-                .tick
-                .checked_sub(measured)
-                .and_then(|n| usize::try_from(n).ok())
-                .filter(|&n| n < self.nodes.len())
-            {
-                assert!(
-                    self.nodes[index].replace(batch.nodes).is_none(),
-                    "one batch per posted tick"
-                );
-            }
-        }
+        self.observe(cuts, endpoint, measured);
         let answers = query.drain(endpoint, step);
+        let in_measurement = (WARM_TICKS..WARM_TICKS + MEASURE_TICKS).contains(&sequence);
         for reply in &answers {
-            if let Some(index) = reply
-                .posted
-                .checked_sub(measured)
-                .and_then(|n| usize::try_from(n).ok())
-                .filter(|&n| n < self.nodes.len())
-            {
+            let id = usize::try_from(reply.id).expect("fleet body ID");
+            if reply.held {
+                if in_measurement {
+                    self.held_points += reply.points.len();
+                }
+                continue;
+            }
+            if let Some(index) = self.measured_index(reply.posted, measured) {
+                self.batches[index].delivered[id] = Some(tick);
                 let age = usize::try_from(tick - reply.posted).expect("reply age");
                 self.ages[age] += reply.points.len();
                 for (&start, window) in WITNESSES.iter().zip(&mut self.witness) {
@@ -100,7 +103,7 @@ impl GameTick {
             }
         }
         let requests: Vec<_> = fleet.iter().map(|body| body.request(tick, step)).collect();
-        if (WARM_TICKS..WARM_TICKS + MEASURE_TICKS).contains(&sequence) {
+        if in_measurement {
             for (body, request) in fleet.iter().zip(&requests) {
                 let answer = answers.iter().find(|answer| answer.id == request.id);
                 for station in 0..request.points.len() {
@@ -113,6 +116,38 @@ impl GameTick {
         }
         if sequence < WARM_TICKS + MEASURE_TICKS {
             query.post(endpoint, requests);
+        }
+    }
+
+    fn measured_index(&self, tick: u64, measured: u64) -> Option<usize> {
+        tick.checked_sub(measured)
+            .and_then(|n| usize::try_from(n).ok())
+            .filter(|&n| n < self.batches.len())
+    }
+
+    fn observe(&mut self, cuts: &QueryCutTap, endpoint: SourceTick, measured: u64) {
+        for batch in cuts.drain_submissions() {
+            assert_eq!(batch.endpoint.epoch, endpoint.epoch);
+            assert_eq!(batch.endpoint.timeline, endpoint.timeline);
+            if let Some(index) = self.measured_index(batch.endpoint.tick, measured) {
+                assert!(
+                    self.batches[index]
+                        .submitted
+                        .replace(batch.submission_tick)
+                        .is_none()
+                );
+            }
+        }
+        for batch in cuts.drain() {
+            assert_eq!(batch.endpoint.epoch, endpoint.epoch);
+            assert_eq!(batch.endpoint.timeline, endpoint.timeline);
+            if let Some(index) = self.measured_index(batch.endpoint.tick, measured) {
+                self.batches[index].published = Some(batch.publication_tick);
+                assert!(
+                    self.nodes[index].replace(batch.nodes).is_none(),
+                    "one batch per posted tick"
+                );
+            }
         }
     }
 }
@@ -165,18 +200,35 @@ fn arm(gpu: &thrum_test_support::Gpu, extent: [u32; 2], fleet: Vec<Body>) -> Gam
     let mut dropped = 0;
     let mut view_in_flight = None::<Instant>;
     let mut completion_ms = Vec::new();
+    let mut views = Vec::new();
+    let mut refusals = Vec::new();
     let mut last_draw = None;
     loop {
-        while fixture
+        while let Some(view) = fixture
             .host
             .poll_completed()
             .expect("nonblocking completion")
-            .is_some()
         {
             let began = view_in_flight.take().expect("one submitted view");
             completion_ms.push(began.elapsed().as_secs_f64() * 1000.0);
+            let record: &mut Value = views.last_mut().expect("view receipt");
+            record["completed_s"] = json!(wall.elapsed().as_secs_f64());
+            record["submission"] = json!(view.submission_order);
+            record["tick"] = json!(view.tick);
+        }
+        if stats.lock().expect("game tick").ticks >= WARM_TICKS + MEASURE_TICKS + DRAIN_TICKS {
+            if view_in_flight.is_none() {
+                break;
+            }
+            assert!(
+                wall.elapsed() < Duration::from_secs(40),
+                "last view did not complete"
+            );
+            std::thread::sleep(Duration::from_micros(500));
+            continue;
         }
         let elapsed = wall.elapsed();
+        let prior = fixture.host.tick_submission_stats();
         let opportunity = elapsed.as_nanos() / VIEW_INTERVAL.as_nanos();
         // Admit one frame per opportunity and keep at most one outstanding.
         // When there is no free slot, the fixed clock still runs. Nonblocking
@@ -191,13 +243,25 @@ fn arm(gpu: &thrum_test_support::Gpu, extent: [u32; 2], fleet: Vec<Body>) -> Gam
         .expect("running scene");
         assert!(drive.overload.is_none(), "{drive:?}");
         if drive.submitted {
-            view_in_flight = Some(wall + elapsed);
+            let submitted_at = Instant::now();
+            view_in_flight = Some(submitted_at);
+            views.push(json!({
+                "drive_started_s": elapsed.as_secs_f64(),
+                "submitted_by_s": submitted_at.duration_since(wall).as_secs_f64(),
+            }));
+        }
+        let after = fixture.host.tick_submission_stats();
+        if prior.refused_bound != after.refused_bound
+            || prior.refused_permission != after.refused_permission
+        {
+            refusals.push(json!({
+                "tick": fixture.host.world().source().tick,
+                "bound": after.refused_bound - prior.refused_bound,
+                "permission": after.refused_permission - prior.refused_permission,
+            }));
         }
         submitted += usize::from(drive.submitted);
         dropped += usize::from(drive.dropped_view);
-        if stats.lock().expect("game tick").ticks >= WARM_TICKS + MEASURE_TICKS + DRAIN_TICKS {
-            break;
-        }
         assert!(
             wall.elapsed() < Duration::from_secs(40),
             "wall-clock ticks did not advance"
@@ -215,6 +279,14 @@ fn arm(gpu: &thrum_test_support::Gpu, extent: [u32; 2], fleet: Vec<Body>) -> Gam
     .into_inner()
     .expect("game tick");
     let completed_batch_ticks = stats.nodes.iter().flatten().count();
+    let measured = observation + 1 + u64::from(WARM_TICKS);
+    let batches: Vec<_> = (measured..)
+        .zip(&stats.batches)
+        .map(|(posted, batch)| {
+            json!({"posted":posted, "submitted":batch.submitted,
+                "published":batch.published, "first_drains":batch.delivered})
+        })
+        .collect();
     let nodes: Vec<_> = stats
         .nodes
         .iter()
@@ -226,6 +298,8 @@ fn arm(gpu: &thrum_test_support::Gpu, extent: [u32; 2], fleet: Vec<Body>) -> Gam
             "render_in_flight":1, "view_opportunity_hz":30, "warm_profile":warm_profile,
             "warm_wall_ms":warm_wall_ms, "frames_submitted":submitted,
             "frames_completed":completion_ms.len(), "view_completion_ms":completion_ms,
+            "views":views, "batches":batches, "tick_refusals":refusals,
+            "held_points":stats.held_points,
             "dropped_views":dropped, "age":stats.ages, "nodes":nodes,
             "completed_batch_ticks":completed_batch_ticks,
             "fallback":stats.fallback, "unavailable":mailbox.unavailable,
@@ -246,7 +320,6 @@ struct GameArm {
 
 pub(super) fn run(gpu: &thrum_test_support::Gpu) -> Value {
     let extent = [192, 108];
-    let (breakers, _) = breaker_fleet();
     let open = (0..8)
         .map(|id| {
             Body::new(
@@ -259,6 +332,14 @@ pub(super) fn run(gpu: &thrum_test_support::Gpu) -> Value {
         })
         .collect();
     let open = arm(gpu, extent, open);
+    let mut record = json!({"target":"mac-metal", "extent":extent, "step_hz":60, "maximum_age":AGE,
+        "tolerance_m":TOLERANCE,
+        "camera":{"position":CAMERA.position, "target":CAMERA.target, "fov_degrees":CAMERA.vertical_fov_degrees},
+        "open_water":open.record});
+    if std::env::var("THRUM_WATER_SURF_ARM").is_ok_and(|arm| arm == "open-water") {
+        return record;
+    }
+    let (breakers, _) = breaker_fleet();
     let breakers = arm(gpu, extent, breakers);
     // Evaluate f64 after both paced arms. Reading the reference can be slow;
     // it does not contend with the wall clock, rendering or delivery.
@@ -294,9 +375,7 @@ pub(super) fn run(gpu: &thrum_test_support::Gpu) -> Value {
                 json!({"post_index":sequence, "stations":stations, "max_error_m":maximum})
             })
             .collect::<Vec<_>>();
-    json!({"target":"mac-metal", "extent":extent, "step_hz":60, "maximum_age":AGE,
-        "tolerance_m":TOLERANCE,
-        "camera":{"position":CAMERA.position, "target":CAMERA.target, "fov_degrees":CAMERA.vertical_fov_degrees},
-        "open_water":open.record, "breakers":breakers.record,
-        "witness":witness})
+    record["breakers"] = breakers.record;
+    record["witness"] = json!(witness);
+    record
 }

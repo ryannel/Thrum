@@ -495,7 +495,7 @@ fn build_scene(
             // Retain a sliding window for status readers, including deliveries
             // on ticks followed by ticks with no reply in the same frame.
             const REPLY_HISTORY: usize = 64;
-            for answer in answers {
+            for answer in answers.into_iter().filter(|answer| !answer.held) {
                 if interaction.is_some()
                     && answer.id == 1
                     && let Some(point) = answer.points.first()

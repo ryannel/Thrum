@@ -1,4 +1,6 @@
 //! Surf through the real Metal contribution and tick query.
+#[path = "surf_gpu/cache_first_frame.rs"]
+mod cache_first_frame;
 mod frame_fixture;
 
 use std::f64::consts::TAU;
@@ -103,6 +105,18 @@ fn surf_tick_and_repeat_queries_match_the_model() {
         Clock::new(true),
         QUERY_EXTENT,
     );
+    // The guard samples both bodies, including the sea behind the ordinary
+    // query camera. Frame the whole test bed in the cache's actual draw view.
+    host.source_mut().view = thrum_render::synthetic::SyntheticView::perspective(
+        [0.0, 125.0, 0.0],
+        [0.0; 3],
+        [0.0, 0.0, -1.0],
+        60_f32.to_radians(),
+        1.5,
+        0.1,
+        500.0,
+    )
+    .expect("whole bed camera");
     let output = SurfaceOutput {
         view: &target,
         extent: QUERY_EXTENT,

@@ -344,7 +344,7 @@ pub type FoamScene = (SkyGame, SharedReport, SharedMap, Option<FoamProbes>);
 /// # Panics
 /// Panics if a scene lock is poisoned or a bounded control fails.
 pub fn build_foam(wind: Wind, draw_water: bool, foam: bool) -> Result<FoamScene, Box<dyn Error>> {
-    build_island(wind, draw_water, foam, None)
+    build_island(wind, draw_water, foam, None, |_| {})
 }
 
 /// Use the island's surf profile and tide and beach inspection controls.
@@ -362,7 +362,20 @@ pub fn build_surf_paired(
     draw_water: bool,
     surf: bool,
 ) -> Result<FoamScene, Box<dyn Error>> {
-    build_island(wind, draw_water, true, Some(surf))
+    build_island(wind, draw_water, true, Some(surf), |_| {})
+}
+
+/// Build the surf island with an observer for the cache's evaluated nodes and table reads.
+/// # Errors
+/// Returns invalid controls, content or water declarations.
+pub fn build_surf_measured(
+    wind: Wind,
+) -> Result<(FoamScene, thrum_water::SurfTap), Box<dyn Error>> {
+    let mut tap = None;
+    let scene = build_island(wind, true, true, Some(true), |water| {
+        tap = Some(water.tap_surf_work());
+    })?;
+    Ok((scene, tap.ok_or("missing surf work observer")?))
 }
 
 fn build_island(
@@ -370,6 +383,7 @@ fn build_island(
     draw_water: bool,
     foam: bool,
     surf: Option<bool>,
+    configure: impl FnOnce(&mut Water),
 ) -> Result<FoamScene, Box<dyn Error>> {
     let surf_route = surf.is_some();
     let forcing = if surf_route {
@@ -396,6 +410,7 @@ fn build_island(
         });
     }
     let mut water = Water::mapped(Arc::clone(&map), spectrum, profile)?;
+    configure(&mut water);
     let probes = if foam {
         water.enable_foam(wind.velocity())?;
         Some(FoamProbes {

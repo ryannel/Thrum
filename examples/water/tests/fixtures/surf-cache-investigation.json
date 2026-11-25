@@ -1,0 +1,168 @@
+{
+  "start_commit": "83a9ac020801e5c3eea1fff09c0a763a34159cec",
+  "camera": {
+    "fov_degrees": 65.0,
+    "position": [
+      -112.0,
+      2.0,
+      30.0
+    ],
+    "target": [
+      -105.0,
+      -1.0,
+      -7.0
+    ]
+  },
+  "extent": [
+    2560,
+    1440
+  ],
+  "wind": "Gale",
+  "wp19_review_fix": {
+    "commit": "fd52deb0eef67517252ca3d8ee5df90f821ae99b",
+    "sha256": "f87093c1fa0b64d89f73cd5eb2c577c1f4cb15242441ad3de92298765170d1c4",
+    "cache_ms": {
+      "step": 93.4530625,
+      "repeat": 93.87454149999999
+    }
+  },
+  "ablations": {
+    "unmodified": {
+      "cache_samples_ms": {
+        "step": [
+          81.452792,
+          83.128875,
+          82.34325,
+          92.425833,
+          82.978875,
+          83.486042,
+          86.705792,
+          82.769333,
+          85.474417,
+          84.845958,
+          83.389125,
+          83.268791
+        ],
+        "repeat": [
+          84.943458,
+          82.04875,
+          82.229917,
+          84.546834,
+          84.768,
+          85.105166,
+          82.281541,
+          82.335,
+          82.914458,
+          82.893625,
+          86.077917,
+          84.19075
+        ]
+      },
+      "sha256": "af536993cb62b1fd1ca4764dce42f3fc1bd2895dd481114b88ef6977004568c8"
+    },
+    "without_table_reads": {
+      "cache_samples_ms": {
+        "step": [
+          2.071417,
+          2.100458,
+          9.728542,
+          2.219458,
+          2.096,
+          2.071791,
+          2.252583,
+          2.281583,
+          2.328416,
+          2.070958,
+          2.051125,
+          2.146625
+        ],
+        "repeat": [
+          2.151041,
+          2.123125,
+          2.1225,
+          2.063208,
+          2.118083,
+          2.070542,
+          2.332333,
+          3.8165,
+          2.121833,
+          3.816917,
+          2.119583,
+          2.131959
+        ]
+      },
+      "sha256": "53151d8c17244a9ca956015f01d92864ce945a7a728cf878683a6514d5875226"
+    },
+    "half_components": {
+      "cache_samples_ms": {
+        "step": [
+          38.390708,
+          28.821,
+          29.261667,
+          36.576792,
+          28.458042,
+          28.372708,
+          30.575333,
+          30.877542,
+          30.727584,
+          31.427458,
+          44.176125,
+          31.563125
+        ],
+        "repeat": [
+          30.557208,
+          30.58375,
+          28.192125,
+          29.981125,
+          28.552208,
+          27.715125,
+          29.84275,
+          30.560792,
+          31.879959,
+          32.792041,
+          31.072084,
+          31.660709
+        ]
+      },
+      "sha256": "0852cfea832522799fcb34f76611d5ca46b959bc1c4c9ac45f49e5a9bba0baf6"
+    },
+    "half_nodes": {
+      "cache_samples_ms": {
+        "step": [
+          47.512292,
+          49.030875,
+          48.786666,
+          58.769834,
+          49.059709,
+          51.162458,
+          52.12025,
+          51.261458,
+          52.150167,
+          53.7465,
+          54.896625,
+          57.135458
+        ],
+        "repeat": [
+          48.603125,
+          48.529458,
+          50.19975,
+          48.787083,
+          49.24375,
+          50.682125,
+          49.883417,
+          49.779333,
+          50.833375,
+          51.720208,
+          54.746584,
+          56.601583
+        ]
+      },
+      "sha256": "239c1c3eff9bededde6268bdd1a009f3bbe2f29cefc9b534eb1c0ca8056efb6b"
+    }
+  },
+  "method": {
+    "without_table_reads": "Replace the per-component shore lookup in the cache shader by its neutral sample. Other passes and the diagnostic fixture stay enabled.",
+    "half_components": "Sum the first 32 of 64 active components in the original cache. The query and surface retain their full spectra.",
+    "half_nodes": "Skip alternate 64-node workgroups, preserving the lattice size sentinel. The surface still submits the original triangles."
+  }
+}

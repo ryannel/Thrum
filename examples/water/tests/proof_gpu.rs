@@ -392,17 +392,25 @@ fn driver(gpu: &thrum_test_support::Gpu) {
 
 #[cfg(target_os = "macos")]
 fn surf_checkpoints() -> Vec<(String, String, f64)> {
+    let swell_stills = std::env::var_os("THRUM_WATER_SWELL_STILLS").is_some();
     [
         "sand", "beach", "offshore", "lee", "headland", "island", "seaward", "handoff", "approach",
     ]
     .into_iter()
     .zip(0_u32..)
+    .filter(|(_, view)| !swell_stills || matches!(view, 2 | 7))
     .flat_map(|(name, view)| {
         (0_u32..3).map(move |phase| {
+            // Sample thirds of the 6.5 s trade swell at each review camera.
+            let time = if swell_stills {
+                16.0 + f64::from(view) * 2.7 + f64::from(phase) * (6.5 / 3.0)
+            } else {
+                16.0 + f64::from(view * 3 + phase) * 0.9
+            };
             (
                 format!("surf-{name}-{phase}"),
                 format!(r#"{{"camera.island":{view}}}"#),
-                16.0 + f64::from(view * 3 + phase) * 0.9,
+                time,
             )
         })
     })

@@ -78,6 +78,8 @@ pub struct BodyAnswers {
     pub endpoint: SourceTick,
     /// Game tick at which this batch was posted.
     pub posted: u64,
+    /// True when this result was previously delivered and is being held.
+    pub held: bool,
     /// Coarse and fine node evaluations charged to this body.
     pub cut_nodes: [u64; 2],
     /// Answers, including dry points.
@@ -85,7 +87,7 @@ pub struct BodyAnswers {
 }
 
 /// Cumulative query counters for the scene status.
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct QueryStats {
     /// Submitted batches.
     pub dispatches: u64,
@@ -111,6 +113,8 @@ pub struct QueryStats {
     pub age_two: u64,
     /// Completed body answers taken later than two ticks within the age limit.
     pub age_older: u64,
+    /// Station uses served by a previously delivered answer.
+    pub held_points: u64,
 }
 
 const CUT_RECORD_LIMIT: usize = 64;
@@ -120,12 +124,41 @@ const CUT_RECORD_LIMIT: usize = 64;
 pub struct QueryCutRecord {
     /// World endpoint at which the batch was posted.
     pub endpoint: SourceTick,
+    /// Most recent game drain when the readback published the batch.
+    pub publication_tick: u64,
     /// Coarse and fine node evaluations, counting shared nodes once.
     pub nodes: [u64; 2],
 }
 
+/// Submission of one posted query page.
+#[derive(Clone, Copy, Debug)]
+pub struct QuerySubmissionRecord {
+    /// World endpoint at which the batch was posted.
+    pub endpoint: SourceTick,
+    /// Most recent game drain or post when the batch was submitted.
+    pub submission_tick: u64,
+}
+
+#[derive(Default)]
+struct QueryRecords {
+    submitted: VecDeque<QuerySubmissionRecord>,
+    completed: VecDeque<QueryCutRecord>,
+}
+
+struct HeldBody {
+    answer: BodyAnswers,
+    last_taken: u64,
+}
+
+fn record_event<T>(records: &mut VecDeque<T>, event: T) {
+    if records.len() == CUT_RECORD_LIMIT {
+        records.pop_front();
+    }
+    records.push_back(event);
+}
+
 /// Bounded observer of completed batches, independent of game answer delivery.
-pub struct QueryCutTap(Arc<Mutex<VecDeque<QueryCutRecord>>>);
+pub struct QueryCutTap(Arc<Mutex<QueryRecords>>);
 
 impl QueryCutTap {
     /// Remove the available records. The tap retains the last 64 completions.
@@ -135,6 +168,19 @@ impl QueryCutTap {
         self.0
             .lock()
             .expect("water cut records")
+            .completed
+            .drain(..)
+            .collect()
+    }
+
+    /// Remove the available submission records, retaining at most 64.
+    /// # Panics
+    /// Panics if the probe's lock is poisoned.
+    pub fn drain_submissions(&self) -> Vec<QuerySubmissionRecord> {
+        self.0
+            .lock()
+            .expect("water query records")
+            .submitted
             .drain(..)
             .collect()
     }
@@ -145,12 +191,14 @@ struct State {
     pages: VecDeque<Page>,
     maps: VecDeque<(u64, Arc<Map>)>,
     last_post: Option<u64>,
+    last_drain: Option<u64>,
     world: Option<(u128, u64)>,
     ready: BTreeMap<(u32, u64), ReadyBody>,
+    held: BTreeMap<u32, HeldBody>,
     generations: BTreeMap<u32, u32>,
     epoch: u64,
     stats: QueryStats,
-    cut_tap: Weak<Mutex<VecDeque<QueryCutRecord>>>,
+    cut_tap: Weak<Mutex<QueryRecords>>,
 }
 
 impl State {
@@ -160,11 +208,24 @@ impl State {
             self.pages.clear();
             self.maps.clear();
             self.ready.clear();
+            self.held.clear();
             self.generations.clear();
             self.last_post = None;
+            self.last_drain = None;
             self.epoch += 1;
             self.world = Some(world);
         }
+    }
+
+    fn expire_held(&mut self, oldest: u64) {
+        self.held.retain(|id, held| {
+            held.answer.posted >= oldest
+                && self.generations.get(id) == Some(&held.answer.generation)
+        });
+    }
+
+    fn observed_tick(&self, posted: u64) -> u64 {
+        self.last_drain.max(self.last_post).unwrap_or(posted)
     }
 
     fn expire_pages(&mut self, oldest: u64) {
@@ -257,6 +318,7 @@ impl QueryMailbox {
             .iter()
             .map(|body| (body.id, body.generation))
             .collect();
+        state.expire_held(oldest_page);
         let State {
             ready,
             generations,
@@ -299,7 +361,9 @@ impl QueryMailbox {
     /// Take one usable completed result for each live body. Prefer the older
     /// result within the normal one-to-two tick window so the newer result can
     /// serve the next tick. A newer result supersedes one outside that window.
-    /// Correct height once from the requested tick, and reject expired results.
+    /// If there is no new result for a body, carry its previously delivered
+    /// result from the requested tick until it expires, once in a tick where
+    /// the body has received nothing. Later drains can still take fresh results.
     /// Call after releasing the water map lock, once this tick's stage is known.
     /// # Panics
     /// Panics if a thread panicked while mutating the mailbox.
@@ -308,12 +372,20 @@ impl QueryMailbox {
         let map = self.map.lock().expect("water query map");
         let mut state = self.state.lock().expect("water query mailbox");
         state.enter_world(endpoint);
-        state.expire_pages(tick.saturating_sub(u64::from(self.limits.max_age)));
+        state.last_drain = state.last_drain.max(Some(tick));
+        let oldest = tick.saturating_sub(u64::from(self.limits.max_age));
+        state.expire_pages(oldest);
+        state.expire_held(oldest);
         state.remember_map(tick, &map, self.limits.max_age);
         let mut answers: Vec<BodyAnswers> = Vec::new();
         let mut ready = std::mem::take(&mut state.ready).into_iter().peekable();
         while let Some(((id, posted), mut body)) = ready.next() {
-            if state.generations.get(&id) != Some(&body.answers.generation) {
+            if state.generations.get(&id) != Some(&body.answers.generation)
+                || state
+                    .held
+                    .get(&id)
+                    .is_some_and(|held| held.answer.posted >= posted)
+            {
                 continue;
             }
             let age = tick.saturating_sub(posted);
@@ -351,23 +423,37 @@ impl QueryMailbox {
                 state.stats.unavailable += 1;
                 continue;
             }
-            let mut body = body.answers;
+            let mut taken = body.answers.clone();
             match age {
                 1 => state.stats.age_one += 1,
                 2 => state.stats.age_two += 1,
                 _ => state.stats.age_older += 1,
             }
-            for answer in &mut body.points {
-                if tick != answer.point.use_tick {
-                    let dt = seconds_between(tick, answer.point.use_tick, step);
-                    let sample = &mut answer.surface.sample;
-                    sample.height = sample.height_dt.mul_add(dt, sample.height);
-                    answer.surface.wet = answer.surface.body.is_some()
-                        && answer.bed.is_none_or(|bed| sample.height > f64::from(bed));
-                    state.stats.late += 1;
-                }
+            state.stats.late += carry_heights(&mut taken, tick, step);
+            state.held.insert(
+                id,
+                HeldBody {
+                    answer: body.answers,
+                    last_taken: tick,
+                },
+            );
+            answers.push(taken);
+        }
+        let State { held, stats, .. } = &mut *state;
+        let new_answers = answers.len();
+        for body in held.values_mut() {
+            if tick <= body.last_taken {
+                continue;
             }
-            answers.push(body);
+            let mut taken = body.answer.clone();
+            taken.held = true;
+            body.last_taken = tick;
+            carry_heights(&mut taken, tick, step);
+            stats.held_points += taken.points.len() as u64;
+            answers.push(taken);
+        }
+        if answers.len() != new_answers {
+            answers.sort_unstable_by_key(|answer| answer.id);
         }
         answers
     }
@@ -396,7 +482,7 @@ impl QueryMailbox {
     pub fn tap_cuts(&self) -> QueryCutTap {
         let mut state = self.state.lock().expect("water query mailbox");
         let records = state.cut_tap.upgrade().unwrap_or_else(|| {
-            let records = Arc::new(Mutex::new(VecDeque::with_capacity(CUT_RECORD_LIMIT)));
+            let records = Arc::new(Mutex::new(QueryRecords::default()));
             state.cut_tap = Arc::downgrade(&records);
             records
         });
@@ -407,7 +493,23 @@ impl QueryMailbox {
         let mut state = self.state.lock().expect("water query mailbox");
         state.epoch += 1;
         state.ready.clear();
+        state.held.clear();
     }
+}
+
+fn carry_heights(body: &mut BodyAnswers, tick: u64, step: Duration) -> u64 {
+    let mut carried = 0;
+    for answer in &mut body.points {
+        let dt = seconds_between(tick, answer.point.use_tick, step);
+        if dt != 0.0 {
+            let sample = &mut answer.surface.sample;
+            sample.height = sample.height_dt.mul_add(dt, sample.height);
+            answer.surface.wet = answer.surface.body.is_some()
+                && answer.bed.is_none_or(|bed| sample.height > f64::from(bed));
+            carried += 1;
+        }
+    }
+    carried
 }
 
 fn seconds_between(tick: u64, reference: u64, step: Duration) -> f64 {

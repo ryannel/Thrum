@@ -850,6 +850,8 @@ fn tick_stage_world_waits_for_its_view_and_rejects_old_timeline_results() {
         .poll(wgpu::PollType::wait_indefinitely())
         .expect("witness wake");
     let old = mailbox.drain(host.world().endpoint(4), step);
+    assert_eq!(old[0].posted, 3);
+    assert!(!old[0].held);
     assert!(
         old[0].points[0].wake_height > 0.001,
         "{:?}",
@@ -900,6 +902,11 @@ fn tick_stage_world_waits_for_its_view_and_rejects_old_timeline_results() {
     let replies = mailbox.drain(host.world().endpoint(7), step);
     assert_eq!(replies.len(), 1);
     assert_eq!(replies[0].endpoint, endpoint);
+    assert!(!replies[0].held);
     assert_eq!(replies[0].points[0].wake_height, 0.0);
-    assert!(mailbox.drain(host.world().endpoint(8), step).is_empty());
+    let held = mailbox.drain(host.world().endpoint(8), step);
+    assert_eq!(held.len(), 1);
+    assert!(held[0].held);
+    assert_eq!(held[0].endpoint, endpoint);
+    assert_eq!(held[0].points[0].wake_height, 0.0);
 }

@@ -7,7 +7,9 @@ use thrum_test_support::Gpu;
 use thrum_water::query::BodyQuery;
 use thrum_water_model::Sheet;
 use water_scene::floating::{Body, Hull};
-use water_scene::island::{Wind, build_surf_paired, surf_inputs, surf_water_profile};
+use water_scene::island::{
+    Wind, build_surf_measured, build_surf_paired, surf_inputs, surf_water_profile,
+};
 
 use super::{sample_json, support::Fixture};
 
@@ -147,6 +149,7 @@ pub(super) fn run(gpu: &Gpu) -> Value {
     json!({
         "target":"mac-metal", "extent":[2560,1440], "capture":false, "wind":"Gale", "arms":arms,
         "camera":{"position":camera.position, "target":camera.target, "fov_degrees":camera.vertical_fov_degrees},
+        "cache_work": measure_cache_work(gpu, wind),
         "shore_reads":{
             "eligible_long_components":eligible,
             "scope":"Logical textureLoad calls, per eligible component and forward evaluation. Invalid shore samples can exit early.",
@@ -166,4 +169,34 @@ pub(super) fn run(gpu: &Gpu) -> Value {
             "sources":["crates/thrum-water/src/surf.wgsl", "crates/thrum-water/src/surf/cache.wgsl"],
         },
     })
+}
+
+fn measure_cache_work(gpu: &Gpu, wind: Wind) -> Value {
+    let ((game, report, _, _), tap) = build_surf_measured(wind).expect("measured surf scene");
+    let mut fixture = Fixture::from_game(gpu, [2560, 1440], game, report);
+    fixture.parameters(r#"{"camera.island":0}"#);
+    fixture.warm_cooked();
+    let sample = |fixture: &mut Fixture, time| {
+        fixture.frame_without_timings(time);
+        let witness = tap.witness().expect("submitted field cache");
+        let work = witness.work.as_ref().expect("cache work counters");
+        let bytes = thrum_test_support::readback::buffer(&fixture.device, &fixture.queue, work, ..);
+        let counts: &[u32; 8] = bytemuck::from_bytes(&bytes);
+        // The bound is for all 8 directions and 6 lag rungs. The dispatch
+        // skips banks with no components and reads only lags for edge probes.
+        json!({
+            "mesh": {"allocated": witness.nodes.size() / 16, "evaluated": counts[0]},
+            "distant_lattice": {"allocated": witness.lattice_nodes, "evaluated": counts[1]},
+            "texels": {
+                "own_cell": counts[2], "swash_contour": counts[3], "across_cell_edge": counts[4],
+                "ring_edge": counts[5], "previous_stage": counts[6], "distant_lattice": counts[7],
+            },
+        })
+    };
+    let stable = sample(&mut fixture, 1.0);
+    fixture.parameters(r#"{"sea.stage":0.25}"#);
+    let moved = sample(&mut fixture, 1.0 + STEP.as_secs_f64());
+    json!({"texels_per_full_cell_stage": 56, "texels_per_lag_cell_stage": 48,
+        "stable_stage": stable, "moved_stage": moved,
+        "units": "Evaluated nodes and actual packed texels loaded by the instrumented shader. Three lag layers serve each occupied pair of sectors, and one exposure layer serves two pairs."})
 }

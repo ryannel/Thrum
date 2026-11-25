@@ -19,10 +19,12 @@ const OUTPUT_BINDING: u32 = 13;
 const COMPUTE_SURF_BINDING: u32 = 7;
 const GROUP_WIDTH: u32 = 64;
 const MAX_SHORE_GRID_SIDE: u32 = 384;
+const WORK_COUNTERS: usize = 8;
+const WORK_BINDING: u32 = 12;
 
 /// Opt-in readback handle for the most recent submitted surf field.
 #[derive(Clone, Default)]
-pub struct SurfTap(pub(crate) Arc<Mutex<Option<SurfWitness>>>);
+pub struct SurfTap(pub(crate) Arc<Mutex<Option<SurfWitness>>>, pub(crate) bool);
 
 impl SurfTap {
     /// Observe the submitted products without waiting for the GPU.
@@ -46,6 +48,12 @@ pub struct SurfWitness {
     pub samples: wgpu::Buffer,
     /// World x/z used to place the camera-relative sea nodes.
     pub anchor: [f32; 2],
+    /// Optional u32 counters for evaluated mesh nodes, evaluated lattice nodes,
+    /// and shore-transform texel reads by footprint: rest, contour, neighbour,
+    /// ring edge, previous stage, distant lattice.
+    pub work: Option<wgpu::Buffer>,
+    /// Number of allocated distant lattice nodes, excluding the size record.
+    pub lattice_nodes: u32,
 }
 
 #[repr(C)]
@@ -59,6 +67,7 @@ pub(super) struct CacheSettings {
     pub(super) shore_size: [u32; 2],
     pub(super) camera_planes: [[f32; 4]; 4],
     pub(super) vertical_bounds: [f32; 4],
+    pub(super) component_ends: [u32; 4],
 }
 
 #[repr(C)]
@@ -74,6 +83,7 @@ pub(crate) struct Cache {
     settings: wgpu::Buffer,
     components: wgpu::Buffer,
     samples: wgpu::Buffer,
+    work: Option<wgpu::Buffer>,
     group: wgpu::BindGroup,
     pipeline: wgpu::ComputePipeline,
     count: u32,
@@ -90,6 +100,7 @@ impl Cache {
         mesh: &wgpu::Buffer,
         count: u32,
         shore_lattice: Option<[usize; 2]>,
+        measure_work: bool,
     ) -> Result<Self, WaterError> {
         use wgpu::BufferUsages as Usage;
         let stride = size_of::<CacheSample>() as u64;
@@ -132,6 +143,13 @@ impl Cache {
             Usage::STORAGE | Usage::COPY_DST,
         );
         let samples = buffer(PASS, bytes, Usage::STORAGE | Usage::COPY_SRC);
+        let work = measure_work.then(|| {
+            buffer(
+                "surf field work counts",
+                (WORK_COUNTERS * size_of::<u32>()) as u64,
+                Usage::STORAGE | Usage::COPY_SRC | Usage::COPY_DST,
+            )
+        });
         let compute = wgpu::ShaderStages::COMPUTE;
         let mut layout_entries = vec![
             binding::uniform(0, compute, settings.size()),
@@ -141,6 +159,9 @@ impl Cache {
         ];
         layout_entries.extend(map_gpu::bindings(compute));
         layout_entries.extend(SurfGpu::layout(COMPUTE_SURF_BINDING, compute));
+        if let Some(work) = &work {
+            layout_entries.push(binding::storage(WORK_BINDING, compute, false, work.size()));
+        }
         let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some(PASS),
             entries: &layout_entries,
@@ -156,6 +177,12 @@ impl Cache {
             .collect();
         entries.extend(map.entries(&view));
         entries.extend(surf.entries(COMPUTE_SURF_BINDING));
+        if let Some(work) = &work {
+            entries.push(wgpu::BindGroupEntry {
+                binding: WORK_BINDING,
+                resource: work.as_entire_binding(),
+            });
+        }
         let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some(PASS),
             layout: &layout,
@@ -166,7 +193,7 @@ impl Cache {
             bind_group_layouts: &[Some(&layout)],
             immediate_size: 0,
         });
-        let source = Self::compute_source();
+        let source = Self::compute_source(measure_work);
         let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some(PASS),
             source: wgpu::ShaderSource::Wgsl(source.into()),
@@ -183,6 +210,7 @@ impl Cache {
             settings,
             components,
             samples,
+            work,
             group,
             pipeline,
             count,
@@ -229,7 +257,7 @@ impl Cache {
         spectrum: &Spectrum,
         heights: [f32; 4],
         frame: &ContributionFrame,
-        bounds: Option<[f32; 2]>,
+        bounds: Option<[f32; 3]>,
         [time, dt, chop]: [f64; 3],
     ) {
         let anchor = [frame.camera[0], frame.camera[2]];
@@ -237,13 +265,30 @@ impl Cache {
         let matrix = glam::Mat4::from_cols_array_2d(&frame.view_proj);
         let [x, y, _, w] = std::array::from_fn(|row| matrix.row(row));
         let camera_planes = [w + x, w - x, w + y, w - y].map(|plane| plane.to_array());
-        let vertical_bounds = bounds.map_or([0.0; 4], |[low, high]| [low, high, 1.0, 0.0]);
+        let vertical_bounds = bounds.map_or([0.0; 4], |[low, high, horizontal]| {
+            [low, high, 1.0, horizontal]
+        });
         let mut active = 0;
         let mut components = [Component::zeroed(); COMPONENT_LIMIT];
         for component in spectrum.long.iter().filter(|wave| wave.amplitude > 0.0) {
             components[active] = Component::at(component, anchor, time);
             active += 1;
         }
+        let bank = |component: &Component| {
+            let wavelength = std::f32::consts::TAU * component.inverse_k;
+            if (20.0..=640.0).contains(&wavelength) {
+                component.shore_sector as usize / 2
+            } else {
+                4
+            }
+        };
+        components[..active].sort_by_key(bank);
+        let component_ends = std::array::from_fn(|which| {
+            u32::try_from(
+                components[..active].partition_point(|component| bank(component) <= which),
+            )
+            .expect("validated spectrum")
+        });
         let count = u32::try_from(active).expect("validated spectrum");
         queue.write_buffer(
             &self.settings,
@@ -257,6 +302,7 @@ impl Cache {
                 shore_size: self.shore_size,
                 camera_planes,
                 vertical_bounds,
+                component_ends,
             }),
         );
         if active != 0 {
@@ -266,6 +312,9 @@ impl Cache {
                 bytemuck::cast_slice(&components[..active]),
             );
         }
+        if let Some(work) = &self.work {
+            queue.write_buffer(work, 0, bytemuck::bytes_of(&[0_u32; WORK_COUNTERS]));
+        }
     }
 
     pub(crate) fn encode(&self, pass: &mut wgpu::ComputePass<'_>) {
@@ -274,12 +323,22 @@ impl Cache {
         pass.dispatch_workgroups(self.dispatch_count.div_ceil(GROUP_WIDTH), 1, 1);
     }
 
-    pub(super) fn compute_source() -> String {
+    pub(super) fn compute_source(measure_work: bool) -> String {
+        let observer = if measure_work {
+            format!(
+                "@group(0) @binding({WORK_BINDING}) var<storage, read_write> work: array<atomic<u32>>;
+                 fn cache_observe(index: u32, count: u32) {{ atomicAdd(&work[index], count); }}\n"
+            )
+        } else {
+            "fn cache_observe(_index: u32, _count: u32) {}\n".to_owned()
+        };
         map_gpu::declarations_at(0)
             + include_str!("../column/records.wgsl")
             + &SurfGpu::source(0, COMPUTE_SURF_BINDING)
             + &Self::ring_source(true)
+            + &observer
             + include_str!("cache.wgsl")
+            + include_str!("cache_moments.wgsl")
     }
 
     fn ring_source(enabled: bool) -> String {
@@ -302,6 +361,10 @@ impl Cache {
                      if spacing == 8.0 {{ return {eight_metre_radius}u; }}
                  }}
                  return SURF_GRID_RADIUS;
+             }}\n\
+             fn sea_inner_radius(spacing: f32) -> f32 {{
+                 if spacing <= 0.25 {{ return 0.0; }}
+                 return f32(sea_grid_radius(spacing * 0.5) / 2u);
              }}\n"
         )
     }
@@ -338,7 +401,10 @@ impl Cache {
     }
 
     pub(crate) fn bytes(&self) -> u64 {
-        self.samples.size() + self.settings.size() + self.components.size()
+        self.samples.size()
+            + self.settings.size()
+            + self.components.size()
+            + self.work.as_ref().map_or(0, wgpu::Buffer::size)
     }
 
     pub(crate) fn witness(&self, mesh: &wgpu::Buffer) -> SurfWitness {
@@ -346,6 +412,8 @@ impl Cache {
             nodes: mesh.clone(),
             samples: self.samples.clone(),
             anchor: self.recorded_anchor,
+            work: self.work.clone(),
+            lattice_nodes: self.shore_size.into_iter().product(),
         }
     }
 }

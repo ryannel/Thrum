@@ -656,10 +656,12 @@ try {
     }
   } else if(mode==='fixed' && surfInspection){
     const views=['sand','beach','offshore','lee','headland','island','seaward','handoff','approach'];
+    const swellStills=process.env.THRUM_WATER_SWELL_STILLS!==undefined;
     for(const [index,name] of views.entries()){
+      if(swellStills && index!==2 && index!==7)continue;
       await evaluate(`game.edit_control('camera.island',${index})`);
       for(let phase=0;phase<3;phase++){
-        const seconds=16+0.9*(3*index+phase);
+        const seconds=swellStills?16+index*2.7+phase*(6.5/3):16+0.9*(3*index+phase);
         const timestamp=surfClockOrigin+seconds*1000;
         assert(timestamp>=now,'surf fixed checkpoint precedes the clock anchor');
         const frame=await capture(`surf-${name}-${phase}`,timestamp-now);

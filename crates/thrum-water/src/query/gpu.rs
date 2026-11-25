@@ -2,8 +2,8 @@ mod coarse;
 mod correction;
 
 use super::{
-    BodyAnswers, BodyQuery, CUT_RECORD_LIMIT, QueryAnswer, QueryCutRecord, QueryLimits,
-    QueryMailbox, seconds_between,
+    BodyAnswers, BodyQuery, QueryAnswer, QueryCutRecord, QueryLimits, QueryMailbox,
+    QuerySubmissionRecord, record_event, seconds_between,
 };
 use crate::{
     column::{COMPONENT_LIMIT, Component},
@@ -805,6 +805,18 @@ impl Readback {
         {
             let mut state = self.mailbox.state.lock().expect("water query mailbox");
             if state.epoch == last.epoch {
+                if let Some(tap) = state.cut_tap.upgrade() {
+                    let mut records = tap.lock().expect("water query records");
+                    for batch in &self.pending {
+                        record_event(
+                            &mut records.submitted,
+                            QuerySubmissionRecord {
+                                endpoint: batch.endpoint,
+                                submission_tick: state.observed_tick(batch.endpoint.tick),
+                            },
+                        );
+                    }
+                }
                 while state
                     .pages
                     .front()
@@ -895,13 +907,14 @@ impl Batch {
         state.stats.cut_nodes += nodes[0] + nodes[1];
         if let Some(tap) = state.cut_tap.upgrade() {
             let mut records = tap.lock().expect("water cut records");
-            if records.len() == CUT_RECORD_LIMIT {
-                records.pop_front();
-            }
-            records.push_back(QueryCutRecord {
-                endpoint: self.endpoint,
-                nodes,
-            });
+            record_event(
+                &mut records.completed,
+                QueryCutRecord {
+                    endpoint: self.endpoint,
+                    publication_tick: state.observed_tick(self.endpoint.tick),
+                    nodes,
+                },
+            );
         }
         let mut values = values.iter().zip(self.map_revisions);
         for body in self.bodies {
@@ -956,6 +969,7 @@ impl Batch {
                         generation: body.generation,
                         endpoint: self.endpoint,
                         posted: self.endpoint.tick,
+                        held: false,
                         cut_nodes,
                         points,
                     },

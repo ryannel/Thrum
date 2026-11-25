@@ -178,6 +178,7 @@ pub(super) fn new(
     interaction: Option<interaction::Mailbox>,
     previous_interaction: Option<interaction::Report>,
     whitewater: Option<(foam::Whitewater, foam::Report)>,
+    measure_surf_work: bool,
 ) -> Result<Prepared, String> {
     let device = surface.device;
     let map_gpu = mapped
@@ -204,6 +205,7 @@ pub(super) fn new(
                 &mesh,
                 count,
                 whitewater.as_ref().map(|_| map.bed().lattice().2),
+                measure_surf_work,
             )
         })
         .transpose()
