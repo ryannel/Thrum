@@ -280,7 +280,7 @@ def mac_governor_capture(output, binary, env, route):
         runtime = json.loads((directory / "runtime.json").read_text())
         manifest = json.loads((directory / "manifest.json").read_text())
         if (runtime["backend"] != "Metal" or manifest["timebase"] != "realtime"
-                or tuple(runtime["extent"]) != LIVE_EXTENT or runtime["requested_hz"] != 120):
+                or tuple(runtime["extent"]) != LIVE_EXTENT or runtime["requested_hz"] != 60):
             raise ValueError("wrong capture target or timebase")
         if not manifest["complete"]:
             raise ValueError(f"incomplete realtime capture in {directory}")
@@ -300,7 +300,7 @@ def mac_governor_capture(output, binary, env, route):
                 (row.get("idle_gpu_progress") or {}).get("cpu_ns", 0) for row in timings) / 1e6,
         )
     return dict(target="mac-metal", capture_mode="realtime", extent=LIVE_EXTENT,
-                requested_hz=120, rounds=rounds, binary_sha256=digest(binary), arms=arms)
+                requested_hz=60, rounds=rounds, binary_sha256=digest(binary), arms=arms)
 
 
 def mac_governor_identity(output):

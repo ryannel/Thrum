@@ -870,13 +870,9 @@ async fn record(
     } else {
         Timebase::Elapsed
     };
-    // Match the ordinary Mac window's requested cadence for the governor take.
-    // Other motion scenarios keep their independently declared cadence.
-    let requested_hz = if governed {
-        120
-    } else {
-        capture_hz(scenario, motion_capture)
-    };
+    // Match the 60 Hz world and Chrome motion take. The native window and
+    // existing 120 Hz capture scenarios keep their own opportunity cadence.
+    let requested_hz = capture_hz(scenario, motion_capture);
     let mut quality_trace = Vec::new();
     if governed
         && !driver
