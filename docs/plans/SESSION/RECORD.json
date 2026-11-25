@@ -1032,7 +1032,7 @@
         {
           "verdict": "fail",
           "commit": "d0577763879ab1f01c6f20faa5e8262c6d255cf2",
-          "review": ".orchestrate/evidence/SESSION/WP7-review.md",
+          "review": ".orchestrate/evidence/SESSION/WP7-review-4.md",
           "items": {
             "WP7.1": "pass",
             "WP7.2": "pass",
@@ -1070,6 +1070,44 @@
             "turns": 1
           },
           "at": "2026-11-25T11:56:19Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "9ad20958a9a1a005ae97fd4b195b811fdc9c8f43",
+          "review": ".orchestrate/evidence/SESSION/WP7-review.md",
+          "items": {
+            "WP7.1": "pass",
+            "WP7.2": "pass",
+            "WP7.3": "pass",
+            "WP7.4": "pass",
+            "WP7.5": "fail",
+            "WP7.6": "pass",
+            "WP7.7": "pass",
+            "WP7.8": "pass"
+          },
+          "findings": [
+            {
+              "name": "The Mac replica discards the display target on interpolating frames",
+              "item": "WP7.5",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "visible",
+          "usage": {
+            "input": 160938,
+            "cached": 9484416,
+            "output": 17993,
+            "turns": 1
+          },
+          "at": "2026-11-25T18:08:41Z"
         }
       ],
       "authorised": {
