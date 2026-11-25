@@ -1276,7 +1276,7 @@
     {
       "id": "WP19",
       "name": "Floats in a gale's breaking surf get the height of the crest they ride in time to ride it, with the game running",
-      "status": "in_progress",
+      "status": "blocked",
       "depends_on": [
         "EFFECT-GRAPH:WP6"
       ],
@@ -1371,7 +1371,17 @@
           "item": "WP19.4",
           "repeat": false
         }
-      ]
+      ],
+      "blocked": {
+        "reason": "needs_dependency",
+        "what": "The tick stage needs a delivery path that meets the two-tick requirement while the island\u2019s sand view draws.",
+        "work": {
+          "commit": "ab950b5b9a2c8a2fcd5b4a5316a0589f72c78e52",
+          "branch": "build/waters",
+          "pushed": false
+        },
+        "handoff": ".orchestrate/evidence/WATERS/WP19-handoff.md"
+      }
     },
     {
       "id": "WP8",
