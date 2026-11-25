@@ -84,20 +84,27 @@ struct NativeTextures {
 }
 
 impl Factory {
+    #[cfg_attr(
+        target_arch = "wasm32",
+        expect(
+            clippy::arc_with_non_send_sync,
+            reason = "Native and browser providers use the same ownership model; WebGPU handles stay on the browser thread"
+        )
+    )]
     pub(crate) fn new(
         capabilities: &DeviceCapabilities,
         queue: &wgpu::Queue,
         probe: MetalFxProbe,
-    ) -> Self {
+    ) -> Arc<Self> {
         #[cfg(not(any(target_os = "macos", target_os = "ios")))]
         let _ = probe;
-        Self {
+        Arc::new(Self {
             capabilities: capabilities.clone(),
             queue: queue.clone(),
             #[cfg(any(target_os = "macos", target_os = "ios"))]
             probe,
             extents: Mutex::new(BTreeMap::new()),
-        }
+        })
     }
 
     fn extent(&self, extent: [u32; 2]) -> Result<Arc<Extent>, RenderError> {

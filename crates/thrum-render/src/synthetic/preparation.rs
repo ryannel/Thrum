@@ -926,11 +926,11 @@ impl PreparedSynthetic {
         }
         Ok(Self {
             native: if scene.view.requests_metalfx() {
-                Some(Arc::new(crate::apple_tile::metalfx::Factory::new(
+                Some(crate::apple_tile::metalfx::Factory::new(
                     capabilities,
                     queue,
                     scene.view.metalfx_probe(),
-                )))
+                ))
             } else if scene.view.native_witness() == NativeWitness::Off {
                 None
             } else {
