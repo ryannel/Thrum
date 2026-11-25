@@ -205,6 +205,16 @@ pub fn shade_config() -> ShadeConfig {
                 profile: [0.65, 0.19],
             },
             Type {
+                // Broken banks keep enough depth for separate crowns and
+                // shaded undersides while the neighbouring gaps stay open.
+                base: 1600.0,
+                depth: [1550.0, 2900.0],
+                liquid_water: 0.000335,
+                droplet_radius: 0.000_011,
+                deck: 0.5,
+                profile: [0.45, 0.33],
+            },
+            Type {
                 base: 1600.0,
                 depth: [1450.0, 3800.0],
                 liquid_water: 0.00032,
