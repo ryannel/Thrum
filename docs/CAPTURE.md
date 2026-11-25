@@ -133,7 +133,8 @@ For Chrome, a cloud view can supply `preset`, `weather_rate` and `wind`, plus
 
 The ordinary V1 window runs until closed and reports submitted frame counts and
 CPU times on exit. Its longest submission interval measures successive surface
-submissions at the preferred display cadence, relative to the first submission.
+submissions made for future display targets at the preferred display cadence.
+The interval is relative to the first such submission.
 Keep the frame profiler closed and leave `THRUM_REPORT` unset for ordinary play.
 Set `THRUM_REPORT=1` when the run needs per-pass GPU timestamps.
 

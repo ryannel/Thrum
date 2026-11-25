@@ -802,11 +802,13 @@ impl<G: WindowGame + 'static> App<G> {
         match reply.platform.surface_status {
             SurfaceStatus::Presented => {
                 self.presented += 1;
-                self.cadence.presented(
-                    reply.sequence,
-                    self.render_target,
-                    self.preferred_refresh(),
-                );
+                if reply.target_status == Some(TargetLeadStatus::Future) {
+                    self.cadence.presented(
+                        reply.sequence,
+                        self.render_target,
+                        self.preferred_refresh(),
+                    );
+                }
                 if self.surface_configuration_error.take().is_some() {
                     self.refresh_title();
                 }
