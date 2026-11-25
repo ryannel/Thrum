@@ -264,3 +264,10 @@
   hands a game's fixed update each tick's endpoint (rule 3, WP6.8 added, the seam ruling's third place).
   `WATERS`' files, every contract's words, Done item and exact baseline stand.
   [Each finding and its change](../../../.orchestrate/evidence/EFFECT-GRAPH/WP6-design-fixes.md).
+- 2026-11-25 Builder, WP6. The frame host submits posted tick queries before view recording, with bounded
+  admission and the shell's permission. Effects can read the committed history side and match a post against
+  its world endpoint. The Mac actor asks before waiting for a slot, the iOS render owner uses its surface
+  lease for permission, and sky fixed updates hand each tick's endpoint to the game.
+  [Target checks and review notes](../../../.orchestrate/evidence/EFFECT-GRAPH/WP6/README.md).
+  Metal and Chrome returned exact oracle values while optional views were skipped. The iOS lease was
+  exercised with the planned Mac stand-in, and the iOS simulator target type-checked.
