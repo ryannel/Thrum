@@ -25,6 +25,7 @@ MAC_WITNESS = ROOT / 'scripts/host_witness'
 ASSETS = ROOT / 'examples/v1-game/assets/showcase'
 PRESET = ROOT / 'examples/v1-game/params/showcase-noon.params.json'
 WEB_CHECK = ROOT / 'scripts/check_v1_browser.mjs'
+PROVING_WEB = 'v1-game-web-proving'
 WEB_CASES = ('normal', 'controls', 'overload', 'device-loss', 'late-device-loss', 'device-recovery',
              'device-recovery-retry', 'device-recovery-acquire', 'valley-recovery', 'valley-late-attach')
 COOKER = ROOT / 'target/debug/thrum-cook'
@@ -83,13 +84,13 @@ def check_mac(folder, revision):
 
 def prepare_web(folder, env):
     build = ROOT / 'examples/v1-game/web/build.sh'
-    run(build, env=dict(env, THRUM_V1_WEB_OUTPUT=str(folder / 'v1-game-web')))
+    run(build, '--proving', env=dict(env, THRUM_V1_WEB_OUTPUT=str(folder / PROVING_WEB)))
     run(build, '--dev', env=dict(env, THRUM_V1_WEB_OUTPUT=str(folder / 'v1-game-web-dev')))
 
 
 def check_web(folder):
     folder.mkdir(parents=True, exist_ok=True)
-    for case, web_root in [(case, 'v1-game-web') for case in WEB_CASES] + [
+    for case, web_root in [(case, PROVING_WEB) for case in WEB_CASES] + [
         ('material', 'v1-game-web-dev'),
     ]:
         run('node', WEB_CHECK, '--case', case, '--web-root', folder.parent / web_root,

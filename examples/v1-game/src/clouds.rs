@@ -55,6 +55,7 @@ impl WeatherPreset {
 }
 
 /// An optional, deterministic weather sequence in the V1 scene.
+#[cfg(feature = "proving")]
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum WeatherSequence {
     /// Keep the selected initial parameters.
@@ -66,6 +67,7 @@ pub enum WeatherSequence {
     WindTurn,
 }
 
+#[cfg(feature = "proving")]
 impl WeatherSequence {
     pub(crate) fn target(self, initial: Parameters, seconds: f64) -> Parameters {
         match self {

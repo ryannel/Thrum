@@ -9,7 +9,7 @@ pub(crate) mod test_bank;
 use crate::{
     camera::{CameraRoute, SceneCamera},
     environment::DayCycle,
-    host::GameSetup,
+    host::{GameReconstruction, GameSetup},
     scene::{self, GameContent},
     simulation::PublishedPage,
 };
@@ -389,7 +389,7 @@ pub struct GameScene {
     pub(super) display_overlay: DisplayOverlay,
     #[cfg(feature = "proving")]
     temporal_inputs: bool,
-    reconstruction: thrum_render::synthetic::Reconstruction,
+    reconstruction: GameReconstruction,
     #[cfg(feature = "proving")]
     temporal_pan: (u64, f32),
     #[cfg(feature = "proving")]
@@ -524,7 +524,10 @@ impl GameScene {
             capture_solar_tick: None,
             camera_pitch: 0.0,
             camera_yaw: 0.0,
+            #[cfg(feature = "proving")]
             display_overlay: setup.display_overlay,
+            #[cfg(not(feature = "proving"))]
+            display_overlay: DisplayOverlay::Off,
             #[cfg(feature = "proving")]
             temporal_inputs: temporal.is_some(),
             native_witness: native_witness_selection(),
@@ -583,20 +586,18 @@ impl GameScene {
         scene.view = scene
             .view
             .with_native_witness(native_witness_selection())
-            .with_reconstruction(
-                setup.reconstruction != thrum_render::synthetic::Reconstruction::Off,
-            )
-            .with_reconstruction_reference(
-                setup.reconstruction == thrum_render::synthetic::Reconstruction::Reference,
-            )
-            .with_display_overlay(setup.display_overlay);
+            .with_reconstruction(setup.reconstruction != GameReconstruction::Off);
         #[cfg(feature = "proving")]
         {
             scene.view = scene
                 .view
+                .with_reconstruction_reference(
+                    setup.reconstruction == GameReconstruction::Reference,
+                )
+                .with_display_overlay(setup.display_overlay)
                 .with_temporal_inputs(setup.display_overlay == DisplayOverlay::TemporalInputs);
+            scene.ray_structure = setup.display_overlay == DisplayOverlay::TracedGeometry;
         }
-        scene.ray_structure = setup.display_overlay == DisplayOverlay::TracedGeometry;
         scene.sun_shadow_method = setup.sun_shadow_method;
         scene.sun_penumbra = setup.sun_penumbra;
         scene.lamp_shadows = setup.lamp_shadows;
@@ -805,12 +806,11 @@ impl SceneSource<PublishedPage> for GameScene {
         .with_native_witness(self.native_witness)
         .with_display_overlay(self.display_overlay)
         .with_jitter_sequence(0, [640, 360])
-        .with_reconstruction(self.reconstruction != thrum_render::synthetic::Reconstruction::Off)
-        .with_reconstruction_reference(
-            self.reconstruction == thrum_render::synthetic::Reconstruction::Reference,
-        );
+        .with_reconstruction(self.reconstruction != GameReconstruction::Off);
         #[cfg(feature = "proving")]
-        let view = view.with_temporal_inputs(self.temporal_inputs);
+        let view = view
+            .with_reconstruction_reference(self.reconstruction == GameReconstruction::Reference)
+            .with_temporal_inputs(self.temporal_inputs);
         // The diagnostic fixture's local Y zero is a two-metre reference datum.
         // Authored scene and field coordinates already measure altitude above sea level.
         let camera_altitude_m = view.camera_position()[1]
@@ -864,7 +864,9 @@ impl SceneSource<PublishedPage> for GameScene {
 
 #[cfg(test)]
 mod tests {
-    use super::{GameScene, RenderExtractor, SceneSource, SourceTick, frame_view, scene};
+    use super::{
+        GameReconstruction, GameScene, RenderExtractor, SceneSource, SourceTick, frame_view, scene,
+    };
     use crate::{camera::SceneCamera, environment::DayCycle};
     use thrum_core::StableId;
     use thrum_render::synthetic::{DisplayOverlay, FrameLighting, SdrToneMap, SyntheticView};
@@ -1128,7 +1130,7 @@ mod tests {
             display_overlay: DisplayOverlay::Off,
             #[cfg(feature = "proving")]
             temporal_inputs: false,
-            reconstruction: thrum_render::synthetic::Reconstruction::Off,
+            reconstruction: GameReconstruction::Off,
             #[cfg(feature = "proving")]
             temporal_pan: (30, -0.05),
             #[cfg(feature = "proving")]

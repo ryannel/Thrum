@@ -393,10 +393,16 @@ impl RuntimeSetup for WindowGame {
         !thrum_render::synthetic::mac_backing_grid_requested()
             && crate::selected_setup().is_ok_and(|setup| {
                 #[cfg(feature = "proving")]
-                if setup.sprite_scale.is_some() {
-                    return false;
+                {
+                    setup.sprite_scale.is_none()
+                        && setup.display_overlay
+                            != thrum_render::synthetic::DisplayOverlay::TracedGeometry
                 }
-                setup.display_overlay != thrum_render::synthetic::DisplayOverlay::TracedGeometry
+                #[cfg(not(feature = "proving"))]
+                {
+                    let _ = setup;
+                    true
+                }
             })
     }
 

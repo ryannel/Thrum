@@ -71,7 +71,7 @@ pub use host::WorldControls;
 #[cfg(feature = "proving")]
 #[doc(hidden)]
 pub use host::field_in_view_share;
-pub use host::{GameHost, GameScene, GameSetup, GameWorld, MeshRowSource};
+pub use host::{GameHost, GameReconstruction, GameScene, GameSetup, GameWorld, MeshRowSource};
 pub use scene::{GameContent, RouteOverlay};
 #[doc(hidden)]
 pub use scene::{exit_authority, simulation_with_count};

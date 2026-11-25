@@ -40,7 +40,7 @@ use web_sys::HtmlCanvasElement;
 
 use thrum_render::runtime::FrameSample;
 
-use crate::{controls::GameControls, host::web as game, hosted::HostedGame};
+use crate::{GameReconstruction, controls::GameControls, host::web as game, hosted::HostedGame};
 
 #[cfg(feature = "proving")]
 use crate::host::haze_capture::HazeTake;
@@ -119,6 +119,7 @@ pub struct BrowserGame {
     #[cfg(feature = "dev-material")]
     material_reported: u64,
     /// The page's outstanding capture, finished from a later animation frame.
+    #[cfg(feature = "proving")]
     capture: Option<thrum_render::runtime::PendingCapture>,
 }
 
@@ -168,9 +169,9 @@ pub async fn create_browser_game(
                 crate::GameContent::Grid
             },
             reconstruction: if reconstruction.unwrap_or(false) {
-                thrum_render::synthetic::Reconstruction::Taau
+                GameReconstruction::Taau
             } else {
-                thrum_render::synthetic::Reconstruction::Off
+                GameReconstruction::Off
             },
             #[cfg(feature = "proving")]
             display_overlay: if temporal_inputs.unwrap_or(false) {
@@ -224,7 +225,7 @@ pub async fn create_field_game(
             display_overlay: thrum_render::synthetic::DisplayOverlay::Off,
             clouds: crate::CloudSelection::Off,
             cloud_weather: crate::clouds::initial_state().parameters(),
-            reconstruction: thrum_render::synthetic::Reconstruction::Off,
+            reconstruction: GameReconstruction::Off,
             content: crate::GameContent::Field,
             exit_entities: crate::ExitEntities::Draw,
             cooked_mesh_rows: crate::host::MeshRowSource::Code,
@@ -380,6 +381,7 @@ async fn create_game_with_shapes(
         material: None,
         #[cfg(feature = "dev-material")]
         material_reported: 0,
+        #[cfg(feature = "proving")]
         capture: None,
     })
 }
@@ -535,9 +537,9 @@ pub async fn create_route_game(
             },
             valley_stars,
             reconstruction: if reconstruction.unwrap_or(false) {
-                thrum_render::synthetic::Reconstruction::Taau
+                GameReconstruction::Taau
             } else {
-                thrum_render::synthetic::Reconstruction::Off
+                GameReconstruction::Off
             },
             #[cfg(feature = "proving")]
             route_overlay: overlay,
@@ -1033,6 +1035,7 @@ impl BrowserGame {
     /// # Errors
     /// Refuses a lost device or a second outstanding capture, or returns a
     /// recording failure.
+    #[cfg(feature = "proving")]
     pub fn begin_capture(&mut self) -> Result<String, JsValue> {
         if self.capture.is_some() && !self.page.shell.graphics_lost() {
             return Err(JsValue::from_str("a capture is already outstanding"));
@@ -1054,6 +1057,7 @@ impl BrowserGame {
     /// loss is never returned after it.
     /// # Errors
     /// Returns a lost device, retired device generation or readback failure.
+    #[cfg(feature = "proving")]
     pub fn try_finish_capture(&mut self) -> Result<Option<Vec<u8>>, JsValue> {
         let Some(pending) = self.capture.as_mut() else {
             return Ok(None);

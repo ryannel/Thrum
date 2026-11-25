@@ -98,7 +98,12 @@ def browser(out, base, env):
                 file.write_text(text)
                 report['builds'][arm]['witness_overlay']={str(file.relative_to(tree)):digest(file)}
             build_target=out/(arm+'-target')
-            subprocess.run(['sh','examples/v1-game/web/build.sh'],cwd=tree,env=dict(env,CARGO_TARGET_DIR=str(build_target)),check=True)
+            # The archived baseline predates separate shipping and proving bundles.
+            flags = ['--proving'] if arm == 'claim' else []
+            web = build_target / 'v1-game-web'
+            subprocess.run(['sh', 'examples/v1-game/web/build.sh', *flags], cwd=tree,
+                           env=dict(env, CARGO_TARGET_DIR=str(build_target),
+                                    THRUM_V1_WEB_OUTPUT=str(web)), check=True)
             report['builds'][arm]['artifacts']={p.name:digest(p) for p in (build_target/'v1-game-web').iterdir() if p.suffix in ['.js','.wasm']}
         subprocess.run(['node','scripts/cooked_draw_browser.mjs',str(out),str(store)],env=env,check=True)
         result=json.loads((out/'browser.json').read_text())

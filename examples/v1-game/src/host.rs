@@ -61,6 +61,21 @@ pub enum ExitEntities {
     Omit,
 }
 
+/// Reconstruction modes available to the proving ground, including the reference.
+#[cfg(feature = "proving")]
+pub use thrum_render::synthetic::Reconstruction as GameReconstruction;
+
+/// Reconstruction modes available to the game.
+#[cfg(not(feature = "proving"))]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub enum GameReconstruction {
+    /// Spatial output with no temporal history.
+    #[default]
+    Off,
+    /// Portable temporal reconstruction.
+    Taau,
+}
+
 /// Content and camera culling chosen when the host is prepared.
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[expect(
@@ -84,10 +99,12 @@ pub struct GameSetup {
     /// Initial authoritative weather controls; ignored when clouds are off.
     pub cloud_weather: thrum_cloud_model::Parameters,
     /// Optional tick-driven sequence for the selected weather.
+    #[cfg(feature = "proving")]
     pub cloud_sequence: crate::clouds::WeatherSequence,
     /// Admit portable temporal reconstruction at native scale.
-    pub reconstruction: thrum_render::synthetic::Reconstruction,
+    pub reconstruction: GameReconstruction,
     /// Initial display diagnostic; TemporalInputs also prepares stored reconstruction inputs.
+    #[cfg(feature = "proving")]
     pub display_overlay: DisplayOverlay,
     /// Main view's Sun shadow method.
     pub sun_shadow_method: SunShadowMethod,
@@ -155,8 +172,10 @@ impl Default for GameSetup {
             cooked_mesh_rows: MeshRowSource::Code,
             clouds: crate::CloudSelection::Off,
             cloud_weather: crate::clouds::initial_state().parameters(),
+            #[cfg(feature = "proving")]
             cloud_sequence: crate::clouds::WeatherSequence::Held,
-            reconstruction: thrum_render::synthetic::Reconstruction::Off,
+            reconstruction: GameReconstruction::Off,
+            #[cfg(feature = "proving")]
             display_overlay: DisplayOverlay::Off,
             sun_shadow_method: SunShadowMethod::Maps,
             sun_penumbra: false,
@@ -517,17 +536,21 @@ fn clouded_weather(
     if setup.clouds == crate::CloudSelection::Off {
         return Ok(None);
     }
+    #[cfg(feature = "proving")]
     let initial = setup.cloud_sequence.target(setup.cloud_weather, 0.0);
+    #[cfg(not(feature = "proving"))]
+    let initial = setup.cloud_weather;
     let state = shapes.map_or_else(
         || thrum_cloud_model::State::new(initial, 5.0, 0),
         |placed| placed.state(initial),
     );
     state
         .map(|state| {
-            Some(
-                crate::simulation::Weather::new(state, shapes.and_then(crate::PlacedSky::demo))
-                    .with_sequence(setup.cloud_sequence, initial),
-            )
+            let weather =
+                crate::simulation::Weather::new(state, shapes.and_then(crate::PlacedSky::demo));
+            #[cfg(feature = "proving")]
+            let weather = weather.with_sequence(setup.cloud_sequence, initial);
+            Some(weather)
         })
         .map_err(|error| runtime::FrameError::World(error.to_string()))
 }
@@ -577,6 +600,7 @@ pub trait GameHost {
     /// Current presentation camera pitch and yaw, in radians.
     fn camera_orientation(&self) -> [f32; 2];
     /// Draw a display diagnostic, such as exposure zones, in place of the tone-mapped scene.
+    #[cfg(feature = "proving")]
     fn set_display_overlay(&mut self, overlay: DisplayOverlay);
     /// The authored scene camera, when content selected one.
     fn scene_camera(&self) -> Option<SceneCamera>;
@@ -626,8 +650,10 @@ pub trait GameHost {
     #[cfg(feature = "proving")]
     fn cloud_ground_product(&self) -> Option<(wgpu::Texture, wgpu::Buffer)>;
     /// Submitted cloud products and their placement reports for a placed sky.
+    #[cfg(feature = "proving")]
     fn cloud_placed_input(&self) -> Option<&thrum_clouds::WeatherInput>;
     /// Prepared cloud resource payload bytes, excluding driver overhead.
+    #[cfg(feature = "proving")]
     fn cloud_resource_bytes(&self) -> Vec<(String, u64)>;
     /// Move the inline clock and rules onto the engine's world lane. The frame host then
     /// renders the lane's publications, and the returned controls drive the world.
@@ -661,6 +687,7 @@ impl GameHost for Runtime {
         let source = self.source();
         [source.camera_pitch, source.camera_yaw]
     }
+    #[cfg(feature = "proving")]
     fn set_display_overlay(&mut self, overlay: DisplayOverlay) {
         set_display_overlay(self, overlay);
     }
@@ -735,12 +762,14 @@ impl GameHost for Runtime {
     fn cloud_ground_product(&self) -> Option<(wgpu::Texture, wgpu::Buffer)> {
         self.source().cloud_input.as_ref()?.ground_product()
     }
+    #[cfg(feature = "proving")]
     fn cloud_placed_input(&self) -> Option<&thrum_clouds::WeatherInput> {
         self.source()
             .cloud_input
             .as_ref()
             .filter(|_| self.source().cloud_shapes.is_some())
     }
+    #[cfg(feature = "proving")]
     fn cloud_resource_bytes(&self) -> Vec<(String, u64)> {
         self.source()
             .cloud_input

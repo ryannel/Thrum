@@ -30,7 +30,8 @@ class ChromeInputs(unittest.TestCase):
                     self.assertEqual(Path(env['CARGO_TARGET_DIR']), cache)
                     page = Path(env['THRUM_V1_WEB_OUTPUT'])
                     page.mkdir()
-                    (page / 'v1_game_bg.wasm').write_text('dev' if '--dev' in arguments else 'default')
+                    self.assertIn(arguments[1:], [('--dev',), ('--proving',)])
+                    (page / 'v1_game_bg.wasm').write_text(arguments[1])
                 else:
                     self.assertEqual(arguments[0], 'node')
                     self.assertIn('--verify-owned-shutdown', arguments)
@@ -49,7 +50,7 @@ class ChromeInputs(unittest.TestCase):
                 shutil.rmtree(cache)
                 host_lifecycle.check_web(output / 'chrome')
 
-            self.assertEqual(seen, {**dict.fromkeys(host_lifecycle.WEB_CASES, 'default'), 'material': 'dev'})
+            self.assertEqual(seen, {**dict.fromkeys(host_lifecycle.WEB_CASES, '--proving'), 'material': '--dev'})
 
 
 class SimulatorDispatch(unittest.TestCase):

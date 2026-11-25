@@ -141,7 +141,7 @@ fn prove_paused_recovery(phase: f32, midnight: bool, overlay: DisplayOverlay) {
             .expect("camera during preparation");
         host.set_time_of_day(phase)
             .expect("solar edit during preparation");
-        host.set_display_overlay(overlay);
+        crate::host::set_display_overlay(&mut host, overlay);
         let (expected, prior) = draw(&mut host, origin, &old.device, &old.queue, &old.target);
         assert_ne!(before, expected);
         if overlay == DisplayOverlay::ExposureZones {

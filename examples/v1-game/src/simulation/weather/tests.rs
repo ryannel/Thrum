@@ -82,6 +82,7 @@ fn disabled_weather_adds_no_entity_or_publication_component() {
 }
 
 #[test]
+#[cfg(feature = "proving")]
 fn clearing_deck_does_not_reintroduce_cumulus() {
     use crate::clouds::{WeatherPreset, WeatherSequence};
 

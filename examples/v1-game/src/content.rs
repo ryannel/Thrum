@@ -2,7 +2,7 @@
 
 use std::sync::{Arc, Mutex};
 
-use crate::{GameHost, host::Runtime as Host};
+use crate::{GameHost, GameReconstruction, host::Runtime as Host};
 use thrum_asset_gpu::CookedStats;
 
 // This cold launch boundary owns environment interpretation; world construction
@@ -217,6 +217,7 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
         Ok("sky") => crate::CloudSelection::Sky,
         _ => return Err("THRUM_CLOUDS must be off, shade or sky".to_owned()),
     };
+    #[cfg(feature = "proving")]
     let cloud_sequence = match launch_value("THRUM_CLOUD_SEQUENCE").as_deref() {
         Err(std::env::VarError::NotPresent) => crate::clouds::WeatherSequence::Held,
         Ok("presets") => crate::clouds::WeatherSequence::Presets,
@@ -257,16 +258,10 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
         } else {
             cloud_weather()?
         },
+        #[cfg(feature = "proving")]
         cloud_sequence,
         clouds,
-        reconstruction: match launch_value("THRUM_RECONSTRUCTION").as_deref() {
-            Err(std::env::VarError::NotPresent) | Ok("off") => {
-                thrum_render::synthetic::Reconstruction::Off
-            }
-            Ok("taau") => thrum_render::synthetic::Reconstruction::Taau,
-            Ok("reference") => thrum_render::synthetic::Reconstruction::Reference,
-            _ => return Err("THRUM_RECONSTRUCTION must be off, taau or reference".to_owned()),
-        },
+        reconstruction: selected_reconstruction(launch_value("THRUM_RECONSTRUCTION").as_deref())?,
         #[cfg(feature = "proving")]
         display_overlay: match launch_value("THRUM_TRACED_VIEW").as_deref() {
             Err(std::env::VarError::NotPresent) | Ok("off") => {
@@ -348,6 +343,50 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
         .into(),
         ..crate::GameSetup::default()
     })
+}
+
+fn selected_reconstruction(
+    value: Result<&str, &std::env::VarError>,
+) -> Result<GameReconstruction, String> {
+    match value {
+        Err(std::env::VarError::NotPresent) | Ok("off") => Ok(GameReconstruction::Off),
+        Ok("taau") => Ok(GameReconstruction::Taau),
+        #[cfg(feature = "proving")]
+        Ok("reference") => Ok(GameReconstruction::Reference),
+        #[cfg(feature = "proving")]
+        _ => Err("THRUM_RECONSTRUCTION must be off, taau or reference".to_owned()),
+        #[cfg(not(feature = "proving"))]
+        _ => Err("THRUM_RECONSTRUCTION must be off or taau".to_owned()),
+    }
+}
+
+#[cfg(test)]
+mod reconstruction_tests {
+    use super::{GameReconstruction, selected_reconstruction};
+
+    #[test]
+    fn native_launch_admits_only_the_reconstruction_modes_in_this_build() {
+        assert_eq!(
+            selected_reconstruction(Err(&std::env::VarError::NotPresent)),
+            Ok(GameReconstruction::Off)
+        );
+        assert_eq!(
+            selected_reconstruction(Ok("off")),
+            Ok(GameReconstruction::Off)
+        );
+        assert_eq!(
+            selected_reconstruction(Ok("taau")),
+            Ok(GameReconstruction::Taau)
+        );
+        assert!(selected_reconstruction(Ok("invalid")).is_err());
+        #[cfg(feature = "proving")]
+        assert_eq!(
+            selected_reconstruction(Ok("reference")),
+            Ok(GameReconstruction::Reference)
+        );
+        #[cfg(not(feature = "proving"))]
+        assert!(selected_reconstruction(Ok("reference")).is_err());
+    }
 }
 
 #[cfg(feature = "proving")]
@@ -551,6 +590,7 @@ fn attach_selected(
     }
     #[cfg(not(feature = "proving"))]
     host.set_game_contribution(Box::new(assets))?;
+    #[cfg(feature = "proving")]
     let camera = if let (Some(camera), Ok(height)) = (camera, launch_value("THRUM_CAMERA_HEIGHT")) {
         let mut eye = camera.eye();
         eye[1] = height

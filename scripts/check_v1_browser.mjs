@@ -2272,10 +2272,22 @@ async function checkShippingBoundary(cdp, origin, timeout, wasm) {
       };
     })()`);
     const wasmHash = await readWasmReceipt(cdp, sessionId, `${origin}/v1_game_bg.wasm`, wasm.sha256, wasm.bytes.length);
-    if (exports.globals.length ||
-        exports.module.some(name => /qualify|probe|governor|placed|field|sprite/i.test(name)) ||
-        exports.browserGame.some(name => /route_render_scale|cloud_submission|haze|submitted_capture|begin_fixed_submission|begin_linear_capture|exit_sweep_samples|renderer_signature|^complete$/i.test(name))) {
-      throw new Error(`The normal build exposed qualification hooks: ${JSON.stringify(exports)}`);
+    const shippingModule = [
+      'BrowserGame', 'BrowserScene', 'CookedValley', 'Page', 'create_browser_game',
+      'create_route_game', 'create_scene', 'default', 'fetch_cooked_valley', 'initSync',
+    ];
+    const shippingGame = [
+      '__destroy_into_raw', 'apply_parameters', 'apply_params', 'attach_cooked_valley',
+      'committed_tick', 'constructor', 'control_changes', 'controlled_position', 'controls_json',
+      'cooked_status', 'discard_route_samples_before', 'edit_control', 'exit_status', 'focus_lost',
+      'frame', 'free', 'graphics_fault', 'graphics_recovery_error', 'install_route', 'key',
+      'paused', 'presented', 'recover_graphics', 'recovering', 'report', 'request_graphics_recovery',
+      'route_report', 'route_slot_ready', 'route_step_ms', 'set_camera_pitch', 'set_camera_yaw',
+      'set_controls', 'set_paused', 'set_time_of_day', 'set_visible', 'time_of_day',
+    ];
+    if (exports.globals.length || JSON.stringify(exports.module) !== JSON.stringify(shippingModule) ||
+        JSON.stringify(exports.browserGame) !== JSON.stringify(shippingGame)) {
+      throw new Error(`The normal build's JavaScript exports differ from the shipping API: ${JSON.stringify(exports)}`);
     }
     const route = await evaluate("fetch('/route.html').then(response => response.text())");
     if (!route.includes('install_route') || /thrumRoute|thrumCheckpointPng|scale-proof|culling-proof|route_render_scale/.test(route)) {

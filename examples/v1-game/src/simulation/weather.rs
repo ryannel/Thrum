@@ -1,4 +1,5 @@
 use super::{Rules, SimError, Simulation, WEATHER};
+#[cfg(feature = "proving")]
 use crate::clouds::WeatherSequence;
 use std::sync::Arc;
 use thrum_core::{
@@ -13,6 +14,7 @@ use thrum_core::{
 pub(crate) struct Weather {
     pub(super) state: Arc<thrum_cloud_model::State>,
     demo: Option<crate::clouds::PlacementDemo>,
+    #[cfg(feature = "proving")]
     sequence: Option<(WeatherSequence, thrum_cloud_model::Parameters)>,
 }
 
@@ -24,10 +26,12 @@ impl Weather {
         Self {
             state: Arc::new(state),
             demo,
+            #[cfg(feature = "proving")]
             sequence: None,
         }
     }
 
+    #[cfg(feature = "proving")]
     pub(crate) fn with_sequence(
         mut self,
         sequence: WeatherSequence,
@@ -77,6 +81,7 @@ impl Permits {
             .with(&self.read, handle, Clone::clone)
             .map_err(|_| SimError::InvalidHandle)?;
         let state = Arc::make_mut(&mut value.state);
+        #[cfg(feature = "proving")]
         if let Some((sequence, initial)) = value.sequence {
             state
                 .set_target(sequence.target(initial, tick as f64 * dt))
