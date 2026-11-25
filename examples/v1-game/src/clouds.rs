@@ -209,7 +209,7 @@ pub fn shade_config() -> ShadeConfig {
                 // shaded undersides while the neighbouring gaps stay open.
                 base: 1600.0,
                 depth: [1550.0, 2900.0],
-                liquid_water: 0.000335,
+                liquid_water: 0.000_335,
                 droplet_radius: 0.000_011,
                 deck: 0.5,
                 profile: [0.45, 0.33],

@@ -483,21 +483,7 @@ impl GameSetup {
         if setup.content == GameContent::Exit {
             setup.sun_proof_geometry.prepare(&mut scene);
         }
-        let cloud_sky = setup
-            .clouds
-            .sky_profile(config.render_extent)
-            .map(|mut sky| {
-                if matches!(
-                    capabilities.recipe(),
-                    Ok(thrum_render::capabilities::Recipe::AppleTile)
-                ) {
-                    // Trace one member of each 2×2 block and reproject the other
-                    // three with the cloud's world-space travel between submissions.
-                    sky.refresh_stride = 2;
-                    sky.step = 22.5;
-                }
-                sky
-            });
+        let cloud_sky = cloud_sky_profile(setup.clouds, config.render_extent, capabilities);
         let weather = clouded_weather(setup, shapes.as_ref())?;
         let world = GameWorld(WorldPort::Inline(Box::new(
             WorldDriver::for_setup(&setup, weather).map_err(FrameError::World)?,
@@ -543,6 +529,24 @@ impl GameSetup {
         }
         Ok(inner)
     }
+}
+
+fn cloud_sky_profile(
+    selection: crate::CloudSelection,
+    extent: [u32; 2],
+    capabilities: &DeviceCapabilities,
+) -> Option<thrum_clouds::SkyProfile> {
+    let mut sky = selection.sky_profile(extent)?;
+    if matches!(
+        capabilities.recipe(),
+        Ok(thrum_render::capabilities::Recipe::AppleTile)
+    ) {
+        // Trace one member of each 2×2 block and reproject the other three
+        // with the cloud's world-space travel between submissions.
+        sky.refresh_stride = 2;
+        sky.step = 22.5;
+    }
+    Some(sky)
 }
 
 fn clouded_weather(
