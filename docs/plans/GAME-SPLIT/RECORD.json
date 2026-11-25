@@ -301,7 +301,7 @@
         {
           "verdict": "fail",
           "commit": "6bbbded1d7032ebfc344c694ebead893526d932d",
-          "review": ".orchestrate/evidence/GAME-SPLIT/WP3-review.md",
+          "review": ".orchestrate/evidence/GAME-SPLIT/WP3-review-3.md",
           "items": {
             "WP3.1": "pass",
             "WP3.2": "pass",
@@ -337,6 +337,40 @@
             "turns": 1
           },
           "at": "2026-11-25T00:25:27Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "45f660d5da16544c8d0b39ac5eaa686a8ef5009e",
+          "review": ".orchestrate/evidence/GAME-SPLIT/WP3-review.md",
+          "items": {
+            "WP3.1": "pass",
+            "WP3.2": "pass",
+            "WP3.3": "pass",
+            "WP3.4": "pass",
+            "WP3.5": "pass"
+          },
+          "findings": [
+            {
+              "name": "Exact-image verification records the wrong Wasm artifact hashes",
+              "repeat": true
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 88051,
+            "cached": 1554688,
+            "output": 5517,
+            "turns": 1
+          },
+          "at": "2026-11-25T00:49:38Z"
         }
       ],
       "authorised": {
