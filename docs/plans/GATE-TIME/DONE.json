@@ -840,7 +840,7 @@
     {
       "id": "WP15",
       "name": "Merge verification reuses a bounded local Cargo cache",
-      "status": "ready_for_review",
+      "status": "done",
       "quality_bar": "The configured merge check makes real Cargo rebuilds cheaper on the busy Mac and returns the ordinary check's verdict on the exact candidate.",
       "items": [
         {
@@ -875,13 +875,7 @@
         }
       ],
       "failed_reviews": 2,
-      "failed_reviews_with_repeat": 0,
-      "findings": [
-        {
-          "name": "Merge cache fixtures inherit RUSTFLAGS and fail the ordinary Mac check",
-          "repeat": false
-        }
-      ]
+      "failed_reviews_with_repeat": 0
     },
     {
       "id": "WP5",

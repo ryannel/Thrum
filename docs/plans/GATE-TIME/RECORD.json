@@ -1301,7 +1301,7 @@
         {
           "verdict": "fail",
           "commit": "4bed3bdbd561d516bba46a380917d14d63b3db21",
-          "review": ".orchestrate/evidence/GATE-TIME/WP15-review.md",
+          "review": ".orchestrate/evidence/GATE-TIME/WP15-review-2.md",
           "items": {
             "WP15.1": "pass",
             "WP15.2": "pass",
@@ -1329,6 +1329,32 @@
             "turns": 1
           },
           "at": "2026-11-25T04:30:09Z"
+        },
+        {
+          "verdict": "pass",
+          "commit": "b5248eb5cb1d75bf2e22a199873431f6d0fd0e12",
+          "review": ".orchestrate/evidence/GATE-TIME/WP15-review.md",
+          "items": {
+            "WP15.1": "pass",
+            "WP15.2": "pass",
+            "WP15.3": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 61173,
+            "cached": 925440,
+            "output": 4365,
+            "turns": 1
+          },
+          "at": "2026-11-25T05:05:43Z"
         }
       ],
       "authorised": {
@@ -1361,6 +1387,13 @@
           "output": 190956,
           "turns": 4
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "b5248eb5cb1d75bf2e22a199873431f6d0fd0e12",
+        "review": ".orchestrate/evidence/GATE-TIME/WP15-review.md",
+        "checked": "4d8db3ffec415e041bcab413a093c9eadab762c5",
+        "at": "2026-11-25T05:05:43Z"
       }
     }
   },
