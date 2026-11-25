@@ -1276,7 +1276,7 @@
     {
       "id": "WP22",
       "name": "The water scene's tests compile for Linux and Windows again",
-      "status": "in_progress",
+      "status": "done",
       "quality_bar": "The workspace's tests stay type-checked for Linux and Windows, as they were before WP19 merged: no error for either target, and the Mac's surf proofs as they are.",
       "items": [
         {

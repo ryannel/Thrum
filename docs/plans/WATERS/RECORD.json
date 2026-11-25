@@ -1946,6 +1946,41 @@
         "by": "plan",
         "task": "The main-branch check cross-target fails, and the script couldn't tell which commit broke it. Find what breaks it, and p",
         "at": "2026-11-25T16:18:59Z"
+      },
+      "ready_for_review": {
+        "commit": "0f2aed1cf9e0f5adb9f99297ef5152032bb67e00",
+        "checked": "0f2aed1cf9e0f5adb9f99297ef5152032bb67e00",
+        "at": "2026-11-25T16:34:52Z",
+        "reused": [
+          "WP22.1"
+        ],
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.171.0-alpha.13",
+        "path": "headless",
+        "usage": {
+          "input": 66638,
+          "cached": 2535424,
+          "output": 6284,
+          "turns": 1
+        },
+        "session_usage": {
+          "input": 66638,
+          "cached": 2535424,
+          "output": 6284,
+          "turns": 1
+        }
+      },
+      "done": {
+        "by": "checks",
+        "commit": "0f2aed1cf9e0f5adb9f99297ef5152032bb67e00",
+        "checked": "0f2aed1cf9e0f5adb9f99297ef5152032bb67e00",
+        "at": "2026-11-25T16:34:52Z"
       }
     }
   },
