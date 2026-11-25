@@ -147,7 +147,70 @@
     },
     "WP2": {
       "definitions": "53a36a021b3c9658122f30f4cd2d2b9f21d8c798967f1ed80634ff3f4f0a5130",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "631e7746fcc9fb302427ce4b39c046f3bee7dc8a",
+          "review": ".orchestrate/evidence/GAME-UI/WP2-review.md",
+          "items": {
+            "WP2.1": "pass",
+            "WP2.2": "pass",
+            "WP2.3": "pass",
+            "WP2.4": "pass",
+            "WP2.5": "fail",
+            "WP2.6": "pass",
+            "WP2.7": "pass",
+            "WP2.8": "fail",
+            "WP2.9": "fail",
+            "WP2.10": "fail",
+            "WP2.11": "pass",
+            "WP2.12": "pass",
+            "WP2.13": "pass"
+          },
+          "findings": [
+            {
+              "name": "A live font refusal after initial readiness is ignored",
+              "item": "WP2.8",
+              "repeat": false
+            },
+            {
+              "name": "Adding a font removes unrelated sibling assets from the manifest",
+              "repeat": false
+            },
+            {
+              "name": "Chrome font edit leaves the old and new glyph sheets identical",
+              "item": "WP2.9",
+              "repeat": false
+            },
+            {
+              "name": "Metal glyph comparison allows a one-code error on opaque texels",
+              "item": "WP2.5",
+              "repeat": false
+            },
+            {
+              "name": "Font cost check accepts a missing outline sheet measurement",
+              "item": "WP2.10",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 160234,
+            "cached": 6174464,
+            "output": 14428,
+            "turns": 1
+          },
+          "at": "2026-11-25T21:53:06Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
