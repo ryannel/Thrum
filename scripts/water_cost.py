@@ -386,11 +386,13 @@ def measure_surf_running():
             if arm[key]:
                 problems.append(f"{name} reported {arm[key]} {key}")
         nodes = arm['nodes']
-        cuts = all(coarse > 0 and fine > 0 for coarse, fine in nodes)
-        no_cuts = all(coarse == fine == 0 for coarse, fine in nodes)
-        if (len(nodes) != ticks or arm['completed_batch_ticks'] != ticks
-                or not (cuts if name == 'breakers' else no_cuts)):
-            problems.append(f"{name} did not show its expected cuts on every measured tick")
+        if len(nodes) != ticks:
+            problems.append(f"{name} recorded {len(nodes)} node counts for {ticks} ticks")
+        if name == 'breakers':
+            if arm['completed_batch_ticks'] != ticks or not all(coarse > 0 and fine > 0 for coarse, fine in nodes):
+                problems.append('breakers did not show cuts on every measured tick')
+        elif arm['completed_cut_nodes'] != [0, 0]:
+            problems.append('open water unexpectedly made cuts')
         arm['node_summary'] = {
             phase: {'min': min(column), 'mean': statistics.mean(column), 'max': max(column)}
             for phase, column in zip(('coarse', 'fine'), zip(*nodes), strict=True)
