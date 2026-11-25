@@ -18,6 +18,7 @@ import time
 from capture_v1_runtime import digest
 from cloud_cadence import (
     ARMS, HZ, InvalidMeasurement, NS, OccludedMeasurement, PERIOD, analyze_arm, differences, interval,
+    require_unoccluded, window_conditions,
 )
 from mac_m2_presented import table
 from qualify_mac_m2 import ROOT, bounded, panel_witness, save
@@ -80,8 +81,13 @@ def console_unlocked():
 
 def require_unlocked_panel(*, wake=False):
     # A sleeping display can set the screen-lock flag even with locking off.
+    wake_display = ['/usr/bin/caffeinate', '-u', '-t', '3']
     if wake or not console_unlocked():
-        subprocess.run(['/usr/bin/caffeinate', '-u', '-t', '3'], check=True, timeout=6)
+        subprocess.run(wake_display, check=True, timeout=6)
+    if wake and not console_unlocked():
+        subprocess.run(['/usr/bin/pmset', 'displaysleepnow'], check=True, timeout=6)
+        time.sleep(3)
+        subprocess.run(wake_display, check=True, timeout=6)
     if not console_unlocked():
         raise InvalidMeasurement('local console must be unlocked for the built-in panel')
 
@@ -143,6 +149,24 @@ def kernel_recording(candidates):
     if not stat.S_ISREG(info.st_mode) or (info.st_dev, info.st_ino) != (device, inode):
         raise InvalidMeasurement('the owned kernel recording path changed identity')
     return path
+
+
+def discard_interrupted_recording(arm, candidates, recorder_pid):
+    try:
+        raw = kernel_recording(candidates)
+    except InvalidMeasurement:
+        return
+    save(arm / 'interrupted-scratch.json', {'path': str(raw), 'recorder_pid': recorder_pid,
+         'owned_device': raw.stat().st_dev, 'owned_inode': raw.stat().st_ino})
+    kernel_recording(candidates).unlink()
+
+
+def require_finished_arm(arm, code):
+    if not code and (arm / 'refresh-account.tsv').is_file():
+        return
+    if (arm / 'refresh-window.txt').is_file():
+        require_unoccluded(arm, window_conditions(arm))
+    raise InvalidMeasurement(f'{arm.name}: window did not finish the cadence record (exit {code})')
 
 
 def collect(arm, store, wind, *, diagnostic=False):
@@ -217,19 +241,14 @@ def collect(arm, store, wind, *, diagnostic=False):
         code = bounded(command, recorder, 155 if not diagnostic else 33, environment=env,
                        observe=observe, finalization_seconds=None if diagnostic else 125,
                        on_start=launched)
-        if code or not (arm / 'refresh-account.tsv').is_file():
-            raise InvalidMeasurement(f'{arm.name}: window did not finish the cadence record (exit {code})')
+        require_finished_arm(arm, code)
+    except OccludedMeasurement:
+        discard_interrupted_recording(arm, candidates, recorder_pid)
+        raise
     except RuntimeError as error:
         if diagnostic or not isinstance(error.__cause__, subprocess.TimeoutExpired):
             raise
-        try:
-            raw = kernel_recording(candidates)
-        except InvalidMeasurement:
-            pass
-        else:
-            save(arm / 'interrupted-scratch.json', {'path': str(raw), 'recorder_pid': recorder_pid,
-                 'owned_device': raw.stat().st_dev, 'owned_inode': raw.stat().st_ino})
-            kernel_recording(candidates).unlink()
+        discard_interrupted_recording(arm, candidates, recorder_pid)
         raise RecordingTimeout(f'{arm.name}: {error}') from error
     finally:
         if power.poll() is None:

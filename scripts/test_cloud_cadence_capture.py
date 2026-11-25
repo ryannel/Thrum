@@ -106,6 +106,31 @@ class RecordingOwnership(unittest.TestCase):
 
 
 class WindRecovery(unittest.TestCase):
+    def test_failed_arm_retries_only_with_recorded_occlusion(self):
+        with TemporaryDirectory() as folder:
+            arm = Path(folder) / '00-off'
+            arm.mkdir()
+            with self.assertRaisesRegex(InvalidMeasurement, 'exit 54'):
+                capture.require_finished_arm(arm, 54)
+            conditions = arm / 'refresh-window.txt'
+            conditions.write_text('occluded_window_events=0\noccluded_surface_attempts=0\n')
+            with self.assertRaisesRegex(InvalidMeasurement, 'exit 54'):
+                capture.require_finished_arm(arm, 54)
+            conditions.write_text('occluded_window_events=1\noccluded_surface_attempts=2400\n')
+            with self.assertRaisesRegex(OccludedMeasurement, '2400 surface attempts'):
+                capture.require_finished_arm(arm, 54)
+
+    def test_prepare_cycles_display_only_when_first_wake_leaves_flag_set(self):
+        with (
+            patch.object(capture, 'console_unlocked', side_effect=[False, True]),
+            patch.object(capture.subprocess, 'run') as run,
+            patch.object(capture.time, 'sleep') as sleep,
+        ):
+            capture.require_unlocked_panel(wake=True)
+        self.assertEqual([call.args[0][0] for call in run.call_args_list],
+                         ['/usr/bin/caffeinate', '/usr/bin/pmset', '/usr/bin/caffeinate'])
+        sleep.assert_called_once_with(3)
+
     def test_cadence_starts_a_fresh_series_after_occlusion(self):
         with TemporaryDirectory() as folder:
             working = Path(folder).resolve()

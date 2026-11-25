@@ -705,6 +705,12 @@ impl<G: WindowGame + 'static> App<G> {
         self.watch = self.start_watch(wake);
         self.load_params(false)?;
         self.game.reload();
+        if let Some(observer) = &self.qualification
+            && observer.options.refresh_measurement.is_some()
+            && let Some(window) = &self.window
+        {
+            window.focus_window();
+        }
         Ok(())
     }
 
@@ -1891,23 +1897,24 @@ fn run_with<G: WindowGame + 'static, E: std::error::Error>(
         }
         if let Some(observer) = &app.qualification {
             let output = &observer.options.output;
-            let write = account.write(output).and_then(|()| {
-                let [nominal, fair, serious, critical] = app.thermal_states;
-                std::fs::write(
-                    output.join("refresh-window.txt"),
-                    format!(
-                        "occluded_window_events={}\noccluded_surface_attempts={}\nthermal_nominal={nominal}\nthermal_fair={fair}\nthermal_serious={serious}\nthermal_critical={critical}\n",
-                        app.window_occlusions, app.occluded
-                    ),
-                )
-            });
-            if let Err(error) = write {
+            if let Err(error) = account.write(output) {
                 result = Err(format!("refresh account: {error}"));
             }
         }
     }
     if let Some(observer) = &app.qualification {
         let output = &observer.options.output;
+        let [nominal, fair, serious, critical] = app.thermal_states;
+        if let Err(error) = std::fs::write(
+            output.join("refresh-window.txt"),
+            format!(
+                "occluded_window_events={}\noccluded_surface_attempts={}\nthermal_nominal={nominal}\nthermal_fair={fair}\nthermal_serious={serious}\nthermal_critical={critical}\n",
+                app.window_occlusions, app.occluded
+            ),
+        ) && result.is_ok()
+        {
+            result = Err(format!("refresh window: {error}"));
+        }
         let samples = if observer.options.refresh_measurement.is_some() {
             qualification::write_cadence_samples(output, &app.samples)
         } else {
