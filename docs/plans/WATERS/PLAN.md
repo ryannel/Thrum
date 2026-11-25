@@ -17,7 +17,7 @@ First read [Proof and builder handoff](DESIGN.md#proof-and-builder-handoff) and
 - Assumption: wet long-wave loss keeps WP7.5's distributed foam wherever no breaking face is available, swash included; an eligible crest concentrates part on its face and under a resolved lip; distant beaches take steady cover from the same loss.
 - Assumption: as part of surf an island shelters its lee: a lee beach laps with short waves only.
 - Assumption: the surf query's age is proved for the example's eight floats in a gale on the Mac (nine answers in ten within two ticks), not for 2,048 points in breakers or in Chrome; the coarse-cell rule is measured, not proved.
-- Assumption: two-tick answers are owed while a view takes the device under about a tick, and no second path past the view is built; through a tick with no new answer a float rides its last one, to the maximum age.
+- Assumption: delivery, not a view's time, decides two-tick answers; no second path past the view is built; through a tick with no new answer a float rides its last one, to the maximum age.
 - Assumption: surf on a lake is proved against the model, not by eye: the example's lake raises no long waves.
 - Assumption: "scenery reflections" is met by drawing the scene again from the camera's mirror image for the two water levels with most water in view; a third reflects only what is on screen.
 - Assumption: under water there are no lens drops, particles or bubbles, and the picture darkens with depth by a quarter of the light lost. One water surface in any column still holds.
@@ -81,7 +81,7 @@ First read [Proof and builder handoff](DESIGN.md#proof-and-builder-handoff) and
 
 ## WP21 With surf in view, a float gets the sea's height within two ticks and rides a hitch on its last answer
 
-[Measure before changing the pass](DESIGN.md#a-surf-view-a-running-game-can-afford-wp21).
+[Measure before changing the pass](DESIGN.md#a-surf-view-a-running-game-can-afford-wp21), and take WP21.6's reference stills first.
 
 ## WP19 Floats in a gale's breaking surf get the height of the crest they ride in time to ride it, with the game running
 

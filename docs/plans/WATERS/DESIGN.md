@@ -10,7 +10,9 @@ diagnostics. Revised 25 November 2026 after the design review of that day: the c
 Revised again that day after WP19's builder stopped: the query is
 [admitted by the tick](#bodies-and-the-query), and no longer waits for a view. Revised after that
 revision's review: the carry bound covers an ordinary post, and a post is answered only from
-[its own world's state](#bodies-and-the-query).
+[its own world's state](#bodies-and-the-query). Revised after the review of
+[WP21](#a-surf-view-a-running-game-can-afford-wp21): delivery decides it, the distant front is held by
+eye, and a held answer ends with its device.
 [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) · [module list](../ARCHITECTURE.md) ·
 [the wave field, `SEA`](../SEA/DESIGN.md). C02, C04, C06, C07, C08, C09 and C12 in
 [CONTRACTS](../../design/CONTRACTS.md) and [the hardware-native decision](../../design/decisions/HARDWARE-NATIVE-ENGINE.md)
@@ -2016,7 +2018,7 @@ rows are in [the sea's design](../SEA/DESIGN.md#cost-account).
 |---|---|---|---|---|
 | The map | Prepared; read by every water vertex, pixel and query | Level, bed and current on each body's grid: a 1 km square at 1 m cells is about 16 MiB | One more read set in the surface pass | |
 | The shore transform | Prepared; read by the field cache and the query | For each still body with long waves: 8 directions × 6 wavelengths × its stage samples, on the bed's grid, and 8 exposures; for enclosed water the source and the exposure come from rays over the bed at preparation, as the sea's exposure does. A 1 km bed at 4 m cells with a 2 m tide range is 240 layers of 250², about 30 MiB at 16 bits, and the bed's min-max pyramid about two thirds of the bed's own bytes. Solving them is CPU work at preparation, which WP12 records | In the frame, for a cache texel over a bed, a few reads for each direction and wavelength in use where there were none, and the section's table; WP13 records it | |
-| The surf field cache | Frame, with surf in the profile | One sample for each node of the surface mesh and of the distant shore's lattice, about 550,000 on the island. For a node on the bed: the transform's table at that node once, 56 texels at a stage sample and 112 between two, whatever the number of components, then one pass over the long components that gives the sheet at both presentations. For a node no triangle in view uses: nothing | Unmeasured as designed; [WP21](#a-surf-view-a-running-game-can-afford-wp21) builds it so and records it. As WP13 built it, 93 ms to 97 ms a frame at the beach in a gale: each of 64 components read its own 12 to 24 texels, in each of two to six evaluations a node, for every node whether drawn or not | |
+| The surf field cache | Frame, with surf in the profile | One sample for each node of the surface mesh and of the distant shore's lattice, about 550,000 on the island. For a node on the bed: the transform's table once for each distinct bed cell and stage its sheet reads, 56 texels a cell at a stage sample and 112 between two, whatever the number of components, then one pass over the long components at each place the sheet is summed, which gives both presentations where the stage has not moved. An interior node reads one cell and sums once. A swash node sums again at its contour, in that place's cell; a node beside a cell's edge reads the lags across it; a ring-edge node reads and sums at its two coarser nodes; a previous presentation at another stage reads its own. For a node no triangle in view uses: nothing | Unmeasured as designed; [WP21](#a-surf-view-a-running-game-can-afford-wp21) builds it so and records the reads of each kind. As WP13 built it, 93 ms to 97 ms a frame at the beach in a gale: each of 64 components read its own 12 to 24 texels, in each of two to six evaluations a node, for every node whether drawn or not | |
 | Bore decay and swash | Field-cache evaluation on frame pages and direct sheet evaluation on query ticks, on supported shores with exposed long waves | Up to one extra long-wave sum at the contour per eligible sample, with reuse where samples share a contour reference at the same time and stage. The overlap adds local arithmetic and a bed lookup if the displaced bed value is unavailable | Use the existing map, surf preparation and field-cache path. Reuse derived samples for surface and foam where their time and footprint coincide. No new solver, per-frame upload or readback. WP13.12's paired run covers field-cache and query cost, including any prepared data or sample storage | |
 | Interaction waves | Tick | 2 × 256². For each region, one complex transform forward and one back for each ladder depth in use: two transforms a level over deep open water, up to 16 solves a level at the profile's bound. Labelling a window's regions is CPU work on the tick, when a window moves | Under 0.2 ms over deep water; about 0.7 ms at a shore with six depths in use; more at the bound, which WP6 records with the count of regions and solves | About 3.8 ms a tick in its lake, as an interval |
 | Foam | Tick | 2 × 512² × 4 stocks. The swash's drift reads the surface's rate and slope at cells on a shore, where births already read the field | Under 0.2 ms | About 2.2 ms for first deposition |
@@ -2180,16 +2182,17 @@ decides nothing. [WP19](#a-surf-query-a-running-game-can-use-wp19) uses it.
     fall back to the conformance model whenever they enter the surf; and answers that reach the game later
     than two ticks in the breakers while open water's arrive on time. A batch that waits for an admitted
     view is late whatever it costs, and [the tick stage](#bodies-and-the-query) removes that wait and
-    nothing else. A batch is also late behind a view that holds the device for longer than a tick, on the
-    one queue wgpu has, and no order of submission changes that: WP19's run from the sand measured it, and
-    the remedy is that view's cost ([risk 33](#risks)). The designed remedy for the cut's cost is
+    nothing else. A batch is also late behind device work submitted ahead of it, on the one queue wgpu
+    has, and no order of submission changes that: WP19's run from the sand measured it behind a 93 ms
+    pass, and the remedy is that pass's cost ([risk 33](#risks)). The designed remedy for the cut's cost is
     [the coarse pass](#bodies-and-the-query), shared by a body's points; then a dispatch spread over nodes,
     ceilings taken at a cell's own depth after the depth limit, and component sums on a coarser lattice.
     The wrong fixes are a longer maximum age, a read of the field cache or of the camera's mesh, an answer
     that gives up the highest surface, a cut cell coarse enough to hide a lip, and a landing margin of one
     size, which drops the lip where the sheet bends most.
-33. **The surf field cache holds the device for longer than a tick**, so every view with a beach in it is
-    late and every query behind it. Early sign: WP13.12's record, 97 ms for the pass at the beach in a gale,
+33. **The surf field cache holds the device across several ticks**, so every view with a beach in it is
+    late and every query behind it. Delivery says when it is cheap enough, and no time for the view does
+    (WP21.3). Early sign: WP13.12's record, 97 ms for the pass at the beach in a gale,
     which tripped the refresh-interval wire and was left; then WP19's control arm, 4% of open-water answers
     within two ticks from the sand. The designed remedies do each kind of work as often as it changes and
     leave the sheet as it is: the transform's table read once a node, both presentations from one pass over
@@ -2391,10 +2394,11 @@ holds whatever they become. WP13 keeps the regular-wave run-up and draw-back and
   for 93 ms of every view, and a tick whose drain brought no result sent a float to the fallback.
   [WP21](#a-surf-view-a-running-game-can-afford-wp21) settles both and proves the control arm by itself.
   WP19 then takes the pair and the cost record again, as its items stand. A control still under nine in
-  ten is a view that still holds the device for more than a tick: the record's completion times and the
-  cost record's passes say which pass holds it, and a pass of the water's is brought down here as WP21
-  brought the cache down. WP19 ends `BLOCKED` on it only for a pass another module owns, naming the pass
-  and its time.
+  ten is not read as a view holding the device: a cheap view can sit ahead of a late drain. The run's
+  record says [where each late answer waited](#where-a-late-answer-waited), in the queue, behind a pass
+  or at the drain, for both arms. A pass of the water's is brought down here as WP21 brought the cache
+  down, and a fault in the mailbox's drain is repaired here. WP19 ends `BLOCKED` only where the wait is
+  the stage's bound or a pass another module owns, naming it and its counts.
 
 ## A surf view a running game can afford (WP21)
 
@@ -2411,9 +2415,12 @@ work is counted in mesh nodes and not in pixels.
 says it gives: a tick submission goes ahead of its own view and behind whatever was submitted before it, on
 the one queue wgpu has on Metal and in WebGPU. A view that holds the device for seven ticks delays every
 batch behind it by up to seven, in any order of submission, and a second queue would not stop a dispatch
-that is already running. So the stage is not reopened and no second path for the query is built. A view
-that takes the device for less than a tick leaves the batch inside its two, so the remedy is the view's
-cost, and the view's cost is this pass. It tripped the refresh-interval wire in every surf record from
+that is already running. So the stage is not reopened and no second path for the query is built. The
+remedy is the device time ahead of the batch, and from the sand 93 ms of every view's is this pass. No
+time for a view is the bar. How long a batch can wait behind a view and still be drained within two ticks
+depends on when views are submitted and when the game drains: a 20 ms view submitted every other tick
+leaves a 0.25 ms batch inside its two, and a cheap view does not save a result published after its drain.
+The bar is delivery, which WP21.3 counts. The pass tripped the refresh-interval wire in every surf record from
 WP13's first, at 22 ms, to WP19.4's, and each record answered with a sentence the tool writes for every
 record in place of [an investigation](#cost-account). Under [the performance policy](../../design/AI-PERFORMANCE.md#performance-investment-from-the-first-design)
 a confirmed cause is fixed while building goes on, and this one also breaks a contract.
@@ -2425,20 +2432,38 @@ a ring's edge. Each evaluation sums every long component, 64 in the island's gal
 reads its own lag and exposure from the shore transform's textures: 12 texels where the stage is on a
 sample and 24 between two, more beside a cell's edge. That is 1,500 to 3,000 texel reads a node and of the
 order of a billion a frame. [The cost account](#cost-account) planned "a few reads for each direction and
-wavelength in use": the transform at a node and stage is 8 directions by 6 wavelengths, 56 texels,
-however many components read it. These counts are read from the source and the record's `shore_reads`;
+wavelength in use": the transform in one bed cell at one stage is 8 directions by 6 wavelengths, 56
+texels at the cell's four corners, however many components read it. These counts are read from the source and the record's `shore_reads`;
 which of them holds the time is to be measured. Three things are done more often than they change:
 
-1. **The table is read for every component and every evaluation.** What a node takes from the shore
-   transform depends on where it rests and on the stage. It does not depend on the time, nor on the
-   component beyond its direction and wavelength. Read once a node, it serves every component and both
-   presentations.
+1. **The table is read for every component and every evaluation.** What the sheet takes from the shore
+   transform depends on the bed cell it is read in and on the stage. It does not depend on the time, nor
+   on the component beyond its direction and wavelength. So a read is shared by **place, footprint and
+   stage**: every component, evaluation and presentation that reads the same bed cell at the same stage
+   shares one read of that cell's table. That is not one table a node. The sheet at a node reads more
+   than its rest cell, and each of these is a read of its own, made where the sheet makes it today:
+   - *the contour.* A node in the swash takes the arriving phase from a sum at the still-water contour,
+     which can lie in another bed cell. It reads that cell's table, and its own for the rest;
+   - *a cell's edge.* Within a hundredth of a cell of a boundary the wave's direction is taken from the
+     lag just across it, so the node reads those lags in the neighbouring cell as well;
+   - *a ring's edge.* A node on a ring's outer edge is the blend of the sheet at its two coarser nodes
+     (below), each with its own cell, contour and edge reads;
+   - *a moved stage.* The previous presentation reads the table at its own stage where the stage has
+     moved, and shares this presentation's where it has not;
+   - *the distant shore's lattice.* A lattice node in view is one sum of the sheet, for this
+     presentation alone, with the reads that sum makes.
+
+   Reads that fall on the same cell and stage, from any of these, may be shared. The rest cell's table
+   used in place of the contour's or the neighbour's is not a saving: it changes the arriving wave and
+   its direction at the waterline and at a cell's edge, where the swash is drawn.
 2. **The two presentations share nothing.** They differ by each component's phase, `ω·Δt`, and by the
-   stage while a tide moves. Where the stage has not moved, one pass over the components gives both sums.
+   stage while a tide moves. Where the stage has not moved, one pass over the components at a place gives
+   both sums there.
 3. **Nodes that nothing reads are evaluated.** The cache is read by the surface draw, where a vertex reads
    its own node and four neighbours, and by the distant shore face. A node that no triangle in view uses,
    with the furthest the sheet can move a vertex allowed for, need not be evaluated in that frame. The
-   distant shore's lattice is already culled so.
+   distant shore's lattice is already culled so, to the nodes a pixel in view reads, and is culled no
+   further.
 
 **The order.** Measure first. With the pass's table reads switched off, then its components halved, then
 its nodes halved, say where the 93 ms is, and take first the remedy the measurement names. The three
@@ -2446,22 +2471,60 @@ above are the designed ones, and each leaves the sheet as it is. How the table i
 and the sum, how nodes are chosen and how the dispatch is laid out are the builder's, inside Chrome's
 limits as on Metal.
 
-**What does not change.** What a node holds once evaluated is the model's forward sheet, as WP13.1 holds
-it. The mesh, its rings and their spacing, the number of components, the section, the foam and the query,
-which reads no cache, stay as WP13 and WP19 left them. So the surf WP13 passed is the surf drawn, and no
-inspection is taken again. WP21.1 holds the sheet in the frames where a saving could show: the first
-frame after the camera has turned to nodes that were not being evaluated, after it has moved, after the
-stage has moved and after the spectrum has changed. WP13.1's guard keeps its 4,096 points and its
-tolerance, from a view that holds them. Drawn bytes that move because sums are made in another order are
-a deliberate change, refreshed under [the baseline rules](../ARCHITECTURE.md#exact-baselines).
+**What does not change.** The pass writes two products, and each holds what WP13's pass put there.
+
+- **The mesh's nodes.** An interior node holds the model's forward sheet at its rest place, as WP13.1
+  holds it. A node on a ring's outer edge holds the blend that joins the ring to the coarser one outside
+  it: the model's sheet at the two nearest nodes of twice the ring's spacing, one to either side of it,
+  mixed by its place between them, and the sheet itself where it stands on such a node. That is so at
+  both presentations. It is not the model's sheet at the node's own rest place. On a 32 m crest of 0.5 m
+  amplitude the mean of the heights 4 m to either side lies 0.146 m under the crest, ten times
+  WP13.1's tolerance of 0.015 m, which is why WP13.1's guard leaves those nodes out. WP21.1 compares
+  them with the blend of the model.
+- **The distant shore's lattice.** Beyond the near window a node in view holds the phase and the
+  strength of the breaking front at its place, from the same forward sheet, and zero where nothing
+  breaks or the place is dry. The surface draws the white front seen from offshore from it, blended in
+  between 80 m and 140 m from the camera. This is the surf line WP13 passed at 1 km. An empty or stale
+  lattice saves work and moves no mesh node, no depth and no motion, so no check of the mesh shows it,
+  and in Chrome the surf case reads mesh nodes alone. WP21.6 holds it by eye on both targets.
+
+The mesh, its rings and their spacing, the lattice, the number of components, the section, the foam and
+the query, which reads no cache, stay as WP13 and WP19 left them. So the surf WP13 passed is the surf
+drawn. WP13's inspection is not taken again whole. WP21.6 takes the one part of it no check reads: the
+front from 1 km and across the foam handoff, beside the draw as it was before the pass changed. WP21.1
+holds the sheet in the frames where a saving could show: the first frame after the camera has turned to
+nodes that were not being evaluated, after it has moved, after the stage has moved and after the
+spectrum has changed. WP13.1's guard keeps its 4,096 points and its tolerance, from a view that holds
+them. Drawn bytes that move because sums are made in another order are a deliberate change, refreshed
+under [the baseline rules](../ARCHITECTURE.md#exact-baselines).
 
 **What is not a remedy here.** A smaller extent or a camera offshore: the pass does not shrink with the
 extent, and the sand is where a player stands. A lower rate of views, a reordered queue or a longer
 maximum age: the batch is behind the view however they are arranged. And [risk 33](#risks)'s three that
 change the drawn sheet: other rings, a sum on a coarser lattice, a cache made on alternate frames. Those
-may come with the performance phase, each with the surf judged again by eye. If the designed remedies
-leave WP21.3 short, write the split of the time that is left in the log and end `BLOCKED`, and a planner
-adds the inspection such a change needs.
+may come with the performance phase, each with the surf judged again by eye.
+
+<a id="where-a-late-answer-waited"></a>
+**Where a late answer waited.** Delivery decides WP21.3, so a run that falls short has to say where its
+late answers waited, and the run's record does. For each tick's batch it has the tick of the post, the
+tick the batch was submitted or the refusal that held it back, the tick in which the result was
+published to the mailbox, and the tick whose drain first handed it over. A late answer waited in one of
+three places:
+
+- **the queue**, when its batch was submitted after its post's tick: the host made no asking, or refused
+  the batch at its bound on outstanding tick submissions;
+- **a pass**, when its batch was submitted on its tick and its result was published after the drain two
+  ticks on: device work was ahead of it, and the views' completion times and the cost record's passes
+  name whose;
+- **the drain**, when its result was published in time and the game took it late, or the mailbox handed
+  over another in its place.
+
+A pass of the water's is brought down here, the cache first, and a fault in the mailbox's drain is
+repaired here. Where the designed remedies are spent and a pass of the water's still holds answers past
+two ticks, write the split in the log and end `BLOCKED`, and a planner adds the inspection a change to
+the drawn sheet needs. Where the wait is the stage's bound or a pass another module owns, end `BLOCKED`
+naming it, with its counts. A run is taken again at a smaller extent only where the record shows the
+extent's passes, and not the water's, ahead of the late answers.
 
 **The held answer.** The WP19 review found a second thing that fails WP19.3 with the view cheap. Its run
 with views offered at the full refresh delivered more than nine answers in ten within two ticks, and still
@@ -2472,16 +2535,29 @@ the machine's ordinary load shows none. That is not [the contract](#bodies-and-t
 result is unavailable when it is older than the declared maximum and a hitch ages answers. The mailbox
 keeps it:
 
-- At a drain with no undelivered result for a live body, the mailbox hands the game the newest result it
-  has delivered for that body again. Each height is carried from its use tick to the drained tick by its
-  rate of change, as a late answer's is, once and never on top of an earlier carry, and wet or dry is
-  decided again from the carried height.
-- When that result's post is more than the maximum age behind the drained tick, the drain hands nothing
-  for the body, the float falls back, and the use is counted unavailable.
-- A newer result takes the held one's place when it is published, at its own age.
-- A held result is its world's and its body's. A drain on another world epoch or timeline hands it to no
-  one, as [the former timeline](#bodies-and-the-query)'s results are dropped, and a changed generation
-  ends it.
+- **Once a tick.** A body is handed one result for a tick, new or held, and no more. The first drain of
+  a tick that has no undelivered result it can use for a live body hands the game the newest result
+  already delivered for that body again. Each height is carried from its use tick to the drained tick by
+  its rate of change, as a late answer's is, once and never on top of an earlier carry, and wet or dry
+  is decided again from the carried height. A second drain of the same tick hands nothing for that body
+  and changes no count, as the mailbox behaves today: WP5.1's guard drains a tick-3 post at tick 5,
+  drains tick 5 again and gets nothing, and it stands as written. The held answer is that result at the
+  first drain of tick 6, if nothing newer can be used then.
+- **To the maximum age.** When the held result's post is more than the maximum age behind the drained
+  tick, the mailbox lets it go and the drain hands nothing for the body. No count of the mailbox's
+  changes, because the result was counted when it was first delivered. The float falls back, and the
+  game counts that use unavailable as it counts any station without an answer.
+- A newer result takes the held one's place when it is first delivered, at its own age.
+- **Its own water's.** A held result is its world's, its body's and its device's. A drain on another
+  world epoch or timeline hands it to no one, as [the former timeline](#bodies-and-the-query)'s results
+  are dropped, and a changed generation ends it. So does the readback reset, which the water's rebuild
+  makes when a device is replaced or the profile or the bodies change, and which already drops the
+  results published and not yet drained. A rebuild resets the wake to calm, and the answer held from
+  before it has the old wake in its height. World, generation and age can all still pass at that
+  moment, so none of them is the test. The first drain after the reset hands nothing for the body, and
+  the float is on the fallback until a result made after the rebuild is delivered. This is
+  [the tick stage's rule](../EFFECT-GRAPH/DESIGN.md#the-tick-stage-wp6) that a result belongs to the
+  device generation that recorded it, kept where the game takes the result.
 - The age counts take each result at its first delivery, so the share within two ticks still measures
   delivery, and uses of a held result are counted apart.
 
@@ -2489,12 +2565,17 @@ The game does not change: the island takes what its drain gives it, and a predic
 from the station still sends that station to the fallback.
 
 **The proofs.** WP21.2 holds the held answer on the CPU, with results the test publishes, since the rule
-is the mailbox's own and needs no device. WP21.3 is WP19.3's control arm taken by itself from the sand,
-`water_cost.py running --scene surf --arm open-water`, at the extent WP19.3 will draw, by WP19.3's own
-counts. Its corrected driver is on `build/waters` at `ab950b5b9` and merges with this work package. A run
-that fails is taken again at a smaller extent only where its completion times show the extent's passes,
-and not the cache, holding the device. WP21.4 takes the paired record again at WP13.12's view, with the
-cache's time beside WP13.12's and WP19's, the nodes evaluated beside the nodes held, the table texels read
-at a node, and the measurements of **the order** above as the cache's investigation. No figure in it
-decides the item: WP21.3 is what the cost has to buy. WP21.5 runs WP13.10's Chrome case on the changed
-pass. The breakers arm, and the pair, stay WP19's.
+is the mailbox's own and needs no device, and runs WP5.1's Metal guard beside it, unchanged. WP21.3 is
+WP19.3's control arm taken by itself from the sand, `water_cost.py running --scene surf --arm open-water`,
+at the extent WP19.3 will draw. It is decided by delivery and by nothing timed: of every station posted,
+nine in ten first handed over within two ticks, a station never handed over counting as late, and no
+station sent to the conformance model. Its record is the one
+[where a late answer waited](#where-a-late-answer-waited) reads. Its corrected driver is on `build/waters`
+at `ab950b5b9` and merges with this work package. WP21.4 takes the paired record again at WP13.12's view,
+with the cache's time beside WP13.12's and WP19's, the nodes evaluated beside the nodes held, the table
+reads of each kind above counted as the pass makes them, and the measurements of **the order** above as
+the cache's investigation. No figure in it decides the item: WP21.3 is what the cost has to buy. WP21.5
+runs WP13.10's Chrome case on the changed pass. WP21.6 is the distant front by eye. Its reference is the
+draw before the pass changed: `fixed` stills from the revision the work package starts from, at WP13.7's
+1 km view and its handoff view, taken before the pass is touched, then the same stills from the result,
+on Metal and in Chrome. The breakers arm, and the pair, stay WP19's.

@@ -1067,3 +1067,36 @@
   `surf_cost`, which it imports, and the driver that calls it are declared for the Mac alone: E0432 for Linux
   and for Windows, and no other error in the workspace. A merge's check builds for the Mac only, so it passed.
   New WP22, ahead of WP21, with the type-check as its one item. It waits for nothing of WP19's.
+- 2026-11-25 Design review of WP21 asked for changes, six Must Fix and no suggestion
+  ([review](../../../.orchestrate/evidence/WATERS/design-review.md)). The six entries below settle them.
+  WP21's items are written again, WP21.6 is new, and no other work package's item changed.
+- 2026-11-25 Must Fix 1, WP21 could pass with the distant breaking front gone: the design now names the
+  pass's [two products](DESIGN.md#a-surf-view-a-running-game-can-afford-wp21), the mesh's nodes and the
+  distant shore's lattice, and says the lattice holds what it held and is culled no further. New WP21.6
+  puts `fixed` stills from before the pass changed beside the result's at WP13.7's 1 km and handoff
+  views, at three engine times, on Metal and in Chrome, and a reviewer judges the front in the 12 pairs.
+  WP21.4 counts the lattice's nodes apart.
+- 2026-11-25 Must Fix 2, a held answer could outlive the device that made its wake: a held result is now
+  its device's as well as its world's and its body's. The readback reset the water's rebuild makes ends
+  it, and WP21.2's seventh case drains after that reset with the timeline, the generation and the age
+  all still passing, and gets nothing until a result published after the reset.
+- 2026-11-25 Must Fix 3, the quality bar asked for a view under one tick while WP21.3 judged delivery:
+  delivery decides. The quality bar and the design's "whose it is" no longer set a time for a view.
+  WP21.3 counts first delivery over every posted station, a station never handed over as late, and the
+  fallback count. Its record has each batch's post, submission, publication and drain ticks, and
+  [where a late answer waited](DESIGN.md#where-a-late-answer-waited) reads the queue, a pass or the
+  drain from it. WP19's "after WP21" routes a failed control the same way. The plan file's assumption
+  on two-tick answers is reworded to match.
+- 2026-11-25 Must Fix 4, WP21.1 expected the model's sheet at a ring-edge node: the design states the
+  blend there, the model's sheet at the two nodes of twice the ring's spacing mixed by the node's place
+  between them. WP21.1 compares interior nodes with the model directly and 32 or more ring-edge nodes
+  with that blend.
+- 2026-11-25 Must Fix 5, one table footprint a node could not reproduce the swash: reuse is by place,
+  footprint and stage. The design and the cost account list the reads a node's sheet makes beyond its
+  rest cell: the contour's cell, the lags across a cell's edge, a ring edge's two coarser nodes, a
+  previous presentation at another stage, and the distant lattice. WP21.4 records the count of each.
+- 2026-11-25 Must Fix 6, the held answer broke WP5.1's repeat-drain guard: a body is handed one result
+  a tick. A second drain of a tick hands nothing and changes no count, and the held result is handed at
+  the first drain of a later tick. A held result that passes the maximum age is let go with no mailbox
+  count, since the game counts the fallback it takes, which keeps the guard's count of one at tick 10.
+  WP21.2 has both as cases and its check runs the guard unchanged.
