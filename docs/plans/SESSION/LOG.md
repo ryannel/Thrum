@@ -294,3 +294,12 @@
   driver’s clock and page become eligible. The Mac and Chrome matches each matched all 120 digests
   over 3,600 ticks. The Chrome T2 run includes every named hold and skip.
   [Timing checks and motion inspections](../../../.orchestrate/evidence/SESSION/WP7/timing/README.md)
+
+- 2026-11-25 WP7 review fixes. Inline authority now advances at the frame observation. The Crowd replica renders
+  the playout sample from that observation, and the Metal regression covers a nonzero display lead across the
+  next observation. The Mac proof places both windows side by side and leaves optional GPU timing off.
+  The native and Chrome runs matched all 120 digests each over 3,600 ticks. The capture record includes each
+  submitted frame's observation, and the proof checks that its committed tick was already due.
+  The relay starts timed cuts on an actual downstream delivery. The short cut dropped a packet before reopening
+  and the submitted positions sustained 1.100× catch-up after the separate underrun.
+  [Target receipts and motion inspections](../../../.orchestrate/evidence/SESSION/WP7/observation/README.md)
