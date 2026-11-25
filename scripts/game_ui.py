@@ -135,10 +135,11 @@ def median(record, key):
     return statistics.median(row[key] for row in record["samples"])
 
 
-def costs_native(destination, revision, scratch, target):
+def costs_native(destination, revision, scratch):
     old_tree = scratch / "before"
     snapshot_main(old_tree)
     before = build_native(old_tree, scratch / "before-target", scratch / "old-interface-cost")
+    target = scratch / "after-target"
     after = build_native(ROOT, target, scratch / "new-interface-cost")
     store = cook_store(scratch, target)
     builds = {"before": (before, BEFORE), "after": (after, revision)}
@@ -235,7 +236,7 @@ def main():
     target = ROOT / "target"
     with tempfile.TemporaryDirectory(prefix="cost-", dir=scratch) as work:
         if args.target == "mac-metal":
-            record = costs_native(destination, revision, Path(work), target)
+            record = costs_native(destination, revision, Path(work))
         else:
             record = costs_chrome(destination, revision, target)
     write(destination / "summary.json", record)
