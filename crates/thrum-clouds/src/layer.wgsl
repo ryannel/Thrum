@@ -86,12 +86,16 @@ fn cloud_detail(sigma:f32,point:vec3<f32>,footprint:f32,extinction:f32,height:f3
     let air=point.xz/22400.0+vec2(cloud.noise.x,cloud.noise.y);
     let swell=textureSampleLevel(shape_noise,noise_sampler,vec3(air.x,0.31,air.y),
                                  erosion_mip(footprint,175.0)).r;
-    let bank_height=smoothstep(0.20,0.83,swell);
+    let bank_height=smoothstep(0.32,0.68,swell);
     let billow=cloud_bank_billow(point,footprint);
-    let bottom=0.52*bank_height+0.11*billow;
-    let top=1.0-0.40*(1.0-bank_height)*(1.0-bank_height);
-    let shape_weight=smoothstep(0.72*bottom,bottom+0.12,height)
-        *(1.0-smoothstep(top-0.21,top,height));
+    let bottom=0.05+0.59*bank_height+0.08*billow;
+    let top=0.55+0.45*bank_height;
+    let interval=smoothstep(0.78*bottom,bottom+0.12,height)
+        *(1.0-smoothstep(top-0.18,top,height));
+    // Thin the spaces between broad banks so low sight lines can see
+    // through to the next bank rather than meeting a uniform ceiling.
+    let separation=smoothstep(0.20,0.48,swell+0.16*billow);
+    let shape_weight=interval*mix(0.28,1.0,separation);
     return eroded*mix(1.0,shape_weight,bank);
 }
 fn cloud_sun_depths(world:vec3<f32>,start_height:f32)->vec3<f32> {
@@ -228,11 +232,13 @@ fn cloud_bank_light(source:vec3<f32>,solar:vec3<f32>,point:vec3<f32>,sigma:f32,
     let beam=exp(-mix(0.28,0.14,high_sun)*sun_depth);
     let interior=exp(-0.085*sun_depth);
     let billow=smoothstep(0.20,0.79,cloud_bank_billow(point,footprint));
-    let shade=(0.29+0.36*interior+0.38*exposed)*mix(0.61,1.18,billow);
+    let shade=(mix(0.29,0.19,high_sun)+0.36*interior+mix(0.38,0.29,high_sun)*exposed)
+        *mix(0.61,1.18,billow);
     // At noon the Sun lights the inward wall of a gap from above. Keep
     // the wider transmission lobe on exposed walls, with a narrower falloff
     // into the bank so the same light does not wash out its whole underside.
-    let rim=beam*exposed*exposed*(0.095+0.16*high_sun*exposed)*mix(1.0,0.48,distant);
+    let edge_light=1.0-smoothstep(0.075,0.43,sigma/cloud.physical.x);
+    let rim=beam*exposed*exposed*(0.095+0.21*high_sun*exposed*edge_light)*mix(1.0,0.48,distant);
     let glare=1.0-0.70*smoothstep(0.72,0.96,sun_alignment);
     return mix(source,source*shade*glare+solar*rim,bank);
 }
