@@ -5,7 +5,9 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from apple_governor_proof import InvalidDisplayEnvironment, compare_live_load, require_unlocked_display
+from apple_governor_proof import (
+    InvalidDisplayEnvironment, compare_live_load, measure_window, require_unlocked_display,
+)
 from apple_presentation import annotate_display_ticks
 
 
@@ -115,6 +117,39 @@ class GovernorProofTests(unittest.TestCase):
                     with self.assertRaisesRegex(InvalidDisplayEnvironment, "unloaded baseline"):
                         compare_live_load(Path("."), Path("v1-game"), {}, {})
                 arm.assert_called_once_with(Path("."), Path("v1-game"), {}, {}, "steady")
+
+    def test_steady_retries_only_when_fixed_quality_control_cannot_keep_up(self):
+        route = dict(origin_tick=180, keys=[dict(tick=60)], tick_hz=60)
+        failed = dict(directory="steady", display_hz=120, changes=[
+            dict(tick=180 + index, quality=dict(scale=scale))
+            for index, scale in enumerate((100, 85, 75, 67))
+        ])
+        passed = dict(failed, changes=failed["changes"][:1])
+        for misses in (0, 3):
+            with self.subTest(misses=misses), tempfile.TemporaryDirectory() as directory:
+                control = dict(directory="steady-off", display_hz=120, rows=[
+                    dict(world_tick=tick, sequence=tick,
+                         governor=dict(missed_present_proxy=min(tick - 180, misses)))
+                    for tick in range(180, 240)
+                ])
+                with (
+                    patch("apple_governor_proof.require_unlocked_display"),
+                    patch("apple_governor_proof.digest", return_value="binary"),
+                    patch("apple_governor_proof.window_arm", side_effect=[failed, control, passed]) as arm,
+                ):
+                    output = Path(directory)
+                    args = (output, Path("v1-game"), {}, route)
+                    if misses == 0:
+                        with self.assertRaisesRegex(ValueError, "steady route changed scale 3 times"):
+                            measure_window(*args, steady=True)
+                        self.assertEqual(arm.call_count, 2)
+                    else:
+                        report = measure_window(*args, steady=True)
+                        self.assertEqual(report["scale_changes"], 0)
+                        self.assertEqual(len(report["invalid_display_attempts"]), 1)
+                        self.assertIn("steady-off", report["invalid_display_attempts"][0])
+                        self.assertEqual(arm.call_count, 3)
+                    self.assertEqual(arm.call_args_list[1].kwargs, {"enabled": False})
 
 
 if __name__ == "__main__":

@@ -126,7 +126,7 @@ def exceeds_baseline(arm, baseline):
 
 
 class InvalidDisplayEnvironment(ValueError):
-    """Unloaded display delivery could not support a forced-load comparison."""
+    """Unloaded display delivery could not support a governor qualification."""
 
 
 def steady_miss_rate(arm, first, until):
@@ -180,31 +180,49 @@ def mac_governor(output, *, steady=False, capture=False):
 
 def measure_window(output, binary, env, route, *, steady):
     require_unlocked_display()
-    if steady:
-        arm = window_arm(output, binary, env, route, "steady")
-        last_tick = route["origin_tick"] + route["keys"][-1]["tick"]
-        changes = [row for row in arm["changes"] if row["tick"] <= last_tick]
-        if not changes:
-            raise ValueError("no recorded quality")
-        count = sum(a["quality"]["scale"] != b["quality"]["scale"]
-                    for a, b in zip(changes, changes[1:]))
-        if count > 2:
-            raise ValueError(f"steady route changed scale {count} times in {arm['directory']}")
-        return dict(target="mac-metal", extent=LIVE_EXTENT, scale_changes=count, display_hz=arm["display_hz"],
-                    changes=changes, binary_sha256=digest(binary))
-
+    check = check_steady_route if steady else compare_live_load
+    attempts = 5 if steady else 3
     interrupted = []
-    for number in range(1, 4):
+    for number in range(1, attempts + 1):
         attempt = output / f"attempt-{number}"
         attempt.mkdir()
         try:
-            report = compare_live_load(attempt, binary, env, route)
+            report = check(attempt, binary, env, route)
         except InvalidDisplayEnvironment as error:
             interrupted.append(str(error))
         else:
             return dict(report, invalid_display_attempts=interrupted)
     raise InvalidDisplayEnvironment(
-        f"invalid display environment in all forced-load attempts: {interrupted}")
+        f"invalid display environment in all governor attempts: {interrupted}")
+
+
+def check_steady_route(output, binary, env, route):
+    arm = window_arm(output, binary, env, route, "steady")
+    first_tick = route["origin_tick"]
+    last_tick = first_tick + route["keys"][-1]["tick"]
+    changes = [row for row in arm["changes"] if row["tick"] <= last_tick]
+    if not changes:
+        raise ValueError("no recorded quality")
+    count = sum(a["quality"]["scale"] != b["quality"]["scale"]
+                for a, b in zip(changes, changes[1:]))
+    if count > 2:
+        # A failed governor run alone cannot distinguish poor delivery from
+        # unnecessary changes. Check the same unloaded route at fixed quality.
+        control = window_arm(output, binary, env, route, "steady-off", enabled=False)
+        if abs(control["display_hz"] - arm["display_hz"]) > arm["display_hz"] * 0.03:
+            raise InvalidDisplayEnvironment(
+                f"{arm['directory']}: steady refresh {arm['display_hz']} Hz differs from "
+                f"fixed-quality control {control['display_hz']} Hz")
+        tick_hz = route["tick_hz"]
+        for start in range(first_tick, last_tick - tick_hz + 1, tick_hz):
+            try:
+                steady_miss_rate(control, start, start + tick_hz)
+            except InvalidDisplayEnvironment as error:
+                raise InvalidDisplayEnvironment(
+                    f"{arm['directory']}: scale changed {count} times and {error}") from error
+        raise ValueError(f"steady route changed scale {count} times in {arm['directory']}")
+    return dict(target="mac-metal", extent=LIVE_EXTENT, scale_changes=count, display_hz=arm["display_hz"],
+                directory=arm["directory"], changes=changes, binary_sha256=digest(binary))
 
 
 def compare_live_load(output, binary, env, route):
