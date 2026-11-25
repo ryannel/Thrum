@@ -1,6 +1,6 @@
 # Baseline guard: a change to another module's exact reference images is found on main and traced to its commit
 
-11 November 2026, planned again 15 November 2026. [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
+11 November 2026, planned again 15 November 2026; the Wasm record planned 25 November 2026. [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) ·
 [module list](../ARCHITECTURE.md#exact-baselines) · [the brief](../VISION.md). C12 in
 [CONTRACTS](../../design/CONTRACTS.md) governs evidence.
 
@@ -32,6 +32,13 @@ The lead's task for this plan, of 15 November 2026:
 > down to what remains Thrum's own (for example the verify command and the CPU ownership guard), and decide what
 > happens to its in-flight WP2 on branch build/baseline-guard.
 
+The lead's task of 25 November 2026, after three reviews of `GAME-SPLIT` WP3 found the verifier recording the
+hashes of a Wasm file its captures did not run:
+
+> Plan the fix in BASELINE-GUARD as a plan change or its next work package, with an item like: every registered
+> Chrome capture's instantiated Wasm SHA-256 equals the Wasm SHA-256 in the verifier's artifact record. It must
+> not change any retained reference bytes.
+
 ## Purpose and scope
 
 [The module list](../ARCHITECTURE.md#exact-baselines) states the rules. This module builds the parts of them
@@ -54,6 +61,11 @@ that are Thrum's own.
    that read it are removed.
 6. **Scratch that stays bounded** in the checkout the run on main uses.
 
+**Commissioned (WP3):**
+
+7. **A record that names what ran.** The record holds the hashes of the Wasm bundle the Chrome captures drew,
+   and a run fails when a capture instantiated any other.
+
 **Not commissioned:** changing any baseline, comparison or tolerance; toleranced baselines such as the G7
 route's; visual judgement. Scheduling the run on main, its single flight, its retry, the bisect and naming the
 first failing commit are the orchestrate script's, and nothing here repeats them.
@@ -73,6 +85,11 @@ refresh them, stay with each baseline's owner module.
   commit, which turns a silent change into a reviewed one. `cargo build --locked` also refuses a lockfile that
   has lost an entry the manifest still needs, so dropping a pin is no way round it. The reference guard is
   both, for the references and for the set of baselines.
+- **An artifact is named by a digest taken where it is used.** A container deployed by tag can run an image
+  other than the one tested, so a deployment names `image@sha256:…` and the runtime checks what it pulled.
+  SLSA provenance names its subject by digest for the same reason, and Subresource Integrity has the browser
+  check the bytes it fetched against the hash the page states. The Wasm record is the same idea, with the
+  digest taken from the bytes the page compiled.
 - **A narrower proof key was designed and is set aside.** [Later work](#later-work) has the record.
 
 ## Mechanism
@@ -92,17 +109,59 @@ runs it on main's tip in a checkout of its own, kept between runs so the builds 
 `chrome` locks. The verifier:
 
 1. refuses a tree with uncommitted changes, and reports low disk space as its own named failure;
-2. builds the release game, the cooker and the Wasm page;
+2. builds the release game, the cooker and the proving bundle of the Wasm page;
 3. cooks the showcase valley fresh and runs `APPLE-TILE`'s native matrices unchanged;
-4. captures the four Chrome `fixed` runs and compares each with its retained manifest, record by record, by the
-   SHA-256 of each frame's decoded bytes;
+4. captures the four Chrome `fixed` runs from that bundle, requires each to have instantiated the Wasm file the
+   run recorded, and compares each with its retained manifest, record by record, by the SHA-256 of each frame's
+   decoded bytes;
 5. exits non-zero on any difference, naming the baseline, its owner and the comparison;
 6. writes a record of the run, pass or fail: the revision, the content key of the covered paths, the binary and
-   Wasm hashes and the cooked root.
+   Wasm hashes, the Wasm hash each Chrome capture instantiated, and the cooked root.
 
 It takes every input from the checkout and its own fresh outputs. One run takes about 16 minutes
 ([58 passing records](../../../.orchestrate/evidence/BASELINE-GUARD/WP2-replan/proof-regime.md#measured-this-session): native
 matrices 410 s and 369 s, the four Chrome sets about 140 s).
+
+### The Wasm a Chrome capture runs
+
+Since `GAME-SPLIT` WP3 the browser build is two bundles. `examples/v1-game/web/build.sh` builds the **normal
+bundle**, which holds no qualification page or hook, and `build.sh --proving` builds the **proving bundle**,
+which holds them. The capture page is only in the proving bundle, so that is the build every registered Chrome
+baseline draws ([the ruling](../ARCHITECTURE.md#ruling-on-the-wasm-a-chrome-capture-runs)). A capture given no
+web root chooses and builds a bundle itself. The verifier as WP2 left it hashed the normal bundle and let the
+capture choose, so a passing record named a file no capture ran. WP3 builds two things, and needs both.
+
+- **One bundle, handed over.** The verifier builds the proving bundle once, records the SHA-256 of each of its
+  files under `wasm_artifact_hashes`, and gives that folder to each of the four captures as its web root. It
+  builds no other bundle, and the capture makes no choice.
+- **The hash is taken where the Wasm is loaded.** Each capture reports the SHA-256 of the bytes its page handed
+  to WebAssembly, hashed inside the page by `scripts/wasm_receipt.mjs`, which `HOST`'s lifecycle checks already
+  use on this bundle. The verifier compares it with its recorded hash of `v1_game_bg.wasm` and writes it in the
+  record as that comparison's `instantiated_wasm_sha256`. A hash that differs, or a capture that reports none,
+  fails the run with exit 1, naming the baseline and its owner, whatever the pixels did. It is never exit 75: a
+  different executable is a difference, not load.
+
+Handing the folder over makes the two hashes agree today without the second part. The second part is there
+because the fault was a silent choice made between the verifier's hash and the page. A default, a rebuild or a
+cache anywhere on that path would bring it back, and only a hash taken in the page shows it.
+
+Where the bundle is built is the builder's choice. A copy kept in a run's scratch is removed with that run's
+captures, so [the scratch rule](#scratch) keeps its bound.
+
+**Check that it can work.**
+
+- *The fault as found.* The verifier hashes one folder and the capture serves another. The instantiated hash
+  differs from the record's, and the run fails at the first Chrome baseline, by name.
+- *A page that loads its Wasm by a route the receipt does not see.* The capture reports no hash and the run
+  fails. The receipt observes `WebAssembly.instantiate` and `instantiateStreaming`, and
+  [the third review of `GAME-SPLIT` WP3](../../../.orchestrate/evidence/GAME-SPLIT/WP3-review-3/proving-receipt-r3.json)
+  took one from the proving bundle in Chrome. None has been taken from the capture page inside a verifier run,
+  and [the builder's draft](../../../.orchestrate/evidence/GAME-SPLIT/WP3/round-3/exact-receipt-proposal.patch)
+  ran only against stand-ins, so WP3 makes one real run and keeps its record.
+- *Every other caller of the capture.* It reports the hash only when asked, so a capture another module runs
+  builds, serves, draws and writes what it did before.
+- *Cost.* The page hashes one file of under 11 MB, four times a run. The run makes one Wasm build where it made
+  two, the verifier's normal bundle and the capture's own proving bundle.
 
 ### The answer for a commit
 
@@ -204,7 +263,9 @@ kept are the builder's, set from the measured size of a failed run.
 - `python3 scripts/exact_baselines.py verify --full`, under the `gpu` lock: a planned refresh's run on its
   candidate. `GAME-SPLIT` WP4 runs it with `THRUM_GAMES` pointing at nothing.
 - A verifier record's `content_key`, `revision` and hashes, which the rulings on a frame that varies under load
-  and a fixed capture that stalls compare.
+  and a fixed capture that stalls compare. From WP3 its `wasm_artifact_hashes` are the proving bundle's, and
+  each Chrome comparison holds `instantiated_wasm_sha256`. A record of a commit from `c33723d47` on, made
+  before WP3, names the normal bundle there, which Chrome did not draw.
 - The registry's pins and refreshes, which a planned refresh edits for its own baseline under its ruling, and
   which an owner edits when it changes one of its comparison files. Its retired list, for a baseline a ruling
   ends.
@@ -226,6 +287,10 @@ kept are the builder's, set from the measured size of a failed run.
 - A candidate that is not drawn. The files that only produce a candidate (the game, the cooker, the capture
   scripts) are what the run on main tests, and no pin covers them. One changed to emit the reference instead of
   drawing is a reviewer's to find.
+- A capture changed to report a Wasm hash it did not take from the page. The comparison of the two hashes is in
+  the verifier, which is pinned. The measurement is in the capture script and `scripts/wasm_receipt.mjs`, which
+  produce the candidate and are not. A reviewer finds it.
+- A fault in the normal bundle. No registered baseline draws it; what it ships is `GAME-SPLIT`'s to check.
 - A change outside the repository: macOS, the GPU driver, Chrome, Node or `wasm-bindgen`. Main then fails for a
   cause no commit holds, and the script cannot tell. Its bisect trusts the last recorded pass without running it
   again and halves the commits after it, so when every one of them now fails it names the first commit after
@@ -276,9 +341,12 @@ guard in `./dev check`, a tree read and two reads of the registry. The times are
 - No tolerance, nearest-frame search, retry inside a run or skipped record, for any reason.
 - Do not change `scripts/apple_tile_m0.py`, `apple_tile_m1.py` or `apple_tile_m2.py`,
   `scripts/compare_v1_pixels.py`, the byte mode of the Chrome comparator, `scripts/capture_v1_browser.mjs` or
-  `examples/v1-game/web/build.sh`. They belong to other modules.
+  `examples/v1-game/web/build.sh`. They belong to other modules. WP3 has one exception, by
+  [the ruling](../ARCHITECTURE.md#ruling-on-the-wasm-a-chrome-capture-runs): the capture reports the
+  instantiated Wasm hash when asked, and is otherwise as it was.
 - In the registry, add to the existing baselines only their comparison files, pins and refreshes. Their other
-  fields, and which baselines are registered, stay as they are.
+  fields, and which baselines are registered, stay as they are. WP3 changes the five pins and refreshes and
+  nothing else there.
 - Do not change what `verify` without `--full` answers or the item text other modules carry, and do not edit
   `ORCHESTRATE.md`: the settings line is the planner's.
 - Tests of the guard and any demonstration of a merge run against a scratch repository whose remote is a local
@@ -288,4 +356,6 @@ guard in `./dev check`, a tree read and two reads of the registry. The times are
 
 `mac-metal` and `chrome-webgpu`. A `verify --full` run a builder makes holds the `gpu` lock. Scratch goes in
 `tmp/baseline-guard/`; selected evidence in `.orchestrate/evidence/BASELINE-GUARD/`. The guard's tests build small Git
-repositories of their own, so they run offline and need no GPU.
+repositories of their own, so they run offline and need no GPU. A work package that changes what the verifier
+runs, as WP3 does, makes one `verify --full` run on its candidate before it merges, as a planned refresh does,
+and keeps that run's record in the evidence folder.

@@ -256,3 +256,18 @@
   retained references are kept, after `SHOWCASE` M9 moved them to test fixtures on the lead's ruling. In the
   registry a relocation changes `reference`, the matching `covered_paths` and, through the paths, each `pin`
   and `refresh`. The guard and the verifier are as they were. No item of this module changed.
+
+- 2026-11-25 Three reviews of `GAME-SPLIT` WP3 found, outside its items, that a passing verifier record names a
+  Wasm file no capture ran. Since `c33723d47` a capture given no web root builds and serves the proving bundle,
+  and the verifier still builds and hashes the normal one.
+  [The third review](../../../.orchestrate/evidence/GAME-SPLIT/WP3-review-3.md) measured `5f62545d…` against
+  `710c305c…` instantiated. No image moved and no reference is stale.
+- 2026-11-25 Planned as WP3 on the lead's task, with
+  [a ruling](../ARCHITECTURE.md#ruling-on-the-wasm-a-chrome-capture-runs) in the module list. The verifier
+  builds the proving bundle once, hands it to each Chrome capture, and fails a run whose capture did not
+  instantiate the Wasm file it recorded. No reference or definition changes.
+  [Planning notes](../../../.orchestrate/evidence/BASELINE-GUARD/WP3-plan/README.md)
+- 2026-11-25 Planner's decisions: the real run is the builder's, once, before the merge, and WP3.2 checks its
+  kept record; the capture script and `scripts/wasm_receipt.mjs` stay outside the pins; two assumptions were
+  added to the plan; no owner's ruling was needed. The planning notes give the reasons.
+- 2026-11-25 WP2's section in the plan shrank to its heading and review link, as a Done work package's does.

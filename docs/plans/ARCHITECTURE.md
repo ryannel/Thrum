@@ -1182,6 +1182,61 @@ a loaded machine and to exit 75 when it is incomplete.
 - **Not part of this.** `.orchestrate/evidence/APPLE-TILE/WP10/window-proof.py` ending "CUA app selection timed out" is
   a wait for a computer-use action in the attended window proof. It stays with `APPLE-TILE` WP10's sitting.
 
+<a id="ruling-on-the-wasm-a-chrome-capture-runs"></a>
+
+**Ruling on the Wasm a Chrome capture runs (with `GAME-SPLIT`, `T2-CAPTURE`, `APPLE-TILE` and `BASELINE-GUARD`),
+25 November 2026.** `GAME-SPLIT` WP3 split the browser build in two. `examples/v1-game/web/build.sh` builds the
+**normal bundle**, which holds no qualification page or hook, and `build.sh --proving` builds the **proving
+bundle**, which holds them. From `c33723d47` a capture given no web root builds and serves the proving bundle.
+The verifier still builds and hashes the normal bundle and gives the capture no web root, so a passing run
+records the hashes of a Wasm file that no capture ran. Three reviews of `GAME-SPLIT` WP3 found it:
+[the second](../../.orchestrate/evidence/GAME-SPLIT/WP3-review-2.md), finding 2;
+[the third](../../.orchestrate/evidence/GAME-SPLIT/WP3-review-3.md), finding 1, which measured `5f62545d…`
+for the normal bundle against `710c305c…` instantiated; and the fourth, of 25 November at `45f660d5d`, which
+passed all five items and failed WP3 on this alone. WP3's builder had changed the verifier to follow the split,
+met the reference guard, put the verifier back in `14c3adb4e` and wrote
+[a proposal](../../.orchestrate/evidence/GAME-SPLIT/WP3/round-3/exact-receipt-proposal.patch), as rule 1 asks.
+
+- **What it is.** A fault in the record, not in a comparison. Every image compared was drawn by the proving
+  bundle and compared exactly, no reference is stale, and no exact image went unguarded.
+- **Which build the registered baselines draw.** The one with `proving` on, on both targets. By
+  [track 4's ruling 11](#seam-rulings-for-track-4) the references are drawn through the proving ground with
+  `proving` on by default, and the capture page is compiled only there. The native binary is built with default
+  features, so it has `proving` on already. No registered baseline draws the normal bundle. What that bundle
+  ships is `GAME-SPLIT` WP3.3's to check.
+- **Whose it is.** The verifier is `BASELINE-GUARD`'s, and the work is its WP3. `GAME-SPLIT` owes nothing: its
+  WP3 left the verifier as it found it and is judged on its own items, and from this ruling on a reviewer does
+  not hold this fault against it. `APPLE-TILE` gains no work package and no item.
+- **What WP3 builds.** The verifier builds the proving bundle once, records the SHA-256 of each of its files,
+  and gives that folder to each of the four registered Chrome captures. Each capture reports the SHA-256 of the
+  bytes its page handed to WebAssembly, taken inside the page. The verifier compares that with its recorded hash
+  of the Wasm file and writes it in the record against the baseline. A hash that differs or is missing fails the
+  run, naming the baseline and its owner. [`BASELINE-GUARD`'s design](BASELINE-GUARD/DESIGN.md#the-wasm-a-chrome-capture-runs)
+  has the mechanism.
+- **What WP3's builder changes in other modules' files, and nothing else there.** In `T2-CAPTURE`'s
+  `scripts/capture_v1_browser.mjs`: a capture that is asked to reports that hash, by `scripts/wasm_receipt.mjs`
+  as `HOST`'s lifecycle checks take it. A capture that is not asked builds, serves, draws and writes what it did
+  before. In `T2-CAPTURE`'s `scripts/test_capture_unjudged.py`: the stand-in for the verifier's web build
+  follows the bundle the verifier now builds, and no assertion changes. `examples/v1-game/web/build.sh` and
+  `scripts/wasm_receipt.mjs` are used as they are.
+- **What does not change.** Every retained reference file keeps its Git blob. Each baseline keeps its
+  definition: identity, owner, scene, source, reference, candidate, comparison, record count and lists of
+  comparison files. The comparison scripts other than the verifier, the sampling and the exactness stay as they
+  are. The verifier does not retry inside a run, accept a nearer frame, skip a record or compare within a
+  tolerance, and a Wasm hash that differs is a failure, never exit 75. What `verify` without `--full` answers
+  does not change.
+- **The registry.** The verifier is a comparison file of all five baselines, so every pin changes and no
+  reference moves. The builder copies the pins the guard prints and sets each `refresh` to
+  `ruling-on-the-wasm-a-chrome-capture-runs`, `BASELINE-GUARD` and `WP3`, in the landing that changes the
+  verifier. There are no reference hashes to record.
+- **Records made before WP3 lands.** A run on a commit from `c33723d47` on, made by the verifier as it is,
+  names the normal bundle under `wasm_artifact_hashes`. Its comparisons stand. Its Wasm hashes identify nothing
+  that Chrome drew, and nobody cites them for that. [Load variation](#a-frame-that-varies-under-load) pairs runs
+  by content key, which is not affected.
+- **Everyone else.** Nothing is owed. `GAME-SPLIT` WP4 still has the verifier hand on `THRUM_GAMES`, by ruling
+  11. Whichever of the two work packages lands second copies the pins the guard prints and keeps its own
+  refresh, as for any rebase over a changed comparison file.
+
 Exact tests that hold no retained references (a culled mode against Direct, the cooked direct path against its
 reference, paused frames against each other) come under rule 1: they belong to the module that owns the output.
 
@@ -3165,3 +3220,8 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   Orchestrate refuses `main-check` from an item check. The lead's working assumption is that the scheduled
   `exact-images` run and the merge-time reference guard suffice for ordinary landings. Planned refreshes
   and verifier-specific qualifications keep their own proofs.
+- 2026-11-25 [Exact baselines](#ruling-on-the-wasm-a-chrome-capture-runs) gained a ruling on the Wasm a Chrome
+  capture runs, after three reviews of `GAME-SPLIT` WP3 found the verifier recording the hashes of the normal
+  bundle while the captures drew the proving bundle. `BASELINE-GUARD` gained WP3: the record names the Wasm
+  each capture instantiated, and a run fails when it differs. No reference, definition or other module's
+  dependency or open item changed. `GAME-SPLIT` WP3 is not held for the fault.

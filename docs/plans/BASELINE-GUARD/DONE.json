@@ -150,6 +150,47 @@
           "review": ".orchestrate/evidence/BASELINE-GUARD/WP2-review.md"
         }
       ]
+    },
+    {
+      "id": "WP3",
+      "name": "A passing exact-image record names the Wasm file that Chrome ran, and a run whose capture ran another fails",
+      "status": "not_started",
+      "quality_bar": "A deployment pinned by digest, as `image@sha256:…` is: the record names the executable by a hash taken where it was loaded, and a run that loaded anything else fails by name.",
+      "items": [
+        {
+          "id": "WP3.1",
+          "statement": "In a `verify --full` run the verifier builds one Wasm bundle, the proving bundle, records the SHA-256 of each of its files, and gives that folder to each of the four registered Chrome captures as its web root. For each capture it compares the SHA-256 the capture reports for the Wasm bytes its page instantiated with the recorded SHA-256 of `v1_game_bg.wasm`. When all four are equal the run can pass, and the record holds the reported hash against each baseline. When one differs, or one capture reports none, the run exits 1, names that baseline and its owner, and its record is not a pass.",
+          "check": "python3 scripts/test_exact_baselines.py WasmIdentityTests",
+          "ask": "Read the verifier, the capture and the tests. Is the hash a capture reports taken inside the page from the bytes handed to WebAssembly, and not from the file on disk or the served file's hash? Does the verifier itself compare it, for every registered Chrome baseline, with the hash it recorded from the folder it gave that capture? Do the tests drive the verifier's real `verify` (stand-in child processes are fine) through the three cases: all equal, one different, one missing? Is any build or hash of the normal bundle left in the verifier, or any flag, environment variable or exit 75 by which a run with a different or missing hash is not a failure?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP3.2",
+          "statement": "One `verify --full` run on a clean checkout of this work package's candidate passes all five registered baselines, and its record is kept as `.orchestrate/evidence/BASELINE-GUARD/WP3/record.json`. In that record, for each of the four registered Chrome baselines, the Wasm SHA-256 the capture page instantiated equals the record's SHA-256 of `v1_game_bg.wasm`.",
+          "check": "python3 -c 'import json; r=json.load(open(\".orchestrate/evidence/BASELINE-GUARD/WP3/record.json\")); ids=[b[\"id\"] for b in json.load(open(\".config/exact-baselines.json\"))[\"baselines\"] if \"scene\" in b]; w=r[\"wasm_artifact_hashes\"][\"v1_game_bg.wasm\"]; assert r[\"passed\"] is True and len(r[\"baselines\"])==5 and len(ids)==4 and len(w)==64 and all(r[\"comparisons\"][i][\"instantiated_wasm_sha256\"]==w for i in ids)'",
+          "ask": "Read the record and the logs kept with it. Is its revision a commit of this work package, on a clean tree? Do its commands show one Wasm build, of the proving bundle, and that folder given to each of the four captures? Is each comparison's instantiated hash the one its capture wrote, and not copied from the verifier's own hash of the file?",
+          "target": "chrome-webgpu",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP3.3",
+          "statement": "This work package changes nothing that is drawn or compared. Every retained reference file keeps its Git blob. Each of the five registry entries keeps its definition, and only its pin and its refresh change, the refresh naming `ruling-on-the-wasm-a-chrome-capture-runs`, `BASELINE-GUARD` and `WP3`. The comparison scripts other than the verifier are untouched. A capture that is not asked for the instantiated hash builds, serves, draws and writes what it did before.",
+          "check": "python3 scripts/exact_baselines.py guard",
+          "ask": "Read this work package's diff. Is every file under the registered references unchanged, and does the registry differ only in the five pins and refreshes? In `scripts/capture_v1_browser.mjs`, is reporting the instantiated hash the only change, and does a run that does not ask for it take the path it took before, with the same default bundle and the same manifest fields? In `scripts/test_capture_unjudged.py`, did only the stand-in for the verifier's web build change, with every assertion as it was? Are `examples/v1-game/web/build.sh`, `scripts/wasm_receipt.mjs`, the native matrices and the Chrome comparator untouched?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
     }
   ]
 }
