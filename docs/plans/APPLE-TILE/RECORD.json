@@ -653,12 +653,12 @@
       }
     },
     "WP13": {
-      "definitions": "166c517cd0882b67651a653e930bbbe6d43d0fa5b7f64f9656a493439759d87e",
+      "definitions": "be42ae397f55a6612e763cfc1b82ddbb6cc59273d81db7143eb7a4a895c55529",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "APPLE-PRESENTATION WP8 needs something no plan provides yet. The builder wrote: APPLE-TILE must supply the reusable `Nat",
-        "at": "2026-11-25T13:45:55Z"
+        "task": "The design review of APPLE-TILE at .orchestrate/evidence/APPLE-TILE/design-review.md asked for changes, with its 2 Must ",
+        "at": "2026-11-25T13:57:05Z"
       },
       "ends_stretch": true
     }
@@ -710,11 +710,15 @@
     {
       "task": "APPLE-PRESENTATION WP8 needs something no plan provides yet. The builder wrote: APPLE-TILE must supply the reusable `NativeProvider` interface, or the planner must assign its extraction to WP8. The builder's handoff, .orchestrate/evidence/APPLE-PRESENTATION/WP8-handoff.md, says what is finished, what was tried and what to do first. Its work is on branch build/apple-presentation at 2252c56af21c, which isn't merged; read it with `git show`. A plan you keep ends with `KEEP APPLE-PRESENTATION WP8: builder: <where the plan provides it>`.",
       "at": "2026-11-25T13:45:55Z"
+    },
+    {
+      "task": "The design review of APPLE-TILE at .orchestrate/evidence/APPLE-TILE/design-review.md asked for changes, with its 2 Must Fix findings.",
+      "at": "2026-11-25T13:57:05Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-25T13:45:55Z"
+    "at": "2026-11-25T13:57:05Z"
   },
   "design_history": [
     {
