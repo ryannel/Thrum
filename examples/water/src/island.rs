@@ -408,7 +408,7 @@ fn build_island(
         .slider(
             "camera.island",
             if surf_route {
-                "Sand/Beach/Sea/Lee/Headland/Island/Out/Handoff/Approach"
+                "Sand/Beach/Sea/Lee/Point/Map/Out/Foam/Approach"
             } else if foam {
                 "Beach / Lake / Pond / Hill / Map / Sill / Aerial"
             } else {
