@@ -18,6 +18,8 @@ pub enum SunProofGeometry {
     Fast,
     /// A low caster that clears a still ambient receiver for the rest of the take.
     Ambient,
+    /// The cooked balloon stopped with its basket at the lookout terrain.
+    GroundedBalloon,
     /// An open shell and a panel in one mesh.
     Joined,
     /// The same open shell and panel in separate instances.
@@ -28,6 +30,10 @@ const FAST_SLOT: usize = 1499;
 const SHELL_SLOT: usize = 5080;
 const PANEL_SLOT: usize = SHELL_SLOT + 1;
 const SHELL_POSITION: [f32; 3] = [0.0, 242.0, -5.0];
+const LOOKOUT_BALLOON_SCALE: f32 = 1.6;
+// The shipped terrain at (0.4, -12.0) is 239.96193 m. The basket's foot
+// is 0.87 model units below its origin.
+const LOOKOUT_BALLOON_POSITION: [f32; 3] = [0.4, 241.353_93, -12.0];
 
 impl SunProofGeometry {
     fn shell(self) -> bool {
@@ -35,6 +41,9 @@ impl SunProofGeometry {
     }
 
     pub(crate) fn position(self, index: usize) -> Option<[f64; 3]> {
+        if self == Self::GroundedBalloon && index == FAST_SLOT {
+            return Some(LOOKOUT_BALLOON_POSITION.map(f64::from));
+        }
         (self.shell() && (index == SHELL_SLOT || (self == Self::Separate && index == PANEL_SLOT)))
             .then(|| SHELL_POSITION.map(f64::from))
     }
@@ -45,7 +54,8 @@ impl SunProofGeometry {
         }
         match self {
             Self::Fast => Some(Drift([-0.8, 241.4, -13.4], [2.8, 0.0, 0.45], 42, 0)),
-            Self::Ambient => Some(Drift([-29.0, 241.4, -13.4], [31.0, 0.0, 0.0], 360, 0)),
+            Self::Ambient => Some(Drift([-29.0, 240.12, -13.4], [31.0, 0.0, 0.0], 360, 0)),
+            Self::GroundedBalloon => None,
             _ => authored,
         }
     }
@@ -72,6 +82,21 @@ impl SunProofGeometry {
             scene.instances[FAST_SLOT] = caster;
             Arc::make_mut(scene.meshes.as_mut().expect("valley meshes")).slots[FAST_SLOT] =
                 SyntheticMeshChoice::Cube;
+        } else if self == Self::GroundedBalloon {
+            let mut balloon = instance(scene, FAST_SLOT);
+            for (axis, basis) in glam::Mat3::IDENTITY
+                .to_cols_array_2d()
+                .into_iter()
+                .enumerate()
+            {
+                balloon.current[axis][..3]
+                    .copy_from_slice(&basis.map(|v| v * LOOKOUT_BALLOON_SCALE));
+                balloon.normal[axis][..3]
+                    .copy_from_slice(&basis.map(|v| v / LOOKOUT_BALLOON_SCALE));
+            }
+            balloon.current[3][..3].copy_from_slice(&LOOKOUT_BALLOON_POSITION);
+            balloon.previous = balloon.current;
+            scene.instances[FAST_SLOT] = balloon;
         } else if self.shell() {
             self.prepare_shell(scene);
         }

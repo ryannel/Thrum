@@ -800,7 +800,7 @@ mod temporal_tests {
         }
         expected[228..232].copy_from_slice(&7_u32.to_le_bytes());
         assert_eq!(record, expected);
-        let source = super::super::scene_source::compose(false, false);
+        let source = super::super::scene_source::compose(false, false, false);
         let module = wgpu::naga::front::wgsl::parse_str(&source).unwrap();
         for (name, span, offsets) in [
             (

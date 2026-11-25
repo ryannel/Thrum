@@ -135,14 +135,14 @@ pub(super) fn cloud_variant(source: String, variant: crate::shaders::CloudVarian
     }
 }
 
-#[cfg(test)]
 fn compose_with_cloud(
     atmosphere: bool,
     air_shadow: bool,
     cloud: bool,
     shadowed: SunShadows,
+    ambient: bool,
 ) -> String {
-    apply_providers(compose(atmosphere, air_shadow), cloud, shadowed)
+    apply_providers(compose(atmosphere, air_shadow, ambient), cloud, shadowed)
 }
 
 fn apply_providers(source: String, cloud: bool, shadowed: SunShadows) -> String {
@@ -164,12 +164,11 @@ fn apply_providers(source: String, cloud: bool, shadowed: SunShadows) -> String 
 }
 
 /// The forward WGSL for a scene with or without the atmosphere and its aerial shadow.
-#[cfg(test)]
-pub(super) fn compose(atmosphere: bool, air_shadow: bool) -> String {
+pub(super) fn compose(atmosphere: bool, air_shadow: bool, ambient: bool) -> String {
     compose_aerial(
         atmosphere,
         air_shadow::aerial_source(atmosphere, air_shadow),
-        false,
+        ambient,
     )
 }
 
@@ -271,12 +270,12 @@ pub(crate) fn main_source(variant: crate::shaders::SceneVariant) -> String {
             variant.shadows,
         )
     } else {
-        let atmosphere = variant.atmosphere.present();
-        let aerial = air_shadow::aerial_source(atmosphere, variant.atmosphere.air_shadow());
-        apply_providers(
-            compose_aerial(atmosphere, aerial, variant.ambient),
+        compose_with_cloud(
+            variant.atmosphere.present(),
+            variant.atmosphere.air_shadow(),
             variant.cloud.present(),
             variant.shadows,
+            variant.ambient,
         )
     };
     let source = cloud_variant(source, variant.cloud);
@@ -312,7 +311,7 @@ mod tests {
                 let selection =
                     ShadowSelection::resolve(sun, lamps, RayStructureSelection::Enabled);
                 let source = super::traced(
-                    compose_with_cloud(true, true, false, shadows),
+                    compose_with_cloud(true, true, false, shadows, false),
                     shadows,
                     selection,
                     sun == SunShadowMethod::Traced,
@@ -339,6 +338,7 @@ mod tests {
                     atmosphere && shadowed,
                     false,
                     SunShadows::from(shadowed),
+                    false,
                 );
                 let module = naga::front::wgsl::parse_str(&source).expect("WGSL");
                 let info = naga::valid::Validator::new(

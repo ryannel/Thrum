@@ -287,11 +287,12 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
         #[cfg(feature = "proving")]
         sun_proof_geometry: match launch_value("THRUM_SUN_PROOF_GEOMETRY").as_deref() {
             Err(std::env::VarError::NotPresent) | Ok("off") => crate::SunProofGeometry::Off,
+            Ok("grounded-balloon") if content == crate::GameContent::Exit => crate::SunProofGeometry::GroundedBalloon,
             Ok("ambient") if content == crate::GameContent::Exit => crate::SunProofGeometry::Ambient,
             Ok("fast") if content == crate::GameContent::Exit => crate::SunProofGeometry::Fast,
             Ok("joined") if content == crate::GameContent::Exit => crate::SunProofGeometry::Joined,
             Ok("separate") if content == crate::GameContent::Exit => crate::SunProofGeometry::Separate,
-            _ => return Err("THRUM_SUN_PROOF_GEOMETRY requires off or an exit scene selection: fast, ambient, joined or separate".to_owned()),
+            _ => return Err("THRUM_SUN_PROOF_GEOMETRY requires off or an exit scene selection: fast, ambient, grounded-balloon, joined or separate".to_owned()),
         },
         #[cfg(feature = "proving")]
         lamp_shadows: match launch_value("THRUM_LAMP_SHADOWS").as_deref() {
