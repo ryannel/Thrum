@@ -527,7 +527,7 @@
           "target": "chrome-webgpu",
           "evidence": ".orchestrate/evidence/RENDER-2D/WP4/review-repair/chrome/inspection.md",
           "builder_result": "pass",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/RENDER-2D/WP4-review.md",
           "inspect": "Use the same Chrome edit that the check qualifies. Take T2 engine capture in realtime mode from moving frames before the save through the first submitted frame using the new sheet and the following motion. Review at 1x with the save time, monotonic submission times, committed ticks, view motion and skipped-opportunity records aligned to the switch. Does the scene keep moving through fetch and staging without a visible pause relative to the pre-save interval? A gap in submissions must remain visible in elapsed-time playback."
         },
@@ -547,7 +547,7 @@
           "ask": "Does a folder and description written from the documentation alone cook and draw as it says, at the claimed commit?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/RENDER-2D/WP4/review-repair/guide/inspection.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/RENDER-2D/WP4-review.md",
           "builder_result": "pass"
         }
@@ -555,24 +555,8 @@
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
-      "quality_bar": "Sprite import as in Godot's or Unity's atlas workflow from Aseprite, without a restart or a hitch: save the art and the running game shows it a moment later, never half-swapped and never with the wrong picture on a sprite. A bad save leaves the last good art on screen and says why.",
-      "findings": [
-        {
-          "name": "The Chrome sprite page refuses the cooked store before loading it",
-          "item": "WP4.8",
-          "repeat": false
-        },
-        {
-          "name": "The sheet guide links to a Chrome launch that cannot draw",
-          "item": "WP4.10",
-          "repeat": false
-        },
-        {
-          "name": "Cooked scenes omit world ordering from the reported ordering time",
-          "repeat": false
-        }
-      ]
+      "status": "done",
+      "quality_bar": "Sprite import as in Godot's or Unity's atlas workflow from Aseprite, without a restart or a hitch: save the art and the running game shows it a moment later, never half-swapped and never with the wrong picture on a sprite. A bad save leaves the last good art on screen and says why."
     },
     {
       "id": "WP5",
