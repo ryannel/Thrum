@@ -1784,7 +1784,7 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
     // Wait for document unload before Target.closeTarget can race Browser.close.
     await unloadGamePage(cdp, sessionId, timeout);
     log('WebGPU page unloaded');
-    const result = { case: mode, ...(noCompile && { commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repo, encoding: 'utf8' }).trim() }), url, state, actualWasmSha256, responseStatus: 200, input, pause, controls, tabs, params, loss, recovery, sky, material, oracle, route, exit, timeline, scope: oracle?.scope ?? scope };
+    const result = { case: mode, ...(noCompile && { commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repo, encoding: 'utf8' }).trim() }), url: noCompile ? url + cullingQuery : url, state, actualWasmSha256, responseStatus: 200, input, pause, controls, tabs, params, loss, recovery, sky, material, oracle, route, exit, timeline, scope: oracle?.scope ?? scope };
     await fs.writeFile(path.join(output, `${mode}.json`), JSON.stringify(result, null, 2));
     log(`PASS actualWasmSha256=${actualWasmSha256}`);
     return result;
@@ -1870,7 +1870,7 @@ async function qualifyMovingRoute(cdp, sessionId, poll, timeout, output, files, 
   await fs.writeFile(path.join(output, 'moving-route.record.json'), JSON.stringify(record, null, 2));
   if (mode === 'no-compile') {
     const [ready, finished] = record.compile_creations ?? [];
-    if (!ready || !finished || ready.createShaderModule <= 0 ||
+    if (record.header.reconstruction !== 'Taau' || !ready || !finished || ready.createShaderModule <= 0 ||
         ready.createComputePipeline + ready.createComputePipelineAsync <= 0 ||
         ready.createRenderPipeline + ready.createRenderPipelineAsync <= 0 ||
         JSON.stringify(ready) !== JSON.stringify(finished)) {
