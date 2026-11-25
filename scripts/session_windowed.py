@@ -389,4 +389,22 @@ def package_motion(images, frames, raw, output):
     shutil.rmtree(png)
     raw.unlink()
     return {**movie, "clip": os.path.relpath(output / "preview-1x.mp4", ROOT),
-            "extent": EXTENT, "seconds": records[-1]["submit_ns"] / 1e9}
+            "extent": EXTENT, "seconds": records[-1]["submit_ns"] / 1e9,
+            "submission_intervals": submission_intervals(images)}
+
+
+def submission_intervals(images):
+    """Report elapsed submission gaps, including named events and any missed display opportunities."""
+    ordered = sorted(images, key=lambda row: row["submit_ns"])
+    intervals = sorted(
+        ((current["submit_ns"] - previous["submit_ns"], previous, current)
+         for previous, current in zip(ordered, ordered[1:])),
+        key=lambda interval: interval[0],
+    )
+    count = len(intervals)
+    return {"count": count, "median_ns": intervals[count // 2][0],
+            "p99_ns": intervals[(count - 1) * 99 // 100][0],
+            "longest": [{"elapsed_ns": gap, "from_submission": previous["submission"],
+                         "to_submission": current["submission"], "from_position": frame_position(previous),
+                         "to_position": frame_position(current), "to_frame_cpu_ns": current["frame_cpu_ns"]}
+                        for gap, previous, current in intervals[:-6:-1]]}
