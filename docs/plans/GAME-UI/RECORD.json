@@ -151,7 +151,7 @@
         {
           "verdict": "fail",
           "commit": "631e7746fcc9fb302427ce4b39c046f3bee7dc8a",
-          "review": ".orchestrate/evidence/GAME-UI/WP2-review.md",
+          "review": ".orchestrate/evidence/GAME-UI/WP2-review-1.md",
           "items": {
             "WP2.1": "pass",
             "WP2.2": "pass",
@@ -209,6 +209,50 @@
             "turns": 1
           },
           "at": "2026-11-25T21:53:06Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "578af4aaaae14330e4cb69ecf622805d2a4aadab",
+          "review": ".orchestrate/evidence/GAME-UI/WP2-review.md",
+          "items": {
+            "WP2.1": "pass",
+            "WP2.2": "pass",
+            "WP2.3": "pass",
+            "WP2.4": "pass",
+            "WP2.5": "pass",
+            "WP2.6": "pass",
+            "WP2.7": "pass",
+            "WP2.8": "fail",
+            "WP2.9": "pass",
+            "WP2.10": "pass",
+            "WP2.11": "pass",
+            "WP2.12": "pass",
+            "WP2.13": "pass"
+          },
+          "findings": [
+            {
+              "name": "A refused font edit publishes the proposed grid binding changes",
+              "item": "WP2.8",
+              "different": "The late runtime layout refusal now passes. This failure occurs in the cooker before residency sees the edit, when a rejected grid filename changes the public manifest.",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 117722,
+            "cached": 4199168,
+            "output": 10006,
+            "turns": 1
+          },
+          "at": "2026-11-25T22:36:09Z"
         }
       ],
       "authorised": {

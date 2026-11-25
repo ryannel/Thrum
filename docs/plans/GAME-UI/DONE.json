@@ -147,10 +147,10 @@
     {
       "id": "WP2",
       "name": "Text is drawn from a cooked font, every glyph crisp at 1\u00d7, 2\u00d7 and 3\u00d7, and an edited font shows in the running game",
-      "failed_reviews": 1,
-      "failed_reviews_with_repeat": 0,
+      "failed_reviews": 2,
+      "failed_reviews_with_repeat": 1,
       "diagnoses": 0,
-      "status": "ready_for_review",
+      "status": "in_progress",
       "quality_bar": "Text as crisp as the system draws the same face at the same size: each glyph on screen is exactly the bitmap rasterised for that size and scale, as in Dear ImGui or a browser at 100% zoom, and never a resampled one. A pixel font as clean as the status text of Vampire Survivors or Celeste: square texels at a whole-number scale. Spacing as even and steady as a browser's: no pair collides or gapes, accents sit on their letters, and a number that counts never shivers.",
       "items": [
         {
@@ -203,7 +203,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/GAME-UI/WP2/revision/metal.log",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/GAME-UI/WP2-review.md",
           "builder_result": "pass"
         },
@@ -237,10 +237,10 @@
           "ask": "Does the edit keep the cooked size and widen the advances, as from 8 to 12 pixels for two glyphs in a 16-pixel box, so that new glyphs at old offsets would overlap and leave the box? Is every submitted frame of the edit captured and compared with both fresh references, and not only the settled one, while a value in the text keeps changing? Does the test discard the switch frame once, and show that a refused publication leaves no prepared layout behind?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/GAME-UI/WP2/revision/metal.log",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GAME-UI/WP2-review.md",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "WP2.9",
@@ -249,7 +249,7 @@
           "lock": "chrome",
           "target": "chrome-webgpu",
           "evidence": ".orchestrate/evidence/GAME-UI/WP2/revision/chrome/interface-text.json",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/GAME-UI/WP2-review.md",
           "builder_result": "pass"
         },
@@ -261,7 +261,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/GAME-UI/WP2/revision/costs/summary.json",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/GAME-UI/WP2-review.md",
           "builder_result": "pass"
         },
@@ -298,27 +298,9 @@
       ],
       "findings": [
         {
-          "name": "A live font refusal after initial readiness is ignored",
+          "name": "A refused font edit publishes the proposed grid binding changes",
           "item": "WP2.8",
-          "repeat": false
-        },
-        {
-          "name": "Adding a font removes unrelated sibling assets from the manifest",
-          "repeat": false
-        },
-        {
-          "name": "Chrome font edit leaves the old and new glyph sheets identical",
-          "item": "WP2.9",
-          "repeat": false
-        },
-        {
-          "name": "Metal glyph comparison allows a one-code error on opaque texels",
-          "item": "WP2.5",
-          "repeat": false
-        },
-        {
-          "name": "Font cost check accepts a missing outline sheet measurement",
-          "item": "WP2.10",
+          "different": "The late runtime layout refusal now passes. This failure occurs in the cooker before residency sees the edit, when a rejected grid filename changes the public manifest.",
           "repeat": false
         }
       ]
