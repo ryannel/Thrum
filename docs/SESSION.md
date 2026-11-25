@@ -150,6 +150,8 @@ animation-frame timestamps to `WebShell::frame_game`, and pass actual visibility
 `WebShell::set_visible`. A hidden tab stops polling its driver. When it is shown, the session can resume,
 skip the backlog or install a repair baseline. Show `take_stall` and `take_skip` records as appropriate in the
 game. The frame host evaluates the sample at display time and clamps it at the latest committed endpoint.
+A stall can come from a missing set or an exhausted step budget. `take_stall` reports its duration and sets
+`work_cap` when the step budget held playout, including when the driver chose a smaller cap than the match.
 
 The reference runs on Mac and Chrome with A0 relay conditioning and shares the standalone Crowd scene.
 The standalone view keeps its ordinary clock. [Reference driver](../examples/match-proof/src/windowed.rs)

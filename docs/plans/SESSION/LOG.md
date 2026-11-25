@@ -280,3 +280,9 @@
   for 1.717 seconds and regained 10.3 ticks. The previous review take fails that sustained-travel check.
   The buffered burst, named skip, and Chrome hidden-tab return passed on their targets.
   [Review fix and current captures](../../../.orchestrate/evidence/SESSION/WP7/recovery/README.md)
+
+- 2026-11-25 The playout clock now recognizes the driver's effective step cap. The public-API regression
+  commits one buffered tick, reports the work-cap hold, and resumes at a bounded rate. The native proof sends
+  records to a bounded writer off the render thread. Two Mac T2 takes preserved 1.100× catch-up and reduced the
+  longest joined submission gaps from 88–128 ms in the review to 24–36 ms.
+  [Cadence inspection and work-cap test](../../../.orchestrate/evidence/SESSION/WP7/cadence/README.md)
