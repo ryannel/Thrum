@@ -19,6 +19,7 @@ mod temporal;
 
 pub(crate) const TRACE: &str = "cloud trace";
 pub(crate) const COMPOSE: &str = "cloud compose";
+const BANK_NOISE_PERIOD: f64 = 22_400.0;
 
 /// Resolution and march controls, independent of the authoritative weather.
 #[derive(Clone, Copy, Debug)]
@@ -74,6 +75,7 @@ struct Uniform {
     render_extent: [u32; 2],
     temporal: [u32; 4],
     noise: [f32; 4],
+    bank_noise: [f32; 4],
     inverse_raster: [[f32; 4]; 4],
     previous_raster: [[f32; 4]; 4],
 }
@@ -363,6 +365,14 @@ impl Layer {
                 (anchor[1].rem_euclid(SHAPE_PERIOD) / SHAPE_PERIOD) as f32,
                 (anchor[0].rem_euclid(DETAIL_PERIOD) / DETAIL_PERIOD) as f32,
                 (anchor[1].rem_euclid(DETAIL_PERIOD) / DETAIL_PERIOD) as f32,
+            ],
+            // This octave needs its own wrapped phase when the weather
+            // anchor moves. The shape-noise phase uses a different period.
+            bank_noise: [
+                (anchor[0].rem_euclid(BANK_NOISE_PERIOD) / BANK_NOISE_PERIOD) as f32,
+                (anchor[1].rem_euclid(BANK_NOISE_PERIOD) / BANK_NOISE_PERIOD) as f32,
+                BANK_NOISE_PERIOD as f32,
+                0.0,
             ],
             inverse_raster: glam::Mat4::from_cols_array_2d(&frame.view_proj)
                 .inverse()

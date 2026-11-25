@@ -83,7 +83,7 @@ fn cloud_detail(sigma:f32,point:vec3<f32>,footprint:f32,extinction:f32,height:f3
     // Vary the visible ceiling and underside independently of the weather
     // column bounds. Adjacent skies retain the same condensation level for
     // column queries. The longer bank scale avoids a row of equal shelves.
-    let air=point.xz/22400.0+vec2(cloud.noise.x,cloud.noise.y);
+    let air=point.xz/cloud.bank_noise.z+cloud.bank_noise.xy;
     let swell=textureSampleLevel(shape_noise,noise_sampler,vec3(air.x,0.31,air.y),
                                  erosion_mip(footprint,175.0)).r;
     let bank_height=smoothstep(0.32,0.68,swell);
