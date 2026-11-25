@@ -278,7 +278,8 @@ impl<G: Game> Actor<G> {
                     Ok(report) => {
                         let mut failure = None;
                         if !self.gpu.watch.is_lost() {
-                            for sample in &mut reply.samples {
+                            for sample in reply.samples.iter_mut().filter(|sample| sample.is_none())
+                            {
                                 match self.host.poll_completed() {
                                     Ok(next) => *sample = next,
                                     Err(error) => {
@@ -413,6 +414,25 @@ impl<G: Game> Actor<G> {
         self.host
             .governor_display_tick(now, request.platform.display_tick);
         let lead = display_target_lead(request.target_media_seconds, CACurrentMediaTime());
+        if ready && !self.host.has_free_slot() {
+            // A callback can arrive while an older packet is retiring. Give
+            // it the part of this opportunity that encoding can spare.
+            let deadline = Instant::now() + lead.duration.saturating_sub(Duration::from_millis(3));
+            let mut samples = reply.samples.iter_mut();
+            while !self.host.has_free_slot() && Instant::now() < deadline {
+                ensure_running(&self.stopped)?;
+                if let Some(completed) = self.host.poll_completed()? {
+                    let Some(sample) = samples.next() else { break };
+                    *sample = Some(completed);
+                } else if !self.host.has_free_slot() {
+                    std::thread::sleep(
+                        Duration::from_micros(250)
+                            .min(deadline.saturating_duration_since(Instant::now())),
+                    );
+                }
+            }
+        }
+        let lead = display_target_lead(request.target_media_seconds, CACurrentMediaTime());
         reply.target_status = Some(lead.status);
         self.host.set_presentation_lead(lead.duration);
         if !ready {
@@ -438,7 +458,7 @@ impl<G: Game> Actor<G> {
         if let Some(proof) = &mut self.transition_proof {
             proof.stage("advancing the world and polling GPU completions");
         }
-        let advanced = self.host.advance(now)?;
+        let advanced = self.host.advance(self.origin.elapsed())?;
         if !advanced.can_acquire_serial() {
             let report = advanced.submit(None)?;
             reply.platform.surface_status = if report.overload.is_some() {
