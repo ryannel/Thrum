@@ -274,3 +274,9 @@
 - The game-owned driver supplies bounded committed advances and a display-time sample. The native and browser Crowd proofs use the shared renderer and the standalone view keeps its fixed clock.
 - Verified 120 equal digests across 3,600 ticks in each A0 socket run. The Mac relay recorded a buffered burst, a hold and a skip. Chrome returned from a hidden tab through named skips. Both 640×360 realtime captures were complete and reviewed against the standalone view.
 - The guide covers wiring a driver into both shells. The rendered checks record function and motion on one Mac. [Proofs and motion](../../../.orchestrate/evidence/SESSION/WP7/README.md)
+
+- 2026-11-25 The inline replica now admits buffered sets through the upcoming display target while polling the
+  link and authoring input at observation time. The Mac T2 take held at tick 597, then submitted 1.100× playout
+  for 1.717 seconds and regained 10.3 ticks. The previous review take fails that sustained-travel check.
+  The buffered burst, named skip, and Chrome hidden-tab return passed on their targets.
+  [Review fix and current captures](../../../.orchestrate/evidence/SESSION/WP7/recovery/README.md)
