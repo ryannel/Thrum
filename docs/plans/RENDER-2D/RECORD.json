@@ -604,9 +604,9 @@
         "at": "2026-11-24T22:06:49Z"
       },
       "ready_for_review": {
-        "commit": "081256d11ddf73ac85d8204eae64967aa820fe01",
-        "checked": "4a70a6d919b4a53c9002a3b6b714fefcbcecd6db",
-        "at": "2026-11-25T00:50:35Z",
+        "commit": "e833d96af6fa77e859e4533958dd1282fdcb74d5",
+        "checked": "e833d96af6fa77e859e4533958dd1282fdcb74d5",
+        "at": "2026-11-25T02:17:36Z",
         "reused": [
           "WP3.5"
         ],
@@ -620,16 +620,16 @@
         "cli": "codex-cli 0.171.0-alpha.13",
         "path": "headless",
         "usage": {
-          "input": 337247,
-          "cached": 48524032,
-          "output": 74121,
-          "turns": 2
+          "input": 329133,
+          "cached": 47479040,
+          "output": 89825,
+          "turns": 1
         },
         "session_usage": {
-          "input": 3593017,
-          "cached": 540749824,
-          "output": 738135,
-          "turns": 14
+          "input": 3922150,
+          "cached": 588228864,
+          "output": 827960,
+          "turns": 15
         }
       }
     },
