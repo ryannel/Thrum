@@ -236,10 +236,8 @@ fn reflected_sky(slope:vec2<f32>,covariance:vec3<f32>,v:vec3<f32>)->vec4<f32> {
     if use_sheet_normal {
         // Interpolate normals of the displaced rest sheet before adding the
         // fine ripple slopes. The depth test still selects the nearest branch.
-        // Keep the horizontal orientation as the lip passes through vertical.
-        // The filtered sky still uses a slope in the upper hemisphere.
-        let vertical = max(abs(surf_normal.y), length(surf_normal) * 0.03 + 1e-20);
-        slope += -surf_normal.xz / vertical;
+        let up = select(-surf_normal, surf_normal, surf_normal.y >= 0.0);
+        slope += -up.xz / max(up.y, length(up) * 0.03 + 1e-20);
     }
     var whitewater=vec4(0.0);
     if FOAM_ENABLED {
