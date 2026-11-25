@@ -95,6 +95,10 @@ const RECORD: u8 = 1;
 const STOP: u8 = 2;
 
 impl Output {
+    #[expect(
+        clippy::print_stderr,
+        reason = "surface worker I/O failures in the proof process log"
+    )]
     fn new(path: &Path, control: Option<PathBuf>) -> std::io::Result<Self> {
         let file = File::create(path)?;
         let (rows, incoming) = mpsc::sync_channel(1024);
