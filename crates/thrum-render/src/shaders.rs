@@ -452,6 +452,7 @@ macro_rules! shader_catalog {
             Scene(SceneVariant),
             SecondaryScene(SceneVariant),
             ViewVolume(bool, CloudVariant, bool, u32),
+            AtmosphereOverlayDiffuse(bool, CloudVariant),
             GroundBandExposure(CloudVariant),
             WorldLightExposure(CloudVariant),
         }
@@ -464,6 +465,7 @@ macro_rules! shader_catalog {
                     Self::WorldLightExposure(variant) => crate::synthetic::exposure::world_light_source(variant).into(),
                     Self::Scene(variant) => crate::synthetic::scene_source::main_source(variant).into(),
                     Self::ViewVolume(cascades, cloud, medium, near) => crate::atmosphere::gpu::view_volume::source(cascades, cloud, medium, near).into(),
+                    Self::AtmosphereOverlayDiffuse(haze, cloud) => crate::atmosphere::overlay::diffuse_source(haze, cloud).into(),
                     Self::SecondaryScene(variant) => crate::synthetic::secondary::composed_source(variant).into(),
                 }
             }
@@ -581,6 +583,7 @@ shader_catalog! {
                 wgsl!("atmosphere/sky.wgsl")
             );
     AtmosphereReflection => crate::atmosphere::reflection::cube_source();
+    AtmosphereOverlayReflection => crate::atmosphere::overlay::reflection_source();
     AtmosphereDfg => crate::atmosphere::reflection::dfg_source();
 }
 
@@ -658,6 +661,26 @@ fn secondary_visibility_source() -> String {
 #[doc(hidden)]
 pub fn composed_sources() -> Vec<(&'static str, Cow<'static, str>)> {
     let mut sources: Vec<_> = fixed_sources().collect();
+    sources.push((
+        "AtmosphereOverlayDiffuse",
+        Shader::AtmosphereOverlayDiffuse(false, CloudVariant::Absent).source(),
+    ));
+    for cloud in [
+        CloudVariant::Absent,
+        CloudVariant::Sampled,
+        CloudVariant::Gpu,
+        CloudVariant::SampledGround,
+        CloudVariant::GpuGround,
+    ] {
+        sources.push((
+            "AtmosphereOverlayDiffuse",
+            Shader::AtmosphereOverlayDiffuse(true, cloud).source(),
+        ));
+        sources.push((
+            "WorldLightExposure",
+            Shader::WorldLightExposure(cloud).source(),
+        ));
+    }
     for variant in [CloudVariant::SampledGround, CloudVariant::GpuGround] {
         sources.push((
             "GroundBandExposure",

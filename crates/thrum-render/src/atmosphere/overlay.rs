@@ -1,6 +1,6 @@
 //! Physical sky radiance for the optional world-light producers.
 
-use crate::shaders::wgsl;
+use crate::shaders::{CloudVariant, Shader, wgsl};
 
 const EDGE: u32 = 48;
 // Store physical radiance with headroom for the bright sky near the Sun.
@@ -79,11 +79,12 @@ pub(super) fn prepare_diffuse(
     (directional, cloud): (&wgpu::Buffer, Option<&super::CloudPrepared>),
 ) -> (wgpu::ComputePipeline, wgpu::BindGroup) {
     let haze = target.lighting == Lighting::OverlayAndHaze;
+    let variant = cloud.map_or(CloudVariant::Absent, super::CloudPrepared::variant);
     let diffuse = pipeline(
         device,
         "atmosphere overlay diffuse irradiance",
         "diffuse_main",
-        diffuse_source(haze, cloud),
+        Shader::AtmosphereOverlayDiffuse(haze, variant),
     );
     let mut entries = vec![
         buffer(0, uniform),
@@ -110,22 +111,25 @@ pub(super) fn prepare_diffuse(
 }
 
 pub(super) fn prepare_reflection(device: &crate::runtime::DeviceSite) -> wgpu::ComputePipeline {
-    let integrate = wgsl!(@reflection_integrate
-        "            radiance+=vec4(prepared.w*overlay_radiance(direction,textureSampleLevel(reflection_sky,reflection_sampler,uv,0.0),reflection_sampler)/OVERLAY_REFLECTION_GAIN,0.0);\n");
-    let source = with_reflection_gain(&format!(
-        "{}\n{}",
-        super::reflection::cube_source_with(integrate),
-        include_str!("overlay.wgsl")
-    ));
     pipeline(
         device,
         "atmosphere overlay specular prefilter",
         "reflection_main",
-        source,
+        Shader::AtmosphereOverlayReflection,
     )
 }
 
-fn diffuse_source(haze: bool, cloud: Option<&super::CloudPrepared>) -> String {
+pub(crate) fn reflection_source() -> String {
+    let integrate = wgsl!(@reflection_integrate
+        "            radiance+=vec4(prepared.w*overlay_radiance(direction,textureSampleLevel(reflection_sky,reflection_sampler,uv,0.0),reflection_sampler)/OVERLAY_REFLECTION_GAIN,0.0);\n");
+    with_reflection_gain(&format!(
+        "{}\n{}",
+        super::reflection::cube_source_with(integrate),
+        include_str!("overlay.wgsl")
+    ))
+}
+
+pub(crate) fn diffuse_source(haze: bool, cloud: CloudVariant) -> String {
     let diffuse = wgsl!(@diffuse_producer concat!(
         include_str!("diffuse_nodes.wgsl"),
         include_str!("overlay_diffuse.wgsl"),
@@ -143,8 +147,8 @@ fn diffuse_source(haze: bool, cloud: Option<&super::CloudPrepared>) -> String {
         wgsl!("directional_light.wgsl"),
         include_str!("overlay_haze.wgsl")
     );
-    if let Some(cloud) = cloud {
-        source.push_str(&cloud.variant().sampling_source_for(0, "atmosphere"));
+    if cloud.present() {
+        source.push_str(&cloud.sampling_source_for(0, "atmosphere"));
         source.push_str("\nfn overlay_sun_factor() -> f32 { return cloud_factor(atmosphere.camera_altitude.xyz); }\n");
     } else {
         source.push_str("\nfn overlay_sun_factor() -> f32 { return 1.0; }\n");
@@ -190,12 +194,9 @@ fn pipeline(
     device: &crate::runtime::DeviceSite,
     name: &str,
     entry: &str,
-    source: String,
+    shader: Shader,
 ) -> wgpu::ComputePipeline {
-    let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-        label: Some(name),
-        source: wgpu::ShaderSource::Wgsl(source.into()),
-    });
+    let module = shader.compile(device, name);
     device.compute(&wgpu::ComputePipelineDescriptor {
         label: Some(name),
         layout: None,
