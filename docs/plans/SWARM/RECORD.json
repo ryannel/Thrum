@@ -34,21 +34,21 @@
       }
     },
     "WP2": {
-      "definitions": "dacb6f9f100c88c213c619e7a248a69068c6624f390ad90b8b24fd22a374c567",
+      "definitions": "c8ae22942877637591ff4150c01ccf7504baa9bed557d4ed1871191c99b26d54",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
-        "at": "2026-11-24T22:06:49Z"
+        "task": "Plan a new module: Thrum's game SDK, the public interface game developers and coding agents use to build new games.",
+        "at": "2026-11-25T20:45:01Z"
       }
     },
     "WP3": {
-      "definitions": "d97c948c1442fd5c15a8c3550d2fb7379a7967a46dc01cab0b173a2450a4c1cc",
+      "definitions": "40495a25246a25395a7778a123e28f55bd07c4ffbe77edb2b8346d359786ae33",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
-        "at": "2026-11-24T22:06:49Z"
+        "task": "Plan a new module: Thrum's game SDK, the public interface game developers and coding agents use to build new games.",
+        "at": "2026-11-25T20:45:01Z"
       }
     },
     "WP4": {
@@ -61,21 +61,21 @@
       }
     },
     "WP5": {
-      "definitions": "c2c5492f4188602968fe18827d652e1f2b58960f5a7425337b6d81fd669ff0e4",
+      "definitions": "b001d04048d9a746b0fcfe31d0b12480ae6c430903d1e5a9927d804b06271457",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
-        "at": "2026-11-24T22:06:49Z"
+        "task": "Plan a new module: Thrum's game SDK, the public interface game developers and coding agents use to build new games.",
+        "at": "2026-11-25T20:45:01Z"
       }
     },
     "WP6": {
-      "definitions": "f09bfc9153581e9897654c577fe09b3c250cab5fbcad2297715fa0ae80d6017e",
+      "definitions": "b459ec141dbb0456251d1843d64bbbc748ab499e0b835a78983c8c13ecbfa60b",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
-        "at": "2026-11-24T22:06:49Z"
+        "task": "Plan a new module: Thrum's game SDK, the public interface game developers and coding agents use to build new games.",
+        "at": "2026-11-25T20:45:01Z"
       }
     },
     "WP7": {
@@ -134,11 +134,15 @@
     {
       "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TRACING WP4.10, SESSION WP5.10, WATERS WP13.13, RENDER-2D WP3.11 and WP3.13, GAME-SPLIT, GAME-UI, PUDDLES, RIVERS, SWARM, SHOWCASE and others) check with `python3 scripts/exact_baselines.py verify`, which without --full delegates to `agent_loop.py main-check exact-images`; orchestrate refuses any item check that invokes main-check, so each of those work packages blocks (CLOUDS WP7 and RAY-TRACING WP4 have, and REPO-RULES WP5 already had its copy removed). Fix this once for the whole project rather than per module.\n\nThe lead's assumption, which the owner can overturn: the registered main-branch check `exact-images` (ORCHESTRATE.md) already guards that no baseline moves after every merge, and the owner wants fast merges with long proofs on main, not in each work package. So remove these items where nothing else in the work package depends on them, or replace them with something the work package can show before the merge, such as a check that it changed no registered baseline or comparison file. Do not make each work package run `verify --full`. Change scripts/exact_baselines.py in its owning module only if that is the cleaner fix. Put CLOUDS WP7 and RAY-TRACING WP4 first, since their builders have finished and wait only on this.",
       "at": "2026-11-24T22:06:49Z"
+    },
+    {
+      "task": "Plan a new module: Thrum's game SDK, the public interface game developers and coding agents use to build new games.\n\nThe owner's request, in their words: \"What I would like you to plan is a high end, intuitive, expressive, readable, SDK that game developers can use to build new games. this should be what V1 uses ideally and what we will use to build the swarm game. It's VITAL that we get this right as it's the entire interface that developers and coding agents will use to build a variety of games. It's the front of the product we're building. So it needs to be as intuitive, well documented and easy to use as possible.\"\n\nThe owner's decisions (25 Nov 2026), in their words: \"V1 first, Rust only, I'll approve the design.\"\n- V1 first: the V1 exit does not wait for the SDK. V1 lands on today's API; SDK work packages then move the showcase (examples/v1-game) onto the SDK, and the swarm game (docs/design/NEXT-GOAL-SWARM-GAME.md) is built on it from the start. Order the SDK's dependencies so no V1-path work package (APPLE-PRESENTATION WP8-WP12, SHOWCASE WP7-WP8, RAY-TRACING WP6, GAME-SPLIT WP4, MESH-SHADING WP3) waits on it.\n- Rust only: games are written in Rust. No scripting layer.\n- The owner approves the SDK design before any builder starts. Say so in the design and plan, and end your report with what the owner should look at to approve it.\n\nOutcome: a developer or agent who has never seen Thrum builds a small 3D game, a small 2D game and a networked game from the SDK's documentation alone, and the code reads as plainly as the game it describes. One structure and one vocabulary across 2D, 3D, single-player and multiplayer; good-looking defaults; mistakes that explain themselves; every public item documented with an example. The SDK is the front door over the engine's existing modules (render, atmosphere, controls, assets and hot reload, profiler, GAME-UI, RENDER-2D, SESSION, TRANSPORT, sim2d); it does not leak their internals, and it keeps the hardware-native performance policy (docs/design/AI-PERFORMANCE.md, docs/design/decisions/HARDWARE-NATIVE-ENGINE.md).\n\nWhat the design must settle and show: the game structure (app, scenes, entities/objects, systems or behaviours), the lifecycle against the fixed tick and the frame host, input actions, the scene and rendering surface, assets, UI, 2D and 3D under one model, multiplayer as an opt-in, errors, and documentation (reference, guides, templates). Show it with worked examples: real games written against the proposed API (at least the swarm game's core loop, a slice of the V1 showcase and a small starter), so the owner judges the API by reading game code. Research how current engines and frameworks do this (for example Bevy, Godot, Unity, Unreal, Fyrox, macroquad) and choose by what serves Thrum best, with your reasons; prefer modern, state-of-the-art approaches. Physics, animation and audio: say whether they belong in this module's first release, and bring that to the owner as a decision rather than assuming.\n\nPointers: the existing SDK ambition and creator path in docs/design/ENGINE-EXPERIENCE.md, FIRST-USE-WALKTHROUGHS.md, FROM-SCRATCH-WALKTHROUGHS.md, SCENARIO-WALKTHROUGHS.md and ARCHITECTURE-DECISIONS.md (evidence to judge, not a template); the CREATOR and GAME-SPLIT modules, which overlap and must be reconciled in the module list; the C4 contracts in docs/design/CONTRACTS.md; .config/architecture.toml for crate registration. Use the glossary's terms and propose new names where needed.",
+      "at": "2026-11-25T20:45:01Z"
     }
   ],
   "planner": {
-    "host": "codex",
-    "at": "2026-11-24T22:06:49Z"
+    "host": "claude",
+    "at": "2026-11-25T20:45:01Z"
   },
   "design_history": [
     {

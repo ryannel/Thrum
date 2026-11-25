@@ -1,0 +1,35 @@
+{
+  "module": "GAME-SDK",
+  "design": null,
+  "work_packages": {
+    "WP1": {
+      "definitions": "e475b45b869dbaeceebfbc7bf1d720162a6714c9897109cbcd11dc8c0fce53c9",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan a new module: Thrum's game SDK, the public interface game developers and coding agents use to build new games.",
+        "at": "2026-11-25T20:45:01Z"
+      }
+    },
+    "WP2": {
+      "definitions": "d71c389f288c3927e98b4b7f3746f35fdddc9002af6a35add3097c963e528dac",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan a new module: Thrum's game SDK, the public interface game developers and coding agents use to build new games.",
+        "at": "2026-11-25T20:45:01Z"
+      },
+      "ends_stretch": true
+    }
+  },
+  "tasks": [
+    {
+      "task": "Plan a new module: Thrum's game SDK, the public interface game developers and coding agents use to build new games.\n\nThe owner's request, in their words: \"What I would like you to plan is a high end, intuitive, expressive, readable, SDK that game developers can use to build new games. this should be what V1 uses ideally and what we will use to build the swarm game. It's VITAL that we get this right as it's the entire interface that developers and coding agents will use to build a variety of games. It's the front of the product we're building. So it needs to be as intuitive, well documented and easy to use as possible.\"\n\nThe owner's decisions (25 Nov 2026), in their words: \"V1 first, Rust only, I'll approve the design.\"\n- V1 first: the V1 exit does not wait for the SDK. V1 lands on today's API; SDK work packages then move the showcase (examples/v1-game) onto the SDK, and the swarm game (docs/design/NEXT-GOAL-SWARM-GAME.md) is built on it from the start. Order the SDK's dependencies so no V1-path work package (APPLE-PRESENTATION WP8-WP12, SHOWCASE WP7-WP8, RAY-TRACING WP6, GAME-SPLIT WP4, MESH-SHADING WP3) waits on it.\n- Rust only: games are written in Rust. No scripting layer.\n- The owner approves the SDK design before any builder starts. Say so in the design and plan, and end your report with what the owner should look at to approve it.\n\nOutcome: a developer or agent who has never seen Thrum builds a small 3D game, a small 2D game and a networked game from the SDK's documentation alone, and the code reads as plainly as the game it describes. One structure and one vocabulary across 2D, 3D, single-player and multiplayer; good-looking defaults; mistakes that explain themselves; every public item documented with an example. The SDK is the front door over the engine's existing modules (render, atmosphere, controls, assets and hot reload, profiler, GAME-UI, RENDER-2D, SESSION, TRANSPORT, sim2d); it does not leak their internals, and it keeps the hardware-native performance policy (docs/design/AI-PERFORMANCE.md, docs/design/decisions/HARDWARE-NATIVE-ENGINE.md).\n\nWhat the design must settle and show: the game structure (app, scenes, entities/objects, systems or behaviours), the lifecycle against the fixed tick and the frame host, input actions, the scene and rendering surface, assets, UI, 2D and 3D under one model, multiplayer as an opt-in, errors, and documentation (reference, guides, templates). Show it with worked examples: real games written against the proposed API (at least the swarm game's core loop, a slice of the V1 showcase and a small starter), so the owner judges the API by reading game code. Research how current engines and frameworks do this (for example Bevy, Godot, Unity, Unreal, Fyrox, macroquad) and choose by what serves Thrum best, with your reasons; prefer modern, state-of-the-art approaches. Physics, animation and audio: say whether they belong in this module's first release, and bring that to the owner as a decision rather than assuming.\n\nPointers: the existing SDK ambition and creator path in docs/design/ENGINE-EXPERIENCE.md, FIRST-USE-WALKTHROUGHS.md, FROM-SCRATCH-WALKTHROUGHS.md, SCENARIO-WALKTHROUGHS.md and ARCHITECTURE-DECISIONS.md (evidence to judge, not a template); the CREATOR and GAME-SPLIT modules, which overlap and must be reconciled in the module list; the C4 contracts in docs/design/CONTRACTS.md; .config/architecture.toml for crate registration. Use the glossary's terms and propose new names where needed.",
+      "at": "2026-11-25T20:45:01Z"
+    }
+  ],
+  "planner": {
+    "host": "claude",
+    "at": "2026-11-25T20:45:01Z"
+  }
+}
