@@ -115,7 +115,7 @@ struct CoarseGpu {
 
 impl CoarseScratch {
     fn new(gpu: &CoarseGpu, size: u64) -> Self {
-        let buffer = buffer(
+        let lattice = buffer(
             &gpu.device,
             "water query coarse lattice",
             size,
@@ -133,7 +133,7 @@ impl CoarseScratch {
             entries: &[
                 wgpu::BindGroupEntry {
                     binding: 0,
-                    resource: buffer.as_entire_binding(),
+                    resource: lattice.as_entire_binding(),
                 },
                 wgpu::BindGroupEntry {
                     binding: 1,
@@ -142,7 +142,7 @@ impl CoarseScratch {
             ],
         });
         Self {
-            buffer,
+            buffer: lattice,
             group,
             count,
         }
