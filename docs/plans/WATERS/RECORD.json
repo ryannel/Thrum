@@ -1409,7 +1409,7 @@
         {
           "verdict": "fail",
           "commit": "25a5fe3cf9ec383935dc30671f6cd00e36e04529",
-          "review": ".orchestrate/evidence/WATERS/WP8-review.md",
+          "review": ".orchestrate/evidence/WATERS/WP8-review-3.md",
           "items": {
             "WP8.1": "pass",
             "WP8.2": "pass",
@@ -1452,6 +1452,53 @@
             "turns": 1
           },
           "at": "2026-11-25T21:46:01Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "da8af84db847d171e921930b11bbc82075576bd3",
+          "review": ".orchestrate/evidence/WATERS/WP8-review.md",
+          "items": {
+            "WP8.1": "pass",
+            "WP8.2": "pass",
+            "WP8.3": "pass",
+            "WP8.4": "pass",
+            "WP8.5": "fail",
+            "WP8.6": "pass",
+            "WP8.7": "pass",
+            "WP8.12": "pass",
+            "WP8.9": "fail",
+            "WP8.10": "pass"
+          },
+          "findings": [
+            {
+              "name": "The reflected hillside has a straight seam in its screen-edge fade",
+              "item": "WP8.5",
+              "different": "The bright cutouts at the hidden pine crossings have subsided. This seam crosses unobstructed hillside reflection near the left screen edge, where the mapped bank contribution switches on or off.",
+              "repeat": false
+            },
+            {
+              "name": "Chrome shows a straight seam in the noon lake screen-edge fade",
+              "item": "WP8.9",
+              "different": "The earlier blue holes surrounded hidden tree trunks. This line is at the screen margin away from the trees. Changing only the bank blend in a hardware Chrome diagnostic removes it.",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 116646,
+            "cached": 2874240,
+            "output": 11617,
+            "turns": 1
+          },
+          "at": "2026-11-25T22:36:43Z"
         }
       ],
       "authorised": {
