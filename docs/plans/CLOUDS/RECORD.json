@@ -21,7 +21,11 @@
       "output": 2751,
       "turns": 1
     },
-    "at": "2026-11-23T15:15:14Z"
+    "at": "2026-11-23T15:15:14Z",
+    "items_owed": [
+      "WP19",
+      "WP20"
+    ]
   },
   "work_packages": {
     "WP1": {
@@ -831,7 +835,7 @@
       }
     },
     "WP7": {
-      "definitions": "28c1968b8be0d2571530d829340e68d0134532075c0c5f559ebd82dc4a48f8ca",
+      "definitions": "2e4ef0d4a6271cae2044f452bd70a8a501ff672b7392aa88a1db953a5a81a792",
       "reviews": [
         {
           "verdict": "fail",
@@ -1016,34 +1020,8 @@
       ],
       "authorised": {
         "by": "plan",
-        "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
-        "at": "2026-11-24T22:06:49Z"
-      },
-      "ready_for_review": {
-        "commit": "4f5a9469d642167952719f6d2912b3cecb79a6ee",
-        "checked": "b4ffe59638d43a87548ed7f2629fad27eb2a64e9",
-        "at": "2026-11-25T07:47:05Z",
-        "host": "codex",
-        "model": "gpt-6.2-sol",
-        "effort": "medium",
-        "observed": {
-          "model": "gpt-6.2-sol",
-          "effort": "medium"
-        },
-        "cli": "codex-cli 0.171.0-alpha.13",
-        "path": "visible",
-        "usage": {
-          "input": 401556,
-          "cached": 79182976,
-          "output": 97795,
-          "turns": 2
-        },
-        "session_usage": {
-          "input": 401556,
-          "cached": 79182976,
-          "output": 97795,
-          "turns": 2
-        }
+        "task": "CLOUDS WP7 has failed review four times, three on WP7.4 (the ordinary 1920x1080 window holds 120 Hz targets during wind ",
+        "at": "2026-11-25T08:39:28Z"
       }
     },
     "WP8": {
@@ -1083,12 +1061,12 @@
       }
     },
     "WP12": {
-      "definitions": "b3fdaf4a4e2043998ebc16d40099e22dc132fd16b7a614dc6d1baa129aeaff2f",
+      "definitions": "e0efe71319e67f0a7213eb81a6a366a08e3da8756b313b45e9da9842291020bc",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
-        "at": "2026-11-24T22:06:49Z"
+        "task": "CLOUDS WP7 has failed review four times, three on WP7.4 (the ordinary 1920x1080 window holds 120 Hz targets during wind ",
+        "at": "2026-11-25T08:39:28Z"
       },
       "ends_stretch": true
     },
@@ -1368,6 +1346,24 @@
         "checked": "29272be51e08154569aa94c6f9a570461d6c536e",
         "at": "2026-11-23T16:44:10Z"
       }
+    },
+    "WP19": {
+      "definitions": "b1bae0acdb7c4a8af173d6a91cb0a2b21e318938a0a281a214ab3c5657dfc2c8",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "CLOUDS WP7 has failed review four times, three on WP7.4 (the ordinary 1920x1080 window holds 120 Hz targets during wind ",
+        "at": "2026-11-25T08:39:28Z"
+      }
+    },
+    "WP20": {
+      "definitions": "3f7ac697fd9dd2b00135ce752a2af2ed2041de416cd7f6e9a81a0a1ef27b3a77",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "CLOUDS WP7 has failed review four times, three on WP7.4 (the ordinary 1920x1080 window holds 120 Hz targets during wind ",
+        "at": "2026-11-25T08:39:28Z"
+      }
     }
   },
   "tasks": [
@@ -1478,11 +1474,15 @@
     {
       "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TRACING WP4.10, SESSION WP5.10, WATERS WP13.13, RENDER-2D WP3.11 and WP3.13, GAME-SPLIT, GAME-UI, PUDDLES, RIVERS, SWARM, SHOWCASE and others) check with `python3 scripts/exact_baselines.py verify`, which without --full delegates to `agent_loop.py main-check exact-images`; orchestrate refuses any item check that invokes main-check, so each of those work packages blocks (CLOUDS WP7 and RAY-TRACING WP4 have, and REPO-RULES WP5 already had its copy removed). Fix this once for the whole project rather than per module.\n\nThe lead's assumption, which the owner can overturn: the registered main-branch check `exact-images` (ORCHESTRATE.md) already guards that no baseline moves after every merge, and the owner wants fast merges with long proofs on main, not in each work package. So remove these items where nothing else in the work package depends on them, or replace them with something the work package can show before the merge, such as a check that it changed no registered baseline or comparison file. Do not make each work package run `verify --full`. Change scripts/exact_baselines.py in its owning module only if that is the cleaner fix. Put CLOUDS WP7 and RAY-TRACING WP4 first, since their builders have finished and wait only on this.",
       "at": "2026-11-24T22:06:49Z"
+    },
+    {
+      "task": "CLOUDS WP7 has failed review four times, three on WP7.4 (the ordinary 1920x1080 window holds 120 Hz targets during wind drift). Seven of eight items pass. Latest review (.orchestrate/evidence/CLOUDS/WP7-review.md): the launch-path fix landed and the fast arm improved, but the matched runs missed targets, including the 90-degree turn. Note the reviewer's runs were on a shared machine ('other work continued'): still air held only 0.125 s while 40 m/s 60x held 32.6 s and clouds-absent 44.8 s, which looks more like contention than cloud cost. The reviewer also found the cadence report samples the target before encode/acquire/submit, so it can overstate streaks. Decide why it keeps failing and what changes: whether WP7.4 needs an exclusive-GPU measurement protocol (gpu lock held, other visible runs excluded) to be judgeable at all, whether the cadence report must record target vs actual submission time, and whether the turn needs a stage-time diagnosis before more repair. Keep the bar: the player's ordinary game holds the display's refresh with clouds drifting; don't weaken it to a bounded or capped run.",
+      "at": "2026-11-25T08:39:28Z"
     }
   ],
   "planner": {
-    "host": "codex",
-    "at": "2026-11-24T22:06:49Z"
+    "host": "claude",
+    "at": "2026-11-25T08:39:28Z"
   },
   "design_history": [
     {

@@ -930,10 +930,10 @@
     {
       "id": "WP7",
       "name": "The sky runs from clear through fair and broken to overcast and back, and its clouds drift, form, grow and thin",
-      "status": "in_progress",
-      "failed_reviews": 4,
-      "failed_reviews_with_repeat": 3,
-      "diagnoses": 0,
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 1,
       "depends_on": [],
       "quality_bar": "Weather as in Red Dead Redemption 2: each sky recognisable at a glance, turning into the next the way real weather does, with clouds that live and die and none that pops, slides or returns on a beat.",
       "items": [
@@ -942,10 +942,10 @@
           "statement": "Under each of the four presets, from 2 m and from 40 m, at noon and at a 15\u00b0 Sun, the sky reads as that sky to the horizon: clear has no cloud; fair has scattered cumulus; broken has connected lumpy banks with irregular gaps and bright gap edges; overcast is a continuous low ceiling with soft relief and the Sun hidden.",
           "inspect": "Capture `fixed` stills for each preset, height and Sun. Judge contact sheets by preset, then native-size crops overhead, in the middle distance and at the horizon.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP7/r3/fixed-weather.md",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/CLOUDS/WP7-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP7.2",
@@ -953,20 +953,20 @@
           "check": "cargo test --locked --offline -p v1-game --test clouds_clear_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP7/r3/item-checks.log",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/CLOUDS/WP7-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP7.3",
           "statement": "As the weather moves from clear to fair, to broken, to overcast and back to clear, a minute each, the sky changes with no pop, step or restart. No cloud switches on or off; a deck closes by thickening and by its gaps closing.",
           "inspect": "Capture a `realtime` sequence of the four changes from 40 m at noon. Judge consecutive frames at 1x across each change, whole and in native-size crops overhead.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP7/r3/WP7.3-metal-cycle.md",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/CLOUDS/WP7-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP7.4",
@@ -975,18 +975,18 @@
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
-          "verdict": "fail",
-          "review": ".orchestrate/evidence/CLOUDS/WP7-review.md"
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP7.5",
           "statement": "At 8x and at 60x, a cloud followed through its life is born, rises and thins away. Nothing reappears where it stood on a beat, a deck's gaps do not open and close in step, and nothing pops.",
           "inspect": "Capture `realtime` sequences at 8x and at 60x under the fair and the broken presets, from 40 m, each long enough to hold whole lives. Judge consecutive frames, following at least three clouds from birth to death, and then the whole frame for any rhythm.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP7/r3/WP7.5-metal-lifetimes.md",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/CLOUDS/WP7-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP7.6",
@@ -994,20 +994,20 @@
           "check": "cargo test --locked --offline -p thrum-clouds --test weather_range_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP7/r3/WP7.6-metal.md",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/CLOUDS/WP7-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP7.7",
           "statement": "In Chrome the four presets at noon pass WP7.1's list, and a 60x sequence passes WP7.5's.",
           "inspect": "Capture the noon `fixed` stills and one `realtime` 60x sequence in Chrome. Judge them by those lists.",
           "target": "chrome-webgpu",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP7/r3/fixed-weather.md",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/CLOUDS/WP7-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP7.8",
@@ -1015,21 +1015,10 @@
           "check": "python3 scripts/cloud_cost.py check --scene decks",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP7/r3/WP7.8-current-pair.json",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/CLOUDS/WP7-review.md"
-        }
-      ],
-      "findings": [
-        {
-          "name": "Wind drift skips refresh targets at a normal game extent",
-          "item": "WP7.4",
-          "repeat": true
-        },
-        {
-          "name": "Governor-off Metal qualification loses GPU timestamps",
-          "repeat": false
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
       ]
     },
@@ -1073,7 +1062,9 @@
           "verdict": "",
           "review": ""
         }
-      ]
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0
     },
     {
       "id": "WP20",
@@ -1095,7 +1086,9 @@
           "verdict": "",
           "review": ""
         }
-      ]
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0
     },
     {
       "id": "WP8",
@@ -2027,7 +2020,9 @@
           "check": "sh -c 'python3 scripts/cloud_cost.py --help | grep -q refuse && ! python3 scripts/cloud_cost.py --help | grep -q -E \"cadence|hold\"'",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
       ]
     }
