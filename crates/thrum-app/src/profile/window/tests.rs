@@ -38,6 +38,7 @@ fn sample(order: u64) -> FrameSample {
         timing_requested: true,
         culling_mode: CullMode::Direct,
         shadow_selection: thrum_render::synthetic::ShadowSelection::default(),
+        ambient_occlusion: thrum_render::capabilities::AmbientOcclusionSelection::default(),
         culling_selection: CullingSelection {
             requested: CullMode::Direct,
             resolved: CullMode::Direct,
