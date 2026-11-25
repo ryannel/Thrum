@@ -517,3 +517,10 @@
   The forced storage step still exceeded TAAU's mean-luminance error at 17 of 36 samples with a zero repeat
   noise floor. D8.8's realtime capture and inspection are in progress.
   [Metal evidence](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP8/target-a30845335/README.md)
+
+- 2026-11-25 WP8. The held-storage control reproduced all 17 D8.3 misses and the same worst mean-luminance
+  excess. The worst sample came 15 submissions before the multiplier step. All twelve T2 realtime arms
+  completed and every frame matched its writer hash. Consecutive native crops show clean trailing contours,
+  reveal and spawn in the inspected windows. Continuous 1× playback review is still due.
+  [Exposure control](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP8/fixed-storage/comparison.json) ·
+  [Motion evidence](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP8/motion-previews/README.md)
