@@ -52,21 +52,13 @@ fn incident_sun_source(body: &str, variant: crate::shaders::CloudVariant) -> Str
 
 pub(crate) fn world_light_source(variant: crate::shaders::CloudVariant) -> String {
     let body = exposure_source!(wgsl!(@exposure_body
-        "                let adapted = adapt_world_light_ev(raw_ev, measured, parameters.zw);\n                ev = adapted.x;\n                inverse = CAMERA_EXPOSURE_NORMALIZATION * exp2(ev);\n                flags = select(0u, WORLD_LIGHT_ADAPTING, adapted.y > 0.0);\n"));
+        "                let adapted = adapt_world_light_ev(raw_ev, parameters.zw);\n                ev = adapted.x;\n                inverse = CAMERA_EXPOSURE_NORMALIZATION * exp2(ev);\n                flags = select(0u, WORLD_LIGHT_ADAPTING, adapted.y > 0.0);\n"));
     let source = if variant.present() {
         incident_sun_source(body, variant)
     } else {
         format!("{body}\nfn incident_sun_factor() -> f32 {{ return 1.0; }}")
     };
-    let regional_sun = if variant.gpu() {
-        "if !cloud_path_supported() { return 1.0; } return exp(-max(0.0, cloud_field.far.x));"
-    } else {
-        "return incident_sun_factor();"
-    };
-    format!(
-        "{source}\nfn world_light_regional_sun() -> f32 {{ {regional_sun} }}\n{}",
-        wgsl!("atmosphere/overlay_exposure.wgsl")
-    )
+    format!("{source}\n{}", wgsl!("atmosphere/overlay_exposure.wgsl"))
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]

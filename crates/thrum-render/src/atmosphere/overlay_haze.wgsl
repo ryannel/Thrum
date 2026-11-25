@@ -16,5 +16,4 @@ fn write_haze_scale(light: vec4<f32>) {
     // The RGB lanes are the sky SH coefficients. The second coefficient's
     // spare W lane carries the aerial scale in this producer only.
     environment_light.sky_diffuse[1].w = scale;
-    environment_light.sky_diffuse[2].w = clear;
 }
