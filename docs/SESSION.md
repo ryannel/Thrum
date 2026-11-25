@@ -103,6 +103,57 @@ ticks of history and returns to the confirmed character when that span is exhaus
    grace period. A match ends with its host.
    When stopping cleanly, call `Host::stop` and keep advancing so clients can receive the final endpoint.
 
+## Drive a world in a window or on a page
+
+Keep the session and its authority runtime together in the game-owned driver. Implement
+`thrum_core::sim::WorldDriver` and give the driver to `DrivenWorld::new(driver, catch_up_cap)` in
+`Game::prepare`. Supply that world to `FrameHost` and return `Prepared::inline(host)`. The renderer
+leases `WorldPublication` from the driver and uses its actual epoch, tick and timeline. When installing a
+baseline, publish it in a fresh world epoch. Configure the runtime to publish both body endpoints that the
+scene reads.
+
+- In the client's `WorldDriver::advance(now, cap)`, call
+  `client.advance_with_step_budget(now_us, cap, sample_controls)` and drain results as above. Pass the
+  driver's cap as a `u8` or use a smaller budget. After that advance, read `client.playout(now_us)` and
+  `client.settings().tick_us`. Before playout starts, hold the current endpoint.
+- In the listen host's driver, drain accepted links, stage local inputs, then call
+  `host.advance(now_us, current_tick + cap)` and read `host.playout(now_us)`. The host applies its own
+  negotiated catch-up cap as well.
+- Return the actual number of successful rule steps since the preceding advance. A restored endpoint
+  establishes a new pair without adding to that count. Pass the playout fraction, rate and timestamp in
+  `DrivenAdvance`. Set `next_due` to the delay you want between polls if you put your driver on a
+  resident `WorldLane`.
+
+The runner supplies a monotonic `Duration` in its own origin. Convert it to microseconds for every call to
+the session and keep the original `Duration` for the render sample. The interval ends at the current tick.
+For tick zero or when playout is unavailable, use a held sample with fraction one and rate zero.
+
+```rust
+let fraction = (playout.position - tick.saturating_sub(1) as f64).clamp(0.0, 1.0);
+let ticks_per_second = playout.rate * 1_000_000.0 / f64::from(tick_us);
+let presentation = ClockSample::driven(now, fraction, ticks_per_second)
+    .ok_or(DriverError::InvalidPlayoutSample)?;
+Ok(DrivenAdvance { completed_ticks, presentation, next_due })
+```
+
+Run the native game through `thrum_app::run_until_closed`. In the browser, call `web::create_game`, forward
+animation-frame timestamps to `WebShell::frame_game`, and pass actual visibility changes to
+`WebShell::set_visible`. A hidden tab stops polling its driver. When it is shown, the session can resume,
+skip the backlog or install a repair baseline. Show `take_stall` and `take_skip` records as appropriate in the
+game. The frame host evaluates the sample at display time and clamps it at the latest committed endpoint.
+On an inline client, you can report an edge that a future display target already reached by sampling
+`client.playout` again at the host's `last_submitted_clock().display_time` before the next advance.
+
+The reference runs on Mac and Chrome with A0 relay conditioning and shares the standalone Crowd scene.
+The standalone view keeps its ordinary clock. [Reference driver](../examples/match-proof/src/windowed.rs)
+
+```sh
+python3 scripts/session_match.py windowed --target mac-metal
+python3 scripts/session_match.py windowed playout --target mac-metal
+python3 scripts/session_match.py windowed --target chrome-webgpu
+python3 scripts/session_match.py closure --windowed
+```
+
 ## Rehearse, then run on the targets
 
 Run from the repository root after the [Rust and target setup](../README.md). For a small rehearsal, create a
@@ -134,7 +185,7 @@ For one target's socket fault scenario, the `sockets faults` subcommand accepts 
 `chrome-webgpu` or `ios-sim`. The host stays on the Mac. The full steady scenario always exercises all three
 client targets.
 
-The reference match is a headless loopback proof on one Mac. The simulator qualifies function. The match uses
+The ten-minute reference match is a headless loopback proof on one Mac. The simulator qualifies function. The match uses
 one full world per peer, samples digests at committed ticks, and predicts only the local controller. It has no
 host migration or whole-world rollback. [Networking design and evidence scope](design/modules/NETWORKING.md)
 

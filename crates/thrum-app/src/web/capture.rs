@@ -62,6 +62,11 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
         self.host.recycle_submitted_image(image);
     }
 
+    /// Stop admitting capture copies while pending submitted images drain.
+    pub fn stop_submitted_capture(&mut self) {
+        self.host.stop_submitted_capture();
+    }
+
     /// Retire the session, cancelling pending readbacks without waiting.
     pub fn end_submitted_capture(&mut self) {
         self.host.disable_submitted_capture();

@@ -230,6 +230,22 @@ queued bytes and synchronization duration have per-peer and whole-session caps. 
 never drop a required control transaction and continue as if it arrived. If backlog cannot meet the profile's limits,
 resynchronize or disconnect that peer. Transport congestion/backpressure behavior must be qualified per adapter.
 
+## Deterministic matches in a window or on a page
+
+The game's driver advances the host or client session at the publication barrier. The driver passes its own
+playout sample and committed page to the frame host, which evaluates the sample at display time. The driven
+world commits within its catch-up cap and holds at the newest complete endpoint. Its native and web shells use
+the same frame observer. Browser visibility controls when the driver's polls run. The fixed-clock Crowd view
+uses the same renderer without the networking crates.
+
+The windowed proof uses the reference Crowd and independent sockets over an A0-conditioned loopback relay.
+It compares committed digests and records the interpolation consumed by each submitted view. The Mac replica
+exercises a buffered burst, a stall and a skip. The Chrome replica exercises hiding and showing its tab.
+T2 realtime clips cover the submitted motion separately from the numeric checks. See the
+[driven-world design](../../plans/SESSION/DESIGN.md#12-a-driven-world),
+[game-maker guide](../../SESSION.md#drive-a-world-in-a-window-or-on-a-page) and
+[WP7 evidence](../../../.orchestrate/evidence/SESSION/WP7/README.md).
+
 ## Initial design proofs and construction boundaries
 
 The first local slice already uses actor-directed typed commands, world/session scopes and authoritative side effects;

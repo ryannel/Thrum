@@ -384,6 +384,25 @@ impl<W: World, Codec: ActionWire<W::Action>> Host<W, Codec> {
         }
     }
 
+    /// Sample the authority's local display position between its committed endpoints.
+    pub fn playout(&self, now: u64) -> super::Playout {
+        let tick = self.world.tick();
+        if self.state != HostState::Running || tick == 0 {
+            return super::Playout {
+                position: tick as f64,
+                rate: 0.0,
+            };
+        }
+        let period = u64::from(self.settings.tick_us);
+        let elapsed = now
+            .saturating_sub(self.next.saturating_sub(period))
+            .min(period);
+        super::Playout {
+            position: (tick - 1) as f64 + elapsed as f64 / f64::from(self.settings.tick_us),
+            rate: 1.0,
+        }
+    }
+
     /// Offer a transport connection to the application handshake.
     ///
     /// # Errors

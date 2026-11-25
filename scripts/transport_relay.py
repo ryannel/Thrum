@@ -17,7 +17,8 @@ async def run(args):
                              "first_packet_us": None, "last_packet_us": None} for _ in range(2)]}
     backends = {}
     opening = {}
-    cut = False
+    cut = ""
+    stats["cut_windows"] = []
     pending = set()
     stop = asyncio.Event()
 
@@ -28,7 +29,7 @@ async def run(args):
             row["first_packet_us"] = now
         row["last_packet_us"] = now
         row["seen_bytes"] += len(data)
-        if cut:
+        if cut == "cut":
             row["cut"] += 1
             return
         if randomizer.random() < 0.02:
@@ -36,7 +37,7 @@ async def run(args):
             return
         def deliver():
             pending.discard(handle)
-            if cut:
+            if cut == "cut" or (direction == 1 and cut == "cut download"):
                 row["cut"] += 1
                 return
             send(data)
@@ -78,7 +79,10 @@ async def run(args):
     try:
         while not stop.is_set():
             if args.control and Path(args.control).exists():
-                cut = Path(args.control).read_text().strip() == "cut"
+                command = Path(args.control).read_text().strip()
+                if command != cut:
+                    cut = command
+                    stats["cut_windows"].append({"command": cut, "wall_us": time.time_ns() // 1000})
             try:
                 await asyncio.wait_for(stop.wait(), 0.01)
             except TimeoutError:

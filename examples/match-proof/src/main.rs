@@ -2,6 +2,29 @@
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let arguments: Vec<_> = std::env::args().skip(1).collect();
+    #[cfg(all(target_os = "macos", feature = "windowed"))]
+    {
+        use std::path::{Path, PathBuf};
+        let args: Vec<_> = arguments.iter().map(String::as_str).collect();
+        match args.as_slice() {
+            ["window-host", output, control, ticks] => {
+                return Ok(match_proof::windowed::host(
+                    Path::new(output),
+                    PathBuf::from(control),
+                    ticks.parse()?,
+                )?);
+            }
+            ["window-client", ticket, output, capture] => {
+                let capture = (*capture != "-").then(|| PathBuf::from(capture));
+                return Ok(match_proof::windowed::client(
+                    &ticket.parse()?,
+                    Path::new(output),
+                    capture,
+                )?);
+            }
+            _ => {}
+        }
+    }
     #[cfg(all(not(target_arch = "wasm32"), feature = "sockets"))]
     {
         use match_proof::sockets::native;

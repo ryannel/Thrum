@@ -27,7 +27,7 @@ fn micros(duration: std::time::Duration) -> u64 {
     u64::try_from(duration.as_micros()).expect("proof duration in range")
 }
 
-fn unix_us() -> u64 {
+pub(crate) fn unix_us() -> u64 {
     micros(
         SystemTime::now()
             .duration_since(UNIX_EPOCH)

@@ -51,3 +51,8 @@ path = "tests/error_types.rs"
 [[test]]
 name = "world_image_untrusted"
 path = "tests/world_image_untrusted/main.rs"
+
+# Target named directly by the SESSION WP7.1 check.
+[[test]]
+name = "driven_world"
+path = "tests/driven_world.rs"

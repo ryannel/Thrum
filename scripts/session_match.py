@@ -75,6 +75,15 @@ def dependency_closure(package, *features, edges="normal,build", no_defaults=Fal
     return packages
 
 
+def windowed_closure():
+    network = {"thrum-network", "thrum-transport"}
+    view = {name for name, _ in dependency_closure("crowd-2d-view", edges="normal,build,dev")}
+    assert not network & view, f"standalone Crowd view reaches {view & network}"
+    windowed = {name for name, _ in dependency_closure(PACKAGE, "windowed")}
+    assert network | {"crowd-2d-view"} <= windowed
+    return {"standalone_crowd_view": sorted(view), "windowed_match": sorted(windowed)}
+
+
 def closure():
     network = {"thrum-network", "thrum-transport"}
     shipping = {}
@@ -466,9 +475,9 @@ def run_game(parser, args):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=["image", "identity", "image-costs", "memory", "sockets", "closure"])
+    parser.add_argument("action", choices=["image", "identity", "image-costs", "memory", "sockets", "closure", "windowed"])
     parser.add_argument("scenario", nargs="?", choices=[
-        "steady", "faults", "slow", "listen", "lead", "costs", "prediction", "prediction-costs", "game",
+        "steady", "faults", "slow", "listen", "lead", "costs", "prediction", "prediction-costs", "game", "playout",
         *session_faults.SCENARIOS,
     ])
     parser.add_argument("--target", choices=TARGETS, default="mac-metal")
@@ -479,13 +488,27 @@ def main():
     parser.add_argument("--bodies", type=int, help="world size argument for sockets game (default 128)")
     parser.add_argument("--ios-program", type=Path, help="add an iPhone simulator executable to sockets game")
     parser.add_argument("--chrome-page", type=Path, help="add a prepared browser proof directory to sockets game")
+    parser.add_argument("--windowed", action="store_true", help="verify the standalone Crowd view closure")
+    parser.add_argument("--motion", action="store_true", help="retain T2 realtime motion during a windowed event run")
     args = parser.parse_args()
+    if args.windowed and args.action != "closure":
+        parser.error("--windowed requires closure")
+    if args.motion and (args.action != "windowed" or not args.output
+                        or (args.target != "chrome-webgpu" and args.scenario != "playout")):
+        parser.error("--motion requires --output and a windowed playout or Chrome run")
     if args.scenario == "game":
         run_game(parser, args)
         return
     if any(value is not None for value in
            (args.program, args.ticks, args.profile, args.bodies, args.ios_program, args.chrome_page)):
         parser.error("game program and workload options require the game scenario")
+    if args.action == "windowed":
+        from session_windowed import proof
+        if (args.target == "ios-sim" or args.scenario not in (None, "playout")
+                or (args.scenario == "playout" and args.target != "mac-metal")):
+            parser.error("windowed supports Mac and Chrome, with relay playout cuts on Mac")
+        proof(args.target, args.scenario, args.output, args.motion)
+        return
     if args.action == "sockets":
         import session_sockets
         if args.scenario not in session_sockets.SCENARIOS:
@@ -513,7 +536,7 @@ def main():
     if args.action == "closure":
         if args.target != "mac-metal":
             parser.error("the dependency closure check runs on the Mac and covers all Cargo targets")
-        record = closure()
+        record = windowed_closure() if args.windowed else closure()
     else:
         SCRATCH.mkdir(parents=True, exist_ok=True)
         scratch_root = None if args.action == "identity" else SCRATCH

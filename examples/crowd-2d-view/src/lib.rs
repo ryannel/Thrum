@@ -5,14 +5,42 @@ pub mod proof;
 mod scene;
 mod world;
 
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
 
 use thrum_app::{Edits, Game, GameError, Gpu, Prepared};
 use thrum_controls::Controls;
-use thrum_render::runtime::{FrameConfig, FrameHost, SpriteSceneRequests};
+use thrum_core::sim::PublicationPage;
+use thrum_render::runtime::{FrameConfig, FrameHost, FrameWorld, SpriteSceneRequests};
 
 pub use scene::CrowdScene;
 pub use world::CrowdWorld;
+
+/// Prepare the ordinary Crowd renderer for any world that publishes Crowd tick pages.
+///
+/// # Errors
+/// Returns a renderer preparation failure.
+pub async fn prepare_crowd<W: FrameWorld<Page = Arc<PublicationPage>>>(
+    gpu: Gpu<'_>,
+    world: W,
+    count: u32,
+    close: bool,
+    band: f64,
+) -> Result<FrameHost<W, CrowdScene>, GameError> {
+    let config = FrameConfig {
+        render_extent: gpu.surface.extent,
+        surface: Some(gpu.surface),
+    };
+    Ok(FrameHost::new_2d(
+        gpu.capabilities,
+        gpu.queue,
+        config,
+        world,
+        CrowdScene::new(close),
+        scene::configuration(count, band),
+        SpriteSceneRequests::default(),
+    )
+    .await?)
+}
 
 /// Replay renderer using the same rule package on every target.
 pub struct CrowdView {
@@ -92,21 +120,8 @@ impl Game for CrowdView {
         gpu: Gpu<'a>,
         _world_advanced: Box<dyn Fn() + Send>,
     ) -> Result<Prepared<CrowdWorld, CrowdScene>, GameError> {
-        let config = FrameConfig {
-            render_extent: gpu.surface.extent,
-            surface: Some(gpu.surface),
-        };
         let world = CrowdWorld::new(self.count, self.exact_steps);
-        let mut host = FrameHost::new_2d(
-            gpu.capabilities,
-            gpu.queue,
-            config,
-            world,
-            CrowdScene::new(self.close),
-            scene::configuration(self.count, self.band),
-            SpriteSceneRequests::default(),
-        )
-        .await?;
+        let mut host = prepare_crowd(gpu, world, self.count, self.close, self.band).await?;
         host.set_timing_requested(self.timed);
         Ok(Prepared::inline(host))
     }

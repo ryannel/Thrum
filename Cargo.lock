@@ -1521,13 +1521,20 @@ name = "match-proof"
 version = "0.1.0"
 dependencies = [
  "crowd-2d",
+ "crowd-2d-view",
+ "js-sys",
  "rayon",
  "serde_json",
  "sha2",
+ "thrum-app",
+ "thrum-controls",
  "thrum-core",
  "thrum-network",
+ "thrum-render",
  "thrum-transport",
  "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
  "web-time",
 ]
 

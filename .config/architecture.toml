@@ -49,7 +49,8 @@ allowed_workspace_dependencies = ["crowd-2d", "thrum-core", "thrum-network"]
 
 [packages.match-proof]
 manifest = "examples/match-proof/Cargo.toml"
-allowed_workspace_dependencies = ["crowd-2d", "thrum-core", "thrum-network", "thrum-transport"]
+allowed_workspace_dependencies = ["crowd-2d", "crowd-2d-view", "thrum-app", "thrum-controls", "thrum-core", "thrum-network", "thrum-render", "thrum-transport"]
+implicit_dependencies = { wasm-bindgen-futures = "the windowed proof's async wasm_bindgen export" }
 
 [packages.thrum-sea-model]
 manifest = "crates/thrum-sea-model/Cargo.toml"

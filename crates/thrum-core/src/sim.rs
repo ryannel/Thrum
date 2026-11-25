@@ -4,6 +4,7 @@
 mod clocked_world;
 mod column_store;
 mod dense_directory;
+mod driven_world;
 mod history;
 mod input;
 mod publication;
@@ -24,6 +25,7 @@ pub use clocked_world::{
     ClockedWorld, ClockedWorldError, WorldAdvance, WorldGame, WorldPublication, WorldStep,
     WorldUpdate,
 };
+pub use driven_world::{DrivenAdvance, DrivenWorld, DrivenWorldError, WorldDriver};
 pub use history::{HistoryError, HistoryGame, RuntimeHistory};
 pub use input::{ControlBinding, InputFrame, InputFrameError};
 pub use publication::{PublicationChanges, PublicationPage};

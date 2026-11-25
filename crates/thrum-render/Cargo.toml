@@ -350,3 +350,8 @@ required-features = ["creation-counters"]
 name = "ray_soft_history_gpu"
 path = "tests/ray_soft_history_gpu.rs"
 required-features = ["creation-counters"]
+
+# Target named directly by the SESSION WP7.2 check.
+[[test]]
+name = "driven_world_observer"
+path = "tests/driven_world_observer.rs"

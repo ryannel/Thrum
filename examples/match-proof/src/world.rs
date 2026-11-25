@@ -15,10 +15,10 @@ use thrum_network::{
     session::{RosterEvents, SLOTS, World},
 };
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(any(not(target_arch = "wasm32"), feature = "windowed"))]
 pub(super) struct NoActions;
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(any(not(target_arch = "wasm32"), feature = "windowed"))]
 impl ActionWire<()> for NoActions {
     fn encode(&self, (): &(), _: &mut [u8]) -> Result<(u32, usize), InputCodecError> {
         Err(InputCodecError::InvalidAction)
@@ -63,6 +63,8 @@ pub(super) struct CrowdWorld {
     count: u32,
     epoch: u128,
     headless: Option<Box<[RuntimeUndo; 2]>>,
+    #[cfg(feature = "windowed")]
+    window_steps: Option<RefCell<Vec<u64>>>,
 }
 
 impl CrowdWorld {
@@ -93,6 +95,8 @@ impl CrowdWorld {
             count,
             epoch,
             headless: None,
+            #[cfg(feature = "windowed")]
+            window_steps: None,
         }
     }
 
@@ -117,6 +121,46 @@ impl CrowdWorld {
         self.runtime
             .world_digest(&self.game.resources, |_, _| {})
             .expect("registered crowd schema")
+    }
+
+    #[cfg(feature = "windowed")]
+    pub(super) fn presented(count: u32, epoch: u128) -> Self {
+        let Simulation {
+            runtime,
+            game,
+            candidate,
+            ..
+        } = Simulation::for_presentation(count, epoch);
+        Self {
+            runtime,
+            game,
+            candidate,
+            window_steps: Some(RefCell::default()),
+            ..Self::new(count, epoch, false, false)
+        }
+    }
+
+    #[cfg(feature = "windowed")]
+    pub(super) fn window_steps(&self) -> Vec<u64> {
+        self.window_steps
+            .as_ref()
+            .map_or_else(Vec::new, |steps| std::mem::take(&mut *steps.borrow_mut()))
+    }
+
+    #[cfg(feature = "windowed")]
+    pub(super) fn window_endpoint(&self) -> (thrum_core::sim::SnapshotId, u64) {
+        (
+            thrum_core::sim::SnapshotId {
+                epoch: self.runtime.epoch(),
+                tick: self.runtime.tick(),
+            },
+            self.runtime.timeline(),
+        )
+    }
+
+    #[cfg(feature = "windowed")]
+    pub(super) fn window_page(&self) -> Option<std::sync::Arc<thrum_core::sim::PublicationPage>> {
+        self.runtime.latest()
     }
 
     #[cfg(not(target_arch = "wasm32"))]
@@ -170,6 +214,10 @@ impl World for CrowdWorld {
             .prepare_history_tick(&self.runtime, self.tick() + 1, frames)
             .map_err(|error| error.to_string())?;
         self.step_runtime()?;
+        #[cfg(feature = "windowed")]
+        if let Some(steps) = &self.window_steps {
+            steps.borrow_mut().push(self.tick());
+        }
         if let Some(start) = start {
             self.engine.add(elapsed(start));
         }
@@ -195,6 +243,13 @@ impl World for CrowdWorld {
     }
 
     fn restore(&mut self, tick: u64, image: &[u8]) -> Result<(), String> {
+        #[cfg(feature = "windowed")]
+        let (mut runtime, mut game, mut candidate) = if self.window_steps.is_some() {
+            Simulation::presentation_image_parts(self.count, self.epoch + 1)
+        } else {
+            Simulation::image_parts(self.count, self.epoch, false)
+        };
+        #[cfg(not(feature = "windowed"))]
         let (mut runtime, mut game, mut candidate) =
             Simulation::image_parts(self.count, self.epoch, false);
         runtime
@@ -204,6 +259,10 @@ impl World for CrowdWorld {
             return Err("baseline tick differs from image".into());
         }
         runtime.publish_initial(&mut game, &mut candidate);
+        #[cfg(feature = "windowed")]
+        if self.window_steps.is_some() {
+            self.epoch += 1;
+        }
         self.runtime = runtime;
         if self.headless.is_some() {
             self.configure_headless();

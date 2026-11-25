@@ -111,18 +111,47 @@ pub struct ClockSample {
     fractional_tick: u128,
     tick_hz: u32,
     interpolate: bool,
+    driven: Option<(f64, f64)>,
 }
 
 impl ClockSample {
+    pub(crate) fn held(at: Duration, fraction: f32) -> Self {
+        Self::driven(at, f64::from(fraction), 0.0).expect("bounded presentation phase")
+    }
+
+    pub(crate) fn is_driven_at(self, at: Duration) -> bool {
+        self.driven.is_some() && self.last_time == at
+    }
+
+    /// A driver-supplied fraction and rate in ticks per second at monotonic `at`.
+    /// Returns `None` for a non-finite or out-of-range fraction or a negative
+    /// or non-finite rate. A zero rate holds the supplied fraction.
+    #[must_use]
+    pub fn driven(at: Duration, fraction: f64, ticks_per_second: f64) -> Option<Self> {
+        if !(0.0..=1.0).contains(&fraction)
+            || !ticks_per_second.is_finite()
+            || ticks_per_second < 0.0
+        {
+            return None;
+        }
+        Some(Self {
+            last_time: at,
+            fractional_tick: 0,
+            tick_hz: 0,
+            interpolate: true,
+            driven: Some((fraction, ticks_per_second)),
+        })
+    }
+
     /// Host time at which this sample's committed tick fell due, rounded up to
-    /// the next nanosecond. Endpoint-only samples consume no target.
+    /// the next nanosecond. Driven samples have no fixed-clock due time.
     /// Sampling is read-only; queued work and lifecycle holds return `None`.
     ///
     /// # Panics
     ///
     /// Panics only if a sub-tick fraction no longer fits in `u64` nanoseconds.
     pub fn tick_due_time(self) -> Option<Duration> {
-        self.interpolate.then(|| {
+        (self.interpolate && self.driven.is_none()).then(|| {
             let nanos = self.fractional_tick / u128::from(self.tick_hz);
             self.last_time.saturating_sub(Duration::from_nanos(
                 u64::try_from(nanos).expect("a sub-tick fraction fits in u64 nanoseconds"),
@@ -134,6 +163,9 @@ impl ClockSample {
     /// observation. Stopped samples consume no target and show their endpoint.
     #[cfg(not(target_arch = "wasm32"))]
     pub(crate) fn accepts_observation(self, observation: Duration) -> bool {
+        if self.driven.is_some() {
+            return observation >= self.last_time;
+        }
         !self.interpolate
             || observation >= self.last_time
             || self.fractional_tick
@@ -156,6 +188,9 @@ impl ClockSample {
         reason = "bounded presentation numerator needs only f32 precision"
     )]
     pub fn display_phase_at(self, target: Duration) -> f32 {
+        if self.driven.is_some() {
+            return self.alpha_at(target);
+        }
         if !self.interpolate {
             return 1.0;
         }
@@ -187,12 +222,24 @@ impl ClockSample {
         reason = "the clamped numerator is below one billion and f32 precision is enough for display interpolation"
     )]
     pub fn alpha_at(self, target: Duration) -> f32 {
+        if let Some((fraction, rate)) = self.driven {
+            let elapsed = target.saturating_sub(self.last_time).as_secs_f64();
+            return bounded_fraction(fraction + elapsed * rate);
+        }
         if !self.interpolate {
             return 1.0;
         }
         let fraction = self.fraction_at(target);
         fraction.min(NANOS_PER_SECOND) as f32 / NANOS_PER_SECOND as f32
     }
+}
+
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "the renderer consumes a bounded f32 fraction"
+)]
+fn bounded_fraction(value: f64) -> f32 {
+    value.clamp(0.0, 1.0) as f32
 }
 
 impl TickClock {
@@ -257,6 +304,7 @@ impl TickClock {
             interpolate: self.state == ClockState::Active
                 && self.queued == 0
                 && !self.presentation_hold,
+            driven: None,
         }
     }
 

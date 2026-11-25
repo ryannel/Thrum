@@ -91,6 +91,18 @@ pub trait InlineWorld: FrameWorld {
     fn resume(&mut self, now: Duration) -> Result<(), GameError>;
 }
 
+impl<D: thrum_core::sim::WorldDriver> InlineWorld for thrum_core::sim::DrivenWorld<D> {
+    fn pause(&mut self) -> Result<(), GameError> {
+        self.pause();
+        Ok(())
+    }
+
+    fn resume(&mut self, _now: Duration) -> Result<(), GameError> {
+        self.resume();
+        Ok(())
+    }
+}
+
 /// Lifecycle control of a world that runs on its own lane, used for pause and overload.
 #[cfg(not(target_arch = "wasm32"))]
 pub trait WorldLink {

@@ -629,6 +629,17 @@ impl Simulation {
         Self::runtime_parts(count, epoch, mixed, false)
     }
 
+    /// Prepare an unseeded Crowd for image restore with both body endpoints in its pages.
+    ///
+    /// # Panics
+    /// If the body count is outside 4..=10,000.
+    pub fn presentation_image_parts(
+        count: u32,
+        epoch: u128,
+    ) -> (GameRuntime<Crowd>, Crowd, Candidate) {
+        Self::runtime_parts(count, epoch, false, true)
+    }
+
     fn runtime_parts(
         count: u32,
         epoch: u128,

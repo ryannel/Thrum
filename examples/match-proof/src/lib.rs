@@ -4,6 +4,9 @@ mod image;
 #[cfg(feature = "sockets")]
 pub mod sockets;
 
+#[cfg(all(feature = "windowed", any(target_os = "macos", target_arch = "wasm32")))]
+pub mod windowed;
+
 #[cfg(any(not(target_arch = "wasm32"), feature = "sockets"))]
 mod world;
 pub use image::{capture, restore};

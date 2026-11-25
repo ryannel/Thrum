@@ -6,10 +6,12 @@ import { createServer } from 'node:http';
 import { spawn } from 'node:child_process';
 import { setTimeout as delay } from 'node:timers/promises';
 
-const [directory, artifacts, log, control, pageControl, ticket, bodies, trace] = process.argv.slice(2);
+const [directory, artifacts, log, control, pageControl, ticket, bodies, trace, mode] = process.argv.slice(2);
+const windowed = mode === 'windowed';
 const chromePath = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-const page = '<!doctype html><title>Thrum socket match</title><script type="module" src="/socket_player.js"></script>';
-const staticFiles = new Set(['match_proof.js', 'match_proof_bg.wasm', 'socket_player.js']);
+const player = windowed ? 'windowed_player.js' : 'socket_player.js';
+const page = `<!doctype html><title>Thrum socket match</title>${windowed ? '<canvas></canvas>' : ''}<script type="module" src="/${player}"></script>`;
+const staticFiles = new Set(['match_proof.js', 'match_proof_bg.wasm', player]);
 const readControl = async file => (await fs.readFile(file, 'utf8').catch(() => '')).trim();
 const writeRows = rows => fs.appendFile(log, rows.map(row => JSON.stringify(row) + '\n').join(''));
 const server = createServer(async (request, response) => {
@@ -28,6 +30,17 @@ const server = createServer(async (request, response) => {
             }
             await writeRows(JSON.parse(data));
             response.end(await readControl(control));
+        } else if (windowed && request.url === '/image' && request.method === 'POST') {
+            const chunks = [];
+            let bytes = 0;
+            for await (const chunk of request) {
+                bytes += chunk.length;
+                if (bytes > 640 * 360 * 4) throw new Error('invalid submitted image extent');
+                chunks.push(chunk);
+            }
+            if (bytes !== 640 * 360 * 4) throw new Error('incomplete submitted image');
+            await fs.appendFile(path.join(path.dirname(log), 'frames.rgba'), Buffer.concat(chunks));
+            response.end();
         } else if (staticFiles.has(request.url.slice(1))) {
             response.setHeader('Content-Type', request.url.endsWith('.wasm') ? 'application/wasm' : 'text/javascript');
             response.end(await fs.readFile(path.join(artifacts, request.url.slice(1))));
@@ -42,11 +55,13 @@ await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 // The isolated proof page represents an active player. Keep both its timer
 // wakeups and renderer scheduling in the foreground class. The freeze
 // scenario still suspends the renderer explicitly.
-const flags = ['--headless=new', '--remote-debugging-port=0', `--user-data-dir=${directory}`,
+const flags = [windowed ? '--disable-backgrounding-occluded-windows' : '--headless=new',
+    '--remote-debugging-port=0', `--user-data-dir=${directory}`,
     '--disable-background-timer-throttling', '--disable-renderer-backgrounding', '--no-first-run', 'about:blank'];
 const chrome = spawn(chromePath, flags, { detached: true, stdio: ['ignore', 'ignore', 'inherit'] });
 let pageSession;
 let browserSession;
+let coveringTab;
 const frozen = new Set();
 let interrupted = false;
 for (const signal of ['SIGTERM', 'SIGINT', 'SIGHUP']) {
@@ -118,6 +133,15 @@ try {
         if (command !== prior) {
             if (command === 'exit') break;
             if (command === 'reload') await pageSession.call('Page.reload');
+            if (windowed && command === 'hidden') {
+                coveringTab = (await pageSession.call('Target.createTarget', { url: 'about:blank' })).targetId;
+                await pageSession.call('Target.activateTarget', { targetId: coveringTab });
+            }
+            if (windowed && command === 'active' && coveringTab) {
+                await pageSession.call('Target.closeTarget', { targetId: coveringTab });
+                await pageSession.call('Page.bringToFront');
+                coveringTab = undefined;
+            }
             if (command === 'frozen') {
                 // Chrome's page-lifecycle transition closes WebTransport.
                 // Suspend the isolated renderer as TRANSPORT's proof does,

@@ -1,0 +1,253 @@
+use std::{
+    fs::{self, File},
+    io::{BufWriter, Write},
+    net::{Ipv4Addr, SocketAddr},
+    num::NonZeroU32,
+    path::{Path, PathBuf},
+    time::Duration,
+};
+
+use crowd_2d_view::proof;
+use serde_json::{Value, json};
+use thrum_app::{
+    Config, GameError,
+    capture_writer::{ImageWriter, SpoolEncoding},
+};
+use thrum_network::session::{HostState, Playout, Settings, World};
+use thrum_render::runtime::{CaptureLimits, SubmittedImage};
+use thrum_transport::{Profile, Ticket, native};
+
+use super::{BODIES, Driver, Host, NoActions, Peer, Replica, WindowMatch, rejected};
+use crate::world::CrowdWorld;
+
+pub(super) struct Authority {
+    pub(super) session: thrum_network::session::Host<CrowdWorld, NoActions>,
+    transport: native::Host,
+    control: PathBuf,
+    end: u64,
+    staged: u64,
+    offered: bool,
+}
+
+impl Authority {
+    pub(super) fn advance(
+        &mut self,
+        now: u64,
+        cap: NonZeroU32,
+        rows: &mut Vec<Value>,
+    ) -> Result<(Playout, u32), GameError> {
+        if !self.offered
+            && let Some(ticket) = self.transport.ticket()
+        {
+            let settings = Settings::default();
+            rows.push(
+                json!({"event":"host", "ticket":ticket.to_string(), "pid":std::process::id(),
+                "tick_us":settings.tick_us, "catch_up":settings.catch_up, "behind":settings.behind,
+                "absence":settings.absence, "digest_interval":settings.digest_interval,
+                "playout_catch_up":settings.playout_catch_up, "bodies":BODIES}),
+            );
+            self.offered = true;
+        }
+        while let Some(link) = self.transport.accept() {
+            self.session.connect(link, now).map_err(rejected)?;
+        }
+        if self.session.state() == HostState::Lobby
+            && fs::read_to_string(&self.control).is_ok_and(|command| command.trim() == "run")
+        {
+            self.session.start(now);
+            rows.push(json!({"event":"start", "clock_us":now}));
+        }
+        let through = self
+            .end
+            .min(self.session.world().tick() + u64::from(cap.get()));
+        if self.session.state() == HostState::Running {
+            for tick in self.staged + 1..=through {
+                self.session
+                    .stage_local(tick, crate::seeded_axes(71, 0, tick), [])
+                    .map_err(rejected)?;
+                self.staged = tick;
+            }
+        }
+        self.session.advance(now, through);
+        if self.session.state() == HostState::Running && self.session.world().tick() == self.end {
+            self.session.stop();
+            rows.push(json!({"event":"finish", "clock_us":now, "tick":self.end}));
+        }
+        Ok((self.session.playout(now), Settings::default().tick_us))
+    }
+}
+
+pub(super) struct Output {
+    rows: BufWriter<File>,
+    control: Option<PathBuf>,
+    capture: Option<ImageWriter<SubmittedImage>>,
+    stopped_capture: bool,
+}
+
+impl Output {
+    fn new(path: &Path, control: Option<PathBuf>) -> std::io::Result<Self> {
+        Ok(Self {
+            rows: BufWriter::new(File::create(path)?),
+            control,
+            capture: None,
+            stopped_capture: false,
+        })
+    }
+
+    pub(super) fn write(&mut self, row: &Value) -> std::io::Result<()> {
+        serde_json::to_writer(&mut self.rows, row)?;
+        self.rows.write_all(b"\n")?;
+        self.rows.flush()
+    }
+}
+
+fn config(name: &'static str) -> Config {
+    let mut config = Config::new("match-proof", name);
+    config.window_size = [640, 360];
+    config
+}
+
+/// Open the authority's native Crowd window and publish its join ticket.
+///
+/// # Errors
+/// A socket, control or record could not be opened.
+pub fn host(output: &Path, control: PathBuf, ticks: u64) -> Result<(), GameError> {
+    let transport = native::Host::start(
+        SocketAddr::from((Ipv4Addr::LOCALHOST, 0)),
+        Profile::default(),
+    )
+    .map_err(rejected)?;
+    let settings = Settings::default();
+    let session = thrum_network::session::Host::new(
+        CrowdWorld::presented(BODIES, 1),
+        NoActions,
+        settings,
+        [7; 16],
+        71,
+        true,
+        0,
+    )
+    .map_err(rejected)?;
+    let peer = Peer::Authority(Box::new(Authority {
+        session,
+        transport,
+        control,
+        end: ticks,
+        staged: 0,
+        offered: false,
+    }));
+    run(
+        config("Crowd Match Host"),
+        peer,
+        Output::new(output, None).map_err(rejected)?,
+    );
+    Ok(())
+}
+
+/// Join through a socket from a second native Crowd window.
+///
+/// # Errors
+/// The proof could not open the link or its record.
+pub fn client(
+    ticket: &Ticket,
+    output: &Path,
+    capture_control: Option<PathBuf>,
+) -> Result<(), GameError> {
+    let peer = Peer::Replica(Box::new(Replica::connect(ticket)?));
+    run(
+        config("Crowd Match Client"),
+        peer,
+        Output::new(output, capture_control).map_err(rejected)?,
+    );
+    Ok(())
+}
+
+fn run(config: Config, peer: Peer, native: Output) {
+    thrum_app::run_until_closed(config, || {
+        Ok::<_, GameError>(WindowMatch::new(Driver {
+            peer,
+            native,
+            last_frame: None,
+        }))
+    });
+}
+
+fn drain(host: &mut Host, writer: &ImageWriter<SubmittedImage>) -> Result<(), GameError> {
+    while let Some(image) = writer.recycled() {
+        host.recycle_submitted_image(image);
+    }
+    while let Some(image) = host.try_submitted_image()? {
+        let mut row = proof::image_sample(&image);
+        row["event"] = json!("capture");
+        host.world_mut()
+            .driver_mut()
+            .native
+            .write(&row)
+            .map_err(rejected)?;
+        if let Some(image) = writer.submit(image) {
+            host.recycle_submitted_image(image);
+            return Err(rejected("native T2 writer did not accept an image"));
+        }
+    }
+    Ok(())
+}
+
+pub(super) fn capture(host: &mut Host) -> Result<(), GameError> {
+    let output = &mut host.world_mut().driver_mut().native;
+    let Some(control) = output.control.clone() else {
+        return Ok(());
+    };
+    if output.stopped_capture {
+        return Ok(());
+    }
+    let command = fs::read_to_string(&control).unwrap_or_default();
+    let mut writer = output.capture.take();
+    if writer.is_none() && command.trim() == "record" {
+        host.enable_submitted_capture_with_limits(
+            1,
+            CaptureLimits {
+                staging_slots: 8,
+                cpu_buffers: 32,
+                byte_allowance: 128 * 1024 * 1024,
+            },
+        )?;
+        let file = File::create(control.with_file_name("frames.spool")).map_err(rejected)?;
+        writer = Some(
+            ImageWriter::start_with_frame_limit(
+                file,
+                24,
+                2 * 1024 * 1024 * 1024,
+                SpoolEncoding::ZstdDelta,
+                3600,
+            )
+            .map_err(rejected)?,
+        );
+    }
+    if let Some(active) = &writer {
+        if command.trim() == "stop" {
+            host.stop_submitted_capture();
+        }
+        drain(host, active)?;
+    }
+    let drained = host
+        .submitted_capture_usage()
+        .is_some_and(|(staging, _)| staging == 0);
+    if command.trim() == "stop"
+        && drained
+        && let Some(active) = writer.take()
+    {
+        let omitted = host.submitted_capture_omissions();
+        host.disable_submitted_capture();
+        let summary = active.finish(Duration::from_secs(3)).map_err(rejected)?;
+        let output = &mut host.world_mut().driver_mut().native;
+        output.stopped_capture = true;
+        output
+            .write(
+                &json!({"event":"capture_finished", "mode":"realtime", "frames":summary.frames,
+            "omitted":omitted, "hashes":summary.frame_hashes}),
+            )
+            .map_err(rejected)?;
+    }
+    host.world_mut().driver_mut().native.capture = writer;
+    Ok(())
+}

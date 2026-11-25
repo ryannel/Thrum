@@ -35,6 +35,7 @@ mod creation_off;
 #[cfg(not(feature = "creation-counters"))]
 use creation_off as creation;
 mod device;
+mod driven;
 mod extent;
 #[cfg(not(target_arch = "wasm32"))]
 mod extent_transition;
@@ -547,6 +548,10 @@ pub struct SubmittedFrameClock {
     pub presentation_alpha: f32,
     /// GPU submission order.
     pub submission_order: u64,
+    /// Monotonic display time consumed when evaluating the world clock.
+    pub display_time: Duration,
+    /// Whether the submission wrote to the platform surface.
+    pub surface_presented: bool,
 }
 
 /// One clock callback. A busy presentation ring drops only its optional view;
@@ -2550,6 +2555,8 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             tick: sample.tick,
             presentation_alpha: sample.presentation_alpha,
             submission_order: sample.submission_order,
+            display_time: sample.observation.saturating_add(sample.presentation_lead),
+            surface_presented,
         });
         if let Some(index) = capture_slot
             && let Some(tap) = self.submitted_capture.as_mut()

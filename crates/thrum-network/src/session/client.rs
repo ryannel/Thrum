@@ -346,7 +346,8 @@ impl<W: World, Codec: ActionWire<W::Action>, P: PredictedController<W>> Client<W
             .map(|baseline| (baseline.bytes.len(), baseline.size))
     }
 
-    /// Sample the playout position between advances.
+    /// Sample the playout position between advances, including the final
+    /// interval after a clean end reaches its committed endpoint.
     pub fn playout(&self, now: u64) -> Option<Playout> {
         Some(
             self.clock
@@ -636,6 +637,9 @@ impl<W: World, Codec: ActionWire<W::Action>, P: PredictedController<W>> Client<W
     }
 
     fn terminate(&mut self, state: ClientState, disposition: Disposition) {
+        if !matches!(state, ClientState::Ended(..)) {
+            self.clock = None;
+        }
         self.state = state;
         self.replica.packet_sets.clear();
         self.replica
@@ -663,7 +667,6 @@ impl<W: World, Codec: ActionWire<W::Action>, P: PredictedController<W>> Client<W
         self.commands.clear();
         self.baseline = None;
         self.pending_fault = None;
-        self.clock = None;
         if let Some(prediction) = &mut self.prediction {
             prediction.suspend(true);
         }
