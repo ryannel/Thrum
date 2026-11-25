@@ -391,3 +391,10 @@
   scale. The GPU arm first dropped at tick 138 and the animation-frame arm at tick 135. The Mac verifier
   got zero presents while the console was locked. D7.2 and D7.3 still require an unlocked window for the
   merged replay. [Chrome and Metal records](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP7/replay/README.md)
+
+- 2026-11-25 WP7 replayed on the unlocked Mac. The live check selects load strength using the governor-off
+  control alone and compares the full settled window. At 60 Hz the governor dropped to 85% at tick 237
+  and returned to 100% at tick 333. The unloaded and governed arms each missed 0 of 59 opportunities,
+  against 4 of 59 with the governor off. The separate steady run changed scale zero times. Hardware Chrome
+  passed both timing arms with 12,288 rounds, each returning to 100%.
+  [Target records](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP7/unlocked/README.md)
