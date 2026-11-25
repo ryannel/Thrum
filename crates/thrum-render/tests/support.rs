@@ -417,6 +417,23 @@ pub(crate) async fn host_with_config(
     lighting: FrameLighting,
     config: FrameConfig,
 ) -> Host {
+    host_with_config_exact(
+        &selected_capabilities(capabilities),
+        queue,
+        scene,
+        lighting,
+        config,
+    )
+    .await
+}
+
+pub(crate) async fn host_with_config_exact(
+    capabilities: &DeviceCapabilities,
+    queue: &wgpu::Queue,
+    scene: SyntheticScene,
+    lighting: FrameLighting,
+    config: FrameConfig,
+) -> Host {
     let source = Source {
         view: scene.view,
         lighting,
@@ -433,7 +450,7 @@ pub(crate) async fn host_with_config(
             .collect(),
     };
     Box::pin(FrameHost::new(
-        &selected_capabilities(capabilities),
+        capabilities,
         queue,
         config,
         World,

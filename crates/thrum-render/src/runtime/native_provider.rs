@@ -30,6 +30,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         if self.pending_frames() != 0 {
             return false;
         }
+        let mut rejected = false;
         for slot in &self.slots {
             if let Some(binding) = slot
                 .target
@@ -37,9 +38,11 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 .and_then(|target| target.native.as_ref())
             {
                 binding.reject();
+                rejected = true;
             }
         }
-        true
+        self.history_reset_pending |= rejected;
+        rejected
     }
 
     /// Labelled fault injection for the native-boundary diagnostic. The next
@@ -54,6 +57,60 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         {
             binding.inject_completion_error();
         }
+    }
+
+    /// Read the native normalization repair totals after a diagnostic run.
+    /// The three channels count high clamps, low clamps and non-finite repairs.
+    /// # Errors
+    /// Returns a diagnostic readback or device wait error.
+    #[cfg(all(feature = "creation-counters", not(target_arch = "wasm32")))]
+    pub fn metalfx_repairs_for_probe(&self) -> Result<Option<[u64; 3]>, FrameError> {
+        let buffers: Vec<_> = self
+            .slots
+            .iter()
+            .filter_map(|slot| slot.target.three_d()?.metalfx_repairs())
+            .collect();
+        if buffers.is_empty() {
+            return Ok(None);
+        }
+        let stride = 3 * size_of::<u32>() as u64;
+        let readback = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("MetalFX repair totals"),
+            size: stride * buffers.len() as u64,
+            usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+        for (index, source) in buffers.iter().enumerate() {
+            encoder.copy_buffer_to_buffer(source, 0, &readback, stride * index as u64, stride);
+        }
+        let submission = self.queue.submit([encoder.finish()]);
+        let slice = readback.slice(..);
+        let (sender, receiver) = std::sync::mpsc::sync_channel(1);
+        slice.map_async(wgpu::MapMode::Read, move |result| {
+            drop(sender.send(result));
+        });
+        self.device
+            .poll(wgpu::PollType::Wait {
+                submission_index: Some(submission),
+                timeout: Some(std::time::Duration::from_secs(10)),
+            })
+            .map_err(|error| FrameError::gpu("MetalFX repair totals", error))?;
+        receiver
+            .try_recv()
+            .ok()
+            .and_then(Result::ok)
+            .ok_or(FrameError::Render(crate::error::RenderError::Readback))?;
+        let mapped = slice
+            .get_mapped_range()
+            .map_err(|_| FrameError::Render(crate::error::RenderError::Readback))?;
+        let mut total = [0_u64; 3];
+        for (index, bytes) in mapped.as_chunks::<4>().0.iter().enumerate() {
+            total[index % total.len()] += u64::from(u32::from_le_bytes(*bytes));
+        }
+        Ok(Some(total))
     }
 
     pub(super) fn discard_native_presentation(

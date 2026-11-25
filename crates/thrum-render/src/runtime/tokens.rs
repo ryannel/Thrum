@@ -318,6 +318,27 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> EncodedFrame<'_, W, V> {
         Ok(self.report)
     }
 
+    /// Refuse queue admission after recording, exercising the real submission
+    /// discard path without destroying the present device.
+    /// # Errors
+    /// Returns the injected admission refusal.
+    #[cfg(feature = "creation-counters")]
+    pub fn refuse_submission_for_probe(
+        mut self,
+        surface: Option<&SurfaceOutput<'_>>,
+    ) -> Result<DriveReport, FrameError> {
+        if let Some(ready) = self.ready.take() {
+            ready.host.finish_encoded_with(
+                ready.recorded,
+                &mut self.report,
+                surface,
+                self.wall_start,
+                || Err(FrameError::InvalidState("injected submission refusal")),
+            )?;
+        }
+        Ok(self.report)
+    }
+
     fn discard_recording(&mut self, healthy: bool) -> Option<&mut FrameHost<W, V>> {
         let ReadyFrame { host, recorded } = self.ready.take()?;
         drop(recorded.encoder);

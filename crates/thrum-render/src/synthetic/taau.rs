@@ -7,7 +7,7 @@ use crate::graph::{
     Access, AccessKind, FrameGraph, PassScope, PipelineKey, ResourceDescriptor, ResourceId,
     ResourceScope,
 };
-use crate::pass_key::{PassKey, PipelineRole};
+use crate::pass_key::PipelineRole;
 use crate::shader_constants::RECONSTRUCTION_WORKGROUP_EDGE;
 use std::collections::BTreeSet;
 
@@ -241,14 +241,20 @@ impl super::SyntheticTargetInputs {
         textures: &crate::graph::GraphTextures,
         ids: &super::TargetResources,
         inputs: [&wgpu::TextureView; 4],
+        native: Option<&crate::apple_tile::NativeBinding>,
     ) -> Result<Option<TaauTarget>, RenderError> {
         ids.taau
             .as_ref()
             .map(|ids| {
-                let output = textures
-                    .texture(&ids.output)
-                    .ok_or(RenderError::GraphPassMismatch)?
-                    .create_view(&wgpu::TextureViewDescriptor::default());
+                let output =
+                    if let Some(native) = native.filter(|_| self.view_sample.requests_metalfx()) {
+                        native.output_view().clone()
+                    } else {
+                        textures
+                            .texture(&ids.output)
+                            .ok_or(RenderError::GraphPassMismatch)?
+                            .create_view(&wgpu::TextureViewDescriptor::default())
+                    };
                 Ok(self
                     .taau
                     .as_ref()
@@ -261,14 +267,14 @@ impl super::SyntheticTargetInputs {
         PipelineRole::Taau.key(self.key)
     }
 
-    pub(super) fn append_taau(
+    pub(super) fn declare_taau(
         &self,
         graph: &mut FrameGraph,
         keys: &mut BTreeSet<PipelineKey>,
         inputs: [&ResourceId; 4],
         exposure: &ResourceId,
         extent: [u32; 2],
-    ) -> Result<Option<TaauResources>, RenderError> {
+    ) -> Result<Option<(ResourceId, PassBody)>, RenderError> {
         let Some(taau) = &self.taau else {
             return Ok(None);
         };
@@ -282,9 +288,18 @@ impl super::SyntheticTargetInputs {
             format,
             usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::STORAGE_BINDING,
         };
+        let native = self.view_sample.requests_metalfx();
+        let mut output_descriptor = descriptor(wgpu::TextureFormat::Rgba16Float);
+        if native && let ResourceDescriptor::Texture { usage, .. } = &mut output_descriptor {
+            *usage |= crate::apple_tile::metalfx::OUTPUT_USAGE;
+        }
         let output = graph.resource(
-            descriptor(wgpu::TextureFormat::Rgba16Float),
-            ResourceScope::Transient,
+            output_descriptor,
+            if native {
+                ResourceScope::Imported { initialized: true }
+            } else {
+                ResourceScope::Transient
+            },
         )?;
         let mut accesses: Vec<_> = inputs
             .into_iter()
@@ -352,16 +367,15 @@ impl super::SyntheticTargetInputs {
             ));
         }
         keys.insert(self.taau_key());
-        let pass = graph.declare(
-            PassKey::Taau,
+        Ok(Some((
+            output,
             PassBody {
                 scope: PassScope::View(1),
                 pipeline: Some(self.taau_key()),
                 accesses,
                 external_side_effect: true,
             },
-        );
-        Ok(Some(TaauResources { output, pass }))
+        )))
     }
 }
 

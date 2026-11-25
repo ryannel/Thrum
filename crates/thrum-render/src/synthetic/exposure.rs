@@ -90,6 +90,7 @@ impl ExposurePolicy {
         atmosphere: bool,
         tone_map: SdrToneMap,
         overlay: DisplayOverlay,
+        forced_storage_scale: Option<f32>,
     ) -> [u8; size_of::<crate::records::Policy>()] {
         let (inverse, compensation, min, max, mode) = match self {
             Self::Fixed { inverse } => (inverse, 0.0, 0.0, 0.0, 0),
@@ -113,7 +114,8 @@ impl ExposurePolicy {
         bytemuck::cast(crate::records::Policy {
             inverse_compensation_min_max: [inverse, compensation, min, max],
             mode,
-            pre_exposure: PRE_EXPOSURE,
+            // A negative value is reserved for the labelled storage-scale proof.
+            pre_exposure: forced_storage_scale.map_or(PRE_EXPOSURE, |scale| -scale),
             atmosphere: u32::from(atmosphere),
             display_selectors: display_selectors(tone_map, overlay),
         })

@@ -1,8 +1,9 @@
 //! Native provider interface and the whole-encoder segment.
+pub(crate) mod metalfx;
 mod segment;
 pub(crate) use segment::{
-    NativeBinding, NativeFrame, NativeFrameValues, NativeGraph, NativePolicy, NativePreparation,
-    NativeProvider, NativeState, PreparedProvider,
+    NativeBinding, NativeFrame, NativeFrameValues, NativeGraph, NativeGraphInputs, NativePolicy,
+    NativePreparation, NativeProvider, NativeState, PreparedProvider,
 };
 pub use segment::{
     NativeOutcome, NativeProviderReport, NativeSegment, NativeTwinSelection, TwinReason,

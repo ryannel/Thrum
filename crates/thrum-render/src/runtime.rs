@@ -952,7 +952,15 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     /// The reconstruction provider prepared for the live scene generation.
     pub fn reconstruction(&self) -> crate::synthetic::Reconstruction {
         match &self.prepared {
-            PreparedRenderer::ThreeD(scene) => scene.reconstruction(),
+            PreparedRenderer::ThreeD(scene) => {
+                if self.native_provider_report().is_some_and(|report| {
+                    report.pass == crate::apple_tile::metalfx::PASS && report.twin.is_none()
+                }) {
+                    crate::synthetic::Reconstruction::MetalFx
+                } else {
+                    scene.reconstruction()
+                }
+            }
             PreparedRenderer::TwoD(_) => crate::synthetic::Reconstruction::Off,
         }
     }
@@ -994,8 +1002,12 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
 
     /// The temporal reconstructor resolved for the prepared scene, when active.
     pub fn resolved_reconstructor(&self) -> Option<crate::capabilities::Reconstructor> {
-        (self.reconstruction() == crate::synthetic::Reconstruction::Taau)
-            .then(|| self.prepared.capabilities().reconstructor())
+        use crate::{capabilities::Reconstructor, synthetic::Reconstruction};
+        match self.reconstruction() {
+            Reconstruction::MetalFx => Some(Reconstructor::MetalFx),
+            Reconstruction::Taau => Some(Reconstructor::Taau),
+            Reconstruction::Off | Reconstruction::Reference => None,
+        }
     }
     /// Change presentation policy between frames. Invalidate retained extraction
     /// and GPU correspondence because the mapping itself may have changed.
@@ -2235,7 +2247,14 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         let native = slot
             .target
             .three_d()
-            .map(|target| target.reserve_native(&self.scene.view))
+            .map(|target| {
+                let view = self
+                    .prepared
+                    .three_d()
+                    .and_then(PreparedSynthetic::pending_view)
+                    .unwrap_or(&self.scene.view);
+                target.reserve_native(view)
+            })
             .transpose()
             .map_err(FrameError::Render)?
             .flatten();

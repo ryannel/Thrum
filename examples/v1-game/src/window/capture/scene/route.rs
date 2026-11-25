@@ -285,22 +285,26 @@ pub(super) fn record(
         let checkpoint = checkpoints
             .next_if(|checkpoint| route.origin_tick + checkpoint.tick == frame.tick)
             .map(|checkpoint| checkpoint.name);
-        write_json_line(
-            &mut log,
-            &serde_json::json!({
-                "tick": frame.tick, "route_tick": frame.tick - route.origin_tick,
-                "alpha": alpha, "alpha_bits": alpha.to_bits(),
-                "committed_solar_hours": committed, "committed_solar_bits": committed.to_bits(),
-                "rendered_solar_hours": rendered, "rendered_solar_bits": rendered.to_bits(),
-                "eye": pose.eye, "yaw": pose.yaw, "pitch": pose.pitch, "epoch": pose.epoch,
-                "submission": sample.submission_order, "visual_revision": sample.visual_revision,
-                "render_extent": sample.render_extent, "jitter_phase": sample.jitter_phase,
-                "history": sample.history_identity, "render_scale": scale.percent(),
-                "dropped_light_references":sample.dropped_light_references,
-                "gpu_pass_ns":sample.gpu_pass_ns.as_ref().map(thrum_render::timing::SceneGpuTimings::values),
-                "checkpoint": checkpoint,
-            }),
-        )?;
+        let mut row = serde_json::json!({
+            "tick": frame.tick, "route_tick": frame.tick - route.origin_tick,
+            "alpha": alpha, "alpha_bits": alpha.to_bits(),
+            "committed_solar_hours": committed, "committed_solar_bits": committed.to_bits(),
+            "rendered_solar_hours": rendered, "rendered_solar_bits": rendered.to_bits(),
+            "eye": pose.eye, "yaw": pose.yaw, "pitch": pose.pitch, "epoch": pose.epoch,
+            "submission": sample.submission_order, "visual_revision": sample.visual_revision,
+            "render_extent": sample.render_extent, "jitter_phase": sample.jitter_phase,
+            "history": sample.history_identity, "render_scale": scale.percent(),
+            "dropped_light_references":sample.dropped_light_references,
+            "gpu_pass_ns":sample.gpu_pass_ns.as_ref().map(thrum_render::timing::SceneGpuTimings::values),
+            "checkpoint": checkpoint,
+        });
+        if let Some(segment) = &sample.native_segment {
+            row["native_segment"] = serde_json::json!({
+                "pass": segment.pass_name(), "submission": segment.submission,
+                "generation": segment.generation, "outcome": format!("{:?}", segment.outcome()),
+            });
+        }
+        write_json_line(&mut log, &row)?;
         if capture {
             let mut image = target.submitted_image(host, sample.submission_order, source)?;
             let identity = serde_json::json!({"source_tick":image.source.tick,"epoch":image.source.epoch,
@@ -343,6 +347,25 @@ pub(super) fn record(
                 .map_err(|error| error.to_string())?;
             }
         }
+    }
+    #[cfg(feature = "creation-counters")]
+    if let Some(provider) = driver.host().native_provider_report() {
+        use thrum_render::runtime::CreationPhase::{Build, Play, Transition};
+        let report = driver.host().creation_report();
+        let native = [Build, Transition, Play].map(|phase| report.native_events(phase));
+        std::fs::write(
+            directory.join("native-provider.json"),
+            serde_json::json!({
+                "pass": provider.pass, "resolved": format!("{:?}", driver.host().reconstruction()),
+                "exposure_path": "normalized-scene-linear",
+                "native_creations": {"build": native[0], "transition": native[1], "play": native[2]},
+                "native_instrumentation": format!("{:?}", report.native),
+                "pipeline_creations_in_play": report.pipeline_events(Play),
+                "submitted": provider.submitted, "encoded": provider.encoded,
+                "completed": provider.completed, "discards": provider.discarded, "resets": provider.resets,
+                "twin_reason": provider.twin.map(|selection| format!("{:?}", selection.reason)),
+            }).to_string(),
+        ).map_err(|error| error.to_string())?;
     }
     if thermal_proof.is_some() {
         #[cfg(feature = "creation-counters")]

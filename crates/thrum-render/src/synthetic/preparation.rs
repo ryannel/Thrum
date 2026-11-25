@@ -899,15 +899,11 @@ impl PreparedSynthetic {
         } else {
             None
         };
-        let temporal = temporal::TemporalInputs::new(device);
+        let temporal = temporal::TemporalInputs::new(device, scene.view.metalfx_normalizes());
         let taau = scene
             .view
             .reconstruction()
-            .then(|| match capabilities.reconstructor() {
-                crate::capabilities::Reconstructor::Taau => {
-                    taau::Taau::new(device, scene.view.reconstruction_reference(), view_volume)
-                }
-            });
+            .then(|| taau::Taau::new(device, scene.view.reconstruction_reference(), view_volume));
         let traced_view = (scene.view.traced_geometry() && ray_structure.is_some())
             .then(|| Box::new(raytrace::TracedView::new(device, &view_layout)));
         let mut pipeline_error = None;
@@ -929,7 +925,13 @@ impl PreparedSynthetic {
             return Err(RenderError::Gpu(error));
         }
         Ok(Self {
-            native: if scene.view.native_witness() == NativeWitness::Off {
+            native: if scene.view.requests_metalfx() {
+                Some(Arc::new(crate::apple_tile::metalfx::Factory::new(
+                    capabilities,
+                    queue,
+                    scene.view.metalfx_probe(),
+                )))
+            } else if scene.view.native_witness() == NativeWitness::Off {
                 None
             } else {
                 Some(native_witness::Factory::new(

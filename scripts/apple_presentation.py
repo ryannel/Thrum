@@ -378,10 +378,10 @@ def ios_transition(output):
 SCALE_STEPS = {36: 85, 72: 75, 108: 67, 144: 50, 180: 67, 224: 75, 260: 85, 300: 100}
 
 
-def scale_environment(output):
+def scale_environment(output, *, counters=False):
     from run_v1_showcase import MOVING_ROUTE, SOURCE, store_root
 
-    binary, env = mac_binary(cook=True)
+    binary, env = mac_binary(cook=True, counters=counters)
     store = output / "store"
     run(str(ROOT / "target/release/thrum-cook"), "cook", str(SOURCE), str(store))
     route = json.loads(MOVING_ROUTE.read_text())
@@ -442,7 +442,7 @@ def scale_history(output, binary, env):
     return dict(header=header, steps=rows)
 
 
-def scale_reference(output, env):
+def scale_reference(output, env, *, metalfx=False):
     from reconstruction_difference import compare, self_check
     from run_v1_showcase import ROUTE
 
@@ -450,6 +450,8 @@ def scale_reference(output, env):
     frames = output / "still-frames"
     env = dict(env, THRUM_RECONSTRUCTION_OUTPUT=str(frames),
                THRUM_RECONSTRUCTION_SCALE_STEPS="1", THRUM_REQUIRE_GPU="1")
+    if metalfx:
+        env = dict(env, THRUM_RECIPE="apple-tile", THRUM_METALFX_QUALITY="1")
     with (output / "reference.log").open("w") as log:
         subprocess.run(["cargo", "test", "--locked", "--offline", "--release", "-p", "v1-game",
                         "--lib", "reconstruction_reference_on_submitted_game_frames", "--",
@@ -478,9 +480,123 @@ def scale_reference(output, env):
             if len(renders) != 64 or any(r["render_extent"] != expected for r in renders):
                 raise ValueError(f"{name}: {arm} missing frames at drawn extent {expected}")
             results[str(percent)] = dict(drawn=expected, **compare(pixels(arm), reference))
+            if metalfx:
+                native = arm.replace("taau", "metalfx", 1)
+                renders = [r for r in rows if r["mode"] == native]
+                if len(renders) != 64 or any(r["render_extent"] != expected for r in renders):
+                    raise ValueError(f"{name}: {native} missing frames at drawn extent {expected}")
+                results[str(percent)] = dict(drawn=expected, taau=compare(pixels(arm), reference),
+                                             metalfx=compare(pixels(native), reference))
         no_aa = compare(pixels("off"), reference)
         checkpoints[name] = dict(scales=results, no_aa=no_aa, held=next(iter(held)))
     return checkpoints
+
+
+def mac_metalfx(output):
+    from run_v1_showcase import MOVING_ROUTE
+
+    binary, env, _ = scale_environment(output, counters=True)
+    capture = output / "valley"
+    command = dict(env, MTL_DEBUG_LAYER="1", THRUM_RECIPE="apple-tile",
+                   THRUM_RECONSTRUCTION="metalfx", THRUM_ROUTE_RENDER_SCALE="trace",
+                   THRUM_CAPTURE_SCENE=str(capture), THRUM_CAPTURE_ROUTE=str(MOVING_ROUTE))
+    with (output / "metal-validation.log").open("w") as log:
+        subprocess.run([binary], cwd=ROOT, env=command, stdout=log,
+                       stderr=subprocess.STDOUT, check=True, timeout=300)
+    validation = (output / "metal-validation.log").read_text()
+    if "Metal API Validation Enabled" not in validation or re.search(
+            r"Metal API Validation.*(?:error|failed)|validation error", validation, re.I):
+        raise ValueError("missing validation activation or Metal validation error")
+    header, *frames = read_rows(capture / "route.jsonl")
+    if (header["backend"], header["recipe"], header["reconstruction"]) != (
+            "Metal", "Ok(AppleTile)", "MetalFx"):
+        raise ValueError(f"wrong MetalFX target: {header}")
+    selected = json.loads((capture / "native-provider.json").read_text())
+    if (selected["native_instrumentation"] != "Counted"
+            or selected["native_creations"] != {"build": 1, "transition": 0, "play": 0}
+            or selected["pipeline_creations_in_play"] != 0 or selected["twin_reason"] is not None
+            or selected["completed"] != selected["submitted"] or selected["discards"]):
+        raise ValueError(f"unexpected native provider lifecycle: {selected}")
+    scales = {}
+    for frame in frames:
+        native = frame["native_segment"]
+        outcome = re.fullmatch(r"Timed\(\[(.+), (.+)\]\)", native["outcome"])
+        if (native["pass"] != selected["pass"] or native["submission"] != frame["submission"]
+                or not outcome or not 0 < float(outcome[1]) < float(outcome[2])):
+            raise ValueError(f"missing actual MetalFX time for {frame}")
+        percent = frame["render_scale"]
+        expected = [(axis * percent + 50) // 100 for axis in header["render_extent"]]
+        if frame["render_extent"] != expected:
+            raise ValueError(f"incorrect MetalFX input content for {frame}")
+        scales.setdefault(percent, []).append(1000 * (float(outcome[2]) - float(outcome[1])))
+    if set(scales) != {100, 85, 75, 67, 50}:
+        raise ValueError(f"missing MetalFX scales: {scales.keys()}")
+    return dict(target="mac-metal", header=header, provider=selected,
+                by_scale={scale: dict(frames=len(times), median_native_ms=median(times))
+                          for scale, times in scales.items()},
+                binary_sha256=hashlib.sha256(binary.read_bytes()).hexdigest())
+
+
+def mac_metalfx_quality(output):
+    _, env, _ = scale_environment(output)
+    return dict(target="mac-metal", checkpoints=scale_reference(output, env, metalfx=True))
+
+
+def mac_metalfx_motion(output):
+    log = output / "motion.log"
+    with log.open("w") as stream:
+        subprocess.run(["cargo", "test", "--locked", "--offline", "-p", "thrum-render",
+                        "--features", "creation-counters", "--test", "metalfx_motion"],
+                       cwd=ROOT, stdout=stream, stderr=subprocess.STDOUT,
+                       env=dict(os.environ, THRUM_REQUIRE_GPU="1", RUST_TEST_NOCAPTURE="1",
+                                MTL_DEBUG_LAYER="1"), check=True, timeout=300)
+    return dict(target="mac-metal", metal_validation=True, log=str(log))
+
+
+def mac_metalfx_exposure(output):
+    _, env, _ = scale_environment(output, counters=True)
+    frames = output / "frames"
+    for option in ("THRUM_METALFX_EXPOSURE_LINEAR", "THRUM_METALFX_EXPOSURE_SCALE_67"):
+        if option in os.environ:
+            env[option] = os.environ[option]
+    with (output / "exposure.log").open("w") as log:
+        subprocess.run(["cargo", "test", "--locked", "--offline", "--release", "-p", "v1-game",
+                        "--features", "creation-counters", "--lib",
+                        "metalfx_exposure_on_submitted_game_frames", "--", "--ignored", "--nocapture"],
+                       cwd=ROOT / "examples/v1-game", stdout=log, stderr=subprocess.STDOUT,
+                       env=dict(env, THRUM_REQUIRE_GPU="1", THRUM_RECONSTRUCTION_OUTPUT=str(frames)),
+                       check=True, timeout=900)
+    off = read_rows(frames / "off.jsonl")
+    repeat = read_rows(frames / "repeat.jsonl")
+    grain = max(abs(a["mean_luminance"] - b["mean_luminance"])
+                for a, b in zip(off, repeat, strict=True))
+    (output / "noise-floor.json").write_text(json.dumps(dict(max_abs_mean_luminance=grain), indent=2))
+    taau = read_rows(frames / "taau.jsonl")
+    metalfx = read_rows(frames / "metalfx.jsonl")
+    rows = []
+    for a, b, c in zip(off, taau, metalfx, strict=True):
+        if len({(row["arm"], row["index"], tuple(row["exposure"][:4]))
+                for row in (a, b, c)}) != 1 or c["reconstructor"] != "MetalFx":
+            raise ValueError(f"mismatched exposure arm: {a}, {b}, {c}")
+        observed = [row["mean_luminance"] for row in (a, b, c)]
+        portable = abs(observed[0] - observed[1])
+        native = abs(observed[0] - observed[2])
+        rows.append(dict(arm=a["arm"], index=a["index"], means=observed,
+                         taau_error=portable, metalfx_error=native,
+                         metalfx_excess=native - portable, history=c["history"],
+                         normalization_ns=c["normalization_ns"]))
+    if {row["exposure"][0] for row in off if row["arm"] == "storage-step"} != {1056964608, 1073741824}:
+        raise ValueError("the GPU sample did not record both forced storage scales")
+    repairs = {arm: json.loads((frames / f"{arm}-repairs.json").read_text())
+               for arm in ("scrub", "storage-step")}
+    if not all(row["normalization_ns"] and row["normalization_ns"] > 0 for row in rows):
+        raise ValueError("normalization GPU cost is missing")
+    receipt = dict(target="mac-metal", exposure_path="normalized-scene-linear",
+                   noise=grain, repairs_by_arm=repairs, rows=rows)
+    (output / "comparison.json").write_text(json.dumps(receipt, indent=2))
+    if any(row["metalfx_excess"] > grain for row in rows):
+        raise ValueError("MetalFX normalization exceeds TAAU outside the measured noise floor")
+    return receipt
 
 
 def mac_scale(output):
@@ -586,7 +702,7 @@ def ios_reset(output):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("check", choices=["extent", "transition", "configure-fault", "transition-capture", "scale", "scale-costs", "edr", "edr-identity", "edr-modes", "edr-headroom", "edr-route", "governor", "governor-identity", "governor-thermal", "reset"])
+    parser.add_argument("check", choices=["extent", "transition", "configure-fault", "transition-capture", "scale", "scale-costs", "edr", "edr-identity", "edr-modes", "edr-headroom", "edr-route", "governor", "governor-identity", "governor-thermal", "reset", "metalfx", "metalfx-quality", "metalfx-exposure", "metalfx-motion"])
     parser.add_argument("--target", choices=["mac-metal", "ios-sim"], required=True)
     parser.add_argument("--output", type=Path)
     parser.add_argument("--steady", action="store_true", help="qualify the unloaded governor arm")
@@ -610,6 +726,10 @@ def main():
               ("governor-identity", "mac-metal"): mac_governor_identity,
               ("governor-thermal", "mac-metal"): mac_governor_thermal,("edr", "ios-sim"): ios_edr,
               ("reset", "ios-sim"): ios_reset,
+              ("metalfx", "mac-metal"): mac_metalfx,
+              ("metalfx-quality", "mac-metal"): mac_metalfx_quality,
+              ("metalfx-exposure", "mac-metal"): mac_metalfx_exposure,
+              ("metalfx-motion", "mac-metal"): mac_metalfx_motion,
               ("edr", "mac-metal"): mac_edr,
               ("edr-modes", "mac-metal"): mac_edr_modes,
               ("edr-headroom", "mac-metal"): mac_edr_headroom,

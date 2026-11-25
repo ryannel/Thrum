@@ -8,26 +8,32 @@ use crate::graph::{
 use crate::pass_key::{PassKey, PipelineRole};
 use std::collections::BTreeSet;
 
+mod normalization;
+use normalization::{Normalize, NormalizedResources, NormalizedTarget};
+
 /// The shared submitted temporal-input qualification witness, as UTF-8 JSON.
 pub const TEMPORAL_WITNESS_JSON: &str = include_str!("temporal/witness.json");
 
 #[derive(Clone)]
 pub(super) struct TemporalInputs {
     pipelines: [wgpu::RenderPipeline; 2],
+    pub(super) normalize: Option<Box<Normalize>>,
 }
 pub(super) struct TemporalTarget {
     exposure: wgpu::TextureView,
     exposure_groups: [wgpu::BindGroup; 2],
+    pub(super) normalized: Option<Box<NormalizedTarget>>,
     pub(super) witness: Option<(wgpu::TextureView, [wgpu::BindGroup; 2])>,
 }
 pub(super) struct TemporalResources {
     pub(super) exposure: ResourceId,
+    pub(super) normalized: Option<NormalizedResources>,
     pub(super) witness: Option<ResourceId>,
     pub(super) witness_pass: Option<usize>,
 }
 
 impl TemporalInputs {
-    pub(super) fn new(device: &crate::runtime::DeviceSite) -> Self {
+    pub(super) fn new(device: &crate::runtime::DeviceSite, normalize: bool) -> Self {
         let shader = crate::shaders::Shader::Temporal.compile(device, "temporal inputs");
         let pipelines = std::array::from_fn(|i| {
             device.render(&wgpu::RenderPipelineDescriptor {
@@ -60,7 +66,10 @@ impl TemporalInputs {
                 cache: None,
             })
         });
-        Self { pipelines }
+        Self {
+            pipelines,
+            normalize: normalize.then(|| Box::new(Normalize::new(device))),
+        }
     }
 
     pub(super) fn target(
@@ -77,6 +86,19 @@ impl TemporalInputs {
                 .ok_or(RenderError::GraphPassMismatch)
                 .map(|t| t.create_view(&wgpu::TextureViewDescriptor::default()))
         };
+        let normalized = self
+            .normalize
+            .as_ref()
+            .zip(ids.normalized.as_ref())
+            .map(|(normalize, ids)| {
+                normalize
+                    .target(device, textures, ids, samples)
+                    .map(Box::new)
+            })
+            .transpose()?;
+        let exposure_samples = normalized
+            .as_ref()
+            .map_or(samples, |target| &target.exposure);
         let groups =
             |witness: bool| {
                 std::array::from_fn(|side| {
@@ -85,7 +107,7 @@ impl TemporalInputs {
                     } else {
                         vec![wgpu::BindGroupEntry {
                             binding: 0,
-                            resource: samples[side].as_entire_binding(),
+                            resource: exposure_samples[side].as_entire_binding(),
                         }]
                     };
                     if witness {
@@ -111,6 +133,7 @@ impl TemporalInputs {
                 .as_ref()
                 .map(|id| Ok::<_, RenderError>((view(id)?, groups(true))))
                 .transpose()?,
+            normalized,
         })
     }
 }
@@ -133,9 +156,14 @@ impl super::SyntheticTargetInputs {
         graph: &mut FrameGraph,
         keys: &mut BTreeSet<PipelineKey>,
         inputs: [&ResourceId; 3],
-        exposure: &ResourceId,
+        (scene, original_exposure): (&ResourceId, &ResourceId),
         extent: [u32; 2],
     ) -> Result<TemporalResources, RenderError> {
+        let normalized =
+            self.append_normalization(graph, keys, scene, original_exposure, extent)?;
+        let exposure = normalized
+            .as_ref()
+            .map_or(original_exposure, |target| &target.exposure);
         let mut append = |witness: bool| {
             let key = self.temporal_key(witness);
             keys.insert(key);
@@ -202,6 +230,7 @@ impl super::SyntheticTargetInputs {
             witness.map_or((None, None), |(id, pass)| (Some(id), Some(pass)));
         Ok(TemporalResources {
             exposure,
+            normalized,
             witness,
             witness_pass,
         })
@@ -218,6 +247,7 @@ impl SceneContext<'_> {
             exposure,
             exposure_groups,
             witness: target,
+            ..
         } = &self.target.temporal;
         let (view, groups, id) = if witness {
             let (view, groups) = target.as_ref().ok_or(RenderError::GraphPassMismatch)?;

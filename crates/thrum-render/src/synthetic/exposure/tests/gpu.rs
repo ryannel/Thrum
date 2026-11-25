@@ -108,7 +108,13 @@ fn assert_night_policy(
             queue,
             exposure,
             light_buffers,
-            night_policy.pack(16_000.0, true, SdrToneMap::Reinhard, DisplayOverlay::Off),
+            night_policy.pack(
+                16_000.0,
+                true,
+                SdrToneMap::Reinhard,
+                DisplayOverlay::Off,
+                None,
+            ),
             light(-1.0, [0.0; 3], [lux; 3]),
         );
         assert!((sample.values[2] - expected).abs() < 0.005, "{sample:?}");
@@ -173,6 +179,7 @@ fn gpu_meter_calibration_fixed_bits_bounds_zero_and_invalid_inputs() {
                     false,
                     SdrToneMap::Reinhard,
                     DisplayOverlay::Off,
+                    None,
                 ),
                 [0.0; 16],
             );
@@ -205,7 +212,13 @@ fn gpu_meter_calibration_fixed_bits_bounds_zero_and_invalid_inputs() {
                 &queue,
                 &exposure,
                 light_buffers,
-                policy.pack(16_000.0, true, SdrToneMap::Reinhard, DisplayOverlay::Off),
+                policy.pack(
+                    16_000.0,
+                    true,
+                    SdrToneMap::Reinhard,
+                    DisplayOverlay::Off,
+                    None,
+                ),
                 values,
             );
             assert!(
@@ -222,7 +235,13 @@ fn gpu_meter_calibration_fixed_bits_bounds_zero_and_invalid_inputs() {
             &queue,
             &exposure,
             light_buffers,
-            policy.pack(16_000.0, true, SdrToneMap::Reinhard, DisplayOverlay::Off),
+            policy.pack(
+                16_000.0,
+                true,
+                SdrToneMap::Reinhard,
+                DisplayOverlay::Off,
+                None,
+            ),
             sky,
         );
         let mut probe_warning = sky;
@@ -232,7 +251,13 @@ fn gpu_meter_calibration_fixed_bits_bounds_zero_and_invalid_inputs() {
             &queue,
             &exposure,
             light_buffers,
-            policy.pack(16_000.0, true, SdrToneMap::Reinhard, DisplayOverlay::Off),
+            policy.pack(
+                16_000.0,
+                true,
+                SdrToneMap::Reinhard,
+                DisplayOverlay::Off,
+                None,
+            ),
             probe_warning,
         );
         assert_eq!(
@@ -250,6 +275,7 @@ fn gpu_meter_calibration_fixed_bits_bounds_zero_and_invalid_inputs() {
                 true,
                 SdrToneMap::Reinhard,
                 DisplayOverlay::Off,
+                None,
             ),
             sky,
         );
@@ -268,7 +294,13 @@ fn gpu_meter_calibration_fixed_bits_bounds_zero_and_invalid_inputs() {
                 &queue,
                 &exposure,
                 light_buffers,
-                policy.pack(16_000.0, true, SdrToneMap::Reinhard, DisplayOverlay::Off),
+                policy.pack(
+                    16_000.0,
+                    true,
+                    SdrToneMap::Reinhard,
+                    DisplayOverlay::Off,
+                    None,
+                ),
                 values,
             );
             assert_eq!(sample.flags, 12);
@@ -280,7 +312,13 @@ fn gpu_meter_calibration_fixed_bits_bounds_zero_and_invalid_inputs() {
             &queue,
             &exposure,
             light_buffers,
-            policy.pack(16_000.0, false, SdrToneMap::Reinhard, DisplayOverlay::Off),
+            policy.pack(
+                16_000.0,
+                false,
+                SdrToneMap::Reinhard,
+                DisplayOverlay::Off,
+                None,
+            ),
             sky,
         );
         assert_eq!(
@@ -316,7 +354,13 @@ fn gpu_meter_calibration_fixed_bits_bounds_zero_and_invalid_inputs() {
                     &queue,
                     &exposure,
                     light_buffers,
-                    selected.pack(16_000.0, true, SdrToneMap::Reinhard, DisplayOverlay::Off),
+                    selected.pack(
+                        16_000.0,
+                        true,
+                        SdrToneMap::Reinhard,
+                        DisplayOverlay::Off,
+                        None,
+                    ),
                     values,
                 )
             });

@@ -20,6 +20,8 @@ pub enum Reconstruction {
     Off,
     /// Registry-selected portable temporal resolve.
     Taau,
+    /// Apple MetalFX temporal reconstruction with a prepared TAAU twin.
+    MetalFx,
     /// Independent 32-offset box reference for held-state qualification.
     Reference,
 }
@@ -42,10 +44,12 @@ pub(super) enum Projection {
 pub struct SyntheticView {
     native_witness: super::NativeWitness,
     native_content: Option<NativeFrameValues>,
+    metalfx_probe: super::MetalFxProbe,
     pub(super) projection: Projection,
     view_proj: Mat4,
     camera: Vec3,
     exposure: Option<ExposurePolicy>,
+    forced_storage_scale: f32,
     sdr_tone_map: SdrToneMap,
     display_overlay: DisplayOverlay,
     history_reset: bool,
@@ -75,10 +79,12 @@ impl Default for SyntheticView {
         Self {
             native_witness: super::NativeWitness::Off,
             native_content: None,
+            metalfx_probe: super::MetalFxProbe::None,
             projection: Projection::OrthographicFixture,
             view_proj: reverse_z,
             camera: Vec3::new(0.0, 0.0, -3.0),
             exposure: None,
+            forced_storage_scale: 0.0,
             sdr_tone_map: SdrToneMap::default(),
             display_overlay: DisplayOverlay::Off,
             history_reset: false,
@@ -116,6 +122,7 @@ impl SyntheticView {
         self.native_content = Some(NativeFrameValues {
             content_origin: origin,
             content_extent: extent,
+            raster_jitter: [0.0; 2],
         });
         self
     }
@@ -126,7 +133,8 @@ impl SyntheticView {
     ) -> Result<NativeFrameValues, RenderError> {
         let content = self.native_content.unwrap_or(NativeFrameValues {
             content_origin: [0, 0],
-            content_extent: input_extent,
+            content_extent: self.render_scale().extent(input_extent),
+            raster_jitter: self.raster_jitter_pixels(),
         });
         if content.content_extent.contains(&0)
             || (0..2).any(|axis| {
@@ -208,6 +216,7 @@ impl SyntheticView {
         Ok(Self {
             native_witness: super::NativeWitness::Off,
             native_content: None,
+            metalfx_probe: super::MetalFxProbe::None,
             projection: Projection::Perspective {
                 view,
                 fx,
@@ -218,6 +227,7 @@ impl SyntheticView {
             view_proj,
             camera: eye,
             exposure: None,
+            forced_storage_scale: 0.0,
             sdr_tone_map: SdrToneMap::default(),
             display_overlay: DisplayOverlay::Off,
             history_reset: false,
@@ -300,6 +310,18 @@ impl SyntheticView {
         }
     }
 
+    /// Replace only the storage multiplier for a labelled reconstruction proof.
+    /// # Errors
+    /// Refuses values outside the renderer's positive storage scale range.
+    #[cfg(feature = "creation-counters")]
+    pub fn with_storage_scale_probe(mut self, scale: Option<f32>) -> Result<Self, RenderError> {
+        if scale.is_some_and(|value| !(super::PRE_EXPOSURE..=64.0).contains(&value)) {
+            return Err(RenderError::InvalidExposure);
+        }
+        self.forced_storage_scale = scale.unwrap_or_default();
+        Ok(self)
+    }
+
     pub(super) fn exposure_policy(
         &self,
         fallback: f32,
@@ -314,6 +336,7 @@ impl SyntheticView {
                 atmosphere,
                 self.sdr_tone_map,
                 self.display_overlay,
+                (self.forced_storage_scale != 0.0).then_some(self.forced_storage_scale),
             )
     }
 
@@ -397,6 +420,37 @@ impl SyntheticView {
             Reconstruction::Off
         };
         self
+    }
+
+    /// Request MetalFX on the Apple recipe, with TAAU on unsupported targets.
+    #[must_use]
+    pub fn with_metalfx(mut self) -> Self {
+        self.reconstruction = Reconstruction::MetalFx;
+        self
+    }
+
+    /// Select a labelled MetalFX qualification control before preparation.
+    #[cfg(feature = "creation-counters")]
+    #[must_use]
+    pub fn with_metalfx_probe(mut self, probe: super::MetalFxProbe) -> Self {
+        self.metalfx_probe = probe;
+        self
+    }
+
+    pub(super) fn metalfx_probe(&self) -> super::MetalFxProbe {
+        self.metalfx_probe
+    }
+
+    pub(super) fn metalfx_normalizes(&self) -> bool {
+        #[cfg(feature = "creation-counters")]
+        if self.metalfx_probe == super::MetalFxProbe::ExposureTextureOnly {
+            return false;
+        }
+        self.requests_metalfx()
+    }
+
+    pub(super) fn requests_metalfx(&self) -> bool {
+        self.reconstruction == Reconstruction::MetalFx
     }
 
     pub(super) fn reconstruction(&self) -> bool {

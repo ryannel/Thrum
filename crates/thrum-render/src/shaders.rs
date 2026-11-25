@@ -400,6 +400,7 @@ shader_catalog! {
     );
     Exposure => crate::synthetic::exposure::SHADER;
     Temporal => wgsl!("synthetic/temporal.wgsl");
+    MetalFxNormalize => concat!(wgsl!("records/exposure.wgsl"), wgsl!("synthetic/temporal/normalize.wgsl"));
     History => wgsl!("synthetic/history_gpu.wgsl");
     NativeWitness => wgsl!("synthetic/native_witness.wgsl");
     Shadow => wgsl!("synthetic/shadow.wgsl");

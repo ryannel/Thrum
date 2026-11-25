@@ -466,7 +466,7 @@ if __name__ == "__main__":
     parser.add_argument("--scene", choices=["valley", "exit"], help="cooked scene for a fixed checkpoint")
     parser.add_argument("--params", type=Path, default=ROOT / "examples/v1-game/params/showcase-noon.params.json")
     parser.add_argument("--route", type=Path, help="checked cooked route for --case route")
-    parser.add_argument('--reconstruction', choices=['off','taau'])
+    parser.add_argument('--reconstruction', choices=['off','taau','metalfx'])
     parser.add_argument('--overlay', choices=['off','proof','motion','reconstruction'])
     parser.add_argument('--recipe', choices=['portable','apple-tile'])
     parser.add_argument("--case", choices=[

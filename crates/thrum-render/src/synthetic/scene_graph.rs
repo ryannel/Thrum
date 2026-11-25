@@ -55,7 +55,7 @@ impl SceneGraphs<CompiledGraph> {
         keys: &BTreeSet<PipelineKey>,
         capture: CaptureSource,
         surface: Option<&(ResourceId, PassBody)>,
-        consumers: [Option<usize>; 4],
+        consumers: impl IntoIterator<Item = Option<usize>>,
     ) -> Result<Option<Self>, RenderError> {
         let Some(stars) = stars else {
             return Ok(None);
@@ -587,30 +587,71 @@ impl super::SyntheticTargetInputs {
             &mut graph,
             &mut prepared_keys,
             [&depth, &motion, &reactive],
+            (&scene, &exposure_sample),
+            [width, height],
+        )?;
+        let attachments = [&scene, &depth, &motion, &reactive];
+        let mut reconstruction = self.declare_taau(
+            &mut graph,
+            &mut prepared_keys,
+            attachments,
             &exposure_sample,
             [width, height],
         )?;
+        let use_native_reconstruction = self.view_sample.requests_metalfx();
         let native = self
             .native
             .as_ref()
-            .map(|provider| provider.declare(&mut graph, &scene, [width, height]))
+            .map(|provider| {
+                provider.declare(
+                    &mut graph,
+                    crate::apple_tile::NativeGraphInputs {
+                        attachments,
+                        exposure: &temporal.exposure,
+                        normalized_colour: temporal
+                            .normalized
+                            .as_ref()
+                            .map(|target| &target.colour),
+                        reconstruction_twin: if use_native_reconstruction {
+                            reconstruction.take()
+                        } else {
+                            None
+                        },
+                    },
+                    [width, height],
+                )
+            })
             .transpose()?;
-        let taau = self.append_taau(
-            &mut graph,
-            &mut prepared_keys,
-            [&scene, &depth, &motion, &reactive],
-            &exposure_sample,
-            [width, height],
-        )?;
+        let taau = if use_native_reconstruction {
+            native.as_ref().map(|native| super::taau::TaauResources {
+                output: native.output.clone(),
+                pass: native.pass,
+            })
+        } else {
+            reconstruction.map(|(output, body)| super::taau::TaauResources {
+                output,
+                pass: graph.declare(PassKey::Taau, body),
+            })
+        };
         late.order_consumers(
             &mut graph,
             [
+                temporal.normalized.as_ref().map(|target| target.pass),
                 native.as_ref().map(|native| native.pass),
-                taau.as_ref().map(|taau| taau.pass),
+                taau.as_ref()
+                    .filter(|_| !use_native_reconstruction)
+                    .map(|taau| taau.pass),
             ],
         )?;
         let pre_tone = self.pre_tone_input(
-            (&scene, &motion, &exposure_sample),
+            (
+                &scene,
+                &motion,
+                temporal
+                    .normalized
+                    .as_ref()
+                    .map_or(&exposure_sample, |target| &target.exposure),
+            ),
             &temporal,
             taau.as_ref(),
             native.as_ref(),
@@ -677,10 +718,13 @@ impl super::SyntheticTargetInputs {
             capture_source,
             surface.as_ref(),
             [
+                temporal.normalized.as_ref().map(|target| target.pass),
                 native.as_ref().map(|native| native.pass),
                 Some(display_pass),
                 temporal.witness_pass,
-                taau.as_ref().map(|taau| taau.pass),
+                taau.as_ref()
+                    .filter(|_| !use_native_reconstruction)
+                    .map(|taau| taau.pass),
             ],
         )?;
         Ok(CompiledScene {
@@ -1523,6 +1567,17 @@ impl super::SyntheticTargetInputs {
             PassKey::CombinedVisibility => B::new(id, PassKind::Compute, |frame, pass| {
                 frame.soft_sun(super::raytrace::soft::Stage::Trace, pass)
             }),
+            PassKey::MetalFxNormalize => B::new(id, PassKind::Compute, |frame, pass| {
+                frame.normalize_metalfx(pass)
+            }),
+            PassKey::MetalFx => B::new(id, PassKind::Native, |frame, pass| {
+                let native = frame.native.ok_or(RenderError::GraphPassMismatch)?;
+                if native.uses_twin() {
+                    frame.taau(pass)
+                } else {
+                    Self::encode_native(frame)
+                }
+            }),
             PassKey::NativeProviderBefore(_) => Self::bind_native(id, false),
             PassKey::NativeProvider(_) => Self::bind_native(id, true),
             PassKey::Readback => B::new(id, PassKind::Copy, |frame, pass| frame.copy(pass)),
@@ -1533,19 +1588,23 @@ impl super::SyntheticTargetInputs {
         })
     }
 
+    fn encode_native(frame: &mut super::SceneContext<'_>) -> Result<(), RenderError> {
+        let native = frame.native.ok_or(RenderError::GraphPassMismatch)?;
+        native.encode(
+            &frame.target.device,
+            frame.encoder,
+            frame
+                .segments
+                .as_deref_mut()
+                .ok_or(RenderError::GraphPassMismatch)?,
+        );
+        Ok(())
+    }
+
     fn bind_native(id: usize, segment: bool) -> RecordBinding<SceneFamily> {
         if segment {
             RecordBinding::<SceneFamily>::new(id, PassKind::Native, |frame, _| {
-                let native = frame.native.ok_or(RenderError::GraphPassMismatch)?;
-                native.encode(
-                    &frame.target.device,
-                    frame.encoder,
-                    frame
-                        .segments
-                        .as_deref_mut()
-                        .ok_or(RenderError::GraphPassMismatch)?,
-                );
-                Ok(())
+                Self::encode_native(frame)
             })
         } else {
             RecordBinding::<SceneFamily>::new(id, PassKind::Copy, |frame, _| {

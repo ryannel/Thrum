@@ -38,7 +38,7 @@ impl DeviceSite {
     }
 
     #[cfg(any(target_os = "macos", target_os = "ios"))]
-    pub(crate) fn native_prepared(&self) {
+    pub(crate) fn native_prepared(&self, _counted: bool) {
         let _ = &self.0;
     }
 

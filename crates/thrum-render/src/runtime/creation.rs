@@ -138,7 +138,9 @@ pub enum Instrumentation {
 pub enum NativeSites {
     /// No Thrum code creates a native object.
     Absent,
-    /// Native objects exist, but their creation counts are not instrumented.
+    /// Explicit native provider creation sites report their events by phase.
+    Counted,
+    /// Native objects exist, but their creation counts are not fully instrumented.
     Uninstrumented,
 }
 
@@ -210,6 +212,7 @@ pub struct CreationReport {
     pub instrumentation: Instrumentation,
     /// Native-object creation sites.
     pub native: NativeSites,
+    native_events: [u64; 3],
     /// The generation's build finished.
     pub ready: bool,
     /// Frames submitted on this generation.
@@ -233,6 +236,7 @@ impl CreationReport {
             generation: 0,
             instrumentation: Instrumentation::Untracked,
             native: NativeSites::Absent,
+            native_events: [0; 3],
             ready: false,
             frames: 0,
             pipelines: Vec::new(),
@@ -251,6 +255,12 @@ impl CreationReport {
             total.add(row.counts);
         }
         total
+    }
+
+    /// Explicitly instrumented native provider creations in this phase.
+    #[must_use]
+    pub fn native_events(&self, phase: CreationPhase) -> u64 {
+        self.native_events[phase as usize]
     }
 
     /// Pipeline creation events of one phase over all threads and scopes.
@@ -385,9 +395,30 @@ impl DeviceSite {
     }
 
     #[cfg(any(target_os = "macos", target_os = "ios"))]
-    pub(crate) fn native_prepared(&self) {
+    pub(crate) fn native_prepared(&self, counted: bool) {
         if let Some(ledger) = &self.0.ledger {
-            ledger.lock().report.native = NativeSites::Uninstrumented;
+            let scope = event_scope(ledger);
+            let mut state = ledger.lock();
+            if counted {
+                let phase = scope
+                    .and_then(|id| state.open.iter().find(|item| item.id == id))
+                    .map_or_else(
+                        || {
+                            if state.report.ready {
+                                CreationPhase::Play
+                            } else {
+                                CreationPhase::Build
+                            }
+                        },
+                        |item| item.phase,
+                    );
+                state.report.native_events[phase as usize] += 1;
+                if state.report.native == NativeSites::Absent {
+                    state.report.native = NativeSites::Counted;
+                }
+            } else {
+                state.report.native = NativeSites::Uninstrumented;
+            }
         }
     }
 
@@ -440,19 +471,23 @@ thread_local! {
 /// Record one pipeline creation on `ledger`: in the innermost region this
 /// thread has open on that same ledger, else unscoped.
 fn record(ledger: &Arc<CreationLedger>, kind: PipelineKind) {
+    let scope = event_scope(ledger);
+    if scope.is_some_and(|id| ledger.event(Some(id), kind)) {
+        return;
+    }
+    ledger.event(None, kind);
+}
+
+fn event_scope(ledger: &Arc<CreationLedger>) -> Option<u64> {
     let target = Arc::as_ptr(ledger);
-    let scope = SCOPES.with_borrow_mut(|scopes| {
+    SCOPES.with_borrow_mut(|scopes| {
         scopes.retain(|scope| scope.ledger.strong_count() > 0);
         scopes
             .iter()
             .rev()
             .find(|scope| scope.ledger.as_ptr() == target)
             .map(|scope| scope.id)
-    });
-    if scope.is_some_and(|id| ledger.event(Some(id), kind)) {
-        return;
-    }
-    ledger.event(None, kind);
+    })
 }
 
 /// The host's shared handle to its generation's ledger; empty for an
@@ -617,6 +652,7 @@ impl CreationLedger {
                     generation,
                     instrumentation: Instrumentation::Pending,
                     native: NativeSites::Absent,
+                    native_events: [0; 3],
                     ready: false,
                     frames: 0,
                     pipelines: Vec::new(),

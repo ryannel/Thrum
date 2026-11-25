@@ -193,6 +193,7 @@ async fn host(
 ) {
     let mut setup = crate::selected_setup().unwrap();
     setup.reconstruction = match mode {
+        name if name.starts_with("metalfx") => thrum_render::synthetic::Reconstruction::MetalFx,
         "reference" => thrum_render::synthetic::Reconstruction::Reference,
         "off" => thrum_render::synthetic::Reconstruction::Off,
         _ => thrum_render::synthetic::Reconstruction::Taau,
@@ -220,8 +221,41 @@ async fn host(
     if early_preset {
         select_checkpoint(&mut host, preset);
     }
-    thrum_asset_gpu::await_drawn(&mut host, &stats, thrum_asset_gpu::Drawn::Generation(1))
-        .expect("cooked residency");
+    if mode.starts_with("metalfx") {
+        assert_eq!(
+            host.reconstruction(),
+            thrum_render::synthetic::Reconstruction::MetalFx
+        );
+        let view = device
+            .create_texture(&wgpu::TextureDescriptor {
+                label: Some("native reconstruction warmup surface"),
+                size: wgpu::Extent3d {
+                    width: EXTENT[0],
+                    height: EXTENT[1],
+                    depth_or_array_layers: 1,
+                },
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: wgpu::TextureFormat::Bgra8Unorm,
+                usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+                view_formats: &[],
+            })
+            .create_view(&wgpu::TextureViewDescriptor::default());
+        thrum_asset_gpu::await_drawn_on_surface(
+            &mut host,
+            &stats,
+            thrum_asset_gpu::Drawn::Generation(1),
+            &SurfaceOutput {
+                view: &view,
+                extent: EXTENT,
+            },
+        )
+        .expect("native cooked residency");
+    } else {
+        thrum_asset_gpu::await_drawn(&mut host, &stats, thrum_asset_gpu::Drawn::Generation(1))
+            .expect("cooked residency");
+    }
     {
         let stats = stats.lock().unwrap();
         assert!(stats.errors.is_empty(), "{:?}", stats.errors);
@@ -269,6 +303,16 @@ async fn checkpoint(
             ("taau-75", RenderScale::Percent75),
             ("taau-67", RenderScale::Percent67),
             ("taau-50", RenderScale::Half),
+        ]);
+    }
+    if metalfx_quality() {
+        arms.retain(|(mode, _)| *mode != "broken");
+        arms.extend([
+            ("metalfx", RenderScale::Native),
+            ("metalfx-85", RenderScale::Percent85),
+            ("metalfx-75", RenderScale::Percent75),
+            ("metalfx-67", RenderScale::Percent67),
+            ("metalfx-50", RenderScale::Half),
         ]);
     }
     for (mode, scale) in arms {
@@ -359,6 +403,10 @@ async fn checkpoint(
     }
 }
 
+fn metalfx_quality() -> bool {
+    std::env::var_os("THRUM_METALFX_QUALITY").is_some()
+}
+
 #[test]
 #[ignore = "explicit cooked-valley reconstruction oracle; run run_v1_showcase.py reconstruction"]
 fn reconstruction_reference_on_submitted_game_frames() {
@@ -393,7 +441,11 @@ fn reconstruction_reference_on_submitted_game_frames() {
         .unwrap();
         assert_eq!(
             caps.recipe().unwrap(),
-            thrum_render::capabilities::Recipe::Portable
+            if metalfx_quality() {
+                thrum_render::capabilities::Recipe::AppleTile
+            } else {
+                thrum_render::capabilities::Recipe::Portable
+            }
         );
         let texture = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("M3 game proof presentation"),
@@ -429,7 +481,9 @@ fn reconstruction_reference_on_submitted_game_frames() {
             }
             checkpoint(&device, &queue, &caps, &surface, &output, name).await;
         }
-        Box::pin(cut(&device, &queue, &caps, &surface, &output)).await;
+        if !metalfx_quality() {
+            Box::pin(cut(&device, &queue, &caps, &surface, &output)).await;
+        }
     });
 }
 
@@ -480,4 +534,163 @@ async fn cut(
         "post-cut output must equal independent reset render"
     );
     assert_ne!(suppressed, reset, "control must reject a suppressed reset");
+}
+
+#[cfg(feature = "creation-counters")]
+#[test]
+#[ignore = "explicit cooked-valley MetalFX exposure campaign"]
+fn metalfx_exposure_on_submitted_game_frames() {
+    let Some(gpu) =
+        thrum_test_support::gpu("MetalFX exposure on the valley", Some(wgpu::Backend::Metal))
+    else {
+        return;
+    };
+    pollster::block_on(async {
+        let (device, queue, caps) = gpu
+            .device_with_hardware(
+                thrum_test_support::Profile::Native,
+                &thrum_test_support::Restriction::default(),
+                1,
+                &[],
+            )
+            .expect("Mac Metal");
+        let caps = caps
+            .with_recipe_override("apple-tile")
+            .expect("Apple recipe");
+        let texture = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("exposure qualification surface"),
+            size: wgpu::Extent3d {
+                width: EXTENT[0],
+                height: EXTENT[1],
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Bgra8Unorm,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+            view_formats: &[],
+        });
+        let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let surface = SurfaceOutput {
+            view: &view,
+            extent: EXTENT,
+        };
+        let output = std::path::PathBuf::from(
+            std::env::var_os("THRUM_RECONSTRUCTION_OUTPUT").expect("exposure evidence"),
+        );
+        std::fs::create_dir_all(&output).expect("evidence folder");
+        let preset = serde_json::from_str(include_str!(
+            "../../../params/showcase-sunset-clear-sun.params.json"
+        ))
+        .unwrap();
+        let linear = std::env::var_os("THRUM_METALFX_EXPOSURE_LINEAR").is_some();
+        for mode in ["off", "repeat", "taau", "metalfx"] {
+            let mut log = std::fs::File::create(output.join(format!("{mode}.jsonl"))).unwrap();
+            for arm in ["scrub", "storage-step"] {
+                let (mut host, _) = host(
+                    &device,
+                    &queue,
+                    &caps,
+                    match (mode, linear) {
+                        ("taau", true) => "metalfx",
+                        ("repeat", _) => "off",
+                        _ => mode,
+                    },
+                    &preset,
+                )
+                .await;
+                if linear {
+                    use thrum_render::synthetic::CaptureSource;
+                    host.disable_submitted_capture();
+                    if mode == "taau" {
+                        assert!(host.reject_native_provider());
+                    }
+                    let stage = if matches!(mode, "taau" | "metalfx") {
+                        CaptureSource::NativeOutput
+                    } else {
+                        CaptureSource::SceneLinear
+                    };
+                    host.enable_submitted_capture_from(1, CaptureLimits::default(), stage)
+                        .expect("true scene-linear exposure input tap");
+                }
+                if matches!(mode, "taau" | "metalfx")
+                    && std::env::var_os("THRUM_METALFX_EXPOSURE_SCALE_67").is_some()
+                {
+                    host.set_render_scale(RenderScale::Percent67)
+                        .expect("normal Apple route scale");
+                }
+                for index in 0_u16..36 {
+                    if arm == "scrub" {
+                        // An edit of the light itself exercises the scaler's
+                        // history without using the public cut entry point.
+                        let hour = 16.8 + 1.8 * (f32::from(index.min(29)) / 29.0);
+                        scrub_haze_sun(&mut host, hour / 24.0).unwrap();
+                    } else {
+                        host.continuous_source_mut().forced_storage_scale =
+                            Some(if index < 16 { 0.5 } else { 2.0 });
+                    }
+                    let (pixels, sample, exposure) = submitted(&mut host, &device, &surface);
+                    let value = serde_json::json!({
+                        "arm": arm, "index": index, "reconstructor": format!("{:?}", host.reconstruction()),
+                        "mean_luminance": if linear {
+                            let matching = if mode == "metalfx" { 0.25 } else {
+                                f32::from_bits(exposure[0]) * f32::from_bits(exposure[1])
+                            };
+                            mean_linear_luminance(&pixels, matching)
+                        } else { mean_luminance(&pixels) },
+                        "exposure": exposure, "history":sample.history_identity,
+                        "normalization_ns":sample.gpu_pass_ns.as_ref().and_then(|timing| timing.get("MetalFX exposure normalization")),
+                    });
+                    writeln!(log, "{value}").unwrap();
+                }
+                if mode == "metalfx" {
+                    let counts = host.metalfx_repairs_for_probe().expect("repair totals");
+                    std::fs::write(
+                        output.join(format!("{arm}-repairs.json")),
+                        serde_json::to_vec(&counts).unwrap(),
+                    )
+                    .unwrap();
+                }
+            }
+        }
+    });
+}
+
+#[cfg(feature = "creation-counters")]
+fn mean_luminance(pixels: &[u8]) -> f64 {
+    let decode: [f64; 256] = std::array::from_fn(|index| {
+        let value = f64::from(u8::try_from(index).unwrap()) / 255.0;
+        if value <= 0.04045 {
+            value / 12.92
+        } else {
+            ((value + 0.055) / 1.055).powf(2.4)
+        }
+    });
+    pixels
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .map(|pixel| {
+            0.2126 * decode[usize::from(pixel[0])]
+                + 0.7152 * decode[usize::from(pixel[1])]
+                + 0.0722 * decode[usize::from(pixel[2])]
+        })
+        .sum::<f64>()
+        / f64::from(EXTENT[0] * EXTENT[1])
+}
+
+#[cfg(feature = "creation-counters")]
+fn mean_linear_luminance(pixels: &[u8], matching: f32) -> f64 {
+    pixels
+        .as_chunks::<8>()
+        .0
+        .iter()
+        .map(|pixel| {
+            let channel =
+                |index| f64::from(half(u16::from_le_bytes([pixel[index], pixel[index + 1]])));
+            (0.2126 * channel(0) + 0.7152 * channel(2) + 0.0722 * channel(4)) / f64::from(matching)
+        })
+        .sum::<f64>()
+        / f64::from(EXTENT[0] * EXTENT[1])
 }

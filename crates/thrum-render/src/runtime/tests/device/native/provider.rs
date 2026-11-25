@@ -4,13 +4,13 @@ use super::*;
 use crate::apple_tile::{self, CommandBuffer, Texture};
 use crate::{
     apple_tile::{
-        NativeBinding, NativeFrameValues, NativeGraph, NativePolicy, NativePreparation,
-        NativeProvider, NativeState, PreparedProvider,
+        NativeBinding, NativeFrameValues, NativeGraph, NativeGraphInputs, NativePolicy,
+        NativePreparation, NativeProvider, NativeState, PreparedProvider,
     },
     error::RenderError,
     graph::{
         Access, AccessKind, FrameGraph, GraphTextures, PassBody, PassScope, ResourceDescriptor,
-        ResourceId, ResourceScope, TextureKind,
+        ResourceScope, TextureKind,
     },
     pass_key::PassKey,
     synthetic::{NativeOutcome, NativeSegment, NativeTwinSelection, TwinReason},
@@ -119,7 +119,7 @@ impl Factory {
         #[cfg(any(target_os = "macos", target_os = "ios"))]
         let (prepared, raw) = {
             let mut prepared = prepared;
-            let raw = prepared.prepare_metal(device, || {
+            let raw = prepared.prepare_metal(device, false, || {
                 let retain = |texture| apple_tile::texture(texture).ok_or(RenderError::StaleTarget);
                 Ok::<_, RenderError>(Raw {
                     source: retain(&source)?,
@@ -153,7 +153,7 @@ impl NativeProvider for Factory {
     fn declare(
         &self,
         graph: &mut FrameGraph,
-        _: &ResourceId,
+        _: NativeGraphInputs<'_>,
         _: [u32; 2],
     ) -> Result<NativeGraph, RenderError> {
         let descriptor = |[width, height]: [u32; 2]| ResourceDescriptor::Texture {

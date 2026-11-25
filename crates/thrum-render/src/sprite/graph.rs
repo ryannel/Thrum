@@ -858,6 +858,8 @@ fn bind(plan: CompiledGraph) -> Result<ExecutableGraph<SpriteGraph>, RenderError
                 | PassKey::TemporalExposure
                 | PassKey::TemporalWitness
                 | PassKey::Taau
+                | PassKey::MetalFx
+                | PassKey::MetalFxNormalize
                 | PassKey::AfterOpaque(_)
                 | PassKey::AfterOpaqueCopy
                 | PassKey::Secondary { .. }

@@ -1273,6 +1273,10 @@ fn write_runtime_report(
                 .collect::<Vec<_>>()
         );
     }
+    result["reconstruction"] = json!(format!("{:?}", driver.host().reconstruction()));
+    if let Some(provider) = driver.host().native_provider_report() {
+        result["native_provider"] = json!(format!("{provider:?}"));
+    }
     if let Some(native) = driver.native_witness_report() {
         result["native_witness"] = json!({"selection":format!("{:?}",native.selection),"encoded":native.encoded,"submitted":native.submitted,"discarded":native.discarded,"resets":native.resets,"completed":native.completed,"resident_bytes":native.resident_bytes});
     }
@@ -1610,7 +1614,7 @@ pub(super) fn prepare_route(
     // The native provider retains the ordinary presentation contract during
     // preparation too. Use an engine texture as the headless surface consumer;
     // never submit native work without its prepared presenter.
-    let preparation_output = host.native_witness_report().map(|_| {
+    let preparation_output = host.native_provider_report().map(|_| {
         gpu.device
             .create_texture(&wgpu::TextureDescriptor {
                 label: Some("native route preparation virtual surface"),
@@ -1630,27 +1634,14 @@ pub(super) fn prepare_route(
     });
     host.world_mut().pause()?;
     let generation = if let Some(view) = &preparation_output {
-        // The native witness refuses endpoint frames, so its preparation draws ordinary
-        // frames into the virtual surface, under the one content wait.
-        let failures = thrum_asset_gpu::cooked_failure_baseline(&stats)?;
-        thrum_asset_gpu::await_content(
+        thrum_asset_gpu::await_drawn_on_surface(
+            host,
+            &stats,
             thrum_asset_gpu::Drawn::Any,
-            || {
-                host.drive(
-                    Duration::ZERO,
-                    Some(&thrum_render::runtime::SurfaceOutput {
-                        view,
-                        extent: gpu.surface.extent,
-                    }),
-                )
-                .map_err(thrum_asset_gpu::AwaitDrawnError::Frame)?;
-                drop(
-                    host.poll_completed()
-                        .map_err(thrum_asset_gpu::AwaitDrawnError::Frame)?,
-                );
-                Ok(())
+            &thrum_render::runtime::SurfaceOutput {
+                view,
+                extent: gpu.surface.extent,
             },
-            || thrum_asset_gpu::cooked_progress(&stats, failures),
         )?
     } else {
         thrum_asset_gpu::await_drawn(host, &stats, thrum_asset_gpu::Drawn::Any)?

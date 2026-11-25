@@ -182,6 +182,8 @@ pub(crate) enum PipelineRole {
     TemporalExposure,
     /// Temporal input witness.
     TemporalWitness,
+    /// Normalize the MetalFX input and publish matching tone exposure.
+    MetalFxNormalize,
     /// Portable temporal upscaling.
     Taau,
     /// One stage of traced Sun visibility.
@@ -237,6 +239,7 @@ impl PipelineRole {
             Self::DepthPrepass => 0x4450,
             Self::TemporalExposure => 0x5440,
             Self::TemporalWitness => 0x5441,
+            Self::MetalFxNormalize => 0x5442,
             Self::Taau => 0x5450,
             Self::SoftSun(stage) => 0x5355 + stage,
             Self::Ambient(stage) => 0x414f + stage,
@@ -334,8 +337,12 @@ pub(crate) enum PassKey {
     TemporalExposure,
     /// Temporal input witness.
     TemporalWitness,
+    /// Normalize the MetalFX input and publish matching tone exposure.
+    MetalFxNormalize,
     /// Portable temporal upscaling.
     Taau,
+    /// MetalFX and its prepared TAAU twin.
+    MetalFx,
     /// One stage of traced Sun visibility.
     SoftSun(crate::synthetic::SoftSunStage),
     CombinedVisibility,
@@ -410,7 +417,9 @@ impl PassKey {
             Self::CullingStats => "camera culling stats",
             Self::TemporalExposure => "temporal exposure texture",
             Self::TemporalWitness => "temporal input witness",
+            Self::MetalFxNormalize => "MetalFX exposure normalization",
             Self::Taau => "portable TAAU",
+            Self::MetalFx => "MetalFX temporal",
             Self::SoftSun(stage) => stage.name(),
             Self::CombinedVisibility => crate::synthetic::COMBINED_TRACE,
             Self::Ambient(stage) => stage.name(),
@@ -457,7 +466,11 @@ impl PassKey {
             Self::History => TimingCategory::History,
             Self::Exposure | Self::Display | Self::DisplayReferred => TimingCategory::Tone,
             Self::Atmosphere(stage) => stage.timing(),
-            Self::TemporalExposure | Self::TemporalWitness | Self::Taau => TimingCategory::Temporal,
+            Self::TemporalExposure
+            | Self::TemporalWitness
+            | Self::Taau
+            | Self::MetalFx
+            | Self::MetalFxNormalize => TimingCategory::Temporal,
             Self::Effect(_)
             | Self::AfterOpaque(_)
             | Self::SoftSun(_)
@@ -500,7 +513,8 @@ impl PassKey {
             Self::FinalCull => PipelineRole::FinalCull,
             Self::TemporalExposure => PipelineRole::TemporalExposure,
             Self::TemporalWitness => PipelineRole::TemporalWitness,
-            Self::Taau => PipelineRole::Taau,
+            Self::MetalFxNormalize => PipelineRole::MetalFxNormalize,
+            Self::Taau | Self::MetalFx => PipelineRole::Taau,
             Self::SoftSun(stage) => PipelineRole::SoftSun(stage as u32),
             Self::CombinedVisibility => PipelineRole::SoftSun(0),
             Self::Ambient(stage) => PipelineRole::Ambient(stage as u32),

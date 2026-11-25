@@ -38,7 +38,7 @@ fn resolve() {
     var ev = log2(inverse / CAMERA_EXPOSURE_NORMALIZATION);
     var lux = 0.0;
     var flags = NOT_METERED;
-    var storage_scale = policy.pre_exposure;
+    var storage_scale = abs(policy.pre_exposure);
     if policy.mode == EXPOSURE_INCIDENT || policy.mode == EXPOSURE_LOW_LIGHT {
         flags = INVALID | NOT_METERED;
         if policy.atmosphere != 0u && finite(directional.direction_to_light.y)
@@ -54,7 +54,7 @@ fn resolve() {
                 }
                 let storage_ev = clamp(raw_ev, parameters.z, parameters.w);
                 let storage_inverse = CAMERA_EXPOSURE_NORMALIZATION * exp2(storage_ev);
-                storage_scale = clamp(0.25 / storage_inverse, policy.pre_exposure, 64.0);
+                storage_scale = clamp(0.25 / storage_inverse, abs(policy.pre_exposure), 64.0);
                 if policy.mode == EXPOSURE_LOW_LIGHT {
                     // Compress the camera's gain at very low scene keys while
                     // preserving the pre-grade scale for dim HDR storage.
@@ -70,6 +70,7 @@ fn resolve() {
         }
     }
     if policy.atmosphere!=0u && environment_light.horizontal_irradiance.w>1.0 { flags|=SKY_SH_NEGATIVE_PROBE; }
+    if policy.pre_exposure < 0.0 { storage_scale = -policy.pre_exposure; }
     result.values = vec4(storage_scale, inverse, ev, lux);
     result.metadata = vec4(flags, serials.current_lo, serials.current_hi, policy.display_selectors);
 }

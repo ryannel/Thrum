@@ -191,7 +191,22 @@ pub(in crate::window) async fn run(
     driver.host_mut().world_mut().pause()?;
     let cooked_generation = content
         .map(|stats| {
-            thrum_asset_gpu::await_drawn(driver.host_mut(), &stats, thrum_asset_gpu::Drawn::Any)
+            if driver.host().native_provider_report().is_some() {
+                let output = driver
+                    .output()
+                    .create_view(&wgpu::TextureViewDescriptor::default());
+                thrum_asset_gpu::await_drawn_on_surface(
+                    driver.host_mut(),
+                    &stats,
+                    thrum_asset_gpu::Drawn::Any,
+                    &thrum_render::runtime::SurfaceOutput {
+                        view: &output,
+                        extent: surface.extent,
+                    },
+                )
+            } else {
+                thrum_asset_gpu::await_drawn(driver.host_mut(), &stats, thrum_asset_gpu::Drawn::Any)
+            }
         })
         .transpose()?;
     std::fs::create_dir_all(&output).map_err(|error| error.to_string())?;

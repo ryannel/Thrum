@@ -2,7 +2,7 @@
 use crate::{
     capabilities::{DeviceCapabilities, Recipe},
     error::RenderError,
-    graph::{FrameGraph, GraphTextures, ResourceId},
+    graph::{FrameGraph, GraphTextures, PassBody, ResourceId},
 };
 use std::{
     any::Any,
@@ -108,6 +108,15 @@ pub(crate) struct NativeGraph {
 pub(crate) struct NativeFrameValues {
     pub(crate) content_origin: [u32; 2],
     pub(crate) content_extent: [u32; 2],
+    pub(crate) raster_jitter: [f32; 2],
+}
+
+/// Scene inputs and the portable reconstruction pass, when it supplies a twin.
+pub(crate) struct NativeGraphInputs<'a> {
+    pub(crate) attachments: [&'a ResourceId; 4],
+    pub(crate) exposure: &'a ResourceId,
+    pub(crate) normalized_colour: Option<&'a ResourceId>,
+    pub(crate) reconstruction_twin: Option<(ResourceId, PassBody)>,
 }
 
 /// Provider configuration and graph declaration, shared by the view's slots.
@@ -115,7 +124,7 @@ pub(crate) trait NativeProvider: wgpu::WasmNotSendSync {
     fn declare(
         &self,
         graph: &mut FrameGraph,
-        scene: &ResourceId,
+        inputs: NativeGraphInputs<'_>,
         extent: [u32; 2],
     ) -> Result<NativeGraph, RenderError>;
 
@@ -194,13 +203,14 @@ impl NativePreparation {
     pub(crate) fn prepare_metal<T, E>(
         &mut self,
         site: &crate::runtime::DeviceSite,
+        counted: bool,
         prepare: impl FnOnce() -> Result<T, E>,
     ) -> Option<T> {
         if self.twin.is_some() {
             return None;
         }
         if let Ok(provider) = prepare() {
-            site.native_prepared();
+            site.native_prepared(counted);
             Some(provider)
         } else {
             self.twin = Some(TwinReason::PreparationRefused);
@@ -352,6 +362,14 @@ pub(crate) struct NativeFrame {
 }
 
 impl NativeFrame {
+    pub(crate) fn content_extent(&self) -> [u32; 2] {
+        self.values.content_extent
+    }
+
+    pub(crate) fn uses_twin(&self) -> bool {
+        self.twin
+    }
+
     pub(crate) fn record_before_native(&self, encoder: &mut wgpu::CommandEncoder) {
         self.binding
             .provider

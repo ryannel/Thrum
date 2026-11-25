@@ -393,6 +393,8 @@ pub struct GameScene {
     pub(super) display_overlay: DisplayOverlay,
     #[cfg(feature = "proving")]
     temporal_inputs: bool,
+    #[cfg(feature = "creation-counters")]
+    pub(super) forced_storage_scale: Option<f32>,
     reconstruction: GameReconstruction,
     #[cfg(feature = "proving")]
     temporal_pan: (u64, f32),
@@ -548,6 +550,8 @@ impl GameScene {
             temporal_inputs: temporal.is_some(),
             native_witness: native_witness_selection(),
             reconstruction: setup.reconstruction,
+            #[cfg(feature = "creation-counters")]
+            forced_storage_scale: None,
             #[cfg(feature = "proving")]
             temporal_star_edit: temporal.as_ref().map_or(u64::MAX, |f| {
                 f["star_edit_tick"].as_u64().expect("fixture star tick")
@@ -603,6 +607,9 @@ impl GameScene {
             .view
             .with_native_witness(native_witness_selection())
             .with_reconstruction(setup.reconstruction != GameReconstruction::Off);
+        if setup.reconstruction == GameReconstruction::MetalFx {
+            scene.view = scene.view.with_metalfx();
+        }
         #[cfg(feature = "proving")]
         {
             scene.view = scene
@@ -831,10 +838,17 @@ impl SceneSource<PublishedPage> for GameScene {
         .with_display_overlay(self.display_overlay)
         .with_jitter_sequence(0, [640, 360])
         .with_reconstruction(self.reconstruction != GameReconstruction::Off);
+        let view = if self.reconstruction == GameReconstruction::MetalFx {
+            view.with_metalfx()
+        } else {
+            view
+        };
         #[cfg(feature = "proving")]
         let view = view
             .with_reconstruction_reference(self.reconstruction == GameReconstruction::Reference)
             .with_temporal_inputs(self.temporal_inputs);
+        #[cfg(feature = "creation-counters")]
+        let view = view.with_storage_scale_probe(self.forced_storage_scale)?;
         // The diagnostic fixture's local Y zero is a two-metre reference datum.
         // Authored scene and field coordinates already measure altitude above sea level.
         let camera_altitude_m = view.camera_position()[1]
@@ -1159,6 +1173,8 @@ mod tests {
             #[cfg(feature = "proving")]
             temporal_inputs: false,
             reconstruction: GameReconstruction::Off,
+            #[cfg(feature = "creation-counters")]
+            forced_storage_scale: None,
             #[cfg(feature = "proving")]
             temporal_pan: (30, -0.05),
             #[cfg(feature = "proving")]

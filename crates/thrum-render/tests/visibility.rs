@@ -107,30 +107,30 @@ fn equivalent(test_gpu: &thrum_test_support::Gpu, view: &SyntheticView, shadows:
     pollster::block_on(async {
         let (adapter, device, queue) = device(test_gpu);
         let capabilities = DeviceCapabilities::capture(&adapter, &device, 41);
-        let direct = render(
+        let direct = Box::pin(render(
             &capabilities,
             &device,
             &queue,
             &scene(view, CullMode::Direct, shadows, 37),
-        )
+        ))
         .await;
-        let culled = render(
+        let culled = Box::pin(render(
             &capabilities,
             &device,
             &queue,
             &scene(view, CullMode::Frustum, shadows, 37),
-        )
+        ))
         .await;
         let changed = differing(&direct, &culled);
         assert_eq!(changed, 0, "frustum compaction changes {changed} pixels");
         // Coverage: pixels the instances touch, against the same view with
         // every instance hidden (the backdrop is not uniform).
-        let empty = render(
+        let empty = Box::pin(render(
             &capabilities,
             &device,
             &queue,
             &scene(view, CullMode::Direct, shadows, 1),
-        )
+        ))
         .await;
         differing(&direct, &empty)
     })
@@ -544,12 +544,12 @@ fn occlusion_matches_direct_draw_through_cuts_recycled_rows_and_a_dropped_frame(
             );
             covered.push(reference);
         }
-        let backdrop = render(
+        let backdrop = Box::pin(render(
             &capabilities,
             &device,
             &queue,
             &scene(&grazing, CullMode::Direct, false, 1),
-        )
+        ))
         .await;
         assert!(
             differing(&covered[0], &backdrop) > 1_000,

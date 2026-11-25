@@ -360,12 +360,13 @@ fn selected_reconstruction(
     match value {
         Err(std::env::VarError::NotPresent) | Ok("off") => Ok(GameReconstruction::Off),
         Ok("taau") => Ok(GameReconstruction::Taau),
+        Ok("metalfx") => Ok(GameReconstruction::MetalFx),
         #[cfg(feature = "proving")]
         Ok("reference") => Ok(GameReconstruction::Reference),
         #[cfg(feature = "proving")]
-        _ => Err("THRUM_RECONSTRUCTION must be off, taau or reference".to_owned()),
+        _ => Err("THRUM_RECONSTRUCTION must be off, taau, metalfx or reference".to_owned()),
         #[cfg(not(feature = "proving"))]
-        _ => Err("THRUM_RECONSTRUCTION must be off or taau".to_owned()),
+        _ => Err("THRUM_RECONSTRUCTION must be off, taau or metalfx".to_owned()),
     }
 }
 

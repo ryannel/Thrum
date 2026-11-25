@@ -67,7 +67,7 @@ use thrum_render::contribution::{
 #[cfg(not(target_arch = "wasm32"))]
 pub use drawn::{
     AwaitDrawnError, DRAWN_DEADLINE, Drawn, Progress, await_content, await_drawn,
-    cooked_failure_baseline, cooked_progress, draw_endpoint,
+    await_drawn_on_surface, cooked_failure_baseline, cooked_progress, draw_endpoint,
 };
 pub use lease::{LeaseRequest, LentProduct, LentSet, ProductLease};
 pub use material::{

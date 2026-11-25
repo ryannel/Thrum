@@ -22,7 +22,7 @@ impl LateGraph {
     pub(super) fn order_consumers(
         &self,
         graph: &mut FrameGraph,
-        passes: [Option<usize>; 2],
+        passes: impl IntoIterator<Item = Option<usize>>,
     ) -> Result<(), RenderError> {
         if self.first.is_some() {
             for pass in passes.into_iter().flatten() {

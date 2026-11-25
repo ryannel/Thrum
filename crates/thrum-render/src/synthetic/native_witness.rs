@@ -2,11 +2,12 @@
 use super::{RenderError, SCENE_FORMAT};
 use crate::{
     apple_tile::{
-        NativeBinding, NativeFrameValues, NativeGraph, NativePolicy, NativePreparation,
-        NativeProvider, NativeProviderReport, NativeState, PreparedProvider, TwinReason,
+        NativeBinding, NativeFrameValues, NativeGraph, NativeGraphInputs, NativePolicy,
+        NativePreparation, NativeProvider, NativeProviderReport, NativeState, PreparedProvider,
+        TwinReason,
     },
     capabilities::DeviceCapabilities,
-    graph::{FrameGraph, GraphTextures, ResourceId},
+    graph::{FrameGraph, GraphTextures},
     runtime::DeviceSite,
 };
 use std::{
@@ -165,7 +166,7 @@ impl Factory {
         #[cfg(any(target_os = "macos", target_os = "ios"))]
         let (preparation, metal) = {
             let mut preparation = preparation;
-            let metal = preparation.prepare_metal(device, || {
+            let metal = preparation.prepare_metal(device, false, || {
                 crate::apple_tile::witness::Pipeline::prepare(device)
             });
             (preparation, metal)
@@ -193,10 +194,10 @@ impl NativeProvider for Factory {
     fn declare(
         &self,
         graph: &mut FrameGraph,
-        scene: &ResourceId,
+        inputs: NativeGraphInputs<'_>,
         extent: [u32; 2],
     ) -> Result<NativeGraph, RenderError> {
-        graph::append(graph, scene, extent)
+        graph::append(graph, inputs.attachments[0], extent)
     }
 
     #[cfg_attr(

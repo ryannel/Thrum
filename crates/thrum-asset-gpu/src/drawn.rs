@@ -3,7 +3,7 @@
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
-use thrum_render::runtime::{FrameError, FrameHost, FrameWorld, SceneSource};
+use thrum_render::runtime::{FrameError, FrameHost, FrameWorld, SceneSource, SurfaceOutput};
 
 use crate::CookedStats;
 
@@ -207,6 +207,38 @@ pub fn await_drawn<W: FrameWorld, V: SceneSource<W::Page>>(
     await_content(
         wanted,
         || draw_endpoint(host),
+        || cooked_progress(stats, failures),
+    )
+}
+
+/// Wait for cooked content using ordinary submitted frames on a prepared
+/// surface. Native scene providers require this path during offscreen warmup.
+/// # Errors
+/// Returns the first loader failure, the deadline, or a frame or device fault.
+pub fn await_drawn_on_surface<W: FrameWorld, V: SceneSource<W::Page>>(
+    host: &mut FrameHost<W, V>,
+    stats: &Mutex<CookedStats>,
+    wanted: Drawn,
+    surface: &SurfaceOutput<'_>,
+) -> Result<u64, AwaitDrawnError> {
+    let device = host.device_capabilities().site().clone();
+    let failures = cooked_failure_baseline(stats)?;
+    await_content(
+        wanted,
+        || {
+            host.drive(Duration::ZERO, Some(surface))
+                .map_err(AwaitDrawnError::Frame)?;
+            while host.pending_frames() != 0 {
+                device
+                    .poll(wgpu::PollType::Wait {
+                        submission_index: None,
+                        timeout: Some(Duration::from_secs(10)),
+                    })
+                    .map_err(|error| AwaitDrawnError::Device(format!("{error:?}")))?;
+                drop(host.poll_completed().map_err(AwaitDrawnError::Frame)?);
+            }
+            Ok(())
+        },
         || cooked_progress(stats, failures),
     )
 }

@@ -22,6 +22,8 @@ pub use recipe::{Recipe, RecipeError};
 pub enum Reconstructor {
     /// Shader-based temporal reconstruction, available on every recipe.
     Taau,
+    /// MetalFX temporal scaling on the Apple recipe.
+    MetalFx,
 }
 
 /// The outcome of resolving a scene's request for a ray structure.

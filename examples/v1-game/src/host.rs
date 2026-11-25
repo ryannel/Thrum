@@ -76,6 +76,8 @@ pub enum GameReconstruction {
     Off,
     /// Portable temporal reconstruction.
     Taau,
+    /// Apple temporal reconstruction with a portable twin.
+    MetalFx,
 }
 
 /// Content and camera culling chosen when the host is prepared.

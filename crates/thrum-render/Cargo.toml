@@ -368,3 +368,15 @@ required-features = ["creation-counters"]
 name = "timestamp_budget"
 path = "tests/timestamp_budget.rs"
 required-features = ["creation-counters"]
+
+[[test]]
+name = "metalfx_fallback"
+required-features = ["creation-counters"]
+
+[[test]]
+name = "metalfx_reset"
+required-features = ["creation-counters"]
+
+[[test]]
+name = "metalfx_motion"
+required-features = ["creation-counters"]

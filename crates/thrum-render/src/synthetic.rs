@@ -81,6 +81,7 @@ mod temporal;
 mod upload;
 mod view;
 pub(crate) use crate::apple_tile::NativeFrame;
+pub use crate::apple_tile::metalfx::MetalFxProbe;
 use crate::apple_tile::{NativeBinding, NativeGraph, NativeProvider};
 pub use crate::apple_tile::{
     NativeOutcome, NativeProviderReport, NativeSegment, NativeTwinSelection, TwinReason,
@@ -1313,8 +1314,13 @@ impl PreparedSynthetic {
     pub fn shadowed(&self) -> bool {
         self.shadow.is_some()
     }
+    pub(crate) fn pending_view(&self) -> Option<&SyntheticView> {
+        self.pending_view.as_ref()
+    }
+
     pub(crate) fn supports_render_scale(&self) -> bool {
-        self.reconstruction() == Reconstruction::Taau && self.native.is_none()
+        self.reconstruction() == Reconstruction::Taau
+            && (self.native.is_none() || self.view_sample.requests_metalfx())
     }
 
     /// Update one live view and its directional, local-light and cascade data.
@@ -2129,6 +2135,7 @@ impl OffscreenTarget {
             &textures,
             &ids,
             [&scene_view, &depth, &motion_view, &reactive_view],
+            native.as_deref(),
         )?;
         let display = prepared.prepare_target_display(
             device,
