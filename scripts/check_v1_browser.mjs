@@ -26,7 +26,7 @@ cases.push('lent-products');
 cases.push('mesh-rows');
 cases.push('effect-after-opaque', 'effect-tick');
 cases.push('exit-scene', 'exit-sweep', 'exit-stops', 'extent');
-cases.push('route-diagnostic', 'scale', 'governor');
+cases.push('route-diagnostic', 'scale', 'governor', 'no-compile');
 cases.push('shipping-boundary');
 cases.push('interface-stage', 'interface-stage-cost', 'interface-text', 'interface-text-visual');
 cases.push('sprites-2d', 'sprites-2d-cost', 'sprites-field', 'sprites-field-cost', 'sprites-crisp', 'sprite-sheets');
@@ -1443,8 +1443,9 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
   const exitCase = mode === 'exit-scene' || mode === 'exit-sweep';
   const sweep = mode === 'exit-sweep';
   const scaleCase = mode === 'scale';
-  const movingCase = scaleCase || mode === 'moving-route' || mode.startsWith('moving-route-');
-  const movingControl = movingCase && !scaleCase && mode !== 'moving-route' ? mode.slice('moving-route-'.length) : undefined;
+  const noCompile = mode === 'no-compile';
+  const movingCase = scaleCase || noCompile || mode === 'moving-route' || mode.startsWith('moving-route-');
+  const movingControl = mode.startsWith('moving-route-') ? mode.slice('moving-route-'.length) : undefined;
   const routeFile = routeCase ? `showcase-${mode.replace(/^(route|exit-stop)-/, '')}.params.json` : undefined;
   const skyCase = mode === 'sky-reflections' || routeDiagnostic || valleyCase;
   const faults = [], timeline = [];
@@ -1454,7 +1455,7 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
     ? `${origin}/?scene=exit&assets=${encodeURIComponent(assetsOrigin)}${sweep ? `&measure&qualify&params=${encodeURIComponent(`showcase-${process.env.THRUM_EXIT_SWEEP_STOP || 'noon'}.params.json`)}` : ''}`
     : movingCase ? `${origin}/route.html?route=${files.movingRouteFile}&assets=${encodeURIComponent(assetsOrigin)}${movingControl === 'phi' ? '&phi=0.1' : ''}${files.movingRouteFile === 'exit-flythrough.json' ? '&scene=exit' : ''}` : routeCase ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&params=${routeFile}&route-check` : routeDiagnostic ? `${origin}/?route-check` : materialCase || materialDisabled ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&material=case.material.wgsl` : valleyCase || valleyRecovery || lateAttach ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}` : mode === 'params' ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&params=case.params.json` : mode === 'controls' || tabCase || destroyCase || skyCase ? `${origin}/` : mode === 'field' ? `${origin}/?qualify&field` : mode === 'field-direct' ? `${origin}/?qualify&field&culling=direct` : mode === 'field-occlusion' ? `${origin}/?qualify&field&culling=occlusion` : oracleCase ? `${origin}/?field&culling=${mode.slice('field-oracle-'.length)}&params=field-oracle.params.json` : `${origin}/?qualify${['normal', 'input'].includes(mode) ? '' : `&${mode}-probe`}`;
   const log = line => { timeline.push(line); console.log(`${mode}: ${line}`); };
-  const cullingQuery = scaleCase ? '&reconstruction=taau&scale-proof' : movingCase ? `&culling=${process.env.THRUM_ROUTE_CULLING ?? 'default'}&meshes=${process.env.THRUM_VALLEY_MESHES ?? 'off'}&reconstruction=${process.env.THRUM_RECONSTRUCTION ?? 'off'}${process.env.THRUM_CULLING_PROOF === 'on' ? '&culling-proof' : ''}` : '';
+  const cullingQuery = scaleCase ? '&reconstruction=taau&scale-proof' : noCompile ? '&reconstruction=taau&no-compile-proof' : movingCase ? `&culling=${process.env.THRUM_ROUTE_CULLING ?? 'default'}&meshes=${process.env.THRUM_VALLEY_MESHES ?? 'off'}&reconstruction=${process.env.THRUM_RECONSTRUCTION ?? 'off'}${process.env.THRUM_CULLING_PROOF === 'on' ? '&culling-proof' : ''}` : '';
   try {
     ({ sessionId } = await cdp.call('Target.attachToTarget', { targetId, flatten: true }));
     cdp.event = packet => {
@@ -1475,6 +1476,20 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
       }
     };
     for (const domain of ['Runtime', 'Page']) await cdp.call(`${domain}.enable`, {}, sessionId);
+    if (noCompile) await cdp.call('Page.addScriptToEvaluateOnNewDocument', { source: `(() => {
+      const methods = ['createShaderModule', 'createComputePipeline', 'createRenderPipeline',
+        'createComputePipelineAsync', 'createRenderPipelineAsync'];
+      const counts = Object.fromEntries(methods.map(method => [method, 0]));
+      for (const method of methods) {
+        const original = GPUDevice.prototype[method];
+        if (typeof original !== 'function') throw new Error('Missing WebGPU method ' + method);
+        GPUDevice.prototype[method] = function (...args) {
+          counts[method]++;
+          return original.apply(this, args);
+        };
+      }
+      window.thrumCompileCreations = () => ({ ...counts });
+    })()` }, sessionId);
     if (scaleCase) await cdp.call('Page.addScriptToEvaluateOnNewDocument', { source: `(() => {
       const methods = ['createTexture', 'createView', 'createBindGroup', 'createComputePipeline',
         'createRenderPipeline', 'createComputePipelineAsync', 'createRenderPipelineAsync'];
@@ -1653,7 +1668,7 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
     }
     else if (oracleCase) oracle = await captureFieldOracle(cdp, sessionId, poll, timeout, output, mode, onDestroy);
     else if (movingControl) route = await qualifyMovingControl(cdp, sessionId, targetId, poll, timeout, output, files, movingControl, otherTarget);
-    else if (movingCase) route = await qualifyMovingRoute(cdp, sessionId, poll, timeout, output, files, scaleCase);
+    else if (movingCase) route = await qualifyMovingRoute(cdp, sessionId, poll, timeout, output, files, mode);
     else if (routeCase) {
       route = await qualifyRoute(cdp, sessionId, poll, timeout, output, mode, routeFile, files);
       if (timeline.some(line => /params|refused/.test(line))) throw new Error(`Parameter problem reached #status: ${JSON.stringify(timeline)}`);
@@ -1769,7 +1784,7 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
     // Wait for document unload before Target.closeTarget can race Browser.close.
     await unloadGamePage(cdp, sessionId, timeout);
     log('WebGPU page unloaded');
-    const result = { case: mode, url, state, actualWasmSha256, responseStatus: 200, input, pause, controls, tabs, params, loss, recovery, sky, material, oracle, route, exit, timeline, scope: oracle?.scope ?? scope };
+    const result = { case: mode, ...(noCompile && { commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repo, encoding: 'utf8' }).trim() }), url, state, actualWasmSha256, responseStatus: 200, input, pause, controls, tabs, params, loss, recovery, sky, material, oracle, route, exit, timeline, scope: oracle?.scope ?? scope };
     await fs.writeFile(path.join(output, `${mode}.json`), JSON.stringify(result, null, 2));
     log(`PASS actualWasmSha256=${actualWasmSha256}`);
     return result;
@@ -1812,7 +1827,7 @@ async function cookedHead(output) {
   return { generation: Number(head.readBigUInt64LE(16)), root: head.subarray(24, 56).toString('hex') };
 }
 
-async function qualifyMovingRoute(cdp, sessionId, poll, timeout, output, files, scaleCase = false) {
+async function qualifyMovingRoute(cdp, sessionId, poll, timeout, output, files, mode = 'moving-route') {
   const deadline = Date.now() + timeout;
   const route = JSON.parse(files.movingRoute.toString('utf8'));
   const cooked = await cookedHead(output);
@@ -1853,7 +1868,16 @@ async function qualifyMovingRoute(cdp, sessionId, poll, timeout, output, files, 
   const origin = route.origin_tick, last = origin + route.keys.at(-1).tick;
   for (let tick = origin; tick <= last; tick += 1) if (!record.samples[tick]) throw new Error(`moving-route: no sample for routed tick ${tick}`);
   await fs.writeFile(path.join(output, 'moving-route.record.json'), JSON.stringify(record, null, 2));
-  if (scaleCase) {
+  if (mode === 'no-compile') {
+    const [ready, finished] = record.compile_creations ?? [];
+    if (!ready || !finished || ready.createShaderModule <= 0 ||
+        ready.createComputePipeline + ready.createComputePipelineAsync <= 0 ||
+        ready.createRenderPipeline + ready.createRenderPipelineAsync <= 0 ||
+        JSON.stringify(ready) !== JSON.stringify(finished)) {
+      throw new Error(`WebGPU creation across readiness: ${JSON.stringify(record.compile_creations)}`);
+    }
+  }
+  if (mode === 'scale') {
     if (record.header.reconstruction !== 'Taau' ||
         ['createTexture', 'createView', 'createBindGroup', 'createComputePipeline', 'createRenderPipeline']
           .some(method => record.creation_baseline[method] <= 0)) {
@@ -1878,7 +1902,7 @@ async function qualifyMovingRoute(cdp, sessionId, poll, timeout, output, files, 
     }
     await fs.writeFile(path.join(output, 'scale-steps.json'), JSON.stringify(changes, null, 2));
   }
-  return { file: files.movingRouteFile, sha256: sha(files.movingRoute), cooked, header: record.header, steps: record.steps.length, captures,
+  return { file: files.movingRouteFile, sha256: sha(files.movingRoute), cooked, header: record.header, steps: record.steps.length, captures, compileCreations: record.compile_creations,
     scope: 'Fresh route.html page with no requestAnimationFrame: the actual authored camera driven one fresh tick per step at the route phase from page clock origin 0, paced by one route-owned timer per step plus bounded slot-wait timers (500 ms at most) where no frame slot is free; checkpoint images are Chrome presented canvas compositor captures, not the submitted pre-display image; no timing or cadence claim' };
 }
 
@@ -2475,7 +2499,7 @@ async function qualifyExtent(cdp, origin, output, timeout, wasm) {
 
 async function main() {
   const args = options(process.argv.slice(2));
-  if (!args) { console.log('node scripts/check_v1_browser.mjs [--case all|effect-state|effect-tick|shipping-boundary|normal|pause|resize|overload|input|controls|tabs|params|device-loss|late-device-loss|device-recovery|device-recovery-retry|device-recovery-acquire|sky-reflections|valley|valley-recovery|valley-late-attach|material|material-disabled|field|field-direct|field-occlusion|field-oracle|route|moving-route|moving-route-controls|clouds-first-frame|clouds-state|clouds-placed|sprite-sheets] [--web-root target/v1-game-web] [--cook target/debug/thrum-cook] [--assets-source examples/v1-game/assets/showcase] [--chrome /path/to/Chrome] [--output tmp/new-run] [--timeout-ms 90000]\nRequires Node 24+, an already-built game, and this Mac\'s Apple M3 Max/Metal Chrome. Controls checks manual pause with ongoing RAF; tabs switches real Chrome tabs and checks authority, input release and manual pause; params applies, explains and reloads a parameter file; visibility checks use the explicit hook, not tab hiding. Recovery uses the real Restore button. The retry case throws once during canvas configure and checks that a second click admits a new candidate. The acquire case throws once after configure and checks recovery on the same candidate. Sky reflections saves nine paused phases and 24 camera/Sun samples; valley repeats them on the cooked valley served by thrum-cook; valley-recovery runs device recovery with that valley attached; valley-late-attach holds the valley requests until the device is lost, then proves the attach made no GPU call on the lost device and the valley draws on the replacement; material reloads a WGSL hook on that valley (valid, refused, and outstanding across a destroyed device) and records contended frame intervals around the valid reload; it needs the development page (web/build.sh --dev), so all leaves it out. material-disabled loads the default page with ?material and proves it starts no material work. Field qualifies the 100,513-instance flythrough with Frustum camera culling; field-direct and field-occlusion qualify it with Direct and Occlusion for a paired comparison; field-oracle pauses three fresh pages and compares Frustum and Occlusion captures with Direct byte for byte. Route launches one fresh page per checked-in examples/v1-game/params/showcase-*.params.json preset with the cooked valley, after requiring the web root to ship each byte for byte and no others; it proves the preset applied and the valley drew, brackets navigation to the first observed cooked draw on the page clock, and captures the paused canvas. Moving-route (not in all) loads route.html with the checked-in examples/v1-game/routes/moving-v1.json against the served cooked store it names, captures the presented canvas at each checkpoint hold and saves the page\'s per-tick record; moving-route-controls runs its negative controls, one fresh page each: hidden at start, hidden mid-route, a clamped timestamp, refused edits plus a performance-stamped frame, a canvas resize, an undeclared second cooked generation (each must end in its named refusal), and phase 0.1 for the comparator. The other cases make no timing claim.'); return; }
+  if (!args) { console.log('node scripts/check_v1_browser.mjs [--case all|effect-state|effect-tick|shipping-boundary|normal|pause|resize|overload|input|controls|tabs|params|device-loss|late-device-loss|device-recovery|device-recovery-retry|device-recovery-acquire|sky-reflections|valley|valley-recovery|valley-late-attach|material|material-disabled|field|field-direct|field-occlusion|field-oracle|route|moving-route|moving-route-controls|no-compile|clouds-first-frame|clouds-state|clouds-placed|sprite-sheets] [--web-root target/v1-game-web] [--cook target/debug/thrum-cook] [--assets-source examples/v1-game/assets/showcase] [--chrome /path/to/Chrome] [--output tmp/new-run] [--timeout-ms 90000]\nRequires Node 24+, an already-built game, and this Mac\'s Apple M3 Max/Metal Chrome. Controls checks manual pause with ongoing RAF; tabs switches real Chrome tabs and checks authority, input release and manual pause; params applies, explains and reloads a parameter file; visibility checks use the explicit hook, not tab hiding. Recovery uses the real Restore button. The retry case throws once during canvas configure and checks that a second click admits a new candidate. The acquire case throws once after configure and checks recovery on the same candidate. Sky reflections saves nine paused phases and 24 camera/Sun samples; valley repeats them on the cooked valley served by thrum-cook; valley-recovery runs device recovery with that valley attached; valley-late-attach holds the valley requests until the device is lost, then proves the attach made no GPU call on the lost device and the valley draws on the replacement; material reloads a WGSL hook on that valley (valid, refused, and outstanding across a destroyed device) and records contended frame intervals around the valid reload; it needs the development page (web/build.sh --dev), so all leaves it out. material-disabled loads the default page with ?material and proves it starts no material work. Field qualifies the 100,513-instance flythrough with Frustum camera culling; field-direct and field-occlusion qualify it with Direct and Occlusion for a paired comparison; field-oracle pauses three fresh pages and compares Frustum and Occlusion captures with Direct byte for byte. Route launches one fresh page per checked-in examples/v1-game/params/showcase-*.params.json preset with the cooked valley, after requiring the web root to ship each byte for byte and no others; it proves the preset applied and the valley drew, brackets navigation to the first observed cooked draw on the page clock, and captures the paused canvas. Moving-route (not in all) loads route.html with the checked-in examples/v1-game/routes/moving-v1.json against the served cooked store it names, captures the presented canvas at each checkpoint hold and saves the page\'s per-tick record; moving-route-controls runs its negative controls, one fresh page each: hidden at start, hidden mid-route, a clamped timestamp, refused edits plus a performance-stamped frame, a canvas resize, an undeclared second cooked generation (each must end in its named refusal), and phase 0.1 for the comparator. The other cases make no timing claim.'); return; }
   if (Number(process.versions.node.split('.')[0]) < 24 || typeof WebSocket !== 'function') throw new Error('Node 24+ with builtin WebSocket is required');
   if (args.case === 'sprite-sheets') {
     if (args.cook === 'target/debug/thrum-cook') {
@@ -2573,10 +2597,10 @@ async function main() {
     // `all` checks the default page; `material` needs the development page, so it runs on its own.
     const modes = [];
     // The moving route is its own run: it needs route.html and makes a separate evidence record.
-    for (const mode of args.case === 'all' ? cases.filter(mode => mode !== 'mesh-rows' && mode !== 'material' && mode !== 'shipping-boundary' && mode !== 'sprites-2d-cost' && mode !== 'sprites-crisp' && mode !== 'sprite-sheets' && mode !== 'route-diagnostic' && mode !== 'scale' && mode !== 'governor' && !mode.startsWith('interface-') && !mode.startsWith('sprites-field') && !mode.startsWith('moving-route') && !mode.startsWith('environment-') && !mode.startsWith('exit-')) : [args.case]) {
+    for (const mode of args.case === 'all' ? cases.filter(mode => mode !== 'mesh-rows' && mode !== 'material' && mode !== 'shipping-boundary' && mode !== 'sprites-2d-cost' && mode !== 'sprites-crisp' && mode !== 'sprite-sheets' && mode !== 'route-diagnostic' && mode !== 'no-compile' && mode !== 'scale' && mode !== 'governor' && !mode.startsWith('interface-') && !mode.startsWith('sprites-field') && !mode.startsWith('moving-route') && !mode.startsWith('environment-') && !mode.startsWith('exit-')) : [args.case]) {
       modes.push(...(mode === 'moving-route-controls' ? Object.keys(movingControls).map(control => `moving-route-${control}`) : mode === 'field-oracle' ? ['field-oracle-direct', 'field-oracle-frustum', 'field-oracle-occlusion'] : mode === 'route' || mode === 'exit-stops' ? (await routeStops(files, directory)).map(stop => mode === 'exit-stops' ? stop.replace(/^route-/, 'exit-stop-') : stop) : [mode]));
     }
-    if (modes.some(mode => mode === 'scale' || mode.startsWith('moving-route'))) {
+    if (modes.some(mode => mode === 'scale' || mode === 'no-compile' || mode.startsWith('moving-route'))) {
       await movingRouteFiles(files, directory, args.case === 'moving-route' && process.env.THRUM_SCENE === 'exit'
         ? 'exit-flythrough.json' : undefined);
     }
@@ -2586,7 +2610,7 @@ async function main() {
     let assetsOrigin;
     let assetsSource;
     if (modes.includes('route-diagnostic')) await routeStops(files, directory);
-    if (modes.some(mode => mode.startsWith('environment-') || ['scale', 'temporal', 'valley', 'valley-recovery', 'valley-late-attach', 'params', 'material', 'material-disabled'].includes(mode) || (mode.startsWith('route-') && mode !== 'route-diagnostic') || mode.startsWith('moving-route') || mode.startsWith('exit-'))) ({ cook, origin: assetsOrigin, source: assetsSource } = await serveCooked(args, output, temporalDefinition));
+    if (modes.some(mode => mode.startsWith('environment-') || ['scale', 'no-compile', 'temporal', 'valley', 'valley-recovery', 'valley-late-attach', 'params', 'material', 'material-disabled'].includes(mode) || (mode.startsWith('route-') && mode !== 'route-diagnostic') || mode.startsWith('moving-route') || mode.startsWith('exit-'))) ({ cook, origin: assetsOrigin, source: assetsSource } = await serveCooked(args, output, temporalDefinition));
     if (args.case.startsWith('interface-text')) {
       ({ cook, origin: assetsOrigin, source: assetsSource } = await serveCooked({
         ...args, 'assets-source': 'tests/fixtures/game-ui/font-source',

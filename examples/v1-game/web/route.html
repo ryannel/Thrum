@@ -129,6 +129,9 @@
         // Only the route's own steps may move authority: any other frame call is refused.
         let expectedTick = game.committed_tick();
         status.textContent = "Running the moving route…";
+        // @proving
+        if (query.has('no-compile-proof')) record.compile_creations = [window.thrumCompileCreations()];
+        // @end
         for (let drain = 0; ; ) {
           if (hidden || document.hidden) fail("the page was hidden during the route");
           const tick = game.committed_tick();
@@ -224,6 +227,9 @@
         const fault = game.graphics_fault();
         if (fault) fail(`graphics fault: ${fault}`);
         if (exit) record.exit = JSON.parse(game.exit_status());
+        // @proving
+        if (query.has('no-compile-proof')) record.compile_creations.push(window.thrumCompileCreations());
+        // @end
         record.done = true;
         status.textContent = "Moving route complete.";
       } catch (error) {
