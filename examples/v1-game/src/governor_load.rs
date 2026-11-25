@@ -21,7 +21,7 @@ pub(crate) struct DebugLoad {
 }
 
 impl DebugLoad {
-    pub(crate) const MAX_ROUNDS: u32 = 8192;
+    pub(crate) const MAX_ROUNDS: u32 = 12_288;
     pub(crate) fn new(ticks: Range<u64>, rounds: u32) -> Self {
         Self {
             ticks,

@@ -11,6 +11,7 @@ from run_v1_showcase import MOVING_ROUTE, SOURCE, store_root
 
 LOAD = (230, 320)
 ROUNDS = 4600
+WINDOW_LOAD_ROUNDS = (ROUNDS, 6200)
 WINDOW_EXTENT = (960, 540)
 CADENCE = "atmosphere.aerial cadence"
 
@@ -89,6 +90,11 @@ def miss_rate(arm, first, until):
     return dict(missed=count, ticks=ticks, rate=count / ticks)
 
 
+def exceeds_baseline(arm, baseline):
+    # Two opportunities of measurement tolerance at window boundaries.
+    return arm["rate"] > baseline["rate"] + 2 / arm["ticks"]
+
+
 def validate_recovery(changes, *, scale=False):
     field = "scale" if scale else "tier"
     recoveries = []
@@ -126,10 +132,25 @@ def mac_governor(output, *, steady=False, capture=False):
     if capture:
         return mac_governor_capture(output, binary, env, route)
 
+    steady_arm = window_arm(output, binary, env, route, "steady")
+    first_control_tick = LOAD[0] + 30
+    baseline = miss_rate(steady_arm, first_control_tick, LOAD[1])
+    controls = {}
+    # Select load strength using only the ungoverned run. A GPU that still
+    # presents on time at the first setting cannot witness a return to rate.
+    for rounds in WINDOW_LOAD_ROUNDS:
+        off_arm = window_arm(output, binary, env, route, f"loaded-off-{rounds}",
+                             enabled=False, load=rounds)
+        controls[rounds] = miss_rate(off_arm, first_control_tick, LOAD[1])
+        if exceeds_baseline(controls[rounds], baseline):
+            break
+    else:
+        raise ValueError(f"no governor-off load exceeded the baseline: {baseline=}, {controls=}")
+
     arms = {
-        "steady": window_arm(output, binary, env, route, "steady"),
-        "loaded": window_arm(output, binary, env, route, "loaded", load=ROUNDS),
-        "loaded-off": window_arm(output, binary, env, route, "loaded-off", enabled=False, load=ROUNDS),
+        "steady": steady_arm,
+        "loaded": window_arm(output, binary, env, route, "loaded", load=rounds),
+        "loaded-off": off_arm,
     }
     changes = arms["loaded"]["changes"]
     if not changes:
@@ -151,17 +172,17 @@ def mac_governor(output, *, steady=False, capture=False):
     last_drop = max(row["tick"] for row in changes
                     if drop["tick"] <= row["tick"] < LOAD[1]
                     and row["quality"]["reason"] in ("OverBudget", "Thermal"))
-    first = max(last_drop + 3, LOAD[0] + 30)
+    first = max(last_drop + 3, first_control_tick)
     comparison = {name: miss_rate(arm, first, LOAD[1]) for name, arm in arms.items()}
     baseline, governed, disabled = (comparison[name] for name in ("steady", "loaded", "loaded-off"))
-    # Two opportunities of measurement tolerance at window boundaries.
-    if (governed["rate"] > baseline["rate"] + 2 / governed["ticks"]
-            or disabled["rate"] <= baseline["rate"] + 2 / disabled["ticks"]
+    if (exceeds_baseline(governed, baseline)
+            or not exceeds_baseline(disabled, baseline)
             or disabled["rate"] <= governed["rate"]):
         raise ValueError(f"loaded/off did not falsify a return to baseline proxy rate: {comparison}")
     return dict(target="mac-metal", comparison=comparison, comparison_ticks=[first, LOAD[1]],
                 changes=changes, load=LOAD,
-                rounds=ROUNDS, proxy=arms["loaded"]["proxy"], display_hz=arms["loaded"]["display_hz"],
+                rounds=rounds, control_trials=controls, proxy=arms["loaded"]["proxy"],
+                display_hz=arms["loaded"]["display_hz"],
                 binary_sha256=digest(binary))
 
 
