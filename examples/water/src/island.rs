@@ -310,7 +310,7 @@ pub const SURF_VIEWS: [Camera; 10] = [
     // Look along the beach so perspective preserves the relative cross-shore gaps.
     Camera::look_at([-188.0, 105.0, 93.0], [-188.0, 0.0, -8.0], 60.0),
     // Look across the gale set so cross-shore distance and crest relief are visible together.
-    Camera::look_at([-175.0, 8.0, -135.0], [-175.0, 0.0, -54.0], 48.0),
+    Camera::look_at([-182.0, 20.0, -151.0], [-179.0, 0.0, -52.0], 48.0),
 ];
 
 /// Build the island with its cooked ground and the mapped water contribution.
