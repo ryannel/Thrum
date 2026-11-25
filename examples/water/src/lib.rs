@@ -178,11 +178,16 @@ fn build_open_sea(
         .slider("camera.bearing", "Camera bearing", 0.0..=360.0)
         .default(90.0)
         .add()?;
+    let initial_drop = if wind.is_some() {
+        65.0
+    } else {
+        CAMERA_LOOK_DROP
+    };
     let pitch = wind
         .map(|_| {
             controls
                 .slider("camera.pitch", "Camera pitch", -55.0..=0.0)
-                .default(-CAMERA_LOOK_DROP.atan2(100.0).to_degrees())
+                .default(-initial_drop.atan2(100.0).to_degrees())
                 .display(Display::plain(1, "°"))
                 .add()
         })
@@ -220,7 +225,7 @@ fn build_open_sea(
             camera_position(2.0, 90.0),
             [
                 camera_position(2.0, 90.0)[0] + 100.0,
-                2.0 - CAMERA_LOOK_DROP,
+                2.0 - initial_drop,
                 CAMERA_FOCUS[1],
             ],
             CAMERA_FOV_DEGREES,

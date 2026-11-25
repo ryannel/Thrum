@@ -287,14 +287,18 @@ fn reflected_sky(slope:vec2<f32>,covariance:vec3<f32>,v:vec3<f32>)->vec4<f32> {
             * (crest * forward * low_sun);
     }
     let h=normalize(l+v);let nh=max(dot(n,h),0.0);let nl=max(dot(n,l),0.0);
-    // Resolve the direct solar lobe over a minimum slope footprint. Normalizing
-    // the broadened GGX distribution keeps the peak finite without capping RGB.
-    let solar_roughness = select(roughness, max(roughness, 0.14), OPTICS_ENABLED);
-    let a2=pow(solar_roughness,4.0);let d=a2/(3.14159265*pow(nh*nh*(a2-1.0)+1.0,2.0));
+    let a2=pow(roughness,4.0);let d=a2/(3.14159265*pow(nh*nh*(a2-1.0)+1.0,2.0));
     let gv=2.0*nv/(nv+sqrt(a2+(1.0-a2)*nv*nv));
     let gl=2.0*nl/(nl+sqrt(a2+(1.0-a2)*nl*nl));
     let fh=water_fresnel(max(dot(v,h),0.0));
-    light+=sunlight*d*gv*gl*fh/(4.0*nv+0.00001);
+    if OPTICS_ENABLED {
+        let glint = d*gv*gl*fh/(4.0*nv+0.00001);
+        // The unresolved solar lobe keeps a graded peak even on glassy water.
+        // Limit its response before lent irradiance so cloud shade stays linear.
+        light += sunlight * (glint / (1.0 + glint / 0.55));
+    } else {
+        light+=sunlight*d*gv*gl*fh/(4.0*nv+0.00001);
+    }
     if FOAM_ENABLED {
         light+=incident*vec3(0.035,0.19,0.19)*whitewater.x*(1.0-fresnel);
         light=mix(light,incident*vec3(0.86,0.90,0.89)/3.14159265,whitewater.y);
