@@ -53,6 +53,10 @@ fn relative(position: vec4<f32>) -> vec2<f32> {
     return (position.xy - view.centre_high) + (position.zw - view.centre_low);
 }
 
+fn sprite_pivot(row: SpriteRow) -> vec2<f32> {
+    return mix(relative(row.previous), relative(row.current), view.alpha);
+}
+
 @vertex fn vertex(@builtin(vertex_index) index: u32, @builtin(instance_index) instance: u32) -> Vertex {
     let corners = array(vec2(0.0, 0.0), vec2(1.0, 0.0), vec2(0.0, 1.0), vec2(1.0, 1.0));
     let corner = corners[index];
@@ -60,7 +64,7 @@ fn relative(position: vec4<f32>) -> vec2<f32> {
     let row = rows[row_index];
     let frame = frames[row.frame];
     let size = vec2<f32>(frame.size);
-    let pivot = mix(relative(row.previous), relative(row.current), view.alpha);
+    let pivot = sprite_pivot(row);
     let angle = row.rotation + row.rotation_delta * view.alpha;
     let scale = mix(row.scales.xy, row.scales.zw, view.alpha);
     let footprint = 1.0 / max(vec2(0.000001), abs(scale * view.pixels_per_unit));
@@ -161,22 +165,31 @@ fn perceptual_weight(root_luma: f32, neighbours: vec4<f32>, masses: vec4<f32>) -
     return 1.0 + dot(masses, (neighbours - root_luma) / (neighbours + root_luma));
 }
 
+fn projected_texel(position: vec2<f32>, row: SpriteRow, footprint: vec2<f32>) -> vec2<f32> {
+    // Invert the sprite projection at the pixel centre. The rasterizer may
+    // snap quad vertices to a grid coarser than the narrow colour shoulder.
+    let extent = round(2.0 * (view.pixels_per_unit / view.clip_per_world));
+    let screen_to_world_axes = vec2(1.0, -1.0);
+    let relative_pixels = (position - 0.5 * extent) * screen_to_world_axes;
+    let delta = relative_pixels - sprite_pivot(row) * view.pixels_per_unit;
+    let angle = row.rotation + row.rotation_delta * view.alpha;
+    let y = sin(angle);
+    let x = cos(angle);
+    let local_pixels = mat2x2(vec2(x, -y), vec2(y, x)) * delta;
+    let scale = mix(row.scales.xy, row.scales.zw, view.alpha);
+    return local_pixels * footprint * sign(scale) * screen_to_world_axes;
+}
+
 fn reconstruct_two_x(sheet: u32, frame: SpriteFrameRecord, texel: vec2<f32>, footprint: vec2<f32>,
     coverage: vec4<f32>) -> vec4<f32> {
     let page = i32(frame.page);
     let origin = vec2<i32>(frame.origin);
     let cell = vec2<i32>(floor(texel - vec2(0.5)));
     let phase = texel - (vec2<f32>(cell) + vec2(1.0));
-    // Stagger the narrow colour transition along the edge, in sprite
-    // coordinates, so a whole row of texel boundaries cannot lose contrast
-    // together. The zero-mean offset stays within 1/48 output pixel.
-    // Coverage alpha still uses the full footprint at silhouettes.
-    // Spread the transition over several adjacent texels rather than
-    // alternating the reconstruction on individual pixels.
-    let stagger = 4.0 * abs(fract((texel.yx + 0.25) / 8.0) - 0.5) - 1.0;
-    let transition = footprint / 48.0;
-    let shoulder = transition / 8.0;
-    let weight = smoothstep(-shoulder, shoulder, phase + stagger * transition);
+    // Centre the narrow colour blend on the projected edge everywhere
+    // along its length. Coverage alpha still uses the full footprint.
+    let shoulder = footprint / 384.0;
+    let weight = smoothstep(-shoulder, shoulder, phase);
     if all(weight == round(weight)) {
         let sample = nearest(sheet, origin + cell + vec2<i32>(weight), page);
         return vec4(coverage.rgb * (1.0 - sample.a) + coverage.a * sample.rgb, coverage.a);
@@ -213,7 +226,10 @@ fn reconstruct_two_x(sheet: u32, frame: SpriteFrameRecord, texel: vec2<f32>, foo
     return vec4(coverage.rgb * (1.0 - mass) + coverage.a * colour, coverage.a);
 }
 
-fn source(sheet: u32, frame: SpriteFrameRecord, texel: vec2<f32>, footprint: vec2<f32>) -> vec4<f32> {
+fn source(row: SpriteRow, frame: SpriteFrameRecord, input: Vertex) -> vec4<f32> {
+    let sheet = row.sheet;
+    let texel = input.texel;
+    let footprint = input.footprint;
     let page = i32(frame.page);
     let origin = vec2<f32>(frame.origin);
     let size = vec2<f32>(frame.size);
@@ -231,7 +247,8 @@ fn source(sheet: u32, frame: SpriteFrameRecord, texel: vec2<f32>, footprint: vec
             pixel = filtered(sheet, origin + coverage_coordinate(texel, footprint), page, 0.0);
         }
         if two_x > 0.0 {
-            pixel = mix(pixel, reconstruct_two_x(sheet, frame, texel, footprint, pixel), two_x);
+            let projected = projected_texel(input.clip.xy, row, footprint);
+            pixel = mix(pixel, reconstruct_two_x(sheet, frame, projected, footprint, pixel), two_x);
         }
         return pixel;
     }
@@ -246,7 +263,7 @@ fn source(sheet: u32, frame: SpriteFrameRecord, texel: vec2<f32>, footprint: vec
 @fragment fn fragment(input: Vertex) -> @location(0) vec4<f32> {
     let row = rows[input.row_index];
     let frame = frames[row.frame];
-    let texel = source(row.sheet, frame, input.texel, input.footprint);
+    let texel = source(row, frame, input);
     let alpha = texel.a * row.tint.a;
     let colour = mix(texel.rgb * row.tint.rgb * row.tint.a, row.flash.rgb * alpha, row.flash.a);
     return vec4(colour, alpha * (1.0 - row.additive));

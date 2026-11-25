@@ -320,7 +320,7 @@
           "statement": "On both Metal recipes and Chrome WebGPU, the existing sprite draw at the output extent applies the widened pixel filter near 1.5\u00d7 and a frame-local spatial reconstruction through the off-grid 2\u00d7 edge crossings. At aligned 2\u00d7 it selects the authored texels. Record the before-and-after sprite-pass timings for the 1920\u00d71080 1.5\u00d7 scroll on Metal and Chrome, with recipe, device, shaded pixels, overdraw and load.",
           "ask": "At 1.5\u00d7 does the shader combine premultiplied scene-linear RGBA with normalized, nonnegative weights within mechanism 6's support? At 2\u00d7 does it use continuous projected texel coordinates through single-axis and two-axis texel-edge crossings and converge to the authored sample at alignment? Do the standalone quad margin and transparent gutter cover the chosen footprint, and do tiles use their own extruded edges with unchanged shared-edge ownership?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/RENDER-2D/WP3/metal-contrast/sampling.md",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP3/projected-crossings/sampling.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/RENDER-2D/WP3-review.md",
           "builder_result": "pass"

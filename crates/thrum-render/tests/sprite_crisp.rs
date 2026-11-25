@@ -269,10 +269,12 @@ fn quarter_size_smooth_checker_preserves_its_linear_mean() {
 #[test]
 fn two_x_colour_crossing_beside_transparency_is_continuous() {
     let extent = [16; 2];
-    let size = [2; 2];
+    let size = [2, 4];
+    let red_blue = [255, 0, 0, 255, 0, 0, 255, 255];
+    let texels = [red_blue, red_blue, red_blue, [0; 8]].concat();
     let art = fixture::sheet(
         size,
-        &[255, 0, 0, 255, 0, 0, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0],
+        &texels,
         &[SpriteRect {
             origin: [0; 2],
             size,
@@ -289,33 +291,48 @@ fn two_x_colour_crossing_beside_transparency_is_continuous() {
             fixture::Scene::new(vec![SpriteRow::new(0, [0.0; 2])], 2),
             art.clone(),
         );
-        // At the witness pixel's local Y of 0.75, the stagger shifts the
-        // projected edge by 1/192 source texel. Probe both shoulder ends and
-        // its interior so the continuity check cannot skip the blend.
-        let crossing = 1.0 - 1.0 / 192.0;
+        // Probe the projected edge, both ends of the shoulder, and the
+        // authored samples on either side.
         let samples = [
             0.75,
-            crossing - 0.00135,
-            crossing - 0.00127,
-            crossing - 0.000_015,
-            crossing,
-            crossing + 0.000_015,
-            crossing + 0.00127,
-            crossing + 0.00135,
+            1.0 - 0.00135,
+            1.0 - 0.00127,
+            1.0 - 0.00065,
+            1.0 - 0.000_015,
+            1.0,
+            1.0 + 0.000_015,
+            1.0 + 0.00065,
+            1.0 + 0.00127,
+            1.0 + 0.00135,
             1.25,
         ]
         .map(|u| {
             host.continuous_source_mut().centre = [u - 0.75, 0.0];
             let image = fixture::capture(&mut host, &gpu.device, extent, CaptureSource::Sdr);
-            image.rgba.as_chunks::<4>().0[9 * 16 + 9]
+            let pixels = image.rgba.as_chunks::<4>().0;
+            let witness = pixels[9 * 16 + 9];
+            for y in 10..=13 {
+                let along_edge = pixels[y * 16 + 9];
+                assert!(
+                    along_edge
+                        .iter()
+                        .zip(witness)
+                        .all(|(&a, b)| a.abs_diff(b) <= 1),
+                    "{recipe}: the same edge phase varied along its length at {u}: {witness:?} vs {along_edge:?}"
+                );
+            }
+            witness
         });
         assert_eq!(samples[0], [255, 0, 0, 255]);
-        assert_eq!(samples[8], [0, 0, 255, 255]);
+        assert_eq!(samples[10], [0, 0, 255, 255]);
         assert!(
-            (1..255).contains(&samples[4][0]) && (1..255).contains(&samples[4][2]),
-            "{recipe}: the shoulder centre did not blend: {samples:?}"
+            samples[3][0] > samples[5][0]
+                && samples[5][0] > samples[7][0]
+                && samples[3][2] < samples[5][2]
+                && samples[5][2] < samples[7][2],
+            "{recipe}: the shoulder interior did not blend: {samples:?}"
         );
-        for (a, b) in [(1, 2), (3, 4), (4, 5), (6, 7)] {
+        for (a, b) in [(1, 2), (4, 5), (5, 6), (8, 9)] {
             for channel in [0, 2] {
                 assert!(
                     samples[a][channel].abs_diff(samples[b][channel]) <= 4,
