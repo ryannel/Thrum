@@ -1122,7 +1122,7 @@
     {
       "id": "WP13",
       "name": "Swell turns to face the beach, rises and breaks into white water that runs up the sand, on the Mac and in Chrome",
-      "status": "in_progress",
+      "status": "blocked",
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -1289,7 +1289,17 @@
           "different": "The earlier triangular steps are gone at the matched 40 m checkpoints. The fresh matched trade-wind takes show fins on the underside of the crest at 2 m.",
           "repeat": false
         }
-      ]
+      ],
+      "blocked": {
+        "reason": "needs_context",
+        "what": "The sand-height defect reached the design\u2019s three-look limit. The warmed diagnostic will inform the planner\u2019s decision on the next repair.",
+        "work": {
+          "commit": "c2adff3d89c29f625d2618a0d692ba67c9193209",
+          "branch": "build/waters",
+          "pushed": false
+        },
+        "handoff": ".orchestrate/evidence/WATERS/WP13-handoff.md"
+      }
     },
     {
       "id": "WP19",
