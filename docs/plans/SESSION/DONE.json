@@ -812,7 +812,7 @@
           "lock": "gpu",
           "ask": "Is each frame's position in the record the one the frame host drew that frame with, at its display time, and not a value from the session's own log?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SESSION/WP7/recovery/mac/summary.json",
+          "evidence": ".orchestrate/evidence/SESSION/WP7/cadence/mac-repeat/summary.json",
           "verdict": "pass",
           "review": ".orchestrate/evidence/SESSION/WP7-review.md",
           "builder_result": "pass"
@@ -822,10 +822,10 @@
           "statement": "In real time on the Mac client in WP7.5's run, the crowd moves as smoothly as the crowd view does alone wherever the record names no stall and no skip: there is no stutter at the tick rate, and nothing shows where sets arrived together inside the buffer. At the stall the picture holds, then moves on from where it held with no jump. The only jump is at the skip the record names.",
           "inspect": "Capture the client's window in WP7.5's run and the crowd view alone with T2 engine capture in `realtime` mode, at the same size. Watch both at 1x, then step through the frames around the buffered burst, the stall and the skip the record names. Say that you watched motion, and whether the faster pace after the stall shows.",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SESSION/WP7/cadence/mac-review.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/SESSION/WP7-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP7.7",
