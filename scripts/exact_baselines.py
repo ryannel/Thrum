@@ -295,11 +295,13 @@ def verify(root=ROOT):
         run('native-build', ['rustup', 'run', '1.99.1', 'cargo', 'build', '--release', '--locked', '--offline',
                              '-p', 'v1-game', '--features', 'draw-probe,thrum-render/creation-counters'])
         run('cooker-build', ['rustup', 'run', '1.99.1', 'cargo', 'build', '--release', '--locked', '--offline', '-p', 'thrum-cook'])
-        run('web-build', ['sh', 'examples/v1-game/web/build.sh'])
+        web_root = output / 'web-proving'
+        run('web-build', ['env', f'THRUM_V1_WEB_OUTPUT={web_root}',
+                          'sh', 'examples/v1-game/web/build.sh', '--proving'])
         run('cook', ['target/release/thrum-cook', 'cook', 'examples/v1-game/assets/showcase', str(output / 'valley')])
         from run_v1_showcase import store_root
         report.update(native_binary_sha256=sha(root / 'target/release/v1-game'),
-                      wasm_artifact_hashes={p.name: sha(p) for p in sorted((root / 'target/v1-game-web').iterdir()) if p.is_file()},
+                      wasm_artifact_hashes={p.name: sha(p) for p in sorted(web_root.iterdir()) if p.is_file()},
                       cooked_root=store_root(output / 'valley'),
                       compiler=git_version_command(['rustup', 'run', '1.99.1', 'rustc', '-Vv'], root),
                       host=git_version_command(['sw_vers'], root))
@@ -320,17 +322,31 @@ def verify(root=ROOT):
             name = entry['id']
             directory = output / name
             run(name, ['node', 'scripts/capture_v1_browser.mjs', '--mode', 'fixed', '--scene', entry['scene'],
-                       '--source', entry['source'], '--cook', 'target/release/thrum-cook', '--output', str(directory)], entry)
+                       '--source', entry['source'], '--cook', 'target/release/thrum-cook', '--output', str(directory),
+                       '--web-root', str(web_root), '--wasm-receipt', 'on'], entry)
+            identity = f"baseline {name} owner {entry['owner']}"
+            try:
+                manifest = json.loads((directory / 'manifest.json').read_text())
+            except (OSError, ValueError) as error:
+                raise ValueError(f'{identity}: unreadable Chrome capture manifest: {error}') from error
+            instantiated = manifest.get('instantiated_wasm_sha256')
+            comparison = report['comparisons'][name] = {'passed': False, 'instantiated_wasm_sha256': instantiated}
+            expected = report['wasm_artifact_hashes']['v1_game_bg.wasm']
+            if not instantiated:
+                raise ValueError(f'{identity}: missing instantiated Wasm SHA-256')
+            if instantiated != expected:
+                raise ValueError(f'{identity}: instantiated Wasm SHA-256 {instantiated} differs from proving bundle {expected}')
             command = [sys.executable, 'scripts/apple_tile_m1_compare_browser.py', '--reference-digest',
                        '--reference', entry['reference'], '--candidate', str(directory),
                        '--output', str(output / (name + '-comparison.json'))]
             if entry['source'] == 'scene-linear':
                 command.append('--linear')
             run(name + '-compare', command, entry)
-            report['comparisons'][name] = {'passed': True, 'records': entry['records']}
+            comparison.update(passed=True, records=entry['records'])
             archive_manifest(directory, output / (name + '-manifest.json.gz'))
         if git('status', '--porcelain', '--untracked-files=all', root=root) or key != content_key(root):
             raise ValueError('checkout changed while verifier ran; run cannot pass')
+        shutil.rmtree(web_root)
         report.update(passed=True, baselines=[entry['id'] for entry in entries])
         report['seconds'] = time.monotonic() - started
         save(output / 'record.json', report)

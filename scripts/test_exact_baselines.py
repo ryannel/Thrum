@@ -347,6 +347,90 @@ class NativePublicationTests(unittest.TestCase):
             self.assertIs(owner.save, guard.save)
 
 
+class WasmIdentityTests(unittest.TestCase):
+    def test_every_capture_reports_the_proving_bundle(self):
+        self.verify_receipts('equal')
+
+    def test_different_receipt_fails(self):
+        self.verify_receipts('different')
+
+    def test_missing_receipt_fails(self):
+        self.verify_receipts('missing')
+
+    def verify_receipts(self, outcome):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / 'reference').write_text('pixels')
+            (root / 'target/release').mkdir(parents=True)
+            (root / 'target/release/v1-game').write_text('native game')
+            baselines = [dict(entry, reference='reference') for entry in guard.registry()['baselines']]
+            chrome_ids = [entry['id'] for entry in baselines if 'scene' in entry]
+            last = baselines[-1]
+            bundle = {'v1_game_bg.wasm': b'proving artifact', 'capture.html': b'proving page'}
+            hashes = {name: hashlib.sha256(data).hexdigest() for name, data in bundle.items()}
+            expected = hashes['v1_game_bg.wasm']
+            reported = {'equal': expected, 'different': hashlib.sha256(b'other module').hexdigest(),
+                        'missing': None}[outcome]
+            builds, captures, comparisons = [], [], []
+
+            def child(command, **_):
+                def option(name):
+                    return command[command.index(name) + 1]
+
+                if 'examples/v1-game/web/build.sh' in command:
+                    self.assertEqual(command[0], 'env')
+                    self.assertTrue(command[1].startswith('THRUM_V1_WEB_OUTPUT='))
+                    self.assertEqual(command[-1], '--proving')
+                    web = Path(command[1].split('=', 1)[1])
+                    builds.append(web)
+                    web.mkdir()
+                    for name, data in bundle.items():
+                        (web / name).write_bytes(data)
+                elif 'scripts/exact_baselines_native.py' in command:
+                    directory = Path(option('--output'))
+                    directory.mkdir()
+                    (directory / 'manifest.json').write_text('{"passed": true, "comparisons": {}}')
+                elif 'scripts/capture_v1_browser.mjs' in command:
+                    self.assertEqual([Path(option('--web-root'))], builds)
+                    self.assertEqual(option('--wasm-receipt'), 'on')
+                    directory = Path(option('--output'))
+                    directory.mkdir()
+                    captures.append(directory.name)
+                    digest = reported if directory.name == last['id'] else expected
+                    manifest = {} if digest is None else {'instantiated_wasm_sha256': digest}
+                    (directory / 'manifest.json').write_text(json.dumps(manifest))
+                elif 'scripts/apple_tile_m1_compare_browser.py' in command:
+                    comparisons.append(Path(option('--candidate')).name)
+                return subprocess.CompletedProcess(command, 0, stdout=b'')
+
+            with patch.object(guard, 'registry', return_value={'baselines': baselines}), \
+                    patch.object(guard, 'git', side_effect=lambda *a, **k: '' if a[0] == 'status' else 'revision'), \
+                    patch.object(guard, 'content_key', return_value='test key'), \
+                    patch.object(guard, 'git_version_command', return_value='fixture'), \
+                    patch('run_v1_showcase.store_root', return_value='test root'), \
+                    patch.object(guard.subprocess, 'run', side_effect=child), \
+                    contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()) as stderr:
+                code = guard.verify(root)
+            record = json.loads(next(root.glob('tmp/baseline-guard/verify-*/record.json')).read_text())
+            self.assertEqual(len(builds), 1)
+            self.assertEqual(captures, chrome_ids)
+            self.assertEqual(record['wasm_artifact_hashes'], hashes)
+            passed = outcome == 'equal'
+            self.assertIs(record['passed'], passed)
+            self.assertEqual(code, 0 if passed else 1)
+            self.assertEqual(comparisons, chrome_ids if passed else chrome_ids[:-1])
+            for name in chrome_ids:
+                comparison = record['comparisons'][name]
+                self.assertEqual(comparison['instantiated_wasm_sha256'], reported if name == last['id'] else expected)
+                self.assertIs(comparison['passed'], passed or name != last['id'])
+            if not passed:
+                error = record['error']
+                self.assertIn(f"baseline {last['id']} owner {last['owner']}", error)
+                self.assertIn('missing instantiated Wasm' if reported is None else 'differs from proving bundle', error)
+                self.assertIn(error, stderr.getvalue())
+                self.assertFalse(record.get('could_not_judge'))
+
+
 class ChromeTests(unittest.TestCase):
     def test_digest_and_byte_modes_and_failures(self):
         with tempfile.TemporaryDirectory() as temp:

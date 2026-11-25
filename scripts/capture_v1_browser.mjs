@@ -9,6 +9,7 @@ import { promisify } from 'node:util';
 import { gunzip, gzip } from 'node:zlib';
 import { checkPublicSheetPage, checkSheetFrame, checkSheetRequests, checkSheetSwitch } from './check_sprite_sheets_browser.mjs';
 import { captureReceiver } from './browser_capture_receiver.mjs';
+import { installWasmReceipt } from './wasm_receipt.mjs';
 import { finalizeBrowserCapture, openLauncherControl } from './browser_capture_shutdown.mjs';
 import { Cdp, assets, serve, serveCooked, hardware, waitFor, closeBrowserConnections, cookedHead, movingRouteFiles, destroyActualDevice, existingGame, releaseGameGraphics, unloadGamePage } from './check_v1_browser.mjs';
 const decompress = promisify(gunzip);
@@ -27,6 +28,7 @@ args.params = '';
 args['sprite-scale'] = '1.5';
 args['sprite-speed'] = '0.05';
 args.dpr = '1';
+args['wasm-receipt'] = 'off';
 for (let i = 2; i < process.argv.length; i += 2) {
   const key = process.argv[i].slice(2);
   if (!Object.hasOwn(args, key) || !process.argv[i + 1]) throw new Error(`Unknown or incomplete option ${process.argv[i]}`);
@@ -35,6 +37,7 @@ for (let i = 2; i < process.argv.length; i += 2) {
 if (!['fixed', 'realtime'].includes(args.mode) || !['ordinary', 'stall', 'saturation', 'resize', 'loss', 'slow', 'off'].includes(args.control)) throw new Error('Invalid mode/control');
 if (!['sdr', 'scene-linear'].includes(args.source) || (args.source === 'scene-linear' && args.control !== 'ordinary')) throw new Error('Unsupported capture source/control');
 if (!['day', 'night', 'noon', 'exit', 'sprites-field', 'sprites-scroll', 'sprites-sheets'].includes(args.scene)) throw new Error('Unknown route scene');
+if (!['off', 'on'].includes(args['wasm-receipt'])) throw new Error('Invalid Wasm receipt option');
 const spriteScroll = args.scene === 'sprites-scroll';
 const spriteSheets = args.scene === 'sprites-sheets';
 const spriteField = args.scene === 'sprites-field' || spriteScroll || spriteSheets;
@@ -211,6 +214,7 @@ try {
   const { targetId } = await cdp.call('Target.createTarget', { url: 'about:blank' });
   const { sessionId } = await cdp.call('Target.attachToTarget', { targetId, flatten: true });
   await cdp.call('Page.enable', {}, sessionId);
+  if (args['wasm-receipt'] === 'on') await installWasmReceipt(cdp, sessionId);
   if (spriteField) await cdp.call('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: output });
   const completionSignal = (spriteField || args.scene === 'exit' || args.clouds !== 'off' || args.atmosphere !== 'off') && args.mode === 'realtime' &&
     (args.control === 'ordinary' || args.control === 'off');
@@ -253,6 +257,14 @@ try {
     return r.result.value ? JSON.parse(r.result.value) : undefined;
   }, 180000, 'submitted-output route');
   manifest.load_after = loadavg();
+  if (args['wasm-receipt'] === 'on') {
+    const receipt = await cdp.call('Runtime.evaluate', {
+      // The capture page instantiates one module. An absent or ambiguous receipt cannot prove its identity.
+      expression: 'globalThis.__thrumWasmReceipts?.length === 1 ? globalThis.__thrumWasmReceipts[0].sha256 : null',
+      returnByValue: true,
+    }, sessionId);
+    if (receipt.result.value) manifest.instantiated_wasm_sha256 = receipt.result.value;
+  }
   await fs.writeFile(path.join(output, 'runtime.json'), JSON.stringify(record, null, 2));
   if (spriteScroll && (record.device_pixel_ratio !== spriteDpr ||
       JSON.stringify(record.css_extent.map(side => side * spriteDpr)) !== JSON.stringify(extent))) {

@@ -186,11 +186,14 @@ class VerifierExit(unittest.TestCase):
                 (root / 'reference').write_text('pixels')
                 (root / 'target/release').mkdir(parents=True)
                 (root / 'target/release/v1-game').write_text('binary')
-                (root / 'target/v1-game-web').mkdir()
                 entry = {'id': 'native', 'owner': 'APPLE-TILE', 'reference': 'reference',
                          'comparisons': ['scripts/apple_tile_m1.py']}
                 real_run = subprocess.run
                 def child(command, **kwargs):
+                    if command[0] == 'env' and command[1].startswith('THRUM_V1_WEB_OUTPUT='):
+                        web = Path(command[1].split('=', 1)[1])
+                        web.mkdir()
+                        (web / 'v1_game_bg.wasm').write_bytes(b'wasm')
                     if 'scripts/exact_baselines_native.py' in command:
                         directory = Path(command[command.index('--output') + 1])
                         directory.mkdir()
