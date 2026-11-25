@@ -85,7 +85,7 @@ fn prepare_late_pipeline(site: &DeviceSite) {
         layout: None,
         module: &module,
         entry_point: Some("main"),
-        compilation_options: Default::default(),
+        compilation_options: wgpu::PipelineCompilationOptions::default(),
         cache: None,
     });
     drop(pipeline);
