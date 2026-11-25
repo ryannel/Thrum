@@ -11,16 +11,16 @@ alone: after changing `examples/water/tests/`, run `bash scripts/check_cross_tar
 - Assumption: a fast test aims for about 2 s, run alone on a quiet Mac.
 - Assumption: "thinking about water as a whole ... built cohesively" (14 November) is met by one design for all water, built by `SEA`, this module, `RIVERS` and `PUDDLES`.
 - Assumption: a river's flow is worked out once and stored, with no floods, dam breaks or travelling levels, which sets aside the water decision's rule that all water simulation runs on the GPU.
-- Assumption: "breaking waves" (14 November) is met by the sea's own swell, turned, shortened and raised over the bed by wave theory and shaped as a breaker as each crest passes its breaking height, then by a bounded swash profile it drives at the still-water contour: neither baked nor a live solver, with no spray, splash, ride inside a barrel or current from surf.
+- Assumption: "breaking waves" (14 November) is met by the sea's own swell shaped into a breaker and a swash profile ([surf](DESIGN.md#surf-the-shore-transform-and-the-breaker)): neither baked nor a live solver, with no spray, splash, ride inside a barrel or current from surf.
 - Assumption: the island's exposed beach gets a swell set for the look: several lines at once, and a period inside the surf cue's 6 s to 14 s.
 - Assumption: from 1 km the surf is judged for fronts starting at different distances and running in; that a set's taller crest breaks farther out is held on the model (WP12.4), not by eye: a known gap.
-- Assumption: the pitching face's finish seen close (tabs and strands under the lip, bands on its white, blunt crest ends, the bend's gray patch) is not foundational: WP13 passed with it as a known gap, and WP20 names and repairs each cause before WP10's motion review.
+- Assumption: the pitching face's finish seen close (WP20's cues) is not foundational, and WP20 repairs it before WP10's motion review.
 - Assumption: wet long-wave loss keeps WP7.5's distributed foam wherever no breaking face is available, swash included; an eligible crest concentrates part on its face and under a resolved lip; distant beaches take steady cover from the same loss.
 - Assumption: as part of surf an island shelters its lee: a lee beach laps with short waves only.
 - Assumption: the surf query's age is proved for the example's eight floats in a gale on the Mac (nine answers in ten within two ticks), not for 2,048 points in breakers or in Chrome; the coarse-cell rule is measured, not proved.
 - Assumption: delivery, not a view's time, decides two-tick answers; no second path past the view is built; through a tick with no new answer a float rides its last one, to the maximum age.
 - Assumption: surf on a lake is proved against the model, not by eye: the example's lake raises no long waves.
-- Assumption: "scenery reflections" is met by drawing the scene again from the camera's mirror image for the two water levels with most water in view; a third reflects only what is on screen.
+- Assumption: "scenery reflections" is met by drawing the scene again from the camera's mirror image for the two water levels with most water in view; a third reflects only what is on screen, and what the screen can't supply shows as the sky or the ground beside it.
 - Assumption: under water there are no lens drops, particles or bubbles, and the picture darkens with depth by a quarter of the light lost. One water surface in any column still holds.
 - Assumption: only WP14 and the close wait for `SCENE-VIEWS`.
 - Assumption: the owner's "it should start from first principles", said of clouds, governs water too, and "bring that across when it makes sense" (13 November) lets work packages start once their dependencies are Done, even before G7.
@@ -30,7 +30,7 @@ alone: after changing `examples/water/tests/`, run `bash scripts/check_cross_tar
 - Assumption: "persists after the hull stops or turns" is met inside windows that follow the craft: short waves to about 30 m behind, longer ones to about 250 m.
 - Assumption: cost is recorded on the Mac only, at 2560×1440 until the showcase's extent exists; no timing figure decides an item (brief decision 3).
 - Assumption: the module closes only after `APPLE-PRESENTATION`'s governor and MetalFX work packages.
-- Assumption: under the owner's bar of 17 November, tests cover what a game reads, the frame contract and what one pass hands another; wakes, foam and underwater light are judged by eye.
+- Assumption: under the owner's bar of 17 November, tests cover what a game reads, the frame contract and what one pass hands another; wakes, foam and underwater light are judged by eye, and a defect found only by enlarging, reading pixels or instrumenting fails no inspection.
 
 ## WP1 Where water lies is worked out on the CPU alone: a sea, a lake in a hollow and a channel with a current each have a level, a depth and a flow at every point
 
@@ -87,6 +87,9 @@ alone: after changing `examples/water/tests/`, run `bash scripts/check_cross_tar
 [Review](../../../.orchestrate/evidence/WATERS/WP19-review.md)
 
 ## WP8 Water reflects the sky, the Sun, its shores and the craft, shows the ground and hulls beneath it, glitters and dims under a cloud's shade, from dawn to night
+
+Rebuild `scene_reflection` as [one colour by one weight](DESIGN.md#optics), not by patching the switch the last
+review names ([why](LOG.md#wp8-diagnosis)).
 
 ## WP23 The water's reflection and shade tests compile for Linux and Windows too
 

@@ -1205,3 +1205,13 @@
   hard sky cutouts. The Chrome observer found no bank or later depth contribution at hidden crossings.
   The paired 1440p-cost record includes the extra silhouette work and the concurrent load.
   [Target evidence](../../../.orchestrate/evidence/WATERS/WP8/lake-transition/README.md).
+
+<a id="wp8-diagnosis"></a>
+- 2026-11-26 Planner, diagnosing WP8 after four failed reviews, each on WP8.5 and WP8.9. The plan was at fault.
+  WP8.5 asked for the sky where a source is hidden and for no hole, and behind a pine the sky is the hole. The
+  design gave the fades and no rule for composing them, so each fix added a case and review 4's seam is where two
+  met. The design now composes every screen-space reflection as [one colour by one weight](DESIGN.md#optics), and
+  inspections are judged at the frame's own pixel size. WP8.5's history: it read "the water shows the sky with no
+  hole, streak or stretched edge"; it now reads "gives way gradually to the sky or to the ground beside it", on
+  a list of five lines. Two assumptions in the plan file were shortened to fit its limit.
+  [The diagnosis](../../../.orchestrate/evidence/WATERS/WP8-diagnosis.md).

@@ -1473,10 +1473,42 @@ own limit.
 
 *The scene's reflection.* Where the water's slope variance is under the profile's mirror limit, a reflected ray
 that met no registered body is marched in screen space against the copied depth, for a bounded number of steps
-over the reach. A hit reads the copied radiance at the hit. A miss, a ray that leaves the screen and a hit hidden
-behind nearer geometry take the environment, fading over the last quarter of the reach and toward the screen's
-edge. Rougher water takes the environment alone: its reflection is a blur the environment's colour already gives.
-This trace can reflect only what is on screen. It serves water that has no mirror view.
+over the reach. Rougher water takes the environment alone: its reflection is a blur the environment's colour
+already gives. This trace can reflect only what is on screen. It serves water that has no mirror view.
+
+*One colour by one weight.* The copy supplies a reflection only in part: a ray's source may lie past the copy's
+edge, past the reach or behind something nearer. How far the copy can be trusted is therefore a weight and never
+a switch. Every screen-space reflected ray, to a registered body or to the scene, ends as
+
+`L_reflected = mix(L_env, L_source, w)`,
+
+with `L_env` the environment product, `L_source` the copied radiance at the one point where the ray first meets
+the opaque scene, and `w` one weight from 0 to 1.
+
+- *One source.* However the point is found (the march, a body's box, or the water map's bed where the ray meets
+  mapped ground that a grazing march steps over), it is one point with one radiance. Two findings of the same
+  surface are never laid one over the other, each under its own fade. Where a ray meets a registered body in
+  front of the scene, the body's colour lies over the scene's by the body's own weight, so on still water a
+  body's reflection thins into the reflected shore behind it and not into a rim of sky.
+- *One weight.* `w` is the product of factors that each run from 1 to 0 without a step, and reach 0 before what
+  they measure runs out: how still the water is (the mirror limit for the scene, the slope allowance for a
+  body); the ray's length, over the last quarter of the reach; how near the source's texel lies to the copy's
+  edge, over a band there; how well the copied depth at the source agrees with the ray; and how near the
+  source's texel lies to the outline of nearer geometry that hides it.
+- *No switch.* A reflection's source moves abruptly only where the scene has an edge: an outline, a waterline, a
+  shadow. A test of the copy (on it or past its edge, within the reach or not, visible or hidden, agreeing or
+  not, found one way or another) acts only through `w`. It may end a ray, or choose between two colours, only
+  where `w` is already 0 on both sides of it. So a reflection has no line, patch or step that the scene does not
+  have, and the cure for one is a factor of `w`, never a further case.
+- *A hidden source.* Where nearer geometry hides the point a ray meets, the copy holds no radiance for it. What
+  the water shows there is a guess, as it is in any shipped game's screen-space reflection, and two guesses
+  meet this design, chosen by eye: the environment, which may be dimmed as the occluder would dim it; or the
+  radiance of the nearest visible point of the same surface, ground for ground, with `w` falling with the
+  distance it is carried. Either comes in through `w`, over a width that leaves no outline of the occluder in
+  the reflection. The occluder's own colour is never carried onto what it hides. The guess is judged by eye
+  and held to no reference, and [the mirror view](#mirror-views-scenery-the-camera-cannot-see) replaces it.
+- *Cost.* The factors come from what the march has read and a bounded number of further depth reads, spent only
+  where a source lies near something that hides it ([risk 8](#risks)).
 
 *The scene through the water.* A refracted ray that met no registered body reads the copy at its own pixel, moved
 by the surface's slope in proportion to the thickness, and keeps the unmoved pixel when the moved one is nearer
@@ -2087,9 +2119,13 @@ decides nothing. [WP19](#a-surf-query-a-running-game-can-use-wp19) uses it.
 10. **A whole-screen gather costs a pass on a tile GPU wherever shallow water fills the view.** Early sign: WP8's
     record at the lake. The designed remedies are a gather at a lower resolution with the full-resolution depth
     kept, and a sight depth that shrinks the see-through region. The wrong fix is dropping the bed from view.
-11. **A reflection whose source is off screen falls to the sky**, and reads as a hole in a lake under a hill.
-    Early sign: WP8's pan, which is built before the mirror view. The fade at the screen's edge and the reach
-    are the remedies there; the mirror view of WP14 is the real one.
+11. **A reflection whose source the screen cannot supply falls to the sky**, and reads as a hole in a lake under
+    a hill, a patch behind a tree or a line where a fade ends. Early sign: WP8's pan and its stills round the
+    pines, which are built before the mirror view. The remedy there is [one colour by one weight](#optics): a
+    factor of the weight for each way the copy runs out. The wrong fix is a further case in the shader for the
+    place a review named. WP8's first four reviews each met an edge that the last such case had made: a fill
+    taken from beside a hidden bank, a cutout, then a seam where two fades met. The mirror view of WP14 is the
+    real remedy.
 12. **A beach without surf reads as a pond's edge, or its swash as a tide.** Early sign: WP4's and WP7's captures,
     which are built before surf. The designed remedies there are the swash ratio, which sets how far the
     waterline travels, the foam born through the band, and the film's sheen. The wrong fixes are a waterline
@@ -2228,8 +2264,10 @@ decides nothing. [WP19](#a-surf-query-a-running-game-can-use-wp19) uses it.
 - **Capture.** Inspected items use T2 engine capture in the mode they name, at 2560×1440 until the showcase's
   extent exists. An item gives the cue, the views and the range. The route, the framing and the length that show
   them are the builder's and the reviewer's to choose; frames are judged whole and at native size, and motion as
-  consecutive frames at 1x. The example wires the tap as `examples/v1-game` does, under ruling 3 where the tap or
-  the shell assumes the V1 game.
+  consecutive frames at 1x. A crop is taken at the frame's own pixel size. An enlarged crop, a pixel reading or
+  an instrumented shader may explain a defect seen that way, and a difference found only by one of them fails
+  no line of an inspection, because a player does not see it. The example wires the tap as `examples/v1-game`
+  does, under ruling 3 where the tap or the shell assumes the V1 game.
 - **Cost records.** Each work package that adds frame work takes [the paired record](#cost-account) again, beside
   the last record for the same view. A tripped wire is investigated and written up there. It never ends a
   session `BLOCKED`.
