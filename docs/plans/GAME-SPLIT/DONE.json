@@ -141,9 +141,9 @@
     {
       "id": "WP3",
       "name": "The game builds and passes its own tests with every engine rig compiled out, and a normal build ships no test hooks",
-      "status": "ready_for_review",
-      "failed_reviews": 2,
-      "failed_reviews_with_repeat": 1,
+      "status": "in_progress",
+      "failed_reviews": 3,
+      "failed_reviews_with_repeat": 2,
       "diagnoses": 0,
       "depends_on": [
         "HOST:WP4"
@@ -158,7 +158,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/GAME-SPLIT/WP3/round-3/README.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/GAME-SPLIT/WP3-review.md"
         },
         {
@@ -177,8 +177,8 @@
           "statement": "A normal web build exports no qualification function and a normal iPhone build accepts no qualification command. The proving builds that other modules' checks run still have them.",
           "ask": "Which exports does the default web bundle hold? Do the browser and simulator checks that other modules pinned still find the hooks they drive, with their check strings unchanged?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/GAME-SPLIT/WP3/round-3/README.md",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GAME-SPLIT/WP3-review.md"
         },
@@ -205,31 +205,13 @@
       ],
       "findings": [
         {
-          "name": "HOST lifecycle checks load the shipping browser bundle",
-          "item": "WP3.3",
-          "different": "The old extent and scale hooks were removed. This failure is in a pinned consumer that still supplies the shipping directory for its proving run.",
-          "repeat": false
-        },
-        {
           "name": "Exact-image verification records the wrong Wasm artifact hashes",
-          "repeat": false
+          "repeat": true
         },
         {
-          "name": "The ordinary browser game exports the endpoint image oracle",
+          "name": "The shipping BrowserScene bindings export the starter capture tap",
           "item": "WP3.3",
-          "different": "The previous extent global and render-scale method are absent. A separate pair of Wasm methods still drives the GPU readback used by engine oracles.",
-          "repeat": false
-        },
-        {
-          "name": "The game-only native setup selects the reference reconstructor",
-          "item": "WP3.1",
-          "different": "The earlier diagnostic cloud and route overlay selections are gated. The independent reference renderer is selected by a different GameSetup field and launch variable.",
-          "repeat": false
-        },
-        {
-          "name": "The atmosphere cost rig builds with proving disabled",
-          "item": "WP3.1",
-          "different": "The renderer measurement example is an independently buildable executable. The previous findings concerned library selections, test manifest declarations and compilation of the clear-sky test.",
+          "different": "The previous BrowserGame endpoint oracle is gated. This export comes from the sky kit in thrum-app and reads submitted images through BrowserScene.",
           "repeat": false
         }
       ]

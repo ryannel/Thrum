@@ -243,7 +243,7 @@
         {
           "verdict": "fail",
           "commit": "b43690153d33bf0d058f77b907dc8d807bdd15a1",
-          "review": ".orchestrate/evidence/GAME-SPLIT/WP3-review.md",
+          "review": ".orchestrate/evidence/GAME-SPLIT/WP3-review-2.md",
           "items": {
             "WP3.1": "fail",
             "WP3.2": "pass",
@@ -297,6 +297,46 @@
             "turns": 1
           },
           "at": "2026-11-24T23:58:57Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "6bbbded1d7032ebfc344c694ebead893526d932d",
+          "review": ".orchestrate/evidence/GAME-SPLIT/WP3-review.md",
+          "items": {
+            "WP3.1": "pass",
+            "WP3.2": "pass",
+            "WP3.3": "fail",
+            "WP3.4": "pass",
+            "WP3.5": "pass"
+          },
+          "findings": [
+            {
+              "name": "Exact-image verification records the wrong Wasm artifact hashes",
+              "repeat": true
+            },
+            {
+              "name": "The shipping BrowserScene bindings export the starter capture tap",
+              "item": "WP3.3",
+              "different": "The previous BrowserGame endpoint oracle is gated. This export comes from the sky kit in thrum-app and reads submitted images through BrowserScene.",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 108308,
+            "cached": 2819968,
+            "output": 9502,
+            "turns": 1
+          },
+          "at": "2026-11-25T00:25:27Z"
         }
       ],
       "authorised": {
