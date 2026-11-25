@@ -1125,7 +1125,51 @@
     },
     "WP8": {
       "definitions": "989d1d0be66c2c0ed13daa010fc8ea2654eb60f0076a07f12705c94a3e3c8243",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "655e2b711fc58ef5115c228b65a8cb4fb8428ac9",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP8-review.md",
+          "items": {
+            "D8.1": "pass",
+            "D8.2": "pass",
+            "D8.3": "pass",
+            "D8.4": "pass",
+            "D8.5": "pass",
+            "D8.6": "fail",
+            "D8.7": "pass",
+            "D8.8": "pass"
+          },
+          "findings": [
+            {
+              "name": "Generation replacement lacks a skipped-reset control",
+              "item": "D8.6",
+              "repeat": false
+            },
+            {
+              "name": "Generation replacement lacks a portable drop comparison",
+              "item": "D8.6",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 129017,
+            "cached": 5307392,
+            "output": 11255,
+            "turns": 1
+          },
+          "at": "2026-11-25T20:51:02Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Unblock APPLE-PRESENTATION WP8. The builder wrote: D8.3 needs a planner decision on whether the luminance bound should i",

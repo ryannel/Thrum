@@ -838,8 +838,8 @@
           "ask": "Is the scaler encoded on the native segment's own command buffer, as APPLE-TILE's boundary requires? Are creations counted by phase, with Metal's validation layer on for the run?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP8/target-exposure-texture/metalfx/metalfx.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP8-review.md",
           "builder_result": "pass"
         },
         {
@@ -849,8 +849,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP8/target-exposure-texture/metalfx-motion/metalfx-motion.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP8-review.md",
           "builder_result": "pass"
         },
         {
@@ -861,8 +861,8 @@
           "ask": "Does the held run differ from the stepped run in the storage scale alone, with the same view, light and sample count, and did the stepped run record both scales? If the pre-pass is on, is the exposure texture alone on record failing this bound? With the pre-pass on, does any second exposure or tone step exist, does a still frame equal the frame without the pre-pass to within float rounding of the tone input, and is an exposed value just above 65504/K clamped to the largest finite half value and counted while one just below it is not?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP8/target-exposure-texture/metalfx-exposure/comparison.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP8-review.md",
           "builder_result": "pass"
         },
         {
@@ -872,8 +872,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP8/target-exposure-texture/metalfx-quality/metalfx-quality.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP8-review.md",
           "builder_result": "pass"
         },
         {
@@ -883,8 +883,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP8/target-exposure-texture/metalfx_fallback.log",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP8-review.md",
           "builder_result": "pass"
         },
         {
@@ -894,10 +894,10 @@
           "lock": "gpu",
           "ask": "Read the test. Is each of the three causes driven through the host's own calls, with a control that skips the reset failing?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP8/target-exposure-texture/metalfx_reset.log",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP8-review.md",
+          "builder_result": "open"
         },
         {
           "id": "D8.7",
@@ -906,8 +906,8 @@
           "lock": "simulator",
           "target": "ios-sim",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP8/simulator-repaired/reset.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP8-review.md",
           "builder_result": "pass"
         },
         {
@@ -916,8 +916,8 @@
           "inspect": "Capture each sequence with T2 engine capture in `realtime` mode with MetalFX and again with TAAU. Watch each pair at 1x and judge native-size crops of trailing edges, the revealed background, the spawned object's first frames, single stars and the sky during the scrub. Say that you watched motion.",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP8/texture-selected-previews/README.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP8-review.md",
           "builder_result": "pass"
         }
       ],
@@ -925,11 +925,23 @@
         "APPLE-TILE:WP11",
         "APPLE-TILE:WP13"
       ],
-      "failed_reviews": 0,
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
-      "quality_bar": "Upscaling as clean as MetalFX in a shipped Mac game, such as Resident Evil Village or Death Stranding: sharp at reduced scale, no ghosting behind moving things, no shimmer on stars or thin geometry, and no brightness lag as the time of day changes. At least as stable as this engine's own TAAU on the same sequences."
+      "status": "in_progress",
+      "quality_bar": "Upscaling as clean as MetalFX in a shipped Mac game, such as Resident Evil Village or Death Stranding: sharp at reduced scale, no ghosting behind moving things, no shimmer on stars or thin geometry, and no brightness lag as the time of day changes. At least as stable as this engine's own TAAU on the same sequences.",
+      "findings": [
+        {
+          "name": "Generation replacement lacks a skipped-reset control",
+          "item": "D8.6",
+          "repeat": false
+        },
+        {
+          "name": "Generation replacement lacks a portable drop comparison",
+          "item": "D8.6",
+          "repeat": false
+        }
+      ]
     },
     {
       "id": "WP9",
