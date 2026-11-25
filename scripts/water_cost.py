@@ -367,6 +367,42 @@ def save_surf_record(record, path):
         staged.replace(path)
 
 
+def late_stations_by_interval(arm, maximum_age):
+    ticks = arm['ticks']
+    batches = arm['batches']
+    assert len(batches) == ticks
+    assert len(arm['views']) == arm['frames_submitted']
+    assert sum('completed_s' in view for view in arm['views']) == arm['frames_completed']
+    counts = [0] * (maximum_age + 1)
+    late = dict(before_submission=0, between_submission_and_publication=0, after_publication=0)
+    refusals = {event['tick']: event for event in arm['tick_refusals']}
+    for index, batch in enumerate(batches):
+        posted = batch['posted']
+        assert posted == batches[0]['posted'] + index
+        submitted, published = batch['submitted'], batch['published']
+        assert submitted is None or submitted >= posted
+        assert published is None or submitted is not None and published >= submitted
+        if submitted is None or submitted > posted:
+            batch['refusal'] = refusals.get(posted, 'no submission at the posting tick')
+        assert len(batch['first_drains']) == 8
+        for delivered in batch['first_drains']:
+            if delivered is not None:
+                assert published is not None and delivered >= published
+                counts[delivered - posted] += 6
+            if delivered is None or delivered - posted > 2:
+                # Publication records the latest tick whose drain had begun.
+                if submitted != posted:
+                    interval = 'before_submission'
+                elif published is None or published >= posted + 2:
+                    interval = 'between_submission_and_publication'
+                else:
+                    interval = 'after_publication'
+                late[interval] += 6
+    assert counts == arm['age']
+    assert sum(late.values()) == 48 * ticks - sum(counts[1:3])
+    return late
+
+
 def measure_surf_running(arm_name=None):
     record = measure_surf_arm('surf-running', arm_name)
     assert record['target'] == 'mac-metal'
@@ -406,40 +442,8 @@ def measure_surf_running(arm_name=None):
             phase: {'min': min(column), 'mean': statistics.mean(column), 'max': max(column)}
             for phase, column in zip(('coarse', 'fine'), zip(*nodes), strict=True)
         }
+        arm['late_stations_by_interval'] = late_stations_by_interval(arm, record['maximum_age'])
     if arm_name:
-        arm = record['open_water']
-        batches = arm['batches']
-        assert len(batches) == arm['ticks']
-        assert len(arm['views']) == arm['frames_submitted']
-        assert sum('completed_s' in view for view in arm['views']) == arm['frames_completed']
-        counts = [0] * (record['maximum_age'] + 1)
-        late = dict(before_submission=0, between_submission_and_publication=0, after_publication=0)
-        refusals = {event['tick']: event for event in arm['tick_refusals']}
-        for index, batch in enumerate(batches):
-            posted = batch['posted']
-            assert posted == batches[0]['posted'] + index
-            submitted, published = batch['submitted'], batch['published']
-            assert submitted is None or submitted >= posted
-            assert published is None or submitted is not None and published >= submitted
-            if submitted is None or submitted > posted:
-                batch['refusal'] = refusals.get(posted, 'no submission at the posting tick')
-            assert len(batch['first_drains']) == 8
-            for delivered in batch['first_drains']:
-                if delivered is not None:
-                    assert published is not None and delivered >= published
-                    counts[delivered - posted] += 6
-                if delivered is None or delivered - posted > 2:
-                    # Publication records the latest tick whose drain had begun.
-                    if submitted != posted:
-                        interval = 'before_submission'
-                    elif published is None or published >= posted + 2:
-                        interval = 'between_submission_and_publication'
-                    else:
-                        interval = 'after_publication'
-                    late[interval] += 6
-        assert counts == arm['age']
-        assert sum(late.values()) == 48 * arm['ticks'] - sum(counts[1:3])
-        arm['late_stations_by_interval'] = late
         record['problems'] = problems
         path = WORKING / 'WP21/surf-running-open-water.json'
         save_surf_record(record, path)
@@ -456,15 +460,15 @@ def measure_surf_running(arm_name=None):
                               for arm in (control, surf))
     record['investigations'] = []
     if surf_late > control_late:
+        comparison_keys = ('delivery_share', 'node_summary', 'busy', 'dropped_views',
+                           'view_completion_summary_ms', 'late_stations_by_interval')
         record['investigations'].append({
             'wire': 'breakers later than open water',
-            'open_water': {key: control[key] for key in ('delivery_share', 'node_summary', 'busy',
-                                                        'dropped_views', 'view_completion_summary_ms')},
-            'breakers': {key: surf[key] for key in ('delivery_share', 'node_summary', 'busy',
-                                                   'dropped_views', 'view_completion_summary_ms')},
-            'disposition': 'Both arms draw the same island view. The breakers add the coarse and fine cut; '
-                           'frame skips and occupied readback slots distinguish visible backpressure from '
-                           'the GPU and OS scheduling variation that also affects the control.',
+            'open_water': {key: control[key] for key in comparison_keys},
+            'breakers': {key: surf[key] for key in comparison_keys},
+            'disposition': 'Both arms draw the same island view. Compare their submission, publication '
+                           'and first-drain ticks. The interval between submission and publication contains '
+                           'device work and any delay before the host polls the result.',
         })
     record['problems'] = problems
     path = WORKING / 'WP19/surf-running.json'
