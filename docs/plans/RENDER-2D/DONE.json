@@ -714,7 +714,7 @@
     {
       "id": "WP6",
       "name": "A 2D game's colours above white go brighter than white on an EDR display, and a capture records the frame the display was given",
-      "status": "not_started",
+      "status": "in_progress",
       "depends_on": [
         "APPLE-PRESENTATION:WP6"
       ],
@@ -727,8 +727,8 @@
           "ask": "Read the test. Is each expected value built on the CPU from the source texels and the design's rule, without any of the renderer's shaders? Is the frame read from the float target the surface was given, as stored half-floats, and not from the scene-linear checkpoint or a converted copy?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
-          "builder_result": "open",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP6/README.md",
+          "builder_result": "pass",
           "verdict": "",
           "review": ""
         },
@@ -738,8 +738,8 @@
           "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render --test sprite_colour -E 'test(~float_mode)' --no-tests=fail",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
-          "builder_result": "open",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP6/metal-detail.log",
+          "builder_result": "pass",
           "verdict": "",
           "review": ""
         },
@@ -749,8 +749,8 @@
           "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render --features creation-counters --test scene_2d_lifecycle -E 'test(~float_mode)' --no-tests=fail",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
-          "builder_result": "open",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP6/metal-detail.log",
+          "builder_result": "pass",
           "verdict": "",
           "review": ""
         },
@@ -760,8 +760,8 @@
           "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render --features creation-counters --test scene_2d -E 'test(~float_mode)' --no-tests=fail",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
-          "builder_result": "open",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP6/inventory-comparison.md",
+          "builder_result": "pass",
           "verdict": "",
           "review": ""
         },
@@ -771,8 +771,8 @@
           "check": "python3 scripts/render2d.py edr --target mac-metal",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
-          "builder_result": "open",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP6/edr.json",
+          "builder_result": "pass",
           "verdict": "",
           "review": ""
         },
@@ -783,8 +783,8 @@
           "ask": "Read how a float-mode 2D host serves a capture at the 8-bit stage. 1. Is the recorded image written from the sprite target by the transfer pass the 8-bit mode runs, with no pixel of it converted or copied from the float target? 2. Does capture read that image at the same point of the frame's graph as in the 8-bit mode, so that a stage the 8-bit mode draws between the transfer and capture's read, as GAME-UI's interface stage will be, is drawn into it on a float-mode host with no second output path?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
-          "builder_result": "open",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP6/README.md",
+          "builder_result": "pass",
           "verdict": "",
           "review": ""
         },
@@ -795,8 +795,8 @@
           "ask": "Read `docs/SPRITE-SCENES.md` and the documentation of the EDR declaration in `thrum-app`'s game contract. Does each tell the maker of a 2D game that making this declaration is what gets the float surface? Is the declaration made in `examples/crowd-2d-view`'s library, so that the copy the guide describes carries it?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
-          "builder_result": "open",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP6/edr-crowd.json",
+          "builder_result": "pass",
           "verdict": "",
           "review": ""
         },
@@ -806,8 +806,8 @@
           "check": "python3 scripts/render2d.py edr-observed --target mac-metal",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
-          "builder_result": "open",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP6/edr-observed.json",
+          "builder_result": "pass",
           "verdict": "",
           "review": ""
         }

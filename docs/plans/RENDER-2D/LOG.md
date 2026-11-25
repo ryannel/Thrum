@@ -358,3 +358,14 @@
   capture enabled its stage must draw its 8-bit form into the display image too, and WP1 needs the comparison
   of a recording with a visible overlay against the 8-bit mode's frame. `GAME-UI`'s files are unchanged.
   [Detail](../../../.orchestrate/evidence/RENDER-2D/design-revision-2026-11-25-2.md)
+
+## WP6 Float display and submitted capture
+
+- 2026-11-25 The 2D present pass writes scene-linear sprite colours to the float drawable up to
+  the display's stored half-float ceiling. The default tap reads that drawable. A named 8-bit tap
+  uses the ordinary display-referred transfer and readback point on the sprite target. After
+  disable, the temporary image retires with its frame slot.
+- Both Mac Metal recipes passed the colour, headroom, transition and inventory proofs. Forced
+  EDR and SDR launches of V1 and the Crowd view selected their respective surfaces. The V1
+  observer recorded clipped 8-bit frames before and after replacing its float surface.
+  [Target evidence](../../../.orchestrate/evidence/RENDER-2D/WP6/README.md)
