@@ -704,7 +704,7 @@
           "check": "python3 scripts/apple_presentation.py governor-thermal --target mac-metal",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP7/review-repair/thermal/governor-thermal.json",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP7/clean-checkout/thermal/governor-thermal.json",
           "verdict": "pass",
           "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP7-review.md",
           "builder_result": "pass"
@@ -715,7 +715,7 @@
           "check": "node scripts/check_v1_browser.mjs --case governor",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP7/review-repair/chrome/governor.json",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP7/clean-checkout/chrome/governor.json",
           "verdict": "pass",
           "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP7-review.md",
           "builder_result": "pass"

@@ -427,3 +427,10 @@
 - 2026-11-25 WP7's 1920×1080 T2 capture retained all 600 opportunities at its 60 Hz elapsed-time cadence.
   The 1× movie, unscaled crops, tap-off control, GPU copy cost and blind opinion cover the downstep and
   recovery. [Motion inspection](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP7/review-repair/motion-verified/README.md)
+
+- 2026-11-25 WP7 repaired two checks that failed on main. The fixed offscreen Metal thermal proof
+  gives render work headroom with an explicit 100 ms diagnostic display interval. The exact arm
+  held 100% scale, stepped aerial cadence through 1, 2, 4, 2, 1, and created zero pipelines.
+  The controlled Chrome refresh replay retires WebGPU work before advancing synthetic time. It
+  held quality at 120→60→120 Hz, and both real callback load arms dropped and recovered.
+  [Target records](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP7/clean-checkout/README.md)
