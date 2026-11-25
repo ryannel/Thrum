@@ -931,7 +931,71 @@
     },
     "WP7": {
       "definitions": "725471207fa46c9e28621c4895d5fa7ea4ea7389c5c93074295b1dfc7c049a28",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "b066852195c38d500abd477eb9fa5c82905fc5c4",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP7-review.md",
+          "items": {
+            "D7.1": "pass",
+            "D7.2": "fail",
+            "D7.3": "fail",
+            "D7.4": "pass",
+            "D7.5": "fail",
+            "D7.6": "pass",
+            "D7.7": "pass",
+            "D7.8": "fail",
+            "D7.9": "pass"
+          },
+          "findings": [
+            {
+              "name": "The Metal load proof caps the display at 60 Hz and quarters the window pixel count",
+              "item": "D7.2",
+              "repeat": false
+            },
+            {
+              "name": "The unloaded 1080p route changes scale four times",
+              "item": "D7.3",
+              "repeat": false
+            },
+            {
+              "name": "The realtime route misses render opportunities through load and recovery",
+              "item": "D7.8",
+              "repeat": false
+            },
+            {
+              "name": "The governor frame record can disagree with the committed knob value",
+              "item": "D7.2",
+              "repeat": false
+            },
+            {
+              "name": "A skipped aerial update loses a change of Sun direction",
+              "item": "D7.5",
+              "repeat": false
+            },
+            {
+              "name": "Chrome keeps the startup budget after a refresh change",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "visible",
+          "usage": {
+            "input": 176411,
+            "cached": 8652672,
+            "output": 19604,
+            "turns": 1
+          },
+          "at": "2026-11-25T05:43:18Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of APPLE-PRESENTATION at docs/evidence/APPLE-PRESENTATION/design-review.md asked for changes. Resolve ",

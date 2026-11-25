@@ -648,8 +648,8 @@
           "ask": "Read the test. Is the policy a function of samples, missed ticks, the display record and the host's hold marks alone, with no clock of its own? Is each behaviour a separate case with a control? After a build that ended with no new generation, is scale shown to drop under load with no further change of request?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP7/native-delivery/rust-final.log",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP7-review.md",
           "builder_result": "pass"
         },
         {
@@ -659,10 +659,10 @@
           "lock": "gpu",
           "ask": "Are ticks without a present counted by the frame host from display-link ticks, and labelled as a render-side proxy? Does the arm fail with the governor off under the same load?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP7/display-environment/live/governor.json",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP7-review.md",
+          "builder_result": "open"
         },
         {
           "id": "D7.3",
@@ -670,10 +670,10 @@
           "check": "python3 scripts/apple_presentation.py governor --target mac-metal --steady",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP7/display-environment/steady/governor.json",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP7-review.md",
+          "builder_result": "open"
         },
         {
           "id": "D7.4",
@@ -682,8 +682,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP7/resume/identity.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP7-review.md",
           "builder_result": "pass"
         },
         {
@@ -693,10 +693,10 @@
           "lock": "gpu",
           "ask": "Read the test. Is registration open to a crate that `thrum-render` does not name, as the module list's quality-knobs interface requires for `WATERS` and `CLOUDS`? Does the test register a knob from a test contribution and watch its value change under load?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP7/native-delivery/rust-final.log",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP7-review.md",
+          "builder_result": "open"
         },
         {
           "id": "D7.6",
@@ -705,8 +705,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP7/resume/thermal/governor-thermal.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP7-review.md",
           "builder_result": "pass"
         },
         {
@@ -716,8 +716,8 @@
           "lock": "chrome",
           "target": "chrome-webgpu",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP7/chrome-recovery/run-2/governor.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP7-review.md",
           "builder_result": "pass"
         },
         {
@@ -725,10 +725,10 @@
           "statement": "In real time on the Mac, through the forced load and the recovery, the motion stays smooth and the picture shows no oscillation, pop or flash: a viewer who is not told cannot point to the frame of a scale step.",
           "inspect": "Capture the forced-load run with T2 engine capture in `realtime` mode, with capture's own cost shown apart. Watch it at 1x, then judge native-size crops of thin features across each step the trace names. Say that you watched motion.",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP7/resume/qualified-motion/README.md",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP7-review.md",
+          "builder_result": "open"
         },
         {
           "id": "D7.9",
@@ -738,17 +738,48 @@
           "ask": "Read the test. Is the failed build the one D4.5's test forces, reached through the host's resize and frame calls and not by setting the governor's state? Does a control whose hold never ends fail it?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP7/native-delivery/rust-final.log",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP7-review.md",
           "builder_result": "pass"
         }
       ],
       "depends_on": [],
-      "failed_reviews": 0,
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
-      "quality_bar": "A frame-rate governor as steady as Unreal's dynamic resolution in a shipped game: under a sudden load the picture gets a little softer within a few frames and the motion stays smooth, quality returns slowly when the load lifts, nothing oscillates, and the simulation never notices."
+      "status": "in_progress",
+      "quality_bar": "A frame-rate governor as steady as Unreal's dynamic resolution in a shipped game: under a sudden load the picture gets a little softer within a few frames and the motion stays smooth, quality returns slowly when the load lifts, nothing oscillates, and the simulation never notices.",
+      "findings": [
+        {
+          "name": "The Metal load proof caps the display at 60 Hz and quarters the window pixel count",
+          "item": "D7.2",
+          "repeat": false
+        },
+        {
+          "name": "The unloaded 1080p route changes scale four times",
+          "item": "D7.3",
+          "repeat": false
+        },
+        {
+          "name": "The realtime route misses render opportunities through load and recovery",
+          "item": "D7.8",
+          "repeat": false
+        },
+        {
+          "name": "The governor frame record can disagree with the committed knob value",
+          "item": "D7.2",
+          "repeat": false
+        },
+        {
+          "name": "A skipped aerial update loses a change of Sun direction",
+          "item": "D7.5",
+          "repeat": false
+        },
+        {
+          "name": "Chrome keeps the startup budget after a refresh change",
+          "repeat": false
+        }
+      ]
     },
     {
       "id": "WP8",
