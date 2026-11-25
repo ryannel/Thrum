@@ -640,7 +640,7 @@
     {
       "id": "WP16",
       "name": "The long tests pass again, and running out of GPU timers is a named error, not a lost device",
-      "status": "in_progress",
+      "status": "done",
       "quality_bar": "A GPU profiler as dependable as a shipped engine's: asking for frame timing never takes the device down, and a test run that runs out of a platform resource says which one.",
       "items": [
         {
