@@ -983,7 +983,7 @@
         {
           "verdict": "fail",
           "commit": "2ff7225e054c3e708ae56318f9eb89aa42d3d149",
-          "review": ".orchestrate/evidence/SESSION/WP7-review.md",
+          "review": ".orchestrate/evidence/SESSION/WP7-review-3.md",
           "items": {
             "WP7.1": "pass",
             "WP7.2": "pass",
@@ -1028,6 +1028,48 @@
             "turns": 1
           },
           "at": "2026-11-25T11:07:02Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "d0577763879ab1f01c6f20faa5e8262c6d255cf2",
+          "review": ".orchestrate/evidence/SESSION/WP7-review.md",
+          "items": {
+            "WP7.1": "pass",
+            "WP7.2": "pass",
+            "WP7.3": "pass",
+            "WP7.4": "pass",
+            "WP7.5": "pass",
+            "WP7.6": "fail",
+            "WP7.7": "pass",
+            "WP7.8": "pass"
+          },
+          "findings": [
+            {
+              "name": "The Mac client visibly hitches during ordinary playout",
+              "item": "WP7.6",
+              "repeat": true
+            },
+            {
+              "name": "Inline driven frames can report a tick due after their observation",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 126847,
+            "cached": 5201536,
+            "output": 14489,
+            "turns": 1
+          },
+          "at": "2026-11-25T11:56:19Z"
         }
       ],
       "authorised": {
