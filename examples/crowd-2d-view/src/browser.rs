@@ -52,7 +52,7 @@ impl BrowserCrowd {
         if let Some(tick) = tick {
             self.shell.discard_report_samples_before(tick);
         }
-        Ok(serde_json::to_string(&collected).map_err(js_error)?)
+        serde_json::to_string(&collected).map_err(js_error)
     }
 
     /// The publication associated with the most recent submission.
