@@ -1274,6 +1274,22 @@
       ]
     },
     {
+      "id": "WP22",
+      "name": "The water scene's tests compile for Linux and Windows again",
+      "status": "not_started",
+      "quality_bar": "The workspace's tests stay type-checked for Linux and Windows, as they were before WP19 merged: no error for either target, and the Mac's surf proofs as they are.",
+      "items": [
+        {
+          "id": "WP22.1",
+          "statement": "The workspace type-checks for Linux and Windows again: `scripts/check_cross_target.sh` passes on this work package's checkout for x86_64-unknown-linux-gnu and x86_64-pc-windows-msvc, with every test target of the water scene among those it checks. Record: one run of the type-check; the scheduled `cross-target` main-branch check guards it from then on.",
+          "check": "bash scripts/check_cross_target.sh",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ]
+    },
+    {
       "id": "WP21",
       "name": "With surf in view, a float gets the sea's height within two ticks and rides a hitch on its last answer",
       "status": "not_started",

@@ -1,9 +1,9 @@
 # WATERS plan
 
-[Design](DESIGN.md) · [done-when file](DONE.json) · [log](LOG.md) · [module list](../ARCHITECTURE.md)
+[Design](DESIGN.md), [done-when file](DONE.json), [log](LOG.md), [module list](../ARCHITECTURE.md)
 
 First read [Proof and builder handoff](DESIGN.md#proof-and-builder-handoff) and
-[Exact baselines](../ARCHITECTURE.md#exact-baselines). Work packages are built in order.
+[Exact baselines](../ARCHITECTURE.md#exact-baselines). Build in order.
 
 ## Open for the human
 
@@ -75,9 +75,12 @@ First read [Proof and builder handoff](DESIGN.md#proof-and-builder-handoff) and
 
 [Review](../../../.orchestrate/evidence/WATERS/WP13-review.md)
 
+## WP22 The water scene's tests compile for Linux and Windows again
+
+`build/waters`' unmerged commits merge with this.
+
 ## WP21 With surf in view, a float gets the sea's height within two ticks and rides a hitch on its last answer
 
-Build on `build/waters` at `ab950b5b9`, whose unmerged commits merge with this.
 [Measure before changing the pass](DESIGN.md#a-surf-view-a-running-game-can-afford-wp21).
 
 ## WP19 Floats in a gale's breaking surf get the height of the crest they ride in time to ride it, with the game running

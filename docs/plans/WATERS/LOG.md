@@ -1062,3 +1062,8 @@
   wire, with the cache at 22, 40, 45, 97, 130 and 93 ms, and each passed on a sentence `water_cost.py` writes
   for every record. WP21.4 asks for measurements as the cache's investigation. The plan file's assumptions
   were reworded to stay inside its word limit; none was removed.
+- 2026-11-25 Planner, the `cross-target` main-branch check, failing since `8d8340e65` (WP19). That commit
+  declared `mod surf_running;` in `examples/water/tests/proof_gpu.rs` for every platform, while `support` and
+  `surf_cost`, which it imports, and the driver that calls it are declared for the Mac alone: E0432 for Linux
+  and for Windows, and no other error in the workspace. A merge's check builds for the Mac only, so it passed.
+  New WP22, ahead of WP21, with the type-check as its one item. It waits for nothing of WP19's.
