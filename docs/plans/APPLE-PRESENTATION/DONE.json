@@ -942,10 +942,10 @@
           "lock": "gpu",
           "ask": "How does the arm clear the cache and show that the cold run was cold? Does the command succeed or fail on the record being complete, and never on a time?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP9/review-fix/launch/launch.json",
           "verdict": "fail",
           "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP9-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D9.2",
@@ -954,10 +954,10 @@
           "lock": "gpu",
           "ask": "Read the test. Is there one case for each of the five, each asserting the counters by thread and phase and the one thing the design says changes? Is readiness taken for each device generation, with recovery preparation counted apart from play?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP9/review-fix/prepared-paths.txt",
           "verdict": "fail",
           "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP9-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D9.3",
@@ -965,10 +965,10 @@
           "check": "python3 scripts/apple_presentation.py no-compile --target mac-metal",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP9/review-fix/native-route/no-compile.json",
           "verdict": "fail",
           "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP9-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D9.4",
