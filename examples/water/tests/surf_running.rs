@@ -9,8 +9,8 @@ use thrum_app::sky::Camera;
 use thrum_render::{extract::SourceTick, runtime::SurfaceOutput};
 use thrum_water::query::{BodyAnswers, QueryCutTap, QueryMailbox};
 use water_scene::{
-    floating::{Body, fallback},
-    island::{Wind, build_surf, surf_inputs, surf_water_profile},
+    floating::{Body, fallback, sample_answer},
+    island::{SURF_VIEWS, Wind, build_surf, surf_inputs, surf_water_profile},
 };
 
 const STEP: Duration = Duration::from_nanos(16_666_667);
@@ -25,7 +25,7 @@ const TOLERANCE: f64 = 0.015;
 const WITNESSES: [usize; 3] = [50, 300, 550];
 const WITNESS_WINDOW: usize = 10;
 type Witnesses = [[Vec<BodyAnswers>; WITNESS_WINDOW]; WITNESSES.len()];
-const CAMERA: Camera = Camera::look_at([-2776.0, 477.0, 25.0], [-126.0, 0.0, 25.0], 1.44);
+const CAMERA: Camera = SURF_VIEWS[0];
 
 struct GameTick {
     begin: Option<u64>,
@@ -33,7 +33,6 @@ struct GameTick {
     ages: [usize; AGE + 1],
     nodes: Vec<Option<[u64; 2]>>,
     witness: Witnesses,
-    latest: [Option<BodyAnswers>; 8],
     fallback: usize,
 }
 
@@ -45,7 +44,6 @@ impl Default for GameTick {
             ages: [0; AGE + 1],
             nodes: vec![None; MEASURE_TICKS as usize],
             witness: std::array::from_fn(|_| std::array::from_fn(|_| Vec::new())),
-            latest: std::array::from_fn(|_| None),
             fallback: 0,
         }
     }
@@ -83,7 +81,8 @@ impl GameTick {
                 );
             }
         }
-        for reply in query.drain(endpoint, step) {
+        let answers = query.drain(endpoint, step);
+        for reply in &answers {
             if let Some(index) = reply
                 .posted
                 .checked_sub(measured)
@@ -99,27 +98,21 @@ impl GameTick {
                     }
                 }
             }
-            let id = reply.id as usize;
-            self.latest[id] = Some(reply);
         }
+        let requests: Vec<_> = fleet.iter().map(|body| body.request(tick, step)).collect();
         if (WARM_TICKS..WARM_TICKS + MEASURE_TICKS).contains(&sequence) {
-            for answer in &self.latest {
-                if answer
-                    .as_ref()
-                    .is_none_or(|answer| tick - answer.posted > AGE as u64)
-                {
-                    // A held float may reuse a resolved answer inside the declared
-                    // age window. Beyond it the game needs a conformance sample.
-                    self.fallback += 6;
-                    query.report_unavailable();
+            for (body, request) in fleet.iter().zip(&requests) {
+                let answer = answers.iter().find(|answer| answer.id == request.id);
+                for station in 0..request.points.len() {
+                    if sample_answer(answer, station, body.station(station)).is_none() {
+                        self.fallback += 1;
+                        query.report_unavailable();
+                    }
                 }
             }
         }
         if sequence < WARM_TICKS + MEASURE_TICKS {
-            query.post(
-                endpoint,
-                fleet.iter().map(|body| body.request(tick, step)).collect(),
-            );
+            query.post(endpoint, requests);
         }
     }
 }
@@ -170,7 +163,8 @@ fn arm(gpu: &thrum_test_support::Gpu, extent: [u32; 2], fleet: Vec<Body>) -> Gam
     let wall = Instant::now();
     let mut submitted = 0;
     let mut dropped = 0;
-    let mut completed = 0;
+    let mut view_in_flight = None::<Instant>;
+    let mut completion_ms = Vec::new();
     let mut last_draw = None;
     loop {
         while fixture
@@ -179,7 +173,8 @@ fn arm(gpu: &thrum_test_support::Gpu, extent: [u32; 2], fleet: Vec<Body>) -> Gam
             .expect("nonblocking completion")
             .is_some()
         {
-            completed += 1;
+            let began = view_in_flight.take().expect("one submitted view");
+            completion_ms.push(began.elapsed().as_secs_f64() * 1000.0);
         }
         let elapsed = wall.elapsed();
         let opportunity = elapsed.as_nanos() / VIEW_INTERVAL.as_nanos();
@@ -195,6 +190,9 @@ fn arm(gpu: &thrum_test_support::Gpu, extent: [u32; 2], fleet: Vec<Body>) -> Gam
         }
         .expect("running scene");
         assert!(drive.overload.is_none(), "{drive:?}");
+        if drive.submitted {
+            view_in_flight = Some(wall + elapsed);
+        }
         submitted += usize::from(drive.submitted);
         dropped += usize::from(drive.dropped_view);
         if stats.lock().expect("game tick").ticks >= WARM_TICKS + MEASURE_TICKS + DRAIN_TICKS {
@@ -225,7 +223,9 @@ fn arm(gpu: &thrum_test_support::Gpu, extent: [u32; 2], fleet: Vec<Body>) -> Gam
     GameArm {
         record: json!({
             "extent":extent, "ticks":MEASURE_TICKS, "warm_ticks":WARM_TICKS, "wall_seconds":wall_seconds,
-            "render_in_flight":1, "view_opportunity_hz":30, "warm_profile":warm_profile, "warm_wall_ms":warm_wall_ms, "frames_submitted":submitted, "frames_completed":completed,
+            "render_in_flight":1, "view_opportunity_hz":30, "warm_profile":warm_profile,
+            "warm_wall_ms":warm_wall_ms, "frames_submitted":submitted,
+            "frames_completed":completion_ms.len(), "view_completion_ms":completion_ms,
             "dropped_views":dropped, "age":stats.ages, "nodes":nodes,
             "completed_batch_ticks":completed_batch_ticks,
             "fallback":stats.fallback, "unavailable":mailbox.unavailable,

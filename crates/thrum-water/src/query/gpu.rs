@@ -524,7 +524,7 @@ impl Readback {
         map: &Map,
         frame_map: Option<&MapGpu>,
         wake: Option<&Interaction>,
-    ) {
+    ) -> bool {
         self.pending.clear();
         let mut state = self.mailbox.state.lock().expect("water query mailbox");
         let slots = self
@@ -538,7 +538,7 @@ impl Readback {
             .front()
             .and_then(|page| self.frame.committed_for(page.endpoint))
         else {
-            return;
+            return false;
         };
         let work: Vec<_> = slots
             .zip(&state.pages)
@@ -565,6 +565,7 @@ impl Readback {
         });
         let profile = map.profile();
         let mut reach = map.surf_throw_reach(&spectrum.long, chop);
+        let mut resources_grew = false;
         for (slot, endpoint, bodies) in work {
             let origin = bodies[0].points[0].position;
             let components: Vec<_> = spectrum
@@ -624,6 +625,7 @@ impl Readback {
                 let bytes = plan.records * COARSE_RECORD_BYTES;
                 if scratch.buffer.size() < bytes {
                     *scratch = CoarseScratch::new(gpu, bytes.next_power_of_two().min(max_bytes));
+                    resources_grew = true;
                 }
                 if !plan.jobs.is_empty() {
                     queue.write_buffer(&scratch.buffer, 0, bytemuck::cast_slice(&plan.jobs));
@@ -686,6 +688,7 @@ impl Readback {
                     }),
             });
         }
+        resources_grew
     }
 
     pub(crate) fn resource_bytes(&self) -> Vec<(String, u64)> {

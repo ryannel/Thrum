@@ -573,7 +573,7 @@ impl SceneContribution for Water {
         _encoder: &mut wgpu::CommandEncoder,
         _step: std::time::Duration,
     ) {
-        if let Some(p) = &mut self.prepared
+        let resources_grew = if let Some(p) = &mut self.prepared
             && let Some(query) = &mut p.query
         {
             let map = self.map.lock().expect("water map lock");
@@ -585,7 +585,12 @@ impl SceneContribution for Water {
                 &map,
                 p.map.as_ref(),
                 p.interaction.as_ref(),
-            );
+            )
+        } else {
+            false
+        };
+        if resources_grew {
+            self.report.lock().expect("water report").resources = self.resource_bytes();
         }
     }
     fn encode_tick(&mut self, _index: usize, pass: &mut wgpu::ComputePass<'_>) {

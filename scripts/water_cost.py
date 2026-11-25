@@ -374,6 +374,11 @@ def measure_surf_running():
         assert ticks >= 600 and arm['extent'] == record['extent']
         assert arm['wall_seconds'] >= ticks / record['step_hz']
         assert arm['frames_completed'] > 0
+        view_times = arm['view_completion_ms']
+        assert len(view_times) == arm['frames_completed']
+        arm['view_completion_summary_ms'] = {
+            'median': statistics.median(view_times), 'max': max(view_times),
+        }
         assert len(arm['age']) == record['maximum_age'] + 1 and arm['age'][0] == 0
         expected = 48 * ticks
         arm['delivery_share'] = {
@@ -409,8 +414,10 @@ def measure_surf_running():
     if surf_late > control_late:
         record['investigations'].append({
             'wire': 'breakers later than open water',
-            'open_water': {key: control[key] for key in ('delivery_share', 'node_summary', 'busy', 'dropped_views')},
-            'breakers': {key: surf[key] for key in ('delivery_share', 'node_summary', 'busy', 'dropped_views')},
+            'open_water': {key: control[key] for key in ('delivery_share', 'node_summary', 'busy',
+                                                        'dropped_views', 'view_completion_summary_ms')},
+            'breakers': {key: surf[key] for key in ('delivery_share', 'node_summary', 'busy',
+                                                   'dropped_views', 'view_completion_summary_ms')},
             'disposition': 'Both arms draw the same island view. The breakers add the coarse and fine cut; '
                            'frame skips and occupied readback slots distinguish visible backpressure from '
                            'the GPU and OS scheduling variation that also affects the control.',
@@ -444,6 +451,8 @@ def measure_surf():
         resources = dict(arm['resources'])
         for key in ('surf lags', 'surf exposures'):
             assert (resources.get(key, 0) > 0) == surf
+        cut_scratch = resources.get('water query coarse lattice', 0)
+        assert (cut_scratch > 0) == surf
         table[name] = wake_summary(arm['frames'])
         for frame in arm['frames']:
             labels = frame['passes_ms']
@@ -455,6 +464,11 @@ def measure_surf():
                 counts = frame['fleet_query']
                 assert counts['cut_nodes'] == counts['coarse_nodes'] + counts['fine_nodes']
                 assert (counts['coarse_nodes'] > 0) == (counts['fine_nodes'] > 0) == surf
+                if surf:
+                    # Coarse nodes alone occupy one 16-byte record each. The
+                    # retained allocation also includes the jobs and fine work.
+                    assert cut_scratch >= 16 * counts['coarse_nodes'], (
+                        f'{cut_scratch} scratch bytes cannot hold {counts["coarse_nodes"]} coarse nodes')
                 query_frames[name] = frame['fleet_query']
                 elapsed = next((value for label, value in labels.items()
                                 if label.endswith('water body query')), None)
