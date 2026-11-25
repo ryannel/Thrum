@@ -19,6 +19,8 @@ Build in the order below.
 - Assumption: WP16 keeps the device safe for timestamp query sets created at the engine's one call site. Code
   that creates one with wgpu directly, in the same process and at the same moment as an engine request, is not
   protected, because that needs a change to wgpu's Metal backend. The owner can ask for that change.
+- Assumption: a viewer cannot see a brightness difference under 1% of a frame's mean luminance, so D8.3 allows
+  MetalFX that much. It is a little under one step of the 8-bit output at the brightness of D8.3's frames.
 
 ## WP1 Every pixel of the valley carries correct motion under jitter, including the sky and stars: done
 [review](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP1-review.md)
@@ -92,10 +94,23 @@ describes; the scaler is a provider there and TAAU is its twin. WP10 and WP11 ha
 inside the copy/select witness, which is why this work package stopped on 25 November. The segment keeps the
 candidate, the reset decision, the encoder split, completion and the counters, so D8.5 and D8.6 drive it and
 add none of their own. Where MetalFX needs something the interface lacks, change it in `APPLE-TILE`'s files
-under [the ruling for seam 8](../ARCHITECTURE.md#interfaces) and keep that module's tests passing. The
-checkpoint on `build/apple-presentation` at `2252c56af` holds D8.7's pass. Take D8.3's noise floor first, on two
-identical runs, since the exposure judgement is made against it. Build the normalising pre-pass only if the
-exposure texture alone fails D8.3.
+under [the ruling for seam 8](../ARCHITECTURE.md#interfaces) and keep that module's tests passing.
+
+Carry on from `build/apple-presentation` at `203ba8269`, which holds the provider, the TAAU twin, the pre-pass
+and the builder's passes for every item but D8.3 and D8.8; the
+[handoff](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP8-handoff.md) says what was tried. D8.3 changed on
+25 November and no other item did. It used to hold MetalFX to TAAU's distance from the un-reconstructed frame
+with no tolerance, which failed on differences between the two reconstructors of 0.0003 in mean luminance that
+were the same with the storage scale held. It now asks only for what a viewer could see: the forced step is
+judged against a matched run with the scale held, the scrub against the un-reconstructed frame, both within 1%.
+Two identical runs differed by exactly zero on this Mac, so the bound carries no noise term. TAAU is not judged
+by D8.3.
+
+The old bound is what switched the pre-pass on, so judge the exposure texture alone against the new one first.
+Its first run sat within 0.51% of the un-reconstructed frame through the scrub and 0.13% through the step, so
+expect it to pass. If it does, it is the path: take the pre-pass out of the product with its counters and
+tests, because nothing would select it, and take again the evidence of the other items that the pre-pass was on
+for, D8.8's recordings among them. Keep the pre-pass only if the exposure texture alone fails D8.3.
 
 ## WP9 Surface, device and display changes create nothing during play, and launch-to-ready time is on record
 

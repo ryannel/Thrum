@@ -493,3 +493,8 @@
 - 2026-11-25 Planner: WP8's block (`NativeProvider` absent) is answered by a new `APPLE-TILE` WP13, which WP8 now
   depends on. Seam 8's ruling says who builds what. WP8's items did not change, and its note no longer says WP10
   and WP11 left the interface. [Handoff](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP8-handoff.md)
+- 2026-11-25 Planner: WP8 stopped on D8.3 (`needs_context`), and D8.3 is rewritten; no other item and no design
+  text changed. The old bound measured how MetalFX and TAAU differ on a still frame: a held-storage run reproduced
+  all 17 misses. D8.3 now judges the forced step against a matched held run and the scrub against the
+  un-reconstructed frame, each within 1% of mean luminance, and the builder judges the exposure texture alone first.
+  [Reasons and numbers](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP8-plan/README.md)
