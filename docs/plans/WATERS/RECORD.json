@@ -1400,12 +1400,12 @@
       }
     },
     "WP13": {
-      "definitions": "d9c32fc2e9373fd5ba5a82b4d872825f4b778c7a9129d992a01df39872a6f613",
+      "definitions": "5e13661c542c647a329682c28868de15260fd08b453c3f1ea8e7da6d99d6890b",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Unblock WATERS WP13. The builder wrote: after three Metal inspections could not follow two adjacent ridges through both ",
-        "at": "2026-11-24T23:46:50Z"
+        "task": "Unblock WATERS WP13 (handoff .orchestrate/evidence/WATERS/WP13-handoff.md; work unmerged on build/waters at 8ca083d6d). ",
+        "at": "2026-11-25T02:29:06Z"
       }
     },
     "WP15": {
@@ -1692,11 +1692,15 @@
     {
       "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 3 Must Fix findings. That makes 2 design reviews in a row that asked for changes, so the script approves the design you leave without another review, and building starts from it.",
       "at": "2026-11-25T00:55:07Z"
+    },
+    {
+      "task": "Unblock WATERS WP13 (handoff .orchestrate/evidence/WATERS/WP13-handoff.md; work unmerged on build/waters at 8ca083d6d). WP13.5 reached the design's three-look stop: from the 1 km narrow-lens view, breaking positions and shoreward travel read in both winds, but neither the builder nor a fresh inspection can tell the relative heights of crests at break onset, though the model cut shows larger crests do break farther out. 32 m offshore triangle sampling flattens the sheet and reversed two trade crests' ranking. WP13.11 waits on the same cue. The builder asks either for approval to refine the offshore mesh (bed-relative geometry) and repeat the 1 km comparison, or to let a matched closer view establish height rank while 1 km keeps the surf-motion requirement. Decide which, and change the items or authorise the pass. Lead's notes: the owner's bar is a plausible shipped-game look, and references diagnose rather than gate (not physical accuracy), so weigh whether height rank at 1 km is a cue players would read. Separately, the handoff records a surf query of 47M nodes and 18,118 ms across 48 stations, against 0.311 ms with surf off, as a tripwire for WP19. Say whether that cost needs a plan change now, before WP19 builds on it.",
+      "at": "2026-11-25T02:29:06Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-25T00:55:07Z"
+    "at": "2026-11-25T02:29:06Z"
   },
   "design_history": [
     {
