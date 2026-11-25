@@ -1025,7 +1025,7 @@
     {
       "id": "WP19",
       "name": "While clouds drift, the game can say where each lost refresh went, and the losses the clouds cause are fixed",
-      "status": "ready_for_review",
+      "status": "done",
       "depends_on": [],
       "quality_bar": "A frame-pacing record as a shipped engine's frame profiler gives one: every lost refresh has a place, none is put down to load or to the window unless the same game without clouds, run beside it, shows the same loss, and a hitch the game without clouds does not have is never put down to them.",
       "items": [
@@ -1053,7 +1053,7 @@
           },
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP19/request-attribution/README.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP19-review.md"
         },
         {
@@ -1083,14 +1083,7 @@
         }
       ],
       "failed_reviews": 2,
-      "failed_reviews_with_repeat": 1,
-      "findings": [
-        {
-          "name": "Loss attribution uses the nearest target instead of the drawable",
-          "item": "WP19.2",
-          "repeat": true
-        }
-      ]
+      "failed_reviews_with_repeat": 1
     },
     {
       "id": "WP20",

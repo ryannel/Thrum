@@ -1453,7 +1453,7 @@
         {
           "verdict": "fail",
           "commit": "c1218a6266068293e058173e8cacea1cde0a3dac",
-          "review": ".orchestrate/evidence/CLOUDS/WP19-review.md",
+          "review": ".orchestrate/evidence/CLOUDS/WP19-review-2.md",
           "items": {
             "WP19.1": "pass",
             "WP19.2": "fail",
@@ -1483,6 +1483,33 @@
             "turns": 1
           },
           "at": "2026-11-25T21:08:39Z"
+        },
+        {
+          "verdict": "pass",
+          "commit": "24ead8c0047c1339f24befc8b9ab90f92fc439bc",
+          "review": ".orchestrate/evidence/CLOUDS/WP19-review.md",
+          "items": {
+            "WP19.1": "pass",
+            "WP19.2": "pass",
+            "WP19.3": "pass",
+            "WP19.4": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 81052,
+            "cached": 1378432,
+            "output": 5911,
+            "turns": 1
+          },
+          "at": "2026-11-25T21:59:50Z"
         }
       ],
       "authorised": {
@@ -1515,6 +1542,13 @@
           "output": 336094,
           "turns": 7
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "24ead8c0047c1339f24befc8b9ab90f92fc439bc",
+        "review": ".orchestrate/evidence/CLOUDS/WP19-review.md",
+        "checked": "55dcb9b8fb15405cc66e1e84e4451154ea3d38d4",
+        "at": "2026-11-25T21:59:50Z"
       }
     },
     "WP20": {
