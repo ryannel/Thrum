@@ -154,7 +154,7 @@
     {
       "id": "WP3",
       "name": "A passing exact-image record names the Wasm file that Chrome ran, and a run whose capture ran another fails",
-      "status": "ready_for_review",
+      "status": "done",
       "quality_bar": "A deployment pinned by digest, as `image@sha256:\u2026` is: the record names the executable by a hash taken where it was loaded, and a run that loaded anything else fails by name.",
       "items": [
         {
@@ -165,8 +165,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/BASELINE-GUARD/WP3/wasm-identity.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/BASELINE-GUARD/WP3-review.md"
         },
         {
           "id": "WP3.2",
@@ -176,8 +176,8 @@
           "target": "chrome-webgpu",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/BASELINE-GUARD/WP3/record.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/BASELINE-GUARD/WP3-review.md"
         },
         {
           "id": "WP3.3",
@@ -187,8 +187,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/BASELINE-GUARD/WP3/reference-guard.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/BASELINE-GUARD/WP3-review.md"
         }
       ],
       "failed_reviews": 0,

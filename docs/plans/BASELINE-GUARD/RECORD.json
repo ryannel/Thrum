@@ -175,7 +175,34 @@
     },
     "WP3": {
       "definitions": "e57892a32fe5d5b28c0fb9b2252c6decad6948af0c8e2906f4fa3bb1ecbfc85b",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "pass",
+          "commit": "dd8d88e8f8b27364b25d5ff75f466b6c73171d4b",
+          "review": ".orchestrate/evidence/BASELINE-GUARD/WP3-review.md",
+          "items": {
+            "WP3.1": "pass",
+            "WP3.2": "pass",
+            "WP3.3": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 60496,
+            "cached": 432384,
+            "output": 2641,
+            "turns": 1
+          },
+          "at": "2026-11-25T10:15:24Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "GAME-SPLIT WP3's last two reviews (.orchestrate/evidence/GAME-SPLIT/WP3-review.md, finding 1, and WP3-review-2.md) found",
@@ -207,6 +234,13 @@
           "output": 24770,
           "turns": 1
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "dd8d88e8f8b27364b25d5ff75f466b6c73171d4b",
+        "review": ".orchestrate/evidence/BASELINE-GUARD/WP3-review.md",
+        "checked": "5f6ce56bb07bdc2aac3bad39654c8f321ce663e0",
+        "at": "2026-11-25T10:15:24Z"
       }
     }
   },
