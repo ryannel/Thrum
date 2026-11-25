@@ -991,16 +991,21 @@ impl SceneContext<'_> {
 }
 
 pub(crate) fn composed_source(variant: crate::shaders::SceneVariant) -> String {
-    let source = super::scene_source::cloud_variant(
-        shader_source(&super::scene_source::secondary_with_lighting(
-            variant.atmosphere.present(),
-            variant.atmosphere.air_shadow(),
-            variant.cloud.present(),
+    let atmosphere = variant.atmosphere.present();
+    let shadowed_air = variant.atmosphere.air_shadow();
+    let cloud = variant.cloud.present();
+    let scene = if variant.lighting == crate::atmosphere::overlay::Lighting::Clear {
+        super::scene_source::secondary(atmosphere, shadowed_air, cloud, variant.shadows)
+    } else {
+        super::scene_source::secondary_with_lighting(
+            atmosphere,
+            shadowed_air,
+            cloud,
             variant.shadows,
             variant.lighting,
-        )),
-        variant.cloud,
-    );
+        )
+    };
+    let source = super::scene_source::cloud_variant(shader_source(&scene), variant.cloud);
     if variant.lighting == crate::atmosphere::overlay::Lighting::Clear {
         source
     } else {

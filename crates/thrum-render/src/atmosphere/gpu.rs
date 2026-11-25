@@ -149,7 +149,6 @@ impl AtmospherePrepared {
         self.aerial_textures.each_ref()
     }
 
-    #[cfg(test)]
     pub(crate) fn new(
         device: &crate::runtime::DeviceSite,
         queue: &wgpu::Queue,
@@ -318,13 +317,18 @@ impl AtmospherePrepared {
             &night,
             aerosol.as_ref(),
         );
-        let reflection = ReflectionPrepared::prepare(
-            device,
-            &uniform,
-            &chart_entries(AtmosphereStage::Reflection(0), &views),
-            &sampler,
-            overlay.as_ref().map(|overlay| &overlay.view),
-        );
+        let reflection_charts = chart_entries(AtmosphereStage::Reflection(0), &views);
+        let reflection = if let Some(overlay) = &overlay {
+            ReflectionPrepared::prepare(
+                device,
+                &uniform,
+                &reflection_charts,
+                &sampler,
+                Some(&overlay.view),
+            )
+        } else {
+            ReflectionPrepared::new(device, &uniform, &reflection_charts, &sampler)
+        };
         let mut result = Self {
             frame,
             environment: super::environment::EnvironmentState::new(frame),

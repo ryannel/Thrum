@@ -362,3 +362,21 @@ fn effect_queries_keep_names_without_changing_the_fixed_scene_buckets() {
     assert_eq!(values.forward(), 1.0);
     assert_eq!(values.get("effect 1: skipped"), None);
 }
+
+#[test]
+fn overlay_records_aerial_before_the_late_lighting_products() {
+    let stages = timings(&[
+        AtmosphereStage::SkyView.name(),
+        AtmosphereStage::Aerial.name(),
+        AtmosphereStage::Diffuse.name(),
+        AtmosphereStage::Reflection(0).name(),
+    ]);
+    let layout = SceneTimingLayout {
+        aerial: AerialPass::ChartBeforeOverlay,
+        ..TRANSFORMS
+    };
+    let (values, _, _) = pass_durations(&stages, false, layout).expect("overlay timing order");
+    assert_eq!(values.diffuse(), 1.0);
+    assert_eq!(values.aerial(), 1.0);
+    assert!(pass_durations(&stages, false, TRANSFORMS).is_none());
+}

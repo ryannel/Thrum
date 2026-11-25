@@ -159,7 +159,6 @@ fn apply_providers(source: String, cloud: bool, shadowed: SunShadows) -> String 
 }
 
 /// The forward WGSL for a scene with or without the atmosphere and its aerial shadow.
-#[cfg(test)]
 pub(super) fn compose(atmosphere: bool, air_shadow: bool, ambient: bool) -> String {
     compose_with_lighting(atmosphere, air_shadow, ambient, Lighting::Clear)
 }
@@ -216,7 +215,6 @@ fn compose_aerial(atmosphere: bool, aerial: &str, ambient: bool, lighting: Light
 
 /// A view changes only the decoder's ray origin/distance. The main source is
 /// assembled as before, and no view declarations add text to that source.
-#[cfg(test)]
 pub(super) fn secondary(
     atmosphere: bool,
     shadowed_air: bool,
@@ -305,6 +303,16 @@ pub(crate) fn main_source(variant: crate::shaders::SceneVariant) -> String {
         );
         apply_providers(
             compose_aerial(true, &aerial, variant.ambient, variant.lighting),
+            variant.cloud.present(),
+            variant.shadows,
+        )
+    } else if variant.lighting == Lighting::Clear {
+        apply_providers(
+            compose(
+                variant.atmosphere.present(),
+                variant.atmosphere.air_shadow(),
+                variant.ambient,
+            ),
             variant.cloud.present(),
             variant.shadows,
         )

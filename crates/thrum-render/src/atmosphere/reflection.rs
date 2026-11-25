@@ -47,7 +47,6 @@ pub(super) struct ReflectionPrepared {
 }
 
 impl ReflectionPrepared {
-    #[cfg(test)]
     pub(super) fn new(
         device: &crate::runtime::DeviceSite,
         uniform: &wgpu::Buffer,

@@ -161,7 +161,6 @@ impl ExposureResolve {
         })
     }
 
-    #[cfg(test)]
     pub(super) fn new(
         device: &crate::runtime::DeviceSite,
         directional: &wgpu::Buffer,
@@ -353,7 +352,6 @@ impl ExposureResolve {
         queue.write_buffer(&self.policy, 0, &policy);
     }
 
-    #[cfg(test)]
     pub(super) fn append_graph(
         graph: &mut FrameGraph,
         key: PipelineKey,

@@ -538,13 +538,22 @@ impl super::SyntheticTargetInputs {
             .filter(|air| air.uses_haze_scale())
             .map(|_| ExposureResolve::history_sample(&mut graph, self.key.device_generation, true))
             .transpose()?;
-        let exposure_sample = ExposureResolve::append_with_adaptation(
-            &mut graph,
-            self.exposure_key(),
-            light.clone(),
-            incident_sun,
-            exposure_history.as_ref(),
-        )?;
+        let exposure_sample = if let Some(previous) = &exposure_history {
+            ExposureResolve::append_with_adaptation(
+                &mut graph,
+                self.exposure_key(),
+                light.clone(),
+                incident_sun,
+                Some(previous),
+            )?
+        } else {
+            ExposureResolve::append_graph(
+                &mut graph,
+                self.exposure_key(),
+                light.clone(),
+                incident_sun,
+            )?
+        };
         accesses.push(Access::new(
             exposure_sample.clone(),
             0..exposure::SAMPLE_BYTES,

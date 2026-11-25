@@ -63,6 +63,7 @@ pub(crate) struct SceneTimingLayout {
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum AerialPass {
     Chart,
+    ChartBeforeOverlay,
     ViewVolume,
 }
 
@@ -103,6 +104,12 @@ impl From<&PreparedSynthetic> for SceneTimingLayout {
                 .is_some_and(|air| air.view_volume.is_some())
             {
                 AerialPass::ViewVolume
+            } else if prepared
+                .atmosphere
+                .as_ref()
+                .is_some_and(crate::atmosphere::AtmospherePrepared::has_overlay)
+            {
+                AerialPass::ChartBeforeOverlay
             } else {
                 AerialPass::Chart
             },
@@ -174,7 +181,23 @@ pub(crate) fn validate_pass_timings(
     let mut culled = 0_u8;
     let mut stars = None;
     let mut caster_cull = None;
-    let mut stages = Some(AtmosphereStage::ORDER.into_iter());
+    let mut stage_order = AtmosphereStage::ORDER;
+    if layout.aerial == AerialPass::ChartBeforeOverlay {
+        // The overlay is traced after the clear charts. Diffuse and reflection
+        // wait for it, while the earlier aerial chart still contains clear air.
+        let index = |stage| {
+            stage_order
+                .iter()
+                .position(|&entry| entry == stage)
+                .expect("atmosphere stage")
+        };
+        let (aerial, diffuse) = (
+            index(AtmosphereStage::Aerial),
+            index(AtmosphereStage::Diffuse),
+        );
+        stage_order.swap(aerial, diffuse);
+    }
+    let mut stages = Some(stage_order.into_iter());
     let mut surface = None;
     for pass in passes {
         if pass.category == TimingCategory::Temporal

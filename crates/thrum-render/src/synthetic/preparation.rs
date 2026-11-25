@@ -413,7 +413,19 @@ impl PreparedSynthetic {
         });
         let exposure_samples = ExposureResolve::allocate_samples(device);
         let mut atmosphere = match lighting {
-            FrameLighting::Atmosphere(frame) => Some(AtmospherePrepared::prepare(
+            FrameLighting::Atmosphere(frame) if scene.sky_overlay => {
+                Some(AtmospherePrepared::prepare(
+                    device,
+                    queue,
+                    generation,
+                    frame,
+                    &scene.view,
+                    &environment_light,
+                    &exposure_samples,
+                    scene.sky_overlay.then_some((&directional, cloud.as_ref())),
+                ))
+            }
+            FrameLighting::Atmosphere(frame) => Some(AtmospherePrepared::new(
                 device,
                 queue,
                 generation,
@@ -421,7 +433,6 @@ impl PreparedSynthetic {
                 &scene.view,
                 &environment_light,
                 &exposure_samples,
-                scene.sky_overlay.then_some((&directional, cloud.as_ref())),
             )),
             _ => None,
         };
@@ -872,14 +883,25 @@ impl PreparedSynthetic {
             }
             _ => None,
         };
-        let exposure_resolve = ExposureResolve::prepare(
-            device,
-            &directional,
-            &environment_light,
-            history.serial_buffer(),
-            exposure_samples,
-            (cloud.as_ref(), atmosphere.as_ref()),
-        );
+        let exposure_resolve = if scene.sky_overlay {
+            ExposureResolve::prepare(
+                device,
+                &directional,
+                &environment_light,
+                history.serial_buffer(),
+                exposure_samples,
+                (cloud.as_ref(), atmosphere.as_ref()),
+            )
+        } else {
+            ExposureResolve::new(
+                device,
+                &directional,
+                &environment_light,
+                history.serial_buffer(),
+                exposure_samples,
+                cloud.as_ref().zip(atmosphere.as_ref()),
+            )
+        };
         exposure_resolve.update(
             queue,
             scene.view.exposure_policy(exposure, atmosphere.is_some()),

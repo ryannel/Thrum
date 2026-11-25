@@ -65,6 +65,7 @@ fn run() {
     let extent = [66; 2];
     pollster::block_on(async {
         let mut samples = [Vec::new(), Vec::new()];
+        let mut prior = std::collections::BTreeMap::new();
         for shapes in [false, true] {
             for (sky, world_light) in [(false, false), (true, false), (true, true)] {
                 let mut host = scene_fixture::prepare_view_with_overlay(
@@ -147,7 +148,17 @@ fn run() {
                 let mut actual = names.clone();
                 actual.sort();
                 assert_eq!(actual, expected, "scene's full cloud schedule");
-                let creations = host.creation_report().named_pipelines;
+                // These hosts share a device generation and its ledger.
+                // Count only creations made while this arm owned the host.
+                let current = host.creation_report().named_pipelines;
+                let creations: std::collections::BTreeMap<_, _> = current
+                    .iter()
+                    .filter_map(|(name, total)| {
+                        let created = total - prior.get(name).copied().unwrap_or(0);
+                        (created != 0).then(|| (name.clone(), created))
+                    })
+                    .collect();
+                prior = current;
                 let shade_builds = creations["cloud weather map"];
                 assert!(shade_builds > 0);
                 for name in GROUND {
