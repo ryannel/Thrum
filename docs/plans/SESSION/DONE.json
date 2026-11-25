@@ -766,7 +766,7 @@
           "check": "cargo test --locked --offline -p thrum-core --test driven_world",
           "ask": "Read the test. Is the driver the test's own, with no session or link in it? Does anything added to `thrum-core`, `thrum-render` or `thrum-app` for this name a session, a link or a game? Do the fixed-clock world's existing tests pass unchanged?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SESSION/WP7/core.log",
+          "evidence": ".orchestrate/evidence/SESSION/WP7/recovery/core-fixed.log",
           "verdict": "pass",
           "review": ".orchestrate/evidence/SESSION/WP7-review.md",
           "builder_result": "pass"
@@ -777,7 +777,7 @@
           "check": "cargo test --locked --offline -p thrum-render --test driven_world_observer",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SESSION/WP7/frame-host.log",
+          "evidence": ".orchestrate/evidence/SESSION/WP7/recovery/frame-host.log",
           "verdict": "pass",
           "review": ".orchestrate/evidence/SESSION/WP7-review.md",
           "builder_result": "pass"
@@ -789,7 +789,7 @@
           "lock": "gpu",
           "ask": "Is each window's world stepped only by the driver the session feeds, with the lane's own clock off? Are the digests read from each peer's own record?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SESSION/WP7/mac-steady/summary.json",
+          "evidence": ".orchestrate/evidence/SESSION/WP7/recovery/mac-steady/summary.json",
           "verdict": "pass",
           "review": ".orchestrate/evidence/SESSION/WP7-review.md",
           "builder_result": "pass"
@@ -800,7 +800,7 @@
           "check": "python3 scripts/session_match.py windowed --target chrome-webgpu",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/SESSION/WP7/chrome/summary.json",
+          "evidence": ".orchestrate/evidence/SESSION/WP7/recovery/chrome-final/summary.json",
           "verdict": "pass",
           "review": ".orchestrate/evidence/SESSION/WP7-review.md",
           "builder_result": "pass"
@@ -812,7 +812,7 @@
           "lock": "gpu",
           "ask": "Is each frame's position in the record the one the frame host drew that frame with, at its display time, and not a value from the session's own log?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SESSION/WP7/mac-playout/summary.json",
+          "evidence": ".orchestrate/evidence/SESSION/WP7/recovery/mac/summary.json",
           "verdict": "pass",
           "review": ".orchestrate/evidence/SESSION/WP7-review.md",
           "builder_result": "pass"
@@ -822,17 +822,17 @@
           "statement": "In real time on the Mac client in WP7.5's run, the crowd moves as smoothly as the crowd view does alone wherever the record names no stall and no skip: there is no stutter at the tick rate, and nothing shows where sets arrived together inside the buffer. At the stall the picture holds, then moves on from where it held with no jump. The only jump is at the skip the record names.",
           "inspect": "Capture the client's window in WP7.5's run and the crowd view alone with T2 engine capture in `realtime` mode, at the same size. Watch both at 1x, then step through the frames around the buffered burst, the stall and the skip the record names. Say that you watched motion, and whether the faster pace after the stall shows.",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SESSION/WP7/recovery/mac/visual-review.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/SESSION/WP7-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP7.7",
           "statement": "In real time in Chrome the joined page's crowd moves as smoothly as the crowd view's page does alone, holding still only at a stall and jumping only at a skip that the page's record names.",
           "inspect": "Capture both pages with T2 engine capture in `realtime` mode and judge them as on the Mac, stepping through the frames around each stall and skip the page's record names; the hidden tab's return is one. Note where Chrome differs.",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/SESSION/WP7/chrome/visual-review.md",
+          "evidence": ".orchestrate/evidence/SESSION/WP7/recovery/chrome-final/visual-review.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/SESSION/WP7-review.md",
           "builder_result": "pass"
@@ -843,7 +843,7 @@
           "check": "python3 scripts/session_match.py closure --windowed",
           "ask": "Could a game maker wire a driver from the guide alone? Does the ledger keep the windowed match's function apart from any claim about speed?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SESSION/WP7/closure.json",
+          "evidence": ".orchestrate/evidence/SESSION/WP7/recovery/closure.json",
           "verdict": "pass",
           "review": ".orchestrate/evidence/SESSION/WP7-review.md",
           "builder_result": "pass"
