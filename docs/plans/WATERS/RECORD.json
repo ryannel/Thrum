@@ -1296,7 +1296,7 @@
         {
           "verdict": "fail",
           "commit": "72687d60afdbd765a235dfb6816fe32f362e0078",
-          "review": ".orchestrate/evidence/WATERS/WP8-review.md",
+          "review": ".orchestrate/evidence/WATERS/WP8-review-1.md",
           "items": {
             "WP8.1": "fail",
             "WP8.2": "pass",
@@ -1361,6 +1361,53 @@
             "turns": 1
           },
           "at": "2026-11-25T19:29:17Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "e65673ff18a563bcf5457c775c7803370ac13a8f",
+          "review": ".orchestrate/evidence/WATERS/WP8-review.md",
+          "items": {
+            "WP8.1": "pass",
+            "WP8.2": "pass",
+            "WP8.3": "pass",
+            "WP8.4": "pass",
+            "WP8.5": "fail",
+            "WP8.6": "pass",
+            "WP8.7": "pass",
+            "WP8.12": "pass",
+            "WP8.9": "fail",
+            "WP8.10": "pass"
+          },
+          "findings": [
+            {
+              "name": "Hidden lake-bank sources borrow neighbouring terrain colour",
+              "item": "WP8.5",
+              "different": "The earlier crown-width holes have closed. The new bank fill takes radiance from another point when the reflected source is hidden.",
+              "repeat": false
+            },
+            {
+              "name": "Chrome reflects neighbouring terrain where the noon bank is hidden",
+              "item": "WP8.9",
+              "different": "The earlier noon bank holes and clipped glint are gone. The new fill samples neighbouring ground behind an occluding pine in the Chrome lake view.",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 144496,
+            "cached": 5694080,
+            "output": 14302,
+            "turns": 1
+          },
+          "at": "2026-11-25T20:48:02Z"
         }
       ],
       "authorised": {
