@@ -63,7 +63,7 @@ pub use browser::{BrowserLightProbe, create_light_list_probe};
 pub use browser::{
     GovernorBrowser, create_cooked_sprite_game, create_field_game, create_governor_game,
     create_placed_browser_game, create_sprite_game, create_sprite_probe,
-    qualify_effect_after_opaque, qualify_effect_state, qualify_lent_products,
+    qualify_effect_after_opaque, qualify_effect_state, qualify_effect_tick, qualify_lent_products,
 };
 pub use camera::{CameraRoute, RouteCheckpoint, RouteKey, RoutePose, SceneCamera};
 #[cfg(all(feature = "draw-probe", not(target_arch = "wasm32")))]

@@ -413,11 +413,27 @@ pub enum EffectGraphError {
     HistoryBindingOnNonHistory,
     /// Effect history result is read before its producer.
     ResultBeforeProducer,
+    /// A tick pass may only read persistent resources and histories.
+    TickPassRequiresRetainedRead(String),
+    /// A tick pass may only read the committed side of a history.
+    TickPassRequiresPrevious(String),
+    /// A 2D scene does not support the named tick pass.
+    TickPassIn2d(String),
 }
 
 impl fmt::Display for EffectGraphError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::TickPassRequiresRetainedRead(pass) => {
+                write!(
+                    f,
+                    "Tick pass {pass} may only read retained compute resources"
+                )
+            }
+            Self::TickPassRequiresPrevious(pass) => {
+                write!(f, "Tick pass {pass} must read history by previous")
+            }
+            Self::TickPassIn2d(pass) => write!(f, "2D scene refuses tick pass {pass}"),
             Self::AfterOpaqueDepthConflict(pass) => write!(
                 f,
                 "After-opaque pass {pass} cannot attach depth in that configuration"

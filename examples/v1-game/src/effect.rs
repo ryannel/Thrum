@@ -3,6 +3,7 @@ mod after_compute;
 pub mod after_opaque;
 pub mod qualification;
 mod slab;
+mod tick;
 mod visual;
 
 use std::sync::{Arc, Mutex};
@@ -10,6 +11,7 @@ use thrum_render::{
     contribution::{
         ContributionFrame, ContributionPasses, EffectAccess, EffectCadence as C, EffectGraph,
         EffectPass, EffectState, EffectStep, HistoryBinding as H, SceneContribution, SceneSurface,
+        TickPass,
     },
     graph::{AccessKind as A, ResourceDescriptor as D, ResourceScope as S, TextureKind as K},
 };
@@ -74,6 +76,7 @@ pub type EffectHandle = Arc<Mutex<EffectWitness>>;
 /// A game-owned effect using only thrum-render's public contribution seam.
 pub struct DiagnosticEffect {
     witness: EffectHandle,
+    queries: Arc<Mutex<tick::Mailbox>>,
     gpu: Option<Prepared>,
     step: EffectStep,
     runs: [bool; 7],
@@ -90,6 +93,7 @@ struct Prepared {
     pipelines: Vec<wgpu::ComputePipeline>,
     groups: Vec<Vec<wgpu::BindGroup>>,
     visual: visual::Visual,
+    query: tick::Query,
 }
 
 impl DiagnosticEffect {
@@ -134,6 +138,7 @@ impl DiagnosticEffect {
         (
             Self {
                 witness: Arc::clone(&witness),
+                queries: Arc::default(),
                 gpu: None,
                 step: EffectStep::Keep,
                 runs: [false; 7],
@@ -400,6 +405,10 @@ impl SceneContribution for DiagnosticEffect {
             ));
         }
         EffectGraph {
+            tick_passes: vec![TickPass {
+                name: tick::PASS.into(),
+                reads: vec![access(0, A::SampledRead, Some(H::Previous))],
+            }],
             view_volume_media: Vec::new(),
             sun_paths: Vec::new(),
             resources,
@@ -579,6 +588,11 @@ impl SceneContribution for DiagnosticEffect {
             slab.rebuild(surface, &textures)
                 .map_err(thrum_render::runtime::FrameError::Scene)?;
         }
+        let query = tick::Query::new(surface, &textures[0]);
+        self.queries
+            .lock()
+            .expect("trail queries")
+            .rebuild(surface.generation);
         witness.generation = surface.generation;
         witness.textures = textures;
         witness.state.rebuild(surface.generation, 1);
@@ -588,6 +602,7 @@ impl SceneContribution for DiagnosticEffect {
             pipelines,
             groups,
             visual,
+            query,
         });
         Ok(())
     }
@@ -677,6 +692,41 @@ impl SceneContribution for DiagnosticEffect {
             gpu.queue.write_buffer(&gpu.params, 0, &bytes);
         }
     }
+    fn tick_has_work(&self, _: usize) -> bool {
+        self.gpu.is_some() && self.queries.lock().expect("trail queries").has_work()
+    }
+
+    fn encode_tick_upload(
+        &mut self,
+        _: usize,
+        _: &mut wgpu::CommandEncoder,
+        _: std::time::Duration,
+    ) {
+        if let Some(gpu) = &mut self.gpu {
+            let witness = self.witness.lock().expect("diagnostic witness");
+            let posts = self.queries.lock().expect("trail queries");
+            gpu.query.stage(&gpu.queue, &posts, &witness.state);
+        }
+    }
+
+    fn encode_tick(&mut self, _: usize, pass: &mut wgpu::ComputePass<'_>) {
+        if let Some(gpu) = &self.gpu {
+            gpu.query.encode(pass);
+        }
+    }
+
+    fn encode_tick_readback(&mut self, _: usize, encoder: &mut wgpu::CommandEncoder) {
+        if let Some(gpu) = &self.gpu {
+            gpu.query.copy(encoder);
+        }
+    }
+
+    fn tick_submitted(&mut self, _: &[usize]) {
+        if let Some(gpu) = &mut self.gpu {
+            gpu.query.submitted(&self.queries);
+        }
+    }
+
     fn effect_runs(&self, index: usize, frame: &ContributionFrame) -> bool {
         if index == 7 {
             !frame.time.capture && self.runs[0]

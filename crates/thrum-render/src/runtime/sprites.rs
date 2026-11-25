@@ -22,6 +22,9 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         };
         check_stages(contribution)?;
         let graph = contribution.effect_graph();
+        graph
+            .validate_2d_tick_stage()
+            .map_err(FrameError::EffectGraph)?;
         if !graph.after_opaque.is_empty() {
             return Err(FrameError::InvalidState(
                 "2D scene refuses contribution after-opaque stage",
@@ -34,6 +37,9 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         })?;
         check_stages(contribution)?;
         let graph = contribution.effect_graph();
+        graph
+            .validate_2d_tick_stage()
+            .map_err(FrameError::EffectGraph)?;
         if !graph.after_opaque.is_empty() {
             return Err(FrameError::InvalidState(
                 "2D scene refuses contribution after-opaque stage",

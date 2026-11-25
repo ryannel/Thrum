@@ -21,7 +21,7 @@ use thrum_core::{
     sim::{SnapshotId, WorldAdvance, WorldPublication},
 };
 
-fn sample(tick: u64) -> FrameSample {
+pub(super) fn sample(tick: u64) -> FrameSample {
     FrameSample {
         native_segment: None,
         tick,
@@ -119,9 +119,9 @@ fn full_report_queue_drops_the_oldest_tick_even_when_it_finishes_late() {
     assert!(queue.iter().map(|entry| entry.tick).eq(3..=final_tick + 1));
 }
 
-struct StaticWorld {
-    authority: SourceTick,
-    publication: SourceTick,
+pub(super) struct StaticWorld {
+    pub(super) authority: SourceTick,
+    pub(super) publication: SourceTick,
 }
 
 impl FrameWorld for StaticWorld {
@@ -174,7 +174,7 @@ impl FrameWorld for StaticWorld {
 }
 
 #[derive(Default)]
-struct StaticScene {
+pub(super) struct StaticScene {
     frames: std::cell::Cell<u32>,
     fail_next: std::cell::Cell<bool>,
     invalid_lighting: std::cell::Cell<bool>,

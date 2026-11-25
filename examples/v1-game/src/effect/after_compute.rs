@@ -83,6 +83,7 @@ fn texture() -> D {
 impl SceneContribution for Effect {
     fn effect_graph(&self) -> EffectGraph {
         EffectGraph {
+            tick_passes: Vec::new(),
             view_volume_media: Vec::new(),
             sun_paths: Vec::new(),
             resources: vec![

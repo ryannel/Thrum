@@ -173,6 +173,14 @@ impl EffectState {
     pub fn committed(&self) -> Option<EffectTime> {
         self.committed
     }
+    /// Committed time when its world and timeline match the post's endpoint.
+    /// A held post can be older than the committed state on the same timeline.
+    #[must_use]
+    pub fn committed_for(&self, post: crate::extract::SourceTick) -> Option<EffectTime> {
+        self.committed
+            .filter(|time| time.epoch == post.epoch && time.timeline == post.timeline)
+    }
+
     /// Integer shift of this recording from the last submitted anchor.
     /// Captures have no pending anchor and report zero. An abandoned recording's
     /// shift is recomputed by the next `begin`.

@@ -279,7 +279,7 @@ fn scene_and_list_commit_only_after_the_complete_attempt() {
                         slots: 20,
                     },
                     view: 30,
-                    contribution: Some(candidate),
+                    contribution: Some(Box::new(candidate)),
                     inherit_rows: true,
                 },
             ))
@@ -397,7 +397,7 @@ fn empty_list_and_standalone_member_admit_and_prepare() {
                     slots: true
                 },
                 view: true,
-                contribution: Some(candidate),
+                contribution: Some(Box::new(candidate)),
                 inherit_rows: false,
             }
             .commit(

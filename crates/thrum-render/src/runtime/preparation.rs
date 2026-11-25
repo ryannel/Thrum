@@ -431,7 +431,7 @@ pub(super) struct SceneTransition<
 > {
     pub(super) scene: PreparedScene<R, S>,
     view: V,
-    pub(super) contribution: Option<ContributionCandidate>,
+    pub(super) contribution: Option<Box<ContributionCandidate>>,
     inherit_rows: bool,
 }
 
@@ -455,7 +455,7 @@ impl<R, S, V> SceneTransition<R, S, V> {
             return false;
         }
         if let Some(member) = self.contribution {
-            member.commit(target.contribution.expect("prepared contribution owner"));
+            (*member).commit(target.contribution.expect("prepared contribution owner"));
         }
         prepare_install(target.prepared, &mut self.scene.prepared, self.inherit_rows);
         *target.prepared = self.scene.prepared;
@@ -599,7 +599,7 @@ impl<W: super::FrameWorld, V: super::SceneSource<W::Page>> super::FrameHost<W, V
             Ok(SceneTransition {
                 scene,
                 view,
-                contribution,
+                contribution: contribution.map(Box::new),
                 inherit_rows,
             })
         }))
@@ -742,7 +742,11 @@ impl TargetPreparation {
                         target.share_view_history(prepared, first);
                     }
                     let timing_layout = self.timing.map(|layout| layout.with_stars(&target));
-                    let passes = target.timed_pass_count();
+                    let tick_passes = u32::try_from(prepared.effect_graph.tick_passes.len())
+                        .map_err(|_| {
+                            FrameError::Render(crate::error::RenderError::EffectPassCount)
+                        })?;
+                    let passes = target.timed_pass_count().saturating_add(tick_passes);
                     (FrameTarget::ThreeD(Box::new(target)), timing_layout, passes)
                 }
                 TargetInputs::TwoD(prepared) => {

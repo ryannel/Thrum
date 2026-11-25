@@ -2,6 +2,8 @@
 use super::{DiagnosticEffect, EffectHandle, SIZE};
 mod oracle;
 mod quality;
+#[cfg(all(feature = "proving", target_arch = "wasm32"))]
+mod tick;
 use oracle::{Expected, seeded_kinds};
 use std::{
     sync::{Arc, Mutex},
@@ -21,6 +23,8 @@ use thrum_render::{
     runtime::{FrameConfig, FrameError, FrameHost, FrameWorld, SceneFrame, SceneSource},
     synthetic::{FrameLighting, SyntheticLight, SyntheticScene, SyntheticView},
 };
+#[cfg(all(feature = "proving", target_arch = "wasm32"))]
+pub(crate) use tick::run as run_tick;
 
 pub(super) struct World(pub(super) SourceTick);
 impl FrameWorld for World {

@@ -46,6 +46,7 @@ mod presentation;
 mod sprites;
 mod submitted_capture;
 mod surface_switch;
+mod tick;
 mod tokens;
 #[cfg(not(target_arch = "wasm32"))]
 mod visual;
@@ -66,6 +67,7 @@ pub use extent::{ExtentPrepareInputs, PreparedExtent};
 pub use extent_transition::{ExtentRequest, ExtentTransition};
 pub use submitted_capture::{CaptureLimits, SubmittedImage};
 pub use surface_switch::{SurfaceSwitch, SurfaceSwitchOutcome, SurfaceSwitchRecord};
+pub use tick::{TickSubmissionPermission, TickSubmissionStats};
 pub use tokens::{AdvancedFrame, EncodedFrame};
 #[cfg(not(target_arch = "wasm32"))]
 pub use visual::{PreparedVisual, VisualPrepareInputs};
@@ -692,6 +694,7 @@ pub struct FrameHost<W: FrameWorld, V: SceneSource<W::Page>> {
     frame_counters: FrameCounters,
     submitted_clock: Option<SubmittedFrameClock>,
     timing_requested: bool,
+    ticks: tick::TickStage,
     native_failed_generation: Option<u64>,
     dropped_views: u64,
     dropped_stale_views: u64,
@@ -1302,6 +1305,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             frame_counters: FrameCounters::default(),
             submitted_clock: None,
             timing_requested: true,
+            ticks: tick::TickStage::default(),
             native_failed_generation: None,
             dropped_views: 0,
             dropped_stale_views: 0,
@@ -1877,6 +1881,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.commit_governor(now)?;
         let advanced = self.world.advance(now)?;
         let report = self.record_world_advance(&advanced);
+        self.ask_tick_stage_for_view()?;
         Ok(AdvancedFrame {
             host: Some(self),
             report: Some(report),

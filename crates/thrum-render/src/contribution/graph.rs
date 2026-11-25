@@ -48,6 +48,16 @@ pub struct EffectPass {
     pub accesses: Vec<EffectAccess>,
 }
 
+/// One named compute pass that answers posts independently of the drawn view.
+#[derive(Clone, Debug, PartialEq)]
+pub struct TickPass {
+    /// Diagnostic name, unique within this contribution.
+    pub name: String,
+    /// Reads from frame-owned resources. Query inputs and outputs are owned
+    /// separately by the contribution and do not appear in the frame graph.
+    pub reads: Vec<EffectAccess>,
+}
+
 /// Effect resource indices for the scene's GPU Sun-path target.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct SunPathResources {
@@ -73,6 +83,8 @@ pub struct EffectGraph {
     pub resources: Vec<(ResourceDescriptor, ResourceScope)>,
     /// Ordered simulate passes.
     pub passes: Vec<EffectPass>,
+    /// Ordered compute passes executed outside the frame.
+    pub tick_passes: Vec<TickPass>,
     /// Resources read by the fixed opaque draw callback. Late-only outputs stay out of forward.
     pub opaque_reads: Vec<EffectAccess>,
     /// The provider's Sun-path target, if an effect writes it. At most one pair
@@ -358,6 +370,46 @@ impl EffectGraph {
                     return Err(Error::ResultBeforeProducer);
                 }
             }
+        }
+        for pass in &self.tick_passes {
+            if !names.insert(&pass.name) {
+                return Err(Error::DuplicateEffectPass(pass.name.clone()));
+            }
+            for read in &pass.reads {
+                let (_, scope) = self
+                    .resources
+                    .get(read.resource)
+                    .ok_or(Error::UnknownEffectResource)?;
+                if !matches!(
+                    read.kind,
+                    AccessKind::SampledRead | AccessKind::UniformRead | AccessKind::StorageRead
+                ) || !matches!(
+                    scope,
+                    ResourceScope::Persistent { .. } | ResourceScope::History { .. }
+                ) {
+                    return Err(Error::TickPassRequiresRetainedRead(pass.name.clone()));
+                }
+                match scope {
+                    ResourceScope::History { .. }
+                        if read.history != Some(HistoryBinding::Previous) =>
+                    {
+                        return Err(Error::TickPassRequiresPrevious(pass.name.clone()));
+                    }
+                    ResourceScope::Persistent { .. } if read.history.is_some() => {
+                        return Err(Error::HistoryBindingOnNonHistory);
+                    }
+                    _ => {}
+                }
+            }
+        }
+        Ok(())
+    }
+
+    pub(crate) fn validate_2d_tick_stage(&self) -> Result<(), crate::error::EffectGraphError> {
+        if let Some(pass) = self.tick_passes.first() {
+            return Err(crate::error::EffectGraphError::TickPassIn2d(
+                pass.name.clone(),
+            ));
         }
         Ok(())
     }

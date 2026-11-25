@@ -7,8 +7,8 @@
 //! made under an older epoch before any surface is removed.
 
 use std::sync::{
-    Mutex, PoisonError, TryLockError,
-    atomic::{AtomicU64, Ordering},
+    Arc, Mutex, PoisonError, TryLockError,
+    atomic::{AtomicBool, AtomicU64, Ordering},
 };
 
 /// The surface held by the slot, with the configuration the owner applied.
@@ -122,11 +122,97 @@ impl<S> SurfaceLease<S> {
     }
 }
 
+/// Hold the installed surface across recording and submit, with a final
+/// foreground and request-epoch check inside that same lease section.
+pub(crate) struct TickPermission<S> {
+    pub(crate) lease: Arc<SurfaceLease<S>>,
+    pub(crate) request_epoch: Arc<AtomicU64>,
+    pub(crate) background: Arc<AtomicBool>,
+}
+
+impl<S: Send> thrum_render::runtime::TickSubmissionPermission for TickPermission<S> {
+    fn with_entry(&self, record: &mut dyn FnMut(&dyn Fn() -> bool)) {
+        let epoch = self.request_epoch.load(Ordering::Acquire);
+        self.lease.section(epoch, |_| {
+            if !self.background.load(Ordering::Acquire) {
+                record(&|| {
+                    !self.background.load(Ordering::Acquire) && self.lease.is_current(epoch)
+                });
+            }
+        });
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::sync::{Arc, Barrier, mpsc};
 
     use super::{SurfaceLease, Take};
+
+    #[test]
+    fn tick_permission_refuses_missing_stale_and_background_entries() {
+        use super::{AtomicBool, AtomicU64, Ordering, TickPermission};
+        use thrum_render::runtime::TickSubmissionPermission;
+
+        let lease = Arc::new(SurfaceLease::new());
+        let background = Arc::new(AtomicBool::new(false));
+        let request_epoch = Arc::new(AtomicU64::new(lease.epoch()));
+        let permission = TickPermission {
+            lease: Arc::clone(&lease),
+            request_epoch: Arc::clone(&request_epoch),
+            background: Arc::clone(&background),
+        };
+        let refused = &mut |_: &dyn Fn() -> bool| panic!("refused permission entered");
+        permission.with_entry(refused);
+
+        request_epoch.store(lease.try_install("surface").unwrap(), Ordering::Release);
+        let mut granted = false;
+        permission.with_entry(&mut |confirm| granted = confirm());
+        assert!(granted);
+
+        let current = lease.invalidate();
+        permission.with_entry(refused);
+        request_epoch.store(current, Ordering::Release);
+        background.store(true, Ordering::Release);
+        permission.with_entry(refused);
+        assert!(matches!(lease.try_take(), Take::Taken("surface")));
+    }
+
+    #[test]
+    fn tick_permission_rechecks_revocation_and_holds_the_surface_through_submit() {
+        use super::{AtomicBool, AtomicU64, Ordering, TickPermission};
+        use thrum_render::runtime::TickSubmissionPermission;
+
+        for (suspend, after_confirmation) in [(false, false), (true, false), (true, true)] {
+            let lease = Arc::new(SurfaceLease::new());
+            let epoch = lease.try_install("surface").unwrap();
+            let background = Arc::new(AtomicBool::new(false));
+            let permission = TickPermission {
+                lease: Arc::clone(&lease),
+                request_epoch: Arc::new(AtomicU64::new(epoch)),
+                background: Arc::clone(&background),
+            };
+            let mut entered = false;
+            permission.with_entry(&mut |confirm| {
+                entered = true;
+                if after_confirmation {
+                    assert!(confirm());
+                }
+                if suspend {
+                    background.store(true, Ordering::Release);
+                }
+                lease.invalidate();
+                if suspend {
+                    assert!(matches!(lease.try_take(), Take::Busy));
+                }
+                if !after_confirmation {
+                    assert!(!confirm());
+                }
+            });
+            assert!(entered);
+            assert!(matches!(lease.try_take(), Take::Taken("surface")));
+        }
+    }
 
     #[test]
     fn observed_extent_round_trips_full_u32_sides() {

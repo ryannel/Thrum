@@ -341,7 +341,7 @@ pub struct StillWorld {
     fixed_update: Option<FixedUpdate>,
 }
 
-type FixedUpdate = Box<dyn FnMut(u64, Duration) + Send>;
+type FixedUpdate = Box<dyn FnMut(SourceTick, Duration) + Send>;
 
 impl std::fmt::Debug for StillWorld {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -416,12 +416,15 @@ impl FrameWorld for StillWorld {
                 self.now += wall_now.saturating_sub(self.wall_now);
             }
             self.wall_now = wall_now;
-            self.tick = u64::try_from(self.now.as_nanos() / step.as_nanos()).unwrap_or(u64::MAX);
+            let due = u64::try_from(self.now.as_nanos() / step.as_nanos()).unwrap_or(u64::MAX);
+            let endpoint = self.source();
             if let Some(update) = &mut self.fixed_update {
-                for tick in (previous..self.tick).map(|tick| tick + 1) {
-                    update(tick, step);
+                for tick in (previous..due).map(|tick| tick + 1) {
+                    self.tick = tick;
+                    update(SourceTick { tick, ..endpoint }, step);
                 }
             }
+            self.tick = due;
             if self.tick > previous {
                 self.presentation_hold = false;
             }
@@ -762,7 +765,17 @@ impl SkyGame {
     /// Run game-owned updates for each committed tick of the configured fixed clock.
     /// The callback is also called at tick zero to publish the initial game state.
     #[must_use]
-    pub fn with_fixed_update(mut self, update: impl FnMut(u64, Duration) + Send + 'static) -> Self {
+    pub fn with_fixed_update(self, mut update: impl FnMut(u64, Duration) + Send + 'static) -> Self {
+        self.with_fixed_update_endpoint(move |endpoint, step| update(endpoint.tick, step))
+    }
+
+    /// Run game-owned updates at tick zero and after each fixed tick commits.
+    /// The endpoint carries the world's epoch, timeline and that tick.
+    #[must_use]
+    pub fn with_fixed_update_endpoint(
+        mut self,
+        update: impl FnMut(SourceTick, Duration) + Send + 'static,
+    ) -> Self {
         self.fixed_update = Some(Box::new(update));
         self
     }
@@ -795,15 +808,16 @@ impl SkyGame {
 
     #[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
     fn take_world(&mut self) -> StillWorld {
-        let mut fixed_update = self.fixed_update.take();
-        if let (Some(step), Some(update)) = (self.tick_duration, &mut fixed_update) {
-            update(0, step);
-        }
-        StillWorld {
+        let mut world = StillWorld {
             tick_duration: self.tick_duration,
-            fixed_update,
+            fixed_update: self.fixed_update.take(),
             ..StillWorld::default()
+        };
+        let endpoint = world.source();
+        if let (Some(step), Some(update)) = (world.tick_duration, &mut world.fixed_update) {
+            update(endpoint, step);
         }
+        world
     }
 
     /// Draw cooked meshes from the store named by `THRUM_ASSET_STORE` ([`STORE_VARIABLE`]),

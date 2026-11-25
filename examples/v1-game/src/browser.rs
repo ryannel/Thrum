@@ -1394,6 +1394,20 @@ pub async fn qualify_effect_state() -> Result<String, JsValue> {
     .map_err(js_error)
 }
 
+/// Check that the trail answers posts on WebGPU even while all views are dropped.
+/// # Errors
+/// Returns a target, exact-answer or recovery failure.
+#[cfg(feature = "proving")]
+#[wasm_bindgen]
+pub async fn qualify_effect_tick() -> Result<String, JsValue> {
+    let (instance, device, queue, caps) = effect_diagnostic_device().await?;
+    Box::pin(crate::effect::qualification::run_tick(
+        &device, &queue, &caps, &instance,
+    ))
+    .await
+    .map_err(js_error)
+}
+
 /// Run the late slab's submitted-input script on Chrome's hardware WebGPU device.
 /// # Errors
 /// Returns a graph, depth, refraction or motion mismatch from the target.

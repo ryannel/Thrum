@@ -147,6 +147,7 @@ pub(super) fn declaration(
     });
     (
         EffectGraph {
+            tick_passes: Vec::new(),
             resources,
             passes,
             opaque_reads: vec![

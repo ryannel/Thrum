@@ -433,3 +433,43 @@ fn loader_failures_after_the_first_draw_are_reported_once_with_the_kept_generati
         [(2, "generation 5: asset unavailable".to_owned())]
     );
 }
+
+#[test]
+fn fixed_update_endpoint_tracks_every_committed_tick_and_preserves_the_old_hook() {
+    use std::time::Duration;
+    use thrum_render::runtime::FrameWorld;
+
+    let step = Duration::from_millis(20);
+    let calls = Arc::new(Mutex::new(Vec::new()));
+    let sink = Arc::clone(&calls);
+    let mut game = SkyGame::new(Controls::new(), CAMERA, |_, _| {})
+        .with_tick_duration(step)
+        .unwrap()
+        .with_fixed_update_endpoint(move |endpoint, step| {
+            sink.lock().unwrap().push((endpoint, step));
+        });
+    let mut world = game.take_world();
+    assert_eq!(calls.lock().unwrap().as_slice(), &[(world.source(), step)]);
+    assert_eq!(world.advance(step * 3).unwrap().completed_ticks, 3);
+    let publication = world.publication().unwrap();
+    let calls = calls.lock().unwrap();
+    assert_eq!(calls.len(), 4);
+    for (tick, (endpoint, duration)) in (0..=3).zip(calls.iter().copied()) {
+        assert_eq!(endpoint.tick, tick);
+        assert_eq!(endpoint.epoch, publication.id.epoch.0);
+        assert_eq!(endpoint.timeline, publication.timeline);
+        assert_eq!(duration, step);
+    }
+
+    let old_calls = Arc::new(Mutex::new(Vec::new()));
+    let sink = Arc::clone(&old_calls);
+    let mut game = SkyGame::new(Controls::new(), CAMERA, |_, _| {})
+        .with_tick_duration(step)
+        .unwrap()
+        .with_fixed_update(move |tick, step| sink.lock().unwrap().push((tick, step)));
+    game.take_world().advance(step * 3).unwrap();
+    assert_eq!(
+        *old_calls.lock().unwrap(),
+        [(0, step), (1, step), (2, step), (3, step)]
+    );
+}

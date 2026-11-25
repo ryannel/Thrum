@@ -1,8 +1,8 @@
 //! Seam for engine modules that simulate and draw inside the prepared scene.
 //!
 //! A contribution (for example cooked meshes and volumes from `thrum-asset-gpu`) never owns a
-//! device, queue, submission, lighting mode or frame clock. It runs inside the scene's own frame
-//! graph, in passes the graph declares, orders and times like any other:
+//! device, queue, submission, lighting mode or frame clock. It records into the scene's own frame
+//! graph and may declare tick passes that answer the game independently of a view:
 //!
 //! 1. [`SceneContribution::rebuild`] whenever a scene is prepared or replaced (visual
 //!    republication or device reconstruction), with a read-only [`SceneSurface`]. Generation-bound
@@ -17,6 +17,9 @@
 //! 5. Declared [`AfterOpaquePass`] callbacks draw after sky and stars, before temporal inputs
 //!    and tone. Depth and the shared refraction source are independent requests.
 //! 6. [`SceneContribution::submitted`] after the frame's encoder is submitted.
+//! 7. Declared [`TickPass`] callbacks record separately, before any view of the advance.
+//!    They read only committed frame state and write only their own query resources.
+//!    [`SceneContribution::tick_submitted`] starts publication after the host submits.
 //!
 //! **Recording is not publication.** A frame may be encoded and then discarded (no drawable, a
 //! timing or encode failure). Everything recorded in steps 2–5 is tentative: a contribution must
@@ -57,7 +60,8 @@ mod views;
 pub use after_opaque::{AfterOpaqueKind, AfterOpaquePass};
 pub(crate) use graph::EffectResources;
 pub use graph::{
-    EffectAccess, EffectCadence, EffectGraph, EffectPass, SunPathResources, ViewVolumeResources,
+    EffectAccess, EffectCadence, EffectGraph, EffectPass, SunPathResources, TickPass,
+    ViewVolumeResources,
 };
 pub use list::SceneContributions;
 pub use quality::{QualityError, QualityInvalidation, QualityKnob, QualitySettings};
@@ -623,6 +627,30 @@ pub trait SceneContribution: wgpu::WasmNotSend + std::any::Any {
     fn effect_graph(&self) -> EffectGraph {
         EffectGraph::default()
     }
+
+    /// Whether this tick pass holds unexpired posts and has capacity to record them.
+    fn tick_has_work(&self, _index: usize) -> bool {
+        false
+    }
+
+    /// Stage the posts for this recording only. Leave them queued until submission.
+    fn encode_tick_upload(
+        &mut self,
+        _index: usize,
+        _encoder: &mut wgpu::CommandEncoder,
+        _tick_duration: std::time::Duration,
+    ) {
+    }
+
+    /// Record compute for the staged posts, reading only committed frame state.
+    fn encode_tick(&mut self, _index: usize, _pass: &mut wgpu::ComputePass<'_>) {}
+
+    /// Record the staged posts' result copies into the effect's own readbacks.
+    fn encode_tick_readback(&mut self, _index: usize, _encoder: &mut wgpu::CommandEncoder) {}
+
+    /// Commit the listed passes' posts and start their asynchronous maps.
+    /// Rebuild must invalidate pending results from a replaced device generation.
+    fn tick_submitted(&mut self, _passes: &[usize]) {}
 
     /// Whether a named simulate pass records work, asked after upload.
     fn effect_runs(&self, _index: usize, _frame: &ContributionFrame) -> bool {

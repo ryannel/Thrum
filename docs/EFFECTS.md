@@ -93,6 +93,27 @@ The example exposes cache interval, volume slices and bounded catch-up ticks.
 `QualityError` distinguishes invalid declarations, unknown controls, out-of-range values and an absent
 contribution. A refused request preserves both the committed value and any earlier valid staged request.
 
+## Tick stage
+
+Declare a `TickPass` in `EffectGraph::tick_passes` for compute that answers the game independently of
+a view. Its declared reads can use persistent resources and the `Previous` side of histories. Allocate
+its inputs, outputs and readbacks in `rebuild`, outside the frame graph. Every piece of frame state read
+by the query must have been written by a submitted frame pass. Queue writes staged during a discarded
+frame can still reach the device.
+
+A post carries the world's `SourceTick` and the tick its answer is for. On the sky kit, use
+`SkyGame::with_fixed_update_endpoint` to post with the endpoint of each committed tick, including tick
+zero. Use `EffectState::committed_for` to compare a post with the last submitted frame's world and
+timeline. If it returns no state, publish a marked answer without a field value or let the post expire.
+
+The host asks after advancing the world and before recording a view. It owns the tick encoder and
+submission. The contribution reports available posts in `tick_has_work`, stages query inputs in
+`encode_tick_upload`, records compute in `encode_tick`, and copies its outputs in `encode_tick_readback`.
+Leave posts queued through recording. Only `tick_submitted` removes submitted posts and starts
+asynchronous maps. Tag the mailbox with its device generation and clear old results on replacement.
+Drain answers on the game side without touching the device. See the
+[tick stage design](plans/EFFECT-GRAPH/DESIGN.md#the-tick-stage-wp6).
+
 ## Secondary views
 
 Declare one `SecondaryViewSlot::new(scale)` for each view you can use at once in

@@ -122,6 +122,7 @@ use thrum_render::{
 };
 fn declaration(scope: S, cadence: C) -> EffectGraph {
     EffectGraph {
+        tick_passes: Vec::new(),
         view_volume_media: Vec::new(),
         sun_paths: Vec::new(),
         opaque_reads: Vec::new(),

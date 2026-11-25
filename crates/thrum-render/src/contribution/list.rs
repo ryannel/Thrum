@@ -11,6 +11,7 @@ use crate::runtime::FrameError;
 pub struct SceneContributions {
     entries: Vec<Box<dyn SceneContribution>>,
     pass_counts: Vec<usize>,
+    tick_counts: Vec<usize>,
     after_counts: Vec<usize>,
 }
 
@@ -20,6 +21,7 @@ impl SceneContributions {
         Self {
             entries,
             pass_counts: Vec::new(),
+            tick_counts: Vec::new(),
             after_counts: Vec::new(),
         }
     }
@@ -58,11 +60,13 @@ impl SceneContributions {
         mut rebuild: impl FnMut(&mut dyn SceneContribution) -> Result<(), E>,
     ) -> Result<(), E> {
         self.pass_counts.clear();
+        self.tick_counts.clear();
         self.after_counts.clear();
         for entry in &mut self.entries {
             rebuild(entry.as_mut())?;
             let graph = entry.effect_graph();
             self.pass_counts.push(graph.passes.len());
+            self.tick_counts.push(graph.tick_passes.len());
             self.after_counts.push(graph.after_opaque.len());
         }
         Ok(())
@@ -95,15 +99,27 @@ impl SceneContributions {
         Ok(
             super::ContributionCandidate::new(passes, graph, move |owner: &mut Self| {
                 owner.pass_counts.clear();
+                owner.tick_counts.clear();
                 owner.after_counts.clear();
                 for (entry, candidate) in owner.entries.iter_mut().zip(candidates) {
                     owner.pass_counts.push(candidate.graph.passes.len());
+                    owner.tick_counts.push(candidate.graph.tick_passes.len());
                     owner.after_counts.push(candidate.graph.after_opaque.len());
                     candidate.commit(entry.as_mut());
                 }
             })
             .with_initialization(initialization),
         )
+    }
+
+    fn tick_member(&self, mut index: usize) -> Option<(usize, usize)> {
+        for (member, &count) in self.tick_counts.iter().enumerate() {
+            if index < count {
+                return Some((member, index));
+            }
+            index -= count;
+        }
+        None
     }
 
     fn combined_graph(
@@ -116,6 +132,18 @@ impl SceneContributions {
                 pass.name = format!("effect {member}: {}", pass.name);
                 for access in &mut pass.accesses {
                     access.resource += offset;
+                }
+            }
+            for pass in &mut declaration.tick_passes {
+                pass.name = format!("effect {member}: {}", pass.name);
+                for read in &mut pass.reads {
+                    // Preserve an invalid member-local index for preparation to
+                    // refuse, even if it would name another member's resource.
+                    read.resource = if read.resource < declaration.resources.len() {
+                        offset + read.resource
+                    } else {
+                        usize::MAX
+                    };
                 }
             }
             for access in declaration.opaque_reads.iter_mut().chain(
@@ -157,6 +185,7 @@ impl SceneContributions {
                     }
                 }));
             graph.passes.extend(declaration.passes);
+            graph.tick_passes.extend(declaration.tick_passes);
             for pass in &mut declaration.after_opaque {
                 pass.name = format!("effect {member}: {}", pass.name);
             }
@@ -283,6 +312,7 @@ impl SceneContribution for SceneContributions {
                     for (index, replacement) in replacements.into_iter().enumerate() {
                         if let Some(next) = replacement {
                             owner.pass_counts[index] = next.graph.passes.len();
+                            owner.tick_counts[index] = next.graph.tick_passes.len();
                             owner.after_counts[index] = next.graph.after_opaque.len();
                             next.publish(owner.entries[index].as_mut());
                         }
@@ -322,6 +352,50 @@ impl SceneContribution for SceneContributions {
     fn effect_graph(&self) -> super::EffectGraph {
         Self::combined_graph(self.entries.iter().map(|entry| entry.effect_graph()))
     }
+    fn tick_has_work(&self, index: usize) -> bool {
+        self.tick_member(index)
+            .is_some_and(|(member, local)| self.entries[member].tick_has_work(local))
+    }
+
+    fn encode_tick_upload(
+        &mut self,
+        index: usize,
+        encoder: &mut wgpu::CommandEncoder,
+        tick_duration: std::time::Duration,
+    ) {
+        if let Some((member, local)) = self.tick_member(index) {
+            self.entries[member].encode_tick_upload(local, encoder, tick_duration);
+        }
+    }
+
+    fn encode_tick(&mut self, index: usize, pass: &mut wgpu::ComputePass<'_>) {
+        if let Some((member, local)) = self.tick_member(index) {
+            self.entries[member].encode_tick(local, pass);
+        }
+    }
+
+    fn encode_tick_readback(&mut self, index: usize, encoder: &mut wgpu::CommandEncoder) {
+        if let Some((member, local)) = self.tick_member(index) {
+            self.entries[member].encode_tick_readback(local, encoder);
+        }
+    }
+
+    fn tick_submitted(&mut self, mut passes: &[usize]) {
+        let mut first = 0;
+        let mut local = Vec::new();
+        for (entry, count) in self.entries.iter_mut().zip(&self.tick_counts) {
+            let end = first + count;
+            let split = passes.partition_point(|&index| index < end);
+            if split != 0 {
+                local.extend(passes[..split].iter().map(|index| index - first));
+                entry.tick_submitted(&local);
+                local.clear();
+                passes = &passes[split..];
+            }
+            first = end;
+        }
+    }
+
     fn effect_runs(&self, mut index: usize, frame: &ContributionFrame) -> bool {
         for (entry, count) in self.entries.iter().zip(self.pass_counts.iter().copied()) {
             if index < count {
@@ -433,6 +507,7 @@ impl SceneContribution for SceneContributions {
         surface: &super::SpriteContributionSurface<'_>,
     ) -> Result<(), FrameError> {
         self.pass_counts.clear();
+        self.tick_counts.clear();
         self.after_counts.clear();
         for entry in &mut self.entries {
             entry.rebuild_2d(surface)?;
@@ -498,6 +573,47 @@ mod tests {
     use std::sync::{Arc, Mutex};
 
     type Seen = Arc<Mutex<Vec<&'static str>>>;
+
+    #[test]
+    fn a_tick_pass_can_only_reference_its_own_members_resources() {
+        use super::super::{EffectAccess, EffectGraph, TickPass};
+        use crate::graph::{AccessKind, ResourceDescriptor, ResourceScope};
+
+        let resource = (
+            ResourceDescriptor::Buffer {
+                bytes: 4,
+                usage: wgpu::BufferUsages::STORAGE,
+            },
+            ResourceScope::Persistent {
+                owner: 0,
+                epoch: 0,
+                initialized: true,
+            },
+        );
+        let member = |index| EffectGraph {
+            resources: vec![resource.clone()],
+            tick_passes: vec![TickPass {
+                name: "local query".into(),
+                reads: vec![EffectAccess {
+                    resource: index,
+                    range: 0..4,
+                    kind: AccessKind::StorageRead,
+                    view: None,
+                    history: None,
+                }],
+            }],
+            ..EffectGraph::default()
+        };
+        let nested = SceneContributions::combined_graph([member(0), member(0)]);
+        let valid = SceneContributions::combined_graph([member(0), nested.clone()]);
+        assert_eq!(valid.tick_passes[2].reads[0].resource, 2);
+        assert_eq!(valid.validate(), Ok(()));
+        let invalid = SceneContributions::combined_graph([member(1), nested]);
+        assert_eq!(
+            invalid.validate(),
+            Err(crate::error::EffectGraphError::UnknownEffectResource)
+        );
+    }
 
     #[test]
     fn a_nested_list_offsets_sun_path_resources_with_their_opaque_reads() {

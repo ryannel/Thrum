@@ -451,18 +451,13 @@ impl<G: Game> Actor<G> {
             // A callback can arrive while an older packet is retiring. Give
             // it the part of this opportunity that encoding can spare.
             let deadline = Instant::now() + lead.duration.saturating_sub(Duration::from_millis(3));
-            let mut samples = reply.samples.iter_mut();
-            while !self.host.has_free_slot() && Instant::now() < deadline && samples.len() != 0 {
-                ensure_running(&self.stopped)?;
-                if let Some(completed) = self.host.poll_completed()? {
-                    *samples.next().expect("space for a completed sample") = Some(completed);
-                } else if !self.host.has_free_slot() {
-                    std::thread::sleep(
-                        Duration::from_micros(250)
-                            .min(deadline.saturating_duration_since(Instant::now())),
-                    );
-                }
-            }
+            wait_for_frame_slot(
+                &mut self.host,
+                &mut reply.samples,
+                &self.stopped,
+                || deadline.saturating_duration_since(Instant::now()),
+                std::thread::sleep,
+            )?;
             lead = display_target_lead(request.target_media_seconds, CACurrentMediaTime());
         }
         reply.target_status = Some(lead.status);
@@ -1001,6 +996,46 @@ fn ensure_device(watch: &DeviceWatch) -> Result<(), FrameError> {
         Ok(())
     }
 }
+trait SlotWaitHost {
+    fn ask_tick_stage(&mut self) -> Result<(), FrameError>;
+    fn has_free_slot(&self) -> bool;
+    fn poll_completed(&mut self) -> Result<Option<FrameSample>, FrameError>;
+}
+
+impl<W: FrameWorld, V: SceneSource<W::Page>> SlotWaitHost for FrameHost<W, V> {
+    fn ask_tick_stage(&mut self) -> Result<(), FrameError> {
+        FrameHost::ask_tick_stage(self)
+    }
+
+    fn has_free_slot(&self) -> bool {
+        FrameHost::has_free_slot(self)
+    }
+
+    fn poll_completed(&mut self) -> Result<Option<FrameSample>, FrameError> {
+        FrameHost::poll_completed(self)
+    }
+}
+
+fn wait_for_frame_slot(
+    host: &mut impl SlotWaitHost,
+    samples: &mut [Option<FrameSample>],
+    stopped: &AtomicBool,
+    mut remaining: impl FnMut() -> Duration,
+    mut sleep: impl FnMut(Duration),
+) -> Result<(), FrameError> {
+    host.ask_tick_stage()?;
+    let mut samples = samples.iter_mut();
+    while !host.has_free_slot() && !remaining().is_zero() && samples.len() != 0 {
+        ensure_running(stopped)?;
+        if let Some(completed) = host.poll_completed()? {
+            *samples.next().expect("space for a completed sample") = Some(completed);
+        } else if !host.has_free_slot() {
+            sleep(Duration::from_micros(250).min(remaining()));
+        }
+    }
+    Ok(())
+}
+
 fn ensure_running(stopped: &AtomicBool) -> Result<(), FrameError> {
     if stopped.load(Ordering::Acquire) {
         Err(FrameError::InvalidState("render owner is stopping"))

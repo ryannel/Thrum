@@ -32,7 +32,7 @@ use thrum_app::{
 };
 use wgpu::TextureViewDescriptor;
 
-use crate::lease::{Leased, SurfaceLease};
+use crate::lease::{Leased, SurfaceLease, TickPermission};
 
 pub(super) const THREAD: &str = "thrum-v1-ios-render";
 pub(super) type Lease = SurfaceLease<wgpu::Surface<'static>>;
@@ -203,7 +203,7 @@ pub(super) struct Signals {
     /// through the same path wgpu's lost callback uses.
     pub(super) stale_wake: AtomicBool,
     /// The app is in the background: no recovery may prepare or publish.
-    pub(super) background: AtomicBool,
+    pub(super) background: Arc<AtomicBool>,
 }
 
 type LostWake = Arc<dyn Fn(u64) + Send + Sync>;
@@ -215,6 +215,7 @@ struct Gpu {
     watch: DeviceWatch,
     destroyed: bool,
     host: super::Host,
+    request_epoch: Arc<AtomicU64>,
     cooked: Option<Arc<Mutex<thrum_asset_gpu::CookedStats>>>,
     cooked_view: Option<super::cooked_view::View>,
     format: wgpu::TextureFormat,
@@ -417,7 +418,13 @@ impl Owner {
         }
         let cooked = v1_game::attach_cooked_scene(&mut host)?;
         let cooked_view = super::cooked_view::View::prepare(&mut host)?;
-        let (host, controls) = host.into_threaded(self.origin, world_advanced)?;
+        let (mut host, controls) = host.into_threaded(self.origin, world_advanced)?;
+        let request_epoch = Arc::new(AtomicU64::new(epoch));
+        host.set_tick_submission_permission(Box::new(TickPermission {
+            lease: Arc::clone(&self.lease),
+            request_epoch: Arc::clone(&request_epoch),
+            background: Arc::clone(&self.signals.background),
+        }));
         let name = format!(
             "{:?}; downlevel={:?}; recipe={:?}; registry={}; unified_memory={:?}; texture_profiles={:?}; max_storage_buffers_per_shader_stage={}",
             capabilities.adapter(),
@@ -439,6 +446,7 @@ impl Owner {
             cooked_view,
             format,
             host_extent: extent,
+            request_epoch,
         });
         Ok(Prepared {
             controls,
@@ -666,6 +674,8 @@ impl Owner {
             .gpu
             .as_mut()
             .ok_or(FrameError::InvalidState("iOS render owner is not prepared"))?;
+        gpu.request_epoch
+            .store(request.surface_generation, Ordering::Release);
         if self.diagnostics
             && let Err(error) = self.capture.before(
                 &mut gpu.host,

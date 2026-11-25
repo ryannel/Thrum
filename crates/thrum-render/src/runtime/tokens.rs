@@ -47,16 +47,19 @@ impl<'a, W: FrameWorld, V: SceneSource<W::Page>> AdvancedFrame<'a, W, V> {
             .report
             .take()
             .ok_or(FrameError::InvalidState("advanced frame already consumed"))?;
-        self.host
+        let host = self
+            .host
             .take()
-            .ok_or(FrameError::InvalidState("advanced host already consumed"))?
-            .finish_advance(
-                report,
-                self.tick_cpu,
-                self.wall_start,
-                self.recovered_publication,
-                surface,
-            )
+            .ok_or(FrameError::InvalidState("advanced host already consumed"))?;
+        let result = host.finish_advance(
+            report,
+            self.tick_cpu,
+            self.wall_start,
+            self.recovered_publication,
+            surface,
+        );
+        host.discard_tick_timing_without_view();
+        result
     }
 
     /// Encode the serial scene while the platform has not yet acquired its
@@ -97,6 +100,11 @@ impl<'a, W: FrameWorld, V: SceneSource<W::Page>> AdvancedFrame<'a, W, V> {
             .host
             .take()
             .ok_or(FrameError::InvalidState("advanced host consumed"))?;
+        if ready.is_some() {
+            host.ticks.timing_slot = None;
+        } else {
+            host.discard_tick_timing_without_view();
+        }
         Ok(EncodedFrame {
             ready: ready.map(|recorded| ReadyFrame { host, recorded }),
             report: self
@@ -113,6 +121,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> Drop for AdvancedFrame<'_, W, V> {
         let Some((host, report)) = self.host.as_deref_mut().zip(self.report.as_mut()) else {
             return;
         };
+        host.discard_tick_timing_without_view();
         host.skip_advance(report, self.recovered_publication);
     }
 }
