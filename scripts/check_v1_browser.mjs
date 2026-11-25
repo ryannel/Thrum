@@ -2531,8 +2531,9 @@ async function main() {
       { cwd: repo, env: { ...process.env, CARGO_TARGET_DIR: 'target', RUSTC_WRAPPER: '' }, stdio: 'inherit' });
     if (proving) args['web-root'] = 'target/v1-game-web-proving';
   }
-  if (['exit-scene', 'scale', 'interface-text', 'interface-text-visual'].includes(args.case) && args.cook === 'target/debug/thrum-cook') {
-    execFileSync('rustup', ['run', 'stable', 'cargo', 'build', '--locked', '--offline', '-p', 'thrum-cook', '--bin', 'thrum-cook'], { cwd: repo, stdio: 'inherit' });
+  if (['exit-scene', 'scale', 'no-compile', 'interface-text', 'interface-text-visual'].includes(args.case) && args.cook === 'target/debug/thrum-cook') {
+    execFileSync('rustup', ['run', 'stable', 'cargo', 'build', '--locked', '--offline', '--target-dir', 'target', '-p', 'thrum-cook', '--bin', 'thrum-cook'],
+      { cwd: repo, env: { ...process.env, RUSTC_WRAPPER: '' }, stdio: 'inherit' });
   }
   if (args.case === 'content-edits' && args.cook === 'target/debug/thrum-cook') {
     execFileSync('cargo', ['build', '--locked', '--offline', '-p', 'thrum-cook'], { cwd: repo, stdio: 'inherit' });

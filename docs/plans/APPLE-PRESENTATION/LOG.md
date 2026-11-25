@@ -577,3 +577,7 @@
   Hardware Chrome completed the route with zero after-ready device calls to create shaders or pipelines.
   Two cold and two warm offscreen launch baselines record the Naga, Metal and synchronous MetalFX stages
   under shared load. [Target evidence](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP9/README.md)
+
+- 2026-11-25 WP9. The clean verifier failed D9.4 because the browser check built the game but had no
+  `thrum-cook` to serve the route's cooked valley. D9.4 now builds the default cooker before starting
+  Chrome. [Verifier replay](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP9/verifier-replay.md)
