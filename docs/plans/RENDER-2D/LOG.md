@@ -324,3 +324,7 @@
   independent sprite passes in one submission. A fresh reader exercised the creator guide and the
   revised walkthrough produced a viewable submitted still.
   [Target evidence](../../../.orchestrate/evidence/RENDER-2D/WP5/README.md)
+- The post-merge simulator check timed out reading the host process table after boot. A bounded
+  retry preserves the ancestor lock check. Regression tests cover both recovery and a repeated
+  timeout. The unchanged simulator command passed with a minimal environment and verified shutdown.
+  [Simulator rerun](../../../.orchestrate/evidence/RENDER-2D/WP5/ios-admission.log)

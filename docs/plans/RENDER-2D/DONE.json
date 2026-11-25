@@ -648,7 +648,7 @@
           "check": "python3 scripts/render2d_sim.py",
           "lock": "simulator",
           "target": "ios-sim",
-          "evidence": ".orchestrate/evidence/RENDER-2D/WP5/ios-held/report.json",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP5/ios-admission/report.json",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
