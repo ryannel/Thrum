@@ -1025,7 +1025,7 @@
     {
       "id": "WP19",
       "name": "While clouds drift, the game can say where each lost refresh went, and the losses the clouds cause are fixed",
-      "status": "blocked",
+      "status": "in_progress",
       "depends_on": [],
       "quality_bar": "A frame-pacing record as a shipped engine's frame profiler gives one: every lost refresh has a place, none is put down to load or to the window unless the same game without clouds, run beside it, shows the same loss, and a hitch the game without clouds does not have is never put down to them.",
       "items": [
@@ -1083,17 +1083,7 @@
         }
       ],
       "failed_reviews": 0,
-      "failed_reviews_with_repeat": 0,
-      "blocked": {
-        "reason": "needs_access",
-        "what": "Confirm access to the unlocked Mac so I can rerun WP19.2 on the merged tip.",
-        "work": {
-          "commit": "27b81f38a9b496c4f1370545031a86b0e8c79056",
-          "branch": "build/clouds",
-          "pushed": false
-        },
-        "handoff": ".orchestrate/evidence/CLOUDS/WP19-handoff.md"
-      }
+      "failed_reviews_with_repeat": 0
     },
     {
       "id": "WP20",
