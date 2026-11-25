@@ -67,11 +67,6 @@ const MAX_FRAMES: usize = 100_000;
 /// when one exceeds it, so a long session holds a bounded recent window.
 const RETAINED_PROFILES: usize = 36_000;
 
-enum TimingPolicy {
-    Report,
-    Profiler,
-}
-
 #[derive(Clone, Copy, Debug)]
 enum UserEvent {
     WorldAdvanced,
@@ -162,7 +157,7 @@ struct App<G: Game> {
     samples: Vec<FrameSample>,
     profile: crate::profile::ProfileWindow,
     profile_recording: Option<profile_recording::Recording>,
-    timing_policy: TimingPolicy,
+    report_gpu_timestamps: bool,
     profiler_title_at: Duration,
     adapter_name: String,
     error: Option<String>,
@@ -181,13 +176,12 @@ impl<G: WindowGame + 'static> App<G> {
     }
 
     fn timing_requested(&self) -> bool {
-        let reports = self
-            .qualification
-            .as_ref()
-            .map_or(matches!(self.timing_policy, TimingPolicy::Report), |pan| {
-                pan.options.gpu_timestamps
-            });
-        reports || crate::profile::enabled(self.game.controls()).unwrap_or(true)
+        self.report_gpu_timestamps
+            || self
+                .qualification
+                .as_ref()
+                .is_some_and(|pan| pan.options.gpu_timestamps)
+            || crate::profile::enabled(self.game.controls()).unwrap_or(true)
     }
 
     /// `target_frames` of `None` runs until the window closes.
@@ -268,7 +262,7 @@ impl<G: WindowGame + 'static> App<G> {
             samples: Vec::with_capacity(reserved * 2),
             profile: crate::profile::ProfileWindow::new(),
             profile_recording: profile_recording::Recording::from_environment(),
-            timing_policy: TimingPolicy::Report,
+            report_gpu_timestamps: false,
             profiler_title_at: Duration::ZERO,
             adapter_name: String::new(),
             error: None,
@@ -1093,8 +1087,10 @@ impl<G: WindowGame + 'static> App<G> {
                 "scene GPU p50/p95={:.3}/{:.3} ms; forward GPU p50/p95={:.3}/{:.3} ms; surface GPU p50/p95={:.3}/{:.3} ms",
                 scene.0, scene.1, forward.0, forward.1, present.0, present.1
             )
-        } else {
+        } else if presented.iter().any(|sample| sample.timing_requested) {
             "GPU timestamps unavailable".to_owned()
+        } else {
+            "GPU timing off".to_owned()
         };
         // The renderer's culling mode and read-back counts, over the frames
         // whose count had settled when they retired; Direct has none.
@@ -1620,6 +1616,7 @@ impl<G: WindowGame + 'static> ApplicationHandler<UserEvent> for App<G> {
 /// Run `game` in one window until its bounded frame count presents, then print the frames
 /// report. The count comes from `config.frames_variable` (default 600). Setup, GPU and world
 /// failures are reported on standard error and exit the process with a nonzero status.
+/// Open the frame profiler or set [`REPORT_VARIABLE`] to `1` to collect GPU timestamps.
 ///
 /// # Panics
 /// If the platform refuses to create the event loop, as on a second call in one process.
@@ -1702,8 +1699,8 @@ pub fn run_with_display<G: WindowGame + 'static, E: std::error::Error>(
     run_with(config, false, None, None, None, Some(options), game);
 }
 
-/// Environment variable that asks [`run_until_closed`] for the frames report: set it to `1`.
-/// [`run`] always prints the report.
+/// Set to `1` to collect GPU timestamps throughout a window run and print the frames report.
+/// Bounded [`run`] always prints the report, with timing from any frames the profiler observed.
 pub const REPORT_VARIABLE: &str = "THRUM_REPORT";
 
 #[expect(
@@ -1748,12 +1745,8 @@ fn run_with<G: WindowGame + 'static, E: std::error::Error>(
     app.transition_proof = transition_proof;
     app.qualification = qualification.map(qualification::Pan::new);
     app.display_options = display_options;
-    app.timing_policy =
-        if prints_report(until_closed, std::env::var(REPORT_VARIABLE).ok().as_deref()) {
-            TimingPolicy::Report
-        } else {
-            TimingPolicy::Profiler
-        };
+    let requested_report = std::env::var(REPORT_VARIABLE).ok();
+    app.report_gpu_timestamps = requested_report.as_deref() == Some("1");
     if let Err(error) = event_loop.run_app(&mut app) {
         app.error = Some(format!("event loop: {error}"));
     }
@@ -1784,7 +1777,7 @@ fn run_with<G: WindowGame + 'static, E: std::error::Error>(
     }
     match result {
         Ok(report) => {
-            if prints_report(until_closed, std::env::var(REPORT_VARIABLE).ok().as_deref()) {
+            if prints_report(until_closed, requested_report.as_deref()) {
                 println!("{report}");
             }
         }

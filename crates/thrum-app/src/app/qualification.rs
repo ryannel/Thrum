@@ -168,7 +168,7 @@ pub struct WindowQualification {
     pub accepted: fn(f32) -> f64,
     /// Record submitted images alongside submission records.
     pub capture: bool,
-    /// Request per-pass GPU timestamps during the observation.
+    /// Request per-pass GPU timestamps in addition to the window's normal timing policy.
     pub gpu_timestamps: bool,
     /// Exercise replacement with a readback pending.
     pub replace_surface: bool,

@@ -135,8 +135,11 @@ For a native window cadence measurement, launch the proving build with
 `THRUM_MAC_QUALIFY` set to an existing output directory, `THRUM_MAC_TAP=off`
 and `THRUM_MAC_QUALIFY_MODE=wind`. Use `THRUM_V1_FRAMES=10000` so the frame
 limit outlasts the observation. Select the cooked valley and running weather
-as for a wind take. The ordinary window retains a 20-second interval after
-warm-up without scripted camera edits or forced GPU timestamp queries.
+as for a wind take. The observer retains a 20-second interval after warm-up and
+leaves the camera and the window's GPU timing policy alone. Keep the frame
+profiler closed and leave `THRUM_REPORT` unset for the ordinary window's cadence.
+Bounded runs still report frame counts and CPU times. Set `THRUM_REPORT=1`
+when the run needs per-pass GPU timestamps.
 Join `requests.tsv` and `surface.tsv` by sequence to check the display-link
 target interval between submitted frames.
 
