@@ -303,3 +303,11 @@
   The relay starts timed cuts on an actual downstream delivery. The short cut dropped a packet before reopening
   and the submitted positions sustained 1.100× catch-up after the separate underrun.
   [Target receipts and motion inspections](../../../.orchestrate/evidence/SESSION/WP7/observation/README.md)
+
+- 2026-11-25 WP7 display-target review fix. The Mac replica admits ticks at the observation and samples the
+  committed pair at the AppKit target. Submitted frames record that target and give the session feedback
+  about time spent at the committed edge. The reference replica reserves 1.1 ms before the target for
+  advancing and drawing. Metal proved the future in-pair sample, endpoint clamp and tick eligibility.
+  Mac and Chrome each matched 120 digests over 3,600 ticks. The Mac relay proof retained the buffered burst,
+  hold, 1.0992× submitted recovery and named skip. Both targets retained complete realtime T2 captures.
+  [Checks and motion inspections](../../../.orchestrate/evidence/SESSION/WP7/display-target/README.md)
