@@ -5,7 +5,7 @@ use std::sync::Arc;
 #[cfg(not(target_arch = "wasm32"))]
 use {
     super::{
-        FrameSlot, SlotState,
+        FrameSlot,
         creation::Ledger,
         submitted_capture::{Tap, TapSpec},
     },
@@ -257,11 +257,8 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             return false;
         }
         let previous = std::mem::replace(&mut self.slots, candidate.slots);
-        self.retired_slots.extend(
-            previous
-                .into_iter()
-                .filter(|slot| !matches!(slot.state, SlotState::Free)),
-        );
+        self.retired_slots
+            .extend(previous.into_iter().filter(FrameSlot::is_pending));
         self.presenter = Some(candidate.presenter);
         if let Some((views, replacement)) = candidate.secondary {
             self.prepared.publish_secondary_extent(views);

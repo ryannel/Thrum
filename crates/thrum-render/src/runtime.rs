@@ -71,6 +71,12 @@ pub use visual::{PreparedVisual, VisualPrepareInputs};
 
 pub(crate) const GPU_WAIT: Duration = Duration::from_secs(10);
 const IN_FLIGHT: usize = 2;
+// A native governor can have one detached timing report per render slot.
+const COMPLETED_REPORTS: usize = if cfg!(target_arch = "wasm32") {
+    IN_FLIGHT
+} else {
+    2 * IN_FLIGHT
+};
 
 /// A submitted capture of one committed endpoint, owned by the caller until
 /// [`FrameHost::try_finish_capture`] returns its pixels. It retains its own
@@ -610,13 +616,23 @@ enum SlotState {
 struct FrameSlot {
     target: FrameTarget,
     presentation: Option<PresentationBinding>,
-    timings: GpuTimings,
+    timing: FrameTimingBatch,
+    deferred_timing: Option<DeferredFrameTiming>,
     timing_records: TimingRecords,
-    timing_layout: Option<SceneTimingLayout>,
-    timing_readback: bool,
-    timing_counter_floor: u64,
     render_done: Arc<AtomicBool>,
     state: SlotState,
+}
+
+struct FrameTimingBatch {
+    queries: GpuTimings,
+    layout: Option<SceneTimingLayout>,
+    readback: bool,
+    counter_floor: u64,
+}
+
+struct DeferredFrameTiming {
+    batch: FrameTimingBatch,
+    sample: Option<FrameSample>,
 }
 
 #[derive(Clone, Copy)]
@@ -802,11 +818,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         &mut self,
         mut contribution: Box<dyn SceneContribution>,
     ) -> Result<(), FrameError> {
-        if self
-            .slots
-            .iter()
-            .any(|slot| !matches!(slot.state, SlotState::Free))
-        {
+        if self.slots.iter().any(FrameSlot::is_pending) {
             return Err(FrameError::InvalidState(
                 "attach a scene contribution with no frames in flight",
             ));
@@ -1295,7 +1307,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             presenter,
             slots: gpu.slots,
             retired_slots: Vec::with_capacity(IN_FLIGHT),
-            completed: VecDeque::with_capacity(IN_FLIGHT),
+            completed: VecDeque::with_capacity(COMPLETED_REPORTS),
             next_submission_order: 0,
             timing_stats: TimingStats::default(),
             frame_counters: FrameCounters::default(),
@@ -1664,11 +1676,9 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     fn latest_submitted_target(&self) -> Option<&OffscreenTarget> {
         self.slots
             .iter()
-            .filter_map(|slot| match &slot.state {
-                SlotState::Rendering(sample) | SlotState::Resolving(sample) => {
-                    Some((sample.submission_order, &slot.target))
-                }
-                SlotState::Free => None,
+            .filter_map(|slot| {
+                let sample = slot.active_sample().or_else(|| slot.deferred_sample())?;
+                Some((sample.submission_order, &slot.target))
             })
             .max_by_key(|(order, _)| *order)
             .and_then(|(_, target)| target.three_d())
@@ -1815,7 +1825,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.slots
             .iter()
             .chain(&self.retired_slots)
-            .filter(|slot| !matches!(slot.state, SlotState::Free))
+            .flat_map(FrameSlot::samples)
             .count()
     }
 
@@ -1837,12 +1847,8 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             .slots
             .iter()
             .chain(&self.retired_slots)
-            .filter_map(|slot| match &slot.state {
-                SlotState::Free => None,
-                SlotState::Rendering(sample) | SlotState::Resolving(sample) => {
-                    Some(sample.submission_order)
-                }
-            })
+            .flat_map(FrameSlot::samples)
+            .map(|sample| sample.submission_order)
             .min();
         Ok(pop_report_before_pending(
             &mut self.completed,
@@ -2295,7 +2301,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             timing_requested,
         );
         let capture_slot = capture.as_ref().map(|(index, _)| *index);
-        let timings = timing_requested.then_some(&mut slot.timings);
+        let timings = timing_requested.then_some(&mut slot.timing.queries);
         let readback = capture.map(|(_, readback)| readback);
         let contribution = self.contribution.as_deref_mut();
         let encoded = match (&self.prepared, &slot.target) {
@@ -2473,7 +2479,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 device_generation: self.generation,
                 submission_order: sample.submission_order,
             };
-            match slot.timings.finish_frame(frame, &encoder) {
+            match slot.timing.queries.finish_frame(frame, &encoder) {
                 Ok(gathered) => self.timing_stats.gathered += u64::from(gathered),
                 Err(error) => {
                     drop(encoder);
@@ -2492,7 +2498,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 }
             }
         }
-        if let Some(frame) = slot.timings.pending_frame() {
+        if let Some(frame) = slot.timing.queries.pending_frame() {
             self.track_frame_counters(slot_index, frame.submission_order);
         }
         let slot = &mut self.slots[slot_index];
@@ -2529,7 +2535,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             (&self.prepared, &mut slot.target)
         {
             target.map_culling_stats(scene.camera_culling(), scene.active_instance_count());
-            slot.timing_layout = Some(SceneTimingLayout::from((&**scene, &**target)));
+            slot.timing.layout = Some(SceneTimingLayout::from((&**scene, &**target)));
         }
         sample.encode_cpu = encode_cpu + finish_start.elapsed();
         sample.wall = wall_start.elapsed();
@@ -2562,7 +2568,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             );
         }
         self.next_submission_order = self.next_submission_order.wrapping_add(1);
-        slot.timing_readback = capture_slot.is_some() && !edr_capture;
+        slot.timing.readback = capture_slot.is_some() && !edr_capture;
         slot.state = SlotState::Rendering(sample);
         report.submitted = true;
         report.surface_presented = surface_presented;
@@ -2841,20 +2847,17 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
 
     fn check_native_completion(&mut self) -> Result<(), FrameError> {
         if self.native_failed_generation.is_none() {
-            self.native_failed_generation =
-                self.slots
-                    .iter()
-                    .chain(&self.retired_slots)
-                    .find_map(|slot| {
-                        let sample = match &slot.state {
-                            SlotState::Rendering(sample) | SlotState::Resolving(sample) => sample,
-                            SlotState::Free => return None,
-                        };
-                        sample.native_segment.as_ref().and_then(|segment| {
-                            (segment.outcome() == crate::synthetic::NativeOutcome::Failed)
-                                .then_some(segment.generation)
-                        })
-                    });
+            self.native_failed_generation = self
+                .slots
+                .iter()
+                .chain(&self.retired_slots)
+                .flat_map(FrameSlot::samples)
+                .find_map(|sample| {
+                    sample.native_segment.as_ref().and_then(|segment| {
+                        (segment.outcome() == crate::synthetic::NativeOutcome::Failed)
+                            .then_some(segment.generation)
+                    })
+                });
         }
         if let Some(generation) = self.native_failed_generation {
             self.history_reset_pending = true;
@@ -2892,7 +2895,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                     sample.camera_culling = sample
                         .camera_culling
                         .or_else(|| slot.target.take_culling_counts_if_3d());
-                    if slot.timings.pending_frame().is_none() {
+                    if slot.timing.queries.pending_frame().is_none() {
                         if let Some(governor) = &mut self.governor {
                             governor.observe(&sample);
                         }
@@ -2902,15 +2905,25 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                     let mut encoder = self
                         .device
                         .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-                    match slot.timings.resolve_if_ready(self.generation, &mut encoder) {
+                    match slot
+                        .timing
+                        .queries
+                        .resolve_if_ready(self.generation, &mut encoder)
+                    {
                         Ok(true) => {
                             self.queue.submit([encoder.finish()]);
-                            slot.state = SlotState::Resolving(sample);
+                            if self.governor.is_some() {
+                                slot.defer_timing(sample);
+                            } else {
+                                slot.state = SlotState::Resolving(sample);
+                            }
                         }
                         Ok(false) => slot.state = SlotState::Rendering(sample),
                         Err(error) => {
-                            slot.refuse_timing(&mut sample, &mut self.timing_stats, error);
-                            slot.recover_timings(self.prepared.capabilities(), &self.queue)?;
+                            slot.timing
+                                .refuse_timing(&mut sample, &mut self.timing_stats, error);
+                            slot.timing
+                                .recover_timings(self.prepared.capabilities(), &self.queue)?;
                             if let Some(governor) = &mut self.governor {
                                 governor.observe(&sample);
                             }
@@ -2921,8 +2934,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 SlotState::Resolving(_) => slot.state = state,
             }
         }
-        self.retired_slots
-            .retain(|slot| !matches!(slot.state, SlotState::Free));
+        self.retired_slots.retain(FrameSlot::is_pending);
         Ok(())
     }
 }
@@ -2940,7 +2952,7 @@ fn duration_ns_u32(value: Duration) -> u32 {
 }
 
 fn retain_sample(queue: &mut VecDeque<FrameSample>, dropped: &mut u64, sample: FrameSample) {
-    if queue.len() == IN_FLIGHT {
+    if queue.len() == COMPLETED_REPORTS {
         if queue
             .front()
             .is_some_and(|oldest| sample.submission_order <= oldest.submission_order)

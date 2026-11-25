@@ -273,7 +273,8 @@ fn m2_temporal_passes_preserve_named_timing_layout() {
             .unwrap();
         let slot = &mut host.slots[0];
         let passes = slot
-            .timings
+            .timing
+            .queries
             .try_collect(7)
             .expect("real timestamp batch")
             .expect("resolved batch");
@@ -282,7 +283,7 @@ fn m2_temporal_passes_preserve_named_timing_layout() {
             crate::synthetic::frame_stats::tests::pass_durations(
                 passes,
                 false,
-                slot.timing_layout.expect("3D timing layout"),
+                slot.timing.layout.expect("3D timing layout"),
             )
             .is_some(),
             "M2 pass layout"

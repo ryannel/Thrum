@@ -69,7 +69,7 @@ pub(super) fn encode_surface_pass(
     match (presenter, slot.presentation.as_ref(), surface) {
         (Some(presenter), Some(binding), Some(surface)) => {
             let surface = (presenter, binding, surface.view, surface.extent);
-            let timings = timing_requested.then_some(&mut slot.timings);
+            let timings = timing_requested.then_some(&mut slot.timing.queries);
             let encoded = match (prepared, &slot.target) {
                 (PreparedRenderer::ThreeD(scene), FrameTarget::ThreeD(target)) => {
                     scene.encode_surface(target, encoder, surface, timings, readback)

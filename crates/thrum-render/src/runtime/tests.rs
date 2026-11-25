@@ -7,7 +7,7 @@ mod submitted_capture;
 #[cfg(not(target_arch = "wasm32"))]
 mod without_rendering;
 
-use super::{FrameSample, IN_FLIGHT, pop_report_before_pending, retain_sample};
+use super::{COMPLETED_REPORTS, FrameSample, IN_FLIGHT, pop_report_before_pending, retain_sample};
 use std::{collections::VecDeque, time::Duration};
 
 use super::{FrameConfig, FrameHost, FrameWorld, SceneFrame, SceneSource};
@@ -104,24 +104,18 @@ fn reused_source_ticks_do_not_hide_earlier_completed_submissions() {
 
 #[test]
 fn full_report_queue_drops_the_oldest_tick_even_when_it_finishes_late() {
-    assert_eq!(IN_FLIGHT, 2);
-    let mut queue = VecDeque::with_capacity(IN_FLIGHT);
+    let mut queue = VecDeque::with_capacity(COMPLETED_REPORTS);
     let mut dropped = 0;
-    for tick in [2, 3] {
+    let final_tick = COMPLETED_REPORTS as u32 + 1;
+    for tick in 2..=final_tick {
         retain_sample(&mut queue, &mut dropped, sample(tick));
     }
     retain_sample(&mut queue, &mut dropped, sample(1));
     assert_eq!(dropped, 1);
-    assert_eq!(
-        queue.iter().map(|entry| entry.tick).collect::<Vec<_>>(),
-        [2, 3]
-    );
-    retain_sample(&mut queue, &mut dropped, sample(4));
+    assert!(queue.iter().map(|entry| entry.tick).eq(2..=final_tick));
+    retain_sample(&mut queue, &mut dropped, sample(final_tick + 1));
     assert_eq!(dropped, 2);
-    assert_eq!(
-        queue.iter().map(|entry| entry.tick).collect::<Vec<_>>(),
-        [3, 4]
-    );
+    assert!(queue.iter().map(|entry| entry.tick).eq(3..=final_tick + 1));
 }
 
 struct StaticWorld {

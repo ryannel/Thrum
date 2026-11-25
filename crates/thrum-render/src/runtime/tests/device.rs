@@ -150,12 +150,17 @@ fn timing_replay_across_slots_and_after_a_refusal_never_publishes() {
             })
             .unwrap();
         let resolve = crate::timing::tests::inject_readback(
-            &mut slot.timings,
+            &mut slot.timing.queries,
             &host.device,
             &host.queue,
             pair,
         );
-        slot.state = SlotState::Resolving(sample);
+        if index == 1 {
+            slot.defer_timing(sample);
+            assert!(matches!(slot.state, SlotState::Free));
+        } else {
+            slot.state = SlotState::Resolving(sample);
+        }
         host.device
             .poll(wgpu::PollType::Wait {
                 submission_index: Some(resolve),

@@ -113,7 +113,7 @@ fn surface_encode_faults_reach_both_routes_and_completed_samples() {
                             GpuTimings::new(&capabilities, &queue, u32::try_from(passes).unwrap())
                                 .unwrap();
                         assert!(queries.is_enabled(), "Metal timestamp queries required");
-                        host.slots[0].timings = queries;
+                        host.slots[0].timing.queries = queries;
                         profile.extent
                     }
                     _ => unreachable!(),

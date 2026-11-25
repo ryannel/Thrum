@@ -1,6 +1,6 @@
 //! One preparation body for initial and replacement scene resources.
 
-use super::{FrameError, FrameSlot, IN_FLIGHT, SlotState};
+use super::{DeferredFrameTiming, FrameError, FrameSlot, FrameTimingBatch, IN_FLIGHT, SlotState};
 #[cfg(not(target_arch = "wasm32"))]
 use crate::contribution::ContributionCandidate;
 use crate::contribution::SceneContribution;
@@ -746,6 +746,26 @@ impl TargetPreparation {
             };
             let timings = GpuTimings::new(capabilities, queue, passes + u32::from(surface))
                 .map_err(|error| FrameError::gpu("scene timings", error))?;
+            // Native 3D can release the render target when its GPU work
+            // completes, while a second prepared batch maps its timestamps.
+            let deferred_timing = if cfg!(not(target_arch = "wasm32"))
+                && timings.is_enabled()
+                && matches!(&target, FrameTarget::ThreeD(_))
+            {
+                let queries = GpuTimings::new(capabilities, queue, timings.capacity())
+                    .map_err(|error| FrameError::gpu("deferred scene timings", error))?;
+                Some(DeferredFrameTiming {
+                    batch: FrameTimingBatch {
+                        queries,
+                        layout: None,
+                        readback: false,
+                        counter_floor: 0,
+                    },
+                    sample: None,
+                })
+            } else {
+                None
+            };
             let timing_records = if timings.is_enabled() {
                 let graph_passes = match &target {
                     FrameTarget::ThreeD(target) => target.timing_metadata_capacity(),
@@ -759,11 +779,14 @@ impl TargetPreparation {
             slots.push(FrameSlot {
                 target,
                 presentation: None,
-                timings,
+                timing: FrameTimingBatch {
+                    queries: timings,
+                    layout: timing_layout,
+                    readback: false,
+                    counter_floor: 0,
+                },
+                deferred_timing,
                 timing_records,
-                timing_layout,
-                timing_readback: false,
-                timing_counter_floor: 0,
                 render_done: Arc::new(AtomicBool::new(false)),
                 state: SlotState::Free,
             });
