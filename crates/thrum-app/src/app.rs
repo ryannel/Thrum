@@ -707,13 +707,6 @@ impl<G: WindowGame + 'static> App<G> {
         }
     }
 
-    fn preferred_refresh(&self) -> f32 {
-        self.transition_proof
-            .as_ref()
-            .and_then(|proof| proof.governor.map(|_| 60.0))
-            .unwrap_or(PREFERRED_REFRESH_HZ)
-    }
-
     fn receive_render(&mut self, mut reply: RenderReply<G::Readback>) -> Result<(), String> {
         self.trim_history();
         if let RenderOutcome::Recovered { attempted, result } = reply.outcome {
@@ -806,7 +799,7 @@ impl<G: WindowGame + 'static> App<G> {
                     self.cadence.presented(
                         reply.sequence,
                         self.render_target,
-                        self.preferred_refresh(),
+                        PREFERRED_REFRESH_HZ,
                     );
                 }
                 if self.surface_configuration_error.take().is_some() {
@@ -1159,7 +1152,7 @@ impl<G: WindowGame + 'static> App<G> {
         let culling =
             format!("{culling}; culling_selection={selection:?}; shadow_selection={shadows:?}");
         let (cadence_start, cadence_end) = self.cadence.longest();
-        let refresh = self.preferred_refresh();
+        let refresh = PREFERRED_REFRESH_HZ;
         Ok(format!(
             "adapter={}; surface={:?} {}x{}; presented={}; callbacks={}; display_link_callbacks={}; longest_{refresh:.0}hz_submission_interval={cadence_start:.6}..{cadence_end:.6}s; late_target_evaluations={}; invalid_target_evaluations={}; clamped_target_evaluations={}; committed_ticks={}; unavailable={}; occluded={}; surface_faults={}; dropped_surface={}; dropped_views={}; dropped_stale_views={}; dropped_reports={}; callback wall p50/p95={:.3}/{:.3} ms; render-worker wall p50/p95={:.3}/{:.3} ms; drawable-acquire wall p50/p95={:.3}/{:.3} ms; tick CPU p50/p95={:.3}/{:.3} us; live-view CPU p50/p95={:.3}/{:.3} us; upload CPU p50/p95={:.3}/{:.3} us; encode CPU p50/p95={:.3}/{:.3} us; upload+encode CPU p50/p95={:.3}/{:.3} us; {gpu}; {culling}; device_losses={}; world_overloads={}; overload_refused_ticks={}; final_drain_device_lost={final_device_loss}; retained_presented_profiles={}; missing_presented_profiles={missing}; profiles describe retained samples",
             self.adapter_name,
@@ -1363,7 +1356,7 @@ impl<G: WindowGame + 'static> ApplicationHandler<UserEvent> for App<G> {
     }
 
     fn user_event(&mut self, event_loop: &ActiveEventLoop, event: UserEvent) {
-        if self.qualification_report.is_some() {
+        if self.qualification_report.is_some() || self.render_stopped.load(Ordering::Acquire) {
             event_loop.exit();
             return;
         }
@@ -1510,7 +1503,7 @@ impl<G: WindowGame + 'static> ApplicationHandler<UserEvent> for App<G> {
     }
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, id: WindowId, event: WindowEvent) {
-        if self.qualification_report.is_some() {
+        if self.qualification_report.is_some() || self.render_stopped.load(Ordering::Acquire) {
             return;
         }
         if self.window.as_ref().is_none_or(|window| window.id() != id) {
@@ -1607,6 +1600,9 @@ impl<G: WindowGame + 'static> ApplicationHandler<UserEvent> for App<G> {
     }
 
     fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
+        if self.render_stopped.load(Ordering::Acquire) {
+            return;
+        }
         let now = self.origin.elapsed();
         self.profile.publish(
             self.game.controls_mut(),
