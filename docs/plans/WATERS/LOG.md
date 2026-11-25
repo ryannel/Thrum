@@ -1166,3 +1166,10 @@
   fallbacks or blocking reads. The breakers cut every tick. The largest model witness error was 9.55 mm.
   The separate 1440p query took 1.770 ms for 1,110 coarse and 4,050 fine nodes in shared load.
   [Metal proof and paired records](../../../.orchestrate/evidence/WATERS/WP19/post-wp21-proof.md).
+- 2026-11-25 WP8. Water gathers private opaque colour and depth for bounded reflection and refraction,
+  with contact fades, physical sky lighting and direct Sun transmission from the cloud optical-depth
+  field. The Metal target checks passed for gather coverage, aerial transport and exposure, cloud shade
+  and the paired 1440p cost record. Fixed and realtime Metal views cover the sea, craft and lake.
+  Chrome hardware WebGPU reproduces the shoreline colour, submerged hull tint, crest glow and lake mirror
+  in the target stills. The formal visual review remains open.
+  [WP8 evidence](../../../.orchestrate/evidence/WATERS/WP8/README.md).
