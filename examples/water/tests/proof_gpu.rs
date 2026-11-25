@@ -5,6 +5,7 @@ mod realtime;
 mod support;
 #[cfg(target_os = "macos")]
 mod surf_cost;
+#[cfg(target_os = "macos")]
 mod surf_running;
 use serde_json::json;
 use std::{path::PathBuf, time::Duration};
