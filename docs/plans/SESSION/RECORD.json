@@ -902,7 +902,7 @@
         {
           "verdict": "fail",
           "commit": "250713d896f995984b004f692cb3d7e733930b35",
-          "review": ".orchestrate/evidence/SESSION/WP7-review.md",
+          "review": ".orchestrate/evidence/SESSION/WP7-review-1.md",
           "items": {
             "WP7.1": "pass",
             "WP7.2": "pass",
@@ -936,6 +936,49 @@
             "turns": 1
           },
           "at": "2026-11-25T09:19:29Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "3e959bf2215ee416c9de1a7cbedda9d06c6ed2e6",
+          "review": ".orchestrate/evidence/SESSION/WP7-review.md",
+          "items": {
+            "WP7.1": "pass",
+            "WP7.2": "pass",
+            "WP7.3": "pass",
+            "WP7.4": "pass",
+            "WP7.5": "pass",
+            "WP7.6": "fail",
+            "WP7.7": "pass",
+            "WP7.8": "pass"
+          },
+          "findings": [
+            {
+              "name": "The Mac client visibly hitches during ordinary playout",
+              "item": "WP7.6",
+              "different": "Both runs now sustain the requested 1.10\u00d7 recovery. The new failure is a gap between surface submissions during ordinary play followed by several ticks of visible travel.",
+              "repeat": false
+            },
+            {
+              "name": "A smaller driver step budget leaves work-cap stalls unreported",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 118232,
+            "cached": 5135744,
+            "output": 15140,
+            "turns": 1
+          },
+          "at": "2026-11-25T10:20:54Z"
         }
       ],
       "authorised": {

@@ -822,10 +822,10 @@
           "statement": "In real time on the Mac client in WP7.5's run, the crowd moves as smoothly as the crowd view does alone wherever the record names no stall and no skip: there is no stutter at the tick rate, and nothing shows where sets arrived together inside the buffer. At the stall the picture holds, then moves on from where it held with no jump. The only jump is at the skip the record names.",
           "inspect": "Capture the client's window in WP7.5's run and the crowd view alone with T2 engine capture in `realtime` mode, at the same size. Watch both at 1x, then step through the frames around the buffered burst, the stall and the skip the record names. Say that you watched motion, and whether the faster pace after the stall shows.",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SESSION/WP7/recovery/mac/visual-review.md",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/SESSION/WP7-review.md",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "WP7.7",
@@ -852,15 +852,20 @@
       "depends_on": [
         "RENDER-2D:WP5"
       ],
-      "failed_reviews": 1,
-      "failed_reviews_with_repeat": 0,
+      "failed_reviews": 2,
+      "failed_reviews_with_repeat": 1,
       "diagnoses": 0,
-      "status": "ready_for_review",
+      "status": "in_progress",
       "quality_bar": "A networked game that draws as smoothly as it does alone wherever its link allows, as Factorio's multiplayer does: the client's world advances only when the match says, and the picture glides between confirmed ticks at the display's refresh. Late sets that land inside the playout buffer show nothing. When the buffer runs out the picture holds, then carries on from where it held, never more than a tenth fast. Only a client that fell behind jumps, and it says so. The engine side names no session: any game can drive a world.",
       "findings": [
         {
-          "name": "The Mac client does not regain lost playout time after a stall",
+          "name": "The Mac client visibly hitches during ordinary playout",
           "item": "WP7.6",
+          "different": "Both runs now sustain the requested 1.10\u00d7 recovery. The new failure is a gap between surface submissions during ordinary play followed by several ticks of visible travel.",
+          "repeat": false
+        },
+        {
+          "name": "A smaller driver step budget leaves work-cap stalls unreported",
           "repeat": false
         }
       ]
