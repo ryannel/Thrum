@@ -47,7 +47,13 @@ def height(x, z):
     bowl = 8.0 + 2.6 * pond_radius**2
     outer_blend = min(max((pond_radius - 1.32) / 0.42, 0), 1)
     pond = bowl + (outer_bank - bowl) * outer_blend**2 * (3 - 2 * outer_blend)
-    return min(ground, lake, hollow, pond)
+    terrain = min(ground, lake, hollow, pond)
+    # Relief behind the far shore stays above the lake's stage range. The
+    # waterline and the shallow shelf keep their original surveyed heights.
+    backshore = smoothstep((terrain - 13.0) / 2.2)
+    ridge = (13 * exp(-((x - 198) / 26) ** 2 - ((z + 42) / 11) ** 2)
+             + 9 * exp(-((x - 226) / 15) ** 2 - ((z + 31) / 11) ** 2))
+    return terrain + backshore * ridge
 
 
 def append_grid(points, normals, uvs, indices, xs, zs, pond=False):
