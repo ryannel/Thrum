@@ -21,7 +21,10 @@
       "output": 4849,
       "turns": 1
     },
-    "at": "2026-11-16T00:22:16Z"
+    "at": "2026-11-16T00:22:16Z",
+    "items_owed": [
+      "WP3"
+    ]
   },
   "work_packages": {
     "WP1": {
@@ -172,6 +175,16 @@
         "checked": "45f31108ba1a4b92e8f50ae819afd36b4afc7a69",
         "at": "2026-11-16T03:48:25Z"
       }
+    },
+    "WP3": {
+      "definitions": "e57892a32fe5d5b28c0fb9b2252c6decad6948af0c8e2906f4fa3bb1ecbfc85b",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "GAME-SPLIT WP3's last two reviews (.orchestrate/evidence/GAME-SPLIT/WP3-review.md, finding 1, and WP3-review-2.md) found",
+        "at": "2026-11-25T01:16:42Z"
+      },
+      "ends_stretch": true
     }
   },
   "tasks": [
@@ -206,11 +219,15 @@
     {
       "task": "The design review of BASELINE-GUARD at docs/evidence/BASELINE-GUARD/design-review.md asked for changes. Resolve its 2 Must Fix findings in the design and the plan. Its Suggestions are yours to take or leave; say which you took and why.",
       "at": "2026-11-16T00:19:00Z"
+    },
+    {
+      "task": "GAME-SPLIT WP3's last two reviews (.orchestrate/evidence/GAME-SPLIT/WP3-review.md, finding 1, and WP3-review-2.md) found, outside GAME-SPLIT's items, that scripts/exact_baselines.py records the wrong Wasm artifact: the release build at about line 298 produces the shipping bundle and line 302 hashes it, but the Chrome capture at about line 322 omits the web root, so scripts/capture_v1_browser.mjs builds and serves the proving bundle. A passing pixel comparison therefore records the hash of an executable it didn't run (reviewer measured shipping 5f62545d\u2026 vs proving 710c305c\u2026). The verifier is BASELINE-GUARD's, so under exact-baseline rule 1 only BASELINE-GUARD may change it. The GAME-SPLIT builder's proposed patch is at .orchestrate/evidence/GAME-SPLIT/WP3/round-3/exact-receipt-proposal.patch (evidence, not a design). Plan the fix in BASELINE-GUARD as a plan change or its next work package, with an item like: every registered Chrome capture's instantiated Wasm SHA-256 equals the Wasm SHA-256 in the verifier's artifact record. It must not change any retained reference bytes. Say whether the owner must rule; if so, end with that ask rather than guessing.",
+      "at": "2026-11-25T01:16:42Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-16T00:19:00Z"
+    "at": "2026-11-25T01:16:42Z"
   },
   "design_history": [
     {

@@ -155,7 +155,7 @@
       "id": "WP3",
       "name": "A passing exact-image record names the Wasm file that Chrome ran, and a run whose capture ran another fails",
       "status": "not_started",
-      "quality_bar": "A deployment pinned by digest, as `image@sha256:…` is: the record names the executable by a hash taken where it was loaded, and a run that loaded anything else fails by name.",
+      "quality_bar": "A deployment pinned by digest, as `image@sha256:\u2026` is: the record names the executable by a hash taken where it was loaded, and a run that loaded anything else fails by name.",
       "items": [
         {
           "id": "WP3.1",
@@ -190,7 +190,9 @@
           "verdict": "",
           "review": ""
         }
-      ]
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0
     }
   ]
 }
