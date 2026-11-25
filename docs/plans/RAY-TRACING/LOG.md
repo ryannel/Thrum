@@ -249,3 +249,11 @@
   the prepared receiver attachment's size and the shared dispatch timings.
   [Metal proof](../../../.orchestrate/evidence/RAY-TRACING/WP5/README.md) ·
   [Route timings](../../../.orchestrate/evidence/RAY-TRACING/WP5/cost-notes.md).
+- 2026-11-25 WP5 forward contract repair. The receiver raster replays opaque geometry against retained depth with
+  three targets in the forward pass. Apple M3 Max Metal verified a candidate using the existing three-format
+  pipeline, the thin-receiver radius, one ambient traversal, byte-identical off frames and stable allocations.
+  Fourteen fixed valley stills matched the previous receiver build byte for byte. The new consecutive submission
+  windows confirmed contact clearing both in view and offscreen. Paired timings account for receiver raster
+  cost and the higher CPU time under rising host load.
+  [Metal proof](../../../.orchestrate/evidence/RAY-TRACING/WP5/forward-contract/README.md) ·
+  [Route timings](../../../.orchestrate/evidence/RAY-TRACING/WP5/forward-contract/cost.md).

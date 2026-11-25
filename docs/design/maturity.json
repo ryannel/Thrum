@@ -189,16 +189,16 @@
     },
     "RAY_TRACING_WP5": {
       "implementation": "Opt-in Apple tile ambient occlusion shares the soft Sun trace dispatch when both run. A separate receiver pass replays opaque geometry against the forward depth and records the visible world position. Each ambient sample uses a single radius-bounded query and the common ray origin. The forward pass retains its three colour targets. The effect retains finite submitted history and receiving-plane filtering. Live extent changes reuse prepared resources. Cooked valley geometry and cloud Shade publish through the same candidate boundary.",
-      "functional_validation": "Metal proofs verified direct-light and soft Sun sample parity, the declared radius from thin visible receivers, rejection of rear and out-of-range sheets, detection of a 5 mm witness at 100 m, runtime extent switches, steady allocations and reported fallback. Portable forward WGSL matches the prior source exactly.",
+      "functional_validation": "Metal proofs verified direct-light and soft Sun sample parity, the declared radius from thin visible receivers, rejection of rear and out-of-range sheets, detection of a 5 mm witness at 100 m, runtime extent switches, steady allocations and reported fallback. A forward-only Metal contributor installed and drew using the three original targets while ambient was admitted. Portable forward WGSL matches the prior source exactly.",
       "experienced_quality": "Fixed Metal pairs show contact at the props, grounded cooked balloon basket and lookout ramp fold, including the prop under the visible overcast sky. Fixed turns and numbered realtime sequences show offscreen occlusion, a smooth settled face at native size and clearing after 16 submitted frames plus one.",
       "platform_performance": {
-        "mac_apple_tile": "Contended paired route records contain ambient visibility pass times, timed-pass spans and frame CPU times at off, half and full, with investigation of the observed tripwires.",
+        "mac_apple_tile": "Contended paired route records contain ambient visibility and receiver raster pass times, timed-pass spans and frame CPU times at off, half and full, with investigation of the observed tripwires.",
         "browser": "Ray ambient occlusion is unqualified. The portable recipe resolves it off.",
         "ios": "Ray ambient occlusion is unqualified."
       },
       "evidence": [
-        "../../.orchestrate/evidence/RAY-TRACING/WP5/README.md",
-        "../../.orchestrate/evidence/RAY-TRACING/WP5/cost-notes.md"
+        "../../.orchestrate/evidence/RAY-TRACING/WP5/forward-contract/README.md",
+        "../../.orchestrate/evidence/RAY-TRACING/WP5/forward-contract/cost.md"
       ]
     },
     "SCENE_VIEWS": {
