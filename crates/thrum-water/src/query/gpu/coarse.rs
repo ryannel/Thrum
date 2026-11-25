@@ -1,7 +1,7 @@
 //! Lay out shared coarse rectangles for queries of the same forward sheet.
 use super::{GROUP_WIDTH, Point};
 use std::collections::HashMap;
-use thrum_water_model::{CutConfig, ThrowReach};
+use thrum_water_model::{BodyKind, CutConfig, Map, ThrowReach};
 
 #[derive(Clone, Copy)]
 struct Rect {
@@ -66,6 +66,7 @@ fn fine_bounds(point: [f32; 2], reach: f64, cut: CutConfig) -> Option<Rect> {
 impl CoarsePlan {
     pub(super) fn new(
         points: &mut [Point],
+        map: &Map,
         reach: &mut ThrowReach<'_>,
         cut: CutConfig,
         max_records: u64,
@@ -75,7 +76,7 @@ impl CoarsePlan {
         let mut grids: Vec<Grid> = Vec::new();
         let step = i32::try_from(cut.coarse_cells).expect("prepared cut controls");
         for (index, point) in points.iter_mut().enumerate() {
-            if point.body == u32::MAX || point.has_bed == 0 {
+            if point.body == u32::MAX || point.flags == 0 {
                 continue;
             }
             let (distance, throws) = reach.at(point.position.map(f64::from));
@@ -140,6 +141,7 @@ impl CoarsePlan {
             let first = u32::try_from(grid.members[0]).expect("point index");
             let width = grid.bounds.width();
             let count = u32::try_from(nodes).expect("coarse storage fits a storage binding");
+            let unshared_owner = one_sea_owner(map, points[grid.members[0]].body, grid.bounds, cut);
             for start in (0..count).step_by(GROUP_WIDTH as usize) {
                 plan.jobs.push([first, start, offset, count]);
             }
@@ -151,6 +153,9 @@ impl CoarsePlan {
                     i32::try_from(width).expect("coarse grid width"),
                     i32::try_from(offset).expect("coarse storage fits a storage binding"),
                 ];
+                if unshared_owner {
+                    point.flags |= super::ONE_SHEET;
+                }
                 point.surf_stage[1] = f32::from_bits(first);
                 point.surf_stage[2] = f32::from_bits(count);
             }
@@ -195,4 +200,29 @@ impl CoarsePlan {
         }
         plan
     }
+}
+
+fn one_sea_owner(map: &Map, sea: u32, bounds: Rect, cut: CutConfig) -> bool {
+    let Some(body) = map.body(sea as usize) else {
+        return false;
+    };
+    if !matches!(body.kind, BodyKind::Sea) {
+        return false;
+    }
+    let cell = cut.cell * f64::from(cut.coarse_cells);
+    // Include the derivative probe and GPU rounding outside the last node.
+    let padding = cut.cell + 0.01;
+    let world = [
+        bounds.lo.map(|x| f64::from(x) * cell - padding),
+        bounds.hi.map(|x| f64::from(x) * cell + padding),
+    ];
+    (0..)
+        .map_while(|id| map.body(id).map(|body| (id, body)))
+        .filter(|&(id, _)| id != sea as usize)
+        .all(|(id, body)| {
+            !matches!(body.kind, BodyKind::Chart(_))
+                && map.surface_bounds(id).is_none_or(|other| {
+                    (0..2).any(|a| world[0][a] > other[1][a] || world[1][a] < other[0][a])
+                })
+        })
 }

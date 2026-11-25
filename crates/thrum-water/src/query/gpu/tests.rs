@@ -31,7 +31,7 @@ fn query_records_match_the_shader_layout() {
                 level_current_bed,
                 slope,
                 body,
-                has_bed,
+                flags,
                 gains,
                 dent,
                 surf_stage,
@@ -84,6 +84,6 @@ fn surf_query_passes_parse_with_all_shared_bindings() {
         + include_str!("../sample.wgsl")
         + &crate::map_gpu::declarations_at(super::SURF_GROUP)
         + &crate::surf::SurfGpu::source(super::SURF_GROUP, super::SURF_BINDING)
-        + include_str!("../../surf/cut.wgsl");
+        + &super::cut_source();
     records::named("surf body query passes", &source, &[]);
 }

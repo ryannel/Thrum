@@ -221,6 +221,7 @@ pub(super) fn new(
             profile.query.expect("enabled query limits"),
             &surface.limits,
             surf.is_some(),
+            interaction.is_some(),
         )?;
         Some(Readback::new(
             device,

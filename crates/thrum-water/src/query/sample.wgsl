@@ -1,7 +1,7 @@
 struct QueryPoint {
     position: vec2<f32>, radius: f32, dt: f32,
     level_current_bed: vec4<f32>,
-    slope: vec2<f32>, body: u32, has_bed: u32,
+    slope: vec2<f32>, body: u32, flags: u32,
     gains: vec4<f32>,
     dent: vec4<f32>,
     surf_stage: vec4<f32>,
@@ -51,7 +51,7 @@ const QUERY_WIDTH = 64u;
 
 fn query_gains(point: QueryPoint) -> vec4<f32> {
     let row = point.level_current_bed;
-    let depth = select(1e30, row.x - row.w, point.has_bed != 0u);
+    let depth = select(1e30, row.x - row.w, (point.flags & 1u) != 0u);
     return limit_gains(point.gains, depth, settings.heights, settings.swash_margin.x, settings.swash_margin.y);
 }
 
@@ -63,7 +63,7 @@ fn plain_query(point: QueryPoint, gain: f32) -> QueryWave {
 fn write_answer(index: u32, point: QueryPoint, gains: vec4<f32>, result: QueryWave) {
     let row = point.level_current_bed;
     var out: Answer;
-    out.body_flags = vec4(point.body, 0u, point.has_bed, 0u);
+    out.body_flags = vec4(point.body, 0u, point.flags & 1u, 0u);
     out.current_bed = vec4(row.yzw, 0.0);
     // A stage change can make a dry or sheltered point gain wave support
     // before its use tick. Keep the actual frame samples for that case.
@@ -81,7 +81,7 @@ fn write_answer(index: u32, point: QueryPoint, gains: vec4<f32>, result: QueryWa
         }
     }
     if point.body != 0xffffffffu {
-        let depth = select(1e30, row.x - row.w, point.has_bed != 0u);
+        let depth = select(1e30, row.x - row.w, (point.flags & 1u) != 0u);
         let long = result.wave;
         out.cut_fine_nodes = result.cut_fine_nodes;
         out.cut_coarse_nodes = result.cut_coarse_nodes;
@@ -111,7 +111,7 @@ fn write_answer(index: u32, point: QueryPoint, gains: vec4<f32>, result: QueryWa
         velocity.y += out.wake.w;
         out.height_slope_rate = vec4(height, slope, rate);
         out.velocity_depth = vec4(velocity, depth);
-        out.body_flags.y = u32(point.has_bed == 0u || height > row.w);
+        out.body_flags.y = u32((point.flags & 1u) == 0u || height > row.w);
         for (var layer = 0u; layer < 4u; layer++) {
             if gains[layer] * settings.heights[layer] > 0.0 { out.body_flags.w |= 1u << layer; }
         }

@@ -16,7 +16,7 @@ fn cut_node(query: QueryPoint, rest: vec2<f32>, dt: f32) -> SurfPoint {
     var body = query.body;
     var row = MapRow(query.level_current_bed.xyz, query.gains);
     var stage = query.surf_stage.x;
-    if map.size_count_sea.z > 1u {
+    if (query.flags & ONE_SHEET) == 0u && map.size_count_sea.z > 1u {
         let owner = map_sample(rest);
         if owner.body != NO_BODY && owner.body != body {
             body = owner.body;
@@ -378,7 +378,7 @@ fn sample_query(@builtin(workgroup_id) group: vec3<u32>, @builtin(local_invocati
     var gains = query_gains(point);
     var result: QueryWave;
     if point.body != 0xffffffffu {
-        if point.has_bed == 0u {
+        if (point.flags & 1u) == 0u {
             result = plain_query(point, gains.x);
         } else {
             var cut: CutResult;

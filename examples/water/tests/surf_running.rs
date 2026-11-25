@@ -191,6 +191,7 @@ fn arm(gpu: &thrum_test_support::Gpu, extent: [u32; 2], fleet: Vec<Body>) -> Gam
             "fallback":stats.fallback, "unavailable":mailbox.unavailable,
             "blocking_reads":mailbox.blocking_reads, "busy":mailbox.busy,
             "dispatches":mailbox.dispatches, "refused":mailbox.refused,
+            "completed_cut_nodes":[mailbox.cut_coarse_nodes, mailbox.cut_fine_nodes],
         }),
         witness: stats.witness,
     }

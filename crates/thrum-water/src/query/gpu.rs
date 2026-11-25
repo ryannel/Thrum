@@ -32,6 +32,7 @@ const SURF_GROUP: u32 = 1;
 const SURF_BINDING: u32 = 7;
 const COARSE_GROUP: u32 = 2;
 const COARSE_RECORD_BYTES: u64 = 16;
+const ONE_SHEET: u32 = 2;
 const PLAIN_QUERY: &str = "
 @compute @workgroup_size(QUERY_WIDTH)
 fn sample_query(@builtin(global_invocation_id) invocation: vec3<u32>) {
@@ -53,7 +54,7 @@ struct Point {
     level_current_bed: [f32; 4],
     slope: [f32; 2],
     body: u32,
-    has_bed: u32,
+    flags: u32,
     gains: [f32; 4],
     dent: [f32; 4],
     surf_stage: [f32; 4],
@@ -186,6 +187,10 @@ fn buffer(
     })
 }
 
+pub(crate) fn cut_source() -> String {
+    format!("const ONE_SHEET = {ONE_SHEET}u;\n") + include_str!("../surf/cut.wgsl")
+}
+
 impl Readback {
     pub(crate) fn new(
         device: &thrum_render::runtime::DeviceSite,
@@ -199,7 +204,7 @@ impl Readback {
         let surf_source = if surf.is_some() {
             map_gpu::declarations_at(SURF_GROUP)
                 + &SurfGpu::source(SURF_GROUP, SURF_BINDING)
-                + include_str!("../surf/cut.wgsl")
+                + &cut_source()
         } else {
             PLAIN_QUERY.to_owned()
         };
@@ -512,6 +517,7 @@ impl Readback {
                     .min(limits.max_buffer_size);
                 let plan = CoarsePlan::new(
                     &mut points,
+                    map,
                     reach,
                     profile.cut,
                     max_bytes / COARSE_RECORD_BYTES,
@@ -625,7 +631,12 @@ impl Readback {
                     pass.set_pipeline(&cut.select);
                     pass.dispatch_workgroups(batch.fine_groups, 1, 1);
                     pass.set_pipeline(&cut.fine);
-                    pass.dispatch_workgroups(256, 1, 1);
+                    let groups = cut
+                        .device
+                        .limits()
+                        .max_compute_workgroups_per_dimension
+                        .min(256);
+                    pass.dispatch_workgroups(groups, 1, 1);
                 }
             }
             pass.set_pipeline(&self.pipeline);
@@ -706,7 +717,7 @@ impl Point {
         };
         let sample = map.sample(world);
         if let Some(bed) = sample.map_or_else(|| map.bed().height(world), |row| row.bed) {
-            input.has_bed = 1;
+            input.flags = 1;
             input.level_current_bed[3] = bed as f32;
         }
         if let Some(sample) = sample {
@@ -841,6 +852,7 @@ pub(crate) fn validate(
     limits: QueryLimits,
     device: &wgpu::Limits,
     surf: bool,
+    wake: bool,
 ) -> Result<(), String> {
     let groups = if surf {
         limits.points
@@ -850,6 +862,7 @@ pub(crate) fn validate(
     if u64::from(limits.points) * size_of::<Answer>() as u64
         > device.max_storage_buffer_binding_size
         || groups > device.max_compute_workgroups_per_dimension
+        || 3 + 2 * u32::from(surf) + u32::from(wake) > device.max_storage_buffers_per_shader_stage
     {
         return Err("water query exceeds the device buffer or dispatch limit".into());
     }
