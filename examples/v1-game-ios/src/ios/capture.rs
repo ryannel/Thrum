@@ -180,6 +180,7 @@ impl Recorder {
                 "surface_extent":request.extent,"surface_epoch":request.surface_generation,"device_generation":generation,
                 "mode":"realtime-windowed-tap","clock":"Instant monotonic elapsed / ordinary world lane / UIKit CADisplayLink",
                 "scope":"simulator function only; final SDR engine output before surface presentation; UIKit and native UI excluded",
+                "passes":host.scene_graph().map_err(|e| e.to_string())?.pass_names().collect::<Vec<_>>(),
                 "limits":{"gpu_slots":LIMITS.staging_slots,"cpu_buffers":LIMITS.cpu_buffers,"pixel_byte_allowance":LIMITS.byte_allowance,
                     "writer_queue":LIMITS.cpu_buffers,"encoded_reserve_bytes":268_435_456,"output_allowance":8_589_934_592_u64,
                     "max_records":MAX_IMAGES,"max_seconds":16},"control":command,"encoding":format!("{encoding:?}")}).to_string()).map_err(|e| e.to_string())?;
@@ -253,6 +254,9 @@ impl Recorder {
                     "previous_endpoint_tick":image.source.tick.checked_sub(1),"alpha":image.sample.presentation_alpha,"history_epoch":image.history_epoch,
                     "device_generation":image.device_generation,"presenter_generation":image.presenter_generation,
                     "surface_epoch":s.epoch,"surface_presented":image.sample.surface_presented,"extent":image.extent,"row_stride":image.extent[0]*4,
+                    "sprite_world_rows":image.sample.sprites.map(|s| s.world_rows),
+                    "sprite_frame_rows":image.sample.sprites.map(|s| s.frame_rows),
+                    "sprite_draws":image.sample.sprites.map(|s| s.draws),
                     "visual_revision":image.sample.visual_revision,"presentation_lead_ns":image.presentation_lead.as_nanos(),
                     "observation_ns":image.sample.observation.as_nanos(),"display_phase":image.sample.display_phase,
                     "clock_interpolating":image.sample.clock_interpolating,

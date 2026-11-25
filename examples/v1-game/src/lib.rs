@@ -32,6 +32,14 @@ mod showcase;
 pub mod simulation;
 #[cfg(feature = "proving")]
 mod sprite_card;
+
+/// Authored RGBA8 bytes of the 256 by 128 sprite registration card.
+#[cfg(feature = "proving")]
+#[must_use]
+pub fn sprite_card_texels() -> Vec<u8> {
+    sprite_card::texels()
+}
+
 #[cfg(feature = "proving")]
 mod sprite_probe;
 #[cfg(feature = "proving")]

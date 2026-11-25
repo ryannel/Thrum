@@ -87,6 +87,8 @@ enum Command {
     CaptureMove,
     CaptureRest,
     ForceHeadroom,
+    HoldWorld,
+    RunWorld,
 }
 
 #[expect(
@@ -133,6 +135,8 @@ extern "C" fn thrum_v1_shell_command(code: i32) {
         16 => Command::CaptureMove,
         17 => Command::CaptureRest,
         18 => Command::ForceHeadroom,
+        19 => Command::HoldWorld,
+        20 => Command::RunWorld,
         _ => return,
     };
     if let Some(shell) = SHELL.get() {
@@ -622,6 +626,12 @@ impl Shell {
             Command::CaptureMove => self.send_axes([1.0, 0.0, 0.0])?,
             Command::CaptureRest => self.send_axes([0.0; 3])?,
             Command::ForceHeadroom => self.force_headroom = true,
+            Command::HoldWorld | Command::RunWorld => {
+                if self.state == State::Active {
+                    self.policy.request(command == Command::HoldWorld);
+                    self.reconcile_world()?;
+                }
+            }
         }
         self.witness.last_command = format!("{command:?}");
         self.write();

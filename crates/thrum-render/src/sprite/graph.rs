@@ -139,6 +139,10 @@ impl PreparedSprites {
         })
     }
 
+    pub(crate) fn world_order(&self) -> &[u32] {
+        &self.world.order
+    }
+
     pub(crate) fn clear_world_history(&mut self) {
         self.world.clear_history();
         self.sprites.forget_world_source();
@@ -804,3 +808,6 @@ fn record_effect(
     }
     Ok(())
 }
+
+#[cfg(test)]
+mod tests;

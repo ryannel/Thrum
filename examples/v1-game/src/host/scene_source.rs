@@ -732,7 +732,14 @@ impl SceneSource<PublishedPage> for GameScene {
         Ok(if let Some(probe) = &self.sprite_probe {
             probe.frame(source, alpha)
         } else if self.sprite_rows.is_some() {
-            crate::sprite_field::frame(extent, self.field_sheets.map(|_| (source.tick, alpha)))
+            #[cfg(target_os = "ios")]
+            {
+                crate::sprite_card::mobile_field(extent)
+            }
+            #[cfg(not(target_os = "ios"))]
+            {
+                crate::sprite_field::frame(extent, self.field_sheets.map(|_| (source.tick, alpha)))
+            }
         } else {
             crate::sprite_card::frame(scale, extent)
         })

@@ -38,6 +38,11 @@ name = "platform-sine"
 bodies = 2000
 ticks = 240
 
+[packages.crowd-2d-view]
+manifest = "examples/crowd-2d-view/Cargo.toml"
+allowed_workspace_dependencies = ["crowd-2d", "thrum-app", "thrum-controls", "thrum-core", "thrum-render"]
+implicit_dependencies = { wasm-bindgen-futures = "async wasm_bindgen exports use wasm_bindgen_futures" }
+
 [packages.crowd-2d-run]
 manifest = "examples/crowd-2d-run/Cargo.toml"
 allowed_workspace_dependencies = ["crowd-2d", "thrum-core", "thrum-network"]

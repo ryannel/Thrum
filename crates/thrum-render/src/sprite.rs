@@ -249,6 +249,15 @@ impl SpriteRow {
 pub struct SpriteFrame<'a> {
     /// Unjittered view used by every row.
     pub view: SpriteView,
-    /// Frame rows borrowed during host preparation, with list position breaking ties.
+    /// Frame rows borrowed during host preparation. They sort by value on each
+    /// layer, with input list position breaking ties. Each row draws before the
+    /// first world row on its layer with a strictly greater sort value, or last
+    /// on the layer when there is no such row.
+    ///
+    /// With zero band, equal-valued world rows draw before the frame rows.
+    /// With band 1, overlapping world rows A and B can retain order A, B as
+    /// their values move from 0 and 1 to 0.75 and 0.25. A frame row F at 0.25
+    /// then draws in order F, A, B. Put a mark that must cover a body on a
+    /// higher layer.
     pub rows: &'a [SpriteRow],
 }

@@ -4,6 +4,26 @@
   "as_of": "2026-11-06",
   "contract_revision": "C4",
   "scope_note": "6 Nov 11:15 owner policy: foundation by best practice, regression/visible tripwires, later performance tuning. Numeric targets are retired; correctness, lifecycle, oracle tolerance and visuals remain. Historical device facts are unchanged.",
+  "render_2d": {
+    "scope": "RENDER-2D sprite scenes and the retained Crowd replay",
+    "implementation": "2D hosts prepare the sprite and display-output graph on the drawable pixel grid. Embedded and cooked sheets feed one ordered draw. World rows use adjacent immutable tick endpoints. Frame rows use the first strict sort crossing on their layer.",
+    "functional_validation": "Metal readbacks exercise aligned texels, interpolation and slot reuse, exact and retained order, mixed world and frame rows, and sheet lease transitions. Chrome exercises portable WebGPU submission and cooked-sheet changes. The V1 sprite scene on the iPhone 18 Pro simulator presents 10,000 world rows and an exact registration card through rotation, background and foreground.",
+    "experienced_quality": "Submitted SDR engine captures cover the reference Crowd at 10,000 bodies and the V1 sprite registration card. Simulator UI inspection uses held portrait and landscape frames.",
+    "platform_cost_baselines": {
+      "mac-metal": "Packed Crowd release takes at 1920\u00d71080 and 3456\u00d72234 are measured under shared load.",
+      "chrome-webgpu": "Packed Crowd release takes at 1920\u00d71080 are measured under shared load.",
+      "ios-sim": "Function only on the iPhone 18 Pro simulator."
+    },
+    "not_run": [
+      "Motion measured on the built-in Mac panel itself",
+      "Appearance of values above white on a physical EDR display",
+      "Physical iPhone",
+      "Mac window on a display of density 1",
+      "Android",
+      "Browsers other than Chrome"
+    ],
+    "evidence": ".orchestrate/evidence/RENDER-2D/WP5/README.md"
+  },
   "showcase_m9": {
     "scope": "The authored lookout rim and sunrise stop",
     "implementation": "The terrain resolves the lookout top and face on separate normals. The sunrise preset holds 6.32 h. The regenerated exit layout and the seven route pins follow the new terrain.",
@@ -3224,7 +3244,7 @@
         "scope": "WATERS WP13 draws the forward surf sheet with contour-driven bounded swash, cuts its highest surface for gameplay, and redistributes depth-limited shore birth in the existing whitewater stocks.",
         "correctness": "Metal verified the folded float column, submitted depth and motion, and the birth budget across breaking, subcritical, calm, omitted-wave and dry cases. Hardware Chrome verified 17,420 cache nodes at 1.983 s with 0.446 mm maximum displacement error and zero faults. The CPU plane beach retained the regular-wave extrema with short geometry present.",
         "visuals": "Metal and Chrome submit curved crests, a spreading bore and a distant surf line. The extended shelf gives two model crests room to shoal. On Metal, three independent looks could not follow a pair through both the turn and the narrowing. Pitch and swash retreat remain unclear.",
-        "device": "Apple M3 Max Metal and Chrome hardware WebGPU. The capture-off native 2560 × 1440 gale arm evaluated 47.43 million nodes for 48 stations and took 20.71 s in the query pass under shared load. The query exceeds the real-time budget at that load.",
+        "device": "Apple M3 Max Metal and Chrome hardware WebGPU. The capture-off native 2560 \u00d7 1440 gale arm evaluated 47.43 million nodes for 48 stations and took 20.71 s in the query pass under shared load. The query exceeds the real-time budget at that load.",
         "evidence": "../../.orchestrate/evidence/WATERS/WP13-handoff.md"
       },
       "waters_whitewater": {
@@ -4913,7 +4933,7 @@
       "CONSTRUCTION-PACKAGES.md": "76881c954b2c929849f52a27eb999faa0c2aa9638df1ab7c0ef28f133c8fc59d",
       "CONTRACTS.md": "f5cbc245b2529e1486a968ac886d82d3397529c6f24ec895fe86be77b28935fa",
       "DESIGN-PROGRAMME.md": "6394461315309427c702aa26a13d8caa9367e7886e8cb283180e899e9918d5ba",
-      "ENGINE-EXPERIENCE.md": "060831492c4fa86cac1e99acffce8f2203fc8a5458bdc95d03750186af3439d2",
+      "ENGINE-EXPERIENCE.md": "b8486b29481b81f3570b896d7b118ec1f5f8ca03364052b7bf19a46c6af20fc1",
       "ENGINE-STRUCTURE-RESEARCH.md": "aa05d06102a9dc9bd53505538188c728fa13ab58f72d33597c6d945e2ddc9a28",
       "FIRST-USE-WALKTHROUGHS.md": "29aecdada136f1b3d99da34bf4a8f8482b63f3813bcffe5b3113e2c26c8585ff",
       "FOUNDATION-SPEC.md": "9293b1eb3beb690d96f88d5fcb8260fc42a1d21c2688fbe515a05e8f3027c1e0",

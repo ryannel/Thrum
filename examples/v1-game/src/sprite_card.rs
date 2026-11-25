@@ -44,6 +44,41 @@ pub(crate) fn frame(scale: u16, extent: [u32; 2]) -> SpriteFrame<'static> {
     }
 }
 
+#[cfg(target_os = "ios")]
+const MOBILE_DENSITY: f32 = 128.0;
+#[cfg(target_os = "ios")]
+const MOBILE_SCALE: f32 = 2.0;
+
+#[cfg(target_os = "ios")]
+pub(crate) fn add_to_mobile_field(field: &mut SpriteScene) -> Result<(), FrameError> {
+    let mut card = scene(2)?.sheets.remove(0);
+    card.name = "registration card".into();
+    card.sheet.texels_per_unit = MOBILE_DENSITY;
+    field.sheets.push(card);
+    Ok(())
+}
+
+#[cfg(target_os = "ios")]
+pub(crate) fn mobile_field(extent: [u32; 2]) -> SpriteFrame<'static> {
+    const ROWS: [SpriteRow; 1] = [SpriteRow {
+        sheet: 1,
+        layer: 2,
+        ..SpriteRow::new(0, [-1.0, 0.5])
+    }];
+    let pixels_per_unit = MOBILE_SCALE * MOBILE_DENSITY;
+    let [odd_x, odd_y] = extent.map(|side| f64::from(side % 2));
+    SpriteFrame {
+        view: SpriteView {
+            centre: [
+                odd_x / (2.0 * f64::from(pixels_per_unit)),
+                -odd_y / (2.0 * f64::from(pixels_per_unit)),
+            ],
+            pixels_per_unit,
+        },
+        rows: &ROWS,
+    }
+}
+
 pub(crate) fn texels() -> Vec<u8> {
     const BORDER: [u8; 3] = [78, 107, 118];
     const PAPER: [u8; 3] = [21, 31, 43];

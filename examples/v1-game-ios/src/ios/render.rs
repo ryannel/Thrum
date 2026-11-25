@@ -407,6 +407,14 @@ impl Owner {
         if self.diagnostics && std::env::var("THRUM_CULLING_ORACLE").as_deref() == Ok("1") {
             super::culling::record(&mut host, &device, &queue, &capabilities, config, setup)?;
         }
+        #[cfg(feature = "proving")]
+        if self.diagnostics && setup.sprite_scale.is_some() && setup.sprite_rows.is_some() {
+            std::fs::write(
+                std::env::temp_dir().join("thrum-sprite-card.rgba"),
+                v1_game::sprite_card_texels(),
+            )
+            .map_err(|error| error.to_string())?;
+        }
         let cooked = v1_game::attach_cooked_scene(&mut host)?;
         let cooked_view = super::cooked_view::View::prepare(&mut host)?;
         let (host, controls) = host.into_threaded(self.origin, world_advanced)?;

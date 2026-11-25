@@ -591,6 +591,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "crowd-2d-view"
+version = "0.1.0"
+dependencies = [
+ "crowd-2d",
+ "pollster",
+ "serde_json",
+ "thrum-app",
+ "thrum-controls",
+ "thrum-core",
+ "thrum-render",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+ "web-time",
+ "wgpu",
+]
+
+[[package]]
 name = "crunchy"
 version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"

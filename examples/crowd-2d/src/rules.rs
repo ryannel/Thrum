@@ -584,7 +584,7 @@ impl Simulation {
     /// # Panics
     /// If count is outside the reference workload's supported 4..=10,000 bodies.
     pub fn new(count: u32, epoch: u128) -> Self {
-        Self::with_trace(count, epoch, false)
+        Self::with_trace(count, epoch, false, false)
     }
 
     /// Construct the Mixed trace: oversize enemies and swept fast projectiles.
@@ -592,11 +592,20 @@ impl Simulation {
     /// # Panics
     /// If the reference workload is outside 4..=10,000 bodies.
     pub fn mixed(count: u32, epoch: u128) -> Self {
-        Self::with_trace(count, epoch, true)
+        Self::with_trace(count, epoch, true, false)
     }
 
-    fn with_trace(count: u32, epoch: u128, mixed: bool) -> Self {
-        let (mut runtime, mut game, mut candidate) = Self::image_parts(count, epoch, mixed);
+    /// Construct the Crowd trace with current and previous body components in each tick page.
+    ///
+    /// # Panics
+    /// If count is outside the reference workload's supported 4..=10,000 bodies.
+    pub fn for_presentation(count: u32, epoch: u128) -> Self {
+        Self::with_trace(count, epoch, false, true)
+    }
+
+    fn with_trace(count: u32, epoch: u128, mixed: bool, publish_bodies: bool) -> Self {
+        let (mut runtime, mut game, mut candidate) =
+            Self::runtime_parts(count, epoch, mixed, publish_bodies);
         Self::seed(&mut runtime, count, mixed);
         runtime.publish_initial(&mut game, &mut candidate);
         let history = RuntimeHistory::new(&runtime, &game, NonZeroUsize::new(8).expect("window"));
@@ -617,12 +626,26 @@ impl Simulation {
         epoch: u128,
         mixed: bool,
     ) -> (GameRuntime<Crowd>, Crowd, Candidate) {
+        Self::runtime_parts(count, epoch, mixed, false)
+    }
+
+    fn runtime_parts(
+        count: u32,
+        epoch: u128,
+        mixed: bool,
+        publish_bodies: bool,
+    ) -> (GameRuntime<Crowd>, Crowd, Candidate) {
         assert!((4..=10_000).contains(&count), "reference crowd count");
         let capacity = count as usize + 128;
         let mut registry = ComponentRegistry::default();
         let body = registry
             .register_profile::<Body>(ComponentSchemaId(1))
             .expect("body schema");
+        if publish_bodies {
+            registry
+                .select_publication::<Body>(true)
+                .expect("registered body");
+        }
         let system = SystemId(1);
         let runtime = GameRuntime::new_published(
             WorldEpoch(epoch),

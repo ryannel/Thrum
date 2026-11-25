@@ -9,9 +9,11 @@ use crate::{
 };
 use thrum_core::{StableId, WorldEpoch};
 use thrum_render::sprite::{
-    EmbeddedSheet, SpriteFrame, SpritePose, SpriteRect, SpriteRow, SpriteScene, SpriteSink,
-    SpriteView,
+    EmbeddedSheet, SpritePose, SpriteRect, SpriteRow, SpriteScene, SpriteSink,
 };
+
+#[cfg(not(target_os = "ios"))]
+use thrum_render::sprite::{SpriteFrame, SpriteView};
 
 const SIDE: u32 = 20;
 const FRAME_COUNT: u32 = 4;
@@ -144,6 +146,7 @@ pub(crate) fn cooked_sheets(
     ))
 }
 
+#[cfg(not(target_os = "ios"))]
 pub(crate) fn frame(extent: [u32; 2], moving: Option<(u64, f32)>) -> SpriteFrame<'static> {
     let centre = moving.map_or([0.0; 2], |(tick, alpha)| {
         let phase = (f64::from(u32::try_from(tick % 360).expect("bounded phase"))

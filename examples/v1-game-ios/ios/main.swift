@@ -67,6 +67,8 @@ private let shellCommands: [String: Int32] = [
     "capture-move": 16,
     "capture-rest": 17,
     "force-headroom": 18,
+    "hold-world": 19,
+    "run-world": 20,
 ]
 
 // Route commands also arrive as files dropped into the app's temporary

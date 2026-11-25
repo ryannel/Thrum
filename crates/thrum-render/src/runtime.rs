@@ -1605,6 +1605,16 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     pub fn scene_shader_source(&self) -> Option<&str> {
         Some(self.prepared.three_d()?.scene_shader_source())
     }
+    /// Slots in the latest extracted 2D world's retained back-to-front order.
+    /// Frame rows are excluded. A 3D scene has no sprite order.
+    #[must_use]
+    pub fn sprite_world_order(&self) -> Option<&[u32]> {
+        match &self.prepared {
+            PreparedRenderer::TwoD(scene) => Some(scene.world_order()),
+            PreparedRenderer::ThreeD(_) => None,
+        }
+    }
+
     /// Inspect the prepared slot's graph without encoding or allocating GPU work.
     /// # Errors
     /// Refuses a stale target during an incomplete scene transition.

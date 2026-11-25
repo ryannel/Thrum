@@ -94,3 +94,76 @@ fn explicit_keys_hold_in_readback_while_other_rows_upload_and_slots_change_owner
         }
     }
 }
+
+#[test]
+fn frame_rows_use_the_first_world_crossing_and_keep_input_ties() {
+    let Some(thrum_test_support::Opened {
+        device,
+        queue,
+        capabilities: caps,
+        ..
+    }) = fixture::open("mixed sprite order", "portable")
+    else {
+        return;
+    };
+    let frames = [0, 1, 2, 3].map(|x| SpriteRect {
+        origin: [x, 0],
+        size: [1; 2],
+    });
+    // Translucent quads make the pixel sensitive to all four positions in
+    // the draw order, even though the quads fully overlap.
+    let pixels = COLORS.map(|[r, g, b, _]| [r, g, b, 128]).concat();
+    let mut config = SpriteScene::new(fixture::sheet([4, 1], &pixels, &frames), 4);
+    config.world_capacity = 2;
+    let pixel = |image: &thrum_render::runtime::SubmittedImage| {
+        let address = (7 * 48 + 25) * 4;
+        <[u8; 4]>::try_from(&image.rgba[address..address + 4]).unwrap()
+    };
+    let cases = [
+        (1.0, 0, [2, 3, 0, 1]), // F, G, A, B
+        (0.0, 0, [1, 2, 3, 0]), // B, F, G, A
+        (1.0, 1, [0, 1, 2, 3]), // A, B, F, G
+    ];
+    let mut witnesses = Vec::new();
+    for (band, layer, order) in cases {
+        config.order_band = band;
+        let mut scene =
+            fixture::Scene::new(vec![row(2, 0.0, layer, 0.25), row(3, 0.0, layer, 0.25)], 1);
+        scene.world_rows = vec![
+            (0, 1, 1, row(0, 0.0, 0, 0.0)),
+            (1, 1, 2, row(1, 0.0, 0, 1.0)),
+        ];
+        let mut host = fixture::configured_host(&caps, &queue, EXTENT, scene, config.clone());
+        fixture::capture(&mut host, &device, EXTENT, CaptureSource::Sdr);
+        let rows = &mut host.continuous_source_mut().world_rows;
+        rows[0].3.sort = Some(0.75);
+        rows[1].3.sort = Some(0.25);
+        let actual = fixture::capture(&mut host, &device, EXTENT, CaptureSource::Sdr);
+
+        // An independent ordering control uses four distinct layers.
+        let reference = fixture::Scene::new(
+            order
+                .into_iter()
+                .zip(0..)
+                .map(|(frame, layer)| row(frame, 0.0, layer, 0.0))
+                .collect(),
+            1,
+        );
+        let mut reference =
+            fixture::configured_host(&caps, &queue, EXTENT, reference, config.clone());
+        let expected = fixture::capture(&mut reference, &device, EXTENT, CaptureSource::Sdr);
+        assert_eq!(
+            pixel(&actual),
+            pixel(&expected),
+            "band {band}, frame layer {layer}"
+        );
+        witnesses.push(pixel(&expected));
+    }
+    witnesses.sort_unstable();
+    witnesses.dedup();
+    assert_eq!(
+        witnesses.len(),
+        cases.len(),
+        "each ordering has a distinct overlap pixel"
+    );
+}

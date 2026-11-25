@@ -465,6 +465,10 @@ impl GameSetup {
             (None, Some(count)) => crate::sprite_field::scene(count),
             (None, None) => crate::sprite_card::scene(scale)?,
         };
+        #[cfg(target_os = "ios")]
+        if setup.sprite_rows.is_some() && setup.sprite_probe.is_none() {
+            crate::sprite_card::add_to_mobile_field(&mut scene)?;
+        }
         let assets = if let Some(source) = sheet_source {
             if setup.sprite_rows.is_none() {
                 return Err(FrameError::InvalidState(
