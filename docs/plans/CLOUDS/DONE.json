@@ -1004,8 +1004,8 @@
           "statement": "In Chrome the four presets at noon pass WP7.1's list, and a 60x sequence passes WP7.5's.",
           "inspect": "Capture the noon `fixed` stills and one `realtime` 60x sequence in Chrome. Judge them by those lists.",
           "target": "chrome-webgpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP7/fix/WP7.7-chrome.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/CLOUDS/WP7-review.md"
         },
