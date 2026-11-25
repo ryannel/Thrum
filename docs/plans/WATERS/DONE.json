@@ -1177,7 +1177,7 @@
         {
           "id": "WP13.5",
           "statement": "A crest steepens and pitches forward, and the break travels along it. From 1 km offshore, in a trade wind and in a gale, successive fronts start to break at different distances from the beach and run in as surf. The broken front lowers and spreads into a connected advancing swash, which retreats to expose the sand again. In the regular-wave case the sheet keeps the existing run-up and draw-back.",
-          "inspect": "Use `realtime` sequences in a trade wind and a gale with swell, from 2 m on the sand looking along the break and out to sea, from 40 m above and from 1 km offshore. 1. At 2 m and 40 m a crest pitches forward and the break progresses along its length. It holds together through the pitch, with no tears, fins or stair steps. 2. At 2 m and 40 m follow the broken front into the shallows. Its face lowers into a thin advancing sheet, with no wall or exposed strip between the bore and swash. Sand reappears from the waterline as the sheet drains. 3. At 1 km, in each wind, successive white fronts start at visibly different distances from the beach, and they read as surf running in.",
+          "inspect": "Use `realtime` sequences in a trade wind and a gale with swell, from 2 m on the sand looking along the break and out to sea, from 40 m above and from 1 km offshore. 1. At 2 m and 40 m a crest pitches forward and the break progresses along its length. It holds together through the pitch, with no tears, fins or stair steps. One recorded gap is WP20's and does not decide this point: one or two short gray, straight-sided patches that show for under half a second in the folding face as a crest passes the bend of the exposed beach, seen from 40 m in a trade wind near native x = 2200\u20132260, y = 345\u2013370 at engine time 5.22 s. A row of teeth along the lip, a patch elsewhere on the crest or one that stays longer fails the point. 2. At 2 m and 40 m follow the broken front into the shallows. Its face lowers into a thin advancing sheet, with no wall or exposed strip between the bore and swash. Sand reappears from the waterline as the sheet drains. 3. At 1 km, in each wind, successive white fronts start at visibly different distances from the beach, and they read as surf running in.",
           "ask": "Do the CPU model and GPU paths use the same swell-driven swash in the displaced sheet, with the plane-beach regular-wave extrema preserved and the wet edge used by both drawing and queries? Use the repeated cross-shore cut to locate any break in the sheet that the motion inspection finds.",
           "target": "mac-metal",
           "builder_result": "open",
@@ -1810,6 +1810,38 @@
           "check": "python3 scripts/water_cost.py check --scene under-light",
           "lock": "gpu",
           "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
+    },
+    {
+      "id": "WP20",
+      "name": "A crest pitching at the bend of the exposed beach is drawn whole, with no gray patch flashing in its face, on the Mac and in Chrome",
+      "status": "not_started",
+      "depends_on": [],
+      "quality_bar": "The breakers on the beaches of Horizon Forbidden West, at the turn of a beach: a pitching face that stays one surface as its lip folds over, with no patch, slit or facet flashing in it as the crest passes, and the same pitch, peel and connected bore WP13 passed.",
+      "items": [
+        {
+          "id": "WP20.1",
+          "statement": "A crest pitching at the bend of the exposed beach is drawn whole on Metal. In a trade wind from WP13.5's 40 m camera, at the witness (engine time 5.22 s to 5.32 s, native x = 2200\u20132260, y = 345\u2013370 at 2560\u00d71440) and as three successive crests pass the bend, no gray straight-sided patch and no dark slit shows in the folding face or the lip, and each crest still pitches, peels along its length and lowers into a connected bore. The frame contract of WP13.9 still holds. Record: taken before any change to the sheet, the mesh or the shading, the witness diagnostic: for the patch's pixels in one submitted frame at a fixed engine time, the branch of the folded sheet that is drawn, the submitted depth beside the model's nearest surface, and the face weight and foam cover, with the cause they name.",
+          "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test surf_frame_gpu",
+          "inspect": "Use a `fixed` still at the witness's engine time and `realtime` motion in a trade wind from WP13.5's 40 m camera, long enough for three crests to pass the upper-right bend. 1. In the still, the face and lip across native x = 2200\u20132260, y = 345\u2013370 run on from their neighbours, with no gray straight-sided patch and no dark slit. 2. In motion, no such patch or slit flashes in the folding face at the bend as each of the three crests passes. 3. Each of the three crests still pitches forward, peels along its length and lowers into a connected bore, with no row of teeth along the lip.",
+          "ask": "Where the patch still showed when the work package began, does the witness record give, for the patch's pixels at one engine time, the branch drawn, the submitted depth beside the model's nearest surface, the face weight and the foam cover, and does the fix change the stage that record names as the cause? If the record names a depth or motion that is not the nearest surface's, does `surf_frame_gpu` hold a case that fails without the fix?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP20.2",
+          "statement": "In Chrome the same crest at the bend is drawn whole. With submitted engine time advancing through the capture, the witness and the three crests of WP20.1 show no gray straight-sided patch and no dark slit, matched to portable Metal.",
+          "inspect": "Use a Chrome T2 `fixed` still at the witness's engine time and `realtime` motion at WP20.1's view, matched to portable Metal. 1. The receipt shows advancing submitted engine time throughout the motion capture. 2. Points 1 to 3 of WP20.1 hold in Chrome. Record any visible differences at the matched view.",
+          "target": "chrome-webgpu",
           "builder_result": "open",
           "evidence": "",
           "verdict": "",
