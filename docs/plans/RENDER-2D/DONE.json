@@ -714,7 +714,7 @@
     {
       "id": "WP6",
       "name": "A 2D game's colours above white go brighter than white on an EDR display, and a capture records the frame the display was given",
-      "status": "in_progress",
+      "status": "blocked",
       "depends_on": [
         "APPLE-PRESENTATION:WP6"
       ],
@@ -813,7 +813,17 @@
         }
       ],
       "failed_reviews": 0,
-      "failed_reviews_with_repeat": 0
+      "failed_reviews_with_repeat": 0,
+      "blocked": {
+        "reason": "needs_context",
+        "what": "WP6.5, WP6.7 and WP6.8 can't be met as written while the Mac\u2019s graphical session is locked. Unlock it so the orchestrator can rerun the window checks.",
+        "work": {
+          "commit": "4227a7cd083181e30fa89ec5669851b36dc8cde8",
+          "branch": "build/render-2d",
+          "pushed": true
+        },
+        "handoff": ".orchestrate/evidence/RENDER-2D/WP6-handoff.md"
+      }
     }
   ]
 }
