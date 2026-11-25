@@ -1471,7 +1471,7 @@
         {
           "verdict": "fail",
           "commit": "2055b4960d8f26bea2ef1511900b144cb007a0ce",
-          "review": ".orchestrate/evidence/WATERS/WP13-review.md",
+          "review": ".orchestrate/evidence/WATERS/WP13-review-2.md",
           "items": {
             "WP13.1": "pass",
             "WP13.2": "pass",
@@ -1521,6 +1521,48 @@
             "turns": 1
           },
           "at": "2026-11-25T05:20:02Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "71c44e7a17eda2b1d476f5505f76c966e9ea467e",
+          "review": ".orchestrate/evidence/WATERS/WP13-review.md",
+          "items": {
+            "WP13.1": "pass",
+            "WP13.2": "pass",
+            "WP13.3": "pass",
+            "WP13.4": "pass",
+            "WP13.5": "pass",
+            "WP13.6": "pass",
+            "WP13.7": "pass",
+            "WP13.8": "pass",
+            "WP13.9": "pass",
+            "WP13.10": "pass",
+            "WP13.11": "pass",
+            "WP13.12": "pass",
+            "WP13.14": "pass"
+          },
+          "findings": [
+            {
+              "name": "Gale foam forms a stationary, hard-edged band around the island",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 179647,
+            "cached": 9172224,
+            "output": 20451,
+            "turns": 1
+          },
+          "at": "2026-11-25T07:03:14Z"
         }
       ],
       "authorised": {
