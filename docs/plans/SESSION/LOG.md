@@ -263,3 +263,8 @@
   the 8,192-frame stall. Draining results kept the client Playing through tick 9,500. The CLI ran the
   integer rules over memory and Mac sockets with matching digests, and successfully launched supplied
   Mac, Chrome and simulator reference programs. [Review evidence](../../../.orchestrate/evidence/SESSION/WP6/review-fix/README.md)
+
+- 2026-11-25 The clean socket check recorded a simulator replica going Behind and returning to
+  Playing on the same link, epoch and slot. It reached the closing tick with every digest equal.
+  The seeded-input check now accepts those Playing transitions and verifies their identity before
+  comparing the sampled input. [Closing checks](../../../.orchestrate/evidence/SESSION/WP6/steady-recovery/README.md)

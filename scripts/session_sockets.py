@@ -371,8 +371,14 @@ def seeded_controls(run):
     """Match observed authored values to the host's admitted values by tick and slot."""
     by_slot = {}
     for peer in run.peers:
-        playing, = peer.playing()
-        slot = playing["slot"]
+        transitions = peer.playing()
+        assert transitions, (peer.target, "never entered Playing")
+        first = transitions[0]
+        slot = first["slot"]
+        # Playout can fall behind and return to Playing on the same connection.
+        for row in transitions[1:]:
+            assert (row["slot"], row["epoch"], row["link"]) == (
+                slot, first["epoch"], first["link"]), (peer.target, "Playing identity changed", first, row)
         assert slot not in by_slot
         authored = {}
         for row in peer.log.events("authored_axes"):

@@ -714,7 +714,7 @@
           "statement": "At the closing commit the V1 game, the starter and the creator scenes have neither `thrum-network` nor `thrum-transport` in their dependency closures, and a package that uses the session with the in-memory link has no crate in its closure that `TRANSPORT` added for sockets.",
           "check": "python3 scripts/session_match.py closure",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SESSION/WP6/closure.json",
+          "evidence": ".orchestrate/evidence/SESSION/WP6/steady-recovery/closure.json",
           "verdict": "pass",
           "review": ".orchestrate/evidence/SESSION/WP6-review.md",
           "builder_result": "pass"
@@ -724,7 +724,7 @@
           "statement": "At the closing commit the full match on the in-memory link again holds every client's digest equal to the host's at every digest tick, at A0 and on the harsh profile.",
           "check": "python3 scripts/session_match.py memory steady",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SESSION/WP6/memory-steady.json",
+          "evidence": ".orchestrate/evidence/SESSION/WP6/steady-recovery/memory-steady.json",
           "verdict": "pass",
           "review": ".orchestrate/evidence/SESSION/WP6-review.md",
           "builder_result": "pass"
@@ -734,7 +734,7 @@
           "statement": "At the closing commit a headless host and two Mac clients, a Chrome page and an iPhone-simulator client again share the 10,000-body crowd over sockets through the relay for ten minutes with equal digests.",
           "check": "python3 scripts/session_match.py sockets steady",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SESSION/WP6/sockets/record.json",
+          "evidence": ".orchestrate/evidence/SESSION/WP6/steady-recovery/sockets/record.json",
           "verdict": "pass",
           "review": ".orchestrate/evidence/SESSION/WP6-review.md",
           "builder_result": "pass"
