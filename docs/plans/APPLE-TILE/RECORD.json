@@ -658,7 +658,7 @@
         {
           "verdict": "fail",
           "commit": "79fe815287e5e433545730ffb9c55db13d2ceb0c",
-          "review": ".orchestrate/evidence/APPLE-TILE/WP13-review.md",
+          "review": ".orchestrate/evidence/APPLE-TILE/WP13-review-1.md",
           "items": {
             "D13.1": "fail",
             "D13.2": "pass"
@@ -690,6 +690,37 @@
             "turns": 1
           },
           "at": "2026-11-25T15:03:58Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "5c71e09c278acc525d72da53abd3e2e2bd4c594e",
+          "review": ".orchestrate/evidence/APPLE-TILE/WP13-review.md",
+          "items": {
+            "D13.1": "pass",
+            "D13.2": "pass"
+          },
+          "findings": [
+            {
+              "name": "Over-budget capture requests allocate replacement frame targets before refusal",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 89064,
+            "cached": 1631104,
+            "output": 5872,
+            "turns": 1
+          },
+          "at": "2026-11-25T15:46:17Z"
         }
       ],
       "authorised": {
