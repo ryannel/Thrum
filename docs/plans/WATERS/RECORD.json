@@ -8,7 +8,10 @@
       ".orchestrate/evidence/WATERS/design-review-21.md",
       ".orchestrate/evidence/WATERS/design-review.md"
     ],
-    "at": "2026-11-25T13:03:00Z"
+    "at": "2026-11-25T13:03:00Z",
+    "items_owed": [
+      "WP21"
+    ]
   },
   "work_packages": {
     "WP1": {
@@ -1929,6 +1932,15 @@
         "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 2 Must Fix find",
         "at": "2026-11-25T13:03:00Z"
       }
+    },
+    "WP21": {
+      "definitions": "aebd1d96d939869a4d1d5ebd3554ebde7c112c1b0ab33466751fcc2f56c3ec88",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "WATERS WP19 needs something no plan provides yet. The builder wrote: The tick stage needs a delivery path that meets the",
+        "at": "2026-11-25T16:12:13Z"
+      }
     }
   },
   "tasks": [
@@ -2067,11 +2079,15 @@
     {
       "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 2 Must Fix findings. That makes 2 design reviews in a row that asked for changes, so the script approves the design you leave without another review, and building starts from it.",
       "at": "2026-11-25T13:03:00Z"
+    },
+    {
+      "task": "WATERS WP19 needs something no plan provides yet. The builder wrote: The tick stage needs a delivery path that meets the two-tick requirement while the island's sand view draws. The builder's handoff, .orchestrate/evidence/WATERS/WP19-handoff.md, says what is finished, what was tried and what to do first. Its work is on branch build/waters at ab950b5b9a2c, which isn't merged; read it with `git show`. A plan you keep ends with `KEEP WATERS WP19: builder: <where the plan provides it>`.\n\nFrom the lead: this is WP19's second dependency block, after EFFECT-GRAPH WP6 added the tick stage. Look at the measured cost before planning another delivery path. The handoff records the surf field cache at about 93 ms a frame at 1440p and a median view completion of about 113 ms, against a two-tick window of about 33 ms at 60 Hz. No submission order delivers inside the window while the view itself takes three times longer, and a 93 ms surf pass is far outside what a shipped game spends on water. Decide whether the right fix is making the surf pass cheap enough (WATERS' own work), a delivery path that does not wait on the view, or both, and plan it where it belongs.",
+      "at": "2026-11-25T16:12:13Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-25T13:03:00Z"
+    "at": "2026-11-25T16:12:13Z"
   },
   "design_history": [
     {
