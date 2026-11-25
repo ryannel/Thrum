@@ -107,8 +107,9 @@ fn trace(
             let tolerance = 0.045 + best.distance * 3.0 * max(
                 view_aux.viewport_inv_viewport.z, view_aux.viewport_inv_viewport.w,
             );
-            if along > 0.02 && along <= interval.y + 0.03 && error < tolerance
+            if along > 0.02 && along <= interval.y + 0.03 && error < 2.0 * tolerance
                 && (!registered || in_box(best.point, body)) {
+                best.edge *= 1.0 - smoothstep(0.75 * tolerance, 2.0 * tolerance, error);
                 return best;
             }
         }
@@ -152,15 +153,28 @@ fn water_optical_paths(
         reflected = trace_bodies(world, reflected_ray, reach, mask);
         through = trace_bodies(world, refracted_ray, optics.extinction_sight.w, mask);
     }
+    let depth = max(0.0, world.y - row.bed);
     var reflection_weight = slope_weight;
     var scene_hit = false;
     let rough_limit = optics.downwelling_mirror.w;
     let still = 1.0 - smoothstep(rough_limit * 0.5, rough_limit, sqrt(variance));
     if reflected.distance == 0.0 && optics.reach_slope_scene.z != 0.0
         && still > 0.0 && reflected_ray.y > 0.0 {
-        reflected = trace(world, reflected_ray, vec2(0.06, reach),
-            OpticsBody(vec4(0.0), vec4(0.0)), false);
+        let scenery = OpticsBody(vec4(0.0), vec4(0.0));
+        let segment = vec2(0.06, reach);
+        reflected = trace(world, reflected_ray, segment, scenery, false);
         reflection_weight = still;
+        if reflected.distance == 0.0 && depth < 0.8 {
+            // A subpixel change near the bank can expose the opaque side of
+            // a shared silhouette. A nearby ray gives a low-weight fallback
+            // instead of a bright sky speck between the roots and the bed.
+            let side = vec3(-reflected_ray.z, 0.0, reflected_ray.x);
+            reflected = trace(world, normalize(reflected_ray + 0.003 * side), segment, scenery, false);
+            if reflected.distance == 0.0 {
+                reflected = trace(world, normalize(reflected_ray - 0.003 * side), segment, scenery, false);
+            }
+            reflection_weight *= 0.72 * (1.0 - smoothstep(0.5, 0.8, depth));
+        }
         scene_hit = true;
     }
     var outgoing = sky;
@@ -168,22 +182,28 @@ fn water_optical_paths(
         let t = length(reflected.point - world);
         let uv = optics_uv(reflected.pixel);
         let margin = min(uv, 1.0 - uv);
-        let scene_edge = smoothstep(0.015, 0.13, min(margin.x, margin.y));
+        let scene_edge = min(reflected.edge, smoothstep(0.015, 0.14, min(margin.x, margin.y)));
         let fade = select(reflected.edge, scene_edge, scene_hit) * reflection_weight
             * (1.0 - smoothstep(0.75 * reach, reach, t));
         outgoing = mix(sky, fresnel * hit_light(reflected), fade);
     }
 
-    let depth = max(0.0, world.y - row.bed);
     var edge_depth = depth;
+    let surface_distance = length(world - view.camera_xyz_time.xyz);
+    var straight = empty_hit();
+    if (mask & (GATHER_SHALLOW | GATHER_BODY_MASK)) != 0u {
+        let sample = gather_at(optics_uv(pixel));
+        if sample.distance > surface_distance && sample.point.y <= world.y + 0.005 {
+            straight = sample;
+            edge_depth = min(edge_depth, max(0.0, world.y - sample.point.y));
+        }
+    }
     var thickness = depth / max(0.08, -refracted_ray.y);
     var behind = vec3(0.0);
     var moved = empty_hit();
     if through.distance == 0.0 && (mask & GATHER_SHALLOW) != 0u
         && depth < optics.extinction_sight.w {
-        let straight = gather_at(optics_uv(pixel));
-        if straight.distance > length(world - view.camera_xyz_time.xyz)
-            && straight.point.y <= world.y + 0.005 {
+        if straight.distance > 0.0 {
             through = straight;
             let d = max(0.0, world.y - straight.point.y);
             // Distort the opaque lookup by the resolved slope and optical depth.
@@ -191,7 +211,7 @@ fn water_optical_paths(
             let shift = n.xz * min(d, 4.0) * 0.35;
             let shifted = optics_project(straight.point + vec3(shift.x, 0.0, shift.y));
             let candidate = gather_at(shifted.xy);
-            if candidate.distance > length(world - view.camera_xyz_time.xyz)
+            if candidate.distance > surface_distance
                 && candidate.point.y <= world.y + 0.005 {
                 moved = candidate;
             }
@@ -200,7 +220,7 @@ fn water_optical_paths(
     if through.distance > 0.0 {
         thickness = length(through.point - world);
         let down = max(0.0, world.y - through.point.y);
-        edge_depth = down;
+        edge_depth = min(edge_depth, down);
         behind = hit_light(through) * exp(-optics.downwelling_mirror.xyz * down);
         if moved.distance > 0.0 && any(moved.pixel != through.pixel) {
             let separation = abs(moved.point.y - through.point.y);
