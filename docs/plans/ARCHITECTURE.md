@@ -8,7 +8,7 @@
 | 4 | COOKED-DRAW | Cooked scenes draw on devices that cannot run GPU-driven draws, such as the iPhone simulator | PLATFORM-RUNTIME-IOS WP7 |
 | 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE WP0 and WP1, PLATFORM-RUNTIME-MAC WP1, COOKED-DRAW WP1 |
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE WP3 |
-| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE WP0, WP2, WP3, WP11 and WP12 |
+| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE WP0, WP2, WP3, WP11, WP12 and WP13 |
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | CONTENT-LOOP WP4 for its WP9 to pass the full check; APPLE-PRESENTATION WP3 and SHOWCASE WP9 for its WP6 |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is found on main within about two hours and traced to the commit that made it | |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE WP2, BASELINE-GUARD WP1 |
@@ -110,7 +110,7 @@ is the game and starts when the exit is reached. The exit has no dependency on t
 | `PLATFORM-RUNTIME-MAC` | G3b | Qualification of the Mac surface, present and cadence path | [Design](PLATFORM-RUNTIME-MAC/DESIGN.md) |
 | `T2-CAPTURE` | T2 | Engine capture: the submitted-output tap, its readback and writer, the capture modes and their evidence | [Design](T2-CAPTURE/DESIGN.md) |
 | `COOKED-DRAW` | G5 | The direct cooked draw path and the selection between it and the indirect path | [Design](COOKED-DRAW/DESIGN.md) |
-| `APPLE-TILE` | G3t | Recipe selection from the capability registry, the frame lifecycle and its one split scene/output graph, the pre-tone scene-linear input, the native Metal segment | [Design](APPLE-TILE/DESIGN.md) |
+| `APPLE-TILE` | G3t | Recipe selection from the capability registry, the frame lifecycle and its one split scene/output graph, the pre-tone scene-linear input, the native Metal segment and its provider interface | [Design](APPLE-TILE/DESIGN.md) |
 | `APPLE-PRESENTATION` | G4 | The view record (jitter, matrices), motion and reactive targets, history keys and acceptance, reconstruction, render extent and generation transitions, exposure retention, EDR present, the display record, the quality governor, pipeline preparation | [Design](APPLE-PRESENTATION/DESIGN.md); [planning notes for WP4–WP11](#apple-presentation-wp4wp11-g4) |
 | `ATMOSPHERE` | G3s; track 2 from WP7 | The one sky, Sun, aerial perspective, night and stars; the environment identity; the direct-Sun path to receivers; the air's optics for a haze the weather sets; the view volume, which integrates air, haze and a provider's medium jointly near the camera, with its history | [Design](ATMOSPHERE/DESIGN.md) |
 | `BASELINE-GUARD` | T2 | The exact-baseline registry, the verifier that the main-branch check `exact-images` runs, and the reference guard in `./dev check`. Retained references stay with each baseline's owner | [Design](BASELINE-GUARD/DESIGN.md) |
@@ -142,7 +142,7 @@ above as `PLATFORM-RUNTIME-WEB` when work on it is next planned.
 | Cooked meshes and textures; hot reload | `CONTENT-LOOP` WP3; `CREATOR` |
 | Live camera, lights and cascaded shadows | G3a, closed before the loop; shadow quality on the route in `ATMOSPHERE` WP6; the far ground under the exit scene's balloons in `ATMOSPHERE` WP10 |
 | GPU culling | `CULLING` WP3 |
-| MetalFX, EDR and a quality governor; no pipeline compilation during play | `APPLE-TILE` WP10–WP12; `APPLE-PRESENTATION` WP4–WP12 |
+| MetalFX, EDR and a quality governor; no pipeline compilation during play | `APPLE-TILE` WP10–WP13; `APPLE-PRESENTATION` WP4–WP12 |
 | Display-link interpolation | G3b's function rows, closed before the loop; Mac cadence in `PLATFORM-RUNTIME-MAC` |
 | Profiler and native/browser demo UI | `CREATOR` WP1 and WP2 |
 | 10,000 entities and 1,000–2,000 movers as the representative scene | `SHOWCASE` WP5 and WP6, with `CULLING` and `CONTENT-LOOP` |
@@ -192,7 +192,7 @@ reasoning behind those entries. The project settings allow one Codex builder, so
    (the profiler), which reads pass-name timing and adds the timing-demand switch in `runtime.rs`; it merges one
    after the other with the two beside it.
 6. **After TAAU.** `ATMOSPHERE` WP6, because antialiasing changes every edge and gradient the sky review judges.
-   `APPLE-PRESENTATION` WP4–WP7 (extent, scale, EDR, governor). `APPLE-TILE` WP10–WP11, then `APPLE-PRESENTATION` WP8
+   `APPLE-PRESENTATION` WP4–WP7 (extent, scale, EDR, governor). `APPLE-TILE` WP10–WP11 and WP13, then `APPLE-PRESENTATION` WP8
    (MetalFX), WP9, WP10 and WP12 (prepared paths, cooked shader libraries, the pipeline archive). `CONTENT-LOOP` WP3 and `CREATOR` WP3 close at any point here. `CONTENT-LOOP` WP1
    (leases) starts earlier, after `APPLE-PRESENTATION:WP2`, and its WP2 (cooked mesh rows) after `CULLING:WP3`.
 7. **The exit.** `SHOWCASE` WP5 and WP6 (the populated valley and its culling) start once `CONTENT-LOOP:WP2` is
@@ -258,6 +258,7 @@ interface by itself: a builder writes a proposal in its module's log and a plann
 | **Display phase**: with the tick, the tick duration and the interpolation alpha, each frame gives every effect where its consumed target lies in ticks after the previous committed tick, with no stop at the committed one and at most 50 ms past it. The consumed target is the time the frame's host observed plus its bounded lead toward the platform's target, and is where alpha is taken today. A frame's display time is its tick less one plus the phase. It is a time of the world's, not of the host's clock: the world time of the tick before the frame's, plus the host time from the frame's tick falling due to the consumed target. So it holds none of the time a clock was paused or overloaded, equal intervals between consumed targets are equal steps of it while the clock runs, and an interpolating frame's record carries its tick's due time. An effect is given no host time. Alpha is the phase held to 1 and is the same function as before; sampling never advances authority; the tick a frame shows was due at or before its observation, so a world on its own thread shows a delayed frame an earlier pair; a quantity shown past the committed tick is a presentation-only prediction from committed state, carried a tick at a time by its own step | The world's clock in core and the frame host, built in `EFFECT-GRAPH:WP4` → `CLOUDS` from its WP2; `SEA`, `WATERS`, `RENDER-2D` and games when their owners plan it | C02, [EFFECT-GRAPH](EFFECT-GRAPH/DESIGN.md#the-timing-model), [the ruling below](#seam-ruling-for-effect-graph-m4) |
 | **Entity visibility**: an entity drawn through the instance field is culled per instance and draws a whole mesh row from the scene's mesh selection; a cooked placement is culled per meshlet; nothing is in both. Cooked meshes reach entities as mesh rows, and an edited mesh replaces its row's geometry while the game runs, switching in the frame the content publication names | `CULLING` (the route and its culling), `CONTENT-LOOP:WP2` (cooked meshes as rows, by the ruling below) → `SHOWCASE` | [CULLING](CULLING/DESIGN.md#one-visibility-authority-per-entity), [CONTENT-LOOP](CONTENT-LOOP/DESIGN.md#cooked-mesh-rows-wp2) |
 | Pre-tone scene-linear input with matching exposure, extent and sample identity | `APPLE-TILE:WP3` → `APPLE-PRESENTATION` | [APPLE-TILE](APPLE-TILE/DESIGN.md) |
+| **Native provider**: a feature records raw Metal commands for one frame, and a portable twin, through `NativeProvider`. The native segment keeps the candidate frame, the reset decision, the choice of native or twin, the encoder split inside the one submission, completion, retention and the counters, for every provider alike | `APPLE-TILE:WP13` → `APPLE-PRESENTATION:WP8` (MetalFX) | C06, [APPLE-TILE](APPLE-TILE/DESIGN.md#the-native-segment-and-its-providers-wp13) |
 | **Temporal contribution**: every drawer writes motion from unjittered positions, marks invalid history, writes the reactive target, and honours the frame's reset flag | `APPLE-PRESENTATION` WP1–WP2 → `ATMOSPHERE`, `CONTENT-LOOP`, `CULLING`, `WATERS`, `CLOUDS` | C07, [APPLE-PRESENTATION](APPLE-PRESENTATION/DESIGN.md#seams-for-thrum-core-proposals) seams 1–4 |
 | **Environment identity and products**: source epoch and time, the true Sun (direction, raw illuminance, radius), and read-only sky, transmittance, aerial and reflection products with their WGSL lookups | `ATMOSPHERE:WP5` → forward contributors, `WATERS`, `CLOUDS` | [ATMOSPHERE](ATMOSPHERE/DESIGN.md#environment-identity-and-products), C08 |
 | **Sun-path optical depth**: one provider's `tau` toward the Sun; V3 applies `exp(-tau)` once on each direct-Sun receiver. A provider may add a **ground band** that holds the whole path to the Sun: a receiver inside it reads the band at its own position in place of the field, so land inside fog loses its Sun and an upper cloud is counted once ([ruling 7](#seam-rulings-for-clouds)). The field is CPU bytes or, by [ruling 1](#seam-rulings-for-clouds), a texture the provider writes on the GPU, read along a path direction the provider keeps continuous at every Sun elevation, and fading across a border to a far value for receivers outside its region | `CLOUDS` from its WP2, the ground band from its WP14 (diagnostic stand-ins in `ATMOSPHERE:WP5` and `WP8`) → `ATMOSPHERE` receivers and its view volume, `WATERS` | C08, [ENVIRONMENT](../design/modules/ENVIRONMENT.md), [ATMOSPHERE](ATMOSPHERE/DESIGN.md#environment-identity-and-products), [CLOUDS](CLOUDS/DESIGN.md#the-suns-path-one-optical-depth-product) |
@@ -317,8 +318,13 @@ tests passing.
 - seam 7 (the governor: missed ticks from the frame host, thermal state from the platform, value commits inside
   a profile generation, and the knob registry) is built in WP7. The aerial lookup's cadence knob is built in
   `ATMOSPHERE`'s files by the WP7 builder if that module has not declared one;
-- seam 8 (MetalFX as a provider in `APPLE-TILE`'s native segment) is built in WP8, after `APPLE-TILE:WP11`, under
-  [the boundary decision](../design/decisions/G3T-METAL-BOUNDARY.md);
+- seam 8 (MetalFX as a provider in `APPLE-TILE`'s native segment) is built in WP8, after `APPLE-TILE:WP11` and
+  `APPLE-TILE:WP13`, under [the boundary decision](../design/decisions/G3T-METAL-BOUNDARY.md). `APPLE-TILE` owns the
+  segment and its provider interface and builds them in its WP13
+  ([ruled 25 November 2026](APPLE-TILE/DESIGN.md#the-native-segment-and-its-providers-wp13), when WP8 found the
+  segment built only inside the copy/select witness). The WP8 builder writes the MetalFX provider, and may change
+  the interface in `APPLE-TILE`'s files where MetalFX needs something it lacks, leaving the segment's duties where
+  they are;
 - seam 9 (pipeline preparation: the library cook as a step beside `CONTENT-LOOP`'s cooker, the passthrough
   loader, and a pinned copy of wgpu's Metal backend) is built in WP10 and WP12. The pinned copy arrives in WP10,
   where it carries stage records to shaders compiled ahead of time, and WP12 adds the archive to it. From WP10

@@ -5,7 +5,7 @@ The Apple tile recipe and backend dataflow (gate G3t), governed by
 [Design](DESIGN.md) · [brief](BRIEF.md) · [done-when file](DONE.json), which owns the criteria · [log](LOG.md) ·
 [module list](../ARCHITECTURE.md)
 
-Work packages run in the order WP0, WP1, WP2, WP3, WP10, WP11, WP12; the IDs are kept for consumers, and M4–M9 were removed
+Work packages run in the order WP0, WP1, WP2, WP3, WP10, WP11, WP12, WP13; the IDs are kept for consumers, and M4–M9 were removed
 as deferred work. Read [Sequence and dependencies](DESIGN.md#sequence-and-dependencies) and
 [Proof and builder handoff](DESIGN.md#proof-and-builder-handoff) before starting any work package.
 
@@ -57,6 +57,18 @@ Criteria: D12.1–D12.6 in the done-when file.
 
 - [ ] Rerun retained mechanisms and full workload, actual final Mac window, exact Chrome baseline, and COOKED-DRAW-dependent simulator function; record sustained costs and owed qualifications.
 - [ ] Retain actual target proof and run scoped checks plus `./dev check` before claiming.
+
+## WP13 The native Metal step runs any provider through one interface, and the copy/select witness is the first
+
+[The design](DESIGN.md#the-native-segment-and-its-providers-wp13) says what the segment keeps and what a provider
+supplies. The lifecycle to lift out is in `crates/thrum-render/src/synthetic/native_witness.rs`, the raw recording
+in `crates/thrum-render/src/apple_tile.rs`, and their callers in `runtime.rs` and `synthetic/scene_graph.rs`.
+`APPLE-PRESENTATION` WP8 looks for the interface in `crates/thrum-render/src/apple_tile/`. The frame sample's
+native outcome and the witness's report are read by the governor, submitted capture, `thrum-app`'s qualification,
+the game's capture and the iOS shell: keep each working. `APPLE-PRESENTATION` WP8's unmerged checkpoint
+(`build/apple-presentation` at `2252c56af`) changes `examples/v1-game-ios/src/ios/render.rs` and `witness.rs`, so
+change there only what a rename forces. D13.2's second provider is test data: make it as small as its four cases
+allow, and keep it out of ordinary builds where the code lets you.
 
 Stop rules, for every work package:
 - D2.5, D3.5 and D12.3 need attended setup: an unlocked active Mac session and Screen Recording permission for the

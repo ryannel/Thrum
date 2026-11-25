@@ -96,7 +96,7 @@ this chain. Mac WP3 reruns its complete runtime-motion/capture-OFF panel-cadence
 on the changed build; earlier results qualify only their recorded build. There is no reverse Mac dependency.
 
 G4 receives WP0 proof tools, WP1 eligibility, WP3's replaceable pre-tone colour/exposure seam and WP11 native
-providers. WP11 uses bounded provider extent fixtures and WP12 two fixed extents/current readers; neither waits on G4.
+providers through [WP13's interface](#the-native-segment-and-its-providers-wp13). WP11 uses bounded provider extent fixtures and WP12 two fixed extents/current readers; neither waits on G4.
 G4 later requalifies real reconstruction readers, display math and live scale transitions. G5 owns cooked draws:
 COOKED-DRAW may add downlevel facts to the same capability registry and change `thrum-asset-gpu/src/draw.rs`.
 G3t must extend that registry in place and preserve the selected cooked direct/indirect path. No draw.rs refactor is
@@ -229,6 +229,81 @@ device. A rejected cache rebuilds before readiness. Upstream contribution is lat
 per-post authorization remains required. G3t's creation authority/registry and generation retirement are shared
 inputs; this plan does not pre-approve a dependency patch, public post or library change.
 
+## The native segment and its providers (WP13)
+
+Planned 25 November 2026, when `APPLE-PRESENTATION` WP8 stopped for want of it.
+
+WP10 and WP11 built the native segment's lifecycle and proved it, but only as part of the copy/select witness.
+`apple_tile.rs` records the witness's own blits and kernel. `synthetic/native_witness.rs` holds the candidate,
+the reset decision, the native-or-twin choice, the encoder split, the completion and the counters in the same
+types as the witness's textures and its WGSL twin. The frame host and the scene graph call the witness by name.
+So nothing else can run in the segment without copying that lifecycle, and a copy would be a second authority
+for what C06 gives one. WP13 separates the two, changing no behaviour that D10.1–D11.3 proved.
+
+**The segment** is this module's. It holds, once and for every provider, all that
+[C06](../../design/CONTRACTS.md) and [the boundary decision](../../design/decisions/G3T-METAL-BOUNDARY.md) say
+about a frame that carries native work:
+
+- *The candidate.* A provider has at most one candidate frame at a time. A candidate that is dropped without a
+  successful submission, for any reason, invalidates the provider's history and counts a discard.
+- *The reset decision.* A candidate is a reset when it is the provider's first, on a cut, after a discard, a
+  failed submission, a completion error or a rejection, and on a new generation. The segment decides this and
+  hands it to the provider as one flag. It does not know how a provider resets.
+- *Native or twin.* The twin records when the recipe is portable, when the provider's preparation refused, and
+  after the provider is rejected. The choice is made for a whole candidate before any command is recorded, and
+  a change of side is a reset. Both sides are prepared before the provider is ready, so a rejection during play
+  creates nothing.
+- *The encoder split.* For native work the segment closes the wgpu encoder being recorded, opens a dedicated
+  wgpu-owned encoder, gives the provider that encoder's raw Metal command buffer to record into, and resumes a
+  fresh wgpu encoder. All three go on the coordinator's ordered list for its one submission. A provider is given
+  no queue, no surface and no way to end, commit or submit a command buffer.
+- *Submission and completion.* Only a successful submission advances a provider's history. Completion is
+  delivered to a mailbox that carries the device generation and the submission order. It reads the raw command
+  buffer's status and GPU start and end times after the queue completes. An error there invalidates the
+  provider and takes the platform's loss path. Times are reported under the provider's own pass identity, in
+  Metal's clock, and missing times are reported as missing. None is gathered while the frame host's
+  timing-demand switch is off.
+- *Retention.* The provider and every native handle it recorded with stay alive until that completion is
+  delivered, across a generation replacement.
+- *Counters.* Encoded, submitted, discarded, reset and completed candidates, and the side that ran with the
+  reason for a twin, are counted for each provider in one report shape.
+
+**A provider** is the feature that runs in the segment. It implements `NativeProvider`, which the segment
+defines, and supplies only what is particular to it:
+
+- its pass identity, and the graph resources it reads and writes with their formats, extents and usages;
+- preparation for one generation, run where generations are built, which creates every native object it will
+  use and may refuse, which selects the twin and is not an error;
+- the native commands for one candidate, recorded into the raw command buffer from the frame's bound inputs,
+  the reset flag and the provider's own values for that frame;
+- its twin: portable passes that write the same declared outputs. They may be passes the scene already owns.
+  MetalFX's twin is TAAU. A twin need not match its native side to the byte, and the segment compares nothing:
+  the witness promises exact bytes, and a reconstructor does not.
+
+The copy/select witness becomes the first provider. Its blits, kernel, textures, WGSL twin and omission controls
+stay its own, and its output, history, counters and timing rows are as WP10 and WP11 left them.
+
+**Range.** These are what `APPLE-PRESENTATION` WP8 needs, and the witness alone exercises none of the first
+three:
+
+- inputs and outputs of any number, each with its own format and extent, so an output may be larger than the
+  inputs it is made from;
+- values that change from frame to frame inside one generation, such as the rectangle of an input that holds
+  content;
+- history a provider keeps inside itself, which the graph does not declare and only the reset flag reaches;
+- the native side on Metal under the Apple recipe, and the twin on every backend. The interface and the twin
+  compile on every target the renderer builds for, and only raw recording is Apple-only;
+- one provider in a view at a time: the witness in a diagnostic run, a reconstructor otherwise. Two providers in
+  one view are not required.
+
+A scene with no provider compiles the graph it compiles today and draws the same bytes, under
+[the exact baselines](../ARCHITECTURE.md#exact-baselines).
+
+**Consumer.** `APPLE-PRESENTATION` WP8 writes MetalFX as a provider. Under
+[the ruling for seam 8](../ARCHITECTURE.md#interfaces) its builder may change the interface in this module's
+files where MetalFX needs something this section did not foresee, keeping WP13's tests passing and the
+segment's seven duties above where they are.
+
 ## Worked execution and creator cases
 
 1. Cook the unchanged valley, capture its root and prepare device/recipe/variants. Attach the cooked contribution
@@ -343,7 +418,8 @@ win with preserved quality; inconclusive candidates remain unpromoted with prepa
 
 Moved from the module plan on 11 November 2026, when the plans took the orchestrate 1.7.0 shape.
 
-Retained sequence: **WP0 → WP1 → WP2 → WP3 → WP10 → WP11 → WP12**. IDs are kept for consumers. Removed M4–M9
+Retained sequence: **WP0 → WP1 → WP2 → WP3 → WP10 → WP11 → WP12 → WP13**. IDs are kept for consumers. WP13 was
+added on 25 November 2026 and gives G4's WP8 [the provider interface](#the-native-segment-and-its-providers-wp13). Removed M4–M9
 are deferred work, not completed work packages. One builder integrates sequentially; this task launches no agents.
 WP0 consumes accepted `T2-CAPTURE:WP0`; WP1 consumes accepted `T2-CAPTURE:WP1`. G3t adds scene-linear checkpoints
 through the shared tap. WP2 also names delivered `PLATFORM-RUNTIME-MAC:WP1`. Before WP1 changes rendering, retain
@@ -356,7 +432,7 @@ runtime-motion and capture-OFF built-in-panel cadence protocols plus real-window
 build. G3t never waits back on Mac WP2/WP3; old results qualify only their recorded builds.
 
 G4 receives WP0 proof tools, WP1 eligibility, WP3 pre-tone linear input/exposure binding and WP11 native
-provider lifetime/reset/timing. G4 reconstruction inserts before the retained SDR tone stage; G4 owns the later EDR
+provider lifetime/reset/timing, which WP13 offers to any provider. G4 reconstruction inserts before the retained SDR tone stage; G4 owns the later EDR
 branch and its display semantics. WP11 bounded extent fixtures and WP12 fixed extents/current readers do not wait for
 G4; G4 later reruns actual reconstruction-reader/scale-transition proofs. Full G4 JSON migration remains its own commission.
 

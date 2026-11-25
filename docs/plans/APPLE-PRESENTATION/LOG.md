@@ -490,3 +490,6 @@
 - The separate 16-thread `mesh_stage_gpu` run had five failures with `TimestampQuerySetsExhausted` during
   timing preparation. That binary's main-tier exclusion stays with MESH-SHADING.
   [Mesh-stage diagnostic](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP16/mesh-stage-gpu.log)
+- 2026-11-25 Planner: WP8's block (`NativeProvider` absent) is answered by a new `APPLE-TILE` WP13, which WP8 now
+  depends on. Seam 8's ruling says who builds what. WP8's items did not change, and its note no longer says WP10
+  and WP11 left the interface. [Handoff](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP8-handoff.md)

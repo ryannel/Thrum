@@ -922,7 +922,8 @@
         }
       ],
       "depends_on": [
-        "APPLE-TILE:WP11"
+        "APPLE-TILE:WP11",
+        "APPLE-TILE:WP13"
       ],
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,

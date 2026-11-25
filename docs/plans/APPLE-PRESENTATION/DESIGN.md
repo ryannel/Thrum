@@ -938,7 +938,8 @@ The module list accepted seams 1–4 on 10 November and settled seams 5–9 on 1
    properties on the main thread. Headroom, refresh and backing scale are per surface (platform owner).
 7. **Governor.** Location, inputs (missed ticks from the frame host, thermal state from the platform) and value
    commits inside a profile generation (C04).
-8. **Native provider.** MetalFX through G3t's independently reviewed whole-encoder segment (depends on G3t WP11).
+8. **Native provider.** MetalFX through G3t's independently reviewed whole-encoder segment (depends on G3t WP11,
+   and on G3t WP13 for [the provider interface](../APPLE-TILE/DESIGN.md#the-native-segment-and-its-providers-wp13)).
 9. **Pipeline preparation and archives.** Owned by G4 WP10 and WP12 under the G3t boundary: the measured split; a
    pinned copy of wgpu-hal from WP10, whose first patch carries stage records for offline metallibs through
    passthrough and whose second (WP12) is the Metal `PIPELINE_CACHE`; upstream later. V1's archive item stays as
@@ -1042,14 +1043,14 @@ Moved from the module plan on 11 November 2026, when the plans took the orchestr
 | WP5 dynamic scale | WP4 | WP6 |
 | WP6 EDR on macOS | **G3t WP3**, seam 6 | WP5 |
 | WP7 governor | WP5, seam 7 | WP6 |
-| WP8 MetalFX temporal | **G3t WP11**, seam 8, WP5 | WP9 |
+| WP8 MetalFX temporal | **G3t WP11 and WP13**, seam 8, WP5 | WP9 |
 | WP9 launch-to-ready split, prepared paths | D9.1 after G3t M0; the rest after WP4–WP8 | G3t WP12 |
 | WP10 offline metallibs, pre-warm | D9.1 | WP2–WP9 (own files) |
 | WP12 local archive | WP10 (the pinned backend) | none |
 | WP11 paired proof | WP1–WP10 and WP12, G3t WP12 | none |
 
 The loop runs this module's work packages one at a time in [plan order](PLAN.md). The done-when file records
-the outside waits for WP8 and WP11 on `APPLE-TILE:WP11` and `APPLE-TILE:WP12`, respectively.
+the outside waits: WP8 on `APPLE-TILE:WP11` and `APPLE-TILE:WP13`, and WP11 on `APPLE-TILE:WP12`.
 
 **Handoffs from G3t**, with their contracts in [G3t's plan](../APPLE-TILE/DESIGN.md#sequence-and-dependencies):
 - *G3t M0 → all checks.*
@@ -1058,7 +1059,8 @@ the outside waits for WP8 and WP11 on `APPLE-TILE:WP11` and `APPLE-TILE:WP12`, r
   sample/generation identity. The existing SDR tone-to-Rgba8Unorm-to-present path and nearest mapping remain.
   G4 inserts TAAU/MetalFX there and owns the qualified EDR branch, headroom transform and transition filtering.
   The surface is bound at execute time; no fused-shader feasibility or traffic saving is inherited from G3t.
-- *G3t WP11 → WP8.* The first native handoff, unlocked by G3t D10.1–D11.3.
+- *G3t WP11 and WP13 → WP8.* The first native handoff, unlocked by G3t D10.1–D11.3 and offered to a provider
+  other than the witness by G3t WP13's `NativeProvider`.
 
 G3t WP11 proves replacement with bounded provider fixtures; WP12 records current readers and fixed extents. Neither
 waits for G4. G4's paired proof reruns eligibility with WP2's real reconstruction readers and traffic with WP5's actual

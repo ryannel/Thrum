@@ -86,8 +86,14 @@ already forces the failed build D7.9 needs.
 
 ## WP8 MetalFX reconstructs the valley on Apple tile, with TAAU as its prepared fallback
 
-`APPLE-TILE` WP10 and WP11 left the native segment, its provider interface and the replacement rules in
-`crates/thrum-render/src/apple_tile`; the scaler is a provider there. Take D8.3's noise floor first, on two
+`APPLE-TILE` WP13 leaves the native segment and its provider interface, `NativeProvider`, in
+`crates/thrum-render/src/apple_tile`, as [its design](../APPLE-TILE/DESIGN.md#the-native-segment-and-its-providers-wp13)
+describes; the scaler is a provider there and TAAU is its twin. WP10 and WP11 had built that lifecycle only
+inside the copy/select witness, which is why this work package stopped on 25 November. The segment keeps the
+candidate, the reset decision, the encoder split, completion and the counters, so D8.5 and D8.6 drive it and
+add none of their own. Where MetalFX needs something the interface lacks, change it in `APPLE-TILE`'s files
+under [the ruling for seam 8](../ARCHITECTURE.md#interfaces) and keep that module's tests passing. The
+checkpoint on `build/apple-presentation` at `2252c56af` holds D8.7's pass. Take D8.3's noise floor first, on two
 identical runs, since the exposure judgement is made against it. Build the normalising pre-pass only if the
 exposure texture alone fails D8.3.
 

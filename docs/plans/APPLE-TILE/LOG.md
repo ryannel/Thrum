@@ -560,3 +560,8 @@
     `ed49185b614138d97531a4d103fd4a7a3aee05087c56b3744c706c17c4100557` → `3b1acc0b7cd40e190f0df280c24d2a0dc26be84ca628101505f8df8c74959dcb`
   - `chrome-night-scene-linear`
     `94f57fabf1be209376074776ca1cfe9db1254109ae0761382aa484c275c01c0a` → `c71bee067d8607eb65319358f3babf6dff9cd66be6ca73118e40c82354ea3b9b`
+- 2026-11-25 Planner: `APPLE-PRESENTATION` WP8 stopped `BLOCKED needs_dependency`. WP10 and WP11 proved the native
+  segment's lifecycle only inside the copy/select witness, and no `NativeProvider` exists for MetalFX to implement.
+  The module list gives this module the native segment, so WP13 was added to separate the segment from its
+  providers, with the witness as the first and a small second provider as the proof that the interface carries
+  what MetalFX needs. No Done item changed. [WP8 handoff](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP8-handoff.md)
