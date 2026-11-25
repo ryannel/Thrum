@@ -80,7 +80,11 @@ impl World {
             use_tick: endpoint.tick + 1,
             point,
         };
-        self.mail.lock().unwrap().posts.push(post);
+        self.mail
+            .lock()
+            .expect("test field mailbox")
+            .posts
+            .push(post);
         post
     }
 }
@@ -168,7 +172,7 @@ impl Fixture {
             })
             .create_view(&wgpu::TextureViewDescriptor::default());
         let mail = Arc::new(Mutex::new(Mailbox::default()));
-        let mut scene = SyntheticScene::grid(1).unwrap();
+        let mut scene = SyntheticScene::grid(1).expect("one-cell scene");
         scene.sun_shadows = false;
         let mut host = FrameHost::new(
             &capabilities,
@@ -191,7 +195,7 @@ impl Fixture {
             1.0,
         )
         .await
-        .unwrap();
+        .expect("prepare tick test host");
         host.set_timing_requested(false);
         Some(Self {
             host,
@@ -208,12 +212,14 @@ impl Fixture {
                 Arc::clone(&self.mail),
                 declare_tick,
             )))
-            .unwrap();
+            .expect("attach test field");
     }
 
     fn schedule(&mut self, points: &[u32]) -> Vec<Post> {
         let world = self.host.world_mut();
-        world.due = u32::try_from(points.len()).unwrap().max(1);
+        world.due = u32::try_from(points.len())
+            .expect("bounded test points")
+            .max(1);
         world.points = points.to_vec();
         let start = world.source();
         points
@@ -233,30 +239,33 @@ impl Fixture {
             view: &self.drawable,
             extent: PROFILE.extent,
         };
-        let report = self.host.drive(Duration::ZERO, Some(&output)).unwrap();
+        let report = self
+            .host
+            .drive(Duration::ZERO, Some(&output))
+            .expect("submit test view");
         assert!(report.submitted && report.surface_presented);
         report
     }
 
     fn expect_answers(&mut self, expected: &[Answer]) {
         self.until(|mail| mail.answers.len() >= expected.len());
-        let answers = std::mem::take(&mut self.mail.lock().unwrap().answers);
+        let answers = std::mem::take(&mut self.mail.lock().expect("test field mailbox").answers);
         assert_eq!(answers, expected);
     }
 
     fn until(&mut self, ready: impl Fn(&Mailbox) -> bool) {
         until("tick readback", Duration::from_secs(3), || {
-            if let Some(sample) = self.host.poll_completed().unwrap() {
+            if let Some(sample) = self.host.poll_completed().expect("poll test device") {
                 self.views.push_back(sample);
             }
-            ready(&self.mail.lock().unwrap()).then_some(())
+            ready(&self.mail.lock().expect("test field mailbox")).then_some(())
         });
     }
 
     fn finish_view(&mut self) -> FrameSample {
         self.views.pop_front().unwrap_or_else(|| {
             until("view completion", Duration::from_secs(3), || {
-                self.host.poll_completed().unwrap()
+                self.host.poll_completed().expect("poll test device")
             })
         })
     }
@@ -414,16 +423,28 @@ struct Permission {
 
 impl TickSubmissionPermission for Permission {
     fn with_entry(&self, record: &mut dyn FnMut(&dyn Fn() -> bool)) {
-        let decision = *self.decision.lock().unwrap();
-        self.mail.lock().unwrap().events.push(Event::Enter);
+        let decision = *self.decision.lock().expect("test permission decision");
+        self.mail
+            .lock()
+            .expect("test permission events")
+            .events
+            .push(Event::Enter);
         if matches!(decision, Decision::RefuseEntry) {
             return;
         }
         record(&|| {
-            self.mail.lock().unwrap().events.push(Event::Confirm);
+            self.mail
+                .lock()
+                .expect("test permission events")
+                .events
+                .push(Event::Confirm);
             matches!(decision, Decision::Grant)
         });
-        self.mail.lock().unwrap().events.push(Event::Leave);
+        self.mail
+            .lock()
+            .expect("test permission events")
+            .events
+            .push(Event::Leave);
     }
 }
 
@@ -495,7 +516,7 @@ fn tick_stage_lifecycle_permission_capture_without_rendering_and_timing() {
         drop(f.host.begin_capture().unwrap());
         assert_eq!(f.host.tick_submission_stats(), stats);
         assert_eq!(f.mail.lock().unwrap().posts, [post]);
-        assert!(f.mail.lock().unwrap().events.is_empty());
+        assert_eq!(f.mail.lock().unwrap().events, []);
 
         f.host.set_timing_requested(true);
         f.draw();
@@ -652,7 +673,7 @@ fn tick_stage_lifecycle_and_tick_stage_world_change_across_device_replacement() 
             .unwrap();
         let old_post = f.host.world().post_from_world(3);
         f.host.ask_tick_stage().unwrap();
-        assert!(f.mail.lock().unwrap().answers.is_empty());
+        assert_eq!(f.mail.lock().unwrap().answers, []);
         assert!(f.mail.lock().unwrap().busy.iter().any(|busy| *busy));
         f.host.publish_device(&mut candidate).unwrap();
         until("retired map callback", Duration::from_secs(3), || {

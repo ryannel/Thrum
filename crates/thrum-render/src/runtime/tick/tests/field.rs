@@ -110,7 +110,7 @@ impl SceneContribution for Field {
         {
             self.state.rebuild(surface.generation, 1);
             {
-                let mut mail = self.mail.lock().unwrap();
+                let mut mail = self.mail.lock().expect("test field mailbox");
                 mail.generation = surface.generation;
                 mail.answers.clear();
                 mail.busy.fill(false);
@@ -125,7 +125,9 @@ impl SceneContribution for Field {
         let (steps, reset) = match step {
             EffectStep::Keep => (0, 0),
             EffectStep::Reset => (0, 1),
-            EffectStep::Advance { ticks, .. } => (u32::try_from(ticks).unwrap(), 0),
+            EffectStep::Advance { ticks, .. } => {
+                (u32::try_from(ticks).expect("bounded field steps"), 0)
+            }
         };
         if let Some(gpu) = &self.gpu {
             gpu.queue.write_buffer(
@@ -146,7 +148,7 @@ impl SceneContribution for Field {
     }
 
     fn encode_effect(&mut self, _: usize, pass: &mut wgpu::ComputePass<'_>, _: &ContributionFrame) {
-        let gpu = self.gpu.as_ref().unwrap();
+        let gpu = self.gpu.as_ref().expect("prepared test field");
         pass.set_pipeline(&gpu.update);
         pass.set_bind_group(
             0,
@@ -164,16 +166,20 @@ impl SceneContribution for Field {
     }
 
     fn tick_has_work(&self, _: usize) -> bool {
-        let mail = self.mail.lock().unwrap();
+        let mail = self.mail.lock().expect("test field mailbox");
         !mail.posts.is_empty() && mail.busy.iter().any(|busy| !busy)
     }
 
     fn encode_tick_upload(&mut self, _: usize, _: &mut wgpu::CommandEncoder, duration: Duration) {
         assert_eq!(duration, super::STEP);
-        let gpu = self.gpu.as_ref().unwrap();
-        let mut mail = self.mail.lock().unwrap();
+        let gpu = self.gpu.as_ref().expect("prepared test field");
+        let mut mail = self.mail.lock().expect("test field mailbox");
         mail.events.push(Event::Record);
-        self.readback = mail.busy.iter().position(|busy| !busy).unwrap();
+        self.readback = mail
+            .busy
+            .iter()
+            .position(|busy| !busy)
+            .expect("admitted test readback");
         self.batch.clear();
         let mut points = [4_u32; 4];
         for (post, point) in mail.posts.iter().zip(&mut points) {
@@ -188,7 +194,7 @@ impl SceneContribution for Field {
     }
 
     fn encode_tick(&mut self, _: usize, pass: &mut wgpu::ComputePass<'_>) {
-        let gpu = self.gpu.as_ref().unwrap();
+        let gpu = self.gpu.as_ref().expect("prepared test field");
         pass.set_pipeline(&gpu.query);
         pass.set_bind_group(
             0,
@@ -199,19 +205,19 @@ impl SceneContribution for Field {
     }
 
     fn encode_tick_readback(&mut self, _: usize, encoder: &mut wgpu::CommandEncoder) {
-        let gpu = self.gpu.as_ref().unwrap();
+        let gpu = self.gpu.as_ref().expect("prepared test field");
         encoder.copy_buffer_to_buffer(&gpu.output, 0, &gpu.readbacks[self.readback], 0, BYTES);
     }
 
     fn tick_submitted(&mut self, passes: &[usize]) {
         assert_eq!(passes, [0]);
-        let gpu = self.gpu.as_ref().unwrap();
+        let gpu = self.gpu.as_ref().expect("prepared test field");
         let generation = gpu.generation;
         let index = self.readback;
         let batch = std::mem::take(&mut self.batch);
         let mail = Arc::clone(&self.mail);
         {
-            let mut mail = mail.lock().unwrap();
+            let mut mail = mail.lock().expect("test field mailbox");
             mail.events.push(Event::Callback);
             mail.busy[index] = true;
             mail.posts.drain(..batch.len());
@@ -227,7 +233,7 @@ impl SceneContribution for Field {
                     })
                     .collect::<Vec<_>>()
             });
-            let mut mail = mail.lock().unwrap();
+            let mut mail = mail.lock().expect("test field mailbox");
             if mail.generation == generation {
                 mail.busy[index] = false;
                 mail.answers.extend(answers.into_iter().flatten());
