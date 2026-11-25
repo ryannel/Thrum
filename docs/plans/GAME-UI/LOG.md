@@ -93,3 +93,8 @@
   graph, resource census and sample minima did not isolate a cause. The valley deltas were −1.1% and +3.4%.
   [Visual review](../../../.orchestrate/evidence/GAME-UI/WP1/visual/review.md) ·
   [Timing investigation](../../../.orchestrate/evidence/GAME-UI/WP1/costs-mac-metal/investigation.md)
+- 2026-11-25 WP1.3 review fix compares all 12 V1 cases in both display modes on each Metal recipe. The
+  MetalFX request resolves natively on Apple tile and to TAAU on portable. Pass order, attachment storage
+  and transient slots match the untouched pre-interface parent `91d2cf288`. The named renderer check also
+  matches the host's live buffer count, and the opt-in allocation control still passes.
+  [Before-build provenance and target runs](../../../.orchestrate/evidence/GAME-UI/WP1/review-graph-coverage.md)

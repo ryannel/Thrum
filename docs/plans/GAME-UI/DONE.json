@@ -45,10 +45,10 @@
           "ask": "Is the 'before' side taken from main at the commit this work package started from, and not produced by the changed code? Does a host prepared with an interface serve as a control that the creation counts do tell apart?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP1/review-graph-coverage.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GAME-UI/WP1-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP1.4",
