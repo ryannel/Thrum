@@ -1130,6 +1130,32 @@
         "by": "plan",
         "task": "Unblock APPLE-PRESENTATION WP8. The builder wrote: D8.3 needs a planner decision on whether the luminance bound should i",
         "at": "2026-11-25T17:34:30Z"
+      },
+      "ready_for_review": {
+        "commit": "2453e0395630d8cd7e621de5db29cc25dba8da85",
+        "checked": "2453e0395630d8cd7e621de5db29cc25dba8da85",
+        "at": "2026-11-25T20:44:06Z",
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.171.0-alpha.13.2",
+        "path": "visible",
+        "usage": {
+          "input": 1884757,
+          "cached": 215962496,
+          "output": 278072,
+          "turns": 6
+        },
+        "session_usage": {
+          "input": 1884757,
+          "cached": 215962496,
+          "output": 278072,
+          "turns": 6
+        }
       }
     },
     "WP9": {
