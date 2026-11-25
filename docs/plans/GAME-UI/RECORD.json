@@ -26,7 +26,49 @@
   "work_packages": {
     "WP1": {
       "definitions": "cc9de478b2b33d5d55b79405f3c76d495223f9ae79877d47705da914a08f6653",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "ae0b445bc7ba17c8c121a55cd76b2aa89dfc64cd",
+          "review": ".orchestrate/evidence/GAME-UI/WP1-review.md",
+          "items": {
+            "WP1.1": "pass",
+            "WP1.2": "pass",
+            "WP1.3": "fail",
+            "WP1.4": "pass",
+            "WP1.5": "pass",
+            "WP1.6": "pass",
+            "WP1.7": "pass",
+            "WP1.8": "pass",
+            "WP1.9": "pass",
+            "WP1.10": "pass",
+            "WP1.11": "pass"
+          },
+          "findings": [
+            {
+              "name": "The no-interface graph comparison omits the V1 MetalFX variant",
+              "item": "WP1.3",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 149173,
+            "cached": 5149184,
+            "output": 10859,
+            "turns": 1
+          },
+          "at": "2026-11-25T19:33:31Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "GAME-UI WP1 needs something no plan provides yet. The builder wrote: Land shared EDR display and submitted half-float ca",

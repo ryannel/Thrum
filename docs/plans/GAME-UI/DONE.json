@@ -8,10 +8,10 @@
         "RENDER-2D:WP6",
         "APPLE-PRESENTATION:WP6"
       ],
-      "failed_reviews": 0,
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
+      "status": "in_progress",
       "quality_bar": "An overlay as exact as a pixel-art game's status display at a whole-number scale, such as Celeste's: every texel a clean block of its authored colour, and steady over a moving scene. As free when unused as Bevy's interface is when its plugin is left out: a game without one runs no pass and holds no resource for it.",
       "items": [
         {
@@ -22,8 +22,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/GAME-UI/WP1/metal-stage-qualified.log",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GAME-UI/WP1-review.md",
           "builder_result": "pass"
         },
         {
@@ -34,8 +34,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/GAME-UI/WP1/metal-uncovered.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GAME-UI/WP1-review.md",
           "builder_result": "pass"
         },
         {
@@ -45,10 +45,10 @@
           "ask": "Is the 'before' side taken from main at the commit this work package started from, and not produced by the changed code? Does a host prepared with an interface serve as a control that the creation counts do tell apart?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/GAME-UI/WP1/metal-absent.md",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/GAME-UI/WP1-review.md",
+          "builder_result": "open"
         },
         {
           "id": "WP1.4",
@@ -58,8 +58,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/GAME-UI/WP1/metal-valley-all-texels.log",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GAME-UI/WP1-review.md",
           "builder_result": "pass"
         },
         {
@@ -70,8 +70,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/GAME-UI/WP1/metal-stage-qualified.log",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GAME-UI/WP1-review.md",
           "builder_result": "pass"
         },
         {
@@ -82,8 +82,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/GAME-UI/WP1/metal-stage-qualified.log",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GAME-UI/WP1-review.md",
           "builder_result": "pass"
         },
         {
@@ -94,8 +94,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/GAME-UI/WP1/metal-stage-qualified.log",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GAME-UI/WP1-review.md",
           "builder_result": "pass"
         },
         {
@@ -105,8 +105,8 @@
           "lock": "chrome",
           "target": "chrome-webgpu",
           "evidence": ".orchestrate/evidence/GAME-UI/WP1/chrome/interface-stage.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GAME-UI/WP1-review.md",
           "builder_result": "pass"
         },
         {
@@ -115,8 +115,8 @@
           "inspect": "Capture the interface scene with T2 engine capture in the 8-bit mode. `fixed` stills over the sprite field at 1280\u00d7720 and 3456\u00d72234, at whole-number scales of 1 and 3; judge each whole and in native-size crops of the corner marks, colour ramps and scrim. A `realtime` capture over the valley at 1920\u00d71080, long enough for the camera to pass near and far ground behind the card; judge consecutive frames at 1x, whole and in native-size crops of the card's edges.",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/GAME-UI/WP1/visual/review.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GAME-UI/WP1-review.md",
           "builder_result": "pass"
         },
         {
@@ -127,8 +127,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/GAME-UI/WP1/costs-mac-metal/summary.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GAME-UI/WP1-review.md",
           "builder_result": "pass"
         },
         {
@@ -138,9 +138,16 @@
           "lock": "chrome",
           "target": "chrome-webgpu",
           "evidence": ".orchestrate/evidence/GAME-UI/WP1/costs-chrome-webgpu/summary.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GAME-UI/WP1-review.md",
           "builder_result": "pass"
+        }
+      ],
+      "findings": [
+        {
+          "name": "The no-interface graph comparison omits the V1 MetalFX variant",
+          "item": "WP1.3",
+          "repeat": false
         }
       ]
     },
