@@ -324,3 +324,10 @@
   so the builder's change is in the checker. [Review](../../../.orchestrate/evidence/SESSION/design-review.md)
 - 2026-11-25 Took the suggestion. The handoff no longer assigns the exact-image verifier to each work package
   and points at the module list's ruling that the main-branch check runs it.
+
+- 2026-11-25 WP7 due-time proof. The Mac checker now requires an eligible committed tick time on every
+  advancing submission, with or without display lead. It rejects the run's own record after removing
+  late-frame timestamps. The proof windows float to preserve actual submissions when other apps open,
+  and the underrun cut leaves time to show sustained recovery. Mac Metal and Chrome WebGPU each matched
+  120 digests through tick 3,600. The Mac relay capture showed a buffered burst, a hold followed by
+  1.100× recovery, and named skips. [Target evidence](../../../.orchestrate/evidence/SESSION/WP7/due-time/README.md)
