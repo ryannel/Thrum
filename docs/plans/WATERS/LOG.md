@@ -1220,3 +1220,8 @@
   [One colour by one weight](DESIGN.md#one-colour-by-one-weight) is two layers, the first body over the scene
   over the environment, and the scene is traced behind a body. WP8.9 is its own list of what a Chrome still
   shows; motion stays on Metal. [What changed for each finding](../../../.orchestrate/evidence/WATERS/design-revision-67c44f3.md).
+- 2026-11-26 Planner, after the design review at `9c0730bc8020` (two Must Fix, neither against a decision).
+  In [one colour by one weight](DESIGN.md#one-colour-by-one-weight) the scene's march always runs up to a
+  body's point, and a body of weight 1 saves only the march beyond it. WP8.9 judges the Sun's glitter at noon
+  and low Sun, and the night sea for the sky's glow and dark water, on a list of ten lines.
+  [What changed for each finding](../../../.orchestrate/evidence/WATERS/design-revision-9c0730b.md).

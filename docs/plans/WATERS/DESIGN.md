@@ -1502,8 +1502,12 @@ neither as `L_env`.
   and half sky. So on still water a body's reflection thins into the reflected shore behind it and not into a
   rim of sky, and at sea it thins into the sky as before.
 - *When the scene is traced.* The scene's march runs for every reflected ray on water still enough to mirror the
-  scene, whether or not the ray met a body. It may be left out only where its layer could not show: where the
-  scene's stillness factor is 0, or where a nearer body's weight is 1.
+  scene, whether or not the ray met a body, because a ray may meet scenery in front of a body as well as behind
+  one. It is left out or cut short only where its layer could not show. Where the scene's stillness factor is 0
+  the whole march is left out. Where the ray met a body whose weight is 1, the march may stop at that body's
+  point, since nothing farther along the ray could show. Up to the body's point it runs whatever the body's
+  weight, because only the march can tell that the body is the nearer of the two. A ray that meets a rock at
+  the water's edge at half weight, and behind it a float at full weight, shows half rock and half float.
 - *One source for a surface.* However a surface's point is found (the march, a body's box, or the water map's
   bed where the ray meets mapped ground that a grazing march steps over), it is one point with one radiance and
   one weight. Two findings of the same surface are never laid one over the other, each under its own fade: a
@@ -1515,11 +1519,12 @@ neither as `L_env`.
   ray; and how near the source's texel lies to the outline of nearer geometry that hides it.
 - *No switch.* A reflection's source moves abruptly only where the scene has an edge: an outline, a waterline, a
   shadow. A test of the copy (on it or past its edge, within the reach or not, visible or hidden, agreeing or
-  not, found one way or another) acts only through the `w` of the layer it tests. It may end a ray, leave out a
-  trace, or choose between two colours, only where that `w` is already 0 on both sides of it. The two layers
-  change order only where the body and the scene touch, which is an edge of the scene. So a reflection has no
-  line, patch or step that the scene does not have, and the cure for one is a factor of a `w`, never a further
-  case.
+  not, found one way or another) acts only through the `w` of the layer it tests. It may end a ray, leave out or
+  cut short a trace, or choose between two colours, only where that layer could not show on either side of it:
+  where its own `w` is already 0, or where it is the farther layer and the nearer one's `w` is already 1. The
+  two layers change order only where the body and the scene touch, which is an edge of the scene. So a
+  reflection has no line, patch or step that the scene does not have, and the cure for one is a factor of a
+  `w`, never a further case.
 - *A hidden source.* Where nearer geometry hides the point a ray meets, the copy holds no radiance for it. That
   holds for the scene behind a body as for a bank behind a tree. What the water shows there is a guess, as it
   is in any shipped game's screen-space reflection, and two guesses meet this design, chosen by eye: the
@@ -1530,8 +1535,9 @@ neither as `L_env`.
   reference, and [the mirror view](#mirror-views-scenery-the-camera-cannot-see) replaces it.
 - *Cost.* The factors come from what the march has read and a bounded number of further depth reads, spent only
   where a source lies near something that hides it. Both traces run only for a still-water pixel inside a
-  body's receiving rectangle whose body is less than fully trusted, each within its own bound of steps
-  ([risk 8](#risks)).
+  body's receiving rectangle, each within its own bound of steps ([risk 8](#risks)). There the scene's march
+  runs to the body's point at least, and beyond it only where the body's weight is under 1, so a fully trusted
+  body saves the march behind it and never the march in front of it.
 
 *The scene through the water.* A refracted ray that met no registered body reads the copy at its own pixel, moved
 by the surface's slope in proportion to the thickness, and keeps the unmoved pixel when the moved one is nearer
