@@ -967,3 +967,9 @@
   diagnostic frames were retained unchanged.
   [Metal crest and swash](../../../.orchestrate/evidence/WATERS/WP13/crest-sweep/metal-inspection.md) ·
   [Matched Chrome inspection](../../../.orchestrate/evidence/WATERS/WP13/crest-sweep/chrome-inspection.md).
+- 2026-11-25 The 300 m gale overview showed distant foam ending at the mapped bed boundary.
+  The distant estimate now feathers across that boundary, and its sparse background shares the
+  existing sampling weights with the phase-resolved bright fronts. Fresh native Metal and hardware
+  Chrome captures show separate fronts without the stationary band. The offshore line and foam
+  handoff passed the new sweep, and all eight item checks and the repository test command passed.
+  [Overview repair and comparisons](../../../.orchestrate/evidence/WATERS/WP13/gale-overview/repair.md).
