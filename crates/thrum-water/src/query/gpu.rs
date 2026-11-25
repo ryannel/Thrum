@@ -220,6 +220,7 @@ struct SurfPipelines {
     coarse: wgpu::ComputePipeline,
     fine: wgpu::ComputePipeline,
     answer: wgpu::ComputePipeline,
+    refine: Option<wgpu::ComputePipeline>,
 }
 
 impl CoarseScratch {
@@ -411,10 +412,20 @@ impl Readback {
         let plain = surf
             .is_none()
             .then(|| make_pipeline(QUERY_PASS, "sample_query", &[]));
-        let make_surf = |coarse, fine, constants| SurfPipelines {
+        let make_surf = |coarse, fine, cooperative| SurfPipelines {
             coarse: make_pipeline("water query coarse lattice", coarse, &[]),
             fine: make_pipeline("water query fine lattice", fine, &[]),
-            answer: make_pipeline(QUERY_PASS, "sample_query", constants),
+            answer: if cooperative {
+                make_pipeline(
+                    "water query cut triangles",
+                    "sample_cut",
+                    &[("single_sheet", 1.0)],
+                )
+            } else {
+                make_pipeline(QUERY_PASS, "sample_query", &[])
+            },
+            refine: cooperative
+                .then(|| make_pipeline("water query refine stations", "refine_query", &[])),
         };
         // A small spectrum leaves most wave lanes idle. A map with a single
         // body cannot enter the multi-owner shader.
@@ -424,14 +435,9 @@ impl Readback {
             layout,
             select: make_pipeline("water query select fine cells", "select_fine", &[]),
             general: (!use_wave_lanes || !only_one_body)
-                .then(|| make_surf("sample_coarse", "sample_fine", &[])),
-            single_sheet: use_wave_lanes.then(|| {
-                make_surf(
-                    "sample_coarse_wide",
-                    "sample_fine_wide",
-                    &[("single_sheet", 1.0)],
-                )
-            }),
+                .then(|| make_surf("sample_coarse", "sample_fine", false)),
+            single_sheet: use_wave_lanes
+                .then(|| make_surf("sample_coarse_wide", "sample_fine_wide", true)),
         });
         let slots = std::array::from_fn(|_| {
             Slot::new(
@@ -770,6 +776,10 @@ impl Readback {
                 }
                 pass.set_pipeline(&pipelines.answer);
                 pass.dispatch_workgroups(batch.count, 1, 1);
+                if let Some(refine) = &pipelines.refine {
+                    pass.set_pipeline(refine);
+                    pass.dispatch_workgroups(batch.count, 1, 1);
+                }
             } else {
                 pass.set_pipeline(self.plain.as_ref().expect("plain query pipeline"));
                 pass.dispatch_workgroups(batch.count.div_ceil(GROUP_WIDTH), 1, 1);

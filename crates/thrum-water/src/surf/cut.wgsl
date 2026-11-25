@@ -416,115 +416,209 @@ fn cut_cells(point: QueryPoint, station: u32, lane: u32) -> CutResult {
     return part;
 }
 
+struct Refinement {
+    rest: vec2<f32>,
+    height: f32,
+    slope: vec2<f32>,
+    velocity: vec3<f32>,
+    finished: bool,
+    resolved: bool,
+}
+
+fn start_refinement(hit: CutHit) -> Refinement {
+    return Refinement(hit.rest, hit.height, vec2(0.0), vec3(0.0), false, false);
+}
+
+fn refine_spacing(finished: bool) -> f32 {
+    return select(max(surf.controls.z * 1e-3, 0.001), 0.001, finished);
+}
+
+fn refine_offsets(h: f32) -> array<vec3<f32>, 8> {
+    return array(vec3(0.0), vec3(h, 0.0, 0.0), vec3(-h, 0.0, 0.0),
+        vec3(0.0, h, 0.0), vec3(0.0, -h, 0.0), vec3(0.0, 0.0, h),
+        vec3(0.0, 0.0, -h), vec3(0.0));
+}
+
+fn refine_step(hit: CutHit, previous: Refinement, iteration: u32,
+    samples: array<vec3<f32>, 8>) -> Refinement {
+    var state = previous;
+    let h = refine_spacing(state.finished);
+    if state.finished {
+        if !hit.valid { state.height = samples[0].y; }
+        state.velocity = (samples[5] - samples[6]) / (2.0 * h);
+    } else if !hit.valid {
+        let next = -samples[0].xz;
+        let error = length(next - state.rest);
+        state.rest = next;
+        state.finished = error <= 0.25 * surf.controls.w || iteration == 255u;
+        return state;
+    } else if length(state.rest + samples[0].xz) <= surf.controls.w {
+        state.height = samples[0].y;
+        state.finished = true;
+        return state;
+    }
+
+    let x = (samples[1] - samples[2]) / (2.0 * h) + vec3(1.0, 0.0, 0.0);
+    let z = (samples[3] - samples[4]) / (2.0 * h) + vec3(0.0, 0.0, 1.0);
+    let det = x.x * z.z - x.z * z.x;
+    if state.finished {
+        state.slope = vec2(x.y * z.z - z.y * x.z, z.y * x.x - x.y * z.x)
+            / select(det, select(-1e-6, 1e-6, det >= 0.0), abs(det) < 1e-6);
+        state.resolved = true;
+        return state;
+    }
+    if abs(det) < 1e-6 {
+        state.rest = hit.rest;
+        state.finished = true;
+        return state;
+    }
+    let next = state.rest - mat2x2(vec2(z.z, -x.z), vec2(-z.x, x.x)) *
+        (state.rest + samples[0].xz) / det;
+    if any(next < hit.cell) || any(next > hit.cell + surf.controls.z) {
+        state.rest = hit.rest;
+        state.finished = true;
+    } else {
+        state.rest = next;
+        state.finished = iteration == 15u;
+    }
+    return state;
+}
+
+fn refined_wave(state: Refinement, cut: CutResult) -> QueryWave {
+    return QueryWave(Wave(vec3(0.0, state.height, 0.0), state.slope, vec3(0.0), state.velocity),
+        cut.fine_nodes, cut.coarse_nodes);
+}
+
 fn surf_query(point: QueryPoint, cut: CutResult) -> QueryWave {
     let hit = cut.hit;
-    var rest = hit.rest;
-    var height = hit.height;
-    var finished = false;
-    var slope = vec2(0.0);
-    var velocity = vec3(0.0);
-    // Keep one forward-sheet evaluation site for the centre, spatial
-    // stencil and time samples. Expanding a separate evaluator at every
-    // stencil offset makes the Metal compiler repeat the entire shore model.
-    for (var iteration = 0u; iteration <= 256u; iteration++) {
-        let h = select(max(surf.controls.z * 1e-3, 0.001), 0.001, finished);
-        let offsets = array(vec3(0.0), vec3(h, 0.0, 0.0), vec3(-h, 0.0, 0.0),
-            vec3(0.0, h, 0.0), vec3(0.0, -h, 0.0), vec3(0.0, 0.0, h), vec3(0.0, 0.0, -h));
-        var samples: array<vec3<f32>, 7>;
-        var count = select(1u, 7u, finished);
+    var state = start_refinement(hit);
+    // One evaluation site keeps the shader compiler from expanding the
+    // whole shore model separately for each derivative offset.
+    for (var iteration = 0u; iteration <= 256u && !state.resolved; iteration++) {
+        let offsets = refine_offsets(refine_spacing(state.finished));
+        var samples: array<vec3<f32>, 8>;
+        var count = select(1u, 7u, state.finished);
         for (var j = 0u; j < count; j++) {
             let offset = offsets[j];
-            samples[j] = cut_node(point, point.position + (rest + offset.xy), point.dt + offset.z).displacement;
-            if j == 0u && hit.valid && !finished &&
-                length(rest + samples[0].xz) > surf.controls.w {
+            samples[j] = cut_node(point, point.position + (state.rest + offset.xy),
+                point.dt + offset.z).displacement;
+            if j == 0u && hit.valid && !state.finished &&
+                length(state.rest + samples[0].xz) > surf.controls.w {
                 count = 5u;
             }
         }
-        if finished {
-            if !hit.valid { height = samples[0].y; }
-            velocity = (samples[5] - samples[6]) / (2.0 * h);
-        } else if !hit.valid {
-            let next = -samples[0].xz;
-            let error = length(next - rest);
-            rest = next;
-            finished = error <= 0.25 * surf.controls.w || iteration == 255u;
-            continue;
-        } else if count == 1u {
-            height = samples[0].y;
-            finished = true;
-            continue;
-        }
-        let x = (samples[1] - samples[2]) / (2.0 * h) + vec3(1.0, 0.0, 0.0);
-        let z = (samples[3] - samples[4]) / (2.0 * h) + vec3(0.0, 0.0, 1.0);
-        let det = x.x * z.z - x.z * z.x;
-        if finished {
-            slope = vec2(x.y * z.z - z.y * x.z, z.y * x.x - x.y * z.x)
-                / select(det, select(-1e-6, 1e-6, det >= 0.0), abs(det) < 1e-6);
-            break;
-        }
-        if abs(det) < 1e-6 {
-            rest = hit.rest;
-            finished = true;
-            continue;
-        }
-        let next = rest - mat2x2(vec2(z.z, -x.z), vec2(-z.x, x.x)) * (rest + samples[0].xz) / det;
-        if any(next < hit.cell) || any(next > hit.cell + surf.controls.z) {
-            rest = hit.rest;
-            finished = true;
-        } else {
-            rest = next;
-            finished = iteration == 15u;
-        }
+        state = refine_step(hit, state, iteration, samples);
     }
-    return QueryWave(Wave(vec3(0.0, height, 0.0), slope, vec3(0.0), velocity), cut.fine_nodes, cut.coarse_nodes);
+    return refined_wave(state, cut);
 }
 
-
 var<workgroup> cut_parts: array<CutResult, QUERY_WIDTH>;
+
+fn reduce_cut(point: QueryPoint, station: u32) -> CutResult {
+    var cut: CutResult;
+    for (var i = 0u; i < QUERY_WIDTH; i++) {
+        let next = cut_parts[i];
+        cut.fine_nodes += next.fine_nodes;
+        cut.coarse_nodes += next.coarse_nodes;
+        let earlier = next.hit.cell.y < cut.hit.cell.y ||
+            (next.hit.cell.y == cut.hit.cell.y && (next.hit.cell.x < cut.hit.cell.x ||
+                (next.hit.cell.x == cut.hit.cell.x && next.hit.face > cut.hit.face)));
+        // Match the sequential row-major tie break at equal height.
+        if next.hit.valid && (!cut.hit.valid || next.hit.height > cut.hit.height ||
+            (next.hit.height == cut.hit.height && earlier)) {
+            cut.hit = next.hit;
+        }
+    }
+    if point.coarse_grid.z != 0 && station == bitcast<u32>(point.surf_stage.y) {
+        cut.coarse_nodes += bitcast<u32>(point.surf_stage.z);
+    }
+    return cut;
+}
+
+fn write_surf_answer(station: u32, point: QueryPoint, result: QueryWave) {
+    var gains = query_gains(point);
+    var answer = result;
+    if point.body != 0xffffffffu {
+        if (point.flags & 1u) == 0u {
+            answer = plain_query(point, gains.x);
+        } else if surf.bodies[point.body].count > 0u && point.gains.x * settings.heights.x > 0.0 {
+            let depth = point.level_current_bed.x - point.level_current_bed.w;
+            let swash = min(settings.swash_margin.x * length(settings.heights * point.gains),
+                settings.swash_margin.y);
+            if swash > 0.0 && depth < 4.0 * map.origin_spacing_margin.w {
+                let stages = surf_stages(surf.bodies[point.body], point.surf_stage.x);
+                let contour = shore_contour(map_cell(point.position), stages);
+                gains = vec4(gains.x, gains.yzw * contour_short_weight(
+                    depth, swash, contour.z, depth + answer.wave.displacement.y));
+            }
+        }
+    }
+    write_answer(station, point, gains, answer);
+}
 
 @compute @workgroup_size(QUERY_WIDTH)
 fn sample_query(@builtin(workgroup_id) group: vec3<u32>, @builtin(local_invocation_index) lane: u32) {
     let point = points[group.x];
-    let part = cut_cells(point, group.x, lane);
-    cut_parts[lane] = part;
+    cut_parts[lane] = cut_cells(point, group.x, lane);
     workgroupBarrier();
     if lane != 0u { return; }
-    var gains = query_gains(point);
     var result: QueryWave;
-    if point.body != 0xffffffffu {
-        if (point.flags & 1u) == 0u {
-            result = plain_query(point, gains.x);
-        } else {
-            var cut: CutResult;
-            for (var i = 0u; i < QUERY_WIDTH; i++) {
-                let next = cut_parts[i];
-                cut.fine_nodes += next.fine_nodes;
-                cut.coarse_nodes += next.coarse_nodes;
-                let earlier = next.hit.cell.y < cut.hit.cell.y ||
-                    (next.hit.cell.y == cut.hit.cell.y && (next.hit.cell.x < cut.hit.cell.x ||
-                        (next.hit.cell.x == cut.hit.cell.x && next.hit.face > cut.hit.face)));
-                // Match the sequential row-major tie break at equal height.
-                if next.hit.valid && (!cut.hit.valid || next.hit.height > cut.hit.height ||
-                    (next.hit.height == cut.hit.height && earlier)) {
-                    cut.hit = next.hit;
-                }
-            }
-            if point.coarse_grid.z != 0 && group.x == bitcast<u32>(point.surf_stage.y) {
-                cut.coarse_nodes += bitcast<u32>(point.surf_stage.z);
-            }
-            result = surf_query(point, cut);
-            if surf.bodies[point.body].count > 0u && point.gains.x * settings.heights.x > 0.0 {
-                let depth = point.level_current_bed.x - point.level_current_bed.w;
-                let swash = min(settings.swash_margin.x * length(settings.heights * point.gains),
-                    settings.swash_margin.y);
-                if swash > 0.0 && depth < 4.0 * map.origin_spacing_margin.w {
-                    let stages = surf_stages(surf.bodies[point.body], point.surf_stage.x);
-                    let contour = shore_contour(map_cell(point.position), stages);
-                    gains = vec4(gains.x, gains.yzw * contour_short_weight(
-                        depth, swash, contour.z, depth + result.wave.displacement.y));
-                }
-            }
-        }
+    if point.body != 0xffffffffu && (point.flags & 1u) != 0u {
+        result = surf_query(point, reduce_cut(point, group.x));
     }
-    write_answer(group.x, point, gains, result);
+    write_surf_answer(group.x, point, result);
+}
+
+@compute @workgroup_size(QUERY_WIDTH)
+fn sample_cut(@builtin(workgroup_id) group: vec3<u32>, @builtin(local_invocation_index) lane: u32) {
+    let point = points[group.x];
+    cut_parts[lane] = cut_cells(point, group.x, lane);
+    workgroupBarrier();
+    if lane != 0u { return; }
+    let cut = reduce_cut(point, group.x);
+    // The next dispatch replaces this temporary cut with the final answer.
+    answers[group.x].height_slope_rate = vec4(cut.hit.rest, cut.hit.cell);
+    answers[group.x].velocity_depth = vec4(cut.hit.height, cut.hit.face, 0.0, 0.0);
+    answers[group.x].body_flags = vec4(u32(cut.hit.valid), cut.fine_nodes, cut.coarse_nodes, 0u);
+}
+
+var<workgroup> refinement: Refinement;
+var<workgroup> stencil: array<vec3<f32>, 8>;
+var<workgroup> has_bed: bool;
+
+@compute @workgroup_size(QUERY_WIDTH)
+fn refine_query(@builtin(workgroup_id) group: vec3<u32>, @builtin(local_invocation_index) lane: u32) {
+    let point = points[group.x];
+    let packed = answers[group.x];
+    let hit = CutHit(packed.height_slope_rate.xy, packed.height_slope_rate.zw,
+        packed.velocity_depth.x, packed.body_flags.x != 0u, packed.velocity_depth.y);
+    if lane == 0u {
+        has_bed = point.body != 0xffffffffu && (point.flags & 1u) != 0u;
+        refinement = start_refinement(hit);
+    }
+    if !workgroupUniformLoad(&has_bed) {
+        if lane == 0u {
+            var result: QueryWave;
+            write_surf_answer(group.x, point, result);
+        }
+        return;
+    }
+    var state = workgroupUniformLoad(&refinement);
+    let index = lane / WAVE_LANES;
+    for (var iteration = 0u; iteration <= 256u && !state.resolved; iteration++) {
+        let count = select(select(1u, 5u, hit.valid), 7u, state.finished);
+        let offset = refine_offsets(refine_spacing(state.finished))[index];
+        var sample_point = point;
+        sample_point.dt += offset.z;
+        let sample = parallel_displacement(sample_point, point.position + (state.rest + offset.xy),
+            lane, index < count);
+        if lane % WAVE_LANES == 0u { stencil[index] = sample; }
+        workgroupBarrier();
+        if lane == 0u { refinement = refine_step(hit, state, iteration, stencil); }
+        state = workgroupUniformLoad(&refinement);
+    }
+    if lane == 0u {
+        let cut = CutResult(hit, packed.body_flags.y, packed.body_flags.z);
+        write_surf_answer(group.x, point, refined_wave(state, cut));
+    }
 }

@@ -21,7 +21,10 @@ const WARM_TICKS: u32 = 32;
 const AGE: usize = 8;
 const DRAIN_TICKS: u32 = 8;
 const TOLERANCE: f64 = 0.015;
+// Take the first complete delivery within each predeclared window.
 const WITNESSES: [usize; 3] = [50, 300, 550];
+const WITNESS_WINDOW: usize = 10;
+type Witnesses = [[Vec<BodyAnswers>; WITNESS_WINDOW]; WITNESSES.len()];
 const CAMERA: Camera = Camera::look_at([-2776.0, 477.0, 25.0], [-126.0, 0.0, 25.0], 1.44);
 
 struct GameTick {
@@ -29,7 +32,7 @@ struct GameTick {
     ticks: u32,
     ages: [usize; AGE + 1],
     nodes: Vec<Option<[u64; 2]>>,
-    witness: [Vec<BodyAnswers>; WITNESSES.len()],
+    witness: Witnesses,
     latest: [Option<BodyAnswers>; 8],
     fallback: usize,
 }
@@ -41,7 +44,7 @@ impl Default for GameTick {
             ticks: 0,
             ages: [0; AGE + 1],
             nodes: vec![None; MEASURE_TICKS as usize],
-            witness: std::array::from_fn(|_| Vec::with_capacity(8)),
+            witness: std::array::from_fn(|_| std::array::from_fn(|_| Vec::new())),
             latest: std::array::from_fn(|_| None),
             fallback: 0,
         }
@@ -89,8 +92,11 @@ impl GameTick {
             {
                 let age = usize::try_from(tick - reply.posted).expect("reply age");
                 self.ages[age] += reply.points.len();
-                if let Some(witness) = WITNESSES.iter().position(|&i| i == index) {
-                    self.witness[witness].push(reply.clone());
+                for (&start, window) in WITNESSES.iter().zip(&mut self.witness) {
+                    if let Some(answers) = index.checked_sub(start).and_then(|i| window.get_mut(i))
+                    {
+                        answers.push(reply.clone());
+                    }
                 }
             }
             let id = reply.id as usize;
@@ -235,7 +241,7 @@ fn arm(gpu: &thrum_test_support::Gpu, extent: [u32; 2], fleet: Vec<Body>) -> Gam
 
 struct GameArm {
     record: Value,
-    witness: [Vec<BodyAnswers>; WITNESSES.len()],
+    witness: Witnesses,
 }
 
 pub(super) fn run(gpu: &thrum_test_support::Gpu) -> Value {
@@ -263,7 +269,16 @@ pub(super) fn run(gpu: &thrum_test_support::Gpu) -> Value {
             .witness
             .iter()
             .zip(WITNESSES)
-            .map(|(fleet, sequence)| {
+            .map(|(window, start)| {
+                let (sequence, fleet) = window
+                    .iter()
+                    .enumerate()
+                    .find(|(_, fleet)| {
+                        fleet.len() == 8 && fleet.iter().all(|body| body.points.len() == 6)
+                    })
+                    .map_or((start, &[][..]), |(index, fleet)| {
+                        (start + index, fleet.as_slice())
+                    });
                 let mut maximum = 0.0_f64;
                 let stations = fleet.iter().flat_map(|body| &body.points).map(|answer| {
             let time = answer.point.use_tick as f64 * STEP.as_secs_f64();
