@@ -16,7 +16,7 @@ fn metalfx_normalization_half_limit() {
     let queue = &opened.queue;
     let normalize = Normalize::new(&DeviceSite::untracked(device.clone()));
     let tex_size = wgpu::Extent3d {
-        width: 4,
+        width: 8,
         height: 1,
         depth_or_array_layers: 1,
     };
@@ -34,14 +34,23 @@ fn metalfx_normalization_half_limit() {
     };
     let input = texture(wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST);
     let output = texture(wgpu::TextureUsages::STORAGE_BINDING | wgpu::TextureUsages::COPY_SRC);
-    let input_pixels = [32752.0, 32768.0, -0.5, f32::NAN]
-        .map(|value| [value, 0.0, 0.0, 1.0].map(|channel| half::f16::from_f32(channel).to_bits()));
+    let input_pixels = [
+        [32752.0, 0.0, 0.0, 1.0],
+        [32768.0, 0.0, 0.0, 1.0],
+        [-0.5, 0.0, 0.0, 1.0],
+        [f32::NAN, 0.0, 0.0, 1.0],
+        [0.000_5, 0.01, 0.0625, 0.0],
+        [0.15, 0.18, 0.22, 0.25],
+        [0.86, 1.0, 1.2, 0.5],
+        [12.0, 45.0, 120.0, 0.75],
+    ]
+    .map(|pixel| pixel.map(|channel| half::f16::from_f32(channel).to_bits()));
     queue.write_texture(
         input.as_image_copy(),
         bytemuck::bytes_of(&input_pixels),
         wgpu::TexelCopyBufferLayout {
             offset: 0,
-            bytes_per_row: Some(32),
+            bytes_per_row: Some(tex_size.width * 8),
             rows_per_image: Some(1),
         },
         tex_size,
@@ -119,7 +128,7 @@ fn metalfx_normalization_half_limit() {
         (red[0] - expected).abs() <= 16.0,
         "half rounding {red:?}, expected {expected}"
     );
-    assert_eq!(&red[1..], &[65504.0, 0.0, 0.0]);
+    assert_eq!(&red[1..4], &[65504.0, 0.0, 0.0]);
     let counts = readback::buffer(device, queue, &repairs, ..);
     assert_eq!(bytemuck::cast_slice::<_, u32>(&counts), [1, 1, 1]);
     let bytes = readback::buffer(device, queue, &output_exposure, ..);
@@ -129,9 +138,25 @@ fn metalfx_normalization_half_limit() {
         [0.25_f32, 1.0, 17.0, 40_000.0].map(f32::to_bits)
     );
     assert_eq!(normalized.metadata, policy.metadata);
+    let original_matching = policy.values[0] * policy.values[1];
+    let normalized_matching = normalized.values[0] * normalized.values[1];
+    for (input, output) in input_pixels[4..].iter().zip(&raw.as_chunks::<8>().0[4..]) {
+        let output: [u16; 4] =
+            std::array::from_fn(|channel| u16::from_le_bytes(output.as_chunks::<2>().0[channel]));
+        for (&source, actual) in input[..3].iter().zip(output[..3].iter().copied()) {
+            let original_tone = half::f16::from_bits(source).to_f32() / original_matching;
+            let expected = half::f16::from_f32(original_tone * normalized_matching).to_bits();
+            assert!(
+                expected.abs_diff(actual) <= 1,
+                "matching tone input {original_tone} exceeds one half-float ULP after normalization"
+            );
+        }
+        assert_eq!(output[3], input[3], "normalization must preserve alpha");
+    }
     writeln!(
         std::io::stdout().lock(),
-        "half-float outputs {red:?}; high, low, non-finite repairs [1, 1, 1]"
+        "half-float boundary outputs {:?}, repair counts [1, 1, 1], 12 finite tone channels within one half-float ULP",
+        &red[..4],
     )
     .expect("write boundary proof");
 }
