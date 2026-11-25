@@ -328,3 +328,7 @@
   retry preserves the ancestor lock check. Regression tests cover both recovery and a repeated
   timeout. The unchanged simulator command passed with a minimal environment and verified shutdown.
   [Simulator rerun](../../../.orchestrate/evidence/RENDER-2D/WP5/ios-admission.log)
+- The creator guide now lists the import, manifest and workspace edits for a renamed copy.
+  A fresh `my-crowd` built and ran on Metal. Tick-360 images with and without the guide's
+  frame row differ only where the violet mark projects. The copied Wasm library generated
+  the import named by its page. [Renamed game proof](../../../.orchestrate/evidence/RENDER-2D/WP5/guide-renamed/inspection.md)

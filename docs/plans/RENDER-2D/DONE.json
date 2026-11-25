@@ -678,10 +678,10 @@
           "statement": "A guide linked from the creator guide shows how to declare a 2D scene, provide sheets, map components to world rows, supply a view and frame rows, choose layers and a band, and pick a scale for a window. It explains linear-light blending and the eight-sheet limit. The guide and public row documentation give the zero-band tie rule, frame-row placement in a banded inversion and higher-layer placement for marks that must cover a body.",
           "ask": "Do the guide's commands and code run at the claimed commit? Do the guide and public row documentation give the same frame-row placement as mechanism 4 for both zero band and its A, B, F example?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP5/guide-renamed/inspection.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/RENDER-2D/WP5-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP5.12",
