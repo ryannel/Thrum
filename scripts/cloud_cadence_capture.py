@@ -221,7 +221,7 @@ def series(output, *, diagnostics):
     dirty = subprocess.check_output(['git', 'status', '--porcelain'], cwd=ROOT, text=True).splitlines()
     record = {
         'revision': head, 'binary_sha256': digest(BIN), 'started': datetime.now(timezone.utc).isoformat(),
-        'dirty': dirty, 'cooked_root': (store / 'HEAD').read_text().strip(),
+        'dirty': dirty, 'cooked_head_sha256': digest(store / 'HEAD'),
         'xcode': subprocess.check_output(['xcodebuild', '-version'], cwd=ROOT, text=True).splitlines(),
         'instrument_sha256': digest(INSTRUMENT), 'runs': [], 'cloud_runs': [],
     }
