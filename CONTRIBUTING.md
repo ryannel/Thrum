@@ -24,6 +24,10 @@ fingerprints after revision changes; the check therefore does not reuse that que
 | `./dev scene <folder>` | The same for any scene package, such as your copy of the starter (macOS) |
 | `./dev refresh-design-hashes` | Explicitly refresh current design digests after reviewing a design edit |
 
+To rerun the offline finite-disk shadow diagnostic from the repository root, use
+`python3 scripts/atmosphere_finite_disk.py`. It reports projected-chord and direct-ray coverage
+on reconstructed terrain and caster cases, plus the work spent under each case's cap.
+
 Before `./dev check`, run
 `rustup target add --toolchain stable wasm32-unknown-unknown aarch64-apple-ios-sim`
 to install the rule guard's cross-compilation targets, and `cargo install --locked cargo-nextest`:

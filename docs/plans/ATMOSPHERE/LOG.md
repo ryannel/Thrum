@@ -784,3 +784,8 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   in-game verdict remains open pending the original submitted inputs and matched fixed Metal and Chrome replay.
   The diagnostic runs from the working folder. The landing changes only these plan records.
   [Builder evidence](../../../.orchestrate/evidence/ATMOSPHERE/WP3/README.md)
+
+- 2026-11-25 WP4 compared the source-side reuse candidate with direct triangle rays on the Mac CPU.
+  All 233 reconstructed queries finished under the cap with zero common-sample omissions and overcoverage.
+  The close-umbra case cost 5.12% more counted work, so the candidate was parked. The original ray inputs
+  and exact finite-disk match remain open under G3s. [Builder evidence](../../../.orchestrate/evidence/ATMOSPHERE/WP4/README.md#wp41)
