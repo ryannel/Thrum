@@ -1853,21 +1853,21 @@
       }
     },
     "WP19": {
-      "definitions": "65036fb0bc12102c5831efbd789ccfe55bf5b528c919a6153f6f8984e96a6c1a",
+      "definitions": "1f66cf5bd5a23eb5188cb073c2b11205fb8e4f94fc9f2b9a8db401fc2edbe921",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "WATERS WP19 is Blocked: Needs Dependency. WP19.3 (crest height reaches the island game's floats within two ticks for 90%",
-        "at": "2026-11-25T11:30:31Z"
+        "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 4 Must Fix find",
+        "at": "2026-11-25T12:46:18Z"
       }
     },
     "WP20": {
-      "definitions": "7f7653681e03b5ad6f0cbe73b645ff920f3180c84a69f5d69d0c3e1d041c5fa9",
+      "definitions": "27313c890942279dcb6ad6da6f6b67c6a7e89ff8a3e3e75d3a52a31eaf32bd14",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "WATERS WP13 is Blocked again on a three-look stop, now the sand-height cue: short straight-sided bright projections/fins",
-        "at": "2026-11-25T06:11:25Z"
+        "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 4 Must Fix find",
+        "at": "2026-11-25T12:46:18Z"
       }
     }
   },
@@ -1999,11 +1999,15 @@
     {
       "task": "WATERS WP19 is Blocked: Needs Dependency. WP19.3 (crest height reaches the island game's floats within two ticks for 90% of stations) fails because the water query is recorded only in Water::encode_upload and mapped after the frame submits; when the frame host skips a view under GPU backpressure, the query waits for the next admitted frame (open water 69% within two ticks, breakers 0%). The handoff (.orchestrate/evidence/WATERS/WP19-handoff.md, work on build/waters at 3110457e6) asks for the frame host and WATERS owners to decide how a tick query is admitted and completed independently of presentation slots, with the same use-tick semantics. Decide which module owns that (frame host vs WATERS), check it against the C4 contracts, and plan it as that module's next work package, ordered ahead of WATERS WP19.",
       "at": "2026-11-25T11:30:31Z"
+    },
+    {
+      "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 4 Must Fix findings.",
+      "at": "2026-11-25T12:46:18Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-25T11:30:31Z"
+    "at": "2026-11-25T12:46:18Z"
   },
   "design_history": [
     {
