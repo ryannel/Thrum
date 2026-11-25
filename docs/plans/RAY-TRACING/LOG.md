@@ -225,3 +225,7 @@
   package for both targets with the feature on, and WP7.2 keeps the Metal test running.
 - 2026-11-25 Plan file trimmed: WP3 and WP4 are Done, so their builder notes left `PLAN.md` for their
   reviews and git history (`0930746ab` holds the last copy).
+- 2026-11-25 WP7 gated the lifecycle test's `ray_support` import on macOS, matching its declaration and
+  keeping the test in the harness on other targets. With `creation-counters` enabled, all `thrum-render`
+  targets type-checked for Linux and Windows on this Mac ([WP7.1](../../../.orchestrate/evidence/RAY-TRACING/WP7/WP7.1-cross-target.log)).
+  The one lifecycle test passed with Metal required ([WP7.2](../../../.orchestrate/evidence/RAY-TRACING/WP7/WP7.2-metal-lifecycle.log)).

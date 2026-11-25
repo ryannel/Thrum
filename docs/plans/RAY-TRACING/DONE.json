@@ -496,7 +496,7 @@
     {
       "id": "WP7",
       "name": "The renderer's tests type-check for Linux and Windows again with its counters on, so the cross-target check on main passes",
-      "status": "not_started",
+      "status": "in_progress",
       "depends_on": [],
       "quality_bar": "Main's Linux and Windows type-check is green again, and the Mac runs every ray test it ran before.",
       "items": [
@@ -505,8 +505,8 @@
           "statement": "With `creation-counters` on, every library, example, test and bench target of `thrum-render` type-checks for `x86_64-unknown-linux-gnu` and for `x86_64-pc-windows-msvc` from this Mac.",
           "check": "sh -c 'PATH=\"$(dirname \"$(rustup which rustc)\"):$PATH\" RUSTC_WRAPPER= cargo check --locked --offline -p thrum-render --features creation-counters --all-targets --target x86_64-unknown-linux-gnu --target x86_64-pc-windows-msvc'",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": ""
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/WP7/WP7.1-cross-target.log"
         },
         {
           "id": "WP7.2",
@@ -514,8 +514,8 @@
           "check": "sh -c 'THRUM_REQUIRE_GPU=1 cargo test --locked --offline -p thrum-render --features creation-counters --test ray_structure_lifecycle_gpu 2>&1 | grep -q \"test result: ok. 1 passed\"'",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": ""
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RAY-TRACING/WP7/WP7.2-metal-lifecycle.log"
         }
       ],
       "failed_reviews": 0,
