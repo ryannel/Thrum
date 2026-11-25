@@ -840,7 +840,7 @@
     {
       "id": "WP15",
       "name": "Merge verification reuses a bounded local Cargo cache",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "quality_bar": "The configured merge check makes real Cargo rebuilds cheaper on the busy Mac and returns the ordinary check's verdict on the exact candidate.",
       "items": [
         {
