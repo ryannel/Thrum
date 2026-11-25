@@ -660,7 +660,33 @@
         "task": "The design review of APPLE-TILE at .orchestrate/evidence/APPLE-TILE/design-review.md asked for changes, with its 2 Must ",
         "at": "2026-11-25T13:57:05Z"
       },
-      "ends_stretch": true
+      "ends_stretch": true,
+      "ready_for_review": {
+        "commit": "f51b893474d1ca77c712468c1e353a1b00c4118a",
+        "checked": "f51b893474d1ca77c712468c1e353a1b00c4118a",
+        "at": "2026-11-25T14:58:20Z",
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.171.0-alpha.13",
+        "path": "headless",
+        "usage": {
+          "input": 247777,
+          "cached": 27370368,
+          "output": 62219,
+          "turns": 1
+        },
+        "session_usage": {
+          "input": 247777,
+          "cached": 27370368,
+          "output": 62219,
+          "turns": 1
+        }
+      }
     }
   },
   "decisions": [
