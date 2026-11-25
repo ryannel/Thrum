@@ -1,27 +1,14 @@
 {
   "module": "EFFECT-GRAPH",
   "design": {
-    "verdict": "changes",
-    "review": ".orchestrate/evidence/EFFECT-GRAPH/design-review.md",
-    "commit": "4177ffe7e53ad9129d176f5772cf2200661734c3",
-    "hash": "7170825dc4732afb68f88af1e6bc95829dc1123e8f74a3d6db4f331c659253c1",
-    "by": "review",
-    "host": "codex",
-    "model": "gpt-6.2-astra",
-    "effort": "high",
-    "observed": {
-      "model": "gpt-6.2-astra",
-      "effort": "high"
-    },
-    "cli": "codex-cli 0.171.0-alpha.13",
-    "path": "headless",
-    "usage": {
-      "input": 85907,
-      "cached": 981120,
-      "output": 5333,
-      "turns": 1
-    },
-    "at": "2026-11-25T12:20:38Z"
+    "verdict": "ok",
+    "by": "review_limit",
+    "hash": "640f0799f4883cfe5577a131ffd69ed5dff419336906913543c90c4c191af686",
+    "after": [
+      ".orchestrate/evidence/EFFECT-GRAPH/design-review-9.md",
+      ".orchestrate/evidence/EFFECT-GRAPH/design-review.md"
+    ],
+    "at": "2026-11-25T12:30:44Z"
   },
   "work_packages": {
     "WP1": {
@@ -516,12 +503,12 @@
       }
     },
     "WP6": {
-      "definitions": "7a47f2468672f4df51d0e7e73c86d11e53addbee03cd61a42b07563532540034",
+      "definitions": "ed9f51a39c0d78aabbff99810385856535040278906b39115fbdbf8a566ed509",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of EFFECT-GRAPH at .orchestrate/evidence/EFFECT-GRAPH/design-review.md asked for changes, with its 6 M",
-        "at": "2026-11-25T12:17:26Z"
+        "task": "The design review of EFFECT-GRAPH at .orchestrate/evidence/EFFECT-GRAPH/design-review.md asked for changes, with its 2 M",
+        "at": "2026-11-25T12:30:44Z"
       },
       "ends_stretch": true
     }
@@ -570,11 +557,15 @@
     {
       "task": "The design review of EFFECT-GRAPH at .orchestrate/evidence/EFFECT-GRAPH/design-review.md asked for changes, with its 6 Must Fix findings.",
       "at": "2026-11-25T12:17:26Z"
+    },
+    {
+      "task": "The design review of EFFECT-GRAPH at .orchestrate/evidence/EFFECT-GRAPH/design-review.md asked for changes, with its 2 Must Fix findings. That makes 2 design reviews in a row that asked for changes, so the script approves the design you leave without another review, and building starts from it.",
+      "at": "2026-11-25T12:30:44Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-25T12:17:26Z"
+    "at": "2026-11-25T12:30:44Z"
   },
   "design_history": [
     {
@@ -789,6 +780,29 @@
         "turns": 1
       },
       "at": "2026-11-25T12:02:03Z"
+    },
+    {
+      "verdict": "changes",
+      "review": ".orchestrate/evidence/EFFECT-GRAPH/design-review.md",
+      "commit": "4177ffe7e53ad9129d176f5772cf2200661734c3",
+      "hash": "7170825dc4732afb68f88af1e6bc95829dc1123e8f74a3d6db4f331c659253c1",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6.2-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6.2-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.171.0-alpha.13",
+      "path": "headless",
+      "usage": {
+        "input": 85907,
+        "cached": 981120,
+        "output": 5333,
+        "turns": 1
+      },
+      "at": "2026-11-25T12:20:38Z"
     }
   ]
 }
