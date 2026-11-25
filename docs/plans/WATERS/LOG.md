@@ -914,3 +914,9 @@
   have investigations, including 35 against positive baselines below 0.05 ms. Replaying the reviewed
   input restored all 12 missing comparisons in its audit. The latest cache holds 26,752,032 bytes.
   [Record, replay and query investigation](../../../.orchestrate/evidence/WATERS/WP13/positive-baseline-cost-inspection.md).
+
+- 2026-11-25 Finer surf triangles remove the reviewed repeating teeth in the 18.7, 19.6 and 20.5 s
+  Metal and Chrome checkpoints. In motion a smaller straight-sided flap remains near the exposed
+  bend around engine time 5.22 s. The normal and folded-face shading trials leave it in place and
+  were reverted. WP13.5 and WP13.11 remain open at the three-look stop.
+  [Fixed pairs, moving crops and branch projection](../../../.orchestrate/evidence/WATERS/WP13/review-bend-followup.md).
