@@ -110,7 +110,6 @@ fn main() {
             .expect("arm the authored route");
         route
     });
-    let graph = host.scene_graph().expect("prepared cost graph");
     let mut rows = Vec::new();
     for _ in 0..40 {
         let now = Duration::from_secs_f64(host.route_step_ms(0.5) / 1000.0);
@@ -133,6 +132,7 @@ fn main() {
             "interface": support::interface_cost::stats(&sample),
         }));
     }
+    let graph = host.scene_graph().expect("submitted cost graph");
     let json = serde_json::json!({
         "mode": mode, "extent": extent, "adapter": caps.adapter().name, "recipe": "portable",
         "passes": graph.pass_names().collect::<Vec<_>>(),
