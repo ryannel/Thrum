@@ -795,3 +795,12 @@
 - The rebased cadence check recorded all eleven arms and ran two timing diagnostics. Every recording has
   a verified scratch identity and cleanup receipt.
   [Device audit](../../../.orchestrate/evidence/CLOUDS/WP19/cadence-20261125T182649.431879Z/audit.json)
+
+- An attended rerun reached an awake built-in panel, but the first game process exited with zero presents.
+  Replays of the same build under the GPU lock measured AppKit occlusion and thousands of refused drawable
+  acquisitions. A window-order sample showed another application above the cadence window during a run.
+  The cadence launch now focuses its normal window once after preparation and writes the window conditions
+  even when the game exits without a frame. The collector uses observed occlusion to reject and restart the
+  whole default series, and it cycles the display during setup if a wake alone leaves the idle flag set.
+  [Window order](../../../.orchestrate/evidence/CLOUDS/WP19/merged-retry-window-order.log) ·
+  [Rejected check](../../../.orchestrate/evidence/CLOUDS/WP19/merged-cadence-retry.log)
