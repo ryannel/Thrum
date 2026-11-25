@@ -657,3 +657,12 @@
 
 - 2026-11-25 The normal bounded window prints its report with GPU timestamps disabled while the frame profiler is closed. Explicit report and pan qualification still request timestamps. Wind qualification inherits the window policy. The shared-GPU retake recorded untimed samples and missed refreshes. The subsequent panel run was fully occluded at the lock screen. [Window evidence](../../../.orchestrate/evidence/CLOUDS/WP7/r9/README.md)
 - The fresh 1080p Metal T2 wind take retained 2,519 verified submitted images over 22 seconds at 40 m/s and 60×. Successive images around 14 seconds show the cloud relief and shade moving together. [Submitted-image evidence](../../../.orchestrate/evidence/CLOUDS/WP7/r9/visual-fast/verified.json)
+
+## WP7 ordinary release display proof
+
+- 2026-11-25 The normal V1 window runs until closed and leaves GPU timestamps off with the
+  profiler closed. Its exit report counts successive surface submissions for future
+  display targets. The built-in 120 Hz panel held all five wind conditions for at least
+  20 consecutive seconds, including 29.57 seconds across the 90° turn and 41.37 seconds
+  at 40 m/s and 60×. Capture and observers were off. Loaded trials also missed
+  refreshes. [Release build and display receipts](../../../.orchestrate/evidence/CLOUDS/WP7/r11/README.md)
