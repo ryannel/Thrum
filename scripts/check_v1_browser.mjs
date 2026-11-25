@@ -2505,7 +2505,7 @@ async function main() {
       }));
       else if (mode === 'sprites-crisp') results.push(await qualifySpriteCrisp({
         cdp, origin: serving.origin, output, timeout: args['timeout-ms'],
-        wasm: files.get('/v1_game_bg.wasm'), existingGame, waitFor, unloadGamePage,
+        wasm: files.get('/v1_game_bg.wasm'), existingGame, waitFor, releaseGameGraphics, unloadGamePage,
         commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repo, encoding: 'utf8' }).trim(),
       }));
       else if (mode === 'sprites-2d' || mode === 'sprites-2d-cost') results.push(await qualifySprites({

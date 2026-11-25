@@ -277,7 +277,7 @@ function movesDiagonally(positions) {
   return positions.slice(1).every((point, i) => point.every((axis, j) => axis > positions[i][j]));
 }
 
-export async function qualifySpriteCrisp({ cdp, origin, output, timeout, wasm, existingGame, waitFor, unloadGamePage, commit }) {
+export async function qualifySpriteCrisp({ cdp, origin, output, timeout, wasm, existingGame, waitFor, releaseGameGraphics, unloadGamePage, commit }) {
   const rows = [];
   for (const dpr of [1, 2]) {
     const { targetId } = await cdp.call('Target.createTarget', { url: 'about:blank' });
@@ -303,13 +303,18 @@ export async function qualifySpriteCrisp({ cdp, origin, output, timeout, wasm, e
         return existingGame(cdp, sessionId);
       };
       const retireCanvas = async game => {
-        await game.invoke('game.set_visible(false, performance.now());return true;');
-        // Give the compositor two callbacks to release the current canvas image
-        // before navigation destroys the surface and its WebGPU device.
+        // Retire the surface and acknowledge device destruction while this
+        // document still owns them. Each navigation creates a fresh device.
+        const devices = await releaseGameGraphics(cdp, sessionId, game);
+        if (!Number.isInteger(devices) || devices < 1) {
+          throw new Error(`DPR ${dpr}: no sprite WebGPU device retired`);
+        }
+        // Give the compositor two callbacks to release the last canvas image.
         await call('Runtime.evaluate', {
           expression: 'new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))',
           awaitPromise: true,
         });
+        return devices;
       };
       const surface = async (game, css) => {
         const grid = await waitFor(() => game.invoke(`
@@ -361,7 +366,7 @@ export async function qualifySpriteCrisp({ cdp, origin, output, timeout, wasm, e
         cardRows.push({ ...grid, submission: frame.meta.submission_id, presenter: frame.meta.presenter_generation });
       }
       if (cardRows[0].presenter === cardRows[1].presenter) throw new Error('Resize did not change the presenter generation');
-      await retireCanvas(card);
+      const cardDevicesRetired = await retireCanvas(card);
       const sweeps = [];
       for (const scale of [1.25, 1.5, 2.37]) {
         const game = await visit(`&sprite-probe=sweep:${scale}`);
@@ -412,15 +417,15 @@ export async function qualifySpriteCrisp({ cdp, origin, output, timeout, wasm, e
         await game.invoke('delete window.spriteSweepFirstPixels;game.end_submitted_capture();return true;');
         const frozenRejected = !movesDiagonally(frozen);
         if (!movesDiagonally(positions) || !frozenRejected) throw new Error(JSON.stringify({positions, frozen}));
+        const devicesRetired = await retireCanvas(game);
         sweeps.push({
           scale, ...grid, submissions: 256, checkpoints, centroids: positions, frozen_centroids: frozen,
-          frozen_rejected: frozenRejected, last_submission: last,
+          frozen_rejected: frozenRejected, last_submission: last, devices_retired: devicesRetired,
         });
-        await retireCanvas(game);
       }
       const receipt = await readWasmReceipt(cdp, sessionId, `${origin}/v1_game_bg.wasm`, wasm.sha256, wasm.bytes.length);
       await unloadGamePage(cdp, sessionId, timeout);
-      rows.push({ dpr, card: cardRows, sweeps, receipt });
+      rows.push({ dpr, card: cardRows, card_devices_retired: cardDevicesRetired, sweeps, receipt });
       console.log(`sprites-crisp: DPR ${dpr}, two CSS grids and 3 × 256 submitted camera poses passed`);
     } finally {
       await cdp.call('Target.closeTarget', { targetId });
