@@ -725,3 +725,20 @@
 - 2026-11-25 The lead asked whether the surf query's 47 million nodes and 18.1 s a tick need a plan change before
   WP19. They do not: the [WP19 decision](#wp19-query-decision) was taken on that measurement, and WP19 makes the
   cut coarse to fine and holds it to the age contract.
+
+<a id="wp13-set-rank-retired"></a>
+
+- 2026-11-25 WP13.5 blocked again after three nearer Metal looks at the gale's 3.0 m and 0.8 m crests, the sixth
+  failed look at ranking two crests by height. The smaller crest breaks inside the surf zone, in water already
+  39–43% white, so it has no first white to place against the outer crest's. Retired the cue from WP13.5 and
+  from the work package's bar, on the lead's direction and the owner's park rule; moved to no later work package, since
+  the same looks would be repeated there. WP12.4 still holds on the model that a set's highest crests reach
+  breaking index 1 in deeper water, WP13.1 holds Metal's long waves to that model, and WP13.5 still judges
+  from 1 km that fronts start at different distances. The gap is recorded as an assumption in the plan file.
+  [Three nearer looks](../../../.orchestrate/evidence/WATERS/WP13/near-gale-set-inspection.md)
+
+- 2026-11-25 Not taken: an optics change so a live breaking face reads over transported lace, and a different
+  crest pair. Neither is certain. `foam_surface` takes the maximum of lace and face cover, so the first would
+  retune the whitewater WP13.7 has passed, and an inner crest breaks in old foam on a real beach too. If the
+  owner asks for the cue back, start a spike from the builder's patch-contrast reading.
+  [Patch contrast](../../../.orchestrate/evidence/WATERS/WP13/gale-onset-brightness.log)

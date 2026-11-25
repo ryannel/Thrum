@@ -13,7 +13,7 @@ Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-bu
 - Assumption: "breaking waves" (14 November) is met by the sea's own swell, which wave theory turns, shortens and raises over the bed, and which takes a breaker's shape as each crest passes its breaking height. It is neither baked nor a live solver. There is no spray or splash, no ride inside a barrel, and no current from surf.
 - Assumption: after the break, a bounded swash profile driven by the incoming swell at the still-water contour is sufficient for the shipped-game look. The same sheet lowers the bore, limits the coherent trough and preserves the regular-wave run-up and draw-back. The builder tunes the bore decay and handoff width by eye.
 - Assumption: the swell at the island's exposed beach is set for the look, so several lines of swell show at once, with a period inside the surf cue's 6 s to 14 s.
-- Assumption: from 1 km the surf is judged for fronts that start at different distances and run in. The taller crest of a set breaking farther out is judged in the gale, from a nearer view.
+- Assumption: from 1 km the surf is judged for fronts that start at different distances and run in. That the taller crest of a set breaks farther out is held on the model (WP12.4) and not judged by eye, a known gap the owner can ask for back.
 - Assumption: wet long-wave loss keeps WP7.5's distributed foam wherever a breaking face is unavailable, including the swash. An eligible crest concentrates part of that birth on its face and under a resolved lip. Distant beaches use the same wet lost-power source for their steady cover.
 - Assumption: as part of surf an island shelters its lee, so a lee beach laps with short waves only.
 - Assumption: the surf query's age is proved for the example's eight floats in a gale on the Mac, not for 2,048 points in breakers or in Chrome. Nine answers in ten arrive within two ticks; the coarse-cell rule is measured, not proved.
@@ -72,13 +72,10 @@ Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-bu
 
 ## WP13 Swell turns to face the beach, rises and breaks into white water that runs up the sand, on the Mac and in Chrome
 
-Resume `build/waters` from its [handoff](../../../.orchestrate/evidence/WATERS/WP13-handoff.md). Keep the shared
-analytic sheet and bounded swash ([approach decision](LOG.md#wp13-approach-decision)).
-
-WP13.5 and WP13.11 are left ([set decision](LOG.md#wp13-set-decision)). The handoff's 1 km takes show WP13.5's
-point 3. The nearer gale view for point 4 is yours, and the decision names the two crests to frame. Leave
-the offshore mesh as it is for the 1 km view; the [restart decision](LOG.md#wp13-restart-decision) covers the
-nearer view's mesh. The query's cost in the breakers is WP19's: record it in WP13.12.
+Resume `build/waters` from its [handoff](../../../.orchestrate/evidence/WATERS/WP13-handoff.md). Only WP13.5 is
+left, and it no longer ranks two crests by height ([retired cue](LOG.md#wp13-set-rank-retired)). The retained
+takes show its three points: take no new look, change no setting, record the evidence and go to review.
+The query's cost in the breakers is WP19's: record it in WP13.12.
 
 ## WP19 Floats in a gale's breaking surf get the height of the crest they ride in time to ride it, with the game running
 
