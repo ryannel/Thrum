@@ -70,6 +70,8 @@ pub use extent::{ExtentPrepareInputs, PreparedExtent};
 #[cfg(not(target_arch = "wasm32"))]
 pub use extent_transition::{ExtentRequest, ExtentTransition};
 pub use submitted_capture::{CaptureLimits, SubmittedImage};
+#[cfg(target_os = "macos")]
+pub use surface_switch::SurfaceLease;
 pub use surface_switch::{SurfaceSwitch, SurfaceSwitchOutcome, SurfaceSwitchRecord};
 pub use tick::{TickSubmissionPermission, TickSubmissionStats};
 pub use tokens::{AdvancedFrame, EncodedFrame};
@@ -732,6 +734,7 @@ pub struct FrameHost<W: FrameWorld, V: SceneSource<W::Page>> {
     contribution: Option<Box<dyn SceneContribution>>,
     contribution_error: Option<String>,
     creations: creation::Ledger,
+    initial_preparation_pending: bool,
     #[cfg(feature = "creation-counters")]
     retired_creations: Option<CreationReport>,
 }
@@ -819,9 +822,12 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 "attach a scene contribution with no frames in flight",
             ));
         }
-        let _region = self
-            .creations
-            .region(CreationPhase::Transition, "contribution");
+        let phase = if self.initial_preparation_pending {
+            CreationPhase::Build
+        } else {
+            CreationPhase::Transition
+        };
+        let _region = self.creations.region(phase, "contribution");
         if self.scene_kind() == SceneKind::TwoD {
             self.attach_sprite_contribution(contribution.as_mut())?;
             self.contribution = Some(contribution);
@@ -1097,6 +1103,27 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         capabilities: &DeviceCapabilities,
         queue: &wgpu::Queue,
         config: FrameConfig,
+        world: W,
+        source: V,
+        scene: SyntheticScene,
+        exposure: f32,
+    ) -> Result<Self, FrameError> {
+        let mut host =
+            Self::new_preparing(capabilities, queue, config, world, source, scene, exposure)
+                .await?;
+        host.finish_preparation();
+        Ok(host)
+    }
+
+    /// Prepare the base 3D scene while leaving the initial device generation unpublished.
+    /// Attach required startup contributions, then call [Self::finish_preparation] before drawing.
+    ///
+    /// # Errors
+    /// Returns invalid extent, initial publication or GPU preparation failure.
+    pub async fn new_preparing(
+        capabilities: &DeviceCapabilities,
+        queue: &wgpu::Queue,
+        config: FrameConfig,
         mut world: W,
         source: V,
         mut scene: SyntheticScene,
@@ -1175,7 +1202,6 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         )
         .await?;
         drop(build);
-        creations.ready();
         Ok(Self::from_prepared(
             capabilities,
             queue,
@@ -1200,6 +1226,34 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     /// # Errors
     /// Refuses named 3D-only requests and invalid initial world, sheet or surface inputs.
     pub async fn new_2d(
+        capabilities: &DeviceCapabilities,
+        queue: &wgpu::Queue,
+        config: FrameConfig,
+        world: W,
+        source: V,
+        sprites: crate::sprite::SpriteScene,
+        requests: SpriteSceneRequests,
+    ) -> Result<Self, FrameError> {
+        let mut host = Self::new_2d_preparing(
+            capabilities,
+            queue,
+            config,
+            world,
+            source,
+            sprites,
+            requests,
+        )
+        .await?;
+        host.finish_preparation();
+        Ok(host)
+    }
+
+    /// Prepare the base sprite scene while leaving the initial device generation unpublished.
+    /// Attach required startup contributions, then call [Self::finish_preparation] before drawing.
+    ///
+    /// # Errors
+    /// Refuses named 3D-only requests and invalid initial world, sheet or surface inputs.
+    pub async fn new_2d_preparing(
         capabilities: &DeviceCapabilities,
         queue: &wgpu::Queue,
         config: FrameConfig,
@@ -1269,7 +1323,6 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         }
         drop(initial);
         drop(build);
-        creations.ready();
         Ok(Self::from_prepared(
             capabilities,
             queue,
@@ -1362,9 +1415,28 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             contribution: None,
             contribution_error: None,
             creations: capabilities.site().ledger(),
+            initial_preparation_pending: true,
             #[cfg(feature = "creation-counters")]
             retired_creations: None,
         }
+    }
+
+    /// Declare the initial device generation ready once its required resources are prepared.
+    /// Replacement device generations publish readiness through [Self::publish_device].
+    pub fn finish_preparation(&mut self) {
+        if self.initial_preparation_pending {
+            self.creations.ready();
+            self.initial_preparation_pending = false;
+        }
+    }
+
+    fn require_ready(&self) -> Result<(), FrameError> {
+        if self.initial_preparation_pending {
+            return Err(FrameError::InvalidState(
+                "initial generation is still preparing",
+            ));
+        }
+        Ok(())
     }
 
     /// Copy presentation inputs once for an asynchronous visual preparation.
@@ -1886,6 +1958,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     /// # Errors
     /// Returns a clock or simulation fault without an incomplete world update.
     pub fn advance(&mut self, now: Duration) -> Result<AdvancedFrame<'_, W, V>, FrameError> {
+        self.require_ready()?;
         self.observation = now;
         let wall_start = Instant::now();
         self.governor_boundary(now);

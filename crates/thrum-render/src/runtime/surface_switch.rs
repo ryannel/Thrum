@@ -2,6 +2,83 @@
 
 use std::time::{Duration, Instant};
 
+/// Mac render owner's observed surface lease and its configuration admission.
+#[cfg(target_os = "macos")]
+pub struct SurfaceLease {
+    generation: u64,
+    pending: bool,
+    refused: Option<u64>,
+}
+
+#[cfg(target_os = "macos")]
+impl SurfaceLease {
+    /// Track a lease on startup or after a device replacement.
+    #[must_use]
+    pub fn new(generation: u64, pending: bool) -> Self {
+        Self {
+            generation,
+            pending,
+            refused: None,
+        }
+    }
+
+    /// The platform has requested a replacement. The next drawable needs a fresh configure.
+    pub fn observe(&mut self, generation: u64) {
+        if generation != self.generation {
+            self.generation = generation;
+            self.invalidate();
+        }
+    }
+
+    /// Close drawable admission until the render owner configures the surface.
+    pub fn invalidate(&mut self) {
+        self.pending = true;
+    }
+
+    /// Whether the render owner still needs to configure.
+    #[must_use]
+    pub fn pending(&self) -> bool {
+        self.pending
+    }
+
+    /// Whether this lease's latest configuration was refused.
+    #[must_use]
+    pub fn refused(&self, generation: u64) -> bool {
+        self.refused == Some(generation)
+    }
+
+    /// An extent switch settled the current configuration.
+    pub fn settle_extent(&mut self, taken: bool) {
+        self.pending = false;
+        if taken {
+            self.refused = None;
+        }
+    }
+
+    /// Recover the surface at the committed extent once the render owner has
+    /// drained submitted frames and no extent preparation is using the device.
+    /// The callback performs a real configure for the committed configuration.
+    /// Returns None when recovery is unnecessary, deferred or already refused.
+    pub fn recover(
+        &mut self,
+        preparation_busy: bool,
+        pending_frames: usize,
+        configure: impl FnMut() -> Result<(), wgpu::Error>,
+    ) -> Option<Result<(), crate::capabilities::SurfaceConfigError>> {
+        if !self.pending || preparation_busy || pending_frames != 0 || self.refused(self.generation)
+        {
+            return None;
+        }
+        let result = crate::capabilities::retry_surface_configuration(configure);
+        if result.is_ok() {
+            self.pending = false;
+        } else {
+            self.refused = Some(self.generation);
+        }
+        Some(result)
+    }
+}
+
 /// Calls made at one admitted generation switch.
 #[derive(Debug, Default)]
 pub struct SurfaceSwitchRecord {

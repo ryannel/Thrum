@@ -4,7 +4,7 @@ use std::{
     path::Path,
     time::{SystemTime, UNIX_EPOCH},
 };
-use thrum_render::runtime::DeviceSite;
+use thrum_render::runtime::{CreationPhase, DeviceSite};
 
 use super::CreationProof;
 use crate::host::Runtime;
@@ -16,10 +16,23 @@ pub(super) struct Ready {
 }
 
 impl Ready {
-    pub(super) fn mark(arm: CreationProof, host: &Runtime) -> Result<Self, String> {
-        let report = host.creation_checkpoint();
-        if !report.ready || report.frames == 0 {
-            return Err("route readiness requires a prepared device and a cooked draw".to_owned());
+    pub(super) fn mark(arm: CreationProof, host: &mut Runtime) -> Result<Self, String> {
+        let pending = host.creation_report();
+        if pending.ready || pending.frames != 0 {
+            return Err("expected a device still preparing and no submitted frames".to_owned());
+        }
+        host.finish_preparation();
+        let ready = epoch_ns()?;
+        let report = host.creation_report();
+        if !report.ready
+            || !report
+                .pipelines
+                .iter()
+                .any(|row| row.phase == CreationPhase::Build && row.label == "contribution")
+        {
+            return Err(
+                "generation readiness must include cooked contribution preparation".to_owned(),
+            );
         }
         let native_creations = report.native_creations.iter().map(|row| row.count).sum();
         let native_elapsed_ns = report
@@ -27,21 +40,29 @@ impl Ready {
             .iter()
             .map(|row| row.elapsed.as_nanos())
             .sum::<u128>();
-        let ready = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .map_err(|error| error.to_string())?;
+        let mut log = std::io::stderr().lock();
         writeln!(
-            std::io::stderr().lock(),
-            "THRUM_METAL_READY {} {} {native_creations} {native_elapsed_ns}",
-            ready.as_nanos(),
-            report.generation,
+            log,
+            "THRUM_METAL_READY {ready} {} {} {native_creations} {native_elapsed_ns}",
+            report.generation, report.frames,
         )
         .map_err(|error| error.to_string())?;
+        writeln!(log, "THRUM_METAL_READY_LEDGER {report}").map_err(|error| error.to_string())?;
         Ok(Self {
             arm,
             generation: report.generation,
             native_creations,
         })
+    }
+
+    pub(super) fn first_cooked_draw(&self, cooked_generation: Option<u64>) -> Result<(), String> {
+        let generation = cooked_generation.ok_or("creation proof requires a cooked draw")?;
+        let now = epoch_ns()?;
+        writeln!(
+            std::io::stderr().lock(),
+            "THRUM_METAL_COOKED_DRAW {now} {generation}"
+        )
+        .map_err(|error| error.to_string())
     }
 
     pub(super) fn finish(
@@ -73,6 +94,13 @@ impl Ready {
         )
         .map_err(|error| error.to_string())
     }
+}
+
+fn epoch_ns() -> Result<u128, String> {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|elapsed| elapsed.as_nanos())
+        .map_err(|error| error.to_string())
 }
 
 fn prepare_late_pipeline(site: &DeviceSite) {

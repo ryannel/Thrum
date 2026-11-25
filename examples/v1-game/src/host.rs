@@ -293,6 +293,21 @@ impl GameSetup {
         capabilities: &DeviceCapabilities,
         config: FrameConfig,
     ) -> Result<Runtime, String> {
+        let mut host = self
+            .prepare_startup(device, queue, capabilities, config, None)
+            .await?;
+        host.finish_preparation();
+        Ok(host)
+    }
+
+    pub(crate) async fn prepare_startup(
+        self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        capabilities: &DeviceCapabilities,
+        config: FrameConfig,
+        shapes: Option<crate::PlacedSky>,
+    ) -> Result<Runtime, String> {
         #[cfg(all(feature = "proving", not(target_arch = "wasm32")))]
         if self.sprite_scale.is_some() {
             let store = if self.interface_text.is_some() {
@@ -303,12 +318,14 @@ impl GameSetup {
             match crate::content::launch_value(store) {
                 Ok(store) => {
                     return self
-                        .prepare_with_sheet_source(
+                        .prepare_scene(
                             device,
                             queue,
                             capabilities,
                             config,
-                            std::path::PathBuf::from(store).into(),
+                            None,
+                            shapes,
+                            Some(std::path::PathBuf::from(store).into()),
                         )
                         .await
                         .map_err(|error| error.to_string());
@@ -317,7 +334,7 @@ impl GameSetup {
                 Err(error) => return Err(error.to_string()),
             }
         }
-        self.prepare_with_rows(device, queue, capabilities, config, None)
+        Box::pin(self.prepare_scene(device, queue, capabilities, config, None, shapes, None))
             .await
             .map_err(|error| error.to_string())
     }
@@ -350,7 +367,11 @@ impl GameSetup {
         config: FrameConfig,
         rows: Option<thrum_asset_gpu::rows::CookedRows>,
     ) -> Result<Runtime, runtime::FrameError> {
-        Box::pin(self.prepare_scene(device, queue, capabilities, config, rows, None, None)).await
+        let mut host =
+            Box::pin(self.prepare_scene(device, queue, capabilities, config, rows, None, None))
+                .await?;
+        host.finish_preparation();
+        Ok(host)
     }
 
     /// Prepare the same scene with the game's opt-in placed sky.
@@ -365,8 +386,18 @@ impl GameSetup {
         config: FrameConfig,
         sky: crate::PlacedSky,
     ) -> Result<Runtime, runtime::FrameError> {
-        Box::pin(self.prepare_scene(device, queue, capabilities, config, None, Some(sky), None))
-            .await
+        let mut host = Box::pin(self.prepare_scene(
+            device,
+            queue,
+            capabilities,
+            config,
+            None,
+            Some(sky),
+            None,
+        ))
+        .await?;
+        host.finish_preparation();
+        Ok(host)
     }
 
     /// Prepare the moving sprite field with cooked art followed through a content lease.
@@ -382,7 +413,7 @@ impl GameSetup {
         config: FrameConfig,
         source: thrum_asset_gpu::CookedSource,
     ) -> Result<Runtime, runtime::FrameError> {
-        Box::pin(self.prepare_scene(
+        let mut host = Box::pin(self.prepare_scene(
             device,
             queue,
             capabilities,
@@ -391,7 +422,9 @@ impl GameSetup {
             None,
             Some(source),
         ))
-        .await
+        .await?;
+        host.finish_preparation();
+        Ok(host)
     }
 
     #[cfg(feature = "proving")]
@@ -519,7 +552,7 @@ impl GameSetup {
         } else {
             None
         };
-        let mut inner = Runtime::new_2d(
+        let mut inner = Runtime::new_2d_preparing(
             capabilities,
             queue,
             config,
@@ -631,7 +664,7 @@ impl GameSetup {
         source.cloud_sky = cloud_sky;
         source.cloud_shapes.clone_from(&shapes);
         source.cooked_rows = rows;
-        let mut inner = Runtime::new(
+        let mut inner = Runtime::new_preparing(
             capabilities,
             queue,
             config,

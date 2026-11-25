@@ -17,8 +17,6 @@ use super::{
 use crate::{CameraRoute, GameHost};
 
 #[cfg(feature = "creation-counters")]
-mod creation;
-#[cfg(feature = "creation-counters")]
 use super::CreationProof;
 
 /// Phase tolerance on the logged presentation alpha.
@@ -145,11 +143,6 @@ pub(super) fn record(
             "presentation_lead_ns": 0,
         }),
     )?;
-    #[cfg(feature = "creation-counters")]
-    let creation = request
-        .creation_proof
-        .map(|arm| creation::Ready::mark(arm, driver.host()))
-        .transpose()?;
     #[cfg(feature = "creation-counters")]
     if request.creation_proof == Some(CreationProof::Launch) {
         return Ok(());
@@ -365,10 +358,6 @@ pub(super) fn record(
                 .map_err(|error| error.to_string())?;
             }
         }
-    }
-    #[cfg(feature = "creation-counters")]
-    if let Some(ready) = creation {
-        ready.finish(device, driver.host(), directory)?;
     }
     #[cfg(feature = "creation-counters")]
     if let Some(provider) = driver.host().native_provider_report() {

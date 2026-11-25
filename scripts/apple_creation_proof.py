@@ -18,7 +18,8 @@ from t2_load import LoadRecord
 RECONSTRUCTION = {"portable": ("taau", "Taau"), "apple-tile": ("metalfx", "MetalFx")}
 STAGES = ("wgsl_parse", "wgsl_validate", "wgsl_specialize", "wgsl_to_msl",
           "msl_compile", "pipeline_state", "shader_module", "metalfx")
-READY = re.compile(r"^THRUM_METAL_READY (\d+) (\d+) (\d+) (\d+)$")
+READY = re.compile(r"^THRUM_METAL_READY (\d+) (\d+) (\d+) (\d+) (\d+)$")
+COOKED_DRAW = re.compile(r"^THRUM_METAL_COOKED_DRAW (\d+) (\d+)$")
 FINISHED = re.compile(r"^THRUM_METAL_FINISHED (\d+) (\d+) (\d+)$")
 STAGE = re.compile(r"^THRUM_METAL_STAGE (\w+) (\d+)$")
 CACHE = re.compile(r"^THRUM_METAL_CACHE (.+)$")
@@ -81,7 +82,15 @@ def witness(output, binary, env, recipe, proof, cache=None):
              if (match := READY.fullmatch(line))]
     if len(ready) != 1:
         raise ValueError(f"expected one host readiness marker in {output}")
-    boundary, now, generation, metalfx_calls, metalfx_ns = ready[0]
+    boundary, now, generation, submitted, metalfx_calls, metalfx_ns = ready[0]
+    if submitted != 0:
+        raise ValueError(f"generation was marked ready after {submitted} submissions")
+    cooked = [(index, *map(int, match.groups())) for index, line in enumerate(lines)
+              if (match := COOKED_DRAW.fullmatch(line))]
+    if (len(cooked) != 1 or cooked[0][0] <= boundary
+            or cooked[0][2] != header["cooked_generation"]):
+        raise ValueError(f"missing first cooked draw after readiness in {output}")
+    _, cooked_epoch_ns, _ = cooked[0]
     rows = [(index, match[1], int(match[2])) for index, line in enumerate(lines)
             if (match := STAGE.fullmatch(line))]
     before = {stage: [ns for index, name, ns in rows if index < boundary and name == stage]
@@ -103,7 +112,9 @@ def witness(output, binary, env, recipe, proof, cache=None):
     if cache and reported_cache != [str(cache[1])]:
         raise ValueError(f"Metal did not attest the selected cache: {reported_cache} vs {cache[1]}")
     return dict(pid=process.pid, host_launch_epoch_ns=started, ready_epoch_ns=now,
-                launch_to_ready_ns=now - started, device_generation=generation, header=header,
+                launch_to_ready_ns=now - started, device_generation=generation,
+                submitted_at_ready=submitted, first_cooked_draw_epoch_ns=cooked_epoch_ns,
+                launch_to_first_cooked_draw_ns=cooked_epoch_ns - started, header=header,
                 stages=stage_totals,
                 wgsl_translation_ns=sum(sum(times) for stage, times in before.items() if stage.startswith("wgsl_")),
                 after_ready=dict.fromkeys(STAGES, 0) | dict(after), finished=finished,
@@ -146,7 +157,7 @@ def mac_launch(output):
     return dict(target="mac-metal", build=build, launches=results, timing_decides_pass=False,
                 clock="parent pre-spawn and child readiness on local system clock; stage durations use Rust Instant",
                 cache_scope="Metal's selected on-disk shader cache for this launch pair; one fresh process per arm",
-                scope="offscreen V1 launch through the first cooked draw; stage receipts include their measured call latencies")
+                scope="offscreen V1 launch to renderer generation readiness before first submission; first cooked draw is a separate endpoint")
 
 
 def mac_no_compile(output):

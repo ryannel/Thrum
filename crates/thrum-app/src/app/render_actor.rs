@@ -20,7 +20,8 @@ use thrum_render::{
     present::SurfaceProfile,
     runtime::{
         DriveReport, EncodedFrame, ExtentRequest, ExtentTransition, FrameError, FrameHost,
-        FrameSample, FrameWorld, SceneKind, SceneSource, SurfaceOutput, SurfaceSwitchOutcome,
+        FrameSample, FrameWorld, SceneKind, SceneSource, SurfaceLease, SurfaceOutput,
+        SurfaceSwitchOutcome,
     },
 };
 use wgpu::TextureViewDescriptor;
@@ -156,14 +157,12 @@ struct Actor<G: Game> {
     gpu: PlatformGpu,
     recipe: WindowDevice,
     surface_generation: Arc<AtomicU64>,
-    surface_epoch: u64,
+    surface_lease: SurfaceLease,
     stopped: Arc<AtomicBool>,
-    needs_reconfigure: bool,
     current_extent: ExtentRequest,
     transition: ExtentTransition,
     transition_proof: Option<TransitionProof>,
     display_proof: Option<super::display::proof::DisplayProof>,
-    refused_surface_generation: Option<u64>,
     origin: Instant,
     frame_budget: Option<Duration>,
     wake: EventLoopProxy<UserEvent>,
@@ -224,11 +223,9 @@ pub(super) fn start<G: Game<World: Send, Scene: Send> + 'static>(
         host,
         gpu,
         recipe,
-        surface_epoch: surface_generation.load(Ordering::Acquire),
+        surface_lease: SurfaceLease::new(surface_generation.load(Ordering::Acquire), false),
         surface_generation,
         stopped,
-        needs_reconfigure: false,
-        refused_surface_generation: None,
         origin,
         frame_budget: config.frame_budget,
         wake: wake.clone(),
@@ -447,13 +444,10 @@ impl<G: Game> Actor<G> {
             .map_or((1.0, 1.0), |record| record.load());
         let current = self.surface_generation.load(Ordering::Acquire) == request.surface_generation;
         if current {
-            if request.surface_generation != self.surface_epoch {
-                self.surface_epoch = request.surface_generation;
-                self.needs_reconfigure = true;
-            }
+            self.surface_lease.observe(request.surface_generation);
             self.advance_extent(request, reply, headroom.1)?;
         } else {
-            self.needs_reconfigure = true;
+            self.surface_lease.invalidate();
         }
         self.host.set_display_headroom(headroom.0);
         // A sprite scene has one output pixel per backing pixel. A pending
@@ -464,8 +458,8 @@ impl<G: Game> Actor<G> {
             && matches_grid
             && !request.extent.contains(&0)
             && self.transition.surface.usable()
-            && self.refused_surface_generation != Some(request.surface_generation)
-            && !self.needs_reconfigure;
+            && !self.surface_lease.refused(request.surface_generation)
+            && !self.surface_lease.pending();
         let now = self.origin.elapsed();
         let observed = request.platform.governor_display;
         let display = self.transition_proof.as_ref().map_or(observed, |proof| {
@@ -497,7 +491,7 @@ impl<G: Game> Actor<G> {
                     SurfaceStatus::SurfaceEpochChanged
                 } else if request.extent.contains(&0) {
                     SurfaceStatus::WindowExtentEmpty
-                } else if self.refused_surface_generation == Some(request.surface_generation)
+                } else if self.surface_lease.refused(request.surface_generation)
                     || !self.transition.surface.usable()
                 {
                     SurfaceStatus::SurfaceConfigurationBlocked
@@ -535,7 +529,7 @@ impl<G: Game> Actor<G> {
             return Ok(encoded.skip());
         }
         if self.surface_generation.load(Ordering::Acquire) != request.surface_generation {
-            self.needs_reconfigure = true;
+            self.surface_lease.invalidate();
             reply.platform.surface_status = SurfaceStatus::SurfaceEpochChanged;
             return Ok(encoded.skip());
         }
@@ -555,7 +549,9 @@ impl<G: Game> Actor<G> {
         let encoded = check_encoded_device(&self.gpu.watch, encoded)?;
         let frame = match surface_action(acquired) {
             SurfaceAction::Draw { frame, reconfigure } => {
-                self.needs_reconfigure |= reconfigure;
+                if reconfigure {
+                    self.surface_lease.invalidate();
+                }
                 frame
             }
             SurfaceAction::Skip { occluded } => {
@@ -567,13 +563,13 @@ impl<G: Game> Actor<G> {
                 return Ok(encoded.skip());
             }
             SurfaceAction::Reconfigure { .. } => {
-                self.needs_reconfigure = true;
+                self.surface_lease.invalidate();
                 reply.platform.surface_status = SurfaceStatus::NeedsReconfigure;
                 return Ok(encoded.skip());
             }
         };
         if self.surface_generation.load(Ordering::Acquire) != request.surface_generation {
-            self.needs_reconfigure = true;
+            self.surface_lease.invalidate();
             reply.platform.surface_status = SurfaceStatus::SurfaceEpochChanged;
             return Ok(encoded.skip());
         }
@@ -649,7 +645,7 @@ impl<G: Game> Actor<G> {
                 .map_err(FrameError::Scene)?;
             if observer.replace_after_present() {
                 self.surface_generation.fetch_add(1, Ordering::AcqRel);
-                self.needs_reconfigure = true;
+                self.surface_lease.invalidate();
             }
         }
         Ok(())
@@ -743,8 +739,7 @@ impl<G: Game> Actor<G> {
                     assert!(self.host.publish_extent(candidate));
                     self.gpu.config = config;
                     self.current_extent = request;
-                    self.needs_reconfigure = false;
-                    self.refused_surface_generation = None;
+                    self.surface_lease.settle_extent(true);
                 }
                 SurfaceSwitchOutcome::Refused => {
                     self.transition.discard(candidate);
@@ -755,33 +750,30 @@ impl<G: Game> Actor<G> {
                     ));
                     // Do not route a refused transition through an automatic
                     // platform retry. Only a new request or a surface epoch can recover it.
-                    self.needs_reconfigure = false;
+                    self.surface_lease.settle_extent(false);
                 }
             }
         }
-        if self.needs_reconfigure
-            && !self.transition.busy()
-            && self.host.pending_frames() == 0
-            && self.refused_surface_generation != Some(frame.surface_generation)
+        if let Some(result) =
+            self.surface_lease
+                .recover(self.transition.busy(), self.host.pending_frames(), || {
+                    TransitionProof::configure(
+                        self.transition_proof.as_mut(),
+                        "platform",
+                        &self.recipe.surface,
+                        &self.gpu.device,
+                        &self.gpu.config,
+                    )
+                })
         {
-            match retry_surface_configuration(|| {
-                TransitionProof::configure(
-                    self.transition_proof.as_mut(),
-                    "platform",
-                    &self.recipe.surface,
-                    &self.gpu.device,
-                    &self.gpu.config,
-                )
-            }) {
+            match result {
                 Ok(()) => {
                     self.transition.surface.platform_configured();
-                    self.needs_reconfigure = false;
                     if let Some(observer) = &mut self.observer {
                         observer.replace(&mut self.host)?;
                     }
                 }
                 Err(error) => {
-                    self.refused_surface_generation = Some(frame.surface_generation);
                     reply.platform.surface_status =
                         SurfaceStatus::ConfigurationRefused(error.to_string());
                 }
@@ -796,7 +788,7 @@ impl<G: Game> Actor<G> {
         frame: &FrameRequest<G::Edits>,
         request: ExtentRequest,
     ) -> Result<(), FrameError> {
-        if self.current_extent == request && !self.needs_reconfigure {
+        if self.current_extent == request && !self.surface_lease.pending() {
             return Ok(());
         }
         if let Some(proof) = &mut self.transition_proof {
@@ -835,8 +827,7 @@ impl<G: Game> Actor<G> {
             assert!(self.host.publish_extent(candidate));
             self.gpu.config = config;
             self.current_extent = request;
-            self.needs_reconfigure = false;
-            self.refused_surface_generation = None;
+            self.surface_lease.settle_extent(true);
         }
         Ok(())
     }
@@ -915,18 +906,19 @@ impl<G: Game> Actor<G> {
                 .replace_device(&mut self.host)
                 .map_err(RecoveryFailure::frame)?;
         }
-        self.refused_surface_generation = None;
-        self.needs_reconfigure = needs_reconfigure
-            || self.surface_generation.load(Ordering::Acquire) != surface_generation;
+        self.surface_lease = SurfaceLease::new(
+            surface_generation,
+            needs_reconfigure
+                || self.surface_generation.load(Ordering::Acquire) != surface_generation,
+        );
         self.current_extent = ExtentRequest {
             extent: profile.extent,
             format: profile.format,
             device: generation,
             ..self.current_extent
         };
-        self.surface_epoch = surface_generation;
         self.transition
-            .recovered(self.current_extent, !self.needs_reconfigure);
+            .recovered(self.current_extent, !self.surface_lease.pending());
         ensure_device(&self.gpu.watch).map_err(RecoveryFailure::frame)?;
         Ok(RecoveryInfo {
             format: self.gpu.config.format,

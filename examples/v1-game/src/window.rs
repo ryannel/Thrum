@@ -424,7 +424,7 @@ impl RuntimeSetup for WindowGame {
         if let Some(scene) = &mut self.scene {
             let mut host = scene
                 .setup
-                .prepare(
+                .prepare_startup(
                     gpu.device,
                     gpu.queue,
                     gpu.capabilities,
@@ -432,6 +432,7 @@ impl RuntimeSetup for WindowGame {
                         render_extent: scene.render_extent,
                         surface: Some(gpu.surface),
                     },
+                    None,
                 )
                 .await?;
             crate::apply_cloud_quality(&mut host).map_err(|e| e.to_string())?;
@@ -466,16 +467,15 @@ impl RuntimeSetup for WindowGame {
             render_extent,
             surface: Some(gpu.surface),
         };
-        let mut host = if let Some(shapes) = crate::content::placed_sky()? {
-            setup
-                .prepare_placed(gpu.device, gpu.queue, gpu.capabilities, config, shapes)
-                .await
-                .map_err(|error| error.to_string())?
-        } else {
-            setup
-                .prepare(gpu.device, gpu.queue, gpu.capabilities, config)
-                .await?
-        };
+        let mut host = setup
+            .prepare_startup(
+                gpu.device,
+                gpu.queue,
+                gpu.capabilities,
+                config,
+                crate::content::placed_sky()?,
+            )
+            .await?;
         #[cfg(feature = "proving")]
         crate::apply_cloud_quality(&mut host).map_err(|e| e.to_string())?;
         #[cfg(feature = "proving")]
@@ -505,6 +505,7 @@ impl RuntimeSetup for WindowGame {
         };
         #[cfg(not(feature = "proving"))]
         crate::attach_cooked_scene(&mut host)?;
+        host.finish_preparation();
         #[cfg(feature = "proving")]
         if let Some(eye) = self.capture_eye {
             if self.capture_route.is_some() {

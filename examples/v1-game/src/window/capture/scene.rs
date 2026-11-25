@@ -22,6 +22,8 @@ use crate::{
     window::{SceneCapture, WindowGame},
 };
 
+#[cfg(feature = "creation-counters")]
+mod creation;
 mod display;
 mod motion;
 mod route;
@@ -92,7 +94,7 @@ pub struct SceneCaptureRequest {
 #[cfg(feature = "creation-counters")]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum CreationProof {
-    /// Stop at readiness, after the cooked generation is available.
+    /// Measure readiness and confirm the first cooked draw after it.
     Launch,
     /// Drive every route tick without readback diagnostics.
     Route,
@@ -187,6 +189,12 @@ pub(in crate::window) async fn run(
     });
     let mut driver = Driver::with_surface(game, &device, &capabilities, &queue, surface)
         .map_err(|error| error.to_string())?;
+    #[cfg(feature = "creation-counters")]
+    let creation = request
+        .creation_proof
+        .map(|arm| creation::Ready::mark(arm, driver.host_mut()))
+        .transpose()?;
+    driver.host_mut().finish_preparation();
     if let Some(eye) = request.fixed_eye {
         if moving_route.is_some() || motion_frames.is_some() {
             return Err("a fixed eye requires a still capture".to_owned());
@@ -206,7 +214,7 @@ pub(in crate::window) async fn run(
     driver.host_mut().world_mut().pause()?;
     let warmup_on_surface = driver.host().native_provider_report().is_some();
     #[cfg(feature = "creation-counters")]
-    // Both proof recipes mark readiness after drawing to the same output surface.
+    // Both proof recipes warm up on the same output surface after readiness.
     let warmup_on_surface = warmup_on_surface || request.creation_proof.is_some();
     let cooked_generation = content
         .map(|stats| {
@@ -228,6 +236,10 @@ pub(in crate::window) async fn run(
             }
         })
         .transpose()?;
+    #[cfg(feature = "creation-counters")]
+    if let Some(ready) = &creation {
+        ready.first_cooked_draw(cooked_generation)?;
+    }
     std::fs::create_dir_all(&output).map_err(|error| error.to_string())?;
     if let Some((text, _, _)) = &moving_route {
         let overlay = match request.display_overlay.as_deref() {
@@ -237,7 +249,7 @@ pub(in crate::window) async fn run(
             _ => return Err("unknown route display overlay".to_owned()),
         };
         driver.host_mut().set_display_overlay(overlay);
-        return route::record(
+        route::record(
             &capabilities,
             &queue,
             &mut driver,
@@ -245,7 +257,14 @@ pub(in crate::window) async fn run(
             &output,
             text,
             cooked_generation,
-        );
+        )?;
+        #[cfg(feature = "creation-counters")]
+        if let Some(ready) = creation
+            && request.creation_proof != Some(CreationProof::Launch)
+        {
+            ready.finish(capabilities.site(), driver.host(), &output)?;
+        }
+        return Ok(());
     }
     if let Some(frames) = motion_frames {
         return motion::record(&mut driver, request, &output, frames, cooked_generation);

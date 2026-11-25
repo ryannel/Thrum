@@ -16,6 +16,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         ),
         FrameError,
     > {
+        self.require_ready()?;
         if self.native_provider_report().is_some() {
             return Err(FrameError::InvalidState(
                 "native providers use the submitted-image tap",

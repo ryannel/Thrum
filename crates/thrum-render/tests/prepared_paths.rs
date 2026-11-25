@@ -70,6 +70,10 @@ fn draw(host: &mut support::Host, view: &wgpu::TextureView, extent: [u32; 2]) ->
         .drive(Duration::ZERO, Some(&SurfaceOutput { view, extent }))
         .expect("draw");
     assert!(frame.submitted && frame.surface_presented, "{frame:?}");
+    completed_draw(host)
+}
+
+fn completed_draw(host: &mut support::Host) -> FrameSample {
     thrum_test_support::wait::until("Metal draw", Duration::from_secs(10), || {
         host.poll_completed().expect("Metal completion")
     })
@@ -90,22 +94,95 @@ fn unchanged_creations(before: &CreationReport, after: &CreationReport) {
     assert_eq!(after.violations, 0, "{after}");
 }
 
+#[cfg(target_os = "macos")]
 #[test]
-fn replaced_drawable_reuses_ready_scene_and_history() {
-    let Some(gpu) = open("surface replacement") else {
-        return;
+fn replaced_surface_lease_reuses_ready_scene_and_history() {
+    use objc2::rc::Retained;
+    use objc2_quartz_core::CAMetalLayer;
+    use thrum_render::{capabilities::configure_surface_once, runtime::SurfaceLease};
+
+    let gpu = open("surface replacement").expect("Mac Metal");
+    let layer = CAMetalLayer::new();
+    #[expect(
+        unsafe_code,
+        reason = "the retained CAMetalLayer outlives the wgpu surface"
+    )]
+    let surface = unsafe {
+        let layer = Retained::as_ptr(&layer).cast_mut().cast();
+        gpu.gpu
+            .instance
+            .create_surface_unsafe(wgpu::SurfaceTargetUnsafe::CoreAnimationLayer(layer))
+    }
+    .expect("Metal surface");
+    let config = wgpu::SurfaceConfiguration {
+        format: FORMAT,
+        color_space: wgpu::SurfaceColorSpace::Auto,
+        usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+        width: EXTENT[0],
+        height: EXTENT[1],
+        desired_maximum_frame_latency: 2,
+        present_mode: wgpu::PresentMode::Fifo,
+        alpha_mode: wgpu::CompositeAlphaMode::Opaque,
+        view_formats: vec![],
     };
-    // AppKit's same-extent lease replacement supplies a new drawable. The
-    // renderer consumes the new binding at encode time.
-    let old = support::drawable(&gpu.device, FORMAT, EXTENT);
-    let replacement = support::drawable(&gpu.device, FORMAT, EXTENT);
+    let configure = || configure_surface_once(&surface, &gpu.device, &config);
+    configure().expect("initial surface configuration");
     let mut host = ready(&gpu);
-    let first = draw(&mut host, &old, EXTENT);
+    let submit = |host: &mut support::Host| {
+        let frame = match surface.get_current_texture() {
+            wgpu::CurrentSurfaceTexture::Success(frame) => frame,
+            other => panic!("expected a Metal drawable, got {other:?}"),
+        };
+        let extent = [frame.texture.width(), frame.texture.height()];
+        assert_eq!(extent, EXTENT);
+        let view = frame
+            .texture
+            .create_view(&wgpu::TextureViewDescriptor::default());
+        let report = host
+            .drive(
+                Duration::ZERO,
+                Some(&SurfaceOutput {
+                    view: &view,
+                    extent,
+                }),
+            )
+            .expect("surface draw");
+        assert!(report.submitted && report.surface_presented, "{report:?}");
+        drop(view);
+        gpu.queue.present(frame);
+    };
+    let mut lease = SurfaceLease::new(1, false);
+    submit(&mut host);
+    lease.observe(2);
+    assert!(lease.pending());
+    assert_eq!(host.pending_frames(), 1);
+    assert!(
+        lease
+            .recover(false, host.pending_frames(), || panic!(
+                "configure while a frame is pending"
+            ))
+            .is_none()
+    );
+    let first = completed_draw(&mut host);
     let before = host.creation_checkpoint();
-    let next = draw(&mut host, &replacement, EXTENT);
+    let mut configure_calls = 0;
+    lease
+        .recover(false, host.pending_frames(), || {
+            configure_calls += 1;
+            configure()
+        })
+        .expect("lease replacement enters configure")
+        .expect("replacement configured at the committed extent");
+    assert_eq!(configure_calls, 1);
+    assert!(!lease.pending() && !lease.refused(2));
+    submit(&mut host);
+    let next = completed_draw(&mut host);
     let after = host.creation_checkpoint();
-    receipt("replaced drawable", &before, &after);
-    assert_ne!(old, replacement);
+    receipt(
+        "Metal surface lease 1 -> 2, same-extent configure and first present",
+        &before,
+        &after,
+    );
     assert_eq!(next.render_extent, first.render_extent);
     assert_eq!(next.history_identity[1], first.history_identity[0]);
     assert_eq!(after.generation, before.generation);

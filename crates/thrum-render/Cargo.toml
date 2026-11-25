@@ -49,6 +49,9 @@ pollster = "=1.0.1"
 tracing = { version = "=0.1.44", default-features = false, features = ["std"] }
 tracing-subscriber = { version = "=0.3.23", default-features = false, features = ["registry"] }
 
+[target.'cfg(target_os = "macos")'.dev-dependencies]
+objc2-quartz-core = { version = "=0.3.2", default-features = false, features = ["CALayer", "CAMetalLayer"] }
+
 # Every test file here is a target of its own, not a module of one `it` target (GATE-TIME mechanism
 # 10): the main-tier list's `creation-counters` line runs every test binary of this package through
 # `cargo test`, where a binary's tests share one process and its device. The shared fixtures

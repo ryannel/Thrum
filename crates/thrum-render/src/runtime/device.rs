@@ -228,6 +228,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     /// # Errors
     /// Returns a current camera/lighting policy refusal without changing the host.
     pub fn device_prepare_inputs(&self) -> Result<DevicePrepareInputs, FrameError> {
+        self.require_ready()?;
         let scene = match &self.prepared {
             PreparedRenderer::ThreeD(prepared) => {
                 let frame = self.source.frame(
@@ -277,6 +278,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     /// or a failed Maps scene rebuild before replacing active resources.
     /// CPU/world inputs remain available.
     pub fn publish_device(&mut self, candidate: &mut PreparedDevice) -> Result<(), FrameError> {
+        self.require_ready()?;
         if !Arc::ptr_eq(&candidate.owner, &self.visual_owner)
             || candidate.base_generation != self.generation
             || candidate.capabilities.generation() <= self.generation

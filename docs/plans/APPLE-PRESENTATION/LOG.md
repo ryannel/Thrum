@@ -581,3 +581,9 @@
 - 2026-11-25 WP9. The clean verifier failed D9.4 because the browser check built the game but had no
   `thrum-cook` to serve the route's cooked valley. D9.4 now builds the default cooker before starting
   Chrome. [Verifier replay](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP9/verifier-replay.md)
+
+- 2026-11-26 WP9. Prepare the native game's required contribution before publishing generation readiness.
+  The launch and route witnesses use that event with zero submissions and record the first cooked draw
+  separately. The prepared-path fixture now advances the same surface lease recovery used by the Mac
+  render actor and presents real Metal drawables on each side of the same-extent configure.
+  [Review follow-up](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP9/review-fix/README.md)
