@@ -714,7 +714,7 @@
     {
       "id": "WP6",
       "name": "A 2D game's colours above white go brighter than white on an EDR display, and a capture records the frame the display was given",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "depends_on": [
         "APPLE-PRESENTATION:WP6"
       ],

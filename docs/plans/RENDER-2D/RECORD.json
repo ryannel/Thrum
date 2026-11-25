@@ -970,7 +970,37 @@
         "task": "The design review of RENDER-2D at .orchestrate/evidence/RENDER-2D/design-review.md asked for changes, with its 2 Must Fi",
         "at": "2026-11-25T13:26:19Z"
       },
-      "ends_stretch": true
+      "ends_stretch": true,
+      "ready_for_review": {
+        "commit": "93fbc30dc9a1ee13c6dc1018ead52db6dbb1219a",
+        "checked": "93fbc30dc9a1ee13c6dc1018ead52db6dbb1219a",
+        "at": "2026-11-25T17:54:40Z",
+        "reused": [
+          "WP6.2",
+          "WP6.6"
+        ],
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.171.0-alpha.13",
+        "path": "headless",
+        "usage": {
+          "input": 270412,
+          "cached": 28752640,
+          "output": 64348,
+          "turns": 2
+        },
+        "session_usage": {
+          "input": 270412,
+          "cached": 28752640,
+          "output": 64348,
+          "turns": 2
+        }
+      }
     }
   },
   "tasks": [
