@@ -96,3 +96,10 @@
 - 2026-11-24 The pre-rollout M5 sample missed the five-minute median at 404.6 seconds, with 37 of 45 over the target. The median test build took 142.0 seconds for slow checks and 12.7 seconds for checks at or under the target. M15 now lands a bounded Cargo cache for the configured merge check before M5 judges the first 20 eligible landings after activation. The earlier samples and the verified contributor-guide work stay in the M5 record. [Handoff](../../../.orchestrate/evidence/GATE-TIME/M5-handoff.md).
 - 2026-11-24 M15 design review Must Fix 1. Admit only checkouts whose committed revision represents the caller's check inputs. M15.1 requires the configured command to run a failing local assertion in the caller's worktree with the cache warm and pass after the file is restored.
 - 2026-11-24 M15 design review Must Fix 2. Configure `THRUM_MERGE_VERIFY=1 ./dev check` so older launchers receive the ordinary argument list. M15.3 requires a passing pre-M15 replay with the exact configured invocation used by broken-main diagnosis.
+- 2026-11-25 WP15 adds an opt-in Cargo cache for the configured merge check on macOS. A leased detached
+  checkout preserves the ordinary Cargo layout. Callers with local changes or incompatible inputs run their
+  ordinary check in place. The contributor guide records the cache location, disk limits and bypass.
+  Verified on the Mac with two singleton replays and one batch. The matched warm and fresh medians were
+  107.192 s and 497.641 s end to end, with test builds of 1.04 s and 124 s. The committed and local assertion
+  failures propagated, their restorations passed, and the pre-launcher revision `d96b41b77` passed the exact
+  rollout command. [Mac qualification and rollout record](../../../.orchestrate/evidence/GATE-TIME/WP15/record.md).

@@ -12,7 +12,7 @@ and `build` commands with the project settings below.
 - **Plans:** docs/plans
 - **Evidence:** .orchestrate/evidence
 - **Graded examples:** docs/design/GRADED-EXAMPLES.md  *(loop: past verdicts the owner agreed with or overturned)*
-- **Test command:** ./dev check  *(loop: CI is manual-only, so this check must pass before a merge; documentation-only work may run ./dev check-docs while building)*
+- **Test command:** THRUM_MERGE_VERIFY=1 ./dev check  *(loop: CI is manual-only, so this check must pass before a merge; documentation-only work may run ./dev check-docs while building)*
 - **Merge:** push  *(loop: owner allows verified checkpoints straight to main)*
 - **Branch:** main  *(loop)*
 - **Remote:** origin  *(loop)*

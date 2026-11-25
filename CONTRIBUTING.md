@@ -104,7 +104,7 @@ is how to work with them.
 
 | Command | When it runs | What it runs | How long it takes |
 | --- | --- | --- | --- |
-| `./dev check` | Before every merge, in the merge's own checkout | The whole workspace's guards, script suites, build and lints, and the fast tests of the packages the change can reach | Planned at about five minutes for a typical landing. The 30 merges before `14a4a7c83` (22 November 2026) had a median of 6.4 minutes; the four that ran tests from `b69c9812f`, where the check took its present shape, took 3.3 to 4.4 |
+| `./dev check` | Before every merge via `THRUM_MERGE_VERIFY=1 ./dev check`, and by hand | The whole workspace's guards, script suites, build and lints, and the fast tests of the packages the change can reach | Planned at about five minutes for a typical landing. The 30 merges before `14a4a7c83` (22 November 2026) had a median of 6.4 minutes; the four that ran tests from `b69c9812f` took 3.3 to 4.4 |
 | `./dev check-all` | On main after merges, at most once an hour (`workspace-tests`) | The same, with every fast test of the workspace | Six to eight minutes |
 | `./dev long-tests` | On main after merges, at most every four hours (`long-tests`) | The long tests in release with overflow checks on, and the tests behind a Cargo feature with their features on, a GPU required | About 17 to 20 minutes, one binary at a time |
 | `bash scripts/check_cross_target.sh` | On main after merges, at most once an hour (`cross-target`) | A type-check, with nothing linked, of every target of every workspace package for Linux and Windows | Under a minute when the build is warm |
@@ -115,6 +115,18 @@ build, and Clippy for the tests behind a Cargo feature, which are built and lint
 on main. Then the selected Rust tests side by side through cargo-nextest, the doc tests, and the game's four
 draw-probe tests. Everything but the tests covers the whole workspace whatever changed, and an unchanged
 crate's build is reused.
+
+**Merge Cargo cache on macOS.** Orchestrate's configured command can check an equivalent committed candidate in
+one detached worktree under `$(git rev-parse --git-common-dir)/orchestrate/merge-cargo/checkout`. Cargo keeps its
+normal `target/` there. The cache holds an exclusive lease through the check and cleanup, with one candidate
+at a time. Every check reruns its guards and selected tests. Cargo decides which builds are fresh.
+
+Admission reserves space for the build above a 30 GB free-space floor. Maintenance discards the cache's own
+Cargo artifacts after an interrupted run, when retention exceeds 8 GiB, or when free space is under pressure.
+The command logs the candidate, merge base, disk accounting and the reason for a reset or fallback. A busy
+cache, insufficient space, local changes or different checkout inputs send verification to the caller's
+worktree. Set `THRUM_MERGE_CACHE=0` in the orchestrate runner's environment to bypass reuse. Plain
+`./dev check` and scheduled main-branch checks use their existing build directories.
 
 **How it selects.** The change is every path that differs from the merge base with `origin/main`, uncommitted
 and untracked paths included. The check runs the tests of each workspace package that holds a changed path and
