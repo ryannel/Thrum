@@ -16,7 +16,7 @@ use super::{sample_json, support::Fixture};
 const QUERY_TICK: u32 = 67;
 const STEP: Duration = Duration::from_nanos(16_666_667);
 
-pub(super) fn breaker_fleet() -> (Vec<Body>, usize) {
+pub(super) fn breaker_fleet() -> Vec<Body> {
     let (map, spectrum) = surf_inputs(Wind::Gale).expect("gale surf inputs");
     let field =
         water_scene::floating::fallback(&spectrum, surf_water_profile(&spectrum).waves.choppiness)
@@ -58,7 +58,7 @@ pub(super) fn breaker_fleet() -> (Vec<Body>, usize) {
         8,
         "gale must place all eight floats in breakers"
     );
-    let fleet = (0..8)
+    (0..8)
         .zip(columns)
         .map(|(id, [x, z])| {
             let mut body = Body::new(id, Hull::Float, [0.0; 2], 0.0, 0.0);
@@ -67,16 +67,7 @@ pub(super) fn breaker_fleet() -> (Vec<Body>, usize) {
             body.position.z = z - station.z;
             body
         })
-        .collect();
-    let eligible = spectrum
-        .long
-        .iter()
-        .filter(|wave| {
-            let wavelength = std::f64::consts::TAU / wave.wave_vector[0].hypot(wave.wave_vector[1]);
-            (20.0..=640.0).contains(&wavelength)
-        })
-        .count();
-    (fleet, eligible)
+        .collect()
 }
 
 #[expect(
@@ -85,7 +76,7 @@ pub(super) fn breaker_fleet() -> (Vec<Body>, usize) {
 )]
 pub(super) fn run(gpu: &Gpu) -> Value {
     let wind = Wind::Gale;
-    let (fleet, eligible) = breaker_fleet();
+    let fleet = breaker_fleet();
     let fleet: Vec<BodyQuery> = fleet
         .iter()
         .map(|body| body.request(u64::from(QUERY_TICK), STEP))
@@ -150,24 +141,6 @@ pub(super) fn run(gpu: &Gpu) -> Value {
         "target":"mac-metal", "extent":[2560,1440], "capture":false, "wind":"Gale", "arms":arms,
         "camera":{"position":camera.position, "target":camera.target, "fov_degrees":camera.vertical_fov_degrees},
         "cache_work": measure_cache_work(gpu, wind),
-        "shore_reads":{
-            "eligible_long_components":eligible,
-            "scope":"Logical textureLoad calls, per eligible component and forward evaluation. Invalid shore samples can exit early.",
-            "stage_endpoint":{"lag":8,"exposure":4},
-            "between_stages":{"lag":16,"exposure":8},
-            "additional_lag_probes_per_boundary_axis":2,
-            "eligible_swash_node":{
-                "contour_reference_reads":{"stage_endpoint":4,"between_stages":8},
-                "inner_profile":"One additional lag and exposure sum with no gradient probes.",
-                "overlap":"Up to four additional bed reads at the displaced position.",
-            },
-            "forward_evaluations_per_cached_node":{"interior":2,"ring_edge":6,"distant_shore":1},
-            "distant_shore":{
-                "scope":"One current sample outside the near window at each eligible prepared bed node. A resolved breaking face adds one displaced-bed cell lookup.",
-                "fragment_reads":"One grid-size entry and up to four phase-and-strength samples from the field cache.",
-            },
-            "sources":["crates/thrum-water/src/surf.wgsl", "crates/thrum-water/src/surf/cache.wgsl"],
-        },
     })
 }
 

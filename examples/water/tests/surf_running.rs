@@ -339,7 +339,7 @@ pub(super) fn run(gpu: &thrum_test_support::Gpu) -> Value {
     if std::env::var("THRUM_WATER_SURF_ARM").is_ok_and(|arm| arm == "open-water") {
         return record;
     }
-    let (breakers, _) = breaker_fleet();
+    let breakers = breaker_fleet();
     let breakers = arm(gpu, extent, breakers);
     // Evaluate f64 after both paced arms. Reading the reference can be slow;
     // it does not contend with the wall clock, rendering or delivery.

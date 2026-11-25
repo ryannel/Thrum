@@ -2,6 +2,7 @@
 """Paired water cost record. Timing numbers are tripwires, never pass thresholds."""
 import argparse
 import json
+import math
 import os
 from pathlib import Path
 import platform
@@ -472,6 +473,12 @@ def measure_surf_running(arm_name=None):
     print(f'PASS paired wall-clock Metal surf query: {path.relative_to(ROOT)}')
 
 
+def measured_cache_ms(value, source, phase):
+    if type(value) not in (int, float) or not math.isfinite(value) or value < 0:
+        raise ValueError(f'{source}: missing or invalid surf field cache timing for {phase}: {value!r}')
+    return value
+
+
 def surf_cache_investigation(record, table, wp13):
     history = json.loads(SURF_CACHE_INVESTIGATION.read_text())
     assert all(record[key] == history[key] for key in ('camera', 'extent', 'wind'))
@@ -481,28 +488,34 @@ def surf_cache_investigation(record, table, wp13):
     for state in ('stable_stage', 'moved_stage'):
         frame = work[state]
         for domain in ('mesh', 'distant_lattice'):
-            assert 0 < frame[domain]['evaluated'] <= frame[domain]['allocated']
+            evaluated, allocated = (frame[domain][key] for key in ('evaluated', 'allocated'))
+            assert type(evaluated) is int and type(allocated) is int and 0 < evaluated <= allocated
         assert frame['texels'].keys() == footprints
-        assert all(isinstance(count, int) and count >= 0 for count in frame['texels'].values())
+        assert all(type(count) is int and count >= 0 for count in frame['texels'].values())
     assert work['stable_stage']['texels']['previous_stage'] == 0
     assert work['moved_stage']['texels']['previous_stage'] > 0
     ablations = history['ablations']
     assert ablations.keys() == {'unmodified', 'without_table_reads', 'half_components', 'half_nodes'}
-    assert all(len(phase) == 12 and all(ms > 0 for ms in phase)
-               for ablation in ablations.values() for phase in ablation['cache_samples_ms'].values())
     label = 'surf field cache'
+    timings = {}
+    for phase in ('step', 'repeat'):
+        pre_change = {}
+        for name, variant in ablations.items():
+            samples = variant['cache_samples_ms'].get(phase)
+            if not isinstance(samples, list) or len(samples) != 12:
+                raise ValueError(f'{name}: expected 12 pre-change cache measurements for {phase}')
+            pre_change[name] = statistics.median(measured_cache_ms(ms, name, phase) for ms in samples)
+        timings[phase] = {
+            'current': measured_cache_ms(table['surf'][phase]['passes_ms'].get(label), 'current', phase),
+            'wp13': measured_cache_ms(wp13['summary']['surf'][phase]['passes_ms'].get(label), 'WP13', phase),
+            'wp19_review_fix': measured_cache_ms(history['wp19_review_fix']['cache_ms'].get(phase),
+                                                 'WP19 review fix', phase),
+            'pre_change': pre_change,
+        }
     return {
         'wire': 'surf field cache cost',
         'history': history,
-        'cache_ms': {
-            phase: {
-                'current': table['surf'][phase]['passes_ms'][label],
-                'wp13': wp13['summary']['surf'][phase]['passes_ms'][label],
-                'wp19_review_fix': history['wp19_review_fix']['cache_ms'][phase],
-                'pre_change': {name: statistics.median(variant['cache_samples_ms'][phase])
-                               for name, variant in ablations.items()},
-            } for phase in ('step', 'repeat')
-        },
+        'cache_ms': timings,
         'changes': [
             'Read packed lag layers by sector pair and share the exposure layer across two pairs. The component loop performs no shore-table texture loads.',
             'Prepare the wave and shore parameters for both presentations in one component loop at equal stage. Read the previous stage separately when it changes.',

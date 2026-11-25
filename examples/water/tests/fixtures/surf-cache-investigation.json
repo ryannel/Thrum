@@ -18,6 +18,40 @@
     1440
   ],
   "wind": "Gale",
+  "shore_reads": {
+    "additional_lag_probes_per_boundary_axis": 2,
+    "between_stages": {
+      "exposure": 8,
+      "lag": 16
+    },
+    "distant_shore": {
+      "fragment_reads": "One grid-size entry and up to four phase-and-strength samples from the field cache.",
+      "scope": "One current sample outside the near window at each eligible prepared bed node. A resolved breaking face adds one displaced-bed cell lookup."
+    },
+    "eligible_long_components": 64,
+    "eligible_swash_node": {
+      "contour_reference_reads": {
+        "between_stages": 8,
+        "stage_endpoint": 4
+      },
+      "inner_profile": "One additional lag and exposure sum with no gradient probes.",
+      "overlap": "Up to four additional bed reads at the displaced position."
+    },
+    "forward_evaluations_per_cached_node": {
+      "distant_shore": 1,
+      "interior": 2,
+      "ring_edge": 6
+    },
+    "scope": "Pre-change shader at start_commit. Logical textureLoad calls, per eligible component and forward evaluation. Invalid shore samples can exit early.",
+    "sources": [
+      "crates/thrum-water/src/surf.wgsl",
+      "crates/thrum-water/src/surf/cache.wgsl"
+    ],
+    "stage_endpoint": {
+      "exposure": 4,
+      "lag": 8
+    }
+  },
   "wp19_review_fix": {
     "commit": "fd52deb0eef67517252ca3d8ee5df90f821ae99b",
     "sha256": "f87093c1fa0b64d89f73cd5eb2c577c1f4cb15242441ad3de92298765170d1c4",
