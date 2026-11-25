@@ -451,3 +451,10 @@
   presented under load but carried zero GPU timestamps. The live proof now explicitly requests GPU
   timing in every arm so it can verify the same debug-load pass across the governed and disabled runs.
   [Merged replay evidence](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP7/exclusive-gpu/README.md)
+
+- 2026-11-25 A governed native frame can now release its render slot while its prepared timestamp
+  batch maps. Timestamp resolution still follows render completion, and retirement validates counters
+  in submission order. The full-size 60 Hz T2 take submitted all 600 opportunities with the image
+  tap on and off. Both arms stepped to 85% at tick 303 and returned to 100% at 363. I inspected the
+  native-pixel sequences across both changes. The blind viewer found the authored cut and could not
+  identify either scale-step frame. [D7.8 evidence](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP7/motion-repair/README.md)

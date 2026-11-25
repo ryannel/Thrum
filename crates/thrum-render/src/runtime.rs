@@ -2912,7 +2912,11 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                     {
                         Ok(true) => {
                             self.queue.submit([encoder.finish()]);
-                            if self.governor.is_some() {
+                            // The elapsed offscreen owner has no numbered
+                            // display-link observer. Let it reuse the target
+                            // while timing maps; keep drawable admission's
+                            // existing bound on submitted reports.
+                            if self.governor.is_some() && self.governor_display_tick.is_none() {
                                 slot.defer_timing(sample);
                             } else {
                                 slot.state = SlotState::Resolving(sample);

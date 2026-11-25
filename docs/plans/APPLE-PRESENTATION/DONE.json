@@ -725,10 +725,10 @@
           "statement": "In real time on the Mac, through the forced load and the recovery, the motion stays smooth and the picture shows no oscillation, pop or flash: a viewer who is not told cannot point to the frame of a scale step.",
           "inspect": "Capture the forced-load run with T2 engine capture in `realtime` mode, with capture's own cost shown apart. Watch it at 1x, then judge native-size crops of thin features across each step the trace names. Say that you watched motion.",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP7/motion-repair/README.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP7-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D7.9",
