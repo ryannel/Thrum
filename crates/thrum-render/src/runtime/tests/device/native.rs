@@ -1,5 +1,4 @@
 use super::*;
-#[cfg(target_os = "macos")]
 mod provider;
 mod replacement;
 use crate::{

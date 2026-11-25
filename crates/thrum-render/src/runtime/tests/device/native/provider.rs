@@ -1,9 +1,11 @@
 //! A tiny second provider, driven through the real frame host and scene graph.
 use super::*;
+#[cfg(any(target_os = "macos", target_os = "ios"))]
+use crate::apple_tile::{self, CommandBuffer, Texture};
 use crate::{
     apple_tile::{
-        self, CommandBuffer, NativeBinding, NativeFrameValues, NativeGraph, NativePolicy,
-        NativePreparation, NativeProvider, NativeState, PreparedProvider, Texture,
+        NativeBinding, NativeFrameValues, NativeGraph, NativePolicy, NativePreparation,
+        NativeProvider, NativeState, PreparedProvider,
     },
     error::RenderError,
     graph::{
@@ -13,6 +15,7 @@ use crate::{
     pass_key::PassKey,
     synthetic::{NativeOutcome, NativeSegment, NativeTwinSelection, TwinReason},
 };
+#[cfg(any(target_os = "macos", target_os = "ios"))]
 use objc2_metal::{MTLBlitCommandEncoder, MTLCommandBuffer, MTLCommandEncoder, MTLOrigin, MTLSize};
 use std::sync::atomic::AtomicUsize;
 
@@ -35,12 +38,15 @@ struct Crop {
     output_view: wgpu::TextureView,
     history: [wgpu::Texture; 2],
     zero: wgpu::Texture,
+    #[cfg(any(target_os = "macos", target_os = "ios"))]
     raw: Option<Raw>,
+    #[cfg(any(target_os = "macos", target_os = "ios"))]
     native_side: AtomicUsize,
     twin_side: AtomicUsize,
     ignore_reset: bool,
 }
 
+#[cfg(any(target_os = "macos", target_os = "ios"))]
 struct Raw {
     source: Texture,
     output: Texture,
@@ -106,16 +112,21 @@ impl Factory {
         let output_view = output.create_view(&wgpu::TextureViewDescriptor::default());
         let history = std::array::from_fn(|_| texture(device, queue, [1, 1], &[0x3800; 4]));
         let zero = texture(device, queue, [1, 1], &[0; 4]);
-        let mut prepared = NativePreparation::new(capabilities, NativePolicy::Recipe);
-        let raw = prepared.prepare_metal(device, || {
-            let retain = |texture| apple_tile::texture(texture).ok_or(RenderError::StaleTarget);
-            Ok::<_, RenderError>(Raw {
-                source: retain(&source)?,
-                output: retain(&output)?,
-                history: [retain(&history[0])?, retain(&history[1])?],
-                zero: retain(&zero)?,
-            })
-        });
+        let prepared = NativePreparation::new(capabilities, NativePolicy::Recipe);
+        #[cfg(any(target_os = "macos", target_os = "ios"))]
+        let (prepared, raw) = {
+            let mut prepared = prepared;
+            let raw = prepared.prepare_metal(device, || {
+                let retain = |texture| apple_tile::texture(texture).ok_or(RenderError::StaleTarget);
+                Ok::<_, RenderError>(Raw {
+                    source: retain(&source)?,
+                    output: retain(&output)?,
+                    history: [retain(&history[0])?, retain(&history[1])?],
+                    zero: retain(&zero)?,
+                })
+            });
+            (prepared, raw)
+        };
         Self {
             state: prepared.state(PASS, TWIN, false),
             crop: Arc::new(Crop {
@@ -124,7 +135,9 @@ impl Factory {
                 output_view,
                 history,
                 zero,
+                #[cfg(any(target_os = "macos", target_os = "ios"))]
                 raw,
+                #[cfg(any(target_os = "macos", target_os = "ios"))]
                 native_side: AtomicUsize::new(0),
                 twin_side: AtomicUsize::new(0),
                 ignore_reset,
@@ -267,6 +280,7 @@ impl PreparedProvider for Crop {
         }
     }
 
+    #[cfg(any(target_os = "macos", target_os = "ios"))]
     #[expect(
         unsafe_code,
         reason = "Fixed initialized disjoint test textures and checked rectangles"
