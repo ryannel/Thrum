@@ -308,7 +308,7 @@ fn aerial_storage_matches_float32_transport_and_consumer_units() {
             frame,
             &SyntheticView::default(),
             &directional,
-            &super::sky_samples(&device),
+            (&super::sky_samples(&device), None),
         );
         let outputs = [
             Output::new(&device, &atmosphere, Storage::ReferenceFloat),
@@ -525,7 +525,7 @@ fn finite_night_radiance_survives_the_aerial_composite() {
             frame,
             &view,
             &directional,
-            &super::sky_samples(&device),
+            (&super::sky_samples(&device), None),
         );
         let [off, on] = [frame, frame.with_nightglow()].map(|frame| {
             atmosphere.update(&queue, frame, &view, [1, 1], None);

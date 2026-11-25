@@ -288,7 +288,7 @@ fn multiple_sun_columns_report_same_model_transport_and_irradiance_error() {
             frame(0.0, 0.0),
             &view,
             &directional,
-            &super::sky_samples(&device),
+            (&super::sky_samples(&device), None),
         );
         let output = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("four physical M consumer observations"),

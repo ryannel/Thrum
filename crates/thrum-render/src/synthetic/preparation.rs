@@ -419,7 +419,10 @@ impl PreparedSynthetic {
                 frame,
                 &scene.view,
                 &environment_light,
-                &exposure_samples,
+                (
+                    &exposure_samples,
+                    ambient.as_ref().map(|_| raytrace::ambient::RECEIVER_FORMAT),
+                ),
             )),
             _ => None,
         };
@@ -701,6 +704,30 @@ impl PreparedSynthetic {
             fail_traced_pipeline,
         );
         let vertex_entry = camera_culling::vertex_entry(camera_mode);
+        let mut opaque_targets = vec![
+            Some(wgpu::ColorTargetState {
+                format: SCENE_FORMAT,
+                blend: None,
+                write_mask: wgpu::ColorWrites::ALL,
+            }),
+            Some(wgpu::ColorTargetState {
+                format: MOTION_FORMAT,
+                blend: None,
+                write_mask: wgpu::ColorWrites::ALL,
+            }),
+            Some(wgpu::ColorTargetState {
+                format: REACTIVE_FORMAT,
+                blend: None,
+                write_mask: wgpu::ColorWrites::ALL,
+            }),
+        ];
+        if ambient.is_some() {
+            opaque_targets.push(Some(wgpu::ColorTargetState {
+                format: raytrace::ambient::RECEIVER_FORMAT,
+                blend: None,
+                write_mask: wgpu::ColorWrites::ALL,
+            }));
+        }
         let create_route_pipeline = |vertex_entry, primitive, depth_only: bool| {
             device.render(&wgpu::RenderPipelineDescriptor {
                 label: Some("prepared opaque synthetic role"),
@@ -730,23 +757,7 @@ impl PreparedSynthetic {
                     module: &shader,
                     entry_point: Some(fragment_entry),
                     compilation_options: wgpu::PipelineCompilationOptions::default(),
-                    targets: &[
-                        Some(wgpu::ColorTargetState {
-                            format: SCENE_FORMAT,
-                            blend: None,
-                            write_mask: wgpu::ColorWrites::ALL,
-                        }),
-                        Some(wgpu::ColorTargetState {
-                            format: MOTION_FORMAT,
-                            blend: None,
-                            write_mask: wgpu::ColorWrites::ALL,
-                        }),
-                        Some(wgpu::ColorTargetState {
-                            format: REACTIVE_FORMAT,
-                            blend: None,
-                            write_mask: wgpu::ColorWrites::ALL,
-                        }),
-                    ],
+                    targets: &opaque_targets,
                 }),
                 multiview_mask: None,
                 cache: None,

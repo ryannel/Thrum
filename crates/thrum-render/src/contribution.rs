@@ -274,10 +274,13 @@ pub struct SceneSurface<'a> {
     pub light_layout: &'a wgpu::BindGroupLayout,
     /// Group 2 (material) layout: material records, four texture arrays and a sampler.
     pub material_layout: &'a wgpu::BindGroupLayout,
-    /// The fragment entry the scene uses (`fragment` or `shadowed_fragment`).
+    /// The fragment entry selected for the prepared opaque surface.
     pub fragment_entry: &'static str,
     /// Colour attachments of the forward pass: scene radiance, motion and reactive.
     pub color_formats: [wgpu::TextureFormat; 3],
+    /// Optional fourth opaque target, with the depth-tested world position in XYZ
+    /// and validity in W. Draws that do not write depth leave this target alone.
+    pub ambient_receiver_format: Option<wgpu::TextureFormat>,
     /// Reverse-Z depth attachment (compare `Greater`, cleared to zero).
     pub depth_format: wgpu::TextureFormat,
     /// The existing Sun depth pass, when shadows are enabled for the scene.

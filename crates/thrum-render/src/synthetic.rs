@@ -1893,6 +1893,7 @@ struct TargetResources {
     scene: ResourceId,
     motion: ResourceId,
     reactive: ResourceId,
+    ambient_receiver: Option<ResourceId>,
     output: ResourceId,
     shadow: Option<ResourceId>,
     air_shadow: Option<ResourceId>,
@@ -1925,6 +1926,7 @@ pub struct OffscreenTarget {
     scene_view: wgpu::TextureView,
     motion_view: wgpu::TextureView,
     reactive_view: wgpu::TextureView,
+    ambient_receiver_view: Option<wgpu::TextureView>,
     temporal: temporal::TemporalTarget,
     taau: Option<taau::TaauTarget>,
     display: PreparedPreToneInput,
@@ -2057,8 +2059,18 @@ impl OffscreenTarget {
             &motion_view,
             [width, height],
         )?;
-        let ambient =
-            prepared.prepare_ambient_target(device, &depth, &motion_view, [width, height]);
+        let ambient_receiver_view = ids
+            .ambient_receiver
+            .as_ref()
+            .map(texture_view)
+            .transpose()?;
+        let ambient = prepared.prepare_ambient_target(
+            device,
+            &depth,
+            &motion_view,
+            ambient_receiver_view.as_ref(),
+            [width, height],
+        );
         let temporal = prepared.temporal.target(
             device,
             &textures,
@@ -2200,6 +2212,7 @@ impl OffscreenTarget {
             scene_view,
             motion_view,
             reactive_view,
+            ambient_receiver_view,
             temporal,
             taau,
             display,

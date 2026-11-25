@@ -311,6 +311,14 @@ impl Pipelines {
                 ],
                 immediate_size: 0,
             });
+        let mut volume_targets = target.main.color_formats.clone();
+        volume_targets[0]
+            .as_mut()
+            .expect("scene colour target")
+            .blend = Some(wgpu::BlendState::PREMULTIPLIED_ALPHA_BLENDING);
+        if let Some(Some(receiver)) = volume_targets.get_mut(3) {
+            receiver.write_mask = wgpu::ColorWrites::empty();
+        }
         let volume = device.render(&wgpu::RenderPipelineDescriptor {
             label: Some("cooked volume"),
             layout: Some(&volume_pipeline_layout),
@@ -330,23 +338,7 @@ impl Pipelines {
                 module: &module,
                 entry_point: Some("cooked_volume_fragment"),
                 compilation_options: wgpu::PipelineCompilationOptions::default(),
-                targets: &[
-                    Some(wgpu::ColorTargetState {
-                        format: surface.color_formats[0],
-                        blend: Some(wgpu::BlendState::PREMULTIPLIED_ALPHA_BLENDING),
-                        write_mask: wgpu::ColorWrites::ALL,
-                    }),
-                    Some(wgpu::ColorTargetState {
-                        format: surface.color_formats[1],
-                        blend: None,
-                        write_mask: wgpu::ColorWrites::ALL,
-                    }),
-                    Some(wgpu::ColorTargetState {
-                        format: surface.color_formats[2],
-                        blend: None,
-                        write_mask: wgpu::ColorWrites::ALL,
-                    }),
-                ],
+                targets: &volume_targets,
             }),
             multiview_mask: None,
             cache: None,

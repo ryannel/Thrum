@@ -26,6 +26,8 @@ use crate::{
 
 const TILE: u32 = 8;
 const SAMPLES: wgpu::TextureFormat = wgpu::TextureFormat::Rgba32Uint;
+pub(in crate::synthetic) const RECEIVER_FORMAT: wgpu::TextureFormat =
+    wgpu::TextureFormat::Rgba32Float;
 const VALUES: wgpu::TextureFormat = wgpu::TextureFormat::Rg32Float;
 const COMPUTE: wgpu::ShaderStages = wgpu::ShaderStages::COMPUTE;
 const FRAGMENT: wgpu::ShaderStages = wgpu::ShaderStages::FRAGMENT;
@@ -129,6 +131,7 @@ impl Pipelines {
                 sampled(2, COMPUTE, FLOAT),
                 sampled(3, COMPUTE, UINT),
                 write(4, SAMPLES),
+                sampled(5, COMPUTE, FLOAT),
             ],
             vec![uniform, sampled(5, COMPUTE, UINT), write(6, VALUES)],
         ];
@@ -189,6 +192,7 @@ impl Pipelines {
         uniform: &wgpu::Buffer,
         history: &History,
         motion: &wgpu::TextureView,
+        receiver: &wgpu::TextureView,
     ) -> [[wgpu::BindGroup; 2]; 2] {
         Stage::ALL.map(|stage| {
             std::array::from_fn(|read| {
@@ -202,6 +206,7 @@ impl Pipelines {
                     view_entry(2, motion),
                     view_entry(3, &history.samples[read]),
                     view_entry(4, &history.samples[write]),
+                    view_entry(5, receiver),
                 ];
                 let filter = [
                     uniform,
@@ -320,7 +325,7 @@ impl Ambient {
             camera: camera.extend(0.0).to_array(),
             extent: drawn,
             jitter_delta: [px - jx, py - jy],
-            stride: stride.unwrap_or(1),
+            stride: stride.unwrap_or(0),
             valid: u32::from(valid),
             phase: self.phase,
             settle: self.settings.knobs()[1].value,
@@ -396,6 +401,7 @@ impl SyntheticTargetInputs {
         device: &wgpu::Device,
         depth: &wgpu::TextureView,
         motion: &wgpu::TextureView,
+        receiver: Option<&wgpu::TextureView>,
         extent: [u32; 2],
     ) -> Option<Target> {
         let pipelines = self.ambient.as_ref()?;
@@ -410,7 +416,7 @@ impl SyntheticTargetInputs {
             samples: history_views(device, "submitted ambient ray samples", extent, SAMPLES),
             filtered: history_views(device, "submitted ambient visibility", extent, VALUES),
         };
-        let groups = pipelines.bind_inputs(device, &uniform, &history, motion);
+        let groups = pipelines.bind_inputs(device, &uniform, &history, motion, receiver?);
         let depth = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("ambient receiver depth"),
             layout: &pipelines.depth,
@@ -431,12 +437,9 @@ impl SyntheticTargetInputs {
         keys: &mut BTreeSet<PipelineKey>,
         forward: &mut Vec<Access>,
         extent: [u32; 2],
-        [depth, motion]: [&ResourceId; 2],
+        [depth, motion, receiver]: [&ResourceId; 3],
         structure: Option<&ResourceId>,
-    ) -> Result<Option<AmbientPasses>, RenderError> {
-        if self.ambient.is_none() {
-            return Ok(None);
-        }
+    ) -> Result<AmbientPasses, RenderError> {
         let structure = structure.ok_or(RenderError::GraphPassMismatch)?;
         let history = |graph: &mut FrameGraph, owner, format| {
             graph.resource(
@@ -468,6 +471,7 @@ impl SyntheticTargetInputs {
         let trace_accesses = vec![
             params.clone(),
             read(motion),
+            read(receiver),
             read(&previous_samples),
             write(&samples),
         ];
@@ -495,11 +499,11 @@ impl SyntheticTargetInputs {
             (Some(declare(Stage::Trace, accesses)), Vec::new())
         };
         let filter = declare(Stage::Filter, vec![params, read(&samples), write(&values)]);
-        Ok(Some(AmbientPasses {
+        Ok(AmbientPasses {
             trace,
             filter,
             combined_accesses,
-        }))
+        })
     }
 }
 
@@ -509,11 +513,12 @@ impl OffscreenTarget {
         prepared: &SyntheticTargetInputs,
         first: &Self,
     ) {
-        if let Some(((target, first), pipelines)) = self
+        if let Some((((target, first), pipelines), receiver)) = self
             .ambient
             .as_mut()
             .zip(first.ambient.as_ref())
             .zip(prepared.ambient.as_ref())
+            .zip(self.ambient_receiver_view.as_ref())
         {
             target.history.clone_from(&first.history);
             target.groups = pipelines.bind_inputs(
@@ -521,6 +526,7 @@ impl OffscreenTarget {
                 &target.uniform,
                 &target.history,
                 &self.motion_view,
+                receiver,
             );
         }
     }

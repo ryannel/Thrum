@@ -26,12 +26,8 @@ fn closest_shadow_hit(origin: vec3<f32>, direction: vec3<f32>, distance: f32) ->
 }
 
 fn closest_shadow_hit_from(origin: vec3<f32>, direction: vec3<f32>, start: f32, distance: f32) -> RayIntersection {
-    return closest_masked_hit_from(origin, direction, start, distance, 1u);
-}
-
-fn closest_masked_hit_from(origin: vec3<f32>, direction: vec3<f32>, start: f32, distance: f32, mask: u32) -> RayIntersection {
     var query: ray_query;
-    rayQueryInitialize(&query, scene_structure, RayDesc(RAY_FLAG_FORCE_OPAQUE, mask, start, distance, origin, direction));
+    rayQueryInitialize(&query, scene_structure, RayDesc(RAY_FLAG_FORCE_OPAQUE, 1u, start, distance, origin, direction));
     while rayQueryProceed(&query) {}
     return rayQueryGetCommittedIntersection(&query);
 }

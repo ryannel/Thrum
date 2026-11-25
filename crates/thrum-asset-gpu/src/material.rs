@@ -293,6 +293,8 @@ impl MeshSurface {
 
 impl Target {
     pub(crate) fn new(surface: &SceneSurface<'_>, epoch: u64) -> Self {
+        let mut colour_formats = Vec::from(surface.color_formats);
+        colour_formats.extend(surface.ambient_receiver_format);
         Self {
             generation: surface.generation,
             epoch,
@@ -306,7 +308,7 @@ impl Target {
             main: MeshSurface::new(
                 surface.pipeline_layout.clone(),
                 surface.fragment_entry,
-                &surface.color_formats,
+                &colour_formats,
                 surface.depth_format,
             ),
             secondary: surface

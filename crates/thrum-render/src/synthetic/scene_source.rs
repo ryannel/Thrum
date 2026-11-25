@@ -42,10 +42,11 @@ pub(super) fn prepare(
     });
     let (source, module) =
         shader.compile_with_source(device, "prepared synthetic shader ABI2", fail_pipeline);
-    let entry = if shadowed == SunShadows::Enabled {
-        "shadowed_fragment"
-    } else {
-        "fragment"
+    let entry = match (shadowed, ambient) {
+        (SunShadows::Enabled, true) => "ambient_shadowed_fragment",
+        (SunShadows::Enabled, false) => "shadowed_fragment",
+        (SunShadows::Disabled, true) => "ambient_fragment",
+        (SunShadows::Disabled, false) => "fragment",
     };
     (source, module, entry)
 }
@@ -274,9 +275,10 @@ pub(crate) fn main_source(variant: crate::shaders::SceneVariant) -> String {
             wgsl!(@bytes "synthetic/raytrace/ambient_plain.wgsl")
         };
         format!(
-            "{source}\n{closure}{}{}",
+            "{source}\n{closure}{}{}{}",
             wgsl!("synthetic/raytrace/ambient_common.wgsl"),
             wgsl!("synthetic/raytrace/ambient_forward.wgsl"),
+            wgsl!("synthetic/raytrace/ambient_output.wgsl"),
         )
     } else {
         source

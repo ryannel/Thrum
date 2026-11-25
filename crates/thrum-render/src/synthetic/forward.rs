@@ -112,43 +112,61 @@ impl PreparedSynthetic {
         compiled: &CompiledPass,
         timings: Option<&mut GpuTimings>,
     ) -> Result<wgpu::RenderPass<'e>, RenderError> {
-        compiled
-            .begin_render(
+        let colour = [
+            Some(GraphColorAttachment {
+                resource: &target.ids.scene,
+                range: 0..1,
+                view: &target.scene_view,
+                clear: self.background,
+            }),
+            Some(GraphColorAttachment {
+                resource: &target.ids.motion,
+                range: 0..1,
+                view: &target.motion_view,
+                clear: wgpu::Color::TRANSPARENT,
+            }),
+            Some(GraphColorAttachment {
+                resource: &target.ids.reactive,
+                range: 0..1,
+                view: &target.reactive_view,
+                clear: wgpu::Color::TRANSPARENT,
+            }),
+        ];
+        let depth = Some(GraphDepthAttachment {
+            resource: &target.ids.depth,
+            range: 0..1,
+            view: target
+                .day_depth
+                .as_ref()
+                .filter(|_| !target.draw_stars)
+                .map_or(&target.depth, |(_, view)| view),
+            clear: 0.0,
+        });
+        let ambient = target
+            .ids
+            .ambient_receiver
+            .as_ref()
+            .zip(target.ambient_receiver_view.as_ref());
+        let generation = self.key.device_generation;
+        let pass = if let Some((resource, view)) = ambient {
+            let [scene, motion, reactive] = colour;
+            let receiver = Some(GraphColorAttachment {
+                resource,
+                view,
+                range: 0..1,
+                clear: wgpu::Color::TRANSPARENT,
+            });
+            compiled.begin_render(
                 encoder,
-                [
-                    Some(GraphColorAttachment {
-                        resource: &target.ids.scene,
-                        range: 0..1,
-                        view: &target.scene_view,
-                        clear: self.background,
-                    }),
-                    Some(GraphColorAttachment {
-                        resource: &target.ids.motion,
-                        range: 0..1,
-                        view: &target.motion_view,
-                        clear: wgpu::Color::TRANSPARENT,
-                    }),
-                    Some(GraphColorAttachment {
-                        resource: &target.ids.reactive,
-                        range: 0..1,
-                        view: &target.reactive_view,
-                        clear: wgpu::Color::TRANSPARENT,
-                    }),
-                ],
-                Some(GraphDepthAttachment {
-                    resource: &target.ids.depth,
-                    range: 0..1,
-                    view: target
-                        .day_depth
-                        .as_ref()
-                        .filter(|_| !target.draw_stars)
-                        .map_or(&target.depth, |(_, view)| view),
-                    clear: 0.0,
-                }),
-                self.key.device_generation,
+                [scene, motion, reactive, receiver],
+                depth,
+                generation,
                 timings,
             )?
-            .ok_or(RenderError::GraphPassMismatch)
+        } else {
+            compiled.begin_render(encoder, colour, depth, generation, timings)?
+        };
+        pass.ok_or(RenderError::GraphPassMismatch)
     }
 
     /// The opaque pipeline, or with `depth_only` its depth-only twin (same

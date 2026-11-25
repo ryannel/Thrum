@@ -2,6 +2,7 @@
 @group(2) @binding(2) var ambient_motion: texture_2d<f32>;
 @group(2) @binding(3) var ambient_previous_samples: texture_2d<u32>;
 @group(2) @binding(4) var ambient_samples_out: texture_storage_2d<rgba32uint, write>;
+@group(2) @binding(5) var ambient_receiver_position: texture_2d<f32>;
 
 fn sample_direction(normal: vec3<f32>, pixel: vec2<u32>) -> vec3<f32> {
     let seed = hash(pixel.y) ^ hash(pixel.x + 0x9e3779b9u);
@@ -20,42 +21,38 @@ fn sample_direction(normal: vec3<f32>, pixel: vec2<u32>) -> vec3<f32> {
         + sqrt(1.0 - uv.x) * normal;
 }
 
-fn ray_visible(origin: vec3<f32>, direction: vec3<f32>) -> u32 {
+fn ray_visible(receiver: vec3<f32>, origin: vec3<f32>, direction: vec3<f32>) -> u32 {
+    // Intersect the lifted ray with the receiver's radius. The entire
+    // segment, including its start, must remain in the receiver's sphere.
+    let offset = (origin - receiver) / ambient_frame.radius;
+    let remaining = 1.0 - dot(offset, offset);
+    if remaining <= 0.0 { return 1u; }
+    let along = max(dot(offset, direction), 0.0);
+    let squared = dot(direction, direction);
+    let exit = remaining / (sqrt(squared * remaining + along * along) + along);
+    let reach = ambient_frame.radius * min(1.0, exit);
     var query: ray_query;
     let flags = RAY_FLAG_FORCE_OPAQUE | RAY_FLAG_TERMINATE_ON_FIRST_HIT;
-    rayQueryInitialize(&query, scene_structure, RayDesc(flags, 2u, 0.0, ambient_frame.radius, origin, direction));
+    rayQueryInitialize(&query, scene_structure, RayDesc(flags, 2u, 0.0, reach, origin, direction));
     while rayQueryProceed(&query) {}
     return select(0u, 1u, rayQueryGetCommittedIntersection(&query).kind == RAY_QUERY_INTERSECTION_NONE);
-}
-
-// Snap the view-depth receiver back onto its triangle before applying the
-// shared origin rule. Search from behind the raster depth so a close sheet
-// in front of the receiver cannot replace the first surface.
-fn ambient_receiver_world(point: vec3<f32>, distance: f32) -> vec3<f32> {
-    let camera = ambient_frame.camera.xyz;
-    let band = distance * 0.00016;
-    if band <= 0.001 { return camera + point; }
-    let direction = point / distance;
-    let behind = camera + direction * (distance + band);
-    let hit = closest_masked_hit_from(behind, -direction, 0.0, 2.0 * band, 3u);
-    if hit.kind == RAY_QUERY_INTERSECTION_NONE { return camera + point; }
-    return behind - direction * hit.t;
 }
 
 fn trace_ambient_pixel(texel: vec2<i32>, pixel: vec2<i32>, receiver: VisibilityReceiver) {
     let point = receiver.point;
     let plane = receiver.normal;
     let z = receiver.z;
-    if dot(plane, plane) < 1e-24 {
+    let visible = textureLoad(ambient_receiver_position, pixel, 0);
+    if visible.w == 0.0 || dot(plane, plane) < 1e-24 {
         textureStore(ambient_samples_out, texel, vec4(0u));
         return;
     }
     let normal = normalize(select(plane, -plane, dot(plane, point) > 0.0));
-    let distance = length(point);
-    let world = ambient_receiver_world(point, distance);
+    let world = visible.xyz;
+    let distance = length(world - ambient_frame.camera.xyz);
     let direction = sample_direction(normal, vec2<u32>(texel));
     let origin = shadow_ray_origin_at_distance(world, normal, distance);
-    let vote = ray_visible(origin, direction);
+    let vote = ray_visible(world, origin, direction);
 
     var prior = vec4(0u);
     if ambient_frame.valid != 0u {
@@ -76,4 +73,3 @@ fn trace_ambient_pixel(texel: vec2<i32>, pixel: vec2<i32>, receiver: VisibilityR
     textureStore(ambient_samples_out, texel, vec4(bits, min(prior.y + 1u, ambient_frame.settle),
         bitcast<u32>(z), pack4x8snorm(vec4(normal, 0.0))));
 }
-

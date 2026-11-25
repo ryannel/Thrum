@@ -47,7 +47,7 @@ impl Probe {
             frame(45.0, 2.0),
             &SyntheticView::default(),
             &environment,
-            &super::super::sky_samples(device),
+            (&super::super::sky_samples(device), None),
         );
         let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("reference texture readback"),

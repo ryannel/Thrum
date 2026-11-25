@@ -194,12 +194,14 @@ fn common_origin_sees_a_thin_sheet_at_one_hundred_metres() {
     let x = point.x / point.w;
     // Keep the selected receiver column visible just outside the sheet edge.
     // The sheet stands 5 mm above the flat receiver and is 0.2 mm thick.
-    let sheet = fixture::box_at(1, Vec3::new(x + 1.0005, 0.0051, 0.0), Vec3::new(1.0, 0.0001, 1.8));
+    let sheet = |gap: f32| {
+        fixture::box_at(1, Vec3::new(x + 1.0005, gap + 0.0001, 0.0), Vec3::new(1.0, 0.0001, 1.8))
+    };
     let lighting = fixture::sun(Vec3::Y, 0.0);
-    let votes = |casters: &[thrum_render::abi::InstanceRecord]| {
+    let votes = |radius, casters: &[thrum_render::abi::InstanceRecord]| {
         let mut scene = fixture::scene(Vec3::ZERO, casters);
         scene.view = view;
-        scene.ambient_occlusion_radius = Some(2.0);
+        scene.ambient_occlusion_radius = Some(radius);
         let (mut renderer, mut target) = fixture::prepare(&device, &caps, &queue, &scene, lighting);
         for _ in 0..16 {
             renderer.update_frame(&queue, &mut target, &scene, lighting, 1.0).unwrap();
@@ -222,10 +224,85 @@ fn common_origin_sees_a_thin_sheet_at_one_hundred_metres() {
             words[1] - words[0].count_ones()
         }).sum::<u32>()
     };
-    let clear = votes(&[]);
-    let blocked = votes(&[sheet]);
+    let clear = votes(2.0, &[]);
+    let blocked = votes(2.0, &[sheet(0.005)]);
     assert_eq!(clear, 0, "the ray must leave the flat receiver without self-hits");
     assert!(blocked > 0, "the ray must reach the sheet above the supported separation");
+    let inside = votes(0.006, &[sheet(0.0035)]);
+    let outside = votes(0.006, &[sheet(0.00602)]);
+    assert!(inside > 0, "a sheet in the supported opening must block within 6 mm");
+    assert_eq!(outside, 0, "a lifted start must not extend beyond 6 mm from the visible face");
+    println!("At a 6 mm radius: {inside}/48 hits at 3.5 mm, {outside}/48 at 6.02 mm");
     println!("At 100 m: {clear}/48 hits on the open plane, {blocked}/48 hits with the 5 mm sheet");
+}
+}
+
+#[cfg(feature = "creation-counters")]
+thrum_test_support::macos_gpu_test! {
+fn distant_thin_receiver_keeps_its_front_face_and_rejects_rear_sheets() {
+    use glam::Vec3;
+    use ray_shadow_support as fixture;
+    use ray_support::support;
+    use thrum_render::synthetic::{FrameLighting, SyntheticView};
+
+    let Some(gpu) = support::gate("ambient reach at the visible face of a thin plate") else { return };
+    let (device, queue, caps) = support::device(&gpu, "ray-query", 1);
+    let view = SyntheticView::perspective(
+        [0.0, 100.0, 0.0], [0.0; 3], Vec3::Z.to_array(), 0.8, 1.0, 0.05, 400.0,
+    ).unwrap();
+    let FrameLighting::Photometric(mut sky) = fixture::sun(Vec3::Y, 0.0) else { unreachable!() };
+    sky.ambient_lux = [2000.0; 3];
+    let lighting = FrameLighting::Photometric(sky);
+    let plate = |slot, top: f32, thickness: f32| {
+        fixture::box_at(slot, Vec3::new(0.0, top - thickness / 2.0, 0.0),
+            Vec3::new(8.0, thickness / 2.0, 8.0))
+    };
+    let render = |thickness, radius, rear: &[thrum_render::abi::InstanceRecord]| {
+        let mut scene = fixture::scene(Vec3::ZERO, rear);
+        scene.instances[0] = plate(0, 0.0, thickness);
+        scene.view = view;
+        scene.ambient_occlusion_radius = radius;
+        let (mut renderer, mut target) = fixture::prepare(&device, &caps, &queue, &scene, lighting);
+        let mut colour = [0; 3];
+        for _ in 0..18 {
+            renderer.update_frame(&queue, &mut target, &scene, lighting, 1.0).unwrap();
+            let pixels = support::submit_bytes(&device, &queue, &renderer, &target);
+            colour = fixture::sample(&view, &pixels, Vec3::ZERO);
+            renderer.commit_frame();
+        }
+        let votes = renderer.ambient_ray_samples_for_probe(&target).map(|samples| {
+            let raw = thrum_test_support::readback::texture(
+                &device, &queue, samples, thrum_test_support::readback::Mip::level(0), ..,
+            );
+            let columns = fixture::EXTENT as usize;
+            let index = (columns / 4 * columns + columns / 4) * 16;
+            let [bits, count, depth, _] = std::array::from_fn(|channel| {
+                let start = index + 4 * channel;
+                u32::from_le_bytes(raw[start..start + 4].try_into().unwrap())
+            });
+            assert_eq!(count, 16);
+            (count - bits.count_ones(), depth)
+        });
+        (colour, votes)
+    };
+
+    let (off, _) = render(0.005, None, &[]);
+    let (thin, thin_votes) = render(0.005, Some(2.0), &[]);
+    let (thick, thick_votes) = render(0.2, Some(2.0), &[]);
+    assert!(off.iter().any(|channel| *channel > 0), "the sky must light the control");
+    assert_eq!(thin, off, "open sky on a thin visible upper face");
+    assert_eq!(thick, off, "the same upper face on a thick plate");
+    assert_eq!(thin_votes, thick_votes);
+    let (blocked, depth) = thin_votes.unwrap();
+    assert_eq!(blocked, 0);
+    println!("At 100 m, 5 mm and 200 mm plates under open sky have {blocked}/16 blocked and match the off RGB {off:?}");
+
+    let rear = [plate(1, -0.014, 0.0002), plate(2, -0.010, 0.0002)];
+    for extra in [&rear[..0], &rear[..1], &rear] {
+        let (colour, votes) = render(0.0002, Some(0.006), extra);
+        assert_eq!(colour, off);
+        assert_eq!(votes, Some((0, depth)), "rear geometry must leave the visible receiver's votes and depth alone");
+        println!("At a 6 mm radius, rear sheets present = {}: zero blocked votes at the same depth", extra.len());
+    }
 }
 }

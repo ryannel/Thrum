@@ -37,7 +37,7 @@ impl Fixture {
                 .with_nightglow(),
             &SyntheticView::default(),
             &directional,
-            &super::sky_samples(&device),
+            (&super::sky_samples(&device), None),
         );
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
         for chart in [Chart::Transmittance, Chart::MultipleScattering] {

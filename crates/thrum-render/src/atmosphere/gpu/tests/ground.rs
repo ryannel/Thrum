@@ -493,7 +493,7 @@ fn cache_lifecycle(fixture: &Fixture) {
         first,
         &SyntheticView::default(),
         &directional,
-        &super::sky_samples(&fixture.device),
+        (&super::sky_samples(&fixture.device), None),
     );
     assert_eq!(
         prepared.validity & GROUND_VALID,

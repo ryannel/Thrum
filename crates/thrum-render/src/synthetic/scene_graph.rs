@@ -110,6 +110,7 @@ enum AttachmentUse {
     Scene,
     Motion,
     Reactive,
+    AmbientReceiver,
 }
 
 impl PreparedSynthetic {
@@ -197,6 +198,9 @@ impl super::SyntheticTargetInputs {
                     } else {
                         wgpu::TextureUsages::empty()
                     }
+            }
+            AttachmentUse::AmbientReceiver => {
+                wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING
             }
             AttachmentUse::Motion => {
                 wgpu::TextureUsages::RENDER_ATTACHMENT
@@ -408,6 +412,20 @@ impl super::SyntheticTargetInputs {
         }
         let [depth, scene, motion, reactive] =
             self.forward_attachments(&mut graph, &mut accesses, [width, height], capture_source)?;
+        let ambient_receiver = self
+            .ambient
+            .as_ref()
+            .map(|_| {
+                Self::view_attachment(
+                    (width, height, &mut graph, &mut accesses),
+                    super::raytrace::ambient::RECEIVER_FORMAT,
+                    AttachmentUse::AmbientReceiver,
+                    false,
+                    capture_source,
+                    false,
+                )
+            })
+            .transpose()?;
         let camera = self.append_camera_visibility(
             &mut graph,
             (view, &instance, &mesh, &route),
@@ -451,14 +469,19 @@ impl super::SyntheticTargetInputs {
             &mut accesses,
             &mut late_uniforms,
         )?;
-        let mut ambient = self.append_ambient_visibility(
-            &mut graph,
-            &mut prepared_keys,
-            &mut accesses,
-            [width, height],
-            [&depth, &motion],
-            ray_structure.as_ref(),
-        )?;
+        let mut ambient = ambient_receiver
+            .as_ref()
+            .map(|receiver| {
+                self.append_ambient_visibility(
+                    &mut graph,
+                    &mut prepared_keys,
+                    &mut accesses,
+                    [width, height],
+                    [&depth, &motion, receiver],
+                    ray_structure.as_ref(),
+                )
+            })
+            .transpose()?;
         let soft_sun = self.append_soft_visibility(
             &mut graph,
             &mut prepared_keys,
@@ -638,6 +661,7 @@ impl super::SyntheticTargetInputs {
                 scene,
                 motion,
                 reactive,
+                ambient_receiver,
                 output,
                 shadow,
                 air_shadow,
