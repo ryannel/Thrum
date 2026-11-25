@@ -715,7 +715,7 @@
           "check": "node scripts/check_v1_browser.mjs --case governor",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP7/unlocked/chrome/governor.json",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP7/chrome-recovery/run-2/governor.json",
           "verdict": "",
           "review": "",
           "builder_result": "pass"

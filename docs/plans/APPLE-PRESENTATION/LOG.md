@@ -398,3 +398,8 @@
   against 4 of 59 with the governor off. The separate steady run changed scale zero times. Hardware Chrome
   passed both timing arms with 12,288 rounds, each returning to 100%.
   [Target records](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP7/unlocked/README.md)
+
+- 2026-11-25 WP7's Chrome proof now waits for the pre-load scale to hold for one second after recovery,
+  with a bounded deadline. The GPU timestamp arm uses 8,192 rounds and the animation-frame arm uses
+  12,288 rounds to create sustained callback pressure. Two exact item runs passed on M3 Max WebGPU.
+  [Chrome recovery traces](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP7/chrome-recovery/README.md)
