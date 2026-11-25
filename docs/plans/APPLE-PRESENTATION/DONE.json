@@ -986,7 +986,7 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "in_progress",
+      "status": "ready_for_review",
       "quality_bar": "As free of shader-compilation stutter as a shipped game that compiles its pipelines on a loading screen before play, as Horizon Zero Dawn and Call of Duty: Modern Warfare do on PC: after the game is ready, nothing is compiled, whatever the window or the display does, and a lost device is prepared again behind the same readiness before play resumes."
     },
     {
