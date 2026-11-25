@@ -524,8 +524,8 @@
     {
       "id": "WP5",
       "name": "Props and terrain are grounded: sky light is dimmed in creases and where things stand close together",
-      "status": "ready_for_review",
-      "failed_reviews": 1,
+      "status": "in_progress",
+      "failed_reviews": 2,
       "failed_reviews_with_repeat": 0,
       "depends_on": [
         "CLOUDS:WP7"
@@ -571,7 +571,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RAY-TRACING/WP5/README.md#wp55-grain-at-rest-and-contact-departure",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/RAY-TRACING/WP5-review.md"
         },
         {
@@ -580,9 +580,9 @@
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test ray_ambient_knob_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RAY-TRACING/WP5/review-fixes/checks/metal.log",
-          "verdict": "pass",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
           "review": ".orchestrate/evidence/RAY-TRACING/WP5-review.md"
         },
         {
@@ -599,20 +599,12 @@
       ],
       "findings": [
         {
-          "name": "Ambient rays step over supported caster separations",
+          "name": "Ambient receiver lookup admits occluders outside the declared radius",
+          "item": "WP5.6",
           "repeat": false
         },
         {
-          "name": "Settled ambient occlusion leaves grain on a flat face",
-          "item": "WP5.5",
-          "repeat": false
-        },
-        {
-          "name": "Ambient tracing adds a separate visibility pass alongside soft Sun",
-          "repeat": false
-        },
-        {
-          "name": "Portable forward shader includes ambient-occlusion code",
+          "name": "Ambient receiver reconstruction doubles the designed ray count beyond 6.25 metres",
           "repeat": false
         }
       ]
