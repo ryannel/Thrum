@@ -196,6 +196,7 @@ def validate(match, peer, scenario):
                                   require_clamp=scenario == "playout"),
     }
     if scenario == "playout":
+        analysis["missing_due_time_control"] = reject_missing_due_times(peer.log.read())
         analysis["cut_cases"] = validate_cuts(match, peer, relay["cut_windows"])
     if peer.target == sockets.CHROME:
         assert peer.log.events("webgpu")[0]["adapter"], "no WebGPU canvas adapter recorded"
@@ -214,15 +215,65 @@ def frame_position(row):
     return max(0, row["tick"] - 1) + row["alpha"] if row["tick"] else 0.0
 
 
+class MissingTickDueTime(AssertionError):
+    pass
+
+
+def validate_native_due_times(rows):
+    """Check the committed tick on all advancing Mac submissions, including endpoint clamps."""
+    advance = None
+    counts = {"target_ahead": 0, "target_passed": 0}
+    for row in rows:
+        if row["event"] == "advance":
+            advance = row
+        elif row["event"] == "frame":
+            tick = row["tick"]
+            assert advance is not None or tick == 0, row
+            if advance is not None:
+                assert advance["tick"] == tick, (row, advance)
+            position = frame_position(row)
+            if advance is None or advance["rate"] == 0:
+                assert position == tick, ("held frame drew inside the committed pair", row)
+                continue
+            assert max(0, tick - 1) <= position <= tick, row
+            target = row["platform_target_ns"]
+            assert target is not None, ("missing Mac display target", row)
+            due = row["due_ns"]
+            if due is None:
+                raise MissingTickDueTime(("missing committed tick due time", row))
+            assert due <= row["observation_ns"], row
+            key = "target_ahead" if target > row["observation_ns"] else "target_passed"
+            counts[key] += 1
+    return counts
+
+
+def reject_missing_due_times(rows):
+    """Replay the due-time check after removing timestamps from the run's late frames."""
+    altered = (
+        dict(row, due_ns=None) if row["event"] == "frame"
+        and row["platform_target_ns"] is not None
+        and row["platform_target_ns"] <= row["observation_ns"] else row
+        for row in rows
+    )
+    try:
+        validate_native_due_times(altered)
+    except MissingTickDueTime as error:
+        _, frame = error.args[0]
+        return {"result": "rejected", "first_rejected_submission": frame["submission"]}
+    raise AssertionError("accepted the Mac record with due times removed from late frames")
+
+
 def validate_sample(log, cfg, *, bounded_rate=True, minimum_frames=600, native_target=False,
                     require_clamp=False):
+    rows = log.read()
+    due_times = validate_native_due_times(rows) if native_target else None
     latest = None
     previous = None
     frames = 0
     worst_ratio = 0.0
     target_samples = {}
     jump = False
-    for row in log.read():
+    for row in rows:
         event = row["event"]
         if event in ("skip", "restore", "finish"):
             jump = True
@@ -252,7 +303,6 @@ def validate_sample(log, cfg, *, bounded_rate=True, minimum_frames=600, native_t
                     and row["tick"] - latest["position"] > 0.001):
                 delta = unclamped - row["tick"]
                 if delta > 0.001 or (delta < -0.001 and latest["rate"] == 1.0):
-                    assert row["due_ns"] is not None, row
                     case = "interpolated" if delta < 0 else "clamped"
                     target_samples.setdefault(case, {"frame": row, "driver": latest,
                                                       "unclamped_position": unclamped})
@@ -271,7 +321,8 @@ def validate_sample(log, cfg, *, bounded_rate=True, minimum_frames=600, native_t
     if require_clamp:
         assert "clamped" in target_samples, target_samples
     return {"frames": frames, "highest_unskipped_rate": worst_ratio if bounded_rate else None,
-            "stalls": log.events("stall"), "skips": log.events("skip"), "target_samples": target_samples}
+            "stalls": log.events("stall"), "skips": log.events("skip"), "target_samples": target_samples,
+            "advancing_due_times": due_times}
 
 
 def validate_cuts(match, peer, relay_edges):
