@@ -663,6 +663,7 @@ try {
         if(!await evaluate('game.frame_ready()'))return false;
         await drive(1000/60);
         const status=await evaluate('game.report()');
+        if(status.startsWith('Asset load failed:')) throw Error(status);
         return /^Cooked generation [0-9]+ drawn/.test(status);
       },'optics content drawn');
     }

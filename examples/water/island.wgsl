@@ -17,8 +17,6 @@ fn ground_noise(point: vec2<f32>) -> f32 {
 }
 
 fn cooked_surface(surface: CookedSurface, at: CookedSurfacePoint) -> CookedSurface {
-    if any(surface.base_colour.rgb < vec3(0.99)) { return surface; }
-    var out = surface;
     let xz = at.world.xz;
     let height = at.world.y;
     let low = ground_noise(xz * 0.07);
@@ -27,6 +25,9 @@ fn cooked_surface(surface: CookedSurface, at: CookedSurfacePoint) -> CookedSurfa
     let fine = ground_noise(xz * 32.0);
     let ripples = sin(xz.x * 24.0 + 7.0 * low + ground_noise(xz * 1.8));
     let ripple_fade = 1.0 - smoothstep(0.014, 0.12, length(fwidth(xz)));
+    // Fragment derivatives above need uniform control flow across the quad.
+    if any(surface.base_colour.rgb < vec3(0.99)) { return surface; }
+    var out = surface;
     let beach = vec3(0.43, 0.34, 0.20) * (0.75 + 0.24 * cover + 0.2 * coarse + 0.22 * fine + 0.05 * ripples * ripple_fade);
     let grass = mix(vec3(0.063, 0.105, 0.029), vec3(0.21, 0.22, 0.082), smoothstep(0.11, 0.84, cover))
         * (0.79 + 0.34 * coarse + 0.20 * fine);

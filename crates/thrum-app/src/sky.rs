@@ -47,7 +47,6 @@ use std::{
 
 #[cfg(target_os = "macos")]
 use std::time::Instant;
-#[cfg(not(target_arch = "wasm32"))]
 use thrum_asset_gpu::MaterialOutcome;
 use thrum_asset_gpu::{CookedAssets, CookedConfig, CookedStats, MaterialHook, MaterialReadError};
 pub use thrum_asset_gpu::{CookedMaterial, MeshPlacement};
@@ -915,6 +914,10 @@ impl SkyGame {
         let lease = assets.lease();
         let stats = assets.stats();
         let material = assets.material();
+        #[cfg(target_arch = "wasm32")]
+        let mut initial_material = initial.is_some().then_some(material.clone());
+        #[cfg(target_arch = "wasm32")]
+        let mut material_error = None;
         if let Some((name, source)) = initial {
             material.request(MaterialHook {
                 name: name.into(),
@@ -928,7 +931,28 @@ impl SkyGame {
                 ContentStatus::Failed(error) => ContentStatus::Failed(format!(
                     "{status_names}: {error}; fix the asset and save again"
                 )),
-                status => status,
+                status => {
+                    #[cfg(target_arch = "wasm32")]
+                    {
+                        if let Some(error) = &material_error {
+                            return ContentStatus::Failed(String::clone(error));
+                        }
+                        if let Some(material) = &initial_material {
+                            for outcome in material.take_outcomes() {
+                                if !matches!(outcome, MaterialOutcome::Promoted { .. }) {
+                                    let error = outcome.to_string();
+                                    material_error = Some(error.clone());
+                                    return ContentStatus::Failed(error);
+                                }
+                            }
+                            if material.accepted().is_none() {
+                                return ContentStatus::Loading;
+                            }
+                            initial_material = None;
+                        }
+                    }
+                    status
+                }
             });
         game.kept = Some(Box::new(move || {
             kept.lock()
