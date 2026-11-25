@@ -3600,7 +3600,7 @@
         "status": "not_inventoried"
       },
       "review_basis": "C4 NETWORK-SPEC, source/save/consumer cross-review and exact R4 application-byte and failure traces apply to the snapshot and delta design. The deterministic session and message link rows record their own functional and target evidence.",
-      "current_design_sha256": "916c04ce809f20715726cdca04aff5b75af394dd5ba6ddb3be7567178f0078d0",
+      "current_design_sha256": "c6560badf4dc66f062bdb5562b25f3b776fa0da9848fa0b7f4fae1b3aa08ed77",
       "current_design_delta": "C4 file-first admission/restart/initial preload and N1 outcome/group/compatibility consumers reconciled. A selected inline probe shows one slow peer can retain typed projections across twelve groups while W1 keeps advancing. The 60-to-20 Hz mandatory batch gap remains explicit; earlier R4 byte arithmetic covers ordinary cadence only. Wire groupId names a stable baseline partition, envelope sequence names a submitted publication, and the bounded sent-frame ledger distinguishes admission ACK from baseline supersession with independent chunk staging credits. Bounded R4 state/lifecycle admission, event-free atomic result progress, structural envelope framing, finite pre-submission payload queue and ordinary sent ledger are implemented; the ordinary peer now preflights joint queued-plus-sent 256-result/128-event identity credit. Event-bearing replica groups still refuse. A test-only complete-partition W1 capture drives four peer-owned queues through nine changed ticks with one slow ACK. Production projection, unified baseline/session ownership and transport remain unbuilt. Prior reviewed hashes retained; no runtime promotion. 16 Nov: the transport section records what TRANSPORT built (message link, ticket, in-memory link, native and Chrome adapters) and that A0's WebSocket fallback was not built; see transport_message_link. SESSION adds the deterministic C13 profile, a game-maker guide and the current headless proof scope. Earlier I2n and R4 entries describe the original snapshot and delta profile.",
       "architecture_selection_review": {
         "status": "reconciled_for_selected_scope",
@@ -3761,7 +3761,7 @@
       "deterministic_session": {
         "implementation": "Caller-clocked host and client over the message link. Includes full-world baseline restore, post-commit set delivery, redundant timed frames, ordered commands, adaptive lead, bounded result retention, roster and match lifecycle, confirmed playout and optional local-controller prediction. A driven world in the native and browser app shells takes a bounded advance and display-time sample from its game-owned driver. An inline replica can admit buffered steps through the display target while polling the link at observation time.",
         "correctness": "On A0 and harsh in-memory profiles, four 10,000-body replicas each matched the authority at all 1,200 digest ticks over 36,000 ticks. The A0 socket match also matched all 1,200 on each of four independent clients. Other proofs cover late join, disconnect and rejoin, repair, slow or frozen peers, and an independent integer rule set with timed actions, ordered commands and roster events. Each independent windowed reference Crowd replica matched all 120 digest ticks over 3,600 ticks under the A0 relay. The Mac receipt records the buffered burst, hold, sustained catch-up in submitted positions, and named skip. Chrome proves a hidden tab returning through named skips without duplicate commits or overload. The dependency closure also covers the standalone Crowd view.",
-        "visuals": "T2 realtime motion at 640×360 compares a 2,000-body joined Crowd with the standalone view on both targets. The retained motion records cover the Mac burst, stall and skip and the Chrome visibility return.",
+        "visuals": "T2 realtime motion at 640\u00d7360 compares a 2,000-body joined Crowd with the standalone view on both targets. The retained motion records cover the Mac burst, stall and skip and the Chrome visibility return.",
         "device": {
           "mac-metal": "Apple M3 Max: headless authority and two independently running native clients over conditioned loopback, plus the virtual-clock rehearsal and two Metal windows in separate native processes.",
           "chrome-webgpu": "Headless Chrome Wasm client over WebTransport to the same Mac's loopback relay. The windowed proof renders the joined Crowd in a real WebGPU canvas.",
@@ -4973,7 +4973,7 @@
       "WHOLE-ENGINE-REVIEW.md": "c3705368bbc941ee64a6ea1c5bbb533854189cbad4c22469208d03aa0ae713e0",
       "modules/AUDIO-UI.md": "60373209c2d3d573f909f92575c75252ac1526a9d730ac8e1c68dc14f99392c0",
       "modules/ENVIRONMENT.md": "7be3e7766badf2fa7d799ea561433f8f9ea945bfc415df9be1cec123b294e00c",
-      "modules/NETWORKING.md": "916c04ce809f20715726cdca04aff5b75af394dd5ba6ddb3be7567178f0078d0",
+      "modules/NETWORKING.md": "c6560badf4dc66f062bdb5562b25f3b776fa0da9848fa0b7f4fae1b3aa08ed77",
       "modules/PLATFORM-RUNTIME.md": "3cfd08165509dac1f0964fdb0d3f92215faf1a820a36a8e5c04ff05146171df1",
       "modules/PLAY-SYSTEMS.md": "86279be04e72643989cecc3a0e562fa4c948fa27c956180dbe6079c830efcd57",
       "modules/RENDERING.md": "70ed4608d576e6b8b1913341d0e170f7ad356989d88204d5144500c6474a1480",
