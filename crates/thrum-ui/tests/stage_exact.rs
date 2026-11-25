@@ -102,12 +102,27 @@ fn compare(plain: &SubmittedImage, painted: &SubmittedImage, scale: u8, float: b
                     encode(read(actual))
                 );
             } else {
-                let code = authored.expect("covered by an opaque row")[channel];
-                assert_eq!(
-                    encode(read(actual)).round(),
-                    f64::from(code),
-                    "opaque {x},{y} channel {channel}"
-                );
+                let texel = authored.expect("covered by a sheet row");
+                let code = f64::from(texel[channel]);
+                if texel[3] == 255 {
+                    assert_eq!(
+                        encode(read(actual)).round(),
+                        code,
+                        "opaque {x},{y} channel {channel}"
+                    );
+                } else {
+                    let alpha = f64::from(texel[3]) / 255.0;
+                    let source = if channel == 3 {
+                        alpha
+                    } else {
+                        decode(code / 255.0) * alpha
+                    };
+                    let reference = encode(source + read(background) * (1.0 - alpha));
+                    assert!(
+                        (encode(read(actual)) - reference).abs() <= 1.0,
+                        "authored alpha at {x},{y} channel {channel}"
+                    );
+                }
             }
         }
     }
