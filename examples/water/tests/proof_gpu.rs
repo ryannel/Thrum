@@ -1,6 +1,5 @@
 //! Opt-in submitted-output capture and paired GPU measurement driver.
 #[cfg(target_os = "macos")]
-#[cfg(target_os = "macos")]
 mod optics_cost;
 #[cfg(target_os = "macos")]
 mod realtime;
@@ -156,8 +155,8 @@ fn driver(gpu: &thrum_test_support::Gpu) {
         .expect("record");
         return;
     }
-    if mode == "optics-cost" {
-        optics_cost::run(gpu, &directory);
+    if matches!(mode.as_str(), "optics-cost" | "optics-cost-views") {
+        optics_cost::run(gpu, &directory, mode == "optics-cost-views");
         return;
     }
     if mode == "surf-cost" || mode == "surf-running" {
@@ -374,12 +373,13 @@ fn driver(gpu: &thrum_test_support::Gpu) {
             ) {
                 let mut views: Vec<_> = [("dawn", 1.0), ("noon", 60.0), ("low-sun", 6.0), ("twilight", -5.0), ("night", -18.0)]
                     .into_iter().flat_map(|(name,sun)| [2,40].map(|height| {
-                        (format!("{name}-{height}"), format!(r#"{{"camera.height":{height},"camera.bearing":90,"sun.elevation":{sun}}}"#), 10.0)
+                        let pitch = if name == "noon" { -33.024 } else { -18.004 };
+                        (format!("{name}-{height}"), format!(r#"{{"camera.height":{height},"camera.bearing":90,"camera.pitch":{pitch},"sun.elevation":{sun}}}"#), 10.0)
                     })).collect();
                 if std::env::var_os(thrum_app::sky::STORE_VARIABLE).is_some() {
                     views.push((
                         "submerged-noon-6".into(),
-                        r#"{"camera.height":6,"camera.bearing":90,"sun.elevation":60}"#.into(),
+                        r#"{"camera.height":6,"camera.bearing":90,"camera.pitch":-33.024,"sun.elevation":60}"#.into(),
                         10.0,
                     ));
                 }

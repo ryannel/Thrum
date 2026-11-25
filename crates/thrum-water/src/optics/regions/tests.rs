@@ -201,3 +201,36 @@ fn see_through_admission_tracks_sight_depth_and_leaves_deep_map_tiles_uncopied()
         SOURCE | SHALLOW
     );
 }
+
+#[test]
+fn source_clips_to_the_actual_frustum_when_the_box_straddles_near_depth() {
+    let matrix = glam::camera::rh::proj::directx::perspective_infinite_reverse(
+        70_f32.to_radians(),
+        1.0,
+        0.1,
+    );
+    let view = View {
+        matrix,
+        inverse: matrix.inverse(),
+        extent: UVec2::splat(600),
+        grid: GRID,
+    };
+    let box_at = |min, max| Bounds {
+        min: Vec3::from_array(min),
+        max: Vec3::from_array(max),
+    };
+    assert!(
+        view.project(box_at([19.0, -1.0, -1.0], [21.0, 1.0, 1.0]))
+            .is_none()
+    );
+    let right = view
+        .project(box_at([0.12, -0.04, -1.0], [1.2, 0.04, 0.2]))
+        .expect("clipped box");
+    assert!(right.low.x > 300 && right.high.x == 600);
+    assert!(right.low.y > 120 && right.high.y < 480);
+    let enveloping = view
+        .project(box_at([-2.0, -2.0, -2.0], [2.0, 2.0, 2.0]))
+        .expect("view inside box");
+    assert_eq!(enveloping.low, UVec2::ZERO);
+    assert_eq!(enveloping.high, view.extent);
+}

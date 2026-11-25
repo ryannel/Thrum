@@ -657,12 +657,24 @@ def optics_summary(data, states):
         arms = {row['enabled']: row for row in view['arms']}
         assert arms.keys() == states
         sources = None
+        observed_view = None
         summary[named] = {}
         for enabled, arm in arms.items():
             frames = arm['frames']
             timeline = [(frame['tick'], frame['alpha']) for frame in frames]
             assert sources is None or sources == timeline
             sources = timeline
+            if view['body_count'] is not None:
+                witness = arm['visibility']
+                assert len(witness['fleet_centres_ndc']) == view['body_count'], named
+                plane = witness['separating_plane']
+                assert 0 <= plane < 6 and len(witness['caster_clip_corners']) == 8
+                for x, y, z, w in witness['caster_clip_corners']:
+                    assert (w+x, w-x, w+y, w-y, z, w-z)[plane] < 0, named
+                assert all(-1 < x < 1 and -1 < y < 1 and 0 < z < 1
+                           for x, y, z in witness['fleet_centres_ndc']), named
+                assert observed_view is None or observed_view == witness, named
+                observed_view = witness
             phases = wake_summary(frames)
             for row in phases.values():
                 assert row['timestamped_samples'] > 0, f'{named}: {arm["timing"]}'
@@ -692,7 +704,7 @@ def measure_optics(action):
     destination = WORKING / 'WP8'
     destination.mkdir(parents=True, exist_ok=True)
     if action == 'record':
-        path = destination / 'optics-cost-prior.json'
+        path = destination / f'optics-cost-prior-{commit[:12]}.json'
     else:
         prior = json.loads(RECORDS['optics'].read_text())
         data['prior_record'] = str(RECORDS['optics'].relative_to(ROOT))

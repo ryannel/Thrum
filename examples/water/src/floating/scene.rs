@@ -218,6 +218,9 @@ pub fn build_wake_paired(
     )
 }
 
+/// Centre of the unit shadow caster kept outside the optics cost view.
+pub const OPTICS_COST_CASTER: [f32; 3] = [162.0, 2.0, 29.0];
+
 /// Same camera, wave forcing and poses in both arms of the optics record.
 /// # Errors
 /// Propagates scene construction errors.
@@ -641,7 +644,7 @@ fn build_scene(
         );
     let game = if optics_arm.is_some() {
         game.with_meshes(vec![
-            MeshPlacement::new("meshes/float", "textures/white").at([150.0, 2.0, 62.0]),
+            MeshPlacement::new("meshes/float", "textures/white").at(OPTICS_COST_CASTER),
         ])?
     } else {
         game

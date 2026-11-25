@@ -30,37 +30,69 @@ struct Rectangle {
 
 struct View {
     matrix: Mat4,
+    inverse: Mat4,
     extent: UVec2,
     grid: UVec2,
 }
 
 impl View {
     fn project(&self, bounds: Bounds) -> Option<Rectangle> {
+        let corners: [Vec4; 8] = core::array::from_fn(|i| {
+            let coordinate = |axis| {
+                if i & (1_usize << axis) == 0 {
+                    bounds.min[axis]
+                } else {
+                    bounds.max[axis]
+                }
+            };
+            self.matrix * Vec4::new(coordinate(0), coordinate(1), coordinate(2), 1.0)
+        });
+        let mut crosses = false;
+        for plane in FRUSTUM {
+            let outside = corners
+                .iter()
+                .filter(|point| plane.dot(**point) < 0.0)
+                .count();
+            if outside == corners.len() {
+                return None;
+            }
+            crosses |= outside != 0;
+        }
+
         let mut low = Vec2::splat(f32::INFINITY);
         let mut high = Vec2::splat(f32::NEG_INFINITY);
-        let mut near_clip = false;
-        for x in [bounds.min.x, bounds.max.x] {
-            for y in [bounds.min.y, bounds.max.y] {
-                for z in [bounds.min.z, bounds.max.z] {
-                    let clip = self.matrix * Vec4::new(x, y, z, 1.0);
-                    if clip.w <= 0.000_01 || clip.z > clip.w {
-                        near_clip = true;
-                        continue;
+        let mut include = |clip: Vec4| {
+            if clip.w > 0.0 {
+                let uv = clip.truncate().truncate() / clip.w * Vec2::new(0.5, -0.5) + 0.5;
+                low = low.min(uv);
+                high = high.max(uv);
+            }
+        };
+        if crosses {
+            for face in BOX_FACES {
+                clip_face(face.map(|index| corners[index]), &mut include);
+            }
+            // Box faces find every intersection vertex except a frustum corner
+            // inside the box, including when the box encloses the entire view.
+            for x in [-1.0, 1.0] {
+                for y in [-1.0, 1.0] {
+                    for z in [0.0, 1.0] {
+                        let clip = Vec4::new(x, y, z, 1.0);
+                        let world = self.inverse * clip;
+                        if world.w > 0.0 {
+                            let point = world.truncate() / world.w;
+                            if point.cmpge(bounds.min).all() && point.cmple(bounds.max).all() {
+                                include(clip);
+                            }
+                        }
                     }
-                    let uv = clip.truncate().truncate() / clip.w * Vec2::new(0.5, -0.5) + 0.5;
-                    low = low.min(uv);
-                    high = high.max(uv);
                 }
             }
+        } else {
+            corners.into_iter().for_each(include);
         }
         if !low.is_finite() {
             return None;
-        }
-        if near_clip {
-            return Some(Rectangle {
-                low: UVec2::ZERO,
-                high: self.extent,
-            });
         }
         // Include the nearest-neighbour depth and colour filter's footprint.
         let pad = Vec2::splat(1.0) / self.extent.as_vec2();
@@ -82,6 +114,56 @@ impl View {
             high: (rectangle.high - UVec2::ONE) * self.grid / self.extent + UVec2::ONE,
         }
     }
+}
+
+// WebGPU's homogeneous clip volume. Depth is reverse-Z, so w − z is the near plane.
+const FRUSTUM: [Vec4; 6] = [
+    Vec4::new(0.0, 0.0, -1.0, 1.0),
+    Vec4::Z,
+    Vec4::new(1.0, 0.0, 0.0, 1.0),
+    Vec4::new(-1.0, 0.0, 0.0, 1.0),
+    Vec4::new(0.0, 1.0, 0.0, 1.0),
+    Vec4::new(0.0, -1.0, 0.0, 1.0),
+];
+const BOX_FACES: [[usize; 4]; 6] = [
+    [0, 2, 6, 4],
+    [1, 3, 7, 5],
+    [0, 1, 5, 4],
+    [2, 3, 7, 6],
+    [0, 1, 3, 2],
+    [4, 5, 7, 6],
+];
+
+fn clip_face(face: [Vec4; 4], include: &mut impl FnMut(Vec4)) {
+    // A plane adds at most one vertex to a convex face.
+    let mut input = [Vec4::ZERO; 10];
+    let mut output = [Vec4::ZERO; 10];
+    input[..4].copy_from_slice(&face);
+    let mut count = 4;
+    for plane in FRUSTUM {
+        let mut next = 0;
+        let mut previous = input[count - 1];
+        let mut previous_side = plane.dot(previous);
+        for &point in &input[..count] {
+            let side = plane.dot(point);
+            if (side < 0.0 && previous_side > 0.0) || (side > 0.0 && previous_side < 0.0) {
+                output[next] = previous.lerp(point, previous_side / (previous_side - side));
+                next += 1;
+            }
+            if side >= 0.0 {
+                output[next] = point;
+                next += 1;
+            }
+            previous = point;
+            previous_side = side;
+        }
+        if next == 0 {
+            return;
+        }
+        std::mem::swap(&mut input, &mut output);
+        count = next;
+    }
+    input[..count].iter().copied().for_each(include);
 }
 
 fn mark(mask: &mut [[[u32; 4]; GRID_WIDTH / 4]; GRID_HEIGHT], rect: Rectangle, bits: u32) {
@@ -214,8 +296,10 @@ impl Shallows {
         height_rms: f32,
     ) -> Inputs {
         let extent = UVec2::from_array(frame.render_extent);
+        let matrix = Mat4::from_cols_array_2d(&frame.view_proj);
         let view = View {
-            matrix: Mat4::from_cols_array_2d(&frame.view_proj),
+            matrix,
+            inverse: matrix.inverse(),
             extent,
             grid: extent.min(GRID),
         };

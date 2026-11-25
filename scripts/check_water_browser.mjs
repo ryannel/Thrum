@@ -678,8 +678,8 @@ try {
         ['hull-6',{'camera.optics_height':6,'sun.elevation':60}]];
     }else{
       checkpoints=[['noon',60],['low-sun',6],['night',-18]].flatMap(([name,sun])=>
-        [2,40].map(height=>[name+'-'+height,{'camera.height':height,'camera.bearing':90,'sun.elevation':sun}]));
-      checkpoints.push(['submerged-noon-6',{'camera.height':6,'camera.bearing':90,'sun.elevation':60}]);
+        [2,40].map(height=>[name+'-'+height,{'camera.height':height,'camera.bearing':90,'camera.pitch':sun===60?-33.024:-18.004,'sun.elevation':sun}]));
+      checkpoints.push(['submerged-noon-6',{'camera.height':6,'camera.bearing':90,'camera.pitch':-33.024,'sun.elevation':60}]);
     }
     for(const [name,params] of checkpoints){
       await evaluate(`game.apply_params(${JSON.stringify(JSON.stringify(params))})`);

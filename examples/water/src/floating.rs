@@ -4,8 +4,8 @@ mod scene;
 
 use glam::{DQuat, DVec3};
 pub use scene::{
-    FloatingScene, WakeDemo, WakeView, WhitewaterDemo, build, build_optics_arm, build_paired,
-    build_wake, build_wake_paired,
+    FloatingScene, OPTICS_COST_CASTER, WakeDemo, WakeView, WhitewaterDemo, build, build_optics_arm,
+    build_paired, build_wake, build_wake_paired,
 };
 use std::time::Duration;
 use thrum_sea_model::{LongWaves, Spectrum};

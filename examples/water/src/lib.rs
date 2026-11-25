@@ -178,6 +178,15 @@ fn build_open_sea(
         .slider("camera.bearing", "Camera bearing", 0.0..=360.0)
         .default(90.0)
         .add()?;
+    let pitch = wind
+        .map(|_| {
+            controls
+                .slider("camera.pitch", "Camera pitch", -55.0..=0.0)
+                .default(-CAMERA_LOOK_DROP.atan2(100.0).to_degrees())
+                .display(Display::plain(1, "°"))
+                .add()
+        })
+        .transpose()?;
     let stage = controls
         .slider("sea.stage", "Sea stage", -2.0..=4.0)
         .default(0.0)
@@ -224,11 +233,9 @@ fn build_open_sea(
             let angle = c.get(bearing).to_radians();
             let h = c.get(height);
             let eye = camera_position(h, c.get(bearing));
-            let look_drop = if wind.is_some() && sky.sun_elevation_degrees >= 50.0 {
-                65.0
-            } else {
-                CAMERA_LOOK_DROP
-            };
+            let look_drop = pitch.map_or(CAMERA_LOOK_DROP, |pitch| {
+                -100.0 * c.get(pitch).to_radians().tan()
+            });
             sky.camera = Camera::look_at(
                 eye,
                 [

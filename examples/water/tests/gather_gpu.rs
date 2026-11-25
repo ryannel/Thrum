@@ -9,7 +9,8 @@ fn gather_admits_visible_bodies_and_preserves_the_waterless_graph() {
     let Some(gpu) = thrum_test_support::gpu("gather", Some(wgpu::Backend::Metal)) else { return };
     let view = camera([0.0, 2.0, 0.0], [0.0, 0.0, 8.0], 0.7, 1.0/1024.0);
     let panel = Panel { centre: [0.0, 1.0, 8.0], half_size: [1.2, 0.8, 0.08], radiant: true };
-    let mut rig = Rig::new(&gpu, &view, sun(2.0, 0.000_01), &[panel], None);
+    let outside = Panel { centre: [20.0, 2.0, 0.0], half_size: [1.0; 3], radiant: true };
+    let mut rig = Rig::new(&gpu, &view, sun(2.0, 0.000_01), &[panel, outside], None);
     let graph = |rig: &Rig| rig.host.scene_graph().expect("graph").pass_names()
         .map(str::to_owned).collect::<Vec<_>>();
     let baseline = graph(&rig);
@@ -22,7 +23,11 @@ fn gather_admits_visible_bodies_and_preserves_the_waterless_graph() {
     assert!(timing.passes().iter().all(|pass| !pass.name.contains("water gather")));
     let (_, empty) = rig.scene_colour();
 
-    assert!(opaque.publish(&[panel.bounds()]));
+    assert!(opaque.publish(&[outside.bounds()]));
+    let timing = rig.frame().gpu_pass_ns.expect("Metal timings with an off-screen body");
+    assert!(timing.passes().iter().all(|pass| !pass.name.contains("water gather")));
+    assert_eq!(rig.scene_colour().1, empty);
+    assert!(opaque.publish(&[outside.bounds(), panel.bounds()]));
     let timing = rig.frame().gpu_pass_ns.expect("Metal pass timings with a visible receiver");
     assert!(timing.passes().iter().any(|pass| pass.name.contains("water gather")));
     let (_, reflected) = rig.scene_colour();

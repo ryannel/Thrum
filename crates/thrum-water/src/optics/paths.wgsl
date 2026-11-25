@@ -137,6 +137,52 @@ fn trace_bodies(origin: vec3<f32>, ray: vec3<f32>, reach: f32, mask: u32) -> Gat
     return best;
 }
 
+// Continue a narrow gap in visible bank radiance across a foreground
+// silhouette. The bed locates the ray's crossing, and only opaque samples
+// whose depth agrees with nearby bed can contribute its colour.
+fn fill_bank_gap(origin: vec3<f32>, ray: vec3<f32>, reach: f32) -> GatherHit {
+    var previous = 0.06;
+    for (var i = 1u; i <= 24u; i++) {
+        let phase = f32(i) / 24.0;
+        let t = mix(0.06, reach, phase * phase);
+        let p = origin + ray * t;
+        if p.y > reflection_bed(p.xz) { previous = t; continue; }
+
+        var lo = previous;
+        var hi = t;
+        for (var j = 0u; j < 7u; j++) {
+            let mid = (lo + hi) * 0.5;
+            let q = origin + ray * mid;
+            if q.y > reflection_bed(q.xz) { lo = mid; } else { hi = mid; }
+        }
+        let bank = origin + ray * hi;
+        let projected = optics_project(bank);
+        let margin = min(projected.xy, 1.0 - projected.xy);
+        if projected.z < 0.0 || min(margin.x, margin.y) < 0.015 { break; }
+        let forward = normalize(ray.xz);
+        let across = vec2(-forward.y, forward.x);
+        let directions = array(across, -across, forward, -forward);
+        for (var j = 0u; j <= 16u; j++) {
+            let radius = f32((j + 3u) / 4u);
+            let offset = directions[(j + 3u) % 4u] * radius;
+            let xz = bank.xz + offset;
+            let bed = vec3(xz.x, reflection_bed(xz), xz.y);
+            let location = optics_project(bed);
+            if location.z < 0.0 { continue; }
+            var sample = gather_at(location.xy);
+            // At a grazing view, one texel can span a long strip of ground.
+            // Test its reconstructed point against the bed at that point.
+            if sample.distance > 0.0 && length(sample.point.xz - xz) < 1.8
+                && abs(sample.point.y - reflection_bed(sample.point.xz)) < 0.22 {
+                sample.point = bank;
+                return sample;
+            }
+        }
+        break;
+    }
+    return empty_hit();
+}
+
 fn water_optical_paths(
     row: SurfaceRow, world: vec3<f32>, pixel: vec2<u32>, n: vec3<f32>, v: vec3<f32>,
     variance: f32, sky: vec3<f32>, fresnel: f32,
@@ -154,6 +200,7 @@ fn water_optical_paths(
         through = trace_bodies(world, refracted_ray, optics.extinction_sight.w, mask);
     }
     let depth = max(0.0, world.y - row.bed);
+    var bank = empty_hit();
     var reflection_weight = slope_weight;
     var scene_hit = false;
     let rough_limit = optics.downwelling_mirror.w;
@@ -164,20 +211,20 @@ fn water_optical_paths(
         let segment = vec2(0.06, reach);
         reflected = trace(world, reflected_ray, segment, scenery, false);
         reflection_weight = still;
-        if reflected.distance == 0.0 && depth < 0.8 {
-            // A subpixel change near the bank can expose the opaque side of
-            // a shared silhouette. A nearby ray gives a low-weight fallback
-            // instead of a bright sky speck between the roots and the bed.
-            let side = vec3(-reflected_ray.z, 0.0, reflected_ray.x);
-            reflected = trace(world, normalize(reflected_ray + 0.003 * side), segment, scenery, false);
-            if reflected.distance == 0.0 {
-                reflected = trace(world, normalize(reflected_ray - 0.003 * side), segment, scenery, false);
-            }
-            reflection_weight *= 0.72 * (1.0 - smoothstep(0.5, 0.8, depth));
+        if reflected.edge < 0.995 {
+            bank = fill_bank_gap(world, reflected_ray, reach);
         }
         scene_hit = true;
     }
     var outgoing = sky;
+    if bank.distance > 0.0 {
+        let dist = length(bank.point - world);
+        let uv = optics_project(bank.point).xy;
+        let margin = min(uv, 1.0 - uv);
+        let edge = smoothstep(0.015, 0.14, min(margin.x, margin.y));
+        let fade = edge * reflection_weight * (1.0 - smoothstep(0.75 * reach, reach, dist));
+        outgoing = mix(sky, fresnel * hit_light(bank), fade);
+    }
     if reflected.distance > 0.0 {
         let t = length(reflected.point - world);
         let uv = optics_uv(reflected.pixel);
@@ -185,7 +232,7 @@ fn water_optical_paths(
         let scene_edge = min(reflected.edge, smoothstep(0.015, 0.14, min(margin.x, margin.y)));
         let fade = select(reflected.edge, scene_edge, scene_hit) * reflection_weight
             * (1.0 - smoothstep(0.75 * reach, reach, t));
-        outgoing = mix(sky, fresnel * hit_light(reflected), fade);
+        outgoing = mix(outgoing, fresnel * hit_light(reflected), fade);
     }
 
     var edge_depth = depth;

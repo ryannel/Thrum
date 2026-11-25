@@ -419,7 +419,11 @@ fn build_island(
         crate::profile(&spectrum)
     };
     if optics {
-        profile.optics = Some(thrum_water::Optics::default());
+        profile.optics = Some(thrum_water::Optics {
+            // The reflecting bank can be farther along the ray than its trees.
+            reflection_reach: 96.0,
+            ..thrum_water::Optics::default()
+        });
     }
     if foam {
         profile.query = Some(thrum_water::query::QueryLimits {
@@ -577,7 +581,7 @@ fn placements(map: &SharedMap, decorate: bool) -> Vec<MeshPlacement> {
             })
     };
     for (x, z, scale) in [
-        (198.0, -20.0, 1.0),
+        (198.0, -18.95, 1.0),
         (204.0, -22.0, 0.83),
         (209.0, -25.0, 0.72),
     ] {

@@ -1,3 +1,5 @@
+fn reflection_bed(_point: vec2<f32>) -> f32 { return -1e30; }
+
 fn surface_vertex(point: vec2<f32>, slot: u32) -> SurfaceRow {
     return SurfaceRow(water.level_dt_reset.x, water.level_dt_reset.w, water.gains, -1e30,
         true, 0.0, 0.0, 0.0);
