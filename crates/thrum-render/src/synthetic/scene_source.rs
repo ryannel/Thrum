@@ -135,16 +135,6 @@ pub(super) fn cloud_variant(source: String, variant: crate::shaders::CloudVarian
     }
 }
 
-fn compose_with_cloud(
-    atmosphere: bool,
-    air_shadow: bool,
-    cloud: bool,
-    shadowed: SunShadows,
-    ambient: bool,
-) -> String {
-    apply_providers(compose(atmosphere, air_shadow, ambient), cloud, shadowed)
-}
-
 fn apply_providers(source: String, cloud: bool, shadowed: SunShadows) -> String {
     // Resource reflection precedes backend constant folding. A false argument
     // to shade() must not make an unshadowed entry require absent Sun bindings.
@@ -270,12 +260,14 @@ pub(crate) fn main_source(variant: crate::shaders::SceneVariant) -> String {
             variant.shadows,
         )
     } else {
-        compose_with_cloud(
-            variant.atmosphere.present(),
-            variant.atmosphere.air_shadow(),
+        apply_providers(
+            compose(
+                variant.atmosphere.present(),
+                variant.atmosphere.air_shadow(),
+                variant.ambient,
+            ),
             variant.cloud.present(),
             variant.shadows,
-            variant.ambient,
         )
     };
     let source = cloud_variant(source, variant.cloud);
@@ -293,7 +285,7 @@ pub(crate) fn main_source(variant: crate::shaders::SceneVariant) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{SunShadows, compose, compose_with_cloud};
+    use super::{SunShadows, apply_providers, compose};
     use crate::contribution::{HookPointError, material_hook_point};
 
     #[test]
@@ -311,7 +303,7 @@ mod tests {
                 let selection =
                     ShadowSelection::resolve(sun, lamps, RayStructureSelection::Enabled);
                 let source = super::traced(
-                    compose_with_cloud(true, true, false, shadows, false),
+                    apply_providers(compose(true, true, false), false, shadows),
                     shadows,
                     selection,
                     sun == SunShadowMethod::Traced,
@@ -333,12 +325,10 @@ mod tests {
         use wgpu::naga;
         for atmosphere in [false, true] {
             for shadowed in [false, true] {
-                let source = compose_with_cloud(
-                    atmosphere,
-                    atmosphere && shadowed,
+                let source = apply_providers(
+                    compose(atmosphere, atmosphere && shadowed, false),
                     false,
                     SunShadows::from(shadowed),
-                    false,
                 );
                 let module = naga::front::wgsl::parse_str(&source).expect("WGSL");
                 let info = naga::valid::Validator::new(
@@ -405,7 +395,7 @@ mod tests {
     fn every_forward_variant_holds_the_material_hook_point_once_in_shade() {
         for atmosphere in [false, true] {
             for air_shadow in [false, true] {
-                let source = compose(atmosphere, air_shadow);
+                let source = compose(atmosphere, air_shadow, false);
                 let variant = format!("atmosphere {atmosphere}, air shadow {air_shadow}");
                 let point = material_hook_point(&source)
                     .unwrap_or_else(|error| panic!("{variant}: {error}"));
