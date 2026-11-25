@@ -871,7 +871,7 @@
           "check": "python3 scripts/apple_presentation.py metalfx-quality --target mac-metal",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP8/target-a30845335/D8.4/metalfx-quality.json",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP8/target-exposure-texture/metalfx-quality/metalfx-quality.json",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -882,7 +882,7 @@
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test metalfx_fallback",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP8/target-a30845335/lifecycle.log",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP8/target-exposure-texture/metalfx_fallback.log",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -894,7 +894,7 @@
           "lock": "gpu",
           "ask": "Read the test. Is each of the three causes driven through the host's own calls, with a control that skips the reset failing?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP8/target-a30845335/lifecycle.log",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP8/target-exposure-texture/metalfx_reset.log",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
