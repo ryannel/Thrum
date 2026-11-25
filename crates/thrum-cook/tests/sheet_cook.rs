@@ -1,7 +1,7 @@
 //! Original-frame texels, deterministic pages and last-good sheet publication.
 
-#[path = "sheet_support/setup.rs"]
-mod setup;
+mod sheet_support;
+use sheet_support as setup;
 
 use image::{Rgba, RgbaImage};
 use thrum_asset::{Ktx2Format, Profile, SheetKind, SheetProduct};

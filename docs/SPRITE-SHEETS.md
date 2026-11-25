@@ -86,3 +86,21 @@ Open [the moving sprite field](http://127.0.0.1:8765/?scene=sprites&rows=500&ass
 and replace `source/field/walk.png` with a saved revision. The field uses `walk.0`, `walk.1`
 and `walk.2`. The generated `edits/recolour.png` and `edits/repack.png` can each be saved as
 `walk.png` to see a live switch.
+
+
+## Record the live switches
+
+The [Mac capture driver](../scripts/prove_sprite_sheets_mac.py) replaces the PNG twice while the
+T2 engine capture records the moving field. Use the project's GPU lock for the Mac run and the
+Chrome lock for the browser check, which records its single recolour through the same path it
+qualifies. Build `v1-game` and `thrum-cook` before recording on the Mac.
+
+```sh
+python3 scripts/prove_sprite_sheets_mac.py tmp/my-sheet-mac
+node scripts/check_v1_browser.mjs --case sprite-sheets --output tmp/my-sheet-chrome
+```
+
+Run the [capture packager](../scripts/review_sprite_sheet_capture.py) with the capture directory
+(`tmp/my-sheet-mac/capture` or `tmp/my-sheet-chrome`) and a new output directory. It preserves
+submission gaps at 1× and saves the eight frames around each switch as whole views and
+native-size crops.

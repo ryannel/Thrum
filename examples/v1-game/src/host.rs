@@ -274,19 +274,23 @@ impl GameSetup {
         config: FrameConfig,
     ) -> Result<Runtime, String> {
         #[cfg(all(feature = "proving", not(target_arch = "wasm32")))]
-        if self.sprite_scale.is_some()
-            && let Some(store) = std::env::var_os("THRUM_SPRITE_SHEETS_STORE")
-        {
-            return self
-                .prepare_with_sheet_source(
-                    device,
-                    queue,
-                    capabilities,
-                    config,
-                    std::path::PathBuf::from(store).into(),
-                )
-                .await
-                .map_err(|error| error.to_string());
+        if self.sprite_scale.is_some() {
+            match crate::content::launch_value("THRUM_SPRITE_SHEETS_STORE") {
+                Ok(store) => {
+                    return self
+                        .prepare_with_sheet_source(
+                            device,
+                            queue,
+                            capabilities,
+                            config,
+                            std::path::PathBuf::from(store).into(),
+                        )
+                        .await
+                        .map_err(|error| error.to_string());
+                }
+                Err(std::env::VarError::NotPresent) => {}
+                Err(error) => return Err(error.to_string()),
+            }
         }
         self.prepare_with_rows(device, queue, capabilities, config, None)
             .await

@@ -1,7 +1,7 @@
 //! Submitted Metal pixels for named frames, transactional residency and device replacement.
 
-#[path = "sprite_sheets_gpu/fixture.rs"]
-mod fixture;
+mod sprite_sheet_fixture;
+use sprite_sheet_fixture as fixture;
 
 use std::time::Duration;
 

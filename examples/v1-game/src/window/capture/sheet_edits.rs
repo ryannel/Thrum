@@ -36,7 +36,7 @@ pub(super) fn start(
 }
 
 fn path(name: &str) -> Result<PathBuf, String> {
-    std::env::var_os(name)
+    crate::content::launch_value(name)
         .map(PathBuf::from)
-        .ok_or_else(|| format!("sprites-sheets needs {name}"))
+        .map_err(|error| format!("sprites-sheets needs {name}: {error}"))
 }

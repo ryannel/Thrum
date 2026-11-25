@@ -1,7 +1,7 @@
 //! Hostile table and array data refused by the runtime sheet reader.
 
-#[path = "sheet_support/setup.rs"]
-mod setup;
+mod sheet_support;
+use sheet_support as setup;
 
 use std::mem::offset_of;
 

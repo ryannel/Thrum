@@ -281,3 +281,20 @@
   [Metal motion](../../../.orchestrate/evidence/RENDER-2D/WP3/phase-precision/motion.md) ·
   [Sampling and timings](../../../.orchestrate/evidence/RENDER-2D/WP3/phase-precision/sampling.md) ·
   [Chrome motion](../../../.orchestrate/evidence/RENDER-2D/WP3/phase-precision/chrome-motion.md)
+
+## WP4 Cooked sprite sheets
+
+- 2026-11-25 Built the sheet product, its validated page array and frame table, and named handles
+  connected through the content lease. Authored folders use `sheet.json`, with row-major grid suffixes.
+  Cooked rows preserve their original-frame pivot through trim, and the separate embedded upload keeps
+  its top-left anchor. The cooker builds mips beside the atlas before encoding and shares the format's
+  mip and gutter constants with the renderer.
+  [Author guide](../../SPRITE-SHEETS.md)
+- The cooker and hostile input checks passed on Mac. The Metal tests passed for discarded
+  recordings, pivot placement, repacking, name removal and restoration, five last-good refusals,
+  and device replacement. The native and Chrome realtime captures verified whole switches with
+  advancing ticks and views. Chrome fetched the changed sheet once and reused the unrelated product.
+  [Package checks](../../../.orchestrate/evidence/RENDER-2D/WP4/check-9615a6717.json) ·
+  [Metal tests](../../../.orchestrate/evidence/RENDER-2D/WP4/metal-tests.md) ·
+  [Mac motion](../../../.orchestrate/evidence/RENDER-2D/WP4/mac/inspection.md) ·
+  [Chrome motion](../../../.orchestrate/evidence/RENDER-2D/WP4/chrome/inspection.md)
