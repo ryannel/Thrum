@@ -80,9 +80,17 @@ impl FontCard {
     pub(crate) fn config(&self) -> InterfaceConfig {
         let mut config = Card::new(1, None, true).config();
         config.row_capacity = 2048;
+        #[cfg_attr(
+            target_arch = "wasm32",
+            expect(
+                clippy::arc_with_non_send_sync,
+                reason = "the browser's lease stays on its render thread"
+            )
+        )]
+        let source = Arc::new(self.lease.clone());
         config.cooked = Some(InterfaceSheets {
             names: [TYPE, PIXEL].map(str::to_owned).into(),
-            source: Arc::new(self.lease.clone()),
+            source,
         });
         config
     }
