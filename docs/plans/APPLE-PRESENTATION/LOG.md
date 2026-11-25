@@ -434,3 +434,10 @@
   The controlled Chrome refresh replay retires WebGPU work before advancing synthetic time. It
   held quality at 120→60→120 Hz, and both real callback load arms dropped and recovered.
   [Target records](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP7/clean-checkout/README.md)
+
+- 2026-11-25 D7.3's failed main run counted six scale changes at 120 Hz and 61 missed render-side
+  opportunities over the authored route. Three other Metal jobs overlapped that run. After an
+  over-limit run, the verifier now checks delivery with the governor off on the same unloaded route.
+  An invalid control permits a bounded retry. A delivering control leaves the over-limit run failed.
+  The shared-lock Metal replay delivered zero scale changes at 1920×1080 and 120 Hz.
+  [Steady route evidence](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP7/steady-control/README.md)
