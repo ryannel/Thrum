@@ -561,3 +561,7 @@
 - 2026-11-25 WP8. The repaired build installed on the simulator. The launch control stayed on the
   Apple logo and also timed out opening Settings. Waking the display and restarting the guest's
   IconServices and SpringBoard did not bring up the Home Screen. [Launch diagnosis](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP8/D8.7-replay.md)
+
+- 2026-11-25 WP8. D8.7 passed twice after the host simulator recovered, including on the rebased
+  build. The second run counted one background discard and resumed submission 121 with invalid
+  history and jitter phase 25. Both turns verified shutdown. [Rebased simulator receipt](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP8/simulator-repaired/reset.json)

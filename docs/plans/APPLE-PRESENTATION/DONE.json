@@ -905,7 +905,7 @@
           "check": "python3 scripts/apple_presentation.py reset --target ios-sim",
           "lock": "simulator",
           "target": "ios-sim",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP8/simulator-resumed-checkpoint/reset.json",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP8/simulator-repaired/reset.json",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
