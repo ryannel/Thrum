@@ -956,3 +956,7 @@
   the channel and the underwater view behind a face that has already stopped the module twice.
 - 2026-11-25 Not taken here, as outside this block: the WP13 review's suggestion that the Metal and Chrome
   conformance samplers still choose points by the former ring widths and miss the widened band of each ring.
+- 2026-11-25 WP13's new review reproduced blade-like faces at the foam handoff and straight tabs at sand
+  height. The tapered section and resolution-dependent throw clear the large handoff blades in the
+  selected witnesses. Smaller tabs and a weak visible roll remain at sand height on the third look.
+  [Diagnosis and target witnesses](../../../.orchestrate/evidence/WATERS/WP13/fin-review/remaining-witness.md).
