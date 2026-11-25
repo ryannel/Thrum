@@ -435,6 +435,59 @@
       ],
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0
+    },
+    {
+      "id": "WP6",
+      "name": "A game's question to an effect is answered every tick from the state the last drawn frame left, even when that tick's frame is skipped, on the Mac and in Chrome",
+      "status": "not_started",
+      "quality_bar": "A query path as in Unity's Crest ocean queries and Unreal's GPU readbacks: asked by the simulation's step, answered a step or two later without a stall, and no later when the renderer drops a frame. A wrong declaration is refused when the scene is prepared, with a named error, and never becomes a wrong answer.",
+      "items": [
+        {
+          "id": "WP6.1",
+          "statement": "A contribution declares tick passes beside its frame passes, and preparation holds the stage's rules. It accepts a tick pass that reads its effect's persistent resources and the committed side of its histories. It refuses each of these with a named error: a tick pass that writes a transient, persistent or history resource or an attachment; a tick pass that reads a transient or an attachment; and a tick pass declared in a 2D scene. Guard: CPU tests of the declaration checks in `thrum-render`.",
+          "check": "cargo nextest run --locked --offline -p thrum-render -E 'test(/tick_stage_rules/)' --no-tests=fail",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP6.2",
+          "statement": "On Metal a test effect's tick pass answers from the state the last submitted frame left, whether or not a view is drawn. The effect keeps an integer field that each submitted frame steps, and its tick pass reads the field at posted points into a buffer the test reads back. In one scripted run the results equal a CPU oracle of the field exactly in each of these advances: one that also submits a view, where the result is the state before that view; one that finds every frame slot held; one whose host has a presenter and is given no drawable; one whose admitted frame is dropped before it is recorded; and the advance after a view was recorded and discarded. In the three advances that submit no view the result still returns, with no view submitted between its post and its delivery, and the host's count of dropped views rises as it does today. An advance with nothing posted makes no submission. Declaring the tick pass leaves the scene's compiled frame graph as it was, in its passes and its storage. Guard: a small Metal test in `thrum-render`, since only a device shows what a submission executes and when its readback maps.",
+          "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render -E 'test(/tick_stage_admission/)' --no-tests=fail",
+          "ask": "Are the expected values worked out by a CPU oracle of the field and never read from the engine? In the advances that submit no view, would the test fail if the tick pass were recorded with the next view instead? Is the frame host the only code that submits a tick pass's encoder, with a contribution given no device or queue submission of its own?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP6.3",
+          "statement": "A tick submission is bounded, follows the device's lifecycle and is timed. On Metal, with the test effect of WP6.2: at the host's declared bound of outstanding tick submissions, an advance with work posted records none, counts one refused tick submission in its report and returns without waiting, and a later advance submits the work once a submission has completed. `advance_without_rendering` with work posted makes no tick submission and leaves the work posted. A capture runs no tick pass. After device replacement a result outstanding on the old generation is never delivered, and the first result on the new generation equals the oracle of the re-seeded field. With timing requested, an advance that makes a tick submission and submits a view reports the tick pass's GPU time under its own name, and with the switch off the pass writes no timestamp. Guard: a small Metal test in `thrum-render`, since only a device shows a submission's completion, a replaced generation and a timestamp.",
+          "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render -E 'test(/tick_stage_lifecycle/)' --no-tests=fail",
+          "ask": "Is there no blocking poll and no blocking map between a post and its delivery? Does the tick stage create no timestamp query set of its own? Do the tests that hold `advance_without_rendering` to touching no device still stand as they were?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP6.4",
+          "statement": "In Chrome the V1 game's diagnostic effect has a tick pass that reads its trail field at posted points, and its results equal the CPU oracle exactly: in advances that submit a view, in advances whose admitted frame is dropped before it is recorded, and on the replacement device after a device loss and recovery. Guard: one browser case, since only Chrome shows that a submission and a map outside the frame complete on WebGPU.",
+          "check": "node scripts/check_v1_browser.mjs --case effect-tick",
+          "lock": "chrome",
+          "target": "chrome-webgpu",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
     }
   ]
 }

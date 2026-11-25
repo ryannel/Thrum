@@ -1277,7 +1277,9 @@
       "id": "WP19",
       "name": "Floats in a gale's breaking surf get the height of the crest they ride in time to ride it, with the game running",
       "status": "blocked",
-      "depends_on": [],
+      "depends_on": [
+        "EFFECT-GRAPH:WP6"
+      ],
       "quality_bar": "Boats and barrels as in the sea of Sea of Thieves, in the surf as on open water: a float lifts on the crest the viewer sees break, and never lags it, slides or drops to a surface that is not drawn. The body query keeps its contract with every float in the breakers of a gale: answers one to two ticks after they are asked for, none older than the declared maximum, and nothing waiting on the GPU.",
       "items": [
         {

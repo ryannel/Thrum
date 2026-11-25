@@ -247,3 +247,9 @@
   resumed tick 3 and paused tick 2. On the Mac the revised check took 0.018 s alone and 0.017 s in
   the first focused batch, which passed all 11 tests.
   [Review fix and proof](../../../.orchestrate/evidence/EFFECT-GRAPH/M5/M5.1-review-fix.md).
+- 2026-11-25 Planner: WP6, [the tick stage](DESIGN.md#the-tick-stage-wp6), added after `WATERS` WP19 ended
+  `BLOCKED needs_dependency`: its body query rode the frame and waited for the next admitted view, 69% within
+  two ticks in open water. The frame host submits tick passes in a submission of their own in every advance
+  that reaches the device. `WATERS` could not own it, since C06 gives submission to the one executor. No
+  contract's words, Done item or exact baseline changes.
+  [Handoff](../../../.orchestrate/evidence/WATERS/WP19-handoff.md).

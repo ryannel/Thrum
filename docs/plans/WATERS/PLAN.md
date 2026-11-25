@@ -72,13 +72,14 @@ Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-bu
 
 ## WP13 Swell turns to face the beach, rises and breaks into white water that runs up the sand, on the Mac and in Chrome
 
-Resume `build/waters` from its [handoff](../../../.orchestrate/evidence/WATERS/WP13-handoff.md) at candidate
-`757681030`, keeping its taper and throw fade. Take no further look at the pitching face and change no setting:
-its finish is WP20's ([decision](LOG.md#wp13-face-finish-parked)). Finish the capture sweep there, record WP13.5
-and WP13.11 against the revised point 1 and go to review. File the near-face diagnostic's frames under
-`.orchestrate/evidence/WATERS/WP20/`, unchanged.
+[Review](../../../.orchestrate/evidence/WATERS/WP13-review.md)
 
 ## WP19 Floats in a gale's breaking surf get the height of the crest they ride in time to ride it, with the game running
+
+Resume `build/waters` from its [handoff](../../../.orchestrate/evidence/WATERS/WP19-handoff.md) at
+`3110457e6`. Move the body query to [the tick stage](DESIGN.md#a-surf-query-a-running-game-can-use-wp19),
+then take WP19.3 and WP19.4's record again. If open water is still under nine in ten on the stage, log the
+lateness and the frames ahead of the batch and end `BLOCKED`: that reopens the stage, not this work package.
 
 ## WP8 Water reflects the sky, the Sun, its shores and the craft, shows the ground and hulls beneath it, glitters and dims under a cloud's shade, from dawn to night
 

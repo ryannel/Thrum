@@ -20,6 +20,7 @@ Read [Shared files and exact baselines](DESIGN.md#shared-files-and-exact-baselin
 - Assumption: WP4 gives effects the display phase and leaves the sea's waves, 2D sprites and a game's camera and entities on the interpolation alpha. Under a display lead those step unevenly by the same arithmetic, which nobody has captured yet. Each is its owner's to plan, the camera and entities with the game contract in `HOST` WP4.
 - Assumption: a frame on a world with its own thread shows a tick that was due by the frame's observation. So a delayed frame in the Mac window, a Mac capture or the iPhone app shows an earlier tick than it did before WP4, with a lead or without, where WP4's first plan said no frame without a lead would change. The other choice keeps every frame's tick and leaves those frames' display time wrong by up to the delay.
 - Assumption: the phase describes the target the clock consumes, which is the frame's observed time plus its lead. WP4 makes the offscreen capture runner measure that lead from the same clock read it gives the world, so its captures consume the platform's target exactly. The Mac window and the iPhone keep reading two clocks a frame, so there the two targets differ by the time between the reads, which nobody has measured. The other choice pairs the two clocks once in both platforms' frame loops, with no WP4 item able to prove it.
+- Assumption: the tick stage answers questions from the state frames leave, and steps no simulation of its own. Wakes, foam and clouds still advance only in drawn frames, so they stand still while a window is hidden. The other choice steps effect state every tick with no frame drawn, which nothing has asked for.
 - Assumption: after a pause or an overload, the first moving frame steps display time forward once, by the time its tick took to arrive plus the lead: 38 ms in the planner's run with a 30 ms lead. Alpha has always waited for the first tick after a resume, and WP4 leaves that. The other choice interpolates through that wait, which changes when every reader of alpha starts moving after a pause.
 
 ## WP1 An engine module can declare volume, cube and mipped-array textures in the frame, and wrong declarations are refused: done
@@ -31,53 +32,26 @@ Read [Shared files and exact baselines](DESIGN.md#shared-files-and-exact-baselin
 ## WP3 A test effect draws through the scene as water or cloud would, hidden by nearer objects, and hands its motion to reconstruction, on Mac and in Chrome: done
 [review](../../../.orchestrate/evidence/EFFECT-GRAPH/WP3-review.md)
 
-## WP4 A test effect that drifts with time moves by even steps at the display's refresh, between ticks and past the newest one
+## WP4 A test effect that drifts with time moves by even steps at the display's refresh, between ticks and past the newest one: done
+[review](../../../.orchestrate/evidence/EFFECT-GRAPH/WP4-review.md)
 
-[The display phase](DESIGN.md#the-display-phase-wp4) is the design. [The timing model](DESIGN.md#the-timing-model)
-in it holds every rule about a frame's time, and [the ruling](../ARCHITECTURE.md#seam-ruling-for-effect-graph-m4)
-says whose files it is built in.
+## WP5 The world lane’s resume origin is proved without real-time pacing: done
+[review](../../../.orchestrate/evidence/EFFECT-GRAPH/WP5-review.md)
 
-WP4's first two builds are on main: the phase in `crates/thrum-core/src/clock.rs`, the world lane with its
-refused pair and the clocked world; `FrameWorld`, `EffectTime`, the frame sample and the capture stamp in
-`thrum-render`; one clock read in `Offscreen::step_for`; the capture time record; the ledger row.
-[Its second review](../../../.orchestrate/evidence/EFFECT-GRAPH/WP4-review.md) passed five items and failed WP4.2 on a frame after
-a resume. The fault was the plan's: it wrote display time as a time on the host's clock. The items changed, so
-every one is proved again.
+## WP6 A game's question to an effect is answered every tick from the state the last drawn frame left, even when that tick's frame is skipped, on the Mac and in Chrome
 
-The clock and the lane already keep the model
-([the planner's check](../../../.orchestrate/evidence/EFFECT-GRAPH/WP4-timing/README.md)), so no phase, alpha or pair that a
-frame is given today should change. What is missing is the due time of a tick, which `ClockSample` holds as
-`last_time` and `fractional_tick` and does not state; its way to the frame's sample and the capture record,
-through every implementer of `FrameWorld`; and tests through a stop. `spans.rs` and `lane_lifecycle.rs`
-beside that check are those tests in outline, and so are your six frames in
-`.orchestrate/evidence/EFFECT-GRAPH/WP4-resume/probe.rs` at `2f3f2db75` on `build/effect-graph`. C02 carries the
-model's words already, written with this plan: change them only where WP4.4 would otherwise fail.
+[The tick stage](DESIGN.md#the-tick-stage-wp6) is the design, and
+[the ruling](../ARCHITECTURE.md#seam-ruling-for-effect-graph-wp6) says whose files it is built in. `WATERS` WP19
+waits for this work package and for nothing else.
 
-`StillWorld` in `crates/thrum-app/src/sky.rs` reports a phase of 1 and a clock that is not interpolating even
-when it has a tick duration and its alpha moves, as it does in `examples/water`. That is WP4.10. Its alpha
-feeds the sea's exact images and must not move by a bit.
+The body query on main shows the shape a consumer has today: `crates/thrum-water/src/query/gpu.rs` stages its
+inputs in `encode_upload`, dispatches in a `simulate` pass, copies in `encode_effect_readback` and starts its
+map in `submitted`. Leave it there. Moving it is WP19's, on its own candidate, and `thrum-water` builds and
+passes its tests unchanged when you land.
 
-`crates/thrum-app/src/app/render_actor.rs` and `examples/v1-game-ios/src/ios/render.rs` are not yours to
-change. `thrum-clouds`, `thrum-sea` and the game's camera keep reading alpha, and effect time gains no field.
-A test fixture in another module's crate that implements `FrameWorld` takes what the trait now asks and
-nothing more. The snapshot ring in `crates/thrum-core/src/sim/snapshot_ring.rs` has four pages: if your runs
-skip publications at 60 or 120 frames a second, write what you found in the log. If your change fails an exact
-test or baseline another module owns, write what you found in the log and end `BLOCKED`; do not edit the
-other module's test.
-
-## WP5 The world lane’s resume origin is proved without real-time pacing
-
-Keep the world-lane path and drive it with controlled time and explicit worker synchronization. Use the
-fewest pre-pause, held and resumed observations that still distinguish a moving origin, a too-early
-publication and an anchor outside the request/acknowledgment bracket. Replace the paced frames and pauses
-with the same logical gap and pause cases on simulated time.
-
-Record each listed test’s disposition and the coverage that replaces it if split. For each fast case,
-record before and after per-test times on the Mac in the default nextest test build used by the workspace
-check, excluding compilation. Measure the revised cases alone and run them as a focused batch alongside
-normal builder work. Use the supplied run for the starting times where available. The batch passes the
-existing ten-second limit on its first run.
-
-These are the cases from the passing `747909d1c` workspace check, with seconds from that run.
-
-- 6.213 s — `thrum-core::it clock_spans::lane::a_resumed_lane_keeps_one_origin_inside_the_resume_bracket`
+`runtime/tests/without_rendering.rs` holds `advance_without_rendering` to touching no device, and those tests
+stand. `APPLE-PRESENTATION` WP16 is not built and will hold a host to one timestamp query set for each frame
+slot, so add none. Other builders are in the frame host's files: integrate on top of what has landed.
+`contribution.rs`'s module documentation says a contribution runs only inside the frame, and the seam's row in
+the maturity ledger says what the seam offers: bring both up to date. If a rule of the stage cannot be built
+as written, write what you found in the log and end `BLOCKED`.

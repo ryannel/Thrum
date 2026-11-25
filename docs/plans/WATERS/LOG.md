@@ -981,3 +981,12 @@
   [Matched targets](../../../.orchestrate/evidence/WATERS/WP13/camera-change/chrome-inspection.md) ·
   [Item checks](../../../.orchestrate/evidence/WATERS/WP13/camera-change/target-checks.md) ·
   [Paired cost and investigations](../../../.orchestrate/evidence/WATERS/WP13/camera-change/cost-inspection.md).
+
+<a id="wp19-tick-stage-decision"></a>
+- 2026-11-25 Planner: WP19 ended `BLOCKED needs_dependency` with WP19.3 failing in both arms: open water 69%
+  within two ticks and the breakers none, because the batch was recorded with a view and waited for the next
+  one the frame host admitted. The query is now [admitted by the tick](DESIGN.md#bodies-and-the-query),
+  through a tick stage that `EFFECT-GRAPH` WP6 builds and the frame host submits. WP19 depends on it and its
+  four items are unchanged. What an answer holds does not change. A layer read from frame state is carried
+  from the last submitted frame, and loses its support flag past the profile's carry bound.
+  [Handoff](../../../.orchestrate/evidence/WATERS/WP19-handoff.md).

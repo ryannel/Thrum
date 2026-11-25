@@ -7,6 +7,8 @@ light under water, after the review of those revisions for
 2026 for the owner's bar: [the look and the speed decide](#proof-and-builder-handoff), and references are
 diagnostics. Revised 25 November 2026 after the design review of that day: the cut is made
 [coarse to fine](#bodies-and-the-query), so that a game gets the surface in the breakers in time to use it.
+Revised again that day after WP19's builder stopped: the query is
+[admitted by the tick](#bodies-and-the-query), and no longer waits for a view.
 [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) · [module list](../ARCHITECTURE.md) ·
 [the wave field, `SEA`](../SEA/DESIGN.md). C02, C04, C06, C07, C08, C09 and C12 in
 [CONTRACTS](../../design/CONTRACTS.md) and [the hardware-native decision](../../design/decisions/HARDWARE-NATIVE-ENGINE.md)
@@ -1062,6 +1064,27 @@ derivative from the use tick, so no layer is extrapolated twice. For a wave of f
 remaining error is at most `½(ωΔt)²` of its amplitude, reported per profile. The cascades are carried at most
 three ticks: 0.4% for a 20 m wave and 3.8% for a 2 m wave, whose height is centimetres (part G).
 
+**Admitted by the tick.** The batch is a [tick pass](../EFFECT-GRAPH/DESIGN.md#the-tick-stage-wp6) and not a
+pass of the frame. The frame host asks for it in every advance that reaches the device, records it and submits
+it by itself, ahead of that advance's view and whether or not a view is drawn, and the readback's map starts
+when that submission is made. So a batch posted in a tick whose view is skipped, for want of a frame slot or
+a drawable, is on the device in that tick. As a `simulate` pass it waited for the next view the host
+admitted: WP19's first running record delivered 69% of open-water answers within two ticks and none within
+one ([record](../../../.orchestrate/evidence/WATERS/WP19/surf-running.json)). The water still submits
+nothing itself (C06).
+
+What the batch reads is the same in kind and may be older. The long waves, the shore transform and the cut
+are evaluated at the use tick from inputs the batch stages itself, so they do not age. The cascades, the
+wake's windows and the map's products on the GPU are as the last submitted frame left them, and the water
+knows the time and tick each holds, because it committed them. Each is brought to the use tick from there by
+the rule above, and the answer carries those times as before. Skipped views lengthen the carry. A layer
+whose carry would pass the profile's carry bound, three ticks in the first profile, is carried to the bound
+and no further, and its support flag is cleared, so a game can tell. The bound is the profile's, and its
+error is reported with the profile as above. An answer is never made from what a frame recorded and did not
+submit: the batch stages its own inputs and takes the frame's state only from what the frame's passes wrote.
+Where the host may not touch the device, after a loss or in the background, no batch is submitted, answers
+age out and the game falls back, as below.
+
 Results come back through a ring of mapped buffers one to two ticks later. A result older than the declared
 maximum is unavailable, and the game falls back to the conformance model in `thrum-water-model` (the map, and the long waves at the body's gain:
 on a lake, level water with its current)
@@ -1075,7 +1098,7 @@ out or stay inside the maximum, and so has one that holds the frame while it wor
 beside them, and leaves the tenth to hitches. The proof is the example's eight floats, 48 stations; 2,048
 points under thrown crests at once is the capacity and is not claimed.
 
-Inputs travel with the tick page: the game puts its body records, impulses, stages and wind in its page, and the scene hands them to the water in `upload`. Results return through a mailbox the game drains at the start of a tick.
+Inputs travel with the tick page: the game puts its body records, impulses, stages and wind in its page, and the scene hands them to the water, the query's points to its tick pass and the rest in `upload`. Results return through a mailbox the game drains at the start of a tick.
 Query capacity comes from the profile and the capability record. A request over capacity is refused whole, by
 body in ID order, counted and reported.
 
@@ -1844,7 +1867,7 @@ need. A cue of theirs that a seam cannot carry is settled in the module list, wi
 | The map on the GPU, the surface from both sides, optics, the mirror lookup, the view from under water, the caustic field and its Sun-path factor, shafts, interaction waves, foam, the query ring | `thrum-water` (this module), one effect on `EFFECT-GRAPH`'s seam, which declares the wave field's passes with its own |
 | Mirror views: the second draw of the scene, its culling, light, air and targets | `SCENE-VIEWS` |
 | Body declarations, the bed, presets, water types, the craft and floats, hull footprints, foam pattern, body integration, controls | The example scene `examples/water` (package `water-scene`); never in engine crates or their tests |
-| Stages, state commit, cadence, knob list | `EFFECT-GRAPH` |
+| Stages, state commit, cadence, knob list; the tick stage and its submission | `EFFECT-GRAPH` |
 | Sky, Sun, aerial, reflection product, cloud factor, the direct-Sun path a Sun-path factor joins, the lent Sun visibility | `ATMOSPHERE` |
 | The exposure meter and the camera request's medium factor | `APPLE-PRESENTATION` (V4) |
 | The light factor at a camera, and the caustic reference | `thrum-water-model` (this module) |
@@ -1852,14 +1875,18 @@ need. A cue of theirs that a seam cannot carry is settled in the module list, wi
 | The foam pattern's residency | `CONTENT-LOOP` |
 | The shell, typed controls, parameter files | `CREATOR` |
 
-**A frame, in order.** `upload` takes the page's body records, query points, impulses, stages and wind, and the
+**A frame, in order.** `upload` takes the page's body records, impulses, stages and wind, and the
 long-wave phases and loop time for the frame's `t`. `simulate`, every frame: the cascades and the field cache at
 `t`, then the caustic field's rungs. `simulate`, only on a frame that advances the tick: the interaction step with its sources, region by region; foam births and
-transport; the query dispatch and its copy to the ring. `SCENE-VIEWS` draws
+transport. `SCENE-VIEWS` draws
 the mirror views the water asked for. Forward, sky and stars draw, and what lies under water takes the
 Sun-path factor. `after-opaque`: the gather, where a reader needs it; the shafts' march and the composition of
 pixels under water; the surface, body by body. Reconstruction, tone and present follow. On submission the
 water commits its tick and each endpoint's tick. A scene without a capability runs none of its steps.
+
+**A tick, in order.** Outside the frame, in each advance of the frame host, before that advance's view: the
+query's tick pass takes the posted points, dispatches the batch against the state the last submitted frame
+left and copies the answers to the ring, in a submission of its own. With nothing posted there is none.
 
 **The example scene** is a `Game` on `thrum-app`'s shell with a ticking world of its own, as `examples/v1-game`
 is. It uses `thrum-controls`, a parameter file and `./dev scene examples/water [--web]`. Its island has a beach
@@ -1903,6 +1930,10 @@ Settled in [the module list](../ARCHITECTURE.md#seam-rulings-for-waters), built 
    shafts' samples (WP16).
 7. A medium factor on the incident light the camera's meter reads, which the camera request carries, 1 by
    default (WP16).
+
+8. A stage for the body query that the frame host submits every tick, whether or not a view is drawn (WP19).
+   [`EFFECT-GRAPH` WP6](../EFFECT-GRAPH/DESIGN.md#the-tick-stage-wp6) builds it, and this module's builder
+   moves the query to it.
 
 5 and 6 are settled with `ATMOSPHERE` and 7 with `APPLE-PRESENTATION`, as
 [rulings 5 to 7](../ARCHITECTURE.md#seam-rulings-for-waters). With no water provider and a factor of 1,
@@ -2083,7 +2114,9 @@ decides nothing. [WP19](#a-surf-query-a-running-game-can-use-wp19) uses it.
 32. **The query in surf answers too late to use**, or holds the frame while it works. Early sign: WP13's
     paired record, which measured 18.9 s for one tick of eight floats in a gale's breakers; floats that
     fall back to the conformance model whenever they enter the surf; and answers that reach the game later
-    than two ticks in the breakers while open water's arrive on time. The designed remedy is
+    than two ticks in the breakers while open water's arrive on time. A batch that waits for an admitted
+    view is late whatever it costs, and [the tick stage](#bodies-and-the-query) removes that wait and
+    nothing else. The designed remedy for the cost is
     [the coarse pass](#bodies-and-the-query), shared by a body's points; then a dispatch spread over nodes,
     ceilings taken at a cell's own depth after the depth limit, and component sums on a coarser lattice.
     The wrong fixes are a longer maximum age, a read of the field cache or of the camera's mesh, an answer
@@ -2245,5 +2278,17 @@ holds whatever they become. WP13 keeps the regular-wave run-up and draw-back and
   pass: take it again, at a smaller extent if need be, and do not ask for a quiet machine. The record
   keeps the lateness of both arms, and the breakers arriving later than open water, inside the nine in
   ten, is a tripped wire to investigate.
+- **The tick stage.** WP19's first candidate, `3110457e6` on `build/waters`, has the two passes in the model
+  and the dispatch and builder passes for WP19.1, WP19.2 and WP19.4. Its running run failed in both arms,
+  the control included, because the batch rode the frame
+  ([handoff](../../../.orchestrate/evidence/WATERS/WP19-handoff.md)). Once `EFFECT-GRAPH:WP6` is Done the
+  batch moves to [the tick stage](#bodies-and-the-query): its inputs, its dispatch, its copy and the start
+  of its map, with the one batch a tick that WP5.1 counts. The run's skipped opportunities are then
+  advances that reach the device with no view submitted, as a window's are. `advance_without_rendering` is
+  the advance of a host that has lost its device, and no batch is submitted in it. The stage removes the
+  wait for a view and no device time: an answer is late by what is left of the frames submitted ahead of
+  it, plus the batch's own. That record's breakers arm completed a frame every 72 ms against 20 ms in open
+  water, so the cut's device time is still to come down, by [risk 32](#risks)'s remedies. The cost record's
+  query time is the tick pass's, read under its name from the same timing feed.
 - **The cost record** is taken again as WP13.12's was, beside it.
 
