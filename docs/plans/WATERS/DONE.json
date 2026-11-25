@@ -1276,7 +1276,7 @@
     {
       "id": "WP19",
       "name": "Floats in a gale's breaking surf get the height of the crest they ride in time to ride it, with the game running",
-      "status": "not_started",
+      "status": "blocked",
       "depends_on": [],
       "quality_bar": "Boats and barrels as in the sea of Sea of Thieves, in the surf as on open water: a float lifts on the crest the viewer sees break, and never lags it, slides or drops to a surface that is not drawn. The body query keeps its contract with every float in the breakers of a gale: answers one to two ticks after they are asked for, none older than the declared maximum, and nothing waiting on the GPU.",
       "items": [
@@ -1328,7 +1328,17 @@
         }
       ],
       "failed_reviews": 0,
-      "failed_reviews_with_repeat": 0
+      "failed_reviews_with_repeat": 0,
+      "blocked": {
+        "reason": "needs_dependency",
+        "what": "WP19.3 needs body queries to keep progressing when the frame host delays or skips a render submission.",
+        "work": {
+          "commit": "3110457e6aa5c4614235c5b85f78dfb49066adc0",
+          "branch": "build/waters",
+          "pushed": false
+        },
+        "handoff": ".orchestrate/evidence/WATERS/WP19-handoff.md"
+      }
     },
     {
       "id": "WP8",
