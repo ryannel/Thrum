@@ -807,10 +807,10 @@
         },
         {
           "id": "WP7.5",
-          "statement": "Over sockets through the relay under A0's profile, a Mac client's path is cut at the relay for less than its playout buffer, for long enough to empty it, and for long enough to leave its backlog above the behind threshold. Its frame record shows each of the three at least once, and apart: sets that arrived together with no stall and no change of rate; a stall after which the position went on from where it held; and a skip, named with its first and last tick. Across the run no frame's position is behind the frame before, and outside the named skips none is further on than the catch-up rate allows for the time between them.",
+          "statement": "Over sockets through the relay under A0's profile, a Mac client's path is cut at the relay for less than its playout buffer, for long enough to empty it, and for long enough to leave its backlog above the behind threshold. Its frame record shows each of the three at least once, and apart: sets that arrived together with no stall and no change of rate; a stall after which the position went on from where it held; and a skip, named with its first and last tick. Across the run no frame's position is behind the frame before, and outside the named skips none is further on than the catch-up rate allows for the time between them. Every frame submitted while the playout position was advancing, inside its committed pair or clamped at the pair's endpoint, carries in its record its committed tick's due time, at or before that frame's observation, whether its platform target was ahead of the observation or had already passed. The command fails a copy of the run's own record in which those due times are removed from the frames whose target had passed.",
           "check": "python3 scripts/session_match.py windowed playout --target mac-metal",
           "lock": "gpu",
-          "ask": "Is each frame's position in the record the one the frame host drew that frame with, at its display time, and not a value from the session's own log?",
+          "ask": "Is each frame's position in the record the one the frame host drew that frame with, at its display time, and not a value from the session's own log? Does the check decide that a frame interpolated from its drawn position and the playout's rate, without reading whether its due time is present?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/SESSION/WP7/display-target/mac-final/summary.json",
           "verdict": "fail",

@@ -763,7 +763,15 @@ adapt holds all of them. The floor catches a collapse and is no target.
   lost in the cut arrive together in the next datagram. The frame record is checked against
   [the promise](#6-the-playout-clock), and a reviewer watches the three places. On the Mac, the record
   also compares the submitted alpha with the runner's target, including samples inside the pair and
-  targets beyond its committed endpoint. Each interpolating tick must have been due by its observation.
+  targets beyond its committed endpoint.
+- **Every interpolating frame proves its tick was due.** [C02](../../design/CONTRACTS.md) has an interpolating
+  frame's record carry its committed tick's due time with its observation. On the Mac that holds for every
+  frame submitted while the playout position is advancing: inside the pair or clamped at its endpoint, with
+  the platform target ahead of the observation or already passed. A frame whose target has passed consumes no
+  lead and needs the same evidence. The due time is at or before the observation. Whether a frame interpolated
+  is decided from the position it drew and the playout's rate, never from whether its record holds a due time,
+  so a record that loses the due time fails. A frame submitted while the playout is held or paused keeps C02's
+  timing: it shows the committed endpoint, reports no interpolation and may carry no due time.
 - **Equal digests** are read from each peer's own record of the digests it took, never from one process on
   another's behalf.
 - **Costs never stop the build.** A row that trips a tripwire is recorded as measured, with what was found.
@@ -771,7 +779,8 @@ adapt holds all of them. The floor catches a collapse and is no target.
   both digests, and ends `BLOCKED`. If an image cannot carry something the digest covers without changing
   `SIM-2D`'s retained digests, it stops the same way.
 - **Exact baselines.** This module edits `crates/` and `scripts/`, which are covered paths, and moves no retained
-  image and no retained digest. Each work package carries the verifier.
+  image and no retained digest. The main-branch check runs the verifier after each landing, as
+  [the module list rules](../ARCHITECTURE.md#proofs-run-once-on-main); no work package runs it before landing.
 
 ### Simulator lifecycle in the proof harnesses (WP5)
 

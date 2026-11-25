@@ -311,3 +311,16 @@
   Mac and Chrome each matched 120 digests over 3,600 ticks. The Mac relay proof retained the buffered burst,
   hold, 1.0992× submitted recovery and named skip. Both targets retained complete realtime T2 captures.
   [Checks and motion inspections](../../../.orchestrate/evidence/SESSION/WP7/display-target/README.md)
+
+## WP7 due-time design review
+
+- 2026-11-25 Design review of `c1e22d90eb03`, Must Fix 1. WP7.5 accepted interpolating Mac frames with no tick
+  due time when the platform target had passed. The design's proof section now states C02's requirement for
+  every frame submitted while the playout position is advancing, with the target ahead or passed, and decides
+  interpolation from the drawn position and the playout's rate. Held and paused frames keep C02's timing.
+  WP7.5's statement requires the due time on those frames and a failing control on the run's own record with
+  the due times removed; its question asks how the check decides a frame interpolated. In the retained Mac
+  record all 6,724 frames submitted at a rate above zero carry a due time and the 215 held frames carry none,
+  so the builder's change is in the checker. [Review](../../../.orchestrate/evidence/SESSION/design-review.md)
+- 2026-11-25 Took the suggestion. The handoff no longer assigns the exact-image verifier to each work package
+  and points at the module list's ruling that the main-branch check runs it.
