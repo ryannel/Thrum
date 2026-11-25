@@ -2396,10 +2396,12 @@ holds whatever they become. WP13 keeps the regular-wave run-up and draw-back and
   [WP21](#a-surf-view-a-running-game-can-afford-wp21) settles both and proves the control arm by itself.
   WP19 then takes the pair and the cost record again, as its items stand. A control still under nine in
   ten is not read as a view holding the device: a cheap view can sit ahead of a late drain. The run's
-  record says [where each late answer waited](#where-a-late-answer-waited), in the queue, behind a pass
-  or at the drain, for both arms. A pass of the water's is brought down here as WP21 brought the cache
-  down, and a fault in the mailbox's drain is repaired here. WP19 ends `BLOCKED` only where the wait is
-  the stage's bound or a pass another module owns, naming it and its counts.
+  record says [where each late answer waited](#where-a-late-answer-waited), before submission, between
+  submission and publication or after publication, for both arms. A wait between submission and
+  publication has no cause until evidence tells device work from the host's polling, and that section
+  says what the evidence is and where each repair goes: a pass of the water's is brought down here as
+  WP21 brought the cache down, a fault in the mailbox's drain is repaired here, and WP19 ends `BLOCKED`
+  on the stage's bound, on another module's pass or polling, or on a cause still unresolved.
 
 ## A surf view a running game can afford (WP21)
 
@@ -2512,23 +2514,40 @@ may come with the performance phase, each with the surf judged again by eye.
 **Where a late answer waited.** Delivery decides WP21.3, so a run that falls short has to say where its
 late answers waited, and the run's record does. For each tick's batch it has the tick of the post, the
 tick the batch was submitted or the refusal that held it back, the tick in which the result was
-published to the mailbox, and the tick whose drain first handed it over. A late answer waited in one of
-three places:
+published to the mailbox, and the tick whose drain first handed it over. Those four ticks put a late
+answer in one of three intervals, and the record counts the late stations in each. They name a cause
+for the first and the last, and not for the middle one:
 
-- **the queue**, when its batch was submitted after its post's tick: the host made no asking, or refused
-  the batch at its bound on outstanding tick submissions;
-- **a pass**, when its batch was submitted on its tick and its result was published after the drain two
-  ticks on: device work was ahead of it, and the views' completion times and the cost record's passes
-  name whose;
-- **the drain**, when its result was published in time and the game took it late, or the mailbox handed
-  over another in its place.
+- **before submission**, when its batch was submitted after its post's tick: the host made no asking, or
+  refused the batch at its bound on outstanding tick submissions, and the record says which;
+- **between submission and publication**, when its batch was submitted on its tick and its result was
+  published after the drain two ticks on, or never. The record gives the interval in ticks and names no
+  cause, because it holds two things these ticks cannot tell apart. A result is published when its
+  map's callback runs, inside a poll of the host
+  ([the tick stage](../EFFECT-GRAPH/DESIGN.md#the-tick-stage-wp6), rule 4), and the GPU may finish
+  before the next poll. So device work that finished just after the drain, and device work that
+  finished in the post's tick and waited for a poll or a callback, leave the same four ticks. A view's
+  completion time is read at a poll too and does not settle it;
+- **after publication**, when its result was published in time and the game took it late, or the
+  mailbox handed over another in its place: a fault in the drain.
 
-A pass of the water's is brought down here, the cache first, and a fault in the mailbox's drain is
-repaired here. Where the designed remedies are spent and a pass of the water's still holds answers past
-two ticks, write the split in the log and end `BLOCKED`, and a planner adds the inspection a change to
-the drawn sheet needs. Where the wait is the stage's bound or a pass another module owns, end `BLOCKED`
-naming it, with its counts. A run is taken again at a smaller extent only where the record shows the
-extent's passes, and not the water's, ahead of the late answers.
+The two-tick verdict needs no cause, and a passing run looks for none. A run that falls short with late
+answers in the middle interval leaves the cause **unresolved** until evidence tells device work from
+the host's polling: the times the device itself gives its passes, which the cost record's timing feed
+reads, beside the times at which the host was polled. Passes whose device time fills the interval name
+a pass. A device that had finished, with no poll or callback until after the drain, names the caller
+that polls, which in the running run is the run's own driver. The builder takes that evidence before
+changing a pass, and changes nothing on the interval alone.
+
+A repair goes to an owner the evidence names. A pass of the water's is brought down here, the cache
+first. A fault in the mailbox's drain or in the run's own polling is repaired here. Where the designed
+remedies are spent and a pass of the water's still holds answers past two ticks, write the split in
+the log and end `BLOCKED`, and a planner adds the inspection a change to the drawn sheet needs. Where
+the evidence names the stage's bound, a pass another module owns or a host's polling another module
+owns, end `BLOCKED` naming it, with its counts. Where the evidence cannot be had or does not tell the
+two apart, end `BLOCKED` with the interval's counts and its cause unresolved, and name no owner. A run
+is taken again at a smaller extent only where device times show the extent's passes, and not the
+water's, ahead of the late answers.
 
 **The held answer.** The WP19 review found a second thing that fails WP19.3 with the view cheap. Its run
 with views offered at the full refresh delivered more than nine answers in ten within two ticks, and still
@@ -2544,14 +2563,24 @@ keeps it:
   body can use, and no drain of that tick has handed the body anything, new or held. Each height is
   carried from its use tick to the drained tick by its rate of change, as a late answer's is, once and
   never on top of an earlier carry, and wet or dry is decided again from the carried height. The reply
-  says it is a held one, so the island and the running run count it apart from a delivery. A later
-  drain of the same tick, with nothing published since, hands nothing for that body and changes no
-  count, whether the first handed a new result or a held one. That is how the mailbox behaves today:
-  WP5.1's guard drains a tick-3 post at tick 5, drains tick 5 again and gets nothing, and it stands as
-  written. The held answer is that result at the first drain of tick 6, if nothing newer can be used
-  then. New results are handed by the rules they have today, which this does not change: WP19.6's
-  guard drains tick 4, publishes a result and takes it at a second drain of tick 4, and that stands
-  too.
+  says it is a held one, so the island and the running run count it apart from a delivery.
+- **A drain of a tick that has already handed the body something.** What it hands turns on one thing:
+  whether the mailbox has an undelivered result the body can use. When that was published does not
+  matter. New results are handed by the rules they have today, which the held answer does not change:
+  a drain hands a body one undelivered result at most, and another the body can use waits for the
+  next drain, of the same tick or a later one.
+  - **One waits.** The drain hands it, as a first delivery at its own age, and its count rises. It may
+    have been published since the earlier drain: WP19.6's guard drains tick 4, publishes a result and
+    takes it at a second drain of tick 4. Or it may have been in the mailbox all along, behind the
+    result the earlier drain handed: in `chart_queries_keep_both_tick_pages_and_sample_their_own_stage`
+    the posts of ticks 7 and 8 are both published before the first drain of tick 9, which hands the
+    tick-7 result and leaves the tick-8 one, and a second drain of tick 9 would hand that one at age
+    one. The test takes it at tick 10, at age two. Both stand as written.
+  - **None waits.** The drain hands nothing for the body and changes no count, whether the earlier
+    drain handed a new result or a held one. It never hands the held answer a second time in a tick.
+    WP5.1's guard drains a tick-3 post at tick 5, drains tick 5 again and gets nothing, and it stands
+    as written. That result is the held answer at the first drain of tick 6, if nothing newer can be
+    used then.
 - **One existing assertion changes.** WP19.6's guard ends by draining tick 8, one tick after the
   restored timeline's first answer, and expects nothing. Under this rule that drain hands the tick-7
   answer again, held: the new endpoint's, with a calm wake. The guard's claim there is that neither
@@ -2579,15 +2608,18 @@ keeps it:
 The game does not change: the island takes what its drain gives it, and a predicted column more than 2 m
 from the station still sends that station to the fallback.
 
-**The proofs.** WP21.2 holds the held answer on the CPU, with results the test publishes, since the rule
-is the mailbox's own and needs no device, and runs the two Metal guards that drain a tick twice beside
-it: WP5.1's unchanged, and WP19.6's with its last drain's assertion as above. WP21.3 is
+**The proofs.** WP21.2 holds the held answer and the repeated drain on the CPU, with results the test
+publishes, since the rules are the mailbox's own and need no device. Its repeated drains include one
+with two results published before the tick's first drain, which a test that starts every repeat with
+one result does not reach. It runs the two Metal guards that drain a tick twice beside it: WP5.1's
+unchanged, and WP19.6's with its last drain's assertion as above. WP21.3 is
 WP19.3's control arm taken by itself from the sand, `water_cost.py running --scene surf --arm open-water`,
 at the extent WP19.3 will draw. It is decided by delivery and by nothing timed: of every station posted,
 nine in ten first handed over within two ticks, a station never handed over counting as late, and no
 station sent to the conformance model. Its record is the one
-[where a late answer waited](#where-a-late-answer-waited) reads. Its corrected driver is on `build/waters`
-at `ab950b5b9` and merges with this work package. WP21.4 takes the paired record again at WP13.12's view,
+[where a late answer waited](#where-a-late-answer-waited) reads, with its late stations counted by
+interval and no cause named for a wait between submission and publication. Its corrected driver is on
+`build/waters` at `ab950b5b9` and merges with this work package. WP21.4 takes the paired record again at WP13.12's view,
 with the cache's time beside WP13.12's and WP19's, the nodes evaluated beside the nodes held, the table
 reads of each kind above counted as the pass makes them, and the measurements of **the order** above as
 the cache's investigation. No figure in it decides the item: WP21.3 is what the cost has to buy. WP21.5

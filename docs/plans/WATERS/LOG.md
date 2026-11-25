@@ -1144,3 +1144,7 @@
   and zero fallbacks. The 1440p paired record measured 6.48 ms for the cache on tick frames, beside
   93.45 ms in WP19's review fix and 96.74 ms in WP13. All 12 fixed still pairs retained the offshore
   front and foam handoff by eye. [Target records](../../../.orchestrate/evidence/WATERS/WP21/README.md).
+- 2026-11-25 WP21 design review, second round: two Must Fix, both settled. A repeated drain now turns on
+  whether an undelivered result waits (WP21.2, eight cases). A wait between submission and publication
+  has no cause until evidence names one (WP21.3 counts late stations by interval). No Suggestions.
+  [What changed](../../../.orchestrate/evidence/WATERS/design-review-25-fixes.md).
