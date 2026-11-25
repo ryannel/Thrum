@@ -92,8 +92,9 @@ try {
     awaitPromise: true, returnByValue: true, timeout: 1_500_000,
   });
   if (response.exceptionDetails) throw new Error(response.result.description);
+  const record = response.result.value;
   if (request.action === 'realtime') {
-    const wanted = response.result.value.expected * request.extent[0] * request.extent[1] * 4;
+    const wanted = record.expected * request.extent[0] * request.extent[1] * 4;
     const deadline = performance.now() + 60_000;
     while (performance.now() < deadline) {
       try {
@@ -104,9 +105,23 @@ try {
       await delay(100);
     }
     if ((await fs.stat(images)).size !== wanted) throw new Error('downloaded spool length differs from submitted images');
+  } else {
+    for (const name of ['publications', 'samples']) {
+      record[name] = [];
+      const length = record.row_counts[name];
+      for (let start = 0; start < length; start += 400) {
+        const chunk = await send('Runtime.evaluate', {
+          expression: `globalThis.crowdReplayRows.${name}.slice(${start},${start + 400})`,
+          returnByValue: true,
+        });
+        if (chunk.exceptionDetails) throw new Error(chunk.result.description);
+        if (chunk.result.value.length !== Math.min(400, length - start)) throw new Error('short replay chunk');
+        record[name].push(...chunk.result.value);
+      }
+    }
   }
   await fs.writeFile(path.join(folder, 'replay.json'), JSON.stringify({
-    ...response.result.value, launch_options: launchOptions, target: 'chrome-webgpu', workload: 'retained Crowd',
+    ...record, launch_options: launchOptions, target: 'chrome-webgpu', workload: 'retained Crowd',
     count: request.count, extent: request.extent,
   }));
 } finally {
@@ -165,7 +180,10 @@ async function run({ action, count, extent, ticks, close, run_id }) {
         await yieldToBrowser();
       }
     }
-    return { ...identity, publications, samples, timing_status: JSON.parse(crowd.timings()), user_agent: navigator.userAgent };
+    // Keep large timelines out of a single debugger message.
+    globalThis.crowdReplayRows = { publications, samples };
+    return { ...identity, row_counts: { publications: publications.length, samples: samples.length },
+      timing_status: JSON.parse(crowd.timings()), user_agent: navigator.userAgent };
   } finally {
     channel.port1.close();
     channel.port2.close();
