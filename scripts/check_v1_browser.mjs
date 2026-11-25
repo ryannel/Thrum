@@ -125,15 +125,28 @@ async function qualifyGovernor(cdp, origin, output, wasm) {
           await wasm.default();
           const game = await wasm.create_governor_game(document.querySelector('canvas'), ${timestamps}, ${rounds});
           const frames = [];
+          const rows = [];
           const trace = await new Promise((resolve, reject) => {
             let start;
+            let nextRead = 4000;
             const tick = now => {
               try {
                 start ??= now;
-                frames.push(now - start);
+                const elapsed = now - start;
+                frames.push(elapsed);
                 game.frame(now);
-                if (now - start >= 9450) resolve(JSON.parse(game.trace()));
-                else requestAnimationFrame(tick);
+                // The host retains a bounded number of rows. Read before it fills
+                // so the entire recovery window survives even at higher refresh rates.
+                if (elapsed >= nextRead) {
+                  const trace = JSON.parse(game.take_trace());
+                  rows.push(...trace.rows);
+                  if (elapsed >= 12000) {
+                    resolve({ ...trace, rows });
+                    return;
+                  }
+                  nextRead += 4000;
+                }
+                requestAnimationFrame(tick);
               } catch (error) { reject(error); }
             };
             requestAnimationFrame(tick);
@@ -147,16 +160,17 @@ async function qualifyGovernor(cdp, origin, output, wasm) {
       const trace = reply.result.value;
       const source = timestamps ? 'Gpu' : 'AnimationFrame';
       await fs.writeFile(path.join(output, `governor-${source}.json`), JSON.stringify(trace));
-      const prior = trace.rows.filter(row => row.tick < 75).at(-1);
-      const loaded = trace.rows.filter(row => row.tick >= 75 && row.tick < 168);
+      const prior = trace.rows.findLast(row => row.tick < trace.load_start);
+      const loaded = trace.rows.filter(row => row.tick >= trace.load_start && row.tick < trace.load_end);
       const drop = prior && loaded.find(row => row.scale < prior.scale);
       const minimum = Math.min(...loaded.map(row => row.scale));
       const recovery = drop && trace.rows.find(row =>
-        row.tick >= 168 && row.reason === 'Recovery' && row.scale > minimum);
-      if (!drop || !recovery || trace.rows.at(-1)?.scale < prior.scale || drop.source !== source ||
+        row.tick >= trace.load_end && row.reason === 'Recovery' && row.scale > minimum);
+      if (prior?.source !== source || !drop || !recovery ||
+          trace.rows.at(-1)?.scale < prior.scale || drop.source !== source ||
           (timestamps && !loaded.some(row => row.debug_load_ns > 0)) ||
           (!timestamps && trace.rows.some(row => row.debug_load_ns !== null))) {
-        throw new Error(`Governor did not lower and recover on ${source}, see ${output}`);
+        throw new Error(`Governor did not lower and recover on ${source} (before: ${prior?.scale}, loaded: ${minimum}, final: ${trace.rows.at(-1)?.scale}), see ${output}`);
       }
       arms.push({ source, drop, recovery, presented: trace.presented });
     } finally {

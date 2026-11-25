@@ -5,10 +5,15 @@ use crate::governor_load::DebugLoad;
 use wasm_bindgen::prelude::*;
 use web_sys::HtmlCanvasElement;
 
+const WARMUP_TICKS: u64 = 60;
+const LOAD_START: u64 = WARMUP_TICKS + 60;
+const LOAD_END: u64 = LOAD_START + 93;
+
 /// The ordinary browser frame host with a scheduled render-only load.
 #[wasm_bindgen]
 pub struct GovernorBrowser {
     shell: game::Shell,
+    governor_enabled: bool,
 }
 
 /// Prepare the real canvas, optionally removing timestamp queries from its device.
@@ -49,25 +54,33 @@ pub async fn create_governor_game(
     .await
     .map_err(js_error)?;
     shell
-        .set_scene_contribution(Box::new(DebugLoad::new(75..168, rounds)))
+        .set_scene_contribution(Box::new(DebugLoad::new(LOAD_START..LOAD_END, rounds)))
         .map_err(js_error)?;
-    if !shell.enable_governor() {
-        return Err(js_error("governor requires a prepared TAAU scene"));
-    }
-    Ok(GovernorBrowser { shell })
+    Ok(GovernorBrowser {
+        shell,
+        governor_enabled: false,
+    })
 }
 
 #[wasm_bindgen]
 impl GovernorBrowser {
     /// Drive a display frame with the timestamp provided by requestAnimationFrame.
     /// # Errors
-    /// Returns a browser frame-host fault.
+    /// Returns a browser frame-host fault or a refusal to enable the governor.
     pub fn frame(&mut self, timestamp: f64) -> Result<(), JsValue> {
+        // Let first-use rendering settle before the policy admits timing samples.
+        if !self.governor_enabled && self.shell.host().world().tick() >= WARMUP_TICKS {
+            if !self.shell.enable_governor() {
+                return Err(js_error("governor requires a prepared TAAU scene"));
+            }
+            self.governor_enabled = true;
+        }
         self.shell.frame(timestamp).map_err(js_error)
     }
 
-    /// Collect the timing source, state and complete timestamped trace.
-    pub fn trace(&self) -> String {
+    /// Take the completed trace rows while leaving space for subsequent samples.
+    pub fn take_trace(&mut self) -> String {
+        let through = self.shell.samples().last().map(|sample| sample.tick);
         let rows = self.shell.samples().iter().filter_map(|sample| {
             let quality = sample.governor.as_ref()?;
             Some(serde_json::json!({
@@ -83,9 +96,14 @@ impl GovernorBrowser {
                 "debug_load_ns": sample.gpu_pass_ns.as_ref().and_then(|gpu| gpu.passes().iter().find(|pass| pass.name.ends_with("debug load")).map(|pass| pass.nanoseconds)),
             }))
         }).collect::<Vec<_>>();
+        if let Some(tick) = through {
+            self.shell.discard_report_samples_before(tick + 1);
+        }
         serde_json::json!({
             "tick": self.shell.host().world().tick(),
             "presented": self.shell.presented(),
+            "load_start": LOAD_START,
+            "load_end": LOAD_END,
             "rows": rows,
         })
         .to_string()
