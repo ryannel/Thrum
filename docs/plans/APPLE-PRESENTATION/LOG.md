@@ -403,3 +403,9 @@
   with a bounded deadline. The GPU timestamp arm uses 8,192 rounds and the animation-frame arm uses
   12,288 rounds to create sustained callback pressure. Two exact item runs passed on M3 Max WebGPU.
   [Chrome recovery traces](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP7/chrome-recovery/README.md)
+
+- 2026-11-25 WP7 preserves coalesced display callbacks in the missed-present proxy and interrupts the policy
+  streak when an opportunity has no render outcome. The native comparison verifies that delivery rates
+  match before applying forced load. At 60 Hz the exact checks recorded zero steady scale changes and
+  2/60 governed misses, 0/59 unloaded and 11/59 with the governor off under the same load.
+  [Native delivery traces](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP7/native-delivery/README.md)

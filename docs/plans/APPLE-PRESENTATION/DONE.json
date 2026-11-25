@@ -647,7 +647,7 @@
           "check": "cargo test --locked --offline -p thrum-render --test governor_policy",
           "ask": "Read the test. Is the policy a function of samples, missed ticks, the display record and the host's hold marks alone, with no clock of its own? Is each behaviour a separate case with a control? After a build that ended with no new generation, is scale shown to drop under load with no further change of request?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP7/resume/span-policy.log",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP7/native-delivery/rust-final.log",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -659,7 +659,7 @@
           "lock": "gpu",
           "ask": "Are ticks without a present counted by the frame host from display-link ticks, and labelled as a render-side proxy? Does the arm fail with the governor off under the same load?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP7/unlocked/live/governor.json",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP7/native-delivery/live/governor.json",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -670,7 +670,7 @@
           "check": "python3 scripts/apple_presentation.py governor --target mac-metal --steady",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP7/unlocked/steady/governor.json",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP7/native-delivery/steady/governor.json",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -693,7 +693,7 @@
           "lock": "gpu",
           "ask": "Read the test. Is registration open to a crate that `thrum-render` does not name, as the module list's quality-knobs interface requires for `WATERS` and `CLOUDS`? Does the test register a knob from a test contribution and watch its value change under load?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP7/rust-items-final.log",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP7/native-delivery/rust-final.log",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -737,7 +737,7 @@
           "lock": "gpu",
           "ask": "Read the test. Is the failed build the one D4.5's test forces, reached through the host's resize and frame calls and not by setting the governor's state? Does a control whose hold never ends fail it?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP7/rust-items-final.log",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP7/native-delivery/rust-final.log",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
