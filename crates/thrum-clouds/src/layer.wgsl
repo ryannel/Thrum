@@ -80,10 +80,19 @@ fn cloud_detail(sigma:f32,point:vec3<f32>,footprint:f32,extinction:f32,height:f3
     let eroded=cloud_erode(sigma,extinction,cloud.physical.y,shape,detail);
     let bank=cloud_bank_weight();
     if bank==0.0 {return eroded;}
-    // The weather map already varies floor height by bank. Keep only
-    // smaller scale erosion in the view trace, inside that column.
-    let lift=0.22*cloud_bank_billow(point,footprint);
-    return eroded*mix(1.0,smoothstep(0.7*lift,lift+0.14,height),bank);
+    // Vary the visible ceiling and underside independently of the weather
+    // column bounds. Adjacent skies retain the same condensation level for
+    // column queries. The longer bank scale avoids a row of equal shelves.
+    let air=point.xz/22400.0+vec2(cloud.noise.x,cloud.noise.y);
+    let swell=textureSampleLevel(shape_noise,noise_sampler,vec3(air.x,0.31,air.y),
+                                 erosion_mip(footprint,175.0)).r;
+    let bank_height=smoothstep(0.20,0.83,swell);
+    let billow=cloud_bank_billow(point,footprint);
+    let bottom=0.52*bank_height+0.11*billow;
+    let top=1.0-0.40*(1.0-bank_height)*(1.0-bank_height);
+    let shape_weight=smoothstep(0.72*bottom,bottom+0.12,height)
+        *(1.0-smoothstep(top-0.21,top,height));
+    return eroded*mix(1.0,shape_weight,bank);
 }
 fn cloud_sun_depths(world:vec3<f32>,start_height:f32)->vec3<f32> {
     let point=world.xz-mapping.path_border.xz*(world.y-mapping.plane_drift.x)/mapping.path_border.y;

@@ -55,8 +55,6 @@ fn main(@builtin(global_invocation_id) id:vec3<u32>) {
     let local=vec2<f32>(bitcast<f32>(ax.y),bitcast<f32>(az.y));
     let turret = turret_cap(vec2<u32>(ax.z, az.z), bitcast<vec2<f32>>(vec2<u32>(ax.w, az.w)));
     var coverage=0.0;var depth=0.0;var age=0.0;var generation_mask=0u;
-    var cell_weight=0.0;
-    var cell_rise=0.0;
     for(var di=-1;di<=1;di++){for(var dj=-1;dj<=1;dj++){
         let i=site.x+u32(di);let j=site.y+u32(dj);
         let birth_offset=random(i,j,0u,1u);
@@ -78,9 +76,6 @@ fn main(@builtin(global_invocation_id) id:vec3<u32>) {
             let share=min(pow(dome,0.7),envelope*turret);
             let clearing=smooth_unit((share-p.turret.x)/p.turret.y);
             let d=dome*clearing;
-            let weight=d*d;
-            cell_weight+=weight;
-            cell_rise+=weight*smooth_unit((phase-0.53)/0.40);
             if d>coverage {age=phase;}
             coverage=max(coverage,d);
             let h=random(i,j,g,8u);
@@ -102,20 +97,9 @@ fn main(@builtin(global_invocation_id) id:vec3<u32>) {
     coverage=max(coverage,deck);
     depth=max(depth,p.physical.y*pow(deck,0.7)*(0.6+0.4*n));
     let tau=p.physical.w*depth*coverage*(1.0-(p.vertical.y+p.vertical.z)*0.5);
-    var base=p.physical.x;
     if coverage==0.0 || depth==0.0 {coverage=0.0;depth=0.0;age=0.0;}
-    else {
-        // Match the CPU field so sky, Sun paths and column queries agree.
-        let mixed=smooth_unit(4.0*share*(1.0-share));
-        let relief=smooth_unit((0.7*n+0.3*opening-0.2)/0.6);
-        let bank_share=smooth_unit(deck/coverage);
-        let late_rise=cell_rise/max(cell_weight,1e-10);
-        let lift=min(p.physical.y*(0.62*mixed*relief*bank_share+0.52*late_rise*(1.0-bank_share)),
-                     max(0.0,p.physical.z-depth));
-        base+=lift;
-    }
     let q=vec2<i32>(i32(id.x),i32(row));let layer=i32(p.rows.w);
-    textureStore(columns,q,layer,vec4<f32>(base,base+depth,coverage,p.weather.y));
+    textureStore(columns,q,layer,vec4<f32>(p.physical.x,p.physical.x+depth,coverage,p.weather.y));
     textureStore(optical,q,layer,vec4<f32>(age,tau,p.vertical.yz));
     let generation=p.integers.z-u32(p.noise.w<hash(site.x,site.y,0u,1u));
     textureStore(identities,q,layer,vec4<u32>(site,generation,generation_mask));

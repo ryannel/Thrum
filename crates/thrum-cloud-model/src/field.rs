@@ -209,8 +209,6 @@ impl Field {
         let mut coverage: f64 = 0.0;
         let mut depth: f64 = 0.0;
         let mut age = 0.0;
-        let mut cell_weight = 0.0;
-        let mut cell_rise = 0.0;
         for di in -1..=1 {
             for dj in -1..=1 {
                 let i = site[0].wrapping_add(di);
@@ -238,9 +236,6 @@ impl Field {
                     let clearing =
                         smooth((share - self.profile.turret_least) / self.profile.turret_fade);
                     let d = dome * clearing;
-                    let weight = d * d;
-                    cell_weight += weight;
-                    cell_rise += weight * smooth((phase - 0.53) / 0.40);
                     if d > coverage {
                         age = phase;
                     }
@@ -283,26 +278,11 @@ impl Field {
         if coverage == 0.0 || depth == 0.0 {
             return clear;
         }
-        // Neighbouring banks can sit at different heights in a mixed deck.
-        // Move the whole column within the type's height bounds so the
-        // column's optical depth stays the same and both ends of the
-        // weather transition keep their original condensation level.
-        let mixed = smooth(4.0 * t.deck * (1.0 - t.deck));
-        let relief = smooth((0.7 * n + 0.3 * opening - 0.2) / 0.6);
-        let bank_share = smooth(deck / coverage);
-        // The base rises while an isolated crown loses density. Weight the
-        // overlapping cells continuously so the boundary between two lives
-        // cannot jump when the dominant cell changes.
-        let late_rise = cell_rise / cell_weight.max(1e-10);
-        let lift = (t.depth[0]
-            * (0.62 * mixed * relief * bank_share + 0.52 * late_rise * (1.0 - bank_share)))
-            .min((t.depth[1] - depth).max(0.0));
-        let base = t.base + lift;
         Column {
             coverage,
             kind: parameters.kind,
-            base,
-            top: base + depth,
+            base: t.base,
+            top: t.base + depth,
             age,
             optical_depth: t.extinction()
                 * depth
