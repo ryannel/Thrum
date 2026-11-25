@@ -26,16 +26,6 @@ BIN = ROOT / 'target/release/v1-game'
 INSTRUMENT = ROOT / 'scripts/host_witness/presented_time.instrpkg'
 INSTRUMENT_PACKAGE = SCRATCH / 'ThrumPresentedTime.instrdst'
 TRACE_TEMPLATE = SCRATCH / 'PresentedTime.tracetemplate'
-TRACE_TABLES = {
-    'signposts.xml': "contains(@schema, 'signpost')",
-    'presented.xml': '@schema="ca-client-presented-handler"',
-    'displays.xml': '@schema="device-display-info"',
-    'raw-displays.xml': (
-        '@schema="display-surface-swap" or @schema="display-vsyncs-interval" or '
-        '@schema="display-surface-queue" or @schema="displayed-surfaces-interval"'
-    ),
-}
-
 
 def prepare():
     if not console_unlocked():
@@ -99,19 +89,10 @@ def recording_scratch(pid):
     return {path for path in paths if path.parent == temporary}, pids
 
 
-def discard_kernel_scratch(arm, pid, began, ended, owned):
-    paths, process_ids = owned
-    if paths:
-        removed = []
-        for path in paths:
-            try:
-                size = path.stat().st_size
-                path.unlink()
-            except FileNotFoundError:
-                continue
-            removed.append({'path': str(path), 'bytes': size})
-        save(arm / 'kernel-scratch.json', {'recording_pids': process_ids, 'removed': removed})
-        return
+def kernel_recording(pid, began, ended, owned):
+    paths, _ = owned
+    if len(paths) == 1:
+        return next(iter(paths))
     temporary = Path(tempfile.gettempdir())
     for path in temporary.glob('instruments*.ktrace'):
         try:
@@ -120,16 +101,13 @@ def discard_kernel_scratch(arm, pid, began, ended, owned):
             continue
         if not began <= birth <= ended:
             continue
-        # Identify the recorder's scratch by the owned game's PID in the
-        # raw event stream, beyond the creation time and filename pattern.
+        # File creation time selects candidates only. Read the owned game's
+        # PID from the kernel events before using or removing the file.
         command = ['/usr/bin/ktrace', 'trace', '-R', path, '-p', str(pid), '--ndjson']
         sample = bounded_trace_identity(command)
         if sample and sample['pid'] == pid and sample['execname'] == 'v1-game':
-            save(arm / 'kernel-scratch.json', {
-                'path': str(path), 'bytes': path.stat().st_size,
-                'game_pid': pid, 'trace_event_time': sample['walltime'],
-            })
-            path.unlink()
+            return path
+    raise InvalidMeasurement('the owned kernel recording was not retained by Instruments')
 
 
 def bounded_trace_identity(command):
@@ -180,7 +158,7 @@ def collect(arm, store, wind, *, diagnostic=False):
         save(options, {'Points of Interest': {'excludeOSLogs': True}})
         command += ['xcrun', 'xctrace', 'record', '--no-prompt', '--template', str(TRACE_TEMPLATE),
                     '--recording-options', str(options), '--package', str(INSTRUMENT_PACKAGE),
-                    '--instrument', 'Thrum Presented Time', '--instrument', 'Points of Interest',
+                    '--instrument', 'Thrum Presentation Events', '--instrument', 'Points of Interest',
                     '--time-limit', '36s', '--output', str(trace),
                     '--target-stdout', str(game)]
         for key, value in settings.items():
@@ -242,25 +220,35 @@ def collect(arm, store, wind, *, diagnostic=False):
     if diagnostic:
         return
     export(trace, arm / 'toc.xml', ['--toc'])
-    toc = (arm / 'toc.xml').read_text()
-    exported = []
-    for filename, predicate in TRACE_TABLES.items():
-        schemas = re.findall(r'@schema="([^"]+)"', predicate)
-        if schemas and not any(f'schema="{schema}"' in toc for schema in schemas):
-            continue
-        export(trace, arm / filename, ['--xpath', f'/trace-toc/run/data/table[{predicate}]'])
-        exported.append(filename)
+    export(trace, arm / 'signposts.xml',
+           ['--xpath', "/trace-toc/run/data/table[contains(@schema, 'signpost')]"])
+    export(trace, arm / 'source-presented-events.xml',
+           ['--xpath', '/trace-toc/run/data/table[@schema="kdebug" and @target="SINGLE"]'])
+    pid = int(re.search(r'^pid=(\d+)$', identity, re.MULTILINE)[1])
+    raw = kernel_recording(pid, began, ended, owned)
+
+    # The live capture requests only the game's Core Animation events. Ask
+    # Instruments to populate its standard presented-handler table offline,
+    # so the live observer never records Metal call stacks.
+    modeled = arm / 'modeled.trace'
+    command = ['xcrun', 'xctrace', 'import', '--input', str(raw), '--output', str(modeled),
+               '--template', str(TRACE_TEMPLATE), '--package', str(INSTRUMENT_PACKAGE),
+               '--instrument', 'Thrum Presented Time']
+    save(arm / 'modeling.json', {'command': command, 'game_pid': pid,
+                                'raw_bytes': raw.stat().st_size, 'recording_pids': owned[1]})
+    if bounded(command, arm / 'modeling.log', 60):
+        raise InvalidMeasurement(f'{arm.name}: offline Instruments modeling failed')
+    export(modeled, arm / 'presented.xml',
+           ['--xpath', '/trace-toc/run/data/table[@schema="ca-client-presented-handler"]'])
     result = read_witness(arm, wind)
-    for filename in ('toc.xml', *exported):
+    for filename in ('toc.xml', 'signposts.xml', 'source-presented-events.xml', 'presented.xml'):
         source = arm / filename
         with source.open('rb') as original, gzip.open(source.with_suffix('.xml.gz'), 'wb') as retained:
             shutil.copyfileobj(original, retained)
         source.unlink()
-    # The successful export retains the OS rows, signposts and display tables.
-    # Keep an unsuccessful trace for setup diagnosis.
     shutil.rmtree(trace)
-    discard_kernel_scratch(arm, int(re.search(r'^pid=(\d+)$', identity, re.MULTILINE)[1]),
-                           began, ended, owned)
+    shutil.rmtree(modeled)
+    raw.unlink()
     return result
 
 
@@ -270,6 +258,11 @@ def read_witness(arm, wind):
         table_path = table_path.with_suffix('.xml.gz')
     witness = ['python3', str(ROOT / 'scripts/mac_m2_presented.py'), '--input', str(table_path),
                '--arm', str(arm), '--output', str(arm / 'witness.json'), '--measured-interval']
+    for suffix in ('.xml', '.xml.gz'):
+        events = arm / ('source-presented-events' + suffix)
+        if events.is_file():
+            witness += ['--source-events', str(events)]
+            break
     # The witness's qualification also asks for no unmatched rows. The wind
     # record explicitly retains unmatched submissions and uses only valid times.
     if bounded(witness, arm / 'witness.log', 40) not in (0, 2) or not (arm / 'witness.json').is_file():

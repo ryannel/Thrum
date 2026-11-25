@@ -106,6 +106,38 @@ def presented_rows(path, pid):
     return rows
 
 
+def replay_origin_shift(path, pid, rows):
+    """Pair the same handler events before and after Apple's offline modeling."""
+    root, resolve = xml(path)
+    live = {}
+    ambiguous = set()
+    for node in root.findall('node'):
+        schema = node.find('schema')
+        if schema is None or schema.get('name') != 'kdebug':
+            continue
+        names = [c.findtext('mnemonic') for c in schema.findall('col')]
+        for row in node.findall('row'):
+            f = dict(zip(names, (resolve(e) for e in row), strict=True))
+            # Core Animation's CAMetalDrawable presented-handler event.
+            if f['class'].text != '49' or f['subclass'].text != '202' or f['code'].text != '81':
+                continue
+            process = f['thread'].find('process')
+            if process is None or resolve(process).get('fmt') != f'v1-game ({pid})':
+                continue
+            key = f['arg1'].text, f['arg2'].text
+            if key in live:
+                ambiguous.add(key)
+            live[key] = int(f['time'].text)
+    shifts = []
+    for row in rows:
+        key = row['drawable_id'], row['status']
+        if key in live and key not in ambiguous:
+            shifts.append(live[key] - int(row['handler_trace_ns']))
+    if len(shifts) < 2 or max(shifts) - min(shifts) > 1:
+        raise ValueError('the same drawable handlers do not identify one trace-origin shift')
+    return sorted(shifts)[len(shifts) // 2], len(shifts)
+
+
 def timebase():
     class Timebase(ctypes.Structure):
         _fields_ = [('numer', ctypes.c_uint32), ('denom', ctypes.c_uint32)]
@@ -218,7 +250,11 @@ def main():
     p.add_argument('--refresh-hz',type=float,help='override only with separately retained display-mode evidence')
     p.add_argument('--measured-interval',action='store_true',
                    help='use the exact interval in refresh-interval.tsv with same-process trace calibration')
+    p.add_argument('--source-events',type=Path,
+                   help='live Core Animation event export when the presented table was modeled offline')
     a=p.parse_args()
+    if a.source_events and not a.measured_interval:
+        p.error('--source-events requires --measured-interval')
     source=a.input
     if source.suffix=='.trace':
         source=a.output.with_suffix('.presented.xml')
@@ -229,8 +265,18 @@ def main():
     hz = a.refresh_hz if a.refresh_hz is not None else int(mode[1])/1000 if mode else None
     if not hz or hz<=0:
         raise ValueError('reported display refresh unavailable; supply retained mode evidence')
-    result=analyse(presented_rows(source,pid),table(a.arm/'surface.tsv'),table(a.arm/'requests.tsv'),low,high,markers,numer,denom,hz)
-    result.update(pid=pid,input=str(a.input),arm=str(a.arm),measured_interval=a.measured_interval)
+    rows = presented_rows(source, pid)
+    replay = None
+    if a.source_events:
+        shift, matched = replay_origin_shift(a.source_events, pid, rows)
+        low += shift
+        high += shift
+        markers = [marker - shift for marker in markers]
+        replay = {'source_events': a.source_events.name, 'origin_shift_ns': shift,
+                  'matched_handlers': matched}
+    result=analyse(rows,table(a.arm/'surface.tsv'),table(a.arm/'requests.tsv'),low,high,markers,numer,denom,hz)
+    result.update(pid=pid,input=str(a.input),arm=str(a.arm),measured_interval=a.measured_interval,
+                  offline_modeling=replay)
     a.output.write_text(json.dumps(result,indent=2)+'\n')
     print(json.dumps({k:v for k,v in result.items() if k not in ('intervals','drawables','unmatched','unmatched_affecting_marked_interval','intervals_over_one_period')},indent=2))
     return 0 if result['qualified'] else 2

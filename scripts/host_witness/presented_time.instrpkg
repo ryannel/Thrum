@@ -4,6 +4,7 @@
     <title>Thrum Presented Time</title>
     <owner><name>Thrum</name></owner>
     <import-schema>ca-client-presented-handler</import-schema>
+    <import-schema>kdebug</import-schema>
     <instrument>
         <id>org.thrum.presented-time.witness</id>
         <title>Thrum Presented Time</title>
@@ -21,6 +22,29 @@
             <column>drawable-id</column>
             <column>at-time</column>
             <column>process</column>
+        </list>
+    </instrument>
+    <instrument>
+        <id>org.thrum.presented-time.events</id>
+        <title>Thrum Presentation Events</title>
+        <category>Graphics</category>
+        <purpose>Records the game's Core Animation presentation events for offline Instruments modeling.</purpose>
+        <icon>Generic</icon>
+        <import-parameter>
+            <from-scope>trace</from-scope>
+            <name>?target-pid</name>
+        </import-parameter>
+        <create-table>
+            <id>presentation-events</id>
+            <schema-ref>kdebug</schema-ref>
+            <attribute><name>codes</name><array><string>0x31,0xca</string></array></attribute>
+            <attribute><name>target</name><parameter-ref>?target-pid</parameter-ref></attribute>
+        </create-table>
+        <list>
+            <title>Presentation events</title>
+            <table-ref>presentation-events</table-ref>
+            <column>time</column>
+            <column>code</column>
         </list>
     </instrument>
 </package>
