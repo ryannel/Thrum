@@ -62,10 +62,12 @@ mod metal {
                     if subpixel == 0 {
                         let opaque = expected
                             .rgba
-                            .chunks_exact(4)
-                            .zip(background.chunks_exact(4))
+                            .as_chunks::<4>()
+                            .0
+                            .iter()
+                            .zip(background.as_chunks::<4>().0)
                             .position(|(glyph, background)| {
-                                glyph == [255; 4] && glyph != background
+                                *glyph == [255; 4] && glyph != background
                             })
                             .expect("opaque white glyph texel")
                             * 4;
