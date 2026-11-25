@@ -5,6 +5,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 from statistics import median
 
@@ -57,6 +58,13 @@ def awake_display():
     finally:
         keep_awake.terminate()
         keep_awake.wait()
+
+def require_unlocked_display():
+    console = subprocess.check_output(
+        ["/usr/sbin/ioreg", "-n", "Root", "-d1"], text=True, timeout=15)
+    if re.search(r'"(?:CGSSessionScreenIsLocked|IOConsoleLocked)"\s*=\s*Yes', console):
+        raise InvalidDisplayEnvironment(
+            "Mac console session is locked; the visible route needs an unlocked display")
 
 
 def window_arm(output, binary, env, route, name, *, enabled=True, load=0, thermal=False):
@@ -170,6 +178,7 @@ def mac_governor(output, *, steady=False, capture=False):
 
 
 def measure_window(output, binary, env, route, *, steady):
+    require_unlocked_display()
     if steady:
         arm = window_arm(output, binary, env, route, "steady")
         last_tick = route["origin_tick"] + route["keys"][-1]["tick"]

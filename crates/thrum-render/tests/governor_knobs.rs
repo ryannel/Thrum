@@ -175,7 +175,9 @@ fn external_knobs_commit_by_tier_and_invalidate_only_their_owned_history() {
         assert_eq!(edited.knobs.iter().find(|knob| knob.name == name).expect("recorded").value, 2);
     }
 }
+}
 
+thrum_test_support::macos_gpu_test! {
 fn deferred_aerial_update_keeps_the_latest_sun_until_submit() {
     let Some(thrum_test_support::Opened { gpu, device, queue, .. }) =
         thrum_test_support::open("governed aerial update", Some(wgpu::Backend::Metal),

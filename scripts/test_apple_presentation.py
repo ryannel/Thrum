@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from apple_governor_proof import InvalidDisplayEnvironment, compare_live_load
+from apple_governor_proof import InvalidDisplayEnvironment, compare_live_load, require_unlocked_display
 from apple_presentation import annotate_display_ticks
 
 
@@ -95,6 +95,12 @@ class DisplayTickTests(unittest.TestCase):
 
 
 class GovernorProofTests(unittest.TestCase):
+    def test_locked_console_session_takes_precedence_over_unlocked_display_flag(self):
+        console = '"IOConsoleLocked" = No\n"IOConsoleUsers" = ({"CGSSessionScreenIsLocked"=Yes})'
+        with patch("apple_governor_proof.subprocess.check_output", return_value=console):
+            with self.assertRaisesRegex(InvalidDisplayEnvironment, "console session is locked"):
+                require_unlocked_display()
+
     def test_missed_presents_in_unloaded_baseline_invalidate_attempt_before_load(self):
         for miss_start, miss_end in ((200, 230), (260, 320)):
             with self.subTest(miss_start=miss_start):
