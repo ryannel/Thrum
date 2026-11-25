@@ -849,7 +849,33 @@
         "task": "The design review of ATMOSPHERE at .orchestrate/evidence/ATMOSPHERE/design-review.md asked for changes, with its 4 Must ",
         "at": "2026-11-24T22:27:38Z"
       },
-      "ends_stretch": true
+      "ends_stretch": true,
+      "ready_for_review": {
+        "commit": "09afb8a16acf17e59ea275b81c237a4eda515fa1",
+        "checked": "939c2a566c897dc123e4f1f8f485c059a3c88fc9",
+        "at": "2026-11-25T00:34:42Z",
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.171.0-alpha.13",
+        "path": "headless",
+        "usage": {
+          "input": 120631,
+          "cached": 8719872,
+          "output": 23046,
+          "turns": 1
+        },
+        "session_usage": {
+          "input": 120631,
+          "cached": 8719872,
+          "output": 23046,
+          "turns": 1
+        }
+      }
     }
   },
   "tasks": [
