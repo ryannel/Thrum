@@ -15,6 +15,7 @@ Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-bu
 - Assumption: the swell at the island's exposed beach is set for the look, shorter and taller than the 10 s, 1.5 m one tried, so several lines of swell show at once. Its period stays inside the surf cue's 6 s to 14 s.
 - Assumption: wet long-wave loss keeps WP7.5's distributed foam wherever a breaking face is unavailable, including the swash. An eligible crest concentrates part of that birth on its face and under a resolved lip. Distant beaches use the same wet lost-power source for their steady cover.
 - Assumption: as part of surf an island shelters its lee, so a lee beach laps with short waves only.
+- Assumption: the surf query's age is proved for the example's eight floats in a gale on the Mac, not for 2,048 points in breakers or in Chrome.
 - Assumption: surf on a lake is proved against the model, not judged by eye: the example's lake raises no long waves.
 - Assumption: "scenery reflections" is met by drawing the scene again from the camera's mirror image, for the two water levels with the most water in view; a third reflects only what is on screen.
 - Assumption: the view from under water has no drops on the lens, particles or bubbles, and its picture darkens with depth by a quarter of the light lost. One water surface in any column still holds.
@@ -71,17 +72,17 @@ Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-bu
 ## WP13 Swell turns to face the beach, rises and breaks into white water that runs up the sand, on the Mac and in Chrome
 
 Resume `build/waters` from its [handoff](../../../.orchestrate/evidence/WATERS/WP13-handoff.md). Keep the shared
-analytic sheet and bounded swash: the [approach decision](LOG.md#wp13-approach-decision) says why a live window
-would draw the same approach.
+analytic sheet and bounded swash ([approach decision](LOG.md#wp13-approach-decision)).
 
-WP13.4 no longer fixes the swell's period. Give the exposed beach a trade swell whose ridges are steep enough to
-see while they still bend and close up, which a shorter and taller swell is; the decision links the figures to
-start from. Its period and height, the shelf and the Sun's place are yours, and the beds the tests make stay as
-they are. Take WP13.5's and WP13.7's looks again with that swell.
+Give the exposed beach a trade swell whose ridges are steep enough to see while they still bend and close up;
+the decision links figures to start from. Its period and height, the shelf and the Sun's place are yours, and
+the beds the tests make stay as they are. Take WP13.5's and WP13.7's looks again with that swell.
 
-This is the one further look at the approach. If a fresh inspection of WP13.4 still fails, end `BLOCKED` with the
-frames. The [restart decision](LOG.md#wp13-restart-decision) still governs the pitching band, the mesh and the
-order of the inspections. Keep the regular-wave run-up and draw-back and the highest-surface query.
+If a fresh inspection of WP13.4 still fails, end `BLOCKED` with the frames. The
+[restart decision](LOG.md#wp13-restart-decision) governs the pitching band, the mesh and the order of the
+inspections. The query's cost in the breakers is WP19's: record it in WP13.12.
+
+## WP19 Floats in a gale's breaking surf get the height of the crest they ride in time to ride it, with the game running
 
 ## WP8 Water reflects the sky, the Sun, its shores and the craft, shows the ground and hulls beneath it, glitters and dims under a cloud's shade, from dawn to night
 

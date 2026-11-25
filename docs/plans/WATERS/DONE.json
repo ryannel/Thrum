@@ -1274,6 +1274,61 @@
       ]
     },
     {
+      "id": "WP19",
+      "name": "Floats in a gale's breaking surf get the height of the crest they ride in time to ride it, with the game running",
+      "status": "not_started",
+      "depends_on": [],
+      "quality_bar": "Boats and barrels as in the sea of Sea of Thieves, in the surf as on open water: a float lifts on the crest the viewer sees break, and never lags it, slides or drops to a surface that is not drawn. The body query keeps its contract with every float in the breakers of a gale: answers one to two ticks after they are asked for, none older than the declared maximum, and nothing waiting on the GPU.",
+      "items": [
+        {
+          "id": "WP19.1",
+          "statement": "The model finds the highest surface coarse to fine, and it is the surface the whole cut finds. On each of the three production surf geometries, at the columns WP17.1's guard reads, and on a sheet of 64 or more long components over a beach the test makes, which throws a crest further than 5 m, at 60 or more columns from the swash to water too deep to throw, 20 or more of which hold three or more surfaces, the model's answer is the height of the highest triangle of the cut-cell lattice over the column's whole throw reach, within 1 cm. Guard: a CPU test of `thrum-water-model` on compact fixtures, in the fast tier.",
+          "check": "cargo nextest run --locked --offline -p thrum-water-model --test it -E 'test(/^surf_cut::.*coarse_to_fine/)' --no-tests=fail && cargo nextest run --locked --offline -p thrum-water-model --test it -E 'test(/^surf_cut::/)' --no-tests=fail",
+          "ask": "Does `surf_cut` hold the many-component sheet with 20 or more columns of three or more surfaces, and is the model's answer there compared with the cut-cell lattice over the whole reach and not with the two passes themselves? Does the model's public cut, which the query and the conformance fallback use, make the two passes?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP19.2",
+          "statement": "On Metal the dispatch makes the model's two passes. For the many-component sheet of WP19.1 on a bed the test makes, with points posted as eight bodies of six stations and again as single points, 20 or more of them in columns that hold three or more surfaces, every answer is the model's at its use tick within WP13.1's tolerance, and a station's answer is the same, within that tolerance, whether its body's other stations are posted with it or not. Guard: a small Metal test, since only a device runs the dispatch's shared nodes and its WGSL cut.",
+          "check": "cargo test --locked --offline -p thrum-water --test surf_gpu",
+          "ask": "Does the target hold this case beside WP13.1's, and would it fail if the coarse pass kept no cell?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP19.3",
+          "statement": "A running game gets the breakers' heights in time. On the island in a gale, ticks follow the wall clock at 60 Hz for 600 ticks or more while the scene draws and the eight floats post their 48 stations every tick: once with the floats held in the breakers, where every tick's batch makes cuts, and once with them held in open water beyond every throw reach. In both runs no answer is unavailable against a declared maximum age of 8 ticks or fewer, no float falls back to the conformance model, and the blocking-read count is zero. At three ticks spread through the breakers run, the 48 answers are the model's highest surface at their use tick within WP13.1's tolerance. The record gives for each run the share of answers that arrived one, two and more ticks after they were asked for, the nodes the cuts evaluate a tick, the extent drawn and the machine's load, with an investigation beside it where the breakers run's share later than two ticks is above the open-water run's. Record: one paired run on Metal by `water_cost.py running`, which stays as the module's tool.",
+          "check": "python3 scripts/water_cost.py running --scene surf",
+          "ask": "Do the ticks of both runs advance from the wall clock, with nothing waiting for the GPU between a post and its drain? Does the breakers run make cuts on every tick, with its node count above zero throughout?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP19.4",
+          "statement": "With surf running at the beach in a gale, the paired cost record is taken again at 2560\u00d71440, beside WP13.12's record for the same views, with the query's time and the nodes its cuts evaluate, coarse and fine apart, in a tick with every float in the breakers. Each tripwire it trips has its investigation beside it. No figure in the record decides this item. Record: the surf cost record on Metal.",
+          "check": "python3 scripts/water_cost.py check --scene surf",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
+    },
+    {
       "id": "WP8",
       "name": "Water reflects the sky, the Sun, its shores and the craft, shows the ground and hulls beneath it, glitters and dims under a cloud's shade, from dawn to night",
       "status": "not_started",

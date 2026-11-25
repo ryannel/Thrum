@@ -671,3 +671,23 @@
 - 2026-11-25 WP17's and WP18's builder notes left the plan file with their reviews passed. WP17 landed the
   fixture reductions ahead of the long tier and recorded each case's time; WP18 brought the compact Metal trail
   fixture forward from `52345b514`. Their designs and the entries above hold the detail.
+
+<a id="wp19-query-decision"></a>
+
+- 2026-11-25 Design review, Must Fix 1: the body query in a gale's breakers took 18.9 s a tick, so no running
+  game could use it. Added WP19 after WP13, with the query's age contract as its criterion: ticks on the wall
+  clock, the eight floats in the breakers, no answer unavailable. The design now makes the cut coarse to fine
+  and says the two passes are the mechanism, with a risk, a cost row and a `water_cost.py running` command.
+  WP13's items are unchanged.
+  [Review](../../../.orchestrate/evidence/WATERS/design-review.md)
+
+- 2026-11-25 Part AA, the planner's f64 study on the island's gale at `6bad9e6e8`: the reach is 87.5 m and the
+  highest surface's rest place is 0.6 m from its column at the median, 16.6 m at the furthest. A coarse pass of
+  2 m cells with a 0.5 m margin kept every surface over 1,600 columns, for about 73,000 nodes a tick where the
+  whole cut is 24 to 47 million. Tighter ceilings were not tried, and the coarse pass does not need them.
+  [Study](../../../.orchestrate/evidence/WATERS/WP19/query-reach-study.md)
+
+- 2026-11-25 Took both of the review's suggestions. The cues are W1 to W12 again, as before the migration to
+  work packages renamed them WP1 to WP12, restored token by token from `24aba8b80`. The builder handoff no
+  longer gives every work package the exact-image verifier, which the ruling of 15 November moved to main.
+

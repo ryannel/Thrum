@@ -1288,7 +1288,7 @@ the module is `WATERS`. The older water designs and [the water decision](../desi
 evidence `WATERS`' design judged; where they differ, that design holds.
 
 **Build order.** `SEA` WP1 and WP2; `WATERS` WP1 and WP12 (surf on the CPU) beside `SEA` WP2; `WATERS` WP2 to WP7, WP13
-(surf drawn), WP8, WP9, WP15 (under water) and WP16 (light under water); `RIVERS` from `WATERS:WP9`, with its solver earlier; `PUDDLES` from
+(surf drawn), WP19 (the query in surf, in time for a game to use), WP8, WP9, WP15 (under water) and WP16 (light under water); `RIVERS` from `WATERS:WP9`, with its solver earlier; `PUDDLES` from
 `WATERS:WP8`, with its CPU work packages earlier; `WATERS` WP10, WP14 (mirrored scenery, on `SCENE-VIEWS:WP3`) and WP11 close the shared system. `CLOUDS`
 WP11 needs `WATERS:WP8`. `WATERS`' work packages keep the numbers other plans name, so its file order, and not its
 numbering, is its build order.
