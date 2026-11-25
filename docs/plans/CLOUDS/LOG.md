@@ -697,3 +697,34 @@
 - PLAN.md: WP18's and WP6's notes shrank to their review links, both being Done. WP18's assumption, "1 second
   below the existing 10-second timeout is enough headroom" for its focused parallel run, left the open list with
   the work package Done on it.
+
+## Design review of 25 November
+
+- 2026-11-25 Planner, after [the design review at `cbd6873e4`](../../../.orchestrate/evidence/CLOUDS/design-review.md):
+  five Must Fix findings, all on the proof of held refresh. No mechanism of the sky and no interface changed.
+- Must Fix 1, WP20 could pass while the player saw a repeated frame. A lost refresh is now counted from the
+  OS-reported presented times, by `PLATFORM-RUNTIME-MAC`'s witness, on every run of the wind series, the turn
+  included. The window's account only says where the game let a refresh go, with a sixth place, after the
+  present call. WP20.1, WP19.2 and WP19.3 are written again on that and are attended setup. The design no
+  longer says WP12 holds the broken and overcast skies to the refresh: WP7.8, WP12.5 and WP12.6 record and
+  investigate, and the plan carries that as an assumption. No WP12 item changed.
+- Must Fix 2, WP19 could send a cloud regression to the window owner. Attribution now asks the whole frame
+  what the cloud run loses that its clouds-absent neighbours do not: more than the neighbours is the clouds',
+  whatever the cloud passes take by themselves, and only a loss the neighbours share is the game's own. A
+  diagnostic run may end as not reproduced or not distinguished, and that ends nothing `BLOCKED`. A proposal
+  in `PLATFORM-RUNTIME-MAC`'s log no longer stops WP19.
+- Must Fix 3, WP7.4 could reject correct drift on a late frame. Its steps are judged by the display time
+  between two frames, from each frame's tick and display phase. Equal steps are expected only of frames one
+  refresh apart in display time. Across the turn the list asks for continuity while the cloud keeps travelling.
+- Must Fix 4, WP20 made a count in a clouds-absent run an admission gate. That count fails nothing now. The
+  record gives each cloud run's result beside what its neighbours lost, the losses go to
+  `PLATFORM-RUNTIME-MAC`'s log, and only a cloud run that loses more than one refresh beyond the worse of its
+  neighbours rejects the sky. The plan no longer ends `BLOCKED` on three series with poor controls; a series
+  is "not a measurement" only for a missing or occluded run or presented times that do not cover the interval.
+- Must Fix 5, WP19.1 kept every opportunity of a run in memory. The account keeps counts for the whole run and
+  rows only inside a measured interval a launch asks for, and its test gains a sixth case for that bound.
+- Suggestions, all three taken: the builder handoff and risk 13 point at the scheduled `exact-images` check;
+  the two `git show` examples name `M3-handoff.md` again, as Git stored it; WP19.1's test runs as unit tests
+  of `thrum-app`, a new test target being against the one-binary rule.
+- WP19 and WP20 are renamed to what they now claim, and PLAN.md has WP19 build the `hold` command so the
+  sitting only runs it.
