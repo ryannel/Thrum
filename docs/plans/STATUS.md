@@ -304,7 +304,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - The governor holds the display rate under forced load, then recovers step by step (APPLE-PRESENTATION WP7): In Progress · [plan](APPLE-PRESENTATION/PLAN.md)
 - A passing exact-image record names the Wasm file that Chrome ran, and a run whose capture ran another fails (BASELINE-GUARD WP3): Not Started · [plan](BASELINE-GUARD/PLAN.md)
 - Swell turns to face the beach, rises and breaks into white water that runs up the sand, on the Mac and in Chrome (WATERS WP13): Not Started · [plan](WATERS/PLAN.md)
-- Sprites stay crisp at every window size and pixel density, and nothing shimmers when the view scrolls (RENDER-2D WP3): In Progress · [plan](RENDER-2D/PLAN.md) · [latest review](../../.orchestrate/evidence/RENDER-2D/WP3-review.md)
+- Sprites stay crisp at every window size and pixel density, and nothing shimmers when the view scrolls (RENDER-2D WP3): Ready for Review · [plan](RENDER-2D/PLAN.md) · [latest review](../../.orchestrate/evidence/RENDER-2D/WP3-review.md)
 
 ### Recently done
 
@@ -436,7 +436,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 19 | PUDDLES | Rain wets the ground and fills its hollows with puddles that ripple, reflect the sky and dry out | WATERS WP1 for its puddles and wet ground on the CPU; WATERS WP8 for its first puddle; SHOWCASE WP5 for the valley; WATERS WP10, WP14 and WP16 to close | Waiting: On Dependency, WATERS:WP8 |
 | 20 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply |  | Done 18 Nov |
 | 21 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser |  | Done 16 Nov |
-| 22 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | EFFECT-GRAPH WP3 and APPLE-PRESENTATION WP3 to start; SIM-2D WP1 for its last work package | WP3 of 5 · In Progress |
+| 22 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | EFFECT-GRAPH WP3 and APPLE-PRESENTATION WP3 to start; SIM-2D WP1 for its last work package | WP3 of 5 · Ready for Review |
 | 23 | SESSION | Two to four players share one run and keep seeing the same crowd, and a windowed game is stepped by its match | SIM-2D WP3 to start; TRANSPORT WP1 for its second work package and TRANSPORT WP2 for its socket work packages; RENDER-2D WP5 for its last | Waiting: On Dependency, RENDER-2D:WP5 |
 | 24 | GAME-UI | Health bars, timers, menus and a join screen drawn in the game's own frame, and one iPhone shell for every game | RENDER-2D WP5 and APPLE-PRESENTATION WP6 | Waiting: On Dependency, RENDER-2D:WP5 |
 | 25 | SWARM | The swarm-survival game itself: its name, rules, characters and art | SHOWCASE WP8 to start, with the owner's pick of a concept; SIM-2D WP3, SESSION WP1, RENDER-2D WP5 and GAME-SPLIT WP4 for the first slice; GAME-UI WP4 for the whole run alone and GAME-UI WP6 for the iPhone simulator; SESSION WP4 for a rehearsed match and SESSION WP7 for co-op on sockets | Waiting: On Dependency, SHOWCASE:WP8 |
