@@ -48,7 +48,10 @@ fn submitted_island_has_the_maps_bodies_and_no_bridge_over_the_ridge() {
                 );
                 expected.push(
                     map.sample([f64::from(position.x), f64::from(position.z)])
-                        .filter(|a| a.depth > 0.0)
+                        .filter(|a| {
+                            // A wet column can be hidden by a rock or tree above its sheet.
+                            a.depth > 0.0 && (p[1] == 0.0 || f64::from(position.y) <= a.row.level)
+                        })
                         .map_or(3, |a| a.body),
                 );
             }
