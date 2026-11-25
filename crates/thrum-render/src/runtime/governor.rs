@@ -34,9 +34,13 @@ pub(super) struct GovernorHost {
     preparing: bool,
     frame_transition: (u64, u64),
     first_frame: bool,
-    knobs: Arc<[QualityKnob]>,
-    refresh_knobs: bool,
-    knob_snapshot_dirty: bool,
+    knobs: GovernorKnobs,
+}
+
+struct GovernorKnobs {
+    committed: Arc<[QualityKnob]>,
+    apply_tier: bool,
+    snapshot_dirty: bool,
 }
 
 #[derive(Clone, Copy)]
@@ -78,7 +82,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     ) -> Result<(), crate::contribution::QualityError> {
         self.stage_quality_knob(name, value)?;
         if let Some(governor) = &mut self.governor {
-            governor.knob_snapshot_dirty = true;
+            governor.knobs.snapshot_dirty = true;
         }
         Ok(())
     }
@@ -122,9 +126,11 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             preparing: false,
             frame_transition: (self.generation, self.presenter_generation),
             first_frame: false,
-            knobs: Arc::from([]),
-            refresh_knobs: true,
-            knob_snapshot_dirty: true,
+            knobs: GovernorKnobs {
+                committed: Arc::from([]),
+                apply_tier: true,
+                snapshot_dirty: true,
+            },
         });
         true
     }
@@ -236,7 +242,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         }
         self.render_scale = state.scale;
         if governor.policy.mark().held()
-            || (!governor.refresh_knobs && (!changed || before.tier == state.tier))
+            || (!governor.knobs.apply_tier && (!changed || before.tier == state.tier))
         {
             return Ok(());
         }
@@ -251,7 +257,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             }
         }
         if let Some(governor) = &mut self.governor {
-            governor.refresh_knobs = false;
+            governor.knobs.apply_tier = false;
         }
         Ok(())
     }
@@ -260,15 +266,15 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         if !self
             .governor
             .as_ref()
-            .is_some_and(|governor| governor.knob_snapshot_dirty)
+            .is_some_and(|governor| governor.knobs.snapshot_dirty)
         {
             return;
         }
         let mut knobs = self.quality_knobs();
         knobs.retain(|knob| knob.governor_steps.is_some());
         if let Some(governor) = &mut self.governor {
-            governor.knobs = knobs.into();
-            governor.knob_snapshot_dirty = false;
+            governor.knobs.committed = knobs.into();
+            governor.knobs.snapshot_dirty = false;
         }
     }
 
@@ -278,7 +284,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         let governor = self.governor.as_ref()?;
         Some(GovernorFrame {
             state: governor.policy.state(),
-            knobs: Arc::clone(&governor.knobs),
+            knobs: Arc::clone(&governor.knobs.committed),
             source: governor.policy.source(),
             budget: governor.policy.budget(),
             display: governor.display,
@@ -297,8 +303,8 @@ impl GovernorHost {
     }
 
     pub(super) fn refresh(&mut self) {
-        self.refresh_knobs = true;
-        self.knob_snapshot_dirty = true;
+        self.knobs.apply_tier = true;
+        self.knobs.snapshot_dirty = true;
     }
 
     pub(super) fn observe(&mut self, sample: &FrameSample) {
