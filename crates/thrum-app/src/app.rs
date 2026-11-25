@@ -1079,6 +1079,7 @@ impl<G: WindowGame + 'static> App<G> {
         let missing = recovery::missing_profiles(
             self.presented,
             presented.len() + self.trimmed_presented,
+            self.counters.lost_reports,
             self.device_losses != 0 || final_device_loss,
         )?;
         if presented.is_empty() {

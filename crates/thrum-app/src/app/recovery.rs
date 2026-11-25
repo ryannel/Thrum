@@ -18,12 +18,13 @@ pub(super) struct Recovery {
 pub(super) fn missing_profiles(
     presented: usize,
     retained: usize,
+    dropped_reports: u64,
     lost_device: bool,
 ) -> Result<usize, String> {
     let missing = presented
         .checked_sub(retained)
         .ok_or("more presented samples than present calls")?;
-    if missing != 0 && !lost_device {
+    if missing > usize::try_from(dropped_reports).unwrap_or(usize::MAX) && !lost_device {
         return Err(format!(
             "{retained} presented samples for {presented} presents"
         ));

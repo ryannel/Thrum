@@ -2,11 +2,13 @@ use super::Recovery;
 
 #[test]
 fn lost_profiles_are_explicit_and_never_create_present_calls_or_timings() {
-    assert_eq!(super::missing_profiles(3, 3, false).unwrap(), 0);
-    assert!(super::missing_profiles(3, 2, false).is_err());
-    assert_eq!(super::missing_profiles(3, 2, true).unwrap(), 1);
-    assert_eq!(super::missing_profiles(3, 0, true).unwrap(), 3);
-    assert!(super::missing_profiles(2, 3, true).is_err());
+    assert_eq!(super::missing_profiles(3, 3, 0, false).unwrap(), 0);
+    assert!(super::missing_profiles(3, 2, 0, false).is_err());
+    assert_eq!(super::missing_profiles(3, 2, 1, false).unwrap(), 1);
+    assert!(super::missing_profiles(3, 1, 1, false).is_err());
+    assert_eq!(super::missing_profiles(3, 2, 0, true).unwrap(), 1);
+    assert_eq!(super::missing_profiles(3, 0, 0, true).unwrap(), 3);
+    assert!(super::missing_profiles(2, 3, 0, true).is_err());
 }
 
 #[test]
