@@ -894,10 +894,10 @@
           "lock": "gpu",
           "ask": "Read the test. Is each of the three causes driven through the host's own calls, with a control that skips the reset failing?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP8/D8.6-replacement.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP8-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D8.7",

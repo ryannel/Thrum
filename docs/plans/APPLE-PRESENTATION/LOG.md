@@ -565,3 +565,9 @@
 - 2026-11-25 WP8. D8.7 passed twice after the host simulator recovered, including on the rebased
   build. The second run counted one background discard and resumed submission 121 with invalid
   history and jitter phase 25. Both turns verified shutdown. [Rebased simulator receipt](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP8/simulator-repaired/reset.json)
+
+- 2026-11-25 WP8. On Mac Metal, device replacement discarded one encoded frame on both Apple Tile and
+  Portable TAAU. The first frame on the replacement MetalFX scaler matched an independent history reset
+  byte for byte. The scaler received `setReset: true`. A temporary mutation suppressing the actual
+  first-encode reset failed the test while the coordinator still counted one reset.
+  [D8.6 target proof](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP8/D8.6-replacement.md)
