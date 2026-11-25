@@ -9,6 +9,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import tomllib
 
 
 GIB = 1024 ** 3
@@ -19,6 +20,8 @@ WARM_HEADROOM = 2 * GIB
 MAIN = "refs/remotes/origin/main"
 COMMAND = ("./dev", "check")
 PROFILE_CONTROLS = "/tmp/sim2d/profile-controls/*/target/"
+RUSTFMT_CONFIG = (".rustfmt.toml", "rustfmt.toml")
+CLIPPY_CONFIG = (".clippy.toml", "clippy.toml")
 
 
 class Unavailable(Exception):
@@ -46,12 +49,28 @@ def check_environment(root, env):
     output_overrides = ("CARGO_TARGET_DIR", "CARGO_BUILD_TARGET_DIR", "CARGO_BUILD_BUILD_DIR")
     if any(key in env for key in (*git_overrides, *output_overrides)):
         raise Unavailable("explicit Git or Cargo output override")
-    for key in ("PATH", "PYTHONPATH"):
+    for key in ("PATH", "PYTHONPATH", "RUST_TARGET_PATH"):
         if key in env and any(not Path(value).is_absolute() for value in env[key].split(os.pathsep)):
             raise Unavailable(f"checkout-relative {key}")
-    for key in ("CARGO_HOME", "RUSTUP_HOME", "RUSTC", "RUSTC_WRAPPER", "RUSTC_WORKSPACE_WRAPPER",
-                "RUSTDOC", "THRUM_PYTHON", "CLIPPY_CONF_DIR"):
+    rust_tools = ("RUSTC", "RUSTC_WRAPPER", "RUSTC_WORKSPACE_WRAPPER", "RUSTDOC")
+    cargo_build_paths = tuple(f"CARGO_BUILD_{name}" for name in rust_tools)
+    config_paths = ("HOME", "XDG_CONFIG_HOME", "CARGO_HOME", "RUSTUP_HOME",
+                    "CLIPPY_CONF_DIR", "CARGO_MANIFEST_DIR")
+    for key in (*config_paths, *rust_tools, *cargo_build_paths, "CARGO", "RUSTFMT", "THRUM_PYTHON"):
         if env.get(key) and not Path(env[key]).is_absolute():
+            raise Unavailable(f"checkout-relative {key}")
+    # Cargo resolves a linker path from the environment against its working
+    # directory. Runners and compiler flags can carry paths in their arguments.
+    compiler_flags = ("RUSTFLAGS", "RUSTDOCFLAGS", "CARGO_ENCODED_RUSTFLAGS",
+                      "CARGO_ENCODED_RUSTDOCFLAGS", "CARGO_BUILD_RUSTFLAGS",
+                      "CARGO_BUILD_RUSTDOCFLAGS", "CARGO_BUILD_TARGET")
+    for key, value in env.items():
+        if not value:
+            continue
+        if key in compiler_flags or (key.startswith("CARGO_TARGET_")
+                                     and key.endswith(("_RUNNER", "_RUSTFLAGS", "_RUSTDOCFLAGS"))):
+            raise Unavailable(f"explicit Cargo or compiler input override {key}")
+        if key.startswith("CARGO_TARGET_") and key.endswith("_LINKER") and not Path(value).is_absolute():
             raise Unavailable(f"checkout-relative {key}")
 
 
@@ -76,6 +95,11 @@ def revision(root, common):
     index = git(root, "ls-files", "--cached", "--stage", "-v", "-z").split(b"\0")
     if any(not entry.startswith((b"H 100", b"H 120000 ")) for entry in index if entry):
         raise Unavailable("index contains sparse, assumed-unchanged or submodule paths")
+    for entry in index:
+        if entry.startswith(b"H 120000 "):
+            path = Path(os.fsdecode(entry.partition(b"\t")[2]))
+            if path.name in (*RUSTFMT_CONFIG, *CLIPPY_CONFIG):
+                raise Unavailable(f"checkout-local tool configuration symlink {path}")
     return git(root, "rev-parse", "--verify", "HEAD^{commit}").decode().strip()
 
 
@@ -94,10 +118,48 @@ def verify_tracked_contents(root, commit):
             raise Unavailable("tracked files do not match the caller's commit")
 
 
-def inherited_cargo_config(root):
-    """Cargo reads configuration in all parents of its working directory."""
-    return [path for parent in root.parents for name in ("config", "config.toml")
-            if (path := parent / ".cargo" / name).exists() or path.is_symlink()]
+def inherited_config(root, names):
+    """Keep the ordered paths each tool can discover outside the checkout."""
+    found = []
+    for parent in root.parents:
+        for name in names:
+            path = parent / name
+            try:
+                path.lstat()
+            except (FileNotFoundError, NotADirectoryError):
+                continue
+            found.append(path)
+    return found
+
+
+def check_local_cargo_config(root):
+    # Cargo resolves paths in these files relative to the checkout. An
+    # otherwise clean tree can still supply a tool from an ignored directory.
+    build_inputs = {"rustc", "rustc-wrapper", "rustc-workspace-wrapper", "rustdoc",
+                    "rustflags", "rustdocflags", "target"}
+    target_inputs = {"linker", "runner", "rustflags", "rustdocflags"}
+    directory = root / ".cargo"
+    if directory.is_symlink():
+        raise Unavailable("checkout-local Cargo configuration symlink")
+    for name in ("config", "config.toml"):
+        path = directory / name
+        if path.is_symlink():
+            raise Unavailable("checkout-local Cargo configuration symlink")
+        try:
+            with path.open("rb") as file:
+                config = tomllib.load(file)
+        except FileNotFoundError:
+            continue
+        except (tomllib.TOMLDecodeError, UnicodeError) as error:
+            raise Unavailable("unreadable checkout-local Cargo configuration") from error
+        build = config.get("build", {})
+        targets = config.get("target", {})
+        if ("include" in config or "env" in config
+                or not isinstance(build, dict) or not isinstance(targets, dict)
+                or build.keys() & build_inputs
+                or any(not isinstance(target, dict) or target.keys() & target_inputs
+                       for target in targets.values())):
+            raise Unavailable("checkout-local Cargo tool or build configuration")
 
 
 def check_cargo_layout(root):
@@ -120,6 +182,16 @@ def real_directory(path):
 
 
 def prepare_checkout(root, checkout, common, commit, lease):
+    # Tracked configuration inside the checkout is checked with the other
+    # inputs. Both trees must also see the same configuration above them.
+    for tool, names in (
+        ("Cargo", (".cargo/config", ".cargo/config.toml")),
+        ("rustfmt", RUSTFMT_CONFIG),
+        ("Clippy", CLIPPY_CONFIG),
+    ):
+        if inherited_config(root, names) != inherited_config(checkout, names):
+            raise Unavailable(f"checkout-local inherited {tool} configuration")
+    check_local_cargo_config(root)
     real_directory(checkout)
     if not checkout.exists():
         git(root, "worktree", "add", "--quiet", "--detach", str(checkout), commit, lease=lease)
@@ -133,8 +205,6 @@ def prepare_checkout(root, checkout, common, commit, lease):
     clean_checkout(checkout, lease)
     if git(root, "config", "--null", "--list") != git(checkout, "config", "--null", "--list"):
         raise Unavailable("checkout-local Git configuration")
-    if inherited_cargo_config(root) != inherited_cargo_config(checkout):
-        raise Unavailable("checkout-local inherited Cargo configuration")
     base = git(root, "merge-base", commit, MAIN)
     if (git(checkout, "merge-base", "HEAD", MAIN) != base
             or revision(root, common) != commit or revision(checkout, common) != commit):

@@ -848,8 +848,8 @@
           "statement": "The configured command checks the caller's inputs and returns the ordinary check's verdict. On the Mac, clean singleton and batch candidates share a bounded Cargo cache and keep their candidate and base selection. A committed failing edit fails with the cache warm and its revert passes. Staged and unstaged tracked changes and non-ignored untracked paths send the check to the caller's worktree. On a passing commit, the configured command reports a failing local assertion when the file is edited and passes after the file is restored, with the cache warm throughout. Toolchain, profile and feature changes invalidate affected builds. Concurrent use, interruption, over-cap retention and low free space recover through cache maintenance or the ordinary check. Ordinary developer and scheduled main-branch checks use their own build directories.",
           "ask": "Do the singleton and batch replays retain their candidate, selection and verdict? Trace the staged, unstaged and untracked admission cases. Do the warm runs show an assertion failure and a passing revert for the committed edit, and an assertion failure in the caller's worktree and a pass after restoration for the uncommitted edit on the same commit? Do the toolchain, profile and feature cases show fresh affected builds? For concurrent use, interruption, over-cap retention and low free space, does the cache owner protect active work and reclaim only its own artifacts, with any fallback preserving the caller's inputs and verdict?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GATE-TIME/WP15/review-fix.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GATE-TIME/WP15-review.md"
         },

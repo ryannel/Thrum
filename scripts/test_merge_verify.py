@@ -52,12 +52,12 @@ fi
     def git(self, *args, root=None):
         return subprocess.check_output(["git", *args], cwd=root or self.root, env=self.env, text=True).strip()
 
-    def run_check(self, **env):
+    def run_check(self, *, root=None, **env):
         runner = ("import sys; sys.path.insert(0, sys.argv[1]); import merge_verify as v;"
                   " v.FREE_FLOOR = v.COLD_HEADROOM = v.WARM_HEADROOM = 0;"
                   " v.check_cargo_layout = lambda root: None; sys.exit(v.main())")
         return subprocess.run([sys.executable, "-c", runner, str(Path(verify.__file__).parent)],
-                              cwd=self.root, text=True,
+                              cwd=root or self.root, text=True,
                               capture_output=True, env=self.env | env, timeout=10)
 
     def assert_check(self, result, status, *lines):
@@ -112,6 +112,60 @@ fi
         self.assert_check(self.run_check(), 0, "reset (interrupted", "cold", f"check cwd={self.checkout}")
         self.assertFalse(artifact.exists())
         self.assertTrue((self.root / "target/artifact").is_file())
+
+    def test_inherited_tool_configuration_takes_fallback(self):
+        parent = self.root / "callers"
+        parent.mkdir()
+        caller = parent / "singleton"
+        self.git("worktree", "add", "--quiet", "--detach", str(caller), self.base)
+        self.assert_check(self.run_check(root=caller), 0, "cold", f"check cwd={self.checkout}")
+        for tool, relative in (("rustfmt", "rustfmt.toml"), ("rustfmt", ".rustfmt.toml"),
+                               ("Clippy", "clippy.toml"), ("Clippy", ".clippy.toml"),
+                               ("Cargo", ".cargo/config.toml")):
+            with self.subTest(configuration=relative):
+                config = parent / relative
+                config.parent.mkdir(exist_ok=True)
+                config.touch()
+                self.assert_check(self.run_check(root=caller), 0, f"inherited {tool} configuration",
+                                  f"check cwd={caller}")
+                config.unlink()
+        self.assert_check(self.run_check(root=caller), 0, "warm", f"check cwd={self.checkout}")
+
+    def test_checkout_relative_tools_and_opaque_flags_take_fallback(self):
+        self.assert_check(self.run_check(), 0, "cold")
+        overrides = {
+            "CARGO_TARGET_AARCH64_APPLE_DARWIN_LINKER": "./tmp/linker",
+            "CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_LINKER": "./tmp/wasm-linker",
+            "CARGO_TARGET_AARCH64_APPLE_DARWIN_RUNNER": "/usr/bin/env ./tmp/runner",
+            "CARGO_BUILD_RUSTC_WRAPPER": "./tmp/rustc",
+            "RUSTFMT": "./tmp/rustfmt",
+            "RUSTFLAGS": "-L ./tmp/native",
+        }
+        for key, value in overrides.items():
+            with self.subTest(override=key):
+                self.assert_check(self.run_check(**{key: value}), 0, key, f"check cwd={self.root}")
+        self.assert_check(self.run_check(CARGO_TARGET_AARCH64_APPLE_DARWIN_LINKER="/usr/bin/cc"),
+                          0, "warm", f"check cwd={self.checkout}")
+
+    def test_tracked_configurations_can_reference_caller_files(self):
+        caller = self.root / "singleton"
+        self.git("worktree", "add", "--quiet", "--detach", str(caller), self.base)
+        self.assert_check(self.run_check(root=caller), 0, "cold")
+        (caller / "target").mkdir()
+        (caller / "target/local.cfg").touch()
+        (caller / "rustfmt.toml").symlink_to("target/local.cfg")
+        self.git("add", "rustfmt.toml", root=caller)
+        self.git("commit", "--quiet", "-m", "Use an external formatter config", root=caller)
+        self.assert_check(self.run_check(root=caller), 0, "configuration symlink rustfmt.toml",
+                          f"check cwd={caller}")
+        self.git("checkout", "--quiet", "--detach", self.base, root=caller)
+        config = caller / ".cargo/config.toml"
+        config.parent.mkdir()
+        config.write_text('[target.aarch64-apple-darwin]\nlinker = "./target/local.cfg"\n')
+        self.git("add", ".cargo", root=caller)
+        self.git("commit", "--quiet", "-m", "Select a checkout-local tool", root=caller)
+        self.assert_check(self.run_check(root=caller), 0, "checkout-local Cargo tool or build configuration",
+                          f"check cwd={caller}")
 
     def test_retention_and_low_space_reclaim_only_cache_artifacts(self):
         self.assert_check(self.run_check(), 0, "cold")

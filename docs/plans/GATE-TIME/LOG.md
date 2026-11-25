@@ -103,3 +103,8 @@
   107.192 s and 497.641 s end to end, with test builds of 1.04 s and 124 s. The committed and local assertion
   failures propagated, their restorations passed, and the pre-launcher revision `d96b41b77` passed the exact
   rollout command. [Mac qualification and rollout record](../../../.orchestrate/evidence/GATE-TIME/WP15/record.md).
+- 2026-11-25 WP15.1 review repair. Cache admission now accounts for inherited rustfmt and Clippy
+  configuration and keeps checkout-dependent Cargo tools and flags in the caller's worktree.
+  Verified on the Mac with the real launcher. The inherited formatter configuration returns the
+  caller's exit 1, the caller-relative linker returns its exit 0, and clean inputs still use the warm
+  cache. [Review repair evidence](../../../.orchestrate/evidence/GATE-TIME/WP15/review-fix.md).
