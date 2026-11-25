@@ -298,3 +298,13 @@
   [Metal tests](../../../.orchestrate/evidence/RENDER-2D/WP4/metal-tests.md) ·
   [Mac motion](../../../.orchestrate/evidence/RENDER-2D/WP4/mac/inspection.md) ·
   [Chrome motion](../../../.orchestrate/evidence/RENDER-2D/WP4/chrome/inspection.md)
+- The public sprite page now follows the watched sheet store and refuses 3D selections.
+  The Chrome check verified the guide URL, a save on the ordinary animation loop and an independent
+  T2 realtime switch, with only the changed product fetched in each run.
+  [Chrome proof](../../../.orchestrate/evidence/RENDER-2D/WP4/review-repair/chrome/inspection.md)
+- The public ordering time now includes the cooked world's retained-order update and the frame-row
+  merge. A fresh Metal take verified both live switches and recorded ordering on changed and
+  repeated source ticks. An independently authored guide example cooked, and its field configuration
+  drew all three submitted art generations.
+  [Metal motion and ordering](../../../.orchestrate/evidence/RENDER-2D/WP4/review-repair/mac/inspection.md) ·
+  [Guide proof](../../../.orchestrate/evidence/RENDER-2D/WP4/review-repair/guide/inspection.md)

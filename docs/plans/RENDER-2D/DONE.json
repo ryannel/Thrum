@@ -525,8 +525,8 @@
           "check": "node scripts/check_v1_browser.mjs --case sprite-sheets",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": "",
-          "builder_result": "open",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP4/review-repair/chrome/inspection.md",
+          "builder_result": "pass",
           "verdict": "fail",
           "review": ".orchestrate/evidence/RENDER-2D/WP4-review.md",
           "inspect": "Use the same Chrome edit that the check qualifies. Take T2 engine capture in realtime mode from moving frames before the save through the first submitted frame using the new sheet and the following motion. Review at 1x with the save time, monotonic submission times, committed ticks, view motion and skipped-opportunity records aligned to the switch. Does the scene keep moving through fetch and staging without a visible pause relative to the pre-save interval? A gap in submissions must remain visible in elapsed-time playback."
@@ -536,7 +536,7 @@
           "statement": "On the Mac the moving sprite scene keeps advancing through a recolour and a save that repacks the sheet. At each switch every sprite takes the new art in one frame, with no blank, wrong or mixed picture. Record: elapsed-time motion and the two switches.",
           "inspect": "Capture the sprite field with a moving view using T2 engine capture in realtime mode. For each edit watch at 1x from ordinary pre-save motion through the first submitted frame using the new sheet and the following motion. Use the save time, monotonic submission times, committed ticks, view motion and skipped-opportunity records to check for a visible pause through cooking and staging against the pre-save interval. Preserve any submission gap in playback. Inspect the eight frames around each switch whole and in native-size crops for blanks, wrong art and a mix of old and new.",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/RENDER-2D/WP4/mac/inspection.md",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP4/review-repair/mac/inspection.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/RENDER-2D/WP4-review.md",
           "builder_result": "pass"
@@ -546,10 +546,10 @@
           "statement": "The public sheet guide explains the folder, pixel and smooth sheet kinds, frame names, grid cells, tiles and linear-light blending. It shows how a cooked pivot is authored in original-frame texels, where its default centre is, and how the row position anchors it through trim. It states the embedded top-left convention.",
           "ask": "Does a folder and description written from the documentation alone cook and draw as it says, at the claimed commit?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/RENDER-2D/WP4/review-repair/guide/inspection.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/RENDER-2D/WP4-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         }
       ],
       "failed_reviews": 1,

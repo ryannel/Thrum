@@ -5771,10 +5771,26 @@
     },
     {
       "kind": "local",
+      "path": "docs/evidence/RENDER-2D/WP4/chrome-95f04c478.rgba.zst",
+      "size": 46392978,
+      "sha256": "a70d929eb5264124444214daa79c86168978a5177054d7c1c40b671056e49e6b",
+      "date": "2026-11-25T04:05:27.253977+00:00",
+      "store": "/Users/ryannel/Workspace/thrum/.git/orchestrate/evidence/RENDER-2D/WP4/lossless-store"
+    },
+    {
+      "kind": "local",
       "path": "docs/evidence/RENDER-2D/WP4/chrome-9615a6717.rgba.zst",
       "size": 41532213,
       "sha256": "b73eee9d8f86f7a8d83a896857d65bec1786b2d26060f29c074a8c4631f982dc",
       "date": "2026-11-25T03:24:07.473554+00:00",
+      "store": "/Users/ryannel/Workspace/thrum/.git/orchestrate/evidence/RENDER-2D/WP4/lossless-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/RENDER-2D/WP4/mac-95f04c478.rgba.zst",
+      "size": 94112956,
+      "sha256": "5f1446a2880b91423de5875be1b6e43105d2c52cc9387bf5243c0662459c0569",
+      "date": "2026-11-25T04:05:27.730705+00:00",
       "store": "/Users/ryannel/Workspace/thrum/.git/orchestrate/evidence/RENDER-2D/WP4/lossless-store"
     },
     {
