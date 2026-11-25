@@ -167,10 +167,16 @@ fn reconstruct_two_x(sheet: u32, frame: SpriteFrameRecord, texel: vec2<f32>, foo
     let origin = vec2<i32>(frame.origin);
     let cell = vec2<i32>(floor(texel - vec2(0.5)));
     let phase = texel - (vec2<f32>(cell) + vec2(1.0));
-    // Blend on either side of the projected edge. The transition ends
-    // before the two aligned sample centres at a quarter texel either side.
-    let shoulder = 0.055 * footprint;
-    let weight = smoothstep(-shoulder, shoulder, phase);
+    // Stagger the narrow colour transition along the edge, in sprite
+    // coordinates, so a whole row of texel boundaries cannot lose contrast
+    // together. The zero-mean offset stays within 1/48 output pixel.
+    // Coverage alpha still uses the full footprint at silhouettes.
+    // Spread the transition over several adjacent texels rather than
+    // alternating the reconstruction on individual pixels.
+    let stagger = 4.0 * abs(fract((texel.yx + 0.25) / 8.0) - 0.5) - 1.0;
+    let transition = footprint / 48.0;
+    let shoulder = transition / 8.0;
+    let weight = smoothstep(-shoulder, shoulder, phase + stagger * transition);
     if all(weight == round(weight)) {
         let sample = nearest(sheet, origin + cell + vec2<i32>(weight), page);
         return vec4(coverage.rgb * (1.0 - sample.a) + coverage.a * sample.rgb, coverage.a);
@@ -179,8 +185,13 @@ fn reconstruct_two_x(sheet: u32, frame: SpriteFrameRecord, texel: vec2<f32>, foo
     let b = nearest(sheet, origin + cell + vec2(1, 0), page);
     let c = nearest(sheet, origin + cell + vec2(0, 1), page);
     let d = nearest(sheet, origin + cell + vec2(1, 1), page);
-    let weights = vec4((1.0 - weight.x) * (1.0 - weight.y), weight.x * (1.0 - weight.y),
-        (1.0 - weight.x) * weight.y, weight.x * weight.y);
+    // At a corner, correlate the crossings so the checker keeps some of its
+    // diagonal contrast. Moving equal mass off the two opposing taps keeps
+    // both axis weights unchanged, including at the end of either shoulder.
+    let diagonal = 0.75 * (min(weight.x, weight.y) - weight.x * weight.y);
+    let weights = vec4((1.0 - weight.x) * (1.0 - weight.y) + diagonal,
+        weight.x * (1.0 - weight.y) - diagonal,
+        (1.0 - weight.x) * weight.y - diagonal, weight.x * weight.y + diagonal);
     let luminance = vec3(0.2126, 0.7152, 0.0722);
     let opacity = vec4(a.a, b.a, c.a, d.a);
     let masses = weights * opacity;

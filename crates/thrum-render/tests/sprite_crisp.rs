@@ -289,14 +289,33 @@ fn two_x_colour_crossing_beside_transparency_is_continuous() {
             fixture::Scene::new(vec![SpriteRow::new(0, [0.0; 2])], 2),
             art.clone(),
         );
-        let samples = [0.75, 0.938, 0.9389, 0.95, 0.9995, 1.0, 1.0005, 1.25].map(|u| {
+        // At the witness pixel's local Y of 0.75, the stagger shifts the
+        // projected edge by 1/192 source texel. Probe both shoulder ends and
+        // its interior so the continuity check cannot skip the blend.
+        let crossing = 1.0 - 1.0 / 192.0;
+        let samples = [
+            0.75,
+            crossing - 0.00135,
+            crossing - 0.00127,
+            crossing - 0.000015,
+            crossing,
+            crossing + 0.000015,
+            crossing + 0.00127,
+            crossing + 0.00135,
+            1.25,
+        ]
+        .map(|u| {
             host.continuous_source_mut().centre = [u - 0.75, 0.0];
             let image = fixture::capture(&mut host, &gpu.device, extent, CaptureSource::Sdr);
             image.rgba.as_chunks::<4>().0[9 * 16 + 9]
         });
         assert_eq!(samples[0], [255, 0, 0, 255]);
-        assert_eq!(samples[7], [0, 0, 255, 255]);
-        for (a, b) in [(1, 2), (4, 5), (5, 6)] {
+        assert_eq!(samples[8], [0, 0, 255, 255]);
+        assert!(
+            (1..255).contains(&samples[4][0]) && (1..255).contains(&samples[4][2]),
+            "{recipe}: the shoulder centre did not blend: {samples:?}"
+        );
+        for (a, b) in [(1, 2), (3, 4), (4, 5), (6, 7)] {
             for channel in [0, 2] {
                 assert!(
                     samples[a][channel].abs_diff(samples[b][channel]) <= 4,
