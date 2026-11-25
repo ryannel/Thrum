@@ -90,6 +90,34 @@ class PresentedWitness(unittest.TestCase):
             self.assertEqual([r['drawable_id'] for r in rows],['4','5'])
             self.assertEqual(rows[1]['status'],'2')
 
+    def test_measured_interval_uses_retained_clock_markers(self):
+        source = """<trace-query-result><node>
+        <row><process fmt="v1-game (7)"/><event-time>21000000000</event-time>
+        <event-type>End</event-type><signpost-name>MacM2Pan</signpost-name></row>
+        <row><process fmt="v1-game (7)"/><event-time>22000000000</event-time>
+        <event-type>End</event-type><signpost-name>MacM2Whole</signpost-name></row>
+        </node></trace-query-result>"""
+        with tempfile.TemporaryDirectory() as directory:
+            arm = Path(directory)
+            (arm / 'window.txt').write_text('pid=7\n')
+            (arm / 'signposts.xml').write_text(source)
+            (arm / 'signposts.tsv').write_text(
+                'stage\tmedia_before\tmedia_after\n'
+                '0\t100.25\t100.250000002\n1\t101\t101.000000002\n'
+                '2\t121\t121.000000002\n3\t122\t122.000000002\n'
+            )
+            (arm / 'refresh-interval.tsv').write_text(
+                'start_media_seconds\tend_media_seconds\n101.000000001\t121.000000001\n'
+            )
+            with self.assertRaisesRegex(ValueError, 'missing same-process clock markers'):
+                witness.calibration(arm)
+            pid, low, high, markers = witness.calibration(arm, measured_interval=True)
+            self.assertEqual((pid, low, high), (7, 100000000000, 100000000002))
+            self.assertEqual(markers, [1000000000, 1000000000, 21000000000, 21000000000])
+            (arm / 'signposts.xml').write_text(source.replace('v1-game (7)', 'v1-game (8)', 1))
+            with self.assertRaisesRegex(ValueError, 'missing same-process clock markers'):
+                witness.calibration(arm, measured_interval=True)
+
     def test_finalization_cap_starts_at_recording_stop(self):
         with tempfile.TemporaryDirectory() as directory:
             log=Path(directory)/'process.log'

@@ -131,12 +131,20 @@ output-byte bound stay the same. Use a small extent for these longer takes.
 For Chrome, a cloud view can supply `preset`, `weather_rate` and `wind`, plus
 `duration_seconds` between 1 and 60 for an elapsed-time take.
 
-The ordinary V1 window runs until closed and reports submitted frame counts and
-CPU times on exit. Its longest submission interval measures successive surface
-submissions made for future display targets at the preferred display cadence.
-The interval is relative to the first such submission.
-Keep the frame profiler closed and leave `THRUM_REPORT` unset for ordinary play.
-Set `THRUM_REPORT=1` when the run needs per-pass GPU timestamps.
+The ordinary V1 window runs until closed and reports submitted frame counts,
+CPU times and the refresh account on exit. The account counts an opportunity
+as served when one new frame's present call falls in that refresh interval.
+The built-in panel cadence measurement uses the OS-reported presented times
+from the presented-time witness. Keep the frame profiler closed and leave
+`THRUM_REPORT` unset for ordinary play. Set `THRUM_REPORT=1` when the run
+needs per-pass GPU timestamps.
+
+On the unlocked Mac, `python3 scripts/cloud_cost.py cadence --scene wind`
+records the 1920×1080 game on the built-in panel. It alternates the five cloud
+wind settings with clouds-absent runs, each measured for 20 seconds after
+warm-up. Each arm retains the exact interval, refresh account, drawable and
+signpost exports, and the witness result. The timing diagnostics run separately.
+`hold --scene wind` applies the count and stall verdict to the same measurement.
 
 To retain the individual display targets for diagnosis, launch the proving build with
 `THRUM_MAC_QUALIFY` set to an existing output directory, `THRUM_MAC_TAP=off`
