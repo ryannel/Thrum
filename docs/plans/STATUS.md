@@ -301,7 +301,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Now and next
 
-- BASELINE-GUARD's design: Design Ready for Review · [design](BASELINE-GUARD/DESIGN.md) · [plan](BASELINE-GUARD/PLAN.md)
+- A passing exact-image record names the Wasm file that Chrome ran, and a run whose capture ran another fails (BASELINE-GUARD WP3): Not Started · [plan](BASELINE-GUARD/PLAN.md)
 - Swell turns to face the beach, rises and breaks into white water that runs up the sand, on the Mac and in Chrome (WATERS WP13): Not Started · [plan](WATERS/PLAN.md)
 - The sky runs from clear through fair and broken to overcast and back, and its clouds drift, form, grow and thin (CLOUDS WP7): Ready for Review · [plan](CLOUDS/PLAN.md) · [latest review](../../.orchestrate/evidence/CLOUDS/WP7-review.md)
 - Sprites stay crisp at every window size and pixel density, and nothing shimmers when the view scrolls (RENDER-2D WP3): In Progress · [plan](RENDER-2D/PLAN.md) · [latest review](../../.orchestrate/evidence/RENDER-2D/WP3-review.md)
@@ -422,7 +422,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE WP3 | Done 24 Nov |
 | 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE WP0, WP2, WP3, WP11 and WP12 | WP7 of 16 · Blocked: Needs Access |
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | CONTENT-LOOP WP4 for its WP9 to pass the full check; APPLE-PRESENTATION WP3 and SHOWCASE WP9 for its WP6 | Done 25 Nov |
-| 9 | BASELINE-GUARD | A change that alters another module's exact reference images is found on main within about two hours and traced to the commit that made it |  | Design Ready for Review |
+| 9 | BASELINE-GUARD | A change that alters another module's exact reference images is found on main within about two hours and traced to the commit that made it |  | WP3 of 3 · Not Started |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE WP2, BASELINE-GUARD WP1 | Done 17 Nov |
 | 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE WP2 and WP3, APPLE-PRESENTATION WP2, BASELINE-GUARD WP1 | Done 24 Nov |
 | 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | Nothing for its WP4; APPLE-PRESENTATION WP2 and WP3, EFFECT-GRAPH WP2, CULLING WP3 | Done 23 Nov |
