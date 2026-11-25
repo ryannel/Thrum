@@ -409,3 +409,9 @@
   match before applying forced load. At 60 Hz the exact checks recorded zero steady scale changes and
   2/60 governed misses, 0/59 unloaded and 11/59 with the governor off under the same load.
   [Native delivery traces](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP7/native-delivery/README.md)
+
+- 2026-11-25 WP7's Mac window proof holds the display awake across the live measurement, including retries.
+  An unloaded baseline with more than two missed opportunities invalidates the attempt before forced load.
+  The earlier sleep trace was rejected at 36/59 misses. The exact 60 Hz replay measured 0/60 unloaded,
+  1/59 governed and 15/59 governor-off misses under the same load. D7.3 recorded no scale changes.
+  [Display environment and target traces](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP7/display-environment/README.md)
