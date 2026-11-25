@@ -269,6 +269,8 @@ fn quarter_size_smooth_checker_preserves_its_linear_mean() {
 #[test]
 fn two_x_colour_crossing_beside_transparency_is_continuous() {
     let extent = [16; 2];
+    // The fine phase lies below an f32 ULP at this camera centre.
+    let base = 1024.0;
     let size = [2, 4];
     let red_blue = [255, 0, 0, 255, 0, 0, 255, 255];
     let texels = [red_blue, red_blue, red_blue, [0; 8]].concat();
@@ -288,28 +290,30 @@ fn two_x_colour_crossing_beside_transparency_is_continuous() {
             &gpu.capabilities,
             &gpu.queue,
             extent,
-            fixture::Scene::new(vec![SpriteRow::new(0, [0.0; 2])], 2),
+            fixture::Scene::new(vec![SpriteRow::new(0, [base, 0.0])], 2),
             art.clone(),
         );
         // Probe the projected edge, both ends of the shoulder, and the
         // authored samples on either side.
-        let half_width = 0.5 / 384.0;
-        let endpoint_step = 0.000_005;
+        let half_width = 0.5 / 32_768.0;
+        let endpoint_step = half_width / 256.0;
         let samples = [
             0.75,
+            1.0 - 0.000_65,
             1.0 - half_width - endpoint_step,
             1.0 - half_width + endpoint_step,
-            1.0 - 0.00065,
-            1.0 - 0.000_015,
+            1.0 - half_width * 0.5,
+            1.0 - endpoint_step,
             1.0,
-            1.0 + 0.000_015,
-            1.0 + 0.00065,
+            1.0 + endpoint_step,
+            1.0 + half_width * 0.5,
             1.0 + half_width - endpoint_step,
             1.0 + half_width + endpoint_step,
+            1.0 + 0.000_65,
             1.25,
         ]
         .map(|u| {
-            host.continuous_source_mut().centre = [u - 0.75, 0.0];
+            host.continuous_source_mut().centre = [base + u - 0.75, 0.0];
             let image = fixture::capture(&mut host, &gpu.device, extent, CaptureSource::Sdr);
             let pixels = image.rgba.as_chunks::<4>().0;
             let witness = pixels[9 * 16 + 9];
@@ -325,20 +329,20 @@ fn two_x_colour_crossing_beside_transparency_is_continuous() {
             }
             witness
         });
-        assert_eq!(samples[0], [255, 0, 0, 255]);
-        assert_eq!(samples[10], [0, 0, 255, 255]);
+        assert_eq!(samples[..=2], [[255, 0, 0, 255]; 3]);
+        assert_eq!(samples[10..], [[0, 0, 255, 255]; 3]);
         assert!(
-            samples[5][0] >= 250 && samples[5][2] <= 24,
+            samples[6][0] >= 250 && samples[6][2] <= 24,
             "{recipe}: the edge tie lost its dominant texel: {samples:?}"
         );
         assert!(
-            samples[3][0] > samples[5][0]
-                && samples[5][0] > samples[7][0]
-                && samples[3][2] < samples[5][2]
-                && samples[5][2] < samples[7][2],
+            samples[4][0] > samples[6][0]
+                && samples[6][0] > samples[8][0]
+                && samples[4][2] < samples[6][2]
+                && samples[6][2] < samples[8][2],
             "{recipe}: the shoulder interior did not blend: {samples:?}"
         );
-        for (a, b) in [(1, 2), (4, 5), (5, 6), (8, 9)] {
+        for (a, b) in [(2, 3), (5, 6), (6, 7), (9, 10)] {
             for channel in [0, 2] {
                 assert!(
                     samples[a][channel].abs_diff(samples[b][channel]) <= 4,

@@ -165,30 +165,52 @@ fn perceptual_weight(root_luma: f32, neighbours: vec4<f32>, masses: vec4<f32>) -
     return 1.0 + dot(masses, (neighbours - root_luma) / (neighbours + root_luma));
 }
 
-fn projected_texel(position: vec2<f32>, row: SpriteRow, footprint: vec2<f32>) -> vec2<f32> {
-    // Invert the sprite projection at the pixel centre. The rasterizer may
-    // snap quad vertices to a grid coarser than the narrow colour shoulder.
+fn projected_pixels(position: vec2<f32>) -> vec2<f32> {
     let extent = round(2.0 * (view.pixels_per_unit / view.clip_per_world));
-    let screen_to_world_axes = vec2(1.0, -1.0);
-    let relative_pixels = (position - 0.5 * extent) * screen_to_world_axes;
-    let delta = relative_pixels - sprite_pivot(row) * view.pixels_per_unit;
-    let angle = row.rotation + row.rotation_delta * view.alpha;
-    let y = sin(angle);
-    let x = cos(angle);
-    let local_pixels = mat2x2(vec2(x, -y), vec2(y, x)) * delta;
-    let scale = mix(row.scales.xy, row.scales.zw, view.alpha);
-    return local_pixels * footprint * sign(scale) * screen_to_world_axes;
+    return (position - 0.5 * extent) * vec2(1.0, -1.0);
 }
 
-fn reconstruct_two_x(sheet: u32, frame: SpriteFrameRecord, texel: vec2<f32>, footprint: vec2<f32>,
-    coverage: vec4<f32>) -> vec4<f32> {
+fn pixel_distance_from_pivot(pixel: vec2<f32>, pivot: vec4<f32>) -> vec2<f32> {
+    return fma(view.centre_high - pivot.xy, vec2(view.pixels_per_unit), pixel) +
+        (view.centre_low - pivot.zw) * view.pixels_per_unit;
+}
+
+fn reconstruct_two_x(row: SpriteRow, frame: SpriteFrameRecord, position: vec2<f32>,
+    footprint: vec2<f32>, coverage: vec4<f32>) -> vec4<f32> {
+    let sheet = row.sheet;
     let page = i32(frame.page);
     let origin = vec2<i32>(frame.origin);
+    let angle = row.rotation + row.rotation_delta * view.alpha;
+    let pixels = projected_pixels(position);
+    // Invert the sprite projection at the pixel centre to avoid the rasterizer's
+    // coarser vertex snap. Signed axes also handle mirrored sprites.
+    let sin_angle = sin(angle);
+    let cos_angle = cos(angle);
+    let rotation = mat2x2(vec2(cos_angle, sin_angle), vec2(-sin_angle, cos_angle));
+    let axes = sign(mix(row.scales.xy, row.scales.zw, view.alpha)) * vec2(1.0, -1.0);
+    let texels_per_pixel = axes * footprint;
+    let delta = pixels - sprite_pivot(row) * view.pixels_per_unit;
+    let texel = (transpose(rotation) * delta) * texels_per_pixel;
     let cell = vec2<i32>(floor(texel - vec2(0.5)));
-    let phase = texel - (vec2<f32>(cell) + vec2(1.0));
+    let edge = vec2<f32>(cell) + vec2(1.0);
+    var phase = texel - edge;
     // Centre the narrow colour blend on the projected edge everywhere
     // along its length. Coverage alpha still uses the full footprint.
-    let shoulder = footprint / 384.0;
+    let scale_error = abs(1.0 / footprint - vec2(2.0));
+    let axis_error = min(abs(sin_angle), abs(cos_angle));
+    let aligned = 1.0 - smoothstep(0.0, 0.001, max(axis_error, max(scale_error.x, scale_error.y)));
+    let shoulder = footprint * mix(1.0 / 384.0, 1.0 / 32768.0, aligned);
+    if aligned > 0.0 {
+        // At exact 2× each parallel edge crosses in the same phase. Limit
+        // their simultaneous blend to a small fraction of an output pixel.
+        // Work relative to the nearest edge and keep the pivot's low part
+        // until after the fused subtraction so the blend is still resolved.
+        let at_edge = pixels - rotation * (edge / texels_per_pixel);
+        let previous = pixel_distance_from_pivot(at_edge, row.previous);
+        let current = pixel_distance_from_pivot(at_edge, row.current);
+        let edge_phase = (transpose(rotation) * mix(previous, current, view.alpha)) * texels_per_pixel;
+        phase = mix(phase, edge_phase, aligned);
+    }
     let blend = smoothstep(-shoulder, shoulder, phase);
     // Prefer the lower texel when the pixel centre lands on the edge.
     // A centred blend can soften every mark at once when a scroll lands
@@ -253,8 +275,7 @@ fn source(row: SpriteRow, frame: SpriteFrameRecord, input: Vertex) -> vec4<f32> 
             pixel = filtered(sheet, origin + coverage_coordinate(texel, footprint), page, 0.0);
         }
         if two_x > 0.0 {
-            let projected = projected_texel(input.clip.xy, row, footprint);
-            pixel = mix(pixel, reconstruct_two_x(sheet, frame, projected, footprint, pixel), two_x);
+            pixel = mix(pixel, reconstruct_two_x(row, frame, input.clip.xy, footprint, pixel), two_x);
         }
         return pixel;
     }
