@@ -14,6 +14,7 @@ use crate::graph::PassBody;
 use crate::pass_key::{PassKey, PipelineRole};
 use std::collections::BTreeSet;
 
+use super::forward::CameraDraw;
 use super::mesh_arena::MeshArena;
 use super::mesh_route::BucketRoute;
 use super::{
@@ -345,8 +346,6 @@ impl super::SyntheticTargetInputs {
         PipelineRole::DepthPrepass.key(self.key)
     }
 }
-
-use super::forward::CameraDraw;
 
 impl PreparedSynthetic {
     pub(super) fn draw_camera(

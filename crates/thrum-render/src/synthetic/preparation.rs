@@ -1,5 +1,6 @@
 //! One preparation transaction for the primary scene's resources and pipelines.
 
+use super::forward::CameraDraw;
 use super::{
     AirShadowPrepared, ArenaLimits, BucketRoute, CasterBox, CasterCulling, CasterInputs,
     ClusterCompute, ClusterTable, ContributionPasses, CullMode, CullingSelection, DEPTH_FORMAT,
@@ -701,7 +702,6 @@ impl PreparedSynthetic {
             fail_traced_pipeline,
         );
         let vertex_entry = camera_culling::vertex_entry(camera_mode);
-        use super::forward::CameraDraw;
         let opaque_targets = [
             Some(wgpu::ColorTargetState {
                 format: SCENE_FORMAT,
