@@ -86,3 +86,10 @@
   the 8-bit transform and inside the float present pass. The before graph snapshot came from Metal on
   `cbb05f15b`, with the float prerequisite landed. Metal and Chrome qualification and timing records
   are in the [WP1 working folder](../../../.orchestrate/evidence/GAME-UI/WP1/).
+- 2026-11-25 WP1 proved authored paint and unchanged uncovered pixels on portable and Apple tile Metal in both
+  display modes, plus resize and replacement on Chrome at DPR 1 and 2. The absent graph and resource census
+  matched the before archive. T2 stills and moving captures kept the card fixed over the sprite field and valley.
+  The two Metal timing runs flagged the absent sprite-field GPU span (+133% and +37% under load). The matching
+  graph, resource census and sample minima did not isolate a cause. The valley deltas were −1.1% and +3.4%.
+  [Visual review](../../../.orchestrate/evidence/GAME-UI/WP1/visual/review.md) ·
+  [Timing investigation](../../../.orchestrate/evidence/GAME-UI/WP1/costs-mac-metal/investigation.md)

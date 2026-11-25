@@ -21,10 +21,10 @@
           "ask": "Read the test. Is the reference built on the CPU from the sheet's source texels, the rows and the same frame captured with no interface, without any of the renderer's shaders? Does it compare every pixel of the submitted output on the portable and the Apple tile recipe, in the 8-bit mode and in the float mode, each read in its own encoding as the design's mechanism 2 defines it, with the one-code allowance used only for tinted and blended texels, and with an asymmetric mark that would show a flip?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP1/metal-stage-qualified.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP1.2",
@@ -33,10 +33,10 @@
           "ask": "Does the test take both frames from one scene state through engine capture's tap, for the 2D scene and for the valley, on both recipes and in both display modes, and compare every uncovered pixel? Does the float mode's frame hold uncovered values above 1?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP1/metal-uncovered.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP1.3",
@@ -45,10 +45,10 @@
           "ask": "Is the 'before' side taken from main at the commit this work package started from, and not produced by the changed code? Does a host prepared with an interface serve as a control that the creation counts do tell apart?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP1/metal-absent.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP1.4",
@@ -57,10 +57,10 @@
           "ask": "Does the test run a recipe that resolves a reconstructor at a render scale below 1, with the camera moving for many frames and the exposure changing? Would an interface drawn before reconstruction, before the 8-bit mode's tone stage, or before the float mode's transform in the present pass fail it?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP1/metal-valley-all-texels.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP1.5",
@@ -69,10 +69,10 @@
           "ask": "Which display modes does the output half offer at this commit, for a 2D scene and for a 3D one? Is each of them one of the design's two, and does the test run each? Is the highlight's value taken from the same frame captured with no interface, and is the float frame read as stored half-floats and not from a converted preview?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP1/metal-stage-qualified.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP1.6",
@@ -81,10 +81,10 @@
           "ask": "Is each of the six events driven through the host's own calls, and is the fresh interface's image compared pixel for pixel after each? Are pipeline creations counted across the change of mode?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP1/metal-stage-qualified.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP1.7",
@@ -93,10 +93,10 @@
           "ask": "Are uploaded bytes counted where they are written, across at least a hundred unchanged frames, with a changed list as a control that the count does see?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP1/metal-stage-qualified.log",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP1.8",
@@ -104,20 +104,20 @@
           "check": "node scripts/check_v1_browser.mjs --case interface-stage",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP1/chrome/interface-stage.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP1.9",
           "statement": "On the Mac the interface scene's panel card reads as drawn over the sprite field and over the valley: upright and unmirrored with its corner marks in their corners, flat authored colours, hard edges, an even half-transparent scrim, nothing missing. Over the moving valley its edges do not swim, shimmer or trail.",
           "inspect": "Capture the interface scene with T2 engine capture in the 8-bit mode. `fixed` stills over the sprite field at 1280\u00d7720 and 3456\u00d72234, at whole-number scales of 1 and 3; judge each whole and in native-size crops of the corner marks, colour ramps and scrim. A `realtime` capture over the valley at 1920\u00d71080, long enough for the camera to pass near and far ground behind the card; judge consecutive frames at 1x, whole and in native-size crops of the card's edges.",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP1/visual/review.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP1.10",
@@ -126,10 +126,10 @@
           "ask": "Were both retained runs release builds of the claimed commit, with the load on the machine recorded? Does the command succeed or fail on the record being complete, and never on a time? Are the before and after runs paired and alternated, and is any tripwire of the design's cost account that tripped written in the log with what was found?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP1/costs-mac-metal/summary.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP1.11",
@@ -137,10 +137,10 @@
           "check": "python3 scripts/game_ui.py costs --target chrome-webgpu",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP1/costs-chrome-webgpu/summary.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         }
       ]
     },
