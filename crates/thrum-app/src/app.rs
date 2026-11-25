@@ -67,6 +67,11 @@ const MAX_FRAMES: usize = 100_000;
 /// when one exceeds it, so a long session holds a bounded recent window.
 const RETAINED_PROFILES: usize = 36_000;
 
+enum TimingPolicy {
+    Report,
+    Profiler,
+}
+
 #[derive(Clone, Copy, Debug)]
 enum UserEvent {
     WorldAdvanced,
@@ -157,7 +162,7 @@ struct App<G: Game> {
     samples: Vec<FrameSample>,
     profile: crate::profile::ProfileWindow,
     profile_recording: Option<profile_recording::Recording>,
-    report_gpu_timestamps: bool,
+    timing_policy: TimingPolicy,
     profiler_title_at: Duration,
     adapter_name: String,
     error: Option<String>,
@@ -176,7 +181,7 @@ impl<G: WindowGame + 'static> App<G> {
     }
 
     fn timing_requested(&self) -> bool {
-        self.report_gpu_timestamps
+        matches!(self.timing_policy, TimingPolicy::Report)
             || self
                 .qualification
                 .as_ref()
@@ -262,7 +267,7 @@ impl<G: WindowGame + 'static> App<G> {
             samples: Vec::with_capacity(reserved * 2),
             profile: crate::profile::ProfileWindow::new(),
             profile_recording: profile_recording::Recording::from_environment(),
-            report_gpu_timestamps: false,
+            timing_policy: TimingPolicy::Profiler,
             profiler_title_at: Duration::ZERO,
             adapter_name: String::new(),
             error: None,
@@ -1746,7 +1751,11 @@ fn run_with<G: WindowGame + 'static, E: std::error::Error>(
     app.qualification = qualification.map(qualification::Pan::new);
     app.display_options = display_options;
     let requested_report = std::env::var(REPORT_VARIABLE).ok();
-    app.report_gpu_timestamps = requested_report.as_deref() == Some("1");
+    app.timing_policy = if requested_report.as_deref() == Some("1") {
+        TimingPolicy::Report
+    } else {
+        TimingPolicy::Profiler
+    };
     if let Err(error) = event_loop.run_app(&mut app) {
         app.error = Some(format!("event loop: {error}"));
     }
