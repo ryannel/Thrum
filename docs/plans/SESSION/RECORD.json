@@ -940,7 +940,7 @@
         {
           "verdict": "fail",
           "commit": "3e959bf2215ee416c9de1a7cbedda9d06c6ed2e6",
-          "review": ".orchestrate/evidence/SESSION/WP7-review.md",
+          "review": ".orchestrate/evidence/SESSION/WP7-review-2.md",
           "items": {
             "WP7.1": "pass",
             "WP7.2": "pass",
@@ -979,6 +979,55 @@
             "turns": 1
           },
           "at": "2026-11-25T10:20:54Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "2ff7225e054c3e708ae56318f9eb89aa42d3d149",
+          "review": ".orchestrate/evidence/SESSION/WP7-review.md",
+          "items": {
+            "WP7.1": "pass",
+            "WP7.2": "pass",
+            "WP7.3": "pass",
+            "WP7.4": "pass",
+            "WP7.5": "pass",
+            "WP7.6": "pass",
+            "WP7.7": "pass",
+            "WP7.8": "pass"
+          },
+          "findings": [
+            {
+              "name": "Driven worlds report a 60 Hz timestep for other tick rates",
+              "repeat": false
+            },
+            {
+              "name": "Driven worlds clamp the effect display phase at the committed endpoint",
+              "repeat": false
+            },
+            {
+              "name": "Interpolating driven frames omit the tick due time",
+              "repeat": false
+            },
+            {
+              "name": "Paused driven frames still report interpolation",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 132986,
+            "cached": 6389888,
+            "output": 16520,
+            "turns": 1
+          },
+          "at": "2026-11-25T11:07:02Z"
         }
       ],
       "authorised": {
