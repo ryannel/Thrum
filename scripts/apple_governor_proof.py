@@ -133,15 +133,15 @@ def mac_governor(output, *, steady=False, capture=False):
         return mac_governor_capture(output, binary, env, route)
 
     steady_arm = window_arm(output, binary, env, route, "steady")
-    first_control_tick = LOAD[0] + 30
-    baseline = miss_rate(steady_arm, first_control_tick, LOAD[1])
+    first = LOAD[0] + 30
+    baseline = miss_rate(steady_arm, first, LOAD[1])
     controls = {}
     # Select load strength using only the ungoverned run. A GPU that still
     # presents on time at the first setting cannot witness a return to rate.
     for rounds in WINDOW_LOAD_ROUNDS:
         off_arm = window_arm(output, binary, env, route, f"loaded-off-{rounds}",
                              enabled=False, load=rounds)
-        controls[rounds] = miss_rate(off_arm, first_control_tick, LOAD[1])
+        controls[rounds] = miss_rate(off_arm, first, LOAD[1])
         if exceeds_baseline(controls[rounds], baseline):
             break
     else:
@@ -167,12 +167,8 @@ def mac_governor(output, *, steady=False, capture=False):
     if not any(row["tick"] >= LOAD[1] and row["quality"]["scale"] >= starting_scale
                for row in recoveries):
         raise ValueError(f"scale did not recover at least to its starting step {starting_scale}")
-    # Compare sustained load after the last committed degradation and its
-    # in-flight frames. The common window must still have enough opportunities.
-    last_drop = max(row["tick"] for row in changes
-                    if drop["tick"] <= row["tick"] < LOAD[1]
-                    and row["quality"]["reason"] in ("OverBudget", "Thermal"))
-    first = max(last_drop + 3, first_control_tick)
+    # Keep the same settled interval for all arms and count every later miss,
+    # including those near any further quality adjustment.
     comparison = {name: miss_rate(arm, first, LOAD[1]) for name, arm in arms.items()}
     baseline, governed, disabled = (comparison[name] for name in ("steady", "loaded", "loaded-off"))
     if (exceeds_baseline(governed, baseline)
