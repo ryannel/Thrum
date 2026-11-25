@@ -2,12 +2,12 @@
 @group(0) @binding(1) var<storage, read_write> display_exposure: ExposureSample;
 @group(0) @binding(2) var source_colour: texture_2d<f32>;
 @group(0) @binding(3) var normalized_colour: texture_storage_2d<rgba16float, write>;
-struct Repairs {
+struct MetalFxRepairs {
     high: atomic<u32>,
     low: atomic<u32>,
     nonfinite: atomic<u32>,
 }
-@group(0) @binding(4) var<storage, read_write> repairs: Repairs;
+@group(0) @binding(4) var<storage, read_write> repairs: MetalFxRepairs;
 
 const STORAGE_KEY: f32 = 0.25;
 const HALF_MAX: f32 = 65504.0;

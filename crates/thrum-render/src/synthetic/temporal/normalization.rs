@@ -11,7 +11,7 @@ use crate::{
 use std::collections::BTreeSet;
 
 const SAMPLE_BYTES: u64 = super::super::exposure::SAMPLE_BYTES;
-const REPAIR_BYTES: u64 = 3 * size_of::<u32>() as u64;
+const REPAIR_BYTES: u64 = size_of::<crate::records::MetalFxRepairs>() as u64;
 pub(in crate::synthetic) const PASS: &str = PassKey::MetalFxNormalize.constant_name();
 
 #[derive(Clone)]

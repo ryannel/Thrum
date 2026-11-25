@@ -65,6 +65,8 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     /// Returns a diagnostic readback or device wait error.
     #[cfg(all(feature = "creation-counters", not(target_arch = "wasm32")))]
     pub fn metalfx_repairs_for_probe(&self) -> Result<Option<[u64; 3]>, FrameError> {
+        use crate::records::MetalFxRepairs;
+
         let buffers: Vec<_> = self
             .slots
             .iter()
@@ -73,7 +75,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         if buffers.is_empty() {
             return Ok(None);
         }
-        let stride = 3 * size_of::<u32>() as u64;
+        let stride = size_of::<MetalFxRepairs>() as u64;
         let readback = self.device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("MetalFX repair totals"),
             size: stride * buffers.len() as u64,
@@ -107,8 +109,15 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             .get_mapped_range()
             .map_err(|_| FrameError::Render(crate::error::RenderError::Readback))?;
         let mut total = [0_u64; 3];
-        for (index, bytes) in mapped.as_chunks::<4>().0.iter().enumerate() {
-            total[index % total.len()] += u64::from(u32::from_le_bytes(*bytes));
+        for bytes in mapped.chunks_exact(size_of::<MetalFxRepairs>()) {
+            let repairs = bytemuck::pod_read_unaligned::<MetalFxRepairs>(bytes);
+            for (total, count) in
+                total
+                    .iter_mut()
+                    .zip([repairs.high, repairs.low, repairs.nonfinite])
+            {
+                *total += u64::from(count);
+            }
         }
         Ok(Some(total))
     }
