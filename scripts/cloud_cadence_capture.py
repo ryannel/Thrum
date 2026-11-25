@@ -11,11 +11,14 @@ import re
 import select
 import shutil
 import subprocess
+import sys
 import tempfile
 import time
 
 from capture_v1_runtime import digest
-from cloud_cadence import ARMS, HZ, InvalidMeasurement, NS, PERIOD, analyze_arm, differences, interval
+from cloud_cadence import (
+    ARMS, HZ, InvalidMeasurement, NS, OccludedMeasurement, PERIOD, analyze_arm, differences, interval,
+)
 from mac_m2_presented import table
 from qualify_mac_m2 import ROOT, bounded, panel_witness, save
 from t2_load import LoadRecord
@@ -379,11 +382,25 @@ def series(output, *, diagnostics, resume=False):
 
 
 def run_wind(command, output, *, resume=False):
-    stamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S.%fZ')
-    work_package = 'WP19' if command == 'cadence' else 'WP20'
-    output = (output or WORKING / work_package / f'{command}-{stamp}').resolve()
-    record = series(output, diagnostics=command == 'cadence', resume=resume)
-    print(output / 'series.json')
+    diagnostics = command == 'cadence'
+    work_package = 'WP19' if diagnostics else 'WP20'
+    # The shared-load cadence check can encounter transient occlusion. Preserve a
+    # rejected attempt and start at the first arm again. Explicit destinations
+    # and the attended hold sitting keep their single-attempt behavior.
+    attempts = 3 if diagnostics and output is None and not resume else 1
+    for attempt in range(1, attempts + 1):
+        stamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S.%fZ')
+        destination = (output or WORKING / work_package / f'{command}-{stamp}').resolve()
+        try:
+            record = series(destination, diagnostics=diagnostics, resume=resume)
+        except OccludedMeasurement as error:
+            if attempt == attempts:
+                raise
+            print(f'{error}. Rejected series: {destination / "series.json"}. '
+                  'Starting a new whole wind series.', file=sys.stderr, flush=True)
+        else:
+            break
+    print(destination / 'series.json')
     for run in record['cloud_runs']:
         print(f'{run["arm"]}: {run["holds"]=}, {run["neighbours_lost"]=}')
     return 1 if command == 'hold' and any(not run['holds'] for run in record['cloud_runs']) else 0

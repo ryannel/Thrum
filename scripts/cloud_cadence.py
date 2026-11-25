@@ -27,6 +27,10 @@ class InvalidMeasurement(ValueError):
     """The witness cannot decide a run's cadence."""
 
 
+class OccludedMeasurement(InvalidMeasurement):
+    """The window or its surface reported occlusion during a run."""
+
+
 def losses(presented, start, end, period):
     """A stall is the unfilled refresh periods between two OS-presented frames."""
     if not presented or presented[0] > start or presented[-1] < end:
@@ -122,8 +126,13 @@ def window_conditions(arm):
 def analyze_arm(arm, wind):
     witness = json.loads((arm / 'witness.json').read_text())
     conditions = window_conditions(arm)
-    if any(conditions[key] != '0' for key in ('occluded_window_events', 'occluded_surface_attempts')):
-        raise InvalidMeasurement(f'{arm.name}: the window was occluded')
+    window_events = conditions['occluded_window_events']
+    surface_attempts = conditions['occluded_surface_attempts']
+    if window_events != '0' or surface_attempts != '0':
+        raise OccludedMeasurement(
+            f'{arm.name}: the window was occluded ({window_events} window events, '
+            f'{surface_attempts} surface attempts)'
+        )
     if not witness['coverage'] or not witness['conversion_validated']:
         raise InvalidMeasurement(f'{arm.name}: witness coverage or conversion failed')
     if witness['reported_refresh_hz'] != HZ:
