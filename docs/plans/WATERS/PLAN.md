@@ -15,7 +15,7 @@ Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-bu
 - Assumption: the swell at the island's exposed beach is set for the look, shorter and taller than the 10 s, 1.5 m one tried, so several lines of swell show at once. Its period stays inside the surf cue's 6 s to 14 s.
 - Assumption: wet long-wave loss keeps WP7.5's distributed foam wherever a breaking face is unavailable, including the swash. An eligible crest concentrates part of that birth on its face and under a resolved lip. Distant beaches use the same wet lost-power source for their steady cover.
 - Assumption: as part of surf an island shelters its lee, so a lee beach laps with short waves only.
-- Assumption: the surf query's age is proved for the example's eight floats in a gale on the Mac, not for 2,048 points in breakers or in Chrome.
+- Assumption: the surf query's age is proved for the example's eight floats in a gale on the Mac, not for 2,048 points in breakers or in Chrome. Nine answers in ten arrive within two ticks; the coarse-cell rule is measured, not proved.
 - Assumption: surf on a lake is proved against the model, not judged by eye: the example's lake raises no long waves.
 - Assumption: "scenery reflections" is met by drawing the scene again from the camera's mirror image, for the two water levels with the most water in view; a third reflects only what is on screen.
 - Assumption: the view from under water has no drops on the lens, particles or bubbles, and its picture darkens with depth by a quarter of the light lost. One water surface in any column still holds.

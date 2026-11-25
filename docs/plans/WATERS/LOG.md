@@ -691,3 +691,24 @@
   work packages renamed them WP1 to WP12, restored token by token from `24aba8b80`. The builder handoff no
   longer gives every work package the exact-image verifier, which the ruling of 15 November moved to main.
 
+
+<a id="wp19-coarse-rule-decision"></a>
+
+- 2026-11-25 Design review, Must Fix 1: all 48 stations seven ticks late on every tick passed WP19.3, since
+  each was inside the 8-tick maximum. WP19.3 now also needs nine answers in ten within two ticks of their
+  post, in the breakers and in the open-water control, and a pair whose control delivers fewer does not
+  pass. The 8-tick expiry, the fallback and blocking-read counts and the lateness record stay. The design's
+  age contract and WP19's running run say the maximum age is for hitches and is not the delivery.
+  [Review](../../../.orchestrate/evidence/WATERS/design-review.md)
+
+- 2026-11-25 Design review, Must Fix 2: 2 m coarse cells with a fixed 0.5 m margin answered −0.806 m at the
+  review's column in the island's gale, where the whole cut answers +1.103 m. A cell's landing margin is now
+  0.5 m plus its corner spread, which lost no surface at 51,658 columns where the fixed margin lost the
+  highest in 91. WP19.1 adds the island's gale: the review's column and 24 or more columns under folds.
+  [Part AB](../../../.orchestrate/evidence/WATERS/WP19/coarse-rule-study.md)
+
+- 2026-11-25 Design review, Must Fix 3: WP19.1 held the public answer to the highest triangle's interpolated
+  height within 1 cm, and the existing cut refines that triangle on the sheet, 1.13 cm higher at one of the
+  production columns. WP19.1 now compares the public answer with the whole cut after the same refinement,
+  within 1 cm, and its question to the reviewer names the unrefined height as the wrong reference. The
+  triangle stage is not a separate claim: the two passes change nothing after the highest triangle is found.

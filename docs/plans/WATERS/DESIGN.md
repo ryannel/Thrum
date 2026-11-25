@@ -981,11 +981,15 @@ within the point's **throw reach**.
   ([part AA](../../../.orchestrate/evidence/WATERS/WP19/query-reach-study.md)). So the cut is made in two
   passes, and only the first covers the reach. The first evaluates the sheet at the nodes of the **coarse
   lattice**, fixed in the world as the cut's is, whose **coarse cell** is a whole number of cut cells, 2 m in
-  the first profile. A coarse cell can stand over the point only if the box round its four displaced corners,
-  grown by the profile's **landing margin**, 0.5 m in the first profile, holds the point. The second pass
-  makes the cut above, at the cut cell, inside those coarse cells alone, and the answer is the highest
-  triangle it finds. The points of one body share one coarse pass over the union of their reaches, and a node
-  that two of them need is evaluated once.
+  the first profile. A coarse cell is kept for the point when the box round its four displaced corners, grown
+  by the cell's **landing margin**, holds the point. The margin is the cell's own. It is the profile's
+  **margin floor**, 0.5 m in the first profile, added to the profile's **bend factor**, 1 in the first
+  profile, times the cell's **corner spread**: the largest difference in displacement between two of its four
+  corners. Where a crest is thrown, the corners of a cell are displaced by different amounts and the sheet
+  between them bows out of their box, so the margin grows where the bow does; in open water the spread is
+  centimetres and the margin is the floor. The second pass makes the cut above, at the cut cell, inside the
+  kept cells alone, and the answer is the highest triangle it finds. The points of one body share one coarse
+  pass over the union of their reaches, and a node that two of them need is evaluated once.
 - **Refinement.** The highest triangle gives a rest place by the same interpolation. Newton's method on the
   assembled map moves it until it maps to the point within the profile's column tolerance, 1 mm in the first
   profile, and the answer's height, slope and velocity are the surface's there. So a point that passes into
@@ -995,7 +999,7 @@ within the point's **throw reach**.
 
 Where no depth within the reach has a throw ceiling above zero, which is everywhere but near water shallow
 enough for a crest of the tick to be thrown, there is no cut and the answer is the plain iteration. The model
-in f64 and the dispatch on the GPU make the same two passes on the same lattices, with the same margin.
+in f64 and the dispatch on the GPU make the same two passes on the same lattices, with the same margin rule.
 
 What a cut can miss is a fold thinner than a cell: the edge of a lip. Its answer is then the highest surface
 at a point no more than one cell away, and never the water under a lip longer than that. Part X holds it to a
@@ -1011,12 +1015,21 @@ established. The lens test of [the view from under water](#under-water) reads th
 lens: its near plane spans a cell or two, so one set of nodes serves every pixel.
 
 What the coarse pass can miss is a part of the sheet inside one coarse cell that lands further outside the
-box of that cell's corners than the margin. The answer is then the highest of the surfaces the kept cells
-hold. In part AA, over 1,600 columns of the island's gale at four times, 17 of which hold three surfaces or
-more, a 2 m coarse cell lost no surface at a margin of 0.25 m or of 0.5 m and lost one in 3 columns with no
-margin; a 4 m cell lost none at 0.5 m and one at 0.25 m; an 8 m cell lost surfaces at every margin up to
-2 m. WP19.1 holds the two passes to the whole cut, the cut-cell lattice over the whole reach, on the three
-production sheets and on a sheet of many trains, so the coarse pass is tested against the cut it replaces.
+box of that cell's corners than the cell's margin: a bend its four corners do not show. The answer is then
+the highest of the surfaces the kept cells hold. A margin of one size does not hold the sheet. The design
+review's column in the island's gale, at 2.0 s and world (−142.177, 8.880) m, holds three surfaces with the
+highest at +1.103 m, and 2 m cells with a fixed margin of 0.5 m answer −0.806 m, the water under the lip.
+[Part AB](../../../.orchestrate/evidence/WATERS/WP19/coarse-rule-study.md) measured the whole sheet: in
+294,400 coarse cells over that gale's breakers, at 40 times, the sheet lies up to 1.03 m outside a 2 m cell's
+corner box and further than 0.5 m in 110 cells, and it does so where the corners are spread. With the bend
+factor at 1 no cell needs a floor above 0.08 m, so a cell's margin is at least 1.7 times what it needed. At
+51,658 columns of ten of those times, 47,657 of them under a fold, where the throw has turned a triangle of
+the cut over, the rule lost no surface and answers the
+review's column at +1.103 m, where the fixed 0.5 m lost the highest surface in 91 columns, by up to 4.1 m.
+At the same factor a 4 m cell needs a floor of 0.31 m and a 1 m cell none. The rule is measured on one bed
+and one sea and is not a bound, so WP19.1 holds the two passes to the whole cut, the cut-cell lattice over
+the whole reach, on the three production sheets, on a sheet of many trains, and on the island's gale at the
+review's column and under its folds. The coarse pass is tested against the cut it replaces.
 
 **What the cut costs.** A node is one evaluation of the long waves and the section, where a plain point costs
 a few. The whole cut, the cut-cell lattice over the whole reach, is about 1,200 nodes for a 1.4 m wave thrown
@@ -1025,16 +1038,18 @@ point. WP13's record measured 47 million nodes and 18.9 s of GPU time for one ti
 breakers, against 0.2 ms with surf off
 ([the paired record](../../../.orchestrate/evidence/WATERS/WP13/surf-cost.json)), and no game can wait for
 that. So the two passes are the mechanism and not an option. On the same gale the coarse pass is about 7,800
-nodes over the reach for a body, and the fine pass about 210 nodes a point and 972 at most: about 73,000
-nodes a tick for the eight floats (part AA). What the query must meet is its age contract, below, with the
-floats in the breakers and the game running, and WP19 shows it.
+nodes over the reach for a body. The fine pass is about 480 nodes for a point in the breakers at large, about
+2,300 for a point under a fold and 5,508 at most: about 86,000 nodes a tick for the eight floats, and about
+174,000 with every station under a lip (part AB). What the query must meet is its age contract, below, with
+the floats in the breakers and the game running, and WP19 shows it.
 
 The rest is the builder's, held to the model by WP13.1 and WP19.2. The nodes are independent, so the dispatch
 may spread them over the GPU as the field cache does for the same sheet. A coarse cell may be skipped when
 the ceilings at its own depth, taken after the depth limit, cannot carry it to the point, since those are
 still ceilings. No long wave is shorter than 7.7 m, a 20 m wave over the lag's floor, so the component sums
-may be taken on a coarser lattice and interpolated. The cut cell, the coarse cell and the margin are the
-profile's knobs: a larger cell of either kind, or a smaller margin, widens what a cut can miss. WP12 records
+may be taken on a coarser lattice and interpolated. The cut cell, the coarse cell, the margin floor and the
+bend factor are the profile's knobs: a larger cell of either kind, or a smaller floor or factor, widens what
+a cut can miss. WP12 records
 what the model's cut costs, WP13 a tick with every float in the breakers, and WP19 the same tick again.
 
 Each answer is the body of water at the point with its depth and current, the height, the slope, the surface's
@@ -1053,9 +1068,12 @@ on a lake, level water with its current)
 and counts it. A hitch ages answers the same way. No path waits on the GPU: a blocking map or poll is a defect,
 and a counter proves there is none. The contract is the same where the dispatch makes cuts: with every float
 of the example in the breakers of a gale, answers still reach the game one to two ticks later and none grows
-older than the declared maximum. A query that answers in surf only by ageing out, or that holds the frame
-while it works, has failed it, whatever its answers ([risk 32](#risks)). The proof is the example's eight
-floats, 48 stations; 2,048 points under thrown crests at once is the capacity and is not claimed.
+older than the declared maximum. The maximum age is what a hitch may cost and is not the delivery. A query
+whose answers in surf arrive later than two ticks, tick after tick, has failed the contract whether they age
+out or stay inside the maximum, and so has one that holds the frame while it works, whatever its answers
+([risk 32](#risks)). WP19.3 reads one to two ticks as nine answers in ten, in the breakers and in open water
+beside them, and leaves the tenth to hitches. The proof is the example's eight floats, 48 stations; 2,048
+points under thrown crests at once is the capacity and is not claimed.
 
 Inputs travel with the tick page: the game puts its body records, impulses, stages and wind in its page, and the scene hands them to the water in `upload`. Results return through a mailbox the game drains at the start of a tick.
 Query capacity comes from the profile and the capability record. A request over capacity is refused whole, by
@@ -1782,11 +1800,14 @@ need. A cue of theirs that a seam cannot carry is settled in the module list, wi
   result ([risk 20](#risks)). The example's lake is too small to raise long waves, so WP12 and WP13
   prove it in the model and on the GPU against the model.
   [Part AA](../../../.orchestrate/evidence/WATERS/WP19/query-reach-study.md): the cut in the island's gale,
-  in f64 at `6bad9e6e8`. The reach is 87.5 m and no node is displaced further than 20.2 m; of 1,600 columns
-  over the breakers 17 hold three surfaces or more; and a coarse pass of 2 m cells with a 0.5 m margin keeps
-  every surface the whole cut finds, at about 210 fine nodes a column where the whole cut is 495,000. One
-  bed, one sea and four times, on the CPU: that the dispatch then meets the age contract is unrun, and WP19
-  is the first run.
+  in f64 at `6bad9e6e8`. The reach is 87.5 m and no node is displaced further than 20.2 m; of 1,600 random
+  columns over the breakers 17 hold three surfaces or more, and the whole cut is 495,000 nodes a column.
+  [Part AB](../../../.orchestrate/evidence/WATERS/WP19/coarse-rule-study.md): which coarse cells the cut may
+  leave out, on the same gale. Part AA's fixed margin of 0.5 m loses the highest surface at the design
+  review's column and at 91 of 47,657 columns under folds. A margin of 0.5 m plus the cell's corner spread
+  holds every fine node of 294,400 coarse cells at 40 times with 1.7 times to spare, and loses no surface at
+  51,658 columns, at about 480 fine nodes a column in the breakers at large and 2,300 under a fold. One bed
+  and one sea, on the CPU: that the dispatch then meets the age contract is unrun, and WP19 is the first run.
 - **W8.** Part P: the mirror lookup against exact reflected rays in a vertical section. A second draw of the
   scene is what Unreal and GTA V ship for water. `SCENE-VIEWS`' own design owes the proof that Thrum's
   renderer can draw one; nothing here runs it.
@@ -1913,7 +1934,7 @@ rows are in [the sea's design](../SEA/DESIGN.md#cost-account).
 | Bore decay and swash | Field-cache evaluation on frame pages and direct sheet evaluation on query ticks, on supported shores with exposed long waves | Up to one extra long-wave sum at the contour per eligible sample, with reuse where samples share a contour reference at the same time and stage. The overlap adds local arithmetic and a bed lookup if the displaced bed value is unavailable | Use the existing map, surf preparation and field-cache path. Reuse derived samples for surface and foam where their time and footprint coincide. No new solver, per-frame upload or readback. WP13.12's paired run covers field-cache and query cost, including any prepared data or sample storage | |
 | Interaction waves | Tick | 2 × 256². For each region, one complex transform forward and one back for each ladder depth in use: two transforms a level over deep open water, up to 16 solves a level at the profile's bound. Labelling a window's regions is CPU work on the tick, when a window moves | Under 0.2 ms over deep water; about 0.7 ms at a shore with six depths in use; more at the bound, which WP6 records with the count of regions and solves | About 3.8 ms a tick in its lake, as an interval |
 | Foam | Tick | 2 × 512² × 4 stocks. The swash's drift reads the surface's rate and slope at cells on a shore, where births already read the field | Under 0.2 ms | About 2.2 ms for first deposition |
-| Query | Tick | Up to 2,048 points, 48 B each. A point within reach of a crest that may be thrown costs the cut, coarse to fine: for a body, the nodes of a 2 m lattice within its points' throw reach, then for each point the nodes of the 0.25 m lattice in the coarse cells that can stand over it, where a plain point costs a few evaluations. In the island's gale that is about 7,800 nodes a body and 210 a point, about 73,000 a tick for eight floats in the breakers, where the whole cut measured 47 million and 18.9 s | Under 0.1 ms with no point in surf; WP12 records the model's cut, WP13 a tick with every float in the breakers and WP19 that tick again with the game running; 96 KiB back | 0.03 ms |
+| Query | Tick | Up to 2,048 points, 48 B each. A point within reach of a crest that may be thrown costs the cut, coarse to fine: for a body, the nodes of a 2 m lattice within its points' throw reach, then for each point the nodes of the 0.25 m lattice in the coarse cells that can stand over it, where a plain point costs a few evaluations. In the island's gale that is about 7,800 nodes a body and 480 a point, 2,300 a point under a fold: about 86,000 a tick for eight floats in the breakers and 174,000 with every station under a lip, where the whole cut measured 47 million and 18.9 s | Under 0.1 ms with no point in surf; WP12 records the model's cut, WP13 a tick with every float in the breakers and WP19 that tick again with the game running; 96 KiB back | 0.03 ms |
 | Gather | Frame | The rectangles its readers need: nothing on an open sea with no body, the screen where see-through or mirror-still water fills it | Proportional to the pixels copied; a whole-screen copy is one pass ended on a tile GPU | A whole-scene copy and a 3 ms trace |
 | Body and scene rays | Frame, inside the surface pass | Water pixels the mask marks: two ray-against-box tests for each marked body; a bounded march where a ray meets a box or the water is mirror-still | Unmeasured; WP8 records it on a calm sea and in a gale with zero, one and nine bodies, and at the lake | |
 | Mirror views | Frame, by `SCENE-VIEWS` | Up to two views of the scene's opaque geometry, each a quarter of the main view's pixels | The scene's own draw again for each view, less what its owner cuts. Unreal reports a planar reflection at up to half a frame at full detail, and GTA V ships one at 240×120. WP14 records it with no view, one and two | |
@@ -2060,12 +2081,14 @@ decides nothing. [WP19](#a-surf-query-a-running-game-can-use-wp19) uses it.
     height the transform does not give.
 
 32. **The query in surf answers too late to use**, or holds the frame while it works. Early sign: WP13's
-    paired record, which measured 18.9 s for one tick of eight floats in a gale's breakers, and floats that
-    fall back to the conformance model whenever they enter the surf. The designed remedy is
+    paired record, which measured 18.9 s for one tick of eight floats in a gale's breakers; floats that
+    fall back to the conformance model whenever they enter the surf; and answers that reach the game later
+    than two ticks in the breakers while open water's arrive on time. The designed remedy is
     [the coarse pass](#bodies-and-the-query), shared by a body's points; then a dispatch spread over nodes,
     ceilings taken at a cell's own depth after the depth limit, and component sums on a coarser lattice.
     The wrong fixes are a longer maximum age, a read of the field cache or of the camera's mesh, an answer
-    that gives up the highest surface, and a cut cell coarse enough to hide a lip.
+    that gives up the highest surface, a cut cell coarse enough to hide a lip, and a landing margin of one
+    size, which drops the lip where the sheet bends most.
 
 ## Proof and builder handoff
 
@@ -2129,7 +2152,7 @@ decides nothing. [WP19](#a-surf-query-a-running-game-can-use-wp19) uses it.
 | What tolerance does the map meet against the model on Metal and in Chrome? | WP4.1's test states it, small beside what a float or a waterline would show |
 | Does a beach read as a beach with a swash and no surf, and its foam as carried by the uprush alone? | WP4 and WP7, for a profile without surf; [risks 12 and 17](#risks) |
 | Does the breaker section read as a breaking wave from the sand, from above and from a kilometre off? | WP13; [risk 20](#risks) |
-| What does the cut for the highest surface cost, in the model and in a tick with every float in the breakers? | WP12 and WP13 record it. It was 18.9 s a tick in the gale, and WP19 makes the cut coarse to fine and holds it to the query's age contract; the cut cell, the coarse cell and the margin are the knobs |
+| What does the cut for the highest surface cost, in the model and in a tick with every float in the breakers? | WP12 and WP13 record it. It was 18.9 s a tick in the gale, and WP19 makes the cut coarse to fine and holds it to the query's age contract; the cut cell, the coarse cell, the margin floor and the bend factor are the knobs |
 | What tolerance does the transformed field meet against the model on Metal and in Chrome, and what do the lags cost to prepare and to read? | WP12 records preparation; WP13.1's test states the tolerance, small beside a breaking wave's height |
 | Can Thrum's renderer draw a second view of the scene, and at what cost? | `SCENE-VIEWS`' planning and its first work package; WP14 records the water's share |
 | Does exposure need to know the camera is under water? | Yes: [the meter](#light-under-water-caustics-shafts-and-the-meter), in WP16 |
@@ -2178,16 +2201,30 @@ WP13 merges the cut as [the whole cut](#bodies-and-the-query): right, and 18.9 s
 eight floats in a gale's breakers. WP19 makes it [coarse to fine](#bodies-and-the-query) in
 `thrum-water-model` and in the dispatch, and shows the age contract with the game running. It changes what
 the query costs and nothing the query answers, the surface draws or the foam reads. Start from the cut WP13
-merged. [Part AA](../../../.orchestrate/evidence/WATERS/WP19/query-reach-study.md) has the figures and the
-test that produced them; its coarse cell and margin are starting values. WP13 keeps the regular-wave run-up
-and draw-back and the highest-surface query.
+merged. [Part AA](../../../.orchestrate/evidence/WATERS/WP19/query-reach-study.md) and
+[part AB](../../../.orchestrate/evidence/WATERS/WP19/coarse-rule-study.md) have the figures and the source
+that produced them. The coarse cell, the margin floor and the bend factor are starting values, and WP19.1
+holds whatever they become. WP13 keeps the regular-wave run-up and draw-back and the highest-surface query.
 
 - **The model first.** The two passes go into the model's cut, and the whole cut stays in its tests as the
-  reference. The many-train sheet is the test's own: 64 long components or more over a beach it makes,
-  steep enough to throw a crest further than 5 m, since a sea of many trains is where the ceiling and the
-  throw part furthest. Seed its columns under lips as well as at random: in part AA one random column in a
-  hundred held three surfaces. One lattice evaluated once serves the whole cut of every column, which keeps
-  the test in the fast tier.
+  reference. The reference is the whole cut as a game reads it today: its highest triangle
+  [refined](#bodies-and-the-query) on the sheet, or left at its interpolated height where the refinement
+  does not converge. The two passes change which nodes are evaluated and nothing after the highest triangle
+  is found, so the public answers are compared, and the triangle alone is not the expected height: on the
+  shoaling production sheet at (−25.072, −7.435) m it is 0.4436 m and the refined answer 0.4548 m. The
+  many-train sheet is the test's own: 64 long components or more over a beach it makes, steep enough to
+  throw a crest further than 5 m, since a sea of many trains is where the ceiling and the throw part
+  furthest. Seed its columns under lips as well as at random: in part AA one random column in a hundred
+  held three surfaces. One lattice evaluated once serves the whole cut of every column, which keeps the
+  test in the fast tier.
+- **The island's gale** is compared in the water scene's own CPU tests, since the island's bed is the
+  scene's. Its columns are the design review's, at 2.0 s and world
+  (x, z) = (−142.17685937352712, 8.880178254307927) m, and columns **under a fold**: each at the centre of a
+  cut-cell triangle that the throw has turned over, so that it holds three surfaces or more. Take them near
+  one another, where one lattice over their reaches is the whole cut of each: about 600,000 nodes, half a
+  minute on one core and a few seconds across the Mac's, which keeps this test in the fast tier too. With
+  the bend factor at 0 the review's column answers 1.9 m low. If WP13 has changed the gale and that column
+  no longer tells the two rules apart, find one that does as part AB's source does and add it.
 - **The dispatch.** A body's points share the coarse pass. How nodes are laid out, stored and spread over
   the GPU is the builder's. The tick still has one batch for every posted point, which is what WP5.1's
   count of dispatches guards: the cut's passes are part of that batch, and if they are dispatches of their
@@ -2195,12 +2232,18 @@ and draw-back and the highest-surface query.
   add is counted against the capability record, and a profile without surf still creates none of it
   (WP13.2).
 - **The running run.** `water_cost.py running --scene surf` takes two arms on the island in a gale: the eight
-  floats held in the breakers, and the same floats held in open water beyond every throw reach. Draw at an
-  extent at which the open-water arm keeps its answers inside the maximum age under the machine's ordinary
-  load, and say which. The floats are held in place by the run, so they stay where the cut is made. The run
-  fails on the maximum age and not on two ticks, because under that load a frame can outlast two ticks with
-  no water in it; it reports the lateness of both arms, and the breakers arriving later than open water is
-  a tripped wire to investigate. If both arms age out the machine was too loaded to measure: take the run
-  again, and do not ask for a quiet one.
+  floats held in the breakers, and the same floats held in open water beyond every throw reach, which is
+  the control. The floats are held in place by the run, so they stay where the cut is made. An answer's
+  lateness is counted in ticks, from the tick that posted its point to the tick whose drain handed it to
+  the game. The control shows what the machine delivers with no cut in the batch: draw at an extent at
+  which nine of its answers in ten arrive within two ticks under the machine's ordinary load, and say
+  which. The breakers arm must then do the same, at the same extent. A frame that outlasts two ticks with
+  no water in it is a hitch, and the tenth is for hitches; all 48 stations arriving seven ticks late on
+  every tick is not one, though each is inside the maximum age, and the run fails it. The run also fails
+  on an answer older than the maximum age, a fallback or a blocking read, in either arm. If the control
+  itself delivers fewer than nine in ten, the run measured the machine and not the query and does not
+  pass: take it again, at a smaller extent if need be, and do not ask for a quiet machine. The record
+  keeps the lateness of both arms, and the breakers arriving later than open water, inside the nine in
+  ten, is a tripped wire to investigate.
 - **The cost record** is taken again as WP13.12's was, beside it.
 
