@@ -408,7 +408,17 @@
           "output": 25104,
           "turns": 1
         }
-      }
+      },
+      "diagnoses": [
+        {
+          "who": "reviewer",
+          "why": "all five items passed review 4 and can be met as written; the one remaining finding, the verifier's Wasm hashes, is outside the items and is BASELINE-GUARD WP3's under the module list's ruling of 25 November (ruling-on-the-wasm-a-chrome-capture-runs), which says a reviewer does not hold it against GAME-SPLIT WP3; the cross-target failure on main is likewise RAY-TRACING WP7's (WP7.1 covers it), so neither fails this work package.",
+          "host": "claude",
+          "at": "2026-11-25T01:20:49Z"
+        }
+      ],
+      "counted_from": "2026-11-25T01:20:49Z",
+      "counted_after": 4
     },
     "WP4": {
       "definitions": "92a40ee332fbe5626aacedeb8e2aa91eded94dd25ab336100d7d157b1899a183",

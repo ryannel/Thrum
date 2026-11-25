@@ -142,9 +142,9 @@
       "id": "WP3",
       "name": "The game builds and passes its own tests with every engine rig compiled out, and a normal build ships no test hooks",
       "status": "in_progress",
-      "failed_reviews": 4,
-      "failed_reviews_with_repeat": 3,
-      "diagnoses": 0,
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 1,
       "depends_on": [
         "HOST:WP4"
       ],
