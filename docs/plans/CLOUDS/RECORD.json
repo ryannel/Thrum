@@ -889,7 +889,7 @@
         {
           "verdict": "fail",
           "commit": "8d224d071bbcc3b3caf3d5eeb2460173d92dd9a0",
-          "review": ".orchestrate/evidence/CLOUDS/WP7-review.md",
+          "review": ".orchestrate/evidence/CLOUDS/WP7-review-2.md",
           "items": {
             "WP7.1": "pass",
             "WP7.2": "pass",
@@ -932,6 +932,44 @@
             "turns": 1
           },
           "at": "2026-11-25T01:47:59Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "f936ede89a8dc88e41bdf8ba43b37d81f9a4cf10",
+          "review": ".orchestrate/evidence/CLOUDS/WP7-review.md",
+          "items": {
+            "WP7.1": "pass",
+            "WP7.2": "pass",
+            "WP7.3": "pass",
+            "WP7.4": "fail",
+            "WP7.5": "pass",
+            "WP7.6": "pass",
+            "WP7.7": "pass",
+            "WP7.8": "pass"
+          },
+          "findings": [
+            {
+              "name": "Wind drift skips refresh targets at a normal game extent",
+              "item": "WP7.4",
+              "repeat": true
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "visible",
+          "usage": {
+            "input": 205332,
+            "cached": 18078592,
+            "output": 35836,
+            "turns": 1
+          },
+          "at": "2026-11-25T05:39:14Z"
         }
       ],
       "authorised": {
