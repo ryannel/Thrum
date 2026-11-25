@@ -647,7 +647,7 @@
           "check": "cargo test --locked --offline -p thrum-render --test governor_policy",
           "ask": "Read the test. Is the policy a function of samples, missed ticks, the display record and the host's hold marks alone, with no clock of its own? Is each behaviour a separate case with a control? After a build that ended with no new generation, is scale shown to drop under load with no further change of request?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP7/native-delivery/rust-final.log",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP7/review-repair/policy.log",
           "verdict": "pass",
           "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP7-review.md",
           "builder_result": "pass"
@@ -693,10 +693,10 @@
           "lock": "gpu",
           "ask": "Read the test. Is registration open to a crate that `thrum-render` does not name, as the module list's quality-knobs interface requires for `WATERS` and `CLOUDS`? Does the test register a knob from a test contribution and watch its value change under load?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP7/review-repair/knobs-verified.log",
           "verdict": "fail",
           "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP7-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D7.6",
@@ -715,7 +715,7 @@
           "check": "node scripts/check_v1_browser.mjs --case governor",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP7/chrome-recovery/run-2/governor.json",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP7/review-repair/chrome/governor.json",
           "verdict": "pass",
           "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP7-review.md",
           "builder_result": "pass"
