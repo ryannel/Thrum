@@ -586,3 +586,11 @@
   The expanded case compares complete 96×64 native and SDR captures on both recipes, including a marker beyond
   the 64×64 render grid. [D13.1](../../../.orchestrate/evidence/APPLE-TILE/WP13/review-fix/D13.1.md) ·
   [D13.2](../../../.orchestrate/evidence/APPLE-TILE/WP13/review-fix/D13.2.md).
+
+- 2026-11-25 Builder, WP13 capture review fix. The tap checks the byte allowance against the compiled capture
+  texture's grid before allocating replacement targets. Mac Metal passed nine witness tests, three provider
+  tests and sixteen submitted-capture tests. The 65×37 scene-linear refusal and the 96×64 provider SDR
+  refusal both recorded zero starts of replacement target allocation. An admissible retry captured the
+  full image in each case.
+  [D13.1](../../../.orchestrate/evidence/APPLE-TILE/WP13/capture-preflight/D13.1.md) ·
+  [D13.2](../../../.orchestrate/evidence/APPLE-TILE/WP13/capture-preflight/D13.2.md).
