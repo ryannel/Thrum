@@ -843,7 +843,32 @@
     },
     "WP4": {
       "definitions": "d865812a6796823b6e4f699c5ce97225f3213506b66402f58a54d5ffdac7835f",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "pass",
+          "commit": "436e46450840c17f590ce0c4025fc89c8d15bf78",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP4-review.md",
+          "items": {
+            "WP4.1": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13",
+          "path": "headless",
+          "usage": {
+            "input": 46836,
+            "cached": 592384,
+            "output": 3120,
+            "turns": 1
+          },
+          "at": "2026-11-25T00:36:50Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of ATMOSPHERE at .orchestrate/evidence/ATMOSPHERE/design-review.md asked for changes, with its 4 Must ",
@@ -875,6 +900,13 @@
           "output": 23046,
           "turns": 1
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "436e46450840c17f590ce0c4025fc89c8d15bf78",
+        "review": ".orchestrate/evidence/ATMOSPHERE/WP4-review.md",
+        "checked": "939c2a566c897dc123e4f1f8f485c059a3c88fc9",
+        "at": "2026-11-25T00:36:50Z"
       }
     }
   },

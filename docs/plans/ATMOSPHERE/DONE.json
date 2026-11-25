@@ -710,7 +710,7 @@
     {
       "id": "WP4",
       "name": "A renderer developer can locate finite-disk shadow errors on reproducible terrain and caster cases",
-      "status": "ready_for_review",
+      "status": "done",
       "items": [
         {
           "id": "WP4.1",
@@ -719,8 +719,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/ATMOSPHERE/WP4/README.md#wp41",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/ATMOSPHERE/WP4-review.md"
         }
       ],
       "failed_reviews": 0,
