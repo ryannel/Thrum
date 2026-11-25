@@ -4,7 +4,7 @@ The orchestrate script writes this page from the plan files and record files aft
 
 ## Overview
 
-20 of 36 modules done · 14 in progress · 2 to come
+21 of 36 modules done · 13 in progress · 2 to come
 
 ### Needs you now
 
@@ -299,7 +299,6 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Now and next
 
-- A renderer developer can locate finite-disk shadow errors on reproducible terrain and caster cases (ATMOSPHERE WP4): Ready for Review · [plan](ATMOSPHERE/PLAN.md)
 - WATERS's design: Design Changes Requested · [design](WATERS/DESIGN.md) · [plan](WATERS/PLAN.md)
 - The sky runs from clear through fair and broken to overcast and back, and its clouds drift, form, grow and thin (CLOUDS WP7): In Progress · [plan](CLOUDS/PLAN.md) · [latest review](../../.orchestrate/evidence/CLOUDS/WP7-review.md)
 - Sprites stay crisp at every window size and pixel density, and nothing shimmers when the view scrolls (RENDER-2D WP3): In Progress · [plan](RENDER-2D/PLAN.md) · [latest review](../../.orchestrate/evidence/RENDER-2D/WP3-review.md)
@@ -308,6 +307,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Recently done
 
+- A renderer developer can locate finite-disk shadow errors on reproducible terrain and caster cases (ATMOSPHERE WP4), 25 Nov · [review](../../.orchestrate/evidence/ATMOSPHERE/WP4-review.md)
 - Sun shadows soften with distance from what casts them, and the Sun dims smoothly as it sets behind a ridge (RAY-TRACING WP4), 25 Nov · [review](../../.orchestrate/evidence/RAY-TRACING/WP4-review.md)
 - A renderer developer can reproduce the shadow sampling failure and assess one filter offline (ATMOSPHERE WP3), 25 Nov · [review](../../.orchestrate/evidence/ATMOSPHERE/WP3-review.md)
 - A test bank of fog stands in the valley: the land fades into it, sunlight dims inside it, and the camera walks in and out of it, on the Mac and in Chrome (ATMOSPHERE WP8), 24 Nov · [review](../../.orchestrate/evidence/ATMOSPHERE/WP8-review.md)
@@ -418,7 +418,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE WP0 and WP1, PLATFORM-RUNTIME-MAC WP1, COOKED-DRAW WP1 | Done 17 Nov |
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE WP3 | Done 24 Nov |
 | 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE WP0, WP2, WP3, WP11 and WP12 | WP7 of 16 · Blocked: Needs Access |
-| 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | CONTENT-LOOP WP4 for its WP9 to pass the full check; APPLE-PRESENTATION WP3 and SHOWCASE WP9 for its WP6 | WP4 of 9 · Ready for Review |
+| 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | CONTENT-LOOP WP4 for its WP9 to pass the full check; APPLE-PRESENTATION WP3 and SHOWCASE WP9 for its WP6 | Done 25 Nov |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is found on main within about two hours and traced to the commit that made it |  | Done 16 Nov |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE WP2, BASELINE-GUARD WP1 | Done 17 Nov |
 | 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame | APPLE-TILE WP2 and WP3, APPLE-PRESENTATION WP2, BASELINE-GUARD WP1 | Done 24 Nov |
