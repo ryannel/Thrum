@@ -86,7 +86,7 @@ the exit.
 | **S2 Things move** | A held view and the flythrough, tick by tick, and in real time at the close | 1,500 movers; a run of hours; pause and resume | Movers that drift out of the valley after ten minutes, or sit too far off to read. Rejected by an hour stepped in a test, a capture of every tick, and WP8's real-time review |
 | **S3 One scene, three rows** | Each stop on each row | Apple and portable recipes; Chrome | A row that quietly ran a fallback, or a comparison that cannot see a missing prop. Rejected by the game's own report and a no-entities control |
 | **S4 Culling is never seen** | The flythrough with movers moving | Frustum and Occlusion; both recipes; Chrome | Equality on a scene with nothing hidden. Rejected by a non-empty prepass and hidden slots in the rows |
-| **S5 Smooth** | The built-in 120 Hz panel; Chrome's window on it | The flythrough, a full day cycle, startup | A smooth offline movie. Rejected by capture-off frame records and OS-reported presented intervals |
+| **S5 Smooth** | The built-in 120 Hz panel, at full screen on the Apple recipe; Chrome's window on it | The flythrough, a full day cycle, startup | A smooth offline movie, or 120 Hz held in a small window or on the bare valley. Rejected by capture-off frame records, and by OS-reported presented intervals of the populated flythrough with the drawable extent and cooked root the game resolved |
 | **S6 One picture** | Stops and motion on each row | Low Sun, noon, night; fast yaw | Props lit or hazed differently from the terrain. Rejected by a clean-context review of crops |
 
 The bar is a shipped high-end game's vista: scatter as in Red Dead Redemption 2's New Austin or Horizon Forbidden
@@ -368,11 +368,51 @@ whose cooked root is the one the claimed commit cooks, and WP8.8 asks for that.
   itself. It is the reason a cause could not be established. WP8.13 answers every carried frame from the sitting
   with the other builders paused: it did not recur at that place, or it recurred and gets a cause there.
 - **On the built-in display (WP8, attended setup).** The Mac's presented-time witness, as `PLATFORM-RUNTIME-MAC`
-  qualifies it, over the flythrough on both recipes with capture off, and windowed startup. For Chrome, the page's
-  frame-callback intervals in a visible window. No presented-time witness exists for Chrome, and the record says
-  so.
+  qualifies it, over the flythrough at full screen on both recipes with capture off, and windowed startup on
+  both. [The full refresh at full screen](#the-full-refresh-at-full-screen-on-the-populated-exit) says what the
+  Apple recipe's takes must show. For Chrome, the page's frame-callback intervals in a visible window. No
+  presented-time witness exists for Chrome, and the record says so.
 - **Tripwire.** A row about a quarter slower than WP5's baseline at the same stop is investigated (brief decision
   3). No figure is a gate.
+
+### The full refresh at full screen, on the populated exit
+
+Added 26 November 2026, after [the design review](../../../.orchestrate/evidence/SHOWCASE/design-review.md).
+`APPLE-PRESENTATION` WP17 holds the display's full 120 Hz at full screen on its own route, and its full-screen
+driver runs the bare valley over `moving-v1.json`. The exit scene is another cooked root with 10,000 props on
+it, and its route file declares a 1280×720 render extent for the route check. So WP17 Done and a smooth exit
+flythrough in a window would not together show the populated showcase smooth at full screen. WP8.6 claims that
+directly, in the sitting WP8 already takes with the other builders paused.
+
+- **The run.** The exit configuration's Apple recipe row, launched as WP7 launches it, with the window at full
+  screen and nothing else changed: capture off, the release game, the exit flythrough from its first tick to its
+  last. The route file's render extent is for the route check's captures and sizes no frame of this run: the
+  governor chooses the render scale, as the row's entry says.
+- **What each take records, from what the game resolved and never from the request.** The scene's cooked root,
+  which is the exit's. The drawable's pixel extent, which is the panel's. The
+  [requested frame rate](../APPLE-PRESENTATION/DESIGN.md#the-requested-frame-rate-at-full-screen-wp11), which is
+  the panel's 120 Hz with no launch setting forcing it, as it is once WP17 is Done. Where the Mac host does not
+  yet tell the game one of these, that is a proposal to its owning module, as for
+  [the exit configuration](#the-exit-configuration-one-file-three-rows-reported-and-not-echoed).
+- **The judge.** The presented-time witness `PLATFORM-RUNTIME-MAC` qualified: an OS-reported presented interval
+  for every submission, in multiples of the display's refresh period. `APPLE-PRESENTATION`'s refresh account
+  counts the engine's present calls. This counts when frames reached the panel.
+- **What holds means.** Two takes. In each, every presented interval is one refresh period. An interval that is
+  longer is listed with its place on the route, and is excused only when the record shows the delay lay outside
+  the game and no long interval sits at that place in the other take. A long interval the frame's own stages or
+  passes account for, or one that recurs at its place, is the game's: it is fixed and both takes are made again.
+  A proposal to another module does not answer it. Every full-screen take of the sitting is kept and listed with
+  the host's load, so two that hold are not two chosen from many without that being seen.
+- **If it does not hold.** The first remedy is content, by regenerating, as for
+  [risk 1](#risks). A cause in another module's code is handled as
+  [defects found in another module's code](#defects-found-in-another-modules-code) says. Accepting less than the
+  full refresh at full screen changes the vision's bar, which is the owner's: the builder ends `NEEDS_CONTEXT`
+  with the record, and WP8.6 stays open.
+- **The portable recipe and startup (WP8.14).** The portable row runs the same flythrough at full screen with
+  the same record and witness. It is the Mac's fallback recipe and no work package brings it to 120 Hz at the
+  panel's pixel extent, so its record says what it held, and each missed refresh is listed with a cause that is
+  fixed, proposed to its owning module, or shown to lie outside the game. Startup to the first exit-scene frame
+  is recorded windowed on both recipes, apart from the full-screen takes, so neither waits on the other.
 
 ### Motion on a shared machine
 
@@ -456,8 +496,8 @@ In WP5, WP6 and WP7 a reviewer who sees a step in a real-time take reads the tak
 elapsed time between two submissions accounts for is a recorded gap. A step it does not account for, or
 content that differs from the tick-by-tick capture of the same tick, is a finding. A late frame in WP7's frame
 records is handled as [Frame records, startup and hitches](#frame-records-startup-and-hitches) says. Stutter at
-1x is judged in WP8.2 and WP8.5, and on the built-in display in WP8.6 and WP8.7. WP8 is this module's last work package,
-so its real-time takes and frame records, the two attended ones included, are made in the sitting the project
+1x is judged in WP8.2 and WP8.5, and on the built-in display in WP8.6, WP8.7 and WP8.14. WP8 is this module's last work package,
+so its real-time takes and frame records, the three attended ones included, are made in the sitting the project
 settings give a last work package, with the other builders paused.
 
 ### Defects found in another module's code
@@ -479,7 +519,10 @@ display presenting at a steady 60 Hz, an interim rate, and its WP17 is Done when
 full 120 Hz ([its design](../APPLE-PRESENTATION/DESIGN.md#reaching-the-full-refresh-at-full-screen-wp17)). The
 exit is judged "smooth at the display's full refresh" on that display, so WP8 depends on WP17 and starts after
 it, and WP8.12 lists WP17 among the work packages the exit rests on. An open WP17 keeps the exit open. Taking
-WP17 out of the exit changes the exit, which is the owner's call.
+WP17 out of the exit changes the exit, which is the owner's call. WP17 proves the rate on the bare valley, so the
+exit record's claim for the showcase cites WP8.6's two takes of the populated flythrough, with their drawable
+extent, and not WP17 alone
+([the full refresh at full screen](#the-full-refresh-at-full-screen-on-the-populated-exit)).
 
 ### Check that it can work
 
@@ -519,9 +562,10 @@ before it trusts any frame.
   [the ruling](../ARCHITECTURE.md#ruling-on-the-valley-fix), and moves them into the game's test fixtures
   under [the relocation ruling](../ARCHITECTURE.md#ruling-on-relocated-references). In every other work package the valley's source
   root, the grid and field contents and the default output stay as they are.
-- Every landing here changes covered paths, so every work package carries a verifier item. It passes from the
-  main-branch check `exact-images`, which runs on main after the merge
-  ([why](../ARCHITECTURE.md#proofs-run-once-on-main)). No builder runs the verifier before a merge.
+- Every landing here changes covered paths. WP7 and WP8 carry no verifier item: the scheduled main-branch
+  check `exact-images` proves each landing on main after the merge
+  ([why](../ARCHITECTURE.md#proofs-run-once-on-main)). WP5 and WP6 are Done and each carried one, which passed
+  from that check. No builder runs the verifier before a merge.
 - This module owns two thresholded baselines: the bare valley's, unchanged, and the exit's, created in WP5 and
   extended to one per row in WP7. `ATMOSPHERE` WP10 takes a balloon's false strip off the far ground, so the
   exit's may be replaced once in WP5 for that cause, by
@@ -537,8 +581,8 @@ before it trusts any frame.
   another module owns, write the proposal in the log and end `BLOCKED`
   ([rule 1](../ARCHITECTURE.md#exact-baselines)). The path a comparison reads its references from, moved under
   [the relocation ruling](../ARCHITECTURE.md#ruling-on-relocated-references), is not such an edit.
-- **Exact images are proved on main.** A verifier item passes from the main-branch check `exact-images`. Do not
-  run the verifier before a merge.
+- **Exact images are proved on main,** by the scheduled check `exact-images`. No item of WP7 or WP8 asks for
+  the verifier. Do not run it before a merge.
 - **The game gets no height function.** Anything that needs the ground's height is decided in the generator,
   so that two copies cannot disagree.
 - **Entities stay as V1 has them.** A mover that needs to turn, or a prop that needs a texture or a level of
@@ -561,7 +605,7 @@ before it trusts any frame.
 4. **A row falls back silently.** Mitigation: the resolved report and a control with one selection removed.
 5. **Shared files move under the builder.** `scripts/run_v1_showcase.py` and the game's sources are edited by
    other modules. Integrate sequentially. After a rebase, rerun only what the script says failed.
-6. **The built-in display is not free when WP8 is ready.** Its two attended items are done in one sitting, batched
+6. **The built-in display is not free when WP8 is ready.** Its three attended items are done in one sitting, batched
    with other modules' attended items.
 
 ## Proof and builder handoff
@@ -575,15 +619,15 @@ before it trusts any frame.
   project runs Codex with `danger-full-access`, so Chrome and Instruments start without an approval. A reviewer
   takes its own captures and never judges the builder's in place of them. If a reviewer cannot start a target,
   the review moves to Claude.
-- **Attended setup.** Two items in WP8 need the built-in display unlocked and awake. The agent runs and reviews;
+- **Attended setup.** Three items in WP8 need the built-in display unlocked and awake. The agent runs and reviews;
   the owner does nothing else. Console state is recorded and is never a pass condition elsewhere.
 - **Storage.** Scratch in `tmp/showcase-<work-package>/`; selected evidence in `.orchestrate/evidence/SHOWCASE/`.
 
 ## Open questions
 
 - Whether Occlusion or Frustum is the exit scene's default. WP6's paired rows settle it.
-- Whether the frame holds the refresh interval under the full exit configuration. WP7's records settle it; the
-  remedy is content, by regenerating.
+- Whether the frame holds the refresh interval under the full exit configuration. WP7's records settle it
+  first, and WP8.6's takes at full screen; the remedy is content, by regenerating.
 - How long a day-cycle sweep runs, and what its captures may store. The exit scene has a solar-time control and
   no sweep yet. WP7 builds the sweep for its capture-off records, which store no images. WP8's real-time day-cycle
   takes run longer than T2's four-second case, so before the first one its builder writes the storage record

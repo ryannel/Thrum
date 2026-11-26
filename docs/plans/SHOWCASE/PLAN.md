@@ -16,7 +16,8 @@ The launch, the six stops and the route check were built before the loop as work
 - Assumption: the 8,500 still entities are desert props (boulders, scrub, cacti and standing rocks) and the 1,500 movers are hot-air balloons adrift over the valley. No entity is a character or an animal, because an entity cannot turn or animate in V1. The layout is generated data, so another concept that only translates swaps in by regenerating.
 - Assumption: the exit scene holds exactly 10,000 entities and 1,500 movers, the counts the game already steps, inside the brief's "1,000–2,000 movers".
 - Assumption: "MetalFX, EDR and a quality governor" stay in the exit, so WP7 and WP8 wait for `APPLE-PRESENTATION`'s paired proof, WP11, and through it for WP4 to WP12. Closing V1 without them would change the exit, which is the owner's call.
-- Assumption: the exit's "smooth at the display's full refresh" holds at full screen on the built-in display, so WP8 also waits for `APPLE-PRESENTATION` WP17, which holds the full 120 Hz there, and WP8.12 lists it. WP7 needs only WP11, where full screen presents at a steady 60 Hz as an interim rate. The owner can take WP17 out of the exit, which closes V1 at 60 Hz at full screen.
+- Assumption: the exit's "smooth at the display's full refresh" holds at full screen on the built-in display, so WP8 also waits for `APPLE-PRESENTATION` WP17, which holds the full 120 Hz there, and WP8.12 lists it. WP17 proves it on the bare valley, and WP8.6 on the populated exit flythrough. WP7 needs only WP11, where full screen presents at a steady 60 Hz as an interim rate. The owner can take WP17 out of the exit, which closes V1 at 60 Hz at full screen.
+- Assumption: holding 120 Hz at full screen is claimed for the Mac's Apple recipe, the row WP17 brings to that rate. The portable recipe is the fallback: WP8.14 records its full-screen flythrough, and the exit does not wait for it to hold 120 Hz. The other choice makes that an exit condition, with work no module plans.
 - Assumption: WP5 and WP6 start as soon as cooked mesh rows (`CONTENT-LOOP:WP2`) and culling (`CULLING:WP3`) are Done, so the scene is built while the other modules finish; WP5 closes after `ATMOSPHERE:WP10`, the shadow fix its review needs. WP7 waits for the work packages it builds on (`APPLE-TILE` WP12, `APPLE-PRESENTATION` WP11, `ATMOSPHERE` WP6 and `CONTENT-LOOP` WP3), and only WP8 for every work package the exit rests on, which WP8.12 lists. The other choice holds all four until then.
 - Assumption: "the same scene in Chrome" means the same cooked publication, layout, route and controls. Texture variant, reconstructor and display range differ by row, and the exit record says how.
 - Assumption: prop detail is sized to fit the Mac's 120 Hz refresh interval at 1920×1080. Chrome's frame time is recorded and sizes nothing.
@@ -31,20 +32,14 @@ The scene, layout, mover rule, route and checks are built and on main (`1556e66d
 passed [the first review](../../../.orchestrate/evidence/SHOWCASE/WP5-review.md). Claim those again from their evidence, renewing
 only what has changed since. What is left is motion and, if a stop moved, the exit baseline: read
 [Motion on a shared machine](DESIGN.md#motion-on-a-shared-machine) first.
-[The handoff](../../../.orchestrate/evidence/SHOWCASE/WP5-handoff.md) is history. Its shadow task became `ATMOSPHERE` WP10, which
-took the false strip off the far ground and marked the balloon row in `exit_scene.rs`, and its retakes are
-WP5.11.
+[The handoff](../../../.orchestrate/evidence/SHOWCASE/WP5-handoff.md) is history; its retakes are WP5.11.
 
 The launcher gains three things. `ticks` drives the native route recorder for WP5.8, on the flythrough or the
-held route, with the windows and the phase its caller names, so that a reviewer takes its own.
-`scripts/capture_v1_runtime.py --mode fixed` cannot give that sequence, and
-`scripts/capture_v1_browser.mjs --mode fixed` with the exit route already gives Chrome's. `motion` takes WP5.11's
-six arms and writes `tests/fixtures/showcase/motion-record.json`; `motion --check` reads that file, computes
-the input digest and starts nothing. That digest covers `scripts/` and `.cargo/` as well as the build paths, so
-finish the launcher first. Take the arms last, on a branch that holds main, and land the record with nothing
-else. If `check --exit` reports drift from the exit baseline at a stop, look at the frames, then add and
-use [the refresh](DESIGN.md#the-route-check-sees-a-missing-prop): `--save-baseline` is the first calibration
-only, and refuses a baseline that exists.
+held route, with the windows and the phase its caller names, so that a reviewer takes its own. `motion` takes
+WP5.11's six arms and writes `tests/fixtures/showcase/motion-record.json`; `motion --check` reads that file,
+computes the input digest and starts nothing. Take the arms last, on a branch that holds main, and land the
+record with nothing else. If `check --exit` reports drift from the exit baseline at a stop, look at the frames,
+then add and use [the refresh](DESIGN.md#the-route-check-sees-a-missing-prop).
 
 ## WP6 The populated valley is culled on the GPU with no pixel changed, on Mac and in Chrome
 
@@ -77,8 +72,10 @@ investigation may end in, and each entry carried to WP8.13 keeps its row and its
 
 The order is part of this work package. First do everything that needs neither a quiet machine nor the display.
 Then end `BLOCKED` asking the lead for the sitting with the other builders paused, as the project settings say.
-In that one sitting take the real-time captures of WP8.2, WP8.3 and WP8.5, the two attended records of WP8.6 and
-WP8.7 on the unlocked built-in display, and what WP8.13's carried entries need. Before the first day-cycle take,
+In that one sitting take the real-time captures of WP8.2, WP8.3 and WP8.5, the three attended records of WP8.6,
+WP8.7 and WP8.14 on the unlocked built-in display, and what WP8.13's carried entries need. Read
+[the full refresh at full screen](DESIGN.md#the-full-refresh-at-full-screen-on-the-populated-exit) before WP8.6's
+two takes. Before the first day-cycle take,
 write the storage record that [the design's open questions](DESIGN.md#open-questions) name. Get a fresh opinion
 against WP8.1 to WP8.5, fix what it finds, and repeat while it finds things that matter. Last, write
 [the exit record](DESIGN.md#the-exit-record) and bring the maturity ledger's G7 rows and the README to match it.

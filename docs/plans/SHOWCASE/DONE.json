@@ -522,8 +522,8 @@
         },
         {
           "id": "WP8.6",
-          "statement": "ATTENDED SETUP: on the built-in display the capture-off release game runs the exit flythrough on both recipes with an OS-reported presented interval for every submission. Each missed refresh is listed and investigated, and windowed startup to the first exit-scene frame is recorded.",
-          "ask": "Does the presented-time witness, as PLATFORM-RUNTIME-MAC qualified it, cover the whole flythrough on both recipes with capture off? Is each missed refresh listed with a cause that is fixed, proposed to its owning module, or shown to lie outside the game?",
+          "statement": "ATTENDED SETUP: at full screen on the built-in display, the exit configuration's Apple recipe row runs the populated exit flythrough in the capture-off release game and holds the display's full refresh in each of two takes. Each take's record gives what the game resolved: the exit's cooked root, a drawable of the panel's full pixel extent, and a requested frame rate of the panel's 120 Hz that no launch setting forced. The presented-time witness gives an OS-reported presented interval for every submission from the flythrough's first tick to its last. Every interval is one refresh period, except intervals listed with their place on the route, which the record shows to lie outside the game and which do not recur at that place in the other take.",
+          "ask": "Take the two takes one at a time. Is it the exit configuration's Apple recipe row on the exit's cooked root, with capture off and nothing changed but the window? Do the drawable extent and the requested frame rate the game recorded equal the panel's pixel extent and its 120 Hz, with no launch setting forcing the rate? Does the presented-time witness, as PLATFORM-RUNTIME-MAC qualified it, cover every submission of the flythrough? Is every presented interval one refresh period, or listed with its place on the route, evidence that it lay outside the game, and no long interval at that place in the other take? Does the record list every full-screen take made in the sitting?",
           "target": "mac-metal",
           "needs": {
             "type": "access",
@@ -593,6 +593,20 @@
           "statement": "Every late frame and long interval that WP7.9 and WP7.10 carried as unresolved under load is answered from the records and takes of the sitting with the other builders paused, at the place on the flythrough or in the day cycle where it occurred: it did not recur there, or it recurred and has a cause that is fixed, proposed to its owning module, or shown to lie outside the game or the page.",
           "ask": "Take the carried entries one at a time. Does a record or take from the paused sitting cover the place each occurred, on the row it occurred on? Is each answered as not recurring, or with a cause?",
           "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "WP8.14",
+          "statement": "ATTENDED SETUP: on the built-in display the capture-off release game is recorded on two further kinds of run. The exit configuration's portable recipe row runs the exit flythrough at full screen, with the drawable extent and requested frame rate the game resolved and an OS-reported presented interval for every submission, and each missed refresh is listed and investigated. Windowed startup to the first exit-scene frame is recorded on both recipes.",
+          "ask": "Does the presented-time witness, as PLATFORM-RUNTIME-MAC qualified it, cover the portable recipe's whole flythrough at full screen with capture off, and does the record give that take's drawable extent and requested frame rate? Is each missed refresh listed with a cause that is fixed, proposed to its owning module, or shown to lie outside the game? Is windowed startup to the first exit-scene frame recorded on both recipes?",
+          "target": "mac-metal",
+          "needs": {
+            "type": "access",
+            "what": "Unlock the Mac, wake the built-in display and keep it awake for one sitting. The agent launches, records and reviews; nothing else is needed. Batch it with any other module's attended items."
+          },
           "evidence": "",
           "verdict": "",
           "review": "",
