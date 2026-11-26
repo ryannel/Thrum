@@ -1467,7 +1467,7 @@
           "inspect": "`fixed` stills at the five hours in a calm, a trade wind and a gale, from 2 m and 40 m: the glitter path, the swell's faces and the horizon.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP8/composed-reflections/README.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP8/roughness-and-blending/README.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/WATERS/WP8-review.md"
         },
@@ -1477,7 +1477,7 @@
           "inspect": "`fixed` stills at noon in a calm, from 2 m and 6 m, of the craft at rest and of floats sunk 0.5 m and 2 m; and of crests against a low Sun in a trade wind.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP8/composed-reflections/README.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP8/roughness-and-blending/README.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/WATERS/WP8-review.md"
         },
@@ -1487,7 +1487,7 @@
           "inspect": "`fixed` stills at noon and low Sun from 2 m on each shore, looking down into the shallows and along the waterline, and a `realtime` sequence of small waves over the lake's shallows.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP8/composed-reflections/README.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP8/roughness-and-blending/README.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/WATERS/WP8-review.md"
         },
@@ -1497,7 +1497,7 @@
           "inspect": "`fixed` stills and a `realtime` pan of the craft and floats on a glassy sea at low Sun, from 2 m and 10 m above: each reflection, and the screen's edges during the pan.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP8/composed-reflections/README.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP8/roughness-and-blending/README.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/WATERS/WP8-review.md"
         },
@@ -1507,7 +1507,7 @@
           "inspect": "`fixed` stills of the lake at dawn and noon in a calm from 2 m and 10 m, a `realtime` pan and tilt that takes the far shore off the screen, and a `realtime` sequence as the wind rises from calm to a breeze. Judge by the design's capture rule: whole frames and crops at the frame's own pixel size, and sequences as consecutive frames at 1x. An enlarged crop, a pixel reading or an instrumented shader may explain a defect seen that way, and fails no line alone. 1. The far shore, the hills and the pines each reflect upside down and can be told apart, at both hours and both heights. 2. The bank meets its reflection along the waterline with no gap, and so does the trunk of each pine that stands at the waterline. 3. Each pine that stands on dry ground above the waterline reflects in the water beyond the bank: its reflection begins where the bank's reflection ends, is neither moved nor stretched toward its foot, and no trunk or reflection is drawn across the dry ground between the trunk and the water. 4. Round the reflected pines, where a pine hides the bank behind it, the reflection has no cutout, hole, hard-edged patch or streak: the bank carries on, or gives way softly to a muted tone. 5. Toward the frame's edges in the stills, and as the far shore leaves the screen in the pan and tilt, the reflection fades out gradually, with no line, step or patch that is not an edge of the scene. 6. As the wind rises the reflection blurs and breaks up by degrees, with no pop.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP8/crown-coverage/README.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP8/roughness-and-blending/README.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/WATERS/WP8-review.md"
         },
@@ -1519,7 +1519,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP8/composed-reflections/README.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP8/roughness-and-blending/README.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/WATERS/WP8-review.md"
         },
@@ -1530,8 +1530,8 @@
           "ask": "Does the test hold the receiving rectangles to rays reflected and refracted on the CPU, from cameras 1 m to 40 m up, on flat water and with waves, including a body whose reflection lies wholly outside its own source rectangle? Does it hold the see-through rectangles to the map's depths and the water type's sight depth?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP8/roughness-and-blending/gather.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/WATERS/WP8-review.md"
         },
@@ -1543,7 +1543,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP8/composed-reflections/README.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP8/roughness-and-blending/README.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/WATERS/WP8-review.md"
         },
@@ -1553,7 +1553,7 @@
           "inspect": "`fixed` stills in Chrome, each beside the same view on the Mac's portable recipe: WP8.1's views at noon, low Sun and night, WP8.2's views, WP8.3's stills at noon and WP8.5's stills at noon. Judge by the design's capture rule, at the frame's own pixel size. These are stills, so what only motion shows is not judged here: the pan and tilt, the rising wind and the bed under passing waves are judged on Metal in WP8.3 and WP8.5. 1. At noon and at low Sun the sea reflects that hour's sky and the Sun's glitter lies under the Sun, wider in the trade wind and the gale than in the calm. 2. At night the Sun is below the horizon, so no glitter of the Sun is looked for: the sea reflects the sky's glow and stays dark water that can still be read as water. 3. At none of the three hours does anything clip to flat white or black. 4. The hull below its waterline and both sunk floats show through the water, tinted and fading with depth, the waterline on the hull is a soft edge, and thin crests against the low Sun glow. 5. On each of the three shores the ground shows through the shallows and fades to the water's own colour, and the waterline is a soft edge with no bright or dark rim. 6. From both heights the lake reflects the far shore, the hills and the pines upside down, and they can be told apart. 7. The bank meets its reflection along the waterline with no gap, and so does the trunk of each pine that stands at the waterline; each pine on dry ground above it reflects in the water beyond the bank, with no trunk or reflection drawn across the dry ground between. 8. Round the reflected pines the reflection has no cutout, hole, hard-edged patch or streak. 9. Toward the frame's edges the reflection fades out gradually, with no line, step or patch that is not an edge of the scene. 10. Beside the Mac's still of the same view, no Chrome still lacks one of these cues that the Mac's shows: the glitter at noon and at low Sun, the sky's glow on the night sea, the hull and the bed seen through the water, the reflected shore.",
           "target": "chrome-webgpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP8/crown-coverage/README.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP8/roughness-and-blending/README.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/WATERS/WP8-review.md"
         },
@@ -1564,7 +1564,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP8/optics-cost-9f0585832a14.json",
+          "evidence": ".orchestrate/evidence/WATERS/WP8/roughness-and-blending/cost-final.json",
           "verdict": "pass",
           "review": ".orchestrate/evidence/WATERS/WP8-review.md"
         }

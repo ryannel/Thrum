@@ -3333,6 +3333,16 @@
         "device": "M3 Max Metal under shared load. From the island's sand camera at 192 × 108, both arms measured 600 wall-clock ticks at 60 Hz. Open water delivered 99.83% of stations within two ticks and the breakers delivered 100%. Both arms recorded zero fallbacks, unavailable uses and blocking reads. The largest of the three breakers model witness errors was 9.55 mm. The separate 2560 × 1440 breakers query evaluated 1,110 coarse and 4,050 fine nodes in 1.770 ms and retained 8,388,672 bytes of cut scratch.",
         "evidence": "../../.orchestrate/evidence/WATERS/WP19/post-wp21-proof.md"
       },
+      "waters_screen_space_optics": {
+        "implementation": "partial",
+        "functional_validation": "target_guards_passed",
+        "experienced_quality": "builder_inspected_review_owed",
+        "scope": "WATERS WP8 adds screen-space reflection, see-through water and registered opaque bodies. Mirror views and under-water transport belong to later work packages.",
+        "correctness": "The gather keeps see-through rectangles when unresolved slopes rule out a scene mirror. Metal covers body admission, exposure, air and cloud shade. A hardware Chrome diagnostic verifies the original environment contribution at partial scene hits over the visible bank.",
+        "visuals": "Native Metal and hardware Chrome submitted stills cover the shore and reflected pines. Elapsed Metal pans and breeze replays cover loss of reflection sources and increasing roughness.",
+        "device": "Apple M3 Max Metal and hardware Chrome WebGPU. The 2560 × 1440 capture-off Metal cost record pairs all seven views with optics disabled and records tripwire investigations under shared load.",
+        "evidence": "../../.orchestrate/evidence/WATERS/WP8/roughness-and-blending/README.md"
+      },
       "waters_whitewater": {
         "implementation": "partial",
         "functional_validation": "passed",

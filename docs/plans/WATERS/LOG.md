@@ -1243,3 +1243,10 @@
   The sky contribution is limited behind the foreground, clearing the bright fringe during the
   low-Sun pan. The screen margin and breeze transitions were retaken on Metal.
   [Target evidence](../../../.orchestrate/evidence/WATERS/WP8/crown-coverage/README.md).
+- 2026-11-26 WP8 gather and reflection review fixes. The gather admits a full-screen mirror only
+  where visible mapped water can meet the unresolved slope limit. The split-bed regression verifies
+  that the shallow source remains available without copying the deep tiles. A bank can support the
+  single scene reflection weight. Partial hits blend over the original environment, as checked on
+  hardware Chrome. Metal target checks, original-size Metal and Chrome inspections, elapsed Metal
+  pans, and the paired 1440p cost record are retained.
+  [Target evidence](../../../.orchestrate/evidence/WATERS/WP8/roughness-and-blending/README.md).
