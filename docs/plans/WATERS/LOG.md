@@ -1361,3 +1361,7 @@
   [Both](../../../.orchestrate/evidence/WATERS/WP25/workspace-timing.md#for-the-lead-not-planned-in-wp25).
 - 2026-11-26 The rule that merges build for the Mac alone moved from the plan file to
   [the design's handoff](DESIGN.md#proof-and-builder-handoff), to keep the plan file short.
+- 2026-11-26 WP25 design review, two Must Fix. (1) Cut-node counts are summed over each tick's replies, not
+  asked of every reply. (2) The sheet must reach the many-component pipelines by the query's own selection.
+  Suggestion taken: "alone" became "however the stations are grouped into bodies".
+  [What changed](../../../.orchestrate/evidence/WATERS/WP25/design-review-fixes.md).

@@ -2742,15 +2742,26 @@ So the time is the CPU's, and most of it repeats what the model's own test prove
 proof by [the settings' two rules](../../../ORCHESTRATE.md#test-tiers):
 
 - **What only the device shows stays.** Every answer is the model's public answer at its use tick within
-  WP13.1's tolerance. A station's answer is the same posted with its body's other stations or alone. Every
-  reply reports nodes from both passes, and each tick makes one dispatch.
+  WP13.1's tolerance. A station's answer is the same however the stations are grouped into game bodies:
+  posted in one tick as bodies of six and in the next as single-point bodies. Both postings put every
+  station in one batch, where the dispatch shares coarse nodes among nearby stations of a sheet whatever
+  bodies they belong to, so the comparison shows the grouping and not a station with its neighbours absent,
+  which this test does not claim. Each tick makes one dispatch, and both of the cut's passes run in it: the
+  coarse-node counts of the tick's replies sum above zero, and so do their fine-node counts. The counts are
+  summed over the tick because a shared node is charged to one body, so a body can be answered rightly at
+  zero coarse nodes, and a station past the throw reach rightly makes no node of either kind.
 - **The smallest world that shows it.** Two bodies of six stations show a body's shared coarse pass and
   more than one body in a batch. A station under a fold shows that the cut finds the highest of several
   surfaces, and a station in deep water shows the pass where nothing is thrown. So the floor is 12
   stations, 6 under a fold and 4 on a line from deep water toward the beach. The sheet needs a thrown
-  crest and many components, not 64 of them: 64 is no limit of the device's, whose long-wave buffer holds
-  192. The test may keep [the shared sheet](#a-surf-query-a-running-game-can-use-wp19) or make a lighter
-  one of its own.
+  crest and the device's many-component path, not 64 components: 64 is no limit of the device's, whose
+  long-wave buffer holds 192. That path is the one WP19.2 proved and the island's gale runs: the query
+  spreads each node's waves over eight lanes of a workgroup and refines the stations in a pass of their
+  own, where a sheet of few waves takes the general pipelines and would leave the lanes' sum untested. The
+  query selects it itself, today for a map of one sea with 16 long waves or more
+  ([the selection](../../../crates/thrum-water/src/query/gpu.rs)), so the test's sheet meets whatever that
+  selection asks, with no switch made for the test. The test may keep
+  [the shared sheet](#a-surf-query-a-running-game-can-use-wp19) or make a lighter one of its own that does.
 - **What a CPU decides leaves.** The test makes no whole cut and asks the model only for the answers it
   compares. A column under a fold is the centre of a cut-cell triangle the throw has turned over, found by
   forward evaluation alone. That such a column holds three or more surfaces, and that the public answer is
