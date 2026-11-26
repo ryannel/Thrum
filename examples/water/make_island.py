@@ -65,7 +65,7 @@ def channel_height(x, z):
     shoulder = smoothstep((x - 200) / 9) * (1 - smoothstep((x - 222) / 15))
     shoulder *= smoothstep((side - 5.7) / 1.2) * (1 - smoothstep((side - 28) / 14))
     ground += shoulder * max(0, 14.2 - ground)
-    if not (199 < x < 385 and -12 < z < 22):
+    if not (199 < x < 385 and side < 29):
         return ground
     along = min(max((x - 210) / 140, 0), 1)
     level = 11.75 - 12.55 * along
@@ -77,14 +77,18 @@ def channel_height(x, z):
     ends = max(1 - smoothstep((x - 210) / 9), smoothstep((x - 342) / 6))
     half_width = 4.7 - 2.35 * narrow + 1.1 * ends + (1 - ends) * 0.38 * sin((x - 219) / 6)
     offset = 0.72 * sin((x - 231) / 9) * (1 - ends) * (1 - 0.85 * narrow)
+    # The tideway flares gradually, giving the drowned reach room to
+    # carry floating objects around the incoming swell without stranding.
+    widening = 7.6 * smoothstep((x - 321) / 28)
+    half_width += widening
     channel_side = abs(z - 5 - offset)
     wall = max(0.85, level + 1.0)
     wall += 1.35 * (1 - smoothstep((x - 210) / 17))
-    cut = floor + (wall - floor) * smoothstep((channel_side - half_width + 0.85) / (7.4 - half_width + 0.85))
+    cut = floor + (wall - floor) * smoothstep((channel_side - half_width + 0.85) / (7.4 + widening - half_width + 0.85))
     cut = min(cut, ground) if x > 352 else cut
     weight = smoothstep((x - 199) / 9) * (1 - smoothstep((x - 362) / 23))
     fade = 10.0 + 2.1 * sin(x * 0.12) + 1.2 * sin(x * 0.30 + z)
-    weight *= 1 - smoothstep((side - 7.5) / fade)
+    weight *= 1 - smoothstep((side - 7.5 - widening) / fade)
     return ground + weight * (cut - ground)
 
 

@@ -53,10 +53,10 @@ fn outlet(bed: &Bed, running: bool) -> Body {
         levels: Vec::new(),
         currents: Vec::new(),
         footprint: Vec::new(),
-        ends: [(1, SOURCE, false), (0, MOUTH, true)]
-            .map(|(body, x, mouth)| End {
+        ends: [(1, SOURCE, 5.0, false), (0, MOUTH, 12.5, true)]
+            .map(|(body, x, width, mouth)| End {
                 body,
-                segment: [[x, 0.0], [x, 10.0]],
+                segment: [[x, CENTRE - width], [x, CENTRE + width]],
                 length: 12.0,
                 mouth,
             })
@@ -69,9 +69,18 @@ fn outlet(bed: &Bed, running: bool) -> Body {
         chart
             .currents
             .push([f64::from(running) * (0.5 + narrows), 0.0]);
+        let half_width = if x < 322.5 {
+            5.0
+        } else if x < 330.0 {
+            7.5
+        } else if x < 337.5 {
+            10.0
+        } else {
+            12.5
+        };
         chart
             .footprint
-            .push((SOURCE..=MOUTH).contains(&x) && (0.0..=10.0).contains(&z));
+            .push((SOURCE..=MOUTH).contains(&x) && (z - CENTRE).abs() <= half_width);
     }
     Body {
         name: "Lake outlet".into(),
