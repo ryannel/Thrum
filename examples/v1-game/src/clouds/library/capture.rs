@@ -43,10 +43,10 @@ impl PlacedSky {
             let mut profile = super::super::shade_config();
             // The fair library uses one authored cell per three-site block.
             // Bring their spacing in for the fair preset without moving the weather windows.
-            profile.seed = 374;
-            profile.model.pitch = 2300.0;
+            profile.seed = 283;
+            profile.model.pitch = 1900.0;
             // Keep the denser lattice inside the Shapes table at every held tick.
-            profile.weather.texels[3] = 900.0;
+            profile.weather.texels[3] = 740.0;
             self.profile = Some(profile);
         }
         self.capacity = 16;
@@ -84,7 +84,12 @@ impl Placement {
         if !matches!(self, Self::Mixed) {
             parameters.coverage = 0.0;
         }
-        let mut state = State::new(parameters, 5.0, 16)?;
+        let response = if matches!(self, Self::Cost) {
+            0.25
+        } else {
+            5.0
+        };
+        let mut state = State::new(parameters, response, 16)?;
         state.set_library(Arc::clone(library))?;
         let offset = match self {
             Self::Shape { side_lit: true, .. } => 55.0_f64,

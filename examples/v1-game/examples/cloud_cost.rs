@@ -129,6 +129,7 @@ async fn measure(
     let mut last_tick = 0;
     let mut refill = 0.0_f64;
     let mut first = None;
+    let settle_ticks = if has_shapes && !library { 300 } else { 30 };
     for tick in 0..360_u32 {
         last_tick = tick;
         host.drive(Duration::from_secs_f64(f64::from(tick) / 60.0), None)?;
@@ -159,7 +160,8 @@ async fn measure(
         if content
             .as_ref()
             .is_none_or(|s| s.lock().is_ok_and(|s| s.drawn.is_some()))
-            && if has_shapes { tick > 300 } else { tick > 30 }
+            && first.is_some()
+            && tick > settle_ticks
         {
             break;
         }
