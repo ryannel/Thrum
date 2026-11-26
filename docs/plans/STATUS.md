@@ -362,7 +362,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Now and next
 
-- Apple tile with MetalFX and EDR is compared with portable TAAU on the route, and each clause of G4 is proved (APPLE-PRESENTATION WP11): In Progress · [plan](APPLE-PRESENTATION/PLAN.md)
+- Apple tile with MetalFX and EDR is compared with portable TAAU on the route, and each clause of G4 is proved (APPLE-PRESENTATION WP11): Ready for Review · [plan](APPLE-PRESENTATION/PLAN.md)
 - WATERS WP15 The camera goes under water: the waterline crosses the lens, and the surface overhead shows the sky through a bright window: Blocked: Needs Context: Can the planner approve the exact overhead camera basis and specify the surface cut and dry-admission requirements for carried flow and wakes? The lead finds the missing fact, or asks you for it
 - CLOUDS WP14 Mist lies in the valley's hollows and fades the land near the camera, in the land's own light: Blocked: Needs Context: WP14.6 and WP14.9 need a design decision on whether to author a dedicated broken-cloud setup in the dawn valley or revise the mist lighting. The lead finds the missing fact, or asks you for it
 - On the island a stream runs from a spring through a pool and a narrows to the lake, and a river runs from the lake to the sea; raise the lake and the river swells, and a float rides from the spring to the sea (RIVERS WP4): In Progress · [plan](RIVERS/PLAN.md) · [latest review](../../.orchestrate/evidence/RIVERS/WP4-review.md)
@@ -506,7 +506,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 4 | COOKED-DRAW | Cooked scenes draw on devices that cannot run GPU-driven draws, such as the iPhone simulator | PLATFORM-RUNTIME-IOS WP7 | Done 9 Nov |
 | 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE WP0 and WP1, PLATFORM-RUNTIME-MAC WP1, COOKED-DRAW WP1 | Done 25 Nov |
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE WP3 | Done 24 Nov |
-| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE WP0, WP2, WP3, WP11, WP12 and WP13 | WP11 of 20 · In Progress |
+| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE WP0, WP2, WP3, WP11, WP12 and WP13 | WP11 of 20 · Ready for Review |
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | CONTENT-LOOP WP4 for its WP9 to pass the full check; APPLE-PRESENTATION WP3 and SHOWCASE WP9 for its WP6 | Done 25 Nov |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is found on main within about two hours and traced to the commit that made it |  | Done 25 Nov |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE WP2, BASELINE-GUARD WP1 | Done 17 Nov |
