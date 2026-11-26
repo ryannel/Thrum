@@ -1218,6 +1218,18 @@ async fn record(
                 && driver.omissions() == 0
                 && trace.writer_omissions == 0));
     let phase_counts = trace.display_phase_counts();
+    let writer_result = writer_result.as_ref().map(|report| {
+        json!({
+            "bytes": report.bytes,
+            "frames": report.frames,
+            "write_ns": report.write_time.as_nanos(),
+            "flush_ns": report.flush_time.as_nanos(),
+            "io_ns": report.io_time.as_nanos(),
+            "encoded_queue_peak": report.encoded_queue_peak,
+            "encoded_bytes": report.encoded_bytes,
+            "frame_sha256": report.frame_hashes,
+        })
+    });
     let mut result = json!({"active_pacing":active_pacing,"thread_qos_before":qos.before,"thread_qos_after":qos.after,"spool_encoding":format!("{encoding:?}"),"pixel_source":format!("{source:?}"),"disk_limit_Bps":disk_limit,
         "scenario":scenario,"adapter":adapter.get_info().name,"backend":"Metal","mode":mode,
         "presentation_lead_policy":if elapsed_observation {"actual elapsed observation without a future target"} else {"engine clock next opportunity target, shared display_target_lead at consumption; untargeted prime/warmup zero"},
@@ -1230,8 +1242,7 @@ async fn record(
         "initial_controls":{"request_ns":relative_ns(origin,preset_requested),"accepted_ns":relative_ns(origin,preset_accepted)},
         "opportunities":trace.opportunities,"images":trace.images,"gpu":trace.gpu,"diagnostic_actions":trace.stalls,"control_actions":trace.controls,
         "ring_omissions":driver.omissions(),"writer_omissions":trace.writer_omissions,
-        "writer_result":writer_result.as_ref().map(|report| json!({"bytes":report.bytes,"frames":report.frames,
-            "write_ns":report.write_time.as_nanos(),"flush_ns":report.flush_time.as_nanos(),"io_ns":report.io_time.as_nanos(),"encoded_queue_peak":report.encoded_queue_peak,"encoded_bytes":report.encoded_bytes,"frame_sha256":report.frame_hashes})),"complete":complete});
+        "writer_result":writer_result,"complete":complete});
     let penumbra = driver.host().quality_knobs();
     if let Some(knob) = penumbra.iter().find(|knob| knob.name == "Sun penumbra") {
         result["sun_penumbra"] = json!({
