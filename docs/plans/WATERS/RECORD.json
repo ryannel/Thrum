@@ -2731,7 +2731,7 @@
         {
           "verdict": "fail",
           "commit": "f275daaecff749f2ff3121926b6a000586ccd333",
-          "review": ".orchestrate/evidence/WATERS/WP24-review.md",
+          "review": ".orchestrate/evidence/WATERS/WP24-review-2.md",
           "items": {
             "WP24.1": "fail"
           },
@@ -2759,6 +2759,30 @@
             "turns": 1
           },
           "at": "2026-11-26T04:53:48Z"
+        },
+        {
+          "verdict": "pass",
+          "commit": "3090edbc19366584c2dd0855e051f3bd116e75e1",
+          "review": ".orchestrate/evidence/WATERS/WP24-review.md",
+          "items": {
+            "WP24.1": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 73564,
+            "cached": 1625856,
+            "output": 5980,
+            "turns": 1
+          },
+          "at": "2026-11-26T05:16:33Z"
         }
       ],
       "authorised": {
@@ -2791,6 +2815,13 @@
           "output": 58962,
           "turns": 3
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "3090edbc19366584c2dd0855e051f3bd116e75e1",
+        "review": ".orchestrate/evidence/WATERS/WP24-review.md",
+        "checked": "e7ea69dbdddf04ab653b4c73876d78998251178a",
+        "at": "2026-11-26T05:16:33Z"
       }
     }
   },

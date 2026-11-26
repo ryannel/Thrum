@@ -1591,7 +1591,7 @@
     {
       "id": "WP24",
       "name": "Calm chart water reflects the scene, and rough chart water copies only its shallows",
-      "status": "ready_for_review",
+      "status": "done",
       "quality_bar": "Over a chart the gather admits what it admits over a basin: the scene's reflection wherever the water is still enough to show it, and on rough water no more of the screen than the shallows need. No look is judged here: the running channel is judged in WP9, against the stream of Red Dead Redemption 2.",
       "items": [
         {
@@ -1603,20 +1603,12 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP24/partial-joins/README.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/WATERS/WP24-review.md"
         }
       ],
       "failed_reviews": 2,
-      "failed_reviews_with_repeat": 1,
-      "findings": [
-        {
-          "name": "A partial join retains a mirror-capable gain that no visible water has",
-          "item": "WP24.1",
-          "different": "The former zero-depth substitution fired outside a short join. The new case has positive join influence across the view and retains the unmixed chart gain even with no resolved waves.",
-          "repeat": false
-        }
-      ]
+      "failed_reviews_with_repeat": 1
     },
     {
       "id": "WP9",
