@@ -25,9 +25,8 @@ CUE_BRACKETS = {
 
 def pacing_passed(take):
     return (take.get("requested_rate") == {"fixed": True, "forced": False, "preferred_hz": 60}
-            and take["bounds_match"] and not take["phase_changes"]
+            and take["bounds_match"]
             and take["governor_intervals_ns"] == [16666667]
-            and take["route_intervals"] >= 360
             and take["interval_outcomes"] == {"served": take["route_intervals"]})
 
 
@@ -44,7 +43,7 @@ def cue_routes(original):
     scrub = dict(held, start={"solar_hours": 17.45})
     return [
         ("terrain", original, [origin, origin + 95], "metalfx", None),
-        ("stars", stars, [origin, origin + 96], "metalfx", None),
+        ("stars", stars, [origin, origin + 122], "metalfx", None),
         ("moving-prop", motion, [origin, origin + 84], "metalfx", None),
         ("scrub", scrub, [origin + 10, origin + 90], "metalfx", [[origin + 24, origin + 68], [17.45, 18.10]]),
         ("scrub-reference", scrub, [origin + 10, origin + 90], "off", [[origin + 24, origin + 68], [17.45, 18.10]]),

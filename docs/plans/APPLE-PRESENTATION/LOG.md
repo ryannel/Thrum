@@ -728,3 +728,8 @@ layer profile change. [Metal controls](../../../.orchestrate/evidence/CLOUDS/WP9
   In the fastest capture-off trial at 3456×2234 and 50% render scale, the GPU span was 10.85 ms p50
   and 14.67 ms p95 against an 8.33 ms display interval. It made 456 present calls across 704 opportunities.
   D11.5 and D11.6 remain open. [Capture-off measurements and pass breakdown](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP11/mac-budget-retake/README.md)
+- 2026-11-26 WP11. The Mac now requests fixed 60 Hz for fullscreen on the built-in 120 Hz display. The
+  paired replay supports keeping TAAU as the Apple Tile default. At native size, T2 retained all 380
+  presented submissions across the four cue windows, with separate capture-off pacing records.
+  The new forced 120 Hz control measured 11.54/15.60 ms GPU span p50/p95 at the 50% governor floor.
+  [Fullscreen captures, pass timings and present intervals](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP11/mac-60hz-closing/README.md)

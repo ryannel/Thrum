@@ -1189,17 +1189,17 @@
         "scope": "The shipped shaders of the V1 moving route on Mac Metal. The two wgpu internal validation stages compile at device setup. The offline path remains opt-in while WP12 measures the local archive."
       },
       "WP11": {
-        "implementation": "The target checks exercise alternating Apple Tile MetalFX EDR and Portable TAAU SDR replay on Metal, the governed TAAU route in Chrome, and the iOS simulator rotation and resume. The Apple Tile registry retains TAAU as its default reconstructor.",
+        "implementation": "WP11 compares alternating Apple Tile MetalFX EDR and Portable TAAU SDR replays on Metal. The Apple Tile registry retains TAAU as its default reconstructor. The Mac window requests an interim fixed 60 Hz in fullscreen on faster displays and supports an explicit 60 or 120 Hz launch override. The fullscreen proof retains native-size submitted SDR cue windows from the live EDR route.",
         "functional_validation": "The paired Metal check retains the launch and render-owner records, including a float drawable retained across a forced move to SDR at H=1. Chrome completed the 1280×720 route with changing governor scale and equal resource creation counters across readiness. The iPhone 18 Pro simulator presented TAAU on a 2622×1206 SDR drawable after rotation and after background/resume.",
-        "experienced_quality": "The builder inspected original-timing Chrome submissions at all five stops and the separate stars and solar scrub. Retained Mac stop comparisons are available. Fullscreen Mac motion qualification is open because the tap omitted submitted frames and the route missed cadence without capture. D6 establishes float values above SDR white submitted to an EDR layer. The panel observation is separate and outstanding.",
+        "experienced_quality": "The builder inspected original-timing Chrome submissions at all five stops, the stars and the solar scrub. Native-size Mac cue windows retain the silhouette, thin props, held and panned stars, moving prop and matched-time scrub. D6 establishes float values above SDR white given to a layer configured for EDR. The owner’s physical panel observation is outstanding.",
         "platform_performance": {
-          "mac": "The matched 1920×1080 replay found a shorter MetalFX reconstruction segment and lower fixed-reference colour error, with no consistent whole-path timing advantage for Apple Tile and EDR. Physical traffic is unmeasured. The 3456×2234 MetalFX EDR governor run recorded 120 Hz display opportunities and 38.25 ms p95 between present calls without capture. The raw T2 take retained 307 of 800 presented frames.",
+          "mac": "The matched 1920×1080 replay found a shorter MetalFX reconstruction segment and lower fixed-reference colour error, with no consistent whole-path timing advantage for Apple Tile and EDR. Physical traffic is unmeasured. Qualification of 3456×2234 capture-off pacing at the interim 60 Hz request is pending. At the 50% governor floor, the earlier 60–120 Hz request with 120 Hz preferred and the explicit 120 Hz closing control measured GPU spans of 10.85/14.67 ms and 11.54/15.60 ms p50/p95 respectively versus an 8.33 ms interval. Both used headroom forced to 2. The evidence includes every pass and contemporaneous host load.",
           "browser": "Chrome WebGPU function and verified motion. No physical cadence claim.",
           "ios": "Simulator function passed. Physical iPhone EDR and timing are owed.",
           "external_display": "The display move uses a documented override on the internal display. A physical external-display move is owed."
         },
         "evidence": "../../.orchestrate/evidence/APPLE-PRESENTATION/WP11/g4-closure.md",
-        "scope": "G4 remains open on D11.5 and D11.6, subject to the combined fullscreen Metal motion and pacing qualification."
+        "scope": "G4 remains open on the two capture-off fullscreen pacing takes. The full-refresh fullscreen bar and the Apple reconstruction milestone are owed by WP17. SHOWCASE WP8.6 owns the OS-reported panel cadence witness."
       },
       "owner_panel_observation": {
         "status": "outstanding",
