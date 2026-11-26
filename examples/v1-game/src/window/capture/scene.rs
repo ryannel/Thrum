@@ -64,6 +64,8 @@ pub struct SceneCaptureRequest {
     pub edr_headroom: Option<f32>,
     /// `THRUM_CAPTURE_SOURCE`: the route's submitted-image stage.
     pub source: Option<String>,
+    /// The exit comparison's submitted stills keep the selected governor enabled.
+    pub still_governor: bool,
     /// `THRUM_CAPTURE_PHASE`: a diagnostic in-tick phase in place of the route's.
     pub phase: Option<String>,
     /// `THRUM_CAPTURE_SURFACE_FORMAT`: the format of the texture standing in for the surface.
@@ -180,7 +182,7 @@ pub(in crate::window) async fn run(
         interface_text: None,
         menu: None,
         capture_route: None,
-        governor_enabled: false,
+        governor_enabled: request.still_governor,
         capture_eye: None,
         capture_cooked: None,
         cloud_capture: false,
@@ -298,6 +300,7 @@ pub(in crate::window) async fn run(
             "recipe": format!("{:?}", capabilities.recipe()), "extent": EXTENT,
             "reconstruction": format!("{:?}", driver.host().reconstruction()),
             "culling": format!("{:?}", driver.host().camera_culling()),
+            "governor": driver.host().governor_frame().is_some(),
             "mode": "still", "headroom": request.edr_headroom, "stills": records
         })).map_err(|error| error.to_string())?).map_err(|error| error.to_string());
     }

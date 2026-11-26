@@ -424,14 +424,16 @@ def exit_compare(rows, stops):
         expected_selection = row['expect']
         if (manifest['recipe'] != f'Ok({expected_selection["recipe"]})'
                 or manifest['reconstruction'] != expected_selection['reconstruction']
-                or manifest['culling'] != expected_selection['culling']):
-            raise Failure(f'{name}: stills resolved a different device, reconstructor or culling mode')
+                or manifest['culling'] != expected_selection['culling']
+                or manifest['governor'] != expected_selection['governor']):
+            raise Failure(f'{name}: stills resolved different render selections')
         values = {}
         for frame, key in zip(manifest['stills'], keys, strict=True):
             extent = manifest['extent']
             filename = target / frame['file']
             expected = stops[key]
             if (not frame['surface_presented'] or frame['headroom'] != 1
+                    or frame['source'] != expected_selection['display']
                     or not close(frame['time_of_day'] * 24, expected['sky.solar_time'], 0.0051)
                     or not close(math.degrees(frame['yaw']), expected['camera.yaw'], 1e-3)
                     or not close(math.degrees(frame['pitch']), expected['camera.pitch'], 1e-3)):
@@ -440,8 +442,6 @@ def exit_compare(rows, stops):
                 transfer = bytes(srgb(value) for value in HALF)
                 pixels = bytes(transfer[word] for word in half_components(filename, extent))
             else:
-                if frame['source'] != 'Sdr':
-                    raise Failure(f'{name}: unexpected comparison source {frame["source"]}')
                 pixels = filename.read_bytes()
             values[key] = pixel_grid(filename, *extent, 4, pixels)
         return values, manifest

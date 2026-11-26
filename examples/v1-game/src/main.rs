@@ -447,8 +447,13 @@ fn scene_capture_request(
         }
     }
     let path = |name: &str| std::env::var_os(name).map(std::path::PathBuf::from);
+    let scene = text("THRUM_SCENE")?;
+    let source = text("THRUM_CAPTURE_SOURCE")?;
+    let still_governor = scene.as_deref() == Some("exit")
+        && source.as_deref() == Some("submitted-sdr")
+        && governor_enabled()?;
     Ok(v1_game::SceneCaptureRequest {
-        scene: text("THRUM_SCENE")?,
+        scene,
         motion_frames: text("THRUM_CAPTURE_MOTION_FRAMES")?,
         pan_to_degrees: text("THRUM_CAPTURE_PAN_TO_DEGREES")?,
         initial_params: path("THRUM_PARAMS"),
@@ -464,7 +469,8 @@ fn scene_capture_request(
             Some(_) => return Err("unknown THRUM_CREATION_PROOF arm".to_owned()),
         },
         display_overlay: text("THRUM_CAPTURE_DISPLAY_OVERLAY")?,
-        source: text("THRUM_CAPTURE_SOURCE")?,
+        source,
+        still_governor,
         fixed_eye: text("THRUM_CAPTURE_FIXED_EYE")?
             .map(|value| serde_json::from_str(&value).map_err(|error| error.to_string()))
             .transpose()?,
