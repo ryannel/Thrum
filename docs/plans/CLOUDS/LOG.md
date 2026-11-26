@@ -861,3 +861,13 @@ The 1440p record now includes Off, Sky and World light at the same view. The
 validator checks the retained record and fresh timings, and requires an investigation
 for each triggered pass. The repeat series documents timing variability.
 [Rework qualification](../../../.orchestrate/evidence/CLOUDS/WP8-rework/README.md)
+
+### WP8 clear sunset
+
+A transparent overlay follows the ordinary incident meter as the Sun changes.
+It carries exposure history only while finishing a handover from cloud cover.
+The small Metal scene compares same-submission exposure words and pixels over
+three light levels. In the cooked valley's realtime sunset, Sky and World light
+reach the same exposure and identical endpoint pixels, with adaptation inactive
+throughout both runs.
+[Metal sunset and coverage evidence](../../../.orchestrate/evidence/CLOUDS/WP8/clear-exposure/README.md)

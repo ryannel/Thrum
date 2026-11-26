@@ -1141,8 +1141,8 @@
           "check": "cargo test --locked --offline -p thrum-render --test haze_scale_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP8/clear-exposure/README.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/CLOUDS/WP8-review.md"
         },
