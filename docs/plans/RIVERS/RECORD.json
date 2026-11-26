@@ -431,7 +431,7 @@
       }
     },
     "WP4": {
-      "definitions": "0893c78bafc2f2e8e946acab0d2a353551013f0acb1186da93147da1d984578f",
+      "definitions": "e1c878ac40ee334af3c423a08ee8989d0ead8bf6798d4893886acc1046f076c4",
       "reviews": [
         {
           "verdict": "fail",
@@ -652,42 +652,8 @@
       ],
       "authorised": {
         "by": "plan",
-        "task": "The design review of RIVERS at .orchestrate/evidence/RIVERS/design-review.md asked for changes, with its 1 Must Fix find",
-        "at": "2026-11-26T18:31:04Z"
-      },
-      "ready_for_review": {
-        "commit": "3532012a14b98d44922edf289003a4f58b810604",
-        "checked": "3532012a14b98d44922edf289003a4f58b810604",
-        "at": "2026-11-26T21:54:04Z",
-        "reused": [
-          "WP4.1",
-          "WP4.2",
-          "WP4.3",
-          "WP4.6",
-          "WP4.7",
-          "WP4.8"
-        ],
-        "host": "codex",
-        "model": "gpt-6.2-sol",
-        "effort": "medium",
-        "observed": {
-          "model": "gpt-6.2-sol",
-          "effort": "medium"
-        },
-        "cli": "codex-cli 0.171.0-alpha.13.2",
-        "path": "visible",
-        "usage": {
-          "input": 357946,
-          "cached": 46882816,
-          "output": 69588,
-          "turns": 1
-        },
-        "session_usage": {
-          "input": 780369,
-          "cached": 111743104,
-          "output": 153193,
-          "turns": 3
-        }
+        "task": "Lead decision on RIVERS WP4.3, which has now failed five reviews, each on a new camera pose (see .orchestrate/evidence/R",
+        "at": "2026-11-26T22:31:59Z"
       }
     },
     "WP5": {
@@ -1012,11 +978,15 @@
     {
       "task": "The design review of RIVERS at .orchestrate/evidence/RIVERS/design-review.md asked for changes, with its 1 Must Fix findings.",
       "at": "2026-11-26T18:31:04Z"
+    },
+    {
+      "task": "Lead decision on RIVERS WP4.3, which has now failed five reviews, each on a new camera pose (see .orchestrate/evidence/RIVERS/WP4-review.md and WP4-review-4.md). The real defect (a 42 cm draw/query wave-phase mismatch at the tidal mouth) was fixed. The latest finding is 1.9 cm at a grazing bank view, 2 m above the water, where reconstructed depth is least precise. A per-pixel absolute bound invites endless pose hunting. By the project's bar (plausible shipped-game look; proof proportional to risk), rewrite WP4.3's interior written-depth clause: (a) a numeric bound that scales with view angle and distance, justified from depth-buffer precision at that pose, or an equivalent bound in screen space (for example, a fraction of a pixel of vertical surface displacement); and (b) a visual check that floating bodies sit on the drawn surface and no seam, gap or step shows, from both a standard camera and a low bank camera. Keep the tight bound on the map rows and on the step at each of the three ends. Record the reasoning and the fixed phase bug in the design. Leave the builder's branch alone.",
+      "at": "2026-11-26T22:31:59Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-26T18:31:04Z"
+    "at": "2026-11-26T22:31:59Z"
   },
   "design_history": [
     {
