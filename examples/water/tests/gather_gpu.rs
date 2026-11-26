@@ -1,4 +1,5 @@
 //! Water admission on the Metal frame graph, with and without an opaque body.
+#[cfg(target_os = "macos")]
 mod support;
 
 #[cfg(target_os = "macos")]

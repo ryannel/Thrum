@@ -1,4 +1,5 @@
 //! Test the water's direct Sun separately from its sky illumination on Metal.
+#[cfg(target_os = "macos")]
 mod support;
 
 #[cfg(target_os = "macos")]

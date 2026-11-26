@@ -1,4 +1,5 @@
 //! Metal's stored panel and bed contributions across exposure and air changes.
+#[cfg(target_os = "macos")]
 mod support;
 
 #[cfg(target_os = "macos")]

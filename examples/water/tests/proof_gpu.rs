@@ -3,22 +3,30 @@
 mod optics_cost;
 #[cfg(target_os = "macos")]
 mod realtime;
+#[cfg(target_os = "macos")]
 mod support;
 #[cfg(target_os = "macos")]
 mod surf_cost;
 #[cfg(target_os = "macos")]
 mod surf_running;
+#[cfg(target_os = "macos")]
 use serde_json::json;
+#[cfg(target_os = "macos")]
 use std::{path::PathBuf, time::Duration};
+#[cfg(target_os = "macos")]
 use thrum_render::runtime::{CaptureLimits, FrameSample, FrameWorld, SceneSource, SubmittedImage};
+#[cfg(target_os = "macos")]
 use water_scene::island::Wind;
+#[cfg(target_os = "macos")]
 use water_scene::settings::{Floating, Settings};
 
 /// The scene settings, parsed from this process's environment as the window parses its own.
+#[cfg(target_os = "macos")]
 fn settings() -> Settings {
     Settings::from_variables(|name| std::env::var(name).ok())
 }
 
+#[cfg(target_os = "macos")]
 fn island_wind() -> Option<Wind> {
     match settings() {
         Settings::Island { wind, .. } | Settings::Surf(wind) => Some(wind),
@@ -26,10 +34,12 @@ fn island_wind() -> Option<Wind> {
     }
 }
 
+#[cfg(target_os = "macos")]
 fn surf_route() -> bool {
     matches!(settings(), Settings::Surf(_))
 }
 
+#[cfg(target_os = "macos")]
 fn floating() -> Option<Floating> {
     match settings() {
         Settings::Floating(floating) => Some(floating),
@@ -38,11 +48,13 @@ fn floating() -> Option<Floating> {
 }
 
 /// The wake route, chosen by a wake or by foam away from the beach.
+#[cfg(target_os = "macos")]
 fn wake_route() -> bool {
     floating().is_some_and(|floating| floating.wake.is_some())
 }
 
 /// Transported whitewater, on the beach or on the wake route.
+#[cfg(target_os = "macos")]
 fn whitewater() -> bool {
     match settings() {
         Settings::Island { foam, .. } => foam,
@@ -52,6 +64,7 @@ fn whitewater() -> bool {
     }
 }
 
+#[cfg(target_os = "macos")]
 fn proof_game(water: bool) -> (thrum_app::sky::SkyGame, water_scene::SharedReport) {
     match settings() {
         Settings::Floating(floating) => {
@@ -89,6 +102,7 @@ fn proof_game(water: bool) -> (thrum_app::sky::SkyGame, water_scene::SharedRepor
 }
 
 /// Build one arm of the floating scene: `wake` and `foam` switch the producers off for a paired arm.
+#[cfg(target_os = "macos")]
 fn floating_game(
     floating: Floating,
     water: bool,
@@ -542,6 +556,7 @@ fn island_pixels(fixture: &support::Fixture) -> [usize; 3] {
     }
     counts
 }
+#[cfg(target_os = "macos")]
 fn limits() -> CaptureLimits {
     CaptureLimits {
         staging_slots: 3,
@@ -559,6 +574,7 @@ fn take_image(fixture: &mut support::Fixture) -> SubmittedImage {
         fixture.host.try_submitted_image().expect("image")
     })
 }
+#[cfg(target_os = "macos")]
 fn sample_json(sample: &FrameSample) -> serde_json::Value {
     let Some(gpu) = sample.gpu_pass_ns.as_ref() else {
         return json!({"tick":sample.tick,"alpha":sample.presentation_alpha,"tick_frame":sample.completed_ticks>0,"submission":sample.submission_order,"gpu_ms":null,"passes_ms":{},"timing_fault":sample.timing_fault,"timing_requested":sample.timing_requested,"cpu_wall_ms":sample.wall.as_secs_f64()*1000.0});
