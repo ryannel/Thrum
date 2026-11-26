@@ -7,7 +7,8 @@ fn submitted_breaker_depth_motion_and_stage_history() {
     use glam::{Mat4, Vec2, Vec3};
     use support::surf_frame::{CENTER, EXTENT, cut_ray, projected_nodes};
     use std::sync::{Arc, Mutex};
-    use support::surf::{CHOPPINESS, STEP, beach};
+    use support::surf::{CHOPPINESS, beach};
+    use water_scene::lens_probe::STEP;
     use thrum_app::sky::{Camera, ContentStatus, Controls, SkyGame};
     use thrum_render::synthetic::SyntheticView;
     use thrum_water::{Profile, Water};

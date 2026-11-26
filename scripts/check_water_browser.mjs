@@ -8,17 +8,43 @@ import zlib from 'node:zlib';
 import {installWasmReceipt,readWasmReceipt} from './wasm_receipt.mjs';
 
 const mode = process.argv[process.argv.indexOf('--case') + 1];
-if (!['first-frame','frames','fixed','realtime','island','bodies','wake','foam','surf','channel','river','rain-puddles','rain-rings'].includes(mode)) throw Error('use --case first-frame|frames|fixed|realtime|island|bodies|wake|foam|surf|channel|river|rain-puddles|rain-rings');
+if (!['first-frame','frames','fixed','realtime','island','bodies','wake','foam','surf','channel','river','rain-puddles','rain-rings','under'].includes(mode)) throw Error('use --case first-frame|frames|fixed|realtime|island|bodies|wake|foam|surf|channel|river|rain-puddles|rain-rings|under');
 const opticsRoute = mode === 'fixed' ? process.env.THRUM_WATER_BROWSER_OPTICS : undefined;
 const diveRoute = ['fixed','realtime'].includes(mode) ? process.env.THRUM_WATER_BROWSER_DIVE : undefined;
 const surfInspection = process.env.THRUM_WATER_INSPECT_SURF === '1' && ['fixed','realtime'].includes(mode);
 const handoffCut = surfInspection && mode === 'realtime' && process.env.THRUM_WATER_ROUTE === 'handoff-cut';
-const [width,height] = mode==='rain-rings' ? [960,540] : [2560,1440];
+const [width,height] = mode === 'under' ? [48,27] : mode==='rain-rings' ? [960,540] : [2560,1440];
 const output = path.resolve(process.env.THRUM_WATER_OUTPUT ?? `tmp/waters-M3/${mode}-${Date.now()}`);
 await fs.mkdir(output,{recursive:true});
 const delay = ms => new Promise(r=>setTimeout(r,ms));
 const assert = (ok,text) => {if(!ok) throw Error(text);};
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
+const lensRoute = (fixture, arm) => `?lens=${fixture}&arm=${arm}`;
+const lensObserver = `
+  globalThis.__lensPasses={gather:0,composition:0};
+  let lensGame;
+  Object.defineProperty(window,'game',{
+    configurable:true,
+    get:()=>lensGame,
+    set(game){
+      lensGame=game;
+      const setVisible=game.set_visible.bind(game);
+      game.set_visible=(visible,timestamp)=>{
+        globalThis.__lensClockOrigin??=timestamp;
+        return setVisible(visible,timestamp);
+      };
+    },
+  });
+  const watchLensPipeline=(prototype, label, kind)=>{
+    const setPipeline=prototype.setPipeline;
+    prototype.setPipeline=function(pipeline){
+      if(pipeline.label===label)__lensPasses[kind]++;
+      return setPipeline.call(this,pipeline);
+    };
+  };
+  watchLensPipeline(GPUComputePassEncoder.prototype,'water gather','gather');
+  watchLensPipeline(GPURenderPassEncoder.prototype,'water through lens','composition');
+`;
 const frameInfo = text => Object.fromEntries(
   text.split(' ').map(pair => pair.split('=')).map(([key, value]) => [key, Number(value)]),
 );
@@ -499,6 +525,11 @@ const result={mode,command:'./dev scene examples/water --web',commit:execFileSyn
 result.dirty_diff_sha256=hash(execFileSync('git',['diff','HEAD']));
 result.source_sha256={};
 for(const file of ['crates/thrum-app/src/sky.rs','crates/thrum-app/src/sky/browser.rs','crates/thrum-app/web/scene.js','crates/thrum-render/src/runtime.rs','crates/thrum-render/src/runtime/device.rs','examples/water/src/lib.rs','examples/water/src/main.rs','examples/water/examples/field_oracle.rs','scripts/check_water_browser.mjs'])result.source_sha256[file]=hash(await fs.readFile(file));
+if(mode==='under'){
+  for(const file of ['crates/thrum-water/src/underwater.rs','crates/thrum-water/src/underwater.wgsl','examples/water/src/lens_probe.rs','examples/water/examples/lens_oracle.rs','examples/water/assets/meshes/lens-panel.gltf']){
+    result.source_sha256[file]=hash(await fs.readFile(file));
+  }
+}
 try {
   const url=await until(async()=>{
     const transcript=await fs.readFile(path.join(output,'command.log'),'utf8');
@@ -526,15 +557,30 @@ try {
   await cdp.call('Page.enable',{},sid);await cdp.call('Runtime.enable',{},sid);
   await installWasmReceipt(cdp,sid);
   const surfRoute=mode==='surf'||surfInspection;
-  await cdp.call('Page.addScriptToEvaluateOnNewDocument',{source:observer+(['island','surf','channel','river','rain-puddles','rain-rings'].includes(mode)?islandObserver:'')+`\ndocument.addEventListener('DOMContentLoaded',()=>{document.querySelector('canvas').width=${width};document.querySelector('canvas').height=${height};});`},sid);
-  const route=diveRoute??opticsRoute??(surfRoute?(handoffCut?'?surf=gale':'?surf=trade'):mode==='foam'?'?foam=calm&speed=6&view=overhead&wake-bodies=1':mode==='wake'?'?wake=calm&speed=6&view=overhead&wake-bodies=1':mode==='bodies'?'?bodies=trade&speed=5':mode==='island'?'?island=trade':mode==='channel'?'?channel=trade':mode==='river'?'?river=trade':['rain-puddles','rain-rings'].includes(mode)?'?rain=calm':'');
+  await cdp.call('Page.addScriptToEvaluateOnNewDocument',{source:observer+(mode==='under'?lensObserver:'')+(['island','surf','channel','river','rain-puddles','rain-rings'].includes(mode)?islandObserver:'')+`\ndocument.addEventListener('DOMContentLoaded',()=>{document.querySelector('canvas').width=${width};document.querySelector('canvas').height=${height};});`},sid);
+  const route=diveRoute??opticsRoute??(surfRoute?(handoffCut?'?surf=gale':'?surf=trade'):mode==='foam'?'?foam=calm&speed=6&view=overhead&wake-bodies=1':mode==='wake'?'?wake=calm&speed=6&view=overhead&wake-bodies=1':mode==='bodies'?'?bodies=trade&speed=5':mode==='island'?'?island=trade':mode==='channel'?'?channel=trade':mode==='river'?'?river=trade':['rain-puddles','rain-rings'].includes(mode)?'?rain=calm':mode==='under'?lensRoute('sea','baseline'):'');
   result.route=route;
-  await cdp.call('Page.navigate',{url:url+route},sid);
-  await until(async()=>{const state=await evaluate('({ready:!!window.game,status:document.querySelector("#status")?.textContent})');if(state.status?.includes('could not start'))throw Error(state.status);return state.ready;},'scene constructed');
-  result.instantiated_wasm=await readWasmReceipt(cdp,sid,url+'scene_bg.wasm',result.wasm,wasm.length);
+  const navigate=async search=>{
+    await cdp.call('Page.navigate',{url:url+search},sid);
+    await until(async()=>{
+      const state=await evaluate('({search:location.search,ready:!!window.game,status:document.querySelector("#status")?.textContent})');
+      if(state.search!==search)return false;
+      if(state.status?.includes('could not start'))throw Error(state.status);
+      return state.ready;
+    },'scene constructed');
+    return readWasmReceipt(cdp,sid,url+'scene_bg.wasm',result.wasm,wasm.length);
+  };
+  result.instantiated_wasm=await navigate(route);
   if(['rain-puddles','rain-rings'].includes(mode))await evaluate("game.edit_control('rain.rate',0)");
   const fixedSurf=surfRoute&&mode!=='realtime';
-  let now=fixedSurf ? await evaluate('performance.now()') : 0;
+  const lensClockOrigin=async()=>{
+    const {origin}=await until(async()=>{
+      const value=await evaluate('__lensClockOrigin');
+      return Number.isFinite(value)?{origin:value}:null;
+    },'the lens page clock origin');
+    return origin;
+  };
+  let now=mode==='under'?await lensClockOrigin():fixedSurf?await evaluate('performance.now()'):0;
   const drive=async delta=>{now+=delta;await evaluate(`game.frame(${now})`);};
   const capture=async(name,delta=1000/120,probe=false)=>{
     await until(()=>evaluate('game.frame_ready()'),'free frame slot');
@@ -570,7 +616,7 @@ try {
     }
     result.frames.push(record);return record;
   };
-  for(let i=0;i<8;i++){await until(()=>evaluate('game.frame_ready()'),'warm frame slot');await drive(i===0?0:1000/120);await delay(30);}
+  for(let i=0;i<8;i++){await until(()=>evaluate('game.frame_ready()'),'warm frame slot');await drive(i===0||mode==='under'?0:1000/120);await delay(30);}
   let surfClockOrigin;
   if(fixedSurf){
     await until(async()=>{
@@ -580,7 +626,65 @@ try {
     const anchor=await capture('surf-clock-anchor',0);
     surfClockOrigin=now-anchor.observation*1000;
   }
-  if(mode==='rain-rings'){
+  if(mode==='under'){
+    const rustc=execFileSync('rustup',['which','--toolchain','stable','rustc'],{encoding:'utf8'}).trim();
+    const oracle=JSON.parse(execFileSync('rustup',['run','stable','cargo','run','--quiet','--release',
+      '--locked','--offline','-p','water-scene','--example','lens_oracle'],{
+      env:{...process.env,PATH:path.dirname(rustc)+path.delimiter+process.env.PATH,RUSTC:rustc}
+    }));
+    assert(oracle.extent.join()===`${width},${height}`,'oracle and browser extents differ');
+    result.extent=oracle.extent;
+    result.lens={};
+    const lensFailures=[];
+    const take=async (fixture,arm)=>{
+      const search=lensRoute(fixture,arm);
+      const instantiated_wasm=search===route?result.instantiated_wasm:await navigate(search);
+      now=await lensClockOrigin();
+      await until(async()=>{
+        if(!await evaluate('game.frame_ready()'))return false;
+        await drive(0);
+        const status=await evaluate('game.report()');
+        if(status.startsWith('Asset load failed:'))throw Error(status);
+        return /^Cooked generation [0-9]+ drawn/.test(status);
+      },'lens witness panel drawn');
+      await evaluate('__lensPasses={gather:0,composition:0}');
+      // Water presents between committed states. Tick one at alpha zero
+      // gives model time zero, while the initial presentation is a step early.
+      const frame=await capture(`${fixture}-${arm}`,oracle.step_ns/1e6);
+      frame.lens_passes=await evaluate('__lensPasses');
+      frame.instantiated_wasm=instantiated_wasm;
+      frame.faults=await evaluate('__faults');
+      assert(frame.faults.length===0,JSON.stringify(frame.faults));
+      assert(!(await evaluate('document.querySelector("#problems").textContent')),'lens page reports a problem');
+      assert(frame.tick===1&&frame.alpha===0,`the fixture requires tick one at alpha zero: ${frame.frame}`);
+      return {frame,rgba:await pixels('__capturePixels')};
+    };
+    for(const fixture of ['sea','lake','swash','lip']){
+      const expected=oracle.cases[fixture];
+      assert(expected?.length===width*height,`missing model pixels for ${fixture}`);
+      const baseline=await take(fixture,'baseline'),split=await take(fixture,'split');
+      const fraction=expected.filter(Boolean).length/expected.length;
+      const proof={fraction,checked:0,checkedWet:0,checkedDry:0,obscured:[],wrong:[]};
+      result.lens[fixture]=proof;
+      assert(fraction>0.25&&fraction<0.75,`${fixture} camera must be half under`);
+      assert(baseline.frame.lens_passes.composition===0,'baseline used lens composition');
+      assert(split.frame.lens_passes.composition===1&&split.frame.lens_passes.gather===1,'split lens did not compose the gathered panel');
+      for(let y=1;y<height-1;y++)for(let x=1;x<width-1;x++){
+        const i=y*width+x,wet=expected[i];
+        if([i-1,i+1,i-width,i+width].some(n=>expected[n]!==wet))continue;
+        const ordinary=baseline.rgba[4*i],measured=split.rgba[4*i];
+        if(ordinary<40){proof.obscured.push({x,y,ordinary});continue;}
+        proof.checked++;
+        proof[wet?'checkedWet':'checkedDry']++;
+        if((measured<0.85*ordinary)!==wet)proof.wrong.push({x,y,wet,ordinary,measured});
+      }
+      assert(proof.checkedWet>0&&proof.checkedDry>0,`${fixture} oracle did not cover both sides`);
+      if(proof.obscured.length||proof.wrong.length)lensFailures.push(`${fixture}: ${proof.wrong.length} disagreements and ${proof.obscured.length} obscured panel pixels`);
+    }
+    const dry=await take('sea','dry');
+    assert(dry.frame.lens_passes.gather===0&&dry.frame.lens_passes.composition===0,'dry lens encoded underwater work');
+    assert(lensFailures.length===0,lensFailures.join('; '));
+  }else if(mode==='rain-rings'){
     await until(async()=>{
       const status=await evaluate(`game.frame(${now});game.report()`);
       return /^Cooked generation [0-9]+ drawn/.test(status);

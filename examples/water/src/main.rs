@@ -10,6 +10,21 @@ fn main() {
         prepare_rivers(std::path::Path::new(&path));
         return;
     }
+    #[cfg(target_arch = "wasm32")]
+    if let Some((name, underwater, dry)) = lens_probe() {
+        thrum_app::sky::run(
+            thrum_app::Config::new("water-scene", "Thrum water lens check"),
+            move || {
+                let fixture = water_scene::lens_probe::Case::new(
+                    name,
+                    water_scene::lens_probe::BROWSER_DATUM,
+                );
+                water_scene::lens_probe::browser_game(&fixture, underwater, dry)
+                    .map_err(thrum_app::sky::SkyBuildError::Scene)
+            },
+        );
+        return;
+    }
     let settings = settings();
     let draw_float =
         cfg!(target_arch = "wasm32") || std::env::var_os(thrum_app::sky::STORE_VARIABLE).is_some();
@@ -109,9 +124,36 @@ fn settings() -> Settings {
 
 #[cfg(target_arch = "wasm32")]
 fn settings() -> Settings {
-    let query = js_sys::Reflect::get(&js_sys::global(), &"location".into())
+    Settings::from_query(&page_query())
+}
+
+#[cfg(target_arch = "wasm32")]
+fn page_query() -> String {
+    js_sys::Reflect::get(&js_sys::global(), &"location".into())
         .and_then(|location| js_sys::Reflect::get(&location, &"search".into()))
         .ok()
-        .and_then(|search| search.as_string());
-    Settings::from_query(&query.unwrap_or_default())
+        .and_then(|search| search.as_string())
+        .unwrap_or_default()
+}
+
+#[cfg(target_arch = "wasm32")]
+fn lens_probe() -> Option<(&'static str, bool, bool)> {
+    let query = page_query();
+    let params = |key| {
+        query
+            .trim_start_matches('?')
+            .split('&')
+            .filter_map(|part| part.split_once('='))
+            .find_map(|(name, value)| (name == key).then_some(value))
+    };
+    let name = params("lens")?;
+    let name = water_scene::lens_probe::NAMES
+        .into_iter()
+        .find(|&known| name == known)?;
+    match params("arm")? {
+        "baseline" => Some((name, false, false)),
+        "split" => Some((name, true, false)),
+        "dry" if name == "sea" => Some((name, true, true)),
+        _ => None,
+    }
 }

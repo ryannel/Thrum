@@ -5,7 +5,8 @@ mod support;
 thrum_test_support::macos_gpu_test! {
 fn float_queries_match_the_breaker_and_swash() {
     use std::sync::{Arc, Mutex};
-    use support::surf::{CHOPPINESS, STEP, beach, check_lip};
+    use support::surf::{CHOPPINESS, beach, check_lip};
+    use water_scene::lens_probe::STEP;
     use thrum_water::{Profile, Water, query::QueryLimits};
     use thrum_water_model::SurfProfile;
     use water_scene::floating::{Body, Hull, sample_answer};

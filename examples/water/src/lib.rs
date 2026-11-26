@@ -3,6 +3,8 @@ pub mod channel;
 pub mod floating;
 pub mod island;
 pub mod river;
+#[doc(hidden)]
+pub mod lens_probe;
 pub mod settings;
 use std::{
     error::Error,
