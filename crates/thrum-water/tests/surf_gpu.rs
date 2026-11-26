@@ -10,7 +10,7 @@ use thrum_render::runtime::SurfaceOutput;
 use thrum_sea_model::{Cascade, Component, LongWaves, Spectrum};
 use thrum_water::{
     Profile, Water,
-    query::{BodyQuery, QueryLimits, QueryPoint},
+    query::{BodyAnswers, BodyQuery, QueryLimits, QueryPoint},
 };
 use thrum_water_model::{Bed, Body, BodyKind, Field, Map, Sheet, Stage, SurfProfile};
 
@@ -556,14 +556,7 @@ fn many_component_metal_cut_matches_the_model_with_grouped_or_single_stations() 
             "tick {tick}"
         );
         assert_eq!(drain.len(), STATION_COUNT / stride);
-        for reply in &drain {
-            assert_eq!(reply.posted, u64::from(tick));
-            assert!(!reply.held);
-            assert_eq!(reply.points.len(), stride);
-        }
-        let [coarse, fine] = drain.iter().fold([0, 0], |[coarse, fine], reply| {
-            [coarse + reply.cut_nodes[0], fine + reply.cut_nodes[1]]
-        });
+        let [coarse, fine] = count_cut_nodes(&drain, u64::from(tick), stride);
         assert!(
             coarse > 0 && fine > 0,
             "tick {tick}: {coarse} coarse, {fine} fine"
@@ -598,6 +591,15 @@ fn many_component_metal_cut_matches_the_model_with_grouped_or_single_stations() 
     eprintln!(
         "Metal: {STATION_COUNT} stations, {FOLD_STATIONS} overturned triangles, maximum error {maximum_error:.6} m"
     );
+}
+
+fn count_cut_nodes(replies: &[BodyAnswers], tick: u64, stations_per_body: usize) -> [u64; 2] {
+    replies.iter().fold([0, 0], |[coarse, fine], reply| {
+        assert_eq!(reply.posted, tick);
+        assert!(!reply.held);
+        assert_eq!(reply.points.len(), stations_per_body);
+        [coarse + reply.cut_nodes[0], fine + reply.cut_nodes[1]]
+    })
 }
 
 mod cache_first_frame {
