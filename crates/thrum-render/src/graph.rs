@@ -1152,14 +1152,31 @@ impl FrameGraph {
                 for (producer, _) in scene.dependencies {
                     predecessors.remove(&producer);
                 }
+                let mut sources = Vec::new();
                 for access in &self.passes[present].accesses {
                     if access.kind.reads() {
-                        predecessors.extend(
-                            self.selected_producers(present, access, false)?
-                                .into_iter()
-                                .map(|(producer, _)| producer),
-                        );
+                        let selected = self.selected_producers(present, access, false)?;
+                        // The surface can read colour and motion from different
+                        // passes even when an earlier pass wrote both.
+                        if let [(producer, range)] = selected.as_slice()
+                            && *range == access.range
+                            && self.passes[present]
+                                .accesses
+                                .iter()
+                                .filter(|other| {
+                                    other.kind.reads() && other.resource == access.resource
+                                })
+                                .count()
+                                == 1
+                        {
+                            sources.push((*producer, access.resource.clone()));
+                        }
+                        predecessors.extend(selected.into_iter().map(|(producer, _)| producer));
                     }
+                }
+                for (producer, resource) in sources {
+                    self.select_producer(producer, present, &resource)?;
+                    predecessors.remove(&producer);
                 }
                 for producer in predecessors {
                     self.dependency(producer, present)?;
@@ -1177,6 +1194,8 @@ impl FrameGraph {
         self.passes.truncate(pass_count);
         self.keys.truncate(pass_count);
         self.explicit_dependencies.truncate(dependency_count);
+        self.resource_producers
+            .retain(|&(consumer, _), _| consumer < pass_count);
         result
     }
 

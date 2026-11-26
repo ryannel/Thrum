@@ -36,11 +36,12 @@ fn run() {
         "cloud ground field",
         "cloud far transmittance",
     ];
-    const SKY: [&str; 4] = [
+    const SKY: [&str; 5] = [
         "cloud hemisphere light",
         "cloud trace",
         "cloud resolve",
         "cloud compose",
+        "cloud internal field",
     ];
     const GROUND: [&str; 4] = [
         "cloud weather map",
