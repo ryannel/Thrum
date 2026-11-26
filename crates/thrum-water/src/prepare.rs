@@ -622,9 +622,8 @@ fn surface_pipelines(
         map,
         interaction.is_some(),
         foam,
-        gather.is_some(),
+        gather,
         rain,
-        under,
     ) + &Cache::source(cache, tidal_grid);
     if rain {
         use std::fmt::Write;
@@ -694,10 +693,11 @@ fn shader_source(
     map: Option<&MapGpu>,
     wake: bool,
     foam: Option<&Foam>,
-    gather: bool,
+    gather: Option<&Gather>,
     rain: bool,
-    underwater: bool,
 ) -> String {
+    let underwater = gather.is_some_and(|gather| gather.lens.is_some());
+    let gather = gather.is_some();
     let sun = if surface.sun_optical_depth {
         "fn water_sun(point: vec3<f32>) -> vec3<f32> { return sun_irradiance(point) * cloud_factor(point); }"
     } else {
