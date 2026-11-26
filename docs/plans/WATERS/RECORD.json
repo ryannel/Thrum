@@ -1632,7 +1632,7 @@
         {
           "verdict": "fail",
           "commit": "774d997126d164f5bea89e117425bf94c38321df",
-          "review": ".orchestrate/evidence/WATERS/WP8-review.md",
+          "review": ".orchestrate/evidence/WATERS/WP8-review-8.md",
           "items": {
             "WP8.1": "pass",
             "WP8.2": "pass",
@@ -1669,6 +1669,53 @@
             "turns": 1
           },
           "at": "2026-11-26T02:40:47Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "8a4a3b70e540d23136af3a067b3de86bd2e529f9",
+          "review": ".orchestrate/evidence/WATERS/WP8-review.md",
+          "items": {
+            "WP8.1": "pass",
+            "WP8.2": "pass",
+            "WP8.3": "pass",
+            "WP8.4": "pass",
+            "WP8.5": "pass",
+            "WP8.6": "pass",
+            "WP8.7": "fail",
+            "WP8.12": "pass",
+            "WP8.9": "pass",
+            "WP8.10": "pass"
+          },
+          "findings": [
+            {
+              "name": "Deep calm chart water loses its scene reflection",
+              "item": "WP8.7",
+              "different": "The previous failure copied the screen over a deep rough basin. That basin now skips the gather. A deep calm chart skips the gather when it needs the on-screen scene reflection.",
+              "repeat": false
+            },
+            {
+              "name": "Rough water with a visible shallow tile requests a whole-screen gather",
+              "item": "WP8.7",
+              "different": "The latest deep rough basin failure is fixed. Here a visible shallow shelf on a rough chart sets the mirror flag and copies the deep part of the screen too. This reproduces the earlier shallow-tile over-copy on the chart path.",
+              "repeat": true
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 136644,
+            "cached": 6493056,
+            "output": 16305,
+            "turns": 1
+          },
+          "at": "2026-11-26T03:15:13Z"
         }
       ],
       "authorised": {
@@ -1701,6 +1748,11 @@
           "output": 36069,
           "turns": 1
         }
+      },
+      "too_many_failed_reviews": {
+        "why": "the same items or findings kept failing after its diagnosis",
+        "after": 0,
+        "at": "2026-11-26T03:15:13Z"
       }
     },
     "WP9": {
