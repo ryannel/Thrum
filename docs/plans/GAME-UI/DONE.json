@@ -303,7 +303,7 @@
       "failed_reviews": 3,
       "failed_reviews_with_repeat": 2,
       "diagnoses": 0,
-      "status": "in_progress",
+      "status": "ready_for_review",
       "quality_bar": "A status display as legible over a crowd as those of Vampire Survivors, Brotato and Halls of Torment: health, time and counts read at a glance with thousands of sprites behind them. Laid out as steadily as a native app's: no element covers another, touches an edge, leaves the safe area or jumps when the window is resized.",
       "items": [
         {
@@ -334,10 +334,10 @@
           "check": "cargo test --locked --offline -p thrum-ui --test layout_properties",
           "ask": "Are layouts and list builds counted inside the tree, across many frames, with a change that does move a box as a control the counts see? Is the comparison with a fresh tree run over random sequences of changes?",
           "target": "mac-metal",
-      "evidence": ".orchestrate/evidence/GAME-UI/WP3/hidden-edits/index.md",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP3/hidden-edits/index.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GAME-UI/WP3-review.md",
-      "builder_result": "pass"
+          "builder_result": "pass"
         },
         {
           "id": "WP3.4",
@@ -433,7 +433,7 @@
           "check": "python3 scripts/game_ui.py costs --target chrome-webgpu --layout",
           "lock": "chrome",
           "target": "chrome-webgpu",
-      "evidence": ".orchestrate/evidence/GAME-UI/WP3/chrome-cost-shutdown/index.md",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP3/chrome-cost-shutdown/index.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/GAME-UI/WP3-review.md",
           "builder_result": "pass"
