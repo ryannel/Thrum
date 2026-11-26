@@ -1713,7 +1713,7 @@
     {
       "id": "WP25",
       "name": "A few stations check the Metal surf query against the model",
-      "status": "not_started",
+      "status": "in_progress",
       "quality_bar": "Keep what only a device shows, that the many-component dispatch's answers are the model's however the stations are grouped into bodies, on the smallest world that shows it. What a CPU decides stays in the model's own test.",
       "items": [
         {
@@ -1723,8 +1723,8 @@
           "ask": "Does the test's sheet reach the many-component pipelines through the query's own selection, with no switch made for the test, so that a wrong sum over a node's wave lanes would fail a height comparison? Would the test fail if the dispatch gave a station under a fold a lower surface of its column? Does the record give the test's CPU time alone, before and after, in the workspace check's default Nextest build, excluding compilation, and do the file's other two tests keep their assertions?",
           "target": "mac-metal",
           "lock": "gpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP25/README.md",
           "verdict": "",
           "review": ""
         }

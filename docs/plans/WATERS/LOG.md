@@ -1365,3 +1365,7 @@
   asked of every reply. (2) The sheet must reach the many-component pipelines by the query's own selection.
   Suggestion taken: "alone" became "however the stations are grouped into bodies".
   [What changed](../../../.orchestrate/evidence/WATERS/WP25/design-review-fixes.md).
+- 2026-11-26 WP25.1 passed on M3 Max Metal with the shared 64-wave sheet and 12 stations. Each posting made one
+  dispatch and both cut passes. The test process used 1.03 s of CPU, down from 3.16 s in a fresh baseline run.
+  Selecting the lower hit or omitting half the wave lanes each failed a folded station's height comparison.
+  The companion surf tests passed in `it`. [Target proof](../../../.orchestrate/evidence/WATERS/WP25/README.md).
