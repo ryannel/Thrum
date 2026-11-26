@@ -1337,8 +1337,8 @@
           "statement": "Each of the twelve shapes, at 3 to 8 km, from 2 m and from 40 m, at noon and at a 10\u00b0 Sun, shows its accepted anatomy in this sky: lit and shaded as its neighbours are, its base on the shared level, with no box, seam, voxel step or filtering band. At a 10\u00b0 Sun every shape's lobes are told apart by their shading. At noon one weakness is known and fails nothing here (the design's risk 14): a broad lobe may read as one even tone, or merge with the lobe beside it, on any shape whose 10\u00b0 view from the same height tells that lobe apart. WP10 found it on four shapes: the congestus core's lower right face, the mediocris twin turrets' left lobe and bridge, congestus-forked's upper left lobe, and fair-head-tail's head and middle lobe. The evidence names every shape and lobe that shows it. It excuses no other Sun and no other line of the list: a broad lobe that reads flat at a 10\u00b0 Sun fails on any shape. The anatomy itself is the owner's accepted content and is not judged again.",
           "inspect": "Capture `fixed` stills of each shape at both Suns and heights. Judge contact sheets by family, then native-size crops of each shape's lit side, base and edge: 1. the shape is recognisable as itself at both Suns and both heights; 2. its light and shade agree with the clouds around it; 3. its base is on the shared level; 4. no box, seam, voxel step or filtering band shows; 5. shaded faces and creases tell its lobes apart, and no broad lobe reads as one even tone. At noon, line 5 is not failed by a broad lobe that reads flat or merges with its neighbour where the same shape's 10\u00b0 view from the same height tells that lobe apart: say which shape and lobe, confirm the evidence names it, and judge lines 1 to 4. At a 10\u00b0 Sun line 5 is judged on every shape.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP10/qualification-gallery.md",
           "verdict": "",
           "review": ""
         },
@@ -1367,8 +1367,8 @@
           "statement": "In Chrome the library is resident, and the fair sky with it passes WP10.1's list for one shape of each family and WP10.3's list at noon. WP10.1's known noon weakness is excused here as it is on the Mac, by the same test against the shape's 10\u00b0 view in Chrome, and no further.",
           "inspect": "Capture the corresponding `fixed` stills in Chrome. Judge them by those lists, then compare native-size crops with the Mac's for a difference in outline, base or light.",
           "target": "chrome-webgpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP10/qualification-chrome-parked.md",
           "verdict": "",
           "review": ""
         },

@@ -1004,3 +1004,10 @@ middle lobe of fair-head-tail merge into one grey face. The 10° Sun separates b
 The plan holds the retained light, so the findings go back to the lead before the gallery can pass.
 [Forked crops and receipts](../../../.orchestrate/evidence/CLOUDS/WP10/qualification-forked.md) ·
 [Head-tail crops and receipts](../../../.orchestrate/evidence/CLOUDS/WP10/qualification-head-tail.md)
+
+The revised risk 14 rule covers all four noon findings in the retained 48-view Metal gallery. At the same
+eye heights, the 10° views distinguish those lobes, and all twelve shapes pass the full low-Sun checklist.
+The noon views pass the outline, shared light, base and edge checks. The retained Chrome proof meets the
+same rule on its three representative shapes. Growth, fair-sky and cost evidence carry forward from
+their target runs. [Metal gallery proof](../../../.orchestrate/evidence/CLOUDS/WP10/qualification-gallery.md) ·
+[Chrome proof](../../../.orchestrate/evidence/CLOUDS/WP10/qualification-chrome-parked.md)
