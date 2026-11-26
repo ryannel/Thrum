@@ -367,6 +367,25 @@
       "failed_reviews_with_repeat": 0
     },
     {
+      "id": "WP10",
+      "name": "The check that a river file keeps each sample's own gains runs on a small reach",
+      "status": "not_started",
+      "quality_bar": "Keep the proof that a river file stores each sample's own chop gains, on the smallest solved reach that shows it, with ample headroom in the fast tier.",
+      "items": [
+        {
+          "id": "WP10.1",
+          "statement": "The test that each sample of a river file carries its own gains passes in the fast tier on a small CPU world. For a spring-fed reach solved at half its discharge and at the whole, and written to a river file from those two solves, it still proves three things: at every wet cell of each reach's footprint the file holds exactly the two chop gains of that sample's own solve, the first sample's in the reach and the second's in the reach's upper sample; at least one such cell is compared; and at a cell on the reach's slope the gain is greater at the whole discharge than at half. Its solves stay on the stepper's one-thread path, and run alone its test process uses 2 s of CPU time or less, user and system together, where it used between 5 s and 14 s on 26 November 2026. Guard: the default thrum-river-model integration suite.",
+          "check": "cargo nextest run --locked --offline -p thrum-river-model --test it -E 'test(=chop::each_sample_of_a_river_file_carries_its_own_gains)' --no-tests=fail",
+          "ask": "Does the test still solve both discharges and write the file from those solves, and compare every wet footprint cell's stored gains with that sample's own solve, exactly, for both samples? Does the record give its CPU time and its time alone, before and after, in the workspace check's default Nextest build, excluding compilation?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
+    },
+    {
       "id": "WP4",
       "name": "On the island a stream runs from a spring through a pool and a narrows to the lake, and a river runs from the lake to the sea; raise the lake and the river swells, and a float rides from the spring to the sea",
       "status": "in_progress",

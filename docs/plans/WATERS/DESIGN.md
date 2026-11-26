@@ -2319,6 +2319,8 @@ decides nothing. [WP19](#a-surf-query-a-running-game-can-use-wp19) uses it.
 - **Targets.** `mac-metal` on both recipes and `chrome-webgpu`. `ios-sim` is not a target. Chrome checks need a
   browser launch outside the Codex sandbox, granted per run; if one is refused, leave the item open and say so.
   Never substitute a Mac result.
+- **Other targets.** Merges build for the Mac alone: after changing `examples/water/tests/`, run
+  `bash scripts/check_cross_target.sh`.
 - **Capture.** Inspected items use T2 engine capture in the mode they name, at 2560×1440 until the showcase's
   extent exists. An item gives the cue, the views and the range. The route, the framing and the length that show
   them are the builder's and the reviewer's to choose; frames are judged whole and at native size, and motion as
@@ -2724,3 +2726,48 @@ runs WP13.10's Chrome case on the changed pass. WP21.6 is the distant front by e
 draw before the pass changed: `fixed` stills from the revision the work package starts from, at WP13.7's
 1 km view and its handoff view, taken before the pass is touched, then the same stills from the result,
 on Metal and in Chrome. The breakers arm, and the pair, stay WP19's.
+
+## A small Metal cut check (WP25)
+
+`many_component_metal_cut_matches_the_model_with_grouped_or_single_stations` is WP19.2's guard: only a
+device runs the dispatch's shared nodes and its WGSL cut. Alone on 26 November 2026 its process used 3.3 s
+to 3.6 s of CPU at every load, and took 3.5 s to 4.2 s once the host's shaders were compiled. About four
+fifths of that time is `thrum-water-model` answering the 48 stations on one core, at 64 components. About a
+sixth is the whole cut, on up to twelve threads, which the test takes only to count the columns that hold
+three surfaces. The device's part is about 0.1 s. Beside other tests the workspace check ran it in 5 s to
+10 s that day or stopped it at ten seconds, and on a loaded hour stopped it again at 30 seconds alone
+([measurements](../../../.orchestrate/evidence/WATERS/WP25/workspace-timing.md)).
+
+So the time is the CPU's, and most of it repeats what the model's own test proves. The repair divides the
+proof by [the settings' two rules](../../../ORCHESTRATE.md#test-tiers):
+
+- **What only the device shows stays.** Every answer is the model's public answer at its use tick within
+  WP13.1's tolerance. A station's answer is the same posted with its body's other stations or alone. Every
+  reply reports nodes from both passes, and each tick makes one dispatch.
+- **The smallest world that shows it.** Two bodies of six stations show a body's shared coarse pass and
+  more than one body in a batch. A station under a fold shows that the cut finds the highest of several
+  surfaces, and a station in deep water shows the pass where nothing is thrown. So the floor is 12
+  stations, 6 under a fold and 4 on a line from deep water toward the beach. The sheet needs a thrown
+  crest and many components, not 64 of them: 64 is no limit of the device's, whose long-wave buffer holds
+  192. The test may keep [the shared sheet](#a-surf-query-a-running-game-can-use-wp19) or make a lighter
+  one of its own.
+- **What a CPU decides leaves.** The test makes no whole cut and asks the model only for the answers it
+  compares. A column under a fold is the centre of a cut-cell triangle the throw has turned over, found by
+  forward evaluation alone. That such a column holds three or more surfaces, and that the public answer is
+  the whole cut's, are held by `surf_cut::many_component_coarse_to_fine_matches_the_whole_cut` in
+  `thrum-water-model`, which keeps its 64 components, its sheet and its assertions (WP19.1).
+
+The test stays in the merge tier: a float's height against the model is what a game reads, so it is made
+fast and not moved. Every item that named the `surf_gpu` binary is Done, so the file joins the package's
+`it` binary in this landing, as [one test binary a package](../../../ORCHESTRATE.md#test-tiers) says, and
+its other two tests move with it unchanged.
+
+The measure of the repair is the test process's CPU time alone, user and system together, because neither
+the Mac's load nor a shader compile moves it: 2 s or less, from
+[the plan's target](PLAN.md#open-for-the-human) for a fast test. The time a frame host takes to compile its
+shaders under load is not this test's to remove; [the log](LOG.md#wp25-workspace-timing) passes it on.
+
+The builder records the test's CPU time and its time alone, before and after, in the workspace check's
+default Nextest build on the Mac, excluding compilation: `/usr/bin/time -p` on the test binary with
+`--exact` gives both. [The planner's measurements](../../../.orchestrate/evidence/WATERS/WP25/workspace-timing.md)
+are the figures before.

@@ -1347,3 +1347,17 @@
   in both reaches and farther in the faster one in every window. All four
   carriage fixtures retained more than half the marker's initial height.
   [Metal readings](../../../.orchestrate/evidence/WATERS/WP9/review-bank/README.md).
+
+## WP25 workspace timing
+
+- 2026-11-26 Main's `workspace-tests` check failed at `ba611f39c2a7` with nothing asserted wrong: on a loaded
+  Mac `surf_gpu many_component_metal_cut_matches_the_model_with_grouped_or_single_stations` was stopped at
+  ten seconds and again at 30 s alone. No commit broke it. Alone it uses 3.3 s to 3.6 s of CPU, nearly all
+  in the CPU model. New WP25, ahead of WP15, keeps the device's proof on 12 stations.
+  [Measurements](../../../.orchestrate/evidence/WATERS/WP25/workspace-timing.md).
+- 2026-11-26 For the lead, not planned in WP25: two more surf tests ran near the 30 s cap in that run, and a
+  fresh GPU test binary waited 14 s on Metal shader compiles while its frame host prepared, which is
+  `thrum-render`'s or the test kit's.
+  [Both](../../../.orchestrate/evidence/WATERS/WP25/workspace-timing.md#for-the-lead-not-planned-in-wp25).
+- 2026-11-26 The rule that merges build for the Mac alone moved from the plan file to
+  [the design's handoff](DESIGN.md#proof-and-builder-handoff), to keep the plan file short.

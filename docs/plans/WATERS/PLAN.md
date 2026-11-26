@@ -3,8 +3,7 @@
 [Design](DESIGN.md), [done-when file](DONE.json), [log](LOG.md), [module list](../ARCHITECTURE.md)
 
 First read [Proof and builder handoff](DESIGN.md#proof-and-builder-handoff) and
-[Exact baselines](../ARCHITECTURE.md#exact-baselines). Merges build for the Mac
-alone: after changing `examples/water/tests/`, run `bash scripts/check_cross_target.sh`.
+[Exact baselines](../ARCHITECTURE.md#exact-baselines).
 
 ## Open for the human
 
@@ -99,7 +98,11 @@ alone: after changing `examples/water/tests/`, run `bash scripts/check_cross_tar
 
 ## WP9 Water runs down a channel from the lake to the sea: its surface follows the slope, its ripples and foam travel with the current, and a float is carried down to the sea
 
-[Diagnosis: build, rerun, leave](../../../.orchestrate/evidence/WATERS/WP9-diagnosis.md#for-the-builder).
+[Review](../../../.orchestrate/evidence/WATERS/WP9-review.md)
+
+## WP25 A few stations check the Metal surf query against the model
+
+[Design](DESIGN.md#a-small-metal-cut-check-wp25).
 
 ## WP15 The camera goes under water: the waterline crosses the lens, and the surface overhead shows the sky through a bright window
 

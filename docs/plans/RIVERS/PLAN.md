@@ -52,6 +52,13 @@ for the two tests that timed out on their isolated retry. Record the work each f
 times with the default Nextest profile, excluding compilation, alone and together under normal builder load.
 Both pass on the first attempt under the existing ten-second limit.
 
+## WP10 The check that a river file keeps each sample's own gains runs on a small reach
+
+Build this repair first. It lands independently of WP4. Use the
+[fixture design](DESIGN.md#compact-river-file-gains-fixture-wp10). Record the test's CPU time and its time
+alone, before and after, in the workspace check's default Nextest build on the Mac, excluding compilation;
+`/usr/bin/time -p` on the test binary with `--exact` gives both. Change no other test.
+
 ## WP4 On the island a stream runs from a spring through a pool and a narrows to the lake, and a river runs from the lake to the sea; raise the lake and the river swells, and a float rides from the spring to the sea
 
 The island's ground, its channel's cut and `scripts/water_cost.py` and `scripts/check_water_browser.mjs` are `WATERS`'; add the valley, cases and scenes behind the selection and change none of theirs. River files are generated beside the example's cooked content and are not committed. The fall is in the map from here and is drawn in WP6.

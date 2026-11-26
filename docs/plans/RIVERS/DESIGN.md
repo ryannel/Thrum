@@ -748,3 +748,30 @@ cells with work in multiple row chunks. Verify that the eight-thread solve actua
 branch. Keep two one-thread solves and one eight-thread solve and compare the same serialized river
 file and the raw depth, both discharge components and loss bytes. This guards the real serial and
 parallel solver paths, including their stable result ordering.
+
+## Compact river-file gains fixture (WP10)
+
+`chop::each_sample_of_a_river_file_carries_its_own_gains` was outside WP8's nineteen cases and WP9's two. It
+still solves the 10,752-cell valley at 0.25 m twice, on the stepper's worker threads. Alone on 26 November
+2026 it took between 4.6 s and 33 s and used between 5 s and 14 s of CPU. Its steps wait on those threads,
+so on a busy Mac it waits far longer than it works: 33 s for 5.5 s of CPU. The workspace check stopped it
+at ten seconds beside other tests and again at 30 seconds alone ([measurements](../../../.orchestrate/evidence/RIVERS/WP10/workspace-timing.md)).
+
+The test's subject is the river file: each sample's two chop gains are stored with that sample, the first in
+the reach and the later ones in the reach's upper samples, and two discharges give different gains. Neither
+needs the valley's pool, sill, ledge or rock. Use the smallest spring-fed reach on which both discharges
+leave wet footprint cells with gains above zero that differ between the samples. WP8's short spring reach
+solves in about 0.01 s and the valley at 0.5 m in about 0.2 s. Keep the two solves and the file made from
+them, because the boundary from solve to file is what this test owns: a prepared chart would not cross it.
+Keep the exact equality at every wet cell of each reach's footprint in both samples, the count above zero,
+and the greater gain at the whole discharge at a cell on the slope.
+
+Keep each solve on the calling thread: a reach under the stepper's 1,024 active cells, or one worker
+thread. A one-thread solve slows only in proportion to the Mac's load. The eight-thread path keeps its own
+guard in WP9's determinism test, and the riffle against the pool keeps its guard in
+`chop::the_chop_follows_the_friction_slope_and_is_far_rougher_in_the_riffle_than_the_pool` on the 0.5 m
+valley. The test stays in the fast tier and asks for no device.
+
+The measure of the repair is the test process's CPU time alone, user and system together, because a busy
+Mac moves it far less than the clock: 2 s or less, from [the plan's target](PLAN.md#open-for-the-human)
+for a fast test.

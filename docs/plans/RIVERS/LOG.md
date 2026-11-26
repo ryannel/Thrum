@@ -193,6 +193,17 @@
   "within a fifth of the current" rest on it. If it does not serve a solved reach, propose the remedy in
   `WATERS`' log.
 
+## WP10 workspace timing
+
+- 2026-11-26 Main's `workspace-tests` check failed at `ba611f39c2a7` with nothing asserted wrong: on a loaded
+  Mac `chop::each_sample_of_a_river_file_carries_its_own_gains` was stopped at ten seconds and again at 30 s
+  alone. No commit broke it: the test was outside WP8's and WP9's lists and still solves the 0.25 m valley
+  twice on the stepper's threads. New WP10, ahead of WP4, makes it small and keeps it in the fast tier.
+  [Measurements](../../../.orchestrate/evidence/RIVERS/WP10/workspace-timing.md).
+- 2026-11-26 For the lead, not planned in WP10: five more of this package's tests, three of them `wetting::`,
+  passed alone at 13 s to 29 s in that run.
+  [The five](../../../.orchestrate/evidence/RIVERS/WP10/workspace-timing.md#for-the-lead-not-planned-in-wp10).
+
 - 2026-11-26 WP4 built the opt-in island valley, keyed spring stream and lake outlet, and GPU sample mixing in
   the shared water map. Metal matched the interior depths and gated wetting to the model and measured seam
   residuals up to 4.8 µm over the lake and tide extremes. The two floats reached the lake and sea. Hardware
