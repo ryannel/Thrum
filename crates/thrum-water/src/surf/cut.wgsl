@@ -65,7 +65,7 @@ fn sample_coarse(@builtin(workgroup_id) group: vec3<u32>, @builtin(local_invocat
     let at = settings.coarse_jobs.x + job.z + index;
     let mask = coarse_lattice[at].w;
     if (mask & 2u) == 0u { return; }
-    let point = points[job.x];
+    let point = query_point(job.x);
     let grid = point.coarse_grid;
     let width = u32(grid.z);
     let coord = grid.xy + vec2(i32(index % width), i32(index / width));
@@ -129,7 +129,7 @@ fn sample_coarse_wide(@builtin(workgroup_id) group: vec3<u32>, @builtin(local_in
     let at = settings.coarse_jobs.x + job.z + index;
     var mask = 0u;
     if index < job.w { mask = coarse_lattice[at].w; }
-    let point = points[job.x];
+    let point = query_point(job.x);
     let grid = point.coarse_grid;
     let width = u32(grid.z);
     let coord = grid.xy + vec2(i32(index % width), i32(index / width));
@@ -207,7 +207,7 @@ fn fine_record(point: QueryPoint, index: u32) -> u32 {
 fn select_fine(@builtin(workgroup_id) group: vec3<u32>, @builtin(local_invocation_index) lane: u32) {
     let job = coarse_lattice[group.x];
     let index = job.y + lane;
-    let sheet = points[job.x];
+    let sheet = query_point(job.x);
     let width = u32(sheet.coarse_grid.z);
     let local = vec2(i32(index % width), i32(index / width));
     if bitcast<u32>(sheet.surf_stage.w) == 0u ||
@@ -220,7 +220,7 @@ fn select_fine(@builtin(workgroup_id) group: vec3<u32>, @builtin(local_invocatio
     }
     let box = landing_box(sheet, coarse, true);
     for (var i = 0u; i < settings.count; i++) {
-        let point = points[i];
+        let point = query_point(i);
         let bounds = coarse_bounds(point.fine_bounds);
         if bitcast<u32>(point.surf_stage.w) == bitcast<u32>(sheet.surf_stage.w) &&
             all(coarse >= bounds.xy) && all(coarse < bounds.zw) &&
@@ -244,7 +244,7 @@ fn sample_fine(@builtin(workgroup_id) group: vec3<u32>, @builtin(num_workgroups)
     let side = step + 1u;
     for (var selected = group.x; selected < count; selected += groups.x) {
         let job = coarse_lattice[jobs_offset() + selected];
-        let sheet = points[job.x];
+        let sheet = query_point(job.x);
         let width = u32(sheet.coarse_grid.z);
         let index = job.y;
         let coarse = sheet.coarse_grid.xy + vec2(i32(index % width), i32(index / width));
@@ -270,7 +270,7 @@ fn sample_fine_wide(@builtin(workgroup_id) group: vec3<u32>, @builtin(num_workgr
     let i = group.y * NODES_PER_GROUP + lane / WAVE_LANES;
     for (var selected = group.x; selected < count; selected += groups.x) {
         let job = coarse_lattice[jobs_offset() + selected];
-        let sheet = points[job.x];
+        let sheet = query_point(job.x);
         let width = u32(sheet.coarse_grid.z);
         let index = job.y;
         let coarse = sheet.coarse_grid.xy + vec2(i32(index % width), i32(index / width));
@@ -558,7 +558,7 @@ fn write_surf_answer(station: u32, point: QueryPoint, result: QueryWave) {
 
 @compute @workgroup_size(QUERY_WIDTH)
 fn sample_query(@builtin(workgroup_id) group: vec3<u32>, @builtin(local_invocation_index) lane: u32) {
-    let point = points[group.x];
+    let point = query_point(group.x);
     cut_parts[lane] = cut_cells(point, group.x, lane);
     workgroupBarrier();
     if lane != 0u { return; }
@@ -571,7 +571,7 @@ fn sample_query(@builtin(workgroup_id) group: vec3<u32>, @builtin(local_invocati
 
 @compute @workgroup_size(QUERY_WIDTH)
 fn sample_cut(@builtin(workgroup_id) group: vec3<u32>, @builtin(local_invocation_index) lane: u32) {
-    let point = points[group.x];
+    let point = query_point(group.x);
     cut_parts[lane] = cut_cells(point, group.x, lane);
     workgroupBarrier();
     if lane != 0u { return; }
@@ -588,7 +588,7 @@ var<workgroup> has_bed: bool;
 
 @compute @workgroup_size(QUERY_WIDTH)
 fn refine_query(@builtin(workgroup_id) group: vec3<u32>, @builtin(local_invocation_index) lane: u32) {
-    let point = points[group.x];
+    let point = query_point(group.x);
     let packed = answers[group.x];
     let hit = CutHit(packed.height_slope_rate.xy, packed.height_slope_rate.zw,
         packed.velocity_depth.x, packed.body_flags.x != 0u, packed.velocity_depth.y);

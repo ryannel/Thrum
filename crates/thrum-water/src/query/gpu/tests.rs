@@ -215,6 +215,10 @@ impl records::Kind for RiverReceiver {
     const KIND: Option<records::RecordScalar> = None;
 }
 
+impl records::Kind for Point {
+    const KIND: Option<records::RecordScalar> = None;
+}
+
 fn query_point_layout() -> records::RecordLayout {
     record!(
         Point as "QueryPoint",
@@ -244,18 +248,14 @@ fn river_query_records_extend_the_plain_layout() {
         + include_str!("../../column/records.wgsl")
         + include_str!("../../column.wgsl")
         + include_str!("../../carriage.wgsl")
-        + &super::sampling_source(true)
+        + super::sampling_source(true)
         + super::PLAIN_QUERY;
-    // The GPU array appends the receiver to the same fields used by the ordinary query.
-    let extended = record!(RiverPoint, receiver);
-    let mut point = query_point_layout();
-    point.size = extended.size;
-    point.members.extend(extended.members);
     records::named(
         "river query shader",
         &source,
         &[
-            point,
+            query_point_layout(),
+            record!(RiverPoint, point, receiver),
             record!(
                 RiverReceiver,
                 current_weight_gradient,
@@ -274,7 +274,7 @@ fn query_records_match_the_shader_layout() {
         + include_str!("../../column/records.wgsl")
         + include_str!("../../column.wgsl")
         + include_str!("../../carriage.wgsl")
-        + include_str!("../sample.wgsl")
+        + super::sampling_source(false)
         + super::PLAIN_QUERY;
     records::named(
         "water query shader",
@@ -326,7 +326,7 @@ fn surf_query_passes_parse_with_all_shared_bindings() {
         + include_str!("../../column/records.wgsl")
         + include_str!("../../column.wgsl")
         + include_str!("../../carriage.wgsl")
-        + &super::sampling_source(true)
+        + super::sampling_source(true)
         + &crate::map_gpu::declarations_at(super::SURF_GROUP)
         + &crate::surf::SurfGpu::query_source(super::SURF_GROUP, super::SURF_BINDING);
     records::named("surf body query passes", &source, &[]);

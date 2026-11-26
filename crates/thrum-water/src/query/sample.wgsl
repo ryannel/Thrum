@@ -37,12 +37,16 @@ struct Answer {
     wake: vec4<f32>,
 }
 @group(0) @binding(0) var<uniform> settings: Settings;
-@group(0) @binding(1) var<storage, read> points: array<QueryPoint>;
 @group(0) @binding(2) var<storage, read> components: array<Component>;
 @group(0) @binding(3) var<storage, read_write> answers: array<Answer>;
 @group(0) @binding(4) var cascades: texture_2d_array<f32>;
 
 fn column_component(index: u32) -> Component { return components[index]; }
+
+struct QueryCarriage {
+    motion: CascadeMotion,
+    gradient: CarriageGradient,
+}
 
 fn carriage_gradient(point: QueryPoint) -> CarriageGradient {
     var gradient = CarriageGradient(COLUMN_IDENTITY, COLUMN_IDENTITY, vec2(0.0));
@@ -68,6 +72,12 @@ fn carriage_gradient(point: QueryPoint) -> CarriageGradient {
         }
     }
     return gradient;
+}
+
+fn local_query_carriage(point: QueryPoint) -> QueryCarriage {
+    let motion = cascade_motion(point.position, point.level_current_bed.yz, point.track,
+        settings.swash_margin.z, settings.swash_margin.w);
+    return QueryCarriage(motion, carriage_gradient(point));
 }
 
 fn cascade_wave(point: QueryPoint, motion: CascadeMotion, band: u32, gradient: CarriageGradient) -> CarriedColumn {
@@ -98,12 +108,11 @@ fn write_answer(index: u32, point: QueryPoint, gains: vec4<f32>, result: QueryWa
     out.current_bed = vec4(row.yzw, 0.0);
     // A stage change can make a dry or sheltered point gain wave support
     // before its use tick. Keep the actual frame samples for that case.
-    let motion = cascade_motion(point.position, row.yz, point.track, settings.swash_margin.z, settings.swash_margin.w);
-    let gradient = carriage_gradient(point);
+    let carriage = query_carriage(index, point);
     var bands: array<CarriedColumn, 3>;
     for (var band = 0u; band < 3u; band++) {
         if settings.heights[band + 1u] > 0.0 {
-            let carried = cascade_wave(point, motion, band, gradient);
+            let carried = cascade_wave(point, carriage.motion, band, carriage.gradient);
             let wave = carried.wave;
             bands[band] = carried;
             out.advection_rate[band] = carried.advection_rate;

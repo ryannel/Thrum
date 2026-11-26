@@ -46,34 +46,23 @@ const PLAIN_QUERY: &str = "
 fn sample_query(@builtin(global_invocation_id) invocation: vec3<u32>) {
     let index = invocation.x;
     if index >= settings.count { return; }
-    let point = points[index];
+    let point = query_point(index);
     let gains = query_gains(point);
     var result: QueryWave;
     if point.body != 0xffffffffu { result = plain_query(point, gains.x); }
     write_answer(index, point, gains, result);
 }";
 
-fn sampling_source(rivers: bool) -> std::borrow::Cow<'static, str> {
-    let source = include_str!("sample.wgsl");
-    if !rivers {
-        return source.into();
+pub(crate) fn sampling_source(rivers: bool) -> &'static str {
+    if rivers {
+        concat!(
+            include_str!("sample.wgsl"),
+            include_str!("../map_gpu/river_carriage.wgsl"),
+            include_str!("river.wgsl"),
+        )
+    } else {
+        concat!(include_str!("sample.wgsl"), include_str!("plain.wgsl"))
     }
-    const LAST_POINT_FIELD: &str = "    track_gradient: vec4<f32>,";
-    const CARRIAGE_GRADIENT: &str = "    let gradient = carriage_gradient(point);";
-    // Keep the smaller input record and the ordinary shader on maps without
-    // sampled river charts. Both query pipelines use the same specialization.
-    let mut source = source
-        .replace(LAST_POINT_FIELD,
-            "    track_gradient: vec4<f32>,\n    receiver: RiverReceiver,")
-        .replace(CARRIAGE_GRADIENT,
-            "    let gradient = carriage_gradient(point);\n    let phase = river_query_motion(point, motion, gradient);")
-        .replace("cascade_wave(point, motion, band, gradient)",
-            "cascade_wave(point, phase.motion, band, phase.gradient)");
-    source.push_str(concat!(
-        include_str!("../map_gpu/river_carriage.wgsl"),
-        include_str!("river.wgsl"),
-    ));
-    source.into()
 }
 
 #[repr(C)]

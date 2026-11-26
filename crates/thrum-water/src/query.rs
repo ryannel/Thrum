@@ -3,6 +3,8 @@ mod gpu;
 mod rain;
 
 pub(super) use gpu::Readback;
+#[cfg(test)]
+pub(super) use gpu::sampling_source;
 pub(super) use gpu::validate;
 use gpu::{Correction, ReadyBody};
 use std::{
