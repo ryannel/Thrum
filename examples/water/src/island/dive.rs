@@ -1,4 +1,6 @@
-use super::{Wind, island_material, placements, prepare_island_map_at};
+use super::{
+    Wind, island_material, placements, prepare_island_map_at, surf_spectrum, surf_water_profile,
+};
 use crate::SharedReport;
 use std::{
     error::Error,
@@ -13,51 +15,79 @@ use thrum_water::{Optics, Water};
 // the island's relative sea, seabed and camera elevations.
 const SEA_LEVEL: f32 = 16.0;
 
+/// An island waterline the inspection camera can cross.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum DiveSite {
+    /// The deep part of the sheltered island lake.
+    Lake,
+    /// The exposed sea over the offshore shelf.
+    Sea,
+    /// The seaward side of the beach's swash.
+    Swash,
+}
+
+impl DiveSite {
+    /// The location name used by the scene query and capture receipts.
+    #[must_use]
+    pub const fn name(self) -> &'static str {
+        match self {
+            Self::Lake => "lake",
+            Self::Sea => "sea",
+            Self::Swash => "swash",
+        }
+    }
+
+    /// The distance above and below mean water used in the crossing.
+    #[must_use]
+    pub const fn crossing_depth(self) -> f64 {
+        match self {
+            Self::Lake | Self::Sea => 0.6,
+            Self::Swash => 0.35,
+        }
+    }
+}
+
 fn camera([x, level, z]: [f32; 3], depth: f32, pitch: f32) -> Camera {
     let y = level - depth;
     let (rise, forward) = pitch.to_radians().sin_cos();
     Camera::look_at([x, y, z], [x + 10.0 * forward, y + 10.0 * rise, z], 105.0)
 }
 
-/// A camera that can dive through the island lake's waterline.
+/// An inspection camera that can cross the selected waterline.
 /// # Errors
 /// Returns invalid map, spectrum, control or cooked asset declarations.
-pub fn build_lake_dive(
+pub fn build_dive(
     wind: Wind,
+    site: DiveSite,
     draw_water: bool,
 ) -> Result<(SkyGame, SharedReport), Box<dyn Error>> {
-    build_dive(wind, draw_water, true)
-}
-
-/// Offshore inspection above the island shelf at a raised sea level.
-/// # Errors
-/// Returns invalid map, spectrum, control or cooked asset declarations.
-pub fn build_sea_dive(
-    wind: Wind,
-    draw_water: bool,
-) -> Result<(SkyGame, SharedReport), Box<dyn Error>> {
-    build_dive(wind, draw_water, false)
-}
-
-fn build_dive(
-    wind: Wind,
-    draw_water: bool,
-    lake: bool,
-) -> Result<(SkyGame, SharedReport), Box<dyn Error>> {
-    let (eye_at_surface, vertical_offset, max_depth) = if lake {
-        ([183.0, 12.0, 5.0], 0.0, 3.4)
-    } else {
-        ([-293.0, SEA_LEVEL, 20.0], SEA_LEVEL, 10.0)
+    let (eye_at_surface, vertical_offset, initial_depth, max_depth) = match site {
+        DiveSite::Lake => ([183.0, 12.0, 5.0], 0.0, 1.0, 3.4),
+        DiveSite::Sea => ([-293.0, SEA_LEVEL, 20.0], SEA_LEVEL, 1.0, 10.0),
+        DiveSite::Swash => ([-112.0, SEA_LEVEL, 0.0], SEA_LEVEL, 0.1, 0.4),
     };
-    let forcing = wind.forcing();
+    let surf = site == DiveSite::Swash;
+    let lake = site == DiveSite::Lake;
+    let forcing = if surf {
+        wind.surf_forcing()
+    } else {
+        wind.forcing()
+    };
     let map = Arc::new(Mutex::new(prepare_island_map_at(
         &forcing,
-        None,
+        surf.then_some(true),
         None,
         f64::from(vertical_offset),
     )?));
-    let spectrum = Spectrum::build(&forcing)?;
-    let mut profile = crate::profile(&spectrum);
+    let (spectrum, mut profile) = if surf {
+        let spectrum = surf_spectrum(wind, &forcing)?;
+        let profile = surf_water_profile(&spectrum);
+        (spectrum, profile)
+    } else {
+        let spectrum = Spectrum::build(&forcing)?;
+        let profile = crate::profile(&spectrum);
+        (spectrum, profile)
+    };
     let mut optics = Optics::default();
     if lake {
         optics = Optics {
@@ -79,7 +109,7 @@ fn build_dive(
     let depth = controls
         .slider("camera.depth", "Depth (m)", -2.0..=max_depth)
         .step(0.01)
-        .default(1.0)
+        .default(initial_depth)
         .add()?;
     let pitch = controls
         .slider("camera.pitch", "Pitch (degrees)", -80.0..=89.99)
@@ -91,7 +121,7 @@ fn build_dive(
         .add()?;
     let game = SkyGame::new(
         controls,
-        camera(eye_at_surface, 1.0, 45.0),
+        camera(eye_at_surface, initial_depth, 45.0),
         move |controls, sky| {
             sky.camera = camera(eye_at_surface, controls.get(depth), controls.get(pitch));
             sky.sun_elevation_degrees = controls.get(sun);
@@ -104,12 +134,14 @@ fn build_dive(
     .with_tick_duration(Duration::from_secs_f64(1.0 / 60.0))?;
     let mut meshes = placements(&map, lake, vertical_offset);
     let [x, level, z] = eye_at_surface;
-    meshes.push(
-        MeshPlacement::new("meshes/float", "textures/white")
-            .at([x + 2.5, level - 1.8, z])
-            .scale(0.38),
-    );
-    if !lake {
+    if !surf {
+        meshes.push(
+            MeshPlacement::new("meshes/float", "textures/white")
+                .at([x + 2.5, level - 1.8, z])
+                .scale(0.38),
+        );
+    }
+    if site == DiveSite::Sea {
         meshes.push(
             MeshPlacement::new("meshes/float", "textures/white")
                 .at([x + 2.5, level, z + 0.7])

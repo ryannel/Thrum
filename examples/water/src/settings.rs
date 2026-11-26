@@ -5,7 +5,7 @@
 //! builds the scene a person opens. The library reads no environment itself. The proof harness's own
 //! variables, which say where a proof writes and what it records, are not parsed here.
 use crate::floating::{WakeDemo, WakeView, WhitewaterDemo};
-use crate::island::Wind;
+use crate::island::{DiveSite, Wind};
 
 /// Each setting's page query name and environment variable.
 const FOAM: (&str, &str) = ("foam", "THRUM_WATER_FOAM");
@@ -40,10 +40,8 @@ pub enum Settings {
     },
     /// The island's rain yard, with a named wind.
     RainYard(Wind),
-    /// The lake, with a continuous camera depth control.
-    LakeDive(Wind),
-    /// Offshore island shelf with a continuous camera depth control.
-    SeaDive(Wind),
+    /// A waterline inspection with wind, location and continuous camera depth control.
+    Dive(Wind, DiveSite),
     /// Island beach with refraction of the long waves and the breaker section.
     Surf(Wind),
     /// Hand-authored outlet from the island's lake.
@@ -102,11 +100,11 @@ impl Wake {
 }
 
 impl Settings {
-    /// The diver's wind, when a dive scene was selected.
+    /// The diver's wind and location, when a dive scene was selected.
     #[must_use]
-    pub fn dive_wind(self) -> Option<Wind> {
+    pub fn dive(self) -> Option<(Wind, DiveSite)> {
         match self {
-            Self::LakeDive(wind) | Self::SeaDive(wind) => Some(wind),
+            Self::Dive(wind, site) => Some((wind, site)),
             _ => None,
         }
     }
@@ -133,11 +131,12 @@ impl Settings {
             .as_deref()
             .and_then(Wind::named)
         {
-            return if get(LOCATION).as_deref() == Some("sea") {
-                Self::SeaDive(wind)
-            } else {
-                Self::LakeDive(wind)
+            let site = match get(LOCATION).as_deref() {
+                Some("sea") => DiveSite::Sea,
+                Some("swash") => DiveSite::Swash,
+                _ => DiveSite::Lake,
             };
+            return Self::Dive(wind, site);
         }
         if let Some(wind) = get(RAIN).as_deref().and_then(Wind::named) {
             return Self::RainYard(wind);
@@ -224,11 +223,11 @@ mod tests {
     fn dive_location_is_shared_by_window_and_browser() {
         assert_eq!(
             Settings::from_query("?dive=calm"),
-            Settings::LakeDive(Wind::Calm)
+            Settings::Dive(Wind::Calm, DiveSite::Lake)
         );
         assert_eq!(
             Settings::from_query("?dive=trade&location=sea"),
-            Settings::SeaDive(Wind::Trade)
+            Settings::Dive(Wind::Trade, DiveSite::Sea)
         );
         assert_eq!(
             Settings::from_variables(|name| match name {
@@ -236,7 +235,11 @@ mod tests {
                 "THRUM_WATER_LOCATION" => Some("sea".into()),
                 _ => None,
             }),
-            Settings::SeaDive(Wind::Trade)
+            Settings::Dive(Wind::Trade, DiveSite::Sea)
+        );
+        assert_eq!(
+            Settings::from_query("?dive=trade&location=swash"),
+            Settings::Dive(Wind::Trade, DiveSite::Swash)
         );
     }
 

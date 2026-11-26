@@ -122,9 +122,12 @@ example `?foam=gale&location=beach`. The browser proof is `node scripts/check_wa
 Use `THRUM_WATER_DIVE=calm ./dev scene examples/water` on the Mac or
 `?dive=calm` in the browser for the island lake. Add
 `THRUM_WATER_LOCATION=sea` on the Mac or `&location=sea` in the browser for
-the offshore shelf. Both routes expose camera depth, pitch and Sun elevation.
+the offshore shelf. The dive routes expose camera depth, pitch and Sun elevation.
 The offshore route lifts the terrain and water levels 16 m so the sky camera
 can reach 10 m underwater within its supported altitude range.
+Choose `THRUM_WATER_LOCATION=swash` or `&location=swash` to cross the
+waterline on the beach. This view uses the same raised datum and the island
+breaker section.
 
 ## Lake outlet
 

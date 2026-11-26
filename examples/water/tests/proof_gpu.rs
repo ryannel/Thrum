@@ -20,7 +20,7 @@ use std::{path::PathBuf, time::Duration};
 #[cfg(target_os = "macos")]
 use thrum_render::runtime::{CaptureLimits, FrameSample, FrameWorld, SceneSource, SubmittedImage};
 #[cfg(target_os = "macos")]
-use water_scene::island::Wind;
+use water_scene::island::{DiveSite, Wind};
 #[cfg(target_os = "macos")]
 use water_scene::settings::{Floating, Settings};
 
@@ -77,8 +77,7 @@ fn whitewater() -> bool {
         Settings::OpenSea
         | Settings::OpticsSea(_)
         | Settings::OpticsShade(_)
-        | Settings::LakeDive(_)
-        | Settings::SeaDive(_)
+        | Settings::Dive(_, _)
         | Settings::RainYard(_)
         | Settings::Channel(_)
         | Settings::River(_) => false,
@@ -97,11 +96,8 @@ fn proof_game(water: bool) -> (thrum_app::sky::SkyGame, water_scene::SharedRepor
                 water_scene::island::build_foam(wind, water, foam).expect("island");
             (game, report)
         }
-        Settings::LakeDive(wind) => {
-            water_scene::island::build_lake_dive(wind, water).expect("lake dive")
-        }
-        Settings::SeaDive(wind) => {
-            water_scene::island::build_sea_dive(wind, water).expect("sea dive")
+        Settings::Dive(wind, site) => {
+            water_scene::island::build_dive(wind, site, water).expect("dive scene")
         }
         Settings::RainYard(wind) => {
             let (game, report, _, _) =
@@ -228,14 +224,14 @@ fn driver(gpu: &thrum_test_support::Gpu) {
         return;
     }
     if mode == "dive-cost" {
-        let wind = settings()
-            .dive_wind()
+        let (wind, site) = settings()
+            .dive()
             .expect("dive cost requires THRUM_WATER_DIVE");
-        let location = if matches!(settings(), Settings::SeaDive(_)) {
-            "sea"
-        } else {
-            "lake"
-        };
+        assert!(
+            site != DiveSite::Swash,
+            "cost fixture requires full-depth sea or lake"
+        );
+        let location = site.name();
         let (game, report) = proof_game(true);
         let mut fixture = support::Fixture::from_game(gpu, [2560, 1440], game, report);
         fixture.warm_cooked();
@@ -299,7 +295,7 @@ fn driver(gpu: &thrum_test_support::Gpu) {
     } else if channel_route()
         || river_route()
         || island_wind().is_some()
-        || settings().dive_wind().is_some()
+        || settings().dive().is_some()
         || matches!(
             settings(),
             Settings::OpticsSea(_) | Settings::OpticsShade(_)
@@ -324,6 +320,10 @@ fn driver(gpu: &thrum_test_support::Gpu) {
     }
     let report = fixture.report.lock().expect("report").clone();
     let mut result = json!({"schema":1,"target":"mac-metal","mode":mode,"extent":fixture.extent,"vertices":report.vertices,"resources":report.resources});
+    if let Some((wind, site)) = settings().dive() {
+        result["wind"] = json!(format!("{wind:?}"));
+        result["dive_site"] = json!(site.name());
+    }
     if let Some(wind) = island_wind() {
         result["wind"] = json!(format!("{wind:?}"));
         result["body_vertices"] = json!(report.bodies);
@@ -514,7 +514,7 @@ fn driver(gpu: &thrum_test_support::Gpu) {
                 && (floating().is_some() || island_wind().is_some())
             {
                 optics_checkpoints()
-            } else if settings().dive_wind().is_some() {
+            } else if let Some((_, site)) = settings().dive() {
                 let mut views = vec![
                     ("up-1m", 1.0, 89.99, 60.0),
                     ("inclined-1m", 1.0, 45.0, 60.0),
@@ -523,7 +523,13 @@ fn driver(gpu: &thrum_test_support::Gpu) {
                     ("dawn-level-3m", 3.0, 0.0, 1.0),
                     ("twilight-level-3m", 3.0, 0.0, -5.0),
                 ];
-                if matches!(settings(), Settings::SeaDive(_)) {
+                if site == DiveSite::Swash {
+                    views = vec![
+                        ("above-swash", -0.35, 0.0, 60.0),
+                        ("split-swash", 0.0, 0.0, 60.0),
+                        ("under-swash", 0.25, 25.0, 60.0),
+                    ];
+                } else if site == DiveSite::Sea {
                     views.extend([
                         ("up-5m", 5.0, 89.99, 60.0),
                         ("inclined-5m", 5.0, 45.0, 60.0),

@@ -1083,7 +1083,13 @@ try {
         ['level-0.5m',{'camera.depth':0.5,'camera.pitch':0}],
         ['down-3m',{'camera.depth':3,'camera.pitch':-35}],
       ];
-      if(routeParams.get('location')==='sea'){
+      if(routeParams.get('location')==='swash'){
+        checkpoints=[
+          ['above-swash',{'camera.depth':-0.35,'camera.pitch':0}],
+          ['split-swash',{'camera.depth':0,'camera.pitch':0}],
+          ['under-swash',{'camera.depth':0.25,'camera.pitch':25}],
+        ];
+      }else if(routeParams.get('location')==='sea'){
         checkpoints.push(
           ['up-5m',{'camera.depth':5,'camera.pitch':89.99}],
           ['inclined-5m',{'camera.depth':5,'camera.pitch':45}],
@@ -1131,15 +1137,17 @@ try {
     // Page's own RAF timestamps drive the ordinary scene loop; each image is the frame it submitted.
     const view=Number(process.env.THRUM_WATER_ISLAND_CAMERA??'0');
     const offshore=surfInspection&&view===2;
-    const dive=new URLSearchParams(route).has('dive');
+    const routeParams=new URLSearchParams(route);
+    const dive=routeParams.has('dive');
+    const diveDepth=routeParams.get('location')==='swash'?0.35:0.6;
     const duration=offshore?22000:surfInspection?12000:dive?5000:1000;
     const spacing=offshore?200:surfInspection?100:dive?50:0;
     if(dive){
-      await evaluate("game.edit_control('camera.pitch',0);game.edit_control('camera.depth',-0.6)");
+      await evaluate(`game.edit_control('camera.pitch',0);game.edit_control('camera.depth',${-diveDepth})`);
       await until(async()=>{
         const status=await evaluate('game.frame(performance.now());game.report()');
         return /^Cooked generation [0-9]+ drawn/.test(status);
-      },'cooked lake drawn');
+      },'cooked dive scene drawn');
     }
     if(surfInspection){
       assert(Number.isInteger(view)&&view>=0&&view<=8,'invalid surf camera');
@@ -1174,7 +1182,7 @@ try {
       const loop=timestamp=>{
         __start??=timestamp;const elapsed=timestamp-__start;
         __intervals.push(timestamp);collect();
-        if(${dive})game.edit_control('camera.depth',-0.6*Math.cos(2*Math.PI*elapsed/${duration}));
+        if(${dive})game.edit_control('camera.depth',${-diveDepth}*Math.cos(2*Math.PI*elapsed/${duration}));
         else if(!${surfInspection})game.edit_control('camera.bearing',90+elapsed*0.012);
         if(${handoffCut}&&elapsed>=5000&&__cameraCut===null){
           game.edit_control('camera.island',8);
