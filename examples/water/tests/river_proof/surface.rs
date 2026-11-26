@@ -3,6 +3,7 @@ use std::{
     time::Duration,
 };
 use thrum_app::sky::{Camera, ContentStatus, Controls, SkyGame};
+use thrum_water_model::{Field, Map, RiverFile};
 use water_scene::{channel, island::Wind, river};
 
 use super::map::{REACHES, transect_points};
@@ -145,9 +146,25 @@ pub(crate) fn check(gpu: &thrum_test_support::Gpu, upper: bool) {
         "Metal river transects: {} spring, {} plunge reach, {} outlet hits, maximum residual {max_error:.7} m",
         count[3], count[4], count[5],
     );
-    if !upper {
-        return;
+    if upper {
+        check_joins(&map, &camera, &mut scene, &tap, &field, &files, time);
     }
+}
+
+#[expect(
+    clippy::cast_possible_truncation,
+    clippy::print_stdout,
+    reason = "join cameras use GPU metres and the log retains the measured step"
+)]
+fn check_joins(
+    map: &Mutex<Map>,
+    camera: &Mutex<Camera>,
+    scene: &mut Fixture,
+    tap: &support::depth::DepthTap,
+    field: &Field,
+    files: &[RiverFile; 2],
+    mut time: f64,
+) {
     let joins: Vec<_> = files
         .iter()
         .flat_map(|file| &file.reaches)
@@ -172,7 +189,7 @@ pub(crate) fn check(gpu: &thrum_test_support::Gpu, upper: bool) {
                 let (at, surface) = (0_u16..=90)
                     .map(|offset| time + f64::from(offset) * 0.20)
                     .find_map(|at| {
-                        let surface = map.surface(&field, point, at).expect("join surface");
+                        let surface = map.surface(field, point, at).expect("join surface");
                         let high = surface.sample.height;
                         (surface.wet
                             && high > bed + 0.03
@@ -199,7 +216,7 @@ pub(crate) fn check(gpu: &thrum_test_support::Gpu, upper: bool) {
             let inverse = support::depth::matrix(view, EXTENT).as_dmat4().inverse();
             // The displayed sample lies one fixed step behind the observation clock.
             scene.frame_without_timings(time + STEP.as_secs_f64());
-            let depth = tap.read(&scene);
+            let depth = tap.read(scene);
             let map = map.lock().expect("river map");
             let row = EXTENT[1] / 2;
             // An odd target samples the seam line through the centre of the
@@ -213,7 +230,7 @@ pub(crate) fn check(gpu: &thrum_test_support::Gpu, upper: bool) {
                 );
                 let p = ray_hit(inverse, column, row, d);
                 let place = [p.x, p.z];
-                let expected = map.surface(&field, place, time).expect("model surface");
+                let expected = map.surface(field, place, time).expect("model surface");
                 assert!(expected.wet);
                 let error = (p.y - expected.sample.height).abs();
                 assert!(
