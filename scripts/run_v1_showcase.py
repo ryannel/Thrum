@@ -242,15 +242,17 @@ def mac_exit_controls(run, store, row, stops, *, edit_source=None):
     parameters = run / 'stop.params.json'
     if edit_source is not None:
         stops = {name: {**preset, 'profiler.enabled': True} for name, preset in stops.items()}
-    write_json(parameters, stops[ROUTE[0]])
+    initial = {'world.paused': True}
+    if edit_source is not None:
+        initial['profiler.enabled'] = True
+    write_json(parameters, initial)
     env = dict(native_exit_environment(store, row), THRUM_PARAMS=str(parameters),
-               THRUM_PROFILE_OUTPUT=str(output), THRUM_REPORT='1')
+               THRUM_PROFILE_OUTPUT=str(output), THRUM_REPORT='1', THRUM_MAC_FRAME_RATE='60')
     content_path = run / 'drawn.json'
     frame_path = run / 'frames.jsonl'
     if edit_source is not None:
         env.update(THRUM_SHOWCASE_CONTENT_REPORT=str(content_path), THRUM_GOVERNOR_RECORD='observed',
-                   THRUM_MAC_TRANSITION=str(run), THRUM_MAC_TRANSITION_ARM='route',
-                   THRUM_MAC_FRAME_RATE='60')
+                   THRUM_MAC_TRANSITION=str(run), THRUM_MAC_TRANSITION_ARM='route')
     result = {}
     last_submission = -1
     log_path = run / 'game.log'
@@ -272,17 +274,30 @@ def mac_exit_controls(run, store, row, stops, *, edit_source=None):
                 ready = wait_until(process, 'present the prepared window',
                                    lambda: next((record for record in reversed(complete_lines(frame_path))
                                                  if record['presented']), None))
+            profiles = output / 'samples.jsonl'
+
+            def initial_profile():
+                records = complete_lines(profiles)
+                if records and records[-1]['frames']:
+                    return records[-1]
+                return None
+
+            # Startup can advance the clock before the initial pause is applied.
+            # Send every stop through the watcher after the paused window has presented.
+            profile = wait_until(process, 'present the paused panel', initial_profile)
+            last_submission = profile['frames'][0]['submission']
             for index, (stop, preset) in enumerate(stops.items()):
-                if index > 0:
-                    pending = parameters.with_suffix('.partial')
-                    write_json(pending, preset)
-                    pending.replace(parameters)
-                profiles = output / 'samples.jsonl'
+                pending = parameters.with_suffix('.partial')
+                write_json(pending, preset)
+                pending.replace(parameters)
 
                 def read_preset():
                     records = complete_lines(profiles)
-                    if not records or log_path.read_text().count('0 refused') <= index:
+                    saves = [line for line in log_path.read_text().splitlines() if ' (saved): ' in line]
+                    if len(saves) <= index:
                         return None
+                    if not saves[index].endswith(', 0 refused'):
+                        raise Failure(f'{stop}: {saves[index]}')
                     record = records[-1]
                     by_key = {control['key']: control for control in record['model']['controls']}
                     matches = all(
