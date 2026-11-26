@@ -2640,7 +2640,7 @@ async function main() {
       }));
       else if (mode.startsWith('interface-text')) results.push(await qualifyInterfaceText({
         cdp, origin: serving.origin, fontOrigin: assetsOrigin, source: assetsSource, output,
-        timeout: args['timeout-ms'], wasm: files.get('/v1_game_bg.wasm'), existingGame, waitFor,
+        timeout: args['timeout-ms'], wasm: files.get('/v1_game_bg.wasm'), existingGame, waitFor, releaseGameGraphics, unloadGamePage,
         commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repo, encoding: 'utf8' }).trim(),
         visual: mode === 'interface-text-visual', decodePng, encodePng,
       }));

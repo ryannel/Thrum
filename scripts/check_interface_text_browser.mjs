@@ -143,7 +143,8 @@ function compare(frame, width, reference) {
   return null;
 }
 
-export async function qualifyInterfaceText({ cdp, origin, fontOrigin, source, output, timeout, wasm, existingGame, waitFor, commit, visual, decodePng, encodePng }) {
+export async function qualifyInterfaceText({ cdp, origin, fontOrigin, source, output, timeout, wasm,
+  existingGame, waitFor, releaseGameGraphics, unloadGamePage, commit, visual, decodePng, encodePng }) {
   const pixelFile = path.join(source, 'pixel', 'font.json');
   const original = await fs.readFile(pixelFile);
   const changed = JSON.parse(original);
@@ -211,6 +212,15 @@ export async function qualifyInterfaceText({ cdp, origin, fontOrigin, source, ou
       const game = await existingGame(cdp, sessionId);
       const build = await readWasmReceipt(cdp, sessionId, `${origin}/v1_game_bg.wasm`, wasm.sha256, wasm.bytes.length);
       await game.invoke('game.begin_fixed_submission(args[0]);', [dpr]);
+      const retire = async () => {
+        // End the capture and acknowledge device loss while the page still owns its canvas.
+        // Closing Chrome with the fixed capture and its WebGPU surface live can stall teardown.
+        await game.invoke('game.end_submitted_capture();');
+        const devices = await releaseGameGraphics(cdp, sessionId, game);
+        assert(Number.isInteger(devices) && devices > 0, `DPR ${dpr}: no font card WebGPU device retired`);
+        await unloadGamePage(cdp, sessionId, timeout);
+        return devices;
+      };
       let previousSubmission = null;
       const frame = async () => {
         assert.equal(await game.invoke('return window.stepFontFrame();'), 1);
@@ -251,7 +261,8 @@ export async function qualifyInterfaceText({ cdp, origin, fontOrigin, source, ou
         return { ...take.metadata, filename, sha256: createHash('sha256').update(take.rgba).digest('hex') };
       };
       if (visual) {
-        arms.push({ dpr, width, height, build, fixed: await keep(initial, 'type') });
+        const fixed = await keep(initial, 'type');
+        arms.push({ dpr, width, height, build, fixed, devices_retired: await retire() });
         continue;
       }
       const initialExpected = reference(before, dpr, initial.metadata.source_tick, false);
@@ -289,7 +300,8 @@ export async function qualifyInterfaceText({ cdp, origin, fontOrigin, source, ou
       assert(last, 'font edit reached the same page');
       assert(frames.some(frame => frame.reference === 'old') && frames.some(frame => frame.reference === 'new'));
       assert.equal(await game.invoke('return game.submitted_capture_omissions();'), 0);
-      arms.push({ dpr, width, height, build, first, frames, sheetHashes, last: await keep(last, 'new') });
+      const final = await keep(last, 'new');
+      arms.push({ dpr, width, height, build, first, frames, sheetHashes, last: final, devices_retired: await retire() });
       if (dpr < 3) {
         await save(original);
         before = await awaitFonts(after.generation);
