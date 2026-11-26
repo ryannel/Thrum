@@ -1,0 +1,96 @@
+{
+  "asset": {
+    "version": "2.0"
+  },
+  "buffers": [
+    {
+      "byteLength": 680352,
+      "uri": "rain-yard-track.bin"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 147132
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 147132,
+      "byteLength": 288000
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 435132,
+      "byteLength": 147132
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 582264,
+      "byteLength": 98088
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 12261,
+      "type": "VEC3",
+      "min": [
+        146.0,
+        14.234752655029297,
+        42.0
+      ],
+      "max": [
+        156.0,
+        16.55159568786621,
+        45.0
+      ]
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5125,
+      "count": 72000,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 12261,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5126,
+      "count": 12261,
+      "type": "VEC2"
+    }
+  ],
+  "meshes": [
+    {
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "indices": 1
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "mesh": 0
+    }
+  ],
+  "scenes": [
+    {
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "scene": 0
+}

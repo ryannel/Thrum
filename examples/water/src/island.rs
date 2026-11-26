@@ -13,6 +13,8 @@ use thrum_water_model::{
 
 use crate::{SharedMap, SharedReport};
 
+mod rain_yard;
+
 /// Weather selected when the island is loaded.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Wind {
@@ -362,7 +364,7 @@ pub type FoamScene = (SkyGame, SharedReport, SharedMap, Option<FoamProbes>);
 /// # Panics
 /// Panics if a scene lock is poisoned or a bounded control fails.
 pub fn build_foam(wind: Wind, draw_water: bool, foam: bool) -> Result<FoamScene, Box<dyn Error>> {
-    build_island(wind, draw_water, foam, None, true, |_| {})
+    build_island(wind, draw_water, foam, None, true, false, |_| {})
 }
 
 /// Use the island's surf profile and tide and beach inspection controls.
@@ -380,7 +382,7 @@ pub fn build_surf_paired(
     draw_water: bool,
     surf: bool,
 ) -> Result<FoamScene, Box<dyn Error>> {
-    build_island(wind, draw_water, true, Some(surf), false, |_| {})
+    build_island(wind, draw_water, true, Some(surf), false, false, |_| {})
 }
 
 /// Build the surf island with an observer for the cache's evaluated nodes and table reads.
@@ -390,7 +392,7 @@ pub fn build_surf_measured(
     wind: Wind,
 ) -> Result<(FoamScene, thrum_water::SurfTap), Box<dyn Error>> {
     let mut tap = None;
-    let scene = build_island(wind, true, true, Some(true), false, |water| {
+    let scene = build_island(wind, true, true, Some(true), false, false, |water| {
         tap = Some(water.tap_surf_work());
     })?;
     Ok((scene, tap.ok_or("missing surf work observer")?))
@@ -400,7 +402,15 @@ pub fn build_surf_measured(
 /// # Errors
 /// Propagates scene construction errors.
 pub fn build_optics_arm(wind: Wind, optics: bool) -> Result<FoamScene, Box<dyn Error>> {
-    build_island(wind, true, false, None, optics, |_| {})
+    build_island(wind, true, false, None, optics, false, |_| {})
+}
+
+/// Build the island with the rain yard's ground and inspection cameras.
+///
+/// # Errors
+/// Propagates scene construction errors.
+pub fn build_rain_yard(wind: Wind, draw_water: bool) -> Result<FoamScene, Box<dyn Error>> {
+    build_island(wind, draw_water, false, None, true, true, |_| {})
 }
 
 fn build_island(
@@ -409,6 +419,7 @@ fn build_island(
     foam: bool,
     surf: Option<bool>,
     optics: bool,
+    yard: bool,
     configure: impl FnOnce(&mut Water),
 ) -> Result<FoamScene, Box<dyn Error>> {
     let surf_route = surf.is_some();
@@ -460,14 +471,18 @@ fn build_island(
     let camera = controls
         .slider(
             "camera.island",
-            if surf_route {
+            if yard {
+                "Yard view"
+            } else if surf_route {
                 "Sand/Top/Sea/Lee/Point/Map/Out/Foam/Rise/Set"
             } else if foam {
                 "Beach / Lake / Pond / Hill / Map / Sill / Aerial"
             } else {
                 "Island view"
             },
-            0.0..=if surf_route {
+            0.0..=if yard {
+                3.0
+            } else if surf_route {
                 9.0
             } else if foam {
                 6.0
@@ -476,7 +491,13 @@ fn build_island(
             },
         )
         .step(1.0)
-        .default(if surf_route { 1.0 } else { 3.0 })
+        .default(if yard {
+            0.0
+        } else if surf_route {
+            1.0
+        } else {
+            3.0
+        })
         .add()?;
     let stage = controls
         .slider("lake.stage", "Lake stage", 0.0..=1.0)
@@ -512,14 +533,21 @@ fn build_island(
         .slider("lake.waves", "Lake wave gain", 0.0..=1.0)
         .default(1.0)
         .add()?;
-    let game = SkyGame::new(controls, CAMERAS[3], move |c, sky| {
+    let initial_camera = if yard {
+        rain_yard::camera(0)
+    } else {
+        CAMERAS[3]
+    };
+    let game = SkyGame::new(controls, initial_camera, move |c, sky| {
         #[expect(
             clippy::cast_possible_truncation,
             clippy::cast_sign_loss,
             reason = "bounded discrete camera control"
         )]
         let index = c.get(camera).round() as usize;
-        sky.camera = if surf_route {
+        sky.camera = if yard {
+            rain_yard::camera(index)
+        } else if surf_route {
             SURF_VIEWS[index]
         } else {
             match index {
@@ -556,8 +584,12 @@ fn build_island(
     .with_ground(None)
     .with_temporal_sampling(cfg!(target_arch = "wasm32"))
     .with_tick_duration(Duration::from_secs_f64(1.0 / 60.0))?;
+    let mut meshes = placements(&map, !surf_route);
+    if yard {
+        meshes.extend(rain_yard::placements());
+    }
     let (game, lease) = game.with_meshes_and_texture_lease(
-        placements(&map, !surf_route),
+        meshes,
         Some(("water island", include_str!("../island.wgsl"))),
         if foam { &["textures/foam-rank"] } else { &[] },
     )?;

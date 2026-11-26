@@ -177,3 +177,7 @@
   types inside one hollows body, while the model steps one ground class per body and the renderer binds one
   optical type per contribution. Proposal: separate paving and packed-earth hollows bodies and authorize
   per-body optics. [Handoff](../../../.orchestrate/evidence/PUDDLES/WP3-handoff.md)
+- 2026-11-26 Authored the yard's paving, packed-earth ruts, roof, posts and wall beside the lake. Verified the
+  baked mesh triangles share the paving-track edge, the 15 cm paving pit joins the shallow dip at a sill below
+  the outlet, both ruts retain water, and the roof covers four posts. The fifth post crosses the pit floor.
+  [Geometry and cooker records](../../../.orchestrate/evidence/PUDDLES/WP3/yard.md)

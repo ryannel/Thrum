@@ -20,6 +20,7 @@ const WAKE_BODIES: (&str, &str) = ("wake-bodies", "THRUM_WATER_WAKE_BODIES");
 const ISLAND: (&str, &str) = ("island", "THRUM_WATER_ISLAND");
 const OPTICS: (&str, &str) = ("optics", "THRUM_WATER_OPTICS");
 const SURF: (&str, &str) = ("surf", "THRUM_WATER_SURF");
+const RAIN: (&str, &str) = ("rain", "THRUM_WATER_RAIN");
 
 /// The scene the settings choose.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -37,6 +38,8 @@ pub enum Settings {
         /// Whitewater on the shore, chosen by `foam` with `location=beach`.
         foam: bool,
     },
+    /// The island's rain yard, with a named wind.
+    RainYard(Wind),
     /// Island beach with refraction of the long waves and the breaker section.
     Surf(Wind),
     /// Hand-authored outlet from the island's lake.
@@ -111,6 +114,9 @@ impl Settings {
     }
 
     fn parse(get: impl Fn((&str, &str)) -> Option<String>) -> Self {
+        if let Some(wind) = get(RAIN).as_deref().and_then(Wind::named) {
+            return Self::RainYard(wind);
+        }
         if let Some(wind) = get(("channel", "THRUM_WATER_CHANNEL"))
             .as_deref()
             .and_then(Wind::named)
@@ -181,6 +187,17 @@ mod tests {
     fn no_setting_opens_the_sea() {
         assert_eq!(Settings::from_query(""), Settings::OpenSea);
         assert_eq!(Settings::from_query("?island=storm"), Settings::OpenSea);
+    }
+
+    #[test]
+    fn rain_yard_is_opt_in_on_both_hosts() {
+        let yard = Settings::RainYard(Wind::Calm);
+        assert_eq!(Settings::from_query("?rain=calm"), yard);
+        assert_eq!(
+            Settings::from_variables(|name| (name == "THRUM_WATER_RAIN").then(|| "calm".into())),
+            yard
+        );
+        assert_eq!(Settings::from_query("?rain=0"), Settings::OpenSea);
     }
 
     #[test]

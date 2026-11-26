@@ -1,0 +1,96 @@
+{
+  "asset": {
+    "version": "2.0"
+  },
+  "buffers": [
+    {
+      "byteLength": 1129632,
+      "uri": "rain-yard-paving.bin"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 243612
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 243612,
+      "byteLength": 480000
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 723612,
+      "byteLength": 243612
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 967224,
+      "byteLength": 162408
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 20301,
+      "type": "VEC3",
+      "min": [
+        146.0,
+        14.592066764831543,
+        45.0
+      ],
+      "max": [
+        156.0,
+        16.562999725341797,
+        50.0
+      ]
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5125,
+      "count": 120000,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 20301,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5126,
+      "count": 20301,
+      "type": "VEC2"
+    }
+  ],
+  "meshes": [
+    {
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "indices": 1
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "mesh": 0
+    }
+  ],
+  "scenes": [
+    {
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "scene": 0
+}

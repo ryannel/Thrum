@@ -68,6 +68,7 @@ fn whitewater() -> bool {
         Settings::OpenSea
         | Settings::OpticsSea(_)
         | Settings::OpticsShade(_)
+        | Settings::RainYard(_)
         | Settings::Channel(_) => false,
     }
 }
@@ -82,6 +83,11 @@ fn proof_game(water: bool) -> (thrum_app::sky::SkyGame, water_scene::SharedRepor
         Settings::Island { wind, foam } => {
             let (game, report, _, _) =
                 water_scene::island::build_foam(wind, water, foam).expect("island");
+            (game, report)
+        }
+        Settings::RainYard(wind) => {
+            let (game, report, _, _) =
+                water_scene::island::build_rain_yard(wind, water).expect("rain yard");
             (game, report)
         }
         Settings::Channel(wind) => {
@@ -205,7 +211,7 @@ fn driver(gpu: &thrum_test_support::Gpu) {
         || island_wind().is_some()
         || matches!(
             settings(),
-            Settings::OpticsSea(_) | Settings::OpticsShade(_)
+            Settings::OpticsSea(_) | Settings::OpticsShade(_) | Settings::RainYard(_)
         )
     {
         let (game, report) = proof_game(true);
@@ -362,7 +368,9 @@ fn driver(gpu: &thrum_test_support::Gpu) {
                 ("low-sun", 2, 90, 6),
                 ("twilight", 2, 90, -4),
             ];
-            let checkpoints: Vec<_> = if surf_route() {
+            let checkpoints: Vec<_> = if matches!(settings(), Settings::RainYard(_)) {
+                yard_checkpoints()
+            } else if surf_route() {
                 surf_checkpoints()
             } else if whitewater() {
                 let beach = island_wind().is_some();
@@ -472,6 +480,25 @@ fn driver(gpu: &thrum_test_support::Gpu) {
         serde_json::to_vec_pretty(&result).expect("json"),
     )
     .expect("record");
+}
+
+#[cfg(target_os = "macos")]
+fn yard_checkpoints() -> Vec<(String, String, f64)> {
+    [("noon", 60), ("low-sun", 8)]
+        .into_iter()
+        .flat_map(|(light, elevation)| {
+            ["west", "east", "roof", "overhead"]
+                .into_iter()
+                .enumerate()
+                .map(move |(camera, view)| {
+                    (
+                        format!("yard-{view}-{light}"),
+                        format!(r#"{{"camera.island":{camera},"sun.elevation":{elevation}}}"#),
+                        1.0,
+                    )
+                })
+        })
+        .collect()
 }
 
 #[cfg(target_os = "macos")]
