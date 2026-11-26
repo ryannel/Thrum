@@ -1,17 +1,27 @@
 {
   "module": "GAME-SDK",
   "design": {
-    "verdict": "ok",
-    "by": "review_limit",
-    "hash": "dcf039615e8717bbb97b302c79728c930ca3d68846207edc9f7f84ee84be1082",
-    "after": [
-      ".orchestrate/evidence/GAME-SDK/design-review-1.md",
-      ".orchestrate/evidence/GAME-SDK/design-review.md"
-    ],
-    "at": "2026-11-25T21:37:02Z",
-    "items_owed": [
-      "WP11"
-    ]
+    "verdict": "changes",
+    "review": ".orchestrate/evidence/GAME-SDK/design-review.md",
+    "commit": "90273de938bd7d55a8598d30a90c5ccb89267718",
+    "hash": "7c3777a447091f74edb3ff27c050460b0213ad2602147229e8a5c8370165cbf3",
+    "by": "review",
+    "host": "codex",
+    "model": "gpt-6.2-astra",
+    "effort": "high",
+    "observed": {
+      "model": "gpt-6.2-astra",
+      "effort": "high"
+    },
+    "cli": "codex-cli 0.171.0-alpha.13.2",
+    "path": "headless",
+    "usage": {
+      "input": 139373,
+      "cached": 2731008,
+      "output": 10505,
+      "turns": 1
+    },
+    "at": "2026-11-26T08:27:32Z"
   },
   "work_packages": {
     "WP1": {
@@ -91,7 +101,7 @@
     },
     {
       "verdict": "changes",
-      "review": ".orchestrate/evidence/GAME-SDK/design-review.md",
+      "review": ".orchestrate/evidence/GAME-SDK/design-review-2.md",
       "commit": "c01f071c872f6b1f2bb064a6da06b5bb0b5f4db5",
       "hash": "90d789090e5e5d848d50a678194645864992c4cc93ad76cc32a7ef3a29045c7a",
       "by": "review",
@@ -111,6 +121,19 @@
         "turns": 1
       },
       "at": "2026-11-25T21:22:34Z"
+    },
+    {
+      "verdict": "ok",
+      "by": "review_limit",
+      "hash": "dcf039615e8717bbb97b302c79728c930ca3d68846207edc9f7f84ee84be1082",
+      "after": [
+        ".orchestrate/evidence/GAME-SDK/design-review-1.md",
+        ".orchestrate/evidence/GAME-SDK/design-review.md"
+      ],
+      "at": "2026-11-25T21:37:02Z",
+      "items_owed": [
+        "WP11"
+      ]
     }
   ]
 }
