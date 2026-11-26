@@ -599,7 +599,33 @@
         "task": "Unblock SHOWCASE WP7 (Blocked, Needs Dependency; handoff .orchestrate/evidence/SHOWCASE/WP7-handoff.md in the showcase w",
         "at": "2026-11-26T20:24:53Z"
       },
-      "ends_stretch": true
+      "ends_stretch": true,
+      "ready_for_review": {
+        "commit": "451e612211c3322dc57b20700cb1f8f17de52529",
+        "checked": "451e612211c3322dc57b20700cb1f8f17de52529",
+        "at": "2026-11-26T21:31:44Z",
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.171.0-alpha.13.2",
+        "path": "visible",
+        "usage": {
+          "input": 184670,
+          "cached": 27714304,
+          "output": 30800,
+          "turns": 1
+        },
+        "session_usage": {
+          "input": 184670,
+          "cached": 27714304,
+          "output": 30800,
+          "turns": 1
+        }
+      }
     }
   },
   "tasks": [
