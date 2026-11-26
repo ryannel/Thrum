@@ -85,6 +85,9 @@ pub trait MobileGame: Sized + Send + 'static {
     type Readback: Send + 'static;
 
     /// Prepare a scene on the render owner, optionally using an app request.
+    /// A request is complete when the prepared scene is installed. Use it here
+    /// to initialise the scene and input state. If installation is deferred,
+    /// the shell can retry preparation with the same request.
     /// The wake callback is for games that start a resident world lane.
     ///
     /// # Errors
@@ -178,7 +181,8 @@ pub trait MobileGame: Sized + Send + 'static {
         std::iter::empty()
     }
 
-    /// Try to handle a scene request without replacing the current scene.
+    /// Try to handle a new request without replacing the current scene. Return
+    /// false to let the shell pass the request to preparation.
     fn scene_request(_input: &mut Self::Input, _request: &SceneRequest, _now: Duration) -> bool {
         false
     }

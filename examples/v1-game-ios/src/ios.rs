@@ -92,7 +92,7 @@ impl MobileGame for V1 {
             surface: Some(gpu.surface),
         };
         let invite_scene = request.is_some();
-        let (setup, mut host) = prepare_scene(&gpu, config, request)
+        let (setup, mut host) = prepare_scene(&gpu, config, request.as_ref())
             .await
             .map_err(GameError::Rejected)?;
         if qualification && self.culling_oracle {
@@ -116,7 +116,10 @@ impl MobileGame for V1 {
         }
         #[cfg(feature = "proving")]
         let input = (setup.interface_text == Some(InterfaceText::Menu)).then(|| {
-            let menu = MobileInterface::new(qualification);
+            let mut menu = MobileInterface::new(qualification);
+            if let Some(request) = request {
+                menu.open_invite(request.payload, Duration::ZERO);
+            }
             menu.view().attach(host.continuous_source_mut());
             menu
         });
@@ -275,7 +278,7 @@ impl MobileGame for V1 {
 async fn prepare_scene(
     gpu: &Gpu<'_>,
     config: FrameConfig,
-    request: Option<SceneRequest>,
+    request: Option<&SceneRequest>,
 ) -> Result<(GameSetup, Host), String> {
     #[cfg(feature = "proving")]
     if let Some(request) = request {
@@ -291,14 +294,14 @@ async fn prepare_scene(
                 gpu.queue,
                 gpu.capabilities,
                 config,
-                request.content.into(),
+                request.content.clone().into(),
             )
             .await
             .map_err(|error| error.to_string())?;
         return Ok((setup, host));
     }
     #[cfg(not(feature = "proving"))]
-    drop(request);
+    let _ = request;
     let setup = v1_game::selected_setup()?;
     let host = setup
         .prepare(gpu.device, gpu.queue, gpu.capabilities, config)

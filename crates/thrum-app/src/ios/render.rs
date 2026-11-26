@@ -210,7 +210,10 @@ pub(super) enum RecoverFault {
 )]
 pub(super) enum Reply<G: MobileGame> {
     Prepared(Result<Prepared<G>, String>),
-    SceneReplaced(Result<Option<SceneReady<G>>, String>),
+    SceneReplaced {
+        request: SceneRequest,
+        result: Result<Option<SceneReady<G>>, String>,
+    },
     Frame(Result<FrameReply<G::Readback>, String>),
     Recovered(Result<Recovered, RecoverFault>),
     Actor(Option<[f64; 3]>),
@@ -405,7 +408,10 @@ impl<G: MobileGame> Owner<G> {
                 self.origin = origin;
                 Reply::Prepared(self.prepare(&instance, epoch, extent, scene))
             }
-            Job::ReplaceScene(scene) => Reply::SceneReplaced(self.replace_scene(scene)),
+            Job::ReplaceScene(request) => Reply::SceneReplaced {
+                result: self.replace_scene(&request),
+                request,
+            },
             Job::Frame(request) => Reply::Frame(self.frame(&request)),
             Job::Recover { from } => Reply::Recovered(self.recover(from)),
             Job::SampleActor => Reply::Actor(

@@ -494,7 +494,7 @@ impl<G: MobileGame> Shell<G> {
             epoch,
             extent: self.observed_extent,
             origin: self.origin,
-            scene: self.pending_scene.clone(),
+            scene: self.pending_scene.take(),
         };
         if render.try_send(job).is_err() {
             return Err("iOS render owner refused preparation".into());
@@ -762,9 +762,9 @@ impl<G: MobileGame> Shell<G> {
             let size = layer_extent(window);
             self.resized([size.width, size.height]);
         }
-        if let Some(scene) = self.pending_scene.clone()
-            && self.window.is_some()
+        if self.window.is_some()
             && !self.observed_extent.contains(&0)
+            && let Some(scene) = self.pending_scene.take()
         {
             self.clear_input()?;
             let render = self.render.as_ref().ok_or("iOS render owner missing")?;
@@ -849,7 +849,7 @@ impl<G: MobileGame> Shell<G> {
                 }
                 self.reconcile_world()?;
             }
-            Reply::SceneReplaced(result) => {
+            Reply::SceneReplaced { request, result } => {
                 self.replacing_scene = false;
                 match result {
                     Ok(Some(opened)) => {
@@ -858,14 +858,21 @@ impl<G: MobileGame> Shell<G> {
                         self.policy.request(paused);
                         self.install(opened)?;
                     }
-                    Ok(None) => {} // Retry at a display target after a resize, suspend or loss.
+                    Ok(None) => {
+                        // A newer request supersedes a deferred one.
+                        if self.pending_scene.is_some() {
+                            self.deliver_scene_request()?;
+                        } else {
+                            self.pending_scene = Some(request);
+                        }
+                    }
                     #[expect(
                         clippy::print_stderr,
                         reason = "report a nonfatal game scene preparation error"
                     )]
                     Err(error) => {
-                        self.pending_scene = None;
                         eprintln!("iOS could not replace the scene: {error}");
+                        self.deliver_scene_request()?;
                     }
                 }
                 self.reconcile_world()?;

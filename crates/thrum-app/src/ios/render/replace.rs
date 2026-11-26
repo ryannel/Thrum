@@ -12,7 +12,7 @@ use super::{MobileGame, Owner, PrepareGpu, SceneReady, SceneRequest, TickPermiss
 impl<G: MobileGame> Owner<G> {
     pub(super) fn replace_scene(
         &mut self,
-        request: SceneRequest,
+        request: &SceneRequest,
     ) -> Result<Option<SceneReady<G>>, String> {
         let gpu = self
             .gpu
@@ -46,7 +46,7 @@ impl<G: MobileGame> Owner<G> {
             },
             origin,
             crate::ios::notify_world,
-            Some(request),
+            Some(request.clone()),
             self.diagnostics,
         ));
         if background() || gpu.watch.is_lost() || !self.lease.is_current(epoch) {
