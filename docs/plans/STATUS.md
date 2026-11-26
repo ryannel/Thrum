@@ -8,7 +8,7 @@ The orchestrate script writes this page from the plan files and record files aft
 
 ### Needs you now
 
-- WATERS WP8 Water reflects the sky, the Sun, its shores and the craft, shows the ground and hulls beneath it, glitters and dims under a cloud's shade, from dawn to night: Blocked: Too Many Failed Reviews, because the same items or findings kept failing after its diagnosis. You decide: accept it, change its scope or give it another try
+- Nothing.
 
 ### Choices made for you
 
@@ -339,6 +339,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 ### Now and next
 
 - A warm launch compiles no pipeline: the local pipeline archive is proved by a strict fresh-process run (APPLE-PRESENTATION WP12): Not Started · [plan](APPLE-PRESENTATION/PLAN.md)
+- The water's reflection and shade tests compile for Linux and Windows too (WATERS WP23): Not Started · [plan](WATERS/PLAN.md)
 - A visitor changes coverage, cloud type, wind and time of day with the controls, and the sky holds up in motion, on the Mac and in Chrome (CLOUDS WP9): Not Started · [plan](CLOUDS/PLAN.md)
 - A status display of a health bar, a timer and counters stays readable and in place at every window size, density and safe area (GAME-UI WP3): Ready for Review · [plan](GAME-UI/PLAN.md)
 - GATE-TIME WP5 The post-rollout record shows a five-minute median for Rust landings: Blocked: Needs Context: WP5.1 needs 17 more qualifying ordinary Rust landings before the fixed window can be judged. The lead finds the missing fact, or asks you for it
@@ -478,11 +479,11 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | Nothing for its WP4; APPLE-PRESENTATION WP2 and WP3, EFFECT-GRAPH WP2, CULLING WP3 | Done 23 Nov |
 | 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | CONTENT-LOOP WP2 and CULLING WP3 to start; ATMOSPHERE WP10 for the populated valley's motion review; APPLE-TILE WP12, APPLE-PRESENTATION's last work package, ATMOSPHERE WP6 (which closes G3s) and CONTENT-LOOP WP3 for the three rows from one command; PLATFORM-RUNTIME-MAC WP3 and CREATOR WP3 as well to close | Waiting: On Dependency, APPLE-PRESENTATION:WP11 |
 | 14 | SEA | The wind's waves, from glassy calm to gale: one wave field that every body of water reads | Nothing to start; EFFECT-GRAPH WP2 for the field on the GPU | Done 14 Nov |
-| 15 | WATERS | Sea, shore, lakes and ponds as one water: drawn, lit, floated on, stirred and foaming, breaking on its beaches, mirroring the land, seen from beneath and lit there by the Sun's net and shafts, with a place made for rivers and puddles | SEA WP1 to start; SEA WP2, EFFECT-GRAPH WP3, ATMOSPHERE WP5 and WP9 and CREATOR WP1 for its first frame; CONTENT-LOOP WP1 for foam; APPLE-PRESENTATION WP3 for the whole range in motion; SCENE-VIEWS WP3 for mirrored scenery; EFFECT-GRAPH WP6 for floats in the surf with the game running; APPLE-PRESENTATION's governor and MetalFX work packages to close | WP8 of 23 · Blocked: Too Many Failed Reviews |
+| 15 | WATERS | Sea, shore, lakes and ponds as one water: drawn, lit, floated on, stirred and foaming, breaking on its beaches, mirroring the land, seen from beneath and lit there by the Sun's net and shafts, with a place made for rivers and puddles | SEA WP1 to start; SEA WP2, EFFECT-GRAPH WP3, ATMOSPHERE WP5 and WP9 and CREATOR WP1 for its first frame; CONTENT-LOOP WP1 for foam; APPLE-PRESENTATION WP3 for the whole range in motion; SCENE-VIEWS WP3 for mirrored scenery; EFFECT-GRAPH WP6 for floats in the surf with the game running; APPLE-PRESENTATION's governor and MetalFX work packages to close | WP23 of 24 · Not Started |
 | 16 | SCENE-VIEWS | The scene is drawn a second time from another viewpoint, so water can mirror hills and trees the camera cannot see | CULLING WP1, ATMOSPHERE WP5 and EFFECT-GRAPH WP3 | Done 23 Nov |
 | 17 | CLOUDS | The weather: a sky from clear to overcast with placed cloud volumes, and mist, fog and low cloud on the ground, which shade and light the world | Nothing to start; EFFECT-GRAPH WP2 and WP4 and ATMOSPHERE WP5 for its shade; EFFECT-GRAPH WP3 for its first frame; CONTENT-LOOP WP1 for placed volumes, and DEAD-TOOLS WP5 for the record of the library it copies; APPLE-PRESENTATION WP3 and CREATOR WP1 for controls and motion; ATMOSPHERE WP8 for mist and fog; WATERS WP8 for the sea; APPLE-PRESENTATION's governor and MetalFX work packages to close | WP9 of 20 · Not Started |
 | 18 | RIVERS | Rivers, streams and waterfalls that run down the land, swell with the lake that feeds them, carry what floats and foam where they fall | WATERS WP1 for its flow on the CPU; WATERS WP9 for its first running stream; WATERS WP10 and WP16 to close | Waiting: On Dependency, WATERS:WP9 |
-| 19 | PUDDLES | Rain wets the ground and fills its hollows with puddles that ripple, reflect the sky and dry out | WATERS WP1 for its puddles and wet ground on the CPU; WATERS WP8 for its first puddle; SHOWCASE WP5 for the valley; WATERS WP10, WP14 and WP16 to close | WP3 of 8 · Invalid |
+| 19 | PUDDLES | Rain wets the ground and fills its hollows with puddles that ripple, reflect the sky and dry out | WATERS WP1 for its puddles and wet ground on the CPU; WATERS WP8 for its first puddle; SHOWCASE WP5 for the valley; WATERS WP10, WP14 and WP16 to close | Waiting: On Dependency, WATERS:WP8 |
 | 20 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply |  | Done 18 Nov |
 | 21 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser |  | Done 16 Nov |
 | 22 | RENDER-2D | Thousands of crisp sprites, drawn without paying for anything 3D | EFFECT-GRAPH WP3 and APPLE-PRESENTATION WP3 to start; SIM-2D WP1 for its fifth work package; APPLE-PRESENTATION WP6 for its sixth | Done 25 Nov |
