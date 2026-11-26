@@ -14,7 +14,7 @@ use thrum_rain_model::{
 use thrum_sea_model::LongWaves;
 use thrum_water_model::{
     Bed, Body, BodyKind, Exposure, Field, Map, OpenSky, Profile, RainBands, RainBandsProfile,
-    RateHistory, Stage, compare,
+    RateHistory, RingTable, Stage, compare,
 };
 
 fn still_field() -> Field {
@@ -131,17 +131,27 @@ fn roofed() -> Canopy {
 
 /// The hollows body holding a puddle in each hollow, with rain bands committed to a tick
 /// of steady rain and read through an exposure.
-fn rained(tree: &Tree, levels: &[f64], tick: u64, exposure: Arc<dyn Exposure>) -> Map {
+fn rained(
+    tree: &Tree,
+    levels: &[f64],
+    tick: u64,
+    exposure: Arc<dyn Exposure>,
+    table: &Arc<RingTable>,
+) -> Map {
     let mut m = map(tree, levels);
     let history = RateHistory {
         tick: TICK,
         last: i64::try_from(tick).expect("a small tick"),
         rates: vec![mm_h(20.0); 61],
     };
-    let table = Arc::new(RingProfile::default().table());
     m.set_rain(Some(
-        RainBands::new(RainBandsProfile::default(), table, history, exposure)
-            .expect("valid test case"),
+        RainBands::new(
+            RainBandsProfile::default(),
+            Arc::clone(table),
+            history,
+            exposure,
+        )
+        .expect("valid test case"),
     ));
     m
 }
@@ -161,13 +171,14 @@ fn the_harness_passes_rain_bands_against_themselves_and_reports_ignored_exposure
     let levels = state.levels(&tree);
     let ticks: Vec<u64> = (600..606).collect();
     let canopy = Arc::new(roofed());
+    let table = Arc::new(RingProfile::default().table());
     let model: Vec<Map> = ticks
         .iter()
-        .map(|&t| rained(&tree, &levels, t, Arc::<Canopy>::clone(&canopy)))
+        .map(|&t| rained(&tree, &levels, t, Arc::<Canopy>::clone(&canopy), &table))
         .collect();
     let open: Vec<Map> = ticks
         .iter()
-        .map(|&t| rained(&tree, &levels, t, Arc::new(OpenSky)))
+        .map(|&t| rained(&tree, &levels, t, Arc::new(OpenSky), &table))
         .collect();
     let at = |maps: &[Map], p, t: u64| {
         #[expect(clippy::cast_precision_loss, reason = "a small tick")]
