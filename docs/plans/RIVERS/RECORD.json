@@ -647,7 +647,32 @@
     },
     "WP10": {
       "definitions": "cdb1b7ae1f3695beae075e6002526b2270d524c791217ce0a73987184f4c8a5b",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "pass",
+          "commit": "54b6667a2223932f32acf93ce3170112a6f5689e",
+          "review": ".orchestrate/evidence/RIVERS/WP10-review.md",
+          "items": {
+            "WP10.1": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 43207,
+            "cached": 383232,
+            "output": 1911,
+            "turns": 1
+          },
+          "at": "2026-11-26T15:50:14Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The main-branch check workspace-tests fails, and the script couldn't tell which commit broke it. Find what breaks it, an",
@@ -678,6 +703,13 @@
           "output": 15370,
           "turns": 1
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "54b6667a2223932f32acf93ce3170112a6f5689e",
+        "review": ".orchestrate/evidence/RIVERS/WP10-review.md",
+        "checked": "39e9939d2adb027d79974d7b67f23148cd519825",
+        "at": "2026-11-26T15:50:14Z"
       }
     }
   },
