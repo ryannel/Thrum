@@ -39,3 +39,7 @@ thrum-test-support = { path = "../thrum-test-support", features = ["render"] }
 [[test]]
 name = "it"
 path = "tests/it.rs"
+
+# PUDDLES WP3.3 runs the Metal map proof by name.
+[[test]]
+name = "hollows_gpu"

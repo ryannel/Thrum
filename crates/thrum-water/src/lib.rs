@@ -357,6 +357,9 @@ impl Water {
                         * u64::from(size.depth_or_array_layers),
                 ));
                 resources.push(("water map records".into(), map.info.size()));
+                if let Some(bytes) = map.hollows_bytes() {
+                    resources.push(("water hollows".into(), bytes));
+                }
             }
             if let Some(surf) = &p.surf {
                 resources.extend(surf.bytes());

@@ -288,7 +288,13 @@ pub(super) fn new(
         })
         .collect();
     if mapped {
-        entries.extend(map_gpu::bindings(wgpu::ShaderStages::VERTEX_FRAGMENT));
+        let stages = wgpu::ShaderStages::VERTEX_FRAGMENT;
+        entries.extend(map_gpu::bindings(stages));
+        entries.extend(
+            map_gpu
+                .as_ref()
+                .and_then(|map| map.hollows_bindings(stages)),
+        );
     }
     if interaction.is_some() {
         entries.extend(Interaction::sample_layout(
@@ -350,7 +356,7 @@ pub(super) fn new(
         &layout,
         &environment,
         &library,
-        mapped,
+        map_gpu.as_ref(),
         interaction.as_ref(),
         foam.as_ref(),
         gather.as_ref(),
@@ -461,6 +467,7 @@ fn field_entries<'a>(
     ];
     if let Some((map, view)) = map {
         bindings.extend(map.entries(view));
+        bindings.extend(map.hollows_entry());
     }
     if let Some(interaction) = interaction {
         bindings.extend(interaction.sample_entries(7));
@@ -499,7 +506,7 @@ fn surface_pipelines(
     layout: &wgpu::BindGroupLayout,
     environment: &EnvironmentProducts,
     library: &str,
-    mapped: bool,
+    map: Option<&MapGpu>,
     interaction: Option<&Interaction>,
     foam: Option<&Foam>,
     gather: Option<&Gather>,
@@ -510,7 +517,7 @@ fn surface_pipelines(
     let source = shader_source(
         surface,
         library,
-        mapped,
+        map,
         interaction.is_some(),
         foam,
         gather.is_some(),
@@ -526,7 +533,7 @@ fn surface_pipelines(
         layout,
         environment,
         &shader,
-        mapped,
+        map.is_some(),
         false,
         gather.is_some(),
     );
@@ -538,7 +545,7 @@ fn surface_pipelines(
 fn shader_source(
     surface: &SceneSurface<'_>,
     library: &str,
-    mapped: bool,
+    map: Option<&MapGpu>,
     wake: bool,
     foam: Option<&Foam>,
     gather: bool,
@@ -548,6 +555,15 @@ fn shader_source(
     } else {
         "fn water_sun(point: vec3<f32>) -> vec3<f32> { return sun_irradiance(point); }"
     };
+    let has_hollows = map.is_some_and(|map| map.hollows_entry().is_some());
+    let surface_shader = if has_hollows {
+        include_str!("surface.wgsl").replace(
+            "    let row=surface_vertex(rest,body);",
+            "    if vertex.z < 0.0 { return hollows_vertex(vertex, body); }\n    let row=surface_vertex(rest,body);",
+        )
+    } else {
+        include_str!("surface.wgsl").to_owned()
+    };
     format!(
         "{}\n{sun}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}",
         library,
@@ -556,7 +572,7 @@ fn shader_source(
         include_str!("sampling.wgsl"),
         include_str!("field.wgsl"),
         Interaction::sample_source(3, 7, 8, wake),
-        concat!(include_str!("carriage.wgsl"), include_str!("surface.wgsl")),
+        include_str!("carriage.wgsl").to_owned() + &surface_shader,
         if gather {
             concat!(
                 include_str!("optics/regions.wgsl"),
@@ -565,11 +581,18 @@ fn shader_source(
         } else {
             include_str!("optics/disabled.wgsl")
         },
-        if mapped {
-            map_gpu::declarations() + include_str!("mapped_surface.wgsl")
-        } else {
-            include_str!("open_surface.wgsl").to_owned()
-        },
+        map.map_or_else(
+            || include_str!("open_surface.wgsl").to_owned(),
+            |map| {
+                map.source(3)
+                    + include_str!("mapped_surface.wgsl")
+                    + if has_hollows {
+                        include_str!("map_gpu/hollows_surface.wgsl")
+                    } else {
+                        ""
+                    }
+            },
+        ),
         if let Some(foam) = foam {
             foam.sample_source() + include_str!("foam/appearance.wgsl")
         } else {
@@ -822,6 +845,13 @@ fn surface_mesh(map: Option<&thrum_water_model::Map>, tidal_grid: bool) -> Geome
                 });
                 previous_half_width = half_width;
             }
+        } else if let thrum_water_model::BodyKind::Hollows(hollows) = &declaration.kind {
+            let first_index = geometry.indices.len() as u32;
+            geometry.hollows(hollows, (body + 1) as f32);
+            geometry.draws.push(WaterDraw {
+                indices: first_index..geometry.indices.len() as u32,
+                offshore: None,
+            });
         } else if let Some([min, max]) = map.surface_bounds(body) {
             // Tile fine enough for geometry in the near view; shading filters
             // the unresolved part of each layer separately.
@@ -845,6 +875,31 @@ fn surface_mesh(map: Option<&thrum_water_model::Map>, tidal_grid: bool) -> Geome
 }
 
 impl Geometry {
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "bounded mesh using GPU metres"
+    )]
+    fn hollows(&mut self, hollows: &thrum_water_model::Hollows, slot: f32) {
+        let ([x, z], cell, [width, height]) = hollows.lattice();
+        for row in 0..height {
+            for column in 0..width {
+                // Dry cells within one cell of water carry the horizontal sheet
+                // to the opaque bed's continuous intersection.
+                let base = self.vertices.len() as u32;
+                for (corner, [dx, dz]) in [[0, 0], [1, 0], [0, 1], [1, 1]].into_iter().enumerate() {
+                    self.vertices.push([
+                        ((column + dx) as f64).mul_add(cell, x) as f32,
+                        ((row + dz) as f64).mul_add(cell, z) as f32,
+                        -(corner as f32 + 1.0),
+                        slot,
+                    ]);
+                }
+                self.indices
+                    .extend([base, base + 2, base + 1, base + 1, base + 2, base + 3]);
+            }
+        }
+    }
+
     fn upload(
         &self,
         device: &wgpu::Device,

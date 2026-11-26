@@ -88,6 +88,24 @@ impl Hollows {
         &self.levels
     }
 
+    /// Outer corner, spacing and cell counts of the cell-centred bed.
+    #[must_use]
+    pub fn lattice(&self) -> ([f64; 2], f64, [usize; 2]) {
+        (self.origin, self.spacing, self.size)
+    }
+
+    /// Bed heights in metres, in x-fastest cell order.
+    #[must_use]
+    pub fn heights(&self) -> &[f64] {
+        &self.bed
+    }
+
+    /// Cell-to-hollow labels, in the same order as the heights.
+    #[must_use]
+    pub fn labels(&self) -> &[u32] {
+        &self.labels
+    }
+
     /// The cell holding a world x/z point, or none outside the rectangle.
     pub(crate) fn cell(&self, point: [f64; 2]) -> Option<usize> {
         let x = (point[0] - self.origin[0]) / self.spacing;

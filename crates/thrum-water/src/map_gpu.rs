@@ -8,8 +8,10 @@ use wgpu::util::DeviceExt;
 
 mod bounded_track;
 mod current_track;
+mod hollows;
 use bounded_track::{BoundedTrack, uniform_current};
 use current_track::CurrentTrack;
+use hollows::HollowsGpu;
 
 struct SharedTrack {
     layer: u32,
@@ -144,6 +146,7 @@ pub struct MapGpu {
     record: MapRecord,
     tracks: WaveTracks,
     support: Vec<[f32; 4]>,
+    hollows: Option<HollowsGpu>,
 }
 
 #[derive(Clone, Copy)]
@@ -254,11 +257,14 @@ impl MapGpu {
         for (id, destination) in record.bodies.iter_mut().enumerate() {
             let Some(body) = map.body(id) else { break };
             record.size_count_sea[2] += 1;
-            destination.layers[1] = layers;
-            layers += 1;
+            if !matches!(&body.kind, BodyKind::Hollows(_)) {
+                destination.layers[1] = layers;
+                layers += 1;
+            }
             match &body.kind {
                 BodyKind::Sea => record.size_count_sea[3] = id as u32,
                 BodyKind::Basin { .. } => destination.layers[0] = 1,
+                BodyKind::Hollows(_) => destination.layers[0] = 3,
                 BodyKind::Chart(chart) if map.river_of(id).is_none() => {
                     destination.layers[0] = 2;
                     destination.layers[2] = layers;
@@ -284,9 +290,9 @@ impl MapGpu {
                         destination.layers[3] += 1;
                     }
                 }
-                _ => {
+                BodyKind::Chart(_) => {
                     return Err(UnsupportedMap(
-                        "water GPU map needs sea, basins or steady charts",
+                        "water GPU map needs sea, basins, steady charts or hollows",
                     ));
                 }
             }
@@ -301,6 +307,7 @@ impl MapGpu {
                 "water map exceeds the device or f32 lattice limits",
             ));
         }
+        let hollows = HollowsGpu::new(device, map)?;
         let texture = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("water map lattice"),
             size: wgpu::Extent3d {
@@ -371,10 +378,42 @@ impl MapGpu {
             record,
             tracks,
             support,
+            hollows,
         };
         let authored = stages(map);
         gpu.upload(queue, map, authored, authored);
+        if let Some(hollows) = &mut gpu.hollows {
+            hollows.record(queue, map, None);
+            hollows.commit();
+        }
         Ok(gpu)
+    }
+
+    /// Map shader declarations specialized to the products that were prepared.
+    pub fn source(&self, group: u32) -> String {
+        let base = declarations_at(group);
+        if self.hollows.is_some() {
+            base.replace("fn map_sample(", "fn ordinary_map_sample(")
+                + include_str!("map_gpu/hollows.wgsl")
+        } else {
+            base
+        }
+    }
+
+    pub(crate) fn hollows_bindings(
+        &self,
+        visibility: wgpu::ShaderStages,
+    ) -> Option<wgpu::BindGroupLayoutEntry> {
+        self.hollows.as_ref().map(|h| h.binding(visibility))
+    }
+
+    /// The additional map entry when a scene declares a hollows body.
+    pub fn hollows_entry(&self) -> Option<wgpu::BindGroupEntry<'_>> {
+        self.hollows.as_ref().map(HollowsGpu::entry)
+    }
+
+    pub(crate) fn hollows_bytes(&self) -> Option<u64> {
+        self.hollows.as_ref().map(HollowsGpu::bytes)
     }
 
     #[expect(
@@ -460,6 +499,9 @@ impl MapGpu {
         let authored = stages(map);
         let recorded = StageEndpoints::record(time, authored, self.submitted.as_ref());
         self.upload(queue, map, authored, recorded.stages());
+        if let Some(hollows) = &mut self.hollows {
+            hollows.record(queue, map, Some(time));
+        }
         self.recorded = Some(recorded);
         self.sampled_map.as_ref().unwrap_or(map)
     }
@@ -470,11 +512,17 @@ impl MapGpu {
             .submitted
             .map_or(authored, |endpoint| endpoint.stages());
         self.upload(queue, map, authored, displayed);
+        if let (Some(hollows), Some(from)) = (&mut self.hollows, &frame.hollows) {
+            hollows.copy_display(queue, from);
+        }
     }
 
     pub(crate) fn commit(&mut self) {
         self.submitted = self.recorded;
         self.previous_levels = Some(self.record.bodies.map(|b| b.level[0] + b.level[1]));
+        if let Some(hollows) = &mut self.hollows {
+            hollows.commit();
+        }
     }
 
     #[expect(
@@ -504,6 +552,9 @@ impl MapGpu {
         for id in 0..self.record.size_count_sea[2] as usize {
             let body = map.body(id).expect("prepared body");
             let record = &mut self.record.bodies[id];
+            if record.layers[0] == 3 {
+                continue;
+            }
             let chart = record.layers[0] == 2;
             let level = [body.level as f32, body.stage.value as f32];
             let spatial = self.revision.is_none()
