@@ -929,7 +929,7 @@ impl BrowserGame {
     /// Latest submitted Shapes report as JSON for the browser proof.
     #[cfg(feature = "proving")]
     pub fn placed_cloud_report(&self) -> Option<String> {
-        crate::clouds::qualification::placed_capture_report(&game::cloud_input(&self.page.shell)?)
+        crate::clouds::qualification::placed_capture_report(game::cloud_input(&self.page.shell)?)
             .map(|report| report.to_string())
     }
 
