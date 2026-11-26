@@ -1587,8 +1587,8 @@
           "statement": "At a 5\u00b0 Sun the shadows of ridges and of clouds lie across far mist, and mist in shadow is dimmer than mist in sunlight beside it, in step with the lit and shaded land.",
           "inspect": "Capture `fixed` stills at a 5\u00b0 Sun across the valley under the fair preset, from 40 m. Judge whole and in native-size crops of a ridge's shadow where it crosses from land onto mist.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP15/continuation/SHADOW.md",
           "verdict": "",
           "review": ""
         },

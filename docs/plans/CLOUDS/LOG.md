@@ -1127,3 +1127,9 @@ still needed. The 5° mesa controls show ridge shade in mist and cloud shade on 
 [Visual inspection](../../../.orchestrate/evidence/CLOUDS/WP15/VISUAL.md) ·
 [Metal costs](../../../.orchestrate/evidence/CLOUDS/WP15/COST.md) ·
 [Handoff](../../../.orchestrate/evidence/CLOUDS/WP15-handoff.md)
+
+
+The surveyed 40 m view at 5° on Metal shows cloud shade darkening the mist. Matching
+fair, clear and dry controls trace the cloud shadow across the valley floor. The mesa
+clear control preserves the separate ridge shadow in the mist.
+[Shadow inspection](../../../.orchestrate/evidence/CLOUDS/WP15/continuation/SHADOW.md)
