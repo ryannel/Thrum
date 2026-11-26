@@ -428,23 +428,45 @@ pub type RainYardReplies = Arc<Mutex<Option<thrum_water::query::BodyAnswers>>>;
 /// # Errors
 /// Propagates scene construction errors.
 pub fn build_rain_yard(wind: Wind, draw_water: bool) -> Result<RainYardScene, Box<dyn Error>> {
-    build_yard(wind, draw_water, true)
+    build_yard(wind, draw_water, YardRoute::Game)
 }
 
 /// Build matched cost arms with the same opaque ground and no float.
 /// # Errors
 /// Propagates scene construction errors.
 pub fn build_rain_yard_cost(wind: Wind, draw_water: bool) -> Result<RainYardScene, Box<dyn Error>> {
-    build_yard(wind, draw_water, false)
+    build_yard(wind, draw_water, YardRoute::Cost)
+}
+
+/// Build the two rain cost arms with equal weather, water geometry and region labelling.
+///
+/// # Errors
+/// Propagates scene construction errors.
+pub fn build_rain_bands_cost(
+    wind: Wind,
+    draw_rings: bool,
+) -> Result<RainYardScene, Box<dyn Error>> {
+    build_yard(wind, true, YardRoute::BandsCost { rings: draw_rings })
+}
+
+enum YardRoute {
+    Game,
+    Cost,
+    BandsCost { rings: bool },
 }
 
 fn build_yard(
     wind: Wind,
     draw_water: bool,
-    draw_float: bool,
+    route: YardRoute,
 ) -> Result<RainYardScene, Box<dyn Error>> {
     let mut rain = rain_yard::Yard::prepare()?;
-    rain.draw_float = draw_float;
+    rain.draw_float = matches!(route, YardRoute::Game);
+    rain.draw_rings = matches!(
+        route,
+        YardRoute::Game | YardRoute::BandsCost { rings: true }
+    );
+    rain.measure_regions = matches!(route, YardRoute::BandsCost { .. });
     let replies = rain.replies();
     let (game, report, map, _) =
         build_island(wind, draw_water, false, None, true, Some(rain), |_| {})?;
@@ -471,6 +493,10 @@ fn query_points(foam: bool, draw_water: bool, yard: Option<&rain_yard::Yard>) ->
     }
 }
 
+#[expect(
+    clippy::too_many_lines,
+    reason = "shared island setup and controls stay together"
+)]
 fn build_island(
     wind: Wind,
     draw_water: bool,
@@ -487,7 +513,12 @@ fn build_island(
         wind.forcing()
     };
     let yard = rain.is_some();
-    let map = prepare_island_map(&forcing, surf, rain.as_ref())?;
+    let mut map = prepare_island_map(&forcing, surf, rain.as_ref())?;
+    if let Some(yard) = &rain
+        && yard.draw_rings
+    {
+        map.set_rain(Some(yard.bands().map_err(|error| format!("{error:?}"))?));
+    }
     let spectrum = if surf_route {
         surf_spectrum(wind, &forcing)
     } else {
@@ -508,6 +539,13 @@ fn build_island(
     }
     if let Some(points) = query_points(foam, draw_water, rain.as_ref()) {
         profile.query = Some(thrum_water::query::QueryLimits { points, max_age: 8 });
+    }
+    if rain.as_ref().is_some_and(|yard| yard.measure_regions) {
+        profile.interaction = Some(thrum_water::interaction::Limits {
+            bodies: 1,
+            impulses: 0,
+            solves: 1,
+        });
     }
     let mut water = Water::mapped(Arc::clone(&map), spectrum, profile)?;
     configure(&mut water);
@@ -547,7 +585,7 @@ fn build_island(
                 "Island view"
             },
             0.0..=if yard {
-                3.0
+                7.0
             } else if surf_route {
                 9.0
             } else if foam {
@@ -630,10 +668,11 @@ fn build_island(
             pan_camera(&mut sky.camera, c.get(pan), c.get(tilt));
         }
         sky.sun_elevation_degrees = c.get(sun);
-        sky.sun_azimuth_degrees = if surf_route && wind == Wind::Trade {
-            224.0
-        } else {
-            228.0
+        sky.sun_azimuth_degrees = match (yard, index, surf_route && wind == Wind::Trade) {
+            (true, 6, _) => 40.0,
+            (true, 7, _) => 11.0,
+            (_, _, true) => 224.0,
+            _ => 228.0,
         };
         sky.exposure_compensation_ev = 0.3;
         sky.temporal_inputs = true;

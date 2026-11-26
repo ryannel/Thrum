@@ -7,6 +7,7 @@ use super::{
     map_gpu::{self, MapGpu},
     optics::{self, Gather},
     query::{self, QueryMailbox, Readback},
+    rain::Rain,
     records::Parameters,
     surf::{SurfGpu, cache::Cache},
 };
@@ -34,6 +35,7 @@ pub(crate) const SURF_EIGHT_METRE_RING_HALF_WIDTH: i32 = 40;
 pub(super) struct Prepared {
     pub(super) ambient: thrum_sea::Ambient,
     pub(super) ambient_passes: usize,
+    pub(super) rain: Option<Rain>,
     pub(super) query: Option<Readback>,
     pub(super) interaction: Option<Interaction>,
     pub(super) foam: Option<Foam>,
@@ -118,6 +120,9 @@ impl Prepared {
                     self.map.as_ref().zip(view.as_ref()),
                     self.interaction.as_ref(),
                 );
+                if let Some(rain) = &self.rain {
+                    entries.extend(rain.entries());
+                }
                 entries.extend(self.foam.as_ref().expect("foam pattern").sample_entries());
                 entries.push(pattern_entry(&product.view));
                 if let Some(cache) = &self.surf_cache {
@@ -154,6 +159,12 @@ impl Prepared {
         self.ambient_passes + usize::from(self.interaction.is_some())
     }
 
+    pub(super) fn rain_offset(&self) -> usize {
+        self.surf_cache_index()
+            + usize::from(self.surf_cache.is_some())
+            + usize::from(self.foam.is_some())
+    }
+
     pub(super) fn graph(&self) -> EffectGraph {
         let mut graph = self.ambient.graph();
         let wake = self
@@ -174,6 +185,9 @@ impl Prepared {
             let read = foam.declare(&mut graph, surface.accesses.clone());
             surface.accesses.push(read);
         }
+        if let Some(rain) = &self.rain {
+            surface.accesses.push(rain.bands.declare(&mut graph));
+        }
         graph.opaque_reads.clear();
         if self.gather.is_some() {
             graph.after_opaque.push(optics::declaration());
@@ -188,6 +202,10 @@ impl Prepared {
         graph
     }
 }
+#[expect(
+    clippy::too_many_lines,
+    reason = "one preparation transaction for shared water resources and pipelines"
+)]
 pub(super) fn new(
     surface: &SceneSurface<'_>,
     profile: Profile,
@@ -234,6 +252,10 @@ pub(super) fn new(
     let ambient =
         thrum_sea::Ambient::new(device, profile.waves).map_err(|error| error.to_string())?;
     let ambient_passes = ambient.graph().passes.len();
+    let rain = map
+        .rain()
+        .map(|model| Rain::new(device, model))
+        .transpose()?;
     let interaction = interaction
         .map(|mailbox| Interaction::new(device, mailbox, previous_interaction.unwrap_or_default()));
     let query = if let Some(mailbox) = mailbox {
@@ -346,6 +368,10 @@ pub(super) fn new(
         entries.push(optics::uniform(wgpu::ShaderStages::FRAGMENT));
         bindings.push(optics::entry(&gather.buffer));
     }
+    if let Some(rain) = &rain {
+        entries.extend(Rain::bindings());
+        bindings.extend(rain.entries());
+    }
     let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
         label: Some("water field"),
         entries: &entries,
@@ -367,6 +393,7 @@ pub(super) fn new(
         surf_cache.as_ref(),
         has_shore(map),
         tidal_grid,
+        rain.is_some(),
     );
     let pattern = foam.as_ref().map(|_| Pattern {
         device: device.clone(),
@@ -378,6 +405,7 @@ pub(super) fn new(
     Ok(Prepared {
         ambient,
         ambient_passes,
+        rain,
         query,
         interaction,
         foam,
@@ -518,8 +546,9 @@ fn surface_pipelines(
     cache: Option<&Cache>,
     shore: bool,
     tidal_grid: bool,
+    rain: bool,
 ) -> (wgpu::RenderPipeline, Option<wgpu::RenderPipeline>) {
-    let source = shader_source(
+    let mut source = shader_source(
         surface,
         library,
         map,
@@ -527,6 +556,9 @@ fn surface_pipelines(
         foam,
         gather.is_some(),
     ) + &Cache::source(cache, tidal_grid);
+    if rain {
+        source = rain_source(source, map.is_some_and(|map| map.hollows_entry().is_some()));
+    }
     let shader = surface
         .device
         .create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -545,6 +577,40 @@ fn surface_pipelines(
     let film = (foam.is_some() && shore)
         .then(|| create_pipeline(surface, layout, environment, &shader, true, true, false));
     (pipeline, film)
+}
+
+// The optional layer is stitched into the field's sum only for a rain profile.
+fn rain_source(mut source: String, hollows: bool) -> String {
+    source.push_str(super::RAIN_GAIN_WGSL);
+    source.push_str(include_str!("rain.wgsl"));
+    source = source.replace(
+        "    return f;\n}\nstruct SurfaceRow",
+        concat!(
+            "    let rain_wave = rain_geometry(point, spacing, row, motion);\n",
+            "    f.displacement.y += rain_wave.x;\n",
+            "    f.velocity.y += rain_wave.y;\n",
+            "    return f;\n}\nstruct SurfaceRow",
+        ),
+    );
+    source = source.replace("    // The cascades store derivatives", concat!(
+        "    rain_normal(input.rest, row, motion, departure_dx, departure_dy, second_dx, second_dy, &slope, &covariance);\n",
+        "    // The cascades store derivatives",
+    ));
+    if hollows {
+        source = source.replace(
+            "    let world = vec3(vertex.x, levels.x, vertex.y);",
+            concat!(
+                "    let row = surface_pixel(vertex.xy, slot);\n",
+                "    let motion = cascade_motion(vertex.xy, row.current, row.track, water.carriage.w, water.carriage.y);\n",
+                "    let wave = rain_geometry(vertex.xy, rectangle.origin_spacing.z, row, motion);\n",
+                "    let world = vec3(vertex.x, levels.x + wave.x, vertex.y);",
+            ),
+        ).replace(
+            "vec4(vertex.x, levels.y, vertex.y, 1.0)",
+            "vec4(vertex.x, levels.y + wave.x - wave.y * water.level_dt_reset.y, vertex.y, 1.0)",
+        );
+    }
+    source
 }
 
 fn shader_source(

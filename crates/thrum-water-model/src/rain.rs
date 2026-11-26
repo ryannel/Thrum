@@ -58,8 +58,28 @@ impl Map {
 /// The share of the rain that reaches a point (x, y, z), from none under a roof to all
 /// under open sky. Shelter is content: it reads no camera and keeps no state.
 pub trait Exposure: Send + Sync {
+    /// Prepared canopy columns, when this exposure can also run on the GPU.
+    fn canopy_grid(&self) -> Option<CanopyGrid> {
+        None
+    }
+
     /// Exposure at a world point.
     fn exposure(&self, point: [f64; 3]) -> f64;
+}
+
+/// Prepared canopy columns. Each column holds two (underside, transmission) pairs.
+#[derive(Clone, Debug, Default)]
+pub struct CanopyGrid {
+    /// Corner of the first column, in world metres.
+    pub origin: [f64; 2],
+    /// Column width in metres.
+    pub cell: f64,
+    /// Columns in x and z.
+    pub size: [usize; 2],
+    /// Width of the square over which exposure is averaged, in metres.
+    pub edge_width: f64,
+    /// Row-major columns, ordered x then z.
+    pub columns: Vec<[[f64; 2]; 2]>,
 }
 
 /// Open sky everywhere.
@@ -67,6 +87,13 @@ pub trait Exposure: Send + Sync {
 pub struct OpenSky;
 
 impl Exposure for OpenSky {
+    fn canopy_grid(&self) -> Option<CanopyGrid> {
+        Some(CanopyGrid {
+            cell: 1.0,
+            ..CanopyGrid::default()
+        })
+    }
+
     fn exposure(&self, _: [f64; 3]) -> f64 {
         1.0
     }
@@ -447,6 +474,18 @@ impl RainBands {
         self.profile
     }
 
+    /// The prepared columns for evaluating exposure in a shader.
+    pub fn canopy_grid(&self) -> Option<CanopyGrid> {
+        self.exposure.canopy_grid()
+    }
+
+    /// Whether a tick within a ring's lifetime held rain at this display time.
+    pub fn active(&self, time: f64) -> bool {
+        let history = &self.history;
+        (history.tick_of(time - self.table.life())..=history.tick_of(time))
+            .any(|tick| history.rate(tick) > 0.0)
+    }
+
     /// Exposure at a world point.
     pub fn exposure(&self, point: [f64; 3]) -> f64 {
         self.exposure.exposure(point)
@@ -480,19 +519,18 @@ impl RainBands {
             term *= lambda / k as f64;
             sum += term;
         }
-        let shares: Vec<f64> = self.table.classes.iter().map(|c| c.share).collect();
         for m in 0..k {
             let h = |s: u64| uniform(hash(&[key[0], key[1], key[2], key[3], key[4], m, s]));
             let time = (bin as f64 + h(1)) * p.bin;
             let tick = self.history.tick_of(time);
             let mut pick = h(3);
-            let mut class = shares.len() - 1;
-            for (c, &s) in shares.iter().enumerate() {
-                if pick < s {
+            let mut class = self.table.classes.len() - 1;
+            for (c, ring) in self.table.classes.iter().enumerate() {
+                if pick < ring.share {
                     class = c;
                     break;
                 }
-                pick -= s;
+                pick -= ring.share;
             }
             out.push(Drop {
                 band,
@@ -539,8 +577,7 @@ impl RainBands {
     /// time.
     pub fn sample(&self, point: [f64; 2], time: f64) -> Sample {
         let mut out = Sample::default();
-        let h = &self.history;
-        if (h.tick_of(time - self.table.life())..=h.tick_of(time)).all(|j| h.rate(j) <= 0.0) {
+        if !self.active(time) {
             // No tick of the last second held rain: the bands are exactly nothing.
             return out;
         }
@@ -676,6 +713,19 @@ impl Map {
     /// The rain gain at a point on a row: exposure at the water's surface times the depth
     /// response, within the depth limit a wave layer has. None with no rain bands.
     pub fn rain_gain(&self, field: &Field, point: [f64; 2], time: f64, map: MapSample) -> f64 {
+        self.rain.as_ref().map_or(0.0, |_| {
+            self.rain_gain_with_variances(field.variances(), point, time, map)
+        })
+    }
+
+    /// Rain gain using precomputed wave variances.
+    pub fn rain_gain_with_variances(
+        &self,
+        variances: [f64; 4],
+        point: [f64; 2],
+        time: f64,
+        map: MapSample,
+    ) -> f64 {
         let Some(rain) = &self.rain else {
             return 0.0;
         };
@@ -691,7 +741,10 @@ impl Map {
         if gain <= 0.0 {
             return 0.0;
         }
-        let swash = self.limited(field, point, map).0.swash_depth;
+        let swash = self
+            .limited_with_variances(variances, point, map)
+            .0
+            .swash_depth;
         let cap = 0.6 * (map.depth + swash).max(0.0);
         let hs = 4.0 * rain.variance(time).sqrt();
         if hs > 0.0 { gain.min(cap / hs) } else { gain }

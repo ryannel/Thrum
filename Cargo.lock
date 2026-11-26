@@ -3414,6 +3414,7 @@ dependencies = [
  "thrum-render",
  "thrum-sea-model",
  "thrum-test-support",
+ "thrum-water-model",
  "wgpu",
 ]
 
@@ -3931,6 +3932,7 @@ dependencies = [
  "thrum-rain-model",
  "thrum-render",
  "thrum-river-model",
+ "thrum-sea",
  "thrum-sea-model",
  "thrum-test-support",
  "thrum-water",

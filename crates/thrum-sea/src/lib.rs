@@ -5,6 +5,8 @@ mod error;
 pub use error::{AmbientError, ProfileField};
 mod filtered;
 mod prepare;
+/// Rain wave layers reconstructed from committed rates and a prepared ring table.
+pub mod rain;
 /// Host record reflection metadata for shader tooling.
 pub mod records;
 mod spec;

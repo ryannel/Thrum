@@ -538,7 +538,12 @@ impl RingProfile {
             diameter: self.response_drop / 1000.0,
         };
         let mut moment_age: Vec<f64> = (0..ages)
-            .map(|a| slope_at(reference, a as f64 * self.age_step))
+            .map(|a| {
+                let age = a as f64 * self.age_step;
+                // Unresolved slopes grow with the new wave and fade at the same
+                // boundary as the resolved ring. The integral below stays one.
+                slope_at(reference, age) * smooth(age / 0.025) * fade(age).powi(2)
+            })
             .collect();
         let norm: f64 = moment_age.iter().sum::<f64>() * self.age_step;
         for v in &mut moment_age {

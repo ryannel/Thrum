@@ -8,11 +8,11 @@ import zlib from 'node:zlib';
 import {installWasmReceipt,readWasmReceipt} from './wasm_receipt.mjs';
 
 const mode = process.argv[process.argv.indexOf('--case') + 1];
-if (!['first-frame','frames','fixed','realtime','island','bodies','wake','foam','surf','channel','river','rain-puddles'].includes(mode)) throw Error('use --case first-frame|frames|fixed|realtime|island|bodies|wake|foam|surf|channel|river|rain-puddles');
+if (!['first-frame','frames','fixed','realtime','island','bodies','wake','foam','surf','channel','river','rain-puddles','rain-rings'].includes(mode)) throw Error('use --case first-frame|frames|fixed|realtime|island|bodies|wake|foam|surf|channel|river|rain-puddles|rain-rings');
 const opticsRoute = mode === 'fixed' ? process.env.THRUM_WATER_BROWSER_OPTICS : undefined;
 const surfInspection = process.env.THRUM_WATER_INSPECT_SURF === '1' && ['fixed','realtime'].includes(mode);
 const handoffCut = surfInspection && mode === 'realtime' && process.env.THRUM_WATER_ROUTE === 'handoff-cut';
-const [width,height] = [2560,1440];
+const [width,height] = mode==='rain-rings' ? [960,540] : [2560,1440];
 const output = path.resolve(process.env.THRUM_WATER_OUTPUT ?? `tmp/waters-M3/${mode}-${Date.now()}`);
 await fs.mkdir(output,{recursive:true});
 const delay = ms => new Promise(r=>setTimeout(r,ms));
@@ -164,9 +164,11 @@ const observer = `
     if(!sample||used!==requested)return null;
     return {tick,x,z,height,expected:sample([x,z])};
   };
+  globalThis.__rainPasses=0;
   const begin=GPUCommandEncoder.prototype.beginComputePass;
   GPUCommandEncoder.prototype.beginComputePass=function(desc){
     if(desc?.label?.includes('sea long waves'))this.__sea=true;
+    if(desc?.label?.endsWith('rain bands'))globalThis.__rainPasses++;
     return begin.call(this,desc);
   };
   const finish=GPUCommandEncoder.prototype.finish;
@@ -518,13 +520,13 @@ try {
   await cdp.call('Page.enable',{},sid);await cdp.call('Runtime.enable',{},sid);
   await installWasmReceipt(cdp,sid);
   const surfRoute=mode==='surf'||surfInspection;
-  await cdp.call('Page.addScriptToEvaluateOnNewDocument',{source:observer+(['island','surf','channel','river','rain-puddles'].includes(mode)?islandObserver:'')+`\ndocument.addEventListener('DOMContentLoaded',()=>{document.querySelector('canvas').width=${width};document.querySelector('canvas').height=${height};});`},sid);
-  const route=opticsRoute??(surfRoute?(handoffCut?'?surf=gale':'?surf=trade'):mode==='foam'?'?foam=calm&speed=6&view=overhead&wake-bodies=1':mode==='wake'?'?wake=calm&speed=6&view=overhead&wake-bodies=1':mode==='bodies'?'?bodies=trade&speed=5':mode==='island'?'?island=trade':mode==='channel'?'?channel=trade':mode==='river'?'?river=trade':mode==='rain-puddles'?'?rain=calm':'');
+  await cdp.call('Page.addScriptToEvaluateOnNewDocument',{source:observer+(['island','surf','channel','river','rain-puddles','rain-rings'].includes(mode)?islandObserver:'')+`\ndocument.addEventListener('DOMContentLoaded',()=>{document.querySelector('canvas').width=${width};document.querySelector('canvas').height=${height};});`},sid);
+  const route=opticsRoute??(surfRoute?(handoffCut?'?surf=gale':'?surf=trade'):mode==='foam'?'?foam=calm&speed=6&view=overhead&wake-bodies=1':mode==='wake'?'?wake=calm&speed=6&view=overhead&wake-bodies=1':mode==='bodies'?'?bodies=trade&speed=5':mode==='island'?'?island=trade':mode==='channel'?'?channel=trade':mode==='river'?'?river=trade':['rain-puddles','rain-rings'].includes(mode)?'?rain=calm':'');
   result.route=route;
   await cdp.call('Page.navigate',{url:url+route},sid);
   await until(async()=>{const state=await evaluate('({ready:!!window.game,status:document.querySelector("#status")?.textContent})');if(state.status?.includes('could not start'))throw Error(state.status);return state.ready;},'scene constructed');
   result.instantiated_wasm=await readWasmReceipt(cdp,sid,url+'scene_bg.wasm',result.wasm,wasm.length);
-  if(mode==='rain-puddles')await evaluate("game.edit_control('rain.rate',0)");
+  if(['rain-puddles','rain-rings'].includes(mode))await evaluate("game.edit_control('rain.rate',0)");
   const fixedSurf=surfRoute&&mode!=='realtime';
   let now=fixedSurf ? await evaluate('performance.now()') : 0;
   const drive=async delta=>{now+=delta;await evaluate(`game.frame(${now})`);};
@@ -572,7 +574,43 @@ try {
     const anchor=await capture('surf-clock-anchor',0);
     surfClockOrigin=now-anchor.observation*1000;
   }
-  if(mode==='rain-puddles'){
+  if(mode==='rain-rings'){
+    await until(async()=>{
+      const status=await evaluate(`game.frame(${now});game.report()`);
+      return /^Cooked generation [0-9]+ drawn/.test(status);
+    },'cooked rain yard drawn');
+    const state=()=>evaluate('(game.report(),{yard:globalThis.waterRainYard,passes:globalThis.__rainPasses})');
+    const frames=async count=>{
+      for(let i=0;i<count;i++){
+        await until(()=>evaluate('game.frame_ready()'),'rain frame slot');
+        await drive(1000/60);
+      }
+      return state();
+    };
+    await evaluate("game.edit_control('camera.island',4);game.edit_control('rain.rate',100);game.edit_control('rain.time_scale',600)");
+    await until(async()=>{
+      const {yard}=await frames(4);
+      return yard?.[0]>18.112 && yard[1]>18.112;
+    },'filled paving puddle');
+    await evaluate("game.edit_control('rain.rate',50);game.edit_control('rain.time_scale',1)");
+    const wet=await frames(12);
+    assert(wet.yard.slice(5).every(count=>count>0)&&wet.passes>0,`both rain bands must submit real drops: ${JSON.stringify(wet)}`);
+    assert(wet.yard[3]===null,'roof column stayed dry');
+    await capture('rings-yard',0);
+    await evaluate("game.edit_control('camera.island',6)");
+    await frames(4);
+    await capture('rings-lake',0);
+    await evaluate("game.edit_control('rain.rate',0)");
+    const fading=await frames(24);
+    assert(fading.yard.slice(5).every(count=>count>0)&&fading.passes>wet.passes,'existing rings must run after the stop');
+    const dry=await frames(44);
+    assert(dry.yard[5]===0&&dry.yard[6]===0,'old rings must expire');
+    const later=await frames(4);
+    assert(dry.passes===later.passes,'dry rain passes must skip');
+    await capture('still-lake',0);
+    assert(result.frames[1].sha256_rgba!==result.frames[2].sha256_rgba,'lake appearance must change when the rings expire');
+    result.rain={wet,fading,dry,later};
+  } else if(mode==='rain-puddles'){
     await until(async()=>{
       const status=await evaluate(`game.frame(${now});game.report()`);
       return /^Cooked generation [0-9]+ drawn/.test(status);

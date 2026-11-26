@@ -4,6 +4,8 @@ mod optics_cost;
 #[cfg(target_os = "macos")]
 mod rain_cost;
 #[cfg(target_os = "macos")]
+mod rain_inspection;
+#[cfg(target_os = "macos")]
 mod realtime;
 #[cfg(target_os = "macos")]
 mod support;
@@ -191,6 +193,14 @@ fn driver(gpu: &thrum_test_support::Gpu) {
     let mode = std::env::var("THRUM_WATER_PROOF").expect("mode");
     let directory = PathBuf::from(std::env::var("THRUM_WATER_OUTPUT").expect("output"));
     std::fs::create_dir_all(&directory).expect("output folder");
+    if mode == "rain-rings-inspection" {
+        rain_inspection::sequences(gpu, &directory);
+        return;
+    }
+    if mode == "rain-rings-cost" {
+        rain_inspection::costs(gpu, &directory);
+        return;
+    }
     if mode == "rain-puddles-cost" {
         let record = rain_cost::measure(gpu);
         std::fs::write(

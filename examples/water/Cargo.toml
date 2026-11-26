@@ -58,6 +58,7 @@ js-sys = "=0.3.106"
 thrum-river-model = { path = "../../crates/thrum-river-model" }
 
 [dev-dependencies]
+thrum-sea = { path = "../../crates/thrum-sea" }
 pollster = "=1.0.1"
 thrum-cook = { path = "../../crates/thrum-cook" }
 thrum-test-support = { path = "../../crates/thrum-test-support", features = ["render"] }
@@ -110,3 +111,7 @@ name = "river_store"
 
 [[test]]
 name = "river_gpu"
+
+# PUDDLES WP4 compares the submitted Metal bands with the model.
+[[test]]
+name = "rain_bands_gpu"

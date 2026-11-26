@@ -235,15 +235,21 @@ impl Map {
         point: [f64; 2],
         map: MapSample,
     ) -> (Limited, [f64; 2]) {
+        self.limited_with_variances(field.variances(), point, map)
+    }
+
+    pub(crate) fn limited_with_variances(
+        &self,
+        variances: [f64; 4],
+        point: [f64; 2],
+        map: MapSample,
+    ) -> (Limited, [f64; 2]) {
         let Some(bands) = &self.flow else {
-            return (
-                limit(map.row, map.depth, field.variances(), self.profile),
-                [0.0; 2],
-            );
+            return (limit(map.row, map.depth, variances, self.profile), [0.0; 2]);
         };
         limit_with_flow(
             map,
-            field.variances(),
+            variances,
             self.flow_gains(map.body, point),
             bands.variances(),
             self.profile,

@@ -274,6 +274,26 @@ impl Canopy {
     }
 }
 
+impl thrum_water_model::Exposure for Canopy {
+    fn exposure(&self, point: [f64; 3]) -> f64 {
+        Self::exposure(self, point)
+    }
+
+    fn canopy_grid(&self) -> Option<thrum_water_model::CanopyGrid> {
+        Some(thrum_water_model::CanopyGrid {
+            origin: self.origin,
+            cell: self.cell,
+            size: self.size,
+            edge_width: self.edge_width,
+            columns: self
+                .layers
+                .iter()
+                .map(|column| column.map(|layer| [layer.underside, layer.share]))
+                .collect(),
+        })
+    }
+}
+
 /// The lowest height at which a vertical line through a point crosses a triangle.
 fn lowest(triangles: &[[[f64; 3]; 3]], [x, z]: [f64; 2]) -> Option<f64> {
     triangles
@@ -289,10 +309,4 @@ fn lowest(triangles: &[[[f64; 3]; 3]], [x, z]: [f64; 2]) -> Option<f64> {
                 .then(|| u * a[1] + v * b[1] + (1.0 - u - v) * c[1])
         })
         .reduce(f64::min)
-}
-
-impl thrum_water_model::Exposure for Canopy {
-    fn exposure(&self, point: [f64; 3]) -> f64 {
-        Self::exposure(self, point)
-    }
 }

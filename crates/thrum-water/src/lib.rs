@@ -8,6 +8,7 @@ pub mod map_gpu;
 mod optics;
 mod prepare;
 pub mod query;
+mod rain;
 mod records;
 #[cfg(test)]
 mod sampling_tests;
@@ -16,7 +17,8 @@ pub use optics::{BodyBounds, Optics, OpticsBodies};
 use std::sync::{Arc, Mutex};
 pub use surf::cache::{SurfTap, SurfWitness};
 use thrum_render::contribution::{
-    ContributionFrame, ContributionPasses, EffectGraph, SceneContribution, SceneSurface,
+    ContributionFrame, ContributionPasses, EffectGraph, QualityError, QualityInvalidation,
+    QualityKnob, QualitySettings, SceneContribution, SceneSurface,
 };
 use thrum_sea::display_seconds;
 use thrum_sea_model::Spectrum;
@@ -24,6 +26,8 @@ use thrum_water_model::Map;
 
 /// The surface pass's timing name.
 pub const SURFACE_PASS: &str = "water surface";
+/// Rain depth and canopy evaluator used by the surface and its conformance tests.
+pub const RAIN_GAIN_WGSL: &str = include_str!("rain_gain.wgsl");
 const VIEW_RECORDS: &str = include_str!("view.wgsl");
 
 /// Physical and mesh settings. Named sea states belong to the game.
@@ -106,6 +110,8 @@ pub struct WaterReport {
     pub foam_pattern: Option<u64>,
     /// Number of submitted changes to the bound foam pattern.
     pub foam_pattern_invalidations: u64,
+    /// Live drops in the two submitted rain bands, when prepared.
+    pub rain_drops: Option<[usize; 2]>,
 }
 
 /// A single contribution containing the ambient passes and the displaced surface.
@@ -131,6 +137,7 @@ pub struct Water {
     foam_pattern: thrum_asset_gpu::ProductLease,
     opaque: OpticsBodies,
     prepared: Option<prepare::Prepared>,
+    rain_quality: Option<QualitySettings>,
     previous: Option<(f64, u64, f64)>,
     recorded: (f64, u64, f64),
     invalid: bool,
@@ -223,14 +230,35 @@ impl Water {
         } else {
             None
         };
+        let rain_quality = guard.rain().map(|_| rain::quality());
         drop(guard);
         if !row.level.is_finite() {
             return Err(WaterError::InvalidLevel);
         }
         let layer_heights = records::layer_heights(&spectrum);
+        let query = profile
+            .query
+            .filter(|limits| limits.points != 0)
+            .map(|limits| {
+                let mailbox =
+                    query::QueryMailbox::new(limits, Arc::clone(&map), long_waves, layer_heights);
+                if rain_quality.is_some() {
+                    let variance = |band: &[thrum_sea_model::Component]| {
+                        band.iter().map(|wave| 0.5 * wave.amplitude.powi(2)).sum()
+                    };
+                    mailbox.with_rain([
+                        variance(&spectrum.long),
+                        variance(spectrum.cascades[0].components()),
+                        variance(spectrum.cascades[1].components()),
+                        variance(spectrum.cascades[2].components()),
+                    ])
+                } else {
+                    mailbox
+                }
+            });
         Ok(Self {
             report: Arc::default(),
-            map: Arc::clone(&map),
+            map,
             mapped,
             body,
             long_variances: records::long_variances(&spectrum),
@@ -249,10 +277,7 @@ impl Water {
             surf_cache_bounds,
             spectrum,
             profile,
-            query: profile
-                .query
-                .filter(|limits| limits.points != 0)
-                .map(|limits| query::QueryMailbox::new(limits, map, long_waves, layer_heights)),
+            query,
             interaction: profile.interaction.map(interaction::Mailbox::new),
             interaction_tap: None,
             foam: None,
@@ -261,6 +286,7 @@ impl Water {
             foam_pattern: thrum_asset_gpu::ProductLease::default(),
             opaque: OpticsBodies::default(),
             prepared: None,
+            rain_quality,
             previous: None,
             recorded: (0.0, 0, 0.0),
             invalid: true,
@@ -380,6 +406,9 @@ impl Water {
             }
             if let Some(foam) = &p.foam {
                 resources.extend(foam.resource_bytes());
+            }
+            if let Some(rain) = &p.rain {
+                resources.push((thrum_sea::rain::PASS.into(), rain.bytes()));
             }
             resources
         })
@@ -512,6 +541,7 @@ impl SceneContribution for Water {
             foam,
             foam_pattern: None,
             foam_pattern_invalidations,
+            rain_drops: None,
         };
         self.previous = None;
         if let Some(tap) = &self.foam_tap {
@@ -521,6 +551,32 @@ impl SceneContribution for Water {
             *tap.0.lock().expect("surf witness") = None;
         }
         Ok(())
+    }
+    fn quality_knobs(&self) -> Vec<QualityKnob> {
+        self.rain_quality
+            .as_ref()
+            .map_or_else(Vec::new, |settings| settings.knobs().to_vec())
+    }
+    fn set_quality_knob(&mut self, name: &str, value: u32) -> Result<(), QualityError> {
+        self.rain_quality
+            .as_mut()
+            .ok_or_else(|| QualityError::UnknownKnob { name: name.into() })?
+            .set(name, value)
+    }
+    fn commit_quality_knobs(&mut self) -> QualityInvalidation {
+        let invalidation = self
+            .rain_quality
+            .as_mut()
+            .map_or(QualityInvalidation::None, QualitySettings::commit);
+        if invalidation == QualityInvalidation::EffectHistory
+            && let Some(rain) = self
+                .prepared
+                .as_mut()
+                .and_then(|prepared| prepared.rain.as_mut())
+        {
+            rain.invalidate();
+        }
+        invalidation
     }
     fn effect_graph(&self) -> EffectGraph {
         self.prepared
@@ -543,6 +599,21 @@ impl SceneContribution for Water {
             Some(gpu) => gpu.record(&p.queue, &map, frame.time),
             None => &map,
         };
+        if let Some(rain) = &mut p.rain
+            && let Some(model) = map.rain()
+        {
+            let cadence = self
+                .rain_quality
+                .as_ref()
+                .map_or(1, |settings| settings.knobs()[0].value);
+            rain.record(
+                &p.queue,
+                model,
+                now,
+                cadence,
+                self.invalid || frame.time.capture,
+            );
+        }
         if let Some(gather) = &mut p.gather {
             gather.record(
                 &p.queue,
@@ -630,6 +701,8 @@ impl SceneContribution for Water {
                 interaction.pending()
             } else if index == p.surf_cache_index() && p.surf_cache.is_some() {
                 true
+            } else if index >= p.rain_offset() {
+                p.rain.as_ref().is_some_and(|rain| rain.pending)
             } else {
                 p.foam.as_ref().is_some_and(foam::Foam::pending)
             }
@@ -652,6 +725,10 @@ impl SceneContribution for Water {
                 && let Some(cache) = &p.surf_cache
             {
                 cache.encode(pass);
+            } else if index >= p.rain_offset() {
+                if let Some(rain) = &p.rain {
+                    rain.bands.encode(index - p.rain_offset(), pass);
+                }
             } else if let Some(foam) = &p.foam {
                 foam.encode(pass);
             }
@@ -775,6 +852,14 @@ impl SceneContribution for Water {
         }
     }
     fn submitted(&mut self, history_advanced: bool) {
+        if let Some(rain) = self
+            .prepared
+            .as_mut()
+            .and_then(|prepared| prepared.rain.as_mut())
+        {
+            rain.submitted();
+            self.report.lock().expect("water report").rain_drops = Some(rain.recorded_drops);
+        }
         if history_advanced {
             if let Some(p) = &mut self.prepared {
                 let (pattern, changed) = p.submit_pattern();

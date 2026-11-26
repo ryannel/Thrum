@@ -22,6 +22,7 @@ RECORDS = {'first-frame': ROOT / 'tests/fixtures/waters/first-frame-cost.json',
            'channel': ROOT / '.orchestrate/evidence/WATERS/WP9/channel-cost.json',
            'river': ROOT / '.orchestrate/evidence/RIVERS/WP4/river-cost.json',
            'rain-puddles': ROOT / 'tests/fixtures/puddles/yard-water-cost.json',
+           'rain-rings': ROOT / 'tests/fixtures/puddles/rain-rings-cost.json',
            'optics': ROOT / 'tests/fixtures/waters/optics-cost-prior.json'}
 WORKING = ROOT / '.orchestrate/evidence/WATERS'
 # The island record taken before the records moved to fixtures names the first-frame record by its old path,
@@ -976,6 +977,92 @@ def validate_rain_yard(data):
         assert all(row['gpu_ms'] > 0 and row['passes_ms'] for row in fill['summary'])
 
 
+def rain_rings_cost(action):
+    output = ROOT / 'tmp/puddles-wp4/cost'
+    output.mkdir(parents=True, exist_ok=True)
+    store = output / 'store'
+    env = dict(os.environ, THRUM_WATER_PROOF='rain-rings-cost',
+               THRUM_WATER_OUTPUT=str(output), THRUM_ASSET_STORE=str(store), THRUM_REQUIRE_GPU='1')
+    run(['cargo', 'run', '--release', '--locked', '--offline', '-p', 'thrum-cook', '--',
+         'cook', 'examples/water/assets', str(store)])
+    run(['cargo', 'test', '--release', '--locked', '--offline', '-p', 'water-scene',
+         '--test', 'proof_gpu'], env=env)
+    data = json.loads((output / 'rain-rings-cost.json').read_text())
+    prior_path = RECORDS['rain-puddles']
+    prior = json.loads(prior_path.read_text())
+    data['commit'] = run(['git', 'rev-parse', 'HEAD'], capture_output=True, text=True).stdout.strip()
+    data['load'] = run(['uptime'], capture_output=True, text=True).stdout.strip()
+    data['host'] = platform.platform()
+    data['wp3'] = {'path': str(prior_path.relative_to(ROOT)), 'commit': prior['commit'],
+                   'brim': prior['fills'][-1]['summary']}
+    controls = {}
+    for arm in data['arms']:
+        for view in arm['views']:
+            summary = []
+            for tick in (False, True):
+                frames = [row for row in view['frames'] if row['tick_frame'] == tick]
+                assert frames and all(row['gpu_ms'] is not None for row in frames)
+                passes = {name.split(': ')[-1]: statistics.median(row['passes_ms'][name] for row in frames
+                                                                  if name in row['passes_ms'])
+                          for name in sorted(set().union(*(row['passes_ms'] for row in frames)))}
+                gpu = statistics.median(row['gpu_ms'] for row in frames)
+                upper = statistics.median(row['completion_upper_ms'] for row in frames)
+                upload = statistics.median(row['upload_cpu_ms'] for row in frames)
+                key = (view['name'], tick)
+                investigations = []
+                if max(gpu, upper) > 1000 / 120:
+                    largest = max(passes, key=passes.get)
+                    investigations.append(f'Pass sum {gpu:.3f} ms. Largest pass {largest} '
+                                          f'{passes[largest]:.3f} ms. Synchronous completion '
+                                          f'{upper:.3f} ms includes polling and shared GPU wait.')
+                if arm['rings']:
+                    control = controls[key]
+                    rain_ms = sum(value for name, value in passes.items() if name.startswith('rain '))
+                    investigations.append(f'Same-view rain dispatch and mips total {rain_ms:.3f} ms. '
+                                          f'CPU upload was {upload:.3f} ms, versus '
+                                          f'{control["upload_cpu_ms"]:.3f} ms with bands disabled.')
+                    for name, previous in control['passes_ms'].items():
+                        if passes.get(name, 0) > 1.25 * previous:
+                            context = ('the same water surface now reads two sets of slopes and moments'
+                                       if name == 'water surface' else
+                                       'the pass has the same inputs and commands in both arms, '
+                                       'so the observed difference includes shared device load')
+                            investigations.append(f'{name} rose from {previous:.4f} to '
+                                                  f'{passes[name]:.4f} ms; {context}.')
+                row = {'tick_frame': tick, 'gpu_ms': gpu, 'completion_upper_ms': upper,
+                       'upload_cpu_ms': upload, 'passes_ms': passes, 'investigations': investigations}
+                if not arm['rings']:
+                    controls[key] = row
+                summary.append(row)
+            view['summary'] = summary
+    validate_rain_rings(data)
+    evidence = ROOT / '.orchestrate/evidence/PUDDLES/WP4/rain-rings-cost.json'
+    evidence.parent.mkdir(parents=True, exist_ok=True)
+    evidence.write_text(json.dumps(data, indent=2) + '\n')
+    if action == 'check':
+        validate_rain_rings(json.loads(RECORDS['rain-rings'].read_text()))
+    print(f'PASS paired Metal rain record: {evidence.relative_to(ROOT)}')
+
+
+def validate_rain_rings(data):
+    assert data['target'] == 'mac-metal' and data['extent'] == [2560, 1440]
+    assert data['capture'] is False and data['rate_mm_h'] == 50
+    assert data['commit'] and data['load'] and data['wp3']['brim']
+    assert [arm['rings'] for arm in data['arms']] == [False, True]
+    for arm in data['arms']:
+        assert len(arm['fills']) >= 3 and any(row['label_ms'] > 0 for row in arm['fills'])
+        assert [view['name'] for view in arm['views']] == ['yard', 'lake']
+        assert arm['resources']
+        for view in arm['views']:
+            assert [row['tick_frame'] for row in view['summary']] == [False, True]
+            for row in view['summary']:
+                passes = row['passes_ms']
+                assert row['gpu_ms'] > 0 and 'water surface' in passes
+                assert ('rain bands' in passes) == arm['rings']
+                if arm['rings'] or max(row['gpu_ms'], row['completion_upper_ms']) > 1000 / 120:
+                    assert row['investigations']
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action', choices=['record', 'check', 'running'])
@@ -1000,6 +1087,9 @@ def main():
         return
     if args.scene == 'surf':
         measure_surf()
+        return
+    if args.scene == 'rain-rings':
+        rain_rings_cost(args.action)
         return
     if args.scene == 'rain-puddles':
         rain_yard_cost(args.action)

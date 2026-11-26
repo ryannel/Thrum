@@ -1,21 +1,29 @@
 //! Yard placements and inspection views for the rain selection.
 use std::{
     error::Error,
-    sync::{Arc, Mutex},
+    sync::{Arc, Mutex, OnceLock},
     time::Duration,
 };
 use thrum_app::sky::{Camera, Controls, CookedMaterial, Display, MeshPlacement, SkyGame};
 use thrum_rain_model::{
-    Canopy, Ground, GroundClass, GroundStores, Profile, Rain, RainState, Shelter, TickReport, Tree,
+    Canopy, Ground, GroundClass, GroundStores, Profile, Rain, RainState, RingProfile, Shelter,
+    TickReport, Tree,
 };
 use thrum_water::query::{BodyQuery, QueryAnswer, QueryPoint};
-use thrum_water_model::{Bed, Body, BodyKind, HollowOptics, Hollows, Map, NO_HOLLOW, Stage};
+use thrum_water_model::{
+    Bed, Body, BodyKind, HollowOptics, Hollows, Map, NO_HOLLOW, RainBands, RainBandsProfile,
+    RateHistory, RingTable, Stage,
+};
 
 pub(super) fn camera(index: usize) -> Camera {
     match index {
         0 => Camera::look_at([144.8, 19.82, 63.35], [149.0, 18.04, 66.4], 60.0),
         1 => Camera::look_at([152.8, 19.82, 63.55], [148.0, 18.04, 66.5], 60.0),
         2 => Camera::look_at([150.2, 19.82, 68.3], [149.6, 18.04, 63.7], 60.0),
+        4 => Camera::look_at([147.2, 18.613, 65.45], [147.2, 18.113, 66.2], 67.0),
+        5 => Camera::look_at([148.8, 19.813, 65.0], [148.0, 18.113, 66.2], 72.0),
+        6 => Camera::look_at([161.0, 41.2, 31.0], [187.0, 11.2, 0.0], 56.0),
+        7 => super::CAMERAS[0],
         _ => Camera::look_at([149.0, 33.12, 64.94], [149.0, 18.12, 65.0], 45.0),
     }
 }
@@ -148,15 +156,42 @@ struct GroundPatch {
 
 pub(super) struct Yard {
     patches: [GroundPatch; 2],
+    canopy: Arc<Canopy>,
     stores: GroundStores,
     levels: Vec<f64>,
     replies: super::RainYardReplies,
     pub(super) draw_float: bool,
+    pub(super) draw_rings: bool,
+    pub(super) measure_regions: bool,
 }
 
 impl Yard {
     pub(super) fn size(&self) -> (usize, usize) {
         (SIZE.iter().product(), self.levels.len())
+    }
+
+    pub(super) fn bands(&self) -> Result<RainBands, thrum_water_model::WaterError> {
+        static TABLE: OnceLock<Arc<RingTable>> = OnceLock::new();
+        let schedule = RainBandsProfile {
+            count: 256.0,
+            ..RainBandsProfile::default()
+        };
+        let table = TABLE.get_or_init(|| {
+            Arc::new(
+                RingProfile {
+                    count: schedule.count,
+                    ..RingProfile::default()
+                }
+                .table(),
+            )
+        });
+        let canopy = Arc::clone(&self.canopy);
+        RainBands::new(
+            schedule,
+            Arc::clone(table),
+            RateHistory::dry(1.0 / 60.0, -1, 62),
+            canopy,
+        )
     }
 
     pub(super) fn replies(&self) -> super::RainYardReplies {
@@ -174,10 +209,13 @@ impl Yard {
         let float = self.float();
         let displayed_float = float.clone();
         let mailbox = water.query_mailbox();
+        let interaction = water.interaction_mailbox();
         #[cfg(target_arch = "wasm32")]
         let displayed_replies = self.replies();
         #[cfg(target_arch = "wasm32")]
         let status_map = Arc::clone(&map);
+        #[cfg(target_arch = "wasm32")]
+        let water_report = water.report();
         let points = self.query_points();
         let game = if self.draw_float {
             float.install(game, water)
@@ -192,6 +230,7 @@ impl Yard {
                 &status_map.lock().expect("yard water map"),
                 displayed_replies.lock().expect("yard query reply").as_ref(),
                 level,
+                water_report.lock().expect("rain report").rain_drops,
             );
         })
         .with_fixed_update_endpoint(move |endpoint, dt| {
@@ -200,8 +239,34 @@ impl Yard {
                 return;
             }
             let weather = *input.lock().expect("yard weather");
-            self.step(weather, dt, &mut map.lock().expect("yard water map"))
-                .expect("prepared yard rain tick");
+            {
+                let mut map = map.lock().expect("yard water map");
+                self.step(weather, dt, &mut map)
+                    .expect("prepared yard rain tick");
+                if let Some(bands) = map.rain() {
+                    let tick = i64::try_from(tick).expect("yard tick in range");
+                    let mut history = bands.history().clone();
+                    // The interval ending at this endpoint has just been committed.
+                    history.last = tick - 2;
+                    history.tick = dt.as_secs_f64();
+                    history.commit(weather.rain.flux);
+                    map.set_rate_history(history)
+                        .expect("valid yard rain history");
+                }
+            }
+            if let Some(interaction) = &interaction {
+                interaction.post_bodies(
+                    tick,
+                    Some(0),
+                    vec![thrum_water::interaction::BodyPressure {
+                        id: 0,
+                        place: [147.2, 66.2],
+                        force: 0.0,
+                        footprint: [0.1; 2],
+                        heading: 0.0,
+                    }],
+                );
+            }
             if let Some(mailbox) = &mailbox {
                 let ready = mailbox.drain(endpoint, dt).into_iter().next();
                 if let Some(answer) = ready {
@@ -270,7 +335,10 @@ impl Yard {
         if bed.heights().contains(&f64::MAX) {
             return Err("yard cell has no ground triangle".into());
         }
-        let profile = Profile::default();
+        let profile = Profile {
+            edge_width: 0.45,
+            ..Profile::default()
+        };
         let canopy = Canopy::prepare(
             ORIGIN,
             [100, 80],
@@ -319,10 +387,13 @@ impl Yard {
         let count = patches.iter().map(|patch| patch.tree.hollow_count()).sum();
         let mut yard = Self {
             patches,
+            canopy: Arc::new(canopy),
             stores,
             levels: Vec::with_capacity(count),
             replies: Arc::default(),
             draw_float: true,
+            draw_rings: true,
+            measure_regions: false,
         };
         yard.refresh_levels();
         Ok(yard)
@@ -417,6 +488,7 @@ fn browser_status(
     map: &Map,
     reply: Option<&thrum_water::query::BodyAnswers>,
     float_waterline: f64,
+    rain_drops: Option<[usize; 2]>,
 ) {
     let status = js_sys::Array::new();
     let column = |point| {
@@ -433,6 +505,11 @@ fn browser_status(
         status.push(&height.map_or(js_sys::wasm_bindgen::JsValue::NULL, Into::into));
     }
     status.push(&float_waterline.into());
+    if let Some(counts) = rain_drops {
+        for count in counts {
+            status.push(&u32::try_from(count).expect("bounded drops").into());
+        }
+    }
     drop(js_sys::Reflect::set(
         &js_sys::global(),
         &"waterRainYard".into(),

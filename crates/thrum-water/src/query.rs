@@ -275,6 +275,7 @@ pub struct QueryMailbox {
     map: Arc<Mutex<Map>>,
     correction: Arc<Correction>,
     limits: QueryLimits,
+    rain_variances: Option<[f64; 4]>,
 }
 
 impl QueryMailbox {
@@ -289,6 +290,46 @@ impl QueryMailbox {
             map,
             correction: Arc::new(Correction::new(long_waves, heights)),
             limits,
+            rain_variances: None,
+        }
+    }
+
+    pub(super) fn with_rain(mut self, variances: [f64; 4]) -> Self {
+        self.rain_variances = Some(variances);
+        self
+    }
+
+    // Analytic rings use the actual use time and committed rate history. The
+    // GPU answer's cascade and wake carry stays independent of render cadence.
+    fn add_rain(&self, answer: &mut BodyAnswers, map: &Map, tick: u64, step: Duration) {
+        let Some((rain, variances)) = map.rain().zip(self.rain_variances) else {
+            return;
+        };
+        let time = tick as f64 * step.as_secs_f64();
+        if !rain.active(time) {
+            return;
+        }
+        for point in &mut answer.points {
+            let world = point.point.position.map(f64::from);
+            let Some(column) = map
+                .sample(world)
+                .filter(|column| Some(column.body) == point.surface.body)
+            else {
+                continue;
+            };
+            let gain = map.rain_gain_with_variances(variances, world, time, column);
+            if gain <= 0.0 {
+                continue;
+            }
+            let rain = rain.sample(world, time);
+            let surface = &mut point.surface.sample;
+            surface.height += gain * rain.height;
+            surface.height_dt += gain * rain.height_dt;
+            surface.velocity[1] += gain * rain.height_dt;
+            for (slope, delta) in surface.slope.iter_mut().zip(rain.slope) {
+                *slope += gain * delta;
+            }
+            point.surface.wet = point.bed.is_none_or(|bed| surface.height > f64::from(bed));
         }
     }
 
@@ -437,6 +478,7 @@ impl QueryMailbox {
                     last_taken: tick,
                 },
             );
+            self.add_rain(&mut taken, &map, tick, step);
             answers.push(taken);
         }
         let State { held, stats, .. } = &mut *state;
@@ -450,6 +492,7 @@ impl QueryMailbox {
             body.last_taken = tick;
             carry_heights(&mut taken, tick, step);
             stats.held_points += taken.points.len() as u64;
+            self.add_rain(&mut taken, &map, tick, step);
             answers.push(taken);
         }
         if answers.len() != new_answers {

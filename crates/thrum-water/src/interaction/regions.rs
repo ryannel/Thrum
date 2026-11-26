@@ -27,7 +27,7 @@ struct Wet {
 
 #[derive(Default)]
 pub(super) struct Window {
-    key: Option<([i32; 2], u64)>,
+    key: Option<([i32; 2], [u64; 2])>,
     wet: Vec<Option<Wet>>,
     next_wet: Vec<Option<Wet>>,
     stack: Vec<usize>,
@@ -44,7 +44,7 @@ impl Window {
         reason = "window indices are checked against the fixed 256-cell dimensions; samples use GPU floats"
     )]
     pub(super) fn label(&mut self, map: &Map, origin: [i32; 2], metres: f32, level: usize) -> bool {
-        let revision = map.spatial_revision();
+        let revision = map.query_revision();
         if self.key == Some((origin, revision)) {
             return false;
         }
