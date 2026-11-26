@@ -639,6 +639,8 @@ def exit_compare(rows, stops, *, calibrate, baseline_path, refresh, refresh_row)
 
 
 def refresh_exit_rows(path, baseline, before_hash, grids, report, selected, cause):
+    from fcntl import LOCK_EX, flock
+
     retained = baseline['exit_comparison']
     history = retained.setdefault('refreshes', [])
     updates = {}
@@ -662,16 +664,19 @@ def refresh_exit_rows(path, baseline, before_hash, grids, report, selected, caus
     for name, replacement in new_grids.items():
         retained['rows'][name]['grids'] = replacement
     content = (json.dumps(baseline, indent=1) + '\n').encode()
-    with tempfile.NamedTemporaryFile(dir=path.parent, prefix=f'.{path.name}.', delete=False) as output:
-        temporary = Path(output.name)
-        output.write(content)
-    try:
+    with path.open('rb') as before:
+        flock(before, LOCK_EX)
         if sha256(path) != before_hash:
             raise Failure('the baseline changed during the refresh')
-        temporary.chmod(path.stat().st_mode)
-        temporary.replace(path)
-    finally:
-        temporary.unlink(missing_ok=True)
+        with tempfile.NamedTemporaryFile(dir=path.parent, prefix=f'.{path.name}.', delete=False) as output:
+            temporary = Path(output.name)
+            try:
+                output.write(content)
+                output.close()
+                temporary.chmod(path.stat().st_mode)
+                temporary.replace(path)
+            finally:
+                temporary.unlink(missing_ok=True)
     return {**record, 'after_file_sha256': hashlib.sha256(content).hexdigest()}
 
 
@@ -2097,7 +2102,8 @@ def main():
                                                 'drift from the old baseline alone does not block it')
     commands.choices['check'].add_argument('--exit', action='store_true', help='check the populated exit scene')
     commands.choices['check'].add_argument('--refresh-baseline', metavar='CAUSE',
-                                           help='refresh the calibrated exit grids after all three controls pass')
+                                           help='refresh the bare-default exit grids; use exit --compare '
+                                                '--refresh-baseline for the configured rows')
     commands.choices['check'].add_argument('--baseline', default=str(BASELINE),
                                            help='baseline file to compare with or save, relative to the current directory '
                                                 '(default: the checked-in one)')
