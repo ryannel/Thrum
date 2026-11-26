@@ -12,6 +12,16 @@ struct CascadeMotion {
     second_drift: vec2<f32>,
 }
 
+// Offsets are in seconds, followed by the first sample's weight and rate.
+fn cascade_renewal(seconds: f32, span: f32) -> vec4<f32> {
+    let a = fract(seconds / span);
+    let b = fract(a + 0.5);
+    let u = 2.0 * min(a, 1.0 - a);
+    let weight = u * u * (3.0 - 2.0 * u);
+    let rate = 12.0 * u * (1.0 - u) * select(-1.0, 1.0, a < 0.5) / span;
+    return vec4((a - 0.5) * span, (b - 0.5) * span, weight, rate);
+}
+
 fn cascade_motion(point: vec2<f32>, current: vec2<f32>, track: vec4<f32>, seconds: f32, period: f32) -> CascadeMotion {
     if track.w == 0.0 {
         return CascadeMotion(cascade_departure(point, current, seconds), point, current, 1.0, 0.0, vec2(0.0));
@@ -23,14 +33,9 @@ fn cascade_motion(point: vec2<f32>, current: vec2<f32>, track: vec4<f32>, second
         if all(abs(residual) < vec2(1e-6)) {
             return CascadeMotion(base, point, reference, 1.0, 0.0, vec2(0.0));
         }
-        let span = min(period, track.z);
-        let a = fract(seconds / span);
-        let b = fract(a + 0.5);
-        let u = 2.0 * min(a, 1.0 - a);
-        let weight = u * u * (3.0 - 2.0 * u);
-        let rate = 12.0 * u * (1.0 - u) * select(-1.0, 1.0, a < 0.5) / span;
-        return CascadeMotion(base - residual * ((a - 0.5) * span),
-            base - residual * ((b - 0.5) * span), current, weight, rate, current);
+        let renewal = cascade_renewal(seconds, min(period, track.z));
+        return CascadeMotion(base - residual * renewal.x,
+            base - residual * renewal.y, current, renewal.z, renewal.w, current);
     }
     let axis = u32(track.w) - 1u;
     var coordinate = point;

@@ -7,8 +7,10 @@ struct QueryPoint {
     surf_stage: vec4<f32>, // stage and surf cut records
     fine_bounds: vec4<i32>,
     coarse_grid: vec4<i32>,
-    carry: vec4<f32>, // cascade and wake time offsets, wave track derivative
+    carry: vec4<f32>, // cascade and wake time offsets
     track: vec4<f32>,
+    current_gradient: vec4<f32>, // current derivatives with respect to x, then z
+    track_gradient: vec4<f32>,
 }
 struct Settings {
     origin: vec2<f32>, count: u32, components: u32,
@@ -42,12 +44,36 @@ struct Answer {
 
 fn column_component(index: u32) -> Component { return components[index]; }
 
-fn cascade_wave(point: QueryPoint, motion: CascadeMotion, band: u32) -> CarriedColumn {
+fn carriage_gradient(point: QueryPoint) -> CarriageGradient {
+    var gradient = CarriageGradient(COLUMN_IDENTITY, COLUMN_IDENTITY, vec2(0.0));
+    let track = point.track;
+    let derivative = point.track_gradient;
+    if track.w > 0.0 {
+        let axis = u32(track.w) - 1u;
+        gradient.first[0][axis] = derivative.x;
+        gradient.first[1][axis] = derivative.z;
+        gradient.blend = derivative.yw;
+    } else if track.w < 0.0 {
+        let renewal = cascade_renewal(settings.swash_margin.z, min(settings.swash_margin.w, track.z));
+        let reference = mat2x2<f32>(derivative.xy, derivative.zw);
+        let current = mat2x2<f32>(point.current_gradient.xy, point.current_gradient.zw);
+        let residual = current - reference;
+        let base = COLUMN_IDENTITY - reference * settings.swash_margin.z;
+        gradient.first = base - residual * renewal.x;
+        gradient.second = base - residual * renewal.y;
+        if all(abs(point.level_current_bed.yz - track.xy) < vec2(1e-6)) {
+            // The two carried places coincide here. Keep their blended
+            // derivative, since the residual may grow on either side.
+            gradient.first = base - residual * mix(renewal.y, renewal.x, renewal.z);
+        }
+    }
+    return gradient;
+}
+
+fn cascade_wave(point: QueryPoint, motion: CascadeMotion, band: u32, gradient: CarriageGradient) -> CarriedColumn {
     let extent = settings.lengths_chop[band];
     let lod = clamp(log2(max(1.0, point.radius * 512.0 / extent)), 0.0, 8.0);
-    var scale = vec2(1.0);
-    if point.track.w > 0.0 { scale[u32(point.track.w) - 1u] = point.carry.z; }
-    return carried_column(motion, extent, band, lod, scale);
+    return carried_column(motion, extent, band, lod, gradient);
 }
 
 struct QueryWave { wave: Wave, cut_fine_nodes: u32, cut_coarse_nodes: u32, }
@@ -73,10 +99,11 @@ fn write_answer(index: u32, point: QueryPoint, gains: vec4<f32>, result: QueryWa
     // A stage change can make a dry or sheltered point gain wave support
     // before its use tick. Keep the actual frame samples for that case.
     let motion = cascade_motion(point.position, row.yz, point.track, settings.swash_margin.z, settings.swash_margin.w);
+    let gradient = carriage_gradient(point);
     var bands: array<CarriedColumn, 3>;
     for (var band = 0u; band < 3u; band++) {
         if settings.heights[band + 1u] > 0.0 {
-            let carried = cascade_wave(point, motion, band);
+            let carried = cascade_wave(point, motion, band, gradient);
             let wave = carried.wave;
             bands[band] = carried;
             out.advection_rate[band] = carried.advection_rate;

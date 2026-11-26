@@ -238,6 +238,8 @@ fn query_records_match_the_shader_layout() {
                 coarse_grid,
                 carry,
                 track,
+                current_gradient,
+                track_gradient,
             ),
             record!(
                 Component,

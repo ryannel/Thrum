@@ -70,6 +70,8 @@ struct Point {
     coarse_grid: [i32; 4],
     carry: [f32; 4],
     track: [f32; 4],
+    current_gradient: [f32; 4],
+    track_gradient: [f32; 4],
 }
 
 #[repr(C)]
@@ -895,10 +897,11 @@ impl Point {
                 .map(|slope| slope as f32);
             input.gains = row.gains.map(|gain| gain as f32);
             if let Some(gpu) = gpu_map {
-                let (track, derivative) =
-                    gpu.wave_track(sample.body, world, row.current, map.bed());
+                let (track, [current_gradient, track_gradient]) =
+                    gpu.query_track(sample.body, world, row.current, map);
                 input.track = track;
-                input.carry[2] = derivative;
+                input.current_gradient = current_gradient;
+                input.track_gradient = track_gradient;
             }
             input.surf_stage[0] = map.body(sample.body).expect("sampled body").stage.value as f32;
         }

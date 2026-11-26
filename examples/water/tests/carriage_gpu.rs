@@ -1,18 +1,29 @@
-//! Track a known phase in the actual draw over three adjacent chart reaches.
+//! Track submitted ripple heights and compare the public mailbox's slope with its heights.
 #[cfg(target_os = "macos")]
 mod support;
 
 thrum_test_support::macos_gpu_test! {
-fn submitted_detail_moves_with_chart_current() {
+fn separate_uniform_reaches_carry_submitted_detail() {
     let Some(gpu) = thrum_test_support::gpu(
-        "submitted_detail_moves_with_chart_current",
-        Some(wgpu::Backend::Metal),
+        "separate_uniform_reaches_carry_submitted_detail", Some(wgpu::Backend::Metal),
     ) else { return };
     let speeds = [0.0, 0.5, 1.5];
-    check_connected_chart(&gpu, speeds, |_, z| {
+    let map = chart_map(speeds.map(|speed| move |_, _| [speed, 0.0]), false);
+    check_carriage(&gpu, "separate", map, [-6.0, 0.0, 6.0], speeds, &steady_windows());
+}
+}
+
+thrum_test_support::macos_gpu_test! {
+fn connected_lanes_carry_submitted_detail() {
+    let Some(gpu) = thrum_test_support::gpu(
+        "connected_lanes_carry_submitted_detail", Some(wgpu::Backend::Metal),
+    ) else { return };
+    let speeds = [0.0, 0.5, 1.5];
+    let map = chart_map([|_, z| {
         let lane = if z < -3 { 0 } else if z < 3 { 1 } else { 2 };
         [speeds[lane], 0.0]
-    });
+    }], true);
+    check_carriage(&gpu, "connected", map, [-6.0, 0.0, 6.0], speeds, &steady_windows());
 }
 }
 
@@ -21,60 +32,9 @@ fn still_chart_has_only_the_intrinsic_wave_motion() {
     let Some(gpu) = thrum_test_support::gpu(
         "still_chart_has_only_the_intrinsic_wave_motion", Some(wgpu::Backend::Metal),
     ) else { return };
-    check_connected_chart(&gpu, [0.0; 3], |_, _| [0.0, 0.0]);
+    let map = chart_map([|_, _| [0.0, 0.0]], true);
+    check_carriage(&gpu, "still", map, [-6.0, 0.0, 6.0], [0.0; 3], &steady_windows());
 }
-}
-
-#[cfg(target_os = "macos")]
-#[expect(
-    clippy::print_stdout,
-    reason = "print submitted Metal phase measurements for review"
-)]
-fn check_connected_chart(
-    gpu: &thrum_test_support::Gpu,
-    speeds: [f64; 3],
-    current: impl Fn(i32, i32) -> [f64; 2],
-) {
-    let centres = [-6.0, 0.0, 6.0];
-    let (mut scene, tap, camera, extent, _) = fixture(gpu, chart_map([current], true), false);
-    let matrix = support::depth::matrix(camera, extent);
-    let mode = marker().cascades[0].components()[0];
-    let k = mode.wave_vector[0];
-    let intrinsic_frequency = thrum_sea_model::cascade_frequency(mode);
-    let duration = 12.0 / 60.0;
-    let mut frames = Vec::new();
-    // Observe consecutive frames across both renewals, followed by late windows
-    // across several periods. Fit each lane independently, even in the control.
-    for time in [
-        0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0, 3.2, 3.4,
-        3.6, 3.8, 4.0, 4.2, 4.4, 5.0, 5.2, 7.9, 8.1, 24.9, 25.1, 59.9, 60.1,
-    ] {
-        scene.frame_without_timings(time + 1e-8);
-        frames.push((time, phase(&tap.read(&scene), extent, matrix, centres, k)));
-    }
-    for pair in frames.windows(2) {
-        let (start, before) = pair[0];
-        let (end, after) = pair[1];
-        if end - start > duration + 1e-6 {
-            continue;
-        }
-        for (i, speed) in speeds.into_iter().enumerate() {
-            let delta = after[i].0 - before[i].0 + intrinsic_frequency * duration;
-            let measured = -delta.sin().atan2(delta.cos()) / (k * duration);
-            println!(
-                "Metal t={start:.1}–{end:.1}s, lane {speed:.2} m/s: {measured:.3} m/s after subtracting intrinsic phase"
-            );
-            let tolerance = if speed == 0.0 { 0.07 } else { 0.22 };
-            assert!(
-                (measured - speed).abs() < tolerance,
-                "carriage: {measured:.4} vs {speed}"
-            );
-            assert!(
-                before[i].1 > 0.08 && after[i].1 > 0.08,
-                "the marker collapsed at {start}s in lane {i}"
-            );
-        }
-    }
 }
 
 thrum_test_support::macos_gpu_test! {
@@ -82,82 +42,204 @@ fn varying_current_keeps_the_submitted_marker_moving() {
     let Some(gpu) = thrum_test_support::gpu(
         "varying_current_keeps_the_submitted_marker_moving", Some(wgpu::Backend::Metal),
     ) else { return };
-    let speeds = [0.0, 0.5, 1.5];
-    let centres = [-6.0, 0.0, 6.0];
-    let map = map(speeds.map(|speed| move |x, z| {
-        if speed == 0.0 { return [0.0, 0.0]; }
+    let speeds = [0.5, 1.5];
+    let map = chart_map(speeds.map(|speed| move |x, z| {
         // The outer bank's transverse flow selects the general chart path.
         [(speed + 0.04 * f64::from(x)).max(0.1), if z % 6 == 2 { 0.05 } else { 0.0 }]
-    }));
-    let (mut scene, tap, camera, extent, _) = fixture(&gpu, map, false);
+    }), false);
+    check_carriage(&gpu, "varying", map, [-6.0, 0.0], speeds,
+        &[0, 240, 242, 244, 246, 248, 250, 252, 254, 256, 599, 602]);
+}
+}
+
+#[cfg(target_os = "macos")]
+fn steady_windows() -> Vec<u32> {
+    // Tenths of a second. The four-second profile period is sampled end to end.
+    (0..40).step_by(2).chain([79, 249, 599]).collect()
+}
+
+#[cfg(target_os = "macos")]
+#[expect(
+    clippy::print_stdout,
+    reason = "record submitted Metal phase and height for review"
+)]
+fn check_carriage<const N: usize>(
+    gpu: &thrum_test_support::Gpu,
+    case: &str,
+    map: thrum_water_model::Map,
+    centres: [f64; N],
+    speeds: [f64; N],
+    starts: &[u32],
+) {
+    let (mut scene, tap, camera, extent, _) = fixture(gpu, map, false);
     let matrix = support::depth::matrix(camera, extent);
-    let k = marker().cascades[0].components()[0].wave_vector[0];
-    // x - u(x)t used to become flat at 25 s and reverse thereafter.
-    for time in [0.0, 23.9, 24.2, 24.9, 25.2, 25.9, 26.2, 59.9, 60.2] {
-        let mut samples = Vec::new();
-        for t in [time, time + 0.2] {
-            scene.frame_without_timings(t + 1e-8);
-            let depth = tap.read(&scene);
-            samples.push(phase(&depth, extent, matrix, centres, k));
+    let mode = marker().cascades[0].components()[0];
+    let k = mode.wave_vector[0];
+    let intrinsic = thrum_sea_model::cascade_frequency(mode) * 0.2;
+    let mut frames = std::collections::BTreeMap::new();
+    for t in starts
+        .iter()
+        .flat_map(|&t| [t, t + 2])
+        .collect::<std::collections::BTreeSet<_>>()
+    {
+        scene.frame_without_timings(f64::from(t) / 10.0 + 1e-8);
+        frames.insert(t, phase(&tap.read(&scene), extent, matrix, centres, k));
+    }
+    let initial = frames[&0];
+    for &t in starts {
+        let before = frames[&t];
+        let after = frames[&(t + 2)];
+        let measured: [f64; N] = std::array::from_fn(|i| {
+            let delta = after[i].0 - before[i].0 + intrinsic;
+            -delta.sin().atan2(delta.cos()) / (k * 0.2)
+        });
+        for (i, speed) in speeds.into_iter().enumerate() {
+            let drift = measured[i];
+            let height = before[i].1.min(after[i].1);
+            let initial_height = initial[i].1;
+            println!(
+                "Metal {case} t={:.1}–{:.1}s, {speed:.2} m/s: drift {drift:.4} m/s, height {height:.5} m of {initial_height:.5} m",
+                f64::from(t) / 10.0,
+                f64::from(t + 2) / 10.0
+            );
+            assert!(
+                height >= 0.5 * initial_height,
+                "{case} t={t}, marker flattened in reach {i}"
+            );
+            if speed == 0.0 {
+                assert!(
+                    drift.abs() < 0.1,
+                    "{case} t={t}, still reach drifted by {drift:.4} m/s"
+                );
+            } else {
+                assert!(
+                    drift > 0.0,
+                    "{case} t={t}, reach {i} did not travel downstream"
+                );
+            }
         }
-        let still = samples[1][0].0 - samples[0][0].0;
-        for (i, speed) in speeds.into_iter().enumerate().skip(1) {
-            let height = samples[0][i].1;
-            let phase_delta = samples[1][i].0 - samples[0][i].0 - still;
-            let measured = -phase_delta.sin().atan2(phase_delta.cos()) / (k * 0.2);
-            println!("Metal t={time:.1}s, {speed:.2} m/s at centre: {height:.5} m peak-to-trough, {measured:.3} m/s after subtracting intrinsic phase");
-            assert!(height > 0.08, "the marker collapsed at {time}s in reach {i}");
-            assert!((measured - speed).abs() < 0.22, "carriage at {time}s: {measured:.4} vs {speed}");
+        if let (Some(slow), Some(fast)) = (
+            speeds
+                .iter()
+                .position(|speed| speed.to_bits() == 0.5_f64.to_bits()),
+            speeds
+                .iter()
+                .position(|speed| speed.to_bits() == 1.5_f64.to_bits()),
+        ) {
+            assert!(
+                measured[fast] > measured[slow],
+                "{case} t={t}, speed order: {measured:?}"
+            );
         }
+    }
+}
+
+thrum_test_support::macos_gpu_test! {
+fn query_reports_world_slopes_for_uniform_parallel_and_sheared_charts() {
+    let Some(gpu) = thrum_test_support::gpu(
+        "query_reports_world_slopes_for_uniform_parallel_and_sheared_charts", Some(wgpu::Backend::Metal),
+    ) else { return };
+    let x = [-9.07_f32, -7.6, -5.71, -3.72, 3.72, 5.71, 7.6, 9.07];
+    let cases: [(&str, thrum_water_model::Map, [[f32; 2]; 8]); 3] = [
+        ("uniform", chart_map([|_, _| [1.0, 0.0]], true), x.map(|x| [x, 0.0])),
+        ("parallel", chart_map([|x, _| [if x < 0 { 0.5 } else { 1.5 }, 0.0]], true),
+            x.map(|x| [x, 0.0])),
+        ("sheared", chart_map([|_, z| [1.0 + 0.25 * f64::from(z).clamp(-2.0, 2.0), 0.0]], true),
+            std::array::from_fn(|i| [x[i], [-1.75, -1.25, -0.75, -0.25, 0.25, 0.75, 1.25, 1.75][i]])),
+    ];
+    for (case, map, stations) in cases {
+        check_query_slopes(&gpu, case, map, stations);
     }
 }
 }
 
-thrum_test_support::macos_gpu_test! {
-fn query_slope_matches_the_carried_height_in_both_sections() {
-    use thrum_water::query::{BodyQuery, QueryPoint};
-    let Some(gpu) = thrum_test_support::gpu(
-        "query_slope_matches_the_carried_height_in_both_sections", Some(wgpu::Backend::Metal),
-    ) else { return };
-    let map = map([0, 1, 2].map(|reach| move |x, _| {
-        let speed = match reach {
-            0 => 0.0,
-            1 => 1.0,
-            _ if x < 0 => 0.5,
-            _ => 1.5,
-        };
-        [speed, 0.0]
-    }));
-    let (mut scene, _, _, _, mailbox) = fixture(&gpu, map, true);
+#[cfg(target_os = "macos")]
+#[expect(
+    clippy::print_stdout,
+    reason = "record mailbox slopes and neighbouring heights for review"
+)]
+fn check_query_slopes(
+    gpu: &thrum_test_support::Gpu,
+    case: &str,
+    map: thrum_water_model::Map,
+    stations: [[f32; 2]; 8],
+) {
+    use thrum_water::query::{BodyQuery, QueryAnswer, QueryPoint};
+    const STEP: std::time::Duration = std::time::Duration::from_nanos(16_666_667);
+    const POST: u32 = 252;
+    const DRAIN: u32 = POST + 2;
+    let (mut scene, _, _, _, mailbox) = fixture(gpu, map, true);
     let mailbox = mailbox.expect("query mailbox");
-    let stations = [-9.07_f32, -7.6, -5.71, -3.72, 3.72, 5.71, 7.6, 9.07];
-    let points = stations.into_iter().flat_map(|x| {
-        [x - 0.15, x, x + 0.15].map(|x| QueryPoint {
-            position: [x, 6.0], radius: 0.0, use_tick: 0,
-        })
-    }).collect();
-    mailbox.post(scene.endpoint(0), vec![BodyQuery { id: 1, generation: 1, points }]);
     scene.frame_without_timings(0.0);
-    let step = std::time::Duration::from_nanos(16_666_667);
-    scene.frame_without_timings(step.as_secs_f64());
-    let answers = mailbox.drain(scene.endpoint(2), step);
-    assert_eq!(answers.len(), 1);
-    assert_eq!(answers[0].points.len(), 3 * stations.len());
-    for (x, points) in stations.into_iter().zip(answers[0].points.as_chunks::<3>().0) {
-        let [left, centre, right] = [0, 1, 2].map(|i| points[i].surface);
-        assert!(left.wet && centre.wet && right.wet);
-        let reported = centre.sample.slope[0];
-        // The mailbox carries height to the drain tick using the rate. Compare
-        // the slope and neighbouring heights at the same submitted field time.
-        let frame_height = |answer: &thrum_water::query::QueryAnswer| {
-            let carried = 2.0 * step.as_secs_f64() - answer.sources[1].expect("cascade time");
-            answer.surface.sample.height - carried * answer.surface.sample.height_dt
-        };
-        let numerical = (frame_height(&points[2]) - frame_height(&points[0])) / 0.3;
-        println!("Metal query x={x:.2}: reported slope {reported:.6}, height derivative {numerical:.6}");
-        assert!((reported - numerical).abs() < 0.012, "query did not return the world-space slope at {x}");
+    let before = scene.frame_without_timings((STEP * (POST - 1)).as_secs_f64() + 1e-8);
+    assert_eq!(before.tick, u64::from(POST - 1));
+    let points = stations
+        .into_iter()
+        .flat_map(|[x, z]| {
+            [
+                [x, z],
+                [x - 0.15, z],
+                [x + 0.15, z],
+                [x, z - 0.15],
+                [x, z + 0.15],
+            ]
+            .map(|position| QueryPoint {
+                position,
+                radius: 0.0,
+                use_tick: u64::from(POST),
+            })
+        })
+        .collect();
+    mailbox.post(
+        scene.endpoint(u64::from(POST)),
+        vec![BodyQuery {
+            id: 1,
+            generation: 1,
+            points,
+        }],
+    );
+    for tick in [POST, POST + 1] {
+        scene.frame_without_timings((STEP * tick).as_secs_f64() + 1e-8);
     }
-}
+    let answers = mailbox.drain(scene.endpoint(u64::from(DRAIN)), STEP);
+    assert_eq!(answers.len(), 1);
+    assert_eq!(answers[0].points.len(), 5 * stations.len());
+    let field_time = answers[0].points[0].sources[1].expect("cascade time");
+    assert!(field_time >= 4.0);
+    let frame_height = |answer: &QueryAnswer| {
+        assert!(answer.surface.wet);
+        assert_eq!(answer.sources[1], Some(field_time));
+        let carried = (STEP * DRAIN).as_secs_f64() - field_time;
+        answer.surface.sample.height - carried * answer.surface.sample.height_dt
+    };
+    let mut greatest_cross_tilt = 0.0_f64;
+    for ([x, z], [centre, x0, x1, z0, z1]) in stations
+        .into_iter()
+        .zip(answers[0].points.as_chunks::<5>().0)
+    {
+        assert!(centre.surface.wet);
+        let reported = centre.surface.sample.slope;
+        let numerical = [
+            (frame_height(x1) - frame_height(x0)) / 0.3,
+            (frame_height(z1) - frame_height(z0)) / 0.3,
+        ];
+        greatest_cross_tilt = greatest_cross_tilt.max(numerical[1].abs());
+        println!(
+            "Metal {case} t={field_time:.3}s x={x:.2} z={z:.2}, slope {reported:.6?}, neighbouring derivative {numerical:.6?}"
+        );
+        for axis in 0..2 {
+            assert!(
+                (reported[axis] - numerical[axis]).abs() < 0.012,
+                "{case} at [{x}, {z}], slope component {axis}: {reported:?} vs {numerical:?}"
+            );
+        }
+    }
+    if case == "sheared" {
+        assert!(
+            greatest_cross_tilt > 0.012,
+            "sheared query did not exercise a distinguishable cross-channel tilt"
+        );
+    }
 }
 
 #[cfg(target_os = "macos")]
@@ -190,7 +272,7 @@ fn fixture(
     let mut profile = thrum_water::Profile::default();
     profile.waves.choppiness = 0.0;
     profile.query = query.then_some(thrum_water::query::QueryLimits {
-        points: 24,
+        points: 40,
         max_age: 8,
     });
     let water = thrum_water::Water::mapped(
@@ -217,11 +299,6 @@ fn fixture(
         extent,
         mailbox,
     )
-}
-
-#[cfg(target_os = "macos")]
-fn map(currents: [impl Fn(i32, i32) -> [f64; 2]; 3]) -> thrum_water_model::Map {
-    chart_map(currents, false)
 }
 
 #[cfg(target_os = "macos")]
@@ -292,15 +369,15 @@ fn chart_map<const N: usize>(
 }
 
 #[cfg(target_os = "macos")]
-fn phase(
+fn phase<const N: usize>(
     depth: &[f32],
     extent: [u32; 2],
     matrix: glam::Mat4,
-    centres: [f64; 3],
+    centres: [f64; N],
     k: f64,
-) -> [(f64, f64); 3] {
-    let mut fits = [[0.0; 2]; 3];
-    let mut bounds = [[f64::INFINITY, f64::NEG_INFINITY]; 3];
+) -> [(f64, f64); N] {
+    let mut fits = [[0.0; 2]; N];
+    let mut bounds = [[f64::INFINITY, f64::NEG_INFINITY]; N];
     for z in 0..extent[1] {
         for x in 0..extent[0] {
             let d = depth[(z * extent[0] + x) as usize];

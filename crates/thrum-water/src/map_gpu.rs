@@ -415,31 +415,27 @@ impl MapGpu {
         self.hollows.as_ref().map(HollowsGpu::bytes)
     }
 
-    #[expect(
-        clippy::cast_possible_truncation,
-        clippy::cast_sign_loss,
-        reason = "clamped chart lattice in GPU metres"
-    )]
-    pub(crate) fn wave_track(
+    #[expect(clippy::cast_sign_loss, reason = "clamped chart lattice in GPU metres")]
+    fn wave_track(
         &self,
         body: usize,
         world: [f64; 2],
         current: [f64; 2],
         bed: &thrum_water_model::Bed,
-    ) -> ([f32; 4], f32) {
-        let mut record = self.record.bodies[body].track;
+    ) -> [f64; 4] {
+        let mut record = self.record.bodies[body].track.map(f64::from);
         if let Some(shared) = &self.tracks.bounded[self.tracks.groups[body]] {
             let sample = shared.track.sample(world, bed);
             for axis in 0..2 {
-                let authored = sample[2 + axis];
-                let scale = (authored * current[axis] as f32 / (authored * authored).max(1e-12))
-                    .clamp(0.0, 1.0);
-                record[axis] = sample[axis] * scale;
+                let authored = f64::from(sample[2 + axis]);
+                let scale =
+                    (authored * current[axis] / (authored * authored).max(1e-12)).clamp(0.0, 1.0);
+                record[axis] = f64::from(sample[axis]) * scale;
             }
-            return (record, 1.0);
+            return record;
         }
         let Some(track) = &self.tracks.parallel[body] else {
-            return (record, 1.0);
+            return record;
         };
         let (origin, spacing, size) = bed.lattice();
         let axis = track.axis;
@@ -456,15 +452,55 @@ impl MapGpu {
         let coordinate = delta.mul_add(alpha, coordinate);
         let speed = (next_speed - speed).mul_add(alpha, speed);
         let blend = (current[axis].abs() / speed).clamp(0.0, 1.0);
-        (
-            [
-                coordinate as f32,
-                track.reference as f32,
-                blend as f32,
-                if axis == 0 { 1.0 } else { 2.0 },
-            ],
-            (delta / spacing) as f32,
-        )
+        [
+            coordinate,
+            track.reference,
+            blend,
+            if axis == 0 { 1.0 } else { 2.0 },
+        ]
+    }
+
+    /// Track and spatial derivatives for the sparse body queries. Differentiate
+    /// the same joined row used for the centre, without changing its owner.
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "chart derivatives use GPU metres"
+    )]
+    pub(crate) fn query_track(
+        &self,
+        body: usize,
+        point: [f64; 2],
+        current: [f64; 2],
+        map: &Map,
+    ) -> ([f32; 4], [[f32; 4]; 2]) {
+        let bed = map.bed();
+        let track = self.wave_track(body, point, current, bed);
+        if track[3] == 0.0 {
+            return (track.map(|v| v as f32), [[0.0; 4]; 2]);
+        }
+        // A symmetric difference also defines the derivative at cell creases.
+        // Keep the interval large enough to resolve f32 track samples.
+        let step = bed.lattice().1 / 128.0;
+        let mut current_gradient = [0.0; 4];
+        let mut track_gradient = [0.0; 4];
+        for axis in 0..2 {
+            let mut lo = point;
+            let mut hi = point;
+            lo[axis] -= step;
+            hi[axis] += step;
+            let a = map.supported_row(body, lo).current;
+            let b = map.supported_row(body, hi).current;
+            let before = self.wave_track(body, lo, a, bed);
+            let after = self.wave_track(body, hi, b, bed);
+            let second = if track[3] > 0.0 { 2 } else { 1 };
+            for (component, index) in [0, second].into_iter().enumerate() {
+                current_gradient[2 * axis + component] =
+                    ((b[component] - a[component]) / (2.0 * step)) as f32;
+                track_gradient[2 * axis + component] =
+                    ((after[index] - before[index]) / (2.0 * step)) as f32;
+            }
+        }
+        (track.map(|v| v as f32), [current_gradient, track_gradient])
     }
 
     /// View over the map's layers, using explicit array dimensionality.

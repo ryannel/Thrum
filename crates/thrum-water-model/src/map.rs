@@ -467,7 +467,11 @@ impl Map {
         })
     }
 
-    fn supported_row(&self, id: usize, point: [f64; 2]) -> Row {
+    /// A body's joined row, continued from its prepared wet support at the bank.
+    /// This reads a named body without resolving ownership at the point.
+    /// # Panics
+    /// Panics if the body index is outside this map.
+    pub fn supported_row(&self, id: usize, point: [f64; 2]) -> Row {
         let mut row = self.row(id, point);
         if let BodyKind::Chart(c) = &self.bodies[id].kind
             && !self.in_chart(c, point)
