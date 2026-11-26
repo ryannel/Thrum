@@ -234,8 +234,17 @@ impl<K> Default for Router<K> {
 impl<K: Copy + Ord> Router<K> {
     /// Switch input geometry when the frame that drew it has been submitted.
     pub fn submitted(&mut self, layout: InputLayout) {
-        self.shown = layout;
+        let previous = std::mem::replace(&mut self.shown, layout);
         let shown = &self.shown;
+        let successor = self.focus().and_then(|focus| {
+            previous
+                .controls
+                .iter()
+                .skip_while(|control| control.id != focus)
+                .skip(1)
+                .find(|control| eligible(shown, self.top_id(), control.id))
+                .map(|control| control.id)
+        });
         for press in self.presses.values_mut() {
             if let Owner::Interface { button, scope, .. } = &mut press.owner
                 && button.is_some_and(|id| !eligible(shown, *scope, id))
@@ -243,7 +252,7 @@ impl<K: Copy + Ord> Router<K> {
                 *button = None;
             }
         }
-        self.reconcile_focus();
+        self.reconcile_focus(successor);
     }
 
     /// Open a declared scope immediately. Supply its policy from the current tree.
@@ -261,7 +270,7 @@ impl<K: Copy + Ord> Router<K> {
             armed_at,
         });
         self.show_focus = true;
-        self.reconcile_focus();
+        self.reconcile_focus(None);
         if interrupts {
             for press in self.presses.values_mut() {
                 if matches!(press.owner, Owner::Game) {
@@ -281,7 +290,7 @@ impl<K: Copy + Ord> Router<K> {
         let was_exclusive = self.exclusive();
         self.cancel_scope_presses();
         self.scopes.pop();
-        self.reconcile_focus();
+        self.reconcile_focus(None);
         (was_exclusive && !self.exclusive()).then(|| {
             let held = self.presses.iter_mut().filter_map(|(&contact, press)| {
                 if matches!(
@@ -442,12 +451,13 @@ impl<K: Copy + Ord> Router<K> {
     ) -> Option<Routed<K>> {
         let armed = self.armed(now);
         let hit = self.hit(position);
+        let shown = &self.shown;
         let press = self.presses.get_mut(&contact)?;
         press.position = Some(position);
         match &mut press.owner {
             Owner::Game => Some(Routed::Game(Event::Move(contact, position))),
             Owner::Interface { button, .. } => {
-                if *button != hit {
+                if button.is_some_and(|id| !focus::contains(shown, id, position)) {
                     *button = None;
                 }
                 if armed && matches!(contact, Contact::Pointer(_)) {
@@ -487,8 +497,7 @@ impl<K: Copy + Ord> Router<K> {
                 && self.armed(now)
                 && position
                     .or(press.position)
-                    .and_then(|point| self.hit(point))
-                    == Some(id) =>
+                    .is_some_and(|point| focus::contains(&self.shown, id, point)) =>
             {
                 Some(Routed::Activated(id))
             }

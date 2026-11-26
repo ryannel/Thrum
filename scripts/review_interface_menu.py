@@ -61,7 +61,7 @@ def fixed(source, destination, extent, env, state):
         width, height = extent
         panel_width = min(width - 32, 920)
         crop(destination / "whole.png", destination / "join-panel.png",
-             [(width - panel_width) / 2, (height - 444) / 2, panel_width, 444])
+             [(width - panel_width) / 2, (height - 488) / 2, panel_width, 488])
     for file in ("manifest.json", "runtime.json"):
         shutil.copy2(source / file, destination / file)
     shutil.rmtree(source)

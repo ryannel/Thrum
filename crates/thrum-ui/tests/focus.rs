@@ -133,7 +133,7 @@ fn named_ragged_grid_neighbours_win_and_scope_restores_focus() {
     tree.set_shown(10, false);
     layout(&mut tree, viewport());
     router.submitted(tree.input_layout());
-    assert_eq!(router.focus(), Some(11));
+    assert_eq!(router.focus(), Some(13));
 }
 
 #[test]

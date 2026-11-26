@@ -74,6 +74,14 @@ fn hit_boxes_grow_to_44_and_overlap_uses_drawn_distance_on_the_displayed_layout(
             Some(Routed::Activated(id))
         );
     }
+    // The captured button owns the release when the point is still in both
+    // hit boxes, even after the other drawn box becomes nearer.
+    router.route(press(mouse, Some([69.0, 63.0]), None), NOW);
+    router.route(Event::Move(mouse, [71.0, 63.0]), NOW);
+    assert_eq!(
+        router.route(Event::Release(mouse, Some([71.0, 63.0])), NOW),
+        Some(Routed::Activated(10))
+    );
     router.submitted(tree.input_layout());
     let old = [56.0, 64.0];
     router.route(press(mouse, Some(old), None), NOW);

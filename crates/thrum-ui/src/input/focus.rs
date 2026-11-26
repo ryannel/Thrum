@@ -1,4 +1,6 @@
-use super::{ButtonState, Control, Direction, Intent, Owner, Routed, Router, eligible};
+use super::{
+    ButtonState, Control, Direction, InputLayout, Intent, Owner, Routed, Router, eligible,
+};
 use crate::NodeId;
 
 impl<K: Copy + Ord> Router<K> {
@@ -34,7 +36,7 @@ impl<K: Copy + Ord> Router<K> {
         }
     }
 
-    pub(super) fn reconcile_focus(&mut self) {
+    pub(super) fn reconcile_focus(&mut self, successor: Option<NodeId>) {
         if let Some(scope) = self.scopes.last_mut() {
             let shown = &self.shown;
             let id = Some(scope.id);
@@ -47,12 +49,16 @@ impl<K: Copy + Ord> Router<K> {
                         .initial
                         .filter(|focus| eligible(shown, id, *focus))
                 })
+                .or(successor)
                 .or_else(|| {
-                    shown
-                        .controls
-                        .iter()
-                        .find(|control| control.scope == id && control.button.enabled)
-                        .map(|control| control.id)
+                    let controls = shown.controls.iter().filter(|control| control.scope == id);
+                    let next = controls
+                        .clone()
+                        .skip_while(|control| Some(control.id) != scope.focus)
+                        .skip(1)
+                        .chain(controls)
+                        .find(|control| control.button.enabled);
+                    next.map(|control| control.id)
                 });
         }
     }
@@ -166,6 +172,13 @@ fn adjacent<'a>(
 
 fn centre(control: &Control) -> [f64; 2] {
     std::array::from_fn(|axis| control.bounds.size[axis].mul_add(0.5, control.bounds.origin[axis]))
+}
+
+pub(super) fn contains(layout: &InputLayout, id: NodeId, point: [f64; 2]) -> bool {
+    layout
+        .controls
+        .iter()
+        .any(|control| control.id == id && in_hit_box(control, point))
 }
 
 fn in_hit_box(control: &Control, point: [f64; 2]) -> bool {

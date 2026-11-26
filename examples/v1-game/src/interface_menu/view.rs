@@ -208,7 +208,7 @@ fn card(
 
 fn join(view: &View, viewport: Viewport) -> Node {
     let width = (viewport.safe().size[0] - 16.0).clamp(0.0, 460.0);
-    let mut panel = scope(JOIN, width, 222.0);
+    let mut panel = scope(JOIN, width, 244.0);
     let mut background = fill(202, INK);
     background.size = [FILL; 2];
     let mut content = stack(203, Axis::Column, 6.0);
@@ -249,7 +249,7 @@ fn join(view: &View, viewport: Viewport) -> Node {
         Screen::Play | Screen::Choice => unreachable!("join view is selected by screen"),
     };
     let mut heading = label(204, title, 24.0, CREAM);
-    heading.size[1] = Size::fixed(32.0);
+    heading.size[1] = Size::fixed(38.0);
     let mut subtitle = label(205, status, 16.0, TEAL);
     subtitle.size[1] = Size::fixed(24.0);
     let mut body = label(206, reason, 12.0, CREAM);
@@ -295,7 +295,7 @@ fn join(view: &View, viewport: Viewport) -> Node {
                     12.0,
                     CREAM,
                 );
-                member.size[1] = Size::fixed(16.0);
+                member.size[1] = Size::fixed(20.0);
                 content.children.push(member);
             }
         }
