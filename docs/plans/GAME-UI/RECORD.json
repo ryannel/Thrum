@@ -423,7 +423,17 @@
           "output": 55288,
           "turns": 1
         }
-      }
+      },
+      "diagnoses": [
+        {
+          "who": "reviewer",
+          "why": "All 13 items passed in reviews 3, 4 and 5; the only finding is outside the items and each fix held. The remaining case needs a store whose refused font edit was made by d97bcb040, WP2's own first-round cooker (font cooking began in WP2 at af494218b, so no font store predates it and none is released), then opened by the new cooker. That is not a user path for this proof of concept, and the design does not ask for compatibility between unfinished WP2 builds. Known limit: in such a store a new sibling PNG publishes only once the font is repaired; the last good font and its private grid are kept. Judge WP2 on its 13 items as written and do not fail it on stores made by earlier WP2 builds.",
+          "host": "claude",
+          "at": "2026-11-26T00:34:42Z"
+        }
+      ],
+      "counted_from": "2026-11-26T00:34:42Z",
+      "counted_after": 5
     },
     "WP3": {
       "definitions": "83268e707b9dce00b96bad04167dab3f21b36a4eb61359a9edfe6aac86014f90",

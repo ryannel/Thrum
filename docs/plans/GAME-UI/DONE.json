@@ -147,9 +147,9 @@
     {
       "id": "WP2",
       "name": "Text is drawn from a cooked font, every glyph crisp at 1\u00d7, 2\u00d7 and 3\u00d7, and an edited font shows in the running game",
-      "failed_reviews": 5,
-      "failed_reviews_with_repeat": 3,
-      "diagnoses": 0,
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 1,
       "status": "in_progress",
       "quality_bar": "Text as crisp as the system draws the same face at the same size: each glyph on screen is exactly the bitmap rasterised for that size and scale, as in Dear ImGui or a browser at 100% zoom, and never a resampled one. A pixel font as clean as the status text of Vampire Survivors or Celeste: square texels at a whole-number scale. Spacing as even and steady as a browser's: no pair collides or gapes, accents sit on their letters, and a number that counts never shivers.",
       "items": [
