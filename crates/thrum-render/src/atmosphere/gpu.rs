@@ -97,26 +97,6 @@ pub(crate) struct AtmospherePrepared {
 }
 
 impl AtmospherePrepared {
-    pub(crate) fn products(
-        &self,
-        device: &wgpu::Device,
-        directional: &wgpu::Buffer,
-        environment_light: &wgpu::Buffer,
-        exposure: &[wgpu::Buffer; 2],
-        far_aerial: bool,
-        cloud: Option<&super::CloudPrepared>,
-    ) -> super::EnvironmentProducts {
-        super::products::create(
-            self,
-            device,
-            directional,
-            environment_light,
-            exposure,
-            far_aerial,
-            cloud,
-        )
-    }
-
     pub(crate) fn aerial_quality(&self) -> &crate::contribution::QualityKnob {
         &self.aerial_quality.knobs()[0]
     }

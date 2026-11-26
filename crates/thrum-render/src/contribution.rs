@@ -326,7 +326,7 @@ impl SceneSurface<'_> {
     /// `None`. Rebuild the result when this surface is replaced.
     #[must_use]
     pub fn environment_products(&self) -> Option<crate::atmosphere::EnvironmentProducts> {
-        self.environment_products_impl(None)
+        self.environment_products_impl(None, true)
     }
 
     /// Borrow the environment and the prepared cloud optical-depth operation.
@@ -336,21 +336,34 @@ impl SceneSurface<'_> {
     pub fn environment_products_with_cloud(
         &self,
     ) -> Option<crate::atmosphere::EnvironmentProducts> {
-        self.environment_products_impl(self.cloud)
+        self.environment_products_impl(self.cloud, true)
+    }
+
+    /// Borrow Sun, sky, diffuse and aerial products for a volume pipeline.
+    /// Reflection is excluded from the bind group. The shader's entry points
+    /// may use the other lighting operations and the scene storage scale.
+    #[must_use]
+    pub fn environment_transport_products(&self) -> Option<crate::atmosphere::EnvironmentProducts> {
+        self.environment_products_impl(None, false)
     }
 
     fn environment_products_impl(
         &self,
         cloud: Option<&crate::atmosphere::CloudPrepared>,
+        reflection: bool,
     ) -> Option<crate::atmosphere::EnvironmentProducts> {
         self.environment.map(|environment| {
-            environment.products(
+            crate::atmosphere::products::create(
+                environment,
                 self.device,
                 self.directional,
                 self.environment_light,
                 self.exposure,
-                self.cloud.is_some(),
-                cloud,
+                crate::atmosphere::products::ProductSelection {
+                    far_aerial: self.cloud.is_some(),
+                    cloud,
+                    reflection,
+                },
             )
         })
     }

@@ -81,7 +81,12 @@ impl Layer {
         validate_profile(profile, surface.limits.max_texture_dimension_2d)?;
         let device = surface.device;
         let (detail_noise, initialization) = prepare_detail_noise(device, weather.seed(), accepted);
-        let environment = surface.environment_products().ok_or(Error::Unsupported(
+        let environment = if ground.is_some() && shapes.is_some() {
+            surface.environment_transport_products()
+        } else {
+            surface.environment_products()
+        }
+        .ok_or(Error::Unsupported(
             "cloud Sky requires the physical environment",
         ))?;
         let params = ground.map_or_else(

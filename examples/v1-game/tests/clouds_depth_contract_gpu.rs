@@ -195,6 +195,18 @@ fn metal_uncovered_pixels_use_their_current_surface_stops_and_a_cut_refills_them
     assert_eq!(host.contribution_error(), None);
     let grown_view = output_texture(&device, GROWN).create_view(&Default::default());
     let grown = submit(&mut host, 75, &grown_view, GROWN);
+    assert_grown_stops(&grown, eye, read);
+}
+
+#[expect(
+    clippy::cast_precision_loss,
+    reason = "the test pixel coordinates are at most 65"
+)]
+fn assert_grown_stops(
+    grown: &thrum_clouds::SkyProducts,
+    eye: [f32; 3],
+    read: impl Fn(&wgpu::Texture) -> Vec<u8>,
+) {
     assert_eq!(grown.active_extent, GROWN.map(|side| side.div_ceil(2)));
     assert!(!grown.history_valid);
     for texture in [

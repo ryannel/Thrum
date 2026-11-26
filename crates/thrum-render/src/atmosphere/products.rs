@@ -58,15 +58,25 @@ impl EnvironmentProducts {
     }
 }
 
-pub(super) fn create(
+pub(crate) struct ProductSelection<'a> {
+    pub(crate) far_aerial: bool,
+    pub(crate) cloud: Option<&'a super::CloudPrepared>,
+    pub(crate) reflection: bool,
+}
+
+pub(crate) fn create(
     atmosphere: &AtmospherePrepared,
     device: &wgpu::Device,
     directional: &wgpu::Buffer,
     environment_light: &wgpu::Buffer,
     exposure: &[wgpu::Buffer; 2],
-    far_aerial: bool,
-    cloud: Option<&super::CloudPrepared>,
+    selection: ProductSelection<'_>,
 ) -> EnvironmentProducts {
+    let ProductSelection {
+        far_aerial,
+        cloud,
+        reflection,
+    } = selection;
     let visibility = wgpu::ShaderStages::FRAGMENT | wgpu::ShaderStages::COMPUTE;
     let buffer = |binding, bytes| binding::uniform(binding, visibility, bytes);
     let mut entries = vec![
@@ -111,6 +121,9 @@ pub(super) fn create(
             entries.extend(super::ground_band::GroundBandPrepared::layout(visibility));
         }
     }
+    // Bindings 7–9 are the filtered reflection pair and its sampler.
+    let selected = |binding: u32| reflection || !(7..=9).contains(&binding);
+    entries.retain(|entry| selected(entry.binding));
     let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
         label: Some("lent environment products"),
         entries: &entries,
@@ -171,6 +184,7 @@ pub(super) fn create(
             bindings.extend(band.entries());
         }
     }
+    bindings.retain(|entry| selected(entry.binding));
     let groups = std::array::from_fn(|side| {
         bindings.push(wgpu::BindGroupEntry {
             binding: 10,

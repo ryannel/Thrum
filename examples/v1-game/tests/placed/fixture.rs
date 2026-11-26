@@ -27,6 +27,15 @@ impl Fixture {
     }
 
     pub(super) fn with_placements(resident: bool, centres: &[[f64; 2]], wind: [f64; 2]) -> Self {
+        Self::with_coverage(resident, centres, wind, 0.0)
+    }
+
+    pub(super) fn with_coverage(
+        resident: bool,
+        centres: &[[f64; 2]],
+        wind: [f64; 2],
+        coverage: f64,
+    ) -> Self {
         let source = Scratch::new("game-placed");
         let inputs = source.join("source");
         fs::create_dir(&inputs).expect("source");
@@ -76,7 +85,7 @@ impl Fixture {
             Arc::new(PlacedLibrary::new(vec![slab.clone()], vec![slab]).expect("library"));
         let mut state = State::new(
             Parameters {
-                coverage: 0.0,
+                coverage,
                 kind: 1.0,
                 wind,
                 time_scale: 60.0,

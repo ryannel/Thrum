@@ -188,3 +188,188 @@ fn clear_pixels() {
         "clear={clear}, changed={changed}"
     );
 }
+
+thrum_test_support::macos_gpu_test! {
+    fn low_deck_keeps_placed_extinction_in_the_trace_and_overlay() {
+        low_deck_placed();
+    }
+}
+
+#[cfg(target_os = "macos")]
+fn low_deck_placed() {
+    use thrum_cloud_model::{Density, Field};
+    use thrum_render::contribution::{
+        ContributionFrame, ContributionPasses, SceneContribution, SceneSurface,
+    };
+    use v1_game::{CloudSelection, GameHost as _, GroundWeather, SceneCamera};
+
+    struct OverlayProbe(std::sync::Arc<std::sync::Mutex<Option<wgpu::Texture>>>);
+    impl SceneContribution for OverlayProbe {
+        fn passes(&self) -> ContributionPasses {
+            ContributionPasses::default()
+        }
+
+        fn rebuild(
+            &mut self,
+            surface: &SceneSurface<'_>,
+        ) -> Result<(), thrum_render::runtime::FrameError> {
+            *self.0.lock().unwrap() = surface.sky_overlay_target();
+            Ok(())
+        }
+
+        fn encode_upload(&mut self, _: &mut wgpu::CommandEncoder, _: &ContributionFrame) {}
+    }
+
+    let Some(gpu) = thrum_test_support::open(
+        "low deck with placed clouds",
+        Some(wgpu::Backend::Metal),
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
+    ) else {
+        return;
+    };
+    let fixture = fixture::Fixture::with_coverage(true, &[[20.0, -1100.0]], [0.0; 2], 0.78);
+    let selection = CloudSelection::Ground(GroundWeather::LowDeck);
+    let mut host = pollster::block_on(fixture.host_with_clouds(&gpu, selection));
+    let overlay = std::sync::Arc::default();
+    host.set_game_contribution(Box::new(OverlayProbe(std::sync::Arc::clone(&overlay))))
+        .expect("lend the live overlay");
+    let overlay = overlay.lock().unwrap().take().expect("world-light overlay");
+    let cadence = host
+        .quality_knobs()
+        .into_iter()
+        .find(|knob| knob.name.ends_with("cloud sky overlay cadence"))
+        .expect("overlay cadence");
+    host.set_game_quality_knob(&cadence.name, 1)
+        .expect("refresh the whole overlay");
+    let camera = SceneCamera::perspective(
+        [20.0, 310.0, 0.0],
+        [20.0, 310.0, -1100.0],
+        0.30,
+        1.0,
+        4000.0,
+    )
+    .expect("look above the deck toward the placed slab");
+    host.set_scene_camera(camera)
+        .expect("camera above the deck");
+    let mut frames = fixture::Frames::new(&gpu);
+    frames.placed_submitted(&mut host, |report| {
+        report.volume_instances == 1 && !report.history_invalid
+    });
+    let (_, _, state) = host
+        .cloud_placed_input()
+        .unwrap()
+        .placed_map()
+        .expect("placed map");
+    let mut profile = v1_game::clouds::shade_config();
+    // Reconstruct the authored V1 low-deck band for the headless point query.
+    let kind = thrum_cloud_model::Type {
+        base: 125.0,
+        depth: [108.0, 119.0],
+        liquid_water: 0.000_22,
+        droplet_radius: 5e-6,
+        profile: [0.23, 0.22],
+        ..profile.types[0]
+    };
+    profile.types.fill(kind);
+    let field = Field::new(profile.seed, profile.model, profile.types).expect("low deck field");
+    assert!(
+        field.density(
+            [80.0, 340.0, -1100.0],
+            &state,
+            Density::Uneroded,
+            |_| None,
+            0.0
+        ) > 0.0,
+        "query missed the slab above the procedural layer"
+    );
+
+    let sky = host.cloud_sky_products().expect("submitted trace");
+    let raw = thrum_test_support::readback::texture(
+        &gpu.device,
+        &gpu.queue,
+        &sky.fresh_transport,
+        thrum_test_support::readback::Mip::layer(0, 0),
+        ..,
+    );
+    let width = sky.fresh_transport.width() as usize;
+    assert!(
+        raw.as_chunks::<8>().0[..width * 8]
+            .iter()
+            .any(|pixel| u16::from_le_bytes([pixel[6], pixel[7]]) < 0x3b00),
+        "the upper part of the frame must see placed extinction"
+    );
+    assert!(
+        overlay_transmittance(&gpu, &overlay) < 0.999,
+        "the sky overlay must see placed extinction above the deck"
+    );
+}
+
+#[cfg(target_os = "macos")]
+fn overlay_transmittance(gpu: &thrum_test_support::Opened, source: &wgpu::Texture) -> f32 {
+    let device = &gpu.device;
+    let read = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+        label: Some("placed cloud overlay witness"),
+        source: wgpu::ShaderSource::Wgsl(
+            r"
+            @group(0) @binding(0) var overlay: texture_2d_array<f32>;
+            @group(0) @binding(1) var<storage, read_write> transmittance: f32;
+            @compute @workgroup_size(1) fn main() {
+                let size = vec2<i32>(textureDimensions(overlay));
+                // The upper half of the -Z face cannot cross the lower deck.
+                var closest = 1.0;
+                for (var y = 0; y < size.y / 2; y++) {
+                    for (var x = 0; x < size.x; x++) {
+                        closest = min(closest, textureLoad(overlay, vec2(x, y), 5, 0).a);
+                    }
+                }
+                transmittance = closest;
+            }"
+            .into(),
+        ),
+    });
+    let pipeline = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+        label: Some("read submitted cloud overlay"),
+        layout: None,
+        module: &read,
+        entry_point: Some("main"),
+        compilation_options: Default::default(),
+        cache: None,
+    });
+    let view = source.create_view(&wgpu::TextureViewDescriptor {
+        dimension: Some(wgpu::TextureViewDimension::D2Array),
+        ..Default::default()
+    });
+    let count = device.create_buffer(&wgpu::BufferDescriptor {
+        label: Some("overlay minimum transmittance"),
+        size: 4,
+        usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
+        mapped_at_creation: false,
+    });
+    let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+        label: Some("cloud overlay witness inputs"),
+        layout: &pipeline.get_bind_group_layout(0),
+        entries: &[
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: wgpu::BindingResource::TextureView(&view),
+            },
+            wgpu::BindGroupEntry {
+                binding: 1,
+                resource: count.as_entire_binding(),
+            },
+        ],
+    });
+    let mut encoder = device.create_command_encoder(&Default::default());
+    {
+        let mut pass = encoder.begin_compute_pass(&Default::default());
+        pass.set_pipeline(&pipeline);
+        pass.set_bind_group(0, &group, &[]);
+        pass.dispatch_workgroups(1, 1, 1);
+    }
+    gpu.queue.submit([encoder.finish()]);
+    let result = thrum_test_support::readback::buffer(device, &gpu.queue, &count, ..);
+    let minimum = f32::from_le_bytes(result.try_into().unwrap());
+    println!("upper -Z overlay minimum transmittance {minimum}");
+    minimum
+}
