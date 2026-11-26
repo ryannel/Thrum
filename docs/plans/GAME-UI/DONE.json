@@ -595,10 +595,10 @@
     {
       "id": "WP5",
       "name": "The status display, the modal choice and the join screen work on the iPhone simulator, and a game maker can build an interface from the guide",
-      "failed_reviews": 0,
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
+      "status": "in_progress",
       "quality_bar": "An interface that sits on a phone as a native game's does: clear of the Dynamic Island, the rounded corners and the home indicator in both orientations, with cards big enough for a thumb. A guide a game maker can follow without reading engine source, as Bevy's interface examples are.",
       "items": [
         {
@@ -608,8 +608,8 @@
           "lock": "simulator",
           "target": "ios-sim",
           "evidence": ".orchestrate/evidence/GAME-UI/WP5/layout/result.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GAME-UI/WP5-review.md",
           "builder_result": "pass"
         },
         {
@@ -618,10 +618,10 @@
           "check": "python3 scripts/game_ui_sim.py touch",
           "lock": "simulator",
           "target": "ios-sim",
-          "evidence": ".orchestrate/evidence/GAME-UI/WP5/touch/result.json",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/GAME-UI/WP5-review.md",
+          "builder_result": "open"
         },
         {
           "id": "WP5.3",
@@ -629,8 +629,8 @@
           "inspect": "Take `simctl` screenshots in portrait and in landscape of the status display, the open choice and the join screen, beside the engine's capture of the same held frames. Judge each whole and in native-size crops of the corners, the top and bottom edges and one line of text. Function only.",
           "target": "ios-sim",
           "evidence": ".orchestrate/evidence/GAME-UI/WP5/visual/review.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GAME-UI/WP5-review.md",
           "builder_result": "pass"
         },
         {
@@ -639,8 +639,8 @@
           "check": "sh -c 'cargo tree --locked --offline -p v1-game -e normal | grep -q thrum-ui && ! cargo tree --locked --offline -p thrum-starter -e normal | grep -q thrum-ui'",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/GAME-UI/WP5/dependencies.log",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GAME-UI/WP5-review.md",
           "builder_result": "pass"
         },
         {
@@ -649,8 +649,8 @@
           "ask": "Does `thrum-ui`, `thrum-render`, `thrum-asset`, `thrum-asset-gpu`, `thrum-cook` or `thrum-app` name a type, constant, string or screen of the V1 game or of SWARM? Does the interface scene reach the tree, the stage and routing only through public items? What does `thrum-ui`'s manifest depend on? Did any file of `thrum-controls` change in this module?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/GAME-UI/WP5/public-boundaries.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GAME-UI/WP5-review.md",
           "builder_result": "pass"
         },
         {
@@ -659,8 +659,8 @@
           "ask": "Do the commands and code the guide gives build and run as written at the claimed commit? Does it cover each interface the design provides, and name complex scripts, right-to-left text, typed text, localisation, accessibility bridges, a gamepad, scrolling and animation as not built?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/GAME-UI/WP5/guide.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GAME-UI/WP5-review.md",
           "builder_result": "pass"
         },
         {
@@ -669,9 +669,16 @@
           "ask": "Do the ledger's rows for the interface keep implementation, correctness, visuals and device results apart? Do they name as not run: key and pointer events delivered by the system to the Mac window, a physical iPhone, how the interface feels under the hand, the interface's look on an EDR panel and whether text over a scrim can be read over a highlight brighter than white, displays of fractional density, and every script and bridge the design lists as unqualified?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/GAME-UI/WP5/ledger.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GAME-UI/WP5-review.md",
           "builder_result": "pass"
+        }
+      ],
+      "findings": [
+        {
+          "name": "A cold invite opens the default grid and loses the ticket",
+          "item": "WP5.2",
+          "repeat": false
         }
       ]
     },

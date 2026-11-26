@@ -872,7 +872,45 @@
     },
     "WP5": {
       "definitions": "a14f522cbab47284f6a8efb78769334e88863530104626ecb1d8ab29cc3b9483",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "bf35b02e9f4fafa03a8379cbe4c85ae668603100",
+          "review": ".orchestrate/evidence/GAME-UI/WP5-review.md",
+          "items": {
+            "WP5.1": "pass",
+            "WP5.2": "fail",
+            "WP5.3": "pass",
+            "WP5.4": "pass",
+            "WP5.5": "pass",
+            "WP5.6": "pass",
+            "WP5.7": "pass"
+          },
+          "findings": [
+            {
+              "name": "A cold invite opens the default grid and loses the ticket",
+              "item": "WP5.2",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 119792,
+            "cached": 3316352,
+            "output": 9259,
+            "turns": 1
+          },
+          "at": "2026-11-26T08:20:02Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
