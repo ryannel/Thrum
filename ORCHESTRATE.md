@@ -330,3 +330,9 @@ names. A reviewer cannot be that reader, because the review skill and these sett
 before any item is read. The lead commissions the fresh reader as a separate new session, never the builder or the
 reviewer, with the task the module's design specifies. The builder retains its record as evidence, and the reviewer
 judges the record and reruns what it retains.
+
+## Agents
+
+| Role    | Codex              |
+|---------|--------------------|
+| Builder | gpt-6.2-sol medium |
