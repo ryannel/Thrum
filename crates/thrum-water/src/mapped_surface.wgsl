@@ -101,33 +101,11 @@ fn surface_vertex(point: vec2<f32>, slot: u32) -> SurfaceRow {
     return surface_row(cell, row, id, true);
 }
 
-fn surface_mesh_body(answer: MapAnswer) -> u32 {
-    let sea = map.size_count_sea.w;
-    if answer.body == sea || answer.body == NO_BODY || sea == NO_BODY || SURF_CACHE_ENABLED {
-        return answer.body;
-    }
-    let chart = map.bodies[answer.body];
-    if chart.layers.x != 2u { return answer.body; }
-    let recipient = map.bodies[sea];
-    let level = recipient.level.x + recipient.level.y;
-    if any(answer.row.water != vec3(level, 0.0, 0.0))
-        || any(answer.row.gains != recipient.gains) {
-        return answer.body;
-    }
-    for (var end = 0u; end < chart.layers.w; end++) {
-        let join = chart.joins[end];
-        // Where the mouth is all receiving sea, one continuous sea mesh
-        // carries its displaced surface across the chart's footprint edge.
-        if join.z > 0.0 && u32(join.x) == sea { return sea; }
-    }
-    return answer.body;
-}
-
 fn surface_pixel(point: vec2<f32>, slot: u32) -> SurfaceRow {
     let id = surface_body(slot);
     let answer = map_sample(point);
     var cell: Cell;
     cell.inside = answer.has_bed;
     cell.bed = answer.bed;
-    return surface_row(cell, answer.row, id, surface_mesh_body(answer) == id);
+    return surface_row(cell, answer.row, id, answer.body == id);
 }
