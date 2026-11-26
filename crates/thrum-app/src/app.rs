@@ -935,7 +935,9 @@ impl<G: WindowGame + 'static> App<G> {
         match reply.outcome {
             RenderOutcome::Frame(report) => {
                 let report = report?;
-                if report.overload.is_some() {
+                if self.game.world().is_none() {
+                    self.world_tick = report.tick;
+                } else if report.overload.is_some() {
                     self.reconcile_pause()?;
                 }
                 if self.last_call.saturating_sub(self.profiler_title_at)
