@@ -124,8 +124,9 @@ pub struct Cooker {
     gltf_buffers: HashMap<ContentHash, Vec<String>>,
     published: Products,
     published_font_inputs: FontInputs,
-    /// Keep the legacy action's input snapshot until a manifest records the recovered binding.
-    recovered_grid_input: bool,
+    /// Possible private PNGs from the last legacy scan. None means no saved scan was available
+    /// for that font. Keep the snapshot until a manifest records the committed input.
+    legacy_grid_candidates: BTreeMap<String, Option<HashSet<String>>>,
     /// Products whose bytes this process has verified against their names.
     verified: HashSet<ContentHash>,
     generation: u64,
@@ -156,7 +157,7 @@ impl Cooker {
             gltf_buffers: HashMap::new(),
             published: BTreeMap::new(),
             published_font_inputs: BTreeMap::new(),
-            recovered_grid_input: false,
+            legacy_grid_candidates: BTreeMap::new(),
             verified: HashSet::new(),
             generation: 0,
             retry: false,
@@ -241,13 +242,24 @@ impl Cooker {
             };
             if font.sizes()[0].pixel == 0 {
                 self.published_font_inputs.insert(name.clone(), None);
-            } else if let Some(input) = self.legacy_grid_input(
-                name,
-                *product,
-                files.get_or_insert_with(|| self.stat.files()),
-            ) {
-                self.published_font_inputs.insert(name.clone(), Some(input));
-                self.recovered_grid_input = true;
+            } else {
+                let files = files.get_or_insert_with(|| self.stat.files());
+                let description = Path::new(name).join("font.json");
+                let candidates = files.contains_key(&description).then(|| {
+                    let folder = Path::new(name);
+                    let pngs = files
+                        .range(folder.to_path_buf()..)
+                        .take_while(|(path, _)| path.starts_with(folder))
+                        .filter(|(path, _)| path.parent() == Some(folder) && sheet::is_png(path));
+                    pngs.filter_map(|(path, _)| classify(path).map(|(name, _, _)| name))
+                        .collect()
+                });
+                // A refused legacy cook can overwrite the description hash while leaving HEAD
+                // alone. At most a PNG known to that scan could be the committed private grid.
+                self.legacy_grid_candidates.insert(name.clone(), candidates);
+                if let Some(input) = self.legacy_grid_input(name, *product, files) {
+                    self.published_font_inputs.insert(name.clone(), Some(input));
+                }
             }
         }
     }
@@ -476,11 +488,13 @@ impl Cooker {
             report.published = Some(self.publish(&products, &font_inputs)?);
             self.published = products;
             self.published_font_inputs = font_inputs;
-            self.recovered_grid_input = false;
+            self.legacy_grid_candidates.retain(|name, _| {
+                has_font(&self.published, name) && !self.published_font_inputs.contains_key(name)
+            });
         }
-        // A refusal must leave HEAD alone. Keep the snapshot that proved ownership so
-        // reopening can recover the input again until the next actual publication.
-        if !self.recovered_grid_input {
+        // A refusal must leave HEAD alone. Keep the legacy snapshot across unrelated publishes
+        // and reopens, so newly scanned PNGs cannot become candidates for an older private grid.
+        if self.legacy_grid_candidates.is_empty() {
             self.stat.save(&self.config.store.join("stat-cache.bin"))?;
         }
         report.publish_time = start.elapsed();
@@ -681,9 +695,14 @@ impl Cooker {
         let font = logical_name(folder);
         match self.published_font_inputs.get(&font) {
             Some(input) => input.as_deref() == Some(texture),
-            // Older grid publications did not record their input. Until a valid cook
-            // identifies it, an unpublished PNG could still belong to that font.
-            None => has_font(&self.published, &font),
+            None => self.legacy_grid_candidates.get(&font).map_or_else(
+                || has_font(&self.published, &font),
+                |candidates| {
+                    candidates
+                        .as_ref()
+                        .is_none_or(|candidates| candidates.contains(texture))
+                },
+            ),
         }
     }
 
@@ -1072,7 +1091,7 @@ mod tests {
 
     #[test]
     fn legacy_grid_refusal_keeps_the_font_private_and_publishes_new_siblings() {
-        for rename in [false, true] {
+        for (rename, legacy_refused_first) in [(false, false), (true, false), (false, true)] {
             let root = thrum_test_support::Scratch::new("legacy-grid");
             let source = root.join("source");
             let folder = source.join("hud");
@@ -1116,14 +1135,24 @@ mod tests {
                 crate::demo::write_checker_png(&icon, 4, [40, 200, 20])
                     .expect("edit proposed input");
             }
+            if legacy_refused_first {
+                // The old cooker writes the edited hashes after refusing the font, without
+                // changing the published manifest or creating a successful action for the edit.
+                let mut stat = StatCache::default();
+                stat.scan_all(&source).expect("legacy scan of refused edit");
+                stat.save(&root.join("store/stat-cache.bin"))
+                    .expect("legacy stat save");
+            }
             let refused = |report: &CookReport| {
                 assert!(report.failed.iter().any(|(name, reason)| {
                     name == "hud" && reason.contains("pixel font cells must divide the image")
                 }));
             };
-            let report = open().cook_all().expect("refuse font");
-            refused(&report);
-            assert!(report.published.is_none());
+            if !legacy_refused_first {
+                let report = open().cook_all().expect("refuse font");
+                refused(&report);
+                assert!(report.published.is_none());
+            }
             assert_eq!(reader.read_head().unwrap(), Some(legacy));
 
             crate::demo::write_checker_png(&folder.join("badge.png"), 4, [20, 40, 200])
@@ -1136,10 +1165,14 @@ mod tests {
                 after.resolve("hud", &[Profile::Portable]),
                 before.resolve("hud", &[Profile::Portable])
             );
-            assert_eq!(
-                after.font_inputs(),
-                Some(br#"{"hud":"hud/grid"}"#.as_slice())
-            );
+            if legacy_refused_first {
+                assert!(after.font_inputs().is_none());
+            } else {
+                assert_eq!(
+                    after.font_inputs(),
+                    Some(br#"{"hud":"hud/grid"}"#.as_slice())
+                );
+            }
             assert!(!after.entries().any(|entry| entry.name == "hud/grid"));
             for profile in Profile::ALL {
                 assert!(
@@ -1152,9 +1185,39 @@ mod tests {
                     before.resolve("hud/icon", &[profile])
                 );
             }
-            let report = open().cook_all().expect("reopen the migrated manifest");
+            let report = open()
+                .cook_all()
+                .expect("reopen after the badge publication");
             refused(&report);
             assert!(report.published.is_none());
+            if legacy_refused_first {
+                // Another refused scan or unrelated publication must never broaden the
+                // legacy candidate set, including for a previously unreadable new sibling.
+                let mark = folder.join("mark.png");
+                std::fs::write(&mark, b"invalid PNG").expect("add unfinished sibling");
+                let report = open().cook_all().expect("refuse the unfinished sibling");
+                assert!(report.failed.iter().any(|(name, _)| name == "hud/mark"));
+                crate::demo::write_checker_png(&mark, 4, [40, 20, 200]).expect("repair sibling");
+                let report = open().cook_all().expect("publish the repaired sibling");
+                refused(&report);
+                let after = reader.load_manifest(&report.published.unwrap()).unwrap();
+                for profile in Profile::ALL {
+                    assert!(
+                        after
+                            .entries()
+                            .any(|entry| { entry.name == "hud/mark" && entry.profile == profile })
+                    );
+                }
+                assert!(!after.entries().any(|entry| entry.name == "hud/grid"));
+                std::fs::write(&description, original).expect("repair font");
+                let report = open().cook_all().expect("publish recovered ownership");
+                assert!(report.failed.is_empty(), "{report:?}");
+                let after = reader.load_manifest(&report.published.unwrap()).unwrap();
+                assert_eq!(
+                    after.font_inputs(),
+                    Some(br#"{"hud":"hud/grid"}"#.as_slice())
+                );
+            }
         }
     }
 
