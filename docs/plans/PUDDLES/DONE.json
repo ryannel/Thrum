@@ -433,8 +433,8 @@
           "ask": "Do the bands keep any texture from one frame to the next?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP4/review-repair.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/PUDDLES/WP4-review.md"
         },
@@ -445,7 +445,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/PUDDLES/WP4/check-final.json",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP4/review-fix-check.json",
           "verdict": "pass",
           "review": ".orchestrate/evidence/PUDDLES/WP4-review.md"
         },
@@ -486,7 +486,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/PUDDLES/WP4/check-final.json",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP4/review-fix-check.json",
           "verdict": "pass",
           "review": ".orchestrate/evidence/PUDDLES/WP4-review.md"
         },
@@ -497,7 +497,7 @@
           "lock": "chrome",
           "target": "chrome-webgpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/PUDDLES/WP4/browser-delivery/run.json",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP4/browser-review-layout/run.json",
           "verdict": "pass",
           "review": ".orchestrate/evidence/PUDDLES/WP4-review.md"
         },
@@ -507,8 +507,8 @@
           "check": "python3 scripts/water_cost.py check --scene rain-rings",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP4/review-repair-cost.json",
           "verdict": "fail",
           "review": ".orchestrate/evidence/PUDDLES/WP4-review.md"
         }
