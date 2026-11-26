@@ -36,6 +36,9 @@ A planner or the lead chose each of these where your words left it open. Each st
 - APPLE-PRESENTATION assumes: a viewer cannot see a brightness difference under 1% of a frame's mean luminance, so D8.3 allows ([plan](APPLE-PRESENTATION/PLAN.md))
 - APPLE-PRESENTATION assumes: "later" for offering the cache upstream means after G4 closes in WP11, not after the V1 exit. So ([plan](APPLE-PRESENTATION/PLAN.md))
 - APPLE-PRESENTATION assumes: agents draft no text for the owner to post upstream, not even a comment to rewrite. The upstream ([plan](APPLE-PRESENTATION/PLAN.md))
+- APPLE-PRESENTATION assumes: G4 closes on a steady 60 Hz at full screen on the built-in display, not on its full 120 Hz. The ([plan](APPLE-PRESENTATION/PLAN.md))
+- APPLE-PRESENTATION assumes: a full-screen window asks for 60 Hz by itself, and a smaller window keeps the display's full ([plan](APPLE-PRESENTATION/PLAN.md))
+- APPLE-PRESENTATION assumes: WP17 comes after G4 and `SHOWCASE` does not wait for it. Whether the V1 exit should is the owner's. ([plan](APPLE-PRESENTATION/PLAN.md))
 - ATMOSPHERE assumes: WP3 ends with a CPU diagnosis. The authored-spur replay and an in-game correction remain open under G3s. A later proposal needs the original inputs and the fixed and realtime captures specified in the design. ([plan](ATMOSPHERE/PLAN.md))
 - ATMOSPHERE assumes: WP4 compares the reconstructed geometry cases in one bounded CPU trial. The original ray inputs and exact finite-disk match remain open under G3s. ([plan](ATMOSPHERE/PLAN.md))
 - BASELINE-GUARD assumes: the key-narrowing work of the earlier WP2, nine commits on the branch `build/baseline-guard`, is set aside and not merged. No proof is asked before a merge now, so a proof that survives more rebases saves nothing. The branch is kept as the record. ([plan](BASELINE-GUARD/PLAN.md))
@@ -357,10 +360,10 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Now and next
 
-- APPLE-PRESENTATION WP11 Apple tile with MetalFX and EDR is compared with portable TAAU on the route, and G4 closes: Blocked: Needs Context: The lead needs to authorize further fullscreen graph work or revise the cadence target. The lead finds the missing fact, or asks you for it
+- APPLE-PRESENTATION's design: Design Ready for Review · [design](APPLE-PRESENTATION/DESIGN.md) · [plan](APPLE-PRESENTATION/PLAN.md)
 - A few stations check the Metal surf query against the model (WATERS WP25): Not Started · [plan](WATERS/PLAN.md)
 - Mist lies in the valley's hollows and fades the land near the camera, in the land's own light (CLOUDS WP14): Not Started · [plan](CLOUDS/PLAN.md)
-- The check that a river file keeps each sample's own gains runs on a small reach (RIVERS WP10): Not Started · [plan](RIVERS/PLAN.md)
+- The check that a river file keeps each sample's own gains runs on a small reach (RIVERS WP10): In Progress · [plan](RIVERS/PLAN.md)
 - Rain rings every water it falls on, the puddles, the lake and the sea, more and rougher as it grows and not at all under the roof, and the rings run out when the rain stops (PUDDLES WP4): Not Started · [plan](PUDDLES/PLAN.md)
 - A second game, the crowd view with a status display, runs on the Mac, in Chrome and as its own app on the iPhone simulator, through the shells the V1 game uses (GAME-UI WP6): In Progress · [plan](GAME-UI/PLAN.md) · [latest review](../../.orchestrate/evidence/GAME-UI/WP6-review.md)
 - GATE-TIME WP5 The post-rollout record shows a five-minute median for Rust landings: Blocked: Needs Context: WP5.1 needs 17 more qualifying ordinary Rust landings before the fixed window can be judged. The lead finds the missing fact, or asks you for it
@@ -499,7 +502,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 4 | COOKED-DRAW | Cooked scenes draw on devices that cannot run GPU-driven draws, such as the iPhone simulator | PLATFORM-RUNTIME-IOS WP7 | Done 9 Nov |
 | 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE WP0 and WP1, PLATFORM-RUNTIME-MAC WP1, COOKED-DRAW WP1 | Done 25 Nov |
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE WP3 | Done 24 Nov |
-| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE WP0, WP2, WP3, WP11, WP12 and WP13 | WP11 of 19 · Blocked: Needs Context |
+| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE WP0, WP2, WP3, WP11, WP12 and WP13 | Design Ready for Review |
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | CONTENT-LOOP WP4 for its WP9 to pass the full check; APPLE-PRESENTATION WP3 and SHOWCASE WP9 for its WP6 | Done 25 Nov |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is found on main within about two hours and traced to the commit that made it |  | Done 25 Nov |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE WP2, BASELINE-GUARD WP1 | Done 17 Nov |
@@ -510,7 +513,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 15 | WATERS | Sea, shore, lakes and ponds as one water: drawn, lit, floated on, stirred and foaming, breaking on its beaches, mirroring the land, seen from beneath and lit there by the Sun's net and shafts, with a place made for rivers and puddles | SEA WP1 to start; SEA WP2, EFFECT-GRAPH WP3, ATMOSPHERE WP5 and WP9 and CREATOR WP1 for its first frame; CONTENT-LOOP WP1 for foam; APPLE-PRESENTATION WP3 for the whole range in motion; SCENE-VIEWS WP3 for mirrored scenery; EFFECT-GRAPH WP6 for floats in the surf with the game running; APPLE-PRESENTATION's governor and MetalFX work packages to close | WP25 of 25 · Not Started |
 | 16 | SCENE-VIEWS | The scene is drawn a second time from another viewpoint, so water can mirror hills and trees the camera cannot see | CULLING WP1, ATMOSPHERE WP5 and EFFECT-GRAPH WP3 | Done 23 Nov |
 | 17 | CLOUDS | The weather: a sky from clear to overcast with placed cloud volumes, and mist, fog and low cloud on the ground, which shade and light the world | Nothing to start; EFFECT-GRAPH WP2 and WP4 and ATMOSPHERE WP5 for its shade; EFFECT-GRAPH WP3 for its first frame; CONTENT-LOOP WP1 for placed volumes, and DEAD-TOOLS WP5 for the record of the library it copies; APPLE-PRESENTATION WP3 and CREATOR WP1 for controls and motion; ATMOSPHERE WP8 for mist and fog; WATERS WP8 for the sea; APPLE-PRESENTATION's governor and MetalFX work packages to close | WP14 of 20 · Not Started |
-| 18 | RIVERS | Rivers, streams and waterfalls that run down the land, swell with the lake that feeds them, carry what floats and foam where they fall | WATERS WP1 for its flow on the CPU; WATERS WP9 for its first running stream; WATERS WP10 and WP16 to close | WP10 of 10 · Not Started |
+| 18 | RIVERS | Rivers, streams and waterfalls that run down the land, swell with the lake that feeds them, carry what floats and foam where they fall | WATERS WP1 for its flow on the CPU; WATERS WP9 for its first running stream; WATERS WP10 and WP16 to close | WP10 of 10 · In Progress |
 | 19 | PUDDLES | Rain wets the ground and fills its hollows with puddles that ripple, reflect the sky and dry out | WATERS WP1 for its puddles and wet ground on the CPU; WATERS WP8 for its first puddle; SHOWCASE WP5 for the valley; WATERS WP10, WP14 and WP16 to close | WP4 of 8 · Not Started |
 | 20 | SIM-2D | Thousands of 2D bodies step identically on every device, and find neighbours and hits cheaply |  | Done 18 Nov |
 | 21 | TRANSPORT | Two processes exchange messages over real internet protocols, one of them a browser |  | Done 16 Nov |
