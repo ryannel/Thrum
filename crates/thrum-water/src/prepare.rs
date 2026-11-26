@@ -903,7 +903,7 @@ fn create_pipeline(
             Some(wgpu::ColorTargetState {
                 format: *f,
                 blend: match i {
-                    0 if mapped => Some(wgpu::BlendState::ALPHA_BLENDING),
+                    0 if mapped || underwater => Some(wgpu::BlendState::ALPHA_BLENDING),
                     2 if film || underwater => {
                         let max = wgpu::BlendComponent {
                             src_factor: wgpu::BlendFactor::One,

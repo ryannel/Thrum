@@ -315,7 +315,12 @@ impl Gather {
         );
         self.under = lens.is_some_and(|lens| lens.state[0] != 0);
         if let Some((lens, buffer)) = lens.zip(self.lens.as_ref()) {
-            queue.write_buffer(buffer, 0, bytemuck::bytes_of(lens));
+            let bytes = if self.under {
+                bytemuck::bytes_of(lens)
+            } else {
+                bytemuck::bytes_of(&lens.state)
+            };
+            queue.write_buffer(buffer, 0, bytes);
         }
         if self.under {
             inputs.dispatch = [0, 0, frame.render_extent[0], frame.render_extent[1]];

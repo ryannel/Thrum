@@ -260,6 +260,47 @@ mod metal {
             );
         }
     }
+
+    pub(super) fn check_meniscus(gpu: &thrum_test_support::Gpu) {
+        let mut case = Case::new("sea", [81.0, 0.0]);
+        case.spectrum.long.clear();
+        let fov = 0.85_f32;
+        let pixel_height = 0.2 * (fov * 0.5).tan() / EXTENT[1] as f32;
+        let view = |y| camera([81.0, y, -0.1], [81.0, y, 0.9], fov, 1.0 / 32768.0);
+        let panel = Panel {
+            centre: [81.0, 0.0, 0.011],
+            half_size: [0.2, 0.16, 0.01],
+            radiant: true,
+        };
+        let mut rig = Rig::with_extent(
+            gpu,
+            &view(pixel_height),
+            sun(0.0, 0.0),
+            &[panel],
+            None,
+            EXTENT,
+        );
+        attach(&mut rig, case.water(true));
+        let middle = ((EXTENT[1] / 2) * EXTENT[0] + EXTENT[0] / 2) as usize;
+        let dry = rig.scene_colour().1[middle][0];
+        rig.host.continuous_source_mut().view = view(-0.5 * pixel_height);
+        let edge = rig.scene_colour().1[middle][0];
+        rig.host.continuous_source_mut().view = view(-2.0 * pixel_height);
+        let wet = rig.scene_colour().1[middle][0];
+        let fraction = (edge - wet) / (dry - wet);
+        assert!(dry - wet > 0.4, "panel separates the two compositions");
+        assert!(
+            (0.15..0.85).contains(&fraction),
+            "subpixel meniscus did not grade the waterline: dry {dry}, edge {edge}, wet {wet}"
+        );
+    }
+}
+
+thrum_test_support::macos_gpu_test! {
+fn metal_meniscus_grades_the_first_submerged_pixel() {
+    let Some(gpu) = thrum_test_support::gpu("subpixel waterline", Some(wgpu::Backend::Metal)) else { return };
+    metal::check_meniscus(&gpu);
+}
 }
 thrum_test_support::macos_gpu_test! {
 fn metal_sea_lens_reads_the_near_plane_and_skips_the_dry_gather() {

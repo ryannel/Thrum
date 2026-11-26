@@ -79,6 +79,16 @@ fn water_path(
         + scatter * water_path_integral(length_m, start_depth, end_depth);
 }
 
+// The derivative measures the height change per pixel across the line.
+// Keep the dry side intact and grade the first covered pixel of the lens.
+fn lens_coverage(depth: f32, pixel_height: f32) -> f32 {
+    return smoothstep(0.0, max(pixel_height, 0.00001), depth);
+}
+
+fn lens_grazing_light(ray: vec3<f32>) -> vec3<f32> {
+    return environment_sky_radiance(normalize(vec3(ray.x, 0.025, ray.z)));
+}
+
 @vertex fn underwater_vertex(@builtin(vertex_index) i: u32) -> @builtin(position) vec4<f32> {
     let p = vec2<f32>(vec2(i & 1u, i >> 1u)) * 4.0 - 1.0;
     return vec4(p, 0.0, 1.0);
@@ -88,8 +98,8 @@ fn water_path(
     let pixel = vec2<u32>(clip.xy);
     let uv = optics_uv(pixel);
     let eye = read_lens(uv);
-    let margin = max(fwidth(eye.signed_depth), 0.00001);
-    if eye.signed_depth <= 0.0 { discard; }
+    let coverage = lens_coverage(eye.signed_depth, fwidth(eye.signed_depth));
+    if coverage == 0.0 { discard; }
     let hit = gather_at(uv);
     let camera = view.camera_xyz_time.xyz;
     let reach = min(optics.extinction_sight.w * 4.0, 4000.0);
@@ -104,10 +114,9 @@ fn water_path(
     }
     let light = under_incident(vec3(eye.point.x, eye.surface, eye.point.z));
     let medium = water_path(body, light, length_m, start_depth, end_depth);
-    let meniscus = 1.0 - smoothstep(0.0, 2.0 * margin, eye.signed_depth);
-    let grazing = environment_sky_radiance(normalize(vec3(ray.x, 0.025, ray.z)));
-    let colour = mix(medium, grazing, meniscus * 0.65);
-    return Output(vec4(colour * environment_storage_scale(), 1.0), vec2(0.0), meniscus);
+    let meniscus = 4.0 * coverage * (1.0 - coverage);
+    let colour = mix(medium, lens_grazing_light(ray), meniscus * 0.65);
+    return Output(vec4(colour * environment_storage_scale(), coverage), vec2(0.0), meniscus);
 }
 
 fn interface_fresnel(cosine: f32, transmitted: f32) -> f32 {
@@ -169,7 +178,9 @@ fn water_underside(input: VertexOut, n: vec3<f32>, v: vec3<f32>, variance: f32, 
     if lens.state.x == 0u { return vec4(0.0); }
     let uv = optics_uv(vec2<u32>(input.clip.xy));
     let eye = read_lens(uv);
+    let coverage = lens_coverage(eye.signed_depth, fwidth(eye.signed_depth));
     if eye.signed_depth <= 0.0 { return vec4(0.0); }
     let light = underside_light(input.world, n, v, variance, foam, eye);
-    return vec4(light * environment_storage_scale(), 1.0);
+    let colour = mix(lens_grazing_light(-v), light, coverage);
+    return vec4(colour * environment_storage_scale(), 1.0);
 }

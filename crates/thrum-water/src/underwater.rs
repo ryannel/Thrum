@@ -18,25 +18,23 @@ pub(super) struct Lens {
 pub(super) struct Underwater {
     field: Field,
     long_amplitude: f64,
-    short_amplitude: f64,
+    short_amplitudes: [f64; 3],
 }
 
 impl Underwater {
     pub(super) fn new(long: LongWaves, spectrum: &Spectrum) -> Self {
         let long_amplitude = spectrum.long.iter().map(|c| c.amplitude).sum();
-        let short_amplitude = spectrum
+        let short_amplitudes = spectrum
             .cascades
-            .iter()
-            .flat_map(thrum_sea_model::Cascade::components)
-            .map(|c| c.amplitude)
-            .sum();
+            .each_ref()
+            .map(|cascade| cascade.components().iter().map(|c| c.amplitude).sum());
         let empty = || LongWaves::new(Vec::new(), 0.0).expect("empty wave band");
         Self {
             field: Field {
                 layers: [long, empty(), empty(), empty()],
             },
             long_amplitude,
-            short_amplitude,
+            short_amplitudes,
         }
     }
 
@@ -78,7 +76,15 @@ impl Underwater {
                     continue;
                 };
                 let bed = sample.bed.unwrap_or(-1e30);
-                let bound = sample.row.gains[0] * self.long_amplitude + self.short_amplitude;
+                // The surface can attenuate these gains further in shallow
+                // water. Open-sea detail cannot admit a sheltered lens.
+                let short_bound: f64 = self
+                    .short_amplitudes
+                    .iter()
+                    .zip(&sample.row.gains[1..])
+                    .map(|(amplitude, gain)| amplitude * gain)
+                    .sum();
+                let bound = sample.row.gains[0] * self.long_amplitude + short_bound;
                 let plain = map.surf_profile().is_none() || sample.bed.is_none();
                 if plain && sample.row.level + bound < plane.lowest {
                     continue;
@@ -97,13 +103,12 @@ impl Underwater {
                 } else {
                     f64::from(p.y)
                 };
-                if roof + self.short_amplitude > lowest.max(bed) {
+                if roof + short_bound > lowest.max(bed) {
                     lens.state[0] = 1;
                 }
                 if !plain
                     && side == SMOOTH_SIDE
-                    && (plane.lowest - self.short_amplitude..=plane.highest + self.short_amplitude)
-                        .contains(&roof)
+                    && (plane.lowest - short_bound..=plane.highest + short_bound).contains(&roof)
                 {
                     may_fold = true;
                 }
