@@ -269,3 +269,6 @@
   four settings, and across 180 successive frames at the reported tidal column. The largest difference
   was 0.231 mm against 10 mm. The f64 choppy-swell, map, wetting and join tests also pass.
   [Target evidence](../../../.orchestrate/evidence/RIVERS/WP4/receiving-phase/README.md)
+
+- 2026-11-26 WP4 integration with WATERS WP15. The shared island material now takes a vertical datum.
+  The river scene supplies its zero datum through the same material constructor as the ordinary island.

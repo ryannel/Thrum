@@ -326,11 +326,9 @@ pub fn build(wind: Wind, draw_water: bool, store: Option<&Path>) -> Result<Scene
     .with_temporal_sampling(cfg!(target_arch = "wasm32"))
     .with_tick_duration(Duration::from_nanos(16_666_667))?;
     let terrain = scenery(map.lock().expect("river map").bed());
-    let (game, _) = game.with_meshes_and_texture_lease(
-        terrain,
-        Some(("river island", include_str!("../island.wgsl"))),
-        &[],
-    )?;
+    let material = crate::island::island_material(0.0);
+    let (game, _) =
+        game.with_meshes_and_texture_lease(terrain, Some(("river island", &material)), &[])?;
     let (z, x) = forcing.wind_direction.sin_cos();
     let wind = glam::DVec2::new(x, z) * forcing.wind_speed;
     let (game, floats) =
