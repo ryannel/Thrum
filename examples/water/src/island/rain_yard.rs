@@ -379,10 +379,6 @@ mod tests {
     use super::*;
 
     #[test]
-    #[expect(
-        clippy::print_stderr,
-        reason = "retain the merge and parting tick witnesses"
-    )]
     fn yard_fills_and_parts_with_stable_map_identity() {
         let mut yard = Yard::prepare().expect("prepare authored yard triangles");
         let float = yard.float();
