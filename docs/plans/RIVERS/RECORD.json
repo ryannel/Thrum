@@ -654,6 +654,35 @@
         "by": "plan",
         "task": "Lead decision on RIVERS WP4.3, which has now failed five reviews, each on a new camera pose (see .orchestrate/evidence/R",
         "at": "2026-11-26T22:31:59Z"
+      },
+      "ready_for_review": {
+        "commit": "3465c5c86772220ed72a02b45d7056143d877a49",
+        "checked": "3465c5c86772220ed72a02b45d7056143d877a49",
+        "at": "2026-11-26T23:14:58Z",
+        "reused": [
+          "WP4.6"
+        ],
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.171.0-alpha.13.2",
+        "path": "visible",
+        "usage": {
+          "input": 417285,
+          "cached": 73666560,
+          "output": 83809,
+          "turns": 2
+        },
+        "session_usage": {
+          "input": 417285,
+          "cached": 73666560,
+          "output": 83809,
+          "turns": 2
+        }
       }
     },
     "WP5": {
