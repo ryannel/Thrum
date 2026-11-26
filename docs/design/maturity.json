@@ -1156,6 +1156,16 @@
         "evidence": "../../.orchestrate/evidence/APPLE-PRESENTATION/WP10/README.md",
         "scope": "The shipped shaders of the V1 moving route on Mac Metal. The two wgpu internal validation stages compile at device setup. The offline path remains opt-in while WP12 measures the local archive."
       },
+      "WP12": {
+        "implementation": "The public wgpu pipeline cache carries local Metal binary archives. Harvest is explicit. Launch checks the device, OS build, manifest and digest before import and prepares missing pipelines before readiness.",
+        "functional_validation": "Mac Metal passed the public render and compute cache round trip, the foreign adapter control, all 32 strict manifest hits, both strict misses, and the three complete faulty-archive routes with zero creations after readiness. Both patched-crate pins and the cache-header tests passed.",
+        "experienced_quality": "The moving route completed under each recovery case. The work package measured preparation and creation during play.",
+        "platform_performance": {
+          "mac": "Median offscreen launch-to-ready, cold/warm driver cache under shared load. wgsl 4378/237 ms, parallel 1084/232 ms, archive 454/236 ms. An archive was present for both archive arms. The combined comparison selected the archive when local products were supplied."
+        },
+        "evidence": "../../.orchestrate/evidence/APPLE-PRESENTATION/WP12/qualification/README.md",
+        "scope": "Mac Metal V1 Apple Tile with MetalFX. Two internal wgpu validation shaders remain device-startup work."
+      },
       "WP16": {
         "implementation": "Each timed frame slot owns one query set while its separate readback resources can finish independently. Metal trial allocations and wgpu timestamp creation run under one process lock. An exhausted ray build probe still records the mesh build.",
         "functional_validation": "All six WP16 items passed on Apple M3 Max Metal. The four named binaries each passed five consecutive runs at 16 test threads.",

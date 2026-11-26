@@ -639,3 +639,9 @@ layer profile change. [Metal controls](../../../.orchestrate/evidence/CLOUDS/WP9
   while writing the Metal cache header. The import validator also rejects Metal adapters. Proposed a narrow
   wgpu-core pin for Metal cache headers so WP12 can use the public cache API. The game route and launch
   comparison remain open. [Handoff and reproduction](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP12-handoff.md)
+
+- 2026-11-26 WP12. The authorized wgpu-core pin enabled public render and compute cache round trips on Mac Metal.
+  The strict route hit all 32 pipelines. The empty and one-pipeline omission controls failed before readiness.
+  All three fault routes completed without late creations. The combined cold and warm launch comparison
+  selected the archive for the registry default when local artifacts are supplied.
+  [Target evidence](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP12/qualification/README.md)
