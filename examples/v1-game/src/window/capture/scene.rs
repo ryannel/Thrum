@@ -227,6 +227,7 @@ pub(in crate::window) async fn run(
     // Both proof recipes warm up on the same output surface after readiness.
     let warmup_on_surface = warmup_on_surface || request.creation_proof.is_some();
     let cooked_generation = content
+        .as_ref()
         .map(|stats| {
             if warmup_on_surface {
                 let output = driver
@@ -234,7 +235,7 @@ pub(in crate::window) async fn run(
                     .create_view(&wgpu::TextureViewDescriptor::default());
                 thrum_asset_gpu::await_drawn_on_surface(
                     driver.host_mut(),
-                    &stats,
+                    stats,
                     thrum_asset_gpu::Drawn::Any,
                     &thrum_render::runtime::SurfaceOutput {
                         view: &output,
@@ -242,7 +243,7 @@ pub(in crate::window) async fn run(
                     },
                 )
             } else {
-                thrum_asset_gpu::await_drawn(driver.host_mut(), &stats, thrum_asset_gpu::Drawn::Any)
+                thrum_asset_gpu::await_drawn(driver.host_mut(), stats, thrum_asset_gpu::Drawn::Any)
             }
         })
         .transpose()?;
@@ -294,6 +295,7 @@ pub(in crate::window) async fn run(
             output,
             params.ok_or("submitted stills need parameter files")?,
             request,
+            content.as_deref(),
         );
     }
     let host = driver.host_mut();

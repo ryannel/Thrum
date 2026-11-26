@@ -3,6 +3,7 @@ use super::{Driver, EXTENT, SceneCaptureRequest, motion};
 use crate::host::GameHost as _;
 use std::{
     path::{Path, PathBuf},
+    sync::Mutex,
     time::Duration,
 };
 use thrum_render::{
@@ -15,6 +16,7 @@ pub(super) fn record(
     directory: &Path,
     files: &[PathBuf],
     request: &SceneCaptureRequest,
+    content: Option<&Mutex<thrum_asset_gpu::CookedStats>>,
 ) -> Result<(), String> {
     if let Some(display) = request.still_governor
         && !driver.host_mut().enable_governor(display)
@@ -69,12 +71,22 @@ pub(super) fn record(
         let file = format!("{name}.{suffix}");
         std::fs::write(directory.join(&file), &image.rgba).map_err(|error| error.to_string())?;
         let [pitch, yaw] = host.camera_orientation();
+        let (cooked_generation, cooked_root) = content
+            .and_then(|stats| {
+                let stats = stats.lock().ok()?;
+                Some((
+                    stats.drawn,
+                    stats.drawn_manifest_hash.map(|hash| hash.to_string()),
+                ))
+            })
+            .unwrap_or_default();
         records.push(serde_json::json!({
             "file": file, "name": name, "source_tick": image.source.tick, "epoch": image.source.epoch,
             "submission": submission, "presenter_generation": image.presenter_generation,
             "exposure": image.exposure_gpu_words, "headroom": host.display_headroom(),
             "time_of_day": host.time_of_day(), "pitch": pitch, "yaw": yaw,
             "surface_presented": image.sample.surface_presented, "source": format!("{source:?}"),
+            "cooked_generation": cooked_generation, "cooked_root": cooked_root,
         }));
         host.recycle_submitted_image(image);
         host.disable_submitted_capture();

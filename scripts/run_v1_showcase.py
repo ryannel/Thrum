@@ -439,7 +439,8 @@ def exit_row(name, row, stops):
         stop_roots = {stop: report['cooked'].get('cooked_root') for stop, report in stop_reports.items()}
     else:
         stop_reports = native_exit_stops(run / 'stops', store, row, stops)
-        stop_roots = dict.fromkeys(ROUTE, stop_reports.get('cooked_root'))
+        stop_roots = {stop: frame.get('cooked_root')
+                      for stop, frame in zip(ROUTE, stop_reports['stills'], strict=True)}
     flythrough = record_exit_phase(run / 'flythrough', source, store, row, builds, web=web, day=False)
     roots = {**stop_roots, 'flythrough': flythrough.get('cooked_root')}
     write_json(run / 'run.json', {'builds': builds, 'row': name, 'target': flythrough['target'],

@@ -1170,12 +1170,13 @@ impl BrowserGame {
         Some(row.to_string())
     }
 
-    /// Cooked generation drawn, swaps and loader errors, or `None` without cooked content.
+    /// Drawn cooked publication, swaps and loader errors, or `None` without cooked content.
     pub fn cooked_status(&self) -> Option<String> {
         let stats = self.cooked.as_ref()?.lock().ok()?;
         Some(
             serde_json::json!({
                 "drawn": stats.drawn,
+                "cooked_root": stats.drawn_manifest_hash.map(|hash| hash.to_string()),
                 "rowGeneration": self.page.shell.host().mesh_rows().and_then(|rows| rows.report().generation),
                 "rowWrittenBytes": self.page.shell.host().mesh_rows().map(|rows| rows.report().submitted_bytes),
                 "drawPath": format!("{:?}", stats.draw_path),

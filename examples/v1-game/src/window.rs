@@ -419,21 +419,22 @@ struct SceneCapture {
 struct ExitContentReport {
     stats: std::sync::Arc<std::sync::Mutex<thrum_asset_gpu::CookedStats>>,
     output: std::path::PathBuf,
-    last_generation: std::cell::Cell<Option<u64>>,
+    last_publication: std::cell::Cell<Option<(u64, thrum_asset::ContentHash)>>,
 }
 
 #[cfg(feature = "proving")]
 impl ExitContentReport {
     fn observe(&self) {
         let Ok(stats) = self.stats.lock() else { return };
-        let Some(generation) = stats.drawn else {
+        let (Some(generation), Some(root)) = (stats.drawn, stats.drawn_manifest_hash) else {
             return;
         };
-        if self.last_generation.get() == Some(generation) {
+        if self.last_publication.get() == Some((generation, root)) {
             return;
         }
         let row = serde_json::json!({
             "generation": generation,
+            "cooked_root": root.to_string(),
             "device_generation": stats.drawn_device_generation,
             "submitted_frames": stats.submitted_frames,
             "swaps": stats.swaps.len(),
@@ -445,7 +446,7 @@ impl ExitContentReport {
             .and_then(|()| std::fs::rename(&temporary, &self.output))
             .is_ok()
         {
-            self.last_generation.set(Some(generation));
+            self.last_publication.set(Some((generation, root)));
         }
     }
 }
@@ -718,7 +719,7 @@ impl RuntimeSetup for WindowGame {
             self.exit_content = Some(ExitContentReport {
                 stats: std::sync::Arc::clone(stats),
                 output,
-                last_generation: std::cell::Cell::new(None),
+                last_publication: std::cell::Cell::new(None),
             });
         }
         host.finish_preparation();
