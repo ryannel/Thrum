@@ -1116,7 +1116,7 @@
     {
       "id": "WP8",
       "name": "Under a clouded sky the land is lit by the clouds: an overcast valley is grey and soft, haze dims with it, and polished surfaces reflect the clouds",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "failed_reviews": 2,
       "failed_reviews_with_repeat": 1,
       "diagnoses": 0,
