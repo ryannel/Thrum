@@ -1628,6 +1628,22 @@ impl<G: WindowGame + 'static> ApplicationHandler<UserEvent> for App<G> {
         if self.window.as_ref().is_none_or(|window| window.id() != id) {
             return;
         }
+        #[cfg(feature = "interface")]
+        if self.interface_script.is_some()
+            && matches!(
+                event,
+                WindowEvent::KeyboardInput { .. }
+                    | WindowEvent::ModifiersChanged(_)
+                    | WindowEvent::CursorMoved { .. }
+                    | WindowEvent::CursorLeft { .. }
+                    | WindowEvent::MouseInput { .. }
+                    | WindowEvent::Touch(_)
+            )
+        {
+            // Scripted contacts already enter these same input handlers.
+            // Keep unrelated desk input out of the qualification record.
+            return;
+        }
         let result = match event {
             WindowEvent::CloseRequested | WindowEvent::Destroyed => {
                 self.render_stopped.store(true, Ordering::Release);
