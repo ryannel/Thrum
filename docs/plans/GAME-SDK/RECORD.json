@@ -8,27 +8,39 @@
       ".orchestrate/evidence/GAME-SDK/design-review-1.md",
       ".orchestrate/evidence/GAME-SDK/design-review.md"
     ],
-    "at": "2026-11-25T21:37:02Z"
+    "at": "2026-11-25T21:37:02Z",
+    "items_owed": [
+      "WP11"
+    ]
   },
   "work_packages": {
     "WP1": {
-      "definitions": "5143447aa860187aeac7afe27b4eb2e08b758d5867428eed934680490b2a0e77",
+      "definitions": "002fe7d599651eea36fac141a223fb221b3ad07fdff2fa53749e320d6bdef8a2",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of GAME-SDK at .orchestrate/evidence/GAME-SDK/design-review.md asked for changes, with its 15 Must Fix",
-        "at": "2026-11-25T21:15:14Z"
+        "task": "Rewrite the GAME-SDK design (docs/plans/GAME-SDK/DESIGN.md, and PLAN.md/DONE.json to match) as the best SDK we can desig",
+        "at": "2026-11-26T08:17:39Z"
       }
     },
     "WP2": {
-      "definitions": "d617eaf4d2b96c9c8c05a2a721eaadeea9194f9ab32ea13129998704c58756d9",
+      "definitions": "46009258429ed6036b9812bb64f4df1c70b62e5fe87dedf202295b9433475c54",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of GAME-SDK at .orchestrate/evidence/GAME-SDK/design-review.md asked for changes, with its 5 Must Fix ",
-        "at": "2026-11-25T21:37:02Z"
+        "task": "Rewrite the GAME-SDK design (docs/plans/GAME-SDK/DESIGN.md, and PLAN.md/DONE.json to match) as the best SDK we can desig",
+        "at": "2026-11-26T08:17:39Z"
       },
       "ends_stretch": true
+    },
+    "WP11": {
+      "definitions": "4c3bc26eb6d73296df1169210e343c15b5011de9be3d6684885d3ca85aaf5fc8",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Rewrite the GAME-SDK design (docs/plans/GAME-SDK/DESIGN.md, and PLAN.md/DONE.json to match) as the best SDK we can desig",
+        "at": "2026-11-26T08:17:39Z"
+      }
     }
   },
   "tasks": [
@@ -43,11 +55,15 @@
     {
       "task": "The design review of GAME-SDK at .orchestrate/evidence/GAME-SDK/design-review.md asked for changes, with its 5 Must Fix findings. That makes 2 design reviews in a row that asked for changes, so the script approves the design you leave without another review, and building starts from it. Also record an owner decision, 25 November 2026: asked whether the first release should keep the planner's default (2D queries and sprite animation in; rigid bodies, skeletal animation and audio out) or add physics and audio, the owner answered \"Planner's default\". Write it into the design and plan as decided rather than open, and remove it from what is left for the owner. The owner still approves the whole design before any work package is built.",
       "at": "2026-11-25T21:37:02Z"
+    },
+    {
+      "task": "Rewrite the GAME-SDK design (docs/plans/GAME-SDK/DESIGN.md, and PLAN.md/DONE.json to match) as the best SDK we can design. The owner, 26 Nov 2026: \"We're looking for something that's readable, expressive, intuitive and powerful. Don't optimise at all for reducing the amount of re-work needed. Let's just find the best possible design.\"\n\nInputs (absolute paths; these are outside Git, read them from the main checkout):\n1. /Users/ryannel/Workspace/thrum/.orchestrate/evidence/GAME-SDK/owner-review-2026-11-26.md \u2014 industry review. The owner answered \"Yes I agree\" to ALL ten recommendations and ALL four owner decisions (input-only cross-device replay with floats for presentation; Rust prefabs, typed assets and children, no editor; the first character is a player's, predicted against fixed 2D scenery, entering the standard lobby; typed content IDs from day one, versioned saves and data packs as year-one commitments). These are decided: write them into the design as decisions.\n2. Three dogfood reports, where agents wrote full games against the design as amended by that review:\n   /Users/ryannel/Workspace/thrum/tmp/sdk-dogfood/arena-3d-online/REPORT.md (online 3D arena shooter)\n   /Users/ryannel/Workspace/thrum/tmp/sdk-dogfood/platformer-2d/REPORT.md (2D precision platformer)\n   /Users/ryannel/Workspace/thrum/tmp/sdk-dogfood/explorer-3d/REPORT.md (3D third-person exploration)\n   Their game source with inline `// SDK:` notes is beside each report. All three said \"not yet, I'd pick Godot/Unity\", and all three praised the same core (written rule order, the rule/frame type wall, phases, windowless tests).\n\nWhat done looks like:\n- Every ambiguity the dogfooders had to guess at is resolved with a named type and signature (phase change/read, scene restart and arguments, prefab declaration and overrides, typed content end to end, saves into and out of a running game, test harness entity lookup, Num literal rules on one page and the float types frame code sees, where `control` runs in the rule order).\n- The recurring friction is designed out: a controlled-character function that can read settings, phase and events (state plainly which parameters cost prediction); a character move against level collision that reports contacts; teleport/cut for interpolation; pause; runtime parenting; local-only keys and pointer for frame functions; level/tile collision that content chosen at run time can load; bots as players; richer roster.\n- Worked examples rewritten so each reads as the best code a developer could write in this SDK, covering the 2D, 3D and online cases.\n- Scope: the owner's first-release scope (2D queries and sprite animation in; rigid bodies, skeletal animation, audio out; 3D multiplayer out) stands unless the owner changes it. Where the reports show a genre is blocked by a scope line (3D collision queries and character move, gamepad, audio, predicted projectiles, lag compensation), design the API shape anyway so it fits, and put each first-release scope change as a one-line owner question with your recommendation in a clearly marked section. Do not decide those yourself.\n- Rust only. The owner approves the design before any build, so do not start a builder.",
+      "at": "2026-11-26T08:17:39Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-25T21:37:02Z"
+    "at": "2026-11-26T08:17:39Z"
   },
   "design_history": [
     {
