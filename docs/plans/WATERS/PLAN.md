@@ -30,7 +30,7 @@ First read [the handoff](DESIGN.md#proof-and-builder-handoff) and
 - Assumption: only WP14 and the close wait for `SCENE-VIEWS`, and the close for `APPLE-PRESENTATION`'s governor and MetalFX work packages.
 - Assumption: under the owner's bar of 17 November, tests cover what a game reads, the frame contract and what one pass hands another; wakes, foam and underwater light are judged by eye, and a defect found only by enlarging, reading pixels or instrumenting fails no inspection.
 - Assumption: carried ripples are proved on four named charts (WP9.2); their speed on a sheared chart is a known gap, left to `RIVERS`.
-- Assumption: only the lens is cut from the drawn sheet, a float's query staying 33 mm off; a wake over 1 m can leave a dry hole.
+- Assumption: only the lens is cut from the drawn sheet, a float's query staying 33 mm off; over a live wake a dry camera pays the underwater gather.
 
 ## WP1 Where water lies is worked out on the CPU alone: a sea, a lake in a hollow and a channel with a current each have a level, a depth and a flow at every point
 

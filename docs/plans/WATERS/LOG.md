@@ -1387,3 +1387,8 @@
   became the bound, with a stone's ring over a lens as the wake's case: the branch's bound has no wake term.
   New profile value, the wake ceiling, 1 m.
 
+- 2026-11-26 Design review at `0533854229df`, three Must Fix on [admission and the lens cut](DESIGN.md#under-water).
+  (1) The bound is taken over the rest places that can reach the lens. (2) The 1 m wake ceiling is gone: a
+  live wake admits the lens, and WP15.9 records that cost. (3) On a current the lens cut reads the draw's
+  carried place. WP15.1 and WP15.9 rewritten.
+  [What changed](../../../.orchestrate/evidence/WATERS/WP15/design-review-fixes.md).

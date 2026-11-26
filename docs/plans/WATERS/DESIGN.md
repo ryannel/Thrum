@@ -14,7 +14,9 @@ revision's review: the carry bound covers an ordinary post, and a post is answer
 [WP21](#a-surf-view-a-running-game-can-afford-wp21): delivery decides it, the distant front is held by
 eye, and a held answer ends with its device. Revised 26 November 2026 after WP15's builder stopped: the lens
 is [cut from the summed sheet and admitted by a bound](#under-water), and the query stays
-[layer by layer](#bodies-and-the-query).
+[layer by layer](#bodies-and-the-query). Revised after that revision's review: the bound is taken over
+the rest places that can reach the lens, a live wake admits the lens with no ceiling, and on a current
+the lens cut reads the cascades through the draw's carried place.
 [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) · [module list](../ARCHITECTURE.md) ·
 [the wave field, `SEA`](../SEA/DESIGN.md). C02, C04, C06, C07, C08, C09 and C12 in
 [CONTRACTS](../../design/CONTRACTS.md) and [the hardware-native decision](../../design/decisions/HARDWARE-NATIVE-ENGINE.md)
@@ -1719,7 +1721,12 @@ while it is not admitted none of its work is done.
   reference. Two rules bind the builder, and where each part is evaluated is otherwise theirs: no layer is
   added at the world column to a cut of the others, and a layer whose displayed field the GPU owns, the
   cascades on a current and the wake, is read from that field in the frame, so the line is the shown
-  surface's there too.
+  surface's there too. On a current that means one carried displacement: the lens cut takes each cascade
+  at a rest place through [the carried place](#carriage-by-the-current) the draw takes it through, worked
+  out from the same row, clock and carriage values of the submitted frame. A lens cut that read the
+  cascades where they would lie on still water would put its line a ripple's phase from the drawn one,
+  farther each second the current runs. The model does not carry cascades, so on a current this is held
+  by tracing both readers to that one displacement (WP15.1), and not by a comparison with the model.
 
   The form this replaces cut the long waves alone and added the short waves at the world column, as the
   query does. In a trade wind at sea the long waves' rest place lies 1.6 to 2.6 m from the column, the two
@@ -1729,17 +1736,35 @@ while it is not admitted none of its work is done.
   A millimetre of surface is several rows at the near plane, so the lens agrees with the drawn sheet by
   being cut from it, never by a second function tuned to match.
 - **Admission.** The capability's passes run unless the CPU can place the whole lens above the water. It
-  does so by a bound: a height that no surface shown over the lens's footprint can pass. The bound is the
-  model's long-wave surface, the highest it stands over the footprint grown by the other layers' largest
-  horizontal displacement, and added to it a ceiling for each other layer: each cascade's amplitude at the
-  largest gain and short-wave weight in the footprint, wherever a current carries it, and, where a wake
-  window that is not at rest covers the footprint, the profile's **wake ceiling**. Where the CPU holds a
-  layer's whole field, on still water with no current and no wake, it may take that layer's highest value
-  over the footprint in place of its ceiling. The bound errs one way. It may admit a lens that is dry, which
-  costs the gather and a composition that keeps no pixel, and it never refuses a lens with a pixel under
-  the shown surface, which would be a dry hole in the picture. Exact admission is not sought under a wake
-  or on a current: those displayed fields are the GPU's, and reading them back would put a wait in the
-  frame. Whether a pixel is under water is never the bound's to say: the lens cut decides it.
+  does so by a bound: a height that no surface shown over the lens's footprint can pass.
+
+  The bound is taken where the sheet is summed, at rest places, and not in the world columns under the
+  lens. A vertex shown over the footprint stands at what every layer gives at its own rest place, and that
+  place need not lie under the lens: in a trade wind the long waves alone carry a vertex 1.6 to 2.6 m
+  sideways, so a short-wave crest read 2 m away can stand over a lens whose own columns hold a trough.
+  The rest places that can reach the lens are those of every vertex of a triangle that can stand over the
+  footprint: the footprint grown by the sum of every layer's largest horizontal displacement, the long
+  waves' included, and by one cell of the surface's lattice there. Every term below is taken over those
+  rest places: a layer's highest value, a gain, a short-wave weight, and whether a wake window overlaps.
+
+  The bound is the sum, layer by layer, of a height the layer cannot pass at any of those rest places.
+  - *The long waves*: the highest they stand there, through the shore transform and the section.
+  - *Each cascade*: a ceiling, a height its field passes nowhere in the frame, at the largest gain and
+    short-wave weight among those rest places. A ceiling holds wherever a current carries the cascade. On
+    still water with no current, where the CPU holds the cascade's field, it may take the cascade's
+    highest value over those rest places in place of the ceiling.
+  - *The wake has no term, because nothing bounds it.* Its height is the GPU's state, a game may post
+    impulses of any finite strength, and they add where they overlap. So where a wake window that is not
+    at rest overlaps those rest places, the lens is admitted, at whatever height it stands. A window is
+    at rest while it has taken no body's pressure and no impulse since its last reset, which the CPU
+    knows from what it posted.
+
+  Wherever the CPU cannot bound a layer, a horizontal displacement or the rest places themselves cheaply,
+  it admits the lens. The bound errs one way. It may admit a lens that is dry, which costs the gather and a
+  composition that keeps no pixel, and it never refuses a lens with a pixel under the shown surface, which
+  would be a dry hole in the picture. Exact admission is not sought under a wake or on a current: those
+  displayed fields are the GPU's, and reading them back would put a wait in the frame. Whether a pixel is
+  under water is never the bound's to say: the lens cut decides it.
 - **The surface from beneath.** The surface is drawn two-sided. Its underside is shaded by Fresnel's law
   from the water's side, with a refractive index of 1.333. Within 48.6° of the surface's normal a ray leaves
   the water, which is Snell's window. It reads the gather where it meets copied geometry that stands above
@@ -1772,10 +1797,16 @@ the bed is lit evenly through the surface, and without shafts the water's light 
 is the camera's, and follows the light down only where the game gives its camera the water's factor.
 Sunlight's path down to a body in the gather is taken vertically. Under a crest that overhangs, the highest surface decides, so inside the hollow of a pitching
 wave the lens reads as under water. Anything transparent that a scene draws after the water takes none of
-the water's murk. The wake ceiling is a profile value and not a bound on the solver: a profile sets it at
-least twice the highest wake its bodies raise, 1 m in the first profile, which WP15 holds against the
-example's craft at 15 m/s and its stone, read from the wake's state. A wake taller than the ceiling, over a
-lens that stands above every other layer's bound, shows as a dry hole.
+the water's murk.
+
+Declared cost: a camera over a live wake window is admitted while it is dry, so a camera that follows a
+craft pays the whole-screen gather and a composition that keeps no pixel in every frame. The gather
+measured about 0.2 ms at 1440p on the M3 Max
+([WP15's record](../../../.orchestrate/evidence/WATERS/WP15/dive-cost-32a3d8367e00.json)), and WP15.9
+records the view. No profile value stands in for a bound on the wake: a ceiling the solver does not keep
+leaves a dry hole under any wake taller than it. Holding the shown wake under a ceiling in the draw, the
+lens cut and the query would make one true, and is not built; if the record shows the dry lens costs
+enough to matter, a planner adds it.
 
 The views an item calls straight up are taken 0.01° off the vertical. The example's camera takes +Y for up
 and refuses a look along it, and 0.01° moves the centre of a 105° view 0.096 px at 1440p. No up vector is
@@ -2172,7 +2203,7 @@ rows are in [the sea's design](../SEA/DESIGN.md#cost-account).
 | Body and scene rays | Frame, inside the surface pass | Water pixels the mask marks: two ray-against-box tests for each marked body; a bounded march where a ray meets a box or the water is mirror-still | Unmeasured; WP8 records it on a calm sea and in a gale with zero, one and nine bodies, and at the lake | |
 | Mirror views | Frame, by `SCENE-VIEWS` | Up to two views of the scene's opaque geometry, each a quarter of the main view's pixels | The scene's own draw again for each view, less what its owner cuts. Unreal reports a planar reflection at up to half a frame at full detail, and GTA V ships one at 240×120. WP14 records it with no view, one and two | |
 | The mirror lookup | Frame, inside the surface pass | Water pixels of a body with a view: three reads of the image and its depth | Less than the screen-space march it replaces there | |
-| Under water | Frame, only while [admitted](#under-water) | The lens cut's few nodes, the lens test for each pixel, one composition for each pixel under water, and a whole-screen gather | Of the order of the surface pass's own pixels; WP15 records it half under and wholly under | |
+| Under water | Frame, only while [admitted](#under-water) | The lens cut's few nodes, the lens test for each pixel, one composition for each pixel under water, and a whole-screen gather | Of the order of the surface pass's own pixels; WP15 records it half under, wholly under, and dry over a live wake, where it is admitted at any height | |
 | The caustic field | Frame, while water with caustics is in the window | 13 rungs of an 18 m window at 3.5 cm cells; the rungs from 2 m down are drawn from coarser grids, since their blur is wider than a cell | About 1.8 million vertices and 13 small passes a frame, then a blur of each. Unmeasured; WP16 records it, and the rung count, the window and the cadence are knobs | |
 | The Sun-path factor | Frame, inside the forward pass | One read of the level for every opaque fragment in a scene with caustics, and two rungs for one under water | One texture more in the forward fragment stage, counted against the capability record | |
 | Shafts | Frame, only while a pixel of the lens is under | Pixels under water at half the render extent each way: 16 steps, each two rung reads and one Sun-visibility tap | Unmeasured; WP16 records it | |
