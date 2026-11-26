@@ -119,12 +119,20 @@ async function arm(opts, call, sessionId, dpr) {
   for (const id of cards) {
     const state = await choice();
     const point = await at(id, state);
-    if (id === 110) await capture('choice-open', state);
+    if (id === 110) {
+      const [left, top] = await canvas();
+      // A touch on the scrim selects touch modality without choosing a card.
+      const idle = { x: Math.round(left + 24), y: Math.round(top + 24), id: 9 };
+      await touch('touchStart', idle);
+      await touch('touchEnd', idle);
+      await capture('choice-idle', await report());
+    }
     await mouse('mouseMoved', point);
     await until(state => state.focus === id, 'mouse focused card');
     if (id === 120) await capture('choice-focused', await report());
+    const beforePress = (await report()).timing.length;
     await mouse('mousePressed', point, { button: 'left', buttons: 1, clickCount: 1 });
-    await until(state => state.timing.some(row => row.kind === 'pointer press' && row.frames), 'pressed card submitted');
+    await until(state => state.timing.slice(beforePress).some(row => row.kind === 'pointer press' && row.frames), 'pressed card submitted');
     if (id === 120) await capture('choice-pressed', await report());
     await mouse('mouseReleased', point, { button: 'left', buttons: 0, clickCount: 1 });
     await play();
@@ -138,8 +146,9 @@ async function arm(opts, call, sessionId, dpr) {
   assert.deepEqual((await report()).position, stopped.position);
   const [x, y] = await at(140, stopped);
   const finger = { x, y, id: 2 };
+  const beforeTouch = (await report()).timing.length;
   await touch('touchStart', finger);
-  await until(state => state.timing.some(row => row.kind === 'touch press' && row.frames), 'touch press submitted');
+  await until(state => state.timing.slice(beforeTouch).some(row => row.kind === 'touch press' && row.frames), 'touch press submitted');
   // Chromium's native DevTools dispatch releases the IDs in a nonempty touchEnd.
   await touch('touchEnd', finger);
   await play();
@@ -185,7 +194,7 @@ async function arm(opts, call, sessionId, dpr) {
 
   const final = await report();
   assert.deepEqual(final.activations, [3, 4, 3, 3]);
-  assert(!final.inputs.some(row => /Arrow|Enter|Pointer|Touch\(\d+\).*\[.*\]/.test(row.input) && !row.input.includes('Touch')));
+  assert(!final.inputs.some(row => /Arrow|Enter|Pointer/.test(row.input)));
   assert.equal(final.inputs.filter(row => row.input.includes('Touch') && row.input.startsWith('Press')).length, 1);
   assert(holds[1].contacts.some(contact => /Touch\(\d+\).*Some\(\[/.test(contact)));
   assert(final.effects.some(row => row.effect.source === 'Link' && row.effect.text === ticket));
