@@ -239,15 +239,36 @@ impl StatCache {
     /// # Errors
     /// I/O failure.
     pub fn save(&self, path: &Path) -> std::io::Result<()> {
-        let mut out = Vec::with_capacity(16 + self.entries.len() * 96);
+        Self::write_entries(path, &self.entries)
+    }
+
+    /// Save current scan entries outside the explicitly preserved part of the old snapshot.
+    pub(crate) fn save_preserving(
+        &self,
+        path: &Path,
+        preserve: impl Fn(&Path) -> bool,
+    ) -> std::io::Result<()> {
+        let mut saved = Self::load(path).entries;
+        saved.retain(|relative, _| preserve(relative));
+        saved.extend(
+            self.entries
+                .iter()
+                .filter(|(relative, _)| !preserve(relative))
+                .map(|(relative, entry)| (relative.clone(), *entry)),
+        );
+        Self::write_entries(path, &saved)
+    }
+
+    fn write_entries(path: &Path, entries: &HashMap<PathBuf, Entry>) -> std::io::Result<()> {
+        let mut out = Vec::with_capacity(16 + entries.len() * 96);
         out.extend_from_slice(FILE_MAGIC);
         out.extend_from_slice(&FILE_FORMAT.to_le_bytes());
         out.extend_from_slice(
-            &u32::try_from(self.entries.len())
+            &u32::try_from(entries.len())
                 .unwrap_or(u32::MAX)
                 .to_le_bytes(),
         );
-        for (relative, entry) in &self.entries {
+        for (relative, entry) in entries {
             let text = relative.to_string_lossy();
             out.extend_from_slice(&u32::try_from(text.len()).unwrap_or(u32::MAX).to_le_bytes());
             out.extend_from_slice(text.as_bytes());

@@ -126,7 +126,7 @@ pub struct Cooker {
     published_font_inputs: FontInputs,
     /// Possible private PNGs from the last legacy scan. None means no saved scan was available
     /// for that font. Keep the snapshot until a manifest records the committed input.
-    legacy_grid_candidates: BTreeMap<String, Option<HashSet<String>>>,
+    legacy_grid_candidates: HashMap<PathBuf, Option<HashSet<String>>>,
     /// Products whose bytes this process has verified against their names.
     verified: HashSet<ContentHash>,
     generation: u64,
@@ -157,7 +157,7 @@ impl Cooker {
             gltf_buffers: HashMap::new(),
             published: BTreeMap::new(),
             published_font_inputs: BTreeMap::new(),
-            legacy_grid_candidates: BTreeMap::new(),
+            legacy_grid_candidates: HashMap::new(),
             verified: HashSet::new(),
             generation: 0,
             retry: false,
@@ -256,7 +256,8 @@ impl Cooker {
                 });
                 // A refused legacy cook can overwrite the description hash while leaving HEAD
                 // alone. At most a PNG known to that scan could be the committed private grid.
-                self.legacy_grid_candidates.insert(name.clone(), candidates);
+                self.legacy_grid_candidates
+                    .insert(PathBuf::from(name), candidates);
                 if let Some(input) = self.legacy_grid_input(name, *product, files) {
                     self.published_font_inputs.insert(name.clone(), Some(input));
                 }
@@ -488,14 +489,23 @@ impl Cooker {
             report.published = Some(self.publish(&products, &font_inputs)?);
             self.published = products;
             self.published_font_inputs = font_inputs;
-            self.legacy_grid_candidates.retain(|name, _| {
-                has_font(&self.published, name) && !self.published_font_inputs.contains_key(name)
+            self.legacy_grid_candidates.retain(|folder, _| {
+                let name = logical_name(folder);
+                has_font(&self.published, &name) && !self.published_font_inputs.contains_key(&name)
             });
         }
         // A refusal must leave HEAD alone. Keep the legacy snapshot across unrelated publishes
         // and reopens, so newly scanned PNGs cannot become candidates for an older private grid.
+        let stat_path = self.config.store.join("stat-cache.bin");
         if self.legacy_grid_candidates.is_empty() {
-            self.stat.save(&self.config.store.join("stat-cache.bin"))?;
+            self.stat.save(&stat_path)?;
+        } else {
+            self.stat.save_preserving(&stat_path, |path| {
+                (font::is_description(path) || sheet::is_png(path))
+                    && path
+                        .parent()
+                        .is_some_and(|folder| self.legacy_grid_candidates.contains_key(folder))
+            })?;
         }
         report.publish_time = start.elapsed();
         failed.sort();
@@ -695,7 +705,7 @@ impl Cooker {
         let font = logical_name(folder);
         match self.published_font_inputs.get(&font) {
             Some(input) => input.as_deref() == Some(texture),
-            None => self.legacy_grid_candidates.get(&font).map_or_else(
+            None => self.legacy_grid_candidates.get(folder).map_or_else(
                 || has_font(&self.published, &font),
                 |candidates| {
                     candidates
@@ -1157,6 +1167,8 @@ mod tests {
 
             crate::demo::write_checker_png(&folder.join("badge.png"), 4, [20, 40, 200])
                 .expect("add an independent sibling in a later save");
+            let notes = Path::new("notes.txt");
+            std::fs::write(source.join(notes), "unrelated edit").expect("unrelated source");
             let report = open().cook_all().expect("reopen and cook the badge");
             refused(&report);
             let next = report.published.expect("badge publishes during refusal");
@@ -1167,6 +1179,12 @@ mod tests {
             );
             if legacy_refused_first {
                 assert!(after.font_inputs().is_none());
+                let saved = StatCache::load(&root.join("store/stat-cache.bin"));
+                assert_eq!(
+                    saved.hash(notes),
+                    Some(ContentHash::of(b"unrelated edit")),
+                    "unrelated scan entries still advance while ownership is unresolved"
+                );
             } else {
                 assert_eq!(
                     after.font_inputs(),
