@@ -480,7 +480,7 @@ async function captureCloudView(view, extent) {
   game.set_cloud_capture_eye(...view.eye);
   const edits = JSON.parse(game.apply_parameters(JSON.stringify(view.params), 0));
   if (edits.problems.length || game.committed_tick() !== 0 || !game.paused()) fail(`invalid held cloud view: ${JSON.stringify(edits)}`);
-  if (mode === 'realtime') game.hold_cloud_capture_sun();
+  game.hold_cloud_capture_sun();
   if (query.has('cloud-store')) {
     await ready(() => {
       const placed = JSON.parse(game.placed_cloud_report() ?? 'null');
