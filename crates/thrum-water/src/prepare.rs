@@ -659,6 +659,8 @@ fn surface_pipelines(
     SurfacePipelines,
     Option<thrum_render::runtime::PipelineInput<wgpu::ShaderModule>>,
 ) {
+    use std::fmt::Write;
+
     let under = gather.is_some_and(|gather| gather.underwater);
     let mut source = shader_source(
         surface,
@@ -669,7 +671,6 @@ fn surface_pipelines(
         gather,
         rain,
     ) + &Cache::source(cache, tidal_grid);
-    use std::fmt::Write;
     let wind_base_mip = if rain {
         thrum_sea::rain::WIND_BASE_MIP
     } else {

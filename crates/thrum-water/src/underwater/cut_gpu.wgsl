@@ -30,7 +30,7 @@ struct LensRead {
 
 fn lens_face(a: VertexOut, b: VertexOut, c: VertexOut) -> LensFace {
     let transformed = select(vec3(0u), vec3(1u), vec3(a.surf_weight, b.surf_weight, c.surf_weight) > vec3(0.0));
-    let ownership = a.body | transformed.x << 8u | transformed.y << 9u | transformed.z << 10u;
+    let ownership = a.body | (transformed.x << 8u) | (transformed.y << 9u) | (transformed.z << 10u);
     return LensFace(vec4(a.world, a.rest.x), vec4(b.world, b.rest.x),
         vec4(c.world, c.rest.x), vec3(a.rest.y, b.rest.y, c.rest.y), ownership,
         lens_river_data(a, b, c));

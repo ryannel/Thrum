@@ -303,7 +303,6 @@ fn metal_admits_the_short_crest_carried_in_from_outside_the_footprint() {
 }
 
 thrum_test_support::macos_gpu_test! {
-#[expect(clippy::print_stderr, reason = "counterfactual lens line measurements")]
 fn metal_uses_the_short_wave_gain_and_weight_at_the_reachable_rest_place() {
     use water_scene::lens_probe::{Case, EXTENT, FOV};
     let Some((_serial, gpu)) = metal::gpu("carried short-wave gain and weight") else { return };

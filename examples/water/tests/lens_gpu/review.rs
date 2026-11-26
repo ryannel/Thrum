@@ -12,7 +12,7 @@ use thrum_water_model::{
     Bed, Body, BodyKind, Map, OpenSky, RainBands, RainBandsProfile, RateHistory, Stage,
 };
 
-fn depth_view(view: SyntheticView) -> SyntheticView {
+fn depth_view(view: &SyntheticView) -> SyntheticView {
     view.with_temporal_inputs(true)
         .with_display_overlay(DisplayOverlay::TemporalInputs)
 }
@@ -25,7 +25,9 @@ fn depth_pixels(rig: &Rig) -> Vec<f32> {
         Mip::level(0),
         ..,
     )
-    .chunks_exact(8)
+    .as_chunks::<8>()
+    .0
+    .iter()
     .map(|pixel| half_value(u16::from_le_bytes([pixel[2], pixel[3]])))
     .collect()
 }
@@ -90,14 +92,13 @@ fn rain_sea(rain_rate: Option<f64>, amplitude: f64, underwater: bool) -> Water {
 }
 
 #[test]
-#[expect(clippy::print_stderr, reason = "submitted wind displacement proof")]
 fn metal_keeps_wind_displacement_in_the_shared_rain_array() {
     let Some((_serial, gpu)) = super::metal::gpu("wind displacement with zero rainfall") else {
         return;
     };
     let extent = [65, 37];
     let centre = ((extent[1] / 2) * extent[0] + extent[0] / 2) as usize;
-    let view = depth_view(camera([0.0, 2.0, -0.001], [0.0; 3], 0.3, 1.0 / 32768.0));
+    let view = depth_view(&camera([0.0, 2.0, -0.001], [0.0; 3], 0.3, 1.0 / 32768.0));
     let inverse = glam::Mat4::from_cols_array_2d(&view.view_proj_columns()).inverse();
     let height = |rain, amplitude| {
         let mut rig = Rig::with_extent(&gpu, &view, sun(0.0, 0.0), &[], None, extent);
@@ -116,10 +117,6 @@ fn metal_keeps_wind_displacement_in_the_shared_rain_array() {
 }
 
 #[test]
-#[expect(
-    clippy::print_stderr,
-    reason = "submitted rain ring and lens admission proof"
-)]
 fn metal_admits_rain_rings_that_reach_a_dry_still_water_lens() {
     let Some((_serial, gpu)) = super::metal::gpu("rain ring lens admission") else {
         return;
@@ -128,7 +125,7 @@ fn metal_admits_rain_rings_that_reach_a_dry_still_water_lens() {
     let height = 0.000_002_5;
     let (x, z) = (3.5, 0.5);
     let view = depth_view(
-        SyntheticView::perspective(
+        &SyntheticView::perspective(
             [x, 0.1 + height, z],
             [x, -1.0, z],
             [0.0, 0.0, 1.0],
@@ -161,7 +158,6 @@ fn metal_admits_rain_rings_that_reach_a_dry_still_water_lens() {
 #[test]
 #[expect(
     clippy::cast_possible_truncation,
-    clippy::print_stderr,
     reason = "bounded GPU stations and recorded centre rows"
 )]
 fn metal_lens_cuts_the_final_solved_river_depth() {
@@ -200,7 +196,7 @@ fn metal_lens_cuts_the_final_solved_river_depth() {
             BodyKind::Chart(_)
         ));
         let (x, z, level) = (x as f32, z as f32, site.row.level as f32);
-        let view = depth_view(camera(
+        let view = depth_view(&camera(
             [x, level + 0.5, z - 0.000_01],
             [x, level, z],
             0.5,
