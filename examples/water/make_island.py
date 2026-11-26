@@ -67,8 +67,12 @@ def channel_height(x, z):
     ground += shoulder * max(0, 14.2 - ground)
     if not (199 < x < 385 and side < 29):
         return ground
-    along = min(max((x - 210) / 140, 0), 1)
-    level = 11.75 - 12.55 * along
+    # Same authored bed centre level as the chart. Ease the last reach
+    # before the sill so the tide meets a shallower fall.
+    start = 11.75 + (0.78 - 11.75) * min(max((x - 210) / 119, 0), 1)
+    approach = (-0.44 - 0.78) * min(max((x - 329) / 19, 0), 1)
+    sill = (-0.80 + 0.44) * min(max((x - 348) / 2, 0), 1)
+    level = start + approach + sill
     # The mouth sill remains wet at the lowest tide, with a shallow bed.
     floor = level - 0.85 + 0.70 * smoothstep((x - 341) / 9)
     floor -= 0.65 * smoothstep((x - 350) / 10)

@@ -39,6 +39,15 @@ pub fn forcing(wind: Wind) -> Forcing {
     forcing
 }
 
+fn bed_centre_level(x: f64) -> f64 {
+    // Ease the grade before the tidal sill, where a small change in level
+    // moves the backwater a long way along the chart.
+    let start = 11.75 + (0.78 - 11.75) * ((x - SOURCE) / (329.0 - SOURCE)).clamp(0.0, 1.0);
+    let approach = (-0.44 - 0.78) * ((x - 329.0) / 19.0).clamp(0.0, 1.0);
+    let sill = (-0.80 + 0.44) * ((x - 348.0) / 2.0).clamp(0.0, 1.0);
+    start + approach + sill
+}
+
 fn outlet(bed: &Bed, running: bool) -> Body {
     let (origin, spacing, [nx, nz]) = bed.lattice();
     let centres = (0..nz).flat_map(|z| {
@@ -63,9 +72,8 @@ fn outlet(bed: &Bed, running: bool) -> Body {
             .to_vec(),
     };
     for [x, z] in centres {
-        let along = ((x - SOURCE) / (MOUTH - SOURCE)).clamp(0.0, 1.0);
         let narrows = (-((x - 256.0) / 16.0).powi(2)).exp();
-        chart.levels.push(11.75 - 12.55 * along);
+        chart.levels.push(bed_centre_level(x));
         chart
             .currents
             .push([f64::from(running) * (0.5 + narrows), 0.0]);
@@ -103,8 +111,11 @@ pub fn map(forcing: &Forcing, running: bool) -> Result<Map, Box<dyn Error>> {
     let bed = island::terrain_bed(include_bytes!("../assets/meshes/channel-island.bin"))?;
     let mut bodies = island::bodies(forcing, 0.5);
     bodies.push(outlet(&bed, running));
-    let mut map =
-        Map::prepare(bed, bodies, island::map_profile(false)).map_err(|e| format!("{e:?}"))?;
+    let profile = thrum_water_model::Profile {
+        margin_height: 1.25,
+        ..island::map_profile(false)
+    };
+    let mut map = Map::prepare(bed, bodies, profile).map_err(|e| format!("{e:?}"))?;
     map.set_forcing(forcing).map_err(|e| format!("{e:?}"))?;
     Ok(map)
 }
