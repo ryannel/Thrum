@@ -603,3 +603,10 @@
   all five submitted checkpoints byte for byte, and performed zero pipeline work after readiness.
   Stale keys, reflection, launch records, the offline pin, and the Chrome shipping boundary passed.
   [Target evidence](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP10/review-fix/README.md)
+
+- 2026-11-26 WP10 lifetime follow-up. Shader and layout inputs now own their Metal stage-key
+  registrations. The preparation index releases each registration with the last input owner.
+  Three Mac Metal disposal rounds returned live resource counts to baseline, and reused inputs
+  drew with zero WGSL translations. Both native recipes matched all five submitted checkpoints
+  byte for byte, and all twelve launch runs and the Chrome shipping check passed.
+  [Target evidence](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP10/lifetime-fix/README.md)
