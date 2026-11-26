@@ -204,3 +204,10 @@
   from the running menu, status display and default grid, and after terminating the app. The run also
   repeated the four card taps and the held-stick handoff.
   [Simulator run](../../../.orchestrate/evidence/GAME-UI/WP5/warm-invite-touch/result.json)
+- 2026-11-26 WP6 moved the UIKit lifecycle, touch delivery, surface lease and render owner into
+  `thrum-app`. The Crowd status display runs from the shared window, page and iPhone app shells.
+  Mac Metal and Chrome WebGPU captured submitted frames after interface input. The iPhone 18 Pro
+  simulator passed real touch, rotation and foreground return, matched the retained digest at tick
+  3,600 and showed clear status text in both orientations. V1 passed the existing simulator
+  lifecycle, cooked-draw, capture, sprite and interface routes. Physical iPhone validation remains
+  pending. [Target proofs](../../../.orchestrate/evidence/GAME-UI/WP6/index.md)
