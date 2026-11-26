@@ -341,7 +341,7 @@
         {
           "verdict": "fail",
           "commit": "55c067ac423f5f8ca8dfd910d2b18f51f1b595da",
-          "review": ".orchestrate/evidence/GAME-UI/WP2-review.md",
+          "review": ".orchestrate/evidence/GAME-UI/WP2-review-5.md",
           "items": {
             "WP2.1": "pass",
             "WP2.2": "pass",
@@ -379,6 +379,42 @@
             "turns": 1
           },
           "at": "2026-11-26T00:32:15Z"
+        },
+        {
+          "verdict": "pass",
+          "commit": "85bb735d63b9dfd0b102c600ed33bb9bd7a49f82",
+          "review": ".orchestrate/evidence/GAME-UI/WP2-review.md",
+          "items": {
+            "WP2.1": "pass",
+            "WP2.2": "pass",
+            "WP2.3": "pass",
+            "WP2.4": "pass",
+            "WP2.5": "pass",
+            "WP2.6": "pass",
+            "WP2.7": "pass",
+            "WP2.8": "pass",
+            "WP2.9": "pass",
+            "WP2.10": "pass",
+            "WP2.11": "pass",
+            "WP2.12": "pass",
+            "WP2.13": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 136978,
+            "cached": 4181376,
+            "output": 10803,
+            "turns": 1
+          },
+          "at": "2026-11-26T01:35:18Z"
         }
       ],
       "authorised": {
@@ -427,7 +463,14 @@
         }
       ],
       "counted_from": "2026-11-26T00:34:42Z",
-      "counted_after": 5
+      "counted_after": 5,
+      "done": {
+        "by": "review",
+        "commit": "85bb735d63b9dfd0b102c600ed33bb9bd7a49f82",
+        "review": ".orchestrate/evidence/GAME-UI/WP2-review.md",
+        "checked": "b5ec77cee7677356160c0419169511e4d817ad7b",
+        "at": "2026-11-26T01:35:18Z"
+      }
     },
     "WP3": {
       "definitions": "83268e707b9dce00b96bad04167dab3f21b36a4eb61359a9edfe6aac86014f90",
