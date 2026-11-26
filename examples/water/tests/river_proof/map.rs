@@ -8,6 +8,39 @@ use wgpu::util::DeviceExt;
 const EPS_DEPTH: f64 = 0.000_04;
 const EPS_CURRENT: f64 = 0.000_004;
 
+pub(super) const REACHES: [(usize, usize); 3] = [(3, 1), (4, 1), (5, 0)];
+
+/// Each reach's prepared bounds include its shore margin. Search every
+/// longitudinal section for its deepest owned column, including the heads
+/// and tails, so a narrow or laterally moving wet path still gets sampled.
+pub(super) fn transect_points(map: &thrum_water_model::Map) -> Vec<(usize, [f64; 2])> {
+    let mut points = Vec::new();
+    for (body, axis) in REACHES {
+        let side = 1 - axis;
+        let [low, high] = map.surface_bounds(body).expect("finite chart bounds");
+        let along = std::iter::successors(Some(low[axis] + 0.31), |&p| Some(p + 1.5))
+            .take_while(|&p| p < high[axis]);
+        let across = std::iter::successors(Some(low[side] + 0.17), |&p| Some(p + 0.5))
+            .take_while(|&p| p < high[side]);
+        for station in along {
+            let deepest = across
+                .clone()
+                .filter_map(|offset| {
+                    let mut point = [0.0; 2];
+                    point[axis] = station;
+                    point[side] = offset;
+                    let row = map.sample(point)?;
+                    (row.body == body && row.depth > 0.0).then_some((row.depth, point))
+                })
+                .max_by(|a, b| a.0.total_cmp(&b.0));
+            if let Some((_, point)) = deepest {
+                points.push((body, point));
+            }
+        }
+    }
+    points
+}
+
 const PROBE: &str = r"
 @group(0) @binding(0) var<storage, read> points: array<vec2<f32>>;
 @group(0) @binding(1) var<storage, read_write> answers: array<vec4<f32>>;
@@ -127,8 +160,9 @@ fn metal_map_keeps_bulk_current_through_the_backwater() {
         return;
     };
     let forcing = water_scene::channel::forcing(water_scene::island::Wind::Calm);
-    let (mut map, _) = water_scene::river::map(&forcing, Some(&crate::support::river_store()))
-        .expect("island rivers");
+    let products = thrum_test_support::Scratch::new("river-backwater");
+    let (mut map, _) =
+        water_scene::river::map(&forcing, Some(products.path())).expect("island rivers");
     let points = [
         [179.668, -23.665],
         [180.0, -20.001],
@@ -342,6 +376,10 @@ fn metal_samples_the_ridge_and_the_dry_reach_at_their_wetting_gauges() {
     );
 }
 
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "the compute stations are authored in GPU metres"
+)]
 #[test]
 fn metal_matches_the_island_depths_at_and_between_samples() {
     let Some(gpu) = thrum_test_support::open(
@@ -358,16 +396,6 @@ fn metal_matches_the_island_depths_at_and_between_samples() {
         water_scene::river::map(&forcing, Some(products.path())).expect("prepared island");
     let stream = files[0].gauges();
     let river = files[1].gauges();
-    let points = [
-        [180.0, -85.0],
-        [180.5, -65.0],
-        [180.0, -42.5],
-        [180.0, -25.0],
-        [222.5, 5.0],
-        [257.5, 5.0],
-        [289.5, 5.5],
-        [317.5, 5.0],
-    ];
     for (spring, lake) in [
         (stream[0], river[0]),
         (stream[0].midpoint(stream[1]), river[1].midpoint(river[2])),
@@ -376,7 +404,14 @@ fn metal_matches_the_island_depths_at_and_between_samples() {
     ] {
         map.set_gauge(0, spring).expect("spring stage");
         map.set_stage(1, lake - 12.0).expect("lake stage");
+        let points: Vec<_> = transect_points(&map)
+            .into_iter()
+            .map(|(_, point)| point.map(|p| p as f32))
+            .collect();
         compare(&gpu, &map, &points);
-        println!("Metal river and stream depths matched at lake {lake:.3} m, spring {spring:.6} m");
+        println!(
+            "Metal map owner, depth and current at {} stations, lake {lake:.3} m, spring {spring:.6} m",
+            points.len()
+        );
     }
 }

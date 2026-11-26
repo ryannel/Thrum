@@ -307,6 +307,11 @@ fn map_source(group: u32, hollows: bool, rivers: bool) -> String {
             "",
         )
     };
+    let cell_coordinates = if rivers {
+        include_str!("map_gpu/river_cell_coordinates.wgsl")
+    } else {
+        include_str!("map_gpu/steady_cell_coordinates.wgsl")
+    };
     let chart_join = if rivers {
         "river_chart_row(point, body, row, rows)"
     } else {
@@ -317,8 +322,9 @@ fn map_source(group: u32, hollows: bool, rivers: bool) -> String {
         .split_once("chart_row(point, body, row, rows)")
         .expect("map body join call");
     let source = format!(
-        "const BODY_LIMIT = {BODY_LIMIT}u;\nconst WATER_MAP_GROUP = {group}u;\n{}            let raw = {chart_cell};\n{before}{chart_join}{after}{sample_hollows}{}\n{}{river_source}",
+        "const BODY_LIMIT = {BODY_LIMIT}u;\nconst WATER_MAP_GROUP = {group}u;\n{}{cell_coordinates}{}            let raw = {chart_cell};\n{before}{chart_join}{after}{sample_hollows}{}\n{}{river_source}",
         include_str!("map.wgsl"),
+        include_str!("map_gpu/map_cell_body.wgsl"),
         include_str!("map_sample.wgsl"),
         include_str!("gains.wgsl"),
     );

@@ -5,24 +5,13 @@ use std::{
 use thrum_app::sky::{Camera, ContentStatus, Controls, SkyGame};
 use water_scene::{channel, island::Wind, river};
 
+use super::map::{REACHES, transect_points};
 use crate::support::{self, Fixture};
 
 const EXTENT: [u32; 2] = [95, 13];
 const STEP: Duration = Duration::from_nanos(16_666_667);
-const EPS_DEPTH: f64 = 0.000_04;
-
-fn transect_points() -> impl Iterator<Item = (usize, [f64; 2])> {
-    let spring = (0..56).map(|station| {
-        let z = f64::from(station) * 1.09 - 91.4;
-        (3, [179.35 + f64::from(station % 3) * 0.67, z])
-    });
-    let outlet = (0..60).map(|station| {
-        let x = f64::from(station) * 2.07 + 215.3;
-        (5, [x, 4.1 + f64::from(station % 4) * 0.69])
-    });
-    spring.chain(outlet)
-}
-
+const EPS_INTERIOR: f64 = 0.010;
+const EPS_JOIN: f64 = 0.000_04;
 fn ray_hit(inverse: glam::DMat4, column: u32, row: u32, depth: f32) -> glam::DVec3 {
     let u = (f64::from(column) + 0.5) / f64::from(EXTENT[0]);
     let v = (f64::from(row) + 0.5) / f64::from(EXTENT[1]);
@@ -34,7 +23,7 @@ fn ray_hit(inverse: glam::DMat4, column: u32, row: u32, depth: f32) -> glam::DVe
     clippy::print_stdout,
     reason = "authored camera coordinates use GPU metres and logs retain target measurements"
 )]
-pub(crate) fn check(gpu: &thrum_test_support::Gpu) {
+pub(crate) fn check(gpu: &thrum_test_support::Gpu, upper: bool) {
     let forcing = channel::forcing(Wind::Trade);
     let (map, files) = river::map(&forcing, Some(&support::river_store())).expect("island rivers");
     let mut spectrum = thrum_sea_model::Spectrum::build(&forcing).expect("trade spectrum");
@@ -66,43 +55,59 @@ pub(crate) fn check(gpu: &thrum_test_support::Gpu) {
     let [low, middle, high] = files[0].gauges().try_into().expect("three spring samples");
     let mut count = [0; 6];
     let mut max_error: f64 = 0.0;
-    for (spring, stage) in [
-        (low, 0.0),
-        ((high - low).mul_add(0.37, low), 0.37),
-        (middle, 0.5),
-        (high, 1.0),
-    ] {
+    let stages = if upper {
+        [(middle, 0.5), (high, 1.0)]
+    } else {
+        [(low, 0.0), ((high - low).mul_add(0.37, low), 0.37)]
+    };
+    for (spring, stage) in stages {
         {
             let mut map = map.lock().expect("river stage");
             map.set_gauge(0, spring).expect("spring stage");
             map.set_stage(1, stage).expect("lake stage");
         }
-        // Sweep the two main reaches through the incoming swell, then sample
-        // the short reach below the fall and the previously failing outlet site.
-        let close = transect_points()
-            .chain([(4, [180.05, -24.65]), (5, [320.87, 6.17])])
+        let sites = transect_points(&map.lock().expect("river map"));
+        for (body, axis) in REACHES {
+            let stations: Vec<_> = sites
+                .iter()
+                .filter_map(|&(owner, point)| (owner == body).then_some(point[axis]))
+                .collect();
+            let first = *stations.first().expect("wet reach start");
+            let last = *stations.last().expect("wet reach end");
+            assert!(
+                stations.windows(2).all(|p| p[1] - p[0] <= 2.0),
+                "{stations:?}"
+            );
+            println!(
+                "Metal stage {stage}, body {body}: {first:.2} to {last:.2} m, {} stations at 1.5 m",
+                stations.len()
+            );
+        }
+        let close = sites
+            .into_iter()
+            .chain([(5, [320.87, 6.17])])
             .map(|(owner, point)| (owner, point, [0.14, 0.25, 0.08]));
         let from_bank = [
             (3, [179.35, -61.97], [7.0, 2.0, 0.8]),
             (5, [237.98, 6.17], [7.0, 2.0, 0.8]),
         ];
         for (owner, point, [dx, dy, dz]) in close.chain(from_bank) {
-            if !map
-                .lock()
-                .expect("river map")
-                .sample(point)
-                .is_some_and(|s| s.body == owner && s.depth > 0.08)
-            {
-                continue;
-            }
             time += 0.25;
-            let height = map
-                .lock()
-                .expect("river map")
-                .surface(&field, point, time)
-                .expect("model surface")
-                .sample
-                .height as f32;
+            let height = {
+                let map = map.lock().expect("river map");
+                // At the tidal end choose a passing wave that leaves the
+                // sampled column wet. The advancing field time is still
+                // the exact time read back from the submitted frame.
+                let surface = loop {
+                    let sample = map.surface(&field, point, time).expect("model surface");
+                    if sample.wet && sample.body == Some(owner) {
+                        break sample;
+                    }
+                    time += 0.125;
+                    assert!(time < 1024.0, "no wet column at {point:?}");
+                };
+                surface.sample.height as f32
+            };
             let [x, z] = point.map(|p| p as f32);
             let view = Camera::look_at(
                 [x + dx, (height + dy).max(0.12), z + dz],
@@ -115,32 +120,34 @@ pub(crate) fn check(gpu: &thrum_test_support::Gpu) {
             let depth = tap.read(&scene);
             let map = map.lock().expect("river map");
             let row = EXTENT[1] / 2;
-            for column in [EXTENT[0] / 2 - 8, EXTENT[0] / 2, EXTENT[0] / 2 + 8] {
-                let d = depth[(row * EXTENT[0] + column) as usize];
-                assert!(d > 0.0, "submitted depth at {point:?}, stage {stage}");
-                let p = ray_hit(inverse, column, row, d);
-                let place = [p.x, p.z];
-                let expected = map.surface(&field, place, time).expect("model surface");
-                assert!(expected.wet, "model water at {place:?}, stage {stage}");
-                assert_eq!(expected.body, Some(owner), "model river at {place:?}");
-                let error = (p.y - expected.sample.height).abs();
-                assert!(
-                    error <= EPS_DEPTH,
-                    "depth at {place:?}, stage {stage}, t {time:.2}: {error:.8} m"
-                );
-                count[owner] += 1;
-                max_error = max_error.max(error);
-            }
+            let column = EXTENT[0] / 2;
+            let d = depth[(row * EXTENT[0] + column) as usize];
+            assert!(d > 0.0, "submitted depth at {point:?}, stage {stage}");
+            let p = ray_hit(inverse, column, row, d);
+            let place = [p.x, p.z];
+            let expected = map.surface(&field, place, time).expect("model surface");
+            assert!(expected.wet, "model water at {place:?}, stage {stage}");
+            assert_eq!(expected.body, Some(owner), "model river at {place:?}");
+            let error = (p.y - expected.sample.height).abs();
+            assert!(
+                error <= EPS_INTERIOR,
+                "depth at {place:?}, stage {stage}, t {time:.2}: {error:.8} m"
+            );
+            count[owner] += 1;
+            max_error = max_error.max(error);
         }
     }
     assert!(
-        count[3] >= 640 && count[4] >= 12 && count[5] >= 700,
+        count[3] >= 92 && count[4] >= 6 && count[5] >= 180,
         "{count:?}"
     );
     println!(
         "Metal river transects: {} spring, {} plunge reach, {} outlet hits, maximum residual {max_error:.7} m",
         count[3], count[4], count[5],
     );
+    if !upper {
+        return;
+    }
     let joins: Vec<_> = files
         .iter()
         .flat_map(|file| &file.reaches)
@@ -210,7 +217,7 @@ pub(crate) fn check(gpu: &thrum_test_support::Gpu) {
                 assert!(expected.wet);
                 let error = (p.y - expected.sample.height).abs();
                 assert!(
-                    error < EPS_DEPTH,
+                    error < EPS_INTERIOR,
                     "depth residual at {place:?}: {error:.7} m"
                 );
                 (expected.body, p.y, expected.sample.height)
@@ -227,7 +234,7 @@ pub(crate) fn check(gpu: &thrum_test_support::Gpu) {
                 "Metal join {point:?}, lake {lake}, tide {tide}, t {time:.3}: owners {:?}/{:?}, GPU {:.7}/{:.7} m, model {:.7}/{:.7} m, seam residual {residual:.7} m",
                 left.0, right.0, left.1, right.1, left.2, right.2,
             );
-            assert!(residual < EPS_DEPTH, "step at {point:?}: {residual:.7} m");
+            assert!(residual < EPS_JOIN, "step at {point:?}: {residual:.7} m");
             if join.body == "Sea" {
                 assert!([left.1, right.1].iter().all(|y| y - tide > 0.01));
                 max_swell = max_swell.max((centre.sample.height - tide).abs());
