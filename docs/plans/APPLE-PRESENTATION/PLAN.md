@@ -24,18 +24,19 @@ Build in the order below.
   protected, because that needs a change to wgpu's Metal backend. The owner can ask for that change.
 - Assumption: a viewer cannot see a brightness difference under 1% of a frame's mean luminance, so D8.3 allows
   MetalFX that much. It is a little under one step of the 8-bit output at the brightness of D8.3's frames.
-- Assumption: "later" for offering the cache upstream means after G4 closes in WP11, not after the V1 exit. So
+- Assumption: "later" for offering the cache upstream means after WP11, not after the V1 exit. So
   U1's notes are written while V1's last modules build, and nothing waits for the owner's answer in U2.
 - Assumption: agents draft no text for the owner to post upstream, not even a comment to rewrite. The upstream
   notes give facts, options and a recommendation, and the owner writes the comment. The owner can ask for drafts.
-- Assumption: G4 closes on a steady 60 Hz at full screen on the built-in display, not on its full 120 Hz. The
-  fastest full-screen route needed 10.85 ms of GPU time at the governor's floor against the 8.33 ms that 120 Hz
-  allows. The lead decided this on 26 November, reading shipped high-end Mac games as holding 60 with an
-  upscaler at full resolution. The settings' bar, "smooth at the display's full refresh", is still what a
-  window gets and what WP17 aims for at full screen. The owner can overturn it.
-- Assumption: a full-screen window asks for 60 Hz by itself, and a smaller window keeps the display's full
-  refresh. A launch setting forces either. The rule goes when WP17 shows 120 Hz held at full screen.
-- Assumption: WP17 comes after G4 and `SHOWCASE` does not wait for it. Whether the V1 exit should is the owner's.
+- Assumption: the vision's "smooth at the display's full refresh" holds at full screen on the built-in display,
+  at its pixel size. So WP11's steady 60 Hz there is an interim rate, the full 120 Hz stays owed by WP17, and
+  the milestone is reached at WP17. The owner can accept 60 Hz at full screen instead, which changes the
+  vision's bar and is theirs alone to say.
+- Assumption: until WP17 shows 120 Hz held, a full-screen window asks for 60 Hz by itself and a smaller window
+  keeps the display's full refresh. A launch setting forces either.
+- Assumption: WP17 comes after WP11, so `SHOWCASE` WP7 does not wait for it, and the V1 exit rests on it.
+  `SHOWCASE` WP8 does not list WP17 yet, which [the log](LOG.md) proposes. The owner can take WP17 out of the
+  exit, for instance by leaving it to the performance phase the vision puts after V1.
 
 ## WP1 Every pixel of the valley carries correct motion under jitter, including the sky and stars: done
 [review](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP1-review.md)
@@ -81,22 +82,26 @@ Build in the order below.
 ## WP12 A warm launch compiles no pipeline: the local pipeline archive is proved by a strict fresh-process run: done
 [review](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP12-review.md)
 
-## WP11 Apple tile with MetalFX and EDR is compared with portable TAAU on the route, and G4 closes
+## WP11 Apple tile with MetalFX and EDR is compared with portable TAAU on the route, and each clause of G4 is proved
 
 `APPLE-TILE` WP12's record holds the fixed-extent baseline and the eligibility rows this proof reruns with real
 reconstruction readers and scale steps. The evidence page is `.orchestrate/evidence/render/G4-PAIRED-<date>.md`, and the
 ledger is `docs/design/maturity.json`. Ask for the owner's look at the panel in the evidence page and in your
-report, and never wait for it: G4 closes on the agent and device evidence, with the look recorded as outstanding.
+report, and never wait for it: WP11 closes on the agent and device evidence, with the look recorded as
+outstanding.
 
 Read [the requested frame rate at full screen](DESIGN.md#the-requested-frame-rate-at-full-screen-wp11) first:
-it answers the 26 November handoff. The target at full screen is a steady 60 Hz, and no more work on the frame
-graph belongs here; the three costly passes are WP17's. `build/apple-presentation` at `1eacafa62` holds the two
+it answers the 26 November handoff. Full screen runs at an interim 60 Hz, and no more work on the frame graph
+belongs here; the three costly passes are WP17's. `build/apple-presentation` at `1eacafa62` holds the two
 changes that section keeps, and
 [the retake](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP11/mac-budget-retake/README.md) is the 120 Hz
-shortfall record. What is left: the requested frame rate, the two pacing takes, the cue windows with the capture
-sized for them, the paired proof again on the merge candidate because the EDR pass changed, and the closing
-record. Pacing takes run under whatever load the host has, so repeat one that a busy host spoils and keep every
-take; don't end `BLOCKED` asking for a quiet machine.
+shortfall record. What is left: the requested frame rate and its launch setting, the two pacing takes, the cue
+windows with the capture sized for them, the paired proof again on the merge candidate because the EDR pass
+changed, and the closing record.
+
+Pacing takes run under whatever load the host has, so repeat one that a busy host spoils and keep every take;
+don't end `BLOCKED` asking for a quiet machine. If six takes in a row miss only for an absent or a late
+callback, end `NEEDS_CONTEXT` with those takes: a sitting with the other builders paused is the lead's to grant.
 
 ## WP17 The valley holds the display's full 120 Hz at full screen on the built-in display
 

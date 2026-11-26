@@ -682,3 +682,28 @@ layer profile change. [Metal controls](../../../.orchestrate/evidence/CLOUDS/WP9
   written again, and reaching 120 Hz at full screen is WP17, after G4.
   [Design](DESIGN.md#the-requested-frame-rate-at-full-screen-wp11) ·
   [reasons and numbers](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP11-plan/README.md)
+
+- 2026-11-26 Planner, design review Must Fix 1 (60 Hz at full screen was treated as the bar met). 60 Hz there is
+  now an interim rate. The vision's full-refresh bar stands, D11.5 has the ledger record it as owed by WP17, and
+  the milestone is reached at WP17, not WP11. WP17 ends only when 120 Hz is held, and the plan no longer says
+  `SHOWCASE` does not wait. The lead's ruling stands for no more frame-graph work in WP11.
+  [Design](DESIGN.md#the-requested-frame-rate-at-full-screen-wp11) ·
+  [detail](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP11-plan/README.md)
+
+- 2026-11-26 Planner, design review Must Fix 2 (D11.6 could pass a visible hitch). Pacing is now judged by the
+  Mac host's refresh account. Every refresh interval of the route is on the record, including a target the
+  link sent no callback for, and an interval is served only by exactly one present call made inside it. D11.6
+  needs every interval served in each of two takes, and a missed one counts whatever its cause. The 95th
+  percentile bound is gone, because with every interval served it adds nothing. D11.5 records this as present
+  calls the engine made, and `SHOWCASE` WP8.6 still owns what the panel showed.
+
+- 2026-11-26 Planner, design review Must Fix 3 (D11.5 asked for a forced-rate label the retake never had). The
+  retake at `1eacafa62` is described as its build ran it: a 60 to 120 Hz request with 120 preferred, an 8.33 ms
+  interval, EDR headroom forced to 2. Only a take made with WP11's new launch setting is called forced-rate,
+  and D11.5's reviewer checks both.
+
+- 2026-11-26 Proposal to `SHOWCASE`: add `APPLE-PRESENTATION:WP17` to the work packages the V1 exit rests on,
+  which are WP8's `depends_on` and WP8.12. WP7 still needs only WP11. Until WP17, a full-screen run presents at
+  60 Hz, which is not the display's full refresh that `SHOWCASE`'s cue S5 judges. The module list's exit table
+  and its line "WP11 (the paired proof, which closes G4)" would follow. Taking WP17 out of the exit is the
+  owner's decision.

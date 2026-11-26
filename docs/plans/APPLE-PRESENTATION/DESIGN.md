@@ -20,7 +20,9 @@ after a failed configure and for a stated iOS transition. Revised 26 November fo
 [offering the cache upstream](#offering-the-cache-upstream-u1-to-u3), once WP12 was Done. Revised a third time
 that day for [the requested frame rate at full screen](#the-requested-frame-rate-at-full-screen-wp11), after
 [the WP11 builder's handoff](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP11-handoff.md) measured that
-the full-screen route misses the display's 120 Hz at the governor's floor. It answers the three independent reviews of revision 1
+the full-screen route misses the display's 120 Hz at the governor's floor, and a fourth time after
+[that revision's design review](../../../.orchestrate/evidence/APPLE-PRESENTATION/design-review.md), which
+asked that 60 Hz at full screen not be taken for the bar. It answers the three independent reviews of revision 1
 (`86ec3b6b`) and the re-reviews of revision 2 (`c507ad3d`) recorded in [the log](LOG.md). Interface and path names below are
 proposals.
 
@@ -49,7 +51,10 @@ saved cache data before import. The second revision of that day adds
 no mechanism of the engine and nothing WP1 to WP12 or WP11 build or prove. The third revision of that day
 adds [the requested frame rate at full screen](#the-requested-frame-rate-at-full-screen-wp11), rewrites what
 WP11 proves about the whole path in motion, and names WP17. It changes nothing WP1 to WP10 or WP12 built: a
-window that is not full screen asks for the display's full refresh, as before.
+window that is not full screen asks for the display's full refresh, as before. The fourth revision of that day
+answers that revision's design review in the same two sections. It makes 60 Hz at full screen an interim rate
+with the full refresh owed by WP17, judges pacing by the Mac host's refresh account, and describes the 120 Hz
+retake as it was taken. It changes no mechanism but the judge of pacing.
 
 ## Purpose and scope
 
@@ -381,8 +386,8 @@ current display shader is a pre-AA diagnostic. So TAAU at scale 1.0 becomes the 
 - EDR is device-only on iOS, because Simulator EDR is unverified.
 
 **Governor.** The policy follows Unreal's dynamic resolution.
-- *Budget.* The display interval times a target headroom of 0.85. The display interval is the interval of the
-  slots the display link delivers at [the requested frame rate](#the-requested-frame-rate-at-full-screen-wp11),
+- *Budget.* The display interval times a target headroom of 0.85. The display interval is the interval between
+  the display link's callbacks at [the requested frame rate](#the-requested-frame-rate-at-full-screen-wp11),
   which is not always the panel's refresh.
 - *Inputs:*
   - resolved GPU time, from pass timestamps plus segment times;
@@ -931,66 +936,96 @@ them as they are.
 
 ### The requested frame rate at full screen (WP11)
 
-Added 26 November 2026. WP11's builder measured the full-screen route on the built-in 3456×2234 display with
-capture off: Apple tile, MetalFX, EDR and the governor at its 50% floor (1728×1117). Its fastest take spent
-10.85 ms of GPU time at the median and 14.67 ms at the 95th percentile against the 8.33 ms interval of 120 Hz,
-with a present call in 437 of 704 slots. The game was asking for a rate it could not hold, so frames landed
-unevenly. [The retake](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP11/mac-budget-retake/README.md) holds
-the six takes, the passes and the host load, which was heavy.
+Added 26 November 2026, and revised that day after
+[its design review](../../../.orchestrate/evidence/APPLE-PRESENTATION/design-review.md). WP11's builder
+measured the full-screen route on the built-in 3456×2234 display with capture off: Apple tile, MetalFX, EDR and
+the governor at its 50% floor (1728×1117). That build asked the display link for 60 to 120 Hz with 120
+preferred, as every window did then, and the link ran at 8.33 ms. Its fastest take spent 10.85 ms of GPU time
+at the median and 14.67 ms at the 95th percentile against that interval, with a present call in 437 of 704
+display opportunities. The game was asking for a rate it could not hold, so frames landed unevenly.
+[The retake](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP11/mac-budget-retake/README.md) holds the six
+takes, the passes and the host load, which was heavy.
 
-**The lead's decision, 26 November 2026.** The bar is a shipped high-end game. On a Mac at the display's full
-resolution those hold a steady 60 frames a second with an upscaler, not 120. So G4 closes on steady, evenly
-paced 60 Hz presentation at full screen on the built-in display, with the 120 Hz shortfall and its passes on
-record. Reaching 120 Hz there is [WP17](#reaching-the-full-refresh-at-full-screen-wp17), after G4. WP11
-commissions no further work on the frame graph.
+**The lead's decision, 26 November 2026.** WP11 commissions no further work on the frame graph. Until the route
+can hold the display's full refresh at full screen, a full-screen window presents at a steady, evenly paced
+60 Hz, which is how the lead reads shipped high-end Mac games to run at a display's full resolution with an
+upscaler. Reaching 120 Hz there is [WP17](#reaching-the-full-refresh-at-full-screen-wp17), after WP11.
 
-**The mechanism.** The game asks the display link for a frame rate, and the link's callbacks are the slots in
-which it presents. That request is the **requested frame rate**.
+**60 Hz is an interim rate, and the bar is unchanged.** The vision names "this M3 Max and its built-in 120 Hz
+ProMotion display" ([decision 1](../VISION.md#decisions)) and judges motion "smooth at the display's full
+refresh" ([how it will be judged](../VISION.md#how-it-will-be-judged)). Only the owner changes either, and the
+owner has not. So when WP11 ends the bar is unmet in one place, full screen on the built-in display, and the
+plan keeps it owed:
+
+- WP11 proves each clause of G4's sentence, and its items judge full screen at the interim rate.
+- WP11's evidence page and the maturity ledger say the display's full refresh at full screen is owed, by WP17.
+  They do not say the bar is met there, that 60 Hz is the target, or that the milestone is reached.
+- WP17 ends when the full refresh is held at full screen, and on nothing less.
+- The milestone, Apple reconstruction, is reached when WP17 is Done. WP11 does not reach it.
+
+**The mechanism.** The game asks the display link for a frame rate, and the link calls it back once for each
+refresh interval at that rate. That request is the **requested frame rate**.
 
 - A full-screen window on a display that refreshes faster than 60 Hz asks for 60 Hz: minimum, maximum and
-  preferred all 60. On the 120 Hz panel the system then delivers a slot every 16.67 ms and shows each frame for
-  two refreshes, which is even pacing. A frame drawn as fast as it can go, at whatever rate that turns out to
-  be, lands on uneven refreshes.
+  preferred all 60. On the 120 Hz panel the system then sends a callback every 16.67 ms and shows each frame
+  for two refreshes, which is even pacing. A frame drawn as fast as it can go, at whatever rate that turns out
+  to be, lands on uneven refreshes.
 - A window that is not full screen asks for the display's full refresh, as it does now. Nothing WP4 to WP10
   measured in a window changes.
-- A launch setting forces either rate. The frame record names the requested rate and says when it was forced.
-  The shortfall takes at 120 Hz use it, labelled as forced.
+- A launch setting forces either rate. The frame record names the requested rate and says when the setting
+  forced it. The setting is new in WP11, so no take made before it is a forced-rate take.
 - The platform sets the request on the main thread, where it reads the display record. Changing it creates no
   GPU object and resets no history. The display record's refresh stays the panel's.
-- The governor budgets against the delivered slot interval: 16.67 ms × 0.85 = 14.17 ms at 60 Hz. It may settle
-  above the 50% floor there, and that is its own decision.
+- The governor budgets against the interval between callbacks: 16.67 ms × 0.85 = 14.17 ms at 60 Hz. It may
+  settle above the 50% floor there, and that is its own decision.
 - The iPhone shell and Chrome are unchanged.
 
 The rule for full screen is provisional. It stands on the measurement above and goes when WP17 shows the full
 refresh held.
 
 **What steady means, from the capture-off record.** The engine sees its own callbacks and present calls. It
-does not see when a frame reached the panel, because wgpu hides the drawable's presented time. The claims are
-therefore about slots:
+does not see when a frame reached the panel, because wgpu hides the drawable's presented time. So the claim is
+about present calls, and the judge is the Mac host's **refresh account**, which already places every present
+call in the refresh interval it was made in:
 
-- A **slot** is one display-link callback at the requested rate, with the target time the link gives it.
-- A slot is **missed** when its callback made no present call. This is the count the governor already takes as
-  display ticks without a present. A slot whose callback the system dispatched after the slot's own target time
-  was never offered to the game: it is listed apart and is not counted as missed.
-- The **interval between presented frames** is the difference between the target times of the slots that
-  carried consecutive present calls. The time of the present call inside its callback moves with host load and
-  is not when the frame is shown, so it is recorded and not judged.
+- A **refresh interval** is one period of the requested frame rate, ending at a display-link target time. The
+  account opens one for every target a callback brought. It also opens one for every target the link sent no
+  callback for, which it finds from the gap between two targets. An absent callback is therefore an interval
+  on the record, and never a hole in it. The account's period is the requested rate's, not the panel's.
+- An interval is **served** when exactly one present call was made inside it, by the time of the call. Which
+  callback asked for the frame does not matter. A call made after its own target serves the interval it landed
+  in if that one is otherwise empty, and leaves its own interval unserved.
+- Every other interval is **missed**, and the account keeps its cause: the link sent no callback, the callback
+  reached the render owner after its target, both frame slots were occupied, no drawable was acquired, or the
+  call came outside the interval or shared it with another call.
 
-D11.6 holds when, over the route's ticks in each of two capture-off takes on the merge candidate, no slot is
-missed and the 95th-percentile interval between presented frames is one 60 Hz interval, 16.67 ms. A slot the
-system never delivered shows as a longer interval, and the 95th percentile allows a few of those. Takes are made
-under the load other builders put on the host, as [the settings](../../../ORCHESTRATE.md#targets) say of every
-timing, so a take may be repeated, and two that hold show it was not one lucky take. Every take made on the
-merge candidate is kept and listed with its host load and its missed slots. The record also gives, without a
-bound, the GPU span and each pass against the interval, and how many present calls came after their slot's
-target time. When a frame
-reached the panel is `SHOWCASE` WP8.6's to witness, in its attended sitting
-([who judges frame cadence](../ARCHITECTURE.md#who-judges-frame-cadence)).
+D11.6 holds when, in each of two capture-off takes on the merge candidate, every refresh interval from the
+route's first tick to its last is served. A missed interval counts whatever its cause, because the viewer sees
+the same held frame whether the game or the system was late. Twelve callbacks that never came are twelve
+missed intervals, and two calls in one interval after an empty one are two. With every interval served,
+consecutive present calls sit in consecutive intervals, so the route needs no separate bound on the interval
+between them.
+
+Takes are made under the load other builders put on the host, as
+[the settings](../../../ORCHESTRATE.md#targets) say of every timing, so a take may be repeated, and two that
+hold show it was not one lucky take. Every take made on the merge candidate is kept and listed with its host
+load and each missed interval's cause. The cause says where to look: occupied frame slots, a missing drawable
+or a late call point at the frame's cost, and an absent or late callback at the main thread or the host. The
+record also gives, without a bound, the GPU span and each pass against the interval, and when each present call
+was made inside its interval.
+
+What this proves is that the engine made one present call in every refresh interval. When a frame reached the
+panel is `SHOWCASE` WP8.6's to witness, from the OS-reported presented intervals of its attended sitting
+([who judges frame cadence](../ARCHITECTURE.md#who-judges-frame-cadence)), and D11.5's record says so.
 
 **The shortfall on record.** The evidence page and the maturity ledger say that full screen does not hold the
-display's full refresh. They give the fastest forced 120 Hz take's GPU span at the floor against 8.33 ms, each
-pass's time, the load it was taken under, and WP17 as the follow-up. The builder's retake is that record; a
-take on the merge candidate replaces it only if the builder makes one.
+display's full refresh, and that it is owed. The record of it is the builder's retake, described as it was
+taken at `1eacafa62`: the display link asked for 60 to 120 Hz with 120 preferred and ran at 8.33 ms, EDR
+headroom was forced to 2, capture was off, and the fastest take's GPU span at the governor's floor, each pass's
+time and the host load are given against 8.33 ms. No launch setting forced the rate on that build, so the
+record does not call it a forced-rate take. The headroom is a forced override and is labelled as one. A take
+the builder makes on the merge candidate with the launch setting at 120 Hz is added beside the retake and is
+the one labelled forced.
 
 **Two changes the builder made stay.** Both are in the measured takes:
 
@@ -1021,28 +1056,50 @@ workload or more throughput and forbids a smaller image or fewer sampled frames:
 - If that shows a slot or a buffer the tap never gives back, the fault is in `T2-CAPTURE`'s tap. The builder
   ends `BLOCKED needs_dependency` with the record, and does not change the tap's admission.
 
-Capture adds the SDR tone encode and the copies, so a captured take may miss slots that the capture-off take
-holds. That cost is shown apart and decides nothing about pacing.
+Capture adds the SDR tone encode and the copies, so a captured take may miss refresh intervals that the
+capture-off take serves. That cost is shown apart and decides nothing about pacing.
 
 ### Reaching the full refresh at full screen (WP17)
 
-Added 26 November 2026, as the follow-up to the shortfall above. It comes after G4, and neither G4 nor
-`SHOWCASE` waits for it. Its mechanisms and items are not planned yet: a planner settles them, with a design
-review, before a builder starts.
+Added 26 November 2026, as the work package that owes the full refresh after the shortfall above, and revised
+that day after [its design review](../../../.orchestrate/evidence/APPLE-PRESENTATION/design-review.md). It
+comes after WP11, so that the paired proof and `SHOWCASE`'s assembly do not wait for work on the frame graph.
+Its mechanisms and items are not planned yet: a planner settles them, with a design review, before a builder
+starts.
 
 - **Where it starts.** At the 50% floor the fastest take's GPU span was 10.85 ms against a 7.08 ms budget. The
   largest passes at the median were forward opaque at 3.08 ms, the float surface present at 1.90 ms and the
   MetalFX segment at 1.71 ms, and the temporal exposure texture reached 3.83 ms at the 95th percentile. Pass
   times overlap and were taken under heavy host load.
 - **What it is for.** Those three passes at the display's pixel size, until the route holds 120 Hz at full
-  screen by the definitions above, or until a record says what remains and why.
-- **What decides.** A full-screen window asks for the full refresh only once a capture-off record shows it
-  held, under [the hardware-native decision](../../design/decisions/HARDWARE-NATIVE-ENGINE.md): promotion by
-  measured win. Until then the 60 Hz rule stays.
+  screen.
+- **When it is Done.** A full-screen window asks for the display's full refresh without a launch setting, and
+  every 120 Hz refresh interval of the route is served in each of two capture-off takes, by
+  [the definitions above](#the-requested-frame-rate-at-full-screen-wp11). The 60 Hz rule for full screen is
+  then gone, and the ledger's owed row is answered. Its items are written to that outcome. A record of what
+  remains and why does not finish it.
+- **If it cannot be reached.** Accepting less than the full refresh at full screen changes the vision's bar,
+  which is the owner's. The planner or builder who finds the route cannot hold 120 Hz there ends
+  `NEEDS_CONTEXT` with the record, and the lead takes the question to the owner. WP17 stays open until the
+  owner answers.
+- **What decides the request.** A full-screen window asks for the full refresh only once a capture-off record
+  shows it held, under [the hardware-native decision](../../design/decisions/HARDWARE-NATIVE-ENGINE.md):
+  promotion by measured win. Until then the 60 Hz rule stays.
+
+**The V1 exit.** The exit is reached through its milestones, and this one is reached at WP17, so the exit rests
+on WP17 as it rests on WP11. `SHOWCASE` judges the exit's motion at the same bar, "smooth at the display's full
+refresh" on the built-in panel ([its cue S5](../SHOWCASE/DESIGN.md#cues)), and nothing here changes that bar. A
+full-screen run before WP17 presents at 60 Hz, which is not the display's full refresh. A window that is not
+full screen asks for the full refresh today. `SHOWCASE` WP7 needs only WP11, the paired proof. The list of work
+packages the exit rests on is `SHOWCASE` WP8's, and adding WP17 to it is proposed to `SHOWCASE` in
+[the log](LOG.md). Taking WP17 out of the exit is the owner's decision, and no plan makes it for them.
 
 ### What closes G4, and what the owner observes (WP11)
 
-G4 closes on evidence agents and the device produce. The brief's sentence is proved clause by clause:
+G4 closes on evidence agents and the device produce. WP11 proves the brief's sentence clause by clause, as the
+table says. The last row is the vision's bar for motion and not a clause of the sentence: the milestone is
+reached when [WP17](#reaching-the-full-refresh-at-full-screen-wp17) has shown the display's full refresh held
+at full screen.
 
 | The brief's clause | Proved by | What that evidence is |
 |---|---|---|
@@ -1052,7 +1109,8 @@ G4 closes on evidence agents and the device produce. The brief's sentence is pro
 | The governor reacts to GPU, thermal and present evidence | D7.1–D7.9 | Policy tests and forced-load runs on the device |
 | Apple tile compared with portable, with image tolerance and counters | D11.1, D11.4 | Paired rows on this Mac |
 | No pipeline compilation during play | D9.2–D9.4, D11.2 | Creation counters by thread and phase |
-| The whole path in motion | D11.6, D11.7 | Agents' review of realtime engine capture, and on the Mac the capture-off pacing record at [the requested frame rate](#the-requested-frame-rate-at-full-screen-wp11) |
+| The whole path in motion | D11.6, D11.7 | Agents' review of realtime engine capture, and on the Mac the capture-off record of present calls in refresh intervals at [the requested frame rate](#the-requested-frame-rate-at-full-screen-wp11), 60 Hz at full screen as an interim rate |
+| Smooth at the display's full refresh, at full screen | WP17 | Owed when WP11 ends, and recorded as owed by D11.5 |
 
 Engine capture proves the values the surface was given, never the light the panel emits, and no agent can see
 the panel. So the look of EDR on the built-in display is the owner's **observation**: experienced quality under
@@ -1237,7 +1295,8 @@ In the V1 game on this M3 Max:
 - stars, the Sun and reveals are stable;
 - EDR highlights appear on the built-in XDR display within its headroom;
 - the governor holds the display rate under forced load without oscillation;
-- at full screen on the built-in display the game presents a steady 60 Hz, and its full 120 Hz there is WP17's;
+- at full screen on the built-in display the game presents a steady 60 Hz as an interim rate, until WP17 holds
+  the display's full 120 Hz there;
 - the simulation is unchanged;
 - scale, headroom and cut changes create nothing during play;
 - resizes and backing-scale changes keep presenting while the new generation builds off the render thread.
