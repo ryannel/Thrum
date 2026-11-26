@@ -18,6 +18,10 @@ use thrum_render::{
 use wgpu::util::DeviceExt;
 
 pub(crate) const SEA_RING_HALF_WIDTH: i32 = 32;
+// A joined chart uses the same half-metre lattice as the sea throughout
+// the near view. This keeps the two displaced triangulations coincident
+// where the draw switches at the drowned edge.
+pub(crate) const TIDAL_RING_HALF_WIDTHS: [i32; 4] = [184, 104, 64, 40];
 pub(crate) const SURF_FINE_RING_HALF_WIDTH: i32 = 64;
 pub(crate) const SURF_HALF_METRE_RING_HALF_WIDTH: i32 = 240;
 pub(crate) const SURF_METRE_RING_HALF_WIDTH: i32 = 128;
@@ -205,7 +209,8 @@ pub(super) fn new(
         .map(|profile| SurfGpu::new(device, surface.queue, map, profile))
         .transpose()
         .map_err(|error| error.to_string())?;
-    let geometry = surface_mesh(mapped.then_some(map));
+    let tidal_grid = mapped && map.surf_profile().is_none() && has_tidal_join(map);
+    let geometry = surface_mesh(mapped.then_some(map), tidal_grid);
     let count = u32::try_from(geometry.vertices.len()).map_err(|e| e.to_string())?;
     let (mesh, indices) = geometry.upload(device, surf.is_some())?;
     let surf_cache = surf
@@ -351,6 +356,7 @@ pub(super) fn new(
         gather.as_ref(),
         surf_cache.as_ref(),
         has_shore(map),
+        tidal_grid,
     );
     let pattern = foam.as_ref().map(|_| Pattern {
         device: device.clone(),
@@ -499,6 +505,7 @@ fn surface_pipelines(
     gather: Option<&Gather>,
     cache: Option<&Cache>,
     shore: bool,
+    tidal_grid: bool,
 ) -> (wgpu::RenderPipeline, Option<wgpu::RenderPipeline>) {
     let source = shader_source(
         surface,
@@ -507,7 +514,7 @@ fn surface_pipelines(
         interaction.is_some(),
         foam,
         gather.is_some(),
-    ) + &Cache::source(cache);
+    ) + &Cache::source(cache, tidal_grid);
     let shader = surface
         .device
         .create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -741,11 +748,22 @@ struct Geometry {
     draws: Vec<WaterDraw>,
 }
 
+fn has_tidal_join(map: &thrum_water_model::Map) -> bool {
+    use thrum_water_model::BodyKind;
+    (0..map_gpu::BODY_LIMIT)
+        .map_while(|body| map.body(body))
+        .any(|body| {
+            matches!(&body.kind, BodyKind::Chart(chart)
+            if chart.ends.iter().any(|end| end.mouth && map.body(end.body).is_some_and(|joined|
+                matches!(joined.kind, BodyKind::Sea))))
+        })
+}
+
 #[expect(
     clippy::cast_possible_truncation,
     reason = "GPU vertices and at most 16 body slots"
 )]
-fn surface_mesh(map: Option<&thrum_water_model::Map>) -> Geometry {
+fn surface_mesh(map: Option<&thrum_water_model::Map>, tidal_grid: bool) -> Geometry {
     let Some(map) = map else {
         return Geometry {
             vertices: mesh(),
@@ -767,7 +785,8 @@ fn surface_mesh(map: Option<&thrum_water_model::Map>) -> Geometry {
             let levels = [declaration.stage.min, declaration.stage.max]
                 .map(|offset| (declaration.level + offset) as f32);
             let mut previous_half_width = 0;
-            for level in 0..17 {
+            let first_level = i32::from(tidal_grid);
+            for level in first_level..17 {
                 let half_width = match (surf, level) {
                     (true, 0) => SURF_FINE_RING_HALF_WIDTH,
                     (true, 1) => SURF_HALF_METRE_RING_HALF_WIDTH,
@@ -776,6 +795,10 @@ fn surface_mesh(map: Option<&thrum_water_model::Map>) -> Geometry {
                     (true, 4) => SURF_FOUR_METRE_RING_HALF_WIDTH,
                     // Keep the mesh transition apart from the coarse foam window's edge.
                     (true, 5) => SURF_EIGHT_METRE_RING_HALF_WIDTH,
+                    _ if tidal_grid => TIDAL_RING_HALF_WIDTHS
+                        .get(usize::try_from(level - first_level).expect("tidal ring"))
+                        .copied()
+                        .unwrap_or(SEA_RING_HALF_WIDTH),
                     _ => SEA_RING_HALF_WIDTH,
                 };
                 let first_index = geometry.indices.len() as u32;

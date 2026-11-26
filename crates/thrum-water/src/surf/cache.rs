@@ -335,13 +335,14 @@ impl Cache {
         map_gpu::declarations_at(0)
             + include_str!("../column/records.wgsl")
             + &SurfGpu::source(0, COMPUTE_SURF_BINDING)
-            + &Self::ring_source(true)
+            + &Self::ring_source(true, false)
             + &observer
             + include_str!("cache.wgsl")
             + include_str!("cache_moments.wgsl")
     }
 
-    fn ring_source(enabled: bool) -> String {
+    fn ring_source(enabled: bool, tidal: bool) -> String {
+        let [tidal_half, tidal_one, tidal_two, tidal_four] = crate::prepare::TIDAL_RING_HALF_WIDTHS;
         let radius = crate::prepare::SEA_RING_HALF_WIDTH;
         let fine_radius = crate::prepare::SURF_FINE_RING_HALF_WIDTH;
         let half_metre_radius = crate::prepare::SURF_HALF_METRE_RING_HALF_WIDTH;
@@ -360,6 +361,12 @@ impl Cache {
                      if spacing == 4.0 {{ return {four_metre_radius}u; }}
                      if spacing == 8.0 {{ return {eight_metre_radius}u; }}
                  }}
+                 if {tidal} {{
+                     if spacing == 0.5 {{ return {tidal_half}u; }}
+                     if spacing == 1.0 {{ return {tidal_one}u; }}
+                     if spacing == 2.0 {{ return {tidal_two}u; }}
+                     if spacing == 4.0 {{ return {tidal_four}u; }}
+                 }}
                  return SURF_GRID_RADIUS;
              }}\n\
              fn sea_inner_radius(spacing: f32) -> f32 {{
@@ -369,10 +376,10 @@ impl Cache {
         )
     }
 
-    pub(crate) fn source(cache: Option<&Self>) -> String {
+    pub(crate) fn source(cache: Option<&Self>, tidal: bool) -> String {
         let enabled = cache.is_some();
         let shore = cache.is_some_and(|cache| cache.shore_size[0] > 0);
-        Self::ring_source(enabled)
+        Self::ring_source(enabled, tidal)
             + &format!("const SURF_SHORE_GRID_ENABLED: bool = {shore};\n")
             + if enabled {
                 include_str!("render.wgsl")
