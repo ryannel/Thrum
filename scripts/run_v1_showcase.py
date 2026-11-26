@@ -15,6 +15,8 @@ in run.json there. The route's values live only in examples/v1-game/params/showc
                                    native fixed route and exact submitted images in inclusive route-tick windows
   motion [--check]                 record or check the six real-time exit tripwire arms
   exit --controls                  apply every exit preset through the Mac and Chrome control paths
+  exit --compare                   compare submitted stills across rows and with each row's baseline
+  exit --calibrate-comparison      stage a first three-row baseline for visual inspection
   frames --target TARGET           record capture-off flythrough and day cycle timing
 """
 
@@ -366,8 +368,8 @@ def exit_showcase(args):
         return exit_row(args.row, rows[args.row], stops)
     if args.clauses:
         return exit_clauses(args, rows)
-    if args.compare:
-        return exit_compare(rows, stops)
+    if args.compare or args.calibrate_comparison:
+        return exit_compare(rows, stops, calibrate=args.calibrate_comparison)
     run = new_run('exit-controls')
     print(f'exit controls: {run}', flush=True)
     build(run, web=True)
@@ -432,60 +434,83 @@ def exit_row(name, row, stops):
     build(run, web=web, creation_counters=not web)
     builds = identities(web=web, built=True)
     source = copy_source(run, exit_assets=EXIT_SOURCE)
-    expected_root = json.loads(EXIT_FLYTHROUGH.read_text())['cooked_root']
+    route_file = json.loads(EXIT_FLYTHROUGH.read_text())
+    expected_root = route_file['cooked_root']
     store = cook_exit(run, source, expected_root)
     if web:
         stop_reports = chrome_exit_stops(run / 'stops', source, row, lock=False)
-        stop_roots = {stop: report['cooked'].get('cooked_root') for stop, report in stop_reports.items()}
+        publications = {stop: (report['cooked'].get('drawn'), report['cooked'].get('cooked_root'))
+                        for stop, report in stop_reports.items()}
     else:
         stop_reports = native_exit_stops(run / 'stops', store, row, stops)
-        stop_roots = {stop: frame.get('cooked_root')
-                      for stop, frame in zip(ROUTE, stop_reports['stills'], strict=True)}
+        publications = {
+            stop: (frame.get('cooked_generation'), frame.get('cooked_root'))
+            for stop, frame in zip(ROUTE, stop_reports['stills'], strict=True)}
     flythrough = record_exit_phase(run / 'flythrough', source, store, row, builds, web=web, day=False)
-    roots = {**stop_roots, 'flythrough': flythrough.get('cooked_root')}
+    publications['flythrough'] = (flythrough.get('cooked_generation'), flythrough.get('cooked_root'))
     write_json(run / 'run.json', {'builds': builds, 'row': name, 'target': flythrough['target'],
-                                 'stops': stop_reports, 'flythrough': flythrough, 'drawn_roots': roots})
-    absent = [phase for phase, root in roots.items() if root is None]
-    if absent:
-        raise Failure(f'{name}: game did not report the drawn cooked root for {", ".join(absent)}; see {run / "run.json"}')
-    wrong = [phase for phase, root in roots.items() if root != expected_root]
+                                 'stops': stop_reports, 'flythrough': flythrough,
+                                 'drawn_publications': {phase: {'generation': generation, 'root': root}
+                                                        for phase, (generation, root) in publications.items()}})
+    expected = (route_file['cooked_generation'], expected_root)
+    wrong = [phase for phase, publication in publications.items() if publication != expected]
     if wrong:
-        raise Failure(f'{name}: drawn cooked root differs from the route for {", ".join(wrong)}; see {run / "run.json"}')
+        raise Failure(f'{name}: missing or wrong drawn publication for {", ".join(wrong)}; see {run / "run.json"}')
     print(f'PASS: {run / "run.json"}')
 
 
-def exit_compare(rows, stops):
+def exit_compare(rows, stops, *, calibrate):
     from apple_display_proof import half_components, HALF, srgb
+
+    root = json.loads(EXIT_FLYTHROUGH.read_text())['cooked_root']
+    identity = {**baseline_identity(root), 'exit_rows': rows}
+    baseline = json.loads(EXIT_BASELINE.read_text())
+    retained = baseline.get('exit_comparison')
+    if calibrate and retained and retained['identity'] == identity:
+        raise Failure('this comparison identity already has a calibration')
+    if not calibrate and (not retained or retained['identity'] != identity):
+        raise Failure('no retained comparison for these rows, comparator, presets and cooked root')
 
     run = new_run('exit-compare')
     print(f'exit comparison: {run}', flush=True)
     build(run, web=True)
     builds = identities(web=True, built=True)
     source = copy_source(run, exit_assets=EXIT_SOURCE)
-    root = json.loads(EXIT_FLYTHROUGH.read_text())['cooked_root']
     store = cook_exit(run, source, root)
-    baseline, mismatch = read_baseline(EXIT_BASELINE, baseline_identity(root))
-    if mismatch:
-        raise Failure('the checked-in exit thresholds belong to another route identity')
-    thresholds = baseline['thresholds']
+    transfer = bytes(srgb(value) for value in HALF)
 
     def capture_native(name, row, *, path=store, keys=ROUTE, empty=False):
         target = run / name
         manifest = native_exit_stops(target, path, row, stops, keys=keys, empty=empty)
         values = {}
         for frame, key in zip(manifest['stills'], keys, strict=True):
+            if frame['cooked_root'] != store_root(path):
+                raise Failure(f'{name} {key}: captured another cooked publication')
             extent = manifest['extent']
             filename = target / frame['file']
             if frame['source'] == 'Edr':
-                transfer = bytes(srgb(value) for value in HALF)
                 pixels = bytes(transfer[word] for word in half_components(filename, extent))
             else:
                 pixels = filename.read_bytes()
             values[key] = pixel_grid(filename, *extent, 4, pixels)
-        return values, manifest
+        return values
 
-    captured = {name: capture_native(name, rows[name]) for name in ('mac-apple', 'mac-portable')}
-    empty, _ = capture_native('empty', rows['mac-portable'], empty=True)
+    def capture_rows(suffix=''):
+        grids = {name: capture_native(name + suffix, rows[name])
+                 for name in ('mac-apple', 'mac-portable')}
+        chrome_dir = run / ('chrome' + suffix)
+        grids['chrome'] = {}
+        for key, result in chrome_exit_stops(chrome_dir, source, rows['chrome']).items():
+            if result['cooked']['cooked_root'] != root:
+                raise Failure(f'Chrome {key}: captured another cooked publication')
+            frame = result['submitted']
+            path = chrome_dir / frame['file']
+            grids['chrome'][key] = pixel_grid(path, frame['width'], frame['height'], 4, path.read_bytes())
+        return grids
+
+    grids = capture_rows()
+    repeat = capture_rows('-repeat') if calibrate else None
+    empty = capture_native('empty', rows['mac-portable'], empty=True)
     retinted = run / 'retinted'
     retinted.mkdir()
     edited_source = copy_source(retinted, origin=source)
@@ -496,14 +521,7 @@ def exit_compare(rows, stops):
             raise Failure('retinted control could not cook')
     if store_root(edited_store) == root:
         raise Failure('retinted control did not change the publication')
-    texture, _ = capture_native('texture-control', rows['mac-portable'], path=edited_store, keys=['noon'])
-    chrome_dir = run / 'chrome'
-    chrome = chrome_exit_stops(chrome_dir, source, rows['chrome'])
-    browser = {}
-    for key, result in chrome.items():
-        frame = result['submitted']
-        path = chrome_dir / frame['file']
-        browser[key] = pixel_grid(path, frame['width'], frame['height'], 4, path.read_bytes())
+    texture = capture_native('texture-control', rows['mac-portable'], path=edited_store, keys=['noon'])
     diagnostic = run / 'diagnostic'
     command = ['node', str(CHECKER), '--case', 'route-diagnostic', '--cook', str(COOK),
                '--web-root', str(WEB), '--assets-source', str(source), '--output', str(diagnostic)]
@@ -511,55 +529,72 @@ def exit_compare(rows, stops):
         if bounded(locked_capture('chrome', command), log, 120, cwd=REPO):
             raise Failure('Chrome diagnostic control failed')
     phases = json.loads((diagnostic / 'run.json').read_text())['results'][0]['sky']['phases']
-    report = {'builds': builds, 'cooked_root': root, 'encoding': 'submitted 8-bit sRGB',
+    report = {'builds': builds, 'identity': identity, 'encoding': 'submitted 8-bit sRGB',
               'sources': {'mac-apple': 'EDR at headroom 1, converted from float to sRGB',
                           'mac-portable': 'SDR at headroom 1', 'chrome': 'SDR'},
-              'thresholds': thresholds, 'pairs': {}, 'controls': {}, 'failures': []}
+              'cross_row_thresholds': {}, 'pairs': {}, 'controls': {}, 'baselines': {}, 'failures': []}
     verify_diagnostic_poses({phase['name']: phase for phase in phases}, stops, report)
-    grids = {name: records[0] for name, records in captured.items()}
-    grids['chrome'] = browser
     for key in ROUTE:
-        parity = report['pairs'][key] = {
-            f'{left} vs {right}': difference(grids[left][key], grids[right][key])
-            for left, right in itertools.combinations(grids, 2)}
-        for pair, values in parity.items():
-            if any(value > limit for value, limit in zip(values, thresholds)):
+        pairs = report['pairs'][key] = {}
+        for left, right in itertools.combinations(grids, 2):
+            cells = cell_differences(grids[left][key], grids[right][key])
+            worst = max(range(len(cells)), key=cells.__getitem__)
+            row_key = f'{left} vs {right}'
+            pairs[row_key] = {'values': difference_statistics(cells), 'max_cell': [worst % 32, worst // 32]}
+        thresholds = report['cross_row_thresholds'][key] = (
+            [1.0, *(max(1.0, 3 * max(pair['values'][index] for pair in pairs.values())) for index in (1, 2))]
+            if calibrate else retained['cross_row_thresholds'][key])
+        for pair, result in pairs.items():
+            if any(value > limit for value, limit in zip(result['values'], thresholds, strict=True)):
                 report['failures'].append(f'{key}: {pair} exceeded the fixed thresholds')
-        controls = report['controls'][key] = {'empty': difference(empty[key], grids['mac-portable'][key])}
+        values = {'empty': difference(empty[key], grids['mac-portable'][key])}
         if key in DIAGNOSTIC_STOPS:
             fallback = grid(diagnostic / f'route-diagnostic-{key}.png')
-            controls['diagnostic'] = difference(fallback, grids['mac-portable'][key])
+            values['diagnostic'] = difference(fallback, grids['mac-portable'][key])
         if key == 'noon':
-            controls['retinted'] = difference(texture[key], grids['mac-portable'][key])
-    hypothetical = [max(1, 3 * max(pair[index] for stop in report['pairs'].values() for pair in stop.values()))
-                    for index in range(3)]
-    report['thresholds_if_recalibrated'] = hypothetical
-    for row in report['controls'].values():
-        row['fails_if_recalibrated'] = {
-            name: any(value >= limit * CONTROL_RATIO if name == 'diagnostic' else value > limit
-                      for value, limit in zip(values, hypothetical))
-            for name, values in row.items()}
-    for key, row in report['controls'].items():
-        for name in ('empty', 'retinted', 'diagnostic'):
-            if name not in row:
-                continue
-            separated = any(value >= limit * CONTROL_RATIO if name == 'diagnostic' else value > limit
-                            for value, limit in zip(row[name], thresholds))
+            values['retinted'] = difference(texture[key], grids['mac-portable'][key])
+        controls = report['controls'][key] = {}
+        for name, distances in values.items():
+            ratios = [value / limit for value, limit in zip(distances, thresholds, strict=True)]
+            controls[name] = {'values': distances, 'threshold_ratios': ratios}
+            separated = max(ratios) >= CONTROL_RATIO if name == 'diagnostic' else max(ratios) > 1
             if not separated:
                 report['failures'].append(f'{key}: {name} control failed to separate')
-    if not report['failures']:
-        retained_rows = baseline.get('exit_rows', {})
-        if set(retained_rows) != set(grids) or any(set(row) != set(ROUTE) for row in retained_rows.values()):
-            report['failures'].append('no accepted three-row baseline')
+
+    saved_rows = {}
+    for name, row in grids.items():
+        if calibrate:
+            repeat_delta = {key: difference(row[key], repeat[name][key]) for key in ROUTE}
+            for key, distances in repeat_delta.items():
+                if any(value > limit for value, limit in
+                       zip(distances, report['cross_row_thresholds'][key], strict=True)):
+                    report['failures'].append(f'{name}/{key}: row did not repeat under its cross-row thresholds')
+            thresholds = [max(1.0, 3 * max(values[index] for values in repeat_delta.values()))
+                          for index in range(3)]
+            saved = {'thresholds': thresholds, 'grids': {key: pack(cells) for key, cells in row.items()}}
+            saved_rows[name] = saved
         else:
-            comparison = compare_baseline(({'grids': retained_rows}, None), grids, thresholds)
-            report['baseline'] = comparison
-            if comparison['over']:
-                report['failures'].append(f'exit row baselines exceeded the threshold: {comparison["over"]}')
+            saved = retained['rows'][name]
+        distances = {key: difference(cells, unpack(saved['grids'][key])) for key, cells in row.items()}
+        report['baselines'][name] = {'thresholds': saved['thresholds'], 'stops': distances}
+        if calibrate:
+            report['baselines'][name]['repeat_differences'] = repeat_delta
+        for key, values in distances.items():
+            if any(value > limit for value, limit in zip(values, saved['thresholds'], strict=True)):
+                report['failures'].append(f'{name}/{key}: exceeded the row baseline thresholds')
+
     write_json(run / 'run.json', report)
     if report['failures']:
         raise Failure(f'{", ".join(report["failures"])}; see {run / "run.json"}')
-    print(f'PASS: {run / "run.json"}')
+    if calibrate:
+        baseline['exit_comparison'] = {
+            'identity': identity, 'cross_row_thresholds': report['cross_row_thresholds'], 'rows': saved_rows,
+            'calibration': {'run': run.name, 'builds': builds},
+        }
+        write_json(run / EXIT_BASELINE.name, baseline)
+        print(f'Staged for inspection: {run / EXIT_BASELINE.name}')
+    else:
+        print(f'PASS: {run / "run.json"}')
 
 
 def exit_clauses(args, rows):
@@ -888,9 +923,17 @@ def pixel_grid(path, width, height, bpp, pixels, columns=32, rows=18, crop=None)
     return [[s[0] / s[3], s[1] / s[3], s[2] / s[3]] for s in sums]
 
 
-def difference(a, b):
-    cells = sorted(sum(abs(p - q) for p, q in zip(x, y)) / 3 for x, y in zip(a, b))
+def cell_differences(a, b):
+    return [sum(abs(p - q) for p, q in zip(x, y, strict=True)) / 3 for x, y in zip(a, b, strict=True)]
+
+
+def difference_statistics(cells):
+    cells = sorted(cells)
     return [cells[len(cells) // 2], cells[int(len(cells) * 0.95)], cells[-1]]
+
+
+def difference(a, b):
+    return difference_statistics(cell_differences(a, b))
 
 
 def close(a, b, tolerance):
@@ -1949,6 +1992,8 @@ def main():
     exit_mode.add_argument('--clauses', action='store_true', help='check the exit time, content and profiler clauses')
     exit_mode.add_argument('--row', choices=['mac-apple', 'mac-portable', 'chrome'], help='run one exit row through the stops and flythrough')
     exit_mode.add_argument('--compare', action='store_true', help='compare the three submitted exit rows')
+    exit_mode.add_argument('--calibrate-comparison', action='store_true',
+                           help='stage a first three-row baseline after the repeat and controls pass')
     exit_command.add_argument('--target', choices=['mac-metal', 'chrome-webgpu'])
     frames_command = commands.add_parser('frames', help='record whole exit frames with capture off')
     frames_command.add_argument('--target', required=True, choices=['mac-metal', 'chrome-webgpu'])

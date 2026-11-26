@@ -154,6 +154,7 @@ def mac_record(output, first, last, day, startup, load):
     content_path = output / 'drawn.json'
     content = json.loads(content_path.read_text()) if content_path.is_file() else {}
     return {'selections': selections, 'cooked_root': content.get('cooked_root'),
+            'cooked_generation': content.get('generation'),
             'target': 'mac-metal', 'adapter': prepared['adapter'],
             'phase': 'day cycle' if day else 'flythrough', 'capture': 'off', 'startup_proxy': startup,
             'load': load, 'callbacks': timeline, 'misses': misses,
@@ -197,8 +198,9 @@ def chrome_record(output, wasm_hash, day):
                        'available_frame_samples': samples[max(0, earlier - 1):later + 1],
                        'investigation': 'unresolved under load',
                        'evidence_read': 'animation-frame timestamps, JS driver times and available GPU pass samples'})
-    return {'selections': runtime['exit_selections'],
-            'cooked_root': runtime.get('exit_cooked', {}).get('cooked_root'), 'target': 'chrome-webgpu',
+    content = runtime.get('exit_cooked', {})
+    return {'selections': runtime['exit_selections'], 'cooked_root': content.get('cooked_root'),
+            'cooked_generation': content.get('drawn'), 'target': 'chrome-webgpu',
             'phase': 'day cycle' if day else 'flythrough', 'capture': 'off',
             'startup_proxy': runtime['startup_proxy'], 'misses': misses,
             'first_requested_tick': first, 'last_requested_tick': last,
