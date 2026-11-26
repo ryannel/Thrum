@@ -709,7 +709,7 @@ dependencies. In addition:
 - **The depth a river writes (WP4.3).** Lead's decision, 26 November 2026, after two reviews failed WP4.3 on
   one clause: the depth the water writes inside a river stood up to 1.4 mm from `thrum-water-model`'s
   surface in the first and 5.2 mm in the second, against the 0.040 mm of `WATERS` WP4.1's test. Each of WP4.3's three bounds is now set at the size
-  at which its fault shows:
+  at which its fault shows, and the draw is held to the map's wet and dry at each wetting:
   - *The map's rows, at that tolerance.* The map is what the query, the floats and the surface all read
     ([ruling 2](../ARCHITECTURE.md#seam-rulings-for-rivers)). A wrong sample mix or wetting gauge there is
     silent in a frame and costly to a game, and a compute pass reads the rows exactly.
@@ -725,6 +725,14 @@ dependencies. In addition:
     sample or off its chart, which is wrong by centimetres. It is read along each river's whole wet length
     and off the mesh's vertices, because both reviews found their misses between the stations the test had
     chosen.
+  - *Either side of each wetting, drawn wet or dry as the map has it.* Design review, 26 November 2026. The
+    map's rows can be right and the draw wrong: water drawn in the hollow from the upper sample while the
+    ridge is dry is a pool cut off from its source, with every wet place at its height and every join whole.
+    So the scene that proves [the wetting gauges](#a-river-answers-its-source) in the map is drawn too, and
+    read at the hollow and along the dry reach at gauges either side of each wetting: where the map has the
+    place dry the water writes nothing above the ground, and where the map has it wet the written depth is
+    within the same 0.010 m. That allowance holds wherever water is drawn, and excuses none drawn where the
+    map has none.
   - *Across each end's edge, at that tolerance.* A step there is a crack along a line, seen from the bank
     however small, and [risk 5](#risks) is this. The step is what the two sides differ by beyond what the
     model's surface differs by between the same two places, so a wave both sides share cancels and the

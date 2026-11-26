@@ -239,3 +239,12 @@
   The opt-out source matched the pre-WP4 assembly byte for byte. The target record holds the rerun float courses,
   Chrome, captures and paired cost.
   [Target evidence](../../../.orchestrate/evidence/RIVERS/WP4/final-fixes/README.md)
+
+- 2026-11-26 Design review, Must Fix 1 (WP4.3 no longer said the hollow and the dry reach are *drawn* dry):
+  WP4.3 is rewritten in three parts, the map, the draw and the joins. The draw now also holds in the wetting
+  scene: at gauges either side of each wetting, at the hollow's middle and along the reach, the water writes
+  nothing above the ground while the map has the place dry and is within 0.010 m once it is wet. Its `ask`
+  adds the reviewer's case, a right map with the hollow or the reach drawn from the upper sample below its
+  wetting. [The design](DESIGN.md#proof-and-builder-handoff) gives the reason. The map's rows, the 0.010 m
+  along the island's rivers and the joins' bound are unchanged, and no other item changed.
+  [Review](../../../.orchestrate/evidence/RIVERS/design-review.md)
