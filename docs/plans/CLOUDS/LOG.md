@@ -1055,3 +1055,9 @@ are recorded in the [visual inspection](../../../.orchestrate/evidence/CLOUDS/WP
 A full two-minute mist sweep passed on Metal, along with the 100 m walk, ten-second fog pan and mover
 crossing. The elapsed-time previews retain their engine submission times.
 [Motion receipts](../../../.orchestrate/evidence/CLOUDS/WP14/motion/selected.json)
+
+The broken-cloud follow-up replayed the same Metal pose with Shade, Sky, World Light and Ground. The
+diagonal in the haze becomes less distinct when the upper clouds are drawn, before mist contributes.
+A renderer diagnostic kept the clouds' extinction and removed their source radiance, exposing the
+shaft in that pose. The ordinary broken-cloud image still needs a legible shaft reaching the mist.
+[Matched captures and diagnostic controls](../../../.orchestrate/evidence/CLOUDS/WP14/shaft-follow-up/README.md)
