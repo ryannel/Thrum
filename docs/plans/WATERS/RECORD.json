@@ -21,7 +21,10 @@
       "output": 5979,
       "turns": 1
     },
-    "at": "2026-11-26T10:28:47Z"
+    "at": "2026-11-26T10:28:47Z",
+    "items_owed": [
+      "WP25"
+    ]
   },
   "work_packages": {
     "WP1": {
@@ -3114,6 +3117,15 @@
         "checked": "e7ea69dbdddf04ab653b4c73876d78998251178a",
         "at": "2026-11-26T05:16:33Z"
       }
+    },
+    "WP25": {
+      "definitions": "b06040867d9d502d6f04ba720027b581a586be09e04f36f7e7fbc743df91afdd",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "The main-branch check workspace-tests fails, and the script couldn't tell which commit broke it. Find what breaks it, an",
+        "at": "2026-11-26T13:27:17Z"
+      }
     }
   },
   "tasks": [
@@ -3296,11 +3308,15 @@
     {
       "task": "Diagnose WATERS WP9. It has failed review 4 times, 3 of them on an item or a finding an earlier review had failed, so the same items keep failing: the fixes aren't holding, or each fix meets a new defect in an item that may ask for more than the vision and scope document does. Its reviews, oldest first: .orchestrate/evidence/WATERS/WP9-review-1.md, .orchestrate/evidence/WATERS/WP9-review-2.md, .orchestrate/evidence/WATERS/WP9-review-3.md, .orchestrate/evidence/WATERS/WP9-review.md. What failed in each review: review 1 (2026-11-26): Ripple carriage reverses during renewal (WP9.2), new; Bank ripples pulse in phase across the reach (WP9.3), new; A downstream force carries the float through still water (WP9.4), new; Chrome ripple carriage reverses while the transport check passes (WP9.5), new; The paired record skips comparable full-screen pass tripwires (WP9.7), new | review 2 (2026-11-26): Varying chart currents flatten ripple detail (WP9.2), new; Chart queries return slope in the wave coordinate instead of world space (outside the items), new | review 3 (2026-11-26): Still water inherits ripple drift from moving water on the same chart (WP9.2), new | review 4 (2026-11-26): Moving ripples follow the mean speed along a lane (WP9.2), new; Chart queries return slope in the wave coordinate instead of world space (outside the items), repeated. A plan you keep ends with `KEEP WATERS WP9: ...`.\n\nLead's view: the WP9.2 findings are each new and each finer than the last (now a speed exchange over four metres between two moving lanes, measured by marker fitting). The bar is the look of shipped high-end games and proof proportional to risk, not exactness: narrow WP9.2 to what a player sees (ripples and foam visibly carried with the local current, still water still, no reversal or pulsing), checked at a visible scale, and record finer per-lane speed fidelity as a known limitation or a later item. The world-space slope defect on the bounded track is a real interface bug (a float tilts wrongly), so keep it as an item.",
       "at": "2026-11-26T10:24:11Z"
+    },
+    {
+      "task": "The main-branch check workspace-tests fails, and the script couldn't tell which commit broke it. Find what breaks it, and plan the fix in the module whose code it is, in its plan or as its next work package. Lead's reading of .git/orchestrate/main-checks/workspace-tests/logs/20261126-135754-ba611f39c2a7-84533-349.stderr: nothing asserts wrong; the run was under heavy host load and 60 tests timed out at 10 s, and two still timed out alone at 30 s: thrum-river-model::it chop::each_sample_of_a_river_file_carries_its_own_gains and thrum-water::surf_gpu many_component_metal_cut_matches_the_model_with_grouped_or_single_stations (the water one passed alone in 8.95 s earlier today with the GPU lock). The owner wants the fastest possible workspace suite: small worlds, CPU first, long work in the long-tests tier, no longer merge checks. Plan the fix that makes those two tests fast or moves them to the right tier, in the owning modules (WATERS, RIVERS); don't raise the timeouts.",
+      "at": "2026-11-26T13:27:17Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-26T10:24:11Z"
+    "at": "2026-11-26T13:27:17Z"
   },
   "design_history": [
     {
