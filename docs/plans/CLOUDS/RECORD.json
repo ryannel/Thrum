@@ -1761,7 +1761,55 @@
     },
     "WP14": {
       "definitions": "0228f7825f1cb465bc19135a2747c604510fc2218b2edad4bff29a43cf6b3e8e",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "d772a8f24365efb0fed9fee139276d52cd3173bc",
+          "review": ".orchestrate/evidence/CLOUDS/WP14-review.md",
+          "items": {
+            "WP14.1": "pass",
+            "WP14.2": "pass",
+            "WP14.3": "fail",
+            "WP14.4": "pass",
+            "WP14.5": "pass",
+            "WP14.6": "pass",
+            "WP14.7": "pass",
+            "WP14.8": "pass",
+            "WP14.9": "pass",
+            "WP14.10": "fail",
+            "WP14.11": "pass",
+            "WP14.13": "pass"
+          },
+          "findings": [
+            {
+              "name": "Ground attenuation disappears at 96 m inside a deeper bank",
+              "item": "WP14.3",
+              "repeat": false
+            },
+            {
+              "name": "Mist cost record omits Ground-enabled GPU allocations",
+              "item": "WP14.10",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 177163,
+            "cached": 9575936,
+            "output": 21571,
+            "turns": 1
+          },
+          "at": "2026-11-26T18:17:52Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its 4 Must Fix find",

@@ -1388,8 +1388,8 @@
     {
       "id": "WP14",
       "name": "Mist lies in the valley's hollows and fades the land near the camera, in the land's own light",
-      "status": "ready_for_review",
-      "failed_reviews": 0,
+      "status": "in_progress",
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
@@ -1406,8 +1406,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP14/CORRECTNESS.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/WP14-review.md"
         },
         {
           "id": "WP14.2",
@@ -1418,8 +1418,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP14/CORRECTNESS.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/WP14-review.md"
         },
         {
           "id": "WP14.3",
@@ -1428,10 +1428,10 @@
           "ask": "Does the test show both wrong substitutes fail? Does one case put a surface receiver in a ridge's shadow and show its shading unchanged by the surface visibility?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP14/CORRECTNESS.md",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/CLOUDS/WP14-review.md"
         },
         {
           "id": "WP14.4",
@@ -1442,8 +1442,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP14/CORRECTNESS.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/WP14-review.md"
         },
         {
           "id": "WP14.5",
@@ -1452,8 +1452,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP14/VISUAL.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/WP14-review.md"
         },
         {
           "id": "WP14.6",
@@ -1462,8 +1462,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP14/VISUAL.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/WP14-review.md"
         },
         {
           "id": "WP14.7",
@@ -1473,8 +1473,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP14/VISUAL.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/WP14-review.md"
         },
         {
           "id": "WP14.8",
@@ -1483,8 +1483,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP14/VISUAL.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/WP14-review.md"
         },
         {
           "id": "WP14.9",
@@ -1493,8 +1493,8 @@
           "target": "chrome-webgpu",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP14/VISUAL.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/WP14-review.md"
         },
         {
           "id": "WP14.10",
@@ -1502,10 +1502,10 @@
           "check": "python3 scripts/cloud_cost.py check --scene mist-near",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP14/COST.md",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/CLOUDS/WP14-review.md"
         },
         {
           "id": "WP14.11",
@@ -1514,8 +1514,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP14/CORRECTNESS.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/WP14-review.md"
         },
         {
           "id": "WP14.13",
@@ -1525,8 +1525,20 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP14/CORRECTNESS.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/WP14-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "name": "Ground attenuation disappears at 96 m inside a deeper bank",
+          "item": "WP14.3",
+          "repeat": false
+        },
+        {
+          "name": "Mist cost record omits Ground-enabled GPU allocations",
+          "item": "WP14.10",
+          "repeat": false
         }
       ]
     },
