@@ -4,9 +4,7 @@ mod world_light_fixture;
 
 use std::time::Duration;
 use thrum_render::{
-    atmosphere::AtmosphereFrame,
-    present::SurfaceProfile,
-    runtime::SurfaceOutput,
+    atmosphere::AtmosphereFrame, present::SurfaceProfile, runtime::SurfaceOutput,
     synthetic::FrameLighting,
 };
 use world_light_fixture::{BINDINGS, prepare, prepare_host, probe};
