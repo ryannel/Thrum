@@ -182,7 +182,7 @@ pub(in crate::window) async fn run(
         interface_text: None,
         menu: None,
         capture_route: None,
-        governor_enabled: request.still_governor,
+        governor_enabled: false,
         capture_eye: None,
         capture_cooked: None,
         cloud_capture: false,
@@ -205,6 +205,16 @@ pub(in crate::window) async fn run(
         .map(|arm| creation::Ready::mark(arm, driver.host_mut(), &capabilities))
         .transpose()?;
     driver.host_mut().finish_preparation();
+    if request.still_governor
+        && !driver
+            .host_mut()
+            .enable_governor(thrum_render::governor::DisplayRecord {
+                interval: Duration::ZERO,
+                thermal: thrum_render::governor::ThermalState::Nominal,
+            })
+    {
+        return Err("the prepared exit scene refused the still governor".to_owned());
+    }
     if let Some(eye) = request.fixed_eye {
         if moving_route.is_some() || motion_frames.is_some() {
             return Err("a fixed eye requires a still capture".to_owned());
