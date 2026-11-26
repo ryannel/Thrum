@@ -9,6 +9,8 @@ use thrum_render::{
 
 pub(crate) const PASS: &str = "cloud sky overlay";
 pub(crate) const DEFAULT_OVERLAY_SLICES: u32 = 8;
+// A 0.1-degree step distinguishes normal solar motion from a fast scrub.
+const FAST_SUN_STEP: f32 = 0.1_f32.to_radians();
 
 #[derive(Clone, Copy, PartialEq)]
 struct OverlayInput {
@@ -23,6 +25,12 @@ impl OverlayInput {
         self.epoch == other.epoch
             && self.sun == other.sun
             && self.camera[1].to_bits() == other.camera[1].to_bits()
+    }
+
+    fn solar_step(self, next: Self) -> bool {
+        let direction = glam::Vec3::from_array(self.sun.toward_sun);
+        let next_direction = glam::Vec3::from_array(next.sun.toward_sun);
+        direction.distance_squared(next_direction) > FAST_SUN_STEP * FAST_SUN_STEP
     }
 }
 
@@ -207,7 +215,12 @@ impl Overlay {
             .committed
             .is_none_or(|old| !old.hemisphere_matches(input));
         let height = self.texture.height();
-        let full = reset || (changed && frame.time.capture);
+        // The cube stores absolute in-scatter. Retaining strips lit by an
+        // earlier Sun makes the diffuse light and haze meter lag behind the
+        // current clear sky during a fast time-of-day edit.
+        let full = reset
+            || (changed && frame.time.capture)
+            || self.committed.is_some_and(|old| old.solar_step(input));
         let row = if full {
             0
         } else {

@@ -108,18 +108,19 @@ pub(super) fn settings(knobs: Vec<QualityKnob>) -> Result<QualitySettings, Error
 }
 
 impl Shade {
-    pub(super) fn extend_quality(
+    pub(super) fn configure_quality(
         &mut self,
-        additions: impl IntoIterator<Item = QualityKnob>,
+        replacements: impl IntoIterator<Item = QualityKnob>,
     ) -> Result<(), Error> {
-        self.quality = settings(
-            self.quality
-                .knobs()
-                .iter()
-                .cloned()
-                .chain(additions)
-                .collect(),
-        )?;
+        let mut knobs = self.quality.knobs().to_vec();
+        for replacement in replacements {
+            if let Some(knob) = knobs.iter_mut().find(|knob| knob.name == replacement.name) {
+                *knob = replacement;
+            } else {
+                knobs.push(replacement);
+            }
+        }
+        self.quality = settings(knobs)?;
         Ok(())
     }
 

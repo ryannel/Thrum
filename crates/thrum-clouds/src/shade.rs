@@ -183,23 +183,23 @@ impl Shade {
     pub fn input(&self) -> WeatherInput {
         self.input.clone()
     }
-    /// Add the visible Sky capability. Shadow-only scenes allocate none of it.
+    /// Configure or replace the visible Sky capability. Shadow-only scenes allocate none of it.
     /// # Errors
     /// Refuses unsupported refresh or local-light sample counts.
     pub fn with_sky(mut self, profile: crate::SkyProfile) -> Result<Self, Error> {
         if ![1, 2, 4].contains(&profile.refresh_stride) || profile.light_samples > 3 {
             return Err(Error::Unsupported("Sky refresh or local-light samples"));
         }
-        self.extend_quality(quality::sky(profile))?;
+        self.configure_quality(quality::sky(profile))?;
         self.sky = Some(profile);
         Ok(self)
     }
-    /// Attach Shapes for the ground path, and for the visible layer when it is declared.
+    /// Configure or replace Shapes for the ground path and any declared visible layer.
     /// # Errors
     /// Rejects an invalid placement range or volume capacity.
     pub fn with_shapes(mut self, config: ShapesConfig) -> Result<Self, Error> {
         config.validate()?;
-        self.extend_quality([quality::placed()])?;
+        self.configure_quality([quality::placed()])?;
         self.shapes = Some(config);
         Ok(self)
     }

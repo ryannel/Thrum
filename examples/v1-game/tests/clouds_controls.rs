@@ -3,6 +3,66 @@ use thrum_controls::Value;
 use v1_game::{clouds::WeatherPreset, controls::GameControls};
 
 #[test]
+fn valid_sky_and_shapes_profiles_can_be_replaced_before_preparation() {
+    use std::sync::Arc;
+    use thrum_asset_gpu::ProductLease;
+    use thrum_cloud_model::{PlacedLibrary, PlacedSlab, Shape};
+    use thrum_clouds::{Shade, ShapesConfig, SkyProfile};
+    use thrum_render::contribution::SceneContribution;
+
+    let sky = SkyProfile {
+        extent: [64, 36],
+        step: 15.0,
+        refresh_stride: 1,
+        light_samples: 3,
+    };
+    let shape = Shape::new([2; 3], 1.0, vec![1.0; 8]).expect("valid shape");
+    let library = PlacedLibrary::new(
+        vec![PlacedSlab {
+            extent: 2.0,
+            floor: 0.0,
+            heading: 0.0,
+            footprint: Arc::new(shape.footprint().clone()),
+        }],
+        Vec::new(),
+    )
+    .expect("valid library");
+    let shapes = ShapesConfig {
+        library: Arc::new(library),
+        lease: ProductLease::default(),
+        range: [100.0, 200.0],
+        capacity: 1,
+    };
+    let shade = || Shade::new(v1_game::clouds::shade_config()).expect("valid shade");
+    let replacement_sky = SkyProfile {
+        refresh_stride: 2,
+        light_samples: 1,
+        ..sky
+    };
+    let replacement_shapes = ShapesConfig {
+        range: [200.0, 300.0],
+        ..shapes.clone()
+    };
+    let reconfigured = shade()
+        .with_sky(sky)
+        .expect("initial sky")
+        .with_shapes(shapes)
+        .expect("initial shapes")
+        .with_sky(replacement_sky)
+        .expect("replacement sky")
+        .with_shapes(replacement_shapes.clone())
+        .expect("replacement shapes");
+    let fresh = shade()
+        .with_sky(replacement_sky)
+        .expect("valid sky")
+        .with_shapes(replacement_shapes)
+        .expect("valid shapes");
+    let descriptors = reconfigured.quality_knobs();
+    assert_eq!(descriptors.len(), 10);
+    assert_eq!(descriptors, fresh.quality_knobs());
+}
+
+#[test]
 fn mac_and_web_share_one_cloud_control_declaration() {
     let controls = GameControls::with_clouds(Some(WeatherPreset::Fair.parameters()), true)
         .expect("valid qualification input");
