@@ -33,7 +33,7 @@ impl Probe {
             source: wgpu::ShaderSource::Wgsl(
                 format!(
                     "{}\n{}",
-                    super::prepare::trace_shader(&layer.environment, false, false),
+                    super::prepare::trace_shader(&layer.environment, false, false, false),
                     include_str!("diagnostic.wgsl")
                 )
                 .into(),

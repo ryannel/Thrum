@@ -160,7 +160,7 @@ pub enum CloudSelection {
 }
 
 impl CloudSelection {
-    pub(crate) const NAMES: &str = "off, shade, sky, world-light, ground-clear, ground-half, ground, ground-fog, ground-fog-edge, ground-fog-outside or ground-mist-bank";
+    pub(crate) const NAMES: &str = "off, shade, sky, world-light, ground-clear, ground-half, ground, ground-fog, ground-fog-edge, ground-fog-outside, ground-mist-bank, ground-mist-far, ground-low-deck or ground-bank-<metres>";
 
     pub(crate) fn named(name: &str) -> Option<Self> {
         Some(match name {
@@ -175,8 +175,41 @@ impl CloudSelection {
             "ground-fog-edge" => Self::Ground(GroundWeather::FogEdge),
             "ground-fog-outside" => Self::Ground(GroundWeather::FogOutside),
             "ground-mist-bank" => Self::Ground(GroundWeather::MistAndBank),
+            "ground-mist-far" => Self::Ground(GroundWeather::FarMist),
+            "ground-low-deck" => Self::Ground(GroundWeather::LowDeck),
+            "ground-bank-200" => Self::Ground(GroundWeather::HandoverBank(200)),
+            "ground-bank-350" => Self::Ground(GroundWeather::HandoverBank(350)),
+            "ground-bank-450" => Self::Ground(GroundWeather::HandoverBank(450)),
+            "ground-bank-700" => Self::Ground(GroundWeather::HandoverBank(700)),
             _ => return None,
         })
+    }
+
+    pub(crate) fn profile(self, shapes: Option<&PlacedSky>) -> ShadeConfig {
+        let mut config = shapes.map_or_else(shade_config, PlacedSky::profile);
+        if self == Self::Ground(GroundWeather::LowDeck) {
+            let deck = Type {
+                base: 140.0,
+                depth: [74.0, 95.0],
+                liquid_water: 0.000_40,
+                profile: [0.13, 0.25],
+                ..config.types[0]
+            };
+            config.types.fill(deck);
+        }
+        config
+    }
+
+    pub(crate) fn weather(self, initial: Parameters) -> Parameters {
+        if self == Self::Ground(GroundWeather::LowDeck) {
+            Parameters {
+                coverage: 1.0,
+                kind: 0.0,
+                ..initial
+            }
+        } else {
+            initial
+        }
     }
 
     pub(crate) fn world_light(self) -> bool {
@@ -199,11 +232,12 @@ pub(crate) fn with_shade(
     sky: Option<thrum_clouds::SkyProfile>,
     shapes: Option<&PlacedSky>,
     ground: Option<&thrum_clouds::GroundConfig>,
+    selection: CloudSelection,
 ) -> Result<Box<dyn thrum_render::contribution::SceneContribution>, String> {
     let Some(input) = input else {
         return Ok(contribution);
     };
-    let profile = shapes.map_or_else(shade_config, PlacedSky::profile);
+    let profile = selection.profile(shapes);
     let shade = thrum_clouds::Shade::new(profile)
         .map_err(|error| error.to_string())?
         .with_input(input.clone());

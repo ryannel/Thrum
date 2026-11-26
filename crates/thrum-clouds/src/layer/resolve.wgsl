@@ -1,10 +1,10 @@
 @group(2) @binding(0) var<uniform> cloud:CloudParams;
-@group(2) @binding(1) var fresh:texture_2d<f32>;
-@group(2) @binding(2) var fresh_front:texture_2d<f32>;
-@group(2) @binding(3) var previous:texture_2d<f32>;
-@group(2) @binding(4) var previous_front:texture_2d<f32>;
-@group(2) @binding(5) var next:texture_storage_2d<rgba16float,write>;
-@group(2) @binding(6) var next_front:texture_storage_2d<rgba16float,write>;
+@group(2) @binding(1) var fresh:texture_2d_array<f32>;
+@group(2) @binding(2) var fresh_front:texture_2d_array<f32>;
+@group(2) @binding(3) var previous:texture_2d_array<f32>;
+@group(2) @binding(4) var previous_front:texture_2d_array<f32>;
+@group(2) @binding(5) var next:texture_storage_2d_array<rgba16float,write>;
+@group(2) @binding(6) var next_front:texture_storage_2d_array<rgba16float,write>;
 
 struct CloudFresh {
     transport: vec4<f32>,
@@ -16,8 +16,8 @@ struct CloudFresh {
 
 fn cloud_fresh(at: vec2<i32>, offset: vec2<i32>, stride: i32, traced: bool) -> CloudFresh {
     if traced {
-        let value = textureLoad(fresh, at, 0);
-        let front = textureLoad(fresh_front, at, 0);
+        let value = textureLoad(fresh, at,0,0);
+        let front = textureLoad(fresh_front, at,0,0);
         return CloudFresh(value, front.x, front.y, value, value);
     }
 
@@ -32,34 +32,43 @@ fn cloud_fresh(at: vec2<i32>, offset: vec2<i32>, stride: i32, traced: bool) -> C
     let p10 = vec2(hi.x, lo.y);
     let p01 = vec2(lo.x, hi.y);
     let f = fract(grid);
-    let v00 = textureLoad(fresh, lo, 0);
-    let v10 = textureLoad(fresh, p10, 0);
-    let v01 = textureLoad(fresh, p01, 0);
-    let v11 = textureLoad(fresh, hi, 0);
+    let v00 = textureLoad(fresh, lo,0,0);
+    let v10 = textureLoad(fresh, p10,0,0);
+    let v01 = textureLoad(fresh, p01,0,0);
+    let v11 = textureLoad(fresh, hi,0,0);
     let value = mix(mix(v00, v10, f.x), mix(v01, v11, f.x), f.y);
 
     // Clear samples contribute transport but have no front to interpolate.
     let front_weights = vec4((1.0 - f.x) * (1.0 - f.y), f.x * (1.0 - f.y),
                              (1.0 - f.x) * f.y, f.x * f.y)
         * (1.0 - vec4(v00.a, v10.a, v01.a, v11.a));
-    let fronts = vec4(textureLoad(fresh_front, lo, 0).x,
-                      textureLoad(fresh_front, p10, 0).x,
-                      textureLoad(fresh_front, p01, 0).x,
-                      textureLoad(fresh_front, hi, 0).x);
+    let fronts = vec4(textureLoad(fresh_front, lo,0,0).x,
+                      textureLoad(fresh_front, p10,0,0).x,
+                      textureLoad(fresh_front, p01,0,0).x,
+                      textureLoad(fresh_front, hi,0,0).x);
     let opacity = dot(front_weights, vec4(1.0));
     let distance = dot(fronts, front_weights) / select(opacity, 1.0, opacity == 0.0);
     return CloudFresh(value, distance, opacity, min(min(v00, v10), min(v01, v11)),
                      max(max(v00, v10), max(v01, v11)));
 }
-fn cloud_history(field:texture_2d<f32>,uv:vec2<f32>)->vec4<f32> {
+fn cloud_history(field:texture_2d_array<f32>,uv:vec2<f32>)->vec4<f32> {
     let size=vec2<i32>(cloud.active_extent);let at=uv*vec2<f32>(size)-0.5;
     let lo=vec2<i32>(floor(at));let f=fract(at);
-    return mix(mix(textureLoad(field,clamp(lo,vec2(0),size-1),0),textureLoad(field,clamp(lo+vec2(1,0),vec2(0),size-1),0),f.x),mix(textureLoad(field,clamp(lo+vec2(0,1),vec2(0),size-1),0),textureLoad(field,clamp(lo+vec2(1),vec2(0),size-1),0),f.x),f.y);
+    return mix(mix(textureLoad(field,clamp(lo,vec2(0),size-1),0,0),textureLoad(field,clamp(lo+vec2(1,0),vec2(0),size-1),0,0),f.x),mix(textureLoad(field,clamp(lo+vec2(0,1),vec2(0),size-1),0,0),textureLoad(field,clamp(lo+vec2(1),vec2(0),size-1),0,0),f.x),f.y);
 }
 @compute @workgroup_size(8,8)
 fn resolve(@builtin(global_invocation_id) id:vec3<u32>) {
     let size=cloud.active_extent;if any(id.xy>=size) {return;}
     let at=vec2<i32>(id.xy);
+    if cloud.per_pixel_stops != 0u {
+        for (var slot = 0; slot < 4; slot++) {
+            let value = textureLoad(fresh, at, slot, 0);
+            let metadata = textureLoad(fresh_front, at, slot, 0);
+            textureStore(next, at, slot, value);
+            textureStore(next_front, at, slot, vec4(metadata.xy, metadata.y, metadata.w));
+        }
+        return;
+    }
     let stride = cloud.temporal.z;
     let offset = vec2(cloud.temporal.y % stride, cloud.temporal.y / stride);
     let traced = cloud.temporal.w != 0u || all(id.xy % stride == offset);
@@ -79,7 +88,7 @@ fn resolve(@builtin(global_invocation_id) id:vec3<u32>) {
         let sky_at = vec2<i32>(clamp(sky_uv * vec2<f32>(size), vec2(0.0), vec2<f32>(size - 1u)));
         var distance = sample.front;
         if !traced && sky_clip.w > 0.0 && all(sky_uv >= vec2(0.0)) && all(sky_uv <= vec2(1.0)) {
-            let retained_front = textureLoad(previous_front, sky_at, 0);
+            let retained_front = textureLoad(previous_front, sky_at,0,0);
             if retained_front.y > 0.0 {
                 distance = retained_front.x;
             }
@@ -94,13 +103,13 @@ fn resolve(@builtin(global_invocation_id) id:vec3<u32>) {
             // A vanished front is a disocclusion, never a carried opaque cloud.
             let displacement = (old_uv - uv) * vec2<f32>(size);
             let old_at = vec2<i32>(clamp(old_uv * vec2<f32>(size), vec2(0.0), vec2<f32>(size - 1u)));
-            let retained_front = textureLoad(previous_front, old_at, 0);
+            let retained_front = textureLoad(previous_front, old_at,0,0);
             let max_age = f32(stride * stride - 1u);
             if !traced && all(abs(displacement) < vec2(0.5)) && retained_front.w < max_age {
                 // Keep a stable texel through the refresh cycle. Repeated
                 // interpolation or clipping to the changing sparse lattice
                 // would erase detail that the current phase did not sample.
-                value = textureLoad(previous, old_at, 0);
+                value = textureLoad(previous, old_at,0,0);
                 front = retained_front.x;
                 age = retained_front.w + 1.0;
                 reactive = 0.0;
@@ -121,6 +130,6 @@ fn resolve(@builtin(global_invocation_id) id:vec3<u32>) {
             }
         }
     }
-    textureStore(next,at,value);
-    textureStore(next_front,at,vec4(front,1.0-value.a,reactive,age));
+    textureStore(next,at,0,value);
+    textureStore(next_front,at,0,vec4(front,1.0-value.a,reactive,age));
 }

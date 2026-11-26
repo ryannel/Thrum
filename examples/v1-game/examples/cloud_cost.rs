@@ -296,7 +296,11 @@ fn ray_statistics(
                 rows_per_image: Some(texture.height()),
             },
         },
-        texture.size(),
+        wgpu::Extent3d {
+            width: texture.width(),
+            height: texture.height(),
+            depth_or_array_layers: 1,
+        },
     );
     let (send, receive) = std::sync::mpsc::channel();
     encoder.map_buffer_on_submit(&output, wgpu::MapMode::Read, .., move |r| {
@@ -314,10 +318,19 @@ fn ray_statistics(
     let refresh = sky.trace_stride;
     let phase = sky.submitted_frames.wrapping_sub(1) % (refresh * refresh);
     let mut samples = Vec::new();
-    for y in 0..texture.height() {
-        for x in 0..texture.width() {
+    let [width, height] = sky.active_extent;
+    let requested = sky.refresh_stride;
+    let requested_phase = sky.submitted_frames.wrapping_sub(1) % (requested * requested);
+    let mut out_of_turn = 0;
+    for y in 0..height {
+        for x in 0..width {
             if x % refresh != phase % refresh || y % refresh != phase / refresh {
                 continue;
+            }
+            if x % requested != requested_phase % requested
+                || y % requested != requested_phase / requested
+            {
+                out_of_turn += 1;
             }
             let at = (y * stride + x * 8 + 4) as usize;
             let word = u32::from(u16::from_le_bytes([mapped[at], mapped[at + 1]]));
@@ -335,6 +348,6 @@ fn ray_statistics(
         return Err("no traced rays in selected phase".into());
     }
     Ok(
-        serde_json::json!({"scope":"last completed capture-off frame, selected fresh texels, readback after timed interval","rays_traced":rays,"mean_samples":samples.iter().map(|&n|f64::from(n)).sum::<f64>()/f64::from(rays),"p95_samples":samples[(samples.len()*95/100).min(samples.len()-1)],"refresh_stride":refresh,"refresh_fraction":1.0/f64::from(refresh*refresh)}),
+        serde_json::json!({"scope":"last completed capture-off frame, selected fresh texels, readback after timed interval","rays_traced":rays,"rays_beyond_refresh_phase":out_of_turn,"mean_samples":samples.iter().map(|&n|f64::from(n)).sum::<f64>()/f64::from(rays),"p95_samples":samples[(samples.len()*95/100).min(samples.len()-1)],"refresh_stride":refresh,"refresh_fraction":1.0/f64::from(refresh*refresh)}),
     )
 }

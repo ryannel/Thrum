@@ -854,10 +854,73 @@ def validate_mist_near(record):
         raise ValueError('mist-near tripwire investigation missing')
 
 
+def mist_far_cost():
+    """Replay WP14's 1440p Metal dawn camera with far mist and the low deck."""
+    baseline = json.loads(MIST_NEAR_FIXTURE.read_text())
+    validate_mist_near(baseline)
+    earlier = baseline['runs'][-1]
+    scratch = ROOT / 'tmp/clouds-wp15/cost'
+    scratch.mkdir(parents=True, exist_ok=True)
+    run(['cargo', 'build', '--release', '--locked', '--offline', '-p', 'v1-game',
+         '--example', 'cloud_cost'], timeout=1200)
+    run(['cargo', 'build', '--release', '--locked', '--offline', '-p', 'thrum-cook',
+         '--bin', 'thrum-cook'], timeout=1200)
+    valley = scratch / 'valley'
+    if not valley.exists():
+        run(['target/release/thrum-cook', 'cook', 'examples/v1-game/assets/showcase', str(valley)], timeout=180)
+    before = os.getloadavg()
+    rows = []
+    for selection, preset in [('ground-mist-far', 'clear'), ('ground-low-deck', 'overcast')]:
+        environment = dict(os.environ, THRUM_SCENE='valley', THRUM_ASSET_STORE=str(valley),
+                           THRUM_CLOUDS=selection, THRUM_CLOUD_PRESET=preset, THRUM_CLOUD_WIND='0',
+                           THRUM_CLOUD_TIME_SCALE='1', THRUM_CAMERA_X='35', THRUM_CAMERA_Z='16',
+                           THRUM_CAMERA_HEIGHT='246')
+        row = json.loads(run(['target/release/examples/cloud_cost', '--device-profile', 'portable',
+                              '--dawn'], env=environment, timeout=360))
+        row['selection'] = selection
+        if (row['extent'] != [2560, 1440] or row['capture'] or row['frames'] < 30
+                or row['view'] != earlier['view'] or row['view_angles'] != earlier['view_angles']
+                or 'Metal' not in row['adapter'] or not positive(row['whole_frame_gpu_ns'])):
+            raise ValueError('mist-far requires the retained WP14 dawn pose and capture-off Metal timings')
+        stats = row['ray_statistics']
+        if not stats or any(not positive(stats[key]) for key in ('rays_traced', 'mean_samples', 'p95_samples')):
+            raise ValueError(f'{selection} is missing the trace work record')
+        passes = row['pass_gpu_ns']
+        for name in ('cloud trace', 'cloud resolve', 'cloud compose', 'cloud ground band',
+                     'cloud medium coefficients', 'atmosphere aerial perspective'):
+            if not any(name in key and positive(ns) for key, ns in passes.items()):
+                raise ValueError(f'{selection} is missing the positive timing for {name}')
+        reference = earlier['ray_statistics']
+        examples = {}
+        if row['whole_frame_gpu_ns'] > 1e9 / 120:
+            examples['whole frame'] = (
+                f"{row['whole_frame_gpu_ns']/1e6:.3f} ms against 8.333 ms. WP14's occupied arm "
+                f"took {earlier['whole_frame_gpu_ns']/1e6:.3f} ms. The paired trace counts and "
+                "named pass times show where work moved. Device load is recorded for each run."
+            )
+        for name, ns in passes.items():
+            old = earlier['pass_gpu_ns'].get(name, 0)
+            if old > 0 and ns >= 1.25 * old:
+                examples[name] = (
+                    f"Pass increased from {old/1e6:.3f} to {ns/1e6:.3f} ms. "
+                    f"Trace rays {reference['rays_traced']} to {stats['rays_traced']}, mean samples "
+                    f"{reference['mean_samples']:.2f} to {stats['mean_samples']:.2f}. "
+                    "Ground trace stores four surface stops and the low deck uses the weather columns "
+                    "in the medium pass. Timing includes shared-device scheduling."
+                )
+        row['investigations'] = examples
+        rows.append(row)
+    return {
+        'commit': run(['git', 'rev-parse', 'HEAD']), 'machine': platform.platform(),
+        'paired_wp14': {'commit': baseline['commit'], 'load': baseline['load'], 'run': earlier},
+        'load': {'before': before, 'after': os.getloadavg()}, 'runs': rows,
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('command', choices=['record', 'check', 'refuse', 'cadence', 'hold'])
-    parser.add_argument('--scene', choices=[*FIXTURES, 'wind', 'scripted', 'mist-near'], required=True)
+    parser.add_argument('--scene', choices=[*FIXTURES, 'wind', 'scripted', 'mist-near', 'mist-far'], required=True)
     parser.add_argument('--previous', type=Path, help='previous renderer cost record at the same low-Sun view')
     parser.add_argument('--output', type=Path, help='write a cost record to an alternate destination')
     parser.add_argument('--resume', action='store_true',
@@ -871,6 +934,12 @@ def main():
     if args.command in ('cadence', 'hold') and args.scene == 'wind':
         from cloud_cadence_capture import run_wind
         return run_wind(args.command, args.output, resume=args.resume)
+    if args.scene == 'mist-far' and args.command in ('check', 'record'):
+        encoded = json.dumps(mist_far_cost(), indent=2) + '\n'
+        if args.output:
+            args.output.write_text(encoded)
+        print(encoded, end='')
+        return
     if args.scene == 'mist-near' and args.command in ('check', 'record'):
         if args.command == 'check':
             validate_mist_near(json.loads(MIST_NEAR_FIXTURE.read_text()))

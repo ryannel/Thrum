@@ -65,7 +65,14 @@ fn trace_overlay(@builtin(global_invocation_id) id: vec3<u32>) {
             let world = camera + ray * at;
             var sigma = 0.0;
             var source = vec3(0.0);
-            if in_cloud {
+            if in_cloud && cloud_deck_active() {
+                let deck = cloud_deck_light(world, ray, atmosphere.sun_lux.xyz, at, transmission);
+                sigma = deck.extinction;
+                if sigma > 0.0 {
+                    source = (deck.ambient
+                        + sun_irradiance(world) * deck.surface_visibility * deck.solar_kernel) / sigma;
+                }
+            } else if in_cloud {
                 let footprint = max(step * 0.5, at / f32(size.y));
                 let column = cloud_column(point);
                 let placed = cloud_placed(point, footprint);

@@ -20,6 +20,12 @@ pub enum GroundWeather {
     FogOutside,
     /// Full mist and a thinner bank in the same valley.
     MistAndBank,
+    /// A valley-wide dawn mist with a separate bank at the far bend.
+    FarMist,
+    /// Cloud below the valley's summits, with dawn mist beneath it.
+    LowDeck,
+    /// A bank on the valley shelf at an authored distance from the inspection pose.
+    HandoverBank(u16),
 }
 
 impl GroundWeather {
@@ -28,8 +34,10 @@ impl GroundWeather {
             Self::Clear => vec![0.0, 0.0],
             Self::HalfMist => vec![0.5, 0.0],
             Self::Mist => vec![1.0, 0.0],
-            Self::Fog | Self::FogEdge | Self::FogOutside => vec![0.0, 1.0],
+            Self::Fog | Self::FogEdge | Self::FogOutside | Self::HandoverBank(_) => vec![0.0, 1.0],
             Self::MistAndBank => vec![1.0, 0.25],
+            Self::FarMist => vec![1.0, 0.35],
+            Self::LowDeck => vec![0.75, 0.35],
         }
     }
 }
@@ -39,6 +47,24 @@ pub(crate) fn valley(preset: GroundWeather) -> Result<GroundConfig, Error> {
         GroundWeather::FogEdge => 49.0,
         GroundWeather::FogOutside => 72.0,
         _ => 0.0,
+    };
+    let (bank_centre, bank_radius, bank_depth, bank_softness, bank_noise) = match preset {
+        GroundWeather::FarMist | GroundWeather::LowDeck => {
+            ([120.0, -2350.0], [1050.0, 340.0], 88.0, 39.0, 0.15)
+        }
+        // The fixed eye is at z = 810. The near face starts one radius
+        // north of the centre and the camera sees both a shoulder and its flank.
+        GroundWeather::HandoverBank(distance) => (
+            [
+                -510.0 + 0.14 * (f64::from(distance) + 150.0),
+                660.0 - f64::from(distance),
+            ],
+            [118.0, 150.0],
+            60.0,
+            16.0,
+            0.0,
+        ),
+        _ => ([bank_centre_x, 8.0], [60.0, 47.0], 32.0, 11.0, 0.08),
     };
     let fog = Ground::new(
         GroundProfile {
@@ -50,9 +76,17 @@ pub(crate) fn valley(preset: GroundWeather) -> Result<GroundConfig, Error> {
         },
         vec![
             Fog {
-                liquid_water: 0.000_054,
+                liquid_water: if preset == GroundWeather::FarMist {
+                    0.000_012
+                } else {
+                    0.000_054
+                },
                 droplet_radius: 10e-6,
-                depth: 36.0,
+                depth: if preset == GroundWeather::FarMist {
+                    37.0
+                } else {
+                    36.0
+                },
                 depression: 12.0,
                 softness: 18.0,
                 pooling: 1.0,
@@ -67,17 +101,17 @@ pub(crate) fn valley(preset: GroundWeather) -> Result<GroundConfig, Error> {
             Fog {
                 liquid_water: (3.912 / 50.0 - 3.912 / 100_000.0) * (2.0 * 1000.0 * 10e-6 / 3.0),
                 droplet_radius: 10e-6,
-                depth: 32.0,
+                depth: bank_depth,
                 depression: 0.0,
-                softness: 11.0,
+                softness: bank_softness,
                 pooling: 0.0,
                 drifting: true,
                 affinity: Affinity::Land,
                 // The lookout bank thickens across the level shelf, giving
                 // the scene a shallow edge before the polished receiver.
-                centre: [bank_centre_x, 8.0],
-                radius: [60.0, 47.0],
-                noise: 0.08,
+                centre: bank_centre,
+                radius: bank_radius,
+                noise: bank_noise,
                 noise_scale: 30.0,
                 radiative: false,
             },

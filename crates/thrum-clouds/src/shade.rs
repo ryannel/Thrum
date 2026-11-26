@@ -403,6 +403,13 @@ impl SceneContribution for Shade {
                     .phases
                     .upload(&gpu.queue, environment.true_sun.angular_radius_radians)?;
                 ground.targets.band.upload(&gpu.queue, camera, travel);
+                if ground.targets.medium.sky_params.is_some() {
+                    ground
+                        .targets
+                        .medium
+                        .lighting
+                        .upload(&gpu.queue, environment.true_sun.angular_radius_radians)?;
+                }
             }
             Ok(())
         });
@@ -419,6 +426,7 @@ impl SceneContribution for Shade {
                         frame,
                         gpu.shapes.as_deref(),
                         field_overlay,
+                        gpu.ground.as_ref().map(|ground| &ground.field),
                     )
                     .is_err()
             {

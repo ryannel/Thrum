@@ -48,7 +48,6 @@ fn ground_light(point: vec3<f32>, ray: vec3<f32>, true_sun: vec3<f32>,
     return result;
 }
 
-const GROUND_RAMP_START_M: f32 = 300.0;
 fn ground_near_weight(distance: f32) -> f32 {
     return 1.0 - cloud_smooth((distance - GROUND_RAMP_START_M) /
                              (CLOUD_RAMP_END_M - GROUND_RAMP_START_M));

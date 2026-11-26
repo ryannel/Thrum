@@ -388,6 +388,7 @@ pub struct GameScene {
     #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
     pub(super) weather_edits: Option<super::WeatherEdits>,
     pub(super) cloud_sky: Option<thrum_clouds::SkyProfile>,
+    pub(super) cloud_selection: crate::CloudSelection,
     pub(super) cloud_ground: Option<thrum_clouds::GroundConfig>,
     pub(super) cloud_shapes: Option<crate::PlacedSky>,
     #[cfg(feature = "proving")]
@@ -657,6 +658,7 @@ impl GameScene {
             weather_edits: None,
             cloud_sky: None,
             cloud_shapes: None,
+            cloud_selection: setup.clouds,
             cloud_ground: None,
             #[cfg(feature = "proving")]
             haze: setup.haze,
@@ -1331,6 +1333,7 @@ mod tests {
             weather_edits: None,
             cloud_sky: None,
             cloud_shapes: None,
+            cloud_selection: crate::CloudSelection::Off,
             cloud_ground: None,
             cooked_rows: None,
             native_witness: thrum_render::synthetic::NativeWitness::Off,

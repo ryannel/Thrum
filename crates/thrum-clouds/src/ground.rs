@@ -247,6 +247,14 @@ impl GroundField {
         self.parameters.upper_heights = heights.map(|value| value as f32);
     }
 
+    pub(crate) fn has_active_rows(&self) -> bool {
+        self.parameters.has_active_rows != 0
+    }
+
+    pub(crate) fn terrain_top(&self) -> f64 {
+        f64::from(self.parameters.ground_heights[2])
+    }
+
     pub(super) fn heights(&self) -> [f32; 4] {
         self.parameters.ground_heights
     }
@@ -325,9 +333,19 @@ impl GroundTargets {
         sun_mapping: &wgpu::Buffer,
         field: &GroundField,
         phases: &lighting::LightTable,
+        sky: bool,
     ) -> Result<Self, Error> {
         let band = band::Band::new(surface, field, sun, sun_mapping)?;
-        let medium = medium::Medium::new(surface, weather, sun, sun_mapping, field, phases, &band)?;
+        let medium = medium::Medium::new(
+            surface,
+            weather,
+            sun,
+            sun_mapping,
+            field,
+            phases,
+            &band,
+            sky,
+        )?;
         Ok(Self { band, medium })
     }
 }
@@ -338,10 +356,12 @@ impl GroundGpu {
         config: &GroundConfig,
         weather: &crate::WeatherMap,
         sun: &crate::SunPath,
+        sky: bool,
     ) -> Result<Self, Error> {
         let field = GroundField::new(surface.device, surface.queue, config, weather.seed())?;
         let phases = lighting::LightTable::new(surface.device, &config.fog)?;
-        let targets = GroundTargets::new(surface, weather, sun, sun.mapping(), &field, &phases)?;
+        let targets =
+            GroundTargets::new(surface, weather, sun, sun.mapping(), &field, &phases, sky)?;
         Ok(Self {
             field,
             phases,

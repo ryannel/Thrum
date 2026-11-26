@@ -1,5 +1,5 @@
 @group(2) @binding(0) var<uniform> cloud:CloudParams;
-@group(2) @binding(2) var front:texture_2d<f32>;
+@group(2) @binding(2) var front:texture_2d_array<f32>;
 @group(3) @binding(0) var weather_columns:texture_2d_array<f32>;
 @group(3) @binding(1) var weather_optical:texture_2d_array<f32>;
 @group(3) @binding(2) var placed_columns:texture_2d_array<f32>;
@@ -35,7 +35,7 @@ fn field_colour(field:u32,uv:vec2<f32>)->vec4<f32> {
         }
         case 7u: {
             let pixel=vec2<i32>(uv*vec2<f32>(cloud.active_extent));
-            value=textureLoad(front,pixel,0).w/max(1.0,f32(cloud.temporal.z*cloud.temporal.z-1u));
+            value=textureLoad(front,pixel,0,0).w/max(1.0,f32(cloud.temporal.z*cloud.temporal.z-1u));
             if cloud.temporal.w!=0u { value=0.0; }
         }
         default: {}

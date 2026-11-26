@@ -280,3 +280,7 @@ required-features = ["proving"]
 name = "clouds_ground_selection_gpu"
 path = "tests/clouds_ground_selection_gpu.rs"
 required-features = ["thrum-render/creation-counters"]
+
+[[test]]
+name = "clouds_depth_contract_gpu"
+path = "tests/clouds_depth_contract_gpu.rs"

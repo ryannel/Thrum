@@ -27,14 +27,14 @@ fn validate_profile(profile: SkyProfile, max_extent: u32) -> Result<(), Error> {
     Ok(())
 }
 
-fn transport_textures(device: &wgpu::Device, extent: [u32; 2]) -> [wgpu::Texture; 2] {
+fn transport_textures(device: &wgpu::Device, extent: [u32; 2], ground: bool) -> [wgpu::Texture; 2] {
     std::array::from_fn(|_| {
         device.create_texture(&wgpu::TextureDescriptor {
             label: Some("cloud layer transport"),
             size: wgpu::Extent3d {
                 width: extent[0].div_ceil(2),
                 height: extent[1].div_ceil(2),
-                depth_or_array_layers: 1,
+                depth_or_array_layers: if ground { 4 } else { 1 },
             },
             mip_level_count: 1,
             sample_count: 1,
@@ -76,7 +76,7 @@ impl Layer {
         profile: SkyProfile,
         shapes: Option<&crate::shapes::Shapes>,
         accepted: Option<&Self>,
-        ground: Option<(&GroundField, &LightTable, &Band)>,
+        ground: Option<(&GroundField, &LightTable, &Band, &wgpu::Buffer)>,
     ) -> Result<(Self, Option<wgpu::CommandBuffer>), Error> {
         validate_profile(profile, surface.limits.max_texture_dimension_2d)?;
         let device = surface.device;
@@ -84,15 +84,13 @@ impl Layer {
         let environment = surface.environment_products().ok_or(Error::Unsupported(
             "cloud Sky requires the physical environment",
         ))?;
-        let params = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("cloud layer parameters"),
-            size: size_of::<Uniform>() as u64,
-            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-            mapped_at_creation: false,
-        });
+        let params = ground.map_or_else(
+            || super::parameter_buffer(device),
+            |(_, _, _, params)| params.clone(),
+        );
         let lighting = super::light::Lighting::new(surface, weather, &environment)?;
         let textures = accepted.map_or_else(
-            || transport_textures(device, profile.extent),
+            || transport_textures(device, profile.extent, ground.is_some()),
             |layer| layer.textures.clone(),
         );
         let uniform_entry = binding::uniform(
@@ -108,7 +106,7 @@ impl Layer {
                     visibility,
                     wgpu::StorageTextureAccess::WriteOnly,
                     wgpu::TextureFormat::Rgba16Float,
-                    wgpu::TextureViewDimension::D2,
+                    wgpu::TextureViewDimension::D2Array,
                 )
             } else {
                 binding::texture(
@@ -165,11 +163,7 @@ impl Layer {
                     ..Default::default()
                 })
             })
-            .chain(
-                textures
-                    .iter()
-                    .map(|t| t.create_view(&wgpu::TextureViewDescriptor::default())),
-            )
+            .chain(textures.iter().map(super::stop_view))
             .chain(sun.products().iter().map(|t| {
                 t.create_view(&wgpu::TextureViewDescriptor {
                     dimension: Some(wgpu::TextureViewDimension::D2Array),
@@ -205,7 +199,7 @@ impl Layer {
                 resource: wgpu::BindingResource::Sampler(&sun.shape_noise.sampler),
             },
         ]);
-        if let Some((field, phases, band)) = ground {
+        if let Some((field, phases, band, _)) = ground {
             entries.extend(field.entries(FIRST));
             entries.extend(phases.entries(band));
         }
@@ -224,7 +218,7 @@ impl Layer {
             bind_group_layouts: &layouts,
             immediate_size: 0,
         });
-        let source = trace_shader(&environment, shapes.is_some(), ground.is_some());
+        let source = trace_shader(&environment, shapes.is_some(), ground.is_some(), false);
         let overlay = surface.sky_overlay_target().map(|target| {
             super::overlay::Overlay::new(
                 surface,
@@ -236,6 +230,13 @@ impl Layer {
             )
         });
         let trace = trace_pipeline(device, &source, &pipeline_layout);
+        let trace_stops = ground.is_some().then(|| {
+            trace_pipeline(
+                device,
+                &trace_shader(&environment, shapes.is_some(), true, true),
+                &pipeline_layout,
+            )
+        });
         let (field_layout, field_group) = field_bindings(
             device,
             weather,
@@ -283,6 +284,7 @@ impl Layer {
                 textures,
                 detail_noise,
                 trace,
+                trace_stops,
                 compose,
                 field_pipeline,
                 field_overlay: crate::FieldOverlay::Off,
@@ -290,6 +292,8 @@ impl Layer {
                 compose_group,
                 field_group,
                 has_placed_map: placed_map.is_some(),
+                per_pixel_stops: false,
+                render_extent: profile.extent,
                 overlay,
             },
             initialization,
@@ -322,6 +326,8 @@ const TRACE_SHADER: &str = concat!(
     include_str!("../layer.wgsl"),
     "@group(1) @binding(0) var scene_depth:texture_depth_2d;\n",
     include_str!("trace_library.wgsl"),
+    include_str!("stop_pixels.wgsl"),
+    include_str!("trace_stops.wgsl"),
     include_str!("trace.wgsl"),
 );
 const OVERLAY_SHADER: &str = concat!(
@@ -334,8 +340,10 @@ pub(super) fn trace_shader(
     environment: &thrum_render::atmosphere::EnvironmentProducts,
     shapes: bool,
     ground: bool,
+    surface_stops: bool,
 ) -> String {
-    layer_shader(environment, TRACE_SHADER, shapes, ground, false)
+    let source = layer_shader(environment, TRACE_SHADER, shapes, ground, false);
+    format!("{source}\nconst SURFACE_STOPS: bool = {surface_stops};")
 }
 
 fn layer_shader(
@@ -366,9 +374,10 @@ fn layer_shader(
         UNPLACED.into()
     };
     format!(
-        "{}\n{}\n{transport}\n{}\n{}\n{}\n{}\n{}\n{placed}\n{}",
+        "{}\n{}\n{transport}\n{}\n{}\n{}\n{}\n{}\n{}\n{placed}\n{}",
         environment.shader_source,
         include_str!("params.wgsl"),
+        density_and_light_source(2),
         include_str!("light.wgsl"),
         super::SCATTERING,
         include_str!("transport.wgsl"),
@@ -459,7 +468,7 @@ fn compose(
     for entry in &mut sampled {
         entry.ty = wgpu::BindingType::Texture {
             sample_type: wgpu::TextureSampleType::Float { filterable: false },
-            view_dimension: wgpu::TextureViewDimension::D2,
+            view_dimension: wgpu::TextureViewDimension::D2Array,
             multisampled: false,
         };
     }
@@ -467,9 +476,7 @@ fn compose(
         label: Some(COMPOSE),
         entries: &[uniform_entry, sampled[0], sampled[1]],
     });
-    let compose_views = textures
-        .each_ref()
-        .map(|t| t.create_view(&wgpu::TextureViewDescriptor::default()));
+    let compose_views = textures.each_ref().map(super::stop_view);
     let compose_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
         label: Some(COMPOSE),
         layout: &compose_layout,
@@ -503,7 +510,7 @@ fn compose(
             format!(
                 "{}\n{}\n{}",
                 include_str!("params.wgsl"),
-                include_str!("view.wgsl"),
+                concat!(include_str!("view.wgsl"), include_str!("stop_pixels.wgsl")),
                 include_str!("compose.wgsl")
             )
             .into(),
@@ -620,4 +627,16 @@ fn field_pipeline(
         multiview_mask: None,
         cache: None,
     })
+}
+
+pub(crate) fn density_and_light_source(group: u32) -> String {
+    format!(
+        "@group({group}) @binding(1) var columns: texture_2d_array<f32>;
+         @group({group}) @binding(2) var optical: texture_2d_array<f32>;
+         @group({group}) @binding(9) var<storage, read> cloud_phase: array<f32>;
+         @group({group}) @binding(10) var<storage, read> cloud_ambient: array<vec4<f32>, 2>;
+         {}\n{}",
+        include_str!("column.wgsl"),
+        include_str!("source_light.wgsl"),
+    )
 }

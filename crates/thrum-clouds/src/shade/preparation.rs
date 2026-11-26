@@ -61,6 +61,7 @@ impl Shade {
                         &sun.mapping,
                         &ground.field,
                         &ground.phases,
+                        self.sky.is_some(),
                     )
                     .map(Box::new)
                     .map_err(|error| frame_prepare_error(&error))
@@ -77,7 +78,7 @@ impl Shade {
                 gpu.ground
                     .as_ref()
                     .zip(ground.as_deref())
-                    .map(|(gpu, targets)| (&gpu.field, &gpu.phases, &targets.band)),
+                    .and_then(|(gpu, targets)| sky_ground(gpu, targets)),
                 &mut initialization,
             )?;
             let bytes =
@@ -147,7 +148,7 @@ impl Shade {
             .ground
             .as_ref()
             .map(|config| {
-                GroundGpu::new(surface, config, &weather, &sun)
+                GroundGpu::new(surface, config, &weather, &sun, self.sky.is_some())
                     .map_err(|error| frame_prepare_error(&error))
             })
             .transpose()?;
@@ -161,7 +162,7 @@ impl Shade {
             None,
             ground
                 .as_ref()
-                .map(|gpu| (&gpu.field, &gpu.phases, &gpu.targets.band)),
+                .and_then(|gpu| sky_ground(gpu, &gpu.targets)),
             initialization,
         )?;
         Ok(Prepared {
@@ -193,6 +194,7 @@ impl Shade {
             &crate::ground::GroundField,
             &crate::ground::lighting::LightTable,
             &crate::ground::band::Band,
+            &wgpu::Buffer,
         )>,
         initialization: &mut Vec<wgpu::CommandBuffer>,
     ) -> Result<Option<Layer>, FrameError> {
@@ -290,7 +292,14 @@ impl Prepared {
             .ground
             .as_ref()
             .zip(ground_targets)
-            .map(|(ground, targets)| graph::append_ground(&mut graph, ground, targets));
+            .map(|(ground, targets)| {
+                graph::append_ground(
+                    &mut graph,
+                    ground,
+                    targets,
+                    self.sun.shape_noise.read(shape_noise),
+                )
+            });
         let overlay_index = graph.passes.len();
         if let Some(sky) = sky {
             sky.append_graph(
@@ -405,4 +414,21 @@ impl Prepared {
         }
         resources
     }
+}
+
+fn sky_ground<'a>(
+    gpu: &'a GroundGpu,
+    targets: &'a GroundTargets,
+) -> Option<(
+    &'a crate::ground::GroundField,
+    &'a crate::ground::lighting::LightTable,
+    &'a crate::ground::band::Band,
+    &'a wgpu::Buffer,
+)> {
+    Some((
+        &gpu.field,
+        &gpu.phases,
+        &targets.band,
+        targets.medium.sky_params.as_ref()?,
+    ))
 }

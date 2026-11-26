@@ -1,7 +1,7 @@
 @group(1) @binding(0) var depth:texture_depth_2d;
 @group(2) @binding(0) var<uniform> cloud:CloudParams;
-@group(2) @binding(1) var transport:texture_2d<f32>;
-@group(2) @binding(2) var front:texture_2d<f32>;
+@group(2) @binding(1) var transport:texture_2d_array<f32>;
+@group(2) @binding(2) var front:texture_2d_array<f32>;
 @vertex fn vertex(@builtin(vertex_index) i:u32)->@builtin(position) vec4<f32> {
     let p=array<vec2<f32>,3>(vec2(-1.0,-1.0),vec2(3.0,-1.0),vec2(-1.0,3.0));return vec4(p[i],0.0,1.0);
 }
@@ -13,28 +13,32 @@ fn sky_transport(uv:vec2<f32>)->vec4<f32> {
     let p=uv*vec2<f32>(size)-0.5;
     let base=vec2<i32>(floor(p));
     let f=fract(p);
-    let a=textureLoad(transport,clamp(base,vec2(0),size-1),0);
-    let b=textureLoad(transport,clamp(base+vec2(1,0),vec2(0),size-1),0);
-    let c=textureLoad(transport,clamp(base+vec2(0,1),vec2(0),size-1),0);
-    let d=textureLoad(transport,clamp(base+vec2(1),vec2(0),size-1),0);
+    let a=textureLoad(transport,clamp(base,vec2(0),size-1),0,0);
+    let b=textureLoad(transport,clamp(base+vec2(1,0),vec2(0),size-1),0,0);
+    let c=textureLoad(transport,clamp(base+vec2(0,1),vec2(0),size-1),0,0);
+    let d=textureLoad(transport,clamp(base+vec2(1),vec2(0),size-1),0,0);
     return mix(mix(a,b,f.x),mix(c,d,f.x),f.y);
 }
 @fragment fn fragment(@builtin(position) position:vec4<f32>)->Output {
     let uv=position.xy/aux.extent.xy;
-    let at=vec2<i32>(clamp(uv*vec2<f32>(cloud.active_extent),vec2(0.0),vec2<f32>(cloud.active_extent)-1.0));
-    let front_value=textureLoad(front,at,0);
-    let opaque_depth=textureLoad(depth,vec2<i32>(position.xy),0);
-    var layer:vec4<f32>;
-    if opaque_depth==0.0 {
-        layer=sky_transport(uv);
-        if front_value.y<=0.0 {
-            if layer.a>=1.0 {discard;}
-            return Output(layer,vec4(0.0),0.0);
+    let pixel = vec2<u32>(position.xy);
+    let per_pixel = cloud.per_pixel_stops != 0u;
+    let legacy_texel = vec2<u32>(clamp(uv * vec2<f32>(cloud.active_extent),
+                                      vec2(0.0), vec2<f32>(cloud.active_extent) - 1.0));
+    let at = vec2<i32>(select(legacy_texel, pixel / 2u, per_pixel));
+    let slot = select(0, cloud_stop_slot(pixel), per_pixel);
+    let front_value = textureLoad(front, at, slot, 0);
+    let opaque_depth = textureLoad(depth, vec2<i32>(pixel), 0);
+    var layer: vec4<f32>;
+    if !per_pixel && opaque_depth == 0.0 {
+        layer = sky_transport(uv);
+        if front_value.y <= 0.0 {
+            if layer.a >= 1.0 { discard; }
+            return Output(layer, vec4(0.0), 0.0);
         }
     } else {
-        // Use the trace's own stop and front when testing against geometry.
-        if front_value.y<=0.0 {discard;}
-        layer=textureLoad(transport,at,0);
+        if front_value.y <= 0.0 { discard; }
+        layer = textureLoad(transport, at, slot, 0);
     }
     let far=cloud.inverse_raster*vec4(uv*vec2(2.0,-2.0)+vec2(-1.0,1.0),0.0,1.0);
     let ray=normalize(far.xyz/far.w-view.camera.xyz);
@@ -42,7 +46,7 @@ fn sky_transport(uv:vec2<f32>)->vec4<f32> {
     let raster=view.raster*vec4(point,1.0);
     // Reversed-Z zero denotes sky. Clouds may extend past the opaque
     // camera's far plane, where their projected depth is negative.
-    if opaque_depth>0.0 && opaque_depth>raster.z/raster.w {discard;}
+    if !per_pixel && opaque_depth>0.0 && opaque_depth>raster.z/raster.w {discard;}
     var motion=vec2(65504.0);
     if cloud.temporal.x!=0u {
         let old_point=point-vec3(cloud.drift.z,0.0,cloud.drift.w);

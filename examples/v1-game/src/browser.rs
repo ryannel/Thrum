@@ -1030,6 +1030,7 @@ impl BrowserGame {
             self.cloud_sky,
             game::cloud_shapes(&self.page.shell),
             game::cloud_ground(&self.page.shell),
+            game::cloud_selection(&self.page.shell),
         )
         .map_err(js_error)?;
         #[cfg(feature = "proving")]

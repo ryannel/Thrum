@@ -64,3 +64,7 @@ path = "tests/ground_band_gpu.rs"
 [[test]]
 name = "medium_coefficients_gpu"
 path = "tests/medium_coefficients_gpu.rs"
+
+[[test]]
+name = "trace_depth_gpu"
+path = "tests/trace_depth_gpu.rs"

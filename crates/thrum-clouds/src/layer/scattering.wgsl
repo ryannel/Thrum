@@ -1,3 +1,4 @@
+const GROUND_RAMP_START_M: f32 = 300.0;
 const CLOUD_RAMP_END_M:f32=500.0;
 
 fn cloud_boundary_weight(distance:f32)->f32 {

@@ -122,11 +122,12 @@ impl LightTable {
 
 pub(crate) fn trace_source(ground: bool) -> String {
     if ground {
-        LightTable::source(2) + include_str!("trace.wgsl")
+        LightTable::source(2) + include_str!("trace.wgsl") + include_str!("deck.wgsl")
     } else {
         concat!(
             include_str!("light_type.wgsl"),
-            include_str!("disabled.wgsl")
+            include_str!("disabled.wgsl"),
+            include_str!("no_deck.wgsl"),
         )
         .into()
     }

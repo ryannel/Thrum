@@ -16,7 +16,7 @@ use thrum_render::{
 pub(crate) mod diagnostic;
 pub(crate) mod light;
 mod overlay;
-mod prepare;
+pub(crate) mod prepare;
 mod temporal;
 
 pub(crate) const TRACE: &str = "cloud trace";
@@ -51,6 +51,9 @@ pub struct SkyProfile {
 
 /// Read-only handles for optional inspection of the last submitted non-capture Sky layer.
 /// The caller waits for GPU completion before readback; these never drive rendering.
+/// Ground allocates four array layers for the four pixels of a trace texel in row-major order.
+/// The single-stop path uses only layer zero. In per-pixel mode, metadata alpha is each stop's
+/// surface distance in kilometres, and the fresh sample count applies to the complete texel ray.
 #[derive(Clone)]
 pub struct SkyProducts {
     /// Resolved RGB in-scatter in scene storage units and transmittance in alpha.
@@ -71,6 +74,8 @@ pub struct SkyProducts {
     pub refresh_stride: u32,
     /// Layer texels per side actually used by the last submitted trace.
     pub trace_stride: u32,
+    /// Width and height of the last submitted trace rectangle in texels.
+    pub active_extent: [u32; 2],
     /// Number of submitted non-capture layer frames since preparation.
     pub submitted_frames: u32,
     /// Jittered projection used by that submission's trace and resolve.
@@ -79,7 +84,7 @@ pub struct SkyProducts {
 
 #[repr(C)]
 #[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
-struct Uniform {
+pub(crate) struct Uniform {
     weather: [[f32; 4]; 4],
     physical: [f32; 4],
     erosion: [f32; 4],
@@ -92,7 +97,9 @@ struct Uniform {
     temporal: [u32; 4],
     noise: [f32; 4],
     bank_noise: [f32; 4],
-    density_profile: [f32; 4],
+    density_profile: [f32; 2],
+    per_pixel_stops: u32,
+    low_deck: u32,
     active_extent: [u32; 2],
     sample_cap: u32,
     field_overlay: u32,
@@ -108,6 +115,7 @@ struct LayerSample {
     history_valid: bool,
     raster: [[f32; 4]; 4],
     trace_stride: u32,
+    active_extent: [u32; 2],
 }
 
 pub(crate) struct Layer {
@@ -124,6 +132,7 @@ pub(crate) struct Layer {
     textures: [wgpu::Texture; 2],
     detail_noise: Noise,
     trace: wgpu::ComputePipeline,
+    trace_stops: Option<wgpu::ComputePipeline>,
     compose: wgpu::RenderPipeline,
     field_pipeline: wgpu::RenderPipeline,
     field_overlay: crate::FieldOverlay,
@@ -131,6 +140,8 @@ pub(crate) struct Layer {
     compose_group: wgpu::BindGroup,
     field_group: [wgpu::BindGroup; 2],
     has_placed_map: bool,
+    per_pixel_stops: bool,
+    render_extent: [u32; 2],
     overlay: Option<overlay::Overlay>,
 }
 
@@ -156,6 +167,7 @@ impl Layer {
                 },
             ));
         }
+        let stop_layers = u64::from(self.textures[0].depth_or_array_layers());
         let access = |resource, kind| EffectAccess {
             resource,
             range: 0..1,
@@ -183,7 +195,11 @@ impl Layer {
             history: None,
             view: None,
         });
-        reads.extend((first..first + 2).map(|i| access(i, AccessKind::StorageWrite)));
+        let stop_access = |resource, kind| EffectAccess {
+            range: 0..stop_layers,
+            ..access(resource, kind)
+        };
+        reads.extend((first..first + 2).map(|i| stop_access(i, AccessKind::StorageWrite)));
         let detail = graph.resources.len();
         graph.resources.push(self.detail_noise.resource());
         reads.extend([shape_noise, self.detail_noise.read(detail)]);
@@ -279,7 +295,7 @@ impl Layer {
             ));
         }
         let mut resolve_reads: Vec<_> = (first..first + 2)
-            .map(|i| access(i, AccessKind::SampledRead))
+            .map(|i| stop_access(i, AccessKind::SampledRead))
             .collect();
         resolve_reads.push(buffer_access(
             params,
@@ -287,9 +303,9 @@ impl Layer {
             AccessKind::UniformRead,
         ));
         for resource in history..history + 2 {
-            let mut previous = access(resource, AccessKind::SampledRead);
+            let mut previous = stop_access(resource, AccessKind::SampledRead);
             previous.history = Some(HistoryBinding::Previous);
-            let mut next = access(resource, AccessKind::StorageWrite);
+            let mut next = stop_access(resource, AccessKind::StorageWrite);
             next.history = Some(HistoryBinding::Next);
             resolve_reads.extend([previous, next]);
         }
@@ -300,14 +316,14 @@ impl Layer {
             COMPOSE,
             AfterOpaqueKind::Render,
             (first..first + 2)
-                .map(|i| access(i, AccessKind::SampledRead))
+                .map(|i| stop_access(i, AccessKind::SampledRead))
                 .chain(std::iter::once(buffer_access(
                     params,
                     self.params.size(),
                     AccessKind::UniformRead,
                 )))
                 .chain((history..history + 2).map(|i| {
-                    let mut read = access(i, AccessKind::SampledRead);
+                    let mut read = stop_access(i, AccessKind::SampledRead);
                     read.history = Some(HistoryBinding::Result);
                     read
                 }))
@@ -345,6 +361,7 @@ impl Layer {
         frame: &ContributionFrame,
         shapes: Option<&crate::shapes::Shapes>,
         field_overlay: crate::FieldOverlay,
+        ground: Option<&crate::ground::GroundField>,
     ) -> Result<(), Error> {
         let environment = frame.environment.ok_or(Error::Unsupported(
             "cloud light requires an environment frame",
@@ -372,6 +389,15 @@ impl Layer {
         let anchor = std::array::from_fn::<_, 2, _>(|i| {
             ((f64::from(frame.camera[[0, 2][i]]) - travel[i]) / 200.0).floor() * 200.0
         });
+        let low_deck = ground.is_some_and(|field| {
+            state.parameters().coverage > 0.0 && kind.base <= field.terrain_top()
+        });
+        let per_pixel_stops =
+            low_deck || ground.is_some_and(crate::ground::GroundField::has_active_rows);
+        let mode_changed = self.per_pixel_stops != per_pixel_stops;
+        self.per_pixel_stops = per_pixel_stops;
+        self.render_extent = frame.render_extent;
+        let reset = reset || mode_changed;
         let stride = self.quality.stride;
         let active_extent = self.active_extent();
         let parameters = state.parameters();
@@ -390,7 +416,10 @@ impl Layer {
                         stride,
                     )
             });
-        let full_trace = reset
+        // Without scene motion as a trace input, the current depth is the
+        // only verified surface. Use the design's full-trace fallback.
+        let full_trace = per_pixel_stops
+            || reset
             || frame.time.capture
             || active_extent.iter().any(|&side| side < stride)
             || unreliable_sparse_trace;
@@ -402,8 +431,13 @@ impl Layer {
             history_valid: !reset,
             raster: frame.view_proj,
             trace_stride: self.trace_stride,
+            active_extent,
         });
-        let mut heights = weather.height_range();
+        let mut heights = if per_pixel_stops && parameters.coverage == 0.0 && shapes.is_none() {
+            [0.0; 2]
+        } else {
+            weather.height_range()
+        };
         if let Some(shapes) = shapes {
             heights = shapes.heights(state, kind, model.pitch, heights);
         }
@@ -460,9 +494,9 @@ impl Layer {
             density_profile: [
                 model.detail_mean as f32,
                 if self.has_placed_map { 1.0 } else { 0.0 },
-                0.0,
-                0.0,
             ],
+            per_pixel_stops: u32::from(per_pixel_stops),
+            low_deck: u32::from(low_deck),
             active_extent,
             sample_cap: self.quality.cap,
             field_overlay: field_overlay as u32,
@@ -521,7 +555,13 @@ impl Layer {
             self.temporal.encode(pass, self.active_extent());
             return;
         }
-        pass.set_pipeline(&self.trace);
+        pass.set_pipeline(if self.per_pixel_stops {
+            self.trace_stops
+                .as_ref()
+                .expect("Ground surface-stop pipeline")
+        } else {
+            &self.trace
+        });
         pass.set_bind_group(0, self.environment.group(frame.exposure_side), &[]);
         pass.set_bind_group(2, &self.trace_group, &[]);
         if let Some(shapes) = shapes {
@@ -575,6 +615,7 @@ impl Layer {
             history_valid: self.committed.is_some_and(|s| s.history_valid),
             refresh_stride: self.quality.stride,
             trace_stride: self.committed.map_or(1, |s| s.trace_stride),
+            active_extent: self.committed.map_or([0; 2], |s| s.active_extent),
             submitted_frames: self.ordinal,
             raster_view_projection: self.committed.map_or([[0.0; 4]; 4], |s| s.raster),
         }
@@ -590,7 +631,10 @@ impl Layer {
         {
             resources.push((
                 format!("cloud layer texture {i}"),
-                u64::from(texture.width()) * u64::from(texture.height()) * 8,
+                u64::from(texture.width())
+                    * u64::from(texture.height())
+                    * u64::from(texture.depth_or_array_layers())
+                    * 8,
             ));
         }
         resources.extend([
@@ -613,6 +657,9 @@ impl Layer {
     }
 
     fn active_extent(&self) -> [u32; 2] {
+        if self.per_pixel_stops {
+            return self.render_extent.map(|side| side.div_ceil(2));
+        }
         [self.textures[0].width(), self.textures[0].height()]
             .map(|side| (side * self.quality.layer_percent).div_ceil(100))
     }
@@ -681,6 +728,22 @@ fn declaration(name: &str, kind: AfterOpaqueKind, accesses: Vec<EffectAccess>) -
         refraction: false,
         images: thrum_render::contribution::AfterOpaqueImages::None,
     }
+}
+
+pub(crate) fn parameter_buffer(device: &wgpu::Device) -> wgpu::Buffer {
+    device.create_buffer(&wgpu::BufferDescriptor {
+        label: Some("cloud layer parameters"),
+        size: size_of::<Uniform>() as u64,
+        usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        mapped_at_creation: false,
+    })
+}
+
+fn stop_view(texture: &wgpu::Texture) -> wgpu::TextureView {
+    texture.create_view(&wgpu::TextureViewDescriptor {
+        dimension: Some(wgpu::TextureViewDimension::D2Array),
+        ..Default::default()
+    })
 }
 
 #[cfg(test)]

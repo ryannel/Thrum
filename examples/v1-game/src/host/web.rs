@@ -32,6 +32,9 @@ pub(crate) fn cloud_input(shell: &Shell) -> Option<&thrum_clouds::WeatherInput> 
     shell.host().source().cloud_input.as_ref()
 }
 
+pub(crate) fn cloud_selection(shell: &Shell) -> crate::CloudSelection {
+    shell.host().source().cloud_selection
+}
 pub(crate) fn cloud_ground(shell: &Shell) -> Option<&thrum_clouds::GroundConfig> {
     shell.host().source().cloud_ground.as_ref()
 }

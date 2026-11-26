@@ -14,6 +14,7 @@ pub(crate) const PASS: &str = "cloud medium coefficients";
 
 pub(crate) struct Medium {
     pub(crate) target: ViewVolumeMediumTarget,
+    pub(crate) sky_params: Option<wgpu::Buffer>,
     pub(crate) lighting: layer::light::Lighting,
     environment: EnvironmentProducts,
     target_group: wgpu::BindGroup,
@@ -30,6 +31,7 @@ impl Medium {
         field: &GroundField,
         phases: &LightTable,
         band: &Band,
+        sky: bool,
     ) -> Result<Self, Error> {
         let target = surface
             .view_volume_medium_target()
@@ -42,6 +44,7 @@ impl Medium {
         let lighting = layer::light::Lighting::new(surface, weather, &environment)?;
         let device = surface.device;
         let stages = wgpu::ShaderStages::COMPUTE;
+        let sky_params = sky.then(|| layer::parameter_buffer(device));
         let mut layout = GroundField::layout(FIRST).to_vec();
         layout.extend(LightTable::layout());
         layout.extend([
@@ -57,6 +60,26 @@ impl Medium {
                 wgpu::TextureViewDimension::D2Array,
             )
         }));
+        if let Some(params) = &sky_params {
+            layout.extend([
+                binding::uniform(0, stages, params.size()),
+                binding::storage(9, stages, true, lighting.phase.size()),
+                binding::texture(
+                    11,
+                    stages,
+                    wgpu::TextureSampleType::Float { filterable: true },
+                    wgpu::TextureViewDimension::D3,
+                ),
+            ]);
+            layout.extend((1..3).map(|slot| {
+                binding::texture(
+                    slot,
+                    stages,
+                    wgpu::TextureSampleType::Float { filterable: false },
+                    wgpu::TextureViewDimension::D2Array,
+                )
+            }));
+        }
         let input_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some(PASS),
             entries: &layout,
@@ -95,23 +118,71 @@ impl Medium {
                     resource: wgpu::BindingResource::TextureView(view),
                 }),
         );
+        let columns = weather.textures()[..2]
+            .iter()
+            .map(|texture| {
+                texture.create_view(&wgpu::TextureViewDescriptor {
+                    dimension: Some(wgpu::TextureViewDimension::D2Array),
+                    ..Default::default()
+                })
+            })
+            .collect::<Vec<_>>();
+        if let Some(params) = &sky_params {
+            entries.extend([
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: params.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 9,
+                    resource: lighting.phase.as_entire_binding(),
+                },
+                sun.shape_noise.bind(11),
+            ]);
+            entries.extend(
+                (1..3)
+                    .zip(&columns)
+                    .map(|(binding, view)| wgpu::BindGroupEntry {
+                        binding,
+                        resource: wgpu::BindingResource::TextureView(view),
+                    }),
+            );
+        }
         let input_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some(PASS),
             layout: &input_layout,
             entries: &entries,
         });
         let target_group = target.bind(device, &target_layout);
+        let deck_source = if sky {
+            format!(
+                "{}\n@group(1) @binding(0) var<uniform> cloud: CloudParams;\n
+                 @group(1) @binding(11) var shape_noise: texture_3d<f32>;\n{}\n{}\n{}",
+                include_str!("../layer/params.wgsl"),
+                layer::prepare::density_and_light_source(1),
+                include_str!("../erosion.wgsl"),
+                include_str!("deck.wgsl"),
+            )
+        } else {
+            concat!(
+                "@group(1) @binding(10) var<storage, read> cloud_ambient:array<vec4<f32>,2>;\n",
+                include_str!("no_deck.wgsl"),
+            )
+            .into()
+        };
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some(PASS),
-            source: wgpu::ShaderSource::Wgsl(format!(
-                "{}\n{}\n{}\n{}\n{}",
-                target.shader_source(), layer::sun_source(1), layer::SCATTERING, LightTable::source(1),
-                concat!(
-                    "const PI:f32=3.141592653589793;\n",
-                    "@group(1) @binding(10) var<storage,read> cloud_ambient:array<vec4<f32>,2>;\n",
+            source: wgpu::ShaderSource::Wgsl(
+                format!(
+                    "{}\n{}\n{}\n{}\nconst PI: f32 = 3.141592653589793;\n{deck_source}\n{}",
+                    target.shader_source(),
+                    layer::sun_source(1),
+                    layer::SCATTERING,
+                    LightTable::source(1),
                     include_str!("medium.wgsl"),
-                ),
-            ).into()),
+                )
+                .into(),
+            ),
         });
         let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some(PASS),
@@ -128,6 +199,7 @@ impl Medium {
         });
         Ok(Self {
             target,
+            sky_params,
             lighting,
             environment,
             target_group,

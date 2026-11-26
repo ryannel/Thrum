@@ -8,7 +8,10 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
     // same texels as a full dispatch with skipped lanes, without idle groups.
     let texel=select(id.xy*stride+offset,id.xy,cloud.temporal.w!=0u);
     if any(texel>=size) {return;}
-    let uv=(vec2<f32>(texel)+0.5)/vec2<f32>(size);
+    let per_pixel = SURFACE_STOPS;
+    let block_centre = min(vec2<f32>(texel * 2u + 1u), vec2<f32>(cloud.render_extent) - 0.5);
+    let uv = select((vec2<f32>(texel) + 0.5) / vec2<f32>(size),
+                    block_centre / vec2<f32>(cloud.render_extent), per_pixel);
     let clip=cloud.inverse_raster*vec4(uv*vec2(2.0,-2.0)+vec2(-1.0,1.0),0.0,1.0);
     let camera=atmosphere.camera_altitude.xyz;let ray=normalize(clip.xyz/clip.w-camera);
     let air_camera=camera-vec3(cloud.drift.x,0.0,cloud.drift.y);
@@ -21,19 +24,32 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
         let a=(cloud.heights.x-camera.y)/ray.y;let b=(cloud.heights.y-camera.y)/ray.y;
         begin=max(0.0,min(a,b));end=min(end,max(a,b));
     }else if camera.y<cloud.heights.x || camera.y>cloud.heights.y {end=0.0;}
+    if per_pixel { begin = max(begin, GROUND_RAMP_START_M); }
     let cloud_interval=vec2(begin,end);
-    let fog_interval=ground_interval(camera,ray,cloud.heights.w);
+    let fog = ground_interval(camera,ray,cloud.heights.w);
+    let fog_interval = vec2(max(fog.x, GROUND_RAMP_START_M), fog.y);
     if fog_interval.x<fog_interval.y {
         begin=select(fog_interval.x,min(begin,fog_interval.x),begin<end);
         end=max(end,fog_interval.y);
     }
-    // The depth allocation can be larger than the drawn rectangle.
-    // Composition tests each render pixel separately.
-    let pixel=vec2<i32>(uv*vec2<f32>(cloud.render_extent));
-    let depth=textureLoad(scene_depth,pixel,0);
-    if depth>0.0 {
-        let hit=cloud.inverse_raster*vec4(uv*vec2(2.0,-2.0)+vec2(-1.0,1.0),depth,1.0);
-        end=min(end,length(hit.xyz/hit.w-camera));
+    var distances = vec4(end);
+    var next_stop = end;
+    var stored = array<bool, 4>(false, false, false, false);
+    var stops: array<CloudStop, 4>;
+    if per_pixel {
+        for (var slot = 0u; slot < 4u; slot++) {
+            let pixel = min(texel * 2u + cloud_stop_offset(slot), cloud.render_extent - 1u);
+            distances[slot] = cloud_stop_distance(pixel, camera);
+        }
+        end = min(end, max(max(distances.x, distances.y), max(distances.z, distances.w)));
+        next_stop = min(min(distances.x, distances.y), min(distances.z, distances.w));
+    } else {
+        let pixel = vec2<i32>(uv * vec2<f32>(cloud.render_extent));
+        let depth = textureLoad(scene_depth, pixel, 0);
+        if depth > 0.0 {
+            let hit = cloud.inverse_raster * vec4(uv * vec2(2.0,-2.0) + vec2(-1.0,1.0),depth,1.0);
+            end = min(end, length(hit.xyz / hit.w - camera));
+        }
     }
     let phase=cloud_phases(ray,atmosphere.sun_lux.xyz);
     let light_angles=cloud_light_angles(-ray);
@@ -63,6 +79,13 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
         } else if distance<fog_interval.x && fog_interval.x<fog_interval.y {
             step=min(step,fog_interval.x-distance);
         }
+        if per_pixel && cloud_interval.x < cloud_interval.y {
+            if in_cloud {
+                step = min(step, cloud_interval.y - distance);
+            } else if distance < cloud_interval.x {
+                step = min(step, cloud_interval.x - distance);
+            }
+        }
         let at=distance+step*0.5;
         let point=air_camera+ray*at;
         let world=camera+ray*at;
@@ -70,7 +93,12 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
         let transmission=total.transmittance*part.transmittance;
         var sigma=0.0;
         var radiance=vec3(0.0);
-        if in_cloud {
+        if in_cloud && cloud_deck_active() {
+            let far = 1.0 - ground_near_weight(at);
+            let deck = cloud_deck_light(world, ray, atmosphere.sun_lux.xyz, at, transmission);
+            sigma = deck.extinction * far;
+            radiance = (deck.ambient + sun_irradiance(world) * deck.surface_visibility * deck.solar_kernel) * far;
+        } else if in_cloud {
             let placed=cloud_placed(point,footprint);
             var column=cloud_column(point);
             if column.x+placed.x>0.0 {
@@ -120,6 +148,21 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
                 part=CloudTransport(vec3(0.0),1.0,0.0);part_weighted=0.0;part_mass=0.0;
             }
             if part_mass==0.0 {part_air=air;}
+            if per_pixel && next_stop < distance + step {
+                next_stop = cloud.heights.w;
+                let state = CloudTracePart(total, part, weighted, opacity, part_weighted, part_mass);
+                for (var slot = 0u; slot < 4u; slot++) {
+                    if stored[slot] { continue; }
+                    let stop = distances[slot];
+                    if stop < distance + step {
+                        stops[slot] = cloud_partial_stop(state, sigma, radiance, distance,
+                            max(0.0, stop - distance), camera, ray, uv);
+                        stored[slot] = true;
+                    } else {
+                        next_stop = min(next_stop, stop);
+                    }
+                }
+            }
             let local_amount=part.transmittance*cloud_removed(segment.optical_depth);
             let amount=total.transmittance*local_amount;
             weighted+=amount*at;opacity+=amount;
@@ -128,9 +171,19 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
         }
         distance+=step;
     }
-    let front_distance=weighted/max(opacity,1e-10);
-    total=cloud_then(total,cloud_air_part(part,part_weighted,part_mass,camera,ray,uv));
-    textureStore(transport,vec2<i32>(texel),vec4(total.scattering*environment_storage_scale(),total.transmittance));
-    // Distances are kilometres to remain representable in fp16.
-    textureStore(front,vec2<i32>(texel),vec4(front_distance*0.001,opacity,f32(samples),1.0));
+    if per_pixel {
+        let final_stop = cloud_stop(CloudTracePart(total, part, weighted, opacity, part_weighted, part_mass),
+                                    camera, ray, uv);
+        for (var slot = 0u; slot < 4u; slot++) {
+            var stop = final_stop;
+            if stored[slot] { stop = stops[slot]; }
+            cloud_write_stop(vec2<i32>(texel), i32(slot), stop, samples, distances[slot] * 0.001);
+        }
+    } else {
+        let front_distance = weighted / max(opacity, 1e-10);
+        total = cloud_then(total, cloud_air_part(part, part_weighted, part_mass, camera, ray, uv));
+        textureStore(transport, vec2<i32>(texel), 0,
+                     vec4(total.scattering * environment_storage_scale(), total.transmittance));
+        textureStore(front, vec2<i32>(texel), 0, vec4(front_distance * 0.001, opacity, f32(samples), 1.0));
+    }
 }

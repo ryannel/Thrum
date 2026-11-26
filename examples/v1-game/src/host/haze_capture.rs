@@ -14,6 +14,8 @@ enum Motion {
     MistWalk,
     MistPan,
     Mover,
+    Climb,
+    Approach,
 }
 
 #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
@@ -60,7 +62,7 @@ impl HazeTake {
     #[cfg(target_os = "macos")]
     pub(crate) fn duration(self) -> Option<f64> {
         match self.motion {
-            Some(Motion::MistPan) => Some(12.0),
+            Some(Motion::MistPan | Motion::Climb | Motion::Approach) => Some(12.0),
             _ => None,
         }
     }
@@ -78,6 +80,17 @@ impl HazeTake {
             Some(Motion::Walk) => pose.eye[0] += 40.0 * progress,
             Some(Motion::BankWalk) => pose.eye[0] += 98.0 * progress,
             Some(Motion::BankPan) => pose.yaw_degrees += 95.0 * progress,
+            Some(Motion::Climb) => {
+                let climb = ((elapsed_seconds - 1.0) / 10.0).clamp(0.0, 1.0);
+                // Follow the broad western flank of the east hill.
+                let height = 108.0 * climb * climb * (3.0 - 2.0 * climb);
+                pose.eye[1] += height + 12.0 * (std::f32::consts::PI * climb).sin();
+                pose.eye[2] -= 1000.0 * climb;
+            }
+            Some(Motion::Approach) => {
+                let walk = ((elapsed_seconds - 1.0) / 10.0).clamp(0.0, 1.0);
+                pose.eye[2] -= 40.0 * walk;
+            }
             Some(Motion::MistWalk) => pose.eye[0] += 100.0 * progress,
             Some(Motion::MistPan) => {
                 pose.yaw_degrees += 90.0 * ((elapsed_seconds - 1.0) / 10.0).clamp(0.0, 1.0);

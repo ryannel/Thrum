@@ -1111,3 +1111,20 @@ fog on terrain above the receiver. Metal agrees with the headless query through 
 The revised paired cost record includes the four view-volume history textures and both upper
 phase buffers, with the shared coefficient texture counted once.
 [Sun-path proof](../../../.orchestrate/evidence/CLOUDS/WP14/REVIEW-SUN-PATH.md) · [Cost](../../../.orchestrate/evidence/CLOUDS/WP14/COST.md)
+
+## WP15 Far mist and low cloud
+
+The Ground trace retains a transport stop at every render pixel's depth, marching once per
+2×2 block. It stores the current frame's stops on Ground frames that need surface depths.
+The late effect has scene depth and no scene-motion input, so this uses the design's full-trace
+fallback. A late-effect motion lease would let the layer test and carry surface stops at sparse
+refresh rates. A low deck uses the same weather columns, shape erosion, source and distance
+weights in the trace and view volume. The V1 valley supplies the dawn mist, low deck and bank
+selections for the target takes.
+
+Metal passed the three-depth bank matrix and the moving occluder with a cut. The specialized
+single-stop frame matched the retained starting commit byte for byte. The first paired 1440p
+record measures the named passes with far mist and the low deck compared with the WP14 dawn view.
+The first visual review identified the local bluff's cloud edge and flat summit cloud. Subsequent
+takes use the east hillside and the shared deck shape noise.
+[WP15 target receipts](../../../.orchestrate/evidence/CLOUDS/WP15/)

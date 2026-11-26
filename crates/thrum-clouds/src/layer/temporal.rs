@@ -54,14 +54,14 @@ impl Temporal {
                     wgpu::ShaderStages::COMPUTE,
                     wgpu::StorageTextureAccess::WriteOnly,
                     wgpu::TextureFormat::Rgba16Float,
-                    wgpu::TextureViewDimension::D2,
+                    wgpu::TextureViewDimension::D2Array,
                 )
             } else {
                 binding::texture(
                     binding,
                     wgpu::ShaderStages::COMPUTE,
                     wgpu::TextureSampleType::Float { filterable: false },
-                    wgpu::TextureViewDimension::D2,
+                    wgpu::TextureViewDimension::D2Array,
                 )
             });
         }
@@ -110,7 +110,7 @@ impl Temporal {
                     &textures[1 - side][0],
                     &textures[1 - side][1],
                 ]
-                .map(|t| t.create_view(&wgpu::TextureViewDescriptor::default()));
+                .map(super::stop_view);
                 let mut entries = vec![wgpu::BindGroupEntry {
                     binding: 0,
                     resource: params.as_entire_binding(),
@@ -162,9 +162,7 @@ pub(super) fn compose_group(
     textures: &[wgpu::Texture; 2],
     layout: &wgpu::BindGroupLayout,
 ) -> wgpu::BindGroup {
-    let views = textures
-        .each_ref()
-        .map(|t| t.create_view(&wgpu::TextureViewDescriptor::default()));
+    let views = textures.each_ref().map(super::stop_view);
     surface
         .device
         .create_bind_group(&wgpu::BindGroupDescriptor {

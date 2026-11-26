@@ -146,6 +146,26 @@ pub(crate) fn render_from_height(
     GroundProducts,
     EnvironmentProducts,
 ) {
+    let (host, input, environment) = render_ground(gpu, ground, state, elevation, eye_y, None);
+    (
+        host,
+        input.ground_condensate_products().expect("ground products"),
+        environment,
+    )
+}
+
+pub(crate) fn render_ground(
+    gpu: &Opened,
+    ground: &GroundConfig,
+    state: &State,
+    elevation: f32,
+    eye_y: f32,
+    depth_writer: Option<Box<dyn SceneContribution>>,
+) -> (
+    FrameHost<World, Source>,
+    thrum_clouds::WeatherInput,
+    EnvironmentProducts,
+) {
     let config = ShadeConfig {
         seed: SEED,
         model: PROFILE,
@@ -170,6 +190,18 @@ pub(crate) fn render_from_height(
     let shade = Shade::new(config)
         .expect("weather")
         .with_ground(ground.clone());
+    let shade = if depth_writer.is_some() {
+        shade
+            .with_sky(thrum_clouds::SkyProfile {
+                extent: EXTENT,
+                step: 10.0,
+                light_samples: 0,
+                refresh_stride: 2,
+            })
+            .expect("visible layer")
+    } else {
+        shade
+    };
     let input = shade.input();
     input
         .publish(Arc::new(state.clone()))
@@ -187,10 +219,10 @@ pub(crate) fn render_from_height(
     let a = elevation.to_radians();
     let provider = shade.provider().expect("ground band target");
     let witness = Arc::new(Mutex::new(None));
-    let contribution = SceneContributions::new(vec![
-        Box::new(shade),
-        Box::new(Receiver(Arc::clone(&witness))),
-    ]);
+    let members: [Box<dyn SceneContribution>; 2] =
+        [Box::new(shade), Box::new(Receiver(Arc::clone(&witness)))];
+    let members = depth_writer.into_iter().chain(members).collect();
+    let contribution = SceneContributions::new(members);
     let mut host = pollster::block_on(prepare_ground(
         &gpu.capabilities,
         &gpu.queue,
@@ -233,7 +265,7 @@ pub(crate) fn render_from_height(
     while host.poll_completed().expect("retire frame").is_some() {}
     (
         host,
-        input.ground_condensate_products().expect("ground products"),
+        input,
         witness
             .lock()
             .expect("receiver witness")

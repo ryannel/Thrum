@@ -822,6 +822,7 @@ fn clouded_weather(
     let initial = setup.cloud_sequence.target(setup.cloud_weather, 0.0);
     #[cfg(not(feature = "proving"))]
     let initial = setup.cloud_weather;
+    let initial = setup.clouds.weather(initial);
     let state = shapes.map_or_else(
         || thrum_cloud_model::State::new(initial, 5.0, 0),
         |placed| placed.state(initial),
@@ -853,7 +854,7 @@ fn cloud_shade(
     if selection == crate::CloudSelection::Off {
         return Ok(None);
     }
-    let config = shapes.map_or_else(crate::clouds::shade_config, crate::PlacedSky::profile);
+    let config = selection.profile(shapes);
     let shade = thrum_clouds::Shade::new(config)
         .map_err(|error| runtime::FrameError::Scene(error.to_string()))?;
     let shade = if let Some(ground) = ground {
@@ -1021,6 +1022,7 @@ impl GameHost for Runtime {
             source.cloud_sky,
             source.cloud_shapes.as_ref(),
             source.cloud_ground.as_ref(),
+            source.cloud_selection,
         )?;
         #[cfg(feature = "proving")]
         let contribution = if source.uses_test_bank() {

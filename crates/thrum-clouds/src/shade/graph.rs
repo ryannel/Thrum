@@ -218,6 +218,7 @@ pub(super) fn append_ground(
     graph: &mut EffectGraph,
     ground: &crate::ground::GroundGpu,
     targets: &crate::ground::GroundTargets,
+    shape_noise: EffectAccess,
 ) -> Vec<EffectAccess> {
     let access = |resource, range, kind| EffectAccess {
         resource,
@@ -263,6 +264,15 @@ pub(super) fn append_ground(
     let observer = buffer(&medium.observer, A::UniformRead, true);
     let history = buffer(&medium.history, A::UniformRead, true);
     let hemisphere = buffer(&targets.medium.lighting.ambient, A::StorageReadWrite, true);
+    let deck_inputs = targets.medium.sky_params.as_ref().map(|params| {
+        [
+            buffer(params, A::UniformRead, true),
+            buffer(&targets.medium.lighting.phase, A::StorageRead, true),
+            access(0, 0..4, A::SampledRead),
+            access(1, 0..4, A::SampledRead),
+            shape_noise,
+        ]
+    });
     let mut paths: Vec<_> = (3..6)
         .map(|resource| {
             let D::Texture { layers, .. } = graph.resources[resource].0 else {
@@ -305,6 +315,7 @@ pub(super) fn append_ground(
             A::StorageWrite,
         ),
     ]);
+    paths.extend(deck_inputs.into_iter().flatten());
     graph.passes.push(EffectPass {
         name: crate::ground::medium::PASS.into(),
         cadence: EffectCadence::EveryFrame,
