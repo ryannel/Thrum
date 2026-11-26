@@ -1081,8 +1081,8 @@
           "ask": "Does the test save and load through wgpu's public `PipelineCache::get_data` and `create_pipeline_cache`, with no Metal persistence call of the engine's own anywhere in the product? Does any shipping path write the archive during play?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP12/qualification/D12.1.log",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP12-review.md",
           "builder_result": "pass"
         },
         {
@@ -1093,8 +1093,8 @@
           "ask": "Is a miss made an error by Metal's own option on the pipeline, not by a counter read afterwards? Are the two failing cases run by the same command as the passing one?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP12/qualification/archive-witness/archive-witness.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP12-review.md",
           "builder_result": "pass"
         },
         {
@@ -1105,8 +1105,8 @@
           "ask": "Is the digest in the game's header taken at harvest over the complete byte sequence `get_data` returned? Does every call in the product that gives file data to `create_pipeline_cache` come after that digest has been recomputed over the data and matched?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP12/qualification/archive-faults/archive-faults.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP12-review.md",
           "builder_result": "pass"
         },
         {
@@ -1116,10 +1116,10 @@
           "lock": "gpu",
           "ask": "Does the default follow the record, and can each path still be forced for a comparison?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP12/qualification/launch/launch.json",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP12-review.md",
+          "builder_result": "open"
         },
         {
           "id": "D12.5",
@@ -1128,17 +1128,28 @@
           "ask": "Does the pin check rebuild each of the two copies from its released crate and patch files without the network, and fail on one changed byte in either? Read the wgpu-core patch: does it change anything besides the Metal adapter key and its unit tests, and does it name anything of Thrum's that wgpu could not take as it stands?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP12/qualification/D12.5.log",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP12-review.md",
           "builder_result": "pass"
         }
       ],
       "depends_on": [],
-      "failed_reviews": 0,
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
-      "quality_bar": "A warm start as a shipped Metal game with binary archives has it: the second launch compiles nothing, a damaged or outdated archive costs one slower launch and never a crash or a hitch in play, and the proof is a run that is not allowed to fall back."
+      "status": "in_progress",
+      "quality_bar": "A warm start as a shipped Metal game with binary archives has it: the second launch compiles nothing, a damaged or outdated archive costs one slower launch and never a crash or a hitch in play, and the proof is a run that is not allowed to fall back.",
+      "findings": [
+        {
+          "name": "Successive launches reuse the rejected archive",
+          "repeat": false
+        },
+        {
+          "name": "A libraries-only launch bypasses the measured preparation default",
+          "item": "D12.4",
+          "repeat": false
+        }
+      ]
     },
     {
       "id": "WP11",

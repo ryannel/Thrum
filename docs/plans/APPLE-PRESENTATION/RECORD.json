@@ -1511,7 +1511,47 @@
     },
     "WP12": {
       "definitions": "47ac266fa842b541e90b8c86483ae0730bb0a3816b023fbf210a184cedebadff",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "2dfbdb4b795c51f8cf3469c0459d7cc3bb1dbf0c",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP12-review.md",
+          "items": {
+            "D12.1": "pass",
+            "D12.2": "pass",
+            "D12.3": "pass",
+            "D12.4": "fail",
+            "D12.5": "pass"
+          },
+          "findings": [
+            {
+              "name": "Successive launches reuse the rejected archive",
+              "repeat": false
+            },
+            {
+              "name": "A libraries-only launch bypasses the measured preparation default",
+              "item": "D12.4",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 89120,
+            "cached": 1684352,
+            "output": 6571,
+            "turns": 1
+          },
+          "at": "2026-11-26T08:29:26Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of APPLE-PRESENTATION at .orchestrate/evidence/APPLE-PRESENTATION/design-review.md asked for changes, ",
