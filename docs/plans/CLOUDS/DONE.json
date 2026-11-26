@@ -1325,7 +1325,7 @@
     {
       "id": "WP10",
       "name": "The twelve accepted cloud volumes and the growing congestus each read as themselves in the finished sky",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -1382,16 +1382,6 @@
           "evidence": ".orchestrate/evidence/CLOUDS/WP10/review-repair/qualification-cost.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP10-review.md"
-        }
-      ],
-      "findings": [
-        {
-          "name": "Changing cloud type at full placed share replaces mature clouds in one tick",
-          "repeat": false
-        },
-        {
-          "name": "The trace and Sun path clip hash-selected clouds scaled above one",
-          "repeat": false
         }
       ]
     },
