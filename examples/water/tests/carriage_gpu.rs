@@ -111,7 +111,7 @@ fn query_slope_matches_the_carried_height_in_both_sections() {
     let answers = mailbox.drain(scene.endpoint(2), step);
     assert_eq!(answers.len(), 1);
     assert_eq!(answers[0].points.len(), 3 * stations.len());
-    for (x, points) in stations.into_iter().zip(answers[0].points.chunks_exact(3)) {
+    for (x, points) in stations.into_iter().zip(answers[0].points.as_chunks::<3>().0) {
         let [left, centre, right] = [0, 1, 2].map(|i| points[i].surface);
         assert!(left.wet && centre.wet && right.wet);
         let reported = centre.sample.slope[0];
