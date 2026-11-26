@@ -1813,8 +1813,8 @@
           "check": "node scripts/check_water_browser.mjs --case under",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP15/chrome-under/run.json",
           "verdict": "",
           "review": ""
         },
