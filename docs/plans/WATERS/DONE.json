@@ -1454,7 +1454,7 @@
     {
       "id": "WP23",
       "name": "The water's reflection and shade tests compile for Linux and Windows too",
-      "status": "in_progress",
+      "status": "done",
       "quality_bar": "The workspace's tests stay type-checked for Linux and Windows, as they were before WP8's first commits reached main: no error for either target, and the Mac's optics proofs as they are.",
       "items": [
         {
