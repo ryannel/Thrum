@@ -12,14 +12,39 @@ pub(super) fn camera(index: usize) -> Camera {
 
 pub(super) fn placements() -> [MeshPlacement; 5] {
     [
-        ("meshes/rain-yard-paving", [0.42, 0.37, 0.29], 0.88),
-        ("meshes/rain-yard-track", [0.23, 0.135, 0.074], 0.97),
-        ("meshes/rain-yard-roof", [0.15, 0.12, 0.094], 0.87),
-        ("meshes/rain-yard-posts", [0.21, 0.107, 0.048], 0.92),
-        ("meshes/rain-yard-wall", [0.39, 0.29, 0.21], 0.95),
+        (
+            "meshes/rain-yard-paving",
+            "textures/rain-yard-paving",
+            [0.42, 0.37, 0.29],
+            0.88,
+        ),
+        (
+            "meshes/rain-yard-track",
+            "textures/rain-yard-track",
+            [0.23, 0.135, 0.074],
+            0.97,
+        ),
+        (
+            "meshes/rain-yard-roof",
+            "textures/white",
+            [0.15, 0.12, 0.094],
+            0.87,
+        ),
+        (
+            "meshes/rain-yard-posts",
+            "textures/white",
+            [0.21, 0.107, 0.048],
+            0.92,
+        ),
+        (
+            "meshes/rain-yard-wall",
+            "textures/white",
+            [0.39, 0.29, 0.21],
+            0.95,
+        ),
     ]
-    .map(|(name, [r, g, b], roughness)| {
-        MeshPlacement::new(name, "textures/white").material(CookedMaterial {
+    .map(|(name, texture, [r, g, b], roughness)| {
+        MeshPlacement::new(name, texture).material(CookedMaterial {
             base_colour: [r, g, b, 1.0],
             roughness,
             metalness: 0.0,

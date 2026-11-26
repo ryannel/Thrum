@@ -4,6 +4,7 @@
 import json
 import math
 import struct
+import zlib
 from pathlib import Path
 
 from make_island import height as island_height
@@ -164,6 +165,47 @@ def main():
     wall = Mesh()
     wall.box((0.9, DATUM - 0.16, 7.04), (5.65, DATUM + 1.3, 7.27))
     wall.save(folder, "rain-yard-wall")
+    textures = folder.parent / "textures"
+    write_texture(textures / "rain-yard-paving.png", True)
+    write_texture(textures / "rain-yard-track.png", False)
+
+
+def write_texture(path, paved):
+    """Tile one metre of albedo with the mesh joints every half metre."""
+    side = 128
+
+    def grain(x, z, period):
+        ix, iz = math.floor(x), math.floor(z)
+        u = smoothstep(x - ix)
+        v = smoothstep(z - iz)
+
+        def value(i, j):
+            seed = (i % period) * 0x85157AF5 ^ (j % period) * 0x2C1B3C6D
+            return ((seed ^ (seed >> 15)) * 0x85EBCA6B & 0xFFFF) / 65535.0
+
+        a = (1.0 - u) * value(ix, iz) + u * value(ix + 1, iz)
+        b = (1.0 - u) * value(ix, iz + 1) + u * value(ix + 1, iz + 1)
+        return (1.0 - v) * a + v * b
+
+    pixels = bytearray()
+    for j in range(side):
+        pixels.append(0)
+        for i in range(side):
+            x, z = (i + 0.5) / side, (j + 0.5) / side
+            noise = 0.5 * grain(x * 8, z * 8, 8) + 0.3 * grain(x * 32, z * 32, 32)
+            noise += 0.2 * grain(i, j, side)
+            joint = min(abs(math.remainder(x, 0.5)), abs(math.remainder(z, 0.5)))
+            slab = 0.025 * ((int(x * 2) ^ int(z * 2)) & 1)
+            mortar = 0.25 * (1.0 - smoothstep(joint / 0.009))
+            tint = 0.84 + 0.12 * noise + slab - mortar if paved else 0.68 + 0.30 * noise
+            pixels.extend([round(255 * tint)] * 3)
+
+    def chunk(kind, data):
+        return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data))
+
+    header = struct.pack(">IIBBBBB", side, side, 8, 2, 0, 0, 0)
+    path.write_bytes(b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", header)
+                     + chunk(b"IDAT", zlib.compress(pixels, 9)) + chunk(b"IEND", b""))
 
 
 if __name__ == "__main__":
