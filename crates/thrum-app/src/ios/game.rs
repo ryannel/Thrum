@@ -70,7 +70,7 @@ pub struct MobilePrepared<G: MobileGame> {
 pub type MobileHost<G> = FrameHost<<G as MobileGame>::World, <G as MobileGame>::Scene>;
 
 /// Game code called by the shared iOS shell. UIKit and drawable ownership stay in the shell.
-pub trait MobileGame: Sized + 'static {
+pub trait MobileGame: Sized + Send + 'static {
     /// Simulation world read by the frame runtime.
     type World: FrameWorld + Send + 'static;
     /// Scene source that turns publications into render data.
@@ -90,6 +90,7 @@ pub trait MobileGame: Sized + 'static {
     /// # Errors
     /// Returns game or renderer preparation failures.
     fn prepare(
+        &self,
         gpu: Gpu<'_>,
         origin: Instant,
         wake: fn(),

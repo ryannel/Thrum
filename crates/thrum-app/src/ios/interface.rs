@@ -8,7 +8,8 @@ use winit::{
     window::Window,
 };
 
-use super::{MobileGame, Shell, gesture::Phase};
+use super::{MobileGame, Shell};
+use crate::ios_gesture::Phase;
 use crate::{KeyCode, OutputMetrics};
 
 #[expect(

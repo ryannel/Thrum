@@ -48,6 +48,7 @@ private func thrumIOSDisplayTarget(_ targetMediaSeconds: Double, _ headroom: Dou
 private func thrumSceneConnected()
 
 protocol ThrumMobileApplication {
+    static func start()
     static func sceneConnected(_ options: UIScene.ConnectionOptions)
     static func openURLs(_ contexts: Set<UIOpenURLContext>)
 }
@@ -165,7 +166,4 @@ func thrumIOSLiveDetachedWindows() -> Int32 {
     return Int32(SceneBridge.detached.count)
 }
 
-@_silgen_name("thrum_mobile_start")
-func thrumMobileStart()
-
-thrumMobileStart()
+MobileApplication.start()

@@ -18,18 +18,16 @@ use winit::{
     window::{Window, WindowId},
 };
 
-use self::{
-    gesture::{Gesture, Phase},
-    lease::Take,
-};
 use crate::GameError;
+use crate::{
+    ios_gesture::{Gesture, Phase},
+    ios_lease::Take,
+};
 
 mod capture;
 mod game;
-mod gesture;
 #[cfg(feature = "interface")]
 mod interface;
-mod lease;
 pub use game::{
     MobileControls, MobileGame, MobileHost, MobileOptions, MobilePrepared, SceneRequest,
 };
@@ -258,6 +256,7 @@ enum State {
 )]
 struct Shell<G: MobileGame> {
     options: MobileOptions,
+    game: Option<G>,
     route: bool,
     instance: wgpu::Instance,
     lease: Arc<Lease>,
@@ -309,12 +308,13 @@ struct Shell<G: MobileGame> {
 }
 
 impl<G: MobileGame> Shell<G> {
-    fn new(options: MobileOptions) -> Self {
+    fn new(game: G, options: MobileOptions) -> Self {
         let mut descriptor = wgpu::InstanceDescriptor::new_without_display_handle();
         descriptor.backends = wgpu::Backends::METAL;
         Self {
             route: options.witness.is_some(),
             options,
+            game: Some(game),
             instance: wgpu::Instance::new(descriptor),
             lease: Arc::new(Lease::new()),
             signals: Arc::new(Signals::default()),
@@ -467,7 +467,9 @@ impl<G: MobileGame> Shell<G> {
         let stalling = wake.clone();
         let lost = wake.clone();
         let held = wake.clone();
-        let render = render::start::<G>(
+        let game = self.game.take().ok_or("iOS game was already started")?;
+        let render = render::start(
+            game,
             Arc::clone(&self.lease),
             Arc::clone(&self.signals),
             &self.options,
@@ -1293,14 +1295,14 @@ extern "C" fn thrum_ios_scene_connected() {
 /// Returns the event loop or game error when the app exits.
 /// # Panics
 /// Panics when called more than once per process.
-pub fn run<G: MobileGame>(options: MobileOptions) -> Result<(), GameError> {
+pub fn run<G: MobileGame>(game: G, options: MobileOptions) -> Result<(), GameError> {
     let event_loop = EventLoop::<ShellEvent>::with_user_event()
         .build()
         .map_err(|error| GameError::Rejected(format!("iOS event loop: {error}")))?;
     SHELL
         .set(event_loop.create_proxy())
         .unwrap_or_else(|_| panic!("one iOS shell event loop"));
-    let mut shell = Shell::<G>::new(options);
+    let mut shell = Shell::new(game, options);
     if let Err(error) = event_loop.run_app(&mut shell) {
         shell.error = Some(format!("iOS event loop: {error}"));
     }

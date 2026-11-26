@@ -28,7 +28,9 @@ mod culling;
 #[cfg(feature = "proving")]
 mod invite;
 
-pub(super) struct V1;
+pub(super) struct V1 {
+    pub(super) culling_oracle: bool,
+}
 
 type Host = MobileHost<V1>;
 
@@ -78,6 +80,7 @@ impl MobileGame for V1 {
     type Readback = ();
 
     async fn prepare(
+        &self,
         gpu: Gpu<'_>,
         origin: Instant,
         wake: fn(),
@@ -92,7 +95,7 @@ impl MobileGame for V1 {
         let (setup, mut host) = prepare_scene(&gpu, config, request)
             .await
             .map_err(GameError::Rejected)?;
-        if qualification && std::env::var("THRUM_CULLING_ORACLE").as_deref() == Ok("1") {
+        if qualification && self.culling_oracle {
             culling::record(
                 &mut host,
                 gpu.device,
@@ -129,7 +132,8 @@ impl MobileGame for V1 {
         } else {
             (
                 v1_game::attach_cooked_scene(&mut host).map_err(GameError::Rejected)?,
-                cooked_view::View::prepare(&mut host).map_err(GameError::Rejected)?,
+                cooked_view::View::prepare(&mut host, qualification)
+                    .map_err(GameError::Rejected)?,
             )
         };
         let (host, controls) = host
@@ -300,8 +304,4 @@ async fn prepare_scene(
         .prepare(gpu.device, gpu.queue, gpu.capabilities, config)
         .await?;
     Ok((setup, host))
-}
-
-pub(super) fn route_enabled() -> bool {
-    cfg!(feature = "proving") && std::env::var("THRUM_V1_ROUTE").as_deref() == Ok("1")
 }

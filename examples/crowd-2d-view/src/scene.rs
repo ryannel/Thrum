@@ -98,6 +98,7 @@ pub struct CrowdScene {
     camera: Cell<[[f64; 2]; 2]>,
     extraction: Cell<Extraction>,
     pan: [f64; 2],
+    span: f32,
     projectiles: RefCell<BTreeMap<u32, (u64, Body)>>,
     flashes: RefCell<Vec<([f64; 2], u64)>>,
 }
@@ -111,9 +112,17 @@ impl CrowdScene {
             camera: Cell::default(),
             extraction: Cell::default(),
             pan: [0.0; 2],
+            span: if close { 44.0 } else { 178.0 },
             projectiles: RefCell::default(),
             flashes: RefCell::new(Vec::with_capacity(16)),
         }
+    }
+
+    /// Set the minimum visible world span for the window or phone's shorter side.
+    #[must_use]
+    pub fn with_span(mut self, span: std::num::NonZeroU16) -> Self {
+        self.span = f32::from(span.get());
+        self
     }
 
     /// Pan the view without changing an input or publication of the replay.
@@ -244,8 +253,7 @@ impl SceneSource<Arc<PublicationPage>> for CrowdScene {
         Ok(SpriteFrame {
             view: SpriteView {
                 centre: [centre[0] + self.pan[0], centre[1] + self.pan[1]],
-                pixels_per_unit: extent[0].min(extent[1]) as f32
-                    / if self.close { 44.0 } else { 178.0 },
+                pixels_per_unit: extent[0].min(extent[1]) as f32 / self.span,
             },
             rows: &[],
         })

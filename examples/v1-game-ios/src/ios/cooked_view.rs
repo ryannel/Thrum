@@ -14,9 +14,8 @@ pub(super) struct View {
 }
 
 impl View {
-    pub(super) fn prepare(host: &mut Host) -> Result<Option<Self>, String> {
-        if !super::route_enabled() || std::env::var("THRUM_COOKED_DRAW_HELD").as_deref() != Ok("1")
-        {
+    pub(super) fn prepare(host: &mut Host, qualification: bool) -> Result<Option<Self>, String> {
+        if !qualification || std::env::var("THRUM_COOKED_DRAW_HELD").as_deref() != Ok("1") {
             return Ok(None);
         }
         let number = |key, default: &str| {

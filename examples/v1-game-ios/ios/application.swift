@@ -1,5 +1,8 @@
 import UIKit
 
+@_silgen_name("thrum_mobile_start")
+private func startV1(_ qualification: Int32, _ cullingOracle: Int32)
+
 #if THRUM_PROVING
 @_silgen_name("thrum_ios_shell_command")
 private func thrumIOSCommand(_ code: Int32)
@@ -101,6 +104,16 @@ private func observeShellCommands() {
 #endif
 
 struct MobileApplication: ThrumMobileApplication {
+    static func start() {
+        #if THRUM_PROVING
+        let settings = ProcessInfo.processInfo.environment
+        startV1(settings["THRUM_V1_ROUTE"] == "1" ? 1 : 0,
+                settings["THRUM_CULLING_ORACLE"] == "1" ? 1 : 0)
+        #else
+        startV1(0, 0)
+        #endif
+    }
+
     #if THRUM_PROVING
     static func sceneConnected(_ options: UIScene.ConnectionOptions) {
         observeShellCommands()

@@ -30,11 +30,9 @@ pub mod capture_writer;
 )]
 mod file_watch;
 // These portable tests exercise the same touch and lease code as UIKit.
-#[cfg(all(test, not(target_os = "ios"), not(target_arch = "wasm32")))]
-#[path = "ios/gesture.rs"]
+#[cfg(any(target_os = "ios", test))]
 mod ios_gesture;
-#[cfg(all(test, not(target_os = "ios"), not(target_arch = "wasm32")))]
-#[path = "ios/lease.rs"]
+#[cfg(any(target_os = "ios", test))]
 mod ios_lease;
 
 pub mod frame;

@@ -34,7 +34,7 @@ impl<G: MobileGame> Owner<G> {
             return Ok(None);
         }
         let origin = Instant::now();
-        let candidate = pollster::block_on(G::prepare(
+        let candidate = pollster::block_on(self.game.prepare(
             PrepareGpu {
                 device: &gpu.device,
                 queue: &gpu.queue,

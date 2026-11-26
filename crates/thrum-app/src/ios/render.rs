@@ -33,7 +33,7 @@ use crate::{
 };
 use wgpu::TextureViewDescriptor;
 
-use super::lease::{Leased, SurfaceLease, TickPermission};
+use crate::ios_lease::{Leased, SurfaceLease, TickPermission};
 
 mod replace;
 
@@ -260,6 +260,7 @@ struct Gpu<G: MobileGame> {
 }
 
 struct Owner<G: MobileGame> {
+    game: G,
     capture: super::capture::Recorder,
     lease: Arc<Lease>,
     /// The instance the first device came from; recoveries use it again.
@@ -287,6 +288,7 @@ pub(super) struct Wakes {
 }
 
 pub(super) fn start<G: MobileGame>(
+    game: G,
     lease: Arc<Lease>,
     signals: Arc<Signals>,
     options: &MobileOptions,
@@ -298,7 +300,8 @@ pub(super) fn start<G: MobileGame>(
         lost,
         recover_held,
     } = wakes;
-    let mut owner = Owner::<G> {
+    let mut owner = Owner {
+        game,
         capture: super::capture::Recorder::default(),
         lease,
         instance: None,
@@ -449,7 +452,7 @@ impl<G: MobileGame> Owner<G> {
             .unwrap_or(Some(PREFERRED_SDR_FORMAT))
             .ok_or("no supported iOS SDR surface format")?;
         let extent = [extent[0].max(1), extent[1].max(1)];
-        let prepared = pollster::block_on(G::prepare(
+        let prepared = pollster::block_on(self.game.prepare(
             PrepareGpu {
                 device: &device,
                 queue: &queue,

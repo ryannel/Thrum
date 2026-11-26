@@ -310,7 +310,9 @@ shells. Its Rust package owns the world, scene, cooked font and interface. Its
    #[cfg(target_os = "ios")]
    #[unsafe(no_mangle)]
    pub extern "C" fn thrum_mobile_start() {
-       if let Err(error) = thrum_app::ios::run::<my_game::MobileGame>(
+       let game = my_game::MobileGame::new();
+       if let Err(error) = thrum_app::ios::run(
+           game,
            thrum_app::ios::MobileOptions {
                title: "My Game",
                render_thread: "my-game-render",
@@ -326,8 +328,18 @@ shells. Its Rust package owns the world, scene, cooked font and interface. Its
    `UISceneDelegateClassName` to `ThrumSceneDelegate` under the Window Application scene role,
    and declare your supported orientations. Use the
    [Crowd Info.plist](../crowd-2d-status-ios/ios/Info.plist) as a template. Add
-   `ios/application.swift` containing `struct MobileApplication: ThrumMobileApplication {}`.
-   Implement the protocol's optional URL handlers there if your game opens URLs.
+   `ios/application.swift` with the Swift call to your Rust entry point. Read launch settings
+   here and pass them into your Rust entry point if your game needs them. Implement optional
+   URL handlers on the same type if your game opens URLs.
+
+   ```swift
+   @_silgen_name("thrum_mobile_start")
+   private func startGame()
+
+   struct MobileApplication: ThrumMobileApplication {
+       static func start() { startGame() }
+   }
+   ```
 5. With Xcode and a booted iPhone simulator, build and install the app. Replace the package,
    paths, executable and bundle ID with your own values.
 

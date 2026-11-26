@@ -1,4 +1,5 @@
 use std::{
+    path::PathBuf,
     sync::{Arc, Mutex},
     time::{Duration, Instant},
 };
@@ -13,7 +14,17 @@ use thrum_ui::{Event, Viewport};
 use crate::{END_TICK, Host, Input, Readback, StatusScene, prepare, readback};
 
 /// The Crowd game wired to the shared UIKit shell.
-pub struct MobileCrowd;
+pub struct MobileCrowd {
+    store: PathBuf,
+}
+
+impl MobileCrowd {
+    /// Use the font store installed by the app.
+    #[must_use]
+    pub const fn new(store: PathBuf) -> Self {
+        Self { store }
+    }
+}
 
 /// Game input and the presented frame witnessed by the iOS route.
 pub struct MobileInput {
@@ -33,25 +44,18 @@ impl MobileGame for MobileCrowd {
     type Readback = Readback;
 
     async fn prepare(
+        &self,
         gpu: Gpu<'_>,
         _: Instant,
         _: fn(),
         _: Option<SceneRequest>,
         qualification: bool,
     ) -> Result<MobilePrepared<Self>, GameError> {
-        let store = std::env::var_os("THRUM_ASSET_STORE").map_or_else(
-            || {
-                std::env::home_dir()
-                    .unwrap_or_default()
-                    .join("Documents/crowd-store")
-            },
-            Into::into,
-        );
         let pan = Arc::new(Mutex::new([0.0; 2]));
         // The function proof advances by committed ticks. Its first checkpoint
         // keeps the replay available for rotation, and the second for backgrounding.
         let first_stop = if qualification { 240 } else { END_TICK };
-        let host = prepare(gpu, store.into(), first_stop, qualification).await?;
+        let host = prepare(gpu, self.store.clone().into(), first_stop, qualification).await?;
         Ok(MobilePrepared {
             host,
             scene: Arc::clone(&pan),

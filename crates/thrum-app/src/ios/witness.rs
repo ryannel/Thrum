@@ -6,8 +6,8 @@ use std::{fmt::Write as _, fs, time::Duration};
 use thrum_core::sim::WorldLifecycle;
 use thrum_render::frame::TargetLeadStatus;
 
-use super::gesture::GestureCounters;
 use super::render::{FrameReply, Recovered, SurfaceStatus};
+use crate::ios_gesture::GestureCounters;
 
 #[derive(Default)]
 pub(super) struct Witness {

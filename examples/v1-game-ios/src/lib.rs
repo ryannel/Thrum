@@ -12,14 +12,20 @@ mod ios;
     reason = "the Swift bootstrap requires an exported C symbol"
 )]
 #[unsafe(no_mangle)]
-pub extern "C" fn thrum_mobile_start() {
+pub extern "C" fn thrum_mobile_start(qualification: i32, culling_oracle: i32) {
     use thrum_app::ios::{MobileOptions, run};
 
-    let result = run::<ios::V1>(MobileOptions {
-        title: "Thrum V1 scene",
-        render_thread: "thrum-v1-ios-render",
-        witness: ios::route_enabled().then_some("thrum-v1-ios-state.txt"),
-    });
+    let game = ios::V1 {
+        culling_oracle: culling_oracle != 0,
+    };
+    let result = run(
+        game,
+        MobileOptions {
+            title: "Thrum V1 scene",
+            render_thread: "thrum-v1-ios-render",
+            witness: (qualification != 0).then_some("thrum-v1-ios-state.txt"),
+        },
+    );
     if let Err(error) = result {
         #[expect(clippy::print_stderr, reason = "report a fatal mobile launch error")]
         {

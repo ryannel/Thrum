@@ -37,7 +37,7 @@ impl Input {
                     _ => [0.0; 2],
                 };
                 self.keys += 1;
-                self.pan = [self.pan[0] + delta[0], self.pan[1] + delta[1]];
+                self.pan_by(delta);
             }
             Routed::Game(Event::Press {
                 contact,
@@ -57,9 +57,12 @@ impl Input {
                 if let Some((owner, previous)) = &mut self.drag
                     && *owner == *contact
                 {
-                    self.pan[0] += (previous[0] - point[0]) * 0.22;
-                    self.pan[1] += (point[1] - previous[1]) * 0.22;
+                    let delta = [
+                        (previous[0] - point[0]) * 0.22,
+                        (point[1] - previous[1]) * 0.22,
+                    ];
                     *previous = *point;
+                    self.pan_by(delta);
                 }
             }
             Routed::Game(Event::Release(contact, _) | Event::Cancel(contact)) => {
@@ -71,6 +74,10 @@ impl Input {
             _ => {}
         }
         Some(routed)
+    }
+
+    fn pan_by(&mut self, delta: [f64; 2]) {
+        self.pan = std::array::from_fn(|axis| (self.pan[axis] + delta[axis]).clamp(-32.0, 32.0));
     }
 
     /// Desired camera offset in world units.

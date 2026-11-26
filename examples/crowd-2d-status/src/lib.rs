@@ -97,7 +97,8 @@ pub async fn prepare(
 ) -> Result<Host, GameError> {
     let (display, assets) = Display::new(source, gpu.surface.extent)?;
     let scene = StatusScene {
-        crowd: CrowdScene::new(false),
+        // Room for the 120-unit arena radius, a 32-unit pan and sprite edges.
+        crowd: CrowdScene::new(false).with_span(std::num::NonZeroU16::new(312).unwrap()),
         display,
         pan: [0.0; 2],
         digest: Cell::default(),
