@@ -18,4 +18,3 @@ fn cloud_window_depths(world:vec3<f32>,start_height:f32,limits:vec2<f32>)->vec3<
     if nw>0.0 {tau=mix(tau,cloud_path_sample(sun_near,near,heights,limits),nw);}
     return tau;
 }
-
