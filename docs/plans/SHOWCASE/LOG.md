@@ -172,3 +172,20 @@
   the generation already observed by the game. The resident set owns the validated `Head`, but `CookedStats`
   exposes only its drawn generation. WP7.2 to WP7.4 need this observation to distinguish two stores that both
   report generation one. A fetched head, requested root or route pin can precede actual draw admission.
+- 2026-11-26 WP7 verified six presets on all three rows, visible live edits on Chrome, live publication swaps
+  and stable pipeline counts on both Mac rows, and the capture-off timing records. Chrome's exit page now
+  calls the web shell's profiler before each frame. Both Mac profiler proofs use 60 Hz for numeric world-tick
+  rows. [WP7 evidence](../../../.orchestrate/evidence/SHOWCASE/WP7/)
+- 2026-11-26 WP7 proposal to `APPLE-PRESENTATION` and the browser presentation owner. The three-row fixed
+  threshold is 1.0. The Apple row and the portable Mac row differ by 5.48 at twilight in the largest grid cell.
+  Holding the Apple recipe, EDR at headroom 1 and the scene fixed, changing TAAU to MetalFX produced a 5.77
+  maximum there. Portable Mac and Chrome still exceed 1.0 at several stops after the resolved selections
+  are verified. Trace provider and frame-history differences at those stops. The fixed calibration rule
+  applied to the measured drift would admit the night diagnostic at its required separation.
+  [Comparison](../../../.orchestrate/evidence/SHOWCASE/WP7/compare/run.json)
+  [Selection isolation](../../../.orchestrate/evidence/SHOWCASE/WP7/compare-isolation/run.json)
+- 2026-11-26 WP7 proposal to `PLATFORM-RUNTIME-MAC` and `APPLE-TILE`. Inspect submit/present and scene
+  encoding where the render owner spans the missed target. The position and neighboring samples of each
+  miss are retained for WP8.13. The portable sunrise tripwire found higher costs with TAAU, including tone
+  encode and surface present. The remaining offscreen p95 gap and browser callback gaps are recorded under
+  load for WP8.13. [Frame investigation](../../../.orchestrate/evidence/SHOWCASE/WP7/frame-investigation.md)

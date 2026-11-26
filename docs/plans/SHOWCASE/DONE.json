@@ -404,8 +404,8 @@
           "check": "python3 scripts/run_v1_showcase.py exit --controls",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
-          "builder_result": "open",
+          "evidence": ".orchestrate/evidence/SHOWCASE/WP7/controls/run.json",
+          "builder_result": "pass",
           "verdict": "",
           "review": ""
         },
@@ -416,10 +416,10 @@
           "lock": "gpu",
           "ask": "Does each clause run in the exit scene itself, through the control, watcher and profiler paths a person uses, and does the pipeline count come from the engine's creation counters?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SHOWCASE/WP7/mac-clauses/run.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP7.8",
@@ -427,8 +427,8 @@
           "check": "python3 scripts/run_v1_showcase.py exit --clauses --target chrome-webgpu",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": "",
-          "builder_result": "open",
+          "evidence": ".orchestrate/evidence/SHOWCASE/WP7/chrome-clauses/run.json",
+          "builder_result": "pass",
           "verdict": "",
           "review": ""
         },
@@ -439,10 +439,10 @@
           "lock": "gpu",
           "ask": "Does each late frame have either a cause that is fixed, proposed to its owning module in the log or shown by the record to lie outside the game, or the mark unresolved under load, with the evidence read, kept for WP8.13? Is load alone given as a cause anywhere? Is any row about a quarter slower than WP5's baseline at the same stop, and if so is it explained?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SHOWCASE/WP7/mac-frames/run.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP7.10",
@@ -451,10 +451,10 @@
           "lock": "chrome",
           "ask": "Does each long interval have either a cause that is fixed, proposed to its owning module in the log or shown by the record to lie outside the page, or the mark unresolved under load, with the evidence read, kept for WP8.13? Is load alone given as a cause anywhere?",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SHOWCASE/WP7/chrome-frames/run.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         }
       ],
       "failed_reviews": 0,
