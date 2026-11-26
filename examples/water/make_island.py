@@ -72,6 +72,10 @@ def channel_height(x, z):
     # The mouth sill remains wet at the lowest tide, with a shallow bed.
     floor = level - 0.85 + 0.70 * smoothstep((x - 341) / 9)
     floor -= 0.65 * smoothstep((x - 350) / 10)
+    # Round out the bed where the moving backwater first covers it. The
+    # shallow tidal sill farther out retains its own level.
+    pool = exp(-((x - 333 - 0.16 * (z - 5)) / 8) ** 2)
+    floor -= (0.55 + 0.08 * cos((z - 5) / 4)) * pool
     # Taper the wetted banks at the narrows without moving the chart edges.
     narrow = exp(-((x - 256) / 16) ** 2)
     ends = max(1 - smoothstep((x - 210) / 9), smoothstep((x - 342) / 6))

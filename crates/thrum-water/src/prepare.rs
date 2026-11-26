@@ -803,12 +803,7 @@ fn surface_mesh(map: Option<&thrum_water_model::Map>) -> Geometry {
             // Tile fine enough for geometry in the near view; shading filters
             // the unresolved part of each layer separately.
             let span = (max[0] - min[0]).max(max[1] - min[1]);
-            // Match the sea's near ring where a tidal chart shares its displaced
-            // crest. A coarser edge leaves subpixel cracks between their triangles.
-            let tidal = matches!(&declaration.kind, thrum_water_model::BodyKind::Chart(chart)
-                if chart.ends.iter().any(|end| map.body(end.body).is_some_and(|joined|
-                    matches!(joined.kind, thrum_water_model::BodyKind::Sea))));
-            let spacing = (if tidal { 0.25_f32 } else { 0.5_f32 }).max((span / 1024.0) as f32);
+            let spacing = 0.5_f32.max((span / 1024.0) as f32);
             let start = min.map(|x| (x / f64::from(spacing)).floor() as i32);
             let end = max.map(|x| (x / f64::from(spacing)).ceil() as i32);
             let first_index = geometry.indices.len() as u32;
