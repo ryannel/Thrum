@@ -328,7 +328,9 @@ tests passing.
   they are;
 - seam 9 (pipeline preparation: the library cook as a step beside `CONTENT-LOOP`'s cooker, the passthrough
   loader, and a pinned copy of wgpu's Metal backend) is built in WP10 and WP12. The pinned copy arrives in WP10,
-  where it carries stage records to shaders compiled ahead of time, and WP12 adds the archive to it. From WP10
+  where it carries stage records to shaders compiled ahead of time, and WP12 adds the archive to it. WP12 also
+  pins wgpu-core, changed only where a pipeline cache's header is written and checked on Metal, and every module
+  builds against that copy too. From WP10
   every module builds against that copy, and its patches leave the WGSL path and every exact baseline as they
   are. No shipping package links the cook, and nothing is posted upstream.
 

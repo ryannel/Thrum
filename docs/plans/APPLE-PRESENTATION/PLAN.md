@@ -16,6 +16,9 @@ Build in the order below.
 - Assumption: at full window size the frame rate may dip until the governor lands in WP7. Record times for
   that interval without applying a frame-time gate.
 - Assumption: WP10 pins wgpu-hal 30.0.1 for the Metal library loader. WP12 adds the archive to that copy.
+- Assumption: WP12 also pins wgpu-core 30.0.1, changed only so that a pipeline cache's header can be written and
+  checked on Metal. Released wgpu-core does that for Vulkan alone, so the archive cannot be saved or loaded
+  through wgpu without it. The lead took this route on 26 November; the owner can overturn it.
 - Assumption: WP16 keeps the device safe for timestamp query sets created at the engine's one call site. Code
   that creates one with wgpu directly, in the same process and at the same moment as an engine request, is not
   protected, because that needs a change to wgpu's Metal backend. The owner can ask for that change.
@@ -43,16 +46,11 @@ Build in the order below.
 ## WP5 Render scale steps during play with no hitch and no history reset: done
 [review](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP5-review.md)
 
-## WP15 Chrome's SDR valley matches the retained frames again
+## WP15 Chrome's SDR valley matches the retained frames again: done
+[review](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP15-review.md)
 
-Restore the [SDR shoulder arithmetic](DESIGN.md#the-edr-transform-and-its-h--1-identity-wp6) before continuing WP6.
-Match the route, cooked root and record identities in the before-and-after Chrome fixed day captures.
-Keep both receipts and rerun D6.2 and D6.3 on the corrected shader. The shared `exact-images` run proves
-the full matrix on the landing against the [registered APPLE-TILE baselines](../ARCHITECTURE.md#exact-baselines).
-
-## WP6 Highlights go brighter than SDR white on the built-in XDR display
-
-Keep the real display record alongside the forced record in the proofs so they can run with the display asleep.
+## WP6 Highlights go brighter than SDR white on the built-in XDR display: done
+[review](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP6-review.md)
 
 ## WP16 The long tests pass again, and running out of GPU timers is a named error, not a lost device
 
@@ -77,55 +75,31 @@ and what it records when refused, under [the ruling](../ARCHITECTURE.md#interfac
 `.config/long-tests.txt` is `MESH-SHADING`'s to lift: record in the log whether it passes whole after this
 work package, and leave the line.
 
-## WP7 The governor holds the display rate under forced load, then recovers step by step
+## WP7 The governor holds the display rate under forced load, then recovers step by step: done
+[review](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP7-review.md)
 
-The aerial lookup's cadence knob is built in `ATMOSPHERE`'s files under the ruling for seam 7 if that module has
-not declared one; its items do not change. `WATERS` and `CLOUDS` register their own knobs later through the same
-interface, so keep it free of any module's name. Frame samples and pass timing are the frame runtime's feed
-(`timing.rs`), which `CREATOR`'s profiler also reads: leave its timing-demand switch working. The generation
-build's lifecycle in the frame host is WP4's; marking held frames on it is this work package's, and D4.5's test
-already forces the failed build D7.9 needs.
+## WP8 MetalFX reconstructs the valley on Apple tile, with TAAU as its prepared fallback: done
+[review](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP8-review.md)
 
-## WP8 MetalFX reconstructs the valley on Apple tile, with TAAU as its prepared fallback
+## WP9 Surface, device and display changes create nothing during play, and launch-to-ready time is on record: done
+[review](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP9-review.md)
 
-`APPLE-TILE` WP13 leaves the native segment and its provider interface, `NativeProvider`, in
-`crates/thrum-render/src/apple_tile`, as [its design](../APPLE-TILE/DESIGN.md#the-native-segment-and-its-providers-wp13)
-describes; the scaler is a provider there and TAAU is its twin. WP10 and WP11 had built that lifecycle only
-inside the copy/select witness, which is why this work package stopped on 25 November. The segment keeps the
-candidate, the reset decision, the encoder split, completion and the counters, so D8.5 and D8.6 drive it and
-add none of their own. Where MetalFX needs something the interface lacks, change it in `APPLE-TILE`'s files
-under [the ruling for seam 8](../ARCHITECTURE.md#interfaces) and keep that module's tests passing.
-
-Carry on from `build/apple-presentation` at `203ba8269`, which holds the provider, the TAAU twin, the pre-pass
-and the builder's passes for every item but D8.3 and D8.8; the
-[handoff](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP8-handoff.md) says what was tried. D8.3 changed on
-25 November and no other item did. It used to hold MetalFX to TAAU's distance from the un-reconstructed frame
-with no tolerance, which failed on differences between the two reconstructors of 0.0003 in mean luminance that
-were the same with the storage scale held. It now asks only for what a viewer could see: the forced step is
-judged against a matched run with the scale held, the scrub against the un-reconstructed frame, both within 1%.
-Two identical runs differed by exactly zero on this Mac, so the bound carries no noise term. TAAU is not judged
-by D8.3.
-
-The old bound is what switched the pre-pass on, so judge the exposure texture alone against the new one first.
-Its first run sat within 0.51% of the un-reconstructed frame through the scrub and 0.13% through the step, so
-expect it to pass. If it does, it is the path: take the pre-pass out of the product with its counters and
-tests, because nothing would select it, and take again the evidence of the other items that the pre-pass was on
-for, D8.8's recordings among them. Keep the pre-pass only if the exposure texture alone fails D8.3.
-
-## WP9 Surface, device and display changes create nothing during play, and launch-to-ready time is on record
-
-The creation counters are `runtime/creation.rs`, behind the `creation-counters` feature. D9.1's split is the
-baseline WP10 and WP12 are judged against, so record it before changing how anything is prepared.
-
-## WP10 Shaders compiled ahead of time load at launch with no WGSL translation, and pipelines are prepared in parallel
-
-Use `xcrun --toolchain Metal metal` on the Mac. The shared `exact-images` run checks the pinned backend
-against the retained images.
+## WP10 Shaders compiled ahead of time load at launch with no WGSL translation, and pipelines are prepared in parallel: done
+[review](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP10-review.md)
 
 ## WP12 A warm launch compiles no pipeline: the local pipeline archive is proved by a strict fresh-process run
 
-The pinned copy of wgpu-hal is WP10's. Keep the archive patch small and apart from WP10's, since the owner may
-offer it upstream. Post nothing, and open no issue or pull request.
+The pinned copy of wgpu-hal is WP10's, and the archive patch is its own file beside WP10's. The wgpu-core pin is
+new here, and [the design](DESIGN.md#pipeline-preparation-wp10-and-wp12) says how far it goes. If the public
+round trip turns out to need a change to wgpu-core outside its cache-header code, stop and say so, because
+widening the pin is the lead's decision.
+
+The first builder's prototype and probe are in
+[the handoff](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP12-handoff.md). The archive half worked on
+this Mac for one compute pipeline; render pipelines are still to prove.
+
+The owner may offer both cache patches upstream, so keep each small and free of Thrum's names. Post nothing,
+and open no issue or pull request.
 
 ## U1 The Metal pipeline-cache change is offered upstream by the owner
 

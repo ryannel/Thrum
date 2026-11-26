@@ -526,11 +526,9 @@
   [Motion evidence](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP8/motion-previews/README.md)
 
 - 2026-11-25 WP8. The 1920×1080 exposure diagnostic still missed the exact D8.3 bound. The GPU witness
-  verified 12 ordinary colour channels within one half-float ULP at the matching tone input, preserved alpha
-  and retained the three boundary repair counts. Side-by-side playback and native-pixel measurements are on
-  record for D8.8. The bright-star crop had 0.0138% phase modulation at the scene-linear tap and 8.11% at
-  the native output before tone. The SDR paired crop showed 2.79% peak-to-peak with MetalFX and 0.16%
-  with TAAU. Continuous playback review is outstanding.
+  held 12 colour channels within one half-float ULP at the matching tone input. For D8.8 the bright-star
+  crop modulated 8.11% at the native output before tone, and the SDR paired crop 2.79% peak-to-peak with
+  MetalFX against 0.16% with TAAU. Continuous playback review was outstanding. The rest is in the records:
   [Exposure at 1920×1080](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP8/exposure-1080p/comparison.json) ·
   [GPU tone-input witness](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP8/still-tone-input.log) ·
   [Motion record](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP8/motion-previews/README.md)
@@ -610,6 +608,13 @@
   drew with zero WGSL translations. Both native recipes matched all five submitted checkpoints
   byte for byte, and all twelve launch runs and the Chrome shipping check passed.
   [Target evidence](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP10/lifetime-fix/README.md)
+
+- 2026-11-26 Planner: WP12 stopped on a dependency conflict. wgpu-core 30.0.1 writes and checks a pipeline
+  cache's header for Vulkan alone, so on Metal the public `get_data` panics and import is refused, and no
+  wgpu-hal patch reaches either. The lead decided to pin wgpu-core 30.0.1 as well, for the Metal cache header
+  and nothing else, shaped so the owner could offer it for gfx-rs/wgpu#8526. The design says so, D12.1 is
+  rewritten around the public `PipelineCache` round trip, and a new D12.5 holds both pins to their patches. No
+  other work package changed. [Handoff](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP12-handoff.md)
 
 ### CLOUDS WP9 fast-pan observation
 

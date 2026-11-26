@@ -1075,10 +1075,10 @@
       "items": [
         {
           "id": "D12.1",
-          "statement": "The pinned backend's second patch backs wgpu's pipeline cache with a Metal binary archive: pipelines created with the cache are added to the archive, and its data survives a write to a file and a read in a new process. The archive change is its own patch file beside WP10's, and D10.6's pin check passes with both.",
+          "statement": "On Metal, wgpu's public pipeline cache makes a round trip between processes, backed by a Metal binary archive. A device that reports `PIPELINE_CACHE` creates a render pipeline and a compute pipeline with a `PipelineCache`, and `PipelineCache::get_data` returns their data under wgpu's cache header. The data survives a write to a file and a read in a new process, where `create_pipeline_cache` accepts it and both pipelines are created with it. Data whose header names another adapter is refused on import: with `fallback` off, `create_pipeline_cache` reports an error, and nothing panics. The engine saves and loads the archive through this API alone.",
           "check": "cargo test --locked --offline -p thrum-render --features creation-counters --test pipeline_archive",
           "lock": "gpu",
-          "ask": "Is the archive change one patch a reader can review apart from WP10's? Does any shipping path write the archive during play?",
+          "ask": "Does the test save and load through wgpu's public `PipelineCache::get_data` and `create_pipeline_cache`, with no Metal persistence call of the engine's own anywhere in the product? Does any shipping path write the archive during play?",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -1114,6 +1114,17 @@
           "check": "python3 scripts/apple_presentation.py launch --target mac-metal --final",
           "lock": "gpu",
           "ask": "Does the default follow the record, and can each path still be forced for a comparison?",
+          "target": "mac-metal",
+          "evidence": "",
+          "verdict": "",
+          "review": "",
+          "builder_result": "open"
+        },
+        {
+          "id": "D12.5",
+          "statement": "Two wgpu crates are pinned, wgpu-hal 30.0.1 and wgpu-core 30.0.1, and wgpu, wgpu-types and naga are the released crates. Each pinned copy is its release with the patch files kept beside it applied and nothing else, selected by a `[patch]` entry and registered in `.config/architecture.toml`, and the pin check, asked for the two by name, verifies both and fails if either is not pinned. wgpu-hal carries WP10's patch and the archive patch, each its own file. wgpu-core carries one patch, confined to `src/pipeline_cache.rs`: it gives Metal an adapter key, so that the release's header write and import validation work on Metal, and adds unit tests of the Metal header beside the existing ones. The header's layout and version and a Vulkan header's bytes are as released.",
+          "check": "python3 scripts/apple_presentation.py wgpu-pin --crate wgpu-hal --crate wgpu-core && cargo test --locked --offline -p wgpu-core --lib pipeline_cache",
+          "ask": "Does the pin check rebuild each of the two copies from its released crate and patch files without the network, and fail on one changed byte in either? Read the wgpu-core patch: does it change anything besides the Metal adapter key and its unit tests, and does it name anything of Thrum's that wgpu could not take as it stands?",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",

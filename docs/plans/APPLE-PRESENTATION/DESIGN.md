@@ -14,7 +14,9 @@ fresh design review of that revision passed on 11 November. Revised 14 November 
 ([settled below](#wp4-to-wp12-settled-14-november-2026)), and twice on 19 November for
 [the surface across a transition](#the-surface-across-a-transition-wp4), the second time after
 [its design review](../../../.orchestrate/evidence/APPLE-PRESENTATION/design-review.md) asked for one answer to the drawable's size
-after a failed configure and for a stated iOS transition. It answers the three independent reviews of revision 1
+after a failed configure and for a stated iOS transition. Revised 26 November for
+[the wgpu-core pin](#pipeline-preparation-wp10-and-wp12) that WP12's archive needs, after
+[the WP12 builder's handoff](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP12-handoff.md). It answers the three independent reviews of revision 1
 (`86ec3b6b`) and the re-reviews of revision 2 (`c507ad3d`) recorded in [the log](LOG.md). Interface and path names below are
 proposals.
 
@@ -35,7 +37,8 @@ are as the 11 November review approved them and are not changed. For WP4 to WP12
 [the section that settles them](#wp4-to-wp12-settled-14-november-2026), which holds the four things the earlier
 approval left for it: the EDR transform and its H = 1 identity, the exposure handoff of the normalising MetalFX
 fallback, the lifecycle of a generation build, and the archive mechanism. Where that section and an older
-paragraph of this page disagree, that section governs.
+paragraph of this page disagree, that section governs. The 26 November revision changes pipeline preparation
+only: the wgpu-core pin, and the archive's round trip through wgpu's public pipeline cache.
 
 ## Purpose and scope
 
@@ -729,8 +732,7 @@ for its bounds checks.
 **The pinned backend (from WP10).** A copy of wgpu-hal 30.0.1 is kept in the repository, selected by a `[patch]`
 entry and registered in `.config/architecture.toml`. Its difference from the release is kept beside it as
 patch files a reader can review, one for each change, and the copy is exactly the release with those patches
-applied. wgpu, wgpu-core, wgpu-types and naga stay the released crates. WP10 adds the first patch and WP12 the
-second:
+applied. WP10 adds the first patch and WP12 the second:
 
 1. *Stage records for passthrough (WP10).* The translation call is the only source of Metal source and stage
    records: the patch lets the cook take both from it, and nothing re-implements its options. A cooked library
@@ -740,6 +742,32 @@ second:
    already has. Bytes with no record section behave as in the release. The WGSL path translates and runs as in
    the release: the patch may expose what its translation call already returns, and changes nothing it does.
 2. *The archive (WP12)*, below.
+
+**The wgpu-core pin (from WP12).** wgpu-core 30.0.1 is the second pinned crate and the last: wgpu, wgpu-types
+and naga stay the released crates. It is kept as the backend is: a copy that is exactly the release with one
+patch file applied, under its own `[patch]` entry and registration, verified by the same pin check.
+
+The archive cannot work without it. wgpu-core wraps every cache's data in a **cache header** that names the
+adapter the data was made for, and release 30.0.1 can name only a Vulkan adapter (`src/pipeline_cache.rs`,
+`adapter_key`). So on Metal the public `PipelineCache::get_data` panics while it writes the header, and
+`create_pipeline_cache` refuses imported data as unsupported before the backend sees it. No change to wgpu-hal
+reaches either. The first WP12 builder reproduced the panic on this Mac with a working archive behind it
+([handoff](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP12-handoff.md)).
+
+The patch gives Metal an adapter key, computed in wgpu-core from the adapter information it already holds and
+the same in every process on that adapter. With the key, the release's own header write and import validation
+run on Metal as they do on Vulkan. The pin covers that and nothing else:
+
+- it changes only wgpu-core's cache-header code and that code's unit tests, which gain tests of the Metal header
+  beside the Vulkan ones;
+- the header's layout and version, and the bytes of a Vulkan header, are as released;
+- no call site, no other backend's behaviour and no public type or signature changes, which is why wgpu and
+  wgpu-types need no pin.
+
+What makes an archive stale beyond the adapter is not this patch's business. The backend's validation key,
+which the archive patch supplies, and the game's own file header carry it, as the archive item below says. A
+fault found anywhere else in wgpu-core is not fixed in this copy, because widening the pin is a new decision,
+and [the surface's wait](#the-surface-across-a-transition-wp4) stays as designed.
 
 The library cook belongs beside CONTENT-LOOP's cooker in `thrum-cook`. Shipping packages exclude it, as
 `scripts/g5_shipping_links.py` checks.
@@ -761,18 +789,30 @@ Three techniques, each behind the registry, each kept only if WP9's and WP12's l
    package.
 2. **Parallel preparation (WP10).** The pipelines of the manifest are created across worker threads before
    readiness. The set that is ready does not depend on the thread count.
-3. **The archive (WP12).** wgpu 30.0.1 offers a pipeline cache only on Vulkan. The second patch backs that
-   cache with an `MTLBinaryArchive` on Metal. In **harvest**, a separate command, pipelines
-   are created with the archive attached and added to it, and it is written to a file whose header carries the
-   device, the OS build and the manifest's digest. In a normal launch the header is checked first: a stale or
+3. **The archive (WP12).** wgpu 30.0.1 offers a pipeline cache only on Vulkan. The backend's second patch backs
+   that cache with an `MTLBinaryArchive` on Metal, and the wgpu-core pin lets its data out and back in. The
+   game saves and loads the archive only through wgpu's public `PipelineCache`: `get_data` to save, and
+   `create_pipeline_cache` to load. The engine has no Metal persistence call of its own, so there is one
+   route to keep right and one to offer upstream. In **harvest**, a separate command, pipelines
+   are created with the archive attached and added to it, and the cache's data is written to a file under the
+   game's own header, which carries the device, the OS build and the manifest's digest. In a normal launch the
+   game's header is checked first, and wgpu then checks its cache header: a stale or
    unreadable archive is set aside and the launch prepares its pipelines the other way, counted by cause. In the
    **strict witness**, a fresh process attaches the archive read-only and creates every pipeline with Metal's
    option that makes an archive miss an error, so no fallback can hide a miss. The archive is local to the
    device that harvested it; nothing is shipped to another device in V1.
 
-No patch is posted upstream by any agent: U1 is the owner's, and it concerns the archive patch alone. The blob
-keeps the pin to one crate; typed fields on wgpu's passthrough descriptor would be the upstream form of the
-first patch, and would mean pinning wgpu-types and wgpu-core as well.
+No patch is posted upstream by any agent: U1 is the owner's. It concerns the two cache patches, the archive in
+wgpu-hal and the cache header in wgpu-core, which together are the Metal half of gfx-rs/wgpu#8526. The
+cache-header patch is written as a change wgpu could take as it stands: it names nothing of Thrum's, follows
+the code and the tests around it, and is a separate file from the archive patch, so the owner can offer one or
+both. As read on 26 November 2026, the proposal on that issue names the same core change, a Metal case in
+`adapter_key` taken from the GPU's name with header unit tests, and a maintainer called the proposal about
+right. Nothing there is agreed and no pull request is open, so it is evidence for the shape, not a
+specification.
+
+The stage-record patch is not part of U1. Its blob keeps that change inside wgpu-hal; typed fields on wgpu's
+passthrough descriptor would be its upstream form, and would mean pinning wgpu-types as well.
 
 ### What closes G4, and what the owner observes (WP11)
 
@@ -888,6 +928,8 @@ pixels of the window, which is why the governor exists before the paired proof.
   captures (D6.8). The owner's look at the panel is an observation, and it gates nothing.
 - **The pinned backend drifts from the release, or changes what the WGSL path does.** Guard: the pin check (D10.6), which
   rebuilds the copy from the release and the retained patches, and the exact baselines under `./dev check`.
+- **The wgpu-core pin grows beyond the cache header.** Guard: the same pin check rebuilds that copy from its
+  release and its one patch, and a reviewer reads the patch (D12.5).
 - **Adding a third forward target breaks contributors.** Guard: SceneContribution and cooked-pipeline tests in G4 WP2.
 - **The reactive target is declared but inert, or history advances before submission, on one target only.** Nothing
   visible changes until WP3. Guard: the temporal-input witness on the Mac and in Chrome.
@@ -942,7 +984,8 @@ The module list accepted seams 1–4 on 10 November and settled seams 5–9 on 1
    and on G3t WP13 for [the provider interface](../APPLE-TILE/DESIGN.md#the-native-segment-and-its-providers-wp13)).
 9. **Pipeline preparation and archives.** Owned by G4 WP10 and WP12 under the G3t boundary: the measured split; a
    pinned copy of wgpu-hal from WP10, whose first patch carries stage records for offline metallibs through
-   passthrough and whose second (WP12) is the Metal `PIPELINE_CACHE`; upstream later. V1's archive item stays as
+   passthrough and whose second (WP12) is the Metal `PIPELINE_CACHE`; from WP12 a pinned copy of wgpu-core,
+   changed only in the cache header it writes and checks on Metal; upstream later. V1's archive item stays as
    written.
 
 ## Open questions
@@ -1016,7 +1059,7 @@ Moved from the module plan on 11 November 2026, when the plans took the orchestr
 | Platform display record, EDR layer, thermal | G4, with the platform owner's review (seam 6) | `thrum-app/src/app/device.rs`, `app.rs`, `display_link.rs`; iOS `ios.rs`, `ios/render.rs` | G3b lease (untouched) |
 | Governor and missed ticks | G4 (seam 7) | new `governor.rs`; `runtime.rs` (missed-tick count, value commit) | C04 |
 | MetalFX provider | G4 | new `apple_tile/metalfx.rs` | G3t `apple_tile/segment.rs` |
-| Pipeline preparation and archives | G4, with the asset-pipeline owner's review for the cook | metallib cook step, passthrough loader, the pinned wgpu-hal copy with its stage-record patch (WP10) and its Metal `PipelineCache` patch (WP12) | G4 WP10 pipeline preparation; every pipeline site; every module's exact baselines, which the pin must not move |
+| Pipeline preparation and archives | G4, with the asset-pipeline owner's review for the cook | metallib cook step, passthrough loader, the pinned wgpu-hal copy with its stage-record patch (WP10) and its Metal `PipelineCache` patch (WP12), the pinned wgpu-core copy with its cache-header patch (WP12) | G4 WP10 pipeline preparation; every pipeline site; every module's exact baselines, which the pin must not move |
 
 Review order:
 1. History protocol.
