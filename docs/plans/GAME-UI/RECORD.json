@@ -1024,7 +1024,7 @@
         {
           "verdict": "fail",
           "commit": "a43a67de01debbbb0fb94d0aa68abfdabb60f010",
-          "review": ".orchestrate/evidence/GAME-UI/WP6-review.md",
+          "review": ".orchestrate/evidence/GAME-UI/WP6-review-1.md",
           "items": {
             "WP6.1": "pass",
             "WP6.2": "pass",
@@ -1057,6 +1057,53 @@
             "turns": 1
           },
           "at": "2026-11-26T11:42:33Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "3fc165873cf6eef48bd768fd3f482a54d8a6140b",
+          "review": ".orchestrate/evidence/GAME-UI/WP6-review.md",
+          "items": {
+            "WP6.1": "fail",
+            "WP6.2": "fail",
+            "WP6.3": "pass",
+            "WP6.4": "fail",
+            "WP6.5": "pass",
+            "WP6.6": "pass",
+            "WP6.7": "pass"
+          },
+          "findings": [
+            {
+              "name": "The ordinary Crowd replay stays frozen after an inline clock overload",
+              "item": "WP6.1",
+              "repeat": false
+            },
+            {
+              "name": "The V1 simulator platform check fails its iOS proving build",
+              "item": "WP6.2",
+              "repeat": false
+            },
+            {
+              "name": "The Crowd window stops presenting after an inline clock overload",
+              "item": "WP6.4",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 192443,
+            "cached": 14098048,
+            "output": 19440,
+            "turns": 1
+          },
+          "at": "2026-11-26T13:01:33Z"
         }
       ],
       "authorised": {
