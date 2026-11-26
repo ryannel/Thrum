@@ -363,7 +363,8 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Now and next
 
-- Apple tile with MetalFX and EDR is compared with portable TAAU on the route, and each clause of G4 is proved (APPLE-PRESENTATION WP11): Ready for Review · [plan](APPLE-PRESENTATION/PLAN.md) · [latest review](../../.orchestrate/evidence/APPLE-PRESENTATION/WP11-review.md)
+- The owner can read, in one reviewed document, what Thrum's Metal pipeline cache would offer wgpu and what to settle there first (APPLE-PRESENTATION U1): Not Started · [plan](APPLE-PRESENTATION/PLAN.md)
+- One command runs the same showcase on the Mac's Apple recipe, on its portable recipe and in Chrome, and each run says exactly what it ran (SHOWCASE WP7): Not Started · [plan](SHOWCASE/PLAN.md)
 - The camera goes under water: the waterline crosses the lens, and the surface overhead shows the sky through a bright window (WATERS WP15): Not Started · [plan](WATERS/PLAN.md)
 - Mist lies in the valley's hollows and fades the land near the camera, in the land's own light (CLOUDS WP14): Ready for Review · [plan](CLOUDS/PLAN.md)
 - RIVERS's design: Design Ready for Review · [design](RIVERS/DESIGN.md) · [plan](RIVERS/PLAN.md)
@@ -373,6 +374,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Recently done
 
+- Apple tile with MetalFX and EDR is compared with portable TAAU on the route, and each clause of G4 is proved (APPLE-PRESENTATION WP11), 26 Nov · [review](../../.orchestrate/evidence/APPLE-PRESENTATION/WP11-review.md)
 - The check that a river file keeps each sample's own gains runs on a small reach (RIVERS WP10), 26 Nov · [review](../../.orchestrate/evidence/RIVERS/WP10-review.md)
 - A second game, the crowd view with a status display, runs on the Mac, in Chrome and as its own app on the iPhone simulator, through the shells the V1 game uses (GAME-UI WP6), 26 Nov · [review](../../.orchestrate/evidence/GAME-UI/WP6-review.md)
 - A few stations check the Metal surf query against the model (WATERS WP25), 26 Nov · [review](../../.orchestrate/evidence/WATERS/WP25-review.md)
@@ -507,13 +509,13 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 4 | COOKED-DRAW | Cooked scenes draw on devices that cannot run GPU-driven draws, such as the iPhone simulator | PLATFORM-RUNTIME-IOS WP7 | Done 9 Nov |
 | 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE WP0 and WP1, PLATFORM-RUNTIME-MAC WP1, COOKED-DRAW WP1 | Done 25 Nov |
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE WP3 | Done 24 Nov |
-| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE WP0, WP2, WP3, WP11, WP12 and WP13 | WP11 of 20 · Ready for Review |
+| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE WP0, WP2, WP3, WP11, WP12 and WP13 | U1 of 20 · Not Started |
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | CONTENT-LOOP WP4 for its WP9 to pass the full check; APPLE-PRESENTATION WP3 and SHOWCASE WP9 for its WP6 | Done 25 Nov |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is found on main within about two hours and traced to the commit that made it |  | Done 25 Nov |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE WP2, BASELINE-GUARD WP1 | Done 17 Nov |
 | 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame, and answer a game's questions every tick even when a frame is skipped | APPLE-TILE WP2 and WP3, APPLE-PRESENTATION WP2, BASELINE-GUARD WP1 | Done 25 Nov |
 | 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | Nothing for its WP4; APPLE-PRESENTATION WP2 and WP3, EFFECT-GRAPH WP2, CULLING WP3 | Done 23 Nov |
-| 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | CONTENT-LOOP WP2 and CULLING WP3 to start; ATMOSPHERE WP10 for the populated valley's motion review; APPLE-TILE WP12, APPLE-PRESENTATION WP11, ATMOSPHERE WP6 (which closes G3s) and CONTENT-LOOP WP3 for the three rows from one command; PLATFORM-RUNTIME-MAC WP3, CREATOR WP3 and APPLE-PRESENTATION WP17 as well to close | Waiting: On Dependency, APPLE-PRESENTATION:WP11 |
+| 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | CONTENT-LOOP WP2 and CULLING WP3 to start; ATMOSPHERE WP10 for the populated valley's motion review; APPLE-TILE WP12, APPLE-PRESENTATION WP11, ATMOSPHERE WP6 (which closes G3s) and CONTENT-LOOP WP3 for the three rows from one command; PLATFORM-RUNTIME-MAC WP3, CREATOR WP3 and APPLE-PRESENTATION WP17 as well to close | WP7 of 5 · Not Started |
 | 14 | SEA | The wind's waves, from glassy calm to gale: one wave field that every body of water reads | Nothing to start; EFFECT-GRAPH WP2 for the field on the GPU | Done 14 Nov |
 | 15 | WATERS | Sea, shore, lakes and ponds as one water: drawn, lit, floated on, stirred and foaming, breaking on its beaches, mirroring the land, seen from beneath and lit there by the Sun's net and shafts, with a place made for rivers and puddles | SEA WP1 to start; SEA WP2, EFFECT-GRAPH WP3, ATMOSPHERE WP5 and WP9 and CREATOR WP1 for its first frame; CONTENT-LOOP WP1 for foam; APPLE-PRESENTATION WP3 for the whole range in motion; SCENE-VIEWS WP3 for mirrored scenery; EFFECT-GRAPH WP6 for floats in the surf with the game running; APPLE-PRESENTATION's governor and MetalFX work packages to close | WP15 of 25 · Not Started |
 | 16 | SCENE-VIEWS | The scene is drawn a second time from another viewpoint, so water can mirror hills and trees the camera cannot see | CULLING WP1, ATMOSPHERE WP5 and EFFECT-GRAPH WP3 | Done 23 Nov |
