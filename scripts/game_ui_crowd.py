@@ -100,11 +100,12 @@ def verify_browser(root, out, scratch):
                                cwd=root, stdout=browser_log, stderr=subprocess.STDOUT,
                                check=True, timeout=300)
         finally:
-            try:
-                os.killpg(process.pid, signal.SIGTERM)
-            except ProcessLookupError:
-                pass
-            process.wait(timeout=15)
+            if process.poll() is None:
+                try:
+                    os.killpg(process.pid, signal.SIGTERM)
+                except ProcessLookupError:
+                    pass
+                process.wait(timeout=15)
     browsers = json.loads((out / "browser.json").read_text())
     for browser in browsers:
         raw = out / browser["raw"]

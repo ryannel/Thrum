@@ -18,10 +18,15 @@ pub struct CrowdPage {
 }
 
 #[wasm_bindgen]
-pub(crate) async fn create_scene(
-    canvas: HtmlCanvasElement,
-    store: String,
-) -> Result<CrowdPage, JsValue> {
+#[expect(
+    unreachable_pub,
+    reason = "wasm-bindgen exports the package binary's page constructor"
+)]
+/// Prepare the Crowd game from the packager's cooked font store.
+///
+/// # Errors
+/// Returns a content or browser device preparation refusal.
+pub async fn create_scene(canvas: HtmlCanvasElement, store: String) -> Result<CrowdPage, JsValue> {
     let mut client = DevClient::new(BrowserFetch, &store).map_err(js)?;
     let generation = client
         .poll()
