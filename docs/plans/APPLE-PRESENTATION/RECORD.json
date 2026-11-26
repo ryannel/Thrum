@@ -1368,6 +1368,32 @@
         "by": "plan",
         "task": "The design review of APPLE-PRESENTATION at docs/evidence/APPLE-PRESENTATION/design-review.md asked for changes. Resolve ",
         "at": "2026-11-19T06:13:45Z"
+      },
+      "ready_for_review": {
+        "commit": "088d9c5a3170649741860b6850f18976e11a0b4a",
+        "checked": "088d9c5a3170649741860b6850f18976e11a0b4a",
+        "at": "2026-11-26T01:12:49Z",
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.171.0-alpha.13.2",
+        "path": "headless",
+        "usage": {
+          "input": 373230,
+          "cached": 51188864,
+          "output": 103713,
+          "turns": 1
+        },
+        "session_usage": {
+          "input": 373230,
+          "cached": 51188864,
+          "output": 103713,
+          "turns": 1
+        }
       }
     },
     "WP12": {
