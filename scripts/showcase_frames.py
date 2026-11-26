@@ -287,12 +287,13 @@ def chrome_record(output, wasm_hash, day):
     callbacks = runtime['opportunities']
     if not callbacks[0]['tick'] <= first or callbacks[-1]['tick'] <= last:
         raise ValueError(f'Chrome run did not bracket the measurement window {first} to {last}')
-    samples = [row for row in runtime['exit_frames'] if first <= row['tick'] <= last and row['presented']]
+    presented = sorted((row for row in runtime['exit_frames'] if row['presented']),
+                       key=lambda row: (row['tick'], row['submission']))
+    samples = [row for row in presented if first <= row['tick'] <= last]
     if not samples or not all(row['timing_requested'] for row in samples):
         raise ValueError('Chrome had no completed frames with timestamp queries requested')
-    samples.sort(key=lambda row: (row['tick'], row['submission']))
     measured = [row for row in callbacks if first <= row['tick'] <= last]
-    misses = chrome_callback_misses(callbacks, samples, first, last, day)
+    misses = chrome_callback_misses(callbacks, presented, first, last, day)
     content = runtime.get('exit_cooked', {})
     return {'selections': runtime['exit_selections'], 'cooked_root': content.get('cooked_root'),
             'cooked_generation': content.get('drawn'), 'target': 'chrome-webgpu',
