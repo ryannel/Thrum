@@ -1,13 +1,16 @@
 //! macOS V1 scene on a real surface.
 
 #[cfg(target_os = "macos")]
+mod metal_preparation;
+
+#[cfg(target_os = "macos")]
 fn main() {
     let names = match std::env::var("THRUM_HARDWARE") {
         Ok(names) => names,
         Err(std::env::VarError::NotPresent) => String::new(),
         Err(error) => report_capture_failure(&format!("THRUM_HARDWARE: {error}")),
     };
-    let hardware = thrum_render::capabilities::HardwareRequest::parse(&names)
+    let mut hardware = thrum_render::capabilities::HardwareRequest::parse(&names)
         .unwrap_or_else(|error| report_capture_failure(&error.to_string()));
     #[cfg(feature = "proving")]
     if let Some(output) = std::env::var_os("THRUM_CAPTURE_RUNTIME") {
@@ -72,14 +75,16 @@ fn main() {
         }
         return;
     }
+    let metal_preparation = metal_preparation::options(&mut hardware)
+        .unwrap_or_else(|error| report_capture_failure(&error));
     #[cfg(feature = "proving")]
     if let Some(output) = std::env::var_os("THRUM_CAPTURE_SCENE") {
         let mut hardware = hardware;
         for request in &mut hardware {
             request.required = true;
         }
-        let request =
-            scene_capture_request().unwrap_or_else(|error| report_capture_failure(&error));
+        let request = scene_capture_request(metal_preparation)
+            .unwrap_or_else(|error| report_capture_failure(&error));
         if let Err(error) =
             v1_game::run_scene_capture(std::path::Path::new(&output), &request, &hardware)
         {
@@ -120,7 +125,7 @@ fn main() {
         #[cfg(feature = "proving")]
         window_menu().unwrap_or_else(|error| report_capture_failure(&error)),
         governor,
-        metal_preparation(),
+        metal_preparation,
     );
 }
 
@@ -140,26 +145,6 @@ fn window_menu() -> Result<v1_game::WindowMenu, String> {
         })
         .transpose()?;
     Ok(v1_game::WindowMenu { ticket, script })
-}
-
-#[cfg(target_os = "macos")]
-#[expect(
-    unsafe_code,
-    reason = "the user selects a Metal library store from their local build"
-)]
-fn metal_preparation() -> Option<thrum_render::capabilities::metallib::Preparation> {
-    use thrum_render::capabilities::metallib::Preparation;
-
-    if let Some(store) = std::env::var_os("THRUM_METALLIB_STORE") {
-        let parallel = std::env::var_os("THRUM_METALLIB_PARALLEL").is_some();
-        // SAFETY: This explicit process option accepts the local cook's output with
-        // the same trust as the local binary. The loader also checks key and digest.
-        Some(unsafe { Preparation::trusted_store(store.into(), parallel) })
-    } else if let Some(output) = std::env::var_os("THRUM_METALLIB_HARVEST") {
-        Some(Preparation::harvest(output.into()))
-    } else {
-        std::env::var_os("THRUM_METALLIB_MANIFEST").map(|_| Preparation::default())
-    }
 }
 
 #[cfg(all(target_os = "macos", feature = "proving"))]
@@ -366,7 +351,9 @@ fn main() {
 
 /// The scene capture's launch settings, read here so the library reads no environment.
 #[cfg(all(target_os = "macos", feature = "proving"))]
-fn scene_capture_request() -> Result<v1_game::SceneCaptureRequest, String> {
+fn scene_capture_request(
+    metal_preparation: Option<thrum_render::capabilities::metallib::Preparation>,
+) -> Result<v1_game::SceneCaptureRequest, String> {
     fn text(name: &str) -> Result<Option<String>, String> {
         match std::env::var(name) {
             Ok(value) => Ok(Some(value)),
@@ -381,7 +368,7 @@ fn scene_capture_request() -> Result<v1_game::SceneCaptureRequest, String> {
         pan_to_degrees: text("THRUM_CAPTURE_PAN_TO_DEGREES")?,
         initial_params: path("THRUM_PARAMS"),
         route: path("THRUM_CAPTURE_ROUTE"),
-        metal_preparation: metal_preparation(),
+        metal_preparation,
         #[cfg(feature = "creation-counters")]
         creation_proof: match text("THRUM_CREATION_PROOF")?.as_deref() {
             None => None,

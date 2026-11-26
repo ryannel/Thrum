@@ -16,11 +16,18 @@ pub(super) struct Ready {
 }
 
 impl Ready {
-    pub(super) fn mark(arm: CreationProof, host: &mut Runtime) -> Result<Self, String> {
+    pub(super) fn mark(
+        arm: CreationProof,
+        host: &mut Runtime,
+        capabilities: &thrum_render::capabilities::DeviceCapabilities,
+    ) -> Result<Self, String> {
         let pending = host.creation_report();
         if pending.ready || pending.frames != 0 {
             return Err("expected a device still preparing and no submitted frames".to_owned());
         }
+        capabilities
+            .save_metal_archive()
+            .map_err(|error| error.to_string())?;
         host.finish_preparation();
         let ready = epoch_ns()?;
         let report = host.creation_report();

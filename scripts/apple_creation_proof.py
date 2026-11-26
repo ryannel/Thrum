@@ -48,7 +48,7 @@ def probe_build(scratch):
     return binary, env, route, build
 
 
-def witness(output, binary, env, recipe, proof, cache=None, *, stage_path="wgsl"):
+def witness(output, binary, env, recipe, proof, cache=None, *, stage_path="wgsl", expect_refusal=False):
     output.mkdir()
     capture = output / "route"
     select, expected = RECONSTRUCTION[recipe]
@@ -69,10 +69,12 @@ def witness(output, binary, env, recipe, proof, cache=None, *, stage_path="wgsl"
                 process.kill()
                 process.wait()
                 raise
-            if code != 0:
+            if code != 0 and not expect_refusal:
                 raise ValueError(f"{recipe} {proof} exited {code}; see {output / 'process.log'}")
     finally:
         observed_load = load.finish()
+    if expect_refusal:
+        return dict(pid=process.pid, exit_code=code, load=observed_load)
     header, *frames = read_rows(capture / "route.jsonl")
     if (header["backend"], header["recipe"], header["reconstruction"]) != ("Metal", RECIPE[recipe], expected):
         raise ValueError(f"wrong Metal target or reconstructor: {header}")

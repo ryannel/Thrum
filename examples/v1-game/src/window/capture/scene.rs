@@ -198,7 +198,7 @@ pub(in crate::window) async fn run(
     #[cfg(feature = "creation-counters")]
     let creation = request
         .creation_proof
-        .map(|arm| creation::Ready::mark(arm, driver.host_mut()))
+        .map(|arm| creation::Ready::mark(arm, driver.host_mut(), &capabilities))
         .transpose()?;
     driver.host_mut().finish_preparation();
     if let Some(eye) = request.fixed_eye {

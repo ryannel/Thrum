@@ -1,0 +1,48 @@
+--- a/src/pipeline_cache.rs
++++ b/src/pipeline_cache.rs
+@@ -233,6 +233,17 @@
+             ];
+             Ok(adapter)
+         }
++        wgt::Backend::Metal => {
++            // Metal doesn't populate the numeric vendor and device IDs. Use a
++            // stable hash of the adapter name. Driver and OS compatibility
++            // are handled by the backend validation key.
++            let name_hash = adapter.name.bytes().fold(0xcbf2_9ce4_8422_2325u64, |hash, byte| {
++                (hash ^ u64::from(byte)).wrapping_mul(0x0100_0000_01b3)
++            });
++            let mut key = [0; 15];
++            key[..8].copy_from_slice(&name_hash.to_be_bytes());
++            Ok(key)
++        }
+         _ => Err(PipelineCacheValidationError::Unsupported),
+     }
+ }
+@@ -351,6 +362,27 @@
+     }
+ 
+     #[test]
++    fn metal_cache_header_round_trip() {
++        let mut adapter = ADAPTER;
++        adapter.backend = wgt::Backend::Metal;
++        adapter.name = "Apple M3 Max".into();
++        let payload = b"archive";
++        let mut cache = [0; HEADER_LENGTH + 7];
++        super::add_cache_header(&mut cache[..HEADER_LENGTH], payload, &adapter, VALIDATION_KEY);
++        cache[HEADER_LENGTH..].copy_from_slice(payload);
++        let same_adapter = adapter.clone();
++        assert_eq!(
++            super::validate_pipeline_cache(&cache, &same_adapter, VALIDATION_KEY),
++            Ok(payload.as_slice())
++        );
++        adapter.name = "Apple M2 Max".into();
++        assert_eq!(
++            super::validate_pipeline_cache(&cache, &adapter, VALIDATION_KEY),
++            Err(E::DeviceMismatch)
++        );
++    }
++
++    #[test]
+     fn valid_data() {
+         let cache: [[u8; 8]; HEADER_LENGTH / 8] = [
+             *b"WGPUPLCH",                                 // MAGIC

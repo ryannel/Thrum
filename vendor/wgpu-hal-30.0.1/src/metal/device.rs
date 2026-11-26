@@ -9,13 +9,13 @@ use objc2::{
 };
 use objc2_foundation::{ns_string, NSError, NSRange, NSString, NSUInteger};
 use objc2_metal::{
-    MTLAccelerationStructure, MTLAccelerationStructureInstanceOptions, MTLBuffer,
+    MTLAccelerationStructure, MTLAccelerationStructureInstanceOptions, MTLBinaryArchive, MTLBuffer,
     MTLCaptureManager, MTLCaptureScope, MTLCompileOptions, MTLComputePipelineDescriptor,
     MTLComputePipelineState, MTLCounterSampleBufferDescriptor, MTLCounterSet, MTLDepthClipMode,
     MTLDepthStencilDescriptor, MTLDevice, MTLFunction,
     MTLIndirectAccelerationStructureInstanceDescriptor, MTLLanguageVersion, MTLLibrary,
     MTLMeshRenderPipelineDescriptor, MTLMutability, MTLPackedFloat3, MTLPackedFloat4x3,
-    MTLPipelineBufferDescriptorArray, MTLPipelineOption, MTLPixelFormat, MTLPrimitiveTopologyClass,
+    MTLPipelineBufferDescriptorArray, MTLPixelFormat, MTLPrimitiveTopologyClass,
     MTLRenderPipelineColorAttachmentDescriptorArray, MTLRenderPipelineDescriptor, MTLResource,
     MTLResourceID, MTLResourceOptions, MTLSamplerAddressMode, MTLSamplerDescriptor,
     MTLSamplerMipFilter, MTLSamplerState, MTLSize, MTLStencilDescriptor, MTLStorageMode,
@@ -1804,18 +1804,35 @@ impl crate::Device for super::Device {
 
             // Create the pipeline from descriptor
             let raw = match descriptor {
-                MetalGenericRenderPipelineDescriptor::Standard(d) => self
-                    .shared
-                    .device
-                    .newRenderPipelineStateWithDescriptor_error(&d),
-                MetalGenericRenderPipelineDescriptor::Mesh(d) => self
-                    .shared
-                    .device
-                    .newRenderPipelineStateWithMeshDescriptor_options_reflection_error(
-                        &d,
-                        MTLPipelineOption::empty(),
-                        None,
-                    ),
+                MetalGenericRenderPipelineDescriptor::Standard(d) => {
+                    use super::archive::create_pipeline;
+                    create_pipeline(
+                        desc.cache,
+                        |archives| d.setBinaryArchives(archives),
+                        |archive| archive.addRenderPipelineFunctionsWithDescriptor_error(&d),
+                        |options| {
+                            if options.is_empty() {
+                                self.shared.device.newRenderPipelineStateWithDescriptor_error(&d)
+                            } else {
+                                self.shared.device
+                                    .newRenderPipelineStateWithDescriptor_options_reflection_error(
+                                        &d, options, None,
+                                    )
+                            }
+                        },
+                    )
+                }
+                MetalGenericRenderPipelineDescriptor::Mesh(d) => super::archive::create_pipeline(
+                    desc.cache.filter(|_| available!(macos = 15.0, ios = 18.0, visionos = 2.0)),
+                    |archives| d.setBinaryArchives(archives),
+                    |archive| archive.addMeshRenderPipelineFunctionsWithDescriptor_error(&d),
+                    |options| {
+                        self.shared.device
+                            .newRenderPipelineStateWithMeshDescriptor_options_reflection_error(
+                                &d, options, None,
+                            )
+                    },
+                ),
             }
             .map_err(|e| {
                 crate::PipelineError::Linkage(
@@ -1894,14 +1911,17 @@ impl crate::Device for super::Device {
                 descriptor.setLabel(Some(&NSString::from_str(name)));
             }
 
-            let raw = self
-                .shared
-                .device
-                .newComputePipelineStateWithDescriptor_options_reflection_error(
-                    &descriptor,
-                    MTLPipelineOption::empty(),
-                    None,
-                );
+            let raw = super::archive::create_pipeline(
+                desc.cache,
+                |archives| descriptor.setBinaryArchives(archives),
+                |archive| archive.addComputePipelineFunctionsWithDescriptor_error(&descriptor),
+                |options| {
+                    self.shared.device
+                        .newComputePipelineStateWithDescriptor_options_reflection_error(
+                            &descriptor, options, None,
+                        )
+                },
+            );
 
             let raw: Retained<ProtocolObject<dyn MTLComputePipelineState>> =
                 raw.map_err(|e: Retained<NSError>| {
@@ -1946,11 +1966,20 @@ impl crate::Device for super::Device {
 
     unsafe fn create_pipeline_cache(
         &self,
-        _desc: &crate::PipelineCacheDescriptor<'_>,
+        desc: &crate::PipelineCacheDescriptor<'_>,
     ) -> Result<super::PipelineCache, crate::PipelineCacheError> {
-        Ok(super::PipelineCache)
+        autoreleasepool(|_| super::PipelineCache::new(&self.shared.device, desc.data))
     }
+
+    fn pipeline_cache_validation_key(&self) -> Option<[u8; 16]> {
+        autoreleasepool(|_| super::archive::validation_key(&self.shared.device))
+    }
+
     unsafe fn destroy_pipeline_cache(&self, _: super::PipelineCache) {}
+
+    unsafe fn pipeline_cache_get_data(&self, cache: &super::PipelineCache) -> Option<Vec<u8>> {
+        autoreleasepool(|_| cache.data())
+    }
 
     unsafe fn create_query_set(
         &self,

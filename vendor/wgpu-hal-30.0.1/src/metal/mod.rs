@@ -21,6 +21,8 @@ end of the VS buffer table.
         TODO: Eventually all deprecated features should be abstracted and use new api when available."
 )]
 mod adapter;
+mod archive;
+pub use archive::{ArchiveOutcome, PipelineCache, with_archive_policy};
 mod command;
 mod conv;
 mod device;
@@ -439,7 +441,8 @@ impl AdapterShared {
             let name = device.name().to_string();
             let capabilities_query = CapabilitiesQuery::new(&device);
             let shared = AdapterShared::new(device, &capabilities_query);
-            let features = capabilities_query.features();
+            let mut features = capabilities_query.features();
+            features.set(wgt::Features::PIPELINE_CACHE, archive::supported(&shared.device));
             let capabilities = capabilities_query.capabilities(instance_flags);
             crate::ExposedAdapter {
                 info: wgt::AdapterInfo {
@@ -1387,9 +1390,6 @@ impl crate::DynCommandBuffer for CommandBuffer {}
 
 unsafe impl Send for CommandBuffer {}
 unsafe impl Sync for CommandBuffer {}
-
-#[derive(Debug)]
-pub struct PipelineCache;
 
 impl crate::DynPipelineCache for PipelineCache {}
 

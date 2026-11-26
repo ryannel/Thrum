@@ -706,22 +706,29 @@ def ios_reset(output):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("check", choices=["wgpu-pin", "metallib", "launch", "no-compile", "extent", "transition", "configure-fault", "transition-capture", "scale", "scale-costs", "edr", "edr-identity", "edr-modes", "edr-headroom", "edr-route", "governor", "governor-identity", "governor-thermal", "reset", "metalfx", "metalfx-quality", "metalfx-exposure", "metalfx-motion"])
+    parser.add_argument("check", choices=["wgpu-pin", "metallib", "archive-harvest", "archive-witness", "archive-faults", "launch", "no-compile", "extent", "transition", "configure-fault", "transition-capture", "scale", "scale-costs", "edr", "edr-identity", "edr-modes", "edr-headroom", "edr-route", "governor", "governor-identity", "governor-thermal", "reset", "metalfx", "metalfx-quality", "metalfx-exposure", "metalfx-motion"])
+    parser.add_argument("--crate", action="append", help="registry patch to verify with wgpu-pin")
     parser.add_argument("--target", choices=["mac-metal", "ios-sim"])
     parser.add_argument("--output", type=Path)
     parser.add_argument("--steady", action="store_true", help="qualify the unloaded governor arm")
     parser.add_argument("--realtime-capture", action="store_true", help="retain the T2 governor tap")
+    parser.add_argument("--final", action="store_true", help="record the final manifest with the local pipeline archive")
     parser.add_argument("--paths", action="store_true", help="record the WGSL, cooked and parallel launch paths")
     parser.add_argument("--build-only", action="store_true", help="build the route's offline Metal libraries")
     args = parser.parse_args()
+    if args.final and (args.check != "launch" or args.paths):
+        parser.error("--final requires launch and cannot be combined with --paths")
     if args.paths and args.check != "launch":
         parser.error("--paths requires the launch check")
     if args.build_only and args.check != "metallib":
         parser.error("--build-only requires the metallib check")
+    if args.crate and args.check != "wgpu-pin":
+        parser.error("--crate requires the wgpu-pin check")
     if args.check == "wgpu-pin":
         from apple_wgpu_pin import verify
 
-        print(json.dumps(verify(ROOT), indent=2))
+        pins = {name: verify(ROOT, name) for name in args.crate} if args.crate else verify(ROOT)
+        print(json.dumps(pins, indent=2))
         return
     if args.target is None:
         parser.error("--target is required")
@@ -738,10 +745,15 @@ def main():
 
     from apple_creation_proof import mac_launch, mac_no_compile
     from apple_metallib_proof import launch_paths, parity
+    from apple_archive_proof import archive_faults, archive_harvest, archive_witness, launch_final
 
     if (args.steady or args.realtime_capture) and args.check != "governor":
         parser.error("governor options require the governor check")
-    checks = {("launch", "mac-metal"): launch_paths if args.paths else mac_launch,
+    launch = launch_final if args.final else launch_paths if args.paths else mac_launch
+    checks = {("launch", "mac-metal"): launch,
+              ("archive-harvest", "mac-metal"): archive_harvest,
+              ("archive-witness", "mac-metal"): archive_witness,
+              ("archive-faults", "mac-metal"): archive_faults,
               ("metallib", "mac-metal"): lambda output: parity(output, build_only=args.build_only),
               ("no-compile", "mac-metal"): mac_no_compile,
               ("governor", "mac-metal"): lambda output: mac_governor(

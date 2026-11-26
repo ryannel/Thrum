@@ -92,3 +92,4 @@ mod_module_files = "warn"
 
 [patch.crates-io]
 wgpu-hal = { path = "vendor/wgpu-hal-30.0.1" }
+wgpu-core = { path = "vendor/wgpu-core-30.0.1" }

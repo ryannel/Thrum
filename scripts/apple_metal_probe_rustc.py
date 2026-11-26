@@ -37,7 +37,7 @@ def instrument_hal(device):
     source = bracket(source, "self\n                    .shared\n                    .device\n                    .newLibraryWithSource_options_error(", "Some(&options),\n                    )", "msl_compile")
     source = bracket(source, "super::library_from_metallib::new_library_from_metallib_bytes(", "file,\n        )", "metallib_load")
     source = bracket(source, "match descriptor {\n                MetalGenericRenderPipelineDescriptor::Standard", "\n            }", "pipeline_state")
-    source = bracket(source, "self\n                .shared\n                .device\n                .newComputePipelineStateWithDescriptor_options_reflection_error(", "None,\n                )", "pipeline_state")
+    source = bracket(source, "super::archive::create_pipeline(\n                desc.cache,", "\n            )", "pipeline_state")
     source = once(source, "        self.counters.shader_modules.add(1);", '''        thrum_probe("shader_module", || self.counters.shader_modules.add(1));''')
     source = once(
         source,

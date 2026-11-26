@@ -18,6 +18,10 @@ use wgpu::{
 
 use crate::runtime::PipelineInput;
 
+mod archive;
+use archive::Archive;
+pub use archive::ArchiveRequest;
+
 const TRANSLATOR: &str = "wgpu 30.0.1; Naga 30.0.1";
 const KEY_FORMAT: &str = "thrum Metal stage 2";
 
@@ -41,12 +45,36 @@ pub fn library_payload<'a>(blob: &'a [u8], key: &str) -> Option<&'a [u8]> {
         .then_some(payload)
 }
 
+/// Available Metal pipeline preparation paths.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PreparationPath {
+    /// Prepare WGSL serially.
+    Wgsl,
+    /// Load cooked Metal stages on independent workers.
+    Parallel,
+    /// Load cooked Metal stages and look up pipelines in the local archive.
+    Archive,
+}
+
+impl PreparationPath {
+    /// Resolve the default against the build products available at launch.
+    #[must_use]
+    pub fn preferred(has_libraries: bool, has_archive: bool) -> Self {
+        match (has_libraries, has_archive) {
+            (true, true) => Self::Archive,
+            (true, false) => Self::Parallel,
+            (false, _) => Self::Wgsl,
+        }
+    }
+}
+
 /// Select load or export of stage libraries during Mac pipeline preparation.
 #[derive(Clone, Debug, Default)]
 pub struct Preparation {
     harvest: Option<PathBuf>,
     store: Option<PathBuf>,
     parallel: bool,
+    archive: Option<ArchiveRequest>,
 }
 
 impl Preparation {
@@ -77,15 +105,28 @@ impl Preparation {
         }
     }
 
+    /// Attach a local binary archive to this preparation request.
+    #[must_use]
+    pub fn with_archive(mut self, archive: Option<ArchiveRequest>) -> Self {
+        self.archive = archive;
+        self
+    }
+
     pub(super) fn attach(
         self,
         device: &wgpu::Device,
         admitted: bool,
+        archive_admitted: bool,
     ) -> Option<PipelinePreparation> {
         let language = language_version(device)?;
+        let archive = self
+            .archive
+            .clone()
+            .and_then(|request| Archive::open(device, request, archive_admitted));
         // A store without admission still records each stage's fallback.
         Some(PipelinePreparation {
             config: self,
+            archive,
             admitted,
             language,
             preserve_invariance: objc2::available!(macos = 11.0),
@@ -93,7 +134,8 @@ impl Preparation {
                 format!("{:?}", device.adapter_info()).as_bytes(),
                 format!(
                     "{:?}",
-                    device.features() - wgpu::Features::PASSTHROUGH_SHADERS
+                    device.features()
+                        - (wgpu::Features::PASSTHROUGH_SHADERS | wgpu::Features::PIPELINE_CACHE)
                 )
                 .as_bytes(),
                 format!("{:?}", device.limits()).as_bytes(),
@@ -157,6 +199,7 @@ fn address<T>(handle: &T) -> usize {
 #[derive(Debug)]
 pub(crate) struct PipelinePreparation {
     config: Preparation,
+    archive: Option<Archive>,
     admitted: bool,
     language: usize,
     preserve_invariance: bool,
@@ -165,6 +208,10 @@ pub(crate) struct PipelinePreparation {
 }
 
 impl PipelinePreparation {
+    pub(super) fn save_archive(&self) -> io::Result<()> {
+        self.archive.as_ref().map_or(Ok(()), Archive::save)
+    }
+
     pub(crate) fn parallel(&self) -> bool {
         self.config.parallel
     }
@@ -278,8 +325,9 @@ impl PipelinePreparation {
             "render",
             desc.label,
             &[Some(vertex), fragment],
-            |[vertex, fragment]| {
+            |[vertex, fragment], cache| {
                 let mut desc = desc.clone();
+                desc.cache = cache.or(desc.cache);
                 if let Some(stage) = vertex {
                     desc.vertex.module = &stage.module;
                     desc.vertex.entry_point = Some(&stage.function);
@@ -313,8 +361,9 @@ impl PipelinePreparation {
             "compute",
             desc.label,
             &[Some(stage)],
-            |[stage]| {
+            |[stage], cache| {
                 let mut desc = desc.clone();
+                desc.cache = cache.or(desc.cache);
                 if let Some(stage) = stage {
                     desc.module = &stage.module;
                     desc.entry_point = Some(&stage.function);
@@ -358,8 +407,9 @@ impl PipelinePreparation {
             "mesh",
             desc.label,
             &[task, Some(mesh), fragment],
-            |[task, mesh, fragment]| {
+            |[task, mesh, fragment], cache| {
                 let mut desc = desc.clone();
+                desc.cache = cache.or(desc.cache);
                 if let (Some(state), Some(stage)) = (&mut desc.task, task) {
                     state.module = &stage.module;
                     state.entry_point = Some(&stage.function);
@@ -384,7 +434,7 @@ impl PipelinePreparation {
         kind: &str,
         label: Option<&str>,
         stages: &[Option<Stage<'_>>; N],
-        create: impl Fn(&[Option<CookedStage>; N]) -> T,
+        create: impl Fn(&[Option<CookedStage>; N], Option<&wgpu::PipelineCache>) -> T,
     ) -> T {
         let keys = self.keys(layout, stages);
         let mut cooked = std::array::from_fn(|index| {
@@ -398,8 +448,25 @@ impl PipelinePreparation {
                 label,
             )
         });
+        let launch = |cooked: &[Option<CookedStage>; N]| {
+            self.archive.as_ref().map_or_else(
+                || create(cooked, None),
+                |archive| archive.create(device, label, |cache| create(cooked, cache)),
+            )
+        };
+        let strict = self.archive.as_ref().is_some_and(Archive::strict);
+        if strict {
+            assert!(
+                stages
+                    .iter()
+                    .zip(&cooked)
+                    .all(|(stage, cooked)| stage.is_none() || cooked.is_some()),
+                "strict Metal archive requires cooked stages for {}",
+                label.unwrap_or("")
+            );
+        }
         let pipeline = if let Some(output) = &self.config.harvest {
-            let (pipeline, translations) = capture_stage_translations(|| create(&cooked));
+            let (pipeline, translations) = capture_stage_translations(|| launch(&cooked));
             for translation in translations {
                 let key = stages.iter().zip(&keys).find_map(|(stage, key)| {
                     let stage = stage.as_ref()?;
@@ -432,16 +499,16 @@ impl PipelinePreparation {
                 }
             }
             pipeline
-        } else if cooked.iter().any(Option::is_some) {
-            let (pipeline, valid) = check_creation(device, || create(&cooked));
+        } else if !strict && cooked.iter().any(Option::is_some) {
+            let (pipeline, valid) = check_creation(device, || launch(&cooked));
             if valid {
                 pipeline
             } else {
                 cooked.fill_with(|| None);
-                create(&cooked)
+                launch(&cooked)
             }
         } else {
-            create(&cooked)
+            launch(&cooked)
         };
         let thread = std::thread::current().id();
         let names = stages

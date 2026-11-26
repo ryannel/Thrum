@@ -410,3 +410,8 @@ path = "tests/metallib_reflection.rs"
 [[test]]
 name = "metallib_keys"
 path = "tests/metallib_keys.rs"
+
+# APPLE-PRESENTATION D12.1 runs this process-isolated Metal cache witness.
+[[test]]
+name = "pipeline_archive"
+required-features = ["creation-counters"]

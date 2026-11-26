@@ -197,9 +197,25 @@ impl DeviceCapabilities {
                 selection.request.feature == HardwareFeature::MetalShaderPassthrough
                     && selection.declined.is_none()
             }) && self.features.contains(wgpu::Features::PASSTHROUGH_SHADERS);
-            let preparation = preparation.and_then(|config| config.attach(&self.site, admitted));
+            let archive_admitted = self.hardware.iter().any(|selection| {
+                selection.request.feature == HardwareFeature::MetalPipelineArchive
+                    && selection.declined.is_none()
+            }) && self.features.contains(wgpu::Features::PIPELINE_CACHE);
+            let preparation = preparation
+                .and_then(|config| config.attach(&self.site, admitted, archive_admitted));
             self.site.set_metal_preparation(preparation);
         }
+    }
+
+    /// Serialize an explicitly harvested archive at the end of preparation.
+    ///
+    /// # Errors
+    /// The cache could not be serialized or the new file could not be written.
+    #[cfg(target_os = "macos")]
+    pub fn save_metal_archive(&self) -> std::io::Result<()> {
+        self.site
+            .metal_preparation()
+            .map_or(Ok(()), metallib::PipelinePreparation::save_archive)
     }
 
     /// Capture from a device when the adapter handle is no longer retained.

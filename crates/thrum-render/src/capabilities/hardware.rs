@@ -13,6 +13,9 @@ pub enum HardwareFeature {
     /// Direct loading of Metal shader libraries during pipeline preparation.
     #[cfg(target_os = "macos")]
     MetalShaderPassthrough,
+    /// Local Metal pipeline archives.
+    #[cfg(target_os = "macos")]
+    MetalPipelineArchive,
 }
 
 impl HardwareFeature {
@@ -24,6 +27,8 @@ impl HardwareFeature {
             Self::RayQuery => "ray-query",
             #[cfg(target_os = "macos")]
             Self::MetalShaderPassthrough => "metal-shader-passthrough",
+            #[cfg(target_os = "macos")]
+            Self::MetalPipelineArchive => "metal-pipeline-archive",
         }
     }
 
@@ -33,6 +38,8 @@ impl HardwareFeature {
             Self::RayQuery => wgpu::Features::EXPERIMENTAL_RAY_QUERY,
             #[cfg(target_os = "macos")]
             Self::MetalShaderPassthrough => wgpu::Features::PASSTHROUGH_SHADERS,
+            #[cfg(target_os = "macos")]
+            Self::MetalPipelineArchive => wgpu::Features::PIPELINE_CACHE,
         }
     }
 
@@ -66,7 +73,7 @@ impl HardwareFeature {
                 base.max_mesh_output_primitives = base.max_mesh_output_primitives.max(124);
             }
             #[cfg(target_os = "macos")]
-            Self::MetalShaderPassthrough => {}
+            Self::MetalShaderPassthrough | Self::MetalPipelineArchive => {}
             Self::RayQuery => {
                 let minimum =
                     wgpu::Limits::default().using_minimum_supported_acceleration_structure_values();
@@ -119,6 +126,8 @@ impl HardwareRequest {
                 "ray-query" => HardwareFeature::RayQuery,
                 #[cfg(target_os = "macos")]
                 "metal-shader-passthrough" => HardwareFeature::MetalShaderPassthrough,
+                #[cfg(target_os = "macos")]
+                "metal-pipeline-archive" => HardwareFeature::MetalPipelineArchive,
                 _ => return Err(HardwareLaunchError::Unknown(name.to_owned())),
             };
             if requests.iter().any(|request| request.feature == feature) {
