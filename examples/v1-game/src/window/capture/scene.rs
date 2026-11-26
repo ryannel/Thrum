@@ -293,21 +293,14 @@ pub(in crate::window) async fn run(
         if !route_only {
             return Err("submitted stills need the still route's parameter files".into());
         }
-        let records = display::record(
+        return display::record(
             &mut driver,
+            &capabilities,
             output,
             params.ok_or("submitted stills need parameter files")?,
             request.edr_headroom,
             request.source.as_deref() == Some("submitted-linear"),
-        )?;
-        return std::fs::write(output.join("stills.json"), serde_json::to_vec_pretty(&serde_json::json!({
-            "adapter": capabilities.adapter().name, "backend": format!("{:?}", capabilities.adapter().backend),
-            "recipe": format!("{:?}", capabilities.recipe()), "extent": EXTENT,
-            "reconstruction": format!("{:?}", driver.host().reconstruction()),
-            "culling": format!("{:?}", driver.host().camera_culling()),
-            "governor": driver.host().governor_frame().is_some(),
-            "mode": "still", "headroom": request.edr_headroom, "stills": records
-        })).map_err(|error| error.to_string())?).map_err(|error| error.to_string());
+        );
     }
     let host = driver.host_mut();
     let mut manifest = serde_json::json!({

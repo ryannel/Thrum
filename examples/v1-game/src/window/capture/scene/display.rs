@@ -5,15 +5,18 @@ use std::{
     path::{Path, PathBuf},
     time::Duration,
 };
-use thrum_render::{runtime::CaptureLimits, synthetic::CaptureSource};
+use thrum_render::{
+    capabilities::DeviceCapabilities, runtime::CaptureLimits, synthetic::CaptureSource,
+};
 
 pub(super) fn record(
     driver: &mut Driver,
+    capabilities: &DeviceCapabilities,
     directory: &Path,
     files: &[PathBuf],
     headroom: Option<f32>,
     scene_linear: bool,
-) -> Result<Vec<serde_json::Value>, String> {
+) -> Result<(), String> {
     let source = if headroom.is_some() {
         CaptureSource::Edr
     } else if scene_linear {
@@ -71,5 +74,19 @@ pub(super) fn record(
         host.recycle_submitted_image(image);
         host.disable_submitted_capture();
     }
-    Ok(records)
+    let host = driver.host();
+    let manifest = serde_json::json!({
+        "adapter": capabilities.adapter().name,
+        "backend": format!("{:?}", capabilities.adapter().backend),
+        "recipe": format!("{:?}", capabilities.recipe()),
+        "extent": EXTENT,
+        "reconstruction": format!("{:?}", host.reconstruction()),
+        "culling": format!("{:?}", host.camera_culling()),
+        "governor": host.governor_frame().is_some(),
+        "mode": "still",
+        "headroom": headroom,
+        "stills": records,
+    });
+    let bytes = serde_json::to_vec_pretty(&manifest).map_err(|error| error.to_string())?;
+    std::fs::write(directory.join("stills.json"), bytes).map_err(|error| error.to_string())
 }
