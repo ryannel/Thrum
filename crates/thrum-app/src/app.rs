@@ -1402,6 +1402,7 @@ impl<G: WindowGame + 'static> ApplicationHandler<UserEvent> for App<G> {
         }
         match event {
             UserEvent::ExtentCaptured => {
+                self.run_deadline = None;
                 event_loop.exit();
                 return;
             }
