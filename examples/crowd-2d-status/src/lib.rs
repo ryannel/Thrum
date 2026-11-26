@@ -30,6 +30,10 @@ pub const BODIES: u32 = 2000;
 /// Last tick of the retained Crowd replay at this body count.
 pub const END_TICK: u64 = 3600;
 
+// Fit the 120-unit arena radius, a 32-unit pan and the sprite edges.
+const VIEW_SPAN: std::num::NonZeroU16 =
+    std::num::NonZeroU16::new(312).expect("the Crowd view span is positive");
+
 /// Crowd rules and sprite extraction with an independent interface stage.
 pub struct StatusScene {
     crowd: CrowdScene,
@@ -97,8 +101,7 @@ pub async fn prepare(
 ) -> Result<Host, GameError> {
     let (display, assets) = Display::new(source, gpu.surface.extent)?;
     let scene = StatusScene {
-        // Room for the 120-unit arena radius, a 32-unit pan and sprite edges.
-        crowd: CrowdScene::new(false).with_span(std::num::NonZeroU16::new(312).unwrap()),
+        crowd: CrowdScene::new(false).with_span(VIEW_SPAN),
         display,
         pan: [0.0; 2],
         digest: Cell::default(),

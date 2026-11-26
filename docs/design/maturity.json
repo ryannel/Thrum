@@ -5,7 +5,7 @@
   "contract_revision": "C4",
   "scope_note": "6 Nov 11:15 owner policy: foundation by best practice, regression/visible tripwires, later performance tuning. Numeric targets are retired; correctness, lifecycle, oracle tolerance and visuals remain. Historical device facts are unchanged.",
   "game_ui": {
-    "scope": "GAME-UI through WP5, the V1 status display, choice and join screen",
+    "scope": "GAME-UI through WP6, including the V1 interface and the Crowd status display",
     "implementation": "Retained interface trees and font-backed paint lists feed the frame host's interface stage. Cooked font and art publications switch with matching layouts. The router owns each contact through release. V1 supplies the screens, their actions and the join ticket. The iOS proving shell translates touches and invite URLs, and provides its view's density and safe area.",
     "functional_validation": "Mac Metal and Chrome WebGPU proved the interface stage, font strikes and publication changes, status layout, modal event ownership and text drops in WP1 through WP4. WP5 adds simulator scale-3 status captures compared against the CPU compositor, orientation and foreground recovery, all four cards activated by XCTest touches, stick interruption and return, and an intact UIKit URL ticket from the running menu, status display and default grid and on a cold launch with the cooked fonts installed.",
     "experienced_quality": "Reviewed Mac and Chrome captures cover the V1 status display, modal interaction and join screen. WP5 builder inspection covers held simulator engine and screen stills in portrait and landscape.",
@@ -24,7 +24,17 @@
       "Accessibility bridges and screen readers, gamepad input and iOS pasteboard input",
       "Scrolling, clipped regions, animation and transition systems, authored tree files, rich text, text selection, sound, and continuously sized fonts"
     ],
-    "evidence": ".orchestrate/evidence/GAME-UI/WP5/index.md"
+    "evidence": ".orchestrate/evidence/GAME-UI/WP5/index.md",
+    "shared_ios_shell": {
+      "implementation": "thrum-app owns UIKit lifecycle, geometry, touch delivery, surface leases and graphics recovery. V1 and the Crowd status display use it from separate app bundles.",
+      "functional_validation": "On the iPhone 18 Pro simulator, the Crowd app draws its live rows, pans from a UIKit touch, retains its process through rotation and background and foreground, and reaches the retained 2,000-body replay digest. The Mac window and Chrome page share the Crowd runtime and capture its submitted output.",
+      "experienced_quality": "The builder inspected portrait and landscape simulator screenshots with the status display and corner crops at native size.",
+      "platform_performance": {
+        "ios-sim": "Metal function on iOS 27.2.",
+        "physical-iphone": "Device behaviour and performance pending."
+      },
+      "evidence": ".orchestrate/evidence/GAME-UI/WP6/index.md"
+    }
   },
   "render_2d": {
     "scope": "RENDER-2D sprite scenes and the retained Crowd replay",
