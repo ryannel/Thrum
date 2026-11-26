@@ -59,7 +59,13 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
     } else if floating.is_some() {
         ([2560, 1440], 3.7, 30.0, MAX_SUBMISSIONS)
     } else if island.is_some() {
-        ([1280, 720], 7.0, 16.0, MAX_SUBMISSIONS)
+        // Inspect the lake reflection and its moving silhouettes at the stills' native size.
+        let extent = if matches!(route.as_str(), "optics-pan" | "optics-breeze") {
+            [2560, 1440]
+        } else {
+            [1280, 720]
+        };
+        (extent, 7.0, 16.0, MAX_SUBMISSIONS)
     } else {
         ([2560, 1440], 1.0, 120.0, MAX_SUBMISSIONS)
     };
