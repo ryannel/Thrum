@@ -555,9 +555,11 @@ fn surface_pipelines(
         interaction.is_some(),
         foam,
         gather.is_some(),
+        rain,
     ) + &Cache::source(cache, tidal_grid);
     if rain {
-        source = rain_source(source, map.is_some_and(|map| map.hollows_entry().is_some()));
+        source.push_str(super::RAIN_GAIN_WGSL);
+        source.push_str(include_str!("rain.wgsl"));
     }
     let shader = surface
         .device
@@ -579,40 +581,6 @@ fn surface_pipelines(
     (pipeline, film)
 }
 
-// The optional layer is stitched into the field's sum only for a rain profile.
-fn rain_source(mut source: String, hollows: bool) -> String {
-    source.push_str(super::RAIN_GAIN_WGSL);
-    source.push_str(include_str!("rain.wgsl"));
-    source = source.replace(
-        "    return f;\n}\nstruct SurfaceRow",
-        concat!(
-            "    let rain_wave = rain_geometry(point, spacing, row, motion);\n",
-            "    f.displacement.y += rain_wave.x;\n",
-            "    f.velocity.y += rain_wave.y;\n",
-            "    return f;\n}\nstruct SurfaceRow",
-        ),
-    );
-    source = source.replace("    // The cascades store derivatives", concat!(
-        "    rain_normal(input.rest, row, motion, departure_dx, departure_dy, second_dx, second_dy, &slope, &covariance);\n",
-        "    // The cascades store derivatives",
-    ));
-    if hollows {
-        source = source.replace(
-            "    let world = vec3(vertex.x, levels.x, vertex.y);",
-            concat!(
-                "    let row = surface_pixel(vertex.xy, slot);\n",
-                "    let motion = cascade_motion(vertex.xy, row.current, row.track, water.carriage.w, water.carriage.y);\n",
-                "    let wave = rain_geometry(vertex.xy, rectangle.origin_spacing.z, row, motion);\n",
-                "    let world = vec3(vertex.x, levels.x + wave.x, vertex.y);",
-            ),
-        ).replace(
-            "vec4(vertex.x, levels.y, vertex.y, 1.0)",
-            "vec4(vertex.x, levels.y + wave.x - wave.y * water.level_dt_reset.y, vertex.y, 1.0)",
-        );
-    }
-    source
-}
-
 fn shader_source(
     surface: &SceneSurface<'_>,
     library: &str,
@@ -620,6 +588,7 @@ fn shader_source(
     wake: bool,
     foam: Option<&Foam>,
     gather: bool,
+    rain: bool,
 ) -> String {
     let sun = if surface.sun_optical_depth {
         "fn water_sun(point: vec3<f32>) -> vec3<f32> { return sun_irradiance(point) * cloud_factor(point); }"
@@ -627,6 +596,15 @@ fn shader_source(
         "fn water_sun(point: vec3<f32>) -> vec3<f32> { return sun_irradiance(point); }"
     };
     let has_hollows = map.is_some_and(|map| map.hollows_entry().is_some());
+    // The opt-out composition reproduces the existing surface source byte for byte.
+    let (rain_geometry, rain_normal) = if rain {
+        (
+            include_str!("rain_geometry_sum.wgsl"),
+            include_str!("rain_normal_sum.wgsl"),
+        )
+    } else {
+        ("", "")
+    };
     let vertex_route = if has_hollows {
         "    if vertex.z < 0.0 { return hollows_vertex(vertex, body); }\n"
     } else {
@@ -641,6 +619,8 @@ fn shader_source(
         include_str!("field.wgsl"),
         Interaction::sample_source(3, 7, 8, wake),
         concat!(include_str!("carriage.wgsl"), include_str!("surface.wgsl")).to_owned()
+            + rain_geometry
+            + include_str!("surface_vertex.wgsl")
             + vertex_route
             + include_str!("surface_fragment.wgsl")
             + if has_hollows && gather {
@@ -649,6 +629,8 @@ fn shader_source(
                 ""
             }
             + include_str!("surface_shading.wgsl")
+            + rain_normal
+            + include_str!("surface_lighting.wgsl")
             + if has_hollows && gather {
                 include_str!("map_gpu/hollows_transport.wgsl")
             } else {
@@ -672,13 +654,20 @@ fn shader_source(
         map.map_or_else(
             || include_str!("open_surface.wgsl").to_owned(),
             |map| {
-                map.source(3)
-                    + include_str!("mapped_surface.wgsl")
-                    + if has_hollows {
-                        include_str!("map_gpu/hollows_surface.wgsl")
+                let mut source = map.source(3) + include_str!("mapped_surface.wgsl");
+                if has_hollows {
+                    let motion = if rain {
+                        include_str!("map_gpu/hollows_rain_motion.wgsl")
                     } else {
-                        include_str!("mapped_surface_pixel.wgsl")
-                    }
+                        include_str!("map_gpu/hollows_motion.wgsl")
+                    };
+                    source.push_str(include_str!("map_gpu/hollows_surface.wgsl"));
+                    source.push_str(motion);
+                    source.push_str(include_str!("map_gpu/hollows_surface_pixel.wgsl"));
+                } else {
+                    source.push_str(include_str!("mapped_surface_pixel.wgsl"));
+                }
+                source
             },
         ),
         if let Some(foam) = foam {
