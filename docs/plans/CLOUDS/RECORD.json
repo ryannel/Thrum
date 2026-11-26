@@ -21,7 +21,10 @@
       "output": 2299,
       "turns": 1
     },
-    "at": "2026-11-26T11:34:37Z"
+    "at": "2026-11-26T11:34:37Z",
+    "items_owed": [
+      "WP22"
+    ]
   },
   "work_packages": {
     "WP1": {
@@ -1593,14 +1596,13 @@
       }
     },
     "WP12": {
-      "definitions": "1c76c80d763f027234bc9b63399956751c74992a3e0bace809f9ce26da055c02",
+      "definitions": "090f81e2cacf9fc8e826f975b89b77284707d8fc738e37b66631f382d5f81b1f",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Unblock CLOUDS WP10 (handoff .orchestrate/evidence/CLOUDS/WP10-handoff.md, branch build/clouds at f2bdb692ab3d). Two mor",
-        "at": "2026-11-26T11:25:38Z"
-      },
-      "ends_stretch": true
+        "task": "Lead decision on CLOUDS WP14 (Blocked, Needs Context; handoff .orchestrate/evidence/CLOUDS/WP14-handoff.md in the clouds",
+        "at": "2026-11-26T16:49:04Z"
+      }
     },
     "WP13": {
       "definitions": "eacf6e86c21eb631106b40d1e67e6f40c9f2095b50f4577b298c2d85fdafcdeb",
@@ -1774,12 +1776,12 @@
       }
     },
     "WP14": {
-      "definitions": "0bf10b712c9c22f53e9f7f17f08e71b752d8616e372eee15cf9d1ad7baa162f2",
+      "definitions": "198af0c7d8bce88254b5f5bab4e87b5de0d549cf92dc4497e620144c89ccdad2",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
-        "at": "2026-11-24T22:06:49Z"
+        "task": "Lead decision on CLOUDS WP14 (Blocked, Needs Context; handoff .orchestrate/evidence/CLOUDS/WP14-handoff.md in the clouds",
+        "at": "2026-11-26T16:49:04Z"
       }
     },
     "WP15": {
@@ -2100,6 +2102,16 @@
         "checked": "1c6ed4682da6806a2aa6174796cb136b95c227ea",
         "at": "2026-11-25T22:56:54Z"
       }
+    },
+    "WP22": {
+      "definitions": "d7860ba670be7e5cbcbd55cf3fbc9b3c06a96cfd4fdba0ea8fc48130399f9fa3",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Lead decision on CLOUDS WP14 (Blocked, Needs Context; handoff .orchestrate/evidence/CLOUDS/WP14-handoff.md in the clouds",
+        "at": "2026-11-26T16:49:04Z"
+      },
+      "ends_stretch": true
     }
   },
   "tasks": [
@@ -2242,11 +2254,15 @@
     {
       "task": "Unblock CLOUDS WP10 (handoff .orchestrate/evidence/CLOUDS/WP10-handoff.md, branch build/clouds at f2bdb692ab3d). Two more shapes, congestus-forked (flat upper-left lobe) and fair-head-tail (head and middle lobe merge), lose relief only under the noon Sun, as the core and twin turrets do; at 10 degrees all read well. Lead's decision: this is the same cause (diffuse sunlight into broad lobes at high Sun), not four separate defects. Widen risk 14 and WP10.1 to cover noon relief on broad lobes of any shape whose 10-degree view passes, and widen WP21 to fix all four named shapes (and any other shape that shows the same cue) to the shipped-game bar. WP21 still must not hold up WP12 or the module's close. Everything else WP10 qualified stands. A plan you keep ends with KEEP CLOUDS WP10: builder: <where the plan provides it>.",
       "at": "2026-11-26T11:25:38Z"
+    },
+    {
+      "task": "Lead decision on CLOUDS WP14 (Blocked, Needs Context; handoff .orchestrate/evidence/CLOUDS/WP14-handoff.md in the clouds worktree, branch build/clouds at bf2635c8e). Over 40 matched Metal and Chrome experiments (deeper and localized mist banks, aperture changes, finer ground-band sampling, source isolation, a Sun-path atlas) could not make a distinct sunlight shaft below BROKEN CLOUD read inside the mist; the diagonal reaches the mist and diffuses. Park that one cue, as we did with WP10's noon relief: do not author a dedicated proof scene to pass the check, and do not reopen the mist lighting model inside WP14. Trim WP14.6 (and WP14.9's Chrome copy of it) so the broken-cloud shaft inside mist is a recorded known limitation, keeping every other clause (mist in the land's light, glow toward a low Sun, grey away, prop shadows weakening with mist depth, shafts below a ridge line, shaded ground never black). Move the broken-cloud shaft cue to a later CLOUDS work package that does not block WP14's close or later work packages, with the handoff's findings as its starting evidence (the diffuse spread persists in the beam-only control, so it is likely the transport model, not sampling or placement). Keep the ten passed items as they are. Leave the builder's branch untouched.\\",
+      "at": "2026-11-26T16:49:04Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-26T11:25:38Z"
+    "at": "2026-11-26T16:49:04Z"
   },
   "design_history": [
     {

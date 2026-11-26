@@ -1388,7 +1388,7 @@
     {
       "id": "WP14",
       "name": "Mist lies in the valley's hollows and fades the land near the camera, in the land's own light",
-      "status": "blocked",
+      "status": "not_started",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -1528,17 +1528,7 @@
           "verdict": "",
           "review": ""
         }
-      ],
-      "blocked": {
-        "reason": "needs_context",
-        "what": "WP14.6 and WP14.9 need a design decision on whether to author a dedicated broken-cloud setup in the dawn valley or revise the mist lighting.",
-        "work": {
-          "commit": "bf2635c8e364e3d3d5521680cc2488f06c18d97f",
-          "branch": "build/clouds",
-          "pushed": false
-        },
-        "handoff": ".orchestrate/evidence/CLOUDS/WP14-handoff.md"
-      }
+      ]
     },
     {
       "id": "WP15",
@@ -2138,7 +2128,9 @@
           "verdict": "",
           "review": ""
         }
-      ]
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0
     }
   ]
 }
