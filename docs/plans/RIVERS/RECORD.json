@@ -535,6 +535,35 @@
         "by": "plan",
         "task": "The design review of RIVERS at .orchestrate/evidence/RIVERS/design-review.md asked for changes, with its 1 Must Fix find",
         "at": "2026-11-26T18:31:04Z"
+      },
+      "ready_for_review": {
+        "commit": "c0b777cc3be328adc66ae1964948d79b04b2fb4f",
+        "checked": "05d2d6d9ffcbb9462b1eeca3074b29e4635ec8e7",
+        "at": "2026-11-26T20:06:08Z",
+        "reused": [
+          "WP4.6"
+        ],
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.171.0-alpha.13.2",
+        "path": "visible",
+        "usage": {
+          "input": 251241,
+          "cached": 26018560,
+          "output": 38412,
+          "turns": 1
+        },
+        "session_usage": {
+          "input": 251241,
+          "cached": 26018560,
+          "output": 38412,
+          "turns": 1
+        }
       }
     },
     "WP5": {
