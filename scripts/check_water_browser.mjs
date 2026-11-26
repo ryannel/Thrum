@@ -599,11 +599,16 @@ try {
       return agrees(state)&&Math.abs(state[2]-state[0])<0.0001 ? state : null;
     },'float settles at the joined waterline');
     await evaluate("game.edit_control('rain.drying',100)");
-    const parted=await until(async()=>{
+    await until(async()=>{
       const state=await step();
       return state[0]!==null && state[1]!==null && state[0]!==state[1] &&
         agrees(state) && state[4]<high[4] ? state : null;
     },'puddles part while drying');
+    await evaluate("game.edit_control('rain.drying',0)");
+    const parted=await until(async()=>{
+      const state=await step();
+      return agrees(state)&&Math.abs(state[2]-state[0])<0.0001 ? state : null;
+    },'float settles at the parted waterline');
     await capture('rain-parted',0);
     const submitted=await evaluate('__island.yardDraws');
     const draws=submitted.length;
