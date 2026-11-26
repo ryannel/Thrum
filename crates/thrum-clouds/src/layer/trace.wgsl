@@ -55,10 +55,19 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
             if sigma>0.0 {
                 let world=camera+ray*at;
                 let solar=mix(sun_base,sun_top,clamp((point.y-cloud.heights.x)/(cloud.heights.y-cloud.heights.x),0.0,1.0));
-                var sun_depths = vec2(0.0);
-                if any(solar > vec3(0.0)) { sun_depths = cloud_local_sun(point,world,at,footprint,sun_alignment,placed.x>0.0); }
-                var source=cloud_source(solar,phase,sun_depths,column.yz,light_angles,at,total.transmittance*part.transmittance);
-                if bank>0.0 && placed.x==0.0 && any(solar>vec3(0.0)) {
+                let sunlit=any(solar>vec3(0.0));
+                var sun_depths=vec2(0.0);
+                var diffuse=vec3(0.0,0.0,1.0);
+                if sunlit {
+                    sun_depths=cloud_local_sun(point,world,at,footprint,sun_alignment,placed.x>0.0);
+                    diffuse=vec3(sun_depths,1.0);
+                    if placed.x>0.0 && cloud.light_samples>0u {
+                        diffuse=cloud_placed_diffuse(point,world,footprint,sun_alignment,sun_depths,placed.x/sigma);
+                    }
+                }
+                var source=cloud_source_with_diffuse(solar,phase,sun_depths.x,diffuse.xy,diffuse.z,
+                    column.yz,light_angles,at,total.transmittance*part.transmittance);
+                if bank>0.0 && placed.x==0.0 && sunlit {
                     source=cloud_bank_light(source,solar,point,sigma,at,footprint,sun_depths.x,sun_alignment,bank);
                 }
                 let segment=cloud_beer(sigma,sigma*source,step);

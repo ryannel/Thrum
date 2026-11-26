@@ -35,12 +35,51 @@ fn cloud_light_angles(viewer:vec3<f32>)->vec4<f32> {
 }
 fn cloud_source(solar:vec3<f32>,phases:vec3<f32>,sun_depths:vec2<f32>,
                 vertical_depths:vec2<f32>,light_angles:vec4<f32>,distance:f32,transmission:f32)->vec3<f32> {
+    return cloud_source_with_diffuse(solar,phases,sun_depths.x,sun_depths,1.0,
+                                     vertical_depths,light_angles,distance,transmission);
+}
+
+fn cloud_source_with_diffuse(solar:vec3<f32>,phases:vec3<f32>,sun_depth:f32,diffuse_column:vec2<f32>,
+                             diffuse_scale:f32,vertical_depths:vec2<f32>,light_angles:vec4<f32>,
+                             distance:f32,transmission:f32)->vec3<f32> {
     // The first profile's near/far medium handover ends at 500 m.
     let boundary=cloud_smooth((distance-500.0)/500.0);
     let g=cloud.erosion.z;
     let depth=-log(transmission);
-    let direct=cloud_solar_source(phases,sun_depths,light_angles,depth,boundary,cloud.scattering.xyz,g);
+    let beam=cloud_solar_beam(phases,sun_depth,cloud.scattering.xyz);
+    let diffuse=cloud_solar_diffuse(diffuse_column,light_angles,depth,boundary,cloud.scattering.xyz,g);
     let diffuse_depth=0.75*(1.0-g)*vertical_depths;
     let ambient=cloud_ambient[0].rgb/(1.0+diffuse_depth.x)+cloud_ambient[1].rgb/(1.0+diffuse_depth.y);
-    return solar*direct+ambient;
+    return solar*(beam+diffuse*diffuse_scale)+ambient;
+}
+
+fn cloud_placed_diffuse(point:vec3<f32>,world:vec3<f32>,footprint:f32,sun_alignment:f32,
+                        sun_depths:vec2<f32>,placed_share:f32)->vec3<f32> {
+    // Under a high Sun, scattering travels across several narrow lobes.
+    // Use the broader column for diffuse light and keep the local beam.
+    let high_sun=smoothstep(0.20,0.55,mapping.path_border.y);
+    let broad=high_sun*placed_share;
+    var column=sun_depths;
+    if broad>0.0 {
+        column=mix(sun_depths,cloud_sun_depths(world,world.y).xy,broad);
+    }
+
+    // Read the density change across a billow. The wider footprint keeps
+    // diffuse light from tracing each wisp.
+    let light_footprint=max(55.0,footprint);
+    let probe=mapping.path_border.xyz*light_footprint;
+    let ahead=cloud_density(point+probe,light_footprint);
+    let behind=cloud_density(point-probe,light_footprint);
+    let falloff=(behind-ahead)/(max(behind,ahead)+0.22*cloud.physical.x);
+    let exposed=smoothstep(-0.32,0.62,falloff);
+    let light=exposed*(0.65+0.35*exp(-0.12*sun_depths.x));
+    let strength=mix(0.52,1.0,high_sun)*placed_share;
+    let scale=mix(1.0,0.76+0.64*light,strength);
+
+    // Let the sheltered flank turn grey at low elevations while preserving
+    // the forward rim and clear-sky ambient.
+    let flank=(1.0-high_sun)*(1.0-smoothstep(0.55,0.90,sun_alignment));
+    let shadow=smoothstep(0.28,0.86,sun_depths.x/max(1.0,sun_depths.y))
+        *smoothstep(1.0,7.0,sun_depths.x);
+    return vec3(column,scale*(1.0-0.61*placed_share*flank*shadow));
 }
