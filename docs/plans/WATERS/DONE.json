@@ -1713,7 +1713,7 @@
     {
       "id": "WP25",
       "name": "A few stations check the Metal surf query against the model",
-      "status": "ready_for_review",
+      "status": "done",
       "quality_bar": "Keep what only a device shows, that the many-component dispatch's answers are the model's however the stations are grouped into bodies, on the smallest world that shows it. What a CPU decides stays in the model's own test.",
       "items": [
         {
@@ -1725,8 +1725,8 @@
           "lock": "gpu",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP25/README.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/WP25-review.md"
         }
       ],
       "failed_reviews": 0,
