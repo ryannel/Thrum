@@ -105,13 +105,15 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
     let whitewater = super::whitewater();
     let surf = super::surf_route();
     let route = std::env::var("THRUM_WATER_ROUTE").unwrap_or_default();
+    let walking = matches!(route.as_str(), "yard-walk" | "yard-walk-paving");
     let footfall = yard
-        && matches!(
-            route.as_str(),
-            "yard-walk" | "yard-stone-left" | "yard-stone-right" | "yard-joined"
-        );
+        && (walking
+            || matches!(
+                route.as_str(),
+                "yard-stone-left" | "yard-stone-right" | "yard-joined"
+            ));
     let footfall_edit = match route.as_str() {
-        "yard-walk" => r#"{"rain.walk":1}"#,
+        "yard-walk" | "yard-walk-paving" => r#"{"rain.walk":1}"#,
         "yard-stone-right" => r#"{"rain.stone_right":1}"#,
         _ => r#"{"rain.stone_left":1}"#,
     };
@@ -141,7 +143,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
     let (extent, interval, opportunities, max_submissions) = if footfall {
         (
             [1280, 720],
-            if route == "yard-walk" { 5.5 } else { 3.25 },
+            if walking { 5.5 } else { 3.25 },
             32.0,
             CHANNEL_SUBMISSIONS,
         )
@@ -193,7 +195,8 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
         "yard-stone-left" => Some([36, 338]),
         "yard-stone-right" => Some([31, 22]),
         "yard-joined" => Some([35, 350]),
-        "yard-walk" => Some([32, 4]),
+        "yard-walk" => Some([37, 328]),
+        "yard-walk-paving" => Some([39, 21]),
         _ => None,
     };
     if yard {
