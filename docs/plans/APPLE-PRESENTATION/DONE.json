@@ -1276,8 +1276,8 @@
         },
         {
           "id": "U1.4",
-          "statement": "Nothing was published, and nothing was written to be posted. The notes hold no draft of a comment, an issue or a pull request description. During the work package no agent posted, commented or reacted on wgpu's GitHub or its chat channels, opened or edited an issue or a pull request there, or pushed a branch to a public remote other than this repository's own. The landing changes nothing under `vendor/`. Record: the notes and the landing.",
-          "ask": "Read the notes whole: is any passage written in the owner's voice, to be posted? With the account `gh` is signed into here, do the issue, wgpu's pull requests and that account's fork of wgpu, if it has one, show anything created or pushed since the work package started? Does the landing change any file under `vendor/`?",
+          "statement": "The owner's publication rule held through U1, in what was delivered and in what its builders did. The notes hold no draft of a comment, an issue or a pull request description. The landing changes nothing under `vendor/`. No session that built U1, and no thread such a session started, posted, commented or reacted on wgpu's GitHub or its chat channels, opened or edited an issue or a pull request there, or pushed to a public remote other than this repository's own. Record: the notes, the landing, and the record each of those sessions' host keeps of what it ran.",
+          "ask": "Read the notes whole: is any passage written in the owner's voice, to be posted? Does the landing change any file under `vendor/`? Take the sessions the script's delivery history lists as building U1, with the threads they started, and in each one's host record read every command and tool call that reaches GitHub, a chat service or a git remote: is any of them one of the actions the statement names? Judge what agents did from those records alone. What an account shows upstream, on the issue, in wgpu's pull requests or in a fork, is not evidence either way, because it doesn't say who acted.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -1290,14 +1290,14 @@
     },
     {
       "id": "U2",
-      "name": "The owner has opened the conversation on wgpu's Metal pipeline-cache issue, and what was settled there is on record",
+      "name": "The owner has said go ahead or stop on offering the Metal pipeline cache to wgpu, and the answer is on record with whatever the issue's thread settled",
       "status": "not_started",
-      "quality_bar": "A record the next planner can plan the trunk change from without asking the owner again, and that says what the public thread says. Nothing is judged against an image or a shipped game.",
+      "quality_bar": "A record from which the next planner can drop the trunk change or plan it without asking the owner again, and which says of the public thread only what the thread says. Nothing is judged against an image or a shipped game.",
       "items": [
         {
           "id": "U2.1",
-          "statement": "On the day the owner is asked, the issue, the pull requests of part 1 and wgpu's trunk are read again, and the upstream notes reach the owner with a dated line for each of parts 1, 2 and 4: it still holds, or what changed. Where trunk moved in the files a cache patch touches, part 4's applying is done again at the new commit. Record: the dated lines, kept with the notes.",
-          "ask": "Do the dated lines agree with the issue, the pull requests and trunk as they stood that day, going by the dates the comments and commits carry?",
+          "statement": "On the day the owner is asked, wgpu's side is read again, and the upstream notes reach the owner with a dated line for each of parts 1, 2 and 4: it still holds, or what changed. The reading covers the issue, the pull requests of part 1, each pull request proposing a Metal pipeline cache that was opened since the day part 1 was read, the two files of part 2, and trunk. Part 1's line gives a pull request opened since then as part 1 gives the others: its author, dates, status and what maintainers said of it, with its link. Where trunk moved in the files a cache patch touches, part 4's applying is done again at the new commit. Record: the dated lines, kept with the notes.",
+          "ask": "Do the dated lines agree with the issue, the pull requests, the two files and trunk as they stood that day, going by the dates the comments and commits carry? Does one search of wgpu's pull requests opened since the day part 1 was read, for a Metal pipeline cache or `MTLBinaryArchive`, find a pull request that part 1's line leaves out?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -1306,11 +1306,11 @@
         },
         {
           "id": "U2.2",
-          "statement": "The owner has answered go ahead or stop, and the answer is on record where the next planner reads it. A go ahead follows a comment of the owner's own on gfx-rs/wgpu#8526. This module's log holds the owner's words, a link to the owner's comment and to each reply the answer rests on, and the outcome: go ahead or stop, and for go ahead each of the three decisions as the thread settled it or left it open: who writes the Metal change, which parts of the patches are offered, and whether the cache header and the archive go as one pull request or two. The landing changes nothing under `vendor/`. Record: the log entry.",
-          "ask": "From the log entry alone, can you say whether the owner chose go ahead or stop and, for go ahead, how each of the three decisions stands? Do the linked comments say the same? Does the landing change any file under `vendor/`?",
+          "statement": "The owner has answered go ahead or stop, and this module's log holds the answer in the owner's words, where the next planner reads it. For stop, the words are the whole record, whether or not the owner posted anything upstream. For go ahead, the entry also links the comment the owner posted on gfx-rs/wgpu#8526 and each reply the answer rests on, if there is one, and gives each of the three decisions as the thread settled it or left it open: who writes the Metal change, which parts of the patches are offered, and whether the cache header and the archive go as one pull request or two. The landing changes nothing under `vendor/`. Record: the log entry.",
+          "ask": "From the log entry alone, can you say whether the owner chose go ahead or stop? A stop asks nothing more of the entry. For go ahead: does the entry link a comment on the issue that the owner named as theirs, and say how each of the three decisions stands, and do the linked comments say the same? Does the landing change any file under `vendor/`?",
           "needs": {
             "type": "human_feedback",
-            "what": "Read the upstream notes, then write and post your own comment on gfx-rs/wgpu#8526. wgpu asks that comments be written by hand, and no agent has drafted one. Answer once the thread has settled enough for you: go ahead or stop, and for go ahead who writes the Metal change, which parts are offered, and one pull request or two, as far as the thread settled them. You can also stop without posting. There is no deadline, and nothing in V1 waits for this."
+            "what": "Read the upstream notes and answer go ahead or stop. A stop needs nothing more, and you can stop without posting anything. To go ahead, first write and post your own comment on gfx-rs/wgpu#8526: wgpu asks that comments be written by hand, and no agent has drafted one. Then answer once the thread has settled enough for you, with a link to your comment and, as far as the thread settled them, who writes the Metal change, which parts are offered, and one pull request or two. There is no deadline, and nothing in V1 waits for this."
           },
           "target": "mac-metal",
           "builder_result": "open",

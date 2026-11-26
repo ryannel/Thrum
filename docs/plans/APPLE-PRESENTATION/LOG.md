@@ -659,3 +659,20 @@ layer profile change. [Metal controls](../../../.orchestrate/evidence/CLOUDS/WP9
   answer. The plan listed U1 before WP11; it moves behind it because revision 6 says the offer "does not gate V1
   or M11". Read that day: trunk `60cef2be` still has no Metal adapter key, the issue's last comment is from
   20 October, and gfx-rs/wgpu#9623, an earlier pull request for the feature, was closed in June with no review.
+
+- 2026-11-26 Planner, design review Must Fix 1 (U2.2 must accept a stop before posting). U2.2 now takes the
+  owner's words as the whole record of a stop, posted or not. Only a go ahead needs the link to the owner's
+  comment, the replies it rests on, if any, and the three decisions. U2's name, its question to the owner and
+  the design's U2 paragraph say the same.
+  [Design](DESIGN.md#offering-the-cache-upstream-u1-to-u3) ·
+  [review](../../../.orchestrate/evidence/APPLE-PRESENTATION/design-review.md)
+
+- 2026-11-26 Planner, design review Must Fix 2 (U1.4's account check cannot establish who acted). U1.4 no
+  longer looks at what an account shows upstream. The notes and the landing are judged from the delivered
+  files, and what agents did from the host's record of each session that built U1, which the script's delivery
+  history lists. The design says why an account's activity is not evidence either way. The owner's publication
+  rule is unchanged.
+
+- 2026-11-26 Planner, design review Must Fix 3 (U2.1 can miss a new Metal cache pull request). U2.1's reading
+  now covers each pull request proposing a Metal pipeline cache opened since part 1 was read, given in part 1's
+  dated line as part 1 gives the others, and its reviewer searches for one the line leaves out.

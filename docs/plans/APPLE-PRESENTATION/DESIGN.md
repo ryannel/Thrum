@@ -853,6 +853,12 @@ agent writes text for the owner to post either: no draft of a comment, an issue 
 wgpu asks contributors to write those themselves, and its maintainers act on it, as the next paragraph shows.
 Agents read wgpu's public pages and repository freely. A clone of wgpu is scratch under `tmp/`.
 
+Each half of this rule is judged from what can establish it. Whether text was written to be posted is read from
+the delivered notes. What agents did is read from the record each builder session's host keeps of the commands
+and tool calls it ran, which the script's delivery history lists by work package. What an account shows upstream
+is not evidence either way: the owner may post, or push to a fork of their own, at any time, and wgpu's chat
+leaves nothing on GitHub.
+
 **wgpu's side, as read on 26 November 2026.** Each of these is evidence for the shape of an offer, not a
 specification, and U1 reads them again.
 
@@ -896,10 +902,18 @@ because the owner will speak from it in public. It has six parts:
    pull request or two. Each has its options, what the patches as they stand support, and the agents'
    recommendation, marked as theirs.
 
-*U2, the conversation.* The owner reads the notes, writes and posts their own comment, and answers the loop
-**go ahead** or **stop** once the thread has settled enough, with the three decisions as far as it settled
-them. How long to wait for a reply, and whether silence is enough to go ahead, is the owner's call. The answer
-goes in the log with links to the comments it rests on.
+*U2, the owner's answer.* On the day the owner is asked, agents read wgpu's side again and add a dated line to
+each of parts 1, 2 and 4: it still holds, or what changed. That reading looks for pull requests proposing a
+Metal pipeline cache opened since U1 as well as the ones part 1 lists, because a new one can appear with no
+comment on the issue and no change to trunk, and it bears on who should write the change. The owner then reads
+the notes and answers the loop **go ahead** or **stop**.
+
+- **Stop** can come at any point, before a comment is posted or after. The owner's words in the log are its
+  whole record, and they are all the next planner needs to drop U3.
+- **Go ahead** follows a comment the owner wrote and posted on the issue themselves, once the thread has
+  settled enough for them. Its record in the log links that comment and each reply the answer rests on, if
+  there is one, and gives the three decisions as far as the thread settled them. How long to wait for a
+  reply, and whether silence is enough to go ahead, is the owner's call.
 
 *U3, the change.* A planner writes U3's items from U2's answer, under rules 2 to 6 above. On **stop** that
 planner drops U3. Either way the pinned copies stay as V1 needs them until a released wgpu carries the cache.

@@ -90,13 +90,15 @@ and `vendor/wgpu-core-patches/0001-metal-cache-header.patch`. WP12's launch reco
 [its README](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP12/review-repair/README.md) also links the rerun
 on the merge candidate, which is a second record and not the one part 5 quotes. `gh` is signed in
 here: use it to read wgpu's issue, pull requests and files, and for nothing that writes. The notes are evidence,
-so the landing is a log entry and no more, and `./dev check-docs` is the check to build against.
+so the landing is a log entry and no more, and `./dev check-docs` is the check to build against. U1.4's
+reviewer reads what each session ran from the host's own record of it, found through `sessions.jsonl` in the
+folder `agent_loop.py settings` prints as `paths.history`, so there is nothing to keep for that part.
 
-## U2 The owner has opened the conversation on wgpu's Metal pipeline-cache issue, and what was settled there is on record
+## U2 The owner has said go ahead or stop on offering the Metal pipeline cache to wgpu, and the answer is on record with whatever the issue's thread settled
 
 The upstream notes are U1's evidence; U1.1's `evidence` field has the path. Do U2.1, then end
-`BLOCKED needs_human_feedback` with the question U2.2 carries. The owner posts when they choose and a reply
-upstream can take weeks, so a long wait here is expected and is not a fault to work around. The log entry
-follows the owner's answer.
+`BLOCKED needs_human_feedback` with the question U2.2 carries. The owner answers when they choose: a stop may
+come at once and with nothing posted, and a go ahead follows the owner's own comment and replies that can take
+weeks. A long wait here is expected and is not a fault to work around. The log entry follows the owner's answer.
 
 ## U3 The Metal pipeline-cache change is offered to wgpu by the owner: on trunk, tested in wgpu's suite, reviewed and walked through
