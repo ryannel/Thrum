@@ -248,7 +248,7 @@
           "check": "node scripts/check_v1_browser.mjs --case interface-text",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/GAME-UI/WP2/round6/index.md",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP2/round7/index.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/GAME-UI/WP2-review.md",
           "builder_result": "pass"

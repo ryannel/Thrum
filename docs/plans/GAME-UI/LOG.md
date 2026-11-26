@@ -128,3 +128,7 @@
   now allows independent new PNGs to publish all three profiles. Reopens retain the font hash and keep
   the original grid private. Restoring the valid description records the binding. Unrelated stat entries
   continue to persist while the legacy font is unresolved. [Target proofs](../../../.orchestrate/evidence/GAME-UI/WP2/round6/index.md)
+- 2026-11-26 WP2.9 verifier fix. The browser had already passed the font-edit comparisons when Chrome's
+  teardown watchdog fired. The text check now ends capture, retires each WebGPU device and unloads its
+  page before closing Chrome. Two Chrome WebGPU runs passed at DPR 1, 2 and 3 with clean shutdown.
+  The fixed type cards at DPR 1 and 2 matched the inspected pixels. [Target proofs](../../../.orchestrate/evidence/GAME-UI/WP2/round7/index.md)
