@@ -35,8 +35,8 @@ Build in the order below.
 - Assumption: until WP17 shows 120 Hz held, a full-screen window asks for 60 Hz by itself and a smaller window
   keeps the display's full refresh. A launch setting forces either.
 - Assumption: WP17 comes after WP11, so `SHOWCASE` WP7 does not wait for it, and the V1 exit rests on it.
-  `SHOWCASE` WP8 does not list WP17 yet, which [the log](LOG.md) proposes. The owner can take WP17 out of the
-  exit, for instance by leaving it to the performance phase the vision puts after V1.
+  `SHOWCASE` WP8 depends on WP17 and its WP8.12 lists it. The owner can take WP17 out of the exit, for instance
+  by leaving it to the performance phase the vision puts after V1.
 
 ## WP1 Every pixel of the valley carries correct motion under jitter, including the sky and stars: done
 [review](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP1-review.md)

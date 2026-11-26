@@ -707,3 +707,12 @@ layer profile change. [Metal controls](../../../.orchestrate/evidence/CLOUDS/WP9
   60 Hz, which is not the display's full refresh that `SHOWCASE`'s cue S5 judges. The module list's exit table
   and its line "WP11 (the paired proof, which closes G4)" would follow. Taking WP17 out of the exit is the
   owner's decision.
+
+- 2026-11-26 Planner, second design review, Must Fix 1 (the V1 exit could still accept WP11 as the last Apple
+  presentation prerequisite). The proposal above is taken, in `SHOWCASE`'s files and the module list. `SHOWCASE`
+  WP8 depends on `APPLE-PRESENTATION:WP17`. WP8.12 names WP17 in its statement and its check, and the check's
+  stale `M` ids are `WP` ids: with every other prerequisite Done and WP17 open it prints
+  `not Done: ['APPLE-PRESENTATION:WP17']` and fails, and with WP17 Done it passes. WP7 and its WP7.1 still need
+  only WP11. The module list's row for `SHOWCASE`, its exit coverage table, its build order and its planning
+  note for this module say the same. No item of this module changed.
+  [Review](../../../.orchestrate/evidence/APPLE-PRESENTATION/design-review.md)

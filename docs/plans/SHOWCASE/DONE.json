@@ -343,7 +343,7 @@
         {
           "id": "WP7.1",
           "statement": "The work packages this one builds on are Done in the record files: `APPLE-TILE` WP12, `APPLE-PRESENTATION` WP11, its paired proof with MetalFX, EDR and the governor, `ATMOSPHERE` WP6, `CULLING` WP3 and `CONTENT-LOOP` WP3.",
-          "check": "python3 -c 'import json,sys; L=lambda m,f: json.load(open(\"docs/plans/\"+m+\"/\"+f)); need=[(\"APPLE-TILE\",\"M12\"),(\"APPLE-PRESENTATION\",\"M11\"),(\"ATMOSPHERE\",\"WP6\"),(\"CULLING\",\"M3\"),(\"CONTENT-LOOP\",\"M3\")]; ok=lambda m,i: any(x[\"id\"]==i and x.get(\"status\")==\"done\" for x in L(m,\"DONE.json\")[\"work_packages\"]) and bool((L(m,\"RECORD.json\")[\"work_packages\"].get(i) or {}).get(\"done\")); bad=[m+\":\"+i for m,i in need if not ok(m,i)]; print(\"not Done:\",bad); sys.exit(1 if bad else 0)'",
+          "check": "python3 -c 'import json,sys; L=lambda m,f: json.load(open(\"docs/plans/\"+m+\"/\"+f)); need=[(\"APPLE-TILE\",\"WP12\"),(\"APPLE-PRESENTATION\",\"WP11\"),(\"ATMOSPHERE\",\"WP6\"),(\"CULLING\",\"WP3\"),(\"CONTENT-LOOP\",\"WP3\")]; ok=lambda m,i: any(x[\"id\"]==i and x.get(\"status\")==\"done\" for x in L(m,\"DONE.json\")[\"work_packages\"]) and bool((L(m,\"RECORD.json\")[\"work_packages\"].get(i) or {}).get(\"done\")); bad=[m+\":\"+i for m,i in need if not ok(m,i)]; print(\"not Done:\",bad); sys.exit(1 if bad else 0)'",
           "target": "mac-metal",
           "evidence": "",
           "builder_result": "open",
@@ -466,7 +466,8 @@
       "name": "The showcase passes review on the Mac and in Chrome, its motion on the built-in display is on record, and the V1 exit record is written",
       "depends_on": [
         "PLATFORM-RUNTIME-MAC:WP3",
-        "CREATOR:WP3"
+        "CREATOR:WP3",
+        "APPLE-PRESENTATION:WP17"
       ],
       "items": [
         {
@@ -579,8 +580,8 @@
         },
         {
           "id": "WP8.12",
-          "statement": "Every work package the V1 exit rests on is Done in the record files: `PLATFORM-RUNTIME-IOS` WP7, `PLATFORM-RUNTIME-MAC` WP3, `T2-CAPTURE` WP2, `COOKED-DRAW` WP1, `APPLE-TILE` WP12, `CREATOR` WP3, `APPLE-PRESENTATION` WP11, `ATMOSPHERE` WP6, which closes G3s, `BASELINE-GUARD` WP1, `CULLING` WP3 and `CONTENT-LOOP` WP3. `ATMOSPHERE`'s later work packages are track 2 and are not among them.",
-          "check": "python3 -c 'import json,sys; L=lambda m,f: json.load(open(\"docs/plans/\"+m+\"/\"+f)); need=[(\"PLATFORM-RUNTIME-IOS\",\"WP7\"),(\"PLATFORM-RUNTIME-MAC\",\"M3\"),(\"T2-CAPTURE\",\"M2\"),(\"COOKED-DRAW\",\"M1\"),(\"APPLE-TILE\",\"M12\"),(\"CREATOR\",\"M3\"),(\"APPLE-PRESENTATION\",\"M11\"),(\"ATMOSPHERE\",\"WP6\"),(\"BASELINE-GUARD\",\"M1\"),(\"CULLING\",\"M3\"),(\"CONTENT-LOOP\",\"M3\")]; ok=lambda m,i: any(x[\"id\"]==i and x.get(\"status\")==\"done\" for x in L(m,\"DONE.json\")[\"work_packages\"]) and bool((L(m,\"RECORD.json\")[\"work_packages\"].get(i) or {}).get(\"done\")); bad=[m+\":\"+i for m,i in need if not ok(m,i)]; print(\"not Done:\",bad); sys.exit(1 if bad else 0)'",
+          "statement": "Every work package the V1 exit rests on is Done in the record files, twelve in all: `PLATFORM-RUNTIME-IOS` WP7, `PLATFORM-RUNTIME-MAC` WP3, `T2-CAPTURE` WP2, `COOKED-DRAW` WP1, `APPLE-TILE` WP12, `CREATOR` WP3, `APPLE-PRESENTATION` WP11, its paired proof, and WP17, which holds the display's full 120 Hz at full screen on the built-in display, `ATMOSPHERE` WP6, which closes G3s, `BASELINE-GUARD` WP1, `CULLING` WP3 and `CONTENT-LOOP` WP3. `ATMOSPHERE`'s later work packages are track 2 and `APPLE-PRESENTATION`'s U1 to U3 are not part of V1, so none of those is among the twelve.",
+          "check": "python3 -c 'import json,sys; L=lambda m,f: json.load(open(\"docs/plans/\"+m+\"/\"+f)); need=[(\"PLATFORM-RUNTIME-IOS\",\"WP7\"),(\"PLATFORM-RUNTIME-MAC\",\"WP3\"),(\"T2-CAPTURE\",\"WP2\"),(\"COOKED-DRAW\",\"WP1\"),(\"APPLE-TILE\",\"WP12\"),(\"CREATOR\",\"WP3\"),(\"APPLE-PRESENTATION\",\"WP11\"),(\"APPLE-PRESENTATION\",\"WP17\"),(\"ATMOSPHERE\",\"WP6\"),(\"BASELINE-GUARD\",\"WP1\"),(\"CULLING\",\"WP3\"),(\"CONTENT-LOOP\",\"WP3\")]; ok=lambda m,i: any(x[\"id\"]==i and x.get(\"status\")==\"done\" for x in L(m,\"DONE.json\")[\"work_packages\"]) and bool((L(m,\"RECORD.json\")[\"work_packages\"].get(i) or {}).get(\"done\")); bad=[m+\":\"+i for m,i in need if not ok(m,i)]; print(\"not Done:\",bad); sys.exit(1 if bad else 0)'",
           "target": "mac-metal",
           "evidence": "",
           "builder_result": "open",

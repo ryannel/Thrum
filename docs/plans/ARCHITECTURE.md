@@ -14,7 +14,7 @@
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE WP2, BASELINE-GUARD WP1 |
 | 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame, and answer a game's questions every tick even when a frame is skipped | APPLE-TILE WP2 and WP3, APPLE-PRESENTATION WP2, BASELINE-GUARD WP1 |
 | 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | Nothing for its WP4; APPLE-PRESENTATION WP2 and WP3, EFFECT-GRAPH WP2, CULLING WP3 |
-| 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | CONTENT-LOOP WP2 and CULLING WP3 to start; ATMOSPHERE WP10 for the populated valley's motion review; APPLE-TILE WP12, APPLE-PRESENTATION's last work package, ATMOSPHERE WP6 (which closes G3s) and CONTENT-LOOP WP3 for the three rows from one command; PLATFORM-RUNTIME-MAC WP3 and CREATOR WP3 as well to close |
+| 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | CONTENT-LOOP WP2 and CULLING WP3 to start; ATMOSPHERE WP10 for the populated valley's motion review; APPLE-TILE WP12, APPLE-PRESENTATION WP11, ATMOSPHERE WP6 (which closes G3s) and CONTENT-LOOP WP3 for the three rows from one command; PLATFORM-RUNTIME-MAC WP3, CREATOR WP3 and APPLE-PRESENTATION WP17 as well to close |
 | 14 | SEA | The wind's waves, from glassy calm to gale: one wave field that every body of water reads | Nothing to start; EFFECT-GRAPH WP2 for the field on the GPU |
 | 15 | WATERS | Sea, shore, lakes and ponds as one water: drawn, lit, floated on, stirred and foaming, breaking on its beaches, mirroring the land, seen from beneath and lit there by the Sun's net and shafts, with a place made for rivers and puddles | SEA WP1 to start; SEA WP2, EFFECT-GRAPH WP3, ATMOSPHERE WP5 and WP9 and CREATOR WP1 for its first frame; CONTENT-LOOP WP1 for foam; APPLE-PRESENTATION WP3 for the whole range in motion; SCENE-VIEWS WP3 for mirrored scenery; EFFECT-GRAPH WP6 for floats in the surf with the game running; APPLE-PRESENTATION's governor and MetalFX work packages to close |
 | 16 | SCENE-VIEWS | The scene is drawn a second time from another viewpoint, so water can mirror hills and trees the camera cannot see | CULLING WP1, ATMOSPHERE WP5 and EFFECT-GRAPH WP3 |
@@ -138,7 +138,7 @@ above as `PLATFORM-RUNTIME-WEB` when work on it is next planned.
 
 | Exit clause | Closed by |
 |---|---|
-| One engine powers `examples/v1-game` on this M3 Max and its 120 Hz display, and the same scene in Chrome | `SHOWCASE` WP7 and WP8; `PLATFORM-RUNTIME-MAC` WP2 and WP3 |
+| One engine powers `examples/v1-game` on this M3 Max and its 120 Hz display, and the same scene in Chrome | `SHOWCASE` WP7 and WP8; `PLATFORM-RUNTIME-MAC` WP2 and WP3; `APPLE-PRESENTATION` WP17 for the display's full 120 Hz at full screen |
 | Physical sky, Sun and aerial perspective with time controls | `ATMOSPHERE` WP6 |
 | Cooked meshes and textures; hot reload | `CONTENT-LOOP` WP3; `CREATOR` |
 | Live camera, lights and cascaded shadows | G3a, closed before the loop; shadow quality on the route in `ATMOSPHERE` WP6; the far ground under the exit scene's balloons in `ATMOSPHERE` WP10 |
@@ -198,7 +198,8 @@ reasoning behind those entries. The project settings allow one Codex builder, so
    (leases) starts earlier, after `APPLE-PRESENTATION:WP2`, and its WP2 (cooked mesh rows) after `CULLING:WP3`.
 7. **The exit.** `SHOWCASE` WP5 and WP6 (the populated valley and its culling) start once `CONTENT-LOOP:WP2` is
    Done, beside the work of step 6. `APPLE-TILE` WP12 and `APPLE-PRESENTATION` WP11 (paired proof) come next, then
-   `SHOWCASE` WP7 and WP8.
+   `SHOWCASE` WP7. `APPLE-PRESENTATION` WP17 (the display's full 120 Hz at full screen) follows WP11 and can be
+   built beside WP7. `SHOWCASE` WP8 comes last, after WP17.
 8. **Track 2.** `SEA`, `WATERS` and `CLOUDS` each start with a CPU work package that needs nothing from the renderer:
    `SEA` WP1 (the wave model), `WATERS` WP1 (where water lies, after `SEA:WP1`) and `CLOUDS` WP1 (the weather). `SEA`
    WP2 (the wave field on the GPU, on `EFFECT-GRAPH:WP2`) and `CLOUDS` WP2 (shade with no cloud drawn, on
@@ -1446,10 +1447,19 @@ Planned on 14 November 2026: [design](APPLE-PRESENTATION/DESIGN.md#wp4-to-wp12-s
 became done-when items, with the drafted WP10 split in two: the order is WP4 (extent and generation transitions),
 WP5 (dynamic scale), WP6 (EDR), WP7 (the governor and its knob registry), WP8 (MetalFX), WP9 (prepared paths and
 launch-to-ready), WP10 (cooked shader libraries and parallel preparation), WP12 (the pipeline archive) and WP11
-(the paired proof, which closes G4). Only two wait on another module: WP8 on `APPLE-TILE:WP11` and WP11 on
+(the paired proof, which proves each clause of G4's sentence). Only two wait on another module: WP8 on `APPLE-TILE:WP11` and WP11 on
 `APPLE-TILE:WP12`. `SHOWCASE` WP7 now waits for `APPLE-PRESENTATION:WP11`, and `WATERS` WP11 and `CLOUDS` WP12 for
 its WP7 and WP8. The owner's look at EDR on the built-in display is asked for in WP11 and recorded as an
 observation; under decision 4 of [the vision and scope document](VISION.md#decisions) the review and G4 can close without it.
+
+**WP17 and the V1 exit, 26 November 2026.** The valley misses 120 Hz at full screen on the built-in display, so
+WP11 judges full screen there at a steady 60 Hz, an interim rate, and closes on it. Holding the display's full
+120 Hz at full screen is WP17, which follows WP11
+([design](APPLE-PRESENTATION/DESIGN.md#reaching-the-full-refresh-at-full-screen-wp17)). The vision judges motion
+"smooth at the display's full refresh", so that bar is owed until WP17 is Done, and the design counts the Apple
+reconstruction milestone as reached then and not at WP11. The V1 exit rests on both work packages: `SHOWCASE`
+WP7 waits only for `APPLE-PRESENTATION:WP11`, `SHOWCASE` WP8 waits for `APPLE-PRESENTATION:WP17` as well, and
+WP8.12 lists both, so an open WP17 keeps the exit open. Taking WP17 out of the exit is the owner's decision.
 
 ### CULLING (G3c)
 
@@ -1475,7 +1485,7 @@ Planned on 13 November 2026: [design](SHOWCASE/DESIGN.md), [plan](SHOWCASE/PLAN.
 WP1 to WP4 were the route slice, built before the loop under
 [the route decision](../design/decisions/G7-SHOWCASE-ROUTE.md) and kept in
 [its record](../../.orchestrate/evidence/SHOWCASE/ROUTE-SLICE-RECORD.md). WP5 and WP6 need `CONTENT-LOOP:WP2` and `CULLING:WP3`; WP7
-needs the closing work packages it builds on and WP8 the last work package of every other track 1 module. The swarm game, `SWARM`, starts when WP8 is Done.
+needs the closing work packages it builds on and WP8 every work package the exit rests on, which WP8.12 lists; since 26 November 2026 that includes `APPLE-PRESENTATION` WP17. The swarm game, `SWARM`, starts when WP8 is Done.
 
 ### EFFECT-GRAPH (track 2 foundation)
 
@@ -3585,3 +3595,9 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   items. No builder starts it before the owner approves its design. No work package on the road to the V1 exit
   gained an edge. `SWARM` WP2, WP3, WP5 and WP6 gained edges to it and `SWARM` is to be re-planned onto the SDK;
   `CREATOR`'s kit and docs pass to it at its WP10. Owner decisions 37 to 43 added.
+- 2026-11-26 `APPLE-PRESENTATION` WP17 (the display's full 120 Hz at full screen on the built-in display) joined
+  the work packages the V1 exit rests on, from [the module's design review](../../.orchestrate/evidence/APPLE-PRESENTATION/design-review.md).
+  `SHOWCASE` WP8 gained the edge `APPLE-PRESENTATION:WP17` and WP8.12 lists it; WP7 still needs only WP11, which
+  closes at a steady 60 Hz at full screen as an interim rate. The module table's row 13, the exit coverage table,
+  step 7 of the build order and [the planning note](#apple-presentation-wp4wp11-g4) follow. No other module's
+  item changed.

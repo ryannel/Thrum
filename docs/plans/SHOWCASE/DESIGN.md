@@ -186,8 +186,8 @@ default so that exact baselines hold. No one place says which of them the showca
   and display range differ by row, and the record says how.
 
 The file's entries for MetalFX, EDR and the governor are written from `APPLE-PRESENTATION`'s closing record, so
-WP7 depends on that module's last work package, M11, and WP7.1 checks the five work packages WP7 builds on in the record
-files.
+WP7 depends on that module's paired proof, WP11, and WP7.1 checks the five work packages WP7 builds on in the
+record files. WP7 does not wait for `APPLE-PRESENTATION` WP17.
 
 ### The lookout's rim and the sunrise stop
 
@@ -473,6 +473,13 @@ claimed commit, the rows it ran on and its status as implementation, correctness
 the visual digest; platform status, the iPhone simulator's taken from the modules that proved it; known defects;
 and the physical-device runs owed. The maturity ledger and the README are brought to match it. The brief is the
 owner's page and is not edited.
+
+**What the exit waits for from `APPLE-PRESENTATION`.** Its WP11 ends with a full-screen window on the built-in
+display presenting at a steady 60 Hz, an interim rate, and its WP17 is Done when that window holds the display's
+full 120 Hz ([its design](../APPLE-PRESENTATION/DESIGN.md#reaching-the-full-refresh-at-full-screen-wp17)). The
+exit is judged "smooth at the display's full refresh" on that display, so WP8 depends on WP17 and starts after
+it, and WP8.12 lists WP17 among the work packages the exit rests on. An open WP17 keeps the exit open. Taking
+WP17 out of the exit changes the exit, which is the owner's call.
 
 ### Check that it can work
 

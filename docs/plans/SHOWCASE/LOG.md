@@ -129,3 +129,11 @@
 - 2026-11-20 Planner, from the cleanup review (L8-05): M9.7's check passed when the routes folder was missing. It now fails unless a game's route files exist, and searches them wherever the folder is. The statement and the ask are unchanged. M9 was Not Started.
 
 - 2026-11-20 Reclaimed M9 against the amended M9.6. The Git audit confirmed all 55 reference blobs survived relocation byte-for-byte. Both logs record the 34 regenerated files, and the shared Metal and Chrome verifier passed against the same fixture hashes. [Amended M9.6 proof](../../../.orchestrate/evidence/SHOWCASE/M9/amended/M9.6.md)
+
+- 2026-11-26 Planner, from [`APPLE-PRESENTATION`'s design review](../../../.orchestrate/evidence/APPLE-PRESENTATION/design-review.md)
+  (Must Fix 1: the exit could accept WP11 as the last Apple presentation prerequisite). `APPLE-PRESENTATION` WP17,
+  the display's full 120 Hz at full screen, is now among the work packages the exit rests on: WP8 depends on it,
+  and WP8.12's statement and check list it. WP7 still needs only WP11. The checks of WP7.1 and WP8.12 named
+  work packages by ids that no longer exist (`M12`, `M11`, `M3` and others), so neither could pass; they now use
+  the `WP` ids. WP7.1's statement is unchanged. WP7 and WP8 were Not Started.
+  [What the exit waits for](DESIGN.md#the-exit-record)

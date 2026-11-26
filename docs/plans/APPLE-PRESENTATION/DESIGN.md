@@ -1091,8 +1091,10 @@ on WP17 as it rests on WP11. `SHOWCASE` judges the exit's motion at the same bar
 refresh" on the built-in panel ([its cue S5](../SHOWCASE/DESIGN.md#cues)), and nothing here changes that bar. A
 full-screen run before WP17 presents at 60 Hz, which is not the display's full refresh. A window that is not
 full screen asks for the full refresh today. `SHOWCASE` WP7 needs only WP11, the paired proof. The list of work
-packages the exit rests on is `SHOWCASE` WP8's, and adding WP17 to it is proposed to `SHOWCASE` in
-[the log](LOG.md). Taking WP17 out of the exit is the owner's decision, and no plan makes it for them.
+packages the exit rests on is `SHOWCASE` WP8's: WP8 depends on `APPLE-PRESENTATION:WP17`, and its item WP8.12
+names WP17 in its statement and its check, so an open WP17 keeps the exit open
+([`SHOWCASE`'s design](../SHOWCASE/DESIGN.md#the-exit-record)). Taking WP17 out of the exit is the owner's
+decision, and no plan makes it for them.
 
 ### What closes G4, and what the owner observes (WP11)
 
