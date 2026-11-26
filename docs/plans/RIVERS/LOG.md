@@ -192,3 +192,11 @@
   travel at a run's mean speed and the pattern shears between runs. The flow bands' carriage and WP5.2's
   "within a fifth of the current" rest on it. If it does not serve a solved reach, propose the remedy in
   `WATERS`' log.
+
+- 2026-11-26 WP4 built the opt-in island valley, keyed spring stream and lake outlet, and GPU sample mixing in
+  the shared water map. Metal matched the interior depths and gated wetting to the model and measured seam
+  residuals up to 4.8 µm over the lake and tide extremes. The two floats reached the lake and sea. Hardware
+  Chrome drew both rivers and read the two packaged keys. Submitted Metal stage sweeps showed both waterlines
+  rising and falling. The paired device record includes file sizes, sample times and each tripped comparison.
+  The scene outlet uses a 0.006 m/s level-rate stopping bound and 0.004 imbalance bound.
+  [Target evidence](../../../.orchestrate/evidence/RIVERS/WP4/README.md)

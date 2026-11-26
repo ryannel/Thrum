@@ -3305,6 +3305,23 @@
       }
     },
     {
+      "id": "E1.rivers",
+      "name": "Rivers and falls",
+      "design": "../plans/RIVERS/DESIGN.md",
+      "current_design_sha256": "a011c1a351dd7fb9b64b16303b81ca1dab2d5af2a5f0783fded8c9e4deec3d0b",
+      "parent": "E1",
+      "contracts": [
+        "C08",
+        "C09"
+      ],
+      "implementation": "partial",
+      "scope": "RIVERS WP1–WP4. The island river selection prepares a spring stream and lake outlet from keyed files. The shared water map mixes flow samples and wetting gauges. The fall record is prepared for later sheet rendering.",
+      "correctness": "The native store prepares both files once and reuses their keys. Metal checks both river interiors, wetting at the ridge and under the fall, and all three joins at the lake and tide limits. Body queries distinguish the dry gap from the plunge pool. The two floats reach the lake and sea. Hardware Chrome reads both packaged keys and carries the spring float to the lake.",
+      "visuals": "Submitted Metal stills and elapsed clips show calm and trade conditions, the narrows and sill, all three joins and both overlooks. Twenty-second stage sweeps show waterlines rising and falling at the lake outlet, halfway down the river and at the spring narrows. Formal review follows the builder evidence.",
+      "device": "Apple M3 Max Metal and hardware Chrome WebGPU. The paired 2560×1440 Metal record includes both file sizes, eight sample times, and investigations for the refresh and channel comparison tripwires under shared load.",
+      "evidence": "../../.orchestrate/evidence/RIVERS/WP4/README.md"
+    },
+    {
       "id": "E1.rain",
       "name": "Rain and puddles",
       "design": "../plans/PUDDLES/DESIGN.md",
