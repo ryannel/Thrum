@@ -177,36 +177,36 @@ pub const VIEWS: [(&str, Camera); 17] = [
     ),
     (
         "Sill along",
-        Camera::look_at([176.5, 19.5, -57.0], [180.0, 17.4, -47.0], 66.0),
+        Camera::look_at([172.8, 19.7, -61.0], [181.0, 16.8, -48.0], 72.0),
     ),
     (
         "Sill across",
-        Camera::look_at([172.0, 19.5, -52.5], [180.0, 17.4, -52.0], 66.0),
+        Camera::look_at([189.4, 19.6, -55.6], [178.0, 16.9, -51.2], 72.0),
     ),
     (
         "Narrows along",
-        Camera::look_at([175.5, 18.6, -46.0], [180.0, 16.5, -36.0], 66.0),
+        Camera::look_at([176.5, 18.7, -48.4], [180.1, 16.4, -40.0], 70.0),
     ),
     (
         "Narrows across",
-        Camera::look_at([173.2, 18.6, -40.0], [181.0, 16.5, -42.0], 66.0),
+        Camera::look_at([173.5, 18.8, -38.0], [181.5, 16.4, -42.5], 70.0),
     ),
     (
         "Lake inlet along",
-        Camera::look_at([184.5, 14.0, -20.0], [183.0, 12.0, -3.0], 66.0),
+        Camera::look_at([180.0, 14.4, -7.0], [181.0, 12.7, -22.0], 68.0),
     ),
     (
         "Lake inlet across",
-        Camera::look_at([174.0, 14.0, -16.0], [186.0, 12.0, -17.0], 66.0),
+        Camera::look_at([172.0, 14.5, -15.0], [184.4, 12.4, -20.5], 72.0),
     ),
     (
         "Stream overlook",
-        Camera::look_at([181.0, 57.0, -61.0], [181.0, 16.0, -55.0], 98.0),
+        Camera::look_at([181.0, 57.0, -61.0], [181.0, 16.0, -57.0], 110.0),
     ),
     ("Outlet along", crate::channel::VIEWS[0]),
     (
         "Outlet across",
-        Camera::look_at([213.0, 14.0, 11.5], [213.0, 12.0, 3.0], 62.0),
+        Camera::look_at([216.5, 14.5, 12.7], [208.0, 12.2, 4.0], 65.0),
     ),
     ("River bank", crate::channel::VIEWS[2]),
     ("Sea mouth", crate::channel::VIEWS[3]),
@@ -224,7 +224,7 @@ pub const VIEWS: [(&str, Camera); 17] = [
     ),
     (
         "Sea mouth across",
-        Camera::look_at([347.0, 2.05, 17.5], [348.0, 0.0, 3.0], 61.0),
+        Camera::look_at([356.0, 2.15, 17.0], [345.5, -0.05, 2.0], 70.0),
     ),
 ];
 
@@ -395,6 +395,30 @@ fn scenery(bed: &Bed) -> Vec<MeshPlacement> {
                     }),
             );
         }
+    }
+    // Exposed rock on the solved shoulders. The lower part of each mesh
+    // is buried in terrain above the stream's highest waterline.
+    for [x, z, scale, inset] in [
+        [175.0, -43.0, 1.05, 0.34],
+        [174.5, -41.5, 0.70, 0.48],
+        [183.7, -42.3, 1.30, 0.43],
+        [184.6, -40.0, 0.77, 0.50],
+        [174.4, -52.3, 0.81, 0.60],
+        [185.4, -52.6, 0.91, 0.55],
+    ] {
+        let height = bed
+            .height([f64::from(x), f64::from(z)])
+            .expect("rock shoulder");
+        meshes.push(
+            MeshPlacement::new("meshes/rock", "textures/white")
+                .at([x, height as f32 - inset, z])
+                .scale(scale)
+                .material(thrum_app::sky::CookedMaterial {
+                    base_colour: [0.25, 0.235, 0.203, 1.0],
+                    roughness: 0.97,
+                    metalness: 0.0,
+                }),
+        );
     }
     meshes
 }

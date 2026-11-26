@@ -1,10 +1,14 @@
-use std::sync::{Arc, Mutex};
+use std::{
+    sync::{Arc, Mutex},
+    time::Duration,
+};
 use thrum_app::sky::{Camera, ContentStatus, Controls, SkyGame};
 use water_scene::{channel, island::Wind, river};
 
 use crate::support::{self, Fixture};
 
 const EXTENT: [u32; 2] = [96, 12];
+const STEP: Duration = Duration::from_nanos(16_666_667);
 const EPS_DEPTH: f64 = 0.000_04;
 
 #[expect(
@@ -31,6 +35,8 @@ pub(crate) fn check(gpu: &thrum_test_support::Gpu) {
     let tap = support::depth::DepthTap::default();
     let game = SkyGame::new(Controls::new(), river::VIEWS[0].1, |_, _| {})
         .with_presentation_camera(move |_| *on_tick.lock().expect("proof camera"))
+        .with_tick_duration(STEP)
+        .expect("elapsed surface clock")
         .with_ground(None)
         .with_contribution(Box::new(water), || ContentStatus::Drawn(1))
         .with_contribution(Box::new(tap.contribution(EXTENT)), || {
@@ -88,7 +94,8 @@ pub(crate) fn check(gpu: &thrum_test_support::Gpu) {
             );
             *camera.lock().expect("proof camera") = view;
             let matrix = support::depth::matrix(view, EXTENT);
-            scene.frame_without_timings(time);
+            // The displayed sample lies one fixed step behind the observation clock.
+            scene.frame_without_timings(time + STEP.as_secs_f64());
             let depth = tap.read(&scene);
             let map = map.lock().expect("river map");
             let row = EXTENT[1] / 2;

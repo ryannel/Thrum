@@ -25,4 +25,6 @@ The river island mesh comes from Thrum's [island generator](../../examples/water
 with `--river`. The generator reuses the WATERS channel cut and adds the spring valley above the
 lake. The river selection uses that mesh for rendering and for the bed lattice. The channel
 and island variants retain their own meshes. The keyed river files are derived from the bed and
-the declarations at preparation. No third-party assets or code were added.
+the declarations at preparation. The exposed rock placements reuse Thrum's dry-valley mesh, copied byte for byte from
+`examples/starter/assets/meshes/rock.gltf` and `rock.bin`. The valley's baked shoulders
+remain the ground used by the solve.

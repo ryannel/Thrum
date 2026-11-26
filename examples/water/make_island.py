@@ -121,6 +121,9 @@ def river_height(x, z):
     half = 5.7 - 2.35 * narrows + 2.7 * exp(-((z + 68) / 10) ** 2)
     inlet = smoothstep((z + 27) / 6)
     half += inlet * (5.4 - half)
+    # The last surveyed row still contains the join at high stage. Beyond it
+    # the throat widens into the lake as the carved banks lose their height.
+    half += 2.2 * smoothstep((z + 17.0) / 5.5)
     bank = 5.4 * smoothstep((side - half + 0.65) / (6.0 - 4.0 * inlet))
     rock = 1.9 * exp(-((x - centre - 4.5) / 1.6) ** 2 - ((z + 42) / 2.6) ** 2)
     rock += 1.5 * exp(-((x - centre + 4.8) / 1.7) ** 2 - ((z + 39) / 2.0) ** 2)
