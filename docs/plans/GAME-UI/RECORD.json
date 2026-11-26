@@ -876,7 +876,7 @@
         {
           "verdict": "fail",
           "commit": "bf35b02e9f4fafa03a8379cbe4c85ae668603100",
-          "review": ".orchestrate/evidence/GAME-UI/WP5-review.md",
+          "review": ".orchestrate/evidence/GAME-UI/WP5-review-1.md",
           "items": {
             "WP5.1": "pass",
             "WP5.2": "fail",
@@ -909,6 +909,44 @@
             "turns": 1
           },
           "at": "2026-11-26T08:20:02Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "6694d15c2decaa3b1baf96eff87bd1812835b007",
+          "review": ".orchestrate/evidence/GAME-UI/WP5-review.md",
+          "items": {
+            "WP5.1": "pass",
+            "WP5.2": "fail",
+            "WP5.3": "pass",
+            "WP5.4": "pass",
+            "WP5.5": "pass",
+            "WP5.6": "pass",
+            "WP5.7": "pass"
+          },
+          "findings": [
+            {
+              "name": "A warm invite loses the ticket when the running game has no menu",
+              "item": "WP5.2",
+              "different": "The previous failure was a terminated app selecting the default scene on cold launch. Cold launch now opens Join. The new failure occurs in an existing process that has already prepared the status display or default scene.",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 107963,
+            "cached": 2880512,
+            "output": 9619,
+            "turns": 1
+          },
+          "at": "2026-11-26T09:06:44Z"
         }
       ],
       "authorised": {

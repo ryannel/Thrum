@@ -595,10 +595,10 @@
     {
       "id": "WP5",
       "name": "The status display, the modal choice and the join screen work on the iPhone simulator, and a game maker can build an interface from the guide",
-      "failed_reviews": 1,
-      "failed_reviews_with_repeat": 0,
+      "failed_reviews": 2,
+      "failed_reviews_with_repeat": 1,
       "diagnoses": 0,
-      "status": "ready_for_review",
+      "status": "in_progress",
       "quality_bar": "An interface that sits on a phone as a native game's does: clear of the Dynamic Island, the rounded corners and the home indicator in both orientations, with cards big enough for a thumb. A guide a game maker can follow without reading engine source, as Bevy's interface examples are.",
       "items": [
         {
@@ -618,10 +618,10 @@
           "check": "python3 scripts/game_ui_sim.py touch",
           "lock": "simulator",
           "target": "ios-sim",
-          "evidence": ".orchestrate/evidence/GAME-UI/WP5/invite-touch/result.json",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GAME-UI/WP5-review.md",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "WP5.3",
@@ -676,8 +676,9 @@
       ],
       "findings": [
         {
-          "name": "A cold invite opens the default grid and loses the ticket",
+          "name": "A warm invite loses the ticket when the running game has no menu",
           "item": "WP5.2",
+          "different": "The previous failure was a terminated app selecting the default scene on cold launch. Cold launch now opens Join. The new failure occurs in an existing process that has already prepared the status display or default scene.",
           "repeat": false
         }
       ]
