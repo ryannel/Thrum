@@ -12,6 +12,31 @@ mod placed_fixture;
 )]
 mod scene_fixture;
 
+#[cfg(target_os = "macos")]
+const SHADE_PASSES: [&str; 6] = [
+    "cloud weather map",
+    "cloud Sun path near",
+    "cloud Sun path middle",
+    "cloud Sun path far",
+    "cloud ground field",
+    "cloud far transmittance",
+];
+#[cfg(target_os = "macos")]
+const SKY_PASSES: [&str; 5] = [
+    "cloud hemisphere light",
+    "cloud trace",
+    "cloud resolve",
+    "cloud compose",
+    "cloud internal field",
+];
+#[cfg(target_os = "macos")]
+const GROUND_PIPELINES: [&str; 4] = [
+    "cloud weather map",
+    "cloud Sun path",
+    "cloud ground field",
+    "cloud far transmittance",
+];
+
 thrum_test_support::macos_gpu_test! {
     fn metal_creates_and_runs_only_declared_cloud_capabilities() {
         run();
@@ -27,28 +52,6 @@ fn run() {
     use std::{sync::Arc, time::Duration};
     use thrum_clouds::{Shade, SkyProfile};
     use thrum_render::{contribution::SceneContributions, runtime::FrameConfig};
-
-    const SHADE: [&str; 6] = [
-        "cloud weather map",
-        "cloud Sun path near",
-        "cloud Sun path middle",
-        "cloud Sun path far",
-        "cloud ground field",
-        "cloud far transmittance",
-    ];
-    const SKY: [&str; 5] = [
-        "cloud hemisphere light",
-        "cloud trace",
-        "cloud resolve",
-        "cloud compose",
-        "cloud internal field",
-    ];
-    const GROUND: [&str; 4] = [
-        "cloud weather map",
-        "cloud Sun path",
-        "cloud ground field",
-        "cloud far transmittance",
-    ];
 
     let Some(gpu) = thrum_test_support::open(
         "cloud capability inventory",
@@ -139,9 +142,9 @@ fn run() {
                     })
                     .collect();
                 let mut expected: Vec<_> =
-                    SHADE
+                    SHADE_PASSES
                         .into_iter()
-                        .chain(SKY.into_iter().filter(|name| {
+                        .chain(SKY_PASSES.into_iter().filter(|name| {
                             sky && (!world_light || *name != "cloud hemisphere light")
                         }))
                         .chain(world_light.then_some("cloud sky overlay"))
@@ -165,7 +168,7 @@ fn run() {
                 prior = current;
                 let shade_builds = creations["cloud weather map"];
                 assert!(shade_builds > 0);
-                for name in GROUND {
+                for name in GROUND_PIPELINES {
                     assert_eq!(creations.get(name), Some(&shade_builds), "{name}");
                 }
                 let count = |name| creations.get(name).copied().unwrap_or(0);
@@ -173,7 +176,7 @@ fn run() {
                     let value = count(name);
                     assert_eq!(value > 0, enabled, "{name} created {value} times");
                 };
-                for name in SKY {
+                for name in SKY_PASSES {
                     check_creation(name, sky);
                 }
                 for name in [
