@@ -333,7 +333,8 @@ judges the record and reruns what it retains.
 
 ## Agents
 
-| Role    | Codex              | Antigravity | Claude                 |
-|---------|--------------------|-------------|------------------------|
-| Planner |                    | -           | claude-fable-5-2 high  |
-| Builder | gpt-6.2-sol medium | -           | claude-opus-5-5 medium |
+| Role     | Codex              | Antigravity | Claude                 |
+|----------|--------------------|-------------|------------------------|
+| Planner  |                    | -           | claude-fable-5-2 high  |
+| Builder  | gpt-6.2-sol medium | -           | claude-opus-5-5 medium |
+| Reviewer | gpt-6.2-astra high |             |                        |
