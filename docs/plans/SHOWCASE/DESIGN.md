@@ -21,7 +21,9 @@ into test fixtures, and [what moves with the terrain](#the-lookouts-rim-and-the-
 paths follow them. Revised on 26 November 2026 to unblock WP7: the cooked root a row reports is the drawn
 publication's, from `CONTENT-LOOP` WP6, and
 [what the three rows are held to](#what-the-three-rows-are-held-to-wp75) replaces one fixed threshold for
-every stop and every pair of rows.
+every stop and every pair of rows. Revised that day for the design review of that revision: WP7.5's review
+judges [each stop by what the route gives it to show](#what-each-stop-must-show), and the median is credited
+only with what it can see.
 
 ## The request
 
@@ -87,7 +89,7 @@ the exit.
 |---|---|---|---|
 | **S1 A populated place** | The six stops and the exit flythrough, Mac and Chrome | Dawn to night; near ground to the far slopes | 10,000 entities that exist and are not seen, as today. Rejected by in-view counts at each stop and inspected frames |
 | **S2 Things move** | A held view and the flythrough, tick by tick, and in real time at the close | 1,500 movers; a run of hours; pause and resume | Movers that drift out of the valley after ten minutes, or sit too far off to read. Rejected by an hour stepped in a test, a capture of every tick, and WP8's real-time review |
-| **S3 One scene, three rows** | Each stop on each row | Apple and portable recipes; Chrome | A row that quietly ran a fallback or drew another store, a comparison that cannot see a missing prop, or one so loose that a row with a wrong exposure passes. Rejected by the game's own report of what it drew, a no-entities control and a median held at one code |
+| **S3 One scene, three rows** | Each stop on each row | Apple and portable recipes; Chrome | A row that quietly ran a fallback or drew another store, a comparison that cannot see a missing prop, one so loose that a row with a wrong exposure passes, or three rows that agree because all lack what a stop is there to show. Rejected by the game's own report of what it drew, a no-entities control, a median held at one code and a review of each stop against what the route gives it to show |
 | **S4 Culling is never seen** | The flythrough with movers moving | Frustum and Occlusion; both recipes; Chrome | Equality on a scene with nothing hidden. Rejected by a non-empty prepass and hidden slots in the rows |
 | **S5 Smooth** | The built-in 120 Hz panel, at full screen on the Apple recipe; Chrome's window on it | The flythrough, a full day cycle, startup | A smooth offline movie, or 120 Hz held in a small window or on the bare valley. Rejected by capture-off frame records, and by OS-reported presented intervals of the populated flythrough with the drawable extent and cooked root the game resolved |
 | **S6 One picture** | Stops and motion on each row | Low Sun, noon, night; fast yaw | Props lit or hazed differently from the terrain. Rejected by a clean-context review of crops |
@@ -387,9 +389,11 @@ ten times a threshold. One bound for every stop is as loose everywhere as its ha
 
 1. **Across rows, stop by stop: the same scene, alike.** At each stop the three pairs of rows are compared
    under that stop's own thresholds.
-   - **The median stays at 1.0, at every stop.** It is the statistic of the picture as a whole. Exposure, a
-     tint, haze, the sky and any pass that covers the frame move it, and the reconstructors agree in it to a
-     twentieth of a code. It is never calibrated, so a difference of that kind can never be absorbed.
+   - **The median stays at 1.0, at every stop.** It is the statistic of the picture as a whole. A change of
+     brightness or colour over most of the frame moves it: exposure, a tint, or haze or sky that fills more
+     than half the cells. The reconstructors agree in it to a twentieth of a code. It is never calibrated, so
+     a difference of that kind can never be absorbed. A loss in fewer than half the cells leaves it where it
+     was: with every entity removed at sunrise the median difference is 0 and the largest cell 53.74.
    - **The 95th percentile and the maximum are, for each stop, the larger of 1.0 and three times the worst
      value among that stop's three pairs.** They are the statistics of edges and fine detail, where the
      reconstructors differ. This is the route decision's formula, applied to one stop at a time.
@@ -413,9 +417,39 @@ and the route decision's rule for each is unchanged.
 | The exit store drawn with no entities, at every stop | A lost prop or balloon | Exceed a threshold at every stop with entities in view | 3.0 to 7.2 times at the 95th percentile, 5.0 to 17 times at the maximum |
 | The retinted ground texture, at noon | A wrong texture | Exceed a threshold | 7.6 times at the maximum |
 
-A missing pass and a wrong exposure have no control of their own, and need none. Across rows the uncalibrated
-median catches them, as above. Within a row its own baseline does, at 1.0. And the review of WP7.5 looks at
-the three rows side by side, because a calibration can only repeat what its first run saw.
+A wrong exposure and a missing pass have no control of their own. A wrong exposure, a tint or a pass lost
+over most of the frame moves the uncalibrated median between rows. A pass lost in part of the frame on one
+row, such as a prop's shadow, moves the 95th percentile or the largest cell between rows, and fails where it
+passes that stop's threshold. Once a row's baseline is kept, either kind fails against it at 1.0. None of
+the three sees a cue that all three rows lack at the calibration run: the rows agree, and each baseline
+records the lack. The review of WP7.5 is what sees it.
+
+<a id="what-each-stop-must-show"></a>
+
+**What each stop must show, and what it must not.** A calibration can only repeat what its first run saw,
+so the review of WP7.5 looks at the three rows' stills side by side and judges each stop by what
+[the route](../../design/decisions/G7-SHOWCASE-ROUTE.md#the-route) gives that stop to show. "On all three
+rows or on none" is not the test for these: a cue in the table that is missing from all three fails, and so
+does a thing the table says is hidden that shows on any row.
+
+| Stop | Hour, view | In the frame on all three rows | Not in the frame on any row |
+|---|---|---|---|
+| `sunrise` | 6.32 h, authored | The sphere and the rock, each casting a long shadow across the lookout | |
+| `noon` | 12 h, authored | The sphere and the rock, each with a short shadow on the ground toward the camera | |
+| `sunset-clear-sun` | 17.4 h, turned 90° to the west | The Sun's disk, clear above the west ridge | The sphere and the rock |
+| `sunset-sun` | 17.9 h, turned 90° to the west | The sky's glow behind the west ridge | The Sun's disk, which the ridge hides; the sphere and the rock |
+| `twilight` | 18.48 h, authored | The sphere and the rock, lit by the sky alone; the last glow low in the sky | A shadow cast by the Sun |
+| `night-upslope` | 0 h, authored and raised 7° | The ridge line against the night sky | The Sun, and a Moon: the scene has none |
+
+The view is 37° wide to either side of its heading, and the sphere and the rock stand about 9° from the
+authored heading, so they are inside the four authored views and outside both sunset views. The disk is in
+the frame at 17.4 h only. At 17.9 h the ridge hides it. At sunrise it is 87° to the right of the heading, and
+at noon it is ahead and 45° up, above the frame. At twilight and at night it is below the horizon.
+[`ATMOSPHERE`'s profile](../ATMOSPHERE/DESIGN.md) has no Moon. Props and balloons are in view at all six
+stops, as the no-entities control shows, and are compared at each. Whether a cue looks right is not judged
+here. `ATMOSPHERE` WP6 judged the sky and the sunlight, and WP8 judges each row. WP7.5 asks whether each row
+has the cue, and has it where the other rows do. A calibration whose stills lack a cue in the table is not
+kept: the cause is traced, and the thresholds and baselines are set again by the same rule once it is fixed.
 
 **Calibrated once.** The cross-row thresholds, each row's thresholds and the row baselines are set by one
 calibration run, which is refused unless every control separates under the thresholds it would write, and are

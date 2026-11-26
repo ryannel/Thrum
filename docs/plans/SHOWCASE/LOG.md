@@ -158,3 +158,9 @@
   inspection. The builder's proposal to correct MetalFX against TAAU, on `build/showcase`, is not taken up.
   [The cooked root](DESIGN.md#the-exit-configuration-one-file-three-rows-reported-and-not-echoed) ·
   [the rule](DESIGN.md#what-the-three-rows-are-held-to-wp75)
+- 2026-11-26 Planner, from [the design review](../../../.orchestrate/evidence/SHOWCASE/design-review.md) (Must
+  Fix 1: WP7.5's inspection asked for the Sun or Moon, the sphere and the rock at every stop, and passed a
+  shadow absent from all three rows). WP7.5's inspection and statement are written again, stop by stop, from
+  the route's cues, and a cue missing from all three rows fails. Took the suggestion: the median is credited
+  with broad changes only. Thresholds, controls and the check are unchanged. WP7 was Not Started.
+  [What each stop must show](DESIGN.md#what-each-stop-must-show)

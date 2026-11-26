@@ -56,8 +56,9 @@ WP7.10 again from their evidence, renewing only what has changed. Two things are
   [the exit configuration](DESIGN.md#the-exit-configuration-one-file-three-rows-reported-and-not-echoed) says,
   then run the three row checks and the fallback control again.
 - **The comparison (WP7.5).** Read [what the three rows are held to](DESIGN.md#what-the-three-rows-are-held-to-wp75).
-  Do not trace or correct the reconstructor differences. Look at the three rows' stills at every stop before
-  keeping the calibration, and log its measured values and the baseline file's hashes.
+  Do not trace or correct the reconstructor differences. Before keeping the calibration, look at the three
+  rows' stills at every stop against [what each stop must show](DESIGN.md#what-each-stop-must-show): a cue all
+  three rows lack would be calibrated in. Log the calibration's measured values and the baseline file's hashes.
 
 ## WP8 The showcase passes review on the Mac and in Chrome, its motion on the built-in display is on record, and the V1 exit record is written
 
