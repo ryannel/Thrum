@@ -339,3 +339,12 @@ pub(crate) fn foam_buffer<T: bytemuck::Pod>(fixture: &Fixture, buffer: &wgpu::Bu
         .map(bytemuck::pod_read_unaligned)
         .collect()
 }
+
+pub(crate) fn river_store() -> std::path::PathBuf {
+    water_scene::river::store_directory(
+        std::env::var_os("THRUM_WATER_RIVER_STORE").map(std::path::PathBuf::from),
+        std::env::var_os(thrum_app::sky::STORE_VARIABLE)
+            .as_deref()
+            .map(std::path::Path::new),
+    )
+}

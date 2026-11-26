@@ -101,6 +101,35 @@ def channel_height(x, z):
     return ground + weight * (cut - ground)
 
 
+def river_height(x, z):
+    """A spring valley entering the lake from the north."""
+    ground = channel_height(x, z)
+    centre = 180 + 1.1 * sin((z + 32) / 8)
+    side = abs(x - centre)
+    if not (-132 < z < -9 and side < 45):
+        return ground
+    # Fast headwater, an excavated pool, a sill and a short rock narrows.
+    floor = 18.2 - 0.049 * (z + 100)
+    floor -= 1.20 * exp(-((z + 68) / 10) ** 2)
+    floor += 0.39 * exp(-((z + 52) / 4.2) ** 2)
+    floor += 0.60 * (1 - smoothstep((z + 48) / 19))
+    # The lip lies on the last high row. Its 4 m face is shorter than one
+    # water-map cell, and the plunge pool then runs into the existing lake.
+    floor -= 4.25 * smoothstep((z + 27.2) / 2.1)
+    floor -= 0.48 * exp(-((z + 23) / 3.2) ** 2)
+    narrows = exp(-((z + 42) / 5) ** 2)
+    half = 5.7 - 2.35 * narrows + 2.7 * exp(-((z + 68) / 10) ** 2)
+    inlet = smoothstep((z + 27) / 6)
+    half += inlet * (5.4 - half)
+    bank = 5.4 * smoothstep((side - half + 0.65) / (6.0 - 4.0 * inlet))
+    rock = 1.9 * exp(-((x - centre - 4.5) / 1.6) ** 2 - ((z + 42) / 2.6) ** 2)
+    rock += 1.5 * exp(-((x - centre + 4.8) / 1.7) ** 2 - ((z + 39) / 2.0) ** 2)
+    headwall = 5 * (1 - smoothstep((z + 103) / 7))
+    width = 1 - smoothstep((side - 12) / 33)
+    ends = smoothstep((z + 132) / 18) * (1 - smoothstep((z + 20) / 11))
+    return ground + ends * width * (floor + bank + rock + headwall - ground)
+
+
 def append_grid(points, normals, uvs, indices, xs, zs, terrain, pond=False):
     base = len(points)
     nx, nz = len(xs), len(zs)
@@ -131,9 +160,16 @@ def append_grid(points, normals, uvs, indices, xs, zs, terrain, pond=False):
 
 def main():
     args = argparse.ArgumentParser(description=__doc__)
-    args.add_argument('--channel', action='store_true', help='author the island variant with the chart outlet')
-    terrain = channel_height if args.parse_args().channel else height
-    name = 'channel-island' if terrain is channel_height else 'island'
+    variant = args.add_mutually_exclusive_group()
+    variant.add_argument('--channel', action='store_true', help='author the chart outlet')
+    variant.add_argument('--river', action='store_true', help='author the spring valley and outlet')
+    selection = args.parse_args()
+    if selection.river:
+        name, terrain = 'river-island', river_height
+    elif selection.channel:
+        name, terrain = 'channel-island', channel_height
+    else:
+        name, terrain = 'island', height
     # Keep the denser triangles local to the pond. The wider island uses the
     # original one-metre inland grid and larger seabed triangles.
     xs = sorted(set(range(-320, 401, 4)) | set(range(82, 281)))

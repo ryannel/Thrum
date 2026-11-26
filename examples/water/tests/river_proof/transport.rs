@@ -1,0 +1,156 @@
+use std::time::Duration;
+use thrum_water::query::{BodyQuery, QueryPoint};
+use water_scene::{island::Wind, river};
+
+use crate::support::Fixture;
+
+const STEP: Duration = Duration::from_nanos(16_666_667);
+const EXTENT: [u32; 2] = [96, 48];
+
+#[expect(
+    clippy::print_stdout,
+    reason = "retain measured Metal transport in the item's evidence"
+)]
+pub(crate) fn check(gpu: &thrum_test_support::Gpu) {
+    query(gpu);
+    let route =
+        river::build(Wind::Trade, true, Some(&crate::support::river_store())).expect("river route");
+    let mut scene = Fixture::from_game(gpu, EXTENT, route.game, route.report);
+    scene.parameters(r#"{"sea.stage":-0.45}"#);
+    scene.frame_without_timings(0.0);
+    let mut entered = [false; 2];
+    let mut pool_speed = None;
+    let mut narrows_speed = None;
+    for seconds in [
+        6, 12, 18, 24, 30, 36, 42, 50, 60, 70, 85, 100, 125, 160, 200, 250,
+    ] {
+        scene
+            .host
+            .advance_without_rendering(Duration::from_secs(seconds))
+            .expect("river tick page");
+        let floats = (route.floats)();
+        let map = route.map.lock().expect("river map");
+        for (i, float) in floats.into_iter().enumerate() {
+            let place = [float.position.x, float.position.z];
+            let water = map.sample(place).filter(|row| row.depth > 0.0);
+            let owner = water.map(|row| row.body);
+            let speed = float.velocity.x.hypot(float.velocity.z);
+            println!(
+                "Metal float {i} at {seconds}s: position {:?}, speed {speed:.3}, owner {owner:?}",
+                float.position
+            );
+            assert!(float.position.is_finite());
+            if i == 0 {
+                if (-70.0..-57.0).contains(&place[1]) {
+                    pool_speed = Some(speed);
+                } else if (-46.0..-34.0).contains(&place[1]) {
+                    narrows_speed = Some(speed);
+                }
+                entered[0] |= owner == Some(1) && place[1] > -20.0;
+            } else {
+                entered[1] |= owner == Some(0) && place[0] > 348.0;
+            }
+        }
+        if entered == [true; 2] {
+            break;
+        }
+    }
+    assert_eq!(
+        entered, [true; 2],
+        "stream-to-lake and river-to-sea float routes"
+    );
+    assert!(narrows_speed.expect("narrows traverse") > pool_speed.expect("pool traverse"));
+}
+
+#[expect(
+    clippy::print_stdout,
+    reason = "keep the actual submitted query readings"
+)]
+fn query(gpu: &thrum_test_support::Gpu) {
+    let route = river::build(Wind::Calm, true, Some(&crate::support::river_store()))
+        .expect("river query route");
+    let map = route.map;
+    let query = route.query;
+    // Use the actual scene's query pipe and a static set of extra float stations.
+    let game = route.game.with_fixed_update_endpoint(|_, _| {});
+    let mut scene = Fixture::from_game(gpu, EXTENT, game, route.report);
+    let points = [
+        [180.0, -92.5],
+        [180.0, -65.0],
+        [180.0, -41.0],
+        [180.0, -26.25],
+        [180.0, -25.0],
+        [180.0, -20.001],
+        [180.0, -19.999],
+        [207.499, 5.0],
+        [207.501, 5.0],
+        [347.499, 5.0],
+        [347.501, 5.0],
+    ];
+    query.post(
+        scene.endpoint(0),
+        vec![BodyQuery {
+            id: 40,
+            generation: 1,
+            points: points
+                .into_iter()
+                .map(|position| QueryPoint {
+                    position,
+                    radius: 0.18,
+                    use_tick: 2,
+                })
+                .collect(),
+        }],
+    );
+    scene.frame_without_timings(0.0);
+    scene.frame_without_timings(STEP.as_secs_f64());
+    let answers = query.drain(scene.endpoint(2), STEP);
+    let answers = &answers
+        .iter()
+        .find(|answer| answer.id == 40)
+        .expect("submitted Metal queries")
+        .points;
+    let map = map.lock().expect("river map");
+    for (point, actual) in points.into_iter().zip(answers) {
+        let expected = map
+            .sample(point.map(f64::from))
+            .filter(|row| row.depth > 0.0);
+        assert_eq!(actual.surface.wet, expected.is_some(), "wet at {point:?}");
+        if let Some(expected) = expected {
+            assert_eq!(
+                actual.surface.body,
+                Some(expected.body),
+                "owner at {point:?}"
+            );
+            assert!(
+                (actual.surface.sample.height - expected.row.level).abs() < 0.000_04,
+                "level at {point:?}"
+            );
+            for (found, expected) in actual.surface.current.into_iter().zip(expected.row.current) {
+                assert!((found - expected).abs() < 0.000_004, "current at {point:?}");
+            }
+        }
+        println!(
+            "Metal query at {point:?}: wet={} body={:?}, height={:.7}, current={:?}",
+            actual.surface.wet,
+            actual.surface.body,
+            actual.surface.sample.height,
+            actual.surface.current
+        );
+    }
+    assert!(!answers[3].surface.wet, "under the falling sheet");
+    assert!(answers[4].surface.wet, "plunge pool");
+    for pair in answers[5..].as_chunks::<2>().0 {
+        assert!(pair.iter().all(|row| row.surface.wet));
+        assert_ne!(pair[0].surface.body, pair[1].surface.body);
+        assert!((pair[0].surface.sample.height - pair[1].surface.sample.height).abs() < 0.000_04);
+        for (a, b) in pair[0]
+            .surface
+            .current
+            .into_iter()
+            .zip(pair[1].surface.current)
+        {
+            assert!((a - b).abs() < 0.000_004);
+        }
+    }
+}

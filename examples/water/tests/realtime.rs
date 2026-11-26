@@ -37,6 +37,8 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
     let yard = matches!(super::settings(), super::Settings::RainYard(_));
     let channel = super::channel_route();
     let channel_view = std::env::var("THRUM_WATER_CHANNEL_CAMERA").unwrap_or_else(|_| "2".into());
+    let river = super::river_route();
+    let river_view = std::env::var("THRUM_WATER_RIVER_CAMERA").unwrap_or_else(|_| "0".into());
     let floating = super::floating();
     let wake = super::wake_route();
     let whitewater = super::whitewater();
@@ -70,6 +72,10 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
         ([2560, 1440], 22.0, 5.0, MAX_SUBMISSIONS)
     } else if surf && island_view == "9" {
         ([2560, 1440], 18.0, 6.5, MAX_SUBMISSIONS)
+    } else if river && route == "stage" {
+        ([1280, 720], 20.5, 8.0, CHANNEL_SUBMISSIONS)
+    } else if river {
+        ([1280, 720], 4.0, 12.0, MAX_SUBMISSIONS)
     } else if channel {
         ([1280, 720], 9.0, 20.0, CHANNEL_SUBMISSIONS)
     } else if surf {
@@ -118,6 +124,16 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
             ))
             .expect("channel view");
     }
+    if river {
+        let stages = if route == "stage" {
+            r#","lake.stage":0,"spring.stage":0"#
+        } else {
+            ""
+        };
+        runtime
+            .parameters(&format!(r#"{{"camera.river":{river_view}{stages}}}"#))
+            .expect("river view");
+    }
     for _ in 0..8 {
         runtime.step().expect("warm submit");
         device
@@ -138,7 +154,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
             },
         )
         .expect("tap");
-    let (file, encoding) = if floating.is_some() || whitewater || channel || yard {
+    let (file, encoding) = if floating.is_some() || whitewater || channel || river || yard {
         ("motion.spool.zst", SpoolEncoding::ZstdDelta)
     } else {
         ("motion.spool.raw", SpoolEncoding::Raw)
@@ -172,13 +188,21 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
                 applied = change;
             }
         }
-        if !yard && !channel && island.is_none() && floating.is_none() {
+        if !yard && !channel && !river && island.is_none() && floating.is_none() {
             runtime
                 .parameters(&format!(
                     r#"{{"camera.bearing":{}}}"#,
                     70.0 + elapsed * 12.0
                 ))
                 .expect("pan control");
+        }
+        if river && route == "stage" {
+            let stage = (1.0 - (elapsed / 10.0 - 1.0).abs()).clamp(0.0, 1.0);
+            runtime
+                .parameters(&format!(
+                    r#"{{"lake.stage":{stage:.4},"spring.stage":{stage:.4}}}"#
+                ))
+                .expect("river stage sweep");
         }
         if channel && route == "tide" {
             let height = ((elapsed - 1.0) / 6.0).clamp(0.0, 1.0);
@@ -329,7 +353,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
         !handoff_cut || cut.is_some(),
         "capture reached the camera change"
     );
-    json!({"schema":1,"target":"mac-metal","mode":"realtime","commit":std::env::var("THRUM_WATER_COMMIT").unwrap_or_else(|_|"working tree diagnostic".into()),"extent":extent,"vertices":prepared.vertices,"resources":prepared.resources,"wind":island.or(floating.map(|f| f.wind)).map(|w| format!("{w:?}")),"island_view":(yard || island.is_some()).then_some(&island_view),"weather_edits":weather_edits,"yard_levels":yard_levels,"camera_cut":cut,"channel_view":channel.then_some(channel_view),"channel_route":channel.then_some(&route),"floating_view":floating.map(|f| f.wake.map_or_else(|| if f.chase {"chase".into()} else {String::new()}, |wake| format!("{:?}", wake.view).to_lowercase())),"craft_speed":floating.map(|f| f.speed),"clock":if late_channel {"ordinary submits at 60 seconds plus actual elapsed time"} else {"ordinary Offscreen::step on actual monotonic world time; asynchronous in-flight frames"},"opportunities_hz":opportunities,"frames":frames,"hashes":written.frame_hashes,"encoding":format!("{encoding:?}"),"omissions":runtime.omissions(),"capture_limits":{"interval_seconds":interval,"max_submissions":max_submissions,"gpu_staging_slots":6,"cpu_image_leases":CPU_LEASES,"pixel_byte_allowance":PIXEL_ALLOWANCE,"writer_queue":WRITER_QUEUE,"raw_spool_allowance":6_u64*1024*1024*1024},"writer_seconds":written.write_time.as_secs_f64(),"body_tick_poses":poses,"query":fleet.map(|(_,mailbox)|format!("{:?}",mailbox.stats())), "wake_route": (wake || whitewater).then_some(route), "interaction":prepared.interaction.map(|wake| format!("{wake:?}")), "foam":prepared.foam.map(|foam| format!("{foam:?}")), "foam_pattern":prepared.foam_pattern})
+    json!({"schema":1,"target":"mac-metal","mode":"realtime","commit":std::env::var("THRUM_WATER_COMMIT").unwrap_or_else(|_|"working tree diagnostic".into()),"extent":extent,"vertices":prepared.vertices,"resources":prepared.resources,"wind":island.or(floating.map(|f| f.wind)).map(|w| format!("{w:?}")),"island_view":(yard || island.is_some()).then_some(&island_view),"weather_edits":weather_edits,"yard_levels":yard_levels,"camera_cut":cut,"channel_view":channel.then_some(channel_view),"channel_route":channel.then_some(&route),"river_view":river.then_some(river_view),"river_route":river.then_some(&route),"floating_view":floating.map(|f| f.wake.map_or_else(|| if f.chase {"chase".into()} else {String::new()}, |wake| format!("{:?}", wake.view).to_lowercase())),"craft_speed":floating.map(|f| f.speed),"clock":if late_channel {"ordinary submits at 60 seconds plus actual elapsed time"} else {"ordinary Offscreen::step on actual monotonic world time; asynchronous in-flight frames"},"opportunities_hz":opportunities,"frames":frames,"hashes":written.frame_hashes,"encoding":format!("{encoding:?}"),"omissions":runtime.omissions(),"capture_limits":{"interval_seconds":interval,"max_submissions":max_submissions,"gpu_staging_slots":6,"cpu_image_leases":CPU_LEASES,"pixel_byte_allowance":PIXEL_ALLOWANCE,"writer_queue":WRITER_QUEUE,"raw_spool_allowance":6_u64*1024*1024*1024},"writer_seconds":written.write_time.as_secs_f64(),"body_tick_poses":poses,"query":fleet.map(|(_,mailbox)|format!("{:?}",mailbox.stats())), "wake_route": (wake || whitewater).then_some(route), "interaction":prepared.interaction.map(|wake| format!("{wake:?}")), "foam":prepared.foam.map(|foam| format!("{foam:?}")), "foam_pattern":prepared.foam_pattern})
 }
 fn drain(
     runtime: &mut Offscreen<SkyGame>,

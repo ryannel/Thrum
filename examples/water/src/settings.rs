@@ -44,6 +44,8 @@ pub enum Settings {
     Surf(Wind),
     /// Hand-authored outlet from the island's lake.
     Channel(Wind),
+    /// The island with its solved spring stream and lake outlet.
+    River(Wind),
     /// The craft and buoys, with or without the wake route.
     Floating(Floating),
 }
@@ -116,6 +118,12 @@ impl Settings {
     fn parse(get: impl Fn((&str, &str)) -> Option<String>) -> Self {
         if let Some(wind) = get(RAIN).as_deref().and_then(Wind::named) {
             return Self::RainYard(wind);
+        }
+        if let Some(wind) = get(("river", "THRUM_WATER_RIVER"))
+            .as_deref()
+            .and_then(Wind::named)
+        {
+            return Self::River(wind);
         }
         if let Some(wind) = get(("channel", "THRUM_WATER_CHANNEL"))
             .as_deref()

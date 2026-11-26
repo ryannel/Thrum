@@ -54,6 +54,9 @@ bytemuck = { version = "=1.25.2", features = ["derive"] }
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 js-sys = "=0.3.106"
 
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+thrum-river-model = { path = "../../crates/thrum-river-model" }
+
 [dev-dependencies]
 pollster = "=1.0.1"
 thrum-cook = { path = "../../crates/thrum-cook" }
@@ -100,3 +103,10 @@ name = "puddles_gpu"
 # PUDDLES WP3.1 proves the deployed scene selection on Metal.
 [[test]]
 name = "rain_selection_gpu"
+
+# RIVERS WP4 names the native store and Metal proofs.
+[[test]]
+name = "river_store"
+
+[[test]]
+name = "river_gpu"

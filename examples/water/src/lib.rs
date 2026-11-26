@@ -2,6 +2,7 @@
 pub mod channel;
 pub mod floating;
 pub mod island;
+pub mod river;
 pub mod settings;
 use std::{
     error::Error,

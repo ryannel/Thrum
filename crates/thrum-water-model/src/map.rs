@@ -1,4 +1,4 @@
-use crate::{Bed, Hollows, HollowsProfile, WaterError};
+use crate::{Bed, Gauge, Hollows, HollowsProfile, WaterError};
 use std::collections::VecDeque;
 use std::sync::Arc;
 
@@ -317,6 +317,20 @@ impl Map {
     /// # Errors
     /// Refuses a wrong stage count or a nonfinite stage.
     pub fn sample_stages(&self, stages: &[f64]) -> Result<Self, WaterError> {
+        self.sample_stages_and_gauges(stages, &[])
+    }
+
+    /// Sample the body's stage endpoints and any spring-fed river's own gauge for display.
+    /// A `None` entry keeps the river's authored gauge. Gauges that read a source body
+    /// follow that body's sampled stage or chart without a separate value.
+    /// # Errors
+    /// Refuses a wrong stage count, nonfinite stage or gauge, and gauge values for
+    /// nonexistent rivers or rivers whose gauge follows a body.
+    pub fn sample_stages_and_gauges(
+        &self,
+        stages: &[f64],
+        gauges: &[Option<f64>],
+    ) -> Result<Self, WaterError> {
         if stages.len() != self.bodies.len() || stages.iter().any(|value| !value.is_finite()) {
             return Err(WaterError::new("stage sample", "invalid stage values"));
         }
@@ -328,6 +342,21 @@ impl Map {
                 changed |= stage.to_bits() != body.stage.value.to_bits();
                 body.stage.value = stage;
             }
+        }
+        for (id, value) in gauges.iter().copied().enumerate() {
+            let Some(value) = value else { continue };
+            let Some(river) = sample.rivers.get_mut(id).filter(|_| value.is_finite()) else {
+                return Err(WaterError::new("stage sample", "invalid river gauge"));
+            };
+            let Gauge::Stage(gauge) = &mut river.gauge else {
+                return Err(WaterError::new(
+                    &river.name,
+                    "gauge follows its source body",
+                ));
+            };
+            let bounded = value.clamp(gauge.min, gauge.max);
+            changed |= bounded.to_bits() != gauge.value.to_bits();
+            gauge.value = bounded;
         }
         if changed {
             sample.spatial_revision = sample.spatial_revision.wrapping_add(1);

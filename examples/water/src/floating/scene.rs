@@ -841,6 +841,9 @@ fn browser_status(
     ));
 }
 
+mod river;
+pub(crate) use river::install_river_floats;
+
 pub(crate) fn install_channel_float(
     game: SkyGame,
     map: crate::SharedMap,

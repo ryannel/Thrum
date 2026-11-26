@@ -170,3 +170,14 @@ their receiving or source bodies, including the sea's reach at the mouth.
 For a sampled river, the gauge selects and mixes the prepared flow samples
 and their wetting thresholds. The sample layout and gauge rules are in the
 [RIVERS design](../../docs/plans/RIVERS/DESIGN.md).
+
+### Solved rivers
+
+Run `THRUM_WATER_RIVER=trade ./dev scene examples/water` to see the spring stream and the
+lake's solved outlet. Use `calm` to inspect the still waterline. The river view control visits the
+pool, sill, narrows, joins and overlooks. The spring, lake and tide controls set their stages.
+The floats start at the spring and just below the lake outlet.
+
+The Mac prepares the two keyed river files beside the cooked store and prints a line for each cold
+solve. An unchanged key reuses its file. The web build packages those keyed files into its WebAssembly
+bundle. Open its printed URL with `?river=trade`.

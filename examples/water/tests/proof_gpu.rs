@@ -42,6 +42,11 @@ fn channel_route() -> bool {
 }
 
 #[cfg(target_os = "macos")]
+fn river_route() -> bool {
+    matches!(settings(), Settings::River(_))
+}
+
+#[cfg(target_os = "macos")]
 fn surf_route() -> bool {
     matches!(settings(), Settings::Surf(_))
 }
@@ -71,7 +76,8 @@ fn whitewater() -> bool {
         | Settings::OpticsSea(_)
         | Settings::OpticsShade(_)
         | Settings::RainYard(_)
-        | Settings::Channel(_) => false,
+        | Settings::Channel(_)
+        | Settings::River(_) => false,
     }
 }
 
@@ -91,6 +97,11 @@ fn proof_game(water: bool) -> (thrum_app::sky::SkyGame, water_scene::SharedRepor
             let (game, report, _, _) =
                 water_scene::island::build_rain_yard(wind, water).expect("rain yard");
             (game, report)
+        }
+        Settings::River(wind) => {
+            let scene = water_scene::river::build(wind, water, Some(&support::river_store()))
+                .expect("river scene");
+            (scene.game, scene.report)
         }
         Settings::Channel(wind) => {
             let scene = water_scene::channel::build(wind, water, true).expect("channel scene");
@@ -227,6 +238,7 @@ fn driver(gpu: &thrum_test_support::Gpu) {
         let scene = floating_game(floating, true, true, whitewater());
         support::Fixture::from_game(gpu, [2560, 1440], scene.game, scene.report)
     } else if channel_route()
+        || river_route()
         || island_wind().is_some()
         || matches!(
             settings(),
@@ -244,6 +256,9 @@ fn driver(gpu: &thrum_test_support::Gpu) {
     } else {
         support::Fixture::new(gpu, [2560, 1440])
     };
+    if river_route() {
+        fixture.parameters(r#"{"camera.river":14}"#);
+    }
     for index in 0..8 {
         fixture.frame(f64::from(index) / 120.0);
     }
@@ -268,7 +283,12 @@ fn driver(gpu: &thrum_test_support::Gpu) {
     }
     result["recipe"] =
         json!(std::env::var("THRUM_WATER_RECIPE").unwrap_or_else(|_| "native".into()));
-    if !channel_route() {
+    if river_route() {
+        let (_, camera) = water_scene::river::VIEWS[14];
+        result["body_vertices"] = json!(report.bodies);
+        result["camera"] = json!({"position": camera.position, "target": camera.target});
+    }
+    if !channel_route() && !river_route() {
         result["camera"] = json!({"focus_xz":water_scene::CAMERA_FOCUS,"eye_at_2m_along_wind":water_scene::camera_position(2.0,90.0),"vertical_fov_degrees":water_scene::CAMERA_FOV_DEGREES,"look_drop_over_100_m":water_scene::CAMERA_LOOK_DROP,"orbit_radius":"24m at 2m height, 40m at 40m height; bearing orbits the focus"});
     }
     result["commit"] = json!(
@@ -304,10 +324,13 @@ fn driver(gpu: &thrum_test_support::Gpu) {
                         fixture.warm_cooked();
                     }
                     fixture
-                } else if channel_route() {
+                } else if channel_route() || river_route() {
                     let (game, report) = proof_game(present);
                     let mut fixture = support::Fixture::from_game(gpu, [2560, 1440], game, report);
                     fixture.warm_cooked();
+                    if river_route() {
+                        fixture.parameters(r#"{"camera.river":14}"#);
+                    }
                     fixture
                 } else if let Some(wind) = island_wind() {
                     let (game, report, _, _) = water_scene::island::build_foam(wind, present, foam)
@@ -357,7 +380,7 @@ fn driver(gpu: &thrum_test_support::Gpu) {
                 } else {
                     0
                 };
-                let mut arm = json!({"water":present,"calibration_float":island_wind().is_none() && floating().is_none() && !channel_route(),"frames":frames,"water_pixels_shaded":pixels,"pixel_count_method":"visible coverage from submitted reactive/depth witness; helper and hidden invocations excluded","storage":fixture.host.storage_report()});
+                let mut arm = json!({"water":present,"calibration_float":island_wind().is_none() && floating().is_none() && !channel_route() && !river_route(),"frames":frames,"water_pixels_shaded":pixels,"pixel_count_method":"visible coverage from submitted reactive/depth witness; helper and hidden invocations excluded","storage":fixture.host.storage_report()});
                 if wake || whitewater {
                     arm["wake"] = json!(interaction);
                     let report = fixture.report.lock().expect("water report");
@@ -389,6 +412,18 @@ fn driver(gpu: &thrum_test_support::Gpu) {
             ];
             let checkpoints: Vec<_> = if matches!(settings(), Settings::RainYard(_)) {
                 yard_checkpoints()
+            } else if river_route() {
+                water_scene::river::VIEWS
+                    .iter()
+                    .zip(0..)
+                    .map(|((name, _), view)| {
+                        (
+                            name.to_lowercase().replace(' ', "-"),
+                            format!(r#"{{"camera.river":{view}}}"#),
+                            10.0 + f64::from(view),
+                        )
+                    })
+                    .collect()
             } else if surf_route() {
                 surf_checkpoints()
             } else if whitewater() {

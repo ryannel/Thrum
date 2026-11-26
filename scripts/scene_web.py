@@ -26,6 +26,16 @@ def main(folder):
     capture = os.environ.get('THRUM_SCENE_WEB_CAPTURE') == '1'
     wasm_target = target / 'scene-web-capture' if capture else target
     features = ['--features', 'thrum-app/browser-capture'] if capture else []
+    if package == 'water-scene':
+        subprocess.run(cargo + ['build', '--locked', '--offline', '--release', '-p', package,
+                               '--bin', binary], check=True)
+        rivers = web.parent / 'rivers'
+        keys = subprocess.check_output(
+            [str(target / 'release' / binary), '--prepare-rivers', str(rivers)],
+            text=True,
+        ).splitlines()
+        stream, outlet = (str(rivers / (key + '.river')) for key in keys)
+        wasm_env.update(THRUM_WATER_STREAM_FILE=stream, THRUM_WATER_OUTLET_FILE=outlet)
     subprocess.run(cargo + ['build', '--locked', '--offline', '--release', '-p', package,
                            '--bin', binary, '--target', 'wasm32-unknown-unknown',
                            '--target-dir', str(wasm_target), *features], env=wasm_env, check=True)

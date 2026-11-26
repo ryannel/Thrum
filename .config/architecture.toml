@@ -90,7 +90,7 @@ allowed_workspace_dependencies = ["thrum-asset-gpu", "thrum-render", "thrum-sea"
 
 [packages.water-scene]
 manifest = "examples/water/Cargo.toml"
-allowed_workspace_dependencies = ["thrum-app", "thrum-render", "thrum-water", "thrum-water-model", "thrum-rain-model", "thrum-sea-model", "thrum-test-support", "thrum-cook"]
+allowed_workspace_dependencies = ["thrum-app", "thrum-render", "thrum-water", "thrum-water-model", "thrum-rain-model", "thrum-sea-model", "thrum-test-support", "thrum-cook", "thrum-river-model"]
 
 [packages.thrum-river-model]
 manifest = "crates/thrum-river-model/Cargo.toml"

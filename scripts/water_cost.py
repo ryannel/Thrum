@@ -6,6 +6,7 @@ import math
 import os
 from pathlib import Path
 import platform
+import re
 import statistics
 import subprocess
 import tempfile
@@ -19,6 +20,7 @@ RECORDS = {'first-frame': ROOT / 'tests/fixtures/waters/first-frame-cost.json',
            'foam': ROOT / '.orchestrate/evidence/WATERS/M7/cost.json',
            'surf': ROOT / '.orchestrate/evidence/WATERS/WP21/surf-cost.json',
            'channel': ROOT / '.orchestrate/evidence/WATERS/WP9/channel-cost.json',
+           'river': ROOT / '.orchestrate/evidence/RIVERS/WP4/river-cost.json',
            'rain-puddles': ROOT / 'tests/fixtures/puddles/yard-water-cost.json',
            'optics': ROOT / 'tests/fixtures/waters/optics-cost-prior.json'}
 WORKING = ROOT / '.orchestrate/evidence/WATERS'
@@ -41,8 +43,9 @@ def run(command, **kwargs):
 def measure(scene):
     island = scene == 'island'
     channel = scene == 'channel'
+    river = scene == 'river'
     output = ROOT / ({
-        'channel': 'tmp/waters-wp9/cost-current', 'island': 'tmp/waters-M4/cost-current',
+        'river': 'tmp/rivers-wp4/cost-current', 'channel': 'tmp/waters-wp9/cost-current', 'island': 'tmp/waters-M4/cost-current',
     }.get(scene, 'tmp/waters-M2/cost-current'))
     output.mkdir(parents=True, exist_ok=True)
     env = dict(os.environ, THRUM_WATER_PROOF='cost', THRUM_WATER_OUTPUT=str(output))
@@ -50,6 +53,10 @@ def measure(scene):
         env['THRUM_WATER_CHANNEL'] = 'trade'
     else:
         env.pop('THRUM_WATER_CHANNEL', None)
+    if river:
+        env['THRUM_WATER_RIVER'] = 'trade'
+    elif channel:
+        env.pop('THRUM_WATER_RIVER', None)
     if island:
         env['THRUM_WATER_ISLAND'] = 'trade'
     else:
@@ -57,6 +64,19 @@ def measure(scene):
     store = output / 'store'
     run(['cargo', 'run', '--release', '--locked', '--offline', '-p', 'thrum-cook', '--', 'cook', 'examples/water/assets', str(store)])
     env['THRUM_ASSET_STORE'] = str(store)
+    products = None
+    if river:
+        with tempfile.TemporaryDirectory(prefix='solve-', dir=output) as directory:
+            solved = run(['cargo', 'run', '--release', '--locked', '--offline', '-p', 'water-scene',
+                          '--', '--prepare-rivers', directory], text=True, capture_output=True)
+            products = river_products(solved, Path(directory))
+            # Keep measured products beside the cooked store for both GPU arms.
+            river_store = output / 'rivers'
+            river_store.mkdir(exist_ok=True)
+            for product in products:
+                key = product['key']
+                (Path(directory) / f'{key}.river').replace(river_store / f'{key}.river')
+            env['THRUM_WATER_RIVER_STORE'] = str(river_store)
     run(['cargo', 'test', '--release', '--locked', '--offline', '-p', 'water-scene', '--test', 'proof_gpu'], env=env)
     data = json.loads((output / 'cost.json').read_text())
     data['commit'] = run(['git', 'rev-parse', 'HEAD'], capture_output=True, text=True).stdout.strip()
@@ -68,6 +88,9 @@ def measure(scene):
                     if island else 'camera at 2 m, bearing 90 degrees, noon; camera record gives origin and lens; identical calibration float and sky in both arms at identical world times')
     if channel:
         data['view'] = 'Narrows camera under trade wind; same cooked outlet terrain, float, post and sky in both arms'
+    if river:
+        data['view'] = 'Both rivers from above the lake in trade wind, with identical terrain, floats and sky in both arms'
+        data['river_files'] = products
     data['scene'] = scene
     data['estimates'] = {'surface_vertices': 200000, 'surface_gpu_ms': 'unmeasured in design; largest term', 'long_cache_gpu_ms': '0.2-0.3', 'previous_inverted_cache_gpu_ms': 3.6, 'broadsides_surface_ms': 10.5}
     data['summary'] = []
@@ -114,7 +137,40 @@ def measure(scene):
             'commit': prior['commit'], 'view': prior['view'], 'summary': prior['summary'],
         }
         data['investigations'].extend(channel_investigations(data['summary'], prior['summary']))
+    if river:
+        # Keep the current channel comparison in memory and preserve its saved record.
+        channel_record = measure('channel')
+        data['channel_record'] = {key: channel_record[key] for key in ('view', 'commit', 'summary')}
+        for row, label, baseline, duration in channel_growth(data['summary'], channel_record['summary']):
+            opposite = next(arm for arm in data['summary']
+                            if arm['water'] != row['water'] and arm['tick_frame'] == row['tick_frame'])
+            data['investigations'].append({
+                'wire': 'pass grew by at least 25% compared to channel',
+                'water': row['water'], 'tick_frame': row['tick_frame'], 'pass': label,
+                'measurement': f'{label} grew from {baseline:.3f} ms to {duration:.3f} ms.',
+                'paired_ms': opposite['passes_ms'].get(label),
+                'disposition': ('The river overview shows more terrain and wet coverage than the channel narrows. '
+                                'The paired water-off timing shows which changes also occur without water. '
+                                'This comparison does not isolate coverage from the cost of mixing samples.'),
+            })
     return data
+
+
+def river_products(solved, directory):
+    by_name = {}
+    for name, gauge, seconds, steps, rate, imbalance in re.findall(
+        r'river sample (.+?) gauge=([\d.]+) seconds=([\d.]+) steps=(\d+) '
+        r'level_rate=([\d.e+-]+) imbalance=([\d.e+-]+)', solved.stderr
+    ):
+        by_name.setdefault(name, []).append({
+            'gauge': float(gauge), 'seconds': float(seconds), 'steps': int(steps),
+            'level_rate': float(rate), 'imbalance': float(imbalance),
+        })
+    return [
+        {'name': name, 'key': key, 'bytes': (directory / f'{key}.river').stat().st_size,
+         'samples': by_name[name]}
+        for name, key in zip(('Spring stream', 'Lake river'), solved.stdout.splitlines(), strict=True)
+    ]
 
 
 def comparable_pass(label):
@@ -198,6 +254,18 @@ def validate(data, scene):
         for row, label, _, _ in channel_growth(data['summary'], data['island_record']['summary']):
             assert (row['water'], row['tick_frame'], label) in investigated, label
         assert dict(data['body_vertices'])['Lake outlet'] > 0
+    if scene == 'river':
+        assert [len(file['samples']) for file in data['river_files']] == [3, 5]
+        assert all(file['bytes'] > 0 and all(sample['steps'] > 0 for sample in file['samples'])
+                   for file in data['river_files'])
+        investigated = {(item['water'], item['tick_frame'], item['pass'])
+                        for item in data['investigations']
+                        if item['wire'] == 'pass grew by at least 25% compared to channel'
+                        and item.get('measurement') and item.get('disposition')}
+        for row, label, _, _ in channel_growth(data['summary'], data['channel_record']['summary']):
+            assert (row['water'], row['tick_frame'], label) in investigated, label
+        for name in ['Spring stream', 'Lake river']:
+            assert any(n.startswith(name) and count > 0 for n, count in data['body_vertices'])
     if scene == 'island':
         named = data['first_frame_record']
         assert named == str(RECORDS['first-frame'].relative_to(ROOT)) or named.endswith(FIRST_FRAME_FORMER)
@@ -939,10 +1007,10 @@ def main():
     record = RECORDS[args.scene]
     data = measure(args.scene)
     validate(data, args.scene)
-    if args.scene == 'channel':
+    if args.scene in ('channel', 'river'):
         record = Path(os.environ.get('THRUM_WATER_OUTPUT', record))
         if record.is_dir():
-            record /= 'channel-cost.json'
+            record /= f'{args.scene}-cost.json'
         record.parent.mkdir(parents=True, exist_ok=True)
         record.write_text(json.dumps(data, indent=2) + '\n')
     elif args.action == 'record':

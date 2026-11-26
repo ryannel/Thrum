@@ -3,12 +3,13 @@ use crate::WaterError;
 use bytemuck::{Pod, Zeroable};
 use thrum_render::binding;
 use thrum_render::contribution::EffectTime;
-use thrum_water_model::{BodyKind, Map};
+use thrum_water_model::{BodyKind, Gauge, Map};
 use wgpu::util::DeviceExt;
 
 mod bounded_track;
 mod current_track;
 mod hollows;
+mod rivers;
 use bounded_track::{BoundedTrack, uniform_current};
 use current_track::CurrentTrack;
 use hollows::HollowsGpu;
@@ -138,7 +139,7 @@ pub struct MapGpu {
     pub(crate) texture: wgpu::Texture,
     pub(crate) info: wgpu::Buffer,
     revision: Option<u64>,
-    uploaded_stages: [f64; BODY_LIMIT],
+    uploaded_stages: Stages,
     sampled_map: Option<Map>,
     recorded: Option<StageEndpoints>,
     submitted: Option<StageEndpoints>,
@@ -147,24 +148,25 @@ pub struct MapGpu {
     tracks: WaveTracks,
     support: Vec<[f32; 4]>,
     hollows: Option<HollowsGpu>,
+    rivers: [Option<rivers::ChartLayers>; BODY_LIMIT],
 }
 
 #[derive(Clone, Copy)]
 struct StageEndpoints {
     time: EffectTime,
-    from: [f64; BODY_LIMIT],
-    to: [f64; BODY_LIMIT],
+    from: Stages,
+    to: Stages,
 }
 
 impl StageEndpoints {
-    fn record(time: EffectTime, current: [f64; BODY_LIMIT], previous: Option<&Self>) -> Self {
+    fn record(time: EffectTime, current: &Stages, previous: Option<&Self>) -> Self {
         let Some(previous) =
             previous.filter(|p| p.time.epoch == time.epoch && p.time.timeline == time.timeline)
         else {
             return Self {
                 time,
-                from: current,
-                to: current,
+                from: *current,
+                to: *current,
             };
         };
         if previous.time.tick == time.tick {
@@ -174,26 +176,55 @@ impl StageEndpoints {
         let from = if previous.time.tick.checked_add(1) == Some(time.tick) {
             previous.to
         } else {
-            current
+            *current
         };
         Self {
             time,
             from,
-            to: current,
+            to: *current,
         }
     }
 
-    fn stages(&self) -> [f64; BODY_LIMIT] {
+    fn stages(&self) -> Stages {
         let alpha = f64::from(self.time.alpha);
         if alpha >= 1.0 {
             return self.to;
         }
-        std::array::from_fn(|id| (self.to[id] - self.from[id]).mul_add(alpha, self.from[id]))
+        Stages {
+            bodies: std::array::from_fn(|id| {
+                let from = self.from.bodies[id];
+                (self.to.bodies[id] - from).mul_add(alpha, from)
+            }),
+            gauges: std::array::from_fn(|id| {
+                let to = self.to.gauges[id]?;
+                let from = self.from.gauges[id].unwrap_or(to);
+                Some((to - from).mul_add(alpha, from))
+            }),
+        }
     }
 }
 
-fn stages(map: &Map) -> [f64; BODY_LIMIT] {
-    std::array::from_fn(|id| map.body(id).map_or(0.0, |body| body.stage.value))
+#[derive(Clone, Copy, Default)]
+struct Stages {
+    bodies: [f64; BODY_LIMIT],
+    gauges: [Option<f64>; BODY_LIMIT],
+}
+
+impl Stages {
+    fn same(&self, other: &Self) -> bool {
+        self.bodies.map(f64::to_bits) == other.bodies.map(f64::to_bits)
+            && self.gauges.map(|v| v.map(f64::to_bits)) == other.gauges.map(|v| v.map(f64::to_bits))
+    }
+}
+
+fn stages(map: &Map) -> Stages {
+    Stages {
+        bodies: std::array::from_fn(|id| map.body(id).map_or(0.0, |body| body.stage.value)),
+        gauges: std::array::from_fn(|id| match map.river(id)?.gauge {
+            Gauge::Stage(stage) => Some(stage.value),
+            _ => None,
+        }),
+    }
 }
 
 /// WGSL declarations and sampling functions, with map resources in group 3.
@@ -203,18 +234,31 @@ pub fn declarations() -> String {
 
 /// Map shader declarations with the specified resource group.
 pub fn declarations_at(group: u32) -> String {
-    map_source(group, false)
+    map_source(group, false, false)
 }
 
-fn map_source(group: u32, hollows: bool) -> String {
+fn map_source(group: u32, hollows: bool, rivers: bool) -> String {
     let sample_hollows = if hollows {
         "    let local = hollows_sample(point);\n    if local.has_bed { return local; }\n"
     } else {
         ""
     };
+    // The steady specialization keeps its original source and texture layout.
+    let (chart_cell, river_source) = if rivers {
+        (
+            "river_chart_cell(cell, k, body)",
+            include_str!("map_gpu/rivers.wgsl"),
+        )
+    } else {
+        (
+            "textureLoad(bed_map, cell.corners[k], i32(body.layers.z), 0)",
+            "",
+        )
+    };
     let source = format!(
-        "const BODY_LIMIT = {BODY_LIMIT}u;\nconst WATER_MAP_GROUP = {group}u;\n{}{sample_hollows}{}\n{}",
+        "const BODY_LIMIT = {BODY_LIMIT}u;\nconst WATER_MAP_GROUP = {group}u;\n{}            let raw = {chart_cell};\n{}{sample_hollows}{}\n{}{river_source}",
         include_str!("map.wgsl"),
+        include_str!("map_gpu/chart_tail.wgsl"),
         include_str!("map_sample.wgsl"),
         include_str!("gains.wgsl"),
     );
@@ -269,6 +313,7 @@ impl MapGpu {
             return Err(UnsupportedMap("water map exceeds the device lattice limit"));
         }
         let mut tracks = WaveTracks::new(map);
+        let mut rivers = std::array::from_fn(|_| None);
         for (id, destination) in record.bodies.iter_mut().enumerate() {
             let Some(body) = map.body(id) else { break };
             record.size_count_sea[2] += 1;
@@ -280,7 +325,7 @@ impl MapGpu {
                 BodyKind::Sea => record.size_count_sea[3] = id as u32,
                 BodyKind::Basin { .. } => destination.layers[0] = 1,
                 BodyKind::Hollows(_) => destination.layers[0] = 3,
-                BodyKind::Chart(chart) if map.river_of(id).is_none() => {
+                BodyKind::Chart(chart) => {
                     destination.layers[0] = 2;
                     destination.layers[2] = layers;
                     layers += 2;
@@ -304,11 +349,12 @@ impl MapGpu {
                         ];
                         destination.layers[3] += 1;
                     }
-                }
-                BodyKind::Chart(_) => {
-                    return Err(UnsupportedMap(
-                        "water GPU map needs sea, basins, steady charts or hollows",
-                    ));
+                    rivers[id] = rivers::ChartLayers::prepare(
+                        map,
+                        id,
+                        &mut layers,
+                        limits.max_texture_array_layers,
+                    )?;
                 }
             }
         }
@@ -359,6 +405,9 @@ impl MapGpu {
                     ];
                 }
                 write_layer(queue, &texture, body.layers[2], &support);
+                if let Some(samples) = &rivers[id] {
+                    samples.write(queue, &texture, map, &mut support);
+                }
                 if let Some(track) = &tracks.parallel[id] {
                     for (i, pixel) in support.iter_mut().enumerate() {
                         let section = if track.axis == 0 {
@@ -385,7 +434,7 @@ impl MapGpu {
             texture,
             info,
             revision: None,
-            uploaded_stages: [0.0; BODY_LIMIT],
+            uploaded_stages: Stages::default(),
             sampled_map: None,
             recorded: None,
             submitted: None,
@@ -394,9 +443,10 @@ impl MapGpu {
             tracks,
             support,
             hollows,
+            rivers,
         };
         let authored = stages(map);
-        gpu.upload(queue, map, authored, authored);
+        gpu.upload(queue, map, &authored, &authored);
         if let Some(hollows) = &mut gpu.hollows {
             hollows.record(queue, map, None);
             hollows.commit();
@@ -406,7 +456,11 @@ impl MapGpu {
 
     /// Map shader declarations specialized to the products that were prepared.
     pub fn source(&self, group: u32) -> String {
-        map_source(group, self.hollows.is_some())
+        map_source(
+            group,
+            self.hollows.is_some(),
+            self.rivers.iter().any(Option::is_some),
+        )
     }
 
     pub(crate) fn hollows_bindings(
@@ -550,8 +604,8 @@ impl MapGpu {
         time: EffectTime,
     ) -> &'a Map {
         let authored = stages(map);
-        let recorded = StageEndpoints::record(time, authored, self.submitted.as_ref());
-        self.upload(queue, map, authored, recorded.stages());
+        let recorded = StageEndpoints::record(time, &authored, self.submitted.as_ref());
+        self.upload(queue, map, &authored, &recorded.stages());
         if let Some(hollows) = &mut self.hollows {
             hollows.record(queue, map, Some(time));
         }
@@ -564,7 +618,7 @@ impl MapGpu {
         let displayed = frame
             .submitted
             .map_or(authored, |endpoint| endpoint.stages());
-        self.upload(queue, map, authored, displayed);
+        self.upload(queue, map, &authored, &displayed);
         if let (Some(hollows), Some(from)) = (&mut self.hollows, &frame.hollows) {
             hollows.copy_display(queue, from);
         }
@@ -582,21 +636,13 @@ impl MapGpu {
         clippy::cast_possible_truncation,
         reason = "prepared water rows are read in GPU metres"
     )]
-    fn upload(
-        &mut self,
-        queue: &wgpu::Queue,
-        map: &Map,
-        authored: [f64; BODY_LIMIT],
-        displayed: [f64; BODY_LIMIT],
-    ) {
+    fn upload(&mut self, queue: &wgpu::Queue, map: &Map, authored: &Stages, displayed: &Stages) {
         let revision = map.spatial_revision();
-        let displayed_bits = displayed.map(f64::to_bits);
-        let uploaded_bits = self.uploaded_stages.map(f64::to_bits);
-        let changed = self.revision != Some(revision) || uploaded_bits != displayed_bits;
+        let changed = self.revision != Some(revision) || !self.uploaded_stages.same(displayed);
         if changed {
-            self.sampled_map = (authored.map(f64::to_bits) != displayed_bits).then(|| {
+            self.sampled_map = (!authored.same(displayed)).then(|| {
                 let count = self.record.size_count_sea[2] as usize;
-                map.sample_stages(&displayed[..count])
+                map.sample_stages_and_gauges(&displayed.bodies[..count], &displayed.gauges)
                     .expect("bounded tick stages")
             });
         }
@@ -611,12 +657,18 @@ impl MapGpu {
             let chart = record.layers[0] == 2;
             let level = [body.level as f32, body.stage.value as f32];
             let spatial = self.revision.is_none()
-                || uploaded_bits[id] != displayed_bits[id]
+                || self.uploaded_stages.bodies[id].to_bits() != displayed.bodies[id].to_bits()
                 || record.level[0].to_bits() != level[0].to_bits()
                 || chart && changed;
             if changed {
                 record.level[..2].copy_from_slice(&level);
                 record.gains = body.gains.map(|g| g as f32);
+                if let Some(samples) = &self.rivers[id] {
+                    let (layer, weight) = samples.interval(map);
+                    record.level[3] = samples.first() as f32;
+                    record.joins[0][3] = layer as f32;
+                    record.joins[1][3] = weight;
+                }
             }
             if spatial {
                 let origins = map.support_origins(id);
@@ -655,7 +707,7 @@ impl MapGpu {
             queue.write_buffer(&self.info, 0, bytemuck::bytes_of(&self.record));
         }
         self.revision = Some(revision);
-        self.uploaded_stages = displayed;
+        self.uploaded_stages = *displayed;
     }
 }
 

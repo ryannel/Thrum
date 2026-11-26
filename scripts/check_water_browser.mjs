@@ -8,7 +8,7 @@ import zlib from 'node:zlib';
 import {installWasmReceipt,readWasmReceipt} from './wasm_receipt.mjs';
 
 const mode = process.argv[process.argv.indexOf('--case') + 1];
-if (!['first-frame','frames','fixed','realtime','island','bodies','wake','foam','surf','channel','rain-puddles'].includes(mode)) throw Error('use --case first-frame|frames|fixed|realtime|island|bodies|wake|foam|surf|channel|rain-puddles');
+if (!['first-frame','frames','fixed','realtime','island','bodies','wake','foam','surf','channel','river','rain-puddles'].includes(mode)) throw Error('use --case first-frame|frames|fixed|realtime|island|bodies|wake|foam|surf|channel|river|rain-puddles');
 const opticsRoute = mode === 'fixed' ? process.env.THRUM_WATER_BROWSER_OPTICS : undefined;
 const surfInspection = process.env.THRUM_WATER_INSPECT_SURF === '1' && ['fixed','realtime'].includes(mode);
 const handoffCut = surfInspection && mode === 'realtime' && process.env.THRUM_WATER_ROUTE === 'handoff-cut';
@@ -492,7 +492,11 @@ result.dirty_diff_sha256=hash(execFileSync('git',['diff','HEAD']));
 result.source_sha256={};
 for(const file of ['crates/thrum-app/src/sky.rs','crates/thrum-app/src/sky/browser.rs','crates/thrum-app/web/scene.js','crates/thrum-render/src/runtime.rs','crates/thrum-render/src/runtime/device.rs','examples/water/src/lib.rs','examples/water/src/main.rs','examples/water/examples/field_oracle.rs','scripts/check_water_browser.mjs'])result.source_sha256[file]=hash(await fs.readFile(file));
 try {
-  const url=await until(async()=>/SCENE_URL=(\S+)/.exec(await fs.readFile(path.join(output,'command.log'),'utf8'))?.[1],'scene URL',600000);
+  const url=await until(async()=>{
+    const transcript=await fs.readFile(path.join(output,'command.log'),'utf8');
+    if(command.exitCode!==null)throw Error(`scene command exited ${command.exitCode}: ${transcript.slice(-2500)}`);
+    return /SCENE_URL=(\S+)/.exec(transcript)?.[1];
+  },'scene URL',600000);
   const wasm=await fs.readFile(path.join(output,'web/scene_bg.wasm'));result.wasm=hash(wasm);
   const profile=path.join(output,'chrome-profile');await fs.mkdir(profile);
   const chromeLog=await fs.open(path.join(output,'chrome.log'),'w');
@@ -514,8 +518,8 @@ try {
   await cdp.call('Page.enable',{},sid);await cdp.call('Runtime.enable',{},sid);
   await installWasmReceipt(cdp,sid);
   const surfRoute=mode==='surf'||surfInspection;
-  await cdp.call('Page.addScriptToEvaluateOnNewDocument',{source:observer+(['island','surf','channel','rain-puddles'].includes(mode)?islandObserver:'')+`\ndocument.addEventListener('DOMContentLoaded',()=>{document.querySelector('canvas').width=${width};document.querySelector('canvas').height=${height};});`},sid);
-  const route=opticsRoute??(surfRoute?(handoffCut?'?surf=gale':'?surf=trade'):mode==='foam'?'?foam=calm&speed=6&view=overhead&wake-bodies=1':mode==='wake'?'?wake=calm&speed=6&view=overhead&wake-bodies=1':mode==='bodies'?'?bodies=trade&speed=5':mode==='island'?'?island=trade':mode==='channel'?'?channel=trade':mode==='rain-puddles'?'?rain=calm':'');
+  await cdp.call('Page.addScriptToEvaluateOnNewDocument',{source:observer+(['island','surf','channel','river','rain-puddles'].includes(mode)?islandObserver:'')+`\ndocument.addEventListener('DOMContentLoaded',()=>{document.querySelector('canvas').width=${width};document.querySelector('canvas').height=${height};});`},sid);
+  const route=opticsRoute??(surfRoute?(handoffCut?'?surf=gale':'?surf=trade'):mode==='foam'?'?foam=calm&speed=6&view=overhead&wake-bodies=1':mode==='wake'?'?wake=calm&speed=6&view=overhead&wake-bodies=1':mode==='bodies'?'?bodies=trade&speed=5':mode==='island'?'?island=trade':mode==='channel'?'?channel=trade':mode==='river'?'?river=trade':mode==='rain-puddles'?'?rain=calm':'');
   result.route=route;
   await cdp.call('Page.navigate',{url:url+route},sid);
   await until(async()=>{const state=await evaluate('({ready:!!window.game,status:document.querySelector("#status")?.textContent})');if(state.status?.includes('could not start'))throw Error(state.status);return state.ready;},'scene constructed');
@@ -618,6 +622,43 @@ try {
       'the float must rise and fall, with dry ground under the roof');
     assert(new Set(result.frames.map(frame=>frame.sha256_rgba)).size===3,'the submitted yard states must differ');
     result.rain={first,joined,high,parted,draws,submitted};
+  } else if(mode==='river'){
+    const floats=()=>evaluate('(game.report(),globalThis.waterRiverFloats)');
+    await until(async()=>{
+      const status=await evaluate(`game.frame(${now});game.report()`);
+      return /^Cooked generation [0-9]+ drawn/.test(status);
+    },'cooked river island drawn');
+    const files=await evaluate('globalThis.waterRiverFiles');
+    assert(files?.length===2&&files.every(([,key])=>/^[0-9a-f]{64}$/.test(key)),
+      'both keyed river files must be loaded from the package');
+    for(const [name,key] of files){
+      const bytes=await fs.readFile(path.join(output,'rivers',key+'.river'));
+      assert(bytes.subarray(12,44).toString('hex')===key,`stale packaged river ${name}`);
+    }
+    const start=await floats();
+    const riverDraws=async(name,delta)=>{
+      const before=await evaluate('__island.draws.length');
+      await capture(name,delta);
+      const draws=await evaluate(`__island.draws.slice(${before})`);
+      assert(draws.some(([,count])=>count>0),`${name} submitted no water draws`);
+      return draws;
+    };
+    const streamDraws=await riverDraws('spring-stream',1000);
+    await evaluate("game.edit_control('camera.river',11)");
+    const outletDraws=await riverDraws('lake-river',1000/30);
+    const course=[];
+    for(const seconds of [15,30,50,70,95,125,160,200,250,300]){
+      await until(()=>evaluate('game.frame_ready()'),'river float travel frame slot');
+      await drive(seconds*1000-now);
+      const positions=await floats();
+      course.push({seconds,positions});
+      if(positions[0][3]===1&&positions[0][4]>0)break;
+    }
+    const end=course.at(-1).positions;
+    assert(start[0][3]>=3&&end[0][3]===1&&end[0][4]>0&&end[0].every(Number.isFinite),
+      'the stream float did not enter the lake: '+JSON.stringify({start,course,end}));
+    assert(new Set(result.frames.map(frame=>frame.sha256_rgba)).size===2,'both views must submit distinct frames');
+    result.rivers={files,solves_in_page:0,streamDraws,outletDraws,start,course,end};
   } else if(mode==='channel'){
     const float=()=>evaluate('(game.report(),globalThis.waterChannelFloat)');
     await until(async()=>{

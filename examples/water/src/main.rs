@@ -1,6 +1,15 @@
 //! Water example on the engine's normal window and controls.
 use water_scene::settings::Settings;
 fn main() {
+    #[cfg(not(target_arch = "wasm32"))]
+    if std::env::args_os()
+        .nth(1)
+        .is_some_and(|arg| arg == "--prepare-rivers")
+    {
+        let path = std::env::args_os().nth(2).expect("river output directory");
+        prepare_rivers(std::path::Path::new(&path));
+        return;
+    }
     let settings = settings();
     let draw_float =
         cfg!(target_arch = "wasm32") || std::env::var_os(thrum_app::sky::STORE_VARIABLE).is_some();
@@ -13,6 +22,20 @@ fn main() {
                 }
                 Settings::RainYard(wind) => {
                     water_scene::island::build_rain_yard(wind, true).map(|(game, _, _, _)| game)
+                }
+                Settings::River(wind) => {
+                    #[cfg(not(target_arch = "wasm32"))]
+                    let directory = water_scene::river::store_directory(
+                        std::env::var_os("THRUM_WATER_RIVER_STORE").map(std::path::PathBuf::from),
+                        std::env::var_os(thrum_app::sky::STORE_VARIABLE)
+                            .as_deref()
+                            .map(std::path::Path::new),
+                    );
+                    #[cfg(not(target_arch = "wasm32"))]
+                    let directory = Some(directory.as_path());
+                    #[cfg(target_arch = "wasm32")]
+                    let directory = None;
+                    water_scene::river::build(wind, true, directory).map(|scene| scene.game)
                 }
                 Settings::Channel(wind) => {
                     water_scene::channel::build(wind, true, true).map(|scene| scene.game)
@@ -51,6 +74,26 @@ fn main() {
             built.map_err(thrum_app::sky::SkyBuildError::Scene)
         },
     );
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+#[expect(
+    clippy::print_stderr,
+    clippy::print_stdout,
+    reason = "native packaging command's two key lines and errors"
+)]
+fn prepare_rivers(directory: &std::path::Path) {
+    match water_scene::river::prepare_files(directory) {
+        Ok(keys) => {
+            for key in keys {
+                println!("{key}");
+            }
+        }
+        Err(error) => {
+            eprintln!("{error}");
+            std::process::exit(1);
+        }
+    }
 }
 
 #[cfg(not(target_arch = "wasm32"))]

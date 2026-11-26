@@ -3930,6 +3930,7 @@ dependencies = [
  "thrum-cook",
  "thrum-rain-model",
  "thrum-render",
+ "thrum-river-model",
  "thrum-sea-model",
  "thrum-test-support",
  "thrum-water",

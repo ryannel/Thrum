@@ -1,0 +1,96 @@
+{
+  "asset": {
+    "version": "2.0"
+  },
+  "buffers": [
+    {
+      "byteLength": 5768424,
+      "uri": "river-island.bin"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 1247148
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 1247148,
+      "byteLength": 2442696
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 3689844,
+      "byteLength": 1247148
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 4936992,
+      "byteLength": 831432
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 103929,
+      "type": "VEC3",
+      "min": [
+        -320,
+        -28.937997553439935,
+        -225
+      ],
+      "max": [
+        400,
+        29.88599999922463,
+        225
+      ]
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5125,
+      "count": 610674,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 103929,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5126,
+      "count": 103929,
+      "type": "VEC2"
+    }
+  ],
+  "meshes": [
+    {
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "indices": 1
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "mesh": 0
+    }
+  ],
+  "scenes": [
+    {
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "scene": 0
+}

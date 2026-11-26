@@ -18,3 +18,11 @@ Everything else in `crates/thrum-river-model`, `crates/thrum-water-model/src/riv
 `scripts/river_cost.py` was written for Thrum from the RIVERS design. The two dependencies the
 solver adds, `blake3` (CC0-1.0 or Apache-2.0) and `rayon` (MIT or Apache-2.0), were already
 registered in `.config/architecture.toml`. Nothing is GPL or share-alike.
+
+## WP4
+
+The river island mesh comes from Thrum's [island generator](../../examples/water/make_island.py)
+with `--river`. The generator reuses the WATERS channel cut and adds the spring valley above the
+lake. The river selection uses that mesh for rendering and for the bed lattice. The channel
+and island variants retain their own meshes. The keyed river files are derived from the bed and
+the declarations at preparation. No third-party assets or code were added.
