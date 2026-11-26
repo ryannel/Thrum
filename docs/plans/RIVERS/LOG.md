@@ -211,3 +211,9 @@
   rising and falling. The paired device record includes file sizes, sample times and each tripped comparison.
   The scene outlet uses a 0.006 m/s level-rate stopping bound and 0.004 imbalance bound.
   [Target evidence](../../../.orchestrate/evidence/RIVERS/WP4/README.md)
+
+- 2026-11-26 WP10.1 uses the short spring reach on the calling thread. Both gains for all 16 wet
+  footprint cells per sample matched their own solve exactly after decoding, and the slope gain
+  rose at the whole discharge. On the M3 Max, isolated wall time fell from 4.29 s to 0.03 s.
+  The timer reported 6.64 s of CPU before and rounded both CPU components to 0.00 s after.
+  [Timing and check evidence](../../../.orchestrate/evidence/RIVERS/WP10/WP10.1.md)

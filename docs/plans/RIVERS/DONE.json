@@ -369,7 +369,7 @@
     {
       "id": "WP10",
       "name": "The check that a river file keeps each sample's own gains runs on a small reach",
-      "status": "not_started",
+      "status": "in_progress",
       "quality_bar": "Keep the proof that a river file stores each sample's own chop gains, on the smallest solved reach that shows it, with ample headroom in the fast tier.",
       "items": [
         {
@@ -378,8 +378,8 @@
           "check": "cargo nextest run --locked --offline -p thrum-river-model --test it -E 'test(=chop::each_sample_of_a_river_file_carries_its_own_gains)' --no-tests=fail",
           "ask": "Does the test still solve both discharges and write the file from those solves, and compare every wet footprint cell's stored gains with that sample's own solve, exactly, for both samples? Does the record give its CPU time and its time alone, before and after, in the workspace check's default Nextest build, excluding compilation?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RIVERS/WP10/WP10.1.md",
           "verdict": "",
           "review": ""
         }
