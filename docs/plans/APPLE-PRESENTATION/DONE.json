@@ -1162,10 +1162,10 @@
           "check": "node scripts/check_v1_browser.mjs --case g4-route",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP11/chrome-function/g4-route.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D11.3",
@@ -1223,10 +1223,10 @@
           "statement": "The owner's look at EDR on the built-in display is asked for and recorded as an observation that gates nothing. The evidence page says how to see EDR on and off at the sunset and night-lights stops and what to note. The ledger carries the observation's status, outstanding or the owner's words with the display's brightness and headroom at the time, apart from what agents proved.",
           "ask": "Does the evidence page carry the request, and the ledger its status, kept apart from the agent and device evidence? Does any sentence there, or in the closing report, offer captured values as proof of what the panel emits, or make G4's close wait for the owner?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP11/owner-edr-observation.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         }
       ],
       "depends_on": [
