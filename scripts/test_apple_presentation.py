@@ -9,6 +9,7 @@ from apple_governor_proof import (
     InvalidDisplayEnvironment, awake_display, compare_live_load, measure_window, require_unlocked_display,
 )
 from apple_presentation import annotate_display_ticks
+from apple_paired_proof import verify_replayed_scale
 
 
 def callback(sequence, media, dispatched, busy=False):
@@ -94,6 +95,23 @@ class DisplayTickTests(unittest.TestCase):
             [callback(1, 0, 0.001), callback(2, 0.008, 0.009)], [late], [call])
         self.assertEqual(ticks[0]["outcome"], "acquiring a drawable")
         self.assertEqual(ticks[0]["configure_calls"], [call])
+
+
+class PairedReplayTests(unittest.TestCase):
+    def test_repeated_step_tick_and_skipped_ticks_use_the_exact_trace(self):
+        samples = [
+            dict(submission=1, tick=323, render_extent=[1286, 724]),
+            dict(submission=2, tick=324, render_extent=[960, 540]),
+            dict(submission=3, tick=324, render_extent=[960, 540]),
+            dict(submission=4, tick=326, render_extent=[960, 540]),
+        ]
+        frames = [dict(submission=i, presented=True) for i in range(1, 5)]
+        verify_replayed_scale("apple", samples, frames, 180, [1920, 1080])
+        with self.assertRaisesRegex(ValueError, "missing scale samples for presents \\[4\\]"):
+            verify_replayed_scale("apple", samples[:-1], frames, 180, [1920, 1080])
+        samples[2]["render_extent"] = [1286, 724]
+        with self.assertRaisesRegex(ValueError, "submission 3 at routed tick 144"):
+            verify_replayed_scale("apple", samples, frames, 180, [1920, 1080])
 
 
 class GovernorProofTests(unittest.TestCase):

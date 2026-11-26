@@ -80,7 +80,24 @@ impl<'a, W: FrameWorld, V: SceneSource<W::Page>> AdvancedFrame<'a, W, V> {
     /// # Errors
     /// Returns an extraction or GPU encoding fault; a failed optional view
     /// never rolls back an admitted world update.
-    pub fn encode_scene(mut self) -> Result<EncodedFrame<'a, W, V>, FrameError> {
+    pub fn encode_scene(self) -> Result<EncodedFrame<'a, W, V>, FrameError> {
+        self.encode_scene_at_scale(|_| None)
+    }
+
+    /// Encode with a replay scale sampled at the tick of the extracted publication.
+    /// # Errors
+    /// Returns an extraction, scale selection or GPU encoding fault.
+    pub fn encode_scene_with_scale(
+        self,
+        scale_for_tick: impl FnOnce(u64) -> crate::synthetic::RenderScale,
+    ) -> Result<EncodedFrame<'a, W, V>, FrameError> {
+        self.encode_scene_at_scale(|tick| Some(scale_for_tick(tick)))
+    }
+
+    fn encode_scene_at_scale(
+        mut self,
+        scale_for_tick: impl FnOnce(u64) -> Option<crate::synthetic::RenderScale>,
+    ) -> Result<EncodedFrame<'a, W, V>, FrameError> {
         if !self.can_acquire_serial() {
             return Err(FrameError::InvalidState(
                 "serial scene is not ready for encoding",
@@ -101,6 +118,9 @@ impl<'a, W: FrameWorld, V: SceneSource<W::Page>> AdvancedFrame<'a, W, V> {
             .ok_or(FrameError::InvalidState("advanced report consumed"))?;
         let frame =
             host.extract_serial(self.tick_cpu, report.completed_ticks, report.queued_ticks)?;
+        if let Some(scale) = scale_for_tick(frame.source.tick) {
+            host.set_render_scale(scale)?;
+        }
         let ready = match host.prepare_extracted(slot_index, report, frame) {
             Ok(Some(prepared)) => Some(host.encode_scene_only(slot_index, prepared)?),
             Ok(None) => None,

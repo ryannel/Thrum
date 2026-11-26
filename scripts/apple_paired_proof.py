@@ -53,6 +53,24 @@ def measured_scale(scale, samples, graph_traffic):
         measured_device_memory_traffic="unmeasured")
 
 
+def verify_replayed_scale(name, samples, route_frames, start, extent):
+    submissions = {sample["submission"] for sample in samples}
+    if len(submissions) != len(samples):
+        raise ValueError(f"{name}: duplicate routed submission samples")
+    missing = {row["submission"] for row in route_frames if row["presented"]} - submissions
+    if missing:
+        raise ValueError(f"{name}: missing scale samples for presents {sorted(missing)}")
+    for sample in samples:
+        routed_tick = sample["tick"] - start
+        scale = next((percent for step, percent in reversed(SCALE_STEPS.items())
+                      if routed_tick >= step), 100)
+        expected_extent = [(axis * scale + 50) // 100 for axis in extent]
+        if sample["render_extent"] != expected_extent:
+            raise ValueError(
+                f"{name}: submission {sample['submission']} at routed tick {routed_tick} "
+                f"drew {sample['render_extent']}, expected {expected_extent}")
+
+
 def window_arm(output, binary, env, route, name, recipe, reconstruction, headroom, *,
                replay=True, fullscreen=False, capture=False, frame_rate=None, cue=None):
     arm = output / name
@@ -113,15 +131,7 @@ def window_arm(output, binary, env, route, name, recipe, reconstruction, headroo
     if not samples or any(row["surface"] != extent for row in route_frames):
         raise ValueError(f"{name}: route lacks samples or changed its surface")
     if replay:
-        for sample in samples:
-            routed_tick = sample["tick"] - start
-            if any(abs(routed_tick - step) <= 4 for step in SCALE_STEPS):
-                continue
-            scale = next((percent for step, percent in reversed(SCALE_STEPS.items())
-                          if routed_tick >= step), 100)
-            expected_extent = [(axis * scale + 50) // 100 for axis in extent]
-            if sample["render_extent"] != expected_extent:
-                raise ValueError(f"{name}: replay diverged at routed tick {routed_tick}")
+        verify_replayed_scale(name, samples, route_frames, start, extent)
         graph_traffic = prepared["graph_attachment_load_store_bytes"]
         scales = [measured_scale(scale, samples, graph_traffic) for scale in SCALES]
         for row in scales:
@@ -148,6 +158,8 @@ def window_arm(output, binary, env, route, name, recipe, reconstruction, headroo
                   route_display_ticks=len(in_route))
     if fullscreen:
         report.update(fullscreen_account(arm, ticks, route_frames, samples, start, end))
+    if replay:
+        report["verified_replay_samples"] = len(samples)
     return report
 
 

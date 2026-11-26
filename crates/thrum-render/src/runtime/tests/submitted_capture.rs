@@ -999,6 +999,53 @@ fn scene_linear_capture_uses_the_ordinary_submission_and_can_restore_sdr() {
 }
 
 #[test]
+fn edr_graph_retains_the_sdr_encode_only_for_an_sdr_readback() {
+    let Some(test_gpu) = thrum_test_support::gpu(
+        "edr_graph_retains_the_sdr_encode_only_for_an_sdr_readback",
+        Some(wgpu::Backend::Metal),
+    ) else {
+        return;
+    };
+    pollster::block_on(async {
+        let (mut host, output) =
+            Box::pin(host_and_output(&test_gpu, wgpu::TextureFormat::Rgba16Float)).await;
+        let check_graph = |host: &FrameHost<StaticWorld, StaticScene>, readback, tone| {
+            let graph = host.scene_graph_variant(readback).unwrap();
+            assert_eq!(
+                graph
+                    .pass_names()
+                    .any(|pass| pass == "synthetic tone encode"),
+                tone,
+            );
+            assert_eq!(
+                graph
+                    .pass_bindings()
+                    .any(|(_, pass)| pass.kind == Some(crate::graph::PassKind::Copy)),
+                readback,
+            );
+        };
+        check_graph(&host, false, false);
+        for (session, source) in [(1, CaptureSource::SceneLinear), (2, CaptureSource::Sdr)] {
+            host.enable_submitted_capture_from(session, CaptureLimits::default(), source)
+                .unwrap();
+            check_graph(&host, false, false);
+            check_graph(&host, true, source == CaptureSource::Sdr);
+            submit(&mut host, &output);
+            let collected = image(&mut host);
+            assert_eq!(collected.pixel_source, source);
+            host.recycle_submitted_image(collected);
+            host.disable_submitted_capture();
+            for _ in 0..3 {
+                check_graph(&host, false, false);
+                let frame = submit(&mut host, &output);
+                assert!(frame.surface_presented);
+                assert!(host.try_submitted_image().unwrap().is_none());
+            }
+        }
+    });
+}
+
+#[test]
 fn linear_capture_allowance_is_validated_before_target_replacement() {
     let Some(test_gpu) = thrum_test_support::gpu(
         "linear_capture_allowance_is_validated_before_target_replacement",

@@ -737,14 +737,13 @@ impl super::SyntheticTargetInputs {
             (colour_producer, late.last),
         )?;
         let edr_surface = profile.is_some_and(|p| p.format == wgpu::TextureFormat::Rgba16Float);
-        // The float surface reads pre-tone colour directly. In the ordinary
-        // target layout only the SDR readback variant consumes the SDR image.
-        let retain_sdr_output = !edr_surface || capture_source != CaptureSource::Sdr;
+        // The float surface reads pre-tone colour directly. The SDR readback
+        // retains the encode through its input; other variants can cull it.
         let (output, display_pass) = self.display.append_graph(
             &mut graph,
             &pre_tone,
             ray_structure.filter(|_| self.traced_view),
-            retain_sdr_output,
+            !edr_surface,
         )?;
         if pre_tone_last != colour_producer {
             graph.select_producer(pre_tone_last, display_pass, &pre_tone.colour)?;
