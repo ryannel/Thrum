@@ -952,3 +952,11 @@ contribution using the replacement profiles.
   shipped games, without holding up WP12 or the module's close. Planner: [risk 14](DESIGN.md#risks), WP10.1,
   WP10.4 and WP12.9 now go by the cue, and [the follow-up](DESIGN.md#the-noon-relief-follow-up) answers for
   every shape WP10's evidence names. WP10.2 to WP10.5 stand as proved. No mechanism or interface changed.
+- 2026-11-26 Design review after the widening: one Must Fix, settled in
+  [the follow-up's line 1](DESIGN.md#what-the-follow-up-must-show). Moving congestus-forked and fair-head-tail
+  into line 1 had left the affected shapes judged at noon by relief and edges only, so a remedy could restore
+  a crease and lose the shape. Line 1 now judges its noon stills by two lists, the relief cues and lines 1 to
+  4 of WP10.1's list (recognisable with its whole outline, in one light with its family, base on the shared
+  level, no box, seam, voxel step or filtering band), and Chrome's line 3 asks for both. Took the suggestion:
+  lines 1 and 2 link WP10's complete 48-view gallery, `WP10/parked-metal/`. No item, mechanism or interface
+  changed, and the lead's decision of 26 November stands.
