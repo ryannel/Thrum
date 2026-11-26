@@ -634,3 +634,8 @@ sharper, stair-stepped detail. On Metal, the lower cloud bands persist with
 negligible TAAU history and in a separate take that preserves the sky's motion
 under clouds. Both cloud histories reset for one frame at a cut and at the
 layer profile change. [Metal controls](../../../.orchestrate/evidence/CLOUDS/WP9/metal/pan-isolation/README.md) and [Chrome controls](../../../.orchestrate/evidence/CLOUDS/WP9/chrome/pan-isolation/README.md).
+- 2026-11-26 WP12. A fresh Mac Metal process hit a persisted HAL compute archive and rejected the omitted
+  function and empty archive in strict mode. Public `PipelineCache::get_data` panicked in wgpu-core 30.0.1
+  while writing the Metal cache header. The import validator also rejects Metal adapters. Proposed a narrow
+  wgpu-core pin for Metal cache headers so WP12 can use the public cache API. The game route and launch
+  comparison remain open. [Handoff and reproduction](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP12-handoff.md)
