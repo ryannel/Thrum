@@ -3116,12 +3116,12 @@
       }
     },
     "WP25": {
-      "definitions": "b06040867d9d502d6f04ba720027b581a586be09e04f36f7e7fbc743df91afdd",
+      "definitions": "d48506d931ad2d21ba24ed0fd01809a2cffb161558043fa47e0e9fe7c61f7f7c",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The main-branch check workspace-tests fails, and the script couldn't tell which commit broke it. Find what breaks it, an",
-        "at": "2026-11-26T13:27:17Z"
+        "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 2 Must Fix find",
+        "at": "2026-11-26T13:37:31Z"
       }
     }
   },
@@ -3309,11 +3309,15 @@
     {
       "task": "The main-branch check workspace-tests fails, and the script couldn't tell which commit broke it. Find what breaks it, and plan the fix in the module whose code it is, in its plan or as its next work package. Lead's reading of .git/orchestrate/main-checks/workspace-tests/logs/20261126-135754-ba611f39c2a7-84533-349.stderr: nothing asserts wrong; the run was under heavy host load and 60 tests timed out at 10 s, and two still timed out alone at 30 s: thrum-river-model::it chop::each_sample_of_a_river_file_carries_its_own_gains and thrum-water::surf_gpu many_component_metal_cut_matches_the_model_with_grouped_or_single_stations (the water one passed alone in 8.95 s earlier today with the GPU lock). The owner wants the fastest possible workspace suite: small worlds, CPU first, long work in the long-tests tier, no longer merge checks. Plan the fix that makes those two tests fast or moves them to the right tier, in the owning modules (WATERS, RIVERS); don't raise the timeouts.",
       "at": "2026-11-26T13:27:17Z"
+    },
+    {
+      "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 2 Must Fix findings. Lead: WP25 fixes a broken main branch, so keep it small and first.",
+      "at": "2026-11-26T13:37:31Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-26T13:27:17Z"
+    "at": "2026-11-26T13:37:31Z"
   },
   "design_history": [
     {
