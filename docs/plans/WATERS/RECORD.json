@@ -1588,7 +1588,7 @@
         {
           "verdict": "fail",
           "commit": "762b3ad051eb995eeb16c5e13c08ba79fe8639da",
-          "review": ".orchestrate/evidence/WATERS/WP8-review.md",
+          "review": ".orchestrate/evidence/WATERS/WP8-review-7.md",
           "items": {
             "WP8.1": "pass",
             "WP8.2": "pass",
@@ -1628,6 +1628,47 @@
             "turns": 1
           },
           "at": "2026-11-26T01:35:18Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "774d997126d164f5bea89e117425bf94c38321df",
+          "review": ".orchestrate/evidence/WATERS/WP8-review.md",
+          "items": {
+            "WP8.1": "pass",
+            "WP8.2": "pass",
+            "WP8.3": "pass",
+            "WP8.4": "pass",
+            "WP8.5": "pass",
+            "WP8.6": "pass",
+            "WP8.7": "fail",
+            "WP8.12": "pass",
+            "WP8.9": "pass",
+            "WP8.10": "pass"
+          },
+          "findings": [
+            {
+              "name": "Deep rough lake water requests a whole-screen gather with no visible reader",
+              "item": "WP8.7",
+              "different": "The earlier split-bed sea case depended on a visible shallow tile and now passes. In this lake view zero shallow tiles are visible. The separate basin-bounds path supplies depth zero for the entire basin and admits the screen whenever the shortest wave band has positive height.",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 151127,
+            "cached": 4699520,
+            "output": 15487,
+            "turns": 1
+          },
+          "at": "2026-11-26T02:40:47Z"
         }
       ],
       "authorised": {
