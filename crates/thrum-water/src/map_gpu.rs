@@ -415,7 +415,11 @@ impl MapGpu {
         self.hollows.as_ref().map(HollowsGpu::bytes)
     }
 
-    #[expect(clippy::cast_sign_loss, reason = "clamped chart lattice in GPU metres")]
+    #[expect(
+        clippy::cast_possible_truncation,
+        clippy::cast_sign_loss,
+        reason = "clamped chart lattice in GPU metres"
+    )]
     fn wave_track(
         &self,
         body: usize,
