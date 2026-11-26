@@ -2,9 +2,27 @@
 use serde_json::{Value, json};
 use std::time::Duration;
 use thrum_test_support::Gpu;
+use thrum_water_model::Map;
 use water_scene::island::{Wind, build_rain_yard};
 
 const EXTENT: [u32; 2] = [2560, 1440];
+
+/// Baked paving outlet, independently checked by the yard model test.
+pub(super) const BRIM_METRES: f64 = 18.112_875;
+
+pub(super) fn levels(map: &Map) -> [Option<f64>; 2] {
+    [[147.2, 66.2], [149.75, 66.35]].map(|point| {
+        map.sample(point)
+            .filter(|hit| hit.body == 3 && hit.depth > 0.0)
+            .map(|hit| hit.row.level)
+    })
+}
+
+pub(super) fn at_brim(levels: [Option<f64>; 2]) -> bool {
+    levels
+        .into_iter()
+        .all(|level| level.is_some_and(|metres| (metres - BRIM_METRES).abs() < 0.000_1))
+}
 
 pub(super) fn measure(gpu: &Gpu) -> Value {
     let mut fills: Vec<_> = ["first", "separate", "brim"]
@@ -19,7 +37,7 @@ pub(super) fn measure(gpu: &Gpu) -> Value {
         fixture.frame(1.0);
         fixture.parameters(r#"{"rain.rate":100,"rain.time_scale":600}"#);
         for (index, fill) in (0_u32..).zip(&mut fills) {
-            let time = [1.2, 1.48, 2.05][index as usize];
+            let time = [1.2, 1.48, 6.8][index as usize];
             fixture.frame(time);
             // Freeze this fill. Simulated and repeated draws share the same
             // puddle footprint and tick endpoints for both arms.
@@ -51,11 +69,13 @@ pub(super) fn measure(gpu: &Gpu) -> Value {
                 .find_map(|(name, vertices)| (name == "Rain yard").then_some(*vertices))
                 .unwrap_or(0);
             let map = map.lock().expect("yard map");
-            let levels = [[147.2, 66.2], [149.75, 66.35]].map(|p| {
-                map.sample(p)
-                    .filter(|hit| hit.depth > 0.0)
-                    .map(|hit| hit.row.level)
-            });
+            let levels = levels(&map);
+            if fill["name"] == "brim" {
+                assert!(
+                    at_brim(levels),
+                    "paired arm reached the paving outlet: {levels:?}"
+                );
+            }
             fill["arms"].as_array_mut().expect("paired arms").push(json!({
                 "water": present, "frames": frames, "reactive_pixels": pixels, "vertices": vertices,
                 "hollows_bytes": count("water hollows"), "levels": levels,

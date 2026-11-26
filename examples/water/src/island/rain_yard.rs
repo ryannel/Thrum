@@ -408,6 +408,7 @@ mod tests {
         let tree = &yard.patches[PAVING].tree;
         assert_eq!(tree.hollow_count(), 2, "the paving has two hollows");
         let sill = tree.node(0).sill;
+        let brim = tree.node(tree.node(0).parent.expect("paving joins")).sill;
         assert_eq!(sill.to_bits(), tree.node(1).sill.to_bits());
         for tick in 1..=1200 {
             yard.step(Weather::new(100.0, 0.0, 150.0), step, &mut map)
@@ -453,13 +454,23 @@ mod tests {
             yard.stores.store(PAVING, 0).fill <= 0.0,
             "paving has no pores"
         );
-        for _ in 0..60 {
+        for _ in 0..300 {
             yard.step(Weather::new(100.0, 0.0, 600.0), step, &mut map)
                 .expect("rain tick");
         }
         assert!(
             wet(&map, [147.1, 62.1]).is_some(),
             "the track keeps its own water"
+        );
+        let full = wet(&map, pits[0])
+            .expect("the joined puddle remains")
+            .row
+            .level;
+        assert!((full - brim).abs() < 1e-7, "paving reaches its outlet");
+        eprintln!("yard brim {brim:.6} m");
+        assert!(
+            wet(&map, shelter).is_none(),
+            "the roof stays dry at the brim"
         );
         let mut parted = false;
         for tick in 1..=1200 {

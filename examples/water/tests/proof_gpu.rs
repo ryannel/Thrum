@@ -215,14 +215,22 @@ fn driver(gpu: &thrum_test_support::Gpu) {
         .expect("record");
         return;
     }
-    let mut fixture = if let Some(floating) = floating() {
+    let mut yard_map = None;
+    let mut fixture = if let Settings::RainYard(wind) = settings() {
+        let (game, report, map, _) =
+            water_scene::island::build_rain_yard(wind, true).expect("rain yard");
+        yard_map = Some(map);
+        let mut fixture = support::Fixture::from_game(gpu, [2560, 1440], game, report);
+        fixture.warm_cooked();
+        fixture
+    } else if let Some(floating) = floating() {
         let scene = floating_game(floating, true, true, whitewater());
         support::Fixture::from_game(gpu, [2560, 1440], scene.game, scene.report)
     } else if channel_route()
         || island_wind().is_some()
         || matches!(
             settings(),
-            Settings::OpticsSea(_) | Settings::OpticsShade(_) | Settings::RainYard(_)
+            Settings::OpticsSea(_) | Settings::OpticsShade(_)
         )
     {
         let (game, report) = proof_game(true);
@@ -478,7 +486,18 @@ fn driver(gpu: &thrum_test_support::Gpu) {
                 assert_eq!(image.sample.tick, sample.tick);
                 let file = format!("{name}.rgba");
                 std::fs::write(directory.join(&file), &image.rgba).expect("fixed image");
-                images.push(json!({"name":name,"file":file,"camera":eye,"sample":sample_json(&sample),"exposure_words":image.exposure_gpu_words,"submitted_elapsed":image.submitted_elapsed.as_secs_f64()}));
+                let mut record = json!({"name":name,"file":file,"camera":eye,"sample":sample_json(&sample),"exposure_words":image.exposure_gpu_words,"submitted_elapsed":image.submitted_elapsed.as_secs_f64()});
+                if let Some(map) = &yard_map {
+                    let levels = rain_cost::levels(&map.lock().expect("yard map"));
+                    if name.starts_with("yard-brim-") {
+                        assert!(
+                            rain_cost::at_brim(levels),
+                            "fixed frame reached the paving outlet: {levels:?}"
+                        );
+                    }
+                    record["yard_levels"] = json!(levels);
+                }
+                images.push(record);
                 fixture.host.recycle_submitted_image(image);
                 fixture.host.disable_submitted_capture();
             }
@@ -495,7 +514,7 @@ fn driver(gpu: &thrum_test_support::Gpu) {
 
 #[cfg(target_os = "macos")]
 fn yard_checkpoints() -> Vec<(String, String, f64)> {
-    [("first", 0.2), ("separate", 0.5), ("brim", 1.5)]
+    [("first", 0.2), ("separate", 0.5), ("brim", 5.8)]
         .into_iter()
         .flat_map(|(fill, time)| {
             [("noon", 60), ("low-sun", 8)].into_iter().flat_map(move |(light, elevation)| {

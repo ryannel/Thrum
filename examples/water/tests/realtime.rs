@@ -64,7 +64,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
         super::proof_game(true)
     };
     let (extent, interval, opportunities, max_submissions) = if yard {
-        ([1280, 720], 15.0, 12.0, CHANNEL_SUBMISSIONS)
+        ([1280, 720], 20.0, 9.0, CHANNEL_SUBMISSIONS)
     } else if surf && island_view == "2" {
         // A complete set of unequal breaks takes longer than a nearshore take.
         ([2560, 1440], 22.0, 5.0, MAX_SUBMISSIONS)
@@ -159,7 +159,8 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
         let elapsed = begin.elapsed().as_secs_f64();
         if yard {
             let change = match elapsed {
-                t if t >= 4.0 => r#"{"rain.rate":0,"rain.drying":100,"rain.time_scale":600}"#,
+                t if t >= 7.8 => r#"{"rain.rate":0,"rain.drying":100,"rain.time_scale":600}"#,
+                t if t >= 3.0 => r#"{"rain.rate":100,"rain.drying":0,"rain.time_scale":600}"#,
                 t if t >= 0.25 => r#"{"rain.rate":100,"rain.drying":0,"rain.time_scale":150}"#,
                 _ => "",
             };
@@ -243,11 +244,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
         if submitted_frame.expect("ordinary submit").submitted {
             if let Some(map) = &yard_map {
                 let map = map.lock().expect("yard map");
-                yard_levels.push([[147.2, 66.2], [149.75, 66.35]].map(|point| {
-                    map.sample(point)
-                        .filter(|hit| hit.depth > 0.0)
-                        .map(|hit| hit.row.level)
-                }));
+                yard_levels.push(super::rain_cost::levels(&map));
             }
             if let Some((observe, _)) = &fleet {
                 poses.push(observe().into_iter().map(|body| json!({
@@ -302,6 +299,12 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
             "one level pair per submitted frame"
         );
         let joined = |levels: &[Option<f64>; 2]| matches!(levels, [Some(a), Some(b)] if a.to_bits() == b.to_bits());
+        assert_eq!(yard_levels.first(), Some(&[None; 2]), "the yard starts dry");
+        assert_eq!(yard_levels.last(), Some(&[None; 2]), "the yard dries out");
+        assert!(
+            yard_levels.iter().copied().any(super::rain_cost::at_brim),
+            "the paving reaches its outlet before drying"
+        );
         let merge = yard_levels
             .iter()
             .position(joined)
