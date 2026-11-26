@@ -821,7 +821,7 @@ async fn record(
     let (qos, encoding, disk_limit) = capture_settings()?;
     let parity_checkpoint = renderer_parity_requested();
     let active_pacing = active_pacing()?;
-    let instance = metal_instance(false);
+    let instance = metal_instance();
     let (adapter, device, queue, capabilities) =
         metal_device(&instance, FIRST_DEVICE_GENERATION, hardware).await?;
     let (game, preview) = capture_game(output, scenario, capture_output)?;
@@ -1364,12 +1364,9 @@ async fn metal_device(
     Ok((adapter, device, queue, capabilities))
 }
 
-fn metal_instance(metallib: bool) -> wgpu::Instance {
+fn metal_instance() -> wgpu::Instance {
     let mut descriptor = wgpu::InstanceDescriptor::new_without_display_handle();
     descriptor.backends = wgpu::Backends::METAL;
-    if metallib {
-        thrum_render::capabilities::metallib::Preparation::configure_instance(&mut descriptor);
-    }
     wgpu::Instance::new(descriptor)
 }
 

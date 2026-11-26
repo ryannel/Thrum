@@ -2,7 +2,7 @@
 use std::{
     io::Write,
     path::Path,
-    time::{SystemTime, UNIX_EPOCH},
+    time::{Duration, SystemTime, UNIX_EPOCH},
 };
 use thrum_render::runtime::{CreationPhase, DeviceSite};
 
@@ -88,6 +88,44 @@ impl Ready {
         )
         .map_err(|error| error.to_string())
     }
+}
+
+/// Give paired captures the same submission cursor regardless of when cooked assets first draw.
+pub(super) fn align_route_history(
+    driver: &mut super::Driver,
+    device: &wgpu::Device,
+) -> Result<(), String> {
+    const WARMUP_FRAMES: u64 = 32;
+    let frames = driver.host().creation_report().frames;
+    if frames > WARMUP_FRAMES {
+        return Err(format!(
+            "cooked assets first drew after the {WARMUP_FRAMES}-frame parity warmup"
+        ));
+    }
+    for _ in frames..WARMUP_FRAMES {
+        let frame = driver
+            .step_at(Duration::ZERO)
+            .map_err(|error| error.to_string())?;
+        if !frame.surface_presented || frame.dropped_view {
+            return Err("parity warmup did not submit its frame".to_owned());
+        }
+        while driver.pending_frames() != 0 {
+            device
+                .poll(wgpu::PollType::Wait {
+                    submission_index: None,
+                    timeout: Some(Duration::from_secs(10)),
+                })
+                .map_err(|error| error.to_string())?;
+            drop(driver.completed().map_err(|error| error.to_string())?);
+        }
+    }
+    while driver
+        .completed()
+        .map_err(|error| error.to_string())?
+        .is_some()
+    {}
+    driver.host_mut().invalidate_history();
+    Ok(())
 }
 
 pub(super) fn first_cooked_draw(cooked_generation: Option<u64>) -> Result<(), String> {

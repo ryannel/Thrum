@@ -82,9 +82,47 @@ impl StarPrepared {
             dst_factor: wgpu::BlendFactor::One,
             operation: wgpu::BlendOperation::Add,
         };
+        let vertex = wgpu::ShaderStages::VERTEX;
+        let both = wgpu::ShaderStages::VERTEX_FRAGMENT;
+        let sample = wgpu::TextureSampleType::Float { filterable: true };
+        let mut entries = vec![
+            crate::binding::storage(0, vertex, true, 16),
+            crate::binding::uniform(1, both, UNIFORM_BYTES),
+            crate::binding::texture(
+                2,
+                both,
+                wgpu::TextureSampleType::Depth,
+                wgpu::TextureViewDimension::D2,
+            ),
+            crate::binding::uniform(3, vertex, exposure::SAMPLE_BYTES),
+            crate::binding::texture(4, vertex, sample, wgpu::TextureViewDimension::D2),
+            crate::binding::sampler(
+                5,
+                if view_volume { both } else { vertex },
+                wgpu::SamplerBindingType::Filtering,
+            ),
+            crate::binding::uniform(6, vertex, size_of::<crate::records::Atmosphere>() as u64),
+        ];
+        if view_volume {
+            entries.push(crate::binding::texture(
+                7,
+                wgpu::ShaderStages::FRAGMENT,
+                sample,
+                wgpu::TextureViewDimension::D2Array,
+            ));
+        }
+        let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some(PASS_NAME),
+            entries: &entries,
+        });
+        let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some(PASS_NAME),
+            bind_group_layouts: &[Some(&layout)],
+            immediate_size: 0,
+        });
         let pipeline = device.render(&wgpu::RenderPipelineDescriptor {
             label: Some(PASS_NAME),
-            layout: None,
+            layout: Some(&pipeline_layout),
             vertex: wgpu::VertexState {
                 module: &shader,
                 entry_point: Some("vertex"),
@@ -126,7 +164,6 @@ impl StarPrepared {
             multiview_mask: None,
             cache: None,
         });
-        let layout = pipeline.get_bind_group_layout(0);
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
             label: Some("star transmittance linear clamp"),
             mag_filter: wgpu::FilterMode::Linear,

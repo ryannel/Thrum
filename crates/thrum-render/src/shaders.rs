@@ -588,13 +588,13 @@ shader_catalog! {
 }
 
 impl Shader {
-    pub(crate) fn compile(self, device: &wgpu::Device, label: &str) -> wgpu::ShaderModule {
+    pub(crate) fn compile(self, device: &impl ShaderDevice, label: &str) -> wgpu::ShaderModule {
         compile(device, label, self.source())
     }
 
     pub(crate) fn compile_with_source(
         self,
-        device: &wgpu::Device,
+        device: &impl ShaderDevice,
         label: &str,
         inject_failure: bool,
     ) -> (String, wgpu::ShaderModule) {
@@ -612,8 +612,24 @@ impl Shader {
     }
 }
 
-fn compile(device: &wgpu::Device, label: &str, source: Cow<'_, str>) -> wgpu::ShaderModule {
-    device.create_shader_module(wgpu::ShaderModuleDescriptor {
+pub(crate) trait ShaderDevice {
+    fn create_wgsl_module(&self, desc: wgpu::ShaderModuleDescriptor<'_>) -> wgpu::ShaderModule;
+}
+
+impl ShaderDevice for wgpu::Device {
+    fn create_wgsl_module(&self, desc: wgpu::ShaderModuleDescriptor<'_>) -> wgpu::ShaderModule {
+        self.create_shader_module(desc)
+    }
+}
+
+impl ShaderDevice for crate::runtime::DeviceSite {
+    fn create_wgsl_module(&self, desc: wgpu::ShaderModuleDescriptor<'_>) -> wgpu::ShaderModule {
+        self.create_shader_module(desc)
+    }
+}
+
+fn compile(device: &impl ShaderDevice, label: &str, source: Cow<'_, str>) -> wgpu::ShaderModule {
+    device.create_wgsl_module(wgpu::ShaderModuleDescriptor {
         label: Some(label),
         source: wgpu::ShaderSource::Wgsl(source),
     })

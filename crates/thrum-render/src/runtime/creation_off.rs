@@ -7,7 +7,8 @@
 #[derive(Clone, Debug)]
 pub struct DeviceSite(
     wgpu::Device,
-    #[cfg(target_os = "macos")] Option<std::sync::Arc<crate::capabilities::metallib::Preparation>>,
+    #[cfg(target_os = "macos")]
+    Option<std::sync::Arc<crate::capabilities::metallib::PipelinePreparation>>,
 );
 
 impl DeviceSite {
@@ -34,9 +35,16 @@ impl DeviceSite {
     #[cfg(target_os = "macos")]
     pub(crate) fn set_metal_preparation(
         &mut self,
-        preparation: Option<crate::capabilities::metallib::Preparation>,
+        preparation: Option<crate::capabilities::metallib::PipelinePreparation>,
     ) {
         self.1 = preparation.map(std::sync::Arc::new);
+    }
+
+    #[cfg(target_os = "macos")]
+    pub(super) fn metal_preparation(
+        &self,
+    ) -> Option<&crate::capabilities::metallib::PipelinePreparation> {
+        self.1.as_deref()
     }
 
     /// `create_render_pipeline`.
@@ -45,7 +53,7 @@ impl DeviceSite {
         let create = || self.0.create_render_pipeline(desc);
         #[cfg(target_os = "macos")]
         if let Some(metal) = &self.1 {
-            return metal.pipeline("render", desc.label, create);
+            return metal.render(&self.0, desc);
         }
         create()
     }
@@ -56,7 +64,7 @@ impl DeviceSite {
         let create = || self.0.create_compute_pipeline(desc);
         #[cfg(target_os = "macos")]
         if let Some(metal) = &self.1 {
-            return metal.pipeline("compute", desc.label, create);
+            return metal.compute(&self.0, desc);
         }
         create()
     }
@@ -66,7 +74,7 @@ impl DeviceSite {
         let create = || self.0.create_mesh_pipeline(desc);
         #[cfg(target_os = "macos")]
         if let Some(metal) = &self.1 {
-            return metal.pipeline("mesh", desc.label, create);
+            return metal.mesh(&self.0, desc);
         }
         create()
     }
@@ -75,7 +83,7 @@ impl DeviceSite {
     pub(crate) fn pipeline_worker_scope(&self) -> Option<(CreationPhase, &'static str)> {
         self.1
             .as_ref()?
-            .parallel
+            .parallel()
             .then_some((CreationPhase::Build, "pipeline preparation"))
     }
 

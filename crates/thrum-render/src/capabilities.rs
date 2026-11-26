@@ -193,6 +193,11 @@ impl DeviceCapabilities {
     #[cfg(target_os = "macos")]
     pub fn set_metal_preparation(&mut self, preparation: Option<metallib::Preparation>) {
         if self.adapter.backend == wgpu::Backend::Metal {
+            let admitted = self.hardware.iter().any(|selection| {
+                selection.request.feature == HardwareFeature::MetalShaderPassthrough
+                    && selection.declined.is_none()
+            }) && self.features.contains(wgpu::Features::PASSTHROUGH_SHADERS);
+            let preparation = preparation.and_then(|config| config.attach(&self.site, admitted));
             self.site.set_metal_preparation(preparation);
         }
     }

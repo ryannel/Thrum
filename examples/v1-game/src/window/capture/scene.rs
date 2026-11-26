@@ -169,7 +169,7 @@ pub(in crate::window) async fn run(
             ),
         },
     };
-    let instance = super::metal_instance(request.metal_preparation.is_some());
+    let instance = super::metal_instance();
     let (_, device, queue, mut capabilities) =
         super::metal_device(&instance, FIRST_DEVICE_GENERATION, hardware).await?;
     capabilities.set_metal_preparation(request.metal_preparation.clone());
@@ -244,6 +244,10 @@ pub(in crate::window) async fn run(
     #[cfg(feature = "creation-counters")]
     if creation.is_some() {
         creation::first_cooked_draw(cooked_generation)?;
+    }
+    #[cfg(feature = "creation-counters")]
+    if request.creation_proof == Some(CreationProof::Metallib) {
+        creation::align_route_history(&mut driver, &device)?;
     }
     std::fs::create_dir_all(&output).map_err(|error| error.to_string())?;
     if let Some((text, _, _)) = &moving_route {

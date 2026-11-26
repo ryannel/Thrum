@@ -113,15 +113,6 @@ pub(super) fn prepare_diffuse(
     (diffuse, group)
 }
 
-pub(super) fn prepare_reflection(device: &crate::runtime::DeviceSite) -> wgpu::ComputePipeline {
-    pipeline(
-        device,
-        "atmosphere overlay specular prefilter",
-        "reflection_main",
-        Shader::AtmosphereOverlayReflection,
-    )
-}
-
 pub(crate) fn reflection_source() -> String {
     let integrate = wgsl!(@reflection_integrate
         "            let encoded = textureSampleLevel(reflection_sky,reflection_sampler,uv,0.0);\n            if overlay_flags.sky_diffuse[2].w == 0.0 {\n                radiance += prepared.w * encoded;\n            } else {\n                radiance += vec4(prepared.w * overlay_radiance(direction,encoded,reflection_sampler) / OVERLAY_REFLECTION_GAIN,0.0);\n            }\n");

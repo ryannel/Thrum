@@ -10,7 +10,7 @@ pub enum HardwareFeature {
     MeshStages,
     /// Ray queries in shaders.
     RayQuery,
-    /// Direct loading of Metal shader libraries in the stage record witness.
+    /// Direct loading of Metal shader libraries during pipeline preparation.
     #[cfg(target_os = "macos")]
     MetalShaderPassthrough,
 }

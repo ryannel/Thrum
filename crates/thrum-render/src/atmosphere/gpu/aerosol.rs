@@ -43,7 +43,7 @@ pub(super) fn entry(buffer: &wgpu::Buffer) -> wgpu::BindGroupEntry<'_> {
 }
 
 pub(super) fn compile(
-    device: &wgpu::Device,
+    device: &crate::runtime::DeviceSite,
     shader: Shader,
     label: &str,
     aerosol: Option<&wgpu::Buffer>,

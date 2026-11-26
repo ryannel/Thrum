@@ -132,7 +132,11 @@ def witness(output, binary, env, recipe, proof, cache=None, *, stage_path="wgsl"
                 wgsl_translation_ns=sum(sum(times) for stage, times in before.items() if stage.startswith("wgsl_")),
                 after_ready=dict.fromkeys(STAGES, 0) | dict(after), finished=finished,
                 cache_path=reported_cache[0] if reported_cache else None, load=observed_load,
-                routed_ticks=[frame["route_tick"] for frame in frames])
+                routed_ticks=[frame["route_tick"] for frame in frames],
+                route_history_sha256=hashlib.sha256(json.dumps([
+                    (frame["route_tick"], frame["submission"], frame["jitter_phase"], frame["history"])
+                    for frame in frames
+                ]).encode()).hexdigest())
 
 
 def cache_inventory(directory):

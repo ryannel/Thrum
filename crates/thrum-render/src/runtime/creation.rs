@@ -367,7 +367,7 @@ pub struct DeviceSite(Arc<SiteCore>);
 struct SiteCore {
     device: wgpu::Device,
     #[cfg(target_os = "macos")]
-    metal: Option<Arc<crate::capabilities::metallib::Preparation>>,
+    metal: Option<Arc<crate::capabilities::metallib::PipelinePreparation>>,
     /// `None` for an [`untracked`](DeviceSite::untracked) site.
     ledger: Option<Arc<CreationLedger>>,
 }
@@ -413,12 +413,19 @@ impl DeviceSite {
     #[cfg(target_os = "macos")]
     pub(crate) fn set_metal_preparation(
         &mut self,
-        preparation: Option<crate::capabilities::metallib::Preparation>,
+        preparation: Option<crate::capabilities::metallib::PipelinePreparation>,
     ) {
         Arc::make_mut(&mut self.0).metal = preparation.map(Arc::new);
     }
 
-    /// `create_render_pipeline`, unchanged, then one event on this site's ledger.
+    #[cfg(target_os = "macos")]
+    pub(super) fn metal_preparation(
+        &self,
+    ) -> Option<&crate::capabilities::metallib::PipelinePreparation> {
+        self.0.metal.as_deref()
+    }
+
+    /// `create_render_pipeline`, then one event on this site's ledger.
     pub fn render(&self, desc: &wgpu::RenderPipelineDescriptor<'_>) -> wgpu::RenderPipeline {
         let create = || self.0.device.create_render_pipeline(desc);
         #[cfg(target_os = "macos")]
@@ -426,7 +433,7 @@ impl DeviceSite {
             .0
             .metal
             .as_ref()
-            .map_or_else(create, |metal| metal.pipeline("render", desc.label, create));
+            .map_or_else(create, |metal| metal.render(&self.0.device, desc));
         #[cfg(not(target_os = "macos"))]
         let pipeline = create();
         if let Some(ledger) = &self.0.ledger {
@@ -435,13 +442,15 @@ impl DeviceSite {
         pipeline
     }
 
-    /// `create_compute_pipeline`, unchanged, then one event on this site's ledger.
+    /// `create_compute_pipeline`, then one event on this site's ledger.
     pub fn compute(&self, desc: &wgpu::ComputePipelineDescriptor<'_>) -> wgpu::ComputePipeline {
         let create = || self.0.device.create_compute_pipeline(desc);
         #[cfg(target_os = "macos")]
-        let pipeline = self.0.metal.as_ref().map_or_else(create, |metal| {
-            metal.pipeline("compute", desc.label, create)
-        });
+        let pipeline = self
+            .0
+            .metal
+            .as_ref()
+            .map_or_else(create, |metal| metal.compute(&self.0.device, desc));
         #[cfg(not(target_os = "macos"))]
         let pipeline = create();
         if let Some(ledger) = &self.0.ledger {
@@ -458,7 +467,7 @@ impl DeviceSite {
             .0
             .metal
             .as_ref()
-            .map_or_else(create, |metal| metal.pipeline("mesh", desc.label, create));
+            .map_or_else(create, |metal| metal.mesh(&self.0.device, desc));
         #[cfg(not(target_os = "macos"))]
         let pipeline = create();
         if let Some(ledger) = &self.0.ledger {
@@ -469,7 +478,7 @@ impl DeviceSite {
 
     #[cfg(target_os = "macos")]
     pub(crate) fn pipeline_worker_scope(&self) -> Option<(CreationPhase, &'static str)> {
-        if !self.0.metal.as_ref()?.parallel {
+        if !self.0.metal.as_ref()?.parallel() {
             return None;
         }
         let ledger = self.0.ledger.as_ref()?;

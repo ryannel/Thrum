@@ -27,8 +27,8 @@ mod device;
 mod stage_record;
 
 pub use stage_record::{
-    capture_stage_translations, encode_stage_records, split_stage_records, with_stage_resolver,
-    StageInputs, StageLibrary, StageRecord, StageResolver, StageTranslation,
+    capture_stage_translations, encode_stage_records, split_stage_records, StageRecord,
+    StageTranslation,
 };
 mod library_from_metallib;
 mod surface;

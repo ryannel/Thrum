@@ -13,6 +13,7 @@ from apple_creation_proof import READY, cache_inventory, probe_build, witness
 from apple_presentation import ROOT, run
 
 PIPELINE = re.compile(r"THRUM_METALLIB_PIPELINE (\w+) (ThreadId\(\d+\)) ([^ ]+) ?(.*)")
+PASSTHROUGH = re.compile(r"THRUM_METALLIB_PASSTHROUGH (ThreadId\(\d+\)) ([0-9a-f]{64}) ?(.*)")
 COUNTED = re.compile(r"; pipelines (\w+)/[^;]*?: render (\d+) compute (\d+) mesh (\d+)")
 
 
@@ -28,9 +29,15 @@ def manifest(directory, expected, *, parallel=False):
             for kind, value in zip(("render", "compute", "mesh"), (render, compute, mesh)):
                 counts[kind] += int(value)
     pipelines, stages, threads = Counter(), Counter(), set()
+    passed, modules = Counter(), Counter()
+    expected_path = "passthrough" if expected == "cooked" else expected
     for index, line in enumerate(lines):
         if line.startswith("THRUM_METALLIB_EXPORT_ERROR"):
             raise ValueError(line)
+        if receipt := PASSTHROUGH.fullmatch(line):
+            if index >= ready:
+                raise ValueError(f"passthrough module created after readiness: {directory}")
+            modules[receipt.groups()] += 1
         if not (match := PIPELINE.fullmatch(line)):
             continue
         kind, thread, recorded, label = match.groups()
@@ -39,12 +46,18 @@ def manifest(directory, expected, *, parallel=False):
         keys = []
         for item in recorded.split(","):
             key, path = item.split(":")
-            if not re.fullmatch(r"[0-9a-f]{64}", key) or path != expected:
+            if not re.fullmatch(r"[0-9a-f]{64}", key) or path != expected_path:
                 raise ValueError(f"{label} has an unexpected {path} stage {key}: {directory}")
+            if path == "passthrough":
+                passed[(thread, key, label)] += 1
+                if passed[(thread, key, label)] > modules[(thread, key, label)]:
+                    raise ValueError(f"{label} used {key} before its passthrough module receipt")
             stages[key] += 1
             keys.append(key)
         threads.add(thread)
         pipelines[(kind, label, tuple(keys))] += 1
+    if passed != modules:
+        raise ValueError(f"passthrough module receipts disagree with the stage manifest: {directory}")
     if not stages or Counter({kind: sum(count for row, count in pipelines.items() if row[0] == kind)
                               for kind in counts}) != counts:
         raise ValueError(f"pipeline manifest did not cover the creation counters: {counts} {pipelines}")
@@ -108,12 +121,19 @@ def parity(output, *, build_only=False):
                 launch = dict(env, THRUM_METALLIB_MANIFEST="1")
                 if path == "cooked":
                     launch["THRUM_METALLIB_STORE"] = str(store)
+                    launch["THRUM_HARDWARE"] = "metal-shader-passthrough"
                 result = witness(arm, binary, launch, recipe, "metallib", stage_path=path)
                 pipelines, stages, threads = manifest(arm, path)
                 if pipelines != baked or any(result["after_ready"].values()):
                     raise ValueError(f"{recipe} {path} did not finish the manifest before readiness")
+                expected_loads = stages.total() if path == "cooked" else 0
+                if result["stages"]["metallib_load"]["calls"] != expected_loads:
+                    raise ValueError(f"{recipe} {path} did not load exactly one library per passthrough stage")
                 if result["routed_ticks"] != list(range(route["keys"][-1]["tick"] + 1)):
                     raise ValueError(f"{recipe} {path} did not finish the whole route")
+                if path == "cooked" and (result["route_history_sha256"]
+                                         != arms["wgsl"]["result"]["route_history_sha256"]):
+                    raise ValueError(f"{recipe}: capture arms used different submission or history phases")
                 hashes = {}
                 for checkpoint in route["checkpoints"]:
                     name = checkpoint["name"]
@@ -142,6 +162,7 @@ def launch_paths(output):
             launch = dict(env, THRUM_METALLIB_MANIFEST="1")
             if expected == "cooked":
                 launch["THRUM_METALLIB_STORE"] = str(store)
+                launch["THRUM_HARDWARE"] = "metal-shader-passthrough"
             if mode == "parallel":
                 launch["THRUM_METALLIB_PARALLEL"] = "1"
             for repeat in (1, 2):
@@ -157,6 +178,9 @@ def launch_paths(output):
                     if not after or any(result["after_ready"].values()) or result["finished"]:
                         raise ValueError(f"incomplete readiness receipt in {arm}")
                     pipelines, stages, threads = manifest(arm, expected, parallel=mode == "parallel")
+                    expected_loads = stages.total() if expected == "cooked" else 0
+                    if result["stages"]["metallib_load"]["calls"] != expected_loads:
+                        raise ValueError(f"{mode} {repeat} {temperature}: unexpected native library load count")
                     if pipelines != baked:
                         raise ValueError(f"manifest differs in {arm}")
                     results.append(dict(

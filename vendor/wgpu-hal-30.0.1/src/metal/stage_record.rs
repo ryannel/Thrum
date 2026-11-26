@@ -1,6 +1,6 @@
 //! Reflection collected alongside the Metal source in the WGSL pipeline path.
 
-use alloc::{string::String, sync::Arc, vec::Vec};
+use alloc::{string::String, vec::Vec};
 use core::cell::RefCell;
 
 const MAGIC: &[u8] = b"wgpu-metal-stage\x00\x01";
@@ -25,60 +25,6 @@ pub struct StageTranslation {
     pub language_version: usize,
     pub preserve_invariance: bool,
     pub record: StageRecord,
-    pub key: Option<String>,
-}
-
-/// Inputs to the existing Metal translation, before override specialization or MSL emission.
-#[derive(Debug)]
-pub struct StageInputs<'a> {
-    pub wgsl: Option<&'a str>,
-    pub options: &'a naga::back::msl::Options,
-    pub pipeline: &'a naga::back::msl::PipelineOptions,
-    pub constants: &'a naga::back::PipelineConstants,
-    pub language_version: usize,
-    pub preserve_invariance: bool,
-}
-
-/// A caller's selection for one validated stage.
-#[derive(Debug)]
-pub struct StageLibrary {
-    pub key: String,
-    pub bytes: Option<Vec<u8>>,
-}
-
-/// Lookup restricted to the pipeline creation on the calling thread.
-pub trait StageResolver: Send + Sync {
-    fn resolve(&self, inputs: &StageInputs<'_>) -> StageLibrary;
-    fn loaded(&self, key: &str, success: bool);
-}
-
-std::thread_local! {
-    static RESOLVER: RefCell<Option<Arc<dyn StageResolver>>> = const { RefCell::new(None) };
-}
-
-/// Supply offline libraries while creating a pipeline on this thread.
-///
-/// # Safety
-///
-/// Any bytes returned by the resolver must be trusted output from the same
-/// WGSL, stage, layout and Metal translation settings as the live pipeline.
-pub unsafe fn with_stage_resolver<T>(
-    resolver: Arc<dyn StageResolver>,
-    create: impl FnOnce() -> T,
-) -> T {
-    struct Resolve(Option<Arc<dyn StageResolver>>);
-    impl Drop for Resolve {
-        fn drop(&mut self) {
-            RESOLVER.with_borrow_mut(|current| *current = self.0.take());
-        }
-    }
-
-    let _resolve = Resolve(RESOLVER.with_borrow_mut(|current| current.replace(resolver)));
-    create()
-}
-
-pub(super) fn resolver() -> Option<Arc<dyn StageResolver>> {
-    RESOLVER.with_borrow(|current| current.clone())
 }
 
 std::thread_local! {

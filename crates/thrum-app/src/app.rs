@@ -585,9 +585,6 @@ impl<G: WindowGame + 'static> App<G> {
         }
         let mut descriptor = wgpu::InstanceDescriptor::new_without_display_handle();
         descriptor.backends = wgpu::Backends::METAL;
-        if self.config.metal_preparation.is_some() {
-            thrum_render::capabilities::metallib::Preparation::configure_instance(&mut descriptor);
-        }
         let instance = wgpu::Instance::new(descriptor);
         let surface = Arc::new(
             instance

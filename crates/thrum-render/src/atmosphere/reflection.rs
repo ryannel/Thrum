@@ -84,16 +84,21 @@ impl ReflectionPrepared {
             lod_max_clamp: (MIP_COUNT - 1) as f32,
             ..Default::default()
         });
-        let cube_pipeline = if overlay.is_some() {
-            super::overlay::prepare_reflection(device)
-        } else {
-            pipeline(
-                device,
-                "atmosphere sky specular prefilter",
-                "reflection_main",
-                crate::shaders::Shader::AtmosphereReflection,
-            )
-        };
+        let cube_pipeline = pipeline(
+            device,
+            if overlay.is_some() {
+                "atmosphere overlay specular prefilter"
+            } else {
+                "atmosphere sky specular prefilter"
+            },
+            "reflection_main",
+            if overlay.is_some() {
+                crate::shaders::Shader::AtmosphereOverlayReflection
+            } else {
+                crate::shaders::Shader::AtmosphereReflection
+            },
+            &reflection_bindings(overlay.is_some()),
+        );
         let cube_layout = cube_pipeline.get_bind_group_layout(0);
         let cube_groups = std::array::from_fn(|mip| {
             let output = cube.create_view(&wgpu::TextureViewDescriptor {
@@ -145,6 +150,13 @@ impl ReflectionPrepared {
             "atmosphere DFG integration",
             "dfg_main",
             crate::shaders::Shader::AtmosphereDfg,
+            &[crate::binding::storage_texture(
+                0,
+                wgpu::ShaderStages::COMPUTE,
+                wgpu::StorageTextureAccess::WriteOnly,
+                wgpu::TextureFormat::Rgba16Float,
+                wgpu::TextureViewDimension::D2,
+            )],
         );
         let dfg_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("atmosphere DFG output"),
@@ -159,6 +171,12 @@ impl ReflectionPrepared {
             "atmosphere GGX sample preparation",
             "prefilter_samples_main",
             crate::shaders::Shader::AtmosphereDfg,
+            &[crate::binding::storage(
+                1,
+                wgpu::ShaderStages::COMPUTE,
+                false,
+                SAMPLE_BYTES,
+            )],
         );
         let samples_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("atmosphere GGX sample output"),
@@ -252,16 +270,52 @@ fn texture(device: &wgpu::Device, label: &str, size: u32, layers: u32, mips: u32
     })
 }
 
+fn reflection_bindings(overlay: bool) -> Vec<wgpu::BindGroupLayoutEntry> {
+    use crate::binding;
+    let compute = wgpu::ShaderStages::COMPUTE;
+    let sample = wgpu::TextureSampleType::Float { filterable: true };
+    let mut entries = vec![
+        binding::uniform(0, compute, size_of::<crate::records::Atmosphere>() as u64),
+        binding::texture(1, compute, sample, wgpu::TextureViewDimension::D2),
+        binding::sampler(2, compute, wgpu::SamplerBindingType::Filtering),
+        binding::storage_texture(
+            3,
+            compute,
+            wgpu::StorageTextureAccess::WriteOnly,
+            wgpu::TextureFormat::Rgba16Float,
+            wgpu::TextureViewDimension::D2Array,
+        ),
+        binding::storage(4, compute, true, SAMPLE_BYTES),
+    ];
+    if overlay {
+        entries.extend([
+            binding::texture(5, compute, sample, wgpu::TextureViewDimension::Cube),
+            binding::uniform(6, compute, crate::light::ENVIRONMENT_BYTES),
+        ]);
+    }
+    entries
+}
+
 fn pipeline(
     device: &crate::runtime::DeviceSite,
     label: &str,
     entry: &str,
     source: crate::shaders::Shader,
+    entries: &[wgpu::BindGroupLayoutEntry],
 ) -> wgpu::ComputePipeline {
+    let group = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+        label: Some(label),
+        entries,
+    });
+    let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+        label: Some(label),
+        bind_group_layouts: &[Some(&group)],
+        immediate_size: 0,
+    });
     let module = source.compile(device, label);
     device.compute(&wgpu::ComputePipelineDescriptor {
         label: Some(label),
-        layout: None,
+        layout: Some(&layout),
         module: &module,
         entry_point: Some(entry),
         compilation_options: wgpu::PipelineCompilationOptions::default(),

@@ -29,10 +29,44 @@ pub(super) struct TemporalResources {
 impl TemporalInputs {
     pub(super) fn new(device: &crate::runtime::DeviceSite) -> Self {
         let shader = crate::shaders::Shader::Temporal.compile(device, "temporal inputs");
+        let exposure = [crate::binding::uniform(
+            0,
+            wgpu::ShaderStages::FRAGMENT,
+            super::exposure::SAMPLE_BYTES,
+        )];
+        let witness = [
+            crate::binding::texture(
+                1,
+                wgpu::ShaderStages::FRAGMENT,
+                wgpu::TextureSampleType::Depth,
+                wgpu::TextureViewDimension::D2,
+            ),
+            crate::binding::texture(
+                2,
+                wgpu::ShaderStages::FRAGMENT,
+                wgpu::TextureSampleType::Float { filterable: false },
+                wgpu::TextureViewDimension::D2,
+            ),
+            crate::binding::texture(
+                3,
+                wgpu::ShaderStages::FRAGMENT,
+                wgpu::TextureSampleType::Float { filterable: false },
+                wgpu::TextureViewDimension::D2,
+            ),
+        ];
         let pipelines = std::array::from_fn(|i| {
+            let group = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: Some("temporal inputs"),
+                entries: if i == 0 { &exposure } else { &witness },
+            });
+            let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: Some("temporal inputs"),
+                bind_group_layouts: &[Some(&group)],
+                immediate_size: 0,
+            });
             device.render(&wgpu::RenderPipelineDescriptor {
                 label: Some("temporal inputs"),
-                layout: None,
+                layout: Some(&layout),
                 vertex: wgpu::VertexState {
                     module: &shader,
                     entry_point: Some("vertex"),

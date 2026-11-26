@@ -1,4 +1,4 @@
-//! A matching blob takes the native loader. Each stale key forces a real WGSL draw.
+//! Matching keys load explicit passthrough modules. Each stale key forces a WGSL draw.
 
 thrum_test_support::macos_gpu_test! {
     fn mismatched_metallib_keys_fall_back_before_drawing() {
@@ -7,17 +7,18 @@ thrum_test_support::macos_gpu_test! {
 }
 
 #[cfg(target_os = "macos")]
-mod metallib_cook;
-
-#[cfg(target_os = "macos")]
 mod metal {
-    use std::sync::{Arc, Mutex, PoisonError};
+    use std::{fs, path::Path};
 
-    use thrum_render::capabilities::metallib::{TRANSLATOR, library_payload, stage_key};
-    use thrum_test_support::{Scratch, target};
-    use wgpu::hal::metal::{
-        StageInputs, StageLibrary, StageResolver, capture_stage_translations, with_stage_resolver,
+    use thrum_render::{
+        capabilities::{
+            DeviceCapabilities, HardwareFeature, HardwareRequest,
+            metallib::{Preparation, stage_key},
+        },
+        runtime::DeviceSite,
     };
+    use thrum_test_support::{Scratch, target};
+    use wgpu::hal::metal::{capture_stage_translations, encode_stage_records, split_stage_records};
 
     const SOURCE: &str = r"
         @vertex fn vertex_main(@builtin(vertex_index) i: u32) -> @builtin(position) vec4<f32> {
@@ -28,105 +29,41 @@ mod metal {
             return vec4(0.0, 1.0, 0.0, 1.0);
         }";
 
-    #[derive(Clone, Copy)]
-    enum Change {
-        Source,
-        Translator,
-        Options,
-        Language,
-    }
-
-    impl Change {
-        fn key(self, inputs: &StageInputs<'_>) -> String {
-            let mut options = inputs.options.clone();
-            let mut facts = StageInputs { ..*inputs };
-            let mut translator = TRANSLATOR;
-            match self {
-                Self::Source => facts.wgsl = Some("different WGSL"),
-                Self::Translator => translator = "wgpu 30.0.1; Naga 30.0.0",
-                Self::Options => {
-                    options.zero_initialize_workgroup_memory =
-                        !options.zero_initialize_workgroup_memory;
-                }
-                Self::Language => facts.language_version ^= 1,
-            }
-            facts.options = &options;
-            stage_key(&facts, translator).expect("native stage key")
-        }
-    }
-
-    #[derive(Default)]
-    struct Libraries {
-        keys: Mutex<Vec<(String, Option<String>)>>,
-        loaded: Mutex<Vec<bool>>,
-        blobs: Vec<Vec<u8>>,
-        change: Option<Change>,
-    }
-
-    impl StageResolver for Libraries {
-        fn resolve(&self, inputs: &StageInputs<'_>) -> StageLibrary {
-            let key = stage_key(inputs, TRANSLATOR).expect("debug source provided by wgpu");
-            let wrong = self.change.map(|change| change.key(inputs));
-            if let Some(wrong) = &wrong {
-                assert_ne!(&key, wrong);
-            }
-            self.keys
-                .lock()
-                .unwrap_or_else(PoisonError::into_inner)
-                .push((key.clone(), wrong));
-            let bytes = self
-                .blobs
-                .iter()
-                .find_map(|blob| library_payload(blob, &key))
-                .map(<[u8]>::to_vec);
-            StageLibrary { key, bytes }
-        }
-
-        fn loaded(&self, _key: &str, success: bool) {
-            self.loaded
-                .lock()
-                .unwrap_or_else(PoisonError::into_inner)
-                .push(success);
-        }
-    }
-
-    #[expect(
-        unsafe_code,
-        reason = "the fixture only loads offline output compiled for the same validated stage"
-    )]
-    fn pipeline(
-        device: &wgpu::Device,
-        shader: &wgpu::ShaderModule,
-        libraries: &Arc<Libraries>,
-    ) -> wgpu::RenderPipeline {
-        let libraries: Arc<dyn StageResolver> = Arc::<Libraries>::clone(libraries);
-        // SAFETY: The positive control keys the cooked blob to the exact wgpu stage.
-        // A negative control changes the embedded key, so its bytes cannot reach Metal.
-        unsafe {
-            with_stage_resolver(libraries, || {
-                device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-                    label: Some("keyed stage draw"),
-                    layout: None,
-                    vertex: wgpu::VertexState {
-                        module: shader,
-                        entry_point: Some("vertex_main"),
-                        compilation_options: wgpu::PipelineCompilationOptions::default(),
-                        buffers: &[],
-                    },
-                    primitive: wgpu::PrimitiveState::default(),
-                    depth_stencil: None,
-                    multisample: wgpu::MultisampleState::default(),
-                    fragment: Some(wgpu::FragmentState {
-                        module: shader,
-                        entry_point: Some("fragment_main"),
-                        compilation_options: wgpu::PipelineCompilationOptions::default(),
-                        targets: &[Some(target::FORMAT.into())],
-                    }),
-                    multiview_mask: None,
-                    cache: None,
-                })
-            })
-        }
+    fn pipeline(site: &DeviceSite, source: &str, zero: bool) -> wgpu::RenderPipeline {
+        let layout = site.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: None,
+            bind_group_layouts: &[],
+            immediate_size: 0,
+        });
+        let shader = site.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: None,
+            source: wgpu::ShaderSource::Wgsl(source.into()),
+        });
+        let compilation = wgpu::PipelineCompilationOptions {
+            zero_initialize_workgroup_memory: zero,
+            ..Default::default()
+        };
+        site.render(&wgpu::RenderPipelineDescriptor {
+            label: Some("keyed stage draw"),
+            layout: Some(&layout),
+            vertex: wgpu::VertexState {
+                module: &shader,
+                entry_point: Some("vertex_main"),
+                compilation_options: compilation.clone(),
+                buffers: &[],
+            },
+            primitive: wgpu::PrimitiveState::default(),
+            depth_stencil: None,
+            multisample: wgpu::MultisampleState::default(),
+            fragment: Some(wgpu::FragmentState {
+                module: &shader,
+                entry_point: Some("fragment_main"),
+                compilation_options: compilation,
+                targets: &[Some(target::FORMAT.into())],
+            }),
+            multiview_mask: None,
+            cache: None,
+        })
     }
 
     fn draw(device: &wgpu::Device, queue: &wgpu::Queue, pipeline: &wgpu::RenderPipeline) {
@@ -159,87 +96,135 @@ mod metal {
         );
     }
 
-    fn stamp(key: &str, payload: &[u8]) -> Vec<u8> {
+    fn stamp(store: &Path, name: &str, key: &str, payload: &[u8]) {
         let mut blob = format!("{key}\n{}\n", blake3::hash(payload).to_hex()).into_bytes();
         blob.extend(payload);
-        blob
+        fs::write(store.join(format!("{name}.blob")), blob).expect("write stage blob");
+    }
+
+    fn translated_draw(
+        capabilities: &DeviceCapabilities,
+        queue: &wgpu::Queue,
+        source: &str,
+        zero: bool,
+        stages: usize,
+    ) {
+        let site = capabilities.site();
+        let (pipeline, translated) = capture_stage_translations(|| pipeline(site, source, zero));
+        assert_eq!(translated.len(), stages);
+        draw(site, queue, &pipeline);
+    }
+
+    #[expect(
+        unsafe_code,
+        reason = "the fixture admits only its own keyed Metal cook"
+    )]
+    fn use_store(capabilities: &mut DeviceCapabilities, store: &Path) {
+        // SAFETY: Matching products were cooked using the fixture's source and explicit layout.
+        // Negative controls have mismatching keys or an empty record table and are rejected before use.
+        capabilities.set_metal_preparation(Some(unsafe {
+            Preparation::trusted_store(store.to_owned(), false)
+        }));
+    }
+
+    fn file_options(path: &Path) -> (blake3::Hash, String, usize) {
+        let options: serde_json::Value =
+            serde_json::from_slice(&fs::read(path.join("options.json")).expect("stage options"))
+                .expect("parse stage options");
+        let pipeline = options["pipeline_key"].as_str().expect("pipeline key");
+        let translator = options["translator"].as_str().expect("translator");
+        let language = options["language_version"].as_u64().expect("language");
+        (
+            blake3::Hash::from_hex(pipeline).expect("hex pipeline key"),
+            translator.to_owned(),
+            usize::try_from(language).expect("Metal language value"),
+        )
     }
 
     pub(super) fn check() {
-        let mut descriptor = wgpu::InstanceDescriptor::new_without_display_handle();
-        descriptor.backends = wgpu::Backends::METAL;
-        descriptor.flags |= wgpu::InstanceFlags::DEBUG;
-        let instance = wgpu::Instance::new(descriptor);
-        let Some(gpu) = thrum_test_support::gpu_on("mismatched_metallib_keys", &instance) else {
+        let Some(gpu) =
+            thrum_test_support::gpu("mismatched_metallib_keys", Some(wgpu::Backend::Metal))
+        else {
             return;
         };
-        let (device, queue) = gpu.device(
-            thrum_test_support::Profile::Native,
-            &thrum_test_support::Restriction::default(),
+        let profile = thrum_test_support::Profile::Native;
+        let restrictions = thrum_test_support::Restriction::default();
+        let request = HardwareRequest {
+            feature: HardwareFeature::MetalShaderPassthrough,
+            required: true,
+        };
+        let (_, queue, mut capabilities) = gpu
+            .device_with_hardware(profile, &restrictions, 1, &[request])
+            .expect("admit Metal passthrough");
+        let harvest = Scratch::new("metallib-key-harvest");
+        capabilities.set_metal_preparation(Some(Preparation::harvest(harvest.path().to_owned())));
+        draw(
+            capabilities.site(),
+            &queue,
+            &pipeline(capabilities.site(), SOURCE, true),
         );
-        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("keyed stage draw"),
-            source: wgpu::ShaderSource::Wgsl(SOURCE.into()),
-        });
-        let (reference, harvest) = capture_stage_translations(|| {
-            pipeline(&device, &shader, &Arc::new(Libraries::default()))
-        });
-        draw(&device, &queue, &reference);
-        assert_eq!(harvest.len(), 2);
-        let native: Vec<_> = harvest
-            .iter()
-            .map(|stage| {
-                super::metallib_cook::cook(stage, &Scratch::new("metallib-key"))
-                    .expect("cook native stage")
-            })
+        let entries: Vec<_> = fs::read_dir(harvest.path())
+            .expect("harvested fixture")
+            .map(|entry| entry.expect("harvested stage").path())
             .collect();
+        assert_eq!(entries.len(), 2);
 
-        let exact = Arc::new(Libraries {
-            blobs: harvest
-                .iter()
-                .zip(&native)
-                .map(|(stage, blob)| stamp(stage.key.as_deref().expect("harvested key"), blob))
-                .collect(),
-            ..Default::default()
-        });
-        let (cooked, translations) =
-            capture_stage_translations(|| pipeline(&device, &shader, &exact));
-        assert!(translations.is_empty());
-        assert_eq!(*exact.loaded.lock().expect("load receipts"), [true, true]);
-        draw(&device, &queue, &cooked);
-
-        for change in [
-            Change::Source,
-            Change::Translator,
-            Change::Options,
-            Change::Language,
-        ] {
-            let candidate = Arc::new(Libraries {
-                change: Some(change),
-                ..Default::default()
-            });
-            let probe = pipeline(&device, &shader, &candidate);
-            drop(probe);
-            let stale = Arc::new(Libraries {
-                blobs: candidate
-                    .keys
-                    .lock()
-                    .expect("observed keys")
-                    .iter()
-                    .zip(&native)
-                    .map(|((_, stale), blob)| stamp(stale.as_deref().expect("changed key"), blob))
-                    .collect(),
-                ..Default::default()
-            });
-            let (fallback, translations) =
-                capture_stage_translations(|| pipeline(&device, &shader, &stale));
-            assert_eq!(
-                translations.len(),
-                2,
-                "both stages fell back before drawing"
+        let matching = Scratch::new("metallib-key-matching");
+        let wrong_translator = Scratch::new("metallib-key-translator");
+        let wrong_language = Scratch::new("metallib-key-language");
+        let no_record = Scratch::new("metallib-key-record");
+        for entry in entries {
+            let key = entry
+                .file_name()
+                .and_then(|key| key.to_str())
+                .expect("stage key");
+            let (pipeline, translator, language) = file_options(&entry);
+            assert_eq!(stage_key(&pipeline, &translator, language), key);
+            let payload_file = entry.join("cooked.blob");
+            thrum_cook::metallib::cook_stage(&entry, &payload_file).expect("offline cook");
+            let payload = fs::read(payload_file).expect("read cooked blob");
+            stamp(matching.path(), key, key, &payload);
+            for (store, stale) in [
+                (
+                    &wrong_translator,
+                    stage_key(&pipeline, "stale translator", language),
+                ),
+                (
+                    &wrong_language,
+                    stage_key(&pipeline, &translator, language ^ 1),
+                ),
+            ] {
+                assert_ne!(stale, key);
+                stamp(store.path(), key, &stale, &payload);
+            }
+            let (_, library) = split_stage_records(&payload).expect("split cooked blob");
+            stamp(
+                no_record.path(),
+                key,
+                key,
+                &encode_stage_records(&[], library),
             );
-            assert!(stale.loaded.lock().expect("load receipts").is_empty());
-            draw(&device, &queue, &fallback);
         }
+
+        use_store(&mut capabilities, matching.path());
+        translated_draw(&capabilities, &queue, SOURCE, true, 0);
+        translated_draw(
+            &capabilities,
+            &queue,
+            &format!("{SOURCE}\n// stale source"),
+            true,
+            2,
+        );
+        translated_draw(&capabilities, &queue, SOURCE, false, 2);
+        for store in [&wrong_translator, &wrong_language, &no_record] {
+            use_store(&mut capabilities, store.path());
+            translated_draw(&capabilities, &queue, SOURCE, true, 2);
+        }
+
+        let (_, queue, mut unadmitted) = gpu
+            .device_with_hardware(profile, &restrictions, 2, &[])
+            .expect("ordinary Metal device");
+        use_store(&mut unadmitted, matching.path());
+        translated_draw(&unadmitted, &queue, SOURCE, true, 2);
     }
 }

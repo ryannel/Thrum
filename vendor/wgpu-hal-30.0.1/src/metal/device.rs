@@ -175,6 +175,16 @@ impl super::Device {
         match stage.module.source {
             ShaderModuleSource::Naga(ref naga_shader) => {
                 let stage_bit = map_naga_stage(naga_stage);
+                let (module, module_info) = naga::back::pipeline_constants::process_overrides(
+                    &naga_shader.module,
+                    &naga_shader.info,
+                    Some((naga_stage, stage.entry_point)),
+                    stage.constants,
+                )
+                .map_err(|e| {
+                    crate::PipelineError::PipelineConstants(stage_bit, format!("MSL: {e:?}"))
+                })?;
+
                 let ep_resources = &layout.per_stage_map[naga_stage];
 
                 let bounds_check_policy = if stage.module.runtime_checks.bounds_checks {
@@ -249,39 +259,6 @@ impl super::Device {
                     binding_array_length_map: layout.binding_array_length_map.clone(),
                 };
 
-                let preserve_invariance = available!(
-                    macos = 11.0, ios = 13.0, tvos = 14.0, visionos = 1.0
-                );
-                let mut key = None;
-                if let Some(resolver) = super::stage_record::resolver() {
-                    let selected = resolver.resolve(&super::StageInputs {
-                        wgsl: naga_shader.debug_source.as_ref().map(|source| source.source_code.as_ref()),
-                        options: &options,
-                        pipeline: &pipeline_options,
-                        constants: stage.constants,
-                        language_version: self.shader_language_version(),
-                        preserve_invariance,
-                    });
-                    if let Some(bytes) = selected.bytes {
-                        let shader = self.load_cooked_stage(&bytes, naga_stage);
-                        resolver.loaded(&selected.key, shader.is_some());
-                        if let Some(shader) = shader {
-                            return Ok(shader);
-                        }
-                    }
-                    key = Some(selected.key);
-                }
-
-                let (module, module_info) = naga::back::pipeline_constants::process_overrides(
-                    &naga_shader.module,
-                    &naga_shader.info,
-                    Some((naga_stage, stage.entry_point)),
-                    stage.constants,
-                )
-                .map_err(|e| {
-                    crate::PipelineError::PipelineConstants(stage_bit, format!("MSL: {e:?}"))
-                })?;
-
                 let (source, info) = naga::back::msl::write_string(
                     &module,
                     &module_info,
@@ -301,6 +278,8 @@ impl super::Device {
                 options.setLanguageVersion(self.shared.private_caps.msl_version);
 
                 // https://developer.apple.com/documentation/metal/mtlcompileoptions/preserveinvariance
+                let preserve_invariance =
+                    available!(macos = 11.0, ios = 13.0, tvos = 14.0, visionos = 1.0);
                 if preserve_invariance {
                     options.setPreserveInvariance(true);
                 }
@@ -404,7 +383,6 @@ impl super::Device {
                     source,
                     language_version: self.shader_language_version(),
                     preserve_invariance,
-                    key,
                     record: super::StageRecord {
                         function: translated_ep_name.to_owned(),
                         workgroup_size: ep.workgroup_size,
@@ -470,21 +448,6 @@ impl super::Device {
             sized_bindings,
             immutable_buffer_mask,
         })
-    }
-
-    // wgpu-core already validated the WGSL interface and derived the layout.
-    // Only the native stage is replaced, through the ordinary MetalLib loader.
-    fn load_cooked_stage(
-        &self,
-        bytes: &[u8],
-        naga_stage: naga::ShaderStage,
-    ) -> Option<CompiledShader> {
-        let (records, library) = super::split_stage_records(bytes).ok()?;
-        let [record] = records.as_deref()? else {
-            return None;
-        };
-        let shader = self.load_metallib(library, records.clone(), Default::default()).ok()?;
-        Self::load_passthrough_stage(&shader, &record.function, naga_stage).ok()
     }
 
     fn load_metallib(
