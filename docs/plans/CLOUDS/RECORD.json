@@ -1888,7 +1888,75 @@
     },
     "WP15": {
       "definitions": "7d1bde824540ec8ea52f6c3d4ce601e41721dc092f8f4aa6a31e7525a4c89ee4",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "b59dd6f9cdfee0f42a8a9c1d57edbcf60bd31e5b",
+          "review": ".orchestrate/evidence/CLOUDS/WP15-review.md",
+          "items": {
+            "WP15.1": "fail",
+            "WP15.4": "pass",
+            "WP15.13": "pass",
+            "WP15.5": "pass",
+            "WP15.6": "pass",
+            "WP15.7": "pass",
+            "WP15.8": "pass",
+            "WP15.9": "pass",
+            "WP15.10": "fail",
+            "WP15.11": "fail"
+          },
+          "findings": [
+            {
+              "name": "Ground mist opens a clear hole in nearby upper cloud",
+              "repeat": false
+            },
+            {
+              "name": "Growing the scene leaves too few surface stops",
+              "item": "WP15.1",
+              "repeat": false
+            },
+            {
+              "name": "A low deck hides placed volumes from the trace and sky overlay",
+              "repeat": false
+            },
+            {
+              "name": "Ground accepts a layer scale it does not apply",
+              "repeat": false
+            },
+            {
+              "name": "The paired mist cost record omits the current clouds-off arm",
+              "item": "WP15.10",
+              "repeat": false
+            },
+            {
+              "name": "The mist-far check skips validation of the retained record",
+              "item": "WP15.10",
+              "repeat": false
+            },
+            {
+              "name": "The ledger overstates per-pixel depth coverage after resize",
+              "item": "WP15.11",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 296171,
+            "cached": 13097600,
+            "output": 29687,
+            "turns": 1
+          },
+          "at": "2026-11-26T21:54:32Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",

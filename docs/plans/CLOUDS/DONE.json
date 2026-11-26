@@ -1533,8 +1533,8 @@
     {
       "id": "WP15",
       "name": "Mist and fog banks reach the horizon, low cloud hides the hilltops, and a climbing camera passes into the cloud and out above it",
-      "status": "ready_for_review",
-      "failed_reviews": 0,
+      "status": "in_progress",
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [],
@@ -1547,10 +1547,10 @@
           "ask": "Would the nearest and farthest stops blended to the middle depth fail the bank cases? Is the unchanged frame compared with one from the commit this work package started at, or with a retained image?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP15/CORRECTNESS.md",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/CLOUDS/WP15-review.md"
         },
         {
           "id": "WP15.4",
@@ -1559,8 +1559,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP15/VISUAL.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/WP15-review.md"
         },
         {
           "id": "WP15.13",
@@ -1569,8 +1569,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP15/VISUAL.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/WP15-review.md"
         },
         {
           "id": "WP15.5",
@@ -1579,8 +1579,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP15/continuation/DECK.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/WP15-review.md"
         },
         {
           "id": "WP15.6",
@@ -1589,8 +1589,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP15/continuation/SHADOW.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/WP15-review.md"
         },
         {
           "id": "WP15.7",
@@ -1601,8 +1601,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP15/CORRECTNESS.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/WP15-review.md"
         },
         {
           "id": "WP15.8",
@@ -1611,8 +1611,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP15/VISUAL.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/WP15-review.md"
         },
         {
           "id": "WP15.9",
@@ -1621,8 +1621,8 @@
           "target": "chrome-webgpu",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP15/continuation/CHROME.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/WP15-review.md"
         },
         {
           "id": "WP15.10",
@@ -1630,20 +1630,54 @@
           "check": "python3 scripts/cloud_cost.py check --scene mist-far",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP15/COST.md",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/CLOUDS/WP15-review.md"
         },
         {
           "id": "WP15.11",
           "statement": "The maturity ledger's `E1.clouds` row is current.",
           "ask": "Does the row claim only what this work package proved, on the targets it ran on, with visuals apart from correctness?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP15/VISUAL.md",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/CLOUDS/WP15-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "name": "Ground mist opens a clear hole in nearby upper cloud",
+          "repeat": false
+        },
+        {
+          "name": "Growing the scene leaves too few surface stops",
+          "item": "WP15.1",
+          "repeat": false
+        },
+        {
+          "name": "A low deck hides placed volumes from the trace and sky overlay",
+          "repeat": false
+        },
+        {
+          "name": "Ground accepts a layer scale it does not apply",
+          "repeat": false
+        },
+        {
+          "name": "The paired mist cost record omits the current clouds-off arm",
+          "item": "WP15.10",
+          "repeat": false
+        },
+        {
+          "name": "The mist-far check skips validation of the retained record",
+          "item": "WP15.10",
+          "repeat": false
+        },
+        {
+          "name": "The ledger overstates per-pixel depth coverage after resize",
+          "item": "WP15.11",
+          "repeat": false
         }
       ]
     },
