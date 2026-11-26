@@ -1226,8 +1226,8 @@
     {
       "id": "WP9",
       "name": "A visitor changes coverage, cloud type, wind and time of day with the controls, and the sky holds up in motion, on the Mac and in Chrome",
-      "status": "ready_for_review",
-      "failed_reviews": 0,
+      "status": "in_progress",
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
@@ -1243,8 +1243,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP9/filtered/native-controls.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/WP9-review.md"
         },
         {
           "id": "WP9.2",
@@ -1254,8 +1254,8 @@
           "target": "chrome-webgpu",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP9/filtered/browser-run.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/WP9-review.md"
         },
         {
           "id": "WP9.3",
@@ -1264,8 +1264,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP9/filtered/control-sweeps.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/WP9-review.md"
         },
         {
           "id": "WP9.4",
@@ -1274,18 +1274,18 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP9/filtered/overlay-restoration.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/WP9-review.md"
         },
         {
           "id": "WP9.5",
           "statement": "Under TAAU on the Mac's portable recipe the sky is stable in motion: no shimmer in far clouds, no crawl on cloud edges, no ghost behind a cloud against sky or terrain. A cut and a profile change each reset in one frame.",
           "inspect": "Capture `realtime` sequences with temporal sampling selected: a fast pan under the broken preset at a 10\u00b0 Sun, a 40 m walk, a 60x time-lapse, a preset change, a cut and a profile change. Judge consecutive frames at 1x, whole and in native-size crops of far clouds, of a near cloud's edge and of a ridge against cloud.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP9/filtered/metal/motion",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/CLOUDS/WP9-review.md"
         },
         {
           "id": "WP9.6",
@@ -1294,8 +1294,8 @@
           "target": "chrome-webgpu",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP9/filtered/chrome/motion",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/WP9-review.md"
         },
         {
           "id": "WP9.7",
@@ -1306,8 +1306,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP9/filter-overlay-probe.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/WP9-review.md"
         },
         {
           "id": "WP9.8",
@@ -1317,8 +1317,15 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP9/filtered/range-replay.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/WP9-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "name": "Sparse cloud refresh makes edges crawl during a fast pan",
+          "item": "WP9.5",
+          "repeat": false
         }
       ]
     },

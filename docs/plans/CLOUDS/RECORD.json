@@ -1259,7 +1259,46 @@
     },
     "WP9": {
       "definitions": "5a207371abd75ea0e70d6fa2231a443a39ad444be08ee53c7a3e89df0fd1e5fc",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "6c5dd0bcf751a691d2ee92f559c67b5937c128ee",
+          "review": ".orchestrate/evidence/CLOUDS/WP9-review.md",
+          "items": {
+            "WP9.1": "pass",
+            "WP9.2": "pass",
+            "WP9.3": "pass",
+            "WP9.4": "pass",
+            "WP9.5": "fail",
+            "WP9.6": "pass",
+            "WP9.7": "pass",
+            "WP9.8": "pass"
+          },
+          "findings": [
+            {
+              "name": "Sparse cloud refresh makes edges crawl during a fast pan",
+              "item": "WP9.5",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 181379,
+            "cached": 11435648,
+            "output": 24748,
+            "turns": 1
+          },
+          "at": "2026-11-26T04:54:47Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "CLOUDS WP9 needs something no plan provides yet. The builder wrote: Land the Ground producers in WP14 and the cadence co",
