@@ -14,6 +14,52 @@ use thrum_test_support::{
 };
 
 #[test]
+fn metal_sun_kernel_retains_fog_attenuation_above_96_metres() {
+    let Some(gpu) = ground_support::open() else {
+        return;
+    };
+    let state = ground_support::state(0.0, 1.0);
+    let draw = |depth| {
+        let ground = ground_support::fixture(
+            thrum_cloud_model::Fog {
+                depth,
+                ..ground_support::fog(false)
+            },
+            false,
+        );
+        ground_support::render_from_height(&gpu, &ground, &state, 10.0, 105.0)
+    };
+    let (_host, shallow, _) = draw(130.0);
+    let (_host, deep, _) = draw(150.0);
+    let points = read_points(&gpu, &deep.medium);
+    let coefficients = |target: &ViewVolumeMediumTarget| {
+        ground_support::read(&gpu, &target.coefficients, Mip::level(0))
+    };
+    let mut covered = 0;
+    let mut maximum_ratio = 0.0_f32;
+    for (([_, altitude, _, distance], shallow), deep) in points
+        .into_iter()
+        .zip(coefficients(&shallow.medium))
+        .zip(coefficients(&deep.medium))
+    {
+        if (98.0..112.0).contains(&altitude) && distance < 300.0 {
+            assert!(shallow[0] > 0.0 && shallow[1] > 0.0);
+            assert_eq!(shallow[0], deep[0], "the local extinction is unchanged");
+            maximum_ratio = maximum_ratio.max(deep[1] / shallow[1]);
+            covered += 1;
+        }
+    }
+    assert!(covered > 0);
+    assert!(
+        maximum_ratio < 0.995,
+        "a deeper Sun path must reduce the solar kernel, max ratio {maximum_ratio}"
+    );
+    eprintln!(
+        "{covered} occupied near cells above 96 m; deep/shallow solar kernel ≤ {maximum_ratio:.5}"
+    );
+}
+
+#[test]
 fn metal_medium_writes_the_near_share_at_the_current_jittered_points() {
     let Some(gpu) = ground_support::open() else {
         return;

@@ -1428,8 +1428,8 @@
           "ask": "Does the test show both wrong substitutes fail? Does one case put a surface receiver in a ridge's shadow and show its shading unchanged by the surface visibility?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP14/REVIEW-SUN-PATH.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/CLOUDS/WP14-review.md"
         },
@@ -1502,8 +1502,8 @@
           "check": "python3 scripts/cloud_cost.py check --scene mist-near",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP14/COST.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/CLOUDS/WP14-review.md"
         },

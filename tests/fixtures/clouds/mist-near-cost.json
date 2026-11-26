@@ -1,16 +1,16 @@
 {
-  "commit": "f90be1060ba8e3a35f2d3a3b6eb8a98b3afd263a",
+  "commit": "c97330b5e5228cd02166950832a32704b47e14c0",
   "machine": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
   "load": {
     "before": [
-      315.818359375,
-      203.31201171875,
-      156.5419921875
+      21.20361328125,
+      13.171875,
+      21.26611328125
     ],
     "after": [
-      244.8212890625,
-      194.427734375,
-      154.4423828125
+      32.39990234375,
+      16.17431640625,
+      22.14990234375
     ]
   },
   "runs": [
@@ -23,62 +23,62 @@
       ],
       "first_submission": {
         "pass_gpu_ns": {
-          "atmosphere DFG integration": 2571084.0,
-          "atmosphere aerial perspective": 421291.0,
-          "atmosphere diffuse irradiance": 988042.0,
-          "atmosphere ground irradiance": 1090167.0,
-          "atmosphere multiple scattering": 3418958.0,
-          "atmosphere reflection mip 0": 60209.0,
-          "atmosphere reflection mip 1": 424458.0,
-          "atmosphere reflection mip 2": 593792.0,
-          "atmosphere reflection mip 3": 312625.0,
-          "atmosphere reflection mip 4": 287750.0,
-          "atmosphere reflection mip 5": 264417.0,
-          "atmosphere reflection mip 6": 244250.0,
-          "atmosphere sky view": 313833.0,
-          "atmosphere stars": 322542.0,
-          "atmosphere transmittance": 52166.0,
-          "camera visibility": 61875.0,
-          "synthetic Sun air shadow heights": 1403083.0,
-          "synthetic Sun horizon heights": 149833.0,
-          "synthetic Sun shadow far": 152542.0,
-          "synthetic Sun shadow near": 150291.0,
-          "synthetic cluster build": 361459.0,
-          "synthetic exposure resolve": 12291.0,
-          "synthetic forward opaque": 716792.0,
-          "synthetic tone encode": 595083.0,
-          "synthetic transform history": 23458.0,
-          "temporal exposure texture": 1016750.0
+          "atmosphere DFG integration": 544958.0,
+          "atmosphere aerial perspective": 202209.0,
+          "atmosphere diffuse irradiance": 267792.0,
+          "atmosphere ground irradiance": 486542.0,
+          "atmosphere multiple scattering": 1174167.0,
+          "atmosphere reflection mip 0": 177375.0,
+          "atmosphere reflection mip 1": 222875.0,
+          "atmosphere reflection mip 2": 313750.0,
+          "atmosphere reflection mip 3": 99167.0,
+          "atmosphere reflection mip 4": 92875.0,
+          "atmosphere reflection mip 5": 89167.0,
+          "atmosphere reflection mip 6": 83292.0,
+          "atmosphere sky view": 286583.0,
+          "atmosphere stars": 564667.0,
+          "atmosphere transmittance": 1527625.0,
+          "camera visibility": 67000.0,
+          "synthetic Sun air shadow heights": 334708.0,
+          "synthetic Sun horizon heights": 121167.0,
+          "synthetic Sun shadow far": 205417.0,
+          "synthetic Sun shadow near": 65541.0,
+          "synthetic cluster build": 33875.0,
+          "synthetic exposure resolve": 7750.0,
+          "synthetic forward opaque": 179917.0,
+          "synthetic tone encode": 2331292.0,
+          "synthetic transform history": 15292.0,
+          "temporal exposure texture": 18541.0
         },
-        "whole_frame_gpu_ns": 16009041.0
+        "whole_frame_gpu_ns": 9513544.0
       },
       "frames": 80,
       "maximum_sun_refill_ns": 0.0,
       "minimum_volume_instances": null,
       "pass_gpu_ns": {
-        "atmosphere aerial perspective": 275713.0375,
-        "atmosphere diffuse irradiance": 472559.8375,
-        "atmosphere reflection mip 0": 92580.2125,
-        "atmosphere reflection mip 1": 220106.8,
-        "atmosphere reflection mip 2": 376962.0,
-        "atmosphere reflection mip 3": 194023.4125,
-        "atmosphere reflection mip 4": 184589.0375,
-        "atmosphere reflection mip 5": 164667.2,
-        "atmosphere reflection mip 6": 155320.9,
-        "atmosphere sky view": 140546.3875,
-        "atmosphere stars": 78767.1625,
-        "camera visibility": 141046.4125,
-        "contribution compute": 32027.5625,
-        "synthetic Sun air shadow heights": 484422.3625,
-        "synthetic Sun horizon heights": 122353.0625,
-        "synthetic Sun shadow far": 96605.1375,
-        "synthetic Sun shadow near": 97635.9125,
-        "synthetic cluster build": 35843.2,
-        "synthetic exposure resolve": 15019.325,
-        "synthetic forward opaque": 3647985.4875,
-        "synthetic tone encode": 213515.0875,
-        "synthetic transform history": 57450.0125,
-        "temporal exposure texture": 1562018.25
+        "atmosphere aerial perspective": 443977.6625,
+        "atmosphere diffuse irradiance": 535323.4625,
+        "atmosphere reflection mip 0": 626720.9,
+        "atmosphere reflection mip 1": 282659.9625,
+        "atmosphere reflection mip 2": 598422.925,
+        "atmosphere reflection mip 3": 456000.5375,
+        "atmosphere reflection mip 4": 340091.675,
+        "atmosphere reflection mip 5": 322517.7375,
+        "atmosphere reflection mip 6": 287974.4625,
+        "atmosphere sky view": 600053.725,
+        "atmosphere stars": 455300.025,
+        "camera visibility": 1232819.25,
+        "contribution compute": 292063.45,
+        "synthetic Sun air shadow heights": 1635374.5125,
+        "synthetic Sun horizon heights": 529098.425,
+        "synthetic Sun shadow far": 455256.725,
+        "synthetic Sun shadow near": 778555.2,
+        "synthetic cluster build": 185329.725,
+        "synthetic exposure resolve": 39929.7,
+        "synthetic forward opaque": 3824167.2125,
+        "synthetic tone encode": 947891.15,
+        "synthetic transform history": 137122.3625,
+        "temporal exposure texture": 2878534.875
       },
       "quality": [],
       "ray_statistics": null,
@@ -96,7 +96,8 @@
         "start_sun_elevation_degrees": 10.000000953674316,
         "yaw_degrees": 79.8441162109375
       },
-      "whole_frame_gpu_ns": 8861757.8,
+      "view_volume_grid": null,
+      "whole_frame_gpu_ns": 17885185.6625,
       "selection": "off"
     },
     {
@@ -108,85 +109,85 @@
       ],
       "first_submission": {
         "pass_gpu_ns": {
-          "atmosphere DFG integration": 2450208.0,
-          "atmosphere aerial perspective": 643625.0,
-          "atmosphere diffuse irradiance": 368459.0,
-          "atmosphere ground irradiance": 164875.0,
-          "atmosphere multiple scattering": 983334.0,
-          "atmosphere reflection mip 0": 18375.0,
-          "atmosphere reflection mip 1": 111500.0,
-          "atmosphere reflection mip 2": 192000.0,
-          "atmosphere reflection mip 3": 102959.0,
-          "atmosphere reflection mip 4": 92000.0,
-          "atmosphere reflection mip 5": 89875.0,
-          "atmosphere reflection mip 6": 82167.0,
-          "atmosphere sky view": 2146500.0,
-          "atmosphere stars": 3253750.0,
-          "atmosphere transmittance": 18875.0,
-          "camera visibility": 31292.0,
-          "contribution compute": 81708.0,
-          "effect 0: effect 1: cloud weather map": 571667.0,
-          "effect 1: effect 1: cloud Sun path near": 2574625.0,
-          "effect 2: effect 1: cloud Sun path middle": 2826167.0,
-          "effect 3: effect 1: cloud Sun path far": 2392834.0,
-          "effect 4: effect 1: cloud ground field": 45083.0,
-          "effect 5: effect 1: cloud far transmittance": 93875.0,
-          "effect 6: effect 1: cloud ground band": 130875.0,
-          "effect 7: effect 1: cloud medium coefficients": 38708.0,
-          "effect 8: effect 1: cloud sky overlay": 156166.0,
-          "effect after 0: effect 1: cloud trace": 14762375.0,
-          "effect after 1: effect 1: cloud resolve": 113750.0,
-          "effect after 2: effect 1: cloud compose": 13333750.0,
-          "synthetic Sun horizon heights": 82375.0,
-          "synthetic Sun shadow far": 63166.0,
-          "synthetic Sun shadow near": 56584.0,
-          "synthetic cluster build": 4959.0,
-          "synthetic exposure resolve": 6916.0,
-          "synthetic forward opaque": 1700333.0,
-          "synthetic tone encode": 13382417.0,
-          "synthetic transform history": 1119208.0,
-          "temporal exposure texture": 1099500.0
+          "atmosphere DFG integration": 622500.0,
+          "atmosphere aerial perspective": 645459.0,
+          "atmosphere diffuse irradiance": 386875.0,
+          "atmosphere ground irradiance": 252792.0,
+          "atmosphere multiple scattering": 1264500.0,
+          "atmosphere reflection mip 0": 19083.0,
+          "atmosphere reflection mip 1": 116500.0,
+          "atmosphere reflection mip 2": 195042.0,
+          "atmosphere reflection mip 3": 101667.0,
+          "atmosphere reflection mip 4": 96042.0,
+          "atmosphere reflection mip 5": 90416.0,
+          "atmosphere reflection mip 6": 84292.0,
+          "atmosphere sky view": 152500.0,
+          "atmosphere stars": 3347459.0,
+          "atmosphere transmittance": 20250.0,
+          "camera visibility": 34083.0,
+          "contribution compute": 65208.0,
+          "effect 0: effect 1: cloud weather map": 958250.0,
+          "effect 1: effect 1: cloud Sun path near": 2386167.0,
+          "effect 2: effect 1: cloud Sun path middle": 3159167.0,
+          "effect 3: effect 1: cloud Sun path far": 2498125.0,
+          "effect 4: effect 1: cloud ground field": 51959.0,
+          "effect 5: effect 1: cloud far transmittance": 104083.0,
+          "effect 6: effect 1: cloud ground band": 348958.0,
+          "effect 7: effect 1: cloud medium coefficients": 45000.0,
+          "effect 8: effect 1: cloud sky overlay": 159166.0,
+          "effect after 0: effect 1: cloud trace": 14541542.0,
+          "effect after 1: effect 1: cloud resolve": 121417.0,
+          "effect after 2: effect 1: cloud compose": 12624333.0,
+          "synthetic Sun horizon heights": 82458.0,
+          "synthetic Sun shadow far": 80375.0,
+          "synthetic Sun shadow near": 70084.0,
+          "synthetic cluster build": 4666.0,
+          "synthetic exposure resolve": 7500.0,
+          "synthetic forward opaque": 1703834.0,
+          "synthetic tone encode": 12021000.0,
+          "synthetic transform history": 289958.0,
+          "temporal exposure texture": 1114000.0
         },
-        "whole_frame_gpu_ns": 65386835.0
+        "whole_frame_gpu_ns": 59866710.0
       },
       "frames": 80,
-      "maximum_sun_refill_ns": 22896251.0,
+      "maximum_sun_refill_ns": 23790083.0,
       "minimum_volume_instances": null,
       "pass_gpu_ns": {
-        "atmosphere aerial perspective": 1498165.625,
-        "atmosphere diffuse irradiance": 569757.25,
-        "atmosphere reflection mip 0": 443040.6125,
-        "atmosphere reflection mip 1": 289549.475,
-        "atmosphere reflection mip 2": 500986.0375,
-        "atmosphere reflection mip 3": 329376.6,
-        "atmosphere reflection mip 4": 376733.2875,
-        "atmosphere reflection mip 5": 312326.5,
-        "atmosphere reflection mip 6": 329246.9625,
-        "atmosphere sky view": 268637.5,
-        "atmosphere stars": 9190278.625,
-        "camera visibility": 238414.6125,
-        "contribution compute": 194339.5375,
-        "effect 0: effect 1: cloud weather map": 315882.8375,
-        "effect 1: effect 1: cloud Sun path near": 1113110.95,
-        "effect 2: effect 1: cloud Sun path middle": 1187325.05,
-        "effect 3: effect 1: cloud Sun path far": 823503.6,
-        "effect 4: effect 1: cloud ground field": 568496.4125,
-        "effect 5: effect 1: cloud far transmittance": 225790.6375,
-        "effect 6: effect 1: cloud ground band": 357190.55,
-        "effect 7: effect 1: cloud medium coefficients": 343994.2875,
-        "effect 8: effect 1: cloud sky overlay": 321902.5375,
-        "effect after 0: effect 1: cloud trace": 16743881.8,
-        "effect after 1: effect 1: cloud resolve": 896765.675,
-        "effect after 2: effect 1: cloud compose": 18916065.1625,
-        "synthetic Sun horizon heights": 1371428.125,
-        "synthetic Sun shadow far": 1168654.7,
-        "synthetic Sun shadow near": 897531.25,
-        "synthetic cluster build": 68662.425,
-        "synthetic exposure resolve": 193446.3875,
-        "synthetic forward opaque": 12227484.4,
-        "synthetic tone encode": 19901910.975,
-        "synthetic transform history": 410230.275,
-        "temporal exposure texture": 17265925.95
+        "atmosphere aerial perspective": 1359285.35,
+        "atmosphere diffuse irradiance": 601044.8125,
+        "atmosphere reflection mip 0": 412993.8375,
+        "atmosphere reflection mip 1": 407670.3625,
+        "atmosphere reflection mip 2": 489954.6625,
+        "atmosphere reflection mip 3": 402430.2,
+        "atmosphere reflection mip 4": 242962.9375,
+        "atmosphere reflection mip 5": 284452.5625,
+        "atmosphere reflection mip 6": 338768.2125,
+        "atmosphere sky view": 608013.025,
+        "atmosphere stars": 10741422.35,
+        "camera visibility": 627107.3,
+        "contribution compute": 885109.975,
+        "effect 0: effect 1: cloud weather map": 1121374.4375,
+        "effect 1: effect 1: cloud Sun path near": 1233033.825,
+        "effect 2: effect 1: cloud Sun path middle": 1188821.275,
+        "effect 3: effect 1: cloud Sun path far": 1150002.6375,
+        "effect 4: effect 1: cloud ground field": 1322718.2125,
+        "effect 5: effect 1: cloud far transmittance": 237014.0875,
+        "effect 6: effect 1: cloud ground band": 859878.675,
+        "effect 7: effect 1: cloud medium coefficients": 692096.8875,
+        "effect 8: effect 1: cloud sky overlay": 306861.0,
+        "effect after 0: effect 1: cloud trace": 16817418.1875,
+        "effect after 1: effect 1: cloud resolve": 1071785.4375,
+        "effect after 2: effect 1: cloud compose": 18331550.5625,
+        "synthetic Sun horizon heights": 2143290.625,
+        "synthetic Sun shadow far": 2121532.225,
+        "synthetic Sun shadow near": 1920454.2875,
+        "synthetic cluster build": 125957.2875,
+        "synthetic exposure resolve": 150569.775,
+        "synthetic forward opaque": 12319264.6125,
+        "synthetic tone encode": 19537881.25,
+        "synthetic transform history": 480734.8875,
+        "temporal exposure texture": 17607376.9625
       },
       "quality": [
         {
@@ -324,10 +325,6 @@
           96
         ],
         [
-          "cloud medium coefficient texture",
-          4608000
-        ],
-        [
           "cloud surface field",
           1449616
         ],
@@ -345,7 +342,7 @@
         ],
         [
           "cloud ground band",
-          304200
+          1149200
         ],
         [
           "cloud ground band mapping",
@@ -354,6 +351,10 @@
         [
           "cloud medium hemisphere light",
           32
+        ],
+        [
+          "cloud medium droplet phase tables",
+          12300
         ],
         [
           "cloud layer texture 0",
@@ -402,6 +403,42 @@
         [
           "cloud overlay rows",
           16
+        ],
+        [
+          "view volume in-scatter and terminal pair",
+          9446400
+        ],
+        [
+          "view volume transmittance and night in-scatter",
+          9446400
+        ],
+        [
+          "view volume low bands history A",
+          13824000
+        ],
+        [
+          "view volume high bands history A",
+          9216000
+        ],
+        [
+          "view volume low bands history B",
+          13824000
+        ],
+        [
+          "view volume high bands history B",
+          9216000
+        ],
+        [
+          "view volume history camera",
+          96
+        ],
+        [
+          "atmosphere aerosol",
+          80
+        ],
+        [
+          "view volume medium coefficients",
+          4608000
         ]
       ],
       "setup_pass_peaks_ns": {},
@@ -417,7 +454,12 @@
         "start_sun_elevation_degrees": 10.000000953674316,
         "yaw_degrees": 79.8441162109375
       },
-      "whole_frame_gpu_ns": 109860036.6125,
+      "view_volume_grid": [
+        160,
+        90,
+        80
+      ],
+      "whole_frame_gpu_ns": 118140832.725,
       "selection": "ground-clear"
     },
     {
@@ -429,85 +471,85 @@
       ],
       "first_submission": {
         "pass_gpu_ns": {
-          "atmosphere DFG integration": 1498708.0,
-          "atmosphere aerial perspective": 667917.0,
-          "atmosphere diffuse irradiance": 276250.0,
-          "atmosphere ground irradiance": 118750.0,
-          "atmosphere multiple scattering": 791333.0,
-          "atmosphere reflection mip 0": 19000.0,
-          "atmosphere reflection mip 1": 152750.0,
-          "atmosphere reflection mip 2": 251167.0,
-          "atmosphere reflection mip 3": 124125.0,
-          "atmosphere reflection mip 4": 115708.0,
-          "atmosphere reflection mip 5": 106042.0,
-          "atmosphere reflection mip 6": 101708.0,
-          "atmosphere sky view": 65833.0,
-          "atmosphere stars": 11703375.0,
-          "atmosphere transmittance": 23542.0,
-          "camera visibility": 30750.0,
-          "contribution compute": 10333.0,
-          "effect 0: effect 1: cloud weather map": 346791.0,
-          "effect 1: effect 1: cloud Sun path near": 1819125.0,
-          "effect 2: effect 1: cloud Sun path middle": 2527083.0,
-          "effect 3: effect 1: cloud Sun path far": 2377667.0,
-          "effect 4: effect 1: cloud ground field": 47584.0,
-          "effect 5: effect 1: cloud far transmittance": 98000.0,
-          "effect 6: effect 1: cloud ground band": 123750.0,
-          "effect 7: effect 1: cloud medium coefficients": 51000.0,
-          "effect 8: effect 1: cloud sky overlay": 363417.0,
-          "effect after 0: effect 1: cloud trace": 25328000.0,
-          "effect after 1: effect 1: cloud resolve": 126417.0,
-          "effect after 2: effect 1: cloud compose": 24030084.0,
-          "synthetic Sun horizon heights": 78333.0,
-          "synthetic Sun shadow far": 64292.0,
-          "synthetic Sun shadow near": 55375.0,
-          "synthetic cluster build": 4667.0,
-          "synthetic exposure resolve": 8125.0,
-          "synthetic forward opaque": 1702167.0,
-          "synthetic tone encode": 24077500.0,
-          "synthetic transform history": 99584.0,
-          "temporal exposure texture": 1208000.0
+          "atmosphere DFG integration": 1551708.0,
+          "atmosphere aerial perspective": 930250.0,
+          "atmosphere diffuse irradiance": 425750.0,
+          "atmosphere ground irradiance": 143791.0,
+          "atmosphere multiple scattering": 871417.0,
+          "atmosphere reflection mip 0": 35375.0,
+          "atmosphere reflection mip 1": 370292.0,
+          "atmosphere reflection mip 2": 1072917.0,
+          "atmosphere reflection mip 3": 353750.0,
+          "atmosphere reflection mip 4": 119250.0,
+          "atmosphere reflection mip 5": 105625.0,
+          "atmosphere reflection mip 6": 100292.0,
+          "atmosphere sky view": 74375.0,
+          "atmosphere stars": 10534250.0,
+          "atmosphere transmittance": 25709.0,
+          "camera visibility": 130166.0,
+          "contribution compute": 18625.0,
+          "effect 0: effect 1: cloud weather map": 1179125.0,
+          "effect 1: effect 1: cloud Sun path near": 1916334.0,
+          "effect 2: effect 1: cloud Sun path middle": 4579083.0,
+          "effect 3: effect 1: cloud Sun path far": 4752625.0,
+          "effect 4: effect 1: cloud ground field": 5828791.0,
+          "effect 5: effect 1: cloud far transmittance": 291416.0,
+          "effect 6: effect 1: cloud ground band": 2298000.0,
+          "effect 7: effect 1: cloud medium coefficients": 129250.0,
+          "effect 8: effect 1: cloud sky overlay": 370167.0,
+          "effect after 0: effect 1: cloud trace": 36708875.0,
+          "effect after 1: effect 1: cloud resolve": 131208.0,
+          "effect after 2: effect 1: cloud compose": 36994958.0,
+          "synthetic Sun horizon heights": 752041.0,
+          "synthetic Sun shadow far": 62458.0,
+          "synthetic Sun shadow near": 4369583.0,
+          "synthetic cluster build": 132958.0,
+          "synthetic exposure resolve": 10792.0,
+          "synthetic forward opaque": 3264042.0,
+          "synthetic tone encode": 37139917.0,
+          "synthetic transform history": 1128500.0,
+          "temporal exposure texture": 2732500.0
         },
-        "whole_frame_gpu_ns": 100594252.0
+        "whole_frame_gpu_ns": 161636165.0
       },
       "frames": 80,
-      "maximum_sun_refill_ns": 20139374.0,
+      "maximum_sun_refill_ns": 11248042.0,
       "minimum_volume_instances": null,
       "pass_gpu_ns": {
-        "atmosphere aerial perspective": 1251641.7,
-        "atmosphere diffuse irradiance": 374927.575,
-        "atmosphere reflection mip 0": 210787.0125,
-        "atmosphere reflection mip 1": 362938.575,
-        "atmosphere reflection mip 2": 430131.7375,
-        "atmosphere reflection mip 3": 277028.075,
-        "atmosphere reflection mip 4": 238455.225,
-        "atmosphere reflection mip 5": 224381.3,
-        "atmosphere reflection mip 6": 187747.4,
-        "atmosphere sky view": 175032.8,
-        "atmosphere stars": 13644264.5625,
-        "camera visibility": 340883.925,
-        "contribution compute": 100564.0125,
-        "effect 0: effect 1: cloud weather map": 321277.125,
-        "effect 1: effect 1: cloud Sun path near": 1081402.1,
-        "effect 2: effect 1: cloud Sun path middle": 972106.2,
-        "effect 3: effect 1: cloud Sun path far": 801488.5125,
-        "effect 4: effect 1: cloud ground field": 260547.375,
-        "effect 5: effect 1: cloud far transmittance": 193516.1625,
-        "effect 6: effect 1: cloud ground band": 362865.6375,
-        "effect 7: effect 1: cloud medium coefficients": 384530.175,
-        "effect 8: effect 1: cloud sky overlay": 395467.1625,
-        "effect after 0: effect 1: cloud trace": 27592347.375,
-        "effect after 1: effect 1: cloud resolve": 667760.425,
-        "effect after 2: effect 1: cloud compose": 29213738.5625,
-        "synthetic Sun horizon heights": 939399.9625,
-        "synthetic Sun shadow far": 1038202.0,
-        "synthetic Sun shadow near": 857103.1125,
-        "synthetic cluster build": 104173.425,
-        "synthetic exposure resolve": 69962.4625,
-        "synthetic forward opaque": 8145576.0,
-        "synthetic tone encode": 30115615.65,
-        "synthetic transform history": 420162.025,
-        "temporal exposure texture": 28175357.7625
+        "atmosphere aerial perspective": 1363680.1375,
+        "atmosphere diffuse irradiance": 477041.625,
+        "atmosphere reflection mip 0": 281256.275,
+        "atmosphere reflection mip 1": 372484.35,
+        "atmosphere reflection mip 2": 588986.5,
+        "atmosphere reflection mip 3": 348048.95,
+        "atmosphere reflection mip 4": 430996.875,
+        "atmosphere reflection mip 5": 294637.0125,
+        "atmosphere reflection mip 6": 285692.1625,
+        "atmosphere sky view": 469591.1375,
+        "atmosphere stars": 9157808.9125,
+        "camera visibility": 296362.0,
+        "contribution compute": 418136.9875,
+        "effect 0: effect 1: cloud weather map": 346729.675,
+        "effect 1: effect 1: cloud Sun path near": 993950.0375,
+        "effect 2: effect 1: cloud Sun path middle": 1004495.7375,
+        "effect 3: effect 1: cloud Sun path far": 927609.35,
+        "effect 4: effect 1: cloud ground field": 1097146.35,
+        "effect 5: effect 1: cloud far transmittance": 164934.325,
+        "effect 6: effect 1: cloud ground band": 789935.9625,
+        "effect 7: effect 1: cloud medium coefficients": 352987.9875,
+        "effect 8: effect 1: cloud sky overlay": 311130.2,
+        "effect after 0: effect 1: cloud trace": 28298846.3375,
+        "effect after 1: effect 1: cloud resolve": 1425705.7375,
+        "effect after 2: effect 1: cloud compose": 29995779.1125,
+        "synthetic Sun horizon heights": 538784.8875,
+        "synthetic Sun shadow far": 453523.9,
+        "synthetic Sun shadow near": 692619.7875,
+        "synthetic cluster build": 144903.6125,
+        "synthetic exposure resolve": 164539.6875,
+        "synthetic forward opaque": 8538275.025,
+        "synthetic tone encode": 30781649.425,
+        "synthetic transform history": 642887.0375,
+        "temporal exposure texture": 26986388.55
       },
       "quality": [
         {
@@ -552,8 +594,8 @@
         }
       ],
       "ray_statistics": {
-        "mean_samples": 481.6030707465278,
-        "p95_samples": 726.0,
+        "mean_samples": 480.30297526041664,
+        "p95_samples": 722.0,
         "rays_traced": 921600,
         "refresh_fraction": 1.0,
         "refresh_stride": 1,
@@ -645,10 +687,6 @@
           96
         ],
         [
-          "cloud medium coefficient texture",
-          4608000
-        ],
-        [
           "cloud surface field",
           1449616
         ],
@@ -666,7 +704,7 @@
         ],
         [
           "cloud ground band",
-          304200
+          1149200
         ],
         [
           "cloud ground band mapping",
@@ -675,6 +713,10 @@
         [
           "cloud medium hemisphere light",
           32
+        ],
+        [
+          "cloud medium droplet phase tables",
+          12300
         ],
         [
           "cloud layer texture 0",
@@ -723,6 +765,42 @@
         [
           "cloud overlay rows",
           16
+        ],
+        [
+          "view volume in-scatter and terminal pair",
+          9446400
+        ],
+        [
+          "view volume transmittance and night in-scatter",
+          9446400
+        ],
+        [
+          "view volume low bands history A",
+          13824000
+        ],
+        [
+          "view volume high bands history A",
+          9216000
+        ],
+        [
+          "view volume low bands history B",
+          13824000
+        ],
+        [
+          "view volume high bands history B",
+          9216000
+        ],
+        [
+          "view volume history camera",
+          96
+        ],
+        [
+          "atmosphere aerosol",
+          80
+        ],
+        [
+          "view volume medium coefficients",
+          4608000
         ]
       ],
       "setup_pass_peaks_ns": {},
@@ -738,19 +816,23 @@
         "start_sun_elevation_degrees": 10.000000953674316,
         "yaw_degrees": 79.8441162109375
       },
-      "whole_frame_gpu_ns": 149931383.1125,
+      "view_volume_grid": [
+        160,
+        90,
+        80
+      ],
+      "whole_frame_gpu_ns": 149437545.65,
       "selection": "ground-mist-bank"
     }
   ],
   "investigations": {
-    "whole frame": "Off 8.862 ms, declared clear 109.860 ms, and mist with a bank 149.931 ms. Named Ground work: cloud ground band: 0.363 ms, cloud medium coefficients: 0.385 ms, atmosphere aerial perspective: 1.252 ms. The declared-clear control measures the cost of keeping the provider and view volume alive, including surface visibility; occupied minus clear includes marching and lighting the condensate. Device is shared and these figures use capture-off frames.",
-    "atmosphere reflection mip 1": "Same declared pipelines, dimensions and camera: 0.290 ms at zero amount and 0.363 ms with occupied mist and bank. Occupancy adds actual density, Sun-path and in-scatter work while clear skips it. Small or unrelated deltas can include shared load; all measured named passes are retained.",
-    "atmosphere stars": "Same declared pipelines, dimensions and camera: 9.190 ms at zero amount and 13.644 ms with occupied mist and bank. Occupancy adds actual density, Sun-path and in-scatter work while clear skips it. Small or unrelated deltas can include shared load; all measured named passes are retained.",
-    "camera visibility": "Same declared pipelines, dimensions and camera: 0.238 ms at zero amount and 0.341 ms with occupied mist and bank. Occupancy adds actual density, Sun-path and in-scatter work while clear skips it. Small or unrelated deltas can include shared load; all measured named passes are retained.",
-    "effect after 0: effect 1: cloud trace": "Same declared pipelines, dimensions and camera: 16.744 ms at zero amount and 27.592 ms with occupied mist and bank. Occupancy adds actual density, Sun-path and in-scatter work while clear skips it. Small or unrelated deltas can include shared load; all measured named passes are retained.",
-    "effect after 2: effect 1: cloud compose": "Same declared pipelines, dimensions and camera: 18.916 ms at zero amount and 29.214 ms with occupied mist and bank. Occupancy adds actual density, Sun-path and in-scatter work while clear skips it. Small or unrelated deltas can include shared load; all measured named passes are retained.",
-    "synthetic cluster build": "Same declared pipelines, dimensions and camera: 0.069 ms at zero amount and 0.104 ms with occupied mist and bank. Occupancy adds actual density, Sun-path and in-scatter work while clear skips it. Small or unrelated deltas can include shared load; all measured named passes are retained.",
-    "synthetic tone encode": "Same declared pipelines, dimensions and camera: 19.902 ms at zero amount and 30.116 ms with occupied mist and bank. Occupancy adds actual density, Sun-path and in-scatter work while clear skips it. Small or unrelated deltas can include shared load; all measured named passes are retained.",
-    "temporal exposure texture": "Same declared pipelines, dimensions and camera: 17.266 ms at zero amount and 28.175 ms with occupied mist and bank. Occupancy adds actual density, Sun-path and in-scatter work while clear skips it. Small or unrelated deltas can include shared load; all measured named passes are retained."
+    "whole frame": "Off 17.885 ms, declared clear 118.141 ms, and mist with a bank 149.438 ms. Named Ground work: cloud ground band: 0.790 ms, cloud medium coefficients: 0.353 ms, atmosphere aerial perspective: 1.364 ms. The declared-clear control measures the cost of keeping the provider and view volume alive, including surface visibility; occupied minus clear includes marching and lighting the condensate. Device is shared and these figures use capture-off frames.",
+    "atmosphere reflection mip 4": "Same declared pipelines, dimensions and camera: 0.243 ms at zero amount and 0.431 ms with occupied mist and bank. Occupancy adds actual density, Sun-path and in-scatter work while clear skips it. Small or unrelated deltas can include shared load; all measured named passes are retained.",
+    "effect after 0: effect 1: cloud trace": "Same declared pipelines, dimensions and camera: 16.817 ms at zero amount and 28.299 ms with occupied mist and bank. Occupancy adds actual density, Sun-path and in-scatter work while clear skips it. Small or unrelated deltas can include shared load; all measured named passes are retained.",
+    "effect after 1: effect 1: cloud resolve": "Same declared pipelines, dimensions and camera: 1.072 ms at zero amount and 1.426 ms with occupied mist and bank. Occupancy adds actual density, Sun-path and in-scatter work while clear skips it. Small or unrelated deltas can include shared load; all measured named passes are retained.",
+    "effect after 2: effect 1: cloud compose": "Same declared pipelines, dimensions and camera: 18.332 ms at zero amount and 29.996 ms with occupied mist and bank. Occupancy adds actual density, Sun-path and in-scatter work while clear skips it. Small or unrelated deltas can include shared load; all measured named passes are retained.",
+    "synthetic tone encode": "Same declared pipelines, dimensions and camera: 19.538 ms at zero amount and 30.782 ms with occupied mist and bank. Occupancy adds actual density, Sun-path and in-scatter work while clear skips it. Small or unrelated deltas can include shared load; all measured named passes are retained.",
+    "synthetic transform history": "Same declared pipelines, dimensions and camera: 0.481 ms at zero amount and 0.643 ms with occupied mist and bank. Occupancy adds actual density, Sun-path and in-scatter work while clear skips it. Small or unrelated deltas can include shared load; all measured named passes are retained.",
+    "temporal exposure texture": "Same declared pipelines, dimensions and camera: 17.607 ms at zero amount and 26.986 ms with occupied mist and bank. Occupancy adds actual density, Sun-path and in-scatter work while clear skips it. Small or unrelated deltas can include shared load; all measured named passes are retained."
   }
 }

@@ -172,6 +172,9 @@ fn metal_tall_fog_keeps_sun_attenuation_through_the_ground_band() {
                 )
                 .expect("slant reference");
             let expected = (-reference.optical_depth.value).exp();
+            if ridge && (150.0..210.0).contains(&point[1]) {
+                assert!(expected < 0.98, "the ray crosses fog over the ridge");
+            }
             eprintln!(
                 "ridge={ridge}, {} m: GPU {actual:.5}, query {expected:.5}",
                 point[1]

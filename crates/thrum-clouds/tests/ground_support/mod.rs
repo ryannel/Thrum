@@ -132,6 +132,20 @@ pub(crate) fn render(
     GroundProducts,
     EnvironmentProducts,
 ) {
+    render_from_height(gpu, ground, state, elevation, 12.0)
+}
+
+pub(crate) fn render_from_height(
+    gpu: &Opened,
+    ground: &GroundConfig,
+    state: &State,
+    elevation: f32,
+    eye_y: f32,
+) -> (
+    FrameHost<World, Source>,
+    GroundProducts,
+    EnvironmentProducts,
+) {
     let config = ShadeConfig {
         seed: SEED,
         model: PROFILE,
@@ -161,8 +175,8 @@ pub(crate) fn render(
         .publish(Arc::new(state.clone()))
         .expect("ground state");
     let view = SyntheticView::perspective(
-        [0.0, 12.0, 0.0],
-        [1.0, 12.0, 0.0],
+        [0.0, eye_y, 0.0],
+        [1.0, eye_y, 0.0],
         [0.0, 1.0, 0.0],
         10.0_f32.to_radians(),
         2.0,

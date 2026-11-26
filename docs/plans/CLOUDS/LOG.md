@@ -1104,3 +1104,10 @@ preserve light in shaded ground and smooth edges in the lit mist. A ridge shaft 
 where framed. The bright pools and strips inside the mist under cloud openings are the
 documented risk 15 limitation assigned to WP22.
 [Metal and Chrome inspection](../../../.orchestrate/evidence/CLOUDS/WP14/VISUAL.md)
+
+The WP14 review repair extends the ground band's height to clear all configured fog, including
+fog on terrain above the receiver. Metal agrees with the headless query through the original
+96 m boundary and the actual top, and the near medium distinguishes deeper fog above 96 m.
+The revised paired cost record includes the four view-volume history textures and both upper
+phase buffers, with the shared coefficient texture counted once.
+[Sun-path proof](../../../.orchestrate/evidence/CLOUDS/WP14/REVIEW-SUN-PATH.md) · [Cost](../../../.orchestrate/evidence/CLOUDS/WP14/COST.md)
