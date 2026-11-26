@@ -13,7 +13,8 @@
 )]
 use crate::support;
 use support::valley::{CENTRE, DISCHARGE, MANNING, valley};
-use thrum_river_model::{Profile, key_for_samples, solve, solve_samples};
+use thrum_river_model::{Profile, key_for_samples, solve, solve_samples, write};
+use thrum_water_model::RiverFile;
 
 /// The design's constants.
 const C: f64 = 2.0;
@@ -138,40 +139,44 @@ fn the_law_s_edges_rest_the_cap_and_the_bands() {
 
 #[test]
 fn each_sample_of_a_river_file_carries_its_own_gains() {
-    let (grid, declaration) = valley(0.25);
-    let profile = Profile::default();
+    let (grid, declaration) = support::section::short_reach();
+    let profile = Profile {
+        threads: 1,
+        ..Profile::default()
+    };
     let flows = vec![vec![0.5 * DISCHARGE], vec![DISCHARGE]];
     let s = solve_samples(&grid, &declaration, &profile, &flows).unwrap();
-    let file = s
-        .file(key_for_samples(&grid, &declaration, &profile, &flows))
-        .unwrap();
-    let z = grid.heights();
-    let mut compared = 0;
-    for (k, x) in s.solutions.iter().enumerate() {
+    let key = key_for_samples(&grid, &declaration, &profile, &flows);
+    let bytes = write(&s.file(key).unwrap());
+    let file = RiverFile::read(&bytes, &key).unwrap();
+    for (k, sample) in s.solutions.iter().enumerate() {
+        let mut compared = 0;
         for r in &file.reaches {
             let gains = if k == 0 {
                 &r.gains
             } else {
                 &r.upper[k - 1].gains
             };
-            for (i, _) in z.iter().enumerate() {
-                if r.footprint[i] && x.wet[i] && x.reach_of[i].is_some() {
-                    assert_eq!(gains[i], x.gains[i]);
+            for (i, &in_footprint) in r.footprint.iter().enumerate() {
+                if in_footprint && sample.wet[i] {
+                    assert_eq!(gains[i], sample.gains[i], "sample {k}, cell {i}");
                     compared += 1;
                 }
             }
         }
+        assert!(compared > 0, "sample {k} has no wet footprint cells");
+        println!("sample {k}: {compared} wet footprint cells compared");
     }
-    let riffle = |k: usize| {
-        let x = &s.solutions[k];
-        let i = grid.cell([5.0, CENTRE]).unwrap();
-        x.gains[i][0].hypot(x.gains[i][1])
+    // A channel cell midway along the slope, away from the spring and the pool.
+    let slope_cell = grid.cell([4.25, 0.0]).unwrap();
+    assert!(file.reaches.iter().any(|r| r.footprint[slope_cell]));
+    let slope_gain = |k: usize| {
+        let sample = &s.solutions[k];
+        assert!(sample.wet[slope_cell]);
+        let [short, long] = sample.gains[slope_cell];
+        short.hypot(long)
     };
-    println!(
-        "{compared} wet cells' gains stored in their samples; the riffle's gain {:.3} at half \
-         the discharge and {:.3} at the whole",
-        riffle(0),
-        riffle(1)
-    );
-    assert!(compared > 0 && riffle(1) > riffle(0));
+    let (half, whole) = (slope_gain(0), slope_gain(1));
+    println!("slope gain {half:.6} at half the discharge and {whole:.6} at the whole");
+    assert!(half > 0.0 && whole > half);
 }
