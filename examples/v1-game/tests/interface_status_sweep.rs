@@ -113,10 +113,8 @@ fn status_fits_point_grid_at_all_three_densities() {
         check_extent(tree, inputs, viewport);
         cases += 1;
     };
-    for scale in 1..=3 {
-        // Scale one can also be forced on a Retina display. At the other
-        // scales use the matching density as in the window and browser.
-        let density = f64::from(scale.max(2));
+    // Cover matching scale and density, and scale one forced on Retina.
+    for (scale, density) in [(1, 1.0), (1, 2.0), (2, 2.0), (3, 3.0)] {
         // All combinations of logical widths and heights in the range at 16-point
         // intervals, plus the upper endpoints. Maximum insets bound the fit.
         for width in points(320, 3456) {
