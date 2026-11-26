@@ -458,8 +458,18 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "not_started",
-      "quality_bar": "As truthful as a shipped game's benchmark mode, such as Forza Horizon 5's or Shadow of the Tomb Raider's: one command per target, the same scene and controls on each, a report of the settings that actually ran, and a frame record that shows every hitch."
+      "status": "blocked",
+      "quality_bar": "As truthful as a shipped game's benchmark mode, such as Forza Horizon 5's or Shadow of the Tomb Raider's: one command per target, the same scene and controls on each, a report of the settings that actually ran, and a frame record that shows every hitch.",
+      "blocked": {
+        "reason": "needs_dependency",
+        "what": "Expose the drawn publication\u2019s manifest hash for WP7.2\u2013WP7.4 and bring the three rows within WP7.5\u2019s fixed image thresholds.",
+        "work": {
+          "commit": "3714c84956fd94d3a783e457523ac1bd4152d4a1",
+          "branch": "build/showcase",
+          "pushed": false
+        },
+        "handoff": ".orchestrate/evidence/SHOWCASE/WP7-handoff.md"
+      }
     },
     {
       "id": "WP8",
