@@ -1066,14 +1066,8 @@
       "failed_reviews": 2,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
-      "quality_bar": "Launch as a shipped Metal game prepares it, following Apple's guidance to build GPU binaries ahead of time: the shaders the game needs were compiled when it was built, they are exactly the ones the running game asks for, and a library that does not match is rebuilt before play and never during it.",
-      "findings": [
-        {
-          "name": "Metal preparation retains discarded shader modules and layouts for the device generation",
-          "repeat": false
-        }
-      ]
+      "status": "done",
+      "quality_bar": "Launch as a shipped Metal game prepares it, following Apple's guidance to build GPU binaries ahead of time: the shaders the game needs were compiled when it was built, they are exactly the ones the running game asks for, and a library that does not match is rebuilt before play and never during it."
     },
     {
       "id": "WP12",

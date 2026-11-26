@@ -1408,7 +1408,7 @@
         {
           "verdict": "fail",
           "commit": "bf03edc848b5abad193fd285882b90d7bbcf6195",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP10-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP10-review-2.md",
           "items": {
             "D10.1": "pass",
             "D10.2": "pass",
@@ -1439,6 +1439,35 @@
             "turns": 1
           },
           "at": "2026-11-26T02:30:12Z"
+        },
+        {
+          "verdict": "pass",
+          "commit": "0bedc6a06b6a37c90f4ebff77dd3efbb65d33721",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP10-review.md",
+          "items": {
+            "D10.1": "pass",
+            "D10.2": "pass",
+            "D10.3": "pass",
+            "D10.4": "pass",
+            "D10.5": "pass",
+            "D10.6": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 95877,
+            "cached": 2272384,
+            "output": 7487,
+            "turns": 1
+          },
+          "at": "2026-11-26T03:20:08Z"
         }
       ],
       "authorised": {
@@ -1471,6 +1500,13 @@
           "output": 245747,
           "turns": 3
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "0bedc6a06b6a37c90f4ebff77dd3efbb65d33721",
+        "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP10-review.md",
+        "checked": "f896c89072f2b38001fdf392e99ef0a1321693b1",
+        "at": "2026-11-26T03:20:08Z"
       }
     },
     "WP12": {
