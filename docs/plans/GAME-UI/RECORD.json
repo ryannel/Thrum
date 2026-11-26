@@ -1020,7 +1020,45 @@
     },
     "WP6": {
       "definitions": "fd5eee01f8047dc16096eee7123c0fd88cc272b76f10269bd4cd1ba6f2871515",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "a43a67de01debbbb0fb94d0aa68abfdabb60f010",
+          "review": ".orchestrate/evidence/GAME-UI/WP6-review.md",
+          "items": {
+            "WP6.1": "pass",
+            "WP6.2": "pass",
+            "WP6.3": "fail",
+            "WP6.4": "pass",
+            "WP6.5": "pass",
+            "WP6.6": "pass",
+            "WP6.7": "pass"
+          },
+          "findings": [
+            {
+              "name": "A successful iOS scene replacement repeats the same request",
+              "item": "WP6.3",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 117737,
+            "cached": 3943168,
+            "output": 10885,
+            "turns": 1
+          },
+          "at": "2026-11-26T11:42:33Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
