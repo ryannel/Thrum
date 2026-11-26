@@ -627,7 +627,20 @@ impl SceneContribution for Water {
                 self.invalid || frame.time.capture,
             );
         }
+        if let Some(interaction) = &mut p.interaction {
+            interaction.record(&p.queue, encoder, frame, &map);
+        }
         if let Some(gather) = &mut p.gather {
+            let wake = p.interaction.as_ref().map(|interaction| {
+                // An unresolved shore transform can extend the reach beyond
+                // the ambient bound. Admit for any live window in that case.
+                let horizontal = if displayed_map.surf_profile().is_some() {
+                    f64::INFINITY
+                } else {
+                    f64::from(self.offshore_displacement[0])
+                };
+                (interaction, horizontal, f64::from(p.wake_cell_padding))
+            });
             gather.record(
                 &p.queue,
                 frame,
@@ -644,7 +657,7 @@ impl SceneContribution for Water {
                         } else {
                             underwater::ShortWaveDomain::Open(row.gains)
                         });
-                        water.lens(frame, displayed_map, now, short_domain)
+                        water.lens(frame, displayed_map, now, short_domain, wake)
                     })
                     .as_ref(),
             );
@@ -668,9 +681,6 @@ impl SceneContribution for Water {
                 self.surf_cache_bounds,
                 [now, now - previous, self.profile.waves.choppiness],
             );
-        }
-        if let Some(interaction) = &mut p.interaction {
-            interaction.record(&p.queue, encoder, frame, &map);
         }
         if let Some(foam) = &mut p.foam {
             self.invalid |= foam.record(

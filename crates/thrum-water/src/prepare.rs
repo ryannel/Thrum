@@ -50,6 +50,7 @@ pub(super) struct Prepared {
     pattern: Option<Pattern>,
     pub(super) mesh: wgpu::Buffer,
     pub(super) vertices: u32,
+    pub(super) wake_cell_padding: f32,
     pub(super) queue: wgpu::Queue,
     pub(super) map: Option<MapGpu>,
     pub(super) surf: Option<SurfGpu>,
@@ -237,6 +238,16 @@ pub(super) fn new(
         .map_err(|error| error.to_string())?;
     let tidal_grid = mapped && map.surf_profile().is_none() && has_tidal_join(map);
     let geometry = surface_mesh(mapped.then_some(map), tidal_grid);
+    let wake_cell_padding = if profile.underwater && interaction.is_some() {
+        geometry
+            .vertices
+            .iter()
+            .filter(|vertex| vertex[3] != 0.0)
+            .map(|vertex| vertex[2])
+            .fold(0.0, f32::max)
+    } else {
+        0.0
+    };
     let count = u32::try_from(geometry.vertices.len()).map_err(|e| e.to_string())?;
     let (mesh, indices) = geometry.upload(device, surf.is_some())?;
     let surf_cache = surf
@@ -441,6 +452,7 @@ pub(super) fn new(
         pattern,
         mesh,
         vertices: count,
+        wake_cell_padding,
         queue: surface.queue.clone(),
         map: map_gpu,
         surf,

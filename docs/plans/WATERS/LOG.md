@@ -1502,3 +1502,11 @@
   both readable. The declared lake attenuation accounts for their muted
   appearance in the ordinary frame. The diagnostic stays in evidence.
   [Window comparison](../../../.orchestrate/evidence/WATERS/WP15/window-traces/README.md).
+
+- 2026-11-26 WP15 live wake admission. Metal submits no gather over the reset
+  wake window. After an impulse, a dry lens five metres above sea level
+  admits the gather on the impact tick and the next tick. A camera moved
+  clear of both windows skips it. Admission tracks sources recorded into
+  the same wake endpoints the shader samples. The vertex draw now calls
+  a shared displaced-vertex function for the forthcoming summed cut.
+  [Live wake control](../../../.orchestrate/evidence/WATERS/WP15/live-wake-ground.log).

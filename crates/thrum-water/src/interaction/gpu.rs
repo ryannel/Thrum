@@ -63,6 +63,34 @@ struct Endpoint {
     origins: [[i32; 2]; 2],
     tick: u64,
     bank: u32,
+    live: [bool; 2],
+}
+
+impl Endpoint {
+    #[expect(
+        clippy::cast_precision_loss,
+        reason = "enclose the wake shader's rounded f32 origin and extent"
+    )]
+    fn overlaps_live_window(self, [low, high]: [[f64; 2]; 2]) -> bool {
+        self.live
+            .into_iter()
+            .zip(self.origins)
+            .zip(CELL_METRES)
+            .any(|((live, origin), metres)| {
+                if !live {
+                    return false;
+                }
+                // Match the shader's f32 world origin before enclosing the
+                // region in which it can interpolate the endpoint.
+                (0..2).all(|axis| {
+                    let start = f64::from(origin[axis] as f32 * metres);
+                    let end = start + f64::from((GRID_WIDTH - 1) as f32 * metres);
+                    let rounding =
+                        f64::from(f32::EPSILON) * 4.0 * start.abs().max(end.abs()).max(1.0);
+                    high[axis] >= start - rounding && low[axis] <= end + rounding
+                })
+            })
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -459,10 +487,11 @@ impl Interaction {
             })
         });
         let mut report = self.committed.map_or(self.initial_report, |old| old.report);
-        let next = Endpoint {
+        let mut next = Endpoint {
             origins,
             tick: time.tick,
             bank: previous.map_or(0, |old| 1 - old.bank),
+            live: [false; 2],
         };
         let endpoint = if reset {
             encoder.clear_buffer(&self.endpoints, 0, None);
@@ -479,6 +508,7 @@ impl Interaction {
             ]
         } else {
             let previous = previous.expect("previous wake");
+            next.live = previous.live;
             let elapsed = time.tick - previous.tick;
             let ticks = elapsed.min(MAX_TICKS);
             report.dropped_ticks += elapsed - ticks;
@@ -602,6 +632,7 @@ impl Interaction {
                         .filter(|source| source.region == region)
                     {
                         self.patch_rows.push(source.patch);
+                        next.live[level] |= depths != 0 && source.patch.impulse != 0.0;
                         if let Some(body) = source.body {
                             self.recorded_pressures[body].levels |= 1 << level;
                         }
@@ -670,6 +701,15 @@ impl Interaction {
 
     pub(crate) fn pending(&self) -> bool {
         !self.dispatches.is_empty()
+    }
+
+    pub(crate) fn live_wake_intersects(&self, rest: [[f64; 2]; 2]) -> bool {
+        self.recorded.or(self.committed).is_some_and(|frame| {
+            frame
+                .endpoint
+                .into_iter()
+                .any(|end| end.overlaps_live_window(rest))
+        })
     }
 
     pub(crate) fn dent(&self, tick: u64, body: u32, point: [f32; 2]) -> [f32; 4] {

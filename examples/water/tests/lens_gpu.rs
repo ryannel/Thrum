@@ -276,3 +276,55 @@ fn metal_skips_dry_trade_water_as_the_footprint_moves() {
     assert!(gathers(&lens.frame()), "submerged Trade lens omitted its gather");
 }
 }
+
+thrum_test_support::macos_gpu_test! {
+fn metal_admits_a_dry_lens_over_a_live_wake_window() {
+    use crate::support::{Fixture, optics::water_configured};
+    use std::time::Duration;
+    use thrum_app::sky::{Camera, ContentStatus, Controls, SkyGame};
+    use thrum_render::runtime::FrameSample;
+    use thrum_water::{Optics, Profile, interaction::Limits};
+    use thrum_water_model::Impulse;
+    use water_scene::lens_probe::{EXTENT, FOV};
+
+    let Some(gpu) = thrum_test_support::gpu("wake lens admission", Some(wgpu::Backend::Metal)) else { return };
+    let view = |x| Camera::look_at([x, 5.0, -0.1], [x, 5.0, 0.9], FOV.to_degrees());
+    let water = water_configured(None, Profile {
+        optics: Some(Optics::default()),
+        underwater: true,
+        interaction: Some(Limits::default()),
+        ..Profile::default()
+    });
+    let mailbox = water.interaction_mailbox().expect("prepared interaction capability");
+    let report = water.report();
+    let mut controls = Controls::new();
+    let camera_x = controls.slider("camera.x", "Camera x", 0.0..=300.0)
+        .default(0.0).add().expect("camera x control");
+    let game = SkyGame::new(controls, view(0.0), move |controls, sky| {
+        sky.camera = view(controls.get(camera_x));
+    })
+    .with_tick_duration(Duration::from_millis(20)).expect("fixed clock")
+    .with_contribution(Box::new(water), || ContentStatus::Drawn(1));
+    let mut rig = Fixture::from_game(&gpu, EXTENT, game, report);
+    let gathers = |frame: &FrameSample| frame.gpu_pass_ns.as_ref().expect("Metal timing")
+        .passes().iter().any(|pass| pass.name.contains("water gather"));
+    let mut elapsed = 0.0;
+    let mut submit = |rig: &mut Fixture| {
+        let frame = rig.frame(elapsed);
+        elapsed += 0.021;
+        frame
+    };
+    let still = (0..12).map(|_| submit(&mut rig))
+        .find(|frame| frame.gpu_pass_ns.is_some())
+        .unwrap_or_else(|| panic!("settled scene with Metal timestamps: {:?}", rig.host.timing_stats()));
+    assert!(!gathers(&still), "a dry lens over the reset wake window should be idle");
+    let tick = still.tick + 1;
+    mailbox.post_impulse(Impulse { id: 1, tick, place: [0.0; 2], vertical: -100.0, radius: 0.4 });
+    let active = submit(&mut rig);
+    assert!(active.tick >= tick, "the impact tick must submit");
+    assert!(gathers(&active), "a live wake window admits the lens even five metres above water");
+    assert!(gathers(&submit(&mut rig)), "the window remains live after the impact tick");
+    rig.parameters(r#"{"camera.x":300}"#);
+    assert!(!gathers(&submit(&mut rig)), "a dry lens clear of the wake window should be idle");
+}
+}

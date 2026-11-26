@@ -26,7 +26,7 @@ fn sea_surf_normal(index:u32, local:vec2<f32>, spacing:f32)->vec3<f32> {
     return normal/max(length(normal), 1e-20);
 }
 
-@vertex fn water_vertex(@location(0) vertex:vec4<f32>, @builtin(vertex_index) index:u32)->VertexOut {
+fn displaced_water_vertex(vertex: vec4<f32>, index: u32) -> VertexOut {
     let sea=vertex.w==0.0;
     let body=u32(vertex.w);
     let anchor=select(vec2(0.0),floor(view.camera_xyz_time.xz),sea);

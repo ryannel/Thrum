@@ -57,18 +57,24 @@ impl Underwater {
         map: &Map,
         seconds: f64,
         short_domain: Option<ShortWaveDomain>,
+        wake: Option<(&super::interaction::Interaction, f64, f64)>,
     ) -> Lens {
         let plane = Plane::new(frame);
+        let live_wake = wake.is_some_and(|(interaction, horizontal, static_cell)| {
+            interaction.live_wake_intersects(plane.rest_box(frame.camera, horizontal, static_cell))
+        });
         let mut lens = Lens::zeroed();
-        let may_fold = self.sample(&mut lens, &plane, map, seconds, SMOOTH_SIDE);
+        let may_fold = self.sample(&mut lens, &plane, map, seconds, SMOOTH_SIDE, live_wake);
         if may_fold
             && self
                 .level_strip(&plane, map, seconds, frame.render_extent, &mut lens)
                 .is_none()
         {
-            self.sample(&mut lens, &plane, map, seconds, LENS_SIDE);
+            self.sample(&mut lens, &plane, map, seconds, LENS_SIDE, live_wake);
         }
-        if lens.state[0] != 0
+        if live_wake {
+            lens.state[0] = 1;
+        } else if lens.state[0] != 0
             && let Some(domain) = short_domain
             && self.short.iter().any(|band| band.amplitude > 0.0)
             && self.proves_dry(&lens, &plane, map, domain, seconds)
@@ -252,7 +258,15 @@ impl Underwater {
         clippy::cast_possible_truncation,
         reason = "lens grid indices and GPU metres"
     )]
-    fn sample(&self, lens: &mut Lens, plane: &Plane, map: &Map, seconds: f64, side: usize) -> bool {
+    fn sample(
+        &self,
+        lens: &mut Lens,
+        plane: &Plane,
+        map: &Map,
+        seconds: f64,
+        side: usize,
+        live_wake: bool,
+    ) -> bool {
         // A level near plane repeats the same world columns down the image.
         // Its height stays per-pixel, but we only cut those columns once.
         let width = if plane.corners[0].xz() == plane.corners[1].xz() {
@@ -281,7 +295,7 @@ impl Underwater {
                 let short_bound = self.short_bound(&sample.row.gains);
                 let bound = sample.row.gains[0] * self.long_amplitude + short_bound;
                 let plain = map.surf_profile().is_none() || sample.bed.is_none();
-                if plain && sample.row.level + bound < plane.lowest {
+                if !live_wake && plain && sample.row.level + bound < plane.lowest {
                     continue;
                 }
                 let roof = if plain && sample.row.level - bound > plane.highest.max(bed) {
@@ -420,5 +434,23 @@ impl Plane {
             std::array::from_fn(|i| low[i].midpoint(high[i])),
             std::array::from_fn(|i| (high[i] - low[i]) * 0.5),
         )
+    }
+
+    fn rest_box(&self, camera: [f32; 3], horizontal: f64, static_cell: f64) -> [[f64; 2]; 2] {
+        let (centre, radius) = self.horizontal_box();
+        let anchor = [camera[0].floor(), camera[2].floor()].map(f64::from);
+        let reach_from_anchor = (0..2)
+            .map(|axis| (centre[axis] - anchor[axis]).abs() + radius[axis] + horizontal)
+            .fold(0.0, f64::max);
+        // Outside the innermost ring, no sea cell lies closer than half
+        // the preceding ring width in units of this ring's cell size.
+        // The joined sea can start at a half metre.
+        let sea_cell =
+            (reach_from_anchor / f64::from(super::prepare::SEA_RING_HALF_WIDTH / 2)).max(0.5);
+        let reach = radius.map(|span| span + horizontal + sea_cell.max(static_cell));
+        [
+            std::array::from_fn(|axis| centre[axis] - reach[axis]),
+            std::array::from_fn(|axis| centre[axis] + reach[axis]),
+        ]
     }
 }

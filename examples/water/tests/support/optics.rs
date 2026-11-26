@@ -270,6 +270,18 @@ pub(crate) fn water_with_profile(
     optics: bool,
     underwater: bool,
 ) -> Water {
+    water_configured(
+        bottom,
+        Profile {
+            optics: optics.then(Optics::default),
+            underwater,
+            deep_scatter: [0.004, 0.035, 0.065],
+            ..Profile::default()
+        },
+    )
+}
+
+pub(crate) fn water_configured(bottom: Option<(f64, [f64; 2], f64)>, profile: Profile) -> Water {
     let (depth, origin, step) = bottom.unwrap_or((-1000.0, [-2.0; 2], 4.0));
     let map = Map::prepare(
         Bed::new(origin, step, [2, 2], vec![depth; 4]).expect("bed"),
@@ -297,12 +309,6 @@ pub(crate) fn water_with_profile(
             thrum_sea_model::Cascade::new([160.0, 37.0, 9.0][i], &[]).expect("empty cascade")
         }),
         tail_slope_variance: 0.0,
-    };
-    let profile = Profile {
-        optics: optics.then(Optics::default),
-        underwater,
-        deep_scatter: [0.004, 0.035, 0.065],
-        ..Profile::default()
     };
     let map = Arc::new(Mutex::new(map));
     if bottom.is_some() {
