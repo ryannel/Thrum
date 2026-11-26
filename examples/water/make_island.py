@@ -65,12 +65,12 @@ def channel_height(x, z):
     shoulder = smoothstep((x - 200) / 9) * (1 - smoothstep((x - 222) / 15))
     shoulder *= smoothstep((side - 5.7) / 1.2) * (1 - smoothstep((side - 28) / 14))
     ground += shoulder * max(0, 14.2 - ground)
-    if not (199 < x < 374 and -12 < z < 22):
+    if not (199 < x < 385 and -12 < z < 22):
         return ground
     along = min(max((x - 210) / 140, 0), 1)
     level = 11.75 - 12.55 * along
     # The mouth sill remains wet at the lowest tide, with a shallow bed.
-    floor = level - 0.85 + 0.97 * smoothstep((x - 334) / 16)
+    floor = level - 0.85 + 0.70 * smoothstep((x - 334) / 16)
     floor -= 0.65 * smoothstep((x - 350) / 10)
     # Taper the wetted banks at the narrows without moving the chart edges.
     narrow = exp(-((x - 256) / 16) ** 2)
@@ -82,7 +82,7 @@ def channel_height(x, z):
     wall += 1.35 * (1 - smoothstep((x - 210) / 17))
     cut = floor + (wall - floor) * smoothstep((channel_side - half_width + 0.85) / (7.4 - half_width + 0.85))
     cut = min(cut, ground) if x > 352 else cut
-    weight = smoothstep((x - 199) / 9) * (1 - smoothstep((x - 360) / 14))
+    weight = smoothstep((x - 199) / 9) * (1 - smoothstep((x - 362) / 23))
     fade = 10.0 + 2.1 * sin(x * 0.12) + 1.2 * sin(x * 0.30 + z)
     weight *= 1 - smoothstep((side - 7.5) / fade)
     return ground + weight * (cut - ground)
