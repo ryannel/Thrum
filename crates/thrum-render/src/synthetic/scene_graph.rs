@@ -727,14 +727,14 @@ impl super::SyntheticTargetInputs {
                     taau.as_ref().map(|taau| taau.pass)
                 }
             })
-            .unwrap_or(late.last);
+            .unwrap_or(late.colour);
         let pre_tone_last = self.append_pre_tone(
             &mut graph,
             &mut prepared_keys,
             &pre_tone.colour,
             &effect_resources,
             &late_uniforms,
-            colour_producer,
+            (colour_producer, late.last),
         )?;
         let (output, display_pass) = self.display.append_graph(
             &mut graph,
@@ -742,7 +742,7 @@ impl super::SyntheticTargetInputs {
             ray_structure.filter(|_| self.traced_view),
         )?;
         if pre_tone_last != colour_producer {
-            graph.dependency(pre_tone_last, display_pass)?;
+            graph.select_producer(pre_tone_last, display_pass, &pre_tone.colour)?;
         }
         late.order_consumers(&mut graph, [Some(display_pass), temporal.witness_pass])?;
         if let Some((_, passes)) = &soft_sun {

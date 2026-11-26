@@ -6,7 +6,7 @@
 //! Exact-compatible, nonoverlapping transient texture lifetimes share a
 //! physical allocation retained by the target until its GPU work completes.
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::ops::Range;
 use std::sync::Arc;
 
@@ -442,6 +442,7 @@ pub struct FrameGraph {
     keys: Vec<Option<PassKey>>,
     native_passes: BTreeSet<usize>,
     explicit_dependencies: Vec<(usize, usize)>,
+    resource_producers: BTreeMap<(usize, usize), usize>,
     owner: Arc<()>,
 }
 
@@ -1371,6 +1372,22 @@ impl FrameGraph {
         self.explicit_dependencies.push((before, after));
         Ok(())
     }
+
+    /// Select one producer for a resource when an ordering edge serves another input.
+    pub(crate) fn select_producer(
+        &mut self,
+        before: usize,
+        after: usize,
+        resource: &ResourceId,
+    ) -> Result<(), GraphError> {
+        let key = (after, resource.index);
+        if self.descriptor(resource).is_none() || self.resource_producers.contains_key(&key) {
+            return Err(GraphError::InvalidDependency);
+        }
+        self.dependency(before, after)?;
+        self.resource_producers.insert(key, before);
+        Ok(())
+    }
     fn attachment_storage(&self, order: &[usize]) -> Vec<AttachmentStorage> {
         self.resources
             .iter()
@@ -1502,10 +1519,21 @@ impl FrameGraph {
                 })
                 .map(|(index, _)| index)
                 .collect::<Vec<_>>();
+            let selected_writer = self
+                .resource_producers
+                .get(&(consumer, access.resource.index));
+            if selected_writer.is_some_and(|writer| !writers.contains(writer)) {
+                return Err(GraphError::InvalidDependency);
+            }
             let explicit = writers
                 .iter()
                 .copied()
-                .filter(|&writer| self.explicit_dependencies.contains(&(writer, consumer)))
+                .filter(|&writer| {
+                    selected_writer.map_or_else(
+                        || self.explicit_dependencies.contains(&(writer, consumer)),
+                        |&chosen| writer == chosen,
+                    )
+                })
                 .collect::<Vec<_>>();
             let prior = writers
                 .iter()

@@ -192,7 +192,7 @@ impl SyntheticTargetInputs {
         colour: &ResourceId,
         resources: &crate::contribution::EffectResources,
         uniforms: &[Access],
-        mut producer: usize,
+        (mut producer, mut predecessor): (usize, usize),
     ) -> Result<usize, RenderError> {
         for (index, declaration) in self.effect_graph.after_opaque.iter().enumerate() {
             if declaration.kind != crate::contribution::AfterOpaqueKind::PreTone {
@@ -219,8 +219,12 @@ impl SyntheticTargetInputs {
                     external_side_effect: true,
                 },
             );
-            graph.dependency(producer, pass)?;
+            graph.select_producer(producer, pass, colour)?;
+            if predecessor != producer {
+                graph.dependency(predecessor, pass)?;
+            }
             producer = pass;
+            predecessor = pass;
         }
         Ok(producer)
     }
