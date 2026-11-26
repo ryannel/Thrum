@@ -706,6 +706,29 @@ dependencies. In addition:
   the flow bands and the river's caustics is not held to an f64 reference or to a bound measured first, and
   nor are the rings: WP6.10 compares the step with itself. Parts 1 to 10 are the source of the bounds WP1 to WP3
   were proved with and of WP6.10's carriage figures, and part 12 of its half.
+- **The depth a river writes (WP4.3).** Lead's decision, 26 November 2026, after two reviews failed WP4.3 on
+  one clause: the depth the water writes inside a river stood up to 1.4 mm from `thrum-water-model`'s
+  surface in the first and 5.2 mm in the second, against the 0.040 mm of `WATERS` WP4.1's test. Each of WP4.3's three bounds is now set at the size
+  at which its fault shows:
+  - *The map's rows, at that tolerance.* The map is what the query, the floats and the surface all read
+    ([ruling 2](../ARCHITECTURE.md#seam-rulings-for-rivers)). A wrong sample mix or wetting gauge there is
+    silent in a frame and costly to a game, and a compute pass reads the rows exactly.
+  - *Along a river, within 0.010 m.* 0.040 mm is no bound for a pixel. It is about one single-precision step
+    of a world coordinate at the island's rivers (0.031 mm at 330 m), so a place rebuilt from a frame's depth
+    barely resolves it. The drawn surface is a mesh that carries its wave displacement between vertices,
+    where the model evaluates each place; the two part by millimetres where the level curves and where the
+    swell enters, smoothly, with nothing drawn beside the water to show it. 0.010 m is the size this design
+    already works at: between samples the mix is itself up to 5.6 mm from a solve at that level
+    ([part 3](#a-river-answers-its-source)), and WP9's off-sample comparison allows 1 cm. At 0.010 m a
+    waterline moves at most 0.1 m on a bank of 1 in 10, and a float, which rides at the query's level, sits
+    at most 1 cm off the drawn surface, inside its own bob. The bound still fails water drawn from the wrong
+    sample or off its chart, which is wrong by centimetres. It is read along each river's whole wet length
+    and off the mesh's vertices, because both reviews found their misses between the stations the test had
+    chosen.
+  - *Across each end's edge, at that tolerance.* A step there is a crack along a line, seen from the bank
+    however small, and [risk 5](#risks) is this. The step is what the two sides differ by beyond what the
+    model's surface differs by between the same two places, so a wave both sides share cancels and the
+    tight bound is one a frame can meet: WP4 measured 4.8 µm at the worst.
 - **Maturity.** A ledger row for `E1.rivers` is added in WP4 and kept current.
 
 ## Open questions

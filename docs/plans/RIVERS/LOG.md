@@ -224,3 +224,11 @@
   with continuous Metal submissions, the outlet float was afloat in the sea by 36 s in both winds. The spring
   float reached the lake by 100 s in calm and 60 s in trade.
   [Target evidence](../../../.orchestrate/evidence/RIVERS/WP4/repair/README.md)
+
+- 2026-11-26 Lead: WP4.3 failed review twice on the depth the water writes inside a river (up to 1.4 mm
+  from the model, then 5.2 mm, against 0.040 mm). The lead ruled that bound not meaningful for a pixel. WP4.3 now holds the
+  GPU map's rows and the step across each end's edge at `WATERS` WP4.1's tolerance, and the written depth
+  along each river within 0.010 m; [the design](DESIGN.md#proof-and-builder-handoff) has the reasoning. No
+  other WP4 item changed.
+  [First review](../../../.orchestrate/evidence/RIVERS/WP4-review-1.md) ·
+  [second review](../../../.orchestrate/evidence/RIVERS/WP4-review.md)
