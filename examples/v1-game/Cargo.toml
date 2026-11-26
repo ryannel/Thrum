@@ -275,3 +275,8 @@ required-features = ["proving"]
 [[example]]
 name = "interface_guide"
 required-features = ["proving"]
+
+[[test]]
+name = "clouds_ground_selection_gpu"
+path = "tests/clouds_ground_selection_gpu.rs"
+required-features = ["thrum-render/creation-counters"]

@@ -478,7 +478,9 @@ impl GameSetup {
             crate::CloudSelection::Shade => {
                 return Err(FrameError::InvalidState("2D scene refuses cloud shade"));
             }
-            crate::CloudSelection::Sky | crate::CloudSelection::WorldLight => {
+            crate::CloudSelection::Sky
+            | crate::CloudSelection::WorldLight
+            | crate::CloudSelection::Ground(_) => {
                 return Err(FrameError::InvalidState("2D scene refuses cloud sky"));
             }
         }
@@ -657,7 +659,15 @@ impl GameSetup {
             WorldDriver::for_setup(&setup, weather, weather_edits.clone())
                 .map_err(FrameError::World)?,
         )));
-        let shade = cloud_shade(setup.clouds, shapes.as_ref(), cloud_sky)?;
+        let ground = if matches!(setup.clouds, crate::CloudSelection::Ground(_)) {
+            Some(
+                crate::clouds::ground::valley()
+                    .map_err(|error| FrameError::Scene(error.to_string()))?,
+            )
+        } else {
+            None
+        };
+        let shade = cloud_shade(setup.clouds, shapes.as_ref(), cloud_sky, ground.as_ref())?;
         if let Some(shade) = &shade {
             scene.sun_optical_depth = Some(shade.provider()?);
         }
@@ -669,6 +679,7 @@ impl GameSetup {
             source.weather_edits = weather_edits;
         }
         source.cloud_sky = cloud_sky;
+        source.cloud_ground = ground;
         source.cloud_shapes.clone_from(&shapes);
         source.cooked_rows = rows;
         let mut inner = Box::pin(Runtime::new_preparing(
@@ -800,6 +811,14 @@ fn clouded_weather(
         return Ok(None);
     }
     #[cfg(feature = "proving")]
+    if setup.cloud_sequence == crate::clouds::WeatherSequence::MistSweep
+        && setup.clouds != crate::CloudSelection::Ground(crate::GroundWeather::Clear)
+    {
+        return Err(runtime::FrameError::InvalidState(
+            "mist sweep needs Ground with zero initial amount",
+        ));
+    }
+    #[cfg(feature = "proving")]
     let initial = setup.cloud_sequence.target(setup.cloud_weather, 0.0);
     #[cfg(not(feature = "proving"))]
     let initial = setup.cloud_weather;
@@ -808,12 +827,19 @@ fn clouded_weather(
         |placed| placed.state(initial),
     );
     state
-        .map(|state| {
+        .and_then(|mut state| {
+            if let crate::CloudSelection::Ground(preset) = setup.clouds {
+                state.set_ground(thrum_cloud_model::GroundState::new(
+                    preset.amounts(),
+                    0.0,
+                    100_000.0,
+                )?);
+            }
             let weather =
                 crate::simulation::Weather::new(state, shapes.and_then(crate::PlacedSky::demo));
             #[cfg(feature = "proving")]
             let weather = weather.with_sequence(setup.cloud_sequence, initial);
-            Some(weather)
+            Ok(Some(weather))
         })
         .map_err(|error| runtime::FrameError::World(error.to_string()))
 }
@@ -822,6 +848,7 @@ fn cloud_shade(
     selection: crate::CloudSelection,
     shapes: Option<&crate::PlacedSky>,
     sky: Option<thrum_clouds::SkyProfile>,
+    ground: Option<&thrum_clouds::GroundConfig>,
 ) -> Result<Option<thrum_clouds::Shade>, runtime::FrameError> {
     if selection == crate::CloudSelection::Off {
         return Ok(None);
@@ -829,6 +856,11 @@ fn cloud_shade(
     let config = shapes.map_or_else(crate::clouds::shade_config, crate::PlacedSky::profile);
     let shade = thrum_clouds::Shade::new(config)
         .map_err(|error| runtime::FrameError::Scene(error.to_string()))?;
+    let shade = if let Some(ground) = ground {
+        shade.with_ground(ground.clone())
+    } else {
+        shade
+    };
     let Some(sky) = sky else {
         return Ok(Some(shade));
     };
@@ -988,9 +1020,10 @@ impl GameHost for Runtime {
             source.cloud_input.as_ref(),
             source.cloud_sky,
             source.cloud_shapes.as_ref(),
+            source.cloud_ground.as_ref(),
         )?;
         #[cfg(feature = "proving")]
-        let contribution = if source.medium_epoch.is_some() {
+        let contribution = if source.test_bank {
             scene_source::test_bank::alongside(contribution)
         } else {
             contribution

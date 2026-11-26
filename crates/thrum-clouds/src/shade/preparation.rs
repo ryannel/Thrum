@@ -2,7 +2,12 @@ use super::{
     EffectGraph, FrameError, Prepared, SceneSurface, Shade, Shapes, SunPath, WeatherMap,
     frame_prepare_error, graph,
 };
-use crate::{Error, layer::Layer, sun_path::SunTarget};
+use crate::{
+    Error,
+    ground::{GroundGpu, GroundTargets},
+    layer::Layer,
+    sun_path::SunTarget,
+};
 use std::sync::PoisonError;
 
 enum Resources {
@@ -10,6 +15,7 @@ enum Resources {
     Retained {
         sun: SunTarget,
         sky: Option<Box<Layer>>,
+        ground: Option<Box<GroundTargets>>,
     },
 }
 
@@ -44,6 +50,22 @@ impl Shade {
                 .sun
                 .prepare_target(surface.device, target)
                 .map_err(|error| frame_prepare_error(&error))?;
+            let ground = gpu
+                .ground
+                .as_ref()
+                .map(|ground| {
+                    GroundTargets::new(
+                        surface,
+                        &gpu.weather,
+                        &gpu.sun,
+                        &sun.mapping,
+                        &ground.field,
+                        &ground.phases,
+                    )
+                    .map(Box::new)
+                    .map_err(|error| frame_prepare_error(&error))
+                })
+                .transpose()?;
             let sky = self.prepare_sky(
                 surface,
                 &gpu.weather,
@@ -52,19 +74,30 @@ impl Shade {
                 gpu.placed_map.as_ref(),
                 gpu.shapes.as_deref(),
                 gpu.sky.as_ref(),
+                gpu.ground
+                    .as_ref()
+                    .zip(ground.as_deref())
+                    .map(|(gpu, targets)| (&gpu.field, &gpu.phases, &targets.band)),
                 &mut initialization,
             )?;
-            let bytes = gpu.resource_bytes(sky.as_ref(), &sun.ground, &sun.mapping);
+            let bytes =
+                gpu.resource_bytes(sky.as_ref(), &sun.ground, &sun.mapping, ground.as_deref());
             (
                 Resources::Retained {
                     sun,
                     sky: sky.map(Box::new),
+                    ground,
                 },
                 bytes,
             )
         } else {
             let gpu = self.prepare_new(surface, target, &mut initialization)?;
-            let bytes = gpu.resource_bytes(gpu.sky.as_ref(), gpu.sun.ground(), gpu.sun.mapping());
+            let bytes = gpu.resource_bytes(
+                gpu.sky.as_ref(),
+                gpu.sun.ground(),
+                gpu.sun.mapping(),
+                gpu.ground.as_ref().map(|ground| &ground.targets),
+            );
             (Resources::New(Box::new(gpu)), bytes)
         };
         Ok(Staged {
@@ -110,6 +143,14 @@ impl Shade {
         .map_err(|error| frame_prepare_error(&error))?;
         sun.rebuild(surface.generation, 1);
         initialization.extend(sun.take_initialization());
+        let ground = self
+            .ground
+            .as_ref()
+            .map(|config| {
+                GroundGpu::new(surface, config, &weather, &sun)
+                    .map_err(|error| frame_prepare_error(&error))
+            })
+            .transpose()?;
         let sky = self.prepare_sky(
             surface,
             &weather,
@@ -118,6 +159,9 @@ impl Shade {
             placed_map.as_ref(),
             shapes.as_deref(),
             None,
+            ground
+                .as_ref()
+                .map(|gpu| (&gpu.field, &gpu.phases, &gpu.targets.band)),
             initialization,
         )?;
         Ok(Prepared {
@@ -127,6 +171,7 @@ impl Shade {
             sky,
             weather,
             sun,
+            ground,
             queue: surface.queue.clone(),
             #[cfg(target_arch = "wasm32")]
             device: wgpu::Device::clone(device),
@@ -144,6 +189,11 @@ impl Shade {
         placed_map: Option<&crate::shapes::map::ShapeMap>,
         shapes: Option<&Shapes>,
         accepted: Option<&Layer>,
+        ground: Option<(
+            &crate::ground::GroundField,
+            &crate::ground::lighting::LightTable,
+            &crate::ground::band::Band,
+        )>,
         initialization: &mut Vec<wgpu::CommandBuffer>,
     ) -> Result<Option<Layer>, FrameError> {
         self.sky
@@ -157,6 +207,7 @@ impl Shade {
                     profile,
                     shapes,
                     accepted,
+                    ground,
                 )
                 .map_err(|error| frame_prepare_error(&error))?;
                 initialization.extend(command);
@@ -175,21 +226,36 @@ impl Staged {
                 gpu.sky.as_ref(),
                 gpu.sun.ground(),
                 gpu.sun.mapping(),
+                gpu.ground.as_ref().map(|ground| &ground.targets),
             ),
-            Resources::Retained { sun, sky } => shade
+            Resources::Retained { sun, sky, ground } => shade
                 .gpu
                 .as_ref()
                 .expect("accepted cloud resources")
-                .declaration(self.generation, sky.as_deref(), &sun.ground, &sun.mapping),
+                .declaration(
+                    self.generation,
+                    sky.as_deref(),
+                    &sun.ground,
+                    &sun.mapping,
+                    ground.as_deref(),
+                ),
         }
     }
 
     pub(super) fn install(self, shade: &mut Shade) {
         match self.resources {
             Resources::New(gpu) => shade.gpu = Some(gpu),
-            Resources::Retained { sun, mut sky } => {
+            Resources::Retained {
+                sun,
+                mut sky,
+                ground,
+            } => {
                 let gpu = shade.gpu.as_mut().expect("accepted cloud resources");
                 gpu.sun.install_target(sun);
+                if let Some((accepted, prepared)) = gpu.ground.as_mut().zip(ground) {
+                    accepted.targets = *prepared;
+                }
+
                 if let Some((sky, old)) = sky.as_mut().zip(gpu.sky.as_mut()) {
                     sky.inherit_history(old);
                 }
@@ -203,6 +269,10 @@ impl Staged {
         mailbox.resources = self.bytes;
         mailbox.weather_columns = Some(gpu.weather.textures()[0].clone());
         mailbox.ground = Some((gpu.sun.ground().clone(), gpu.sun.mapping().clone()));
+        mailbox.condensate = gpu.ground.as_ref().map(|ground| crate::GroundProducts {
+            band: ground.targets.band.texture.clone(),
+            medium: ground.targets.medium.target.clone(),
+        });
     }
 }
 
@@ -213,8 +283,15 @@ impl Prepared {
         sky: Option<&Layer>,
         ground: &wgpu::Texture,
         mapping: &wgpu::Buffer,
+        ground_targets: Option<&GroundTargets>,
     ) -> EffectGraph {
         let (mut graph, shape_noise) = graph::declaration(self, generation, ground, mapping);
+        let ground_reads = self
+            .ground
+            .as_ref()
+            .zip(ground_targets)
+            .map(|(ground, targets)| graph::append_ground(&mut graph, ground, targets));
+        let overlay_index = graph.passes.len();
         if let Some(sky) = sky {
             sky.append_graph(
                 &mut graph,
@@ -235,7 +312,9 @@ impl Prepared {
                 trace.accesses.extend(reads.iter().cloned());
             }
             if sky.is_some_and(Layer::has_overlay) {
-                graph.passes[6].accesses.extend(reads.iter().cloned());
+                graph.passes[overlay_index]
+                    .accesses
+                    .extend(reads.iter().cloned());
             }
             if let Some(map) = &self.placed_map {
                 let resource = graph.resources.len();
@@ -257,6 +336,20 @@ impl Prepared {
                 }
             }
         }
+        if let Some(reads) = ground_reads {
+            if sky.is_some_and(Layer::has_overlay) {
+                graph.passes[overlay_index]
+                    .accesses
+                    .extend(reads.iter().cloned());
+            }
+            if let Some(trace) = graph
+                .after_opaque
+                .iter_mut()
+                .find(|pass| pass.name == crate::layer::TRACE)
+            {
+                trace.accesses.extend(reads);
+            }
+        }
         graph
     }
 
@@ -265,6 +358,7 @@ impl Prepared {
         sky: Option<&Layer>,
         ground: &wgpu::Texture,
         mapping: &wgpu::Buffer,
+        ground_targets: Option<&GroundTargets>,
     ) -> Vec<(String, u64)> {
         let mut resources: Vec<_> = self
             .weather
@@ -303,6 +397,9 @@ impl Prepared {
                 .enumerate()
                 .map(|(i, buffer)| (format!("cloud buffer {i}"), buffer.size())),
         );
+        if let Some((ground, targets)) = self.ground.as_ref().zip(ground_targets) {
+            resources.extend(graph::ground_bytes(ground, targets));
+        }
         if let Some(sky) = sky {
             resources.extend(sky.resource_bytes());
         }

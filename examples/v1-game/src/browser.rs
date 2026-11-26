@@ -820,18 +820,15 @@ fn cloud_selection(
     request: Option<&str>,
     diagnostic: bool,
 ) -> Result<crate::CloudSelection, JsValue> {
-    match request.unwrap_or("off") {
-        "off" => Ok(crate::CloudSelection::Off),
-        "shade" if !diagnostic => Ok(crate::CloudSelection::Shade),
-        "sky" if !diagnostic => Ok(crate::CloudSelection::Sky),
-        "world-light" if !diagnostic => Ok(crate::CloudSelection::WorldLight),
-        "shade" | "sky" | "world-light" => Err(JsValue::from_str(
+    let selection = crate::CloudSelection::named(request.unwrap_or("off")).ok_or_else(|| {
+        JsValue::from_str(&format!("clouds must be {}", crate::CloudSelection::NAMES))
+    })?;
+    if diagnostic && selection != crate::CloudSelection::Off {
+        return Err(JsValue::from_str(
             "clouds and diagnostic-clouds are mutually exclusive",
-        )),
-        _ => Err(JsValue::from_str(
-            "clouds must be off, shade, sky or world-light",
-        )),
+        ));
     }
+    Ok(selection)
 }
 
 fn valley_culling(
@@ -1032,6 +1029,7 @@ impl BrowserGame {
             game::cloud_input(&self.page.shell),
             self.cloud_sky,
             game::cloud_shapes(&self.page.shell),
+            game::cloud_ground(&self.page.shell),
         )
         .map_err(js_error)?;
         #[cfg(feature = "proving")]

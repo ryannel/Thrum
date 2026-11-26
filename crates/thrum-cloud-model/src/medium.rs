@@ -1,4 +1,4 @@
-use crate::{Conformance, Error, Orders, PhaseTable, Sample, Shape, State, Weather, smooth};
+use crate::{Conformance, Error, Sample, Shape, State, Weather, smooth};
 
 /// Local medium coefficients, before multiplying by true Sun light.
 #[derive(Clone, Copy, Debug, Default)]
@@ -26,10 +26,16 @@ impl Coefficients {
 /// Light inputs evaluated independently of the camera's near/far partition.
 #[derive(Clone, Copy, Debug)]
 pub struct Light {
-    /// Four phase values from `Orders::phases`, evaluated once per ray.
-    pub phases: [f64; 4],
-    /// Whole condensate optical depth toward the Sun.
-    pub sun_depth: f64,
+    /// Disc-averaged droplet phase and the broader beam phase, in sr⁻¹.
+    pub phases: [f64; 2],
+    /// Depth toward the Sun and depth through the whole Sun column.
+    pub sun_depths: [f64; 2],
+    /// Droplet phase's second Legendre moment.
+    pub forward_share: f64,
+    /// Broad lobe weight of the droplet phase.
+    pub broad_weight: f64,
+    /// Cosines of the lit plane's normal with the Sun and the viewer.
+    pub plane_cosines: [f64; 2],
     /// Vertical depths above and below for the diffuse two-stream term.
     pub vertical_depths: [f64; 2],
     /// Sky and ground hemispheric source radiances, with no cloud feedback.
@@ -41,16 +47,27 @@ pub struct Light {
 }
 
 impl Light {
-    /// Cloud light's four orders without incident sunlight; same weights,
-    /// extinction scales and phase table as the existing optical reference.
+    /// Cloud light before adding incident sunlight or a view boundary.
     pub fn coefficients(self, extinction: f64) -> Coefficients {
-        let kernel: f64 = (0..4)
-            .map(|i| {
-                Orders::WEIGHTS[i]
-                    * (-Orders::EXTINCTION[i] * self.sun_depth).exp()
-                    * self.phases[i]
-            })
-            .sum();
+        let [sun, column] = self.sun_depths;
+        let [incidence, viewer] = self.plane_cosines;
+        let reduced = 1.0 - self.forward_share;
+        let beam = (-self.broad_weight.max(reduced) * sun).exp();
+        let remaining = (-reduced * sun).exp();
+        let beam = self.phases[0] * beam + self.phases[1] * (remaining - beam).max(0.0);
+
+        let reduced_cosine = (1.0 - self.mean_cosine) * incidence;
+        let x = reduced_cosine * sun;
+        let column = column.max(sun);
+        let escape = 3.0 / 7.0 * (1.0 + 2.0 * incidence);
+        let transmitted = ((escape + (1.0 - escape) * (-reduced * column).exp())
+            / (1.0 + 0.75 * reduced_cosine * column))
+            .min(1.0);
+        let mean = (incidence / (2.0 * std::f64::consts::PI)
+            * (1.0 - transmitted * (1.0 + 1.5 * x) + (2.0 * escape - 1.0) * (1.0 - remaining)))
+            .max(0.0);
+        let flow = 3.0 * incidence / (4.0 * std::f64::consts::PI) * (transmitted - remaining);
+        let kernel = beam + (mean - self.mean_cosine * flow * viewer).max(0.0);
         let ambient: f64 = (0..2)
             .map(|i| {
                 self.ambient[i] / (1.0 + 0.75 * (1.0 - self.mean_cosine) * self.vertical_depths[i])
@@ -61,22 +78,6 @@ impl Light {
             solar_kernel: extinction * kernel,
             ambient_source: extinction * ambient,
         }
-    }
-}
-
-impl Orders {
-    /// Four f64 phase references. The first order reads the prepared disc table;
-    /// later orders use the existing HG asymmetries, without another phase model.
-    pub fn phases(table: &PhaseTable, sin_half_squared: f64) -> [f64; 4] {
-        let mut values = [0.0; 4];
-        values[0] = table.reference(sin_half_squared);
-        for (i, &g) in Self::LATER_G.iter().enumerate() {
-            values[i + 1] = (1.0 - g * g)
-                / (4.0
-                    * std::f64::consts::PI
-                    * ((1.0 - g).powi(2) + 4.0 * g * sin_half_squared.clamp(0.0, 1.0)).powf(1.5));
-        }
-        values
     }
 }
 

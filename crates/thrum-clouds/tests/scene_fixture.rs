@@ -12,6 +12,12 @@ use thrum_render::{
 };
 
 pub(crate) struct World(u64);
+
+impl World {
+    pub(crate) fn at_tick(tick: u64) -> Self {
+        Self(tick)
+    }
+}
 fn tick(tick: u64) -> SourceTick {
     SourceTick {
         epoch: 1,
@@ -69,6 +75,11 @@ impl FrameWorld for World {
 pub(crate) struct Source {
     pub(crate) view: SyntheticView,
     light: FrameLighting,
+}
+impl Source {
+    pub(crate) fn with_light(view: &SyntheticView, light: FrameLighting) -> Self {
+        Self { view: *view, light }
+    }
 }
 impl SceneSource<SourceTick> for Source {
     fn extract(&self, into: &mut RenderExtractor, page: &SourceTick) -> ExtractReport {
@@ -138,12 +149,12 @@ pub(crate) async fn prepare_view_with_overlay(
     } else {
         FrameLighting::Diagnostic(thrum_render::synthetic::SyntheticLight::default())
     };
-    let source = Source { view: *view, light };
+    let source = Source::with_light(view, light);
     Box::pin(FrameHost::new(
         caps,
         queue,
         config,
-        World(source_tick),
+        World::at_tick(source_tick),
         source,
         scene,
         1.0,

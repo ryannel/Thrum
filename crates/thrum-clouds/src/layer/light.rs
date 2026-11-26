@@ -4,12 +4,12 @@ use thrum_cloud_model::{Phase, PhaseTable};
 use thrum_render::binding;
 use thrum_render::{atmosphere::EnvironmentProducts, contribution::SceneSurface};
 
-pub(super) const PASS: &str = "cloud hemisphere light";
+pub(crate) const PASS: &str = "cloud hemisphere light";
 const ENTRIES: u32 = 1025;
 
-pub(super) struct Lighting {
-    pub(super) phase: wgpu::Buffer,
-    pub(super) ambient: wgpu::Buffer,
+pub(crate) struct Lighting {
+    pub(crate) phase: wgpu::Buffer,
+    pub(crate) ambient: wgpu::Buffer,
     phases: Vec<Phase>,
     radius: Option<f32>,
     pipeline: wgpu::ComputePipeline,
@@ -17,7 +17,7 @@ pub(super) struct Lighting {
 }
 
 impl Lighting {
-    pub(super) fn new(
+    pub(crate) fn new(
         surface: &SceneSurface<'_>,
         weather: &WeatherMap,
         environment: &EnvironmentProducts,
@@ -102,7 +102,7 @@ impl Lighting {
         })
     }
 
-    pub(super) fn upload(&mut self, queue: &wgpu::Queue, radius: f32) -> Result<(), Error> {
+    pub(crate) fn upload(&mut self, queue: &wgpu::Queue, radius: f32) -> Result<(), Error> {
         if self.radius == Some(radius) {
             return Ok(());
         }
@@ -123,7 +123,7 @@ impl Lighting {
         clippy::cast_sign_loss,
         reason = "validated type axis selects bounded phase rows and shader floats"
     )]
-    pub(super) fn type_parameters(&self, kind: f64, plane_turn: f64) -> ([f32; 4], [f32; 4]) {
+    pub(crate) fn type_parameters(&self, kind: f64, plane_turn: f64) -> ([f32; 4], [f32; 4]) {
         let axis = kind * (self.phases.len() - 1) as f64;
         let low = (axis.floor() as usize).min(self.phases.len() - 2);
         let weight = axis - low as f64;
@@ -147,7 +147,7 @@ impl Lighting {
         )
     }
 
-    pub(super) fn encode(
+    pub(crate) fn encode(
         &self,
         pass: &mut wgpu::ComputePass<'_>,
         environment: &EnvironmentProducts,

@@ -11,13 +11,7 @@ fn main(@builtin(global_invocation_id) id:vec3<u32>) {
     var distance=0.0;
     while distance<p.z {
         let step=min(p.w,p.z-distance);
-        var source=vec3(p.y);
-        if p.y<0.0 {
-            // Historical four-order fixture, retained as a diagnostic only.
-            let tau=p.x*(distance+0.5*step)/0.5;
-            let light=dot(CLOUD_WEIGHTS,exp(-CLOUD_BRANCHES*tau))*0.07957747154594767;
-            source=vec3(p.x*(-p.y)*light);
-        }
+        let source=vec3(p.y);
         result=cloud_then(result,cloud_beer(p.x,source,step));
         distance+=step;
     }
@@ -47,7 +41,7 @@ fn known_slabs_conserve_and_compose_once_at_coarse_and_fine_steps() {
                 .collect()
         })
         .collect();
-    assert_eq!(rows.len(), 7);
+    assert_eq!(rows.len(), 5);
     let mut inputs = Vec::new();
     let mut expected = Vec::new();
     for row in &rows {
@@ -62,10 +56,7 @@ fn known_slabs_conserve_and_compose_once_at_coarse_and_fine_steps() {
     let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some("cloud retained slab observer"),
         source: wgpu::ShaderSource::Wgsl(
-            format!("const CLOUD_WEIGHTS:vec4<f32>=vec4<f32>({},{},{},{});\nconst CLOUD_BRANCHES:vec4<f32>=vec4<f32>({},{},{},{});\n{}\n{QUERY}",
-            thrum_cloud_model::Orders::WEIGHTS[0],thrum_cloud_model::Orders::WEIGHTS[1],thrum_cloud_model::Orders::WEIGHTS[2],thrum_cloud_model::Orders::WEIGHTS[3],
-            thrum_cloud_model::Orders::EXTINCTION[0],thrum_cloud_model::Orders::EXTINCTION[1],thrum_cloud_model::Orders::EXTINCTION[2],thrum_cloud_model::Orders::EXTINCTION[3],
-            include_str!("../src/layer/transport.wgsl")).into(),
+            format!("{}\n{QUERY}", include_str!("../src/layer/transport.wgsl")).into(),
         ),
     });
     let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -130,9 +121,6 @@ fn known_slabs_conserve_and_compose_once_at_coarse_and_fine_steps() {
         .collect();
     for (i, (got, want)) in actual.iter().zip(expected).enumerate() {
         for channel in 0..4 {
-            if inputs[i][1] < 0.0 && channel != 0 {
-                continue;
-            }
             let bound = 3e-5 * (1.0 + want[channel].abs());
             assert!(
                 (got[channel] - want[channel]).abs() <= bound,
@@ -145,12 +133,6 @@ fn known_slabs_conserve_and_compose_once_at_coarse_and_fine_steps() {
             assert!(
                 energy <= 1.0 + 3e-5,
                 "constant slab creates energy: {energy}"
-            );
-        }
-        if inputs[i][1] < 0.0 {
-            eprintln!(
-                "four-order diagnostic {i}: scatter {}, retained {}",
-                got[1], want[1]
             );
         }
     }

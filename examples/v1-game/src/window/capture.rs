@@ -989,6 +989,8 @@ async fn record(
         take.bounds()
     } else if bank_mover {
         (14.0, 13.0, f64::INFINITY)
+    } else if let Some(duration) = haze_take.and_then(HazeTake::duration) {
+        (duration + 0.5, duration, 0.0)
     } else {
         scenario_bounds(scenario, recovery_mode)
     };

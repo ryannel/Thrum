@@ -142,7 +142,7 @@ impl GroundBandPrepared {
                 | if band.texels.is_some() {
                     wgpu::TextureUsages::COPY_DST
                 } else {
-                    wgpu::TextureUsages::STORAGE_BINDING
+                    wgpu::TextureUsages::STORAGE_BINDING | wgpu::TextureUsages::COPY_SRC
                 },
             view_formats: &[],
         });

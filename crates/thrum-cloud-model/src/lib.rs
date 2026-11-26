@@ -17,7 +17,7 @@ pub use ground::{Affinity, Fog, Ground, GroundProfile, GroundState, Surface, Sur
 pub use library::{HashedShapes, PlacedLibrary, PlacedSlab, ShapeSource};
 pub use medium::{Coefficients, Handover, Light};
 pub use noise::{BANK_NOISE_PERIOD, DETAIL_PERIOD, DETAIL_SIZE, SHAPE_PERIOD, SHAPE_SIZE};
-pub use optics::{Orders, Phase, PhaseTable, Segment};
+pub use optics::{Phase, PhaseTable, Segment};
 pub use shape::{Footprint, Shape};
 pub use state::{Directed, Parameters, State};
 pub use visibility::{Answer, Fidelity, SunPath, Weather, aerosol_extinction, visual_range};

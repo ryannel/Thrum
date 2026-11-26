@@ -60,7 +60,7 @@ if (spriteField && (args.mode !== 'realtime' || args.control !== 'ordinary' || a
 }
 if (!['route','off'].includes(args.overlay)) throw new Error('Invalid overlay option');
 if (!['off','on'].includes(args['diagnostic-clouds'])) throw new Error('Invalid diagnostic-clouds option');
-if (!['off','shade','sky','world-light'].includes(args.clouds) || (args.clouds !== 'off' && args['diagnostic-clouds'] === 'on')) throw new Error('Invalid cloud selection');
+if (!['off','shade','sky','world-light','ground-clear','ground-half','ground','ground-fog','ground-mist-bank'].includes(args.clouds) || (args.clouds !== 'off' && args['diagnostic-clouds'] === 'on')) throw new Error('Invalid cloud selection');
 if (args['cloud-view'] && (args.clouds === 'off' || args.control !== 'ordinary' || args.source !== 'sdr')) throw new Error('A cloud view requires an ordinary SDR cloud capture');
 if (args['cloud-store'] && !args['cloud-view']) throw new Error('A cloud store requires --cloud-view');
 if (!['off','taau'].includes(args.reconstruction)) throw new Error('Invalid reconstruction option');

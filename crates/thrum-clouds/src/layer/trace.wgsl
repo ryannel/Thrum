@@ -21,6 +21,12 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
         let a=(cloud.heights.x-camera.y)/ray.y;let b=(cloud.heights.y-camera.y)/ray.y;
         begin=max(0.0,min(a,b));end=min(end,max(a,b));
     }else if camera.y<cloud.heights.x || camera.y>cloud.heights.y {end=0.0;}
+    let cloud_interval=vec2(begin,end);
+    let fog_interval=ground_interval(camera,ray,cloud.heights.w);
+    if fog_interval.x<fog_interval.y {
+        begin=select(fog_interval.x,min(begin,fog_interval.x),begin<end);
+        end=max(end,fog_interval.y);
+    }
     // The depth allocation can be larger than the drawn rectangle.
     // Composition tests each render pixel separately.
     let pixel=vec2<i32>(uv*vec2<f32>(cloud.render_extent));
@@ -42,50 +48,83 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
     let bank=cloud_bank_weight(cloud.bank_noise.w);
     var distance=begin;var samples=0u;
     for(var i=0u;i<cloud.sample_cap && distance<end && total.transmittance*part.transmittance>transmission_floor;i++) {
+        let in_cloud=distance>=cloud_interval.x && distance<cloud_interval.y;
+        let in_ground=distance>=fog_interval.x && distance<fog_interval.y;
+        if !in_cloud && !in_ground {
+            let next_cloud=select(end,cloud_interval.x,distance<cloud_interval.x && cloud_interval.x<cloud_interval.y);
+            let next_ground=select(end,fog_interval.x,distance<fog_interval.x && fog_interval.x<fog_interval.y);
+            distance=min(next_cloud,next_ground);
+            continue;
+        }
         samples+=1u;
-        let step=min(end-distance,max(cloud.heights.z,distance*0.003));
-        let at=distance+step*0.5;let point=air_camera+ray*at;
+        var step=min(end-distance,max(cloud.heights.z,distance*0.003));
+        if in_ground {
+            step=min(step,min(fog_interval.y-distance,max(5.0,distance*0.012)));
+        } else if distance<fog_interval.x && fog_interval.x<fog_interval.y {
+            step=min(step,fog_interval.x-distance);
+        }
+        let at=distance+step*0.5;
+        let point=air_camera+ray*at;
+        let world=camera+ray*at;
         let footprint=at/f32(size.y);
-        let placed = cloud_placed(point, footprint);
-        var column=cloud_column(point);
-        if column.x+placed.x>0.0 {
-            let sigma=cloud_detail(column.x,point,footprint,cloud.physical.x,column.w)+placed.x;
-            column.y += placed.y;
-            column.z += placed.z;
-            if sigma>0.0 {
-                let world=camera+ray*at;
-                let solar=mix(sun_base,sun_top,clamp((point.y-cloud.heights.x)/(cloud.heights.y-cloud.heights.x),0.0,1.0));
-                let sunlit=any(solar>vec3(0.0));
-                var sun_depths=vec2(0.0);
-                var diffuse=vec3(0.0,0.0,1.0);
-                if sunlit {
-                    sun_depths=cloud_local_sun(point,world,at,footprint,sun_alignment,placed.x>0.0);
-                    diffuse=vec3(sun_depths,1.0);
-                    if placed.x>0.0 && cloud.light_samples>0u {
-                        diffuse=cloud_placed_diffuse(point,world,footprint,sun_alignment,sun_depths,placed.x/sigma);
+        let transmission=total.transmittance*part.transmittance;
+        var sigma=0.0;
+        var radiance=vec3(0.0);
+        if in_cloud {
+            let placed=cloud_placed(point,footprint);
+            var column=cloud_column(point);
+            if column.x+placed.x>0.0 {
+                sigma=cloud_detail(column.x,point,footprint,cloud.physical.x,column.w)+placed.x;
+                column.y += placed.y;
+                column.z += placed.z;
+                if sigma>0.0 {
+                    let solar=mix(sun_base,sun_top,clamp((point.y-cloud.heights.x)/(cloud.heights.y-cloud.heights.x),0.0,1.0));
+                    let sunlit=any(solar>vec3(0.0));
+                    var sun_depths=vec2(0.0);
+                    var diffuse=vec3(0.0,0.0,1.0);
+                    if sunlit {
+                        sun_depths=cloud_local_sun(point,world,at,footprint,sun_alignment,placed.x>0.0);
+                        diffuse=vec3(sun_depths,1.0);
+                        if placed.x>0.0 && cloud.light_samples>0u {
+                            diffuse=cloud_placed_diffuse(point,world,footprint,sun_alignment,sun_depths,placed.x/sigma);
+                        }
                     }
+                    var source=cloud_source_with_diffuse(solar,phase,sun_depths.x,diffuse.xy,diffuse.z,
+                        column.yz,light_angles,at,transmission);
+                    if bank>0.0 && placed.x==0.0 && sunlit {
+                        source=cloud_bank_light(source,solar,point,sigma,at,footprint,sun_depths.x,sun_alignment,bank);
+                    }
+                    radiance=sigma*source;
                 }
-                var source=cloud_source_with_diffuse(solar,phase,sun_depths.x,diffuse.xy,diffuse.z,
-                    column.yz,light_angles,at,total.transmittance*part.transmittance);
-                if bank>0.0 && placed.x==0.0 && sunlit {
-                    source=cloud_bank_light(source,solar,point,sigma,at,footprint,sun_depths.x,sun_alignment,bank);
-                }
-                let segment=cloud_beer(sigma,sigma*source,step);
-                let air=environment_aerial(world,uv).transmission;
-                // A part spans at most 0.25 of the lent air's optical depth.
-                // Empty gaps require no composition; a distant occupied sample
-                // starts a new part before it can be mixed with the nearer one.
-                if part_mass>0.0 && any(-log(max(air,vec3(1e-20))/max(part_air,vec3(1e-20)))>=vec3(0.25)) {
-                    total=cloud_then(total,cloud_air_part(part,part_weighted,part_mass,camera,ray,uv));
-                    part=CloudTransport(vec3(0.0),1.0,0.0);part_weighted=0.0;part_mass=0.0;
-                }
-                if part_mass==0.0 {part_air=air;}
-                let local_amount=part.transmittance*cloud_removed(segment.optical_depth);
-                let amount=total.transmittance*local_amount;
-                weighted+=amount*at;opacity+=amount;
-                part_weighted+=local_amount*at;part_mass+=local_amount;
-                part=cloud_then(part,segment);
             }
+        }
+        if in_ground {
+            let far=1.0-ground_near_weight(at);
+            if far>0.0 {
+                let fog=ground_light(world,ray,atmosphere.sun_lux.xyz,at,transmission,far<1.0);
+                if fog.extinction>0.0 {
+                    let solar=sun_irradiance(world)*fog.surface_visibility;
+                    sigma+=fog.extinction*far;
+                    radiance+=(fog.ambient+solar*fog.solar_kernel)*far;
+                }
+            }
+        }
+        if sigma>0.0 {
+            let segment=cloud_beer(sigma,radiance,step);
+            let air=environment_aerial(world,uv).transmission;
+            // A part spans at most 0.25 of the lent air's optical depth.
+            // Empty gaps require no composition; a distant occupied sample
+            // starts a new part before it can be mixed with the nearer one.
+            if part_mass>0.0 && any(-log(max(air,vec3(1e-20))/max(part_air,vec3(1e-20)))>=vec3(0.25)) {
+                total=cloud_then(total,cloud_air_part(part,part_weighted,part_mass,camera,ray,uv));
+                part=CloudTransport(vec3(0.0),1.0,0.0);part_weighted=0.0;part_mass=0.0;
+            }
+            if part_mass==0.0 {part_air=air;}
+            let local_amount=part.transmittance*cloud_removed(segment.optical_depth);
+            let amount=total.transmittance*local_amount;
+            weighted+=amount*at;opacity+=amount;
+            part_weighted+=local_amount*at;part_mass+=local_amount;
+            part=cloud_then(part,segment);
         }
         distance+=step;
     }

@@ -208,6 +208,16 @@ def surface_height(mesh,x,z):
     raise AssertionError('point outside selected terrain cell')
 
 
+
+def write_surface_field(mesh, output):
+    """World-space height nodes for the dry valley, from its published terrain triangles."""
+    x0, z0, interval = -3000., -4500., 20.
+    nx = nz = 301
+    samples = [surface_height(mesh, x0 + x * interval, z0 + z * interval)
+               for z in range(nz) for x in range(nx)]
+    output.write_bytes(struct.pack('<3f2I', x0, z0, interval, nx, nz)
+                       + struct.pack(f'<{len(samples)}f', *samples))
+
 def round_mesh(segments, rings, rock=False):
     p, uv = [(0.,1.,0.)], [(0.5,0.)]
     for j in range(1,rings):
@@ -538,6 +548,7 @@ def main():
         report['meshes'][name]=write_mesh(name,mesh,materials[name])
     terrain_positions=[struct.unpack('<3f',struct.pack('<3f',*v)) for v in meshes['terrain'][0]]
     source_terrain=(terrain_positions,*meshes['terrain'][1:])
+    write_surface_field(source_terrain, ROOT / "surface-field.bin")
     sphere_x,sphere_z=-3.4,-5.
     rock_x,rock_z=3.8,-7.
     size, albedo, neutral = ground_albedo()

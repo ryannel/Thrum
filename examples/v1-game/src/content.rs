@@ -221,21 +221,19 @@ pub fn selected_setup() -> Result<crate::GameSetup, String> {
         Ok("occlusion") => thrum_render::synthetic::CullMode::Occlusion,
         _ => return Err("THRUM_CULLING must be direct, frustum or occlusion".to_owned()),
     };
-    let clouds = match launch_value("THRUM_CLOUDS").as_deref() {
-        Err(std::env::VarError::NotPresent) | Ok("off") => crate::CloudSelection::Off,
-        Ok("shade") => crate::CloudSelection::Shade,
-        Ok("sky") => crate::CloudSelection::Sky,
-        Ok("world-light") => crate::CloudSelection::WorldLight,
-        _ => return Err("THRUM_CLOUDS must be off, shade, sky or world-light".to_owned()),
-    };
+    let clouds = selected_clouds()?;
     #[cfg(feature = "proving")]
     let cloud_sequence = match launch_value("THRUM_CLOUD_SEQUENCE").as_deref() {
         Err(std::env::VarError::NotPresent) => crate::clouds::WeatherSequence::Held,
         Ok("coverage-sweep") => crate::clouds::WeatherSequence::CoverageSweep,
+        Ok("mist-sweep") => crate::clouds::WeatherSequence::MistSweep,
         Ok("presets") => crate::clouds::WeatherSequence::Presets,
         Ok("wind-turn") => crate::clouds::WeatherSequence::WindTurn,
         _ => {
-            return Err("THRUM_CLOUD_SEQUENCE must be presets, coverage-sweep or wind-turn".into());
+            return Err(
+                "THRUM_CLOUD_SEQUENCE must be presets, coverage-sweep, mist-sweep or wind-turn"
+                    .into(),
+            );
         }
     };
     Ok(crate::GameSetup {
@@ -421,6 +419,16 @@ fn validate_sprite_launch() -> Result<(), String> {
         }
     }
     Ok(())
+}
+
+fn selected_clouds() -> Result<crate::CloudSelection, String> {
+    let clouds = match launch_value("THRUM_CLOUDS") {
+        Ok(value) => value,
+        Err(std::env::VarError::NotPresent) => "off".into(),
+        Err(error) => return Err(error.to_string()),
+    };
+    crate::CloudSelection::named(&clouds)
+        .ok_or_else(|| format!("THRUM_CLOUDS must be {}", crate::CloudSelection::NAMES))
 }
 
 /// Activate the selected game content from `THRUM_ASSET_STORE` and `THRUM_SCENE`.

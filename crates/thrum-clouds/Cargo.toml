@@ -52,3 +52,15 @@ path = "tests/weather_range_gpu.rs"
 name = "capabilities_gpu"
 path = "tests/capabilities_gpu.rs"
 required-features = ["thrum-render/creation-counters"]
+
+[[test]]
+name = "ground_map_gpu"
+path = "tests/ground_map_gpu.rs"
+
+[[test]]
+name = "ground_band_gpu"
+path = "tests/ground_band_gpu.rs"
+
+[[test]]
+name = "medium_coefficients_gpu"
+path = "tests/medium_coefficients_gpu.rs"

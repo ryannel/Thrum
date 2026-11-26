@@ -1,3 +1,4 @@
+use crate::ground::{GroundConfig, GroundGpu};
 use crate::{
     Error, ShapesConfig, ShapesReport, SunPath, SunProfile, WeatherMap, WeatherProfile,
     shapes::Shapes,
@@ -56,6 +57,7 @@ struct Mailbox {
     state: Option<Arc<State>>,
     field_overlay: crate::FieldOverlay,
     ground: Option<(wgpu::Texture, wgpu::Buffer)>,
+    condensate: Option<crate::GroundProducts>,
     weather_columns: Option<wgpu::Texture>,
     resources: Vec<(String, u64)>,
     shape_resources: Vec<(String, u64)>,
@@ -117,6 +119,11 @@ impl WeatherInput {
         self.0.lock().ok()?.ground.clone()
     }
 
+    /// Current ground-band and coefficient readback handles, if Ground was declared.
+    pub fn ground_condensate_products(&self) -> Option<crate::GroundProducts> {
+        self.0.lock().ok()?.condensate.clone()
+    }
+
     /// Prepared texture payloads and uniform-buffer bytes, excluding driver allocation overhead.
     pub fn resource_bytes(&self) -> Vec<(String, u64)> {
         self.0.lock().map_or_else(
@@ -139,6 +146,7 @@ pub struct Shade {
     quality: QualitySettings,
     sky: Option<crate::SkyProfile>,
     shapes: Option<ShapesConfig>,
+    ground: Option<GroundConfig>,
     config: ShadeConfig,
     input: WeatherInput,
     gpu: Option<Box<Prepared>>,
@@ -154,6 +162,7 @@ struct Prepared {
     sky: Option<crate::layer::Layer>,
     weather: WeatherMap,
     sun: SunPath,
+    ground: Option<GroundGpu>,
     queue: wgpu::Queue,
     #[cfg(target_arch = "wasm32")]
     device: wgpu::Device,
@@ -171,6 +180,7 @@ impl Shade {
             quality: quality::base()?,
             sky: None,
             shapes: None,
+            ground: None,
             config,
             input: WeatherInput::default(),
             gpu: None,
@@ -204,6 +214,13 @@ impl Shade {
         Ok(self)
     }
 
+    /// Select ground condensate. The scene must declare a view-volume medium.
+    #[must_use]
+    pub fn with_ground(mut self, config: GroundConfig) -> Self {
+        self.ground = Some(config);
+        self
+    }
+
     /// Share the extractor mailbox when composing this effect with another contribution.
     #[must_use]
     pub fn with_input(mut self, input: WeatherInput) -> Self {
@@ -214,7 +231,12 @@ impl Shade {
     /// # Errors
     /// Rejects an empty target extent.
     pub fn provider(&self) -> Result<SunOpticalDepth, thrum_render::error::RenderError> {
-        SunOpticalDepth::gpu_target([self.config.sun.ground_size; 2], 1)
+        let sun = SunOpticalDepth::gpu_target([self.config.sun.ground_size; 2], 1)?;
+        if self.ground.is_some() {
+            Ok(sun.with_ground_band(crate::ground::band::provider()?))
+        } else {
+            Ok(sun)
+        }
     }
     fn has_sky_overlay(&self) -> bool {
         self.gpu
@@ -286,6 +308,16 @@ impl SceneContribution for Shade {
             && self.generation == surface.generation
             && gpu.sun.ground() == &target.0
             && gpu.sun.mapping() == &target.1
+            && gpu.ground.as_ref().is_none_or(|ground| {
+                surface.view_volume_medium_target().is_some_and(|target| {
+                    ground.targets.medium.target.coefficients == target.coefficients
+                }) && surface
+                    .ground_band_target()
+                    .is_some_and(|(texture, mapping)| {
+                        ground.targets.band.texture == texture
+                            && ground.targets.band.mapping == mapping
+                    })
+            })
         {
             return Ok(());
         }
@@ -306,6 +338,7 @@ impl SceneContribution for Shade {
                 gpu.sky.as_ref(),
                 gpu.sun.ground(),
                 gpu.sun.mapping(),
+                gpu.ground.as_ref().map(|ground| &ground.targets),
             )
         })
     }
@@ -357,7 +390,21 @@ impl SceneContribution for Shade {
                 gpu.placed_map
                     .as_ref()
                     .is_some_and(crate::shapes::map::ShapeMap::runs),
-            )
+            )?;
+            if let Some(ground) = &mut gpu.ground {
+                let travel = state.display_travel(
+                    f64::from(frame.time.display_phase),
+                    frame.time.tick_duration.as_secs_f64(),
+                    frame.history_reset,
+                );
+                ground.field.set_upper_heights(gpu.sun.frame_heights);
+                ground.field.upload(&gpu.queue, &state, travel);
+                ground
+                    .phases
+                    .upload(&gpu.queue, environment.true_sun.angular_radius_radians)?;
+                ground.targets.band.upload(&gpu.queue, camera, travel);
+            }
+            Ok(())
         });
         if result.is_err() {
             gpu.sun.disable(&gpu.queue);
@@ -382,33 +429,48 @@ impl SceneContribution for Shade {
     }
     fn effect_runs(&self, index: usize, _frame: &ContributionFrame) -> bool {
         self.valid_recording
-            && self.gpu.as_ref().is_some_and(|gpu| match index {
-                0 => gpu.weather.runs(),
-                6 if gpu
-                    .sky
-                    .as_ref()
-                    .is_some_and(crate::layer::Layer::has_overlay) =>
-                {
-                    gpu.sky
+            && self.gpu.as_ref().is_some_and(|gpu| {
+                let index = match (gpu.ground.is_some(), index) {
+                    (true, 6 | 7) => return true,
+                    (true, 8..) => index - 2,
+                    _ => index,
+                };
+                match index {
+                    0 => gpu.weather.runs(),
+                    6 if gpu
+                        .sky
                         .as_ref()
-                        .is_some_and(crate::layer::Layer::overlay_runs)
+                        .is_some_and(crate::layer::Layer::has_overlay) =>
+                    {
+                        gpu.sky
+                            .as_ref()
+                            .is_some_and(crate::layer::Layer::overlay_runs)
+                    }
+                    6 | 7 => gpu
+                        .placed_map
+                        .as_ref()
+                        .is_some_and(crate::shapes::map::ShapeMap::runs),
+                    _ => gpu.sun.runs(index - 1),
                 }
-                6 | 7 => gpu
-                    .placed_map
-                    .as_ref()
-                    .is_some_and(crate::shapes::map::ShapeMap::runs),
-                _ => gpu.sun.runs(index - 1),
             })
     }
     fn encode_effect(
         &mut self,
         index: usize,
         pass: &mut wgpu::ComputePass<'_>,
-        _frame: &ContributionFrame,
+        frame: &ContributionFrame,
     ) {
         if self.valid_recording
             && let Some(gpu) = &self.gpu
         {
+            let index = match (&gpu.ground, index) {
+                (Some(ground), 6) => return ground.targets.band.encode(pass),
+                (Some(ground), 7) => {
+                    return ground.targets.medium.encode(pass, frame.exposure_side);
+                }
+                (Some(_), 8..) => index - 2,
+                _ => index,
+            };
             match index {
                 0 => gpu.weather.encode(pass),
                 6 if gpu

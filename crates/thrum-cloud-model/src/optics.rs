@@ -43,17 +43,6 @@ impl Segment {
     }
 }
 
-/// Four optical orders, as the retained optical reference defines them.
-pub struct Orders;
-impl Orders {
-    /// Scattering weights.
-    pub const WEIGHTS: [f64; 4] = [0.7, 0.2, 0.07, 0.03];
-    /// Extinction multipliers.
-    pub const EXTINCTION: [f64; 4] = [1.0, 0.5, 0.25, 0.125];
-    /// Later-order asymmetries; first order uses the droplet instead.
-    pub const LATER_G: [f64; 3] = [0.43, 0.215, 0.1075];
-}
-
 /// Normalised HG plus Draine phase, with game-supplied or fitted parameters.
 #[derive(Clone, Copy, Debug)]
 pub struct Phase {

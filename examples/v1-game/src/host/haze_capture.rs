@@ -11,6 +11,8 @@ enum Motion {
     Scrub,
     BankWalk,
     BankPan,
+    MistWalk,
+    MistPan,
     Mover,
 }
 
@@ -55,6 +57,14 @@ impl HazeTake {
         matches!(self.motion, Some(Motion::Mover))
     }
 
+    #[cfg(target_os = "macos")]
+    pub(crate) fn duration(self) -> Option<f64> {
+        match self.motion {
+            Some(Motion::MistPan) => Some(12.0),
+            _ => None,
+        }
+    }
+
     pub(crate) fn at(self, elapsed_seconds: f32) -> HazePose {
         let progress = ((elapsed_seconds - 1.0) / 5.0).clamp(0.0, 1.0);
         let mut pose = HazePose {
@@ -68,6 +78,11 @@ impl HazeTake {
             Some(Motion::Walk) => pose.eye[0] += 40.0 * progress,
             Some(Motion::BankWalk) => pose.eye[0] += 98.0 * progress,
             Some(Motion::BankPan) => pose.yaw_degrees += 95.0 * progress,
+            Some(Motion::MistWalk) => pose.eye[0] += 100.0 * progress,
+            Some(Motion::MistPan) => {
+                pose.yaw_degrees += 90.0 * ((elapsed_seconds - 1.0) / 10.0).clamp(0.0, 1.0);
+            }
+
             Some(Motion::Cut) if elapsed_seconds >= 3.0 => {
                 // Keep the far shaft visible on both sides of the cut, at a
                 // different screen position and a different camera distance.

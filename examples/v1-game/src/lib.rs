@@ -6,7 +6,7 @@
 mod browser;
 mod camera;
 pub mod clouds;
-pub use clouds::{CloudSelection, PlacedSky};
+pub use clouds::{CloudSelection, GroundWeather, PlacedSky};
 #[cfg(not(target_arch = "wasm32"))]
 mod content;
 #[cfg(all(feature = "proving", any(target_os = "macos", target_arch = "wasm32")))]

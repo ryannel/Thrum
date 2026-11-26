@@ -1,4 +1,6 @@
 //! The V1 game's cloud look and weather defaults; the engine supplies mechanisms.
+pub(crate) mod ground;
+pub use ground::GroundWeather;
 use thrum_cloud_model::{Parameters, Profile, State, Type};
 use thrum_clouds::{ShadeConfig, SunLevel, SunProfile, WeatherProfile};
 
@@ -65,6 +67,8 @@ pub enum WeatherSequence {
     Presets,
     /// Ease the coverage of the deck from clear to closed and back in two minutes.
     CoverageSweep,
+    /// Ease the valley mist amount from zero to full and back over two minutes.
+    MistSweep,
     /// Turn the selected wind 90 degrees after ten seconds.
     WindTurn,
 }
@@ -73,7 +77,7 @@ pub enum WeatherSequence {
 impl WeatherSequence {
     pub(crate) fn target(self, initial: Parameters, seconds: f64) -> Parameters {
         match self {
-            Self::Held => initial,
+            Self::Held | Self::MistSweep => initial,
             Self::WindTurn => Parameters {
                 wind: if seconds < 10.0 {
                     initial.wind
@@ -151,11 +155,34 @@ pub enum CloudSelection {
     Sky,
     /// Weather, shade, visible clouds and world lighting through the sky overlay.
     WorldLight,
+    /// Ground condensate with the valley surface, visible sky and world light.
+    Ground(GroundWeather),
 }
 
 impl CloudSelection {
+    pub(crate) const NAMES: &str = "off, shade, sky, world-light, ground-clear, ground-half, ground, ground-fog or ground-mist-bank";
+
+    pub(crate) fn named(name: &str) -> Option<Self> {
+        Some(match name {
+            "off" => Self::Off,
+            "shade" => Self::Shade,
+            "sky" => Self::Sky,
+            "world-light" => Self::WorldLight,
+            "ground-clear" => Self::Ground(GroundWeather::Clear),
+            "ground-half" => Self::Ground(GroundWeather::HalfMist),
+            "ground" => Self::Ground(GroundWeather::Mist),
+            "ground-fog" => Self::Ground(GroundWeather::Fog),
+            "ground-mist-bank" => Self::Ground(GroundWeather::MistAndBank),
+            _ => return None,
+        })
+    }
+
+    pub(crate) fn world_light(self) -> bool {
+        matches!(self, Self::WorldLight | Self::Ground(_))
+    }
+
     pub(crate) fn sky_profile(self, extent: [u32; 2]) -> Option<thrum_clouds::SkyProfile> {
-        matches!(self, Self::Sky | Self::WorldLight).then_some(thrum_clouds::SkyProfile {
+        (self == Self::Sky || self.world_light()).then_some(thrum_clouds::SkyProfile {
             extent,
             step: 15.0,
             light_samples: 3,
@@ -169,6 +196,7 @@ pub(crate) fn with_shade(
     input: Option<&thrum_clouds::WeatherInput>,
     sky: Option<thrum_clouds::SkyProfile>,
     shapes: Option<&PlacedSky>,
+    ground: Option<&thrum_clouds::GroundConfig>,
 ) -> Result<Box<dyn thrum_render::contribution::SceneContribution>, String> {
     let Some(input) = input else {
         return Ok(contribution);
@@ -180,6 +208,11 @@ pub(crate) fn with_shade(
     let shade = match sky {
         Some(profile) => shade.with_sky(profile).map_err(|error| error.to_string())?,
         None => shade,
+    };
+    let shade = if let Some(ground) = ground {
+        shade.with_ground(ground.clone())
+    } else {
+        shade
     };
     let members = if let Some(shapes) = shapes {
         let (assets, shade) = shapes.shade(shade)?;

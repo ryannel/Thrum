@@ -1,8 +1,5 @@
 @group(2) @binding(9) var<storage,read> cloud_phase:array<f32>;
 @group(2) @binding(10) var<storage,read> cloud_ambient:array<vec4<f32>,2>;
-fn cloud_hg_phase(s2:f32,g:f32)->f32 {
-    return (1.0-g*g)/(4.0*PI*pow((1.0-g)*(1.0-g)+4.0*g*s2,1.5));
-}
 fn cloud_phase_row(row:u32,s2:f32)->f32 {
     let entries=u32(cloud.erosion.w);
     let at=sqrt(sqrt(clamp(s2,0.0,1.0)))*f32(entries-1u);
@@ -42,15 +39,12 @@ fn cloud_source(solar:vec3<f32>,phases:vec3<f32>,sun_depths:vec2<f32>,
 fn cloud_source_with_diffuse(solar:vec3<f32>,phases:vec3<f32>,sun_depth:f32,diffuse_column:vec2<f32>,
                              diffuse_scale:f32,vertical_depths:vec2<f32>,light_angles:vec4<f32>,
                              distance:f32,transmission:f32)->vec3<f32> {
-    // The first profile's near/far medium handover ends at 500 m.
-    let boundary=cloud_smooth((distance-500.0)/500.0);
     let g=cloud.erosion.z;
-    let depth=-log(transmission);
-    let beam=cloud_solar_beam(phases,sun_depth,cloud.scattering.xyz);
-    let diffuse=cloud_solar_diffuse(diffuse_column,light_angles,depth,boundary,cloud.scattering.xyz,g);
+    let kernel=cloud_sun_term(phases,sun_depth,diffuse_column,diffuse_scale,
+                              light_angles,distance,transmission,vec4(cloud.scattering.xyz,g));
     let diffuse_depth=0.75*(1.0-g)*vertical_depths;
     let ambient=cloud_ambient[0].rgb/(1.0+diffuse_depth.x)+cloud_ambient[1].rgb/(1.0+diffuse_depth.y);
-    return solar*(beam+diffuse*diffuse_scale)+ambient;
+    return solar*kernel+ambient;
 }
 
 fn cloud_placed_diffuse(point:vec3<f32>,world:vec3<f32>,footprint:f32,sun_alignment:f32,

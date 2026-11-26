@@ -1,13 +1,6 @@
-@group(2) @binding(5) var sun_near:texture_2d_array<f32>;
-@group(2) @binding(6) var sun_middle:texture_2d_array<f32>;
-@group(2) @binding(7) var sun_far:texture_2d_array<f32>;
-struct CloudMapping {region:vec4<f32>,plane_drift:vec4<f32>,path_border:vec4<f32>,far_value:vec4<f32>,near:vec4<f32>,middle:vec4<f32>}
-@group(2) @binding(8) var<uniform> mapping:CloudMapping;
 @group(2) @binding(11) var shape_noise: texture_3d<f32>;
 @group(2) @binding(12) var detail_noise: texture_3d<f32>;
-@group(2) @binding(13) var noise_sampler: sampler;
 
-fn cloud_smooth(x:f32)->f32 {let a=clamp(x,0.0,1.0);return a*a*(3.0-2.0*a);}
 fn cloud_bilinear(field:texture_2d_array<f32>,coordinate:vec2<f32>,level:i32)->vec4<f32> {
     let size=vec2<i32>(textureDimensions(field));let p=coordinate-0.5;let lo=vec2<i32>(floor(p));let f=fract(p);
     return mix(mix(textureLoad(field,clamp(lo,vec2(0),size-1),level,0),textureLoad(field,clamp(lo+vec2(1,0),vec2(0),size-1),level,0),f.x),mix(textureLoad(field,clamp(lo+vec2(0,1),vec2(0),size-1),level,0),textureLoad(field,clamp(lo+vec2(1),vec2(0),size-1),level,0),f.x),f.y);
@@ -76,22 +69,7 @@ fn cloud_eroded_density(sigma:f32,point:vec3<f32>,footprint:f32,extinction:f32,h
                                   footprint,height,cloud_bank_weight(cloud.bank_noise.w));
 }
 fn cloud_sun_depths(world:vec3<f32>,start_height:f32)->vec3<f32> {
-    let point=world.xz-mapping.path_border.xz*(world.y-mapping.plane_drift.x)/mapping.path_border.y;
-    let heights=vec2(world.y,start_height);
-    let near=(point-mapping.near.xy)/mapping.near.z;
-    let nw=cloud_smooth(min(min(near.x,near.y),min(1.0-near.x,1.0-near.y))/0.15);
-    if nw==1.0 {return cloud_path_sample(sun_near,near,heights);}
-    let middle=(point-mapping.middle.xy)/mapping.middle.z;
-    let mw=cloud_smooth(min(min(middle.x,middle.y),min(1.0-middle.x,1.0-middle.y))/0.15);
-    var tau=vec3(0.0);
-    if mw==1.0 {tau=cloud_path_sample(sun_middle,middle,heights);}
-    else {
-        let region=vec4(mapping.region.xy,mapping.region.z-mapping.region.x,0.0);
-        tau=cloud_path_sample(sun_far,clamp((point-region.xy)/region.z,vec2(0.0),vec2(1.0)),heights);
-        if mw>0.0 {tau=mix(tau,cloud_path_sample(sun_middle,middle,heights),mw);}
-    }
-    if nw>0.0 {tau=mix(tau,cloud_path_sample(sun_near,near,heights),nw);}
-    return tau;
+    return cloud_window_depths(world,start_height,cloud.heights.xy);
 }
 
 // Six balanced offsets in the plane across the Sun ray.

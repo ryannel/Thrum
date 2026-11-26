@@ -104,8 +104,11 @@ fn placed_density_and_both_medium_entries_share_column_erosion() {
     row.depth = 850.0;
     let ground = ground_support::table(vec![row]);
     let light = Light {
-        phases: [0.1, 0.2, 0.3, 0.4],
-        sun_depth: 2.0,
+        phases: [0.1, 0.2],
+        sun_depths: [2.0, 4.0],
+        forward_share: 0.7,
+        broad_weight: 0.5,
+        plane_cosines: [0.2, 0.3],
         vertical_depths: [1.0, 3.0],
         ambient: [0.2, 0.1],
         mean_cosine: 0.8,

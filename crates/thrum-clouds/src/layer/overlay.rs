@@ -56,6 +56,7 @@ impl Overlay {
         environment: &EnvironmentProducts,
         trace: &wgpu::BindGroupLayout,
         shapes: Option<&crate::shapes::Shapes>,
+        ground: bool,
     ) -> Self {
         let device = surface.device;
         let visibility = wgpu::ShaderStages::COMPUTE;
@@ -106,7 +107,7 @@ impl Overlay {
         let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some(PASS),
             source: wgpu::ShaderSource::Wgsl(
-                super::prepare::overlay_source(environment, shapes.is_some()).into(),
+                super::prepare::overlay_source(environment, shapes.is_some(), ground).into(),
             ),
         });
         let pipeline = device.compute(&wgpu::ComputePipelineDescriptor {

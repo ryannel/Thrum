@@ -2,7 +2,7 @@
 use crate::support;
 use std::f64::consts::PI;
 use support::close;
-use thrum_cloud_model::{Orders, Phase, Segment};
+use thrum_cloud_model::{Phase, Segment};
 
 /// Independent midpoint integration under u=sin(theta/2)^(1/2).
 pub(crate) fn sphere(phase: impl Fn(f64) -> f64, n: u32) -> [f64; 2] {
@@ -40,9 +40,6 @@ fn beer_composition_and_later_orders_match_the_independent_oracle() {
         0.75,
         1e-15,
     );
-    assert_eq!(Orders::WEIGHTS, [0.7, 0.2, 0.07, 0.03]);
-    assert_eq!(Orders::EXTINCTION, [1.0, 0.5, 0.25, 0.125]);
-    assert_eq!(Orders::LATER_G, [0.43, 0.215, 0.1075]);
 }
 
 #[test]

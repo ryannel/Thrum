@@ -2,17 +2,19 @@
 use crate::ground_support;
 use crate::support;
 use thrum_cloud_model::{
-    Coefficients, Conformance, Handover, Light, Orders, Phase, PhaseTable, Sample, Segment, Weather,
+    Coefficients, Conformance, Handover, Light, Phase, PhaseTable, Sample, Segment, Weather,
 };
 
 #[test]
-fn coefficients_use_the_existing_orders_phase_table_and_diffuse_term() {
+fn coefficients_use_the_beam_and_two_stream_diffuse_term() {
     let phase = Phase::fit(20.0).expect("phase");
     let table = PhaseTable::new(phase, 0.00465, 1025).expect("table");
-    let phases = Orders::phases(&table, 0.25);
     let light = Light {
-        phases,
-        sun_depth: 2.0,
+        phases: [table.reference(0.25), 0.1],
+        sun_depths: [2.0, 4.0],
+        forward_share: 0.75,
+        broad_weight: 0.5,
+        plane_cosines: [0.5, 0.0],
         vertical_depths: [3.0, 5.0],
         ambient: [0.2, 0.1],
         mean_cosine: phase.mean_cosine(),
@@ -28,14 +30,17 @@ fn coefficients_use_the_existing_orders_phase_table_and_diffuse_term() {
         ground: Some(&ground),
     };
     let actual = w.medium([0.0, 10.0, 0.0], &state, |_| None, light);
-    let mut kernel = 0.7 * (-2.0_f64).exp() * table.reference(0.25);
-    for (i, g) in [0.43_f64, 0.215, 0.1075].into_iter().enumerate() {
-        let hg = (1.0 - g * g) / (4.0 * std::f64::consts::PI * ((1.0 - g).powi(2) + g).powf(1.5));
-        kernel += [0.2, 0.07, 0.03][i] * (-[0.5, 0.25, 0.125][i] * 2.0_f64).exp() * hg;
-    }
+    let beam =
+        (-1.0_f64).exp() * table.reference(0.25) + 0.1 * ((-0.5_f64).exp() - (-1.0_f64).exp());
+    let reduced_cosine = 0.5 * (1.0 - phase.mean_cosine());
+    let escape = 6.0 / 7.0;
+    let flux = (escape + (-1.0_f64).exp() / 7.0) / (1.0 + 3.0 * reduced_cosine);
+    let mean = (1.0 - flux * (1.0 + 3.0 * reduced_cosine)
+        + (2.0 * escape - 1.0) * (1.0 - (-0.5_f64).exp()))
+        / (4.0 * std::f64::consts::PI);
     let expected = Coefficients {
         extinction: 0.02,
-        solar_kernel: 0.02 * kernel,
+        solar_kernel: 0.02 * (beam + mean),
         ambient_source: 0.02
             * (0.2 / (1.0 + 0.75 * (1.0 - phase.mean_cosine()) * 3.0)
                 + 0.1 / (1.0 + 0.75 * (1.0 - phase.mean_cosine()) * 5.0)),
@@ -70,7 +75,8 @@ fn coefficients_use_the_existing_orders_phase_table_and_diffuse_term() {
     support::close(weighted.ambient_source, actual.ambient_source * 0.4, 1e-15);
     let dim = Light {
         ambient: [0.0; 2],
-        phases: [0.0; 4],
+        phases: [0.0; 2],
+        sun_depths: [0.0; 2],
         ..light
     };
     let mixed = w.medium_sources([0.0, 10.0, 0.0], &state, |_| None, dim, |_| light);

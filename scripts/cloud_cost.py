@@ -731,10 +731,95 @@ def overcast_lit(check):
     return record
 
 
+MIST_NEAR_FIXTURE = ROOT / 'tests/fixtures/clouds/mist-near-cost.json'
+GROUND_RESOURCES = {
+    'cloud surface field', 'cloud ground frame', 'cloud fog table', 'cloud fog phase tables',
+    'cloud ground band', 'cloud ground band mapping', 'cloud medium coefficient texture',
+    'cloud medium hemisphere light',
+}
+
+
+def mist_near_cost():
+    scratch = ROOT / 'tmp/clouds-wp14/cost'
+    scratch.mkdir(parents=True, exist_ok=True)
+    run(['cargo', 'build', '--release', '--locked', '--offline', '-p', 'v1-game',
+         '--example', 'cloud_cost'], timeout=1200)
+    run(['cargo', 'build', '--release', '--locked', '--offline', '-p', 'thrum-cook',
+         '--bin', 'thrum-cook'], timeout=1200)
+    valley = scratch / 'valley'
+    if not valley.exists():
+        run(['target/release/thrum-cook', 'cook', 'examples/v1-game/assets/showcase', str(valley)], timeout=180)
+    before = os.getloadavg()
+    rows = []
+    for selection in ('off', 'ground-clear', 'ground-mist-bank'):
+        environment = dict(os.environ, THRUM_SCENE='valley', THRUM_ASSET_STORE=str(valley),
+                           THRUM_CLOUDS=selection, THRUM_CLOUD_PRESET='clear', THRUM_CLOUD_WIND='0',
+                           THRUM_CLOUD_TIME_SCALE='1', THRUM_CAMERA_X='35', THRUM_CAMERA_Z='16',
+                           THRUM_CAMERA_HEIGHT='246')
+        row = json.loads(run(['target/release/examples/cloud_cost', '--device-profile', 'portable',
+                              '--dawn'], env=environment, timeout=240))
+        rows.append(dict(row, selection=selection))
+    off, clear, mist = rows
+    passes = mist['pass_gpu_ns']
+    locate = lambda fragment, record: next(
+        (value for name, value in record['pass_gpu_ns'].items() if fragment in name), 0)
+    ground_passes = ('cloud ground band', 'cloud medium coefficients', 'atmosphere aerial perspective')
+    investigations = {}
+    if mist['whole_frame_gpu_ns'] > 1e9 / 120.0:
+        amounts = ', '.join(f'{name}: {locate(name, mist)/1e6:.3f} ms' for name in ground_passes)
+        investigations['whole frame'] = (
+            f"Off {off['whole_frame_gpu_ns']/1e6:.3f} ms, declared clear "
+            f"{clear['whole_frame_gpu_ns']/1e6:.3f} ms, and mist with a bank "
+            f"{mist['whole_frame_gpu_ns']/1e6:.3f} ms. Named Ground work: {amounts}. "
+            "The declared-clear control measures the cost of keeping the provider and view volume "
+            "alive, including surface visibility; occupied minus clear includes marching and "
+            "lighting the condensate. Device is shared and these figures use capture-off frames."
+        )
+    for name, value in passes.items():
+        clear_ns = clear['pass_gpu_ns'].get(name)
+        if clear_ns and value >= 1.25 * clear_ns:
+            investigations[name] = (
+                f"Same declared pipelines, dimensions and camera: {clear_ns/1e6:.3f} ms at zero "
+                f"amount and {value/1e6:.3f} ms with occupied mist and bank. Occupancy adds actual "
+                "density, Sun-path and in-scatter work while clear skips it. Small or unrelated "
+                "deltas can include shared load; all measured named passes are retained."
+            )
+    return {'commit': run(['git', 'rev-parse', 'HEAD']), 'machine': platform.platform(),
+            'load': {'before': before, 'after': os.getloadavg()}, 'runs': rows,
+            'investigations': investigations}
+
+
+def validate_mist_near(record):
+    off, clear, mist = record['runs']
+    if [row['selection'] for row in (off, clear, mist)] != ['off', 'ground-clear', 'ground-mist-bank']:
+        raise ValueError('missing a mist-near measurement arm')
+    for row in (off, clear, mist):
+        if (row['extent'] != [2560, 1440] or row['capture'] or row['frames'] < 30
+                or not row['view'] or row['view'] != mist['view']
+                or row['view_angles'] != mist['view_angles'] or 'Metal' not in row['adapter']
+                or not math.isfinite(row['whole_frame_gpu_ns']) or row['whole_frame_gpu_ns'] <= 0):
+            raise ValueError('all mist-near arms need the same capped-resolution Metal dawn view')
+    for fragment in ('cloud ground band', 'cloud medium coefficients', 'atmosphere aerial perspective'):
+        if not any(fragment in name and math.isfinite(ns) and ns > 0
+                   for name, ns in mist['pass_gpu_ns'].items()):
+            raise ValueError(f'missing mist-near timing: {fragment}')
+    resources = {name for name, size in mist['resources'] if size > 0}
+    if not GROUND_RESOURCES <= resources:
+        raise ValueError(f'missing Ground allocation bytes: {GROUND_RESOURCES - resources}')
+    if not mist['ray_statistics']:
+        raise ValueError('mist-near has no trace work record')
+    tripped = {name for name, ns in mist['pass_gpu_ns'].items()
+               if clear['pass_gpu_ns'].get(name, 0) > 0 and ns >= 1.25 * clear['pass_gpu_ns'][name]}
+    if mist['whole_frame_gpu_ns'] > 1e9 / 120:
+        tripped.add('whole frame')
+    if any(not record['investigations'].get(name) for name in tripped):
+        raise ValueError('mist-near tripwire investigation missing')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('command', choices=['record', 'check', 'refuse', 'cadence', 'hold'])
-    parser.add_argument('--scene', choices=[*FIXTURES, 'wind', 'scripted'], required=True)
+    parser.add_argument('--scene', choices=[*FIXTURES, 'wind', 'scripted', 'mist-near'], required=True)
     parser.add_argument('--previous', type=Path, help='previous renderer cost record at the same low-Sun view')
     parser.add_argument('--output', type=Path, help='write a cost record to an alternate destination')
     parser.add_argument('--resume', action='store_true',
@@ -748,6 +833,16 @@ def main():
     if args.command in ('cadence', 'hold') and args.scene == 'wind':
         from cloud_cadence_capture import run_wind
         return run_wind(args.command, args.output, resume=args.resume)
+    if args.scene == 'mist-near' and args.command in ('check', 'record'):
+        if args.command == 'check':
+            validate_mist_near(json.loads(MIST_NEAR_FIXTURE.read_text()))
+        record = mist_near_cost()
+        validate_mist_near(record)
+        encoded = json.dumps(record, indent=2) + '\n'
+        if args.output:
+            args.output.write_text(encoded)
+        print(encoded, end='')
+        return
     if args.scene in ('overcast-lit', 'range', 'library') and args.command in ('check', 'record'):
         measure_record = {'overcast-lit': overcast_lit, 'range': range_cost, 'library': library_cost}[args.scene]
         report = json.dumps(measure_record(args.command == 'check'), indent=2)

@@ -14,7 +14,7 @@ use thrum_render::{
 
 #[cfg(test)]
 pub(crate) mod diagnostic;
-mod light;
+pub(crate) mod light;
 mod overlay;
 mod prepare;
 mod temporal;
@@ -685,3 +685,22 @@ fn declaration(name: &str, kind: AfterOpaqueKind, accesses: Vec<EffectAccess>) -
 
 #[cfg(test)]
 mod tests;
+
+pub(crate) const SCATTERING: &str = include_str!("layer/scattering.wgsl");
+
+pub(crate) fn sun_source(group: u32) -> String {
+    format!(
+        "@group({group}) @binding(5) var sun_near: texture_2d_array<f32>;
+         @group({group}) @binding(6) var sun_middle: texture_2d_array<f32>;
+         @group({group}) @binding(7) var sun_far: texture_2d_array<f32>;
+         struct CloudMapping {{
+             region: vec4<f32>, plane_drift: vec4<f32>, path_border: vec4<f32>,
+             far_value: vec4<f32>, near: vec4<f32>, middle: vec4<f32>,
+         }}
+         @group({group}) @binding(8) var<uniform> mapping: CloudMapping;
+         @group({group}) @binding(13) var noise_sampler: sampler;
+         {}\n{}",
+        include_str!("layer/sun.wgsl"),
+        include_str!("layer/sun_windows.wgsl"),
+    )
+}

@@ -27,9 +27,9 @@ fn cloud_path_nodes(field:texture_2d_array<f32>,uv:vec2<f32>,first:i32,count:i32
     }
     return result;
 }
-fn cloud_path_above(field:texture_2d_array<f32>,uv:vec2<f32>,height:f32,layers:u32)->f32 {
+fn cloud_path_above(field:texture_2d_array<f32>,uv:vec2<f32>,height:f32,layers:u32,limits:vec2<f32>)->f32 {
     let count=layers*4u;
-    let q=clamp((cloud.heights.y-height)/(cloud.heights.y-cloud.heights.x),0.0,1.0)*f32(count-1u);
+    let q=clamp((limits.y-height)/(limits.y-limits.x),0.0,1.0)*f32(count-1u);
     let first=i32(floor(q))-1;
     // Hardware bilinear filtering in X/Z preserves cumulative ordering.
     // The cubic still operates on the four interpolated height nodes.
@@ -47,16 +47,16 @@ fn cloud_path_above(field:texture_2d_array<f32>,uv:vec2<f32>,height:f32,layers:u
 
 // Both heights lie on the same Sun ray. Reuse its horizontal lookup and
 // total depth when replacing the segment between the two heights.
-fn cloud_path_sample(field:texture_2d_array<f32>,uv:vec2<f32>,heights:vec2<f32>)->vec3<f32> {
+fn cloud_path_sample(field:texture_2d_array<f32>,uv:vec2<f32>,heights:vec2<f32>,limits:vec2<f32>)->vec3<f32> {
     let layers=textureNumLayers(field);
     // Constrain the repeating noise sampler to the Sun texture's edge centres.
     let edge=0.5/vec2<f32>(textureDimensions(field));
     let coordinate=clamp(uv,edge,1.0-edge);
     let whole=textureSampleLevel(field,noise_sampler,coordinate,i32(layers)-1,0.0).w;
-    let above=cloud_path_above(field,coordinate,heights.x,layers);
+    let above=cloud_path_above(field,coordinate,heights.x,layers,limits);
     var above_start=above;
     if heights.y!=heights.x {
-        above_start=cloud_path_above(field,coordinate,heights.y,layers);
+        above_start=cloud_path_above(field,coordinate,heights.y,layers,limits);
     }
     return vec3(above,whole,above_start);
 }

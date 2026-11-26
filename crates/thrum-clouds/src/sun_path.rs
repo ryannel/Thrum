@@ -86,6 +86,7 @@ pub struct SunPath {
     origins: [[f64; 2]; 3],
     pending_origins: [[f64; 2]; 3],
     direction: [f32; 3],
+    pub(crate) frame_heights: [f64; 2],
     pending_direction: [f32; 3],
     runs: bool,
     ranges: [(u32, u32); 3],
@@ -270,6 +271,7 @@ impl SunPath {
             origins: [[0.0; 2]; 3],
             pending_origins: [[0.0; 2]; 3],
             direction: [0.0, 1.0, 0.0],
+            frame_heights: [0.0; 2],
             pending_direction: [0.0, 1.0, 0.0],
             runs: false,
             ranges: [(0, 0); 3],
@@ -517,6 +519,7 @@ impl SunPath {
             };
             queue.write_buffer(&self.params[3], 0, bytemuck::bytes_of(&uniform));
         }
+        self.frame_heights = heights;
         self.write_mapping(queue, state, time, heights, cut);
         self.prepare_noise(queue);
         Ok(())

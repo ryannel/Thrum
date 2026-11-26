@@ -1,5 +1,6 @@
 //! GPU weather products. The game supplies the field's type data and committed state.
 mod field_overlay;
+mod ground;
 mod layer;
 pub use field_overlay::FieldOverlay;
 mod noise;
@@ -8,6 +9,7 @@ mod shapes;
 mod sun_path;
 mod weather;
 
+pub use ground::{GroundConfig, GroundField, GroundProducts};
 pub use layer::{SkyProducts, SkyProfile};
 #[cfg(target_arch = "wasm32")]
 pub use shade::CloudSubmission;

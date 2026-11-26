@@ -29,7 +29,7 @@ fn atmosphere_lighting(
     sun: crate::environment::SunSample,
     camera_altitude_m: f32,
     #[cfg(feature = "proving")] haze: Option<thrum_render::atmosphere::Aerosol>,
-    #[cfg(feature = "proving")] medium_epoch: Option<u64>,
+    medium_epoch: Option<u64>,
 ) -> FrameLighting {
     let frame = AtmosphereFrame::new(
         sun.toward_sun,
@@ -46,7 +46,6 @@ fn atmosphere_lighting(
     let frame = haze.map_or(frame, |aerosol| {
         frame.with_aerosol(aerosol).with_view_volume()
     });
-    #[cfg(feature = "proving")]
     let frame = medium_epoch.map_or(frame, |epoch| frame.with_view_volume_medium(epoch));
     FrameLighting::Atmosphere(frame)
 }
@@ -382,11 +381,13 @@ pub struct GameScene {
     #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
     pub(super) weather_edits: Option<super::WeatherEdits>,
     pub(super) cloud_sky: Option<thrum_clouds::SkyProfile>,
+    pub(super) cloud_ground: Option<thrum_clouds::GroundConfig>,
     pub(super) cloud_shapes: Option<crate::PlacedSky>,
     #[cfg(feature = "proving")]
     haze: Option<thrum_render::atmosphere::Aerosol>,
     #[cfg(feature = "proving")]
-    pub(super) medium_epoch: Option<u64>,
+    pub(super) test_bank: bool,
+    medium_epoch: Option<u64>,
     pub(super) cooked_rows: Option<thrum_asset_gpu::rows::CookedRows>,
     native_witness: thrum_render::synthetic::NativeWitness,
     content: GameContent,
@@ -646,10 +647,23 @@ impl GameScene {
             weather_edits: None,
             cloud_sky: None,
             cloud_shapes: None,
+            cloud_ground: None,
             #[cfg(feature = "proving")]
             haze: setup.haze,
             #[cfg(feature = "proving")]
-            medium_epoch: setup.test_bank.then_some(1),
+            test_bank: setup.test_bank,
+            medium_epoch: if matches!(setup.clouds, crate::CloudSelection::Ground(_)) {
+                Some(1)
+            } else {
+                #[cfg(feature = "proving")]
+                if setup.test_bank {
+                    Some(1)
+                } else {
+                    None
+                }
+                #[cfg(not(feature = "proving"))]
+                None
+            },
             cooked_rows: None,
             content: setup.content,
             #[cfg(feature = "proving")]
@@ -755,7 +769,7 @@ impl GameScene {
             }
             scene.sun_optical_depth = Some(test_bank::sun_path()?);
         }
-        scene.sky_overlay = setup.clouds == crate::CloudSelection::WorldLight;
+        scene.sky_overlay = setup.clouds.world_light();
         if setup.clouds != crate::CloudSelection::Off {
             scene.sun_optical_depth = Some(thrum_render::atmosphere::SunOpticalDepth::gpu_target(
                 [crate::clouds::GROUND_SIZE; 2],
@@ -1019,7 +1033,6 @@ impl SceneSource<PublishedPage> for GameScene {
                 camera_altitude_m,
                 #[cfg(feature = "proving")]
                 self.haze,
-                #[cfg(feature = "proving")]
                 self.medium_epoch,
             )
         });
@@ -1297,6 +1310,7 @@ mod tests {
             #[cfg(feature = "proving")]
             haze: None,
             #[cfg(feature = "proving")]
+            test_bank: false,
             medium_epoch: None,
             #[cfg(feature = "proving")]
             sprite_scale: None,
@@ -1313,6 +1327,7 @@ mod tests {
             weather_edits: None,
             cloud_sky: None,
             cloud_shapes: None,
+            cloud_ground: None,
             cooked_rows: None,
             native_witness: thrum_render::synthetic::NativeWitness::Off,
             content: scene::GameContent::Grid,

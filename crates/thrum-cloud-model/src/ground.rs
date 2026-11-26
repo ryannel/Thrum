@@ -100,6 +100,20 @@ impl Surface {
         })
     }
 
+    /// Origin, dimensions and node spacing of the world-anchored grid.
+    pub fn grid(&self) -> ([f64; 2], [usize; 2], f64) {
+        (self.origin, self.size, self.spacing)
+    }
+
+    /// Surface height, datum and shore distance at grid nodes, X fastest.
+    pub fn nodes(&self) -> impl ExactSizeIterator<Item = [f64; 3]> + '_ {
+        self.heights
+            .iter()
+            .zip(&self.datum)
+            .zip(&self.shore)
+            .map(|((&height, &datum), &shore)| [height, datum, shore])
+    }
+
     /// Surface height, averaged datum and signed shore distance (positive on water).
     pub fn sample(&self, point: [f64; 2]) -> [f64; 3] {
         [
@@ -286,6 +300,16 @@ impl Ground {
             return Err(Error::Invalid);
         }
         Ok(Self { rows, profile })
+    }
+
+    /// The authored rows in the same order as the state's amounts.
+    pub fn rows(&self) -> &[Fog] {
+        &self.rows
+    }
+
+    /// Distance over which affinity fades at the shore, in metres.
+    pub fn shore_margin(&self) -> f64 {
+        self.profile.shore_margin
     }
 
     /// Uneroded bottom and top of one row. Empty amount has zero depth.

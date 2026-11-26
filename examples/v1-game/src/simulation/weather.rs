@@ -93,8 +93,17 @@ impl Permits {
         }
         #[cfg(feature = "proving")]
         if let Some((sequence, initial)) = value.sequence {
+            let seconds = tick as f64 * dt;
+            if sequence == WeatherSequence::MistSweep {
+                let t = (1.0 - (seconds / 60.0 - 1.0).abs()).clamp(0.0, 1.0);
+                let amount = t * t * (3.0 - 2.0 * t);
+                state.set_ground(
+                    thrum_cloud_model::GroundState::new(vec![amount, 0.0], 0.0, 100_000.0)
+                        .map_err(|_| SimError::InvalidConfig)?,
+                );
+            }
             state
-                .set_target(sequence.target(initial, tick as f64 * dt))
+                .set_target(sequence.target(initial, seconds))
                 .map_err(|_| SimError::InvalidConfig)?;
         }
         if let Some(demo) = value.demo {

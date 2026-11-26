@@ -1,3 +1,9 @@
+const CLOUD_RAMP_END_M:f32=500.0;
+
+fn cloud_boundary_weight(distance:f32)->f32 {
+    return cloud_smooth((distance-CLOUD_RAMP_END_M)/CLOUD_RAMP_END_M);
+}
+
 fn cloud_solar_beam(phases:vec3<f32>,sun_depth:f32,droplet:vec3<f32>)->f32 {
     let reduced=1.0-droplet.x;
     // Let the narrowed middle lobe take its full share at grazing Sun.
@@ -33,4 +39,18 @@ fn cloud_solar_diffuse(sun_depths:vec2<f32>,light_angles:vec4<f32>,
     let adjustment=free_boundary*exp(-(2.0/3.0)*view/length_scale)/(2.0/3.0+length_scale);
     let diffuse=(1.0-adjustment*length_scale)*(mean-g*flow*cosine)+g*mean*adjustment*(2.0/3.0);
     return max(0.0,diffuse);
+}
+
+fn cloud_sun_term(phases:vec3<f32>,sun_depth:f32,diffuse_column:vec2<f32>,
+                  diffuse_scale:f32,light_angles:vec4<f32>,distance:f32,
+                  transmission:f32,droplet:vec4<f32>)->f32 {
+    let boundary=cloud_boundary_weight(distance);
+    let depth=-log(transmission);
+    let beam=cloud_solar_beam(phases,sun_depth,droplet.xyz);
+    let diffuse=cloud_solar_diffuse(diffuse_column,light_angles,depth,boundary,droplet.xyz,droplet.w);
+    return beam+diffuse*diffuse_scale;
+}
+
+fn cloud_hg_phase(s2:f32,g:f32)->f32 {
+    return (1.0-g*g)/(4.0*PI*pow((1.0-g)*(1.0-g)+4.0*g*s2,1.5));
 }

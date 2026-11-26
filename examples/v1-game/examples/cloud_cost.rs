@@ -9,7 +9,7 @@ use thrum_render::runtime::FrameConfig;
 use v1_game::GameHost as _;
 
 fn main() -> Result<(), String> {
-    let mut low_sun = false;
+    let mut low_sun = None;
     let mut noon = false;
     let mut profile = DeviceProfile::Native;
     let mut store = None;
@@ -17,7 +17,8 @@ fn main() -> Result<(), String> {
     let mut args = std::env::args().skip(1);
     while let Some(arg) = args.next() {
         match arg.as_str() {
-            "--low-sun" => low_sun = true,
+            "--low-sun" => low_sun = Some(1.0),
+            "--dawn" => low_sun = Some(-1.0),
             "--noon" => noon = true,
             "--device-profile" => {
                 profile = match args.next().as_deref() {
@@ -33,10 +34,10 @@ fn main() -> Result<(), String> {
             _ => return Err(format!("unrecognised cloud cost option {arg}")),
         }
     }
-    if low_sun && noon {
+    if low_sun.is_some() && noon {
         return Err("choose either the low Sun or noon view".into());
     }
-    if library && (!low_sun || store.is_none()) {
+    if library && (low_sun != Some(1.0) || store.is_none()) {
         return Err("--library needs --low-sun and --placed-store".into());
     }
     pollster::block_on(measure(low_sun, noon, profile, store, library))
@@ -47,7 +48,7 @@ fn main() -> Result<(), String> {
     reason = "measurement executable emits its one machine-readable record"
 )]
 async fn measure(
-    low_sun: bool,
+    low_sun: Option<f32>,
     noon: bool,
     profile: DeviceProfile,
     store: Option<std::path::PathBuf>,
@@ -97,9 +98,9 @@ async fn measure(
     };
     let content = v1_game::attach_cooked_scene(&mut host)?;
     host.set_timing_requested(true);
-    let view_angles = if low_sun {
+    let view_angles = if let Some(side) = low_sun {
         let elevation = 10.0_f32.to_radians();
-        let hour_angle = (elevation.sin() * std::f32::consts::SQRT_2).acos();
+        let hour_angle = side * (elevation.sin() * std::f32::consts::SQRT_2).acos();
         let solar_time = 0.5 + hour_angle / std::f32::consts::TAU;
         let sun = DayCycle::sample(0, 0.0, hour_angle / std::f32::consts::TAU).toward_sun;
         let yaw = sun[0].atan2(-sun[2]);

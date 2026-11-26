@@ -213,3 +213,147 @@ pub(super) fn append_placed_map(
         accesses: reads,
     });
 }
+
+pub(super) fn append_ground(
+    graph: &mut EffectGraph,
+    ground: &crate::ground::GroundGpu,
+    targets: &crate::ground::GroundTargets,
+) -> Vec<EffectAccess> {
+    let access = |resource, range, kind| EffectAccess {
+        resource,
+        range,
+        kind,
+        view: None,
+        history: None,
+    };
+    let surface = graph.resources.len();
+    graph.resources.push((
+        D::of_texture(&ground.field.surface),
+        S::Imported { initialized: true },
+    ));
+    let band = graph.resources.len();
+    graph.resources.push((
+        D::of_texture(&targets.band.texture),
+        S::Imported { initialized: false },
+    ));
+    let medium = &targets.medium.target;
+    let coefficients = graph.resources.len();
+    graph.resources.push((
+        D::of_texture(&medium.coefficients),
+        S::Imported { initialized: false },
+    ));
+    let mut buffer = |buffer: &wgpu::Buffer, kind, initialized| {
+        let index = graph.resources.len();
+        graph.resources.push((
+            D::Buffer {
+                bytes: buffer.size(),
+                usage: buffer.usage(),
+            },
+            S::Imported { initialized },
+        ));
+        access(index, 0..buffer.size(), kind)
+    };
+    let ground_inputs = [
+        access(surface, 0..1, A::SampledRead),
+        buffer(&ground.field.frame, A::UniformRead, true),
+        buffer(&ground.field.rows, A::StorageRead, true),
+        buffer(&targets.band.mapping, A::UniformRead, true),
+    ];
+    let phase = buffer(&ground.phases.buffer, A::StorageRead, true);
+    let observer = buffer(&medium.observer, A::UniformRead, true);
+    let history = buffer(&medium.history, A::UniformRead, true);
+    let hemisphere = buffer(&targets.medium.lighting.ambient, A::StorageReadWrite, true);
+    let mut paths: Vec<_> = (3..6)
+        .map(|resource| {
+            let D::Texture { layers, .. } = graph.resources[resource].0 else {
+                unreachable!("Sun path texture")
+            };
+            access(resource, 0..u64::from(layers), A::SampledRead)
+        })
+        .collect();
+    let D::Buffer { bytes, .. } = graph.resources[7].0 else {
+        unreachable!("Sun path mapping")
+    };
+    paths.push(access(7, 0..bytes, A::UniformRead));
+    let band_read = access(band, 0..1, A::SampledRead);
+    graph.passes.push(EffectPass {
+        name: crate::ground::band::PASS.into(),
+        cadence: EffectCadence::EveryFrame,
+        async_eligible: false,
+        accesses: paths
+            .iter()
+            .chain(&ground_inputs)
+            .cloned()
+            .chain([access(band, 0..1, A::StorageWrite)])
+            .collect(),
+    });
+    let trace_inputs: Vec<_> = ground_inputs
+        .into_iter()
+        .chain([phase, band_read.clone()])
+        .collect();
+    paths.extend(trace_inputs.iter().cloned());
+    paths.extend([
+        observer,
+        history,
+        hemisphere,
+        access(
+            coefficients,
+            0..u64::from(medium.coefficients.depth_or_array_layers()),
+            A::StorageWrite,
+        ),
+    ]);
+    graph.passes.push(EffectPass {
+        name: crate::ground::medium::PASS.into(),
+        cadence: EffectCadence::EveryFrame,
+        async_eligible: false,
+        accesses: paths,
+    });
+    graph.opaque_reads.push(band_read);
+    graph
+        .view_volume_media
+        .push(thrum_render::contribution::ViewVolumeResources {
+            coefficients,
+            ground_band: Some(band),
+        });
+    trace_inputs
+}
+
+pub(super) fn ground_bytes(
+    ground: &crate::ground::GroundGpu,
+    targets: &crate::ground::GroundTargets,
+) -> Vec<(String, u64)> {
+    let surface = ground.field.surface.size();
+    let band = targets.band.texture.size();
+    let coefficients = targets.medium.target.coefficients.size();
+    [
+        (
+            "cloud medium coefficient texture",
+            u64::from(coefficients.width)
+                * u64::from(coefficients.height)
+                * u64::from(coefficients.depth_or_array_layers)
+                * 8,
+        ),
+        (
+            "cloud surface field",
+            u64::from(surface.width) * u64::from(surface.height) * 16,
+        ),
+        ("cloud ground frame", ground.field.frame.size()),
+        ("cloud fog table", ground.field.rows.size()),
+        ("cloud fog phase tables", ground.phases.buffer.size()),
+        (
+            "cloud ground band",
+            u64::from(band.width)
+                * u64::from(band.height)
+                * u64::from(band.depth_or_array_layers)
+                * 8,
+        ),
+        ("cloud ground band mapping", targets.band.mapping.size()),
+        (
+            "cloud medium hemisphere light",
+            targets.medium.lighting.ambient.size(),
+        ),
+    ]
+    .into_iter()
+    .map(|(name, bytes)| (name.into(), bytes))
+    .collect()
+}

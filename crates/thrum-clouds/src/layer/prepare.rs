@@ -2,7 +2,14 @@ use super::{
     AfterOpaqueKind, COMPOSE, Error, FIELD, Layer, SceneSurface, SkyProfile, TRACE, Uniform,
     WeatherMap, declaration,
 };
-use crate::noise::{DETAIL_SIZE, Noise};
+use crate::{
+    ground::{
+        GroundField,
+        band::Band,
+        lighting::{self, FIRST, LightTable},
+    },
+    noise::{DETAIL_SIZE, Noise},
+};
 use thrum_render::{binding, runtime::PipelineInput};
 
 fn validate_profile(profile: SkyProfile, max_extent: u32) -> Result<(), Error> {
@@ -69,6 +76,7 @@ impl Layer {
         profile: SkyProfile,
         shapes: Option<&crate::shapes::Shapes>,
         accepted: Option<&Self>,
+        ground: Option<(&GroundField, &LightTable, &Band)>,
     ) -> Result<(Self, Option<wgpu::CommandBuffer>), Error> {
         validate_profile(profile, surface.limits.max_texture_dimension_2d)?;
         let device = surface.device;
@@ -111,38 +119,43 @@ impl Layer {
                 )
             }
         };
+        let mut trace_entries = vec![
+            uniform_entry,
+            texture_entry(1, false, false),
+            texture_entry(2, false, false),
+            texture_entry(3, true, false),
+            texture_entry(4, true, false),
+            texture_entry(5, false, true),
+            texture_entry(6, false, true),
+            texture_entry(7, false, true),
+            binding::storage(9, wgpu::ShaderStages::COMPUTE, true, 0),
+            binding::storage(10, wgpu::ShaderStages::COMPUTE, true, 0),
+            binding::texture(
+                11,
+                wgpu::ShaderStages::COMPUTE,
+                wgpu::TextureSampleType::Float { filterable: true },
+                wgpu::TextureViewDimension::D3,
+            ),
+            binding::texture(
+                12,
+                wgpu::ShaderStages::COMPUTE,
+                wgpu::TextureSampleType::Float { filterable: true },
+                wgpu::TextureViewDimension::D3,
+            ),
+            binding::sampler(
+                13,
+                wgpu::ShaderStages::COMPUTE,
+                wgpu::SamplerBindingType::Filtering,
+            ),
+            binding::uniform(8, wgpu::ShaderStages::COMPUTE, 96),
+        ];
+        if ground.is_some() {
+            trace_entries.extend(GroundField::layout(FIRST));
+            trace_entries.extend(LightTable::layout());
+        }
         let trace_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some(TRACE),
-            entries: &[
-                uniform_entry,
-                texture_entry(1, false, false),
-                texture_entry(2, false, false),
-                texture_entry(3, true, false),
-                texture_entry(4, true, false),
-                texture_entry(5, false, true),
-                texture_entry(6, false, true),
-                texture_entry(7, false, true),
-                binding::storage(9, wgpu::ShaderStages::COMPUTE, true, 0),
-                binding::storage(10, wgpu::ShaderStages::COMPUTE, true, 0),
-                binding::texture(
-                    11,
-                    wgpu::ShaderStages::COMPUTE,
-                    wgpu::TextureSampleType::Float { filterable: true },
-                    wgpu::TextureViewDimension::D3,
-                ),
-                binding::texture(
-                    12,
-                    wgpu::ShaderStages::COMPUTE,
-                    wgpu::TextureSampleType::Float { filterable: true },
-                    wgpu::TextureViewDimension::D3,
-                ),
-                binding::sampler(
-                    13,
-                    wgpu::ShaderStages::COMPUTE,
-                    wgpu::SamplerBindingType::Filtering,
-                ),
-                binding::uniform(8, wgpu::ShaderStages::COMPUTE, 96),
-            ],
+            entries: &trace_entries,
         });
         let views: Vec<_> = weather.textures()[..2]
             .iter()
@@ -192,6 +205,10 @@ impl Layer {
                 resource: wgpu::BindingResource::Sampler(&sun.shape_noise.sampler),
             },
         ]);
+        if let Some((field, phases, band)) = ground {
+            entries.extend(field.entries(FIRST));
+            entries.extend(phases.entries(band));
+        }
         let trace_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some(TRACE),
             layout: &trace_layout,
@@ -207,13 +224,16 @@ impl Layer {
             bind_group_layouts: &layouts,
             immediate_size: 0,
         });
-        let source = if shapes.is_some() {
-            shaped_trace_shader
-        } else {
-            trace_shader
-        }(&environment);
+        let source = trace_shader(&environment, shapes.is_some(), ground.is_some());
         let overlay = surface.sky_overlay_target().map(|target| {
-            super::overlay::Overlay::new(surface, target, &environment, &trace_layout, shapes)
+            super::overlay::Overlay::new(
+                surface,
+                target,
+                &environment,
+                &trace_layout,
+                shapes,
+                ground.is_some(),
+            )
         });
         let trace = trace_pipeline(device, &source, &pipeline_layout);
         let (field_layout, field_group) = field_bindings(
@@ -310,64 +330,60 @@ const OVERLAY_SHADER: &str = concat!(
     include_str!("overlay.wgsl"),
 );
 
-pub(super) fn trace_shader(environment: &thrum_render::atmosphere::EnvironmentProducts) -> String {
-    trace_source(environment, TRACE_SHADER, UNPLACED)
+pub(super) fn trace_shader(
+    environment: &thrum_render::atmosphere::EnvironmentProducts,
+    shapes: bool,
+    ground: bool,
+) -> String {
+    layer_shader(environment, TRACE_SHADER, shapes, ground, false)
 }
 
-fn trace_source(
+fn layer_shader(
     environment: &thrum_render::atmosphere::EnvironmentProducts,
-    trace: &str,
-    placed: &str,
+    transport: &str,
+    shapes: bool,
+    ground: bool,
+    coarse: bool,
 ) -> String {
+    let placed = if shapes {
+        let density = if coarse {
+            concat!(
+                include_str!("placed_coarse.wgsl"),
+                "fn cloud_placed_edge_footprint() -> f32 { return 0.0; }"
+            )
+        } else {
+            concat!(
+                include_str!("placed.wgsl"),
+                "fn cloud_placed_edge_footprint() -> f32 { return 60.0 * cloud.physical.y; }"
+            )
+        };
+        format!(
+            "{}\n{}\n{density}",
+            crate::shapes::shader(3),
+            include_str!("placed_column.wgsl")
+        )
+    } else {
+        UNPLACED.into()
+    };
     format!(
-        "{}\n{}\n{trace}\n{}\n{}\n{}\n{}\n{}\n{placed}",
+        "{}\n{}\n{transport}\n{}\n{}\n{}\n{}\n{}\n{placed}\n{}",
         environment.shader_source,
         include_str!("params.wgsl"),
         include_str!("light.wgsl"),
-        include_str!("scattering.wgsl"),
+        super::SCATTERING,
         include_str!("transport.wgsl"),
-        include_str!("sun.wgsl"),
+        super::sun_source(2),
         include_str!("../erosion.wgsl"),
-    )
-}
-
-fn shaped_trace_shader(environment: &thrum_render::atmosphere::EnvironmentProducts) -> String {
-    trace_source(
-        environment,
-        TRACE_SHADER,
-        &format!(
-            "{}\n{}",
-            crate::shapes::shader(3),
-            concat!(
-                include_str!("placed_column.wgsl"),
-                include_str!("placed.wgsl"),
-                "fn cloud_placed_edge_footprint() -> f32 { return 60.0 * cloud.physical.y; }\n"
-            )
-        ),
+        lighting::trace_source(ground),
     )
 }
 
 pub(super) fn overlay_source(
     environment: &thrum_render::atmosphere::EnvironmentProducts,
     shapes: bool,
+    ground: bool,
 ) -> String {
-    if shapes {
-        trace_source(
-            environment,
-            OVERLAY_SHADER,
-            &format!(
-                "{}\n{}",
-                crate::shapes::shader(3),
-                concat!(
-                    include_str!("placed_column.wgsl"),
-                    include_str!("placed_coarse.wgsl"),
-                    "fn cloud_placed_edge_footprint() -> f32 { return 0.0; }\n"
-                ),
-            ),
-        )
-    } else {
-        trace_source(environment, OVERLAY_SHADER, UNPLACED)
-    }
+    layer_shader(environment, OVERLAY_SHADER, shapes, ground, true)
 }
 
 fn field_bindings(
