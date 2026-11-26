@@ -20,7 +20,12 @@ const PROBE: &str = r"
 }
 ";
 
-fn sample(gpu: &thrum_test_support::Opened, cpu: &Map, points: &[[f32; 2]]) -> Vec<[f32; 4]> {
+fn sample(
+    gpu: &thrum_test_support::Opened,
+    cpu: &Map,
+    points: &[[f32; 2]],
+    source: impl FnOnce(String) -> String,
+) -> Vec<[f32; 4]> {
     let (device, queue) = (&gpu.device, &gpu.queue);
     let map = MapGpu::new(device, queue, cpu).expect("river map products");
     let view = map.view();
@@ -38,7 +43,7 @@ fn sample(gpu: &thrum_test_support::Opened, cpu: &Map, points: &[[f32; 2]]) -> V
     });
     let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some("river map probe"),
-        source: wgpu::ShaderSource::Wgsl((map.source(0) + PROBE).into()),
+        source: wgpu::ShaderSource::Wgsl((source(map.source(0)) + PROBE).into()),
     });
     let pipeline = thrum_render::runtime::DeviceSite::untracked(device.clone()).compute(
         &wgpu::ComputePipelineDescriptor {
@@ -84,7 +89,10 @@ fn sample(gpu: &thrum_test_support::Opened, cpu: &Map, points: &[[f32; 2]]) -> V
 }
 
 fn compare(gpu: &thrum_test_support::Opened, map: &Map, points: &[[f32; 2]]) {
-    for (&point, answer) in points.iter().zip(sample(gpu, map, points)) {
+    for (&point, answer) in points
+        .iter()
+        .zip(sample(gpu, map, points, std::convert::identity))
+    {
         let expected = map.sample(point.map(f64::from)).filter(|a| a.depth > 0.0);
         assert_eq!(
             answer[0],
@@ -268,4 +276,31 @@ fn metal_samples_the_ridge_and_the_dry_reach_at_their_wetting_gauges() {
         );
         compare(&gpu, &map, &points);
     }
+    // Both fields must be witnesses for the two shader faults, independently.
+    map.set_gauge(0, 0.33).expect("both features below wetting");
+    let without_wetting = sample(&gpu, &map, &[points[2], points[5]], |source| {
+        assert!(source.contains("if b.w < 0.0"));
+        source.replace("if b.w < 0.0", "if b.w <= 1.0")
+    });
+    assert!(
+        without_wetting
+            .iter()
+            .all(|a| a[0] >= 0.0 && f64::from(a[1]) > EPS_DEPTH)
+    );
+    map.set_gauge(0, 0.73).expect("both features above wetting");
+    let frozen = sample(&gpu, &map, &[points[0], points[2], points[5]], |source| {
+        let select_layer = "let upper = i32(body.joins[0].w);";
+        assert!(source.contains(select_layer));
+        source.replace(select_layer, "let upper = 0i;")
+    });
+    let expected = map
+        .sample(points[0].map(f64::from))
+        .expect("running chart")
+        .depth;
+    assert!((f64::from(frozen[0][1]) - expected).abs() > EPS_DEPTH);
+    assert!(frozen[1..].iter().all(|a| a[0] < 0.0));
+    println!(
+        "Metal mutation witnesses (hollow, fall reach): interpolation without wetting={without_wetting:?}, frozen first sample={:?}",
+        &frozen[1..]
+    );
 }
