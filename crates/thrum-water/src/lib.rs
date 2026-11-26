@@ -243,7 +243,7 @@ impl Water {
         let layer_heights = records::layer_heights(&spectrum);
         let underwater = profile
             .underwater
-            .then(|| underwater::Underwater::new(long_waves.clone(), &spectrum));
+            .then(|| underwater::Underwater::new(long_waves.clone(), &spectrum, layer_heights));
         let query = profile
             .query
             .filter(|limits| limits.points != 0)

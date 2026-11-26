@@ -139,6 +139,17 @@ impl Case {
         if name == "short-trough" {
             return Self::short_trough(true, datum);
         }
+        if name == "mapped-trough" {
+            let mut case = Self::short_trough(true, datum);
+            case.name = name;
+            case.column = [0.0; 2];
+            let sea = case.map.body(0).expect("sea").clone();
+            let heights = (0..25).map(|i| datum - 0.21 - f64::from(i % 5) * 0.01);
+            let bed =
+                Bed::new([-12.0; 2], 6.0, [5, 5], heights.collect()).expect("shallow sloping bed");
+            case.map = Map::prepare(bed, vec![sea], case.map.profile()).expect("mapped trough");
+            return case;
+        }
         if name == "trade-admission" {
             let mut case = Self::new("sea", datum);
             case.name = name;
@@ -205,6 +216,13 @@ impl Case {
         case.spectrum.long.clear();
         case.spectrum.cascades[0] =
             Cascade::new(160.0, &[(0, 12, 0.005, std::f64::consts::PI)]).expect("short wave");
+        case.field.layers = [
+            Vec::new(),
+            case.spectrum.cascades[0].components().to_vec(),
+            Vec::new(),
+            Vec::new(),
+        ]
+        .map(|components| LongWaves::new(components, 0.0).expect("short wave oracle"));
         case.map
             .set_wave_gains(0, [0.0, 1.0, 0.0, 0.0])
             .expect("offshore short wave gain");
@@ -218,7 +236,11 @@ impl Case {
     pub fn water(&self, underwater: bool) -> Water {
         let mut profile = Profile {
             optics: Some(Optics {
-                extinction: [10.0; 3],
+                extinction: [if self.name == "mapped-trough" {
+                    100.0
+                } else {
+                    10.0
+                }; 3],
                 downwelling: [0.0; 3],
                 ..Optics::default()
             }),
@@ -244,9 +266,9 @@ impl Case {
         reason = "the camera uses GPU metres"
     )]
     pub fn eye(&self) -> [f32; 3] {
-        if self.name == "short-trough" {
+        if matches!(self.name, "short-trough" | "mapped-trough") {
             return [
-                81.0,
+                self.column[0] as f32,
                 (self.map.row(0, self.column).level - 0.03) as f32,
                 -0.1,
             ];
@@ -356,7 +378,7 @@ fn target([x, y, z]: [f32; 3]) -> [f32; 3] {
 /// Returns an error for invalid controls, cooked assets or clock setup.
 pub fn browser_game(case: &Case, underwater: bool, dry: bool) -> Result<SkyGame, Box<dyn Error>> {
     let mut eye = case.eye();
-    if case.name == "short-trough" {
+    if matches!(case.name, "short-trough" | "mapped-trough") {
         if !dry {
             eye[2] += 160.0 / 24.0;
         }

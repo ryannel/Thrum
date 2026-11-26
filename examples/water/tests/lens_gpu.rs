@@ -204,18 +204,19 @@ fn metal_skips_a_dry_short_wave_trough_and_admits_the_crest() {
     use crate::support::optics::{Rig, attach, camera, sun};
     use water_scene::lens_probe::{Case, EXTENT, FOV};
     let Some(gpu) = thrum_test_support::gpu("dry short-wave trough", Some(wgpu::Backend::Metal)) else { return };
-    for mapped in [false, true] {
-        let case = Case::short_trough(mapped, 0.0);
+    for case in [
+        Case::short_trough(false, 0.0),
+        Case::short_trough(true, 0.0),
+        Case::new("mapped-trough", 0.0),
+    ] {
         let [x, y, trough] = case.eye();
         let look = |z| camera([x, y, z], [x, y, z + 1.0], FOV, 1.0 / 32768.0);
         let view = look(trough);
+        assert!(case.expected(&view, EXTENT).into_iter().all(|wet| !wet));
         let mut dry = Rig::with_extent(&gpu, &view, sun(0.0, 0.0), &[], None, EXTENT);
         attach(&mut dry, case.water(true));
         let mut plain = Rig::with_extent(&gpu, &view, sun(0.0, 0.0), &[], None, EXTENT);
         attach(&mut plain, case.water(false));
-        assert!(-0.03_f64 - 0.1 * (f64::from(FOV) * 0.5).tan() > -0.08);
-        let centre = case.spectrum.cascades[0].direct([81.0, 0.0], 0.0).displacement[1];
-        assert!(centre < -0.099);
         let submitted = dry.scene_colour().1;
         let reference = plain.scene_colour().1;
         let equal = submitted.iter().zip(&reference)
@@ -223,10 +224,21 @@ fn metal_skips_a_dry_short_wave_trough_and_admits_the_crest() {
             .count();
         assert_eq!(equal, (EXTENT[0] * EXTENT[1]) as usize, "dry pixels remain visually dry");
         dry.host.set_timing_requested(true);
+        plain.host.set_timing_requested(true);
         let gathers = |rig: &mut Rig| rig.frame().gpu_pass_ns.expect("Metal timing")
             .passes().iter().any(|pass| pass.name.contains("water gather"));
-        assert!(!gathers(&mut dry), "the dry lens scheduled the underwater gather");
-        dry.host.continuous_source_mut().view = look(160.0 / 24.0 - 0.1);
+        assert!(!gathers(&mut plain), "ordinary optics gathered in the {} fixture", case.name);
+        assert!(!gathers(&mut dry), "the dry {} scheduled the underwater gather", case.name);
+        if case.name == "mapped-trough" {
+            let low = camera([x, y - 0.02, trough], [x, y - 0.02, trough + 1.0], FOV, 1.0 / 32768.0);
+            let expected = case.expected(&low, EXTENT);
+            assert!(expected.contains(&true) && expected.contains(&false));
+            dry.host.continuous_source_mut().view = low;
+            assert!(gathers(&mut dry), "using the unrestricted trough would skip the wet edge");
+        }
+        let crest = look(160.0 / 24.0 - 0.1);
+        assert!(case.expected(&crest, EXTENT).into_iter().all(|wet| wet));
+        dry.host.continuous_source_mut().view = crest;
         assert!(gathers(&mut dry), "the same lens at the short-wave crest needs the gather");
     }
 }

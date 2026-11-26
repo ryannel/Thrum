@@ -1,6 +1,6 @@
 use std::{collections::HashMap, f64::consts::TAU};
 use thrum_sea_model::{Cascade, GRID_SIZE, LOOP_SECONDS, loop_cycles};
-use thrum_water_model::{BodyKind, Map};
+use thrum_water_model::{Bed, Body, BodyKind, Map};
 
 const GRID: i64 = 256;
 const MAX_FOOTPRINT_TAPS: usize = 64;
@@ -19,9 +19,15 @@ impl ShortWaveDomain {
         clippy::cast_precision_loss,
         reason = "the mapped shader reads the bed lattice and gains as f32"
     )]
-    pub(super) fn gains(self, map: &Map, centre: [f64; 2], radius: [f64; 2]) -> Option<[f64; 4]> {
+    pub(super) fn gain_ranges(
+        self,
+        map: &Map,
+        centre: [f64; 2],
+        radius: [f64; 2],
+        heights: [f32; 4],
+    ) -> Option<[[f64; 2]; 4]> {
         match self {
-            Self::Open(gains) => Some(gains),
+            Self::Open(gains) => Some(gains.map(|gain| [f64::from(gain as f32); 2])),
             Self::Mapped => {
                 let (origin, spacing, size) = map.bed().lattice();
                 // Outside the entire bed, the shader takes its uniform sea
@@ -37,16 +43,130 @@ impl ShortWaveDomain {
                             > end.max(origin[i] + spacing * (size[i] - 1) as f64)
                 });
                 if !offshore {
-                    return None;
+                    return mapped_gains(map, centre, radius, heights);
                 }
                 let mut seas = (0..)
                     .map_while(|index| map.body(index))
                     .filter(|body| matches!(body.kind, BodyKind::Sea));
                 let sea = seas.next()?;
-                seas.next().is_none().then_some(sea.gains)
+                seas.next()
+                    .is_none()
+                    .then(|| sea.gains.map(|gain| [f64::from(gain as f32); 2]))
             }
         }
     }
+}
+
+fn mapped_gains(
+    map: &Map,
+    centre: [f64; 2],
+    radius: [f64; 2],
+    heights: [f32; 4],
+) -> Option<[[f64; 2]; 4]> {
+    let bed = bed_bounds(map.bed(), centre, radius)?;
+    let heights = heights.map(f64::from);
+    let mut envelope = [[f64::INFINITY, 0.0_f64]; 4];
+    // The owner can vary across the footprint. Every still body supplies a
+    // constant row, so enclose their gains without predicting ownership.
+    for body in (0..).map_while(|index| map.body(index)) {
+        if !matches!(body.kind, BodyKind::Sea | BodyKind::Basin { .. }) {
+            return None;
+        }
+        for (range, [lo, hi]) in envelope.iter_mut().zip(row_gains(body, bed, heights, map)?) {
+            *range = [range[0].min(lo), range[1].max(hi)];
+        }
+    }
+    Some(envelope)
+}
+
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "the map uploads the row, stage and depths in GPU metres"
+)]
+fn row_gains(
+    body: &Body,
+    [low_bed, high_bed]: [f64; 2],
+    heights: [f64; 4],
+    map: &Map,
+) -> Option<[[f64; 2]; 4]> {
+    let level = f64::from(body.level as f32 + body.stage.value as f32);
+    let gains = body.gains.map(|g| f64::from(g as f32));
+    let supported = heights
+        .iter()
+        .zip(gains)
+        .map(|(height, gain)| (height * gain).powi(2))
+        .sum::<f64>()
+        .sqrt();
+    let profile = map.profile();
+    let swash = (f64::from(profile.swash_ratio as f32) * supported)
+        .min(f64::from(profile.margin_height as f32));
+    // Enclose the shader's f32 bed interpolation, subtract, length and cap.
+    let error = f64::from(f32::EPSILON)
+        * 32.0
+        * level
+            .abs()
+            .max(low_bed.abs())
+            .max(high_bed.abs())
+            .max(supported)
+            .max(swash)
+            .max(1.0);
+    let depths = [
+        level - high_bed + swash - error,
+        level - low_bed + swash + error,
+    ];
+    if depths.iter().any(|depth| !depth.is_finite()) {
+        return None;
+    }
+    Some(std::array::from_fn(|i| {
+        if heights[i] == 0.0 {
+            return [gains[i]; 2];
+        }
+        let height = heights[i].max(f64::from(1e-30_f32));
+        depths.map(|depth| (f64::from(0.6_f32) * depth.max(0.0) / height).min(gains[i]))
+    }))
+}
+
+#[expect(
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    reason = "GPU lattice coordinates are clipped before conversion to indices"
+)]
+fn bed_bounds(bed: &Bed, centre: [f64; 2], radius: [f64; 2]) -> Option<[f64; 2]> {
+    let (origin, spacing, size) = bed.lattice();
+    let spacing = f64::from(spacing as f32);
+    let axis = |i: usize| {
+        let origin = f64::from(origin[i] as f32);
+        let last = f64::from(u32::try_from(size[i].checked_sub(1)?).ok()?);
+        // Expand in world space for GPU unprojection, then include both
+        // texture taps of every bilinear cell touched by the footprint.
+        let pad = centre[i]
+            .abs()
+            .max(origin.abs())
+            .max(last * spacing)
+            .max(1.0)
+            * f64::from(f32::EPSILON)
+            * 16.0;
+        let low = (centre[i] - radius[i] - pad - origin) / spacing;
+        let high = (centre[i] + radius[i] + pad - origin) / spacing;
+        (low >= 0.0 && high <= last).then(|| low.floor() as usize..=high.ceil() as usize)
+    };
+    let x = axis(0)?;
+    let z = axis(1)?;
+    let width = x.end() - x.start() + 1;
+    let height = z.end() - z.start() + 1;
+    if width.checked_mul(height)? > MAX_FOOTPRINT_TAPS {
+        return None;
+    }
+    let mut low = f64::INFINITY;
+    let mut high = f64::NEG_INFINITY;
+    for row in z {
+        for column in x.clone() {
+            let height = f64::from(bed.heights()[row * size[0] + column] as f32);
+            low = low.min(height);
+            high = high.max(height);
+        }
+    }
+    Some([low, high])
 }
 
 pub(super) struct ShortBand {

@@ -26,11 +26,12 @@ pub(super) struct Underwater {
     field: Field,
     long_amplitude: f64,
     variances: [f64; 4],
+    heights: [f32; 4],
     short: [ShortBand; 3],
 }
 
 impl Underwater {
-    pub(super) fn new(long: LongWaves, spectrum: &Spectrum) -> Self {
+    pub(super) fn new(long: LongWaves, spectrum: &Spectrum, heights: [f32; 4]) -> Self {
         let long_amplitude = spectrum.long.iter().map(|c| c.amplitude).sum();
         let long_variance = spectrum
             .long
@@ -45,6 +46,7 @@ impl Underwater {
             },
             long_amplitude,
             variances: [long_variance, a, b, c],
+            heights,
             short: spectrum.cascades.each_ref().map(ShortBand::new),
         }
     }
@@ -90,20 +92,27 @@ impl Underwater {
             .iter()
             .flatten()
             .filter(|column| column[3] > 0.0)
-            .fold((f64::NEG_INFINITY, 0.0_f32), |(roof, weight), column| {
-                (roof.max(f64::from(column[0])), weight.max(column[3]))
-            });
+            .fold(
+                (f64::NEG_INFINITY, [2.0_f32, 0.0_f32]),
+                |(roof, [lo, hi]), column| {
+                    (
+                        roof.max(f64::from(column[0])),
+                        [lo.min(column[3]), hi.max(column[3])],
+                    )
+                },
+            );
         let rounding = f64::from(f32::EPSILON) * 8.0 * roof.abs().max(lowest.abs()).max(1.0);
         // Interpolation leaves the short-wave weight at zero when all
         // occupied lens columns have lost their short waves in the swash.
-        if weight <= 1.0 {
+        if weight[1] <= 1.0 {
             return roof.is_finite() && roof + rounding < lowest;
         }
+        let weight = weight.map(|w| f64::from(w - 1.0));
         let (centre, radius) = plane.horizontal_box();
-        let Some(gains) = domain.gains(map, centre, radius) else {
+        let Some(gains) = domain.gain_ranges(map, centre, radius, self.heights) else {
             return false;
         };
-        let bound = self.short_bound(&gains);
+        let bound = weight[1] * self.short_bound(&gains.map(|range| range[1]));
         if bound == 0.0 || roof - bound >= lowest {
             return false;
         }
@@ -111,10 +120,10 @@ impl Underwater {
             .short
             .iter_mut()
             .zip(&gains[1..])
-            .filter(|(_, gain)| **gain > 0.0)
-            .map(|(band, gain)| gain * band.height_bound(centre, radius, seconds))
+            .filter(|(_, gain)| gain[1] > 0.0)
+            .map(|(band, gain)| scaled_upper(band.height_bound(centre, radius, seconds), *gain))
             .sum::<f64>();
-        roof + short + rounding < lowest
+        roof + scaled_upper(short, weight) + rounding < lowest
     }
 
     fn surf_sheet<'a>(
@@ -303,6 +312,10 @@ impl Underwater {
         }
         may_fold
     }
+}
+
+fn scaled_upper(value: f64, [lo, hi]: [f64; 2]) -> f64 {
+    if value < 0.0 { lo * value } else { hi * value }
 }
 
 #[expect(

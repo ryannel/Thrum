@@ -691,6 +691,14 @@ try {
     const trough=await take('short-trough','dry'),crest=await take('short-trough','split');
     assert(trough.frame.lens_passes.gather===0&&trough.frame.lens_passes.composition===0,'dry short-wave trough encoded underwater work');
     assert(crest.frame.lens_passes.gather===1&&crest.frame.lens_passes.composition===1,'short-wave crest omitted underwater work');
+    // Ordinary surface optics can gather in the mapped fixture. The lens
+    // must leave the submitted image unchanged and omit its composition.
+    const mappedBase=await take('mapped-trough','dry-baseline');
+    const mappedDry=await take('mapped-trough','dry'),mappedWet=await take('mapped-trough','split');
+    assert(mappedDry.frame.lens_passes.gather===mappedBase.frame.lens_passes.gather &&
+      mappedDry.frame.lens_passes.composition===0 &&
+      mappedDry.frame.sha256_rgba===mappedBase.frame.sha256_rgba,'dry mapped trough changed the ordinary optical frame');
+    assert(mappedWet.frame.lens_passes.gather===1&&mappedWet.frame.lens_passes.composition===1,'mapped short-wave crest omitted underwater work');
     const tradeDry=await take('trade-admission','dry'),tradeWet=await take('trade-admission','split');
     assert(tradeDry.frame.lens_passes.gather===0&&tradeDry.frame.lens_passes.composition===0,'dry Trade lens encoded underwater work');
     assert(tradeWet.frame.lens_passes.gather===1&&tradeWet.frame.lens_passes.composition===1,'submerged Trade lens omitted underwater work');
