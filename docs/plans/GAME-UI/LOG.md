@@ -150,3 +150,9 @@
   The probe tracks retirement of each presented frame and collects costs once a timed status frame is
   available. The clean-checkout command passed both release runs, with 32 timed status frames in each.
   [Target proof](../../../.orchestrate/evidence/GAME-UI/WP3/costs-chrome-retry/final/summary.json)
+- 2026-11-26 WP3 review fixes. Capped shares release slack even at extreme weight ratios. Generated trees
+  cover both logical endpoints and fixed-size text changes repaint without relayout. Mac Retina scale-one
+  capture uses larger cooked type at display density two. Every Chrome cost sample covers an actual
+  one-tick update, and the Metal switch test compares changing values on every submission. All ten
+  automated checks and the 18 fixed Metal retakes passed.
+  [Review fix evidence](../../../.orchestrate/evidence/GAME-UI/WP3/review-fixes/index.md)

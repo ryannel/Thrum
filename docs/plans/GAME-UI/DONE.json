@@ -312,10 +312,10 @@
           "check": "cargo test --locked --offline -p thrum-ui --test layout",
           "ask": "Read the test. Are the expected boxes worked out by hand for each case, including nesting three deep, two shares of unequal weight with a fixed sibling, a share held at its least, and a text whose wrap changes a parent's height?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP3/review-fixes/checks/WP3.1.stdout",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GAME-UI/WP3-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP3.2",
@@ -323,10 +323,10 @@
           "check": "cargo test --locked --offline -p thrum-ui --test layout_properties",
           "ask": "Does the generator build stacks, overlays, text and every kind of size, nested, and sweep extents and insets to both ends of the range? Would a layout that ignores insets, or lets a share go below nothing, fail it?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP3/review-fixes/checks/WP3.2.stdout",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GAME-UI/WP3-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP3.3",
@@ -334,10 +334,10 @@
           "check": "cargo test --locked --offline -p thrum-ui --test layout_properties",
           "ask": "Are layouts and list builds counted inside the tree, across many frames, with a change that does move a box as a control the counts see? Is the comparison with a fresh tree run over random sequences of changes?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP3/review-fixes/index.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GAME-UI/WP3-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP3.4",
@@ -390,10 +390,10 @@
           "statement": "On the Mac the status display reads at a glance over the field of 10,000 sprites: health, time and each count can be told apart and read, over light and dark parts of the crowd; margins are even, no element touches an edge or another element, and the bar's level is plain.",
           "inspect": "Capture `fixed` stills of the interface scene with T2 engine capture: at 640\u00d7360 and 1280\u00d7720 points at a scale of 2, at 3456\u00d72234 pixels at scales of 1 and 2, and at a phone-sized extent in both orientations with insets, the bar at empty, a third and full. Judge each whole, at the size it is shown and in native-size crops of each node.",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP3/review-fixes/visual/review.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GAME-UI/WP3-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP3.9",
@@ -433,10 +433,10 @@
           "check": "python3 scripts/game_ui.py costs --target chrome-webgpu --layout",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP3/review-fixes/costs-chrome-webgpu/summary.json",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GAME-UI/WP3-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP3.14",
@@ -445,10 +445,10 @@
           "ask": "Is every submitted frame of each change captured and compared with both fresh references, with the bar and the counters changing throughout? Would boxes laid out for the old font drawn under the new glyphs fail it?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP3/review-fixes/switch.log",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GAME-UI/WP3-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         }
       ],
       "findings": [
