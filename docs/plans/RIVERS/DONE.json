@@ -390,8 +390,8 @@
     {
       "id": "WP4",
       "name": "On the island a stream runs from a spring through a pool and a narrows to the lake, and a river runs from the lake to the sea; raise the lake and the river swells, and a float rides from the spring to the sea",
-      "status": "ready_for_review",
-      "failed_reviews": 0,
+      "status": "in_progress",
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
@@ -407,8 +407,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RIVERS/WP4/wetting-draw/native.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RIVERS/WP4-review.md"
         },
         {
           "id": "WP4.2",
@@ -418,8 +418,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RIVERS/WP4/wetting-draw/check.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RIVERS/WP4-review.md"
         },
         {
           "id": "WP4.3",
@@ -428,10 +428,10 @@
           "ask": "Is a river reached only through declarations any game can make, with no path in `thrum-water` that knows the island? Does the test fail when the GPU's map reads one sample for every gauge, and when it ignores the wetting gauge, on the hollow and on the dry reach alike? Does it fail when the map is right and the draw wets the hollow, or the reach, from the upper sample at a gauge below its wetting?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RIVERS/WP4/wetting-draw/README.md",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/RIVERS/WP4-review.md"
         },
         {
           "id": "WP4.4",
@@ -440,8 +440,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RIVERS/WP4/wetting-draw/visual.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RIVERS/WP4-review.md"
         },
         {
           "id": "WP4.5",
@@ -450,8 +450,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RIVERS/WP4/wetting-draw/visual.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RIVERS/WP4-review.md"
         },
         {
           "id": "WP4.6",
@@ -461,8 +461,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RIVERS/WP4/wetting-draw/transport.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RIVERS/WP4-review.md"
         },
         {
           "id": "WP4.7",
@@ -472,8 +472,8 @@
           "target": "chrome-webgpu",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RIVERS/WP4/wetting-draw/chrome/run.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RIVERS/WP4-review.md"
         },
         {
           "id": "WP4.8",
@@ -483,8 +483,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RIVERS/WP4/wetting-draw/river-cost.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RIVERS/WP4-review.md"
         },
         {
           "id": "WP4.9",
@@ -493,8 +493,15 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RIVERS/WP4/wetting-draw/README.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RIVERS/WP4-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "name": "Submitted river interior depth exceeds the model tolerance",
+          "item": "WP4.3",
+          "repeat": false
         }
       ]
     },

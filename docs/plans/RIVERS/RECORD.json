@@ -485,7 +485,7 @@
         {
           "verdict": "fail",
           "commit": "42798f19a5eac90ff8a7e0043eabbd223fcaebf5",
-          "review": ".orchestrate/evidence/RIVERS/WP4-review.md",
+          "review": ".orchestrate/evidence/RIVERS/WP4-review-2.md",
           "items": {
             "WP4.1": "fail",
             "WP4.2": "pass",
@@ -529,6 +529,45 @@
             "turns": 1
           },
           "at": "2026-11-26T17:02:28Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "ab0b2afa716797885c0e33433e35d09f1a802578",
+          "review": ".orchestrate/evidence/RIVERS/WP4-review.md",
+          "items": {
+            "WP4.1": "pass",
+            "WP4.2": "pass",
+            "WP4.3": "fail",
+            "WP4.4": "pass",
+            "WP4.5": "pass",
+            "WP4.6": "pass",
+            "WP4.7": "pass",
+            "WP4.8": "pass",
+            "WP4.9": "pass"
+          },
+          "findings": [
+            {
+              "name": "Submitted river interior depth exceeds the model tolerance",
+              "item": "WP4.3",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 152403,
+            "cached": 6379392,
+            "output": 17763,
+            "turns": 1
+          },
+          "at": "2026-11-26T20:16:35Z"
         }
       ],
       "authorised": {
