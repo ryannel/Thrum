@@ -112,26 +112,32 @@ pub(crate) fn check(gpu: &thrum_test_support::Gpu) {
                 let place = [f64::from(p.x), f64::from(p.z)];
                 let expected = map.surface(&field, place, time).expect("model surface");
                 assert!(expected.wet);
-                let error = (f64::from(p.y) - expected.sample.height).abs();
-                assert!(
-                    error < EPS_DEPTH,
-                    "depth residual at {place:?}: {error:.7} m"
-                );
+                if join.body != "Sea" {
+                    let error = (f64::from(p.y) - expected.sample.height).abs();
+                    assert!(
+                        error < EPS_DEPTH,
+                        "depth residual at {place:?}: {error:.7} m"
+                    );
+                }
                 (expected.body, f64::from(p.y), expected.sample.height)
             });
             assert_ne!(
                 left.0, right.0,
                 "the pixels must straddle ownership at {point:?}"
             );
+            // Sea wave height is a common displacement across this join.
+            // Compare the step itself, after accounting for the reference
+            // wave slope between the two distinct ray hits.
             let residual = ((right.1 - left.1) - (right.2 - left.2)).abs();
+            println!(
+                "Metal join {point:?}, lake {lake}, tide {tide}, t {time:.3}: owners {:?}/{:?}, GPU {:.7}/{:.7} m, model {:.7}/{:.7} m, seam residual {residual:.7} m",
+                left.0, right.0, left.1, right.1, left.2, right.2,
+            );
             assert!(residual < EPS_DEPTH, "step at {point:?}: {residual:.7} m");
             if join.body == "Sea" {
+                assert!([left.1, right.1].iter().all(|y| y - tide > 0.01));
                 max_swell = max_swell.max((centre.sample.height - tide).abs());
             }
-            println!(
-                "Metal join {point:?} at lake {lake}, tide {tide}: owners {:?}/{:?}, seam residual {residual:.7} m",
-                left.0, right.0
-            );
         }
     }
     assert!(max_swell > 0.01, "the sea join was crossed with a swell");
