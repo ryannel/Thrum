@@ -1481,6 +1481,35 @@
         "by": "plan",
         "task": "Unblock CLOUDS WP10 (handoff .orchestrate/evidence/CLOUDS/WP10-handoff.md, branch build/clouds at f2bdb692ab3d). Two mor",
         "at": "2026-11-26T11:25:38Z"
+      },
+      "ready_for_review": {
+        "commit": "1f564e8a57615b1a0b04b28545a626eb436e7a87",
+        "checked": "df40589159dce5ec96f8b92fd770fa0bfa7df0cd",
+        "at": "2026-11-26T11:47:39Z",
+        "reused": [
+          "WP10.5"
+        ],
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.171.0-alpha.13.2",
+        "path": "visible",
+        "usage": {
+          "input": 1358026,
+          "cached": 158258048,
+          "output": 264214,
+          "turns": 4
+        },
+        "session_usage": {
+          "input": 1358026,
+          "cached": 158258048,
+          "output": 264214,
+          "turns": 4
+        }
       }
     },
     "WP11": {
