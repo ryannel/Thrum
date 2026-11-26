@@ -1367,8 +1367,8 @@
           "statement": "In Chrome the library is resident, and the fair sky with it passes WP10.1's list for one shape of each family and WP10.3's list at noon. WP10.1's known noon weakness is excused here as it is on the Mac, by the same test against the shape's 10\u00b0 view in Chrome, and no further.",
           "inspect": "Capture the corresponding `fixed` stills in Chrome. Judge them by those lists, then compare native-size crops with the Mac's for a difference in outline, base or light.",
           "target": "chrome-webgpu",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP10/qualification-chrome-parked.md",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "",
           "review": ""
         },
