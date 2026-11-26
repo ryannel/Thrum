@@ -277,6 +277,32 @@
         "by": "plan",
         "task": "The design review of SHOWCASE at .orchestrate/evidence/SHOWCASE/design-review.md asked for changes, with its 1 Must Fix ",
         "at": "2026-11-26T20:38:54Z"
+      },
+      "ready_for_review": {
+        "commit": "9b868d0233355cc4146b0f613379f12dea23b9ae",
+        "checked": "9b868d0233355cc4146b0f613379f12dea23b9ae",
+        "at": "2026-11-26T22:23:45Z",
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.171.0-alpha.13.2",
+        "path": "visible",
+        "usage": {
+          "input": 890010,
+          "cached": 81222784,
+          "output": 187266,
+          "turns": 3
+        },
+        "session_usage": {
+          "input": 890010,
+          "cached": 81222784,
+          "output": 187266,
+          "turns": 3
+        }
       }
     },
     "WP8": {
