@@ -172,6 +172,7 @@ def launch_final(output):
         binary, env, _, build, expected, cook = setup(output, scratch)
         file, harvest_receipt = harvest(output, "complete", binary, env, expected)
         env = dict(env, THRUM_PIPELINE_ARCHIVE=str(file))
+        archive_digest = sha(file)
         probe = scratch / "cache-probe.dylib"
         run("xcrun", "clang", "-Wall", "-Werror", "-dynamiclib", "-framework",
             "CoreFoundation", str(ROOT / "scripts/apple_metal_cache_probe.c"), "-o", str(probe))
@@ -195,6 +196,8 @@ def launch_final(output):
                     rows = lookup_rows(directory)
                     expected_hits = names(expected) if mode == "archive" else Counter()
                     if (prepared != expected or not after or result["finished"]
+                            or (mode == "wgsl" and len(threads) != 1)
+                            or receipts(directory, "THRUM_METAL_PREPARATION ") != [mode]
                             or any(result["after_ready"].values())
                             or any(status != "Hit" for status, _ in rows)
                             or Counter(label for _, label in rows) != expected_hits):
@@ -203,14 +206,18 @@ def launch_final(output):
                                          cache_before=before, cache_after=after, **result,
                                          **describe(prepared, stages, threads)))
         defaults = output / "registry-default"
-        result = witness(defaults, binary, env, RECIPE, "launch", stage_path="cooked")
+        result = witness(defaults, binary, env, RECIPE, "launch", stage_path=None)
         rows = lookup_rows(defaults)
         selected, = receipts(defaults, "THRUM_METAL_PREPARATION ")
         stage_path = "wgsl" if selected == "wgsl" else "cooked"
         prepared, _, _ = manifest(defaults, stage_path, parallel=selected != "wgsl")
-        if prepared != expected or (selected == "archive" and Counter(rows) != Counter(
-                {("Hit", label): count for label, count in names(expected).items()})):
-            raise ValueError("registry default did not exercise its selected path")
+        default_hits = Counter({("Hit", label): count for label, count in names(expected).items()})
+        if (prepared != expected or Counter(rows) != (default_hits if selected == "archive" else Counter())
+                or sha(file) != archive_digest):
+            raise ValueError("registry default did not exercise its selected path with an unchanged archive")
+        pids = {row["pid"] for row in launches}
+        if len(pids) != len(launches) or result["pid"] in pids:
+            raise ValueError("launch comparison did not use fresh processes")
         totals = {mode: {temperature: median(row["launch_to_ready_ns"] for row in launches
                                             if row["mode"] == mode and row["temperature"] == temperature)
                          for temperature in ("cold", "warm")} for mode in modes}

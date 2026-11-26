@@ -100,6 +100,10 @@ def witness(output, binary, env, recipe, proof, cache=None, *, stage_path="wgsl"
     after = Counter(name for index, name, _ in rows if index > boundary)
     if set(after) - set(STAGES) or any(name not in STAGES for _, name, _ in rows):
         raise ValueError("unknown Metal boundary event")
+    if stage_path is None:
+        marker = "THRUM_METAL_PREPARATION "
+        selected, = [line.removeprefix(marker) for line in lines[:boundary] if line.startswith(marker)]
+        stage_path = "wgsl" if selected == "wgsl" else "cooked"
     translated = ("wgsl_specialize", "wgsl_to_msl", "msl_compile")
     always = ("wgsl_parse", "wgsl_validate", "pipeline_state", "shader_module")
     required = always + (translated if stage_path == "wgsl" else ("metallib_load",))

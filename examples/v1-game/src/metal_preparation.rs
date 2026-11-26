@@ -15,9 +15,9 @@ pub(super) fn options(hardware: &mut Vec<HardwareRequest>) -> Result<Option<Prep
     let store = path("THRUM_METALLIB_STORE");
     let manifest = path("THRUM_PIPELINE_MANIFEST");
     let archive = path("THRUM_PIPELINE_ARCHIVE");
-    #[cfg(feature = "creation-counters")]
+    #[cfg(all(feature = "proving", feature = "creation-counters"))]
     let harvest = path("THRUM_PIPELINE_ARCHIVE_HARVEST");
-    #[cfg(not(feature = "creation-counters"))]
+    #[cfg(not(all(feature = "proving", feature = "creation-counters")))]
     let harvest: Option<PathBuf> = None;
     let forced = env::var("THRUM_PIPELINE_PREPARATION").ok();
     let strict = forced.as_deref() == Some("strict-archive");
