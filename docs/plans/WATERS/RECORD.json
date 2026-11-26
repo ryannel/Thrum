@@ -1908,7 +1908,7 @@
         {
           "verdict": "fail",
           "commit": "08373df290736568a80b66381ac34ca5464cd072",
-          "review": ".orchestrate/evidence/WATERS/WP9-review.md",
+          "review": ".orchestrate/evidence/WATERS/WP9-review-3.md",
           "items": {
             "WP9.1": "pass",
             "WP9.2": "fail",
@@ -1942,6 +1942,48 @@
             "turns": 1
           },
           "at": "2026-11-26T08:49:24Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "a223b46cc6361f5e96fc816d71e23e00c27f4816",
+          "review": ".orchestrate/evidence/WATERS/WP9-review.md",
+          "items": {
+            "WP9.1": "pass",
+            "WP9.2": "fail",
+            "WP9.3": "pass",
+            "WP9.4": "pass",
+            "WP9.5": "pass",
+            "WP9.6": "pass",
+            "WP9.7": "pass"
+          },
+          "findings": [
+            {
+              "name": "Moving ripples follow the mean speed along a lane",
+              "item": "WP9.2",
+              "different": "The still margin now stays still, and lanes of constant speed pass. Where running water changes speed downstream, the same-sign run average makes two moving sections exchange their apparent speed ordering.",
+              "repeat": false
+            },
+            {
+              "name": "Chart queries return slope in the wave coordinate instead of world space",
+              "repeat": true
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 119784,
+            "cached": 4594048,
+            "output": 12466,
+            "turns": 1
+          },
+          "at": "2026-11-26T10:07:30Z"
         }
       ],
       "authorised": {
