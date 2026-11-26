@@ -960,3 +960,13 @@ contribution using the replacement profiles.
   level, no box, seam, voxel step or filtering band), and Chrome's line 3 asks for both. Took the suggestion:
   lines 1 and 2 link WP10's complete 48-view gallery, `WP10/parked-metal/`. No item, mechanism or interface
   changed, and the lead's decision of 26 November stands.
+## WP10 Library use distance
+
+The held gallery and fair-sky views now exercise the accepted library and growth track through the ordinary cloud
+trace. Full placed share removes procedural heaped cells. A local Sun-column march restored low-Sun relief on
+Metal. The independent noon retake still found curved bands on the mediocris ridge and weak relief on the
+congestus core and mediocris twin turrets. The sky remains on the builder branch.
+
+The matched 1440p Metal device profiles counted thirteen admitted volume forms throughout the timed arms and
+recorded R8 and BC4 bytes for both stacks. [WP10 target evidence](../../../.orchestrate/evidence/CLOUDS/WP10/README.md)
+Documented review observations and remaining work are in the [handoff](../../../.orchestrate/evidence/CLOUDS/WP10-handoff.md).
