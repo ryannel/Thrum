@@ -1061,3 +1061,10 @@ diagonal in the haze becomes less distinct when the upper clouds are drawn, befo
 A renderer diagnostic kept the clouds' extinction and removed their source radiance, exposing the
 shaft in that pose. The ordinary broken-cloud image still needs a legible shaft reaching the mist.
 [Matched captures and diagnostic controls](../../../.orchestrate/evidence/CLOUDS/WP14/shaft-follow-up/README.md)
+
+The matched scene-linear Metal captures show that removing upper-cloud radiance raises contrast across
+the edge in the sky and changes little below the ridge. Four fresh 1440p pairs on Metal and Chrome
+show the same diagonal glow, cast light and pooled mist. The builder and a fresh reader could follow
+no distinct shaft into the mist. The maturity record now includes the completed Metal motion series.
+[Linear samples](../../../.orchestrate/evidence/CLOUDS/WP14/shaft-follow-up/linear-luminance.json) ·
+[Target inspection and inputs](../../../.orchestrate/evidence/CLOUDS/WP14/shaft-target-pairs/README.md)
