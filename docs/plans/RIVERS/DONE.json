@@ -390,9 +390,9 @@
     {
       "id": "WP4",
       "name": "On the island a stream runs from a spring through a pool and a narrows to the lake, and a river runs from the lake to the sea; raise the lake and the river swells, and a float rides from the spring to the sea",
-      "status": "ready_for_review",
-      "failed_reviews": 1,
-      "failed_reviews_with_repeat": 0,
+      "status": "in_progress",
+      "failed_reviews": 2,
+      "failed_reviews_with_repeat": 1,
       "diagnoses": 0,
       "depends_on": [
         "WATERS:WP9"
@@ -405,9 +405,9 @@
           "check": "cargo test --locked --offline -p water-scene --test river_store",
           "ask": "With the selection off, does any code path of the game or of `thrum-water` differ from before this work package? Is the valley's ground reached only with the selection on?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RIVERS/WP4/repair/qualified/native-prepare.log",
-          "verdict": "pass",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
           "review": ".orchestrate/evidence/RIVERS/WP4-review.md"
         },
         {
@@ -428,8 +428,8 @@
           "ask": "Is a river reached only through declarations any game can make, with no path in `thrum-water` that knows the island? Does the test fail when the GPU reads one sample for every gauge, and when it ignores the wetting gauge, on the hollow and on the dry reach alike?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RIVERS/WP4/repair/qualified/metal-exact-sample.log",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/RIVERS/WP4-review.md"
         },
@@ -461,7 +461,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RIVERS/WP4/repair/qualified/submitted-metal.log",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/RIVERS/WP4-review.md"
         },
         {
@@ -493,24 +493,23 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RIVERS/WP4/repair/README.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/RIVERS/WP4-review.md"
         }
       ],
       "findings": [
         {
-          "name": "Calm-water floats stall before the receiving bodies",
-          "item": "WP4.6",
-          "repeat": false
-        },
-        {
           "name": "Submitted river interior depth exceeds the model tolerance",
           "item": "WP4.3",
+          "repeat": true
+        },
+        {
+          "name": "The surface and body query read different currents in backwater",
           "repeat": false
         },
         {
-          "name": "Maturity row leaves the float result unqualified",
-          "item": "WP4.9",
+          "name": "Disabling rivers changes the shared water surface shader",
+          "item": "WP4.1",
           "repeat": false
         }
       ]

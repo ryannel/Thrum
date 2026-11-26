@@ -436,7 +436,7 @@
         {
           "verdict": "fail",
           "commit": "8e750b74e802195493eb787a92a6de600b52579b",
-          "review": ".orchestrate/evidence/RIVERS/WP4-review.md",
+          "review": ".orchestrate/evidence/RIVERS/WP4-review-1.md",
           "items": {
             "WP4.1": "pass",
             "WP4.2": "pass",
@@ -481,6 +481,54 @@
             "turns": 1
           },
           "at": "2026-11-26T16:12:00Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "42798f19a5eac90ff8a7e0043eabbd223fcaebf5",
+          "review": ".orchestrate/evidence/RIVERS/WP4-review.md",
+          "items": {
+            "WP4.1": "fail",
+            "WP4.2": "pass",
+            "WP4.3": "fail",
+            "WP4.4": "pass",
+            "WP4.5": "pass",
+            "WP4.6": "pass",
+            "WP4.7": "pass",
+            "WP4.8": "pass",
+            "WP4.9": "pass"
+          },
+          "findings": [
+            {
+              "name": "Submitted river interior depth exceeds the model tolerance",
+              "item": "WP4.3",
+              "repeat": true
+            },
+            {
+              "name": "The surface and body query read different currents in backwater",
+              "repeat": false
+            },
+            {
+              "name": "Disabling rivers changes the shared water surface shader",
+              "item": "WP4.1",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 181940,
+            "cached": 8655104,
+            "output": 21768,
+            "turns": 1
+          },
+          "at": "2026-11-26T17:02:28Z"
         }
       ],
       "authorised": {
