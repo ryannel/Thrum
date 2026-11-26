@@ -223,6 +223,42 @@ fn driver(gpu: &thrum_test_support::Gpu) {
         .expect("record");
         return;
     }
+    if mode == "lake-dive-cost" {
+        let Settings::LakeDive(wind) = settings() else {
+            panic!("lake dive cost requires THRUM_WATER_DIVE");
+        };
+        let (game, report) = water_scene::island::build_lake_dive(wind, true).expect("lake dive");
+        let mut fixture = support::Fixture::from_game(gpu, [2560, 1440], game, report);
+        fixture.warm_cooked();
+        let views: Vec<_> = [("above", -2.0), ("half", 0.0), ("under", 2.0)]
+            .into_iter()
+            .zip([1.0, 2.0, 3.0])
+            .map(|((name, depth), start)| {
+                fixture.parameters(&format!(
+                    r#"{{"camera.depth":{depth},"camera.pitch":0,"sun.elevation":60}}"#
+                ));
+                let mut frames = Vec::new();
+                for index in 0..16 {
+                    let frame = fixture.frame(start + f64::from(index) / 120.0);
+                    if index >= 4 {
+                        frames.push(sample_json(&frame));
+                    }
+                }
+                json!({ "view": name, "depth_m": depth, "frames": frames })
+            })
+            .collect();
+        let record = json!({
+            "target": "mac-metal", "extent": [2560, 1440], "capture": false,
+            "commit": std::env::var("THRUM_WATER_COMMIT").expect("cost revision"),
+            "wind": format!("{wind:?}"), "views": views,
+        });
+        std::fs::write(
+            directory.join("lake-dive-cost.json"),
+            serde_json::to_vec_pretty(&record).expect("cost JSON"),
+        )
+        .expect("retain lake dive cost");
+        return;
+    }
     if matches!(mode.as_str(), "optics-cost" | "optics-cost-views") {
         optics_cost::run(gpu, &directory, mode == "optics-cost-views");
         return;

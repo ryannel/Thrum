@@ -109,7 +109,14 @@ fn trace(
         let p = origin + ray * t;
         let projected = optics_project(p);
         if projected.z < 0.0 { return empty_hit(); }
-        let hit = gather_at(projected.xy + offset);
+        let uv = projected.xy + offset;
+        // Underwater traces begin at the visible surface fragment and use
+        // zero screen offset. While clip w stays positive, the projection of
+        // this ray is monotone on both axes, so it cannot re-enter the view.
+        if side != 0.0 && (any(uv < vec2(0.0)) || any(uv >= vec2(1.0))) {
+            return empty_hit();
+        }
+        let hit = gather_at(uv);
         if hit.distance == 0.0 {
             previous = t;
             clear = true;
