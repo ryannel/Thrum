@@ -419,8 +419,8 @@
     {
       "id": "WP4",
       "name": "Rain rings every water it falls on, the puddles, the lake and the sea, more and rougher as it grows and not at all under the roof, and the rings run out when the rain stops",
-      "status": "ready_for_review",
-      "failed_reviews": 0,
+      "status": "in_progress",
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [],
@@ -433,10 +433,10 @@
           "ask": "Do the bands keep any texture from one frame to the next?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/PUDDLES/WP4/check-final.json",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/PUDDLES/WP4-review.md"
         },
         {
           "id": "WP4.2",
@@ -446,18 +446,18 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/PUDDLES/WP4/check-final.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/PUDDLES/WP4-review.md"
         },
         {
           "id": "WP4.4",
           "statement": "From 0.5 m and from 1.7 m the rings read as rain on water: each starts small and sharp, spreads leaving calm water inside it, gains crests and fades. Light rain is a few rings, heavy rain a crowded, roughened surface. No grid, repeat or pair of like rings shows across a puddle 6 m long. Under the roof's edge the rings stop along a soft line, and on the thinnest water they are faint.",
           "inspect": "`realtime` sequences of the yard's largest puddle from 0.5 m and 1.7 m at 2, 10 and 50 mm/h, one framed on the roof's edge and one on a puddle's shallow margin; `fixed` stills cropped at native size of single rings at three ages.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/PUDDLES/WP4/README.md",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/PUDDLES/WP4-review.md"
         },
         {
           "id": "WP4.5",
@@ -466,8 +466,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/PUDDLES/WP4/README.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/PUDDLES/WP4-review.md"
         },
         {
           "id": "WP4.12",
@@ -475,8 +475,8 @@
           "inspect": "`realtime` sequences of the yard's largest puddle from 0.5 m and 1.7 m at 10 and 50 mm/h through a stop, two seconds of no rain and a restart; consecutive frames across the stop and across the restart at native size.",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/PUDDLES/WP4/README.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/PUDDLES/WP4-review.md",
           "builder_result": "pass"
         },
         {
@@ -487,8 +487,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/PUDDLES/WP4/check-final.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/PUDDLES/WP4-review.md"
         },
         {
           "id": "WP4.9",
@@ -498,8 +498,8 @@
           "target": "chrome-webgpu",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/PUDDLES/WP4/browser-delivery/run.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/PUDDLES/WP4-review.md"
         },
         {
           "id": "WP4.10",
@@ -507,10 +507,40 @@
           "check": "python3 scripts/water_cost.py check --scene rain-rings",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/PUDDLES/WP4/paired-cost-delivery.json",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/PUDDLES/WP4-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "name": "Rain queries ignore footprint radius",
+          "item": "WP4.1",
+          "repeat": false
+        },
+        {
+          "name": "Rain queries omit current carriage",
+          "item": "WP4.1",
+          "repeat": false
+        },
+        {
+          "name": "Light rain repeats individual ring births across the puddle",
+          "item": "WP4.4",
+          "repeat": false
+        },
+        {
+          "name": "WP3-to-WP4 pass increases lack investigations",
+          "item": "WP4.10",
+          "repeat": false
+        },
+        {
+          "name": "Removing the rain model leaves the last wet GPU field active",
+          "repeat": false
+        },
+        {
+          "name": "Rain preparation departs from the agreed surface resource layout",
+          "repeat": false
         }
       ]
     },

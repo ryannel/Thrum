@@ -522,7 +522,69 @@
     },
     "WP4": {
       "definitions": "3d82bdb109a6ad013d0444808b2f68a07c4754aebcc596c96105200110d2337b",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "b2f058eb1ef78a8b6ad7421a7b81e8f50f45a5da",
+          "review": ".orchestrate/evidence/PUDDLES/WP4-review.md",
+          "items": {
+            "WP4.1": "fail",
+            "WP4.2": "pass",
+            "WP4.4": "fail",
+            "WP4.5": "pass",
+            "WP4.12": "pass",
+            "WP4.8": "pass",
+            "WP4.9": "pass",
+            "WP4.10": "fail"
+          },
+          "findings": [
+            {
+              "name": "Rain queries ignore footprint radius",
+              "item": "WP4.1",
+              "repeat": false
+            },
+            {
+              "name": "Rain queries omit current carriage",
+              "item": "WP4.1",
+              "repeat": false
+            },
+            {
+              "name": "Light rain repeats individual ring births across the puddle",
+              "item": "WP4.4",
+              "repeat": false
+            },
+            {
+              "name": "WP3-to-WP4 pass increases lack investigations",
+              "item": "WP4.10",
+              "repeat": false
+            },
+            {
+              "name": "Removing the rain model leaves the last wet GPU field active",
+              "repeat": false
+            },
+            {
+              "name": "Rain preparation departs from the agreed surface resource layout",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 176529,
+            "cached": 8938368,
+            "output": 20583,
+            "turns": 1
+          },
+          "at": "2026-11-26T16:22:49Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
