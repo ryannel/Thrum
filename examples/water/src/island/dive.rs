@@ -68,7 +68,7 @@ fn lake_crest_group(spectrum: &mut Spectrum, eye: [f32; 3]) -> Result<(), Box<dy
     let band = &spectrum.cascades[0];
     let length = band.length();
     let step = std::f64::consts::TAU / length;
-    let train = [(65, -1, 0.017), (68, 3, 0.012), (72, 5, 0.009)];
+    let train = [(65, -9, 0.017), (68, 8, 0.012), (58, 22, 0.009)];
     let mut modes: Vec<_> = band
         .components()
         .iter()
@@ -128,6 +128,7 @@ fn build(
     };
     let surf = site == DiveSite::Swash;
     let lake = matches!(site, DiveSite::Lake | DiveSite::HighLake);
+    let lake_whitecaps = site == DiveSite::HighLake && draw_craft && wind == Wind::Trade;
     let lake_stage = if site == DiveSite::HighLake {
         HIGH_LAKE_STAGE
     } else {
@@ -151,7 +152,7 @@ fn build(
         f64::from(vertical_offset),
         f64::from(lake_stage),
     )?;
-    if lake && draw_craft && wind == Wind::Trade {
+    if lake_whitecaps {
         // The authored short crest group is local to this basin. Keep the
         // fetch-derived protection of the other bands, including the swell.
         let mut gains = map.body(1).ok_or("the dive lake is missing")?.gains;
@@ -178,7 +179,7 @@ fn build(
         (spectrum, profile)
     } else {
         let mut spectrum = Spectrum::build(&forcing)?;
-        if lake && draw_craft && wind == Wind::Trade {
+        if lake_whitecaps {
             lake_crest_group(&mut spectrum, eye_at_surface)?;
         }
         let profile = crate::profile(&spectrum);
