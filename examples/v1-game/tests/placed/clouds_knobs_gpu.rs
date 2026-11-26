@@ -14,6 +14,38 @@ thrum_test_support::macos_gpu_test! {
     }
 }
 
+thrum_test_support::macos_gpu_test! {
+    fn field_overlay_off_restores_the_same_committed_sky() {
+        use thrum_clouds::FieldOverlay;
+        use v1_game::{CloudSelection, GameHost as _};
+
+        let Some(gpu) = thrum_test_support::open(
+            "cloud overlay round trip",
+            Some(wgpu::Backend::Metal),
+            thrum_test_support::Profile::Portable,
+            &thrum_test_support::Restriction::default(),
+        ) else {
+            return;
+        };
+        let fixture = fixture::Fixture::new(true);
+        let mut host = pollster::block_on(fixture.host_with_clouds(&gpu, CloudSelection::WorldLight));
+        let mut frames = fixture::Frames::new(&gpu);
+        frames.placed_submitted(&mut host, |row| row.volume_instances == 1);
+        host.world_mut().pause().expect("hold the weather endpoint");
+        frames.submit(&mut host);
+        let input = host.cloud_placed_input().expect("cloud input").clone();
+
+        let baseline = host.capture_pixels().expect("ordinary sky");
+        input.set_field_overlay(FieldOverlay::PlacedSlots).expect("enable placed slots");
+        let diagnostic = host.capture_pixels().expect("placed slots overlay");
+        input.set_field_overlay(FieldOverlay::Off).expect("restore ordinary sky");
+        let restored = host.capture_pixels().expect("restored sky");
+
+        assert!(baseline != diagnostic, "the diagnostic must change the image");
+        assert!(baseline == restored, "turning off the overlay must restore every byte");
+    }
+}
+
 #[cfg(target_os = "macos")]
 fn verify_sky_knobs() {
     use thrum_render::{

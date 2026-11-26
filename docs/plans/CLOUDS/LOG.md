@@ -894,3 +894,11 @@ post-rebase Metal check passed both endpoints for each knob. Cloud history
 applied its declared reset, the weather state and physical columns stayed
 identical, and the GPU creation ledger recorded no new work.
 [Metal evidence](../../../.orchestrate/evidence/CLOUDS/WP9/revised-knobs-metal.log)
+
+The cloud composite now filters sky transport at render pixel centres.
+Low-Sun pan comparisons show smaller differences at the newly revealed
+edge on both targets. The six TAAU retakes per target passed visual review
+and both cuts and profile changes reset for one submission. The controls,
+fixed field views and 1440p cost replay were repeated. Chrome and the
+same-endpoint Metal readback restored the ordinary sky byte for byte.
+[Retake evidence](../../../.orchestrate/evidence/CLOUDS/WP9/filtered/README.md)
