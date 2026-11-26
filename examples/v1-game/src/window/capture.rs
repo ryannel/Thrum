@@ -524,6 +524,7 @@ fn start_writer(
                 | "exit-route"
                 | "exit-drift"
                 | "sun-motion"
+                | "atmosphere-ground-pan"
                 | "sprites-field"
         ) || recovery != super::NativeRecovery::Disabled
         {

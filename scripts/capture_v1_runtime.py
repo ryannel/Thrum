@@ -299,7 +299,7 @@ def run(args):
         "scenario": args.case,
         "observer_only": observer_only,
         "record_limit": 16_384 if args.case in LONG_WEATHER_CASES else
-        4096 if args.case in ('clouds-inspect','clouds-drift','clouds-wind','clouds-life-fast','clouds-placed','clouds-route','exit-route','exit-drift','sprites-field') or os.environ.get('THRUM_CAPTURE_NATIVE_RECOVERY') in ('control', 'faults') else 1024,
+        4096 if args.case in ('clouds-inspect','clouds-drift','clouds-wind','clouds-life-fast','clouds-placed','clouds-route','exit-route','exit-drift','atmosphere-ground-pan','sprites-field') or os.environ.get('THRUM_CAPTURE_NATIVE_RECOVERY') in ('control', 'faults') else 1024,
         "timebase": args.mode,
         "admission_policy": getattr(args, 'admission', 'omit'),
         "scenario_source_sha256": digest(ROOT / "examples/v1-game/src/window/capture.rs"),
