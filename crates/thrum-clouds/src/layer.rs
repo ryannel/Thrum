@@ -120,7 +120,7 @@ pub(crate) struct Layer {
     compose: wgpu::RenderPipeline,
     trace_group: wgpu::BindGroup,
     compose_group: wgpu::BindGroup,
-    field_group: wgpu::BindGroup,
+    field_group: [wgpu::BindGroup; 2],
     has_placed_map: bool,
     overlay: Option<overlay::Overlay>,
 }
@@ -494,7 +494,7 @@ impl Layer {
 
     pub(crate) fn draw(&self, pass: &mut wgpu::RenderPass<'_>, frame: &ContributionFrame) {
         pass.set_pipeline(&self.compose);
-        pass.set_bind_group(3, &self.field_group, &[]);
+        pass.set_bind_group(3, &self.field_group[frame.exposure_side], &[]);
         pass.set_bind_group(
             2,
             if frame.time.capture {

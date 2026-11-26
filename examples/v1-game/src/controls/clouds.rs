@@ -14,6 +14,7 @@ pub(super) struct CloudControls {
     weather: [Slider; 5],
     overlay: Option<Slider>,
     revision: u64,
+    pub(super) replay: CloudEdits,
 }
 
 impl CloudControls {
@@ -53,13 +54,13 @@ impl CloudControls {
                 .step(1.0)
                 .display(Display::plain(0, "°"))
                 .add()?,
+            model
+                .slider("clouds.time_lapse", "Weather time-lapse", 1.0..=60.0)
+                .default(initial.time_scale as f32)
+                .step(0.1)
+                .display(Display::plain(1, "×"))
+                .add()?,
         ];
-        let rate = model
-            .slider("clouds.time_lapse", "Weather time-lapse", 1.0..=60.0)
-            .default(initial.time_scale as f32)
-            .step(0.1)
-            .display(Display::plain(1, "×"))
-            .add()?;
         let overlay = sky
             .then(|| {
                 model
@@ -70,9 +71,10 @@ impl CloudControls {
             })
             .transpose()?;
         Ok(Self {
-            weather: [weather[0], weather[1], weather[2], weather[3], rate],
+            weather,
             overlay,
             revision: model.revision(),
+            replay: CloudEdits::default(),
         })
     }
 
@@ -94,6 +96,10 @@ impl CloudControls {
             .filter(|slider| changed(*slider))
             .map(|slider| thrum_clouds::FieldOverlay::from_stop(model.get(slider)));
         self.revision = model.revision();
+        self.replay = CloudEdits {
+            weather: weather.or(self.replay.weather),
+            overlay: overlay.or(self.replay.overlay),
+        };
         CloudEdits { weather, overlay }
     }
 }

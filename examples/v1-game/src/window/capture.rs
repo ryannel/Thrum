@@ -758,15 +758,7 @@ fn prepare_parameters(
     }
     let preset_accepted = Instant::now();
     warmup_checkpoint(driver, parity_checkpoint)?;
-    settle_placed_capture(
-        driver,
-        mode,
-        if overlay_before.is_some() {
-            None
-        } else {
-            parameters.as_deref()
-        },
-    )?;
+    settle_placed_capture(driver, mode, parameters.as_deref())?;
     if overlay_before.is_some() {
         driver
             .parameters(r#"{"clouds.overlay": 0}"#)

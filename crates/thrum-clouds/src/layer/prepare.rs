@@ -56,6 +56,10 @@ fn prepare_detail_noise(
 }
 
 impl Layer {
+    #[expect(
+        clippy::too_many_lines,
+        reason = "prepare the layer's texture bindings and fixed pipelines together"
+    )]
     pub(crate) fn new(
         surface: &SceneSurface<'_>,
         weather: &WeatherMap,
@@ -212,7 +216,13 @@ impl Layer {
             super::overlay::Overlay::new(surface, target, &environment, &trace_layout, shapes)
         });
         let trace = trace_pipeline(device, &source, &pipeline_layout);
-        let (field_layout, field_group) = field_bindings(device, weather, target.0, placed_map);
+        let (field_layout, field_group) = field_bindings(
+            device,
+            weather,
+            target.0,
+            placed_map,
+            environment.exposure_buffers(),
+        );
         let (compose, compose_group, compose_layout) = compose(
             surface,
             &params,
@@ -363,7 +373,8 @@ fn field_bindings(
     weather: &WeatherMap,
     sun: &wgpu::Texture,
     placed_map: Option<&wgpu::Texture>,
-) -> (wgpu::BindGroupLayout, wgpu::BindGroup) {
+    exposure: &[wgpu::Buffer; 2],
+) -> (wgpu::BindGroupLayout, [wgpu::BindGroup; 2]) {
     use wgpu::TextureViewDimension::{D2, D2Array};
     let fields = [
         (&weather.textures()[0], D2Array),
@@ -371,21 +382,23 @@ fn field_bindings(
         (placed_map.unwrap_or(&weather.textures()[0]), D2Array),
         (sun, D2),
     ];
+    let mut entries: Vec<_> = fields
+        .map(|(_, dimension)| dimension)
+        .into_iter()
+        .zip(0..)
+        .map(|(dimension, binding)| {
+            binding::texture(
+                binding,
+                wgpu::ShaderStages::FRAGMENT,
+                wgpu::TextureSampleType::Float { filterable: false },
+                dimension,
+            )
+        })
+        .collect();
+    entries.push(binding::uniform(4, wgpu::ShaderStages::FRAGMENT, 16));
     let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
         label: Some("cloud internal fields"),
-        entries: &fields
-            .map(|(_, dimension)| dimension)
-            .into_iter()
-            .zip(0..)
-            .map(|(dimension, binding)| {
-                binding::texture(
-                    binding,
-                    wgpu::ShaderStages::FRAGMENT,
-                    wgpu::TextureSampleType::Float { filterable: false },
-                    dimension,
-                )
-            })
-            .collect::<Vec<_>>(),
+        entries: &entries,
     });
     let views = fields.map(|(texture, dimension)| {
         texture.create_view(&wgpu::TextureViewDescriptor {
@@ -393,19 +406,26 @@ fn field_bindings(
             ..Default::default()
         })
     });
-    let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-        label: Some("cloud internal fields"),
-        layout: &layout,
-        entries: &views
+    let groups = std::array::from_fn(|side| {
+        let mut entries: Vec<_> = views
             .iter()
             .zip(0..)
             .map(|(view, binding)| wgpu::BindGroupEntry {
                 binding,
                 resource: wgpu::BindingResource::TextureView(view),
             })
-            .collect::<Vec<_>>(),
+            .collect();
+        entries.push(wgpu::BindGroupEntry {
+            binding: 4,
+            resource: exposure[side].as_entire_binding(),
+        });
+        device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("cloud internal fields"),
+            layout: &layout,
+            entries: &entries,
+        })
     });
-    (layout, group)
+    (layout, groups)
 }
 
 fn compose(

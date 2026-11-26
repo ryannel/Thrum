@@ -88,6 +88,7 @@ fn parameter_files_apply_weather_presets_and_independent_diagnostics() {
     );
     assert!(edits.time_of_day.is_some());
     assert!(controls.take_edits().is_empty());
+    assert_eq!(controls.replay().clouds, edits.clouds);
 
     let key = controls
         .model()

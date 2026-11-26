@@ -108,9 +108,19 @@ fn clearing_deck_does_not_reintroduce_cumulus() {
 
 #[test]
 fn live_target_is_a_tick_edit_that_can_be_replayed() {
-    let mut sim =
-        crate::scene::selected_simulation(crate::GameContent::Grid, crate::RouteOverlay::Off, true)
-            .expect("valid weather edit test");
+    let config = SimConfig {
+        tick_hz: NonZeroU32::new(60).expect("tick rate"),
+        entity_capacity: 1,
+        peer_capacity: 0,
+        actions_per_frame: 8,
+        movement_speed: 6.0,
+    };
+    let mut sim = Simulation::new_clouded(WorldEpoch(99), config).expect("weather schema");
+    sim.seed_weather(Some(super::Weather::new(
+        crate::clouds::initial_state(),
+        None,
+    )))
+    .expect("weather authority");
     let old = sim
         .published_page()
         .expect("valid weather edit test")

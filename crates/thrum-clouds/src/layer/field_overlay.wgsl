@@ -2,6 +2,11 @@
 @group(3) @binding(1) var weather_optical:texture_2d_array<f32>;
 @group(3) @binding(2) var placed_columns:texture_2d_array<f32>;
 @group(3) @binding(3) var ground_sun_path:texture_2d<f32>;
+@group(3) @binding(4) var<uniform> field_exposure:vec4<f32>;
+
+fn field_scene_colour(colour:vec3<f32>)->vec4<f32> {
+    return vec4(colour*(field_exposure.x*field_exposure.y),0.0);
+}
 
 fn field_colour(field:u32,uv:vec2<f32>)->vec4<f32> {
     let weather_pixel=vec2<i32>(uv*vec2<f32>(textureDimensions(weather_columns)));
@@ -18,7 +23,7 @@ fn field_colour(field:u32,uv:vec2<f32>)->vec4<f32> {
             if cloud.density_profile.y>0.0 {
                 let placed=textureLoad(placed_columns,weather_pixel,1,0);
                 if placed.x>0.0 {
-                    return vec4(0.30+0.70*fract(placed.x*vec3(0.618,0.414,0.732)),0.0);
+                    return field_scene_colour(0.30+0.70*fract(placed.x*vec3(0.618,0.414,0.732)));
                 }
             }
         }
@@ -34,5 +39,5 @@ fn field_colour(field:u32,uv:vec2<f32>)->vec4<f32> {
         default: {}
     }
     let heat=mix(vec3(0.012,0.025,0.085),vec3(1.0,0.72,0.12),clamp(value,0.0,1.0));
-    return vec4(heat,0.0);
+    return field_scene_colour(heat);
 }

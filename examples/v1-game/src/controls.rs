@@ -237,7 +237,10 @@ impl GameControls {
             paused: None,
             exposure_zones: Some(self.model.is_on(self.exposure_zones)),
             motion_view: Some(self.model.is_on(self.motion_view)),
-            clouds: CloudEdits::default(),
+            clouds: self
+                .clouds
+                .as_ref()
+                .map_or_else(CloudEdits::default, |clouds| clouds.replay),
             #[cfg(all(feature = "proving", any(target_os = "macos", target_arch = "wasm32")))]
             interface_output: None,
             #[cfg(all(feature = "proving", any(target_os = "macos", target_arch = "wasm32")))]

@@ -38,9 +38,18 @@ pub struct EnvironmentProducts {
     /// WGSL library to prepend to the consumer's own entry points.
     pub shader_source: String,
     groups: [wgpu::BindGroup; 2],
+    exposure: [wgpu::Buffer; 2],
 }
 
 impl EnvironmentProducts {
+    /// Resolved exposure uniforms, in the same side order as the environment groups.
+    /// A pre-tone diagnostic can bind the first four floats to encode a fixed display
+    /// colour in the scene's storage units without bringing in the environment textures.
+    #[must_use]
+    pub fn exposure_buffers(&self) -> &[wgpu::Buffer; 2] {
+        &self.exposure
+    }
+
     /// Select the same resolved exposure side as the scene's forward pass.
     /// The runtime supplies that side with the contribution frame.
     #[must_use]
@@ -195,6 +204,7 @@ pub(super) fn create(
         layout,
         shader_source,
         groups,
+        exposure: exposure.clone(),
     }
 }
 
