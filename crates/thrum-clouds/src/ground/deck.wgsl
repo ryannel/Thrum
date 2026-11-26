@@ -15,9 +15,13 @@ fn cloud_deck_light(world: vec3<f32>, ray: vec3<f32>, true_sun: vec3<f32>,
     let sigma = cloud_erode(column.x, cloud.physical.x, cloud.physical.y, billow, cloud.density_profile.x);
     if sigma <= 0.0 { return GroundLight(0.0, 0.0, vec3(0.0), 1.0); }
     let surface = ground_surface(world.xz).x;
-    let depths = ground_sun_depths(world, surface);
+    let ground = ground_sun_depths(world, surface);
+    // Terrain can occlude the deck's light but its elevation does not set
+    // the bottom of a cloud column. Take the total from the upper product.
+    let column_depths = cloud_window_depths(world, world.y, cloud.heights.xy);
+    let depths = vec2(ground.x, max(ground.x, column_depths.y));
     let angles = vec4(mapping.path_border.y, -ray.y, 0.0, 1.0);
     let kernel = cloud_sun_term(cloud_phases(ray, true_sun), depths.x, depths.xy,
         1.0, angles, distance, transmission, vec4(cloud.scattering.xyz, cloud.erosion.z));
-    return GroundLight(sigma, sigma * kernel, sigma * cloud_ambient_light(column.yz), depths.z);
+    return GroundLight(sigma, sigma * kernel, sigma * cloud_ambient_light(column.yz), ground.z);
 }
