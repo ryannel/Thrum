@@ -39,6 +39,16 @@ class ShowcaseFrameTests(unittest.TestCase):
         self.assertEqual(exit_['page_work_past_callback_budget'][0]['stage'], 'page work after frame return')
         self.assertGreater(exit_['page_work_past_callback_budget'][0]['past_callback_budget_ms'], 60)
 
+    def test_chrome_retains_partial_work_without_attributing_the_remaining_gap(self):
+        callbacks = [
+            {'tick': 31, 'raf_ms': 0, 'requested_ms': 1, 'returned_ms': 20, 'drain_finished_ms': 21},
+            {'tick': 38, 'raf_ms': 100, 'requested_ms': 101, 'returned_ms': 102, 'drain_finished_ms': 103},
+        ]
+        [miss] = chrome_callback_misses(callbacks, [], 31, 42, False)
+        self.assertTrue(miss['page_work_past_callback_budget'])
+        self.assertEqual(miss['remaining_wait_ms'], 80)
+        self.assertEqual(miss['investigation'], 'unresolved under load')
+
 
 if __name__ == '__main__':
     unittest.main()

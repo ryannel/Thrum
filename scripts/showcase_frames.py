@@ -230,6 +230,7 @@ def mac_record(output, first, last, day, startup, load):
 
 
 def chrome_callback_misses(callbacks, samples, first, last, day):
+    period_ms = 1000 / 60
     misses = []
     for previous, current in zip(callbacks, callbacks[1:]):
         if current['tick'] < first or previous['tick'] > last:
@@ -246,7 +247,7 @@ def chrome_callback_misses(callbacks, samples, first, last, day):
         earlier = bisect_left(samples, previous['tick'], key=lambda row: row['tick'])
         later = bisect_right(samples, current['tick'], key=lambda row: row['tick'])
         start = previous['requested_ms']
-        expected = start + 1000 / 60
+        expected = start + period_ms
         wake = current['requested_ms']
         driver_end = previous['drain_finished_ms']
         blocking_work = []
@@ -258,14 +259,18 @@ def chrome_callback_misses(callbacks, samples, first, last, day):
             if blocked > 0:
                 blocking_work.append({'stage': stage, 'start_ms': begin, 'end_ms': finish,
                                       'past_callback_budget_ms': blocked})
+        remaining_wait = max(0, wake - max(expected, driver_end))
+        # At most one normal callback period may pass after the page releases the thread.
+        # A longer residual remains unresolved even when the trace locates part of the delay.
+        accounted_for = blocking_work and remaining_wait <= period_ms
         misses.append({'position': position, 'duration_ms': interval,
                        'preceding_callback': previous, 'following_callback': current,
                        'preceding_driver_ms': driver_end - start,
                        'page_work_past_callback_budget': blocking_work,
-                       'remaining_wait_ms': max(0, wake - max(expected, driver_end)),
+                       'remaining_wait_ms': remaining_wait,
                        'available_frame_samples': samples[max(0, earlier - 1):later + 1],
                        'investigation': ('observed page work overran the callback budget'
-                                         if blocking_work else 'unresolved under load'),
+                                         if accounted_for else 'unresolved under load'),
                        'evidence_read': 'animation-frame timestamps, page driver and post-frame work, available GPU pass samples'})
     return misses
 
