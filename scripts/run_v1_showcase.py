@@ -16,6 +16,8 @@ in run.json there. The route's values live only in examples/v1-game/params/showc
   motion [--check]                 record or check the six real-time exit tripwire arms
   exit --controls                  apply every exit preset through the Mac and Chrome control paths
   exit --compare                   compare submitted stills across rows and with each row's baseline
+  exit --compare --refresh-baseline CAUSE [--refresh-row ROW] [--baseline PATH]
+                                   refresh reviewed row grids with the retained thresholds
   exit --calibrate-comparison      stage a first three-row baseline for visual inspection
   frames --target TARGET           record capture-off flythrough and day cycle timing
 """
@@ -376,6 +378,12 @@ def chrome_exit_stops(run, source, row, *, lock=True):
 
 
 def exit_showcase(args):
+    if (args.refresh_baseline is not None or args.baseline or args.refresh_row) and not args.compare:
+        raise Failure('baseline and refresh options require exit --compare')
+    if args.refresh_row and args.refresh_baseline is None:
+        raise Failure('--refresh-row requires --refresh-baseline')
+    if args.refresh_baseline is not None and not args.refresh_baseline.strip():
+        raise Failure('--refresh-baseline requires a nonempty reviewed cause')
     rows = exit_rows()
     stops = route()
     if args.row:
@@ -383,7 +391,9 @@ def exit_showcase(args):
     if args.clauses:
         return exit_clauses(args, rows)
     if args.compare or args.calibrate_comparison:
-        return exit_compare(rows, stops, calibrate=args.calibrate_comparison)
+        return exit_compare(rows, stops, calibrate=args.calibrate_comparison,
+                            baseline_path=Path(args.baseline).resolve() if args.baseline else EXIT_BASELINE,
+                            refresh=args.refresh_baseline, refresh_row=args.refresh_row)
     run = new_run('exit-controls')
     print(f'exit controls: {run}', flush=True)
     build(run, web=True)
@@ -473,17 +483,20 @@ def exit_row(name, row, stops):
     print(f'PASS: {run / "run.json"}')
 
 
-def exit_compare(rows, stops, *, calibrate):
+def exit_compare(rows, stops, *, calibrate, baseline_path, refresh, refresh_row):
     from apple_display_proof import half_components, HALF, srgb
 
     root = json.loads(EXIT_FLYTHROUGH.read_text())['cooked_root']
     identity = {**baseline_identity(root), 'exit_rows': rows}
-    baseline = json.loads(EXIT_BASELINE.read_text())
+    baseline_bytes = baseline_path.read_bytes()
+    baseline = json.loads(baseline_bytes)
+    baseline_hash = hashlib.sha256(baseline_bytes).hexdigest()
     retained = baseline.get('exit_comparison')
     if calibrate and retained and retained['identity'] == identity:
         raise Failure('this comparison identity already has a calibration')
     if not calibrate and (not retained or retained['identity'] != identity):
         raise Failure('no retained comparison for these rows, comparator, presets and cooked root')
+    refresh_rows = {name for name in rows if refresh is not None and refresh_row in (None, name)}
 
     run = new_run('exit-compare')
     print(f'exit comparison: {run}', flush=True)
@@ -529,7 +542,9 @@ def exit_compare(rows, stops, *, calibrate):
     retinted = run / 'retinted'
     retinted.mkdir()
     edited_source = copy_source(retinted, origin=source)
-    (edited_source / 'white.png').write_bytes(solid_texture([214, 150, 96]))
+    ground = edited_source / 'ground.png'
+    original_ground = sha256(ground)
+    ground.write_bytes(solid_texture([214, 150, 96]))
     edited_store = retinted / 'store'
     with (retinted / 'cook.log').open('w') as log:
         if bounded([str(COOK), 'cook', str(edited_source), str(edited_store)], log, 120, cwd=REPO):
@@ -547,6 +562,9 @@ def exit_compare(rows, stops, *, calibrate):
     report = {'builds': builds, 'identity': identity, 'encoding': 'submitted 8-bit sRGB',
               'sources': {'mac-apple': 'EDR at headroom 1, converted from float to sRGB',
                           'mac-portable': 'SDR at headroom 1', 'chrome': 'SDR'},
+              'baseline_sha256': baseline_hash,
+              'texture_control': {'source': 'ground.png', 'before_sha256': original_ground,
+                                  'after_sha256': sha256(ground), 'cooked_root': store_root(edited_store)},
               'cross_row_thresholds': {}, 'pairs': {}, 'controls': {}, 'baselines': {}, 'failures': []}
     verify_diagnostic_poses({phase['name']: phase for phase in phases}, stops, report)
     for key in ROUTE:
@@ -594,10 +612,18 @@ def exit_compare(rows, stops, *, calibrate):
         report['baselines'][name] = {'thresholds': saved['thresholds'], 'stops': distances}
         if calibrate:
             report['baselines'][name]['repeat_differences'] = repeat_delta
-        for key, values in distances.items():
-            if any(value > limit for value, limit in zip(values, saved['thresholds'], strict=True)):
-                report['failures'].append(f'{name}/{key}: exceeded the row baseline thresholds')
+        over = [key for key, values in distances.items()
+                if any(value > limit for value, limit in zip(values, saved['thresholds'], strict=True))]
+        report['baselines'][name]['over_thresholds'] = over
+        if name not in refresh_rows:
+            report['failures'].extend(f'{name}/{key}: exceeded the row baseline thresholds' for key in over)
 
+    if refresh_rows and not report['failures']:
+        try:
+            report['refresh'] = refresh_exit_rows(baseline_path, baseline, baseline_hash, grids, report,
+                                                  refresh_rows, refresh.strip())
+        except Failure as error:
+            report['failures'].append(str(error))
     write_json(run / 'run.json', report)
     if report['failures']:
         raise Failure(f'{", ".join(report["failures"])}; see {run / "run.json"}')
@@ -610,6 +636,43 @@ def exit_compare(rows, stops, *, calibrate):
         print(f'Staged for inspection: {run / EXIT_BASELINE.name}')
     else:
         print(f'PASS: {run / "run.json"}')
+
+
+def refresh_exit_rows(path, baseline, before_hash, grids, report, selected, cause):
+    retained = baseline['exit_comparison']
+    history = retained.setdefault('refreshes', [])
+    updates = {}
+    new_grids = {}
+    for name in sorted(selected):
+        current = retained['rows'][name]['grids']
+        replacement = {key: pack(cells) for key, cells in grids[name].items()}
+        updated = [key for key in ROUTE if replacement[key] != current[key]]
+        if not updated:
+            continue
+        before_builds = next((entry['after_builds'] for entry in reversed(history) if name in entry['rows']),
+                             retained['calibration']['builds'])
+        previous = report['baselines'][name]
+        updates[name] = {'before_builds': before_builds, 'updated_stops': updated,
+                         'grid_difference': previous['stops'], 'over_thresholds': previous['over_thresholds']}
+        new_grids[name] = replacement
+    if not updates:
+        raise Failure('no selected exit row baseline grid moved')
+    record = {'cause': cause, 'before_file_sha256': before_hash, 'after_builds': report['builds'], 'rows': updates}
+    history.append(record)
+    for name, replacement in new_grids.items():
+        retained['rows'][name]['grids'] = replacement
+    content = (json.dumps(baseline, indent=1) + '\n').encode()
+    with tempfile.NamedTemporaryFile(dir=path.parent, prefix=f'.{path.name}.', delete=False) as output:
+        temporary = Path(output.name)
+        output.write(content)
+    try:
+        if sha256(path) != before_hash:
+            raise Failure('the baseline changed during the refresh')
+        temporary.chmod(path.stat().st_mode)
+        temporary.replace(path)
+    finally:
+        temporary.unlink(missing_ok=True)
+    return {**record, 'after_file_sha256': hashlib.sha256(content).hexdigest()}
 
 
 def exit_clauses(args, rows):
@@ -2009,6 +2072,11 @@ def main():
     exit_mode.add_argument('--compare', action='store_true', help='compare the three submitted exit rows')
     exit_mode.add_argument('--calibrate-comparison', action='store_true',
                            help='stage a first three-row baseline after the repeat and controls pass')
+    exit_command.add_argument('--refresh-baseline', metavar='CAUSE',
+                              help='refresh reviewed grids after parity and controls pass')
+    exit_command.add_argument('--refresh-row', choices=['mac-apple', 'mac-portable', 'chrome'],
+                              help='refresh only this row and check the other rows against their retained grids')
+    exit_command.add_argument('--baseline', help='comparison baseline path (defaults to the checked-in fixture)')
     exit_command.add_argument('--target', choices=['mac-metal', 'chrome-webgpu'])
     frames_command = commands.add_parser('frames', help='record whole exit frames with capture off')
     frames_command.add_argument('--target', required=True, choices=['mac-metal', 'chrome-webgpu'])
