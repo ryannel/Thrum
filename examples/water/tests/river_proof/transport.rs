@@ -57,6 +57,13 @@ fn transport(gpu: &thrum_test_support::Gpu, wind: Wind, submit: bool) {
                 float.position
             );
             assert!(float.position.is_finite());
+            if let Some(sample) = water.filter(|row| i == 1 || row.body == 1) {
+                let heave = float.position.y + float.draft() - sample.row.level;
+                assert!(
+                    heave.abs() < 1.5,
+                    "{wind:?} float {i} left the waterline by {heave:.2} m at {seconds}s"
+                );
+            }
             if i == 0 {
                 if (-70.0..-57.0).contains(&place[1]) {
                     pool_speed = Some(speed);

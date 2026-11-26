@@ -3,7 +3,7 @@ mod draw;
 mod scene;
 pub(crate) use scene::{YardFloat, install_channel_float, install_river_floats};
 
-use glam::{DQuat, DVec3};
+use glam::{DQuat, DVec2, DVec3};
 pub use scene::{
     FloatingScene, OPTICS_COST_CASTER, WakeDemo, WakeView, WhitewaterDemo, build, build_optics_arm,
     build_paired, build_wake, build_wake_paired,
@@ -72,6 +72,7 @@ pub struct Body {
     pub water_reaction: f64,
     /// Latest horizontal drag dissipation in watts per kilogram.
     pub drag_power: f64,
+    query_slope_limit: f64,
 }
 
 /// Actual positive work supplied to the normalized rigid-body state by water and motor.
@@ -119,6 +120,7 @@ impl Body {
             propulsion: DVec3::ZERO,
             water_reaction: GRAVITY,
             drag_power: 0.0,
+            query_slope_limit: f64::INFINITY,
         }
     }
 
@@ -315,6 +317,15 @@ pub fn sample_answer(
     index: usize,
     position: DVec3,
 ) -> Option<(Surface, Option<f64>)> {
+    sample_station(answer, index, position, f64::INFINITY)
+}
+
+fn sample_station(
+    answer: Option<&BodyAnswers>,
+    index: usize,
+    position: DVec3,
+    slope_limit: f64,
+) -> Option<(Surface, Option<f64>)> {
     let answer = answer?.points.get(index)?;
     let mut surface = answer.surface;
     let offset = position
@@ -326,7 +337,10 @@ pub fn sample_answer(
     if offset.length_squared() > 4.0 {
         return None;
     }
-    let [sx, sz] = surface.sample.slope;
+    let [sx, sz] = DVec2::from_array(surface.sample.slope)
+        .clamp_length_max(slope_limit)
+        .to_array();
+    surface.sample.slope = [sx, sz];
     surface.sample.height += sx * offset.x + sz * offset.z;
     let bed = answer.bed.map(f64::from);
     surface.wet = surface.body.is_some() && bed.is_none_or(|bed| surface.sample.height > bed);
@@ -354,9 +368,10 @@ fn advance_fleet(
         let map = map.lock().expect("water map");
         for body in bodies.iter_mut() {
             let answer = answers.iter().find(|answer| answer.id == body.id);
+            let slope_limit = body.query_slope_limit;
             let mut gpu_points = 0;
             let mut sample = |index, position: DVec3| {
-                if let Some(result) = sample_answer(answer, index, position) {
+                if let Some(result) = sample_station(answer, index, position, slope_limit) {
                     gpu_points += 1;
                     result
                 } else {

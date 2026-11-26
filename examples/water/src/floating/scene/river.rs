@@ -24,7 +24,12 @@ pub(crate) fn install_river_floats(
             .expect("float release in water")
             .row
             .level;
-        Body::new(id, Hull::Float, point, level, heading)
+        let mut body = Body::new(id, Hull::Float, point, level, heading);
+        // The float spans several columns. Where carriage compresses a
+        // wind ripple, a point slope can approach vertical. Limit the slope
+        // used for station extrapolation and damping to a 45-degree face.
+        body.query_slope_limit = 1.0;
+        body
     });
     let fleet = Arc::new(Mutex::new(Fleet {
         previous: initial.to_vec(),
