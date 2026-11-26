@@ -56,6 +56,7 @@ struct Mailbox {
     state: Option<Arc<State>>,
     field_overlay: crate::FieldOverlay,
     ground: Option<(wgpu::Texture, wgpu::Buffer)>,
+    weather_columns: Option<wgpu::Texture>,
     resources: Vec<(String, u64)>,
     shape_resources: Vec<(String, u64)>,
     sky: Option<crate::SkyProducts>,
@@ -80,6 +81,11 @@ impl WeatherInput {
     fn frame_input(&self) -> Option<(Arc<State>, crate::FieldOverlay)> {
         let input = self.0.lock().ok()?;
         Some((Arc::clone(input.state.as_ref()?), input.field_overlay))
+    }
+
+    /// Physical weather columns on the current device, for optional readback after submission.
+    pub fn weather_columns(&self) -> Option<wgpu::Texture> {
+        self.0.lock().ok()?.weather_columns.clone()
     }
 
     /// Optional readback handles for the latest submitted visible layer.

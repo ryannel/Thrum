@@ -201,6 +201,7 @@ impl Staged {
         let gpu = shade.gpu.as_ref().expect("installed cloud resources");
         let mut mailbox = shade.input.0.lock().unwrap_or_else(PoisonError::into_inner);
         mailbox.resources = self.bytes;
+        mailbox.weather_columns = Some(gpu.weather.textures()[0].clone());
         mailbox.ground = Some((gpu.sun.ground().clone(), gpu.sun.mapping().clone()));
     }
 }

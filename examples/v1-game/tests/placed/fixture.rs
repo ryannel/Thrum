@@ -148,8 +148,12 @@ impl Fixture {
     }
 
     pub(super) async fn host(&self, gpu: &Opened) -> Host {
+        self.host_with_clouds(gpu, CloudSelection::Sky).await
+    }
+
+    pub(super) async fn host_with_clouds(&self, gpu: &Opened, clouds: CloudSelection) -> Host {
         let mut host = GameSetup {
-            clouds: CloudSelection::Sky,
+            clouds,
             cloud_weather: self.state.parameters(),
             ..Default::default()
         }

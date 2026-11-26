@@ -100,7 +100,7 @@ async function runCapture() {
   }
   record.diagnostic_clouds = query.get('diagnostic-clouds') === 'on';
   if (clouds !== 'off') record.clouds = clouds;
-  game = await create_route_game(document.querySelector('canvas'), text, query.get('diagnostic-clouds') === 'on', query.get('culling') ?? undefined, query.get('meshes') === 'on', query.get('reconstruction') === 'taau', query.get('scene') === 'exit', clouds, query.get('haze') ?? undefined, view ? JSON.stringify({preset: view.preset, rate: view.weather_rate, wind: view.wind}) : undefined);
+  game = await create_route_game(document.querySelector('canvas'), text, query.get('diagnostic-clouds') === 'on', query.get('culling') ?? undefined, query.get('meshes') === 'on', query.get('reconstruction') === 'taau', query.get('scene') === 'exit', clouds, query.get('haze') ?? undefined, view ? JSON.stringify({preset: view.preset, rate: view.weather_rate, wind: view.wind, placed_origin: query.get("cloud-store") ?? undefined}) : undefined);
   if (useAnimationFrame) game.capture_without_pass_timings();
   window.captureGame = game;
   const effect = query.get('effect') ?? 'off';
@@ -481,15 +481,38 @@ async function captureCloudView(view, extent) {
   const edits = JSON.parse(game.apply_parameters(JSON.stringify(view.params), 0));
   if (edits.problems.length || game.committed_tick() !== 0 || !game.paused()) fail(`invalid held cloud view: ${JSON.stringify(edits)}`);
   if (mode === 'realtime') game.hold_cloud_capture_sun();
+  if (query.has('cloud-store')) {
+    await ready(() => {
+      const placed = JSON.parse(game.placed_cloud_report() ?? 'null');
+      if (placed?.resources?.some(([name]) => name.startsWith('cloud-growth '))) return true;
+      if (game.route_slot_ready()) game.frame(0);
+      return false;
+    }, 'cloud volumes did not become resident');
+    if (mode === 'fixed') {
+      game.set_paused(false, 0);
+      let time = 0;
+      await ready(() => {
+        if (game.committed_tick() >= 300) return true;
+        if (game.route_slot_ready()) {
+          time = game.route_step_ms(0.5);
+          game.frame(time);
+        }
+        return false;
+      }, 'placed cloud weather did not settle at tick 300');
+      game.set_paused(true, time);
+    }
+  }
+  const heldTick = mode === 'fixed' && query.has('cloud-store') ? 300 : 0;
+  const heldTime = heldTick ? game.route_step_ms(0.5) : 0;
   const warmupEnd = performance.now() + 3000;
   const warmupStart = game.presented();
   while (performance.now() < warmupEnd) {
     if (hidden) fail('cloud view became hidden during warmup');
-    if (game.route_slot_ready()) game.frame(0);
+    if (game.route_slot_ready()) game.frame(heldTime);
     await wait(2);
   }
   record.held_warmup_submissions = Number(game.presented() - warmupStart);
-  if (!record.held_warmup_submissions || game.committed_tick() !== 0) fail('cloud view warmup missed the held tick');
+  if (!record.held_warmup_submissions || game.committed_tick() !== heldTick) fail('cloud view warmup missed the held tick');
   await ready(() => game.route_slot_ready(), 'cloud view has no free frame slot');
   record.initial_report = JSON.parse(game.route_report(0));
   record.culling = game.report();
@@ -500,13 +523,13 @@ async function captureCloudView(view, extent) {
   record.mode = mode;
   record.pixel_source = source;
   record.extent = extent;
-  record.base_world_ms = 0;
+  record.base_world_ms = heldTime;
   if (mode === 'fixed') {
-    record.scheduling = 'one held T2 submission at tick zero';
-    game.frame(0);
-    record.opportunities.push({ordinal: 0, frame_ms: 0, tick: game.committed_tick()});
+    record.scheduling = 'one held T2 submission';
+    game.frame(heldTime);
+    record.opportunities.push({ordinal: 0, frame_ms: heldTime, tick: game.committed_tick()});
   } else {
-    record.scheduling = 'browser animation-frame callbacks at elapsed time, held camera';
+    record.scheduling = 'browser animation-frame callbacks at elapsed time';
     const duration = view.duration_seconds;
     if (!Number.isFinite(duration) || duration < 1 || duration > 60) fail('Cloud view duration must be 1 to 60 seconds');
     const start = performance.now();
@@ -514,14 +537,56 @@ async function captureCloudView(view, extent) {
     game.set_paused(false, 0);
     let timestamp = 0;
     let ordinal = 0;
+    let discreteEditDone = false;
+    const motion = view.motion;
+    if (motion && !['pan', 'walk', 'lapse', 'preset', 'cut', 'profile'].includes(motion.kind)) {
+      fail('unknown cloud motion');
+    }
+    const phase = (seconds, start, span) => Math.min(1, Math.max(0, (seconds - start) / span));
+    const originalEye = view.eye;
     while (timestamp < duration * 1000) {
       const rafMs = await new Promise(requestAnimationFrame);
       if (hidden) fail('cloud view became hidden during the recording');
       const requested = performance.now();
       timestamp = requested - start;
+      const seconds = timestamp / 1000;
+      let cloudEdit = null;
+      if (motion?.kind === 'pan') {
+        const yaw = motion.from + phase(seconds, 2, 0.8) * (motion.to - motion.from);
+        game.set_camera_yaw(yaw * Math.PI / 180);
+        cloudEdit = { yaw };
+      } else if (motion?.kind === 'walk') {
+        const eye = [originalEye[0] + 40 * phase(seconds, 1, 5), originalEye[1], originalEye[2]];
+        game.move_cloud_capture_eye(...eye, false);
+        cloudEdit = { eye };
+      } else if (motion && !discreteEditDone && seconds >= 2) {
+        discreteEditDone = true;
+        if (motion.kind === 'lapse') {
+          cloudEdit = { 'clouds.time_lapse': 60 };
+        } else if (motion.kind === 'preset') {
+          cloudEdit = { 'clouds.coverage': 100, 'clouds.type': 0, 'clouds.time_lapse': 1,
+            'clouds.wind_speed': 10, 'clouds.wind_direction': 0 };
+        } else if (motion.kind === 'cut') {
+          const eye = [originalEye[0] + 350, originalEye[1] + 100, originalEye[2]];
+          game.move_cloud_capture_eye(...eye, true);
+          cloudEdit = { cut_eye: eye };
+        } else if (motion.kind === 'profile') {
+          game.cloud_capture_scale(75);
+          cloudEdit = { layer_scale: 75 };
+        }
+        if (['lapse', 'preset'].includes(motion.kind)) applyCaptureParameters(JSON.stringify(cloudEdit), timestamp);
+      }
+      const before = game.presented();
       game.frame(timestamp);
       const opportunity = { ordinal: ordinal++, requested_ms: requested, frame_ms: timestamp,
         returned_ms: performance.now(), tick: game.committed_tick(), raf_ms: rafMs };
+      if (motion) {
+        opportunity.cloud_edit = cloudEdit;
+        if (game.presented() !== before) {
+          opportunity.submission_id = Number(game.presented());
+          opportunity.cloud_history_valid = game.cloud_capture_history();
+        }
+      }
       record.opportunities.push(opportunity);
       drain();
       opportunity.drain_finished_ms = performance.now();

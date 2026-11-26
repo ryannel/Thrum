@@ -246,6 +246,12 @@ path = "tests/clouds_meter_gpu.rs"
 [[test]]
 name = "clouds_controls"
 
+# The CLOUDS runtime knob check exercises the game's placed-sky graph and Metal counters.
+[[test]]
+name = "clouds_knobs_gpu"
+path = "tests/placed/clouds_knobs_gpu.rs"
+required-features = ["proving", "thrum-render/creation-counters"]
+
 [[test]]
 name = "interface_status_sweep"
 required-features = ["proving"]

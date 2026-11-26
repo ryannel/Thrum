@@ -656,6 +656,17 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
         admitted
     }
 
+    /// Stage a scene quality knob for the next frame boundary.
+    /// # Errors
+    /// Refuses an unknown knob or a value outside its declared range.
+    pub fn set_quality_knob(
+        &mut self,
+        name: &str,
+        value: u32,
+    ) -> Result<(), thrum_render::contribution::QualityError> {
+        self.host.set_quality_knob(name, value)
+    }
+
     /// Set the drawn subrectangle of the next frame.
     ///
     /// # Errors

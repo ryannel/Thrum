@@ -299,7 +299,7 @@ def run(args):
         "scenario": args.case,
         "observer_only": observer_only,
         "record_limit": 16_384 if args.case in LONG_WEATHER_CASES else
-        4096 if args.case in ('clouds-drift','clouds-wind','clouds-life-fast','clouds-placed','clouds-route','exit-route','exit-drift','sprites-field') or os.environ.get('THRUM_CAPTURE_NATIVE_RECOVERY') in ('control', 'faults') else 1024,
+        4096 if args.case in ('clouds-inspect','clouds-drift','clouds-wind','clouds-life-fast','clouds-placed','clouds-route','exit-route','exit-drift','sprites-field') or os.environ.get('THRUM_CAPTURE_NATIVE_RECOVERY') in ('control', 'faults') else 1024,
         "timebase": args.mode,
         "admission_policy": getattr(args, 'admission', 'omit'),
         "scenario_source_sha256": digest(ROOT / "examples/v1-game/src/window/capture.rs"),
@@ -362,6 +362,11 @@ def run(args):
         manifest['route_sha256'] = digest(args.route.resolve())
     else:
         environment.pop('THRUM_CAPTURE_RUNTIME_ROUTE', None)
+    if args.case == 'clouds-inspect':
+        if getattr(args, 'cloud_take', None) is None:
+            raise ValueError('--case clouds-inspect requires --cloud-take')
+        environment['THRUM_CAPTURE_CLOUD_TAKE'] = str(args.cloud_take.resolve())
+        manifest['cloud_take_sha256'] = digest(args.cloud_take.resolve())
     if store:
         scene = getattr(args, "scene", None) or ("exit" if args.case.startswith("exit-") else "valley")
         environment.update(THRUM_ASSET_STORE=str(store), THRUM_SCENE=scene)
@@ -469,6 +474,7 @@ if __name__ == "__main__":
     parser.add_argument("--store", type=Path)
     parser.add_argument("--scene", choices=["valley", "exit", "interface"], help="cooked scene for a checkpoint or route")
     parser.add_argument("--params", type=Path, default=ROOT / "examples/v1-game/params/showcase-noon.params.json")
+    parser.add_argument("--cloud-take", type=Path, help="elapsed cloud inspection edits")
     parser.add_argument("--route", type=Path, help="checked cooked route for --case route")
     parser.add_argument('--reconstruction', choices=['off','taau','metalfx'])
     parser.add_argument('--overlay', choices=['off','proof','motion','reconstruction'])
@@ -476,7 +482,7 @@ if __name__ == "__main__":
     parser.add_argument("--case", choices=[
         "pan", "route", "variants", "running", "render-stall", "input-stall", "off", "writer-slow",
         "reconstruction-pan", "content-edits", "reconstruction-stars", "reconstruction-scrub",
-        "atmosphere-scrub", "atmosphere-ground-pan", "clouds-drift", "clouds-wind", "clouds-life-fast",
+        "atmosphere-scrub", "atmosphere-ground-pan", "clouds-inspect", "clouds-drift", "clouds-wind", "clouds-life-fast",
         *LONG_WEATHER_CASES, "clouds-placed", "clouds-dusk", "clouds-still", "checkpoint", "clouds-route",
         "exit-route", "exit-drift", "exit-stop", "sun-settle", "sun-cut", "sun-set", "sun-motion",
         "sprites-field", "sprites-field-cost", "sprites-scroll", "sprites-sheets", "sprites-status",

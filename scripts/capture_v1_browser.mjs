@@ -19,6 +19,7 @@ const args = { mode: 'realtime', source: 'sdr', scene: 'day', reconstruction: 'o
 args.effect = 'off';
 args.clouds = 'off';
 args['cloud-view'] = '';
+args['cloud-store'] = '';
 args['retain-raw'] = 'off';
 args.atmosphere = 'off';
 args.haze = '';
@@ -56,6 +57,7 @@ if (!['route','off'].includes(args.overlay)) throw new Error('Invalid overlay op
 if (!['off','on'].includes(args['diagnostic-clouds'])) throw new Error('Invalid diagnostic-clouds option');
 if (!['off','shade','sky','world-light'].includes(args.clouds) || (args.clouds !== 'off' && args['diagnostic-clouds'] === 'on')) throw new Error('Invalid cloud selection');
 if (args['cloud-view'] && (args.clouds === 'off' || args.control !== 'ordinary' || args.source !== 'sdr')) throw new Error('A cloud view requires an ordinary SDR cloud capture');
+if (args['cloud-store'] && !args['cloud-view']) throw new Error('A cloud store requires --cloud-view');
 if (!['off','taau'].includes(args.reconstruction)) throw new Error('Invalid reconstruction option');
 if (!['off','pan','reveal','spawn','stars','scrub'].includes(args.witness) || (args.witness !== 'off' && args.mode !== 'realtime')) throw new Error('Invalid reconstruction witness/mode');
 if (!['off','slab','depth-only'].includes(args.effect)) throw new Error('Invalid effect diagnostic');
@@ -99,6 +101,20 @@ if (args['route-file']) {
 }
 const cloudView = args['cloud-view'] ? await fs.readFile(path.resolve(args['cloud-view'])) : undefined;
 const cloudMotion = cloudView && args.mode === 'realtime';
+const cloudFiles = new Map();
+if (args['cloud-store']) {
+  const store = path.resolve(args['cloud-store']);
+  const admit = async (url, file) => {
+    const bytes = await fs.readFile(file);
+    cloudFiles.set(url, { bytes, type: 'application/octet-stream', sha256: sha(bytes) });
+  };
+  await admit('/head', path.join(store, 'HEAD'));
+  for (const shard of await fs.readdir(path.join(store, 'cas'))) {
+    for (const hash of await fs.readdir(path.join(store, 'cas', shard))) {
+      await admit(`/cas/${hash}`, path.join(store, 'cas', shard, hash));
+    }
+  }
+}
 if (cloudView) files.set('/capture-view.json', { bytes: cloudView, type: 'application/json', sha256: sha(cloudView) });
 for (const [name, type] of [['capture.html', 'text/html'], ['capture.mjs', 'text/javascript'], ['capture_upload.mjs', 'text/javascript']]) {
   const bytes = await fs.readFile(path.join(args['web-root'], name));
@@ -132,6 +148,7 @@ if (spriteField || args.scene === 'exit' || spoolRaw) {
 }
 if (args.clouds !== 'off') manifest.clouds = args.clouds;
 if (cloudView) manifest.cloud_view = JSON.parse(cloudView);
+if (cloudFiles.size) manifest.cloud_store = Object.fromEntries([...cloudFiles].map(([name, file]) => [name, file.sha256]));
 manifest.effect = args.effect;
 manifest.atmosphere = args.atmosphere;
 if (args.haze) manifest.haze = args.haze;
@@ -148,8 +165,15 @@ const retainRaw = args['retain-raw'] === 'on';
 const spoolPath = path.join(output, 'frames.rgba');
 const rawSpool = spoolRaw ? await fs.open(spoolPath, 'wx+') : undefined;
 const { receive, pending } = captureReceiver(output, frameBytes, manifest, error => { failure ??= error; }, { slow: args.control === 'slow', rawSpool });
+let cloudServer;
 try {
-  let cookedOrigin, spriteSource, sheetEdit;
+  let cookedOrigin, cloudOrigin, spriteSource, sheetEdit;
+  if (cloudFiles.size) {
+    ({ server: cloudServer, origin: cloudOrigin } = await serve(cloudFiles, (_request, response) => {
+      response.setHeader('Access-Control-Allow-Origin', '*');
+      return false;
+    }));
+  }
   const requests = [];
   const serveCapture = (request, response) => {
     if (!spriteSheets || request.method !== 'POST' || request.url !== '/sprite-sheet-edit') {
@@ -253,7 +277,7 @@ try {
     if (spriteScroll) manifest.sprite_scroll = { scale: Number(args['sprite-scale']), speed: Number(args['sprite-speed']), dpr: spriteDpr };
   }
   manifest.load_before = loadavg();
-  await cdp.call('Page.navigate', { url: `${manifest.origin}/capture.html?mode=${args.mode}&control=${args.control}&source=${args.source}&scene=${args.scene}&reconstruction=${args.reconstruction}&witness=${args.witness}&atmosphere=${args.atmosphere}&diagnostic-clouds=${args['diagnostic-clouds']}&overlay=${args.overlay}&effect=${args.effect}&route=${captureRoute ? 'capture-route.json' : 'moving-v1.json'}&assets=${encodeURIComponent(cookedOrigin ?? '')}${manifest.export_slots ? `&export-slots=${manifest.export_slots}` : ''}&clouds=${args.clouds}${args.haze ? `&haze=${encodeURIComponent(args.haze)}` : ''}${args['haze-take'] ? '&haze-take' : ''}${args['renderer-signature'] === 'on' ? '&renderer-signature' : ''}${cloudView ? '&cloud-view' : ''}${spriteQuery}` }, sessionId);
+  await cdp.call('Page.navigate', { url: `${manifest.origin}/capture.html?mode=${args.mode}&control=${args.control}&source=${args.source}&scene=${args.scene}&reconstruction=${args.reconstruction}&witness=${args.witness}&atmosphere=${args.atmosphere}&diagnostic-clouds=${args['diagnostic-clouds']}&overlay=${args.overlay}&effect=${args.effect}&route=${captureRoute ? 'capture-route.json' : 'moving-v1.json'}&assets=${encodeURIComponent(cookedOrigin ?? '')}${manifest.export_slots ? `&export-slots=${manifest.export_slots}` : ''}&clouds=${args.clouds}${args.haze ? `&haze=${encodeURIComponent(args.haze)}` : ''}${args['haze-take'] ? '&haze-take' : ''}${args['renderer-signature'] === 'on' ? '&renderer-signature' : ''}${cloudView ? '&cloud-view' : ''}${cloudOrigin ? '&cloud-store=' + encodeURIComponent(cloudOrigin) : ''}${spriteQuery}` }, sessionId);
   let destroyed = false;
   const record = await waitFor(async () => {
     if (completionSignal && !captureDone) return undefined;
@@ -406,6 +430,7 @@ try {
 } catch (error) { failure ??= error; }
 finally {
   cook?.kill();
+  cloudServer?.close();
   // Realtime atmosphere takes can keep large readback pools alive until the
   // owned Chrome process exits. Allow it to drain those pools under shared load.
   const drainLargeCapture = spriteField || Boolean(args.haze) || (spoolRaw && args.atmosphere !== 'off');

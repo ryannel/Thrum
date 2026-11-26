@@ -1,6 +1,7 @@
 //! Authored V1 scenarios on the shared unattended engine driver.
 
 mod admission;
+mod cloud_take;
 mod native_recovery;
 pub(super) mod scene;
 mod sheet_edits;
@@ -76,6 +77,7 @@ pub(super) fn run(
             | "reconstruction-scrub"
             | "atmosphere-scrub"
             | "atmosphere-ground-pan"
+            | "clouds-inspect"
             | "clouds-drift"
             | "clouds-wind"
             | "clouds-cycle"
@@ -509,6 +511,7 @@ fn start_writer(
         } else if matches!(
             scenario,
             "clouds-drift"
+                | "clouds-inspect"
                 | "clouds-wind"
                 | "clouds-life-fast"
                 | "clouds-placed"
@@ -735,7 +738,7 @@ fn prepare_parameters(
     if scenario == "sun-set" {
         crate::host::scrub_haze_sun(driver.host_mut(), SUNSET_START_HOURS / 24.0)?;
     }
-    if weather_motion(scenario) {
+    if weather_motion(scenario) || scenario == "clouds-inspect" {
         crate::host::hold_capture_sun(driver.host_mut());
     }
     let preset_accepted = Instant::now();
@@ -921,11 +924,25 @@ async fn record(
     let mut stalled = false;
     let mut recovery =
         native_recovery::Recovery::new(recovery_mode, capabilities.generation(), hardware);
+    let cloud_take = cloud_take::Take::requested(scenario)?;
+    let mut cloud_edit_done = false;
+    let cloud_eye = cloud_take
+        .as_ref()
+        .map(|_| {
+            driver
+                .host()
+                .scene_camera()
+                .map(crate::SceneCamera::eye)
+                .ok_or("clouds-inspect needs a valley camera")
+        })
+        .transpose()?;
     let mut final_hold = None;
     let mut last_sample_time = Duration::ZERO;
     let bank_mover = haze_take.is_some_and(HazeTake::runs_world);
     let (hard_end, soft_end, world_end) = if governed {
         (12.0, 10.0, f64::INFINITY)
+    } else if let Some(take) = &cloud_take {
+        take.bounds()
     } else if bank_mover {
         (14.0, 13.0, f64::INFINITY)
     } else {
@@ -996,8 +1013,13 @@ async fn record(
                 source,
             )
             .await?;
+        let cloud_edit = match (&cloud_take, cloud_eye) {
+            (Some(take), Some(eye)) => take.apply(&mut driver, eye, t, &mut cloud_edit_done)?,
+            _ => None,
+        };
         let yaw = requested_yaw(scenario, t, recovery_mode);
-        let control_dispatched = applies_yaw(scenario, active_world)
+        let control_dispatched = cloud_take.is_none()
+            && applies_yaw(scenario, active_world)
             && trace.yaw(&mut driver, scenario, t, yaw, origin)?;
         let accepted = origin.elapsed();
         let accepted_yaw = accepted_yaw(&driver)?;
@@ -1098,6 +1120,17 @@ async fn record(
             "submitted":report.submitted,"tick":report.tick,"dropped_view":report.dropped_view,
             "admission_usage":admission_usage,"ring_omissions":driver.omissions()-omissions_before,
             "submission_id":if report.submitted {driver.last_submission()} else {None},"capture_usage":driver.capture_usage()});
+        if cloud_take.is_some() {
+            record["cloud_edit"] = json!(cloud_edit);
+            if report.submitted {
+                record["cloud_history_valid"] = json!(
+                    driver
+                        .host()
+                        .cloud_sky_products()
+                        .map(|layer| layer.history_valid)
+                );
+            }
+        }
         if let Some(idle_gpu_progress) = idle_gpu_progress {
             record["idle_gpu_progress"] = idle_gpu_progress;
         }
@@ -1211,7 +1244,12 @@ fn is_motion_capture(scenario: &str) -> bool {
 fn weather_motion(scenario: &str) -> bool {
     matches!(
         scenario,
-        "clouds-wind" | "clouds-cycle" | "clouds-light-cycle" | "clouds-life" | "clouds-life-fast"
+        "clouds-inspect"
+            | "clouds-wind"
+            | "clouds-cycle"
+            | "clouds-light-cycle"
+            | "clouds-life"
+            | "clouds-life-fast"
     )
 }
 

@@ -105,3 +105,31 @@ fn clearing_deck_does_not_reintroduce_cumulus() {
     }
     assert!(state.parameters().kind > 0.0);
 }
+
+#[test]
+fn live_target_is_a_tick_edit_that_can_be_replayed() {
+    let mut sim =
+        crate::scene::selected_simulation(crate::GameContent::Grid, crate::RouteOverlay::Off, true)
+            .unwrap();
+    let old = sim.published_page().unwrap().weather().unwrap();
+    let snapshot = sim.capture();
+    let target = thrum_cloud_model::Parameters {
+        coverage: 1.0,
+        ..old.parameters()
+    };
+    let bad = Command::SetWeather(thrum_cloud_model::Parameters {
+        coverage: f64::NAN,
+        ..target
+    });
+    assert_eq!(sim.step(&[bad]).err(), Some(SimError::InvalidConfig));
+    assert_eq!(sim.tick(), 0);
+    let edit = Command::SetWeather(target);
+    sim.step(&[edit]).unwrap();
+    let next = sim.published_page().unwrap().weather().unwrap();
+    assert!(next.parameters().coverage > old.parameters().coverage);
+    assert!(next.parameters().coverage < target.coverage);
+    assert_eq!(old.tick(), 0);
+    sim.restore(&snapshot).unwrap();
+    sim.step(&[edit]).unwrap();
+    assert_eq!(sim.published_page().unwrap().weather().unwrap(), next);
+}

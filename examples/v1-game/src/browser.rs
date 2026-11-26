@@ -456,7 +456,17 @@ pub async fn create_placed_browser_game(
     canvas: HtmlCanvasElement,
     origin: String,
 ) -> Result<BrowserGame, JsValue> {
-    let mut client = DevClient::new(BrowserFetch, &origin).map_err(js_error)?;
+    let placed = load_placed_clouds(&origin, true).await?;
+    let setup = crate::GameSetup {
+        clouds: crate::CloudSelection::Sky,
+        ..crate::GameSetup::default()
+    };
+    create_game_with_shapes(canvas, setup, Some(placed)).await
+}
+
+#[cfg(feature = "proving")]
+async fn load_placed_clouds(origin: &str, directed: bool) -> Result<crate::PlacedSky, JsValue> {
+    let mut client = DevClient::new(BrowserFetch, origin).map_err(js_error)?;
     client.prefer(
         thrum_asset::ProductKind::Volume,
         &[thrum_asset::Profile::Portable],
@@ -467,12 +477,7 @@ pub async fn create_placed_browser_game(
         .map_err(js_error)?
         .ok_or_else(|| js_error("no cloud publication"))?;
     let feed = RemoteFeed::new(generation);
-    let placed = crate::PlacedSky::new(CookedSource::Remote(feed), true).map_err(js_error)?;
-    let setup = crate::GameSetup {
-        clouds: crate::CloudSelection::Sky,
-        ..crate::GameSetup::default()
-    };
-    create_game_with_shapes(canvas, setup, Some(placed)).await
+    crate::PlacedSky::new(CookedSource::Remote(feed), directed).map_err(js_error)
 }
 
 /// Prepare an authored sprite sampling scene on a WebGPU canvas.
@@ -711,12 +716,23 @@ pub async fn create_route_game(
     canvas.set_width(extent[0]);
     canvas.set_height(extent[1]);
     #[cfg(feature = "proving")]
-    let cloud_weather = capture_weather
+    let weather: CaptureWeather = capture_weather
         .as_deref()
-        .map(capture_weather_parameters)
-        .transpose()?
-        .unwrap_or_else(|| crate::clouds::WeatherPreset::Fair.parameters());
-    create_game(
+        .map(serde_json::from_str)
+        .transpose()
+        .map_err(js_error)?
+        .unwrap_or_default();
+    #[cfg(feature = "proving")]
+    let cloud_weather = weather.parameters()?;
+    #[cfg(feature = "proving")]
+    let shapes = if let Some(origin) = &weather.placed_origin {
+        Some(load_placed_clouds(origin, false).await?)
+    } else {
+        None
+    };
+    #[cfg(not(feature = "proving"))]
+    let shapes = None;
+    create_game_with_shapes(
         canvas,
         crate::GameSetup {
             content: if exit {
@@ -746,31 +762,37 @@ pub async fn create_route_game(
             cooked_mesh_rows: (exit || meshes.unwrap_or(false)).into(),
             ..crate::GameSetup::default()
         },
+        shapes,
     )
     .await
 }
 
 #[cfg(feature = "proving")]
-fn capture_weather_parameters(text: &str) -> Result<thrum_cloud_model::Parameters, JsValue> {
-    #[derive(serde::Deserialize)]
-    #[serde(deny_unknown_fields)]
-    struct CaptureWeather {
-        preset: Option<String>,
-        rate: Option<f64>,
-        wind: Option<f64>,
+#[derive(Default, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct CaptureWeather {
+    preset: Option<String>,
+    rate: Option<f64>,
+    wind: Option<f64>,
+    placed_origin: Option<String>,
+}
+
+#[cfg(feature = "proving")]
+impl CaptureWeather {
+    fn parameters(&self) -> Result<thrum_cloud_model::Parameters, JsValue> {
+        let preset = match self.preset.as_deref() {
+            None => crate::clouds::WeatherPreset::Fair,
+            Some(name) => crate::clouds::WeatherPreset::named(name).ok_or_else(|| {
+                js_error("weather preset must be clear, fair, broken or overcast")
+            })?,
+        };
+        let mut parameters = preset.parameters();
+        parameters.time_scale = self.rate.unwrap_or(parameters.time_scale);
+        if let Some(wind) = self.wind {
+            parameters.wind = [wind, 0.0];
+        }
+        Ok(parameters)
     }
-    let weather: CaptureWeather = serde_json::from_str(text).map_err(js_error)?;
-    let preset = match weather.preset.as_deref() {
-        None => crate::clouds::WeatherPreset::Fair,
-        Some(name) => crate::clouds::WeatherPreset::named(name)
-            .ok_or_else(|| js_error("weather preset must be clear, fair, broken or overcast"))?,
-    };
-    let mut parameters = preset.parameters();
-    parameters.time_scale = weather.rate.unwrap_or(parameters.time_scale);
-    if let Some(wind) = weather.wind {
-        parameters.wind = [wind, 0.0];
-    }
-    Ok(parameters)
 }
 
 fn cloud_selection(
@@ -1115,6 +1137,47 @@ impl BrowserGame {
             return Err(js_error("cloud capture requires Shade or Sky"));
         }
         game::set_capture_eye(&mut self.page.shell, [x, y, z]).map_err(js_error)
+    }
+
+    /// Move the cloud inspection camera, optionally cutting both histories.
+    /// # Errors
+    /// Refuses an invalid eye or a missing authored camera.
+    #[cfg(feature = "proving")]
+    pub fn move_cloud_capture_eye(
+        &mut self,
+        x: f32,
+        y: f32,
+        z: f32,
+        cut: bool,
+    ) -> Result<(), JsValue> {
+        game::set_haze_eye(&mut self.page.shell, [x, y, z], cut).map_err(js_error)
+    }
+
+    /// Stage a layer profile change for the cloud inspection.
+    /// # Errors
+    /// Refuses an unavailable cloud layer or an out-of-range scale.
+    #[cfg(feature = "proving")]
+    pub fn cloud_capture_scale(&mut self, percent: u32) -> Result<(), JsValue> {
+        let shell = &mut self.page.shell;
+        let knob = shell
+            .host()
+            .quality_knobs()
+            .into_iter()
+            .find(|knob| knob.name.ends_with("cloud layer scale"))
+            .ok_or_else(|| js_error("cloud layer scale is unavailable"))?;
+        shell
+            .set_quality_knob(&knob.name, percent)
+            .map_err(js_error)
+    }
+
+    /// Whether the latest submitted cloud layer carried its history.
+    #[cfg(feature = "proving")]
+    pub fn cloud_capture_history(&self) -> Option<bool> {
+        Some(
+            game::cloud_input(&self.page.shell)?
+                .sky_products()?
+                .history_valid,
+        )
     }
 
     /// Hold solar lighting at the current tick while weather continues to evolve.
