@@ -139,3 +139,7 @@
   The 1× Retina labels are clear in native-size crops and harder to read in a reduced whole-frame preview.
   Two release runs on each target record the tree and frame costs.
   [Target evidence](../../../.orchestrate/evidence/GAME-UI/WP3/index.md)
+- 2026-11-26 WP3.12 verifier fix. The Chrome probe waits for a presented callback before it polls GPU
+  completion and reads the counters around that callback. The clean-checkout command retained two release
+  runs with layout and paint costs at 100, 500 and 2,000 nodes and 32 timed status frames per run.
+  [Target proof](../../../.orchestrate/evidence/GAME-UI/WP3/costs-chrome-retry/index.md)
