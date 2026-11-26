@@ -80,6 +80,9 @@ impl CrowdWorld {
     }
 
     pub(crate) fn resume_clock(&mut self, now: Duration) -> Result<(), ClockError> {
+        if self.end_tick.is_some_and(|end| self.tick() >= end) {
+            return Ok(());
+        }
         self.clock.resume(now)?;
         self.overload = None;
         Ok(())

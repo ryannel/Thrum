@@ -760,8 +760,7 @@ impl<G: MobileGame> Owner<G> {
                 .map_err(|error| FrameError::World(error.to_string()))?;
             if let Some(world) = G::inline_world(gpu.host.world_mut()) {
                 gpu.inline_lifecycle
-                    .set_paused(world, true, now)
-                    .and_then(|()| gpu.inline_lifecycle.set_paused(world, false, now))
+                    .restart_after_gap(world, now)
                     .map_err(|error| FrameError::World(error.to_string()))?;
             }
             self.resumes = resumes;
@@ -818,7 +817,12 @@ impl<G: MobileGame> Owner<G> {
         } else if !usable || reply.platform.status == SurfaceStatus::Reconfigure {
             // Drain old-grid submissions before resizing. Encoding another old
             // view here can keep a busy ring occupied indefinitely.
-            Some(gpu.host.advance_without_rendering(now)?)
+            if G::inline_world(gpu.host.world_mut()).is_some() {
+                Some(gpu.host.advance_without_rendering(now)?)
+            } else {
+                drop(gpu.host.advance(now)?);
+                None
+            }
         } else {
             Some(gpu.host.drive(now, None)?)
         };

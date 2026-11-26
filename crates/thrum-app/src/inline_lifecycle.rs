@@ -27,6 +27,7 @@ impl InlineLifecycle {
         self.reconcile(world, now)
     }
 
+    #[cfg(any(target_os = "ios", target_arch = "wasm32"))]
     pub(crate) fn set_paused(
         &mut self,
         world: &mut (impl InlineWorld + ?Sized),
@@ -35,6 +36,20 @@ impl InlineLifecycle {
     ) -> Result<(), GameError> {
         self.policy.request(paused);
         self.reconcile(world, now)
+    }
+
+    #[cfg(target_os = "ios")]
+    pub(crate) fn restart_after_gap(
+        &mut self,
+        world: &mut (impl InlineWorld + ?Sized),
+        now: Duration,
+    ) -> Result<(), GameError> {
+        // A dropped frame can have advanced the queue without returning a
+        // report. Stop admission now and use the next report to certify drain.
+        self.queued_ticks = self.queued_ticks.max(1);
+        self.set_paused(world, true, now)?;
+        self.policy.request(false);
+        Ok(())
     }
 
     pub(crate) fn counts(&self) -> (u64, u64) {

@@ -7,7 +7,9 @@ use std::{
 
 use thrum_render::present::SurfaceProfile;
 
-use super::{MobileGame, Owner, PrepareGpu, SceneReady, SceneRequest, TickPermission};
+use super::{
+    InlineLifecycle, MobileGame, Owner, PrepareGpu, SceneReady, SceneRequest, TickPermission,
+};
 
 impl<G: MobileGame> Owner<G> {
     pub(super) fn replace_scene(
@@ -75,7 +77,7 @@ impl<G: MobileGame> Owner<G> {
         };
         gpu.host_extent = extent;
         gpu.presentation = presentation;
-        gpu.inline_lifecycle = Default::default();
+        gpu.inline_lifecycle = InlineLifecycle::default();
         if let Err(error) = self
             .capture
             .cancel(&mut previous, &self.signals, "scene replaced")
