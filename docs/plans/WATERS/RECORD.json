@@ -1443,7 +1443,7 @@
         {
           "verdict": "fail",
           "commit": "da8af84db847d171e921930b11bbc82075576bd3",
-          "review": ".orchestrate/evidence/WATERS/WP8-review.md",
+          "review": ".orchestrate/evidence/WATERS/WP8-review-4.md",
           "items": {
             "WP8.1": "pass",
             "WP8.2": "pass",
@@ -1486,6 +1486,57 @@
             "turns": 1
           },
           "at": "2026-11-25T22:36:43Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "a1e5ad7db8278697b89f966166a1aed81c6983a8",
+          "review": ".orchestrate/evidence/WATERS/WP8-review.md",
+          "items": {
+            "WP8.1": "pass",
+            "WP8.2": "pass",
+            "WP8.3": "pass",
+            "WP8.4": "pass",
+            "WP8.5": "fail",
+            "WP8.6": "pass",
+            "WP8.7": "pass",
+            "WP8.12": "pass",
+            "WP8.9": "fail",
+            "WP8.10": "pass"
+          },
+          "findings": [
+            {
+              "name": "Sky-coloured holes break the reflected bank beneath the trees",
+              "item": "WP8.5",
+              "different": "The previous straight seam across the unobstructed hillside at the left edge is resolved. The visible cutouts surround the reflected pine trunks.",
+              "repeat": false
+            },
+            {
+              "name": "Chrome leaves sky-coloured holes in the noon reflected bank",
+              "item": "WP8.9",
+              "different": "The previous screen-margin seam is resolved. The blue-grey patches are at the hidden bank around the reflected pines in the noon view.",
+              "repeat": false
+            },
+            {
+              "name": "Unobstructed bank pixels scan the full occluder neighbourhood",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 162558,
+            "cached": 6908800,
+            "output": 20405,
+            "turns": 1
+          },
+          "at": "2026-11-26T00:08:46Z"
         }
       ],
       "authorised": {
