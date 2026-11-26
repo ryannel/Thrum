@@ -278,3 +278,9 @@
   places and times: 0.010 m from above, the greater of 0.010 m and 4 pixels from the bank, and a new inspection
   of the floats and the surface. The map's rows and the step at each end keep their tolerance.
   [Fifth review](../../../.orchestrate/evidence/RIVERS/WP4-review.md) · [the bounds and why](DESIGN.md#proof-and-builder-handoff)
+- 2026-11-26 WP4 review fix. The river depth solver keeps the sign of the measured slope along the
+  camera ray and brackets a crossing once it finds one. At the two-metre tidal bank, the old solver
+  missed the live query by 19.10 mm. The compact Metal regression covers ticks 380–400 in full
+  trade and measured at most 0.531 mm with the fix. The four full-length transects, wetting and
+  join checks also passed. Hardware Chrome drew both rivers and read both packaged keys with
+  zero solves. [Target evidence](../../../.orchestrate/evidence/RIVERS/WP4/oblique-depth/README.md)
