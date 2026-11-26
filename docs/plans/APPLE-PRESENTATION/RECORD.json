@@ -1367,7 +1367,7 @@
         {
           "verdict": "fail",
           "commit": "5c0ce8ead2838e518052cbc029357935a1603abf",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP10-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP10-review-1.md",
           "items": {
             "D10.1": "fail",
             "D10.2": "pass",
@@ -1404,6 +1404,41 @@
             "turns": 1
           },
           "at": "2026-11-26T01:17:56Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "bf03edc848b5abad193fd285882b90d7bbcf6195",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP10-review.md",
+          "items": {
+            "D10.1": "pass",
+            "D10.2": "pass",
+            "D10.3": "pass",
+            "D10.4": "pass",
+            "D10.5": "pass",
+            "D10.6": "pass"
+          },
+          "findings": [
+            {
+              "name": "Metal preparation retains discarded shader modules and layouts for the device generation",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 102263,
+            "cached": 2125824,
+            "output": 7384,
+            "turns": 1
+          },
+          "at": "2026-11-26T02:30:12Z"
         }
       ],
       "authorised": {
