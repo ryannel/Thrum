@@ -1334,3 +1334,10 @@
   still water does not move"; it now names four charts, held to direction, order and stillness. WP9.8 is new:
   the query's slope on a sheared chart, the finding outside the items in reviews 2 and 4. The rest stand.
   [Diagnosis](../../../.orchestrate/evidence/WATERS/WP9-diagnosis.md).
+
+- 2026-11-26 WP9 diagnosis follow-up. The query applies the spatial derivatives of both carried cascade
+  readings and their blend to height and horizontal displacement. Metal checks direction, speed order,
+  stillness and retained height on the four named carriage fixtures. It compares both mailbox slope
+  components at eight stations on each of the three named charts after four seconds. The sheared case
+  fails when its cross-channel derivative is removed.
+  [Target evidence](../../../.orchestrate/evidence/WATERS/WP9/revision-4/README.md).

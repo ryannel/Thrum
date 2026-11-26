@@ -1627,8 +1627,8 @@
           "ask": "Is the channel reached only through the chart a game can declare, with no code path in `thrum-water` that knows it is the example's or a stand-in? Does the test fail when the chart is taken over its neighbours with one stage of its own? At low tide, does the depth limit hold the swell at the mouth in the test's own readings?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP9/revision-4/metal-channel.md",
           "verdict": "",
           "review": ""
         },
@@ -1638,8 +1638,8 @@
           "check": "cargo test --locked --offline -p water-scene --test carriage_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP9/revision-4/metal-carriage.md",
           "verdict": "",
           "review": ""
         },
@@ -1648,8 +1648,8 @@
           "statement": "The channel reads as running water: ripples and foam move downstream, faster where the channel narrows, with no texture sliding as one sheet and no pulse at the carriage's period. Where it leaves the lake and where it meets the sea there is no seam, step or change of look, in a swell and while the lake's level and the tide are moved.",
           "inspect": "`realtime` sequences from the bank at 2 m, looking across and along the channel, at its narrows and at each end, one of each end while the lake's level and the tide are moved through their ranges in a trade wind with a swell running, the mouth held at low tide among them, and one from 40 m above its whole length.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP9/revision-4/visual.md",
           "verdict": "",
           "review": ""
         },
@@ -1659,8 +1659,8 @@
           "check": "cargo test --locked --offline -p water-scene --test channel_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP9/revision-4/metal-channel.md",
           "verdict": "",
           "review": ""
         },
@@ -1670,8 +1670,8 @@
           "check": "node scripts/check_water_browser.mjs --case channel",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP9/revision-4/check-output/run.json",
           "verdict": "",
           "review": ""
         },
@@ -1680,8 +1680,8 @@
           "statement": "A chart is documented as the seam a river solver writes: its grid and cell size, and the level, current and loss of height with their units, signs and what each reader does with them.",
           "ask": "Could `RIVERS`' planner have a solver write a chart from this documentation and the design alone? Does it say what a chart's stage changes and what it leaves as prepared?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP9/revision-4/chart-contract.md",
           "verdict": "",
           "review": ""
         },
@@ -1691,8 +1691,8 @@
           "check": "python3 scripts/water_cost.py check --scene channel",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP9/revision-4/check-output/channel-cost.json",
           "verdict": "",
           "review": ""
         },
@@ -1703,8 +1703,8 @@
           "ask": "Does the test for (c) post its points after four seconds or more of carriage, on a chart whose current differs across the channel's width, and compare both slope components with neighbouring heights of the same batch at one field time? Would it fail if the answered slope left out the tilt that the carried place adds across the channel?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP9/revision-4/metal-slopes.md",
           "verdict": "",
           "review": ""
         }
