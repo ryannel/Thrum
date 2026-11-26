@@ -146,12 +146,16 @@ each end. The draw and queries use the same rows for surface level, wave
 support, and currents. Surface detail reads upstream through the current.
 Foam stock moves downstream, and games receive the current in body answers.
 
-A prepared solver product also writes the rate of power lost to surface
-breaking in watts per square metre, in `RiverReach::loss` and
-`FlowSample::loss`. Positive values mean dissipation. Dry cells have zero
-current and loss. The model interpolates loss along with the sampled level
-and current. This is a separate field from the depth-limited ambient wave
-power used by the channel's shore foam. The hand-authored `Chart` supplies
+In the solver's energy account, a decrease in hydraulic head downstream is a
+positive head loss, measured in metres. Dividing by the along-flow distance
+gives the loss gradient in metres per metre. The prepared chart stores the
+resulting surface-breaking power in watts per square metre, in
+`RiverReach::loss` and `FlowSample::loss`. The RIVERS design gives the
+discharge and friction terms for that conversion. Write zero current and
+loss at dry centres. The model interpolates loss with level and current and
+mixes it through the ends. The RIVERS foam reader uses the resulting positive
+power to set the birth rate of foam and submerged air. The example channel's
+shore foam uses lost ambient wave power from the depth limit. The hand-authored `Chart` supplies
 level, footprint, currents and ends. The complete solver product also
 provides flow-band gains, wetting gauges and fall records where applicable.
 
