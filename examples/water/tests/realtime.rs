@@ -45,6 +45,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
     let surf = super::surf_route();
     let route = std::env::var("THRUM_WATER_ROUTE").unwrap_or_default();
     let optics_height = std::env::var("THRUM_WATER_OPTICS_HEIGHT").unwrap_or_else(|_| "2".into());
+    let river_stage = river && matches!(route.as_str(), "stage" | "lake-stage" | "spring-stage");
     let late_channel = channel && route == "late";
     let handoff_cut = surf && route == "handoff-cut";
     let island_view = std::env::var("THRUM_WATER_ISLAND_CAMERA").unwrap_or_else(|_| "0".into());
@@ -72,7 +73,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
         ([2560, 1440], 22.0, 5.0, MAX_SUBMISSIONS)
     } else if surf && island_view == "9" {
         ([2560, 1440], 18.0, 6.5, MAX_SUBMISSIONS)
-    } else if river && route == "stage" {
+    } else if river_stage {
         ([1280, 720], 20.5, 8.0, CHANNEL_SUBMISSIONS)
     } else if river {
         ([1280, 720], 4.0, 12.0, MAX_SUBMISSIONS)
@@ -125,10 +126,11 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
             .expect("channel view");
     }
     if river {
-        let stages = if route == "stage" {
-            r#","lake.stage":0,"spring.stage":0"#
-        } else {
-            ""
+        let stages = match route.as_str() {
+            "stage" => r#","lake.stage":0,"spring.stage":0"#,
+            "lake-stage" => r#","lake.stage":0,"spring.stage":0.5"#,
+            "spring-stage" => r#","lake.stage":0.5,"spring.stage":0"#,
+            _ => "",
         };
         runtime
             .parameters(&format!(r#"{{"camera.river":{river_view}{stages}}}"#))
@@ -196,11 +198,13 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
                 ))
                 .expect("pan control");
         }
-        if river && route == "stage" {
+        if river_stage {
             let stage = (1.0 - (elapsed / 10.0 - 1.0).abs()).clamp(0.0, 1.0);
+            let lake = if route == "spring-stage" { 0.5 } else { stage };
+            let spring = if route == "lake-stage" { 0.5 } else { stage };
             runtime
                 .parameters(&format!(
-                    r#"{{"lake.stage":{stage:.4},"spring.stage":{stage:.4}}}"#
+                    r#"{{"lake.stage":{lake:.4},"spring.stage":{spring:.4}}}"#
                 ))
                 .expect("river stage sweep");
         }

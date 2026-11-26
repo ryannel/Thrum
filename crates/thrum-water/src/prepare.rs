@@ -668,6 +668,8 @@ fn shader_source(
     } else {
         ""
     };
+    let has_rivers = map.is_some_and(MapGpu::has_rivers);
+    let (vertex, fragment) = surface_entries(has_rivers);
     format!(
         "{}\n{sun}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}",
         library,
@@ -688,9 +690,9 @@ fn shader_source(
         Interaction::sample_source(3, 7, 8, wake),
         concat!(include_str!("carriage.wgsl"), include_str!("surface.wgsl")).to_owned()
             + rain_geometry
-            + include_str!("surface_vertex.wgsl")
+            + &vertex
             + vertex_route
-            + include_str!("surface_fragment.wgsl")
+            + &fragment
             + if has_hollows && gather {
                 include_str!("map_gpu/hollows_contact.wgsl")
             } else {
@@ -722,7 +724,7 @@ fn shader_source(
         map.map_or_else(
             || include_str!("open_surface.wgsl").to_owned(),
             |map| {
-                let mut source = map.surface_source(3) + include_str!("mapped_surface.wgsl");
+                let mut source = map.source(3) + include_str!("mapped_surface.wgsl");
                 if has_hollows {
                     let motion = if rain {
                         include_str!("map_gpu/hollows_rain_motion.wgsl")
@@ -731,7 +733,16 @@ fn shader_source(
                     };
                     source.push_str(include_str!("map_gpu/hollows_surface.wgsl"));
                     source.push_str(motion);
-                    source.push_str(include_str!("map_gpu/hollows_surface_pixel.wgsl"));
+                    let pixel = include_str!("map_gpu/hollows_surface_pixel.wgsl");
+                    if has_rivers {
+                        source.push_str(&pixel.replacen(
+                            "vertex.xy, vec3(0.0), current",
+                            "vertex.xy, vec3(levels.x, 0.0, 0.0), current",
+                            1,
+                        ));
+                    } else {
+                        source.push_str(pixel);
+                    }
                 } else {
                     source.push_str(include_str!("mapped_surface_pixel.wgsl"));
                 }
@@ -746,6 +757,38 @@ fn shader_source(
                 .into()
         },
     )
+}
+
+fn surface_entries(
+    rivers: bool,
+) -> (
+    std::borrow::Cow<'static, str>,
+    std::borrow::Cow<'static, str>,
+) {
+    let vertex = include_str!("surface_vertex.wgsl");
+    let fragment = include_str!("surface_fragment.wgsl");
+    if !rivers {
+        return (vertex.into(), fragment.into());
+    }
+    // The receiver and chart entries share the vertex and all surface shading.
+    // Specialize the unused velocity varying only when the depth entry reads it.
+    let vertex = vertex.replacen("velocity:vec3<f32>", "river:vec3<f32>", 1);
+    let fragment = fragment
+        .replacen("    return VertexOut(clip,world,rest,f.velocity.xyz,", concat!(
+            "    var swell = 0.0;\n",
+            "    if surf_weight == 0.0 && row.gains.x * water.heights.x > 0.0 && (!sea || vertex.z <= 2.0) {\n",
+            "        swell = long_at(rest,vertex.z).displacement.y * row.gains.x;\n",
+            "    }\n",
+            "    return VertexOut(clip,world,rest,vec3(row.level,swell,vertex.z),",
+        ), 1)
+        .replacen("@fragment fn water_fragment(input:VertexOut)->Output {", concat!(
+            "@fragment fn water_fragment(input:VertexOut)->Output {\n",
+            "    return shade_water(input, surface_pixel(input.rest,input.body));\n",
+            "}\n",
+            "fn shade_water(input:VertexOut, source:SurfaceRow)->Output {",
+        ), 1)
+        .replacen("var row=surface_pixel(input.rest,input.body);", "var row=source;", 1);
+    (vertex.into(), fragment.into())
 }
 
 fn create_pipeline(
@@ -939,6 +982,18 @@ fn surface_mesh(map: Option<&thrum_water_model::Map>, tidal_grid: bool) -> Geome
     };
     let mut geometry = Geometry::default();
     let surf = map.surf_profile().is_some();
+    let mut river_receivers = [false; map_gpu::BODY_LIMIT];
+    for (body, declaration) in (0..map_gpu::BODY_LIMIT)
+        .map_while(|body| map.body(body).map(|declaration| (body, declaration)))
+    {
+        if let thrum_water_model::BodyKind::Chart(chart) = &declaration.kind
+            && sampled_river(map, body)
+        {
+            for end in chart.ends.iter().filter(|end| !end.is_brink()) {
+                river_receivers[end.body] = true;
+            }
+        }
+    }
     for body in 0..map_gpu::BODY_LIMIT {
         let Some(declaration) = map.body(body) else {
             break;
@@ -981,7 +1036,7 @@ fn surface_mesh(map: Option<&thrum_water_model::Map>, tidal_grid: bool) -> Geome
                 let radius = half_width as f32 * spacing;
                 geometry.draws.push(WaterDraw {
                     indices: first_index..geometry.indices.len() as u32,
-                    river: false,
+                    river: river_receivers[body] && level <= 3,
                     offshore: (radius < 524_288.0).then_some(OffshoreRing {
                         radius,
                         levels,
@@ -1006,9 +1061,7 @@ fn surface_mesh(map: Option<&thrum_water_model::Map>, tidal_grid: bool) -> Geome
             geometry.grid(start, end, spacing, (body + 1) as f32, 0, surf);
             geometry.draws.push(WaterDraw {
                 indices: first_index..geometry.indices.len() as u32,
-                river: map.river_of(body).is_some_and(|(river, _)| {
-                    map.river(river).is_some_and(|river| river.gauges.len() > 1)
-                }),
+                river: sampled_river(map, body) || river_receivers[body],
                 offshore: None,
             });
         }
@@ -1018,6 +1071,11 @@ fn surface_mesh(map: Option<&thrum_water_model::Map>, tidal_grid: bool) -> Geome
         ));
     }
     geometry
+}
+
+fn sampled_river(map: &thrum_water_model::Map, body: usize) -> bool {
+    map.river_of(body)
+        .is_some_and(|(river, _)| map.river(river).is_some_and(|river| river.gauges.len() > 1))
 }
 
 impl Geometry {

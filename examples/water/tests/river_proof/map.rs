@@ -116,6 +116,43 @@ fn compare(gpu: &thrum_test_support::Opened, map: &Map, points: &[[f32; 2]]) {
     }
 }
 
+#[test]
+fn metal_map_keeps_bulk_current_through_the_backwater() {
+    let Some(gpu) = thrum_test_support::open(
+        "river backwater current",
+        Some(wgpu::Backend::Metal),
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
+    ) else {
+        return;
+    };
+    let forcing = water_scene::channel::forcing(water_scene::island::Wind::Calm);
+    let (mut map, _) = water_scene::river::map(&forcing, Some(&crate::support::river_store()))
+        .expect("island rivers");
+    let points = [
+        [179.668, -23.665],
+        [180.0, -20.001],
+        [180.0, -19.999],
+        [207.499, 5.0],
+        [207.501, 5.0],
+        [320.87, 6.17],
+        [325.515, 5.289],
+        [347.499, 5.0],
+        [347.501, 5.0],
+    ];
+    for stage in [0.0, 0.5, 1.0] {
+        map.set_stage(1, stage).expect("lake stage");
+        compare(&gpu, &map, &points);
+    }
+    map.set_stage(1, 0.5).expect("default lake stage");
+    // The two backwater witnesses really carry water before they taper to
+    // the receivers at the edge. A zero-current rendering row is a failure.
+    for point in [points[0], points[6]] {
+        let row = map.sample(point.map(f64::from)).expect("backwater owner");
+        assert!(row.depth > 0.0 && row.row.current.into_iter().any(|v| v.abs() > 0.1));
+    }
+}
+
 fn fixture() -> Map {
     const SIDE: usize = 12;
     const CELLS: usize = SIDE * SIDE;

@@ -11,6 +11,24 @@ const EXTENT: [u32; 2] = [95, 13];
 const STEP: Duration = Duration::from_nanos(16_666_667);
 const EPS_DEPTH: f64 = 0.000_04;
 
+fn transect_points() -> impl Iterator<Item = (usize, [f64; 2])> {
+    let spring = (0..56).map(|station| {
+        let z = f64::from(station) * 1.09 - 91.4;
+        (3, [179.35 + f64::from(station % 3) * 0.67, z])
+    });
+    let outlet = (0..60).map(|station| {
+        let x = f64::from(station) * 2.07 + 215.3;
+        (5, [x, 4.1 + f64::from(station % 4) * 0.69])
+    });
+    spring.chain(outlet)
+}
+
+fn ray_hit(inverse: glam::DMat4, column: u32, row: u32, depth: f32) -> glam::DVec3 {
+    let u = (f64::from(column) + 0.5) / f64::from(EXTENT[0]);
+    let v = (f64::from(row) + 0.5) / f64::from(EXTENT[1]);
+    inverse.project_point3(glam::dvec3(2.0 * u - 1.0, 1.0 - 2.0 * v, f64::from(depth)))
+}
+
 #[expect(
     clippy::cast_possible_truncation,
     clippy::print_stdout,
@@ -46,6 +64,7 @@ pub(crate) fn check(gpu: &thrum_test_support::Gpu) {
     scene.frame_without_timings(0.0);
     let mut time = 0.0;
     let [low, middle, high] = files[0].gauges().try_into().expect("three spring samples");
+    let mut count = [0; 6];
     let mut max_error: f64 = 0.0;
     for (spring, stage) in [
         (low, 0.0),
@@ -58,16 +77,18 @@ pub(crate) fn check(gpu: &thrum_test_support::Gpu) {
             map.set_gauge(0, spring).expect("spring stage");
             map.set_stage(1, stage).expect("lake stage");
         }
-        // Sample off the mesh nodes and away from the joins. Hit the pool,
-        // narrows and main outlet at each gauge, including the steep cross-cell bends.
-        for (owner, point) in [
-            (3, [180.5, -65.0]),
-            (3, [179.6, -41.3]),
-            (3, [181.1, -43.1]),
-            (5, [257.5, 5.0]),
-            (5, [258.2, 5.7]),
-            (5, [289.5, 5.5]),
-        ] {
+        // Sweep the two main reaches through the incoming swell, then sample
+        // the short reach below the fall and the previously failing outlet site.
+        let sites = transect_points().chain([(4, [180.05, -24.65]), (5, [320.87, 6.17])]);
+        for (owner, point) in sites {
+            if !map
+                .lock()
+                .unwrap()
+                .sample(point)
+                .is_some_and(|s| s.body == owner && s.depth > 0.08)
+            {
+                continue;
+            }
             time += 0.25;
             let height = map
                 .lock()
@@ -77,31 +98,43 @@ pub(crate) fn check(gpu: &thrum_test_support::Gpu) {
                 .sample
                 .height as f32;
             let [x, z] = point.map(|p| p as f32);
-            let view = Camera::look_at([x + 0.14, height + 0.25, z + 0.08], [x, height, z], 4.0);
+            let view = Camera::look_at(
+                [x + 0.14, (height + 0.25).max(0.12), z + 0.08],
+                [x, height, z],
+                4.0,
+            );
             *camera.lock().expect("proof camera") = view;
-            let matrix = support::depth::matrix(view, EXTENT);
+            let inverse = support::depth::matrix(view, EXTENT).as_dmat4().inverse();
             scene.frame_without_timings(time + STEP.as_secs_f64());
             let depth = tap.read(&scene);
             let map = map.lock().expect("river map");
             let row = EXTENT[1] / 2;
             for column in [EXTENT[0] / 2 - 8, EXTENT[0] / 2, EXTENT[0] / 2 + 8] {
                 let d = depth[(row * EXTENT[0] + column) as usize];
-                assert!(d > 0.0, "river interior at {point:?}, gauge {stage}");
-                let p = support::world_at(matrix, EXTENT, [column, row], d);
-                let place = [f64::from(p.x), f64::from(p.z)];
+                assert!(d > 0.0, "submitted depth at {point:?}, stage {stage}");
+                let p = ray_hit(inverse, column, row, d);
+                let place = [p.x, p.z];
                 let expected = map.surface(&field, place, time).expect("model surface");
-                assert!(expected.wet, "model river at {place:?}, gauge {stage}");
-                assert_eq!(expected.body, Some(owner), "model owner at {place:?}");
-                let error = (f64::from(p.y) - expected.sample.height).abs();
+                assert!(expected.wet, "model water at {place:?}, stage {stage}");
+                assert_eq!(expected.body, Some(owner), "model river at {place:?}");
+                let error = (p.y - expected.sample.height).abs();
                 assert!(
-                    error < EPS_DEPTH,
-                    "depth at {place:?}, gauge {stage}: {error:.7} m"
+                    error <= EPS_DEPTH,
+                    "depth at {place:?}, stage {stage}, t {time:.2}: {error:.8} m"
                 );
+                count[owner] += 1;
                 max_error = max_error.max(error);
             }
         }
     }
-    println!("Metal river interiors, 72 off-grid ray hits, maximum residual {max_error:.7} m");
+    assert!(
+        count[3] >= 640 && count[4] >= 12 && count[5] >= 700,
+        "{count:?}"
+    );
+    println!(
+        "Metal river transects: {} spring, {} plunge reach, {} outlet hits, maximum residual {max_error:.7} m",
+        count[3], count[4], count[5],
+    );
     let joins: Vec<_> = files
         .iter()
         .flat_map(|file| &file.reaches)
@@ -150,7 +183,7 @@ pub(crate) fn check(gpu: &thrum_test_support::Gpu) {
                 4.0,
             );
             *camera.lock().expect("proof camera") = view;
-            let matrix = support::depth::matrix(view, EXTENT);
+            let inverse = support::depth::matrix(view, EXTENT).as_dmat4().inverse();
             // The displayed sample lies one fixed step behind the observation clock.
             scene.frame_without_timings(time + STEP.as_secs_f64());
             let depth = tap.read(&scene);
@@ -165,18 +198,16 @@ pub(crate) fn check(gpu: &thrum_test_support::Gpu) {
                     d > 0.0,
                     "rendered join at {point:?}, lake {lake}, tide {tide}, column {column}"
                 );
-                let p = support::world_at(matrix, EXTENT, [column, row], d);
-                let place = [f64::from(p.x), f64::from(p.z)];
+                let p = ray_hit(inverse, column, row, d);
+                let place = [p.x, p.z];
                 let expected = map.surface(&field, place, time).expect("model surface");
                 assert!(expected.wet);
-                if join.body != "Sea" {
-                    let error = (f64::from(p.y) - expected.sample.height).abs();
-                    assert!(
-                        error < EPS_DEPTH,
-                        "depth residual at {place:?}: {error:.7} m"
-                    );
-                }
-                (expected.body, f64::from(p.y), expected.sample.height)
+                let error = (p.y - expected.sample.height).abs();
+                assert!(
+                    error < EPS_DEPTH,
+                    "depth residual at {place:?}: {error:.7} m"
+                );
+                (expected.body, p.y, expected.sample.height)
             });
             assert_ne!(
                 left.0, right.0,

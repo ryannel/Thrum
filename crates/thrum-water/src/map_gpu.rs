@@ -286,10 +286,10 @@ pub fn declarations() -> String {
 
 /// Map shader declarations with the specified resource group.
 pub fn declarations_at(group: u32) -> String {
-    map_source(group, false, false, false)
+    map_source(group, false, false)
 }
 
-fn map_source(group: u32, hollows: bool, rivers: bool, transport_current: bool) -> String {
+fn map_source(group: u32, hollows: bool, rivers: bool) -> String {
     let sample_hollows = if hollows {
         "    let local = hollows_sample(point);\n    if local.has_bed { return local; }\n"
     } else {
@@ -307,7 +307,7 @@ fn map_source(group: u32, hollows: bool, rivers: bool, transport_current: bool) 
             "",
         )
     };
-    let chart_join = if rivers && transport_current {
+    let chart_join = if rivers {
         "river_chart_row(point, body, row, rows)"
     } else {
         "chart_row(point, body, row, rows)"
@@ -524,13 +524,7 @@ impl MapGpu {
 
     /// Map shader declarations specialized to the products that were prepared.
     pub fn source(&self, group: u32) -> String {
-        map_source(group, self.hollows.is_some(), self.has_rivers(), true)
-    }
-
-    pub(crate) fn surface_source(&self, group: u32) -> String {
-        // The wind-wave field blends into the receiving sheet with its level
-        // and gains. A submerged jet may still carry floating bodies there.
-        map_source(group, self.hollows.is_some(), self.has_rivers(), false)
+        map_source(group, self.hollows.is_some(), self.has_rivers())
     }
 
     pub(crate) fn has_rivers(&self) -> bool {
