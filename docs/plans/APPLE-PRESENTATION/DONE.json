@@ -1000,10 +1000,10 @@
           "lock": "gpu",
           "ask": "Is the manifest the set of pipelines the route really creates, taken from the creation counters and not written by hand? Are fallbacks counted where the loader falls back?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP10/review-fix/metallib.json",
           "verdict": "fail",
           "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP10-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D10.2",
@@ -1012,7 +1012,7 @@
           "lock": "gpu",
           "ask": "Read the test. Do the Metal source and the record both come from the backend's own translation call, with no second implementation of its options? Would a backend that dropped the threadgroup lengths or the sized bindings fail it?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP10/reflection.log",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP10/review-fix/reflection.log",
           "verdict": "pass",
           "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP10-review.md",
           "builder_result": "pass"
@@ -1024,7 +1024,7 @@
           "lock": "gpu",
           "ask": "Read the test. Is each part of the key changed in turn, and is the pipeline that results shown to draw?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP10/keys.log",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP10/review-fix/keys.log",
           "verdict": "pass",
           "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP10-review.md",
           "builder_result": "pass"
@@ -1035,7 +1035,7 @@
           "check": "python3 scripts/apple_presentation.py launch --target mac-metal --paths",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP10/launch/launch.json",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP10/review-fix/launch.json",
           "verdict": "pass",
           "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP10-review.md",
           "builder_result": "pass"
@@ -1045,7 +1045,7 @@
           "statement": "The library cook is a step of the cooker and the build, no shipping package links it, and Chrome's build and its checks are unchanged.",
           "ask": "Which package holds the cook, and does `scripts/g5_shipping_links.py` or its equal find it in no shipping package? Does the web bundle differ only where it must?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP10/README.md#d105-shipping-boundary",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP10/review-fix/README.md#d105-shipping-boundary",
           "verdict": "pass",
           "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP10-review.md",
           "builder_result": "pass"
@@ -1056,10 +1056,10 @@
           "check": "python3 scripts/apple_presentation.py wgpu-pin",
           "ask": "Does the command rebuild the copy from the released crate's source and the patch files without the network, and fail on one changed byte? Read the patch: outside the passthrough shader path, does it do more than expose the translation call's existing results?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP10/review-fix/README.md#d106-backend-pin",
           "verdict": "fail",
           "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP10-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         }
       ],
       "depends_on": [],

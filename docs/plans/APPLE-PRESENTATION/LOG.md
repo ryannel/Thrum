@@ -596,3 +596,10 @@
   while WP12 measures the archive. wgpu-core still parses and validates WGSL interfaces, and its two
   device-internal validation pipelines still translate at device setup.
   [WP10 evidence](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP10/README.md)
+
+- 2026-11-26 WP10 review follow-up. Thrum now submits keyed Metal libraries through registry-admitted
+  wgpu passthrough modules. The pinned backend observes the release's WGSL translations and restores
+  stage records for passthrough. On Mac Metal, both native recipes loaded all 44 route stages, matched
+  all five submitted checkpoints byte for byte, and performed zero pipeline work after readiness.
+  Stale keys, reflection, launch records, the offline pin, and the Chrome shipping boundary passed.
+  [Target evidence](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP10/review-fix/README.md)
