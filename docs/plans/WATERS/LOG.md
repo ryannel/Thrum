@@ -1310,3 +1310,12 @@
   scene and output passes along with the water passes. The widened source footprint
   keeps the flared bank wet at high lake stage.
   [Review follow-up evidence](../../../.orchestrate/evidence/WATERS/WP9/revision-1/README.md).
+
+- 2026-11-26 WP9 second review follow-up. A general chart carries a coherent
+  ripple pattern and renews its local current offset before the departure coordinates
+  accumulate distortion. Metal tracks the varying-current marker through the old
+  25-second collapse and past one minute. The public query applies the parallel
+  travel coordinate's derivative to its slope and horizontal displacement. Metal
+  compares both speed sections with neighbouring heights at the sampled frame time.
+  The Chrome course and the paired 1440p cost check also pass.
+  [Target evidence](../../../.orchestrate/evidence/WATERS/WP9/revision-2/README.md).

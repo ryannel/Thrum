@@ -1628,7 +1628,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP9/final-metal.log",
+          "evidence": ".orchestrate/evidence/WATERS/WP9/revision-2/metal-channel.log",
           "verdict": "pass",
           "review": ".orchestrate/evidence/WATERS/WP9-review.md"
         },
@@ -1638,8 +1638,8 @@
           "check": "cargo test --locked --offline -p water-scene --test carriage_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP9/revision-2/metal-carriage.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/WATERS/WP9-review.md"
         },
@@ -1660,7 +1660,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP9/revision-1/selected-metal.log",
+          "evidence": ".orchestrate/evidence/WATERS/WP9/revision-2/metal-channel.log",
           "verdict": "pass",
           "review": ".orchestrate/evidence/WATERS/WP9-review.md"
         },
@@ -1671,7 +1671,7 @@
           "lock": "chrome",
           "target": "chrome-webgpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP9/revision-1/selected-chrome/run.json",
+          "evidence": ".orchestrate/evidence/WATERS/WP9/revision-2/check-output/run.json",
           "verdict": "pass",
           "review": ".orchestrate/evidence/WATERS/WP9-review.md"
         },
@@ -1692,7 +1692,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP9/revision-1/selected-cost.json",
+          "evidence": ".orchestrate/evidence/WATERS/WP9/revision-2/check-output/channel-cost.json",
           "verdict": "pass",
           "review": ".orchestrate/evidence/WATERS/WP9-review.md"
         }
