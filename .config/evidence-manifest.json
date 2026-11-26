@@ -5243,6 +5243,38 @@
     },
     {
       "kind": "local",
+      "path": "docs/evidence/GAME-UI/WP3/chrome-dpr1.rgba.zst",
+      "size": 643057996,
+      "sha256": "c898141daa4f93142038f190232c868f72d1ba8486b14f81c2ce595e0aaa3582",
+      "date": "2026-11-26T02:32:09.509988+00:00",
+      "store": "/Users/ryannel/Workspace/thrum/.git/orchestrate/evidence/GAME-UI/WP3/capture-blobs"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/GAME-UI/WP3/chrome-dpr2.rgba.zst",
+      "size": 608216890,
+      "sha256": "9d286e5a696a8ee9249a7748e9b9533c2df4fbf6cfbc263e32fc2069057e34e5",
+      "date": "2026-11-26T02:32:10.903056+00:00",
+      "store": "/Users/ryannel/Workspace/thrum/.git/orchestrate/evidence/GAME-UI/WP3/capture-blobs"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/GAME-UI/WP3/metal-resize.rgba.zst",
+      "size": 229632969,
+      "sha256": "7c6c68d7a0466a36386c7e9bb0d018648832497cfacb2200a452dfbcf674ecd3",
+      "date": "2026-11-26T02:32:08.180612+00:00",
+      "store": "/Users/ryannel/Workspace/thrum/.git/orchestrate/evidence/GAME-UI/WP3/capture-blobs"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/GAME-UI/WP3/metal-steady.zst",
+      "size": 853218766,
+      "sha256": "710016cbd5c43d40ff8fe5a00aa0a5373e58229d2b09c45694dbf09f0427baf6",
+      "date": "2026-11-26T02:32:06.770257+00:00",
+      "store": "/Users/ryannel/Workspace/thrum/.git/orchestrate/evidence/GAME-UI/WP3/capture-blobs"
+    },
+    {
+      "kind": "local",
       "path": "docs/evidence/MESH-SHADING/M2/realtime-low-sun-indexed.mp4",
       "size": 3517685,
       "sha256": "8398eeaa77472f1556ee92e44dca66f8f6175de36836c653daafcc3c0c490705",

@@ -132,3 +132,10 @@
   teardown watchdog fired. The text check now ends capture, retires each WebGPU device and unloads its
   page before closing Chrome. Two Chrome WebGPU runs passed at DPR 1, 2 and 3 with clean shutdown.
   The fixed type cards at DPR 1 and 2 matched the inspected pixels. [Target proofs](../../../.orchestrate/evidence/GAME-UI/WP2/round7/index.md)
+- 2026-11-26 WP3 adds the retained tree and the status display over the 10,000-sprite field. The scene uses
+  the same tree for current and prepared sheets. Mac Metal and Chrome WebGPU matched the CPU reference,
+  including first submissions after resize. Metal also compared every submission across font, art and scale
+  changes. The fixed and realtime captures cover both phone orientations and the full health cycle.
+  The 1× Retina labels are clear in native-size crops and harder to read in a reduced whole-frame preview.
+  Two release runs on each target record the tree and frame costs.
+  [Target evidence](../../../.orchestrate/evidence/GAME-UI/WP3/index.md)
