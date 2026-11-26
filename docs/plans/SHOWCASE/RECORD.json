@@ -280,12 +280,12 @@
       }
     },
     "WP8": {
-      "definitions": "353f45fcaa97e733db07e7259fa10a6b8d643c8bf1aac852f31db08ad384a85b",
+      "definitions": "5a7bc5d24a82d573cd03f2a66fb057e17f12c0cbbec68ff8e8aec1cb34837a21",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of APPLE-PRESENTATION at .orchestrate/evidence/APPLE-PRESENTATION/design-review.md asked for changes, ",
-        "at": "2026-11-26T14:17:34Z"
+        "task": "The design review of SHOWCASE at .orchestrate/evidence/SHOWCASE/design-review.md asked for changes, with its 1 Must Fix ",
+        "at": "2026-11-26T14:36:14Z"
       },
       "ends_stretch": true
     },
@@ -464,11 +464,15 @@
     {
       "task": "The design review of APPLE-PRESENTATION at .orchestrate/evidence/APPLE-PRESENTATION/design-review.md asked for changes, with its 1 Must Fix finding (the second review in a row, so the script approves the revision without another review). A planner limited to APPLE-PRESENTATION stopped because the fix needs SHOWCASE's files: add APPLE-PRESENTATION:WP17 to SHOWCASE WP8's depends_on and to WP8.12's statement and check (whose M-prefixed ids must become WP ids), and align the module list's G4 lines so an open WP17 keeps the V1 exit open while WP7 still needs only WP11. Lead's intent for context: G4 closes on steady 60 Hz fullscreen on the built-in display; 120 Hz fullscreen is the later WP17.",
       "at": "2026-11-26T14:17:34Z"
+    },
+    {
+      "task": "The design review of SHOWCASE at .orchestrate/evidence/SHOWCASE/design-review.md asked for changes, with its 1 Must Fix findings.",
+      "at": "2026-11-26T14:36:14Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-26T14:17:34Z"
+    "at": "2026-11-26T14:36:14Z"
   },
   "design_history": [
     {
