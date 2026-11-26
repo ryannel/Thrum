@@ -3,6 +3,7 @@
 use crate::support::{
     half_value,
     optics::{Panel, Rig, attach, camera, sun},
+    river_store,
 };
 #[cfg(target_os = "macos")]
 use std::sync::{Arc, Mutex};
@@ -167,19 +168,58 @@ fn metal_admits_rain_rings_that_reach_a_dry_still_water_lens() {
 }
 }
 
+// Each station submits three independent render hosts. Keep the station
+// witnesses separate so the repository gate can time them individually.
 thrum_test_support::macos_gpu_test! {
-#[cfg_attr(target_os = "macos", expect(
+fn metal_lens_cuts_the_solved_river_depth_near_x338() {
+    check_river_depth([337.83, 5.23]);
+}
+}
+
+thrum_test_support::macos_gpu_test! {
+fn metal_lens_cuts_the_solved_river_depth_near_x330() {
+    check_river_depth([330.1, 5.2]);
+}
+}
+
+thrum_test_support::macos_gpu_test! {
+fn metal_lens_cuts_the_solved_river_depth_near_x325() {
+    check_river_depth([325.4, 5.0]);
+}
+}
+
+thrum_test_support::macos_gpu_test! {
+fn metal_lens_cuts_the_solved_river_depth_near_x312() {
+    check_river_depth([312.0, 5.0]);
+}
+}
+
+thrum_test_support::macos_gpu_test! {
+fn metal_lens_cuts_the_solved_river_depth_near_x295() {
+    check_river_depth([295.0, 5.0]);
+}
+}
+
+thrum_test_support::macos_gpu_test! {
+fn metal_lens_cuts_the_solved_river_depth_near_x286() {
+    check_river_depth([285.5, 5.0]);
+}
+}
+
+#[cfg(target_os = "macos")]
+#[expect(
     clippy::cast_possible_truncation,
-    reason = "bounded GPU stations and recorded centre rows"
-))]
-fn metal_lens_cuts_the_final_solved_river_depth() {
+    clippy::print_stderr,
+    reason = "bounded GPU stations and submitted centre rows in the proof log"
+)]
+fn check_river_depth([x, z]: [f64; 2]) {
     use water_scene::{channel::forcing, island::Wind, river};
     let Some((_serial, gpu)) = super::metal::gpu("refined river lens depth") else {
         return;
     };
     let mut forcing = forcing(Wind::Trade);
     forcing.wind_direction = 0.42;
-    let (map, _) = river::map(&forcing, None).expect("shared solved rivers");
+    let (map, _) = river::map(&forcing, Some(&river_store())).expect("shared solved rivers");
     let spectrum = Spectrum::build(&forcing).expect("wind and swell");
     let extent = [97, 111];
     let [width, height] = extent;
@@ -194,76 +234,66 @@ fn metal_lens_cuts_the_final_solved_river_depth() {
         Water::mapped(Arc::new(Mutex::new(map.clone())), spectrum.clone(), profile)
             .expect("mapped river")
     };
-    for [x, z] in [
-        [337.83, 5.23],
-        [330.1, 5.2],
-        [325.4, 5.0],
-        [312.0, 5.0],
-        [295.0, 5.0],
-        [285.5, 5.0],
-    ] {
-        let site = map.sample([x, z]).expect("wet station");
-        assert!(matches!(
-            map.body(site.body).expect("owner").kind,
-            BodyKind::Chart(_)
-        ));
-        let (x, z, level) = (x as f32, z as f32, site.row.level as f32);
-        let view = depth_view(&camera(
-            [x, level + 0.5, z - 0.000_01],
-            [x, level, z],
-            0.5,
-            1.0 / 32768.0,
-        ));
-        let inverse = glam::Mat4::from_cols_array_2d(&view.view_proj_columns()).inverse();
-        let mut rig = Rig::with_extent(&gpu, &view, sun(0.0, 0.0), &[], None, extent);
-        attach(&mut rig, water(false));
-        let sampled = rig.frame();
-        let depth = depth_pixels(&rig)[(height / 2 * width + width / 2) as usize];
-        assert!(depth > 0.0, "drawn river at {x},{z}");
-        let [x, y, z] = inverse
-            .project_point3(glam::vec3(0.0, 0.0, depth))
-            .to_array();
-        drop(rig);
+    let site = map.sample([x, z]).expect("wet station");
+    assert!(matches!(
+        map.body(site.body).expect("owner").kind,
+        BodyKind::Chart(_)
+    ));
+    let (x, z, level) = (x as f32, z as f32, site.row.level as f32);
+    let view = depth_view(&camera(
+        [x, level + 0.5, z - 0.000_01],
+        [x, level, z],
+        0.5,
+        1.0 / 32768.0,
+    ));
+    let inverse = glam::Mat4::from_cols_array_2d(&view.view_proj_columns()).inverse();
+    let mut rig = Rig::with_extent(&gpu, &view, sun(0.0, 0.0), &[], None, extent);
+    attach(&mut rig, water(false));
+    let sampled = rig.frame();
+    let depth = depth_pixels(&rig)[(height / 2 * width + width / 2) as usize];
+    assert!(depth > 0.0, "drawn river at {x},{z}");
+    let [x, y, z] = inverse
+        .project_point3(glam::vec3(0.0, 0.0, depth))
+        .to_array();
+    drop(rig);
 
-        let view = camera([x, y, z - 0.1], [x, y, z + 1.0], 0.85, 1.0 / 32768.0);
-        let panel = Panel {
-            centre: [x, y, z + 0.010_002],
-            half_size: [0.2, 0.16, 0.01],
-            radiant: true,
-        };
-        let arm = |underwater| {
-            let mut rig = Rig::with_extent(&gpu, &view, sun(0.0, 0.0), &[panel], None, extent);
-            attach(&mut rig, water(underwater));
-            rig.scene_colour_with_sample()
-        };
-        let (plain, _, ordinary) = arm(false);
-        let (composed, _, image) = arm(true);
-        for frame in [&sampled, &plain] {
-            assert_eq!(frame.tick, composed.tick);
-            assert_eq!(
-                frame.presentation_alpha.to_bits(),
-                composed.presentation_alpha.to_bits()
-            );
-        }
-        let centre = height / 2;
-        let mut first_wet = None;
-        let mut mismatches = 0;
-        for row in 0..height {
-            let pixel = (row * width + width / 2) as usize;
-            assert!(ordinary[pixel][0] > 0.2, "panel at {x}, {z}, row {row}");
-            let wet = image[pixel][0] < 0.7 * ordinary[pixel][0];
-            if wet {
-                first_wet.get_or_insert(row);
-            }
-            if row.abs_diff(centre) > 2 && wet != (row > centre) {
-                mismatches += 1;
-            }
-        }
-        eprintln!(
-            "river {}, station {x:.4},{z:.4}: drawn y {y:.6}, expected row {centre}, first wet {first_wet:?}, disagreements outside two rows {mismatches}",
-            site.body
+    let view = camera([x, y, z - 0.1], [x, y, z + 1.0], 0.85, 1.0 / 32768.0);
+    let panel = Panel {
+        centre: [x, y, z + 0.010_002],
+        half_size: [0.2, 0.16, 0.01],
+        radiant: true,
+    };
+    let arm = |underwater| {
+        let mut rig = Rig::with_extent(&gpu, &view, sun(0.0, 0.0), &[panel], None, extent);
+        attach(&mut rig, water(underwater));
+        rig.scene_colour_with_sample()
+    };
+    let (plain, _, ordinary) = arm(false);
+    let (composed, _, image) = arm(true);
+    for frame in [&sampled, &plain] {
+        assert_eq!(frame.tick, composed.tick);
+        assert_eq!(
+            frame.presentation_alpha.to_bits(),
+            composed.presentation_alpha.to_bits()
         );
-        assert_eq!(mismatches, 0, "lens and submitted river depth at {x}, {z}");
     }
-}
+    let centre = height / 2;
+    let mut first_wet = None;
+    let mut mismatches = 0;
+    for row in 0..height {
+        let pixel = (row * width + width / 2) as usize;
+        assert!(ordinary[pixel][0] > 0.2, "panel at {x}, {z}, row {row}");
+        let wet = image[pixel][0] < 0.7 * ordinary[pixel][0];
+        if wet {
+            first_wet.get_or_insert(row);
+        }
+        if row.abs_diff(centre) > 2 && wet != (row > centre) {
+            mismatches += 1;
+        }
+    }
+    eprintln!(
+        "river {}, station {x:.4},{z:.4}: drawn y {y:.6}, expected row {centre}, first wet {first_wet:?}, disagreements outside two rows {mismatches}",
+        site.body
+    );
+    assert_eq!(mismatches, 0, "lens and submitted river depth at {x}, {z}");
 }
