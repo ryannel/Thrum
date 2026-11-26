@@ -218,3 +218,9 @@
   field's period, even when the second field gives the combined pattern a longer period. Give the scheduled
   patterns a world-space repeat distance beyond the 6 m inspection span. Recheck crest sharpness, stop and
   restart, and the memory and dispatch costs before settling the physical profile and resolution.
+
+- 2026-11-26 WP4 schedule repair, approved by the lead. The periods are 6.4 m and 6.4 × √(5/4) m
+  (about 7.155 m). Both exceed the 6 m inspection span and their ratio is irrational. At lower rain rates,
+  each of the earlier periods could repeat an individual ring even though the combined field had a long
+  period. Keep the two 512² patches and the rate history. Bin periodic images in 64² tiles, reject tiles
+  outside each drop's reach, and filter its normalized ring table in hardware. [Schedule repair evidence](../../../.orchestrate/evidence/PUDDLES/WP4/schedule-repair.md)

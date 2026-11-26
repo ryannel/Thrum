@@ -459,8 +459,12 @@ crests with age; and 1.1% of the drop's energy in the rings, where experiments p
 tuned: the crater's width is the one closure, and one drop radius would put 29.5% there.
 
 **Two rain bands** ([ruling 3](../ARCHITECTURE.md#seam-rulings-for-puddles)). Two more wave layers in the
-world's one field, beside the wind's cascades and the flow's bands: periodic patches of 512², 1.28 m and near
-2.1 m across, so that their pattern does not repeat in view. Drops fall on a schedule drawn from a hash of
+world's one field, beside the wind's cascades and the flow's bands. The scheduled periods are 6.4 m and
+\(6.4\sqrt{5/4}\) m (about 7.155 m). Each exceeds the 6 m yard inspection span and their ratio is irrational.
+The earlier 1.28 m and 2.1 m periods made individual sparse births visibly repeat even when the two bands'
+combined pattern had a longer period. Both patches still use 512² samples. A 64² tile grid rejects drops
+whose reach misses the tile. Periodic images are placed when building the lists, and hardware bilinearly
+samples the normalized ring table once per contributing drop. Drops fall on a schedule drawn from a hash of
 place and time, by size class, and a texel's height and slopes are the sum of the rings of the drops that
 landed within reach in the last second, each read from a prepared table of a ring's height by radius and age.
 
@@ -676,7 +680,7 @@ Estimates, unmeasured.
 | The fill step | Tick, on the CPU | A few operations for each puddle and each node that spills | Microseconds for hundreds of puddles; WP1 records it |
 | Hollows in the map | Every read inside a hollows rectangle | A label, a level and the fine bed | Three reads on puddle pixels; none elsewhere. 640,000 cells are about 4 MiB |
 | Puddle tiles | Frame | Cells that hold water and their neighbours, at the cell's spacing | A fifth of a yard under water is about 130,000 quads; WP3 records it |
-| Rain bands | Frame, while the last second held rain and water is in view | Two patches of 512²; about 8 rings a texel from a table, each with one read of the 60-entry rate history | Under the cascades' cost; two more layer reads in the surface where the gain is not zero |
+| Rain bands | Frame, while the last second held rain and water is in view | Two patches of 512², with one bilinear table lookup per contributing drop. The schedule reads committed history before binning. | Under the cascades' cost; two more layer reads in the surface where the gain is not zero |
 | The fine level | Tick, while a source is in the window | 256²; one solve for each region and ladder depth in use, up to the profile's count | A few tenths of a millisecond; WP8 records it with the count of solves |
 | The wetness function | Frame, every forward fragment in a scene with wet ground | One read of the canopy grid's two layers and arithmetic on a small table | One texture more in the forward stage, the second with `WATERS`' caustics; WP5 records the pair |
 | The mirror's bands | Frame, on the CPU | The levels of the hollows in view, sorted and grouped; no view beyond the profile's | Negligible; a band's view costs what any mirror view does, and WP7.8 records it |

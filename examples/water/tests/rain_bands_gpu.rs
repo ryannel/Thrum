@@ -56,11 +56,11 @@ fn periodic_fields_match_committed_rate_history() {
             <[u8; 8]>::try_from(&field[offset..offset+8]).unwrap()
         }).collect::<Vec<_>>()
     };
-    let expected = |model: &RainBands, time: f64, band: usize, texel: [u32; 2]| {
+    let expected = |drops: &[thrum_water_model::Drop], time: f64, band: usize, texel: [u32; 2]| {
         let side = profile.patches[band];
         let point = texel.map(|x| (f64::from(x) + 0.5) / 512.0 * side);
         let mut sample = [0.0; 4];
-        for drop in model.drops(band, time).into_iter().filter(|drop| drop.weight > 0.0) {
+        for drop in drops.iter().filter(|drop| drop.weight > 0.0) {
             let offset: [f64; 2] = std::array::from_fn(|axis| {
                 let d = point[axis] - drop.place[axis];
                 d - (d / side).round() * side
@@ -78,11 +78,13 @@ fn periodic_fields_match_committed_rate_history() {
     for time in [0.605, 57.0 * step, 1.4] {
         let raw = read(&mut bands, time);
         assert_eq!(raw, read(&mut bands, time), "equal display time");
+        let scheduled = [0, 1].map(|band| model.drops(band, time));
+        let previous = [0, 1].map(|band| model.drops(band, time - step / 2.0));
         for (i, bytes) in raw.as_chunks::<8>().0.iter().enumerate() {
             let band = i / 32;
             let at = texel(u32::try_from(i).unwrap());
-            let model_sample = expected(&model, time, band, at);
-            let late = expected(&model, time - step / 2.0, band, at);
+            let model_sample = expected(&scheduled[band], time, band, at);
+            let late = expected(&previous[band], time - step / 2.0, band, at);
             for j in 0..4 {
                 let actual = f64::from(support::half_value(u16::from_le_bytes([bytes[2*j], bytes[2*j+1]])));
                 assert!((actual - model_sample[j]).abs() <= tolerance[j],

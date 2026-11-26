@@ -3410,6 +3410,7 @@ name = "thrum-sea"
 version = "0.1.0"
 dependencies = [
  "bytemuck",
+ "half",
  "pollster",
  "thrum-render",
  "thrum-sea-model",

@@ -468,8 +468,8 @@ target_cost = "Apple-only binding already in locked wgpu Metal closure; preparat
 [external_dependencies.half]
 requirement = "=2.7.1"
 license = "MIT OR Apache-2.0"
-purpose = "Encode the registered Sun-path optical-depth field for portable filtered R16Float sampling"
-target_cost = "Native and Wasm renderer setup or source replacement only, one conversion per field texel, no conversion on the fragment or per-frame metadata path"
+purpose = "Encode portable filtered Sun-path optical depth and the normalized rain ring lookup"
+target_cost = "Native and Wasm preparation or source replacement only, one conversion per table component, no per-frame conversions"
 
 [external_dependencies.harfrust]
 requirement = "=0.16.0"

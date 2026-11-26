@@ -327,7 +327,7 @@ pub struct RainBandsProfile {
 impl Default for RainBandsProfile {
     fn default() -> Self {
         Self {
-            patches: [1.28, 2.1],
+            patches: [6.4, 6.4 * 1.25_f64.sqrt()],
             count: 128.0,
             cells: 8,
             bin: 0.125,
@@ -578,18 +578,24 @@ impl RainBands {
     /// places inside the patch.
     pub fn drops(&self, band: usize, time: f64) -> Vec<Drop> {
         let mut out = Vec::new();
+        self.drops_into(band, time, &mut out);
+        out
+    }
+
+    /// Write the live schedule into caller-owned storage, reusing its capacity.
+    pub fn drops_into(&self, band: usize, time: f64, out: &mut Vec<Drop>) {
+        out.clear();
         let n = i64::try_from(self.profile.cells).unwrap_or(i64::MAX);
         let life = self.table.life();
         let (b0, b1) = self.bins(time - life, time);
         for bin in b0..=b1 {
             for cj in 0..n {
                 for ci in 0..n {
-                    self.cell_drops(band, [ci, cj], bin, &mut out);
+                    self.cell_drops(band, [ci, cj], bin, out);
                 }
             }
         }
         out.retain(|d| d.time <= time && d.time > time - life);
-        out
     }
 
     fn bins(&self, from: f64, to: f64) -> (i64, i64) {
@@ -616,7 +622,18 @@ impl RainBands {
             return out;
         }
         let mut drops = Vec::new();
+        // Once a footprint spans many ring fronts, sparse midpoint samples
+        // alias their slopes. Blend the remaining resolved detail into the
+        // patch mean over a physical distance, independent of the period.
+        let reach = self.table.reach();
+        let broad = ((radius / reach - 2.0) * 0.5).clamp(0.0, 1.0);
         for band in 0..2 {
+            if broad > 0.0 {
+                accumulate(&mut out, self.patch_mean(band, time), broad);
+            }
+            if broad >= 1.0 {
+                continue;
+            }
             let length = self.profile.patches[band];
             let mip = (radius * 512.0 / length).max(1.0).log2().min(9.0);
             let lower = mip.floor();
@@ -647,7 +664,7 @@ impl RainBands {
                     }
                     sample
                 };
-                accumulate(&mut out, sample, weight);
+                accumulate(&mut out, sample, (1.0 - broad) * weight);
             }
         }
         out
