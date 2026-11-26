@@ -8,7 +8,10 @@
       ".orchestrate/evidence/WATERS/design-review-28.md",
       ".orchestrate/evidence/WATERS/design-review.md"
     ],
-    "at": "2026-11-25T23:25:14Z"
+    "at": "2026-11-25T23:25:14Z",
+    "items_owed": [
+      "WP24"
+    ]
   },
   "work_packages": {
     "WP1": {
@@ -1275,7 +1278,7 @@
       }
     },
     "WP8": {
-      "definitions": "b55800035766fbf2593599b7c86445e9c582f8ab8f986821719430edde7e2f9d",
+      "definitions": "8a65f59b6cfc2bbb4c76f498bcf2687ffb87532b1f8d08d62eb4e1692443b5ac",
       "reviews": [
         {
           "verdict": "fail",
@@ -1720,39 +1723,8 @@
       ],
       "authorised": {
         "by": "plan",
-        "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 2 Must Fix find",
-        "at": "2026-11-25T23:25:14Z"
-      },
-      "ready_for_review": {
-        "commit": "6b1a0dfcd56ca1c225eea34678197db3143ca4b7",
-        "checked": "6b1a0dfcd56ca1c225eea34678197db3143ca4b7",
-        "at": "2026-11-26T03:04:04Z",
-        "host": "codex",
-        "model": "gpt-6.2-sol",
-        "effort": "medium",
-        "observed": {
-          "model": "gpt-6.2-sol",
-          "effort": "medium"
-        },
-        "cli": "codex-cli 0.171.0-alpha.13.2",
-        "path": "headless",
-        "usage": {
-          "input": 197578,
-          "cached": 13346176,
-          "output": 36069,
-          "turns": 1
-        },
-        "session_usage": {
-          "input": 197578,
-          "cached": 13346176,
-          "output": 36069,
-          "turns": 1
-        }
-      },
-      "too_many_failed_reviews": {
-        "why": "the same items or findings kept failing after its diagnosis",
-        "after": 0,
-        "at": "2026-11-26T03:15:13Z"
+        "task": "The owner decided WATERS WP8, blocked after five failed reviews with 9 of 10 items passing: asked \"split off the chart c",
+        "at": "2026-11-26T03:34:14Z"
       }
     },
     "WP9": {
@@ -2610,6 +2582,15 @@
         "task": "The main-branch check cross-target fails, and the script couldn't tell which commit broke it. Find what breaks it, and p",
         "at": "2026-11-25T20:17:27Z"
       }
+    },
+    "WP24": {
+      "definitions": "19e56fabb21b79c7732b2e118d6a736d4026475fac88cfc655d912f53baeecaa",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "The owner decided WATERS WP8, blocked after five failed reviews with 9 of 10 items passing: asked \"split off the chart c",
+        "at": "2026-11-26T03:34:14Z"
+      }
     }
   },
   "tasks": [
@@ -2784,11 +2765,15 @@
     {
       "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 2 Must Fix findings. That makes 2 design reviews in a row that asked for changes, so the script approves the design you leave without another review, and building starts from it.",
       "at": "2026-11-25T23:25:14Z"
+    },
+    {
+      "task": "The owner decided WATERS WP8, blocked after five failed reviews with 9 of 10 items passing: asked \"split off the chart cases (WP8 passes on what it proved, the two chart-water cases of WP8.7 become a small follow-up work package) or reopen for one more try?\", the owner answered \"Yes\" to splitting them off. Narrow WP8.7 so WP8 closes on what its reviews already passed, and plan the two failing chart cases from the last review at .orchestrate/evidence/WATERS/WP8-review.md (deep calm chart water loses its scene reflection; rough chart water with a visible shallow tile requests a whole-screen gather, regions.rs:290) as a new small work package after WP23. Keep WP23 next so the cross-target check on main is fixed first.",
+      "at": "2026-11-26T03:34:14Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-25T23:25:14Z"
+    "at": "2026-11-26T03:34:14Z"
   },
   "design_history": [
     {
