@@ -1068,3 +1068,11 @@ show the same diagonal glow, cast light and pooled mist. The builder and a fresh
 no distinct shaft into the mist. The maturity record now includes the completed Metal motion series.
 [Linear samples](../../../.orchestrate/evidence/CLOUDS/WP14/shaft-follow-up/linear-luminance.json) ·
 [Target inspection and inputs](../../../.orchestrate/evidence/CLOUDS/WP14/shaft-target-pairs/README.md)
+
+Closer 16° evening views show a distinct diagonal from broken cloud reaching the mist's upper edge
+on Metal and Chrome. Chrome controls remove the diagonal with clear sky and expose its lit terrain
+footprint with clear Ground. The diagonal still dissolves into the pooled light at the mist's upper
+edge. Seven deeper and more diffuse mist profiles raised the lit pool on Metal and left that cue
+unresolved. Localizing the bank made the footprint brighter and the narrowest takes developed a
+blocky edge. The stock profile gave the clearest view.
+[Closest target stills and mist controls](../../../.orchestrate/evidence/CLOUDS/WP14/shaft-target-pairs/README.md)
