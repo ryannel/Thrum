@@ -1098,3 +1098,9 @@ heights. Fourteen ordinary Metal captures aimed at the ranked openings still sho
 horizontal bands. The probe shader stayed in scratch.
 [Atlas, pose selection and target captures](../../../.orchestrate/evidence/CLOUDS/WP14/shaft-target-pairs/world-atlas/README.md)
 Three fixed Chrome WebGPU captures reproduced the Metal pool and band shapes at matching poses.
+
+WP14.6 and WP14.9 pass the revised inspection. The six retained broken-preset pairs
+preserve light in shaded ground and smooth edges in the lit mist. A ridge shaft remains visible
+where framed. The bright pools and strips inside the mist under cloud openings are the
+documented risk 15 limitation assigned to WP22.
+[Metal and Chrome inspection](../../../.orchestrate/evidence/CLOUDS/WP14/VISUAL.md)

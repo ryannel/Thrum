@@ -1460,8 +1460,8 @@
           "statement": "Mist is in the land's light. Toward a 10\u00b0 Sun it is bright and glows around the Sun, and away from the Sun the same mist is grey. A prop's shadow on the ground weakens with the depth of mist over it and is gone under thick fog. Shafts of sunlight stand in the mist below a ridge line. Shaded ground in mist is never black. The six views WP14 kept under the broken preset are held to the same light: shaded ground in mist is not black, a ridge's shaft in frame stands in the mist, and the mist that sunlight reaches through an opening in the cloud has no blocky edge, tile, step or banding. One limitation in those views is known and fails nothing here (the design's risk 15): sunlight through an opening lights the mist it reaches as a pool, a broad strip or a level glow, and no shaft is followed inside the mist.",
           "inspect": "Capture `fixed` stills at a 10\u00b0 and a 40\u00b0 Sun, toward, across and away from the Sun, with a prop in thin mist and one in fog of a 50 m visual range. Judge each whole and in native-size crops of the shadows and the shafts: 1. toward the 10\u00b0 Sun the mist is bright and glows around the Sun; 2. away from the Sun the same mist is grey; 3. a prop's shadow on the ground weakens with the depth of mist over it, and the prop in the fog casts none; 4. below a ridge line shafts of sunlight stand in the mist; 5. no shaded ground in mist is black. Then judge the six Metal views WP14 kept under the broken preset, whole and in their native-size crops, in `.orchestrate/evidence/CLOUDS/WP14/shaft-target-pairs/`: `metal-closed7-6`, `metal-closed7-12`, `metal-search-24-pm-320-1-20`, `metal-search-40-am-320-1-12`, `metal-focused-close-20` and `metal-focused-near-top-20`. They are the valley and the preset as they ship; that folder's other frames are trials and are not judged. Three lines apply to them: line 5; line 4 where a ridge's shaft is in frame; and 6. the mist that sunlight reaches through an opening has no blocky edge, tile, step or banding. A beam that spreads where it meets the mist into a pool, a broad strip or a level glow, and is not followed inside it, is the limitation and fails none of the three. Take no new frame of these views unless one of the three lines fails and its fix has to be shown.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP14/VISUAL.md",
           "verdict": "",
           "review": ""
         },
@@ -1491,8 +1491,8 @@
           "statement": "In Chrome the dawn valley passes WP14.5's, WP14.6's and WP14.7's lists, and the six Chrome views WP14 kept under the broken preset pass the three lines WP14.6 holds the Metal ones to. The limitation below broken cloud (the design's risk 15) is the same in Chrome, and only it fails nothing here.",
           "inspect": "Capture the same `fixed` stills and the `realtime` walk into the fog in Chrome. Judge them by those lists, then compare native-size crops with the Mac's. Then judge the six kept Chrome views, which are the `chrome-` files of the names WP14.6 gives in `.orchestrate/evidence/CLOUDS/WP14/shaft-target-pairs/`, whole and in their native-size crops, by WP14.6's lines 4, 5 and 6 as it applies them, and take no new frame of them unless one of those lines fails and its fix has to be shown.",
           "target": "chrome-webgpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP14/VISUAL.md",
           "verdict": "",
           "review": ""
         },
