@@ -92,6 +92,7 @@ pub(super) fn prepare_diffuse(
         sampler_entry(2, sampler),
         buffer(3, environment),
         view(5, &target.view),
+        buffer(6, directional),
     ];
     let faces = target.texture.create_view(&wgpu::TextureViewDescriptor {
         dimension: Some(wgpu::TextureViewDimension::D2Array),
@@ -99,7 +100,6 @@ pub(super) fn prepare_diffuse(
     });
     entries.push(view(7, &faces));
     if haze {
-        entries.push(buffer(6, directional));
         if let Some(cloud) = cloud {
             entries.extend([view(13, &cloud.view), buffer(14, &cloud.uniform)]);
             if let Some(band) = &cloud.band {
@@ -143,8 +143,9 @@ pub(crate) fn diffuse_source(haze: bool, cloud: CloudVariant) -> String {
     ));
     if !haze {
         return format!(
-            "{diffuse}\n{}\n{}",
+            "{diffuse}\n{}\n{}\n{}",
             wgsl!(@lighting_constants),
+            wgsl!("directional_light.wgsl"),
             include_str!("overlay_diffuse_no_haze.wgsl")
         );
     }

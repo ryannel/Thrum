@@ -406,21 +406,20 @@ impl super::SyntheticTargetInputs {
         if let (Some(atmosphere), Some((_, uniform))) = (&self.atmosphere, &atmosphere_inputs)
             && atmosphere.has_overlay()
         {
-            let mut sun_reads = Vec::new();
-            if atmosphere.uses_haze_scale() {
-                sun_reads.push(Access::new(
-                    light[0].clone(),
-                    0..DIRECTIONAL_BYTES,
-                    AccessKind::UniformRead,
-                ));
-                if let Some(cloud) = &self.cloud {
-                    cloud.append_reads(
-                        &mut graph,
-                        &mut sun_reads,
-                        effect_resources.sun_path_reads.as_ref(),
-                        effect_resources.ground_band_read.as_ref(),
-                    )?;
-                }
+            let mut sun_reads = vec![Access::new(
+                light[0].clone(),
+                0..DIRECTIONAL_BYTES,
+                AccessKind::UniformRead,
+            )];
+            if atmosphere.uses_haze_scale()
+                && let Some(cloud) = &self.cloud
+            {
+                cloud.append_reads(
+                    &mut graph,
+                    &mut sun_reads,
+                    effect_resources.sun_path_reads.as_ref(),
+                    effect_resources.ground_band_read.as_ref(),
+                )?;
             }
             let start = accesses.len();
             atmosphere.append_overlay_lighting(
