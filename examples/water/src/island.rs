@@ -182,7 +182,7 @@ fn prepare_island_map(
     surf: Option<bool>,
     yard: Option<&rain_yard::Yard>,
 ) -> Result<Map, Box<dyn Error>> {
-    prepare_island_map_at(forcing, surf, yard, 0.0)
+    prepare_island_map_at(forcing, surf, yard, 0.0, 0.0)
 }
 
 fn prepare_island_map_at(
@@ -190,11 +190,23 @@ fn prepare_island_map_at(
     surf: Option<bool>,
     yard: Option<&rain_yard::Yard>,
     vertical_offset: f64,
+    lake_stage: f64,
 ) -> Result<Map, Box<dyn Error>> {
     let mut bed = terrain_bed(include_bytes!("../assets/meshes/island.bin"))?;
     let mut declarations = bodies(forcing, if surf.is_some() { 0.5 } else { 0.0 });
     if let Some(yard) = yard {
         declarations.push(yard.body()?);
+    }
+    if lake_stage != 0.0 {
+        let lake = declarations
+            .iter_mut()
+            .find(|body| body.name == "Lake")
+            .ok_or("island dive requires a lake")?;
+        lake.stage = Stage {
+            min: lake_stage,
+            max: lake_stage,
+            value: lake_stage,
+        };
     }
     if vertical_offset != 0.0 {
         let (origin, spacing, size) = bed.lattice();

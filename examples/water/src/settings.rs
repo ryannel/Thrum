@@ -134,6 +134,7 @@ impl Settings {
             let site = match get(LOCATION).as_deref() {
                 Some("sea") => DiveSite::Sea,
                 Some("swash") => DiveSite::Swash,
+                Some("lake-high-stage") => DiveSite::HighLake,
                 _ => DiveSite::Lake,
             };
             return Self::Dive(wind, site);
@@ -240,6 +241,10 @@ mod tests {
         assert_eq!(
             Settings::from_query("?dive=trade&location=swash"),
             Settings::Dive(Wind::Trade, DiveSite::Swash)
+        );
+        assert_eq!(
+            Settings::from_query("?dive=calm&location=lake-high-stage"),
+            Settings::Dive(Wind::Calm, DiveSite::HighLake)
         );
     }
 

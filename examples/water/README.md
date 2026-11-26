@@ -128,6 +128,8 @@ can reach 10 m underwater within its supported altitude range.
 Choose `THRUM_WATER_LOCATION=swash` or `&location=swash` to cross the
 waterline on the beach. This view uses the same raised datum and the island
 breaker section.
+Choose `lake-high-stage` as the location to inspect the island lake from 5 m
+under its surface. This route raises the lake's stage 2 m over the surveyed bed.
 
 ## Lake outlet
 

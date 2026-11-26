@@ -14,12 +14,16 @@ use thrum_water::{Optics, Water};
 // Keep the inspection camera in the sky shell's altitude range while retaining
 // the island's relative sea, seabed and camera elevations.
 const SEA_LEVEL: f32 = 16.0;
+const LAKE_LEVEL: f32 = 12.0;
+const HIGH_LAKE_STAGE: f32 = 2.0;
 
 /// An island waterline the inspection camera can cross.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum DiveSite {
     /// The deep part of the sheltered island lake.
     Lake,
+    /// The sheltered lake at a stage deep enough for the 5 m view.
+    HighLake,
     /// The exposed sea over the offshore shelf.
     Sea,
     /// The seaward side of the beach's swash.
@@ -32,6 +36,7 @@ impl DiveSite {
     pub const fn name(self) -> &'static str {
         match self {
             Self::Lake => "lake",
+            Self::HighLake => "lake-high-stage",
             Self::Sea => "sea",
             Self::Swash => "swash",
         }
@@ -41,7 +46,7 @@ impl DiveSite {
     #[must_use]
     pub const fn crossing_depth(self) -> f64 {
         match self {
-            Self::Lake | Self::Sea => 0.6,
+            Self::Lake | Self::HighLake | Self::Sea => 0.6,
             Self::Swash => 0.35,
         }
     }
@@ -62,23 +67,43 @@ pub fn build_dive(
     draw_water: bool,
 ) -> Result<(SkyGame, SharedReport), Box<dyn Error>> {
     let (eye_at_surface, vertical_offset, initial_depth, max_depth) = match site {
-        DiveSite::Lake => ([183.0, 12.0, 5.0], 0.0, 1.0, 3.4),
+        DiveSite::Lake => ([183.0, LAKE_LEVEL, 5.0], 0.0, 1.0, 3.4),
+        DiveSite::HighLake => ([183.0, LAKE_LEVEL + HIGH_LAKE_STAGE, 5.0], 0.0, 1.0, 5.3),
         DiveSite::Sea => ([-293.0, SEA_LEVEL, 20.0], SEA_LEVEL, 1.0, 10.0),
         DiveSite::Swash => ([-112.0, SEA_LEVEL, 0.0], SEA_LEVEL, 0.1, 0.4),
     };
     let surf = site == DiveSite::Swash;
-    let lake = site == DiveSite::Lake;
+    let lake = matches!(site, DiveSite::Lake | DiveSite::HighLake);
+    let lake_stage = if site == DiveSite::HighLake {
+        HIGH_LAKE_STAGE
+    } else {
+        0.0
+    };
     let forcing = if surf {
         wind.surf_forcing()
     } else {
         wind.forcing()
     };
-    let map = Arc::new(Mutex::new(prepare_island_map_at(
+    let map = prepare_island_map_at(
         &forcing,
         surf.then_some(true),
         None,
         f64::from(vertical_offset),
-    )?));
+        f64::from(lake_stage),
+    )?;
+    if site == DiveSite::HighLake {
+        let [x, level, z] = eye_at_surface.map(f64::from);
+        let sample = map
+            .sample([x, z])
+            .ok_or("high-stage inspection has no water body")?;
+        let bed = sample
+            .bed
+            .ok_or("high-stage inspection has no surveyed bed")?;
+        if (sample.row.level - level).abs() > 0.001 || level - bed <= f64::from(max_depth) {
+            return Err("high-stage inspection camera is outside the lake".into());
+        }
+    }
+    let map = Arc::new(Mutex::new(map));
     let (spectrum, mut profile) = if surf {
         let spectrum = surf_spectrum(wind, &forcing)?;
         let profile = surf_water_profile(&spectrum);

@@ -228,8 +228,8 @@ fn driver(gpu: &thrum_test_support::Gpu) {
             .dive()
             .expect("dive cost requires THRUM_WATER_DIVE");
         assert!(
-            site != DiveSite::Swash,
-            "cost fixture requires full-depth sea or lake"
+            matches!(site, DiveSite::Lake | DiveSite::Sea),
+            "use the recorded lake or sea cost site"
         );
         let location = site.name();
         let (game, report) = proof_game(true);
@@ -514,6 +514,10 @@ fn driver(gpu: &thrum_test_support::Gpu) {
                 && (floating().is_some() || island_wind().is_some())
             {
                 optics_checkpoints()
+            } else if let Some((_, site @ (DiveSite::Sea | DiveSite::Lake))) = settings().dive()
+                && std::env::var("THRUM_WATER_ROUTE").as_deref() == Ok("dive-depths")
+            {
+                dive_depth_checkpoints(site)
             } else if let Some((_, site)) = settings().dive() {
                 let mut views = vec![
                     ("up-1m", 1.0, 89.99, 60.0),
@@ -529,13 +533,17 @@ fn driver(gpu: &thrum_test_support::Gpu) {
                         ("split-swash", 0.0, 0.0, 60.0),
                         ("under-swash", 0.25, 25.0, 60.0),
                     ];
-                } else if site == DiveSite::Sea {
+                } else if matches!(site, DiveSite::Sea | DiveSite::HighLake) {
                     views.extend([
                         ("up-5m", 5.0, 89.99, 60.0),
                         ("inclined-5m", 5.0, 45.0, 60.0),
-                        ("level-10m", 10.0, 0.0, 60.0),
-                        ("down-10m", 10.0, -35.0, 60.0),
                     ]);
+                    if site == DiveSite::Sea {
+                        views.extend([
+                            ("level-10m", 10.0, 0.0, 60.0),
+                            ("down-10m", 10.0, -35.0, 60.0),
+                        ]);
+                    }
                 }
                 views.into_iter().map(|(name, depth, pitch, sun)| (
                     name.into(),
@@ -633,6 +641,24 @@ fn driver(gpu: &thrum_test_support::Gpu) {
         serde_json::to_vec_pretty(&result).expect("json"),
     )
     .expect("record");
+}
+
+#[cfg(target_os = "macos")]
+fn dive_depth_checkpoints(site: DiveSite) -> Vec<(String, String, f64)> {
+    let depths: &[f64] = if site == DiveSite::Sea {
+        &[0.5, 3.0, 10.0]
+    } else {
+        &[0.5, 3.0]
+    };
+    [("dawn", 1), ("noon", 60), ("twilight", -5)].into_iter()
+        .flat_map(|(light, sun)| depths.iter().flat_map(move |depth| {
+            [("level", 0), ("down", -35)].map(|(view, pitch)| (
+                format!("{light}-{view}-{depth}m"),
+                format!(r#"{{"camera.depth":{depth},"camera.pitch":{pitch},"sun.elevation":{sun}}}"#),
+                10.0,
+            ))
+        }))
+        .collect()
 }
 
 #[cfg(target_os = "macos")]
