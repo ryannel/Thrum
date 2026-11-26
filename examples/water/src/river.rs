@@ -181,7 +181,7 @@ pub const VIEWS: [(&str, Camera); 17] = [
     ),
     (
         "Sill across",
-        Camera::look_at([189.4, 19.6, -55.6], [178.0, 16.9, -51.2], 72.0),
+        Camera::look_at([187.0, 19.6, -55.6], [178.0, 16.9, -51.2], 72.0),
     ),
     (
         "Narrows along",
