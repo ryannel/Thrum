@@ -1152,7 +1152,7 @@
           "ask": "Are the two arms run alternately in one session from the same commit and scale trace? Is every row either a figure with its conditions or marked as not measured, with none left blank?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP11/review-repair-paired/README.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP11-review.md",
           "builder_result": "pass"
         },
@@ -1194,7 +1194,7 @@
           "ask": "Take the brief's G4 sentence clause by clause: which item of WP3 to WP12 proves each, and is any clause proved only by a forced override that the ledger does not label? Then read the ledger and the evidence page for three things. 1. Is full-screen pacing given as present calls in refresh intervals, and nowhere as frames shown on the panel? 2. Is the display's full refresh at full screen given as owed by WP17, and is it said nowhere that the bar is met there, that 60 Hz is the target there, or that the milestone is reached? 3. Is the builder's retake described as its build ran it, with a 60 to 120 Hz request that preferred 120, an 8.33 ms interval and EDR headroom forced to 2, and is a take called forced-rate only where the launch setting set its rate?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP11/g4-closure.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP11-review.md",
           "builder_result": "pass"
         },
@@ -1235,24 +1235,8 @@
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
-      "quality_bar": "The whole presentation path at the level of a shipped high-end Mac game: sharp and stable at the display's full resolution, highlights above SDR white in the frame the XDR display's surface is given, no hitch or compile during play, and smooth at the display's full refresh, with the Apple path's win over the portable one measured and not assumed. At full screen this work package is judged at a steady, evenly paced 60 Hz, which is an interim rate and not the bar: the display's full 120 Hz there stays part of the bar, is recorded as owed, and is WP17's to reach.",
-      "findings": [
-        {
-          "name": "Paired arms apply different scales at the same routed tick",
-          "item": "D11.1",
-          "repeat": false
-        },
-        {
-          "name": "Ending scene-linear capture leaves the SDR tone pass in ordinary EDR frames",
-          "repeat": false
-        },
-        {
-          "name": "Closure credits the comparison before its replay condition holds",
-          "item": "D11.5",
-          "repeat": false
-        }
-      ]
+      "status": "done",
+      "quality_bar": "The whole presentation path at the level of a shipped high-end Mac game: sharp and stable at the display's full resolution, highlights above SDR white in the frame the XDR display's surface is given, no hitch or compile during play, and smooth at the display's full refresh, with the Apple path's win over the portable one measured and not assumed. At full screen this work package is judged at a steady, evenly paced 60 Hz, which is an interim rate and not the bar: the display's full 120 Hz there stays part of the bar, is recorded as owed, and is WP17's to reach."
     },
     {
       "id": "U1",
