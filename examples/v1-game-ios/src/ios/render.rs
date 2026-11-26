@@ -34,6 +34,9 @@ use wgpu::TextureViewDescriptor;
 
 use crate::lease::{Leased, SurfaceLease, TickPermission};
 
+#[cfg(feature = "proving")]
+mod join;
+
 pub(super) const THREAD: &str = "thrum-v1-ios-render";
 pub(super) type Lease = SurfaceLease<wgpu::Surface<'static>>;
 pub(super) type RenderWorker = FrameWorker<Job, Reported>;
@@ -46,8 +49,9 @@ pub(super) enum Job {
         origin: Instant,
         #[cfg(feature = "proving")]
         join_store: Option<std::path::PathBuf>,
-        world_advanced: Box<dyn Fn() + Send>,
     },
+    #[cfg(feature = "proving")]
+    OpenJoin(std::path::PathBuf),
     Frame(FrameRequest),
     /// Rebuild on a fresh device after generation `from` was lost.
     Recover {
@@ -187,6 +191,8 @@ pub(super) enum RecoverFault {
 )]
 pub(super) enum Reply {
     Prepared(Result<Prepared, String>),
+    #[cfg(feature = "proving")]
+    JoinOpened(Result<Option<join::Opened>, String>),
     Frame(Result<FrameReply, String>),
     Recovered(Result<Recovered, RecoverFault>),
     Actor(Option<[f64; 3]>),
@@ -365,7 +371,6 @@ impl Owner {
                 origin,
                 #[cfg(feature = "proving")]
                 join_store,
-                world_advanced,
             } => {
                 self.origin = origin;
                 Reply::Prepared(self.prepare(
@@ -374,9 +379,10 @@ impl Owner {
                     extent,
                     #[cfg(feature = "proving")]
                     join_store,
-                    world_advanced,
                 ))
             }
+            #[cfg(feature = "proving")]
+            Job::OpenJoin(store) => Reply::JoinOpened(self.open_join(store)),
             Job::Frame(request) => Reply::Frame(self.frame(&request)),
             Job::Recover { from } => Reply::Recovered(self.recover(from)),
             Job::SampleActor => Reply::Actor(
@@ -393,7 +399,6 @@ impl Owner {
         epoch: u64,
         extent: [u32; 2],
         #[cfg(feature = "proving")] join_store: Option<std::path::PathBuf>,
-        world_advanced: Box<dyn Fn() + Send>,
     ) -> Result<Prepared, String> {
         if self.gpu.is_some() {
             return Err("iOS render owner is already prepared".into());
@@ -448,15 +453,11 @@ impl Owner {
             .map_err(|error| error.to_string())?;
         }
         #[cfg(feature = "proving")]
-        let interface_menu =
-            (setup.interface_text == Some(v1_game::InterfaceText::Menu)).then(|| {
-                let menu = v1_game::mobile_interface::MobileInterface::new(self.diagnostics);
-                menu.view().attach(host.continuous_source_mut());
-                menu
-            });
+        let interface_menu = (setup.interface_text == Some(v1_game::InterfaceText::Menu))
+            .then(|| join::attach_menu(&mut host, self.diagnostics));
         let cooked = v1_game::attach_cooked_scene(&mut host)?;
         let cooked_view = super::cooked_view::View::prepare(&mut host)?;
-        let (mut host, controls) = host.into_threaded(self.origin, world_advanced)?;
+        let (mut host, controls) = host.into_threaded(self.origin, super::notify_world)?;
         let request_epoch = Arc::new(AtomicU64::new(epoch));
         host.set_tick_submission_permission(Box::new(TickPermission {
             lease: Arc::clone(&self.lease),
@@ -1060,17 +1061,7 @@ async fn prepare_host(
 ) -> Result<(v1_game::GameSetup, super::Host), String> {
     #[cfg(feature = "proving")]
     if let Some(store) = join_store {
-        let setup = v1_game::GameSetup {
-            interface_text: Some(v1_game::InterfaceText::Menu),
-            sprite_scale: Some(2),
-            sprite_rows: Some(10_000),
-            ..v1_game::GameSetup::default()
-        };
-        let host = setup
-            .prepare_with_sheet_source(device, queue, capabilities, config, store.into())
-            .await
-            .map_err(|error| error.to_string())?;
-        return Ok((setup, host));
+        return join::prepare(device, queue, capabilities, config, store).await;
     }
     let setup = v1_game::selected_setup()?;
     let host = setup.prepare(device, queue, capabilities, config).await?;

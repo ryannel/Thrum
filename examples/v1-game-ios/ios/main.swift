@@ -63,10 +63,10 @@ private func inviteTicket(_ url: URL) -> String? {
 
 private func forwardInvite(_ ticket: String?, connecting: Bool) {
     Array((ticket ?? "").utf8).withUnsafeBufferPointer { buffer in
-        if connecting, ticket != nil {
+        if ticket != nil {
             let store = ProcessInfo.processInfo.environment["THRUM_FONT_STORE"]
                 ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Documents/interface-store").path
-            store.withCString { thrumV1OpenInvite(buffer.baseAddress, buffer.count, 1, $0) }
+            store.withCString { thrumV1OpenInvite(buffer.baseAddress, buffer.count, connecting ? 1 : 0, $0) }
         } else {
             thrumV1OpenInvite(buffer.baseAddress, buffer.count, connecting ? 1 : 0, nil)
         }

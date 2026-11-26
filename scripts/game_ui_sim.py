@@ -139,10 +139,14 @@ class Case:
 
     def launch(self, screen):
         self.reset_capture()
-        child = dict(os.environ, SIMCTL_CHILD_THRUM_V1_ROUTE="1", SIMCTL_CHILD_THRUM_SCENE="interface",
-                     SIMCTL_CHILD_THRUM_INTERFACE_TEXT=screen, SIMCTL_CHILD_THRUM_FONT_STORE=str(self.store))
+        child = dict(os.environ, SIMCTL_CHILD_THRUM_V1_ROUTE="1")
+        for name in ("THRUM_SCENE", "THRUM_INTERFACE_TEXT", "THRUM_FONT_STORE"):
+            child.pop(f"SIMCTL_CHILD_{name}", None)
+        if screen is not None:
+            child.update(SIMCTL_CHILD_THRUM_SCENE="interface", SIMCTL_CHILD_THRUM_INTERFACE_TEXT=screen,
+                         SIMCTL_CHILD_THRUM_FONT_STORE=str(self.store))
         self.simctl("launch", self.device, BUNDLE, env=child)
-        return self.expect(lambda s: int(s.get("presented", 0)) >= 10, f"presented {screen}")
+        return self.expect(lambda s: int(s.get("presented", 0)) >= 10, f"presented {screen or 'default grid'}")
 
     def post(self, command):
         self.route["post"](command)
@@ -246,14 +250,16 @@ class Case:
             "THRUM_INTERFACE_TEST_POINT": f"{point[0]:.9f},{point[1]:.9f}",
         }))
 
-    def open_url(self, *, cold=False):
+    def open_url(self, label="warm-menu", *, cold=False):
         url = "thrum-v1://join/" + quote(TICKET, safe="")
-        process = self.state()["pid"]
-        label = "cold" if cold else "warm"
+        before = self.state()
+        process = before["pid"]
 
         def delivered(state):
             report = menu(state)
-            return (report.get("drawn") == "Joining" and report.get("ticket") == TICKET
+            return (state.get("state") == "Active"
+                    and int(state.get("presented", 0)) > (0 if cold else int(before["presented"]))
+                    and report.get("drawn") == "Joining" and report.get("ticket") == TICKET
                     and any(box[0] == 220 for box in report["boxes"])
                     and any(effect["effect"] == {"text": TICKET, "source": "Link"}
                             for effect in report["effects"]))
@@ -278,7 +284,7 @@ class Case:
             screenshot = f"invite-{label}.png"
             self.simctl("io", self.device, "screenshot", str(self.out / screenshot))
             self.report.setdefault("invites", {})[label] = dict(
-                url=url, expected=TICKET, previous_pid=process, state=state, screenshot=screenshot)
+                url=url, expected=TICKET, previous_pid=process, before=before, state=state, screenshot=screenshot)
             return state
         finally:
             if cold:
@@ -377,7 +383,16 @@ class Case:
         self.expect(lambda s: int(s.get("touch_releases", 0)) > int(moving["touch_releases"]) and
                     s.get("last_axes") == "0,0,0", "held contact released")
         self.open_url()
-        self.open_url(cold=True)
+        for screen in ("status", None):
+            self.simctl("terminate", self.device, BUNDLE)
+            before = self.launch(screen)
+            label = f"warm-{screen or 'default'}"
+            require(not menu(before), f"{label} already had a menu")
+            self.simctl("io", self.device, "screenshot", str(self.out / f"invite-{label}-before.png"))
+            joined = self.open_url(label)
+            require(joined["device_generation"] == before["device_generation"],
+                    f"{label} replaced the graphics device")
+        self.open_url("cold", cold=True)
 
 
 def main():

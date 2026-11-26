@@ -65,9 +65,9 @@ enum ShellEvent {
     #[cfg(feature = "proving")]
     Command(Command),
     #[cfg(feature = "proving")]
-    SceneConnected(Option<(String, std::path::PathBuf)>),
+    SceneConnected(Option<interface::Invite>),
     #[cfg(feature = "proving")]
-    Invite(String),
+    Invite(interface::Invite),
 }
 
 /// Qualification commands from Darwin notifications, honoured only when the
@@ -310,7 +310,9 @@ struct Shell {
     #[cfg(feature = "proving")]
     interface_scale: f64,
     #[cfg(feature = "proving")]
-    pending_invite: Option<String>,
+    pending_invite: Option<interface::Invite>,
+    #[cfg(feature = "proving")]
+    opening_join: bool,
     witness: Witness,
     error: Option<String>,
 }
@@ -357,6 +359,8 @@ impl Shell {
             interface_scale: 1.0,
             #[cfg(feature = "proving")]
             pending_invite: None,
+            #[cfg(feature = "proving")]
+            opening_join: false,
             witness: Witness::new(),
             error: None,
         }
@@ -465,11 +469,7 @@ impl Shell {
         Ok(())
     }
 
-    fn start(
-        &mut self,
-        event_loop: &ActiveEventLoop,
-        #[cfg(feature = "proving")] join_store: Option<std::path::PathBuf>,
-    ) -> Result<(), String> {
+    fn start(&mut self, event_loop: &ActiveEventLoop) -> Result<(), String> {
         // No render owner exists yet, so nothing can hold the slot.
         let epoch = self
             .attach_surface(event_loop)?
@@ -496,7 +496,6 @@ impl Shell {
                 }),
             },
         )?;
-        let world = SHELL.get().ok_or("iOS shell proxy missing")?.clone();
         self.origin = Instant::now();
         let job = Job::Prepare {
             instance: self.instance.clone(),
@@ -504,11 +503,10 @@ impl Shell {
             extent: self.observed_extent,
             origin: self.origin,
             #[cfg(feature = "proving")]
-            join_store,
-            world_advanced: Box::new(move || {
-                WORLD_THREAD.get_or_init(thread_name);
-                drop(world.send_event(ShellEvent::WorldAdvanced));
-            }),
+            join_store: self
+                .pending_invite
+                .as_ref()
+                .map(|invite| invite.font_store.clone()),
         };
         if render.try_send(job).is_err() {
             return Err("iOS render owner refused preparation".into());
@@ -579,6 +577,10 @@ impl Shell {
     }
 
     fn send_axes(&mut self, axes: [f32; 3]) -> Result<(), String> {
+        #[cfg(feature = "proving")]
+        if self.opening_join {
+            return Ok(());
+        }
         if let Some(controls) = &self.controls {
             controls.set_controls(axes)?;
             self.witness.axes_sent += 1;
@@ -597,6 +599,10 @@ impl Shell {
         location: [f64; 2],
         current_window: bool,
     ) -> Result<(), String> {
+        #[cfg(feature = "proving")]
+        if self.opening_join {
+            return Ok(());
+        }
         if self.route && self.witness.touch_thread.is_empty() {
             // Thread roles are recorded once, and only for the route.
             self.witness.touch_thread = thread_name();
@@ -768,6 +774,21 @@ impl Shell {
             self.resized([size.width, size.height]);
         }
         #[cfg(feature = "proving")]
+        if let Some(invite) = &self.pending_invite
+            && self.window.is_some()
+            && !self.observed_extent.contains(&0)
+        {
+            let store = invite.font_store.clone();
+            self.clear_input()?;
+            let render = self.render.as_ref().ok_or("iOS render owner missing")?;
+            if render.try_send(Job::OpenJoin(store)).is_err() {
+                return Err("bounded iOS render owner refused a join scene".into());
+            }
+            self.in_flight = true;
+            self.opening_join = true;
+            return Ok(());
+        }
+        #[cfg(feature = "proving")]
         if let Some(menu) = &mut self.interface_menu {
             menu.tick(self.origin.elapsed());
             self.interface_input()?;
@@ -830,9 +851,7 @@ impl Shell {
                 {
                     self.interface_output = prepared.interface_output;
                     self.interface_menu = prepared.interface_menu;
-                    if let Some(ticket) = self.pending_invite.take() {
-                        self.invite(ticket)?;
-                    }
+                    self.deliver_invite()?;
                 }
                 self.witness.device_generation = self.device_generation;
                 if self.state == State::Starting {
@@ -842,6 +861,28 @@ impl Shell {
                 // link stopped; the link starts here for any active state.
                 if self.state == State::Active {
                     start_display_link()?;
+                }
+                self.reconcile_world()?;
+            }
+            #[cfg(feature = "proving")]
+            Reply::JoinOpened(result) => {
+                self.opening_join = false;
+                match result {
+                    Ok(Some(opened)) => {
+                        let paused = self.policy.desired();
+                        self.policy = WorldLifecyclePolicy::default();
+                        self.policy.request(paused);
+                        self.origin = opened.origin;
+                        self.controls = Some(opened.controls);
+                        self.interface_output = true;
+                        self.interface_menu = Some(opened.menu);
+                        self.deliver_invite()?;
+                    }
+                    Ok(None) => {} // Retry at a display target after a resize, suspend or loss.
+                    Err(error) => {
+                        self.pending_invite = None;
+                        eprintln!("iOS could not open Join: {error}");
+                    }
                 }
                 self.reconcile_world()?;
             }
@@ -957,6 +998,11 @@ impl Shell {
 
     /// Consume one lifecycle reply, observe health, and send the next request.
     fn reconcile_world(&mut self) -> Result<(), String> {
+        // The old world lane belongs to the owner until the scene-change reply.
+        #[cfg(feature = "proving")]
+        if self.opening_join {
+            return Ok(());
+        }
         let Some(controls) = self.controls.clone() else {
             return Ok(());
         };
@@ -1120,20 +1166,20 @@ impl ApplicationHandler<ShellEvent> for Shell {
             ShellEvent::Command(command) => shell.command(event_loop, command),
             #[cfg(feature = "proving")]
             ShellEvent::SceneConnected(invite) => {
+                if invite.is_some() {
+                    shell.pending_invite = invite;
+                }
                 if shell.render.is_none() {
-                    let join_store = invite.map(|(ticket, store)| {
-                        shell.pending_invite = Some(ticket);
-                        store
-                    });
-                    shell.start(event_loop, join_store)
-                } else if let Some((ticket, _)) = invite {
-                    shell.invite(ticket)
+                    shell.start(event_loop)
                 } else {
-                    Ok(())
+                    shell.deliver_invite()
                 }
             }
             #[cfg(feature = "proving")]
-            ShellEvent::Invite(ticket) => shell.invite(ticket),
+            ShellEvent::Invite(invite) => {
+                shell.pending_invite = Some(invite);
+                shell.deliver_invite()
+            }
         });
     }
 
@@ -1211,6 +1257,13 @@ fn thread_name() -> String {
         return "main".to_owned();
     }
     thread::current().name().unwrap_or("unnamed").to_owned()
+}
+
+fn notify_world() {
+    WORLD_THREAD.get_or_init(thread_name);
+    if let Some(shell) = SHELL.get() {
+        drop(shell.send_event(ShellEvent::WorldAdvanced));
+    }
 }
 
 pub(super) fn run() {

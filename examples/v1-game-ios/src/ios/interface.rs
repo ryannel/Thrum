@@ -22,6 +22,12 @@ pub(super) struct Output {
     pub(super) insets: [f64; 4],
 }
 
+#[derive(Debug)]
+pub(super) struct Invite {
+    pub(super) ticket: String,
+    pub(super) font_store: PathBuf,
+}
+
 #[expect(
     unsafe_code,
     reason = "read the borrowed UIKit view synchronously on its main thread"
@@ -60,15 +66,18 @@ extern "C" fn thrum_v1_open_invite(
         let bytes = unsafe { std::slice::from_raw_parts(bytes, len) };
         std::str::from_utf8(bytes).ok().map(str::to_owned)
     };
+    let invite = ticket.filter(|_| !font_store.is_null()).and_then(|ticket| {
+        // SAFETY: Swift keeps this NUL-terminated path live through the call.
+        let store = unsafe { CStr::from_ptr(font_store) }.to_str().ok()?;
+        Some(Invite {
+            ticket,
+            font_store: PathBuf::from(store),
+        })
+    });
     let event = if connecting != 0 {
-        let invite = ticket.filter(|_| !font_store.is_null()).and_then(|ticket| {
-            // SAFETY: Swift keeps this NUL-terminated path live through the call.
-            let store = unsafe { CStr::from_ptr(font_store) }.to_str().ok()?;
-            Some((ticket, PathBuf::from(store)))
-        });
         Some(ShellEvent::SceneConnected(invite))
     } else {
-        ticket.map(ShellEvent::Invite)
+        invite.map(ShellEvent::Invite)
     };
     if let (Some(shell), Some(event)) = (SHELL.get(), event) {
         drop(shell.send_event(event));
@@ -76,15 +85,14 @@ extern "C" fn thrum_v1_open_invite(
 }
 
 impl Shell {
-    pub(super) fn invite(&mut self, ticket: String) -> Result<(), String> {
+    pub(super) fn deliver_invite(&mut self) -> Result<(), String> {
         let Some(menu) = &mut self.interface_menu else {
-            // An invite can arrive while the interface is preparing.
-            if self.controls.is_none() {
-                self.pending_invite = Some(ticket);
-            }
             return Ok(());
         };
-        menu.open_invite(ticket, self.origin.elapsed());
+        let Some(invite) = self.pending_invite.take() else {
+            return Ok(());
+        };
+        menu.open_invite(invite.ticket, self.origin.elapsed());
         self.interface_input()?;
         self.write();
         Ok(())
