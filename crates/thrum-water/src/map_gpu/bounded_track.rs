@@ -83,12 +83,36 @@ impl BoundedTrack {
         &self.cells
     }
 
+    pub(super) fn sample(&self, world: [f64; 2], bed: &thrum_water_model::Bed) -> [f32; 4] {
+        let (cells, uv) = self.stencil(world, bed);
+        interpolate(cells, uv)
+    }
+
+    pub(super) fn sampled_river_reference(
+        &self,
+        world: [f64; 2],
+        current: [f64; 2],
+        bed: &thrum_water_model::Bed,
+    ) -> [f64; 2] {
+        // The reference and authored current can cancel at different points
+        // between opposing lanes. Scale each direction before summing.
+        let (cells, uv) = self.stencil(world, bed);
+        let positive = interpolate(cells.map(|cell| cell.map(|v| v.max(0.0))), uv);
+        let negative = interpolate(cells.map(|cell| cell.map(|v| v.min(0.0))), uv);
+        std::array::from_fn(|axis| {
+            let forward = (current[axis] / f64::from(positive[axis + 2].max(1e-6))).clamp(0.0, 1.0);
+            let backward =
+                (-current[axis] / f64::from((-negative[axis + 2]).max(1e-6))).clamp(0.0, 1.0);
+            forward * f64::from(positive[axis]) + backward * f64::from(negative[axis])
+        })
+    }
+
     #[expect(
         clippy::cast_possible_truncation,
         clippy::cast_sign_loss,
         reason = "clamped chart lattice in GPU metres"
     )]
-    pub(super) fn sample(&self, world: [f64; 2], bed: &thrum_water_model::Bed) -> [f32; 4] {
+    fn stencil(&self, world: [f64; 2], bed: &thrum_water_model::Bed) -> ([[f32; 4]; 4], [f32; 2]) {
         let (origin, spacing, size) = bed.lattice();
         let grid = [0, 1].map(|axis| {
             let last = u32::try_from(size[axis] - 1).expect("GPU lattice");
@@ -100,17 +124,18 @@ impl BoundedTrack {
         let u = fraction(0, x);
         let v = fraction(1, z);
         let i = z * size[0] + x;
-        let lerp = |a: f32, b: f32, w: f32| (b - a).mul_add(w, a);
-        std::array::from_fn(|axis| {
-            let near = lerp(self.cells[i][axis], self.cells[i + 1][axis], u);
-            let far = lerp(
-                self.cells[i + size[0]][axis],
-                self.cells[i + size[0] + 1][axis],
-                u,
-            );
-            lerp(near, far, v)
-        })
+        let cells = [i, i + 1, i + size[0], i + size[0] + 1].map(|i| self.cells[i]);
+        (cells, [u, v])
     }
+}
+
+fn interpolate([a, b, c, d]: [[f32; 4]; 4], [u, v]: [f32; 2]) -> [f32; 4] {
+    let lerp = |a: f32, b: f32, w: f32| (b - a).mul_add(w, a);
+    std::array::from_fn(|axis| {
+        let near = lerp(a[axis], b[axis], u);
+        let far = lerp(c[axis], d[axis], u);
+        lerp(near, far, v)
+    })
 }
 
 pub(super) fn uniform_current(chart: &Chart) -> bool {
@@ -127,6 +152,26 @@ pub(super) fn uniform_current(chart: &Chart) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn sampled_river_reference_stays_continuous_across_opposing_currents() {
+        let bed = thrum_water_model::Bed::new([0.0; 2], 1.0, [2, 2], vec![0.0; 4]).unwrap();
+        let track = BoundedTrack {
+            cells: [[1.0, 0.0, 1.0, 0.0], [-4.0, 0.0, -1.0, 0.0]].repeat(2),
+            period_limit: 1.0,
+        };
+        // The live gauge still carries water forward where the authored
+        // stencil cancels. The old reference jumped from negative to zero.
+        for x in [0.499, 0.5, 0.501] {
+            let reference = track.sampled_river_reference([x, 0.5], [0.1, 0.0], &bed);
+            assert!((reference[0] - 0.1).abs() < 1e-6);
+            assert!(reference[1].abs() < 1e-6);
+        }
+        for (current, expected) in [(-0.1, -0.4), (0.0, 0.0), (0.1, 0.1)] {
+            let reference = track.sampled_river_reference([0.5; 2], [current, 0.0], &bed);
+            assert!((reference[0] - expected).abs() < 1e-6);
+        }
+    }
 
     #[test]
     fn reference_follows_separate_runs_in_both_directions() {

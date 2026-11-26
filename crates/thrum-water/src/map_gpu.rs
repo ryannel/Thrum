@@ -25,6 +25,7 @@ pub(crate) struct WaveTracks {
     groups: [usize; BODY_LIMIT],
     bounded: [Option<SharedTrack>; BODY_LIMIT],
     parallel: [Option<CurrentTrack>; BODY_LIMIT],
+    sampled_rivers: bool,
 }
 
 impl WaveTracks {
@@ -105,6 +106,7 @@ impl WaveTracks {
             groups,
             bounded: std::array::from_fn(|_| None),
             parallel: std::array::from_fn(|_| None),
+            sampled_rivers: false,
         }
     }
 
@@ -178,6 +180,11 @@ impl WaveTracks {
     ) -> [f64; 4] {
         let mut record = self.records[body].map(f64::from);
         if let Some(shared) = &self.bounded[self.groups[body]] {
+            if self.sampled_rivers {
+                record[..2]
+                    .copy_from_slice(&shared.track.sampled_river_reference(world, current, bed));
+                return record;
+            }
             let sample = shared.track.sample(world, bed);
             for axis in 0..2 {
                 let authored = f64::from(sample[2 + axis]);
@@ -371,11 +378,19 @@ fn map_source(group: u32, hollows: bool, rivers: bool) -> String {
     let (before, after) = chart_tail
         .split_once("chart_row(point, body, row, rows)")
         .expect("map body join call");
+    let map_sample = include_str!("map_sample.wgsl");
+    let (map_head, map_tail) = map_sample
+        .split_once("        // Bounded wave reference.\n")
+        .expect("bounded wave reference");
+    let wave_reference = if rivers {
+        include_str!("map_gpu/river_wave_reference.wgsl")
+    } else {
+        include_str!("map_gpu/steady_wave_reference.wgsl")
+    };
     let source = format!(
-        "const BODY_LIMIT = {BODY_LIMIT}u;\nconst WATER_MAP_GROUP = {group}u;\n{}{cell_coordinates}{}            let raw = {chart_cell};\n{before}{chart_join}{after}{sample_hollows}{}\n{}{river_source}",
+        "const BODY_LIMIT = {BODY_LIMIT}u;\nconst WATER_MAP_GROUP = {group}u;\n{}{cell_coordinates}{}            let raw = {chart_cell};\n{before}{chart_join}{after}{sample_hollows}{map_head}{wave_reference}{map_tail}\n{}{river_source}",
         include_str!("map.wgsl"),
         include_str!("map_gpu/map_cell_body.wgsl"),
-        include_str!("map_sample.wgsl"),
         include_str!("gains.wgsl"),
     );
     if hollows {
@@ -554,6 +569,7 @@ impl MapGpu {
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
         tracks.records = record.bodies.map(|body| body.track);
+        tracks.sampled_rivers = rivers.iter().any(Option::is_some);
         let mut gpu = Self {
             texture,
             info,

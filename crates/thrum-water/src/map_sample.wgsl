@@ -60,16 +60,7 @@ fn map_wave_track(point: vec2<f32>, body: u32, current: vec2<f32>) -> vec4<f32> 
         let first = vec2<i32>(min(floor(grid), last - vec2(1.0)));
         let uv = grid - vec2<f32>(first);
         let layer = i32(record.track.x);
-        let a = mix(textureLoad(bed_map, first, layer, 0),
-            textureLoad(bed_map, first + CORNERS[1], layer, 0), uv.x);
-        let b = mix(textureLoad(bed_map, first + CORNERS[2], layer, 0),
-            textureLoad(bed_map, first + CORNERS[3], layer, 0), uv.x);
-        let sample = mix(a, b, uv.y);
-        // As a joined speed tends to zero, both departure reads meet the
-        // receiving field continuously. Unjoined water keeps its reference.
-        let scale = clamp(sample.zw * current / max(sample.zw * sample.zw, vec2(1e-12)),
-            vec2(0.0), vec2(1.0));
-        return vec4(sample.xy * scale, record.track.zw);
+        // Bounded wave reference.
     }
     let axis_code = record.track.y;
     if axis_code == 0.0 || all(current == vec2(0.0)) { return vec4(0.0); }
