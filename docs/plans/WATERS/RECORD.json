@@ -1735,6 +1735,32 @@
         "by": "plan",
         "task": "The owner decided WATERS WP8, blocked after five failed reviews with 9 of 10 items passing: asked \"split off the chart c",
         "at": "2026-11-26T03:34:14Z"
+      },
+      "ready_for_review": {
+        "commit": "e8c83a74170155c7bc7afbdf9ae5c543486eaa62",
+        "checked": "84971df1ebe82335ae092d655f187ad81d96944e",
+        "at": "2026-11-26T04:01:45Z",
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.171.0-alpha.13.2",
+        "path": "headless",
+        "usage": {
+          "input": 171406,
+          "cached": 7836544,
+          "output": 17636,
+          "turns": 1
+        },
+        "session_usage": {
+          "input": 171406,
+          "cached": 7836544,
+          "output": 17636,
+          "turns": 1
+        }
       }
     },
     "WP9": {
