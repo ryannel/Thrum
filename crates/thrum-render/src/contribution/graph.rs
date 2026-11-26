@@ -276,7 +276,12 @@ impl EffectGraph {
             if pass.write_depth && (pass.depth || pass.kind != AfterOpaqueKind::Render) {
                 return Err(Error::AfterOpaqueDepthConflict(pass.name.clone()));
             }
-            if pass.kind == AfterOpaqueKind::Render
+            if pass.kind == AfterOpaqueKind::PreTone
+                && (pass.depth || pass.refraction || pass.images != AfterOpaqueImages::None)
+            {
+                return Err(Error::AfterOpaqueUsesSceneAttachments(pass.name.clone()));
+            }
+            if pass.kind != AfterOpaqueKind::Compute
                 && pass.accesses.iter().any(|access| {
                     matches!(
                         access.kind,
@@ -289,7 +294,7 @@ impl EffectGraph {
             {
                 return Err(Error::AfterOpaqueUsesSceneAttachments(pass.name.clone()));
             }
-            if pass.kind == AfterOpaqueKind::Render && pass.cadence != EffectCadence::EveryFrame {
+            if pass.kind != AfterOpaqueKind::Compute && pass.cadence != EffectCadence::EveryFrame {
                 return Err(Error::CadenceRequiresRetainedOutput(pass.name.clone()));
             }
             if pass.kind == AfterOpaqueKind::Compute

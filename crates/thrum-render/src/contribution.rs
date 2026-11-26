@@ -616,8 +616,8 @@ pub trait SceneContribution: wgpu::WasmNotSend + std::any::Any {
             ))
         }
     }
-    /// Whether a declared late compute pass runs, asked after upload. Render composition
-    /// always runs because it loads the scene attachments.
+    /// Whether a declared late compute or pre-tone pass runs, asked after upload.
+    /// Scene render composition always runs.
     fn after_opaque_runs(&self, _index: usize, _frame: &ContributionFrame) -> bool {
         true
     }
@@ -647,9 +647,9 @@ pub trait SceneContribution: wgpu::WasmNotSend + std::any::Any {
         QualityInvalidation::None
     }
     /// Draw a declared late pass. The renderer binds the view at group 0 and requested
-    /// inputs at group 1. Write scene-linear colour, unjittered pixel motion (previous
-    /// minus current), and reactive coverage to the three scene targets. Invalid motion
-    /// is `(65504, 65504)`; honour `frame.history_reset` and the effect's own reset.
+    /// inputs at group 1. Scene composition writes linear colour, unjittered pixel
+    /// motion (previous minus current), and reactive coverage. Invalid motion is
+    /// `(65504, 65504)`. A pre-tone diagnostic writes only resolved linear colour.
     fn draw_after_opaque(
         &self,
         _index: usize,

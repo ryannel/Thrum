@@ -9,6 +9,8 @@ pub enum AfterOpaqueKind {
     Render,
     /// Read requested scene inputs and write declared effect-local resources.
     Compute,
+    /// Draw a diagnostic into the resolved linear colour before tone mapping.
+    PreTone,
 }
 
 /// View-sized, transient images shared within one contribution's late passes.
@@ -33,8 +35,8 @@ impl AfterOpaqueImages {
     pub(crate) const FIRST_IMAGE: u32 = 3;
 }
 
-/// One pass after opaque, sky and stars and before reconstruction and tone.
-/// List order is execution order; medium integration remains the consumer's policy.
+/// One pass after opaque, sky and stars. Scene passes run before reconstruction;
+/// pre-tone diagnostics run afterward. List order applies within each stage.
 #[derive(Clone, Debug, PartialEq)]
 pub struct AfterOpaquePass {
     /// Executor timing name, unique within the effect.

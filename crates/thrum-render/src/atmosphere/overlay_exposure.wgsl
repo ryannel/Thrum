@@ -30,6 +30,9 @@ fn adapt_world_light_ev(raw_ev: f32, lux: f32, limits: vec2<f32>) -> vec2<f32> {
     }
     // Ease display gain only. Keep the current storage scale and the measured
     // light apart from adaptation. A camera cut takes the new reading directly.
-    let delta = clamp(change * 0.10, -0.025, 0.025);
-    return vec2(previous_exposure.values.z + delta, 1.0);
+    // The current incident meter follows daylight. Keep only a bounded
+    // residual for the cloud handover so a solar edit cannot retain night gain.
+    let residual = clamp(-change, -0.5, 0.5);
+    let delta = clamp(-residual * 0.10, -0.025, 0.025);
+    return vec2(desired_ev + residual + delta, 1.0);
 }

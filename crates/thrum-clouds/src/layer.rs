@@ -21,6 +21,7 @@ mod temporal;
 
 pub(crate) const TRACE: &str = "cloud trace";
 pub(crate) const COMPOSE: &str = "cloud compose";
+pub(crate) const FIELD: &str = "cloud internal field";
 pub(crate) const MAX_TRACE_SAMPLES: u32 = 768;
 pub(crate) use overlay::DEFAULT_OVERLAY_SLICES;
 
@@ -124,6 +125,8 @@ pub(crate) struct Layer {
     detail_noise: Noise,
     trace: wgpu::ComputePipeline,
     compose: wgpu::RenderPipeline,
+    field_pipeline: wgpu::RenderPipeline,
+    field_overlay: crate::FieldOverlay,
     trace_group: wgpu::BindGroup,
     compose_group: wgpu::BindGroup,
     field_group: [wgpu::BindGroup; 2],
@@ -298,11 +301,6 @@ impl Layer {
             AfterOpaqueKind::Render,
             (first..first + 2)
                 .map(|i| access(i, AccessKind::SampledRead))
-                .chain([access(6, AccessKind::SampledRead)])
-                .chain([0, 1].map(|resource| EffectAccess {
-                    range: 0..4,
-                    ..access(resource, AccessKind::SampledRead)
-                }))
                 .chain(std::iter::once(buffer_access(
                     params,
                     self.params.size(),
@@ -313,6 +311,25 @@ impl Layer {
                     read.history = Some(HistoryBinding::Result);
                     read
                 }))
+                .collect(),
+        ));
+        let mut refresh_age = access(history + 1, AccessKind::SampledRead);
+        refresh_age.history = Some(HistoryBinding::Result);
+        graph.after_opaque.push(declaration(
+            FIELD,
+            AfterOpaqueKind::PreTone,
+            [0, 1]
+                .map(|resource| EffectAccess {
+                    range: 0..4,
+                    ..access(resource, AccessKind::SampledRead)
+                })
+                .into_iter()
+                .chain([
+                    access(6, AccessKind::SampledRead),
+                    access(first + 1, AccessKind::SampledRead),
+                    refresh_age,
+                    buffer_access(params, self.params.size(), AccessKind::UniformRead),
+                ])
                 .collect(),
         ));
     }
@@ -454,6 +471,7 @@ impl Layer {
         };
         self.queue
             .write_buffer(&self.params, 0, bytemuck::bytes_of(&uniform));
+        self.field_overlay = field_overlay;
         if let Some(overlay) = &mut self.overlay {
             overlay.upload(&self.queue, frame, environment, reset);
         }
@@ -517,9 +535,22 @@ impl Layer {
         );
     }
 
-    pub(crate) fn draw(&self, pass: &mut wgpu::RenderPass<'_>, frame: &ContributionFrame) {
-        pass.set_pipeline(&self.compose);
-        pass.set_bind_group(3, &self.field_group[frame.exposure_side], &[]);
+    pub(crate) fn field_runs(&self) -> bool {
+        self.field_overlay != crate::FieldOverlay::Off
+    }
+
+    pub(crate) fn draw(
+        &self,
+        pass: &mut wgpu::RenderPass<'_>,
+        frame: &ContributionFrame,
+        field: bool,
+    ) {
+        if field {
+            pass.set_pipeline(&self.field_pipeline);
+            pass.set_bind_group(3, &self.field_group[frame.exposure_side], &[]);
+        } else {
+            pass.set_pipeline(&self.compose);
+        }
         pass.set_bind_group(
             2,
             if frame.time.capture {
@@ -645,7 +676,7 @@ fn declaration(name: &str, kind: AfterOpaqueKind, accesses: Vec<EffectAccess>) -
         kind,
         cadence: EffectCadence::EveryFrame,
         accesses,
-        depth: true,
+        depth: kind != AfterOpaqueKind::PreTone,
         write_depth: false,
         refraction: false,
         images: thrum_render::contribution::AfterOpaqueImages::None,

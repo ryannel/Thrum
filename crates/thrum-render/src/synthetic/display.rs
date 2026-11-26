@@ -194,6 +194,7 @@ pub(crate) struct PreToneViews<'a> {
 /// Replacing a binding requires a graph compiled with that binding's resources.
 pub(crate) struct PreparedPreToneInput {
     groups: [wgpu::BindGroup; 2],
+    pub(super) colour: wgpu::TextureView,
     input: PreToneInput,
     generation: u64,
 }
@@ -320,6 +321,7 @@ impl SdrToneStage {
             return Err(RenderError::GraphPassMismatch);
         }
         Ok(PreparedPreToneInput {
+            colour: views.colour.clone(),
             groups: std::array::from_fn(|side| {
                 prepare_group(
                     device,

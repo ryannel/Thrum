@@ -1,3 +1,5 @@
+@group(2) @binding(0) var<uniform> cloud:CloudParams;
+@group(2) @binding(2) var front:texture_2d<f32>;
 @group(3) @binding(0) var weather_columns:texture_2d_array<f32>;
 @group(3) @binding(1) var weather_optical:texture_2d_array<f32>;
 @group(3) @binding(2) var placed_columns:texture_2d_array<f32>;
@@ -5,7 +7,7 @@
 @group(3) @binding(4) var<uniform> field_exposure:vec4<f32>;
 
 fn field_scene_colour(colour:vec3<f32>)->vec4<f32> {
-    return vec4(colour*(field_exposure.x*field_exposure.y),0.0);
+    return vec4(colour*(field_exposure.x*field_exposure.y),1.0);
 }
 
 fn field_colour(field:u32,uv:vec2<f32>)->vec4<f32> {
@@ -40,4 +42,22 @@ fn field_colour(field:u32,uv:vec2<f32>)->vec4<f32> {
     }
     let heat=mix(vec3(0.012,0.025,0.085),vec3(1.0,0.72,0.12),clamp(value,0.0,1.0));
     return field_scene_colour(heat);
+}
+
+struct FieldVertex {
+    @builtin(position) position: vec4<f32>,
+    @location(0) uv: vec2<f32>,
+}
+
+@vertex
+fn vertex(@builtin(vertex_index) index: u32) -> FieldVertex {
+    let uv = array(vec2(0.0, 0.0), vec2(2.0, 0.0), vec2(0.0, 2.0))[index];
+    let screen = vec2(0.025) + uv * vec2(0.30, 0.42);
+    return FieldVertex(vec4(screen * vec2(2.0, -2.0) + vec2(-1.0, 1.0), 0.0, 1.0), uv);
+}
+
+@fragment
+fn fragment(@location(0) uv: vec2<f32>) -> @location(0) vec4<f32> {
+    if any(uv >= vec2(1.0)) { discard; }
+    return field_colour(cloud.field_overlay, uv);
 }

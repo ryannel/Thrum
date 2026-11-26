@@ -110,6 +110,10 @@ impl SyntheticTargetInputs {
         };
         let mut images: Vec<Vec<ResourceId>> = Vec::new();
         for (index, declaration) in self.effect_graph.after_opaque.iter().enumerate() {
+            if declaration.kind == crate::contribution::AfterOpaqueKind::PreTone {
+                images.push(Vec::new());
+                continue;
+            }
             let key = self.late_key(index);
             keys.insert(key);
             let mut accesses = uniforms.to_vec();
@@ -179,6 +183,46 @@ impl SyntheticTargetInputs {
             last,
             colour: previous_render,
         })
+    }
+
+    pub(super) fn append_pre_tone(
+        &self,
+        graph: &mut FrameGraph,
+        keys: &mut BTreeSet<PipelineKey>,
+        colour: &ResourceId,
+        resources: &crate::contribution::EffectResources,
+        uniforms: &[Access],
+        mut producer: usize,
+    ) -> Result<usize, RenderError> {
+        for (index, declaration) in self.effect_graph.after_opaque.iter().enumerate() {
+            if declaration.kind != crate::contribution::AfterOpaqueKind::PreTone {
+                continue;
+            }
+            let key = self.late_key(index);
+            keys.insert(key);
+            let pass = graph.declare_named(
+                PassKey::AfterOpaque(crate::pass_key::pass_index(index)),
+                format!("effect before tone {index}: {}", declaration.name),
+                PassBody {
+                    scope: PassScope::View(1),
+                    pipeline: Some(key),
+                    accesses: uniforms
+                        .iter()
+                        .cloned()
+                        .chain(resources.accesses(&declaration.accesses))
+                        .chain([Access::new(
+                            colour.clone(),
+                            0..1,
+                            AccessKind::AttachmentLoad,
+                        )])
+                        .collect(),
+                    external_side_effect: true,
+                },
+            );
+            graph.dependency(producer, pass)?;
+            producer = pass;
+        }
+        Ok(producer)
     }
 
     pub(super) fn late_bindings(
@@ -338,40 +382,64 @@ impl SceneContext<'_> {
         index: usize,
         compiled: &CompiledPass,
     ) -> Result<(), RenderError> {
-        if self.prepared.effect_graph.after_opaque[index].kind
-            == crate::contribution::AfterOpaqueKind::Compute
+        use crate::contribution::AfterOpaqueKind;
+        let declaration = &self.prepared.effect_graph.after_opaque[index];
+        let pre_tone = match declaration.kind {
+            AfterOpaqueKind::Compute => return self.after_opaque_compute(index, compiled),
+            AfterOpaqueKind::Render => false,
+            AfterOpaqueKind::PreTone => true,
+        };
+        if pre_tone
+            && !self
+                .contribution
+                .as_deref()
+                .is_some_and(|effect| effect.after_opaque_runs(index, &self.contribution_frame))
         {
-            return self.after_opaque_compute(index, compiled);
+            return Ok(());
         }
-        let mut pass = compiled
-            .begin_render(
+        let colour = if pre_tone {
+            &self.target.ids.pre_tone.colour
+        } else {
+            &self.target.ids.scene
+        };
+        let attachment = |resource, view| {
+            Some(GraphColorAttachment {
+                resource,
+                view,
+                range: 0..1,
+                clear: wgpu::Color::BLACK,
+            })
+        };
+        let mut pass = if pre_tone {
+            compiled.begin_render(
                 self.encoder,
-                [
-                    (&self.target.ids.scene, &self.target.scene_view),
-                    (&self.target.ids.motion, &self.target.motion_view),
-                    (&self.target.ids.reactive, &self.target.reactive_view),
-                ]
-                .map(|(resource, view)| {
-                    Some(GraphColorAttachment {
-                        resource,
-                        view,
-                        range: 0..1,
-                        clear: wgpu::Color::BLACK,
-                    })
-                }),
-                self.prepared.effect_graph.after_opaque[index]
-                    .write_depth
-                    .then_some(GraphDepthAttachment {
-                        resource: &self.target.ids.depth,
-                        view: &self.target.depth,
-                        range: 0..1,
-                        clear: 0.0,
-                    }),
+                [attachment(colour, &self.target.display.colour)],
+                None,
                 self.generation,
                 self.timings.as_deref_mut(),
             )?
-            .ok_or(RenderError::GraphPassMismatch)?;
-        self.target.set_drawn_viewport(&mut pass);
+        } else {
+            compiled.begin_render(
+                self.encoder,
+                [
+                    attachment(colour, &self.target.scene_view),
+                    attachment(&self.target.ids.motion, &self.target.motion_view),
+                    attachment(&self.target.ids.reactive, &self.target.reactive_view),
+                ],
+                declaration.write_depth.then_some(GraphDepthAttachment {
+                    resource: &self.target.ids.depth,
+                    view: &self.target.depth,
+                    range: 0..1,
+                    clear: 0.0,
+                }),
+                self.generation,
+                self.timings.as_deref_mut(),
+            )?
+        }
+        .ok_or(RenderError::GraphPassMismatch)?;
+        if colour == &self.target.ids.scene {
+            self.target.set_drawn_viewport(&mut pass);
+        }
         let view_offset =
             self.prepared.view_stride * u32::from(self.target.frame_revision & 1 != 0);
         let offsets = [view_offset, 0];

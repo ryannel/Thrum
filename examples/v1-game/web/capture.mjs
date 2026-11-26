@@ -511,7 +511,15 @@ async function captureCloudView(view, extent) {
   }
   const warmupEnd = performance.now() + 3000;
   const warmupStart = game.presented();
-  while (performance.now() < warmupEnd) {
+  const targetSubmission = view.warmup_submission;
+  if (targetSubmission !== undefined && (mode !== 'fixed' ||
+      !Number.isSafeInteger(targetSubmission) || targetSubmission <= Number(warmupStart))) {
+    fail('invalid fixed cloud warmup submission');
+  }
+  const deadline = performance.now() + 30000;
+  while (targetSubmission === undefined ? performance.now() < warmupEnd
+      : Number(game.presented()) < targetSubmission) {
+    if (performance.now() >= deadline) fail('fixed cloud warmup missed its submission');
     if (hidden) fail('cloud view became hidden during warmup');
     if (game.route_slot_ready()) game.frame(heldTime);
     await wait(2);

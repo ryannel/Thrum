@@ -240,12 +240,12 @@ impl Prepared {
             if let Some(map) = &self.placed_map {
                 let resource = graph.resources.len();
                 graph::append_placed_map(&mut graph, map, reads, generation);
-                if let Some(compose) = graph
+                if let Some(field) = graph
                     .after_opaque
                     .iter_mut()
-                    .find(|pass| pass.name == crate::layer::COMPOSE)
+                    .find(|pass| pass.name == crate::layer::FIELD)
                 {
-                    compose
+                    field
                         .accesses
                         .push(thrum_render::contribution::EffectAccess {
                             resource,

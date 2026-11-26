@@ -717,11 +717,33 @@ impl super::SyntheticTargetInputs {
             native.as_ref(),
             [width, height],
         )?;
+        let colour_producer = native
+            .as_ref()
+            .map(|provider| provider.pass)
+            .or_else(|| {
+                if temporal.witness.as_ref() == Some(&pre_tone.colour) {
+                    temporal.witness_pass
+                } else {
+                    taau.as_ref().map(|taau| taau.pass)
+                }
+            })
+            .unwrap_or(late.last);
+        let pre_tone_last = self.append_pre_tone(
+            &mut graph,
+            &mut prepared_keys,
+            &pre_tone.colour,
+            &effect_resources,
+            &late_uniforms,
+            colour_producer,
+        )?;
         let (output, display_pass) = self.display.append_graph(
             &mut graph,
             &pre_tone,
             ray_structure.filter(|_| self.traced_view),
         )?;
+        if pre_tone_last != colour_producer {
+            graph.dependency(pre_tone_last, display_pass)?;
+        }
         late.order_consumers(&mut graph, [Some(display_pass), temporal.witness_pass])?;
         if let Some((_, passes)) = &soft_sun {
             graph.dependency(passes[3], display_pass)?;
@@ -775,7 +797,15 @@ impl super::SyntheticTargetInputs {
             generation,
             &prepared_keys,
             match capture_source {
+                CaptureSource::SceneLinear
+                    if scene == pre_tone.colour && pre_tone_last != colour_producer =>
+                {
+                    Some(pre_tone_last)
+                }
                 CaptureSource::SceneLinear => Some(late.colour),
+                CaptureSource::NativeOutput if pre_tone_last != colour_producer => {
+                    Some(pre_tone_last)
+                }
                 CaptureSource::Sdr => interface_pass,
                 _ => None,
             },
@@ -1628,7 +1658,8 @@ impl super::SyntheticTargetInputs {
                     .ok_or(RenderError::GraphPassMismatch)?
                     .kind
                 {
-                    crate::contribution::AfterOpaqueKind::Render => PassKind::Render,
+                    crate::contribution::AfterOpaqueKind::Render
+                    | crate::contribution::AfterOpaqueKind::PreTone => PassKind::Render,
                     crate::contribution::AfterOpaqueKind::Compute => PassKind::Compute,
                 };
                 B::new(id, kind, move |frame, pass| frame.after_opaque(index, pass))

@@ -23,11 +23,6 @@ fn sky_transport(uv:vec2<f32>)->vec4<f32> {
     let uv=position.xy/aux.extent.xy;
     let at=vec2<i32>(clamp(uv*vec2<f32>(cloud.active_extent),vec2(0.0),vec2<f32>(cloud.active_extent)-1.0));
     let front_value=textureLoad(front,at,0);
-    let field=cloud.field_overlay;
-    let panel_uv=(uv-vec2(0.025))/vec2(0.30,0.42);
-    if field!=0u && all(panel_uv>=vec2(0.0)) && all(panel_uv<vec2(1.0)) {
-        return Output(field_colour(field,panel_uv),vec4(0.0,0.0,0.0,1.0),1.0);
-    }
     let opaque_depth=textureLoad(depth,vec2<i32>(position.xy),0);
     var layer:vec4<f32>;
     if opaque_depth==0.0 {

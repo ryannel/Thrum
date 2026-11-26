@@ -290,6 +290,15 @@ impl super::SyntheticTargetInputs {
         };
         let native = self.view_sample.requests_metalfx();
         let mut output_descriptor = descriptor(wgpu::TextureFormat::Rgba16Float);
+        if self
+            .effect_graph
+            .after_opaque
+            .iter()
+            .any(|pass| pass.kind == crate::contribution::AfterOpaqueKind::PreTone)
+            && let ResourceDescriptor::Texture { usage, .. } = &mut output_descriptor
+        {
+            *usage |= wgpu::TextureUsages::RENDER_ATTACHMENT;
+        }
         if native && let ResourceDescriptor::Texture { usage, .. } = &mut output_descriptor {
             *usage |= crate::apple_tile::metalfx::OUTPUT_USAGE;
         }

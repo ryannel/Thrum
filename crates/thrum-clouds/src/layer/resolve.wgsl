@@ -65,31 +65,56 @@ fn resolve(@builtin(global_invocation_id) id:vec3<u32>) {
     let traced = cloud.temporal.w != 0u || all(id.xy % stride == offset);
     let sample = cloud_fresh(at, vec2<i32>(offset), i32(stride), traced);
     var value = sample.transport;
+    var front = sample.front;
     var reactive=1.0-value.a;
     var age=0.0;
     if cloud.temporal.x!=0u {
         let uv=(vec2<f32>(id.xy)+0.5)/vec2<f32>(size);
         let far=cloud.inverse_raster*vec4(uv*vec2(2.0,-2.0)+vec2(-1.0,1.0),0.0,1.0);
         let ray=normalize(far.xyz/far.w-view.camera.xyz);
-        let point=view.camera.xyz+ray*sample.front*1000.0;
-        let old_point=point-vec3(cloud.drift.z,0.0,cloud.drift.w);
-        let clip=cloud.previous_raster*vec4(old_point,1.0);
+        // Reproject a retained front independently of this phase's sparse
+        // lattice. An isolated front can lie between all four fresh taps.
+        let sky_clip = cloud.previous_raster * vec4(ray, 0.0);
+        let sky_uv = sky_clip.xy / max(sky_clip.w, 1e-6) * vec2(0.5, -0.5) + 0.5;
+        let sky_at = vec2<i32>(clamp(sky_uv * vec2<f32>(size), vec2(0.0), vec2<f32>(size - 1u)));
+        var distance = sample.front;
+        if !traced && sky_clip.w > 0.0 && all(sky_uv >= vec2(0.0)) && all(sky_uv <= vec2(1.0)) {
+            let retained_front = textureLoad(previous_front, sky_at, 0);
+            if retained_front.y > 0.0 {
+                distance = retained_front.x;
+            }
+        }
+        let point = select(vec4(ray, 0.0), vec4(view.camera.xyz + ray * distance * 1000.0
+            - vec3(cloud.drift.z, 0.0, cloud.drift.w), 1.0), distance > 0.0);
+        let clip = cloud.previous_raster * point;
         let old_uv=clip.xy/clip.w*vec2(0.5,-0.5)+0.5;
         if clip.w>0.0 && all(old_uv>=vec2(0.0)) && all(old_uv<=vec2(1.0)) {
             let old=cloud_history(previous,old_uv);
             let old_front=cloud_history(previous_front,old_uv);
             // A vanished front is a disocclusion, never a carried opaque cloud.
-            if old_front.y>0.0 && sample.opacity>0.0 {
+            let displacement = (old_uv - uv) * vec2<f32>(size);
+            let old_at = vec2<i32>(clamp(old_uv * vec2<f32>(size), vec2(0.0), vec2<f32>(size - 1u)));
+            let retained_front = textureLoad(previous_front, old_at, 0);
+            let max_age = f32(stride * stride - 1u);
+            if !traced && all(abs(displacement) < vec2(0.5)) && retained_front.w < max_age {
+                // Keep a stable texel through the refresh cycle. Repeated
+                // interpolation or clipping to the changing sparse lattice
+                // would erase detail that the current phase did not sample.
+                value = textureLoad(previous, old_at, 0);
+                front = retained_front.x;
+                age = retained_front.w + 1.0;
+                reactive = 0.0;
+            } else if old_front.y > 0.0 && sample.opacity > 0.0 {
                 if !traced {
                     // A large change in sampling position or optical depth makes
                     // the old contour less representative of this ray.
-                    let motion = length((old_uv - uv) * vec2<f32>(size));
+                    let motion = length(displacement);
                     let positional_agreement = 1.0 - smoothstep(0.5, f32(stride), motion);
                     let opacity_agreement = 1.0 - smoothstep(0.025, 0.15, abs(old.a - value.a));
                     let history_weight = positional_agreement * opacity_agreement;
                     value = mix(value, clamp(old, sample.low, sample.high), history_weight);
                     if history_weight > 0.0 {
-                        age = min(old_front.w + 1.0, f32(stride * stride - 1u));
+                        age = min(old_front.w + 1.0, max_age);
                     }
                 }
                 reactive=abs(value.a-old.a)*(1.0-value.a);
@@ -97,5 +122,5 @@ fn resolve(@builtin(global_invocation_id) id:vec3<u32>) {
         }
     }
     textureStore(next,at,value);
-    textureStore(next_front,at,vec4(sample.front,1.0-value.a,reactive,age));
+    textureStore(next_front,at,vec4(front,1.0-value.a,reactive,age));
 }

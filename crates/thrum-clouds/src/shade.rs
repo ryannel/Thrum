@@ -432,12 +432,14 @@ impl SceneContribution for Shade {
         }
     }
     fn after_opaque_runs(&self, index: usize, frame: &ContributionFrame) -> bool {
-        let world_light = self
-            .gpu
-            .as_ref()
-            .and_then(|gpu| gpu.sky.as_ref())
-            .is_some_and(crate::layer::Layer::has_overlay);
-        index + usize::from(world_light) != 2 || !frame.time.capture
+        let Some(sky) = self.gpu.as_ref().and_then(|gpu| gpu.sky.as_ref()) else {
+            return false;
+        };
+        match index + usize::from(sky.has_overlay()) {
+            2 => !frame.time.capture,
+            4 => self.valid_recording && sky.field_runs(),
+            _ => true,
+        }
     }
     fn encode_after_opaque(
         &mut self,
@@ -459,14 +461,14 @@ impl SceneContribution for Shade {
     }
     fn draw_after_opaque(
         &self,
-        _index: usize,
+        index: usize,
         pass: &mut wgpu::RenderPass<'_>,
         frame: &ContributionFrame,
     ) {
         if self.valid_recording
             && let Some(sky) = self.gpu.as_ref().and_then(|gpu| gpu.sky.as_ref())
         {
-            sky.draw(pass, frame);
+            sky.draw(pass, frame, index + usize::from(sky.has_overlay()) == 4);
         }
     }
     fn submitted(&mut self, history_advanced: bool) {

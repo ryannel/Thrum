@@ -1,6 +1,6 @@
 use super::{
-    AfterOpaqueKind, COMPOSE, Error, Layer, SceneSurface, SkyProfile, TRACE, Uniform, WeatherMap,
-    declaration,
+    AfterOpaqueKind, COMPOSE, Error, FIELD, Layer, SceneSurface, SkyProfile, TRACE, Uniform,
+    WeatherMap, declaration,
 };
 use crate::noise::{DETAIL_SIZE, Noise};
 use thrum_render::{binding, runtime::PipelineInput};
@@ -230,8 +230,8 @@ impl Layer {
             uniform_entry,
             |binding, storage| texture_entry(binding, storage, false),
             &input,
-            &field_layout,
         );
+        let field_pipeline = field_pipeline(surface, &compose_layout, &field_layout);
         let temporal = super::temporal::Temporal::new(
             surface,
             &params,
@@ -264,6 +264,8 @@ impl Layer {
                 detail_noise,
                 trace,
                 compose,
+                field_pipeline,
+                field_overlay: crate::FieldOverlay::Off,
                 trace_group,
                 compose_group,
                 field_group,
@@ -435,7 +437,6 @@ fn compose(
     uniform_entry: wgpu::BindGroupLayoutEntry,
     texture_entry: impl Fn(u32, bool) -> wgpu::BindGroupLayoutEntry,
     input: &wgpu::BindGroupLayout,
-    field_layout: &wgpu::BindGroupLayout,
 ) -> (wgpu::RenderPipeline, wgpu::BindGroup, wgpu::BindGroupLayout) {
     let device = surface.device;
     let mut sampled = [texture_entry(1, false), texture_entry(2, false)];
@@ -477,7 +478,6 @@ fn compose(
             Some(surface.view_layout),
             Some(input),
             Some(&compose_layout),
-            Some(field_layout),
         ],
         immediate_size: 0,
     });
@@ -485,10 +485,9 @@ fn compose(
         label: Some(COMPOSE),
         source: wgpu::ShaderSource::Wgsl(
             format!(
-                "{}\n{}\n{}\n{}",
+                "{}\n{}\n{}",
                 include_str!("params.wgsl"),
                 include_str!("view.wgsl"),
-                include_str!("field_overlay.wgsl"),
                 include_str!("compose.wgsl")
             )
             .into(),
@@ -550,4 +549,59 @@ fn compose(
         cache: None,
     });
     (compose, compose_group, compose_layout.into_raw())
+}
+
+fn field_pipeline(
+    surface: &SceneSurface<'_>,
+    layer_layout: &wgpu::BindGroupLayout,
+    field_layout: &wgpu::BindGroupLayout,
+) -> wgpu::RenderPipeline {
+    let device = surface.device;
+    let input = declaration(FIELD, AfterOpaqueKind::PreTone, Vec::new()).input_layout(device);
+    let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+        label: Some(FIELD),
+        bind_group_layouts: &[
+            Some(surface.view_layout),
+            Some(&input),
+            Some(layer_layout),
+            Some(field_layout),
+        ],
+        immediate_size: 0,
+    });
+    let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+        label: Some(FIELD),
+        source: wgpu::ShaderSource::Wgsl(
+            concat!(
+                include_str!("params.wgsl"),
+                "\n",
+                include_str!("field_overlay.wgsl")
+            )
+            .into(),
+        ),
+    });
+    device.render(&wgpu::RenderPipelineDescriptor {
+        label: Some(FIELD),
+        layout: Some(&layout),
+        vertex: wgpu::VertexState {
+            module: &shader,
+            entry_point: Some("vertex"),
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
+            buffers: &[],
+        },
+        primitive: wgpu::PrimitiveState::default(),
+        depth_stencil: None,
+        multisample: wgpu::MultisampleState::default(),
+        fragment: Some(wgpu::FragmentState {
+            module: &shader,
+            entry_point: Some("fragment"),
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
+            targets: &[Some(wgpu::ColorTargetState {
+                format: surface.color_formats[0],
+                blend: None,
+                write_mask: wgpu::ColorWrites::ALL,
+            })],
+        }),
+        multiview_mask: None,
+        cache: None,
+    })
 }
