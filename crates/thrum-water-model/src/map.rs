@@ -578,8 +578,9 @@ impl Map {
             }
             let own_level = row.level;
             let current = self.river_of(body).and_then(|(river, _)| {
-                (self.river(river)?.gauges.len() > 1)
-                    .then(|| self.river_join_current(c, point, row.current))
+                (self.river(river)?.gauges.len() > 1
+                    && c.ends.iter().any(|end| self.variable_mouth(end)))
+                .then(|| self.river_join_current(c, point, row.current))
             });
             let mut total = 1.0;
             // A brink end joins no body: the row up to it is the chart's own.
@@ -616,7 +617,7 @@ impl Map {
             // Backwater can match the receiving level well before the mouth.
             // Keep the solved discharge there, spreading the jet into the
             // receiving current only across the last map cell.
-            let length = if end.mouth {
+            let length = if self.variable_mouth(end) {
                 end.length.min(self.bed.lattice().1)
             } else {
                 end.length
@@ -636,6 +637,13 @@ impl Map {
             }
         }
         current
+    }
+
+    fn variable_mouth(&self, end: &End) -> bool {
+        end.mouth && !end.is_brink() && {
+            let stage = self.bodies[end.body].stage;
+            stage.min < stage.max
+        }
     }
 
     pub(crate) fn join_weight(

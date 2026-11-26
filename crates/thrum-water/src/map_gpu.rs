@@ -335,6 +335,12 @@ impl MapGpu {
                     destination.layers[2] = layers;
                     layers += 2;
                     destination.track = tracks.prepare(map, id, chart, &mut layers);
+                    rivers[id] = rivers::ChartLayers::prepare(
+                        map,
+                        id,
+                        &mut layers,
+                        limits.max_texture_array_layers,
+                    )?;
                     for (n, end) in chart.ends.iter().filter(|end| !end.is_brink()).enumerate() {
                         let segment = destination
                             .ends
@@ -349,17 +355,18 @@ impl MapGpu {
                         destination.joins[n] = [
                             end.body as f32,
                             end.length as f32,
-                            f32::from(end.mouth),
+                            // A stage-controlled receiver can drown the prepared
+                            // head gradient upstream of its physical edge.
+                            if end.mouth && rivers[id].is_some() {
+                                let stage = map.body(end.body).expect("joined body").stage;
+                                1.0 + f32::from(stage.min < stage.max)
+                            } else {
+                                f32::from(end.mouth)
+                            },
                             0.0,
                         ];
                         destination.layers[3] += 1;
                     }
-                    rivers[id] = rivers::ChartLayers::prepare(
-                        map,
-                        id,
-                        &mut layers,
-                        limits.max_texture_array_layers,
-                    )?;
                 }
             }
         }

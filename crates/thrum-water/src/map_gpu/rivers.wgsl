@@ -25,7 +25,7 @@ fn river_chart_row(
     point: vec2<f32>, body: BodyRecord, own: MapRow, rows: ptr<function, array<MapRow, BODY_LIMIT>>,
 ) -> MapRow {
     var row = chart_row(point, body, own, rows);
-    if body.joins[0].w == 0.0 { return row; }
+    if body.joins[0].w == 0.0 || max(body.joins[0].z, body.joins[1].z) <= 1.0 { return row; }
     var current = own.water.yz;
     var total = 1.0;
     for (var e = 0u; e < body.layers.w; e++) {
@@ -34,7 +34,7 @@ fn river_chart_row(
         let delta = segment.zw - segment.xy;
         let offset = point - segment.xy;
         let distance = length(offset - delta * clamp(dot(offset, delta) / dot(delta, delta), 0.0, 1.0));
-        let width = select(join.y, min(join.y, map.origin_spacing_margin.z), join.z > 0.0);
+        let width = select(join.y, min(join.y, map.origin_spacing_margin.z), join.z > 1.0);
         let fade = smoothstep(0.0, width, distance);
         if fade >= 1.0 { continue; }
         let other = (*rows)[u32(join.x)].water.yz;
