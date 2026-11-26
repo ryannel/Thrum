@@ -194,7 +194,8 @@ impl CloudSelection {
             let deck = Type {
                 base: 125.0,
                 depth: [108.0, 119.0],
-                liquid_water: 0.000_40,
+                liquid_water: 0.000_22,
+                droplet_radius: 5e-6,
                 profile: [0.13, 0.29],
                 ..config.types[0]
             };
@@ -206,7 +207,7 @@ impl CloudSelection {
     pub(crate) fn weather(self, initial: Parameters) -> Parameters {
         if self == Self::Ground(GroundWeather::LowDeck) {
             Parameters {
-                coverage: 0.958,
+                coverage: 0.865,
                 kind: 0.0,
                 ..initial
             }
