@@ -1454,7 +1454,7 @@
     {
       "id": "WP23",
       "name": "The water's reflection and shade tests compile for Linux and Windows too",
-      "status": "not_started",
+      "status": "in_progress",
       "quality_bar": "The workspace's tests stay type-checked for Linux and Windows, as they were before WP8's first commits reached main: no error for either target, and the Mac's optics proofs as they are.",
       "items": [
         {
@@ -1462,8 +1462,8 @@
           "statement": "The workspace type-checks for Linux and Windows: `scripts/check_cross_target.sh` passes on this work package's checkout for x86_64-unknown-linux-gnu and x86_64-pc-windows-msvc, with every test target of the water scene among those it checks. Record: one run of the type-check; the scheduled `cross-target` main-branch check guards it from then on.",
           "check": "bash scripts/check_cross_target.sh",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": ""
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP23/README.md"
         }
       ],
       "failed_reviews": 0,

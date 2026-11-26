@@ -1263,3 +1263,7 @@
   more try?", the owner answered "Yes" to splitting them off. WP8.7 now names the sea and basin cases its reviews
   passed. New WP24 holds the last review's two chart findings. WP23 moves ahead of WP8, so main's `cross-target`
   check is repaired first. [What changed and why](../../../.orchestrate/evidence/WATERS/WP8-chart-cases-split.md).
+- 2026-11-26 WP23. The reflection and shade tests and proof driver compile the shared Metal
+  fixture only on macOS. The test entries still use the shared macOS GPU test macro on each platform.
+  The workspace cross-target check passed on the Mac for Linux and Windows, including all water
+  scene test targets. [WP23 evidence](../../../.orchestrate/evidence/WATERS/WP23/README.md).
