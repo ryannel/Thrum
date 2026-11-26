@@ -460,7 +460,7 @@
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "in_progress",
+      "status": "ready_for_review",
       "quality_bar": "As truthful as a shipped game's benchmark mode, such as Forza Horizon 5's or Shadow of the Tomb Raider's: one command per target, the same scene and controls on each, a report of the settings that actually ran, and a frame record that shows every hitch. Across the three rows, the picture that benchmark gives when only its anti-aliasing or upscaler option is changed: one scene, one lighting and one exposure, differing in how edges and fine detail are resolved.",
       "findings": [
         {
