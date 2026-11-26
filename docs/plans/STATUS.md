@@ -4,7 +4,7 @@ The orchestrate script writes this page from the plan files and record files aft
 
 ## Overview
 
-23 of 37 modules done · 12 in progress · 2 to come
+24 of 37 modules done · 11 in progress · 2 to come
 
 ### Needs you now
 
@@ -365,7 +365,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Now and next
 
-- A running game can say exactly which cooked content it is drawing, so two stores at the same generation cannot be mistaken for each other (CONTENT-LOOP WP6): Ready for Review · [plan](CONTENT-LOOP/PLAN.md)
+- One command runs the same showcase on the Mac's Apple recipe, on its portable recipe and in Chrome, and each run says exactly what it ran (SHOWCASE WP7): Not Started · [plan](SHOWCASE/PLAN.md)
 - The camera goes under water: the waterline crosses the lens, and the surface overhead shows the sky through a bright window (WATERS WP15): In Progress · [plan](WATERS/PLAN.md)
 - Mist and fog banks reach the horizon, low cloud hides the hilltops, and a climbing camera passes into the cloud and out above it (CLOUDS WP15): In Progress · [plan](CLOUDS/PLAN.md)
 - On the island a stream runs from a spring through a pool and a narrows to the lake, and a river runs from the lake to the sea; raise the lake and the river swells, and a float rides from the spring to the sea (RIVERS WP4): In Progress · [plan](RIVERS/PLAN.md) · [latest review](../../.orchestrate/evidence/RIVERS/WP4-review.md)
@@ -375,6 +375,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Recently done
 
+- A running game can say exactly which cooked content it is drawing, so two stores at the same generation cannot be mistaken for each other (CONTENT-LOOP WP6), 26 Nov · [review](../../.orchestrate/evidence/CONTENT-LOOP/WP6-review.md)
 - Mist lies in the valley's hollows and fades the land near the camera, in the land's own light (CLOUDS WP14), 26 Nov · [review](../../.orchestrate/evidence/CLOUDS/WP14-review.md)
 - The owner can read, in one reviewed document, what Thrum's Metal pipeline cache would offer wgpu and what to settle there first (APPLE-PRESENTATION U1), 26 Nov · review `.orchestrate/evidence/APPLE-PRESENTATION/U1-review.md` (cleared)
 - Apple tile with MetalFX and EDR is compared with portable TAAU on the route, and each clause of G4 is proved (APPLE-PRESENTATION WP11), 26 Nov · review `.orchestrate/evidence/APPLE-PRESENTATION/WP11-review.md` (cleared)
@@ -513,8 +514,8 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is found on main within about two hours and traced to the commit that made it |  | Done 25 Nov |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE WP2, BASELINE-GUARD WP1 | Done 17 Nov |
 | 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame, and answer a game's questions every tick even when a frame is skipped | APPLE-TILE WP2 and WP3, APPLE-PRESENTATION WP2, BASELINE-GUARD WP1 | Done 25 Nov |
-| 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | Nothing for its WP4; APPLE-PRESENTATION WP2 and WP3, EFFECT-GRAPH WP2, CULLING WP3 | WP6 of 6 · Ready for Review |
-| 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | CONTENT-LOOP WP2 and CULLING WP3 to start; ATMOSPHERE WP10 for the populated valley's motion review; APPLE-TILE WP12, APPLE-PRESENTATION WP11, ATMOSPHERE WP6 (which closes G3s) and CONTENT-LOOP WP3 and WP6 for the three rows from one command; PLATFORM-RUNTIME-MAC WP3, CREATOR WP3 and APPLE-PRESENTATION WP17 as well to close | Waiting: On Dependency, CONTENT-LOOP:WP6 |
+| 12 | CONTENT-LOOP | Edited meshes, textures and volumes appear in the running game without a stall | Nothing for its WP4; APPLE-PRESENTATION WP2 and WP3, EFFECT-GRAPH WP2, CULLING WP3 | Done 26 Nov |
+| 13 | SHOWCASE | The V1 exit: the showcase valley on Mac and in Chrome, reviewed, with its closing record | CONTENT-LOOP WP2 and CULLING WP3 to start; ATMOSPHERE WP10 for the populated valley's motion review; APPLE-TILE WP12, APPLE-PRESENTATION WP11, ATMOSPHERE WP6 (which closes G3s) and CONTENT-LOOP WP3 and WP6 for the three rows from one command; PLATFORM-RUNTIME-MAC WP3, CREATOR WP3 and APPLE-PRESENTATION WP17 as well to close | WP7 of 5 · Not Started |
 | 14 | SEA | The wind's waves, from glassy calm to gale: one wave field that every body of water reads | Nothing to start; EFFECT-GRAPH WP2 for the field on the GPU | Done 14 Nov |
 | 15 | WATERS | Sea, shore, lakes and ponds as one water: drawn, lit, floated on, stirred and foaming, breaking on its beaches, mirroring the land, seen from beneath and lit there by the Sun's net and shafts, with a place made for rivers and puddles | SEA WP1 to start; SEA WP2, EFFECT-GRAPH WP3, ATMOSPHERE WP5 and WP9 and CREATOR WP1 for its first frame; CONTENT-LOOP WP1 for foam; APPLE-PRESENTATION WP3 for the whole range in motion; SCENE-VIEWS WP3 for mirrored scenery; EFFECT-GRAPH WP6 for floats in the surf with the game running; APPLE-PRESENTATION's governor and MetalFX work packages to close | WP15 of 25 · In Progress |
 | 16 | SCENE-VIEWS | The scene is drawn a second time from another viewpoint, so water can mirror hills and trees the camera cannot see | CULLING WP1, ATMOSPHERE WP5 and EFFECT-GRAPH WP3 | Done 23 Nov |
