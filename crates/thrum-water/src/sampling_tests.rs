@@ -127,6 +127,7 @@ fn reconstructed_moments_have_no_magnified_texel_lattice() {
     });
     let source = format!(
         "{}\n{}",
+        include_str!("sampling_weights.wgsl"),
         include_str!("sampling.wgsl"),
         r"
 @group(0) @binding(0) var field:texture_2d_array<f32>;
