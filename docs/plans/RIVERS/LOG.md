@@ -284,3 +284,10 @@
   trade and measured at most 0.531 mm with the fix. The four full-length transects, wetting and
   join checks also passed. Hardware Chrome drew both rivers and read both packaged keys with
   zero solves. [Target evidence](../../../.orchestrate/evidence/RIVERS/WP4/oblique-depth/README.md)
+
+- 2026-11-26 WP4.3 proof follows the revised camera and time bounds. The four-pixel bank allowance is
+  evaluated at each reconstructed ray hit. Metal passed 143 wet stations per camera at each of four
+  gauges. The full 420-pair tidal runs measured at most 0.0770 mm from above and 0.5302 mm from
+  the bank. The maximum step residual across the three ends was 1.9 µm. The complete seven-second
+  runs belong to the main tier. Short observations and the transects stay in the merge tier.
+  [Target evidence](../../../.orchestrate/evidence/RIVERS/WP4/revised-depth/README.md)
