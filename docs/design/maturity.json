@@ -1188,6 +1188,19 @@
         "evidence": "../../.orchestrate/evidence/APPLE-PRESENTATION/WP10/README.md",
         "scope": "The shipped shaders of the V1 moving route on Mac Metal. The two wgpu internal validation stages compile at device setup. The offline path remains opt-in while WP12 measures the local archive."
       },
+      "WP11": {
+        "implementation": "The target checks exercise alternating Apple Tile MetalFX EDR and Portable TAAU SDR replay on Metal, the governed TAAU route in Chrome, and the iOS simulator rotation and resume. The Apple Tile registry retains TAAU as its default reconstructor.",
+        "functional_validation": "The paired Metal check retains the launch and render-owner records, including a float drawable retained across a forced move to SDR at H=1. Chrome completed the 1280×720 route with changing governor scale and equal resource creation counters across readiness. The iPhone 18 Pro simulator presented TAAU on a 2622×1206 SDR drawable after rotation and after background/resume.",
+        "experienced_quality": "The builder inspected original-timing Chrome submissions at all five stops and the separate stars and solar scrub. Retained Mac stop comparisons are available. Fullscreen Mac motion qualification is open because the tap omitted submitted frames and the route missed cadence without capture. D6 establishes float values above SDR white submitted to an EDR layer. The panel observation is separate and outstanding.",
+        "platform_performance": {
+          "mac": "The matched 1920×1080 replay found a shorter MetalFX reconstruction segment and lower fixed-reference colour error, with no consistent whole-path timing advantage for Apple Tile and EDR. Physical traffic is unmeasured. The 3456×2234 MetalFX EDR governor run recorded 120 Hz display opportunities and 38.25 ms p95 between present calls without capture. The raw T2 take retained 307 of 800 presented frames.",
+          "browser": "Chrome WebGPU function and verified motion. No physical cadence claim.",
+          "ios": "Simulator function passed. Physical iPhone EDR and timing are owed.",
+          "external_display": "The display move uses a documented override on the internal display. A physical external-display move is owed."
+        },
+        "evidence": "../../.orchestrate/evidence/APPLE-PRESENTATION/WP11/g4-closure.md",
+        "scope": "G4 remains open on D11.5 and D11.6, subject to the combined fullscreen Metal motion and pacing qualification."
+      },
       "owner_panel_observation": {
         "status": "outstanding",
         "role": "Optional observation of the physical built-in XDR display. It is independent of G4 closure.",

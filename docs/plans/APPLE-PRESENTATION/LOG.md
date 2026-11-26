@@ -716,3 +716,10 @@ layer profile change. [Metal controls](../../../.orchestrate/evidence/CLOUDS/WP9
   only WP11. The module list's row for `SHOWCASE`, its exit coverage table, its build order and its planning
   note for this module say the same. No item of this module changed.
   [Review](../../../.orchestrate/evidence/APPLE-PRESENTATION/design-review.md)
+- 2026-11-26 WP11. Alternating Metal replay, governed Chrome function and motion, and iPhone simulator
+  SDR reconstruction through rotate and resume passed on their targets. MetalFX lowered the measured
+  reconstruction cost and held-reference error. The paired Apple/EDR path did not show a consistent
+  whole-path timing win, so the registry retains TAAU. [Promotion and follow-ups](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP11/promotion.md)
+- 2026-11-26 WP11. D11.5 and D11.6 remain open. At 3456×2234, the governor and MetalFX with an EDR layer missed
+  the 120 Hz cadence with capture off. The raw tap retained 307 of 800 presented frames. The optional panel
+  observation is outstanding. [Mac pacing and capture](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP11/mac-fullscreen-review/README.md)

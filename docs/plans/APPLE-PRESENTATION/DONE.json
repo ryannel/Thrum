@@ -1213,10 +1213,10 @@
           "statement": "In real time in Chrome the route under TAAU with the governor on is sharp and stable in the same places.",
           "inspect": "Capture the route with T2 engine capture in `realtime` mode in Chrome and judge the same crops. Note any stop where Chrome differs from the Mac.",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP11/chrome-route-review/README.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D11.8",
