@@ -771,7 +771,11 @@ pub(crate) fn edit_solar_time(runtime: &mut Runtime, fraction: f32) -> Result<()
     if runtime.source().cloud_input.is_none() {
         return set_time_of_day(runtime, fraction);
     }
-    if let Some(offset) = day_phase_edit(runtime.world().tick(), runtime.source(), fraction)? {
+    let tick = runtime
+        .source()
+        .held_solar_tick()
+        .unwrap_or(runtime.world().tick());
+    if let Some(offset) = day_phase_edit(tick, runtime.source(), fraction)? {
         runtime.continuous_source_mut().day_phase_offset = offset;
     }
     Ok(())

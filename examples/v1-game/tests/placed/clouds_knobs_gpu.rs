@@ -35,21 +35,21 @@ fn verify_sky_knobs() {
     let mut host = pollster::block_on(fixture.host_with_clouds(&gpu, CloudSelection::WorldLight));
     let mut frames = fixture::Frames::new(&gpu);
     frames.placed_submitted(&mut host, |row| row.volume_instances == 1);
-    host.world_mut().pause().unwrap();
+    host.world_mut().pause().expect("valid qualification input");
     frames.submit(&mut host);
     frames.submit(&mut host);
     let columns = host
         .cloud_placed_input()
-        .unwrap()
+        .expect("valid qualification input")
         .weather_columns()
-        .unwrap();
+        .expect("valid qualification input");
     let parked = host
         .world_mut()
         .publication()
-        .unwrap()
+        .expect("valid qualification input")
         .page
         .weather()
-        .unwrap();
+        .expect("valid qualification input");
     let inventory = host.cloud_resource_bytes();
     let read = || readback::texture(&gpu.device, &gpu.queue, &columns, Mip::level(0), ..);
     let original = read();
@@ -86,7 +86,8 @@ fn verify_sky_knobs() {
         let mut previous = knob.value;
         for value in [*knob.range.start(), *knob.range.end()] {
             let before = host.creation_checkpoint();
-            host.set_quality_knob(&knob.name, value).unwrap();
+            host.set_quality_knob(&knob.name, value)
+                .expect("valid qualification input");
             frames.submit(&mut host);
             let after = host.creation_checkpoint();
             assert_eq!(before.named_pipelines, after.named_pipelines, "{name}");
@@ -104,19 +105,21 @@ fn verify_sky_knobs() {
                 .quality_knobs()
                 .into_iter()
                 .find(|entry| entry.name == knob.name)
-                .unwrap();
+                .expect("valid qualification input");
             assert_eq!(current.value, value, "{name}");
             assert_eq!(host.cloud_resource_bytes(), inventory, "{name}");
             let current_state = host
                 .world_mut()
                 .publication()
-                .unwrap()
+                .expect("valid qualification input")
                 .page
                 .weather()
-                .unwrap();
+                .expect("valid qualification input");
             assert_eq!(current_state, parked, "{name}");
             assert_eq!(read(), original, "{name}");
-            let layer = host.cloud_sky_products().unwrap();
+            let layer = host
+                .cloud_sky_products()
+                .expect("valid qualification input");
             assert_eq!(
                 layer.history_valid,
                 previous == value || expected == QualityInvalidation::Age,
@@ -124,7 +127,9 @@ fn verify_sky_knobs() {
             );
             frames.submit(&mut host);
             assert!(
-                host.cloud_sky_products().unwrap().history_valid,
+                host.cloud_sky_products()
+                    .expect("valid qualification input")
+                    .history_valid,
                 "{name} exceeded one frame"
             );
             previous = value;

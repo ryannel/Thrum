@@ -51,7 +51,9 @@ impl FieldOverlay {
         Self::ALL
             .into_iter()
             .zip(0_u16..)
-            .find_map(|(overlay, index)| (f32::from(index) == stop).then_some(overlay))
+            .find_map(|(overlay, index)| {
+                (f32::from(index).to_bits() == stop.to_bits()).then_some(overlay)
+            })
             .unwrap_or_default()
     }
 }

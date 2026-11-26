@@ -10,14 +10,13 @@ fn field_colour(field:u32,uv:vec2<f32>)->vec4<f32> {
     switch field {
         case 1u: { value=column.z; }
         case 2u: { value=column.w; }
-        case 3u: { value=column.y/max(cloud.heights.y,1.0); }
+        case 3u: { value=select(0.0,column.y/max(cloud.heights.y,1.0),column.z>0.0); }
         case 4u: {
-            let age=textureLoad(weather_optical,weather_pixel,0,0).x;
-            value=select(0.0,fract(age/120.0),age>0.0);
+            value=textureLoad(weather_optical,weather_pixel,0,0).x;
         }
         case 5u: {
             if cloud.density_profile.y>0.0 {
-                let placed=textureLoad(placed_columns,weather_pixel,0,0);
+                let placed=textureLoad(placed_columns,weather_pixel,1,0);
                 if placed.x>0.0 {
                     return vec4(0.30+0.70*fract(placed.x*vec3(0.618,0.414,0.732)),0.0);
                 }

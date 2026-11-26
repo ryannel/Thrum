@@ -504,6 +504,11 @@ async function captureCloudView(view, extent) {
   }
   const heldTick = mode === 'fixed' && query.has('cloud-store') ? 300 : 0;
   const heldTime = heldTick ? game.route_step_ms(0.5) : 0;
+  if (view.overlay_before !== undefined) {
+    if (mode !== 'fixed' || !Number.isInteger(view.overlay_before) ||
+        view.overlay_before < 1 || view.overlay_before > 7) fail('invalid initial cloud overlay');
+    applyCaptureParameters(JSON.stringify({'clouds.overlay': view.overlay_before}), heldTime);
+  }
   const warmupEnd = performance.now() + 3000;
   const warmupStart = game.presented();
   while (performance.now() < warmupEnd) {
@@ -513,6 +518,9 @@ async function captureCloudView(view, extent) {
   }
   record.held_warmup_submissions = Number(game.presented() - warmupStart);
   if (!record.held_warmup_submissions || game.committed_tick() !== heldTick) fail('cloud view warmup missed the held tick');
+  if (view.overlay_before !== undefined) {
+    applyCaptureParameters('{"clouds.overlay":0}', heldTime);
+  }
   await ready(() => game.route_slot_ready(), 'cloud view has no free frame slot');
   record.initial_report = JSON.parse(game.route_report(0));
   record.culling = game.report();

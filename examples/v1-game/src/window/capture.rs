@@ -741,9 +741,37 @@ fn prepare_parameters(
     if weather_motion(scenario) || scenario == "clouds-inspect" {
         crate::host::hold_capture_sun(driver.host_mut());
     }
+    let overlay_before = crate::content::launch_value("THRUM_CAPTURE_CLOUD_OVERLAY_BEFORE").ok();
+    if let Some(before) = &overlay_before {
+        if scenario != "clouds-still" || mode != "fixed" {
+            return Err("a restored cloud overlay needs a fixed clouds-still capture".to_owned());
+        }
+        let before: u8 = before
+            .parse()
+            .map_err(|_| "invalid initial cloud overlay")?;
+        if !(1..=7).contains(&before) {
+            return Err("the initial cloud overlay needs an enabled field".to_owned());
+        }
+        driver
+            .parameters(&json!({"clouds.overlay": before}).to_string())
+            .map_err(|error| error.to_string())?;
+    }
     let preset_accepted = Instant::now();
     warmup_checkpoint(driver, parity_checkpoint)?;
-    settle_placed_capture(driver, mode, parameters.as_deref())?;
+    settle_placed_capture(
+        driver,
+        mode,
+        if overlay_before.is_some() {
+            None
+        } else {
+            parameters.as_deref()
+        },
+    )?;
+    if overlay_before.is_some() {
+        driver
+            .parameters(r#"{"clouds.overlay": 0}"#)
+            .map_err(|error| error.to_string())?;
+    }
     Ok((preset_requested, preset_accepted))
 }
 

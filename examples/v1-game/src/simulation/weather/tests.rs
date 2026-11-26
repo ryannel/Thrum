@@ -110,8 +110,12 @@ fn clearing_deck_does_not_reintroduce_cumulus() {
 fn live_target_is_a_tick_edit_that_can_be_replayed() {
     let mut sim =
         crate::scene::selected_simulation(crate::GameContent::Grid, crate::RouteOverlay::Off, true)
-            .unwrap();
-    let old = sim.published_page().unwrap().weather().unwrap();
+            .expect("valid weather edit test");
+    let old = sim
+        .published_page()
+        .expect("valid weather edit test")
+        .weather()
+        .expect("valid weather edit test");
     let snapshot = sim.capture();
     let target = thrum_cloud_model::Parameters {
         coverage: 1.0,
@@ -124,12 +128,22 @@ fn live_target_is_a_tick_edit_that_can_be_replayed() {
     assert_eq!(sim.step(&[bad]).err(), Some(SimError::InvalidConfig));
     assert_eq!(sim.tick(), 0);
     let edit = Command::SetWeather(target);
-    sim.step(&[edit]).unwrap();
-    let next = sim.published_page().unwrap().weather().unwrap();
+    sim.step(&[edit]).expect("valid weather edit test");
+    let next = sim
+        .published_page()
+        .expect("valid weather edit test")
+        .weather()
+        .expect("valid weather edit test");
     assert!(next.parameters().coverage > old.parameters().coverage);
     assert!(next.parameters().coverage < target.coverage);
     assert_eq!(old.tick(), 0);
-    sim.restore(&snapshot).unwrap();
-    sim.step(&[edit]).unwrap();
-    assert_eq!(sim.published_page().unwrap().weather().unwrap(), next);
+    sim.restore(&snapshot).expect("valid weather edit test");
+    sim.step(&[edit]).expect("valid weather edit test");
+    assert_eq!(
+        sim.published_page()
+            .expect("valid weather edit test")
+            .weather()
+            .expect("valid weather edit test"),
+        next
+    );
 }
