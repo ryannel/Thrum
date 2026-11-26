@@ -2487,6 +2487,39 @@
         "by": "plan",
         "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 3 Must Fix find",
         "at": "2026-11-26T17:05:37Z"
+      },
+      "ready_for_review": {
+        "commit": "c51325563c5f4b1f68296af2fa3da4ff6ec270d1",
+        "checked": "004943e83be58840cd20caec6770a4b7715c49f0",
+        "at": "2026-11-26T21:57:44Z",
+        "reused": [
+          "WP15.1",
+          "WP15.11",
+          "WP15.6",
+          "WP15.7",
+          "WP15.9"
+        ],
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.171.0-alpha.13.2",
+        "path": "visible",
+        "usage": {
+          "input": 2616150,
+          "cached": 299913600,
+          "output": 522411,
+          "turns": 4
+        },
+        "session_usage": {
+          "input": 2616150,
+          "cached": 299913600,
+          "output": 522411,
+          "turns": 4
+        }
       }
     },
     "WP14": {
