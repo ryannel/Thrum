@@ -19,6 +19,7 @@ const MAGIC: &[u8] = b"THRUM METAL ARCHIVE 1";
 #[derive(Clone, Debug)]
 pub enum ArchiveRequest {
     /// Open an archive identified by the build's pipeline manifest.
+    /// Normal startup may repair the local file before marking the device ready.
     Read {
         /// Local archive file.
         path: PathBuf,
@@ -187,7 +188,7 @@ impl Identity {
                 .open(&temporary)
             {
                 Ok(file) => break (temporary, file),
-                Err(error) if error.kind() == io::ErrorKind::AlreadyExists => continue,
+                Err(error) if error.kind() == io::ErrorKind::AlreadyExists => {}
                 Err(error) => return Err(error),
             }
         };
