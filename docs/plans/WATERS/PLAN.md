@@ -31,6 +31,7 @@ alone: after changing `examples/water/tests/`, run `bash scripts/check_cross_tar
 - Assumption: cost is recorded on the Mac only, at 2560×1440 until the showcase's extent exists; no timing figure decides an item (brief decision 3).
 - Assumption: the module closes only after `APPLE-PRESENTATION`'s governor and MetalFX work packages.
 - Assumption: under the owner's bar of 17 November, tests cover what a game reads, the frame contract and what one pass hands another; wakes, foam and underwater light are judged by eye, and a defect found only by enlarging, reading pixels or instrumenting fails no inspection.
+- Assumption: carried ripples are proved on four named charts (WP9.2); their speed on a sheared chart is a known gap, left to `RIVERS`.
 
 ## WP1 Where water lies is worked out on the CPU alone: a sea, a lake in a hollow and a channel with a current each have a level, a depth and a flow at every point
 
@@ -90,15 +91,15 @@ alone: after changing `examples/water/tests/`, run `bash scripts/check_cross_tar
 
 ## WP8 Water reflects the sky, the Sun, its shores and the craft, shows the ground and hulls beneath it, glitters and dims under a cloud's shade, from dawn to night
 
-[Prove the code as it stands](../../../.orchestrate/evidence/WATERS/WP8-chart-cases-split.md#wp8).
+[Review](../../../.orchestrate/evidence/WATERS/WP8-review.md)
 
 ## WP24 Calm chart water reflects the scene, and rough chart water copies only its shallows
 
-[Builder notes](../../../.orchestrate/evidence/WATERS/WP8-chart-cases-split.md#wp24).
+[Review](../../../.orchestrate/evidence/WATERS/WP24-review.md)
 
 ## WP9 Water runs down a channel from the lake to the sea: its surface follows the slope, its ripples and foam travel with the current, and a float is carried down to the sea
 
-If the window's mean current makes interaction waves visibly wrong in the example channel, log it for the `RIVERS` planner.
+[Diagnosis: build, rerun, leave](../../../.orchestrate/evidence/WATERS/WP9-diagnosis.md#for-the-builder).
 
 ## WP15 The camera goes under water: the waterline crosses the lens, and the surface overhead shows the sky through a bright window
 

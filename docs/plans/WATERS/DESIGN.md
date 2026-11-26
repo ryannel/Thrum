@@ -779,10 +779,37 @@ Where the map has a current, everything on the surface travels with it.
 - **State** is moved exactly: foam drifts with the current, and interaction waves are carried by their window's
   mean current as a phase shift for each wave vector inside the same step. On a beach foam is also carried by
   the rising sheet of [the swash](#whitewater).
-- **The cascades and the foam pattern**, which are functions and have no state to move, are read at a place
-  carried back along the current, by two samples half a period apart that cross-fade, so the detail moves
-  downstream at the current's speed and its distortion is renewed before it shows. The period is a profile value.
-- **Bodies** feel the current through the query, and the game's own drag carries them.
+- **The foam pattern**, which is a function and has no state to move, is read at a place carried back along the
+  current, by two samples half a period apart that cross-fade, so the pattern moves downstream at the current's
+  speed and its distortion is renewed before it shows. The period is a profile value.
+- **The cascades** are functions too, but they are waves: two displaced samples of one wave cancel and turn its
+  phase back during the fade (WP9's first review). So a cascade is read at one place carried back along the
+  current, and preparation chooses how from the chart's own currents, in three ways.
+  - **One current over the whole chart.** The place moves back at that current. Exact.
+  - **A channel's flow**: one direction along a map axis, one speed across each section, and a speed free to
+    change from section to section, as where a channel narrows. Preparation stores a coordinate along the
+    channel that advances by the mean speed over the local speed, and the cascade is read at that coordinate
+    moved back at the mean speed. A ripple passes each section at that section's speed, closing up where the
+    water slows and drawing out where it quickens, and nothing builds up as the clock runs. Where the channel
+    joins a lake or the sea the carried cascade gives way to the receiving water's by the joined current. The
+    example's channel is carried this way.
+  - **Any other chart**, one sheared across its width, turning, or joined to another chart. A reference current
+    moves the place back continuously, and the rest of the local current is an offset that two cross-faded
+    samples renew, within a period short enough that the offset never folds. The reference is the mean current
+    along each unbroken run of cells flowing one way, so still water has none and stays still.
+- **Bodies** feel the current through the query, and the game's own drag carries them. The query reads a cascade
+  at the same carried place as the draw, and the slope and horizontal displacement it answers are the
+  surface's in world metres: the cascade's own, taken through how the carried place changes from point to
+  point, in all three ways.
+
+**Any other chart is a declared approximation.** A function with no state cannot follow a general flow exactly,
+and the third way is proved only on the charts WP9.2 names. It leaves two things undone. Where the current
+changes along a run, ripples longer than the renewed offset travel at the run's mean speed and not the local
+one, while shorter detail and the foam travel at the local one. And where two runs side by side differ in
+their mean, the pattern between them is sheared further each second. Neither happens in a channel's flow, so
+neither shows in the example. Whether they show on a solved river is [for `RIVERS` to find](#open-questions)
+on its first solved reach; the remedy would be carried state, or a renewal that suits a wave, as a work
+package here. No builder of WP9 chases either.
 
 The long waves are not carried: a body with a current is a chart, and its long-wave gain is zero outside its
 mouth's join. The swell a join lets in is not shifted by the outflow, a declared approximation.
@@ -1865,7 +1892,8 @@ need. A cue of theirs that a seam cannot carry is settled in the module list, wi
   a chart's footprint, ends and join weights with its level, current and loss, to [the rules preparation
   holds](#the-water-map). What this module proves for it: a chart is drawn, queried, carries detail, foam and
   floats, and joins a lake and the sea under a swell and through their stages (WP9). What it leaves to `RIVERS`:
-  how a river's reach answers its source's stage, which here stays as prepared.
+  how a river's reach answers its source's stage, which here stays as prepared, and whether a solved river's
+  sheared flow is served by [the third way of carrying a cascade](#carriage-by-the-current).
 - **`PUDDLES`: rain, puddles and wet ground.** A puddle is a basin whose stage rain raises and drying lowers, in
   hollows found from the bed. Rain rings are one more short wave layer. Wet ground is not a body: it is a wetness
   the ground's material reads, written by rain and by water that has left, which needs a ruling with the forward
@@ -1923,8 +1951,9 @@ need. A cue of theirs that a seam cannot carry is settled in the module list, wi
   [whitewater](#whitewater).
 - **W3.** Unrun. Regional copies and screen-space reflection for water are what Unreal, HDRP and Far Cry 5 ship;
   the units are the sea design's part E. WP8 measures the copy and the march where they fill the view.
-- **W5.** Unrun. Two cross-faded samples carried along a flow are Portal 2's and HDRP's; the pulse they can show
-  is [risk 13](#risks).
+- **W5.** Run in WP9. Two cross-faded samples carried along a flow are Portal 2's and HDRP's, and carry the foam
+  pattern; the pulse they can show is [risk 13](#risks). On a wave they turn its phase back, so the cascades
+  are carried in [three ways](#carriage-by-the-current), the third a declared approximation.
 - **W7.** Part N: the lag from an eikonal solve against Snell's closed form on a plane beach, the blends
   between wavelengths and between stages, and an island, where the transformed wave meets every shore from
   the sea and the exposure calms the lee. Part O: the break point against Komar and Gaughan, sets, a thrown
@@ -2341,6 +2370,7 @@ decides nothing. [WP19](#a-surf-query-a-running-game-can-use-wp19) uses it.
 | How does a river's reach answer a change of its source's stage? | `RIVERS`' planning; here the ends follow and the reach stays as prepared |
 | How do basins that overflow into each other merge and part? | `PUDDLES`' planning, with this module |
 | Does one mean current a window serve interaction waves in running water? | `RIVERS`' planning, on WP9's channel |
+| Do long ripples at a run's mean speed, and a pattern sheared between runs, show on a solved river? | `RIVERS`, on its first solved reach; a remedy is a work package here ([carriage](#carriage-by-the-current)) |
 | How many sampled textures does the surface need with the map, against sixteen? | WP4 counts against the record |
 | Is an Apple-tile kernel variant a measured win? | WP11 |
 

@@ -1634,7 +1634,7 @@
         },
         {
           "id": "WP9.2",
-          "statement": "Surface detail in a current is carried by it. Tracked across submitted frames, the detail moves downstream where the chart's current is 0.5 m/s, moves faster where it is 1.5 m/s, and in still water does not move.",
+          "statement": "On the Mac the drawn ripples travel with the current as a player sees them: downstream wherever the water runs, farther where it runs faster, and not at all where it is still. An 8 m marker ripple is followed in the depth of submitted frames, with the ripple's own travel taken off, over windows of 0.2 s, on four charts and no others. (a) Three reaches side by side, each a chart of one current: 0, 0.5 and 1.5 m/s. (b) One chart whose three lanes hold those currents along their whole length, read at each lane's middle. (c) That chart with every current at nothing. (d) Two reaches whose current rises downstream by 0.04 m/s in each metre, through 0.5 m/s and 1.5 m/s at their middles, with a slight flow across the channel at one bank. On (a), (b) and (c) the windows run back to back through one whole carriage period and then sit near 8 s, 25 s and 60 s; on (d) they sit at the start, between 24 s and 26.5 s, and near 60 s. In every window four things hold. Where the current is nothing the marker travels less than 0.1 m/s either way. In each running reach or lane it travels downstream. It travels farther in the 1.5 m/s reach or lane than in the 0.5 m/s one beside it. And it keeps half its first height or more. The marker's speed is held to no closer figure, and no other chart decides this item: what the design's \"Carriage by the current\" declares an approximation, ripples that take a run's mean speed where the current changes along it and a pattern sheared between runs, is not a finding against it. Guard: Metal tests in the water scene's carriage tests, on a bed of about 36 m by 20 m drawn at 320\u00d7192, since only submitted depth shows what the draw carries.",
           "check": "cargo test --locked --offline -p water-scene --test carriage_gpu",
           "lock": "gpu",
           "target": "mac-metal",
@@ -1695,6 +1695,18 @@
           "evidence": ".orchestrate/evidence/WATERS/WP9/revision-2/check-output/channel-cost.json",
           "verdict": "pass",
           "review": ".orchestrate/evidence/WATERS/WP9-review.md"
+        },
+        {
+          "id": "WP9.8",
+          "statement": "A float on a chart is told the slope of the water it sits on: the slope a chart's query answers is the surface's in world metres, however the current carries the ripples. On Metal, through the query mailbox, with an 8 m marker ripple running along the channel and four seconds or more of carriage gone by, on three charts and no others. (a) A reach of one current, 1 m/s. (b) A reach in two sections along its length, at 0.5 m/s and then 1.5 m/s. (c) A reach whose downstream current rises from 0.5 m/s to 1.5 m/s across 4 m of its width. At eight stations or more on each, in both sections of (b) and across the rise of (c), each of the two components of the answered slope agrees within 0.012 with the difference of the heights the same batch answers 0.15 m to either side of the station along that component, each height taken back to the field time it was sampled at. Guard: Metal tests beside WP9.2's on the same bed, since only the device's query pass makes the answer.",
+          "check": "cargo test --locked --offline -p water-scene --test carriage_gpu",
+          "ask": "Does the test for (c) post its points after four seconds or more of carriage, on a chart whose current differs across the channel's width, and compare both slope components with neighbouring heights of the same batch at one field time? Would it fail if the answered slope left out the tilt that the carried place adds across the channel?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
       ],
       "findings": [

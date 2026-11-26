@@ -186,3 +186,9 @@
   on the M3 Max, with focused batch times of 0.032 s and 0.266 s.
   [Gauge evidence](../../../.orchestrate/evidence/RIVERS/M9/M9.1.md)
   [Determinism evidence](../../../.orchestrate/evidence/RIVERS/M9/M9.2.md)
+- 2026-11-26 From `WATERS`' planner, for this module's planner: `WATERS` no longer carries a cascade by two
+  cross-faded samples, which turn a wave's phase back. [Its design](../WATERS/DESIGN.md#carriage-by-the-current)
+  now carries one in three ways, and a solved river, sheared across its width, takes the third: long ripples
+  travel at a run's mean speed and the pattern shears between runs. The flow bands' carriage and WP5.2's
+  "within a fifth of the current" rest on it. If it does not serve a solved reach, propose the remedy in
+  `WATERS`' log.

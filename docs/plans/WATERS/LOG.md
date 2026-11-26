@@ -1300,15 +1300,11 @@
   [WP9 target evidence](../../../.orchestrate/evidence/WATERS/WP9/README.md).
 
 - 2026-11-26 WP9 review follow-up. The two displaced readings of the same cascade cancelled
-  and reversed its phase during the blend. Keep renewal for the procedural foam pattern
-  and carry the cascades continuously through their periodic domain. Steady parallel reaches
-  use a prepared travel coordinate, keeping the spatial deformation independent of elapsed
-  time. Source and mouth blend the running and receiving waves by the joined current.
-  Metal observes the marker over the full former renewal cycle and matches the
-  current-on and current-off float courses. The browser checks the submitted
-  carriage code and live map. The paired cost record investigates comparable
-  scene and output passes along with the water passes. The widened source footprint
-  keeps the flared bank wet at high lake stage.
+  and reversed its phase during the blend. Renewal stays for the foam pattern; the cascades are carried
+  continuously, and steady parallel reaches use a prepared travel coordinate. Source and mouth blend the
+  running and receiving waves by the joined current. Metal follows the marker through the former renewal
+  cycle and matches the float's courses with the current on and off. The cost record now investigates
+  comparable scene and output passes. The widened source footprint keeps the flared bank wet at high stage.
   [Review follow-up evidence](../../../.orchestrate/evidence/WATERS/WP9/revision-1/README.md).
 
 - 2026-11-26 WP9 second review follow-up. A general chart carries a coherent
@@ -1328,3 +1324,13 @@
   renewal and past 60 seconds. The still lane and the all-still control measure within
   0.019 m/s of zero. The earlier varying-current height and parallel-query slope regressions
   pass. [Target evidence](../../../.orchestrate/evidence/WATERS/WP9/revision-3/metal-carriage.md).
+
+<a id="wp9-diagnosis"></a>
+
+- 2026-11-26 WP9 diagnosis (planner), after four failed reviews: the plan was at fault. WP9.2 named no chart,
+  so each review made a new one, and the design's two cross-faded samples cannot carry a wave. The design now
+  states the three ways a cascade is carried, the third a declared approximation left to `RIVERS`. WP9.2 was
+  "the detail moves downstream where the chart's current is 0.5 m/s, moves faster where it is 1.5 m/s, and in
+  still water does not move"; it now names four charts, held to direction, order and stillness. WP9.8 is new:
+  the query's slope on a sheared chart, the finding outside the items in reviews 2 and 4. The rest stand.
+  [Diagnosis](../../../.orchestrate/evidence/WATERS/WP9-diagnosis.md).
