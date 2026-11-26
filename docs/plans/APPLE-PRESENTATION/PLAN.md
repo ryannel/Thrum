@@ -24,6 +24,10 @@ Build in the order below.
   protected, because that needs a change to wgpu's Metal backend. The owner can ask for that change.
 - Assumption: a viewer cannot see a brightness difference under 1% of a frame's mean luminance, so D8.3 allows
   MetalFX that much. It is a little under one step of the 8-bit output at the brightness of D8.3's frames.
+- Assumption: "later" for offering the cache upstream means after G4 closes in WP11, not after the V1 exit. So
+  U1's notes are written while V1's last modules build, and nothing waits for the owner's answer in U2.
+- Assumption: agents draft no text for the owner to post upstream, not even a comment to rewrite. The upstream
+  notes give facts, options and a recommendation, and the owner writes the comment. The owner can ask for drafts.
 
 ## WP1 Every pixel of the valley carries correct motion under jitter, including the sky and stars: done
 [review](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP1-review.md)
@@ -52,28 +56,7 @@ Build in the order below.
 ## WP6 Highlights go brighter than SDR white on the built-in XDR display: done
 [review](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP6-review.md)
 
-## WP16 The long tests pass again, and running out of GPU timers is a named error, not a lost device
-
-The main-branch check `long-tests` has failed since a25e1d13d, and this is its fix:
-[the design](DESIGN.md#timestamp-query-sets-and-metals-limit-wp16) gives the cause, the two mechanisms and what a
-refusal means for a frame host and for the ray build probe. The
-fault needs tests that share a process. `./dev check` runs each test in a process of its own and passes with the
-fault in. `cargo test -p v1-game --features draw-probe,thrum-render/creation-counters --test ray_tracing_gpu`
-fails from four test threads up, and passes with three.
-
-`./dev long-tests` runs every test of `timestamp_budget` in one process, side by side, and WP16.4 does the same.
-So the two tests that fill the process to 32 must not leave the binary's other tests refused, or each other.
-The guarantee holds [while every creation during a request comes through the call
-site](DESIGN.md#timestamp-query-sets-and-metals-limit-wp16), so the tests hold their query sets through it and
-`thrum-render` offers it outside the crate. WP16.6 needs a test to hold a request between its Metal trial and its
-wgpu creation: keep that hold out of builds without `creation-counters`. `SEA`'s harness in
-`crates/thrum-sea/tests/support.rs` is not yours to change.
-WP7's items do not change and its tests keep passing: the governed frame still frees its slot while its
-timestamps are read back. In `RAY-TRACING`'s `build_probe.rs` change only how `encode` asks for its query set
-and what it records when refused, under [the ruling](../ARCHITECTURE.md#interfaces). The test-only cap in
-`timestamp_permit.rs` stays unless WP16.4 passes without it. `mesh_stage_gpu`'s not-run line in
-`.config/long-tests.txt` is `MESH-SHADING`'s to lift: record in the log whether it passes whole after this
-work package, and leave the line.
+## WP16 The long tests pass again, and running out of GPU timers is a named error, not a lost device: done
 
 ## WP7 The governor holds the display rate under forced load, then recovers step by step: done
 [review](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP7-review.md)
@@ -87,23 +70,8 @@ work package, and leave the line.
 ## WP10 Shaders compiled ahead of time load at launch with no WGSL translation, and pipelines are prepared in parallel: done
 [review](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP10-review.md)
 
-## WP12 A warm launch compiles no pipeline: the local pipeline archive is proved by a strict fresh-process run
-
-The pinned copy of wgpu-hal is WP10's, and the archive patch is its own file beside WP10's. The wgpu-core pin is
-new here, and [the design](DESIGN.md#pipeline-preparation-wp10-and-wp12) says how far it goes. If the public
-round trip turns out to need a change to wgpu-core outside its cache-header code, stop and say so, because
-widening the pin is the lead's decision.
-
-The first builder's prototype and probe are in
-[the handoff](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP12-handoff.md). The archive half worked on
-this Mac for one compute pipeline; render pipelines are still to prove.
-
-The owner may offer both cache patches upstream, so keep each small and free of Thrum's names. Post nothing,
-and open no issue or pull request.
-
-## U1 The Metal pipeline-cache change is offered upstream by the owner
-
-Later, and not part of V1. After WP12 is proved; the owner writes and approves every public post. [As drafted](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP4-M11-milestone-drafts.md#u1-upstream-metal-pipeline-cache-later-not-v1-gating-if-needed-pending).
+## WP12 A warm launch compiles no pipeline: the local pipeline archive is proved by a strict fresh-process run: done
+[review](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP12-review.md)
 
 ## WP11 Apple tile with MetalFX and EDR is compared with portable TAAU on the route, and G4 closes
 
@@ -111,3 +79,24 @@ Later, and not part of V1. After WP12 is proved; the owner writes and approves e
 reconstruction readers and scale steps. The evidence page is `.orchestrate/evidence/render/G4-PAIRED-<date>.md`, and the
 ledger is `docs/design/maturity.json`. Ask for the owner's look at the panel in the evidence page and in your
 report, and never wait for it: G4 closes on the agent and device evidence, with the look recorded as outstanding.
+
+## U1 The owner can read, in one reviewed document, what Thrum's Metal pipeline cache would offer wgpu and what to settle there first
+
+Not part of V1. [The design](DESIGN.md#offering-the-cache-upstream-u1-to-u3) gives the owner's rules, what no
+agent does, wgpu's side as read on 26 November, and the six parts of the upstream notes; it is all of the
+design this work package needs. The two cache patches are `vendor/wgpu-hal-patches/0002-metal-pipeline-archive.patch`
+and `vendor/wgpu-core-patches/0001-metal-cache-header.patch`. WP12's launch record is D12.4's evidence,
+[the paired record](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP12/review-repair/registry-first-run/launch.json);
+[its README](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP12/review-repair/README.md) also links the rerun
+on the merge candidate, which is a second record and not the one part 5 quotes. `gh` is signed in
+here: use it to read wgpu's issue, pull requests and files, and for nothing that writes. The notes are evidence,
+so the landing is a log entry and no more, and `./dev check-docs` is the check to build against.
+
+## U2 The owner has opened the conversation on wgpu's Metal pipeline-cache issue, and what was settled there is on record
+
+The upstream notes are U1's evidence; U1.1's `evidence` field has the path. Do U2.1, then end
+`BLOCKED needs_human_feedback` with the question U2.2 carries. The owner posts when they choose and a reply
+upstream can take weeks, so a long wait here is expected and is not a fault to work around. The log entry
+follows the owner's answer.
+
+## U3 The Metal pipeline-cache change is offered to wgpu by the owner: on trunk, tested in wgpu's suite, reviewed and walked through

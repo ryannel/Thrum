@@ -652,3 +652,10 @@ layer profile change. [Metal controls](../../../.orchestrate/evidence/CLOUDS/WP9
   routes each repaired the configured file before readiness and completed 361 ticks without late creations.
   The next fresh process strictly hit all 32 manifest pipelines in each repaired file.
   [Target evidence](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP12/review-repair/README.md)
+
+- 2026-11-26 Plan: U1 becomes three work packages after WP11, under the owner's rules of 7 November (revision 6
+  above). U1 writes the upstream notes for the owner and a reviewer checks them. In U2 the owner posts their own
+  comment on gfx-rs/wgpu#8526 and answers go ahead or stop. U3, the change on wgpu's trunk, is planned from that
+  answer. The plan listed U1 before WP11; it moves behind it because revision 6 says the offer "does not gate V1
+  or M11". Read that day: trunk `60cef2be` still has no Metal adapter key, the issue's last comment is from
+  20 October, and gfx-rs/wgpu#9623, an earlier pull request for the feature, was closed in June with no review.

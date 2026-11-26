@@ -1237,6 +1237,86 @@
       "diagnoses": 0,
       "status": "not_started",
       "quality_bar": "The whole presentation path at the level of a shipped high-end Mac game: sharp and stable at the display's full resolution, highlights above SDR white in the frame the XDR display's surface is given, the display's rate held, and no hitch or compile during play, with the Apple path's win over the portable one measured and not assumed."
+    },
+    {
+      "id": "U1",
+      "name": "The owner can read, in one reviewed document, what Thrum's Metal pipeline cache would offer wgpu and what to settle there first",
+      "status": "not_started",
+      "quality_bar": "Notes the owner can speak from in public under their own name: every statement about wgpu, its issue or the patches is true on the day it was read and traceable to its source. The standard is a careful contributor's own preparation before a first comment on a project whose maintainers close pull requests their authors have not read. Nothing is judged against an image or a shipped game: each item is judged against the sources it cites.",
+      "items": [
+        {
+          "id": "U1.1",
+          "statement": "The upstream notes give wgpu's side as read on a stated day and at a named trunk commit. Part 1 covers gfx-rs/wgpu#8526 and each pull request that proposes a Metal pipeline cache, #9623 among them: its author, dates, status and what maintainers said of it, each with its link. Part 2 quotes what `CONTRIBUTING.md` and the pull request template say on change ownership, LLM use, designing new features and large pull requests. Part 4 says whether trunk gives Metal an adapter key in the cache header, whether its Metal backend implements the pipeline cache, and what applying each of the two cache patches to that commit does: it applies, or the files and hunks that fail, with the commands and their output kept. Record: parts 1, 2 and 4 of the notes, with the command log.",
+          "ask": "Open the issue, the pull requests and the two files at the named commit. Is each statement in parts 1 and 2 true of what you read? Does one search of wgpu's pull requests for a Metal pipeline cache or `MTLBinaryArchive` find a pull request that part 1 leaves out? Apply each cache patch to the named commit as the command log does: do you get what part 4 states?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "U1.2",
+          "statement": "Part 3 of the notes takes the two cache patches, the archive patch on wgpu-hal and the cache-header patch on wgpu-core, part by part. Each part says what the patch does there in plain words, cites the lines of the patch it rests on, and carries one of three marks against the 4 October proposal on the issue: as proposed; proposed but done differently, saying how; or not in the proposal, saying why Thrum needs it and whether an upstream change could leave it out. Every function and type either patch adds or changes falls under a part. The parts name at least these: where the `PIPELINE_CACHE` feature is reported and on which devices; the validation key and what it is made from; how cache bytes become a Metal archive and back; how a pipeline is added to the archive and looked up in it; the policy that makes a miss an error; the repair of a partial archive and the bundle that carries it; an empty archive; and the adapter key with its unit tests. Record: part 3 of the notes.",
+          "ask": "Read part 3 beside the two patch files and the proposal. Is each part's description true of the lines it cites, and is its mark true of the proposal? Does any function or type that either patch adds or changes fall under no part?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "U1.3",
+          "statement": "Part 5 of the notes gives Thrum's use case from WP12's launch record alone: launch-to-ready for each preparation path, cold and warm, with the machine, the cache conditions and the load that record states, and nothing measured anew. Part 6 sets out the three decisions the conversation on the issue has to settle before a change is written for trunk: who writes the Metal change, which parts of part 3 are offered, and whether the cache header and the archive go as one pull request or two. Each decision has its options, what the patches as they stand support, and the agents' recommendation, marked as theirs. Record: parts 5 and 6 of the notes.",
+          "ask": "Does each figure in part 5 equal the figure in WP12's launch record, with that record's conditions beside it? Does each of the three decisions have its options, what the patches support and a recommendation marked as the agents' own? Can a reader who knows wgpu's public API and has not read the patches follow the notes from start to end without opening a patch?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "U1.4",
+          "statement": "Nothing was published, and nothing was written to be posted. The notes hold no draft of a comment, an issue or a pull request description. During the work package no agent posted, commented or reacted on wgpu's GitHub or its chat channels, opened or edited an issue or a pull request there, or pushed a branch to a public remote other than this repository's own. The landing changes nothing under `vendor/`. Record: the notes and the landing.",
+          "ask": "Read the notes whole: is any passage written in the owner's voice, to be posted? With the account `gh` is signed into here, do the issue, wgpu's pull requests and that account's fork of wgpu, if it has one, show anything created or pushed since the work package started? Does the landing change any file under `vendor/`?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
+    },
+    {
+      "id": "U2",
+      "name": "The owner has opened the conversation on wgpu's Metal pipeline-cache issue, and what was settled there is on record",
+      "status": "not_started",
+      "quality_bar": "A record the next planner can plan the trunk change from without asking the owner again, and that says what the public thread says. Nothing is judged against an image or a shipped game.",
+      "items": [
+        {
+          "id": "U2.1",
+          "statement": "On the day the owner is asked, the issue, the pull requests of part 1 and wgpu's trunk are read again, and the upstream notes reach the owner with a dated line for each of parts 1, 2 and 4: it still holds, or what changed. Where trunk moved in the files a cache patch touches, part 4's applying is done again at the new commit. Record: the dated lines, kept with the notes.",
+          "ask": "Do the dated lines agree with the issue, the pull requests and trunk as they stood that day, going by the dates the comments and commits carry?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "U2.2",
+          "statement": "The owner has answered go ahead or stop, and the answer is on record where the next planner reads it. A go ahead follows a comment of the owner's own on gfx-rs/wgpu#8526. This module's log holds the owner's words, a link to the owner's comment and to each reply the answer rests on, and the outcome: go ahead or stop, and for go ahead each of the three decisions as the thread settled it or left it open: who writes the Metal change, which parts of the patches are offered, and whether the cache header and the archive go as one pull request or two. The landing changes nothing under `vendor/`. Record: the log entry.",
+          "ask": "From the log entry alone, can you say whether the owner chose go ahead or stop and, for go ahead, how each of the three decisions stands? Do the linked comments say the same? Does the landing change any file under `vendor/`?",
+          "needs": {
+            "type": "human_feedback",
+            "what": "Read the upstream notes, then write and post your own comment on gfx-rs/wgpu#8526. wgpu asks that comments be written by hand, and no agent has drafted one. Answer once the thread has settled enough for you: go ahead or stop, and for go ahead who writes the Metal change, which parts are offered, and one pull request or two, as far as the thread settled them. You can also stop without posting. There is no deadline, and nothing in V1 waits for this."
+          },
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
     }
   ]
 }

@@ -16,7 +16,8 @@ fresh design review of that revision passed on 11 November. Revised 14 November 
 [its design review](../../../.orchestrate/evidence/APPLE-PRESENTATION/design-review.md) asked for one answer to the drawable's size
 after a failed configure and for a stated iOS transition. Revised 26 November for
 [the wgpu-core pin](#pipeline-preparation-wp10-and-wp12) that WP12's archive needs, after
-[the WP12 builder's handoff](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP12-handoff.md). It answers the three independent reviews of revision 1
+[the WP12 builder's handoff](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP12-handoff.md), and again that day for
+[offering the cache upstream](#offering-the-cache-upstream-u1-to-u3), once WP12 was Done. It answers the three independent reviews of revision 1
 (`86ec3b6b`) and the re-reviews of revision 2 (`c507ad3d`) recorded in [the log](LOG.md). Interface and path names below are
 proposals.
 
@@ -40,7 +41,9 @@ fallback, the lifecycle of a generation build, and the archive mechanism. Where 
 paragraph of this page disagree, that section governs. The 26 November revision changes pipeline preparation
 only: the wgpu-core pin, the archive's round trip through wgpu's public pipeline cache, and, after
 [its design review](../../../.orchestrate/evidence/APPLE-PRESENTATION/design-review.md), the game's check of the
-saved cache data before import.
+saved cache data before import. The second revision of that day adds
+[offering the cache upstream](#offering-the-cache-upstream-u1-to-u3) and the work packages U1 to U3. It changes
+no mechanism of the engine and nothing WP1 to WP12 or WP11 build or prove.
 
 ## Purpose and scope
 
@@ -401,7 +404,8 @@ current display shader is a pre-AA diagnostic. So TAAU at scale 1.0 becomes the 
 - WP9 takes a planning baseline of launch-to-ready. WP10 then builds and proves the pipeline preparation work: the
   pinned backend, offline metallibs and parallel pre-warm, and WP12 local archive qualification, all within V1. Their
   mechanism is [settled below](#pipeline-preparation-wp10-and-wp12).
-- Contributing the cache upstream (gfx-rs/wgpu#8526) is a later item that does not gate V1, under the owner's per-post authorization rules in G4 WP10/U1.
+- Contributing the cache upstream (gfx-rs/wgpu#8526) is later work that does not gate V1, under the owner's rules
+  in [offering the cache upstream](#offering-the-cache-upstream-u1-to-u3).
 
 **What would change these choices:**
 - A MetalFX neural upscaler (M5 Pro/Max) would be a new provider behind the same contract.
@@ -816,17 +820,92 @@ Three techniques, each behind the registry, each kept only if WP9's and WP12's l
    Metal's option that makes an archive miss an error, so no fallback can hide a miss. The archive is local to
    the device that harvested it; nothing is shipped to another device in V1.
 
-No patch is posted upstream by any agent: U1 is the owner's. It concerns the two cache patches, the archive in
-wgpu-hal and the cache header in wgpu-core, which together are the Metal half of gfx-rs/wgpu#8526. The
-cache-header patch is written as a change wgpu could take as it stands: it names nothing of Thrum's, follows
-the code and the tests around it, and is a separate file from the archive patch, so the owner can offer one or
-both. As read on 26 November 2026, the proposal on that issue names the same core change, a Metal case in
-`adapter_key` taken from the GPU's name with header unit tests, and a maintainer called the proposal about
-right. Nothing there is agreed and no pull request is open, so it is evidence for the shape, not a
-specification.
+### Offering the cache upstream (U1 to U3)
 
-The stage-record patch is not part of U1. Its blob keeps that change inside wgpu-hal; typed fields on wgpu's
-passthrough descriptor would be its upstream form, and would mean pinning wgpu-types as well.
+The owner may offer the Metal pipeline cache to wgpu. This is not part of V1 and nothing in V1 waits for it: U1
+to U3 are built after WP11, and no work package of any module depends on them.
+
+**What could be offered.** The two cache patches, the archive in wgpu-hal and the cache header in wgpu-core,
+which together are the Metal half of gfx-rs/wgpu#8526. The cache-header patch is written as a change wgpu could
+take as it stands: it names nothing of Thrum's, follows the code and the tests around it, and is a separate file
+from the archive patch, so the owner can offer one or both. The archive patch holds more than the issue's
+proposal asks for: beside the cache itself it carries the policy that makes a miss an error, and the repair of
+a partial archive with the bundle that holds it. The stage-record patch is not part of this. Its blob keeps
+that change inside wgpu-hal; typed fields on wgpu's passthrough descriptor would be its upstream form, and
+would mean pinning wgpu-types as well.
+
+**The owner's rules** (7 November 2026, [the log](LOG.md)'s revision 6), in order:
+
+1. coordinate on #8526 first, with an owner-written comment to the contributor who proposed the design;
+2. Metal only, against wgpu trunk rather than the 30.0.1 pin;
+3. tests in wgpu's GPU suite: a cache round trip, rejection of corrupt or mismatched data, and a warm hit under
+   fail-on-miss;
+4. a full `cargo xtask test` run on this Mac;
+5. an independent review;
+6. an owner walkthrough before submission.
+
+The owner writes every public description and comment, and nothing is posted without the owner's OK on each
+post.
+
+**What no agent does.** No agent posts, comments or reacts on wgpu's GitHub or its chat channels, opens or
+edits an issue or a pull request there, or pushes a branch to any public remote but this repository's own. No
+agent writes text for the owner to post either: no draft of a comment, an issue or a pull request description.
+wgpu asks contributors to write those themselves, and its maintainers act on it, as the next paragraph shows.
+Agents read wgpu's public pages and repository freely. A clone of wgpu is scratch under `tmp/`.
+
+**wgpu's side, as read on 26 November 2026.** Each of these is evidence for the shape of an offer, not a
+specification, and U1 reads them again.
+
+- The issue is open and assigned to a maintainer, and its last comment is from 20 October. The proposal of
+  4 October names the same core change as the cache-header patch, a Metal case in `adapter_key` taken from the
+  GPU's name with header unit tests, and an archive behind wgpu-hal's cache. A maintainer answered that it
+  "looks about right" and had not then read it in detail. Its author has opened no pull request. Nothing there
+  is agreed.
+- The proposal leaves the OS version out of the backend's validation key on purpose. The archive patch puts
+  the OS build in. That is one difference the conversation has to settle.
+- An earlier pull request for the same feature, gfx-rs/wgpu#9623, was closed in June 2026 with no review, after
+  a maintainer asked its author to review it before the maintainers did. On #8526 itself, on 20 October, a
+  maintainer asked another commenter to write their comments themselves.
+- `CONTRIBUTING.md` on trunk allows code an LLM wrote. The author who submits it answers for every line, and
+  writes issue and pull request descriptions and large explanatory comment blocks by hand. It asks
+  contributors to agree an approach with the maintainers before investing in a large change. The pull request
+  template asks how LLMs were used.
+- Trunk at `60cef2be` still gives only Vulkan an adapter key in `wgpu-core/src/pipeline_cache.rs`.
+
+**How it proceeds.** Three work packages, each ending where only the owner can go on.
+
+*U1, the upstream notes.* Agents write one document for the owner, kept in U1's evidence: what the owner needs
+in order to write that first comment and to judge what to offer. It is written for someone who knows wgpu's
+public API and has not read the patches. A reviewer checks it against its sources before the owner reads it,
+because the owner will speak from it in public. It has six parts:
+
+1. *Upstream.* The issue, and each pull request that proposes a Metal pipeline cache: author, dates, status and
+   what maintainers said, with links and the day read.
+2. *wgpu's rules.* What `CONTRIBUTING.md` and the pull request template say, at a named trunk commit, on change
+   ownership, LLM use, designing new features and large pull requests, quoted.
+3. *The patches, part by part.* For each of the two cache patches, each part of what it does, with the lines of
+   the patch it rests on and one of three marks against the proposal: as proposed; proposed but done
+   differently, saying how; or not in the proposal, saying why Thrum needs it and whether an upstream change
+   could leave it out.
+4. *Trunk.* At the same commit: whether trunk has the Metal adapter key and a Metal pipeline cache, and what
+   applying each cache patch to it does.
+5. *The use case.* Launch-to-ready by preparation path from WP12's launch record, with the conditions that
+   record states. Nothing is measured anew.
+6. *What the conversation has to settle.* Three decisions: who writes the Metal change, the proposal's author,
+   the owner or both; which parts of part 3 are offered; and whether the cache header and the archive go as one
+   pull request or two. Each has its options, what the patches as they stand support, and the agents'
+   recommendation, marked as theirs.
+
+*U2, the conversation.* The owner reads the notes, writes and posts their own comment, and answers the loop
+**go ahead** or **stop** once the thread has settled enough, with the three decisions as far as it settled
+them. How long to wait for a reply, and whether silence is enough to go ahead, is the owner's call. The answer
+goes in the log with links to the comments it rests on.
+
+*U3, the change.* A planner writes U3's items from U2's answer, under rules 2 to 6 above. On **stop** that
+planner drops U3. Either way the pinned copies stay as V1 needs them until a released wgpu carries the cache.
+
+U1 and U2 change nothing under `vendor/`: the pinned copies and their patch files are V1's, and WP12 proved
+them as they are.
 
 ### What closes G4, and what the owner observes (WP11)
 
@@ -1000,7 +1079,8 @@ The module list accepted seams 1–4 on 10 November and settled seams 5–9 on 1
 9. **Pipeline preparation and archives.** Owned by G4 WP10 and WP12 under the G3t boundary: the measured split; a
    pinned copy of wgpu-hal from WP10, whose first patch carries stage records for offline metallibs through
    passthrough and whose second (WP12) is the Metal `PIPELINE_CACHE`; from WP12 a pinned copy of wgpu-core,
-   changed only in the cache header it writes and checks on Metal; upstream later. V1's archive item stays as
+   changed only in the cache header it writes and checks on Metal; upstream later, by the owner
+   ([U1 to U3](#offering-the-cache-upstream-u1-to-u3)). V1's archive item stays as
    written.
 
 ## Open questions
