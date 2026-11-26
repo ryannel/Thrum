@@ -110,6 +110,7 @@ pub struct Water {
     spectrum: Spectrum,
     long_variances: [[f32; 4]; 8],
     height_rms: f32,
+    mirror_roughness: optics::MirrorRoughness,
     layer_heights: [f32; 4],
     offshore_displacement: [f32; 2],
     surf_cache_bounds: Option<[f32; 3]>,
@@ -221,6 +222,15 @@ impl Water {
             body,
             long_variances: records::long_variances(&spectrum),
             height_rms: records::height_rms(&spectrum),
+            mirror_roughness: profile
+                .optics
+                .map_or_else(optics::MirrorRoughness::default, |_| {
+                    optics::MirrorRoughness::new(
+                        &spectrum,
+                        profile.waves.choppiness,
+                        layer_heights[3],
+                    )
+                }),
             layer_heights,
             offshore_displacement,
             surf_cache_bounds,
@@ -520,7 +530,7 @@ impl SceneContribution for Water {
                 &self.opaque,
                 row.level,
                 self.offshore_displacement[1],
-                self.height_rms,
+                self.mirror_roughness,
             );
         }
         if let Some(cache) = &mut p.surf_cache {

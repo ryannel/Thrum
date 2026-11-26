@@ -71,7 +71,15 @@ fn receiving_rectangles_hold_rays_whose_surface_pixel_is_outside_the_source() {
         let eye = Vec3::from_array(frame.camera);
         for wave in [0_u8, 1] {
             let a = 0.45 * f32::from(wave);
-            let inputs = Shallows::default().inputs(config, &frame, None, &[body], 0.0, a, a);
+            let inputs = Shallows::default().inputs(
+                config,
+                &frame,
+                None,
+                &[body],
+                0.0,
+                a,
+                MirrorRoughness::default(),
+            );
             assert_ne!(inputs.dispatch, [0; 4]);
             for z in 1_u16..320 {
                 for x in -20_i16..=20 {
@@ -127,7 +135,15 @@ fn a_raised_panel_has_separate_source_and_reflected_regions() {
     let low = Vec3::new(-1.0, 1.25, 12.0);
     let high = Vec3::new(1.0, 2.65, 12.25);
     let body = BodyBounds::new(low.to_array(), high.to_array()).expect("test box");
-    let inputs = Shallows::default().inputs(config, &frame, None, &[body], 0.0, 0.0, 0.0);
+    let inputs = Shallows::default().inputs(
+        config,
+        &frame,
+        None,
+        &[body],
+        0.0,
+        0.0,
+        MirrorRoughness::default(),
+    );
     let eye = Vec3::from_array(frame.camera);
     for x in [low.x, high.x] {
         for y in [low.y, high.y] {
@@ -153,7 +169,7 @@ fn a_raised_panel_has_separate_source_and_reflected_regions() {
 fn see_through_admission_tracks_sight_depth_and_leaves_deep_map_tiles_uncopied() {
     use thrum_water_model::{Bed, Body, Stage};
 
-    let map = Map::prepare(
+    let mut map = Map::prepare(
         Bed::new(
             [-40.0, 15.0],
             2.5,
@@ -184,21 +200,43 @@ fn see_through_admission_tracks_sight_depth_and_leaves_deep_map_tiles_uncopied()
     let view = frame(10.0);
     let profile = Optics::default();
     let mut fields = Shallows::default();
-    let inputs = fields.inputs(profile, &view, Some(&map), &[], 0.0, 0.2, 0.45);
+    // No resolved wave height at all, but an unresolved RMS slope of 0.1
+    // makes this rougher than the scene shader's mirror limit.
+    let spectrum = thrum_sea_model::Spectrum {
+        long: vec![],
+        cascades: [160.0, 37.0, 9.0]
+            .map(|length| thrum_sea_model::Cascade::new(length, &[]).expect("empty cascade")),
+        tail_slope_variance: 0.01,
+    };
+    let roughness = MirrorRoughness::new(&spectrum, 4.0, 0.0);
+    let inputs = fields.inputs(profile, &view, Some(&map), &[], 0.0, 0.2, roughness);
     let wet = Vec3::new(-12.0, 0.0, 35.0);
     let deep = Vec3::new(31.0, 0.0, 42.0);
     let shallow_bits = bits(&inputs, &view, wet).expect("shallow sight point");
     let deep_bits = bits(&inputs, &view, deep).expect("deep sight point");
     assert_eq!(shallow_bits & (SOURCE | SHALLOW), SOURCE | SHALLOW);
     assert_eq!(deep_bits & (SOURCE | SHALLOW), 0);
+    assert_eq!(inputs.reach_slope_scene[2], 0.0);
+    assert!(inputs.dispatch[2] < view.render_extent[0]);
+
     let clear = Optics {
         extinction: [0.06; 3],
         ..profile
     };
-    let clear_inputs = Shallows::default().inputs(clear, &view, Some(&map), &[], 0.0, 0.2, 0.45);
+    let clear_inputs = fields.inputs(clear, &view, Some(&map), &[], 0.0, 0.2, roughness);
     assert_eq!(
         bits(&clear_inputs, &view, deep).expect("depth on screen") & (SOURCE | SHALLOW),
         SOURCE | SHALLOW
+    );
+    assert_eq!(clear_inputs.reach_slope_scene[2], 0.0);
+
+    map.set_wave_gains(0, [0.25; 4]).expect("sheltered sea");
+    let sheltered = fields.inputs(profile, &view, Some(&map), &[], 0.0, 0.2, roughness);
+    assert_eq!(sheltered.reach_slope_scene[2], 1.0);
+    assert_eq!(sheltered.dispatch, [0, 0, 853, 479]);
+    assert_eq!(
+        bits(&sheltered, &view, deep).expect("deep mirror point"),
+        SOURCE
     );
 }
 

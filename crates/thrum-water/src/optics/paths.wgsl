@@ -301,16 +301,11 @@ fn trace_scene(
     return hit;
 }
 
-struct SceneReflection {
-    layer: ReflectionLayer,
-    sky_visibility: f32,
-}
-
 fn scene_reflection(
     origin: vec3<f32>, ray: vec3<f32>, reach: f32, still: f32, body_layer: ReflectionLayer,
-) -> SceneReflection {
+) -> ReflectionLayer {
     let limit = select(reach, body_layer.along, body_layer.weight >= 1.0);
-    if limit <= 0.06 { return SceneReflection(no_reflection(reach), 1.0); }
+    if limit <= 0.06 { return no_reflection(reach); }
     let crossing = bank_crossing(origin, ray, limit);
     let mapped = crossing < limit;
     let point = origin + ray * crossing;
@@ -333,15 +328,12 @@ fn scene_reflection(
     var along = select(crossing, dot(hit.point - origin, ray), hit.distance > 0.0);
     var border = scene_edge(optics_uv(hit.pixel));
     var strength = hit.edge;
-    var shade = 0.0;
     if hit.distance > 0.0 && mapped {
         let height = above_bank(hit.point);
         let ground = (1.0 - smoothstep(0.20, 0.36, abs(height)))
             * (1.0 - smoothstep(1.0, 2.5, abs(along - crossing)));
-        // Depth agreement changes coverage continuously. A confirmed bank
-        // behind the foreground also limits grazing sky through the fringe.
+        // Depth agreement changes coverage continuously at a silhouette.
         let foreground = smoothstep(0.22, 0.45, height);
-        shade = foreground * agreement;
         strength = mix(strength, smoothstep(0.0, 0.075, strength), foreground);
         let before = 1.0 - smoothstep(0.25, 0.8, along - crossing);
         if hidden { strength *= max(before, ground); }
@@ -364,15 +356,11 @@ fn scene_reflection(
         along = crossing;
         strength = agreement;
         border = bank_border;
-        shade = 0.0;
     }
 
     let weight = select(0.0, still * reach_weight(along, reach) * border * strength,
         hit.distance > 0.0);
-    // A partly covered foreground texel over a bank also blocks the
-    // bright grazing sky lobe. Both fades vanish with the reflected source.
-    let sky_visibility = 1.0 - still * reach_weight(along, reach) * border * shade;
-    return SceneReflection(ReflectionLayer(hit, along, weight), sky_visibility);
+    return ReflectionLayer(hit, along, weight);
 }
 
 fn water_optical_paths(
@@ -400,20 +388,15 @@ fn water_optical_paths(
         let weight = reflected.edge * slope_weight * reach_weight(along, reach);
         body = ReflectionLayer(reflected, along, weight);
     }
-    var scene = SceneReflection(no_reflection(reach), 1.0);
+    var scene = no_reflection(reach);
     if optics.reach_slope_scene.z != 0.0 && still > 0.0 && reflected_ray.y > 0.0 {
         scene = scene_reflection(world, reflected_ray, reach, still, body);
     }
-    var background = sky;
-    if scene.sky_visibility < 1.0 && scene.layer.weight < 1.0 {
-        let upper = fresnel * 0.65 * environment_sky_radiance(vec3(0.0, 1.0, 0.0));
-        background = mix(sky, min(sky, upper), 1.0 - scene.sky_visibility);
-    }
     var outgoing: vec3<f32>;
-    if body.along < scene.layer.along {
-        outgoing = reflect_layer(body, reflect_layer(scene.layer, background, fresnel), fresnel);
+    if body.along < scene.along {
+        outgoing = reflect_layer(body, reflect_layer(scene, sky, fresnel), fresnel);
     } else {
-        outgoing = reflect_layer(scene.layer, reflect_layer(body, background, fresnel), fresnel);
+        outgoing = reflect_layer(scene, reflect_layer(body, sky, fresnel), fresnel);
     }
 
     var edge_depth = depth;

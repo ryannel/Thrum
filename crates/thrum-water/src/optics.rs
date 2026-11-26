@@ -11,6 +11,7 @@ use thrum_render::{
         SceneSurface,
     },
 };
+use thrum_sea_model::Spectrum;
 use thrum_water_model::Map;
 
 const PASS: &str = "water gather";
@@ -25,6 +26,55 @@ const SHALLOW: u32 = 1 << 30;
 
 /// Maximum number of opaque body boxes read by one water contribution.
 const BODY_CAPACITY: usize = 16;
+
+#[derive(Clone, Copy, Default, PartialEq)]
+pub(super) struct MirrorRoughness {
+    tail_rms_floor: f64,
+    shortest_height: f64,
+}
+
+impl MirrorRoughness {
+    pub(super) fn new(spectrum: &Spectrum, chop: f64, shortest_height: f32) -> Self {
+        let deformation = std::iter::once(spectrum.long.as_slice())
+            .chain(
+                spectrum
+                    .cascades
+                    .iter()
+                    .map(thrum_sea_model::Cascade::components),
+            )
+            .map(|band| thrum_sea_model::contraction_bound(band, chop).unwrap_or(f64::INFINITY))
+            .sum::<f64>();
+        // Filtered differentials are convex combinations, with each gain at
+        // most one. Leave room for FFT and half-float reconstruction.
+        let deformation = if deformation > 0.0 {
+            deformation.mul_add(1.05, 0.002)
+        } else {
+            deformation
+        };
+        // In world space, the isotropic tail variance cannot shrink by more
+        // than the largest stretch of the horizontal Jacobian. When the
+        // shader clamps its determinant, use the adjugate's smaller axis.
+        let minimum_transform =
+            (1.0 / (1.0 + deformation)).min((1.0 - deformation).max(0.0) / 0.05);
+        // Whitewater can leave as little as 35% of the slope variance. The
+        // other variance terms can only add to the tail in exact arithmetic.
+        Self {
+            tail_rms_floor: (0.35 * spectrum.tail_slope_variance).sqrt() * minimum_transform,
+            shortest_height: f64::from(shortest_height),
+        }
+    }
+
+    fn can_mirror(self, gain: f64, depth: f64, limit: f32) -> bool {
+        // The depth limiter adds nonnegative swash depth. Omitting that
+        // allowance gives a lower bound on the shader's shortest-band gain.
+        let gain = if self.shortest_height > 0.0 {
+            gain.min(0.6 * depth.max(0.0) / self.shortest_height)
+        } else {
+            gain
+        };
+        self.tail_rms_floor * gain <= 1.001 * f64::from(limit)
+    }
+}
 
 /// The optical coefficients and screen-space trace budget for a water type.
 #[derive(Clone, Copy, Debug)]
@@ -230,7 +280,7 @@ impl Gather {
         opaque: &OpticsBodies,
         water_level: f64,
         amplitude: f32,
-        height_rms: f32,
+        roughness: MirrorRoughness,
     ) {
         let boxes = opaque.0.lock().expect("water optics bodies");
         let inputs = self.fields.inputs(
@@ -240,7 +290,7 @@ impl Gather {
             &boxes,
             water_level,
             amplitude,
-            height_rms,
+            roughness,
         );
         self.dispatch = [
             inputs.dispatch[2].div_ceil(8),

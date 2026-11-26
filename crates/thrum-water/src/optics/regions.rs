@@ -1,4 +1,7 @@
-use super::{BODY_CAPACITY, BodyBounds, GRID_HEIGHT, GRID_WIDTH, Inputs, Optics, SHALLOW, SOURCE};
+use super::{
+    BODY_CAPACITY, BodyBounds, GRID_HEIGHT, GRID_WIDTH, Inputs, MirrorRoughness, Optics, SHALLOW,
+    SOURCE,
+};
 use bytemuck::Zeroable;
 use glam::{Mat4, UVec2, Vec2, Vec3, Vec4};
 use thrum_render::contribution::ContributionFrame;
@@ -210,14 +213,19 @@ fn receiving(body: Bounds, water_level: f32, a: f32, theta: f32, reach: f32) -> 
 
 #[derive(Default)]
 pub(super) struct Shallows {
-    revision: Option<(u64, u32)>,
-    tiles: Vec<Bounds>,
+    revision: Option<(u64, [u32; 3], MirrorRoughness)>,
+    tiles: Vec<(Bounds, bool)>,
     mirrors: Vec<Bounds>,
 }
 
 impl Shallows {
-    fn refresh(&mut self, map: &Map, sight: f32, amplitude: f32) {
-        let revision = (map.spatial_revision(), amplitude.to_bits());
+    fn refresh(&mut self, map: &Map, profile: Optics, amplitude: f32, roughness: MirrorRoughness) {
+        let sight = profile.sight_depth();
+        let revision = (
+            map.spatial_revision(),
+            [amplitude, sight, profile.mirror_limit].map(f32::to_bits),
+            roughness,
+        );
         if self.revision == Some(revision) {
             return;
         }
@@ -231,6 +239,7 @@ impl Shallows {
             let support = map.support_origins(body_index);
             if let BodyKind::Basin { seed } = body.kind
                 && let Some([lo, hi]) = map.surface_bounds(body_index)
+                && roughness.can_mirror(body.gains[3], 0.0, profile.mirror_limit)
             {
                 let row = map.row(body_index, seed);
                 self.mirrors.push(bounds(
@@ -272,11 +281,24 @@ impl Shallows {
                             lo[axis] -= spacing;
                             hi[axis] += spacing;
                         }
-                        self.tiles.push(bounds(
-                            lo,
-                            hi,
-                            bed_min.max(level_min - a - f64::from(sight)),
-                            level_max + a,
+                        let mirror = match body.kind {
+                            BodyKind::Sea | BodyKind::Basin { .. } => roughness.can_mirror(
+                                body.gains[3],
+                                level_min - bed_max,
+                                profile.mirror_limit,
+                            ),
+                            // Joined charts and hollows can vary their gains
+                            // across a tile. Keep the conservative candidate.
+                            _ => true,
+                        };
+                        self.tiles.push((
+                            bounds(
+                                lo,
+                                hi,
+                                bed_min.max(level_min - a - f64::from(sight)),
+                                level_max + a,
+                            ),
+                            mirror,
                         ));
                     }
                 }
@@ -293,7 +315,7 @@ impl Shallows {
         boxes: &[BodyBounds],
         level: f64,
         amplitude: f32,
-        height_rms: f32,
+        roughness: MirrorRoughness,
     ) -> Inputs {
         let extent = UVec2::from_array(frame.render_extent);
         let matrix = Mat4::from_cols_array_2d(&frame.view_proj);
@@ -338,16 +360,16 @@ impl Shallows {
             }
         }
         if let Some(map) = map {
-            self.refresh(map, sight, amplitude);
-            let mut shallow_visible = false;
-            for &tile in &self.tiles {
+            self.refresh(map, profile, amplitude, roughness);
+            let mut mirror_visible = false;
+            for &(tile, mirror) in &self.tiles {
                 if let Some(rect) = view.project(tile) {
-                    shallow_visible = true;
+                    mirror_visible |= mirror;
                     mark(&mut packed.mask, view.coarse(rect), SOURCE | SHALLOW);
                 }
             }
             // An unbounded sea with an empty bed never requests a scene mirror.
-            let mirror = (shallow_visible && height_rms < 0.25)
+            let mirror = mirror_visible
                 || self
                     .mirrors
                     .iter()
