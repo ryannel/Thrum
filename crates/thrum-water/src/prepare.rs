@@ -664,7 +664,9 @@ fn surface_pipelines(
             layout,
             environment,
             &shader,
-            SurfaceDraw::River { gather: gather.is_some() },
+            SurfaceDraw::River {
+                gather: gather.is_some(),
+            },
         )
     });
     let film = (foam.is_some() && shore)
