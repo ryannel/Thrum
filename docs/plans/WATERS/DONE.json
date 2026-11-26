@@ -1452,6 +1452,24 @@
       "failed_reviews_with_repeat": 0
     },
     {
+      "id": "WP23",
+      "name": "The water's reflection and shade tests compile for Linux and Windows too",
+      "status": "not_started",
+      "quality_bar": "The workspace's tests stay type-checked for Linux and Windows, as they were before WP8's first commits reached main: no error for either target, and the Mac's optics proofs as they are.",
+      "items": [
+        {
+          "id": "WP23.1",
+          "statement": "The workspace type-checks for Linux and Windows: `scripts/check_cross_target.sh` passes on this work package's checkout for x86_64-unknown-linux-gnu and x86_64-pc-windows-msvc, with every test target of the water scene among those it checks. Record: one run of the type-check; the scheduled `cross-target` main-branch check guards it from then on.",
+          "check": "bash scripts/check_cross_target.sh",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
+        }
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0
+    },
+    {
       "id": "WP8",
       "name": "Water reflects the sky, the Sun, its shores and the craft, shows the ground and hulls beneath it, glitters and dims under a cloud's shade, from dawn to night",
       "status": "blocked",
@@ -1525,7 +1543,7 @@
         },
         {
           "id": "WP8.7",
-          "statement": "The gather copies opaque colour and depth only inside the rectangles its readers need: registered bodies on screen, water thin enough to see through, and the screen while water still enough to mirror is in view. On an open sea with no body on screen it does not run. Every water pixel that reads the gather reads inside what was copied, and every water pixel whose reflected or refracted ray meets a registered body within the design's reach and slope allowance lies inside that body's receiving rectangle. A scene with no water compiles to the same passes and storage as before.",
+          "statement": "On a sea and on a basin the gather copies opaque colour and depth for its readers and no wider, in these cases. On an open sea with the camera above it: with no registered body on screen the gather does not run, a registered body wholly off screen does not start it, a registered body on screen starts it and the water shows that body's reflection below its source rectangle, and withdrawing the body stops it with nothing read from an earlier frame's copy. On a sea too rough to mirror, over a bed part shallower and part deeper than the water type's sight depth: the shallow tiles are copied and the deep tiles are not. On a basin deeper than the sight depth: with no shallows in view, rough water does not start the gather until a registered body comes on screen, and calm water starts it for the scene's reflection; with a shallow shelf in view, rough water starts it too. Every water pixel that reads the gather reads inside what was copied, and every water pixel whose reflected or refracted ray meets a registered body within the design's reach and slope allowance lies inside that body's receiving rectangle. A scene with no water compiles to the same passes and storage as before. How the gather is admitted over a chart is WP24's, and no chart case is judged here.",
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test gather_gpu",
           "ask": "Does the test hold the receiving rectangles to rays reflected and refracted on the CPU, from cameras 1 m to 40 m up, on flat water and with waves, including a body whose reflection lies wholly outside its own source rectangle? Does it hold the see-through rectangles to the map's depths and the water type's sight depth?",
           "lock": "gpu",
@@ -1589,22 +1607,22 @@
       }
     },
     {
-      "id": "WP23",
-      "name": "The water's reflection and shade tests compile for Linux and Windows too",
+      "id": "WP24",
+      "name": "Calm chart water reflects the scene, and rough chart water copies only its shallows",
       "status": "not_started",
-      "quality_bar": "The workspace's tests stay type-checked for Linux and Windows, as they were before WP8's first commits reached main: no error for either target, and the Mac's optics proofs as they are.",
+      "quality_bar": "Over a chart the gather admits what it admits over a basin: the scene's reflection wherever the water is still enough to show it, and on rough water no more of the screen than the shallows need. No look is judged here: the running channel is judged in WP9, against the stream of Red Dead Redemption 2.",
       "items": [
         {
-          "id": "WP23.1",
-          "statement": "The workspace type-checks for Linux and Windows: `scripts/check_cross_target.sh` passes on this work package's checkout for x86_64-unknown-linux-gnu and x86_64-pc-windows-msvc, with every test target of the water scene among those it checks. Record: one run of the type-check; the scheduled `cross-target` main-branch check guards it from then on.",
-          "check": "bash scripts/check_cross_target.sh",
+          "id": "WP24.1",
+          "statement": "Over a chart the gather is admitted as it is over a basin, in two cases. Each is made through the map a game declares, with a level chart, beside the same case on a level basin. (a) Calm water, with no current, no resolved waves and no slope variance, deeper than the water type's sight depth, and an unregistered matte panel standing over it on screen, within the reach: on Metal the gather runs, and the water below the panel reflects it, so that those pixels change with the panel's radiance, on the chart as on the basin. (b) Water rougher than the mirror limit everywhere, over a bed part shallower and part deeper than the sight depth, with both parts in view: the chart's shallow tiles are copied and its deep tiles are not, as on the basin, and neither body asks for the scene's mirror. The sea and basin cases of WP8.7 pass as they did.",
+          "check": "cargo test --locked --offline -p thrum-water --lib optics::regions && cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test gather_gpu",
+          "ask": "Is each case made with a chart a game could declare through the public map interface, beside the same case on a basin? Would case (a) fail if a deep chart tile were dropped before its mirror was considered, and case (b) fail if a shallow chart tile in view asked for the scene's mirror on water that cannot mirror?",
+          "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": ""
         }
-      ],
-      "failed_reviews": 0,
-      "failed_reviews_with_repeat": 0
+      ]
     },
     {
       "id": "WP9",

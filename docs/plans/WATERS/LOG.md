@@ -1256,3 +1256,10 @@
   mirror-capable shelf and a registered panel. All four WP8 checks pass. The paired 1440p Metal
   record retains the shared-load tripwires.
   [Target evidence](../../../.orchestrate/evidence/WATERS/WP8/basin-admission/README.md).
+
+<a id="wp8-chart-cases-split"></a>
+- 2026-11-26 Owner, on WP8, Blocked with nine of ten items passing. Asked "split off the chart cases (WP8 passes
+  on what it proved, the two chart-water cases of WP8.7 become a small follow-up work package) or reopen for one
+  more try?", the owner answered "Yes" to splitting them off. WP8.7 now names the sea and basin cases its reviews
+  passed. New WP24 holds the last review's two chart findings. WP23 moves ahead of WP8, so main's `cross-target`
+  check is repaired first. [What changed and why](../../../.orchestrate/evidence/WATERS/WP8-chart-cases-split.md).

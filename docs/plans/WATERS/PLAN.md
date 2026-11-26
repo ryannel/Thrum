@@ -3,7 +3,7 @@
 [Design](DESIGN.md), [done-when file](DONE.json), [log](LOG.md), [module list](../ARCHITECTURE.md)
 
 First read [Proof and builder handoff](DESIGN.md#proof-and-builder-handoff) and
-[Exact baselines](../ARCHITECTURE.md#exact-baselines). Build in order. Merges build for the Mac
+[Exact baselines](../ARCHITECTURE.md#exact-baselines). Merges build for the Mac
 alone: after changing `examples/water/tests/`, run `bash scripts/check_cross_target.sh`.
 
 ## Open for the human
@@ -86,12 +86,15 @@ alone: after changing `examples/water/tests/`, run `bash scripts/check_cross_tar
 
 [Review](../../../.orchestrate/evidence/WATERS/WP19-review.md)
 
+## WP23 The water's reflection and shade tests compile for Linux and Windows too
+
 ## WP8 Water reflects the sky, the Sun, its shores and the craft, shows the ground and hulls beneath it, glitters and dims under a cloud's shade, from dawn to night
 
-Rebuild `scene_reflection` as [one colour by one weight](DESIGN.md#optics), not by patching the switch the last
-review names ([why](LOG.md#wp8-diagnosis)).
+[Prove the code as it stands](../../../.orchestrate/evidence/WATERS/WP8-chart-cases-split.md#wp8).
 
-## WP23 The water's reflection and shade tests compile for Linux and Windows too
+## WP24 Calm chart water reflects the scene, and rough chart water copies only its shallows
+
+[Builder notes](../../../.orchestrate/evidence/WATERS/WP8-chart-cases-split.md#wp24).
 
 ## WP9 Water runs down a channel from the lake to the sea: its surface follows the slope, its ripples and foam travel with the current, and a float is carried down to the sea
 
