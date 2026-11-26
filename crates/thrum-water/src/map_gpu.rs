@@ -631,7 +631,7 @@ impl MapGpu {
         queue: &wgpu::Queue,
         map: &'a Map,
         time: EffectTime,
-    ) -> &'a Map {
+    ) -> (&'a Map, &'a [[u32; 2]]) {
         let authored = stages(map);
         let recorded = StageEndpoints::record(time, &authored, self.submitted.as_ref());
         self.upload(queue, map, &authored, &recorded.stages());
@@ -639,7 +639,10 @@ impl MapGpu {
             hollows.record(queue, map, Some(time));
         }
         self.recorded = Some(recorded);
-        self.sampled_map.as_ref().unwrap_or(map)
+        (
+            self.sampled_map.as_ref().unwrap_or(map),
+            self.hollow_levels(),
+        )
     }
 
     pub(crate) fn record_query(&mut self, queue: &wgpu::Queue, map: &Map, frame: &Self) {

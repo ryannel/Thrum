@@ -80,6 +80,16 @@ pub(crate) struct HollowTiles {
 }
 
 impl HollowTiles {
+    pub(crate) fn draws_cell_at(&self, vertex: u32) -> bool {
+        self.rectangles
+            .iter()
+            .find_map(|rectangle| {
+                let cell = usize::try_from(vertex.checked_sub(rectangle.base)? / 4).ok()?;
+                rectangle.marked.get(cell).copied()
+            })
+            .unwrap_or(false)
+    }
+
     pub(super) fn new(
         device: &DeviceSite,
         rectangles: Vec<Rectangle>,

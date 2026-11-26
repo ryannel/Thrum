@@ -8,6 +8,14 @@ struct Grid {
     spacing: f64,
     inner: i32,
     camera_relative: bool,
+    vertices: Vertices,
+}
+
+#[derive(Clone, Copy)]
+pub(crate) enum Vertices {
+    Indexed { first: u32, surf_diagonal: bool },
+    Expanded { first: u32 },
+    Hollows { first: u32 },
 }
 
 #[derive(Default)]
@@ -21,6 +29,7 @@ impl RestMesh {
         spacing: f32,
         inner: i32,
         camera_relative: bool,
+        vertices: Vertices,
     ) {
         if (0..2).any(|axis| first[axis] >= last[axis]) {
             return;
@@ -32,10 +41,11 @@ impl RestMesh {
             spacing: f64::from(spacing),
             inner,
             camera_relative,
+            vertices,
         });
     }
 
-    pub(crate) fn hollows(&mut self, origin: [f64; 2], spacing: f64, size: [usize; 2]) {
+    pub(crate) fn hollows(&mut self, origin: [f64; 2], spacing: f64, size: [usize; 2], first: u32) {
         self.0.push(Grid {
             origin,
             first: [0; 2],
@@ -43,6 +53,7 @@ impl RestMesh {
             spacing,
             inner: 0,
             camera_relative: false,
+            vertices: Vertices::Hollows { first },
         });
     }
 
@@ -71,9 +82,76 @@ impl RestMesh {
         }
         bounds
     }
+
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "grid sections contain integral i32 cell coordinates"
+    )]
+    pub(super) fn cells<'a>(
+        &'a self,
+        footprint: [[f64; 2]; 2],
+        anchor: [f64; 2],
+        hollows: Option<&'a crate::prepare::hollow_tiles::HollowTiles>,
+    ) -> impl Iterator<Item = [u32; 4]> + 'a {
+        self.0.iter().flat_map(move |grid| {
+            grid.cell_bounds(footprint, anchor)
+                .into_iter()
+                .flat_map(|bounds| grid.sections(bounds))
+                .flat_map(move |[lo, hi]| {
+                    let [x0, z0] = lo.map(|v| v as i32);
+                    let [x1, z1] = hi.map(|v| v as i32);
+                    (z0..z1)
+                        .flat_map(move |z| (x0..x1).map(move |x| grid.corners(x, z)))
+                        .filter(move |corners| {
+                            !matches!(grid.vertices, Vertices::Hollows { .. })
+                                || hollows.is_some_and(|tiles| tiles.draws_cell_at(corners[0]))
+                        })
+                })
+        })
+    }
 }
 
 impl Grid {
+    #[expect(
+        clippy::cast_sign_loss,
+        reason = "the cell comes from this grid's checked section"
+    )]
+    fn corners(self, x: i32, z: i32) -> [u32; 4] {
+        let width = (self.last[0] - self.first[0]) as u32;
+        let column = (x - self.first[0]) as u32;
+        let row = (z - self.first[1]) as u32;
+        match self.vertices {
+            Vertices::Indexed {
+                first,
+                surf_diagonal,
+            } => {
+                let stride = width + 1;
+                let a = first + row * stride + column;
+                if surf_diagonal {
+                    return [a + 1, a, a + stride + 1, a + stride];
+                }
+                [a, a + 1, a + stride, a + stride + 1]
+            }
+            Vertices::Expanded { first } => {
+                let inner = self.inner;
+                let prior_inner_rows = (z + inner).clamp(0, 2 * inner) as u32;
+                let skipped_in_row = if (-inner..inner).contains(&z) && x >= inner {
+                    (2 * inner) as u32
+                } else {
+                    0
+                };
+                let a = first
+                    + 6 * (row * width + column
+                        - prior_inner_rows * (2 * inner) as u32
+                        - skipped_in_row);
+                [a, a + 2, a + 1, a + 5]
+            }
+            Vertices::Hollows { first } => {
+                let a = first + 4 * (row * width + column);
+                [a, a + 1, a + 2, a + 3]
+            }
+        }
+    }
     fn world_origin(self, anchor: [f64; 2]) -> [f64; 2] {
         if self.camera_relative {
             anchor
@@ -141,14 +219,18 @@ impl Grid {
 
 #[cfg(test)]
 mod tests {
-    use super::RestMesh;
+    use super::{RestMesh, Vertices};
 
     #[test]
     fn bounds_use_the_reachable_cells_and_skip_the_larger_rings_hole() {
         let mut mesh = RestMesh::default();
-        mesh.grid([-32; 2], [32; 2], 0.25, 0, true);
-        mesh.grid([-32; 2], [32; 2], 0.5, 16, true);
-        mesh.grid([0; 2], [16; 2], 4.0, 0, false);
+        let vertices = Vertices::Indexed {
+            first: 0,
+            surf_diagonal: false,
+        };
+        mesh.grid([-32; 2], [32; 2], 0.25, 0, true, vertices);
+        mesh.grid([-32; 2], [32; 2], 0.5, 16, true, vertices);
+        mesh.grid([0; 2], [16; 2], 4.0, 0, false, vertices);
         assert_eq!(
             mesh.bounds([[101.14, -44.0], [101.20, -43.94]], [101.0, -44.0]),
             Some([[101.0, -44.25], [101.25, -43.75]])

@@ -55,6 +55,17 @@ struct LensPoint {
 
 fn read_lens(uv: vec2<f32>) -> LensPoint {
     let point = lens_point(uv);
+    if lens_faces.enabled != 0u {
+        var highest = -1e30;
+        for (var i = 0u; i < lens_faces.count; i++) {
+            highest = lens_face_height(lens_faces.faces[i], point.xz, highest);
+        }
+        let row = lens_row(point.xz);
+        if !row.owned || highest <= row.bed {
+            return LensPoint(point, point.y, -1.0);
+        }
+        return LensPoint(point, highest, highest - point.y);
+    }
     let column = lens_column(uv);
     if column.w == 0.0 {
         return LensPoint(point, point.y, -1.0);

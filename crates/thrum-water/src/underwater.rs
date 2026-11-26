@@ -4,9 +4,10 @@ use thrum_render::contribution::ContributionFrame;
 use thrum_sea_model::{Cascade, LongWaves, Spectrum};
 use thrum_water_model::{Field, Map, MapSample, SurfSheet, Surface, WaterError, WholeCut};
 
+pub(crate) mod cut_gpu;
 mod rest;
 mod short;
-pub(super) use rest::RestMesh;
+pub(super) use rest::{RestMesh, Vertices};
 use short::ShortBand;
 pub(super) use short::ShortWaveDomain;
 
@@ -32,6 +33,15 @@ pub(super) struct Underwater {
     short: [ShortBand; 3],
 }
 
+pub(super) struct Admission<'a> {
+    pub(super) mesh: &'a RestMesh,
+    pub(super) horizontal: f64,
+    pub(super) transformed_ceiling: Option<f64>,
+    pub(super) wake: Option<&'a super::interaction::Interaction>,
+    pub(super) domain: ShortWaveDomain,
+    pub(super) level: f64,
+}
+
 impl Underwater {
     pub(super) fn new(long: LongWaves, spectrum: &Spectrum, heights: [f32; 4]) -> Self {
         let long_amplitude = spectrum.long.iter().map(|c| c.amplitude).sum();
@@ -53,87 +63,136 @@ impl Underwater {
         }
     }
 
-    pub(super) fn lens(
+    pub(super) fn ambient_reach(&self, seconds: f64) -> f64 {
+        let long = self.long_amplitude * self.field.layers[0].choppiness();
+        let short = self
+            .short
+            .iter()
+            .map(|band| band.horizontal_bound(seconds) * band.geometry_weight(0.25))
+            .sum::<f64>();
+        (long + short).mul_add(1.05, 0.05)
+    }
+
+    pub(super) fn admitted(
         &mut self,
         frame: &ContributionFrame,
         map: &Map,
         seconds: f64,
-        short_domain: Option<ShortWaveDomain>,
-        wake: Option<(&super::interaction::Interaction, &RestMesh, f64)>,
-    ) -> Lens {
+        admission: &Admission<'_>,
+    ) -> bool {
         let plane = Plane::new(frame);
-        let live_wake = wake.is_some_and(|(interaction, mesh, horizontal)| {
-            plane
-                .rest_box(mesh, frame.camera, horizontal)
-                .is_some_and(|bounds| interaction.live_wake_intersects(bounds))
-        });
+        let rest = plane.rest_box(admission.mesh, frame.camera, admission.horizontal);
+        rest.is_some_and(|rest| {
+            admission
+                .wake
+                .is_some_and(|wake| wake.live_wake_intersects(rest))
+                || !self.proves_dry(&plane, map, frame.camera, rest, seconds, admission)
+        })
+    }
+
+    pub(super) fn lens(
+        &self,
+        frame: &ContributionFrame,
+        map: &Map,
+        seconds: f64,
+        admitted: bool,
+        gpu_cut: bool,
+    ) -> Lens {
         let mut lens = Lens::zeroed();
-        let may_fold = self.sample(&mut lens, &plane, map, seconds, SMOOTH_SIDE, live_wake);
-        if may_fold
-            && self
-                .level_strip(&plane, map, seconds, frame.render_extent, &mut lens)
-                .is_none()
-        {
-            self.sample(&mut lens, &plane, map, seconds, LENS_SIDE, live_wake);
+        if admitted && !gpu_cut {
+            let plane = Plane::new(frame);
+            let may_fold = self.sample(&mut lens, &plane, map, seconds, SMOOTH_SIDE);
+            if may_fold
+                && self
+                    .level_strip(&plane, map, seconds, frame.render_extent, &mut lens)
+                    .is_none()
+            {
+                self.sample(&mut lens, &plane, map, seconds, LENS_SIDE);
+            }
         }
-        if live_wake {
-            lens.state[0] = 1;
-        } else if lens.state[0] != 0
-            && let Some(domain) = short_domain
-            && self.short.iter().any(|band| band.amplitude > 0.0)
-            && self.proves_dry(&lens, &plane, map, domain, seconds)
-        {
-            lens.state[0] = 0;
-        }
+        lens.state[0] = u32::from(admitted);
         lens
     }
 
     fn proves_dry(
         &mut self,
-        lens: &Lens,
         plane: &Plane,
         map: &Map,
-        domain: ShortWaveDomain,
+        camera: [f32; 3],
+        [lo, hi]: [[f64; 2]; 2],
         seconds: f64,
+        admission: &Admission<'_>,
     ) -> bool {
-        let lowest = plane.lowest;
-        let (roof, weight) = lens
-            .columns
-            .iter()
-            .flatten()
-            .filter(|column| column[3] > 0.0)
-            .fold(
-                (f64::NEG_INFINITY, [2.0_f32, 0.0_f32]),
-                |(roof, [lo, hi]), column| {
-                    (
-                        roof.max(f64::from(column[0])),
-                        [lo.min(column[3]), hi.max(column[3])],
-                    )
-                },
-            );
-        let rounding = f64::from(f32::EPSILON) * 8.0 * roof.abs().max(lowest.abs()).max(1.0);
-        // Interpolation leaves the short-wave weight at zero when all
-        // occupied lens columns have lost their short waves in the swash.
-        if weight[1] <= 1.0 {
-            return roof.is_finite() && roof + rounding < lowest;
+        if !lo.into_iter().chain(hi).all(f64::is_finite) {
+            return false;
         }
-        let weight = weight.map(|w| f64::from(w - 1.0));
-        let (centre, radius) = plane.horizontal_box();
-        let Some(gains) = domain.gain_ranges(map, centre, radius, self.heights) else {
+        let centre = std::array::from_fn(|i| lo[i].midpoint(hi[i]));
+        let radius = std::array::from_fn(|i| (hi[i] - lo[i]) * 0.5);
+        if map.surf_profile().is_some() && !ShortWaveDomain::offshore(map, centre, radius) {
+            return admission
+                .transformed_ceiling
+                .is_some_and(|upper| upper < plane.lowest);
+        }
+        let Some(gains) = admission
+            .domain
+            .gain_ranges(map, centre, radius, self.heights)
+        else {
             return false;
         };
-        let bound = weight[1] * self.short_bound(&gains.map(|range| range[1]));
-        if bound == 0.0 || roof - bound >= lowest {
-            return false;
-        }
+        let (level, fine) = admission
+            .domain
+            .still_level_and_spacing(map, admission.level);
+        let camera = [camera[0], camera[2]].map(f64::from);
+        // Within the innermost sea ring every resolved vertex uses the 1 m
+        // long-wave cache and never blends with a coarser edge node.
+        let near = fine && (0..2).all(|i| (centre[i] - camera[i].floor()).abs() + radius[i] < 7.5);
+        let long = if near && gains[0][1] > 0.0 {
+            let waves = &self.field.layers[0];
+            let taps = |axis: usize| {
+                let first = (lo[axis] - 0.5).floor();
+                let last = (hi[axis] - 0.5).floor() + 1.0;
+                (0..17)
+                    .map(move |i| first + f64::from(i))
+                    .take_while(move |&v| v <= last)
+            };
+            let upper = taps(0)
+                .flat_map(|x| taps(1).map(move |z| [x + 0.5, z + 0.5]))
+                .map(|tap| {
+                    waves
+                        .components()
+                        .iter()
+                        .filter(|wave| {
+                            let [x, z] = wave.wave_vector;
+                            x.hypot(z) <= std::f64::consts::PI
+                        })
+                        .map(|wave| wave.amplitude * wave.anchored_phase(tap, seconds).cos())
+                        .sum::<f64>()
+                })
+                .fold(f64::NEG_INFINITY, f64::max);
+            scaled_upper(upper + 0.001 * self.long_amplitude, gains[0])
+        } else {
+            self.long_amplitude * gains[0][1]
+        };
         let short = self
             .short
             .iter_mut()
             .zip(&gains[1..])
             .filter(|(_, gain)| gain[1] > 0.0)
-            .map(|(band, gain)| scaled_upper(band.height_bound(centre, radius, seconds), *gain))
+            .map(|(band, gain)| {
+                let upper = if near {
+                    band.height_bound(centre, radius, seconds)
+                } else {
+                    band.amplitude * 1.001
+                };
+                // The shortest bands can be faded out on this mesh. A
+                // negative crest bound only helps when every draw node uses it.
+                let spacing = if upper < 0.0 && near { 0.5 } else { 0.25 };
+                scaled_upper(upper, *gain) * band.geometry_weight(spacing)
+            })
             .sum::<f64>();
-        roof + scaled_upper(short, weight) + rounding < lowest
+        let roof = level + long + short;
+        let rounding = f64::from(f32::EPSILON) * 16.0 * roof.abs().max(plane.lowest.abs()).max(1.0);
+        roof + rounding < plane.lowest
     }
 
     fn surf_sheet<'a>(
@@ -262,15 +321,7 @@ impl Underwater {
         clippy::cast_possible_truncation,
         reason = "lens grid indices and GPU metres"
     )]
-    fn sample(
-        &self,
-        lens: &mut Lens,
-        plane: &Plane,
-        map: &Map,
-        seconds: f64,
-        side: usize,
-        live_wake: bool,
-    ) -> bool {
+    fn sample(&self, lens: &mut Lens, plane: &Plane, map: &Map, seconds: f64, side: usize) -> bool {
         // A level near plane repeats the same world columns down the image.
         // Its height stays per-pixel, but we only cut those columns once.
         let width = if plane.corners[0].xz() == plane.corners[1].xz() {
@@ -299,9 +350,6 @@ impl Underwater {
                 let short_bound = self.short_bound(&sample.row.gains);
                 let bound = sample.row.gains[0] * self.long_amplitude + short_bound;
                 let plain = map.surf_profile().is_none() || sample.bed.is_none();
-                if !live_wake && plain && sample.row.level + bound < plane.lowest {
-                    continue;
-                }
                 let roof = if plain && sample.row.level - bound > plane.highest.max(bed) {
                     sample.row.level
                 } else {
@@ -334,6 +382,11 @@ impl Underwater {
 
 fn scaled_upper(value: f64, [lo, hi]: [f64; 2]) -> f64 {
     if value < 0.0 { lo * value } else { hi * value }
+}
+
+pub(super) fn cascade_geometry_weight(length: f64, spacing: f64) -> f64 {
+    let ratio = ((spacing * 128.0 / length - 1.0) / 3.0).clamp(0.0, 1.0);
+    1.0 - ratio * ratio * (3.0 - 2.0 * ratio)
 }
 
 #[expect(
@@ -424,6 +477,14 @@ impl Plane {
     }
 
     fn horizontal_box(&self) -> ([f64; 2], [f64; 2]) {
+        let [low, high] = self.bounds();
+        (
+            std::array::from_fn(|i| low[i].midpoint(high[i])),
+            std::array::from_fn(|i| (high[i] - low[i]) * 0.5),
+        )
+    }
+
+    fn bounds(&self) -> [[f64; 2]; 2] {
         let low = self
             .corners
             .into_iter()
@@ -432,12 +493,7 @@ impl Plane {
             .corners
             .into_iter()
             .fold(Vec3::splat(f32::NEG_INFINITY), Vec3::max);
-        let low = low.xz().to_array().map(f64::from);
-        let high = high.xz().to_array().map(f64::from);
-        (
-            std::array::from_fn(|i| low[i].midpoint(high[i])),
-            std::array::from_fn(|i| (high[i] - low[i]) * 0.5),
-        )
+        [low, high].map(|v| v.xz().to_array().map(f64::from))
     }
 
     fn rest_box(

@@ -130,6 +130,7 @@ pub struct Water {
     layer_heights: [f32; 4],
     offshore_displacement: [f32; 2],
     surf_cache_bounds: Option<[f32; 3]>,
+    lens_horizontal: f64,
     profile: Profile,
     query: Option<query::QueryMailbox>,
     interaction: Option<interaction::Mailbox>,
@@ -225,6 +226,12 @@ impl Water {
         }
         let row = guard.row(body, [0.0; 2]);
         let offshore_displacement = offshore_bound(&spectrum, profile.waves.choppiness);
+        let lens_ambient = lens_ambient_reach(&spectrum, profile.waves.choppiness);
+        let lens_horizontal = guard
+            .surf_profile()
+            .map_or(f64::from(lens_ambient), |surf| {
+                surf_horizontal(surf, &spectrum, lens_ambient, profile.waves.choppiness)
+            });
         let surf_cache_bounds = if profile.interaction.is_none() {
             surf_cache_bounds(
                 &guard,
@@ -286,6 +293,7 @@ impl Water {
             layer_heights,
             offshore_displacement,
             surf_cache_bounds,
+            lens_horizontal,
             underwater,
             spectrum,
             profile,
@@ -407,6 +415,9 @@ impl Water {
                     resources.push(("water hollows".into(), bytes));
                 }
             }
+            if let Some(cut) = &p.lens_cut {
+                resources.extend(cut.resource_bytes());
+            }
             if let Some(surf) = &p.surf {
                 resources.extend(surf.bytes());
             }
@@ -434,20 +445,64 @@ impl Water {
     reason = "round outward to GPU world metres"
 )]
 fn offshore_bound(spectrum: &Spectrum, chop: f64) -> [f32; 2] {
-    let amplitude = spectrum
-        .long
+    let amplitude =
+        |band: &[thrum_sea_model::Component]| band.iter().map(|wave| wave.amplitude).sum::<f64>();
+    let long = amplitude(&spectrum.long);
+    let short = spectrum
+        .cascades
         .iter()
-        .chain(
-            spectrum
-                .cascades
-                .iter()
-                .flat_map(thrum_sea_model::Cascade::components),
-        )
+        .flat_map(thrum_sea_model::Cascade::components)
         .map(|component| component.amplitude)
         .sum::<f64>();
     // All gain and filter weights on these open-water vertices are at
-    // most one. Leave margin for FFT, half storage and reconstruction.
-    [chop, 1.0].map(|scale| ((amplitude * scale).mul_add(1.05, 0.05) as f32).next_up())
+    // most one. The Fourier cascades have unit horizontal choppiness.
+    [long * chop + short, long + short].map(|bound| (bound.mul_add(1.05, 0.05) as f32).next_up())
+}
+
+fn surf_amplitude(surf: &thrum_water_model::SurfProfile, spectrum: &Spectrum) -> f64 {
+    spectrum
+        .long
+        .iter()
+        .map(|wave| {
+            let [x, z] = wave.wave_vector;
+            wave.amplitude * thrum_water_model::shoaling(x.hypot(z), surf.lag_floor).max(1.0)
+        })
+        .sum()
+}
+
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "round outward to GPU world metres"
+)]
+fn lens_ambient_reach(spectrum: &Spectrum, chop: f64) -> f32 {
+    let long = spectrum.long.iter().map(|wave| wave.amplitude).sum::<f64>();
+    let short: f64 = spectrum
+        .cascades
+        .iter()
+        .map(|cascade| {
+            let amplitude = cascade
+                .components()
+                .iter()
+                .map(|wave| wave.amplitude)
+                .sum::<f64>();
+            amplitude * underwater::cascade_geometry_weight(cascade.length(), 0.25)
+        })
+        .sum();
+    ((long * chop + short).mul_add(1.05, 0.05) as f32).next_up()
+}
+
+fn surf_horizontal(
+    surf: &thrum_water_model::SurfProfile,
+    spectrum: &Spectrum,
+    ambient: f32,
+    chop: f64,
+) -> f64 {
+    // The phase vector is normalised for chop and throw. Every blend and
+    // depth limiter is bounded by one. Include the ambient cascade reach.
+    ((chop + surf.section.maximum_throw()) * surf_amplitude(surf, spectrum) * 1.05
+        + f64::from(ambient)
+        + 0.05)
+        .next_up()
 }
 
 #[expect(
@@ -477,14 +532,7 @@ fn surf_cache_bounds(
         .flat_map(|(_, row)| row)
         .map(|point| point.height.abs())
         .fold(1.0_f64, f64::max);
-    let amplitude: f64 = spectrum
-        .long
-        .iter()
-        .map(|wave| {
-            let [x, z] = wave.wave_vector;
-            wave.amplitude * thrum_water_model::shoaling(x.hypot(z), surf.lag_floor).max(1.0)
-        })
-        .sum();
+    let amplitude = surf_amplitude(surf, spectrum);
     let wave_height = height_factor * amplitude * 1.05 + f64::from(ambient[1]) + 1.0;
     let swash = map.profile().margin_height;
     let highest_bed = map
@@ -497,11 +545,7 @@ fn surf_cache_bounds(
     // overlap, the section and contour stay inside the wave and swash bounds.
     let lo = ((limits[0] - wave_height - swash) as f32).next_down();
     let hi = ((limits[1].max(highest_bed) + wave_height + swash) as f32).next_up();
-    // The phase vector is normalised for chop and throw, and every blend and
-    // depth limiter is bounded by one. Add the short-wave bound and round up.
-    let horizontal = ((chop + surf.section.maximum_throw()) * amplitude * 1.05
-        + f64::from(ambient[0])
-        + 0.05) as f32;
+    let horizontal = (surf_horizontal(surf, spectrum, ambient[0], chop) as f32).next_up();
     [lo, hi, horizontal]
         .iter()
         .all(|bound| bound.is_finite())
@@ -611,7 +655,17 @@ impl SceneContribution for Water {
         let map = self.map.lock().expect("water map lock");
         let row = map.row(self.body, [0.0; 2]);
         let displayed_map = match &mut p.map {
-            Some(gpu) => gpu.record(&p.queue, &map, frame.time),
+            Some(gpu) => {
+                let (displayed, hollow_levels) = gpu.record(&p.queue, &map, frame.time);
+                if let Some(tiles) = &mut p.hollow_tiles {
+                    tiles.record(&p.queue, hollow_levels);
+                    self.report
+                        .lock()
+                        .expect("water report")
+                        .hollow_surface_vertices = tiles.index_count() / 6 * 4;
+                }
+                displayed
+            }
             None => &map,
         };
         if let Some(rain) = &mut p.rain {
@@ -631,20 +685,45 @@ impl SceneContribution for Water {
             interaction.record(&p.queue, encoder, frame, &map);
         }
         if let Some(gather) = &mut p.gather {
-            let wake =
-                p.interaction
-                    .as_ref()
-                    .zip(p.rest_mesh.as_ref())
-                    .map(|(interaction, mesh)| {
-                        // An unresolved shore transform can extend the reach beyond
-                        // the ambient bound. Admit for any live window in that case.
-                        let horizontal = if displayed_map.surf_profile().is_some() {
-                            f64::INFINITY
-                        } else {
-                            f64::from(self.offshore_displacement[0])
-                        };
-                        (interaction, mesh, horizontal)
-                    });
+            let lens = self
+                .underwater
+                .as_mut()
+                .zip(p.rest_mesh.as_ref())
+                .map(|(water, mesh)| {
+                    let horizontal = if displayed_map.surf_profile().is_some() {
+                        self.lens_horizontal
+                    } else {
+                        water.ambient_reach(now)
+                    };
+                    let admitted = water.admitted(
+                        frame,
+                        displayed_map,
+                        now,
+                        &underwater::Admission {
+                            mesh,
+                            horizontal,
+                            transformed_ceiling: self
+                                .surf_cache_bounds
+                                .map(|limits| f64::from(limits[1])),
+                            wake: p.interaction.as_ref(),
+                            domain: if self.mapped {
+                                underwater::ShortWaveDomain::Mapped
+                            } else {
+                                underwater::ShortWaveDomain::Open(row.gains)
+                            },
+                            level: row.level,
+                        },
+                    );
+                    let gpu_cut = p.lens_cut.as_mut().expect("underwater cut").record(
+                        &p.queue,
+                        frame,
+                        mesh,
+                        admitted,
+                        horizontal,
+                        p.hollow_tiles.as_ref(),
+                    );
+                    water.lens(frame, displayed_map, now, admitted, gpu_cut)
+                });
             gather.record(
                 &p.queue,
                 frame,
@@ -653,28 +732,8 @@ impl SceneContribution for Water {
                 row.level,
                 self.offshore_displacement,
                 self.mirror_roughness.with_foam(p.foam.is_some()),
-                self.underwater
-                    .as_mut()
-                    .map(|water| {
-                        let short_domain = self.interaction.is_none().then_some(if self.mapped {
-                            underwater::ShortWaveDomain::Mapped
-                        } else {
-                            underwater::ShortWaveDomain::Open(row.gains)
-                        });
-                        water.lens(frame, displayed_map, now, short_domain, wake)
-                    })
-                    .as_ref(),
+                lens.as_ref(),
             );
-        }
-        if let Some(tiles) = &mut p.hollow_tiles {
-            tiles.record(
-                &p.queue,
-                p.map.as_ref().expect("hollows map").hollow_levels(),
-            );
-            self.report
-                .lock()
-                .expect("water report")
-                .hollow_surface_vertices = tiles.index_count() / 6 * 4;
         }
         if let Some(cache) = &mut p.surf_cache {
             cache.record(
@@ -826,10 +885,9 @@ impl SceneContribution for Water {
         frame: &ContributionFrame,
     ) {
         if let Some(p) = &self.prepared {
-            let film = p
-                .film
-                .as_ref()
-                .filter(|_| index == usize::from(p.gather.is_some()));
+            let film = p.film.as_ref().filter(|_| {
+                index == usize::from(p.gather.is_some()) + usize::from(p.lens_cut.is_some())
+            });
             pass.set_pipeline(film.unwrap_or(&p.pipeline));
             pass.set_bind_group(
                 2,
@@ -885,28 +943,37 @@ impl SceneContribution for Water {
             }
         }
     }
-    fn after_opaque_runs(&self, _: usize, _: &ContributionFrame) -> bool {
-        self.prepared
-            .as_ref()
-            .and_then(|p| p.gather.as_ref())
-            .is_some_and(optics::Gather::runs)
+    fn after_opaque_runs(&self, index: usize, _: &ContributionFrame) -> bool {
+        self.prepared.as_ref().is_some_and(|p| {
+            if index == 0 {
+                p.gather.as_ref().is_some_and(optics::Gather::runs)
+            } else {
+                p.lens_cut
+                    .as_ref()
+                    .is_some_and(underwater::cut_gpu::Cut::runs)
+            }
+        })
     }
 
     fn encode_after_opaque(
         &mut self,
-        _: usize,
+        index: usize,
         pass: &mut wgpu::ComputePass<'_>,
         frame: &ContributionFrame,
     ) {
-        if let Some(p) = &self.prepared
-            && let Some(gather) = &p.gather
-        {
-            gather.encode(
-                pass,
-                p.environment
-                    .group(frame.exposure_side)
-                    .expect("exposure side"),
-            );
+        if let Some(p) = &self.prepared {
+            if index == 0 {
+                if let Some(gather) = &p.gather {
+                    gather.encode(
+                        pass,
+                        p.environment
+                            .group(frame.exposure_side)
+                            .expect("exposure side"),
+                    );
+                }
+            } else if let Some(cut) = &p.lens_cut {
+                cut.encode(pass);
+            }
         }
     }
     fn submitted(&mut self, history_advanced: bool) {

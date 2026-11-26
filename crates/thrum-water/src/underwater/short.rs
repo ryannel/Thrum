@@ -8,6 +8,7 @@ const MAX_RETAINED_TAPS: usize = 128;
 const MAX_CYCLE: usize = 8192;
 const _: () = assert!(GRID_SIZE == 256);
 
+#[derive(Clone, Copy)]
 pub(crate) enum ShortWaveDomain {
     Open([f64; 4]),
     Mapped,
@@ -16,8 +17,50 @@ pub(crate) enum ShortWaveDomain {
 impl ShortWaveDomain {
     #[expect(
         clippy::cast_possible_truncation,
+        reason = "the draw uploads levels and stages as f32"
+    )]
+    pub(super) fn still_level_and_spacing(self, map: &Map, level: f64) -> (f64, bool) {
+        if matches!(self, Self::Open(_)) {
+            return (f64::from(level as f32), true);
+        }
+        (0..)
+            .map_while(|index| map.body(index).map(|body| (index, body)))
+            .fold(
+                (f64::NEG_INFINITY, true),
+                |(highest, fine), (index, body)| {
+                    let level = f64::from(body.level as f32 + body.stage.value as f32);
+                    let fine = fine
+                        && (matches!(body.kind, BodyKind::Sea)
+                            || map
+                                .surface_bounds(index)
+                                .is_none_or(|[lo, hi]| (0..2).all(|i| hi[i] - lo[i] <= 512.0)));
+                    (highest.max(level), fine)
+                },
+            )
+    }
+
+    #[expect(
+        clippy::cast_possible_truncation,
         clippy::cast_precision_loss,
-        reason = "the mapped shader reads the bed lattice and gains as f32"
+        reason = "the mapped shader reads the bed lattice as f32"
+    )]
+    pub(super) fn offshore(map: &Map, centre: [f64; 2], radius: [f64; 2]) -> bool {
+        let (origin, spacing, size) = map.bed().lattice();
+        (0..2).any(|i| {
+            let start = f64::from(origin[i] as f32);
+            let end = start + f64::from(spacing as f32) * (size[i] - 1) as f64;
+            let margin = f64::from(f32::EPSILON)
+                * 16.0
+                * start.abs().max(end.abs()).max(centre[i].abs()).max(1.0);
+            centre[i] + radius[i] + margin < start.min(origin[i])
+                || centre[i] - radius[i] - margin
+                    > end.max(origin[i] + spacing * (size[i] - 1) as f64)
+        })
+    }
+
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "the mapped shader reads the gains as f32"
     )]
     pub(super) fn gain_ranges(
         self,
@@ -29,20 +72,9 @@ impl ShortWaveDomain {
         match self {
             Self::Open(gains) => Some(gains.map(|gain| [f64::from(gain as f32); 2])),
             Self::Mapped => {
-                let (origin, spacing, size) = map.bed().lattice();
                 // Outside the entire bed, the shader takes its uniform sea
                 // row without transport or the shallow-water gain limiter.
-                let offshore = (0..2).any(|i| {
-                    let start = f64::from(origin[i] as f32);
-                    let end = start + f64::from(spacing as f32) * (size[i] - 1) as f64;
-                    let margin = f64::from(f32::EPSILON)
-                        * 16.0
-                        * start.abs().max(end.abs()).max(centre[i].abs()).max(1.0);
-                    centre[i] + radius[i] + margin < start.min(origin[i])
-                        || centre[i] - radius[i] - margin
-                            > end.max(origin[i] + spacing * (size[i] - 1) as f64)
-                });
-                if !offshore {
+                if !Self::offshore(map, centre, radius) {
                     return mapped_gains(map, centre, radius, heights);
                 }
                 let mut seas = (0..)
@@ -175,6 +207,53 @@ pub(super) struct ShortBand {
     modes: Vec<Mode>,
     phases: Vec<[f64; 2]>,
     taps: HashMap<[usize; 2], Box<[[f64; 2]]>>,
+    initial: Option<InitialField>,
+}
+
+struct InitialField {
+    heights: Box<[f64]>,
+    horizontal: f64,
+    velocity: [f64; 2],
+    acceleration: f64,
+}
+
+impl InitialField {
+    fn new(cascade: &Cascade) -> Self {
+        let field = cascade.inverse_transform(0.0);
+        let horizontal = field
+            .iter()
+            .map(|tap| tap.displacement[0].abs().max(tap.displacement[2].abs()))
+            .fold(0.0, f64::max);
+        let velocity = field
+            .iter()
+            .fold([0.0_f64; 2], |[horizontal, vertical], tap| {
+                [
+                    horizontal
+                        .max(tap.velocity[0].abs())
+                        .max(tap.velocity[2].abs()),
+                    vertical.max(tap.velocity[1].abs()),
+                ]
+            });
+        let acceleration = cascade
+            .components()
+            .iter()
+            .map(|wave| wave.amplitude * thrum_sea_model::cascade_frequency(*wave).powi(2))
+            .sum();
+        Self {
+            heights: field.into_iter().map(|tap| tap.displacement[1]).collect(),
+            horizontal,
+            velocity,
+            acceleration,
+        }
+    }
+
+    fn margin(&self, time: f64, axis: usize, amplitude: f64) -> f64 {
+        let phase = time.rem_euclid(LOOP_SECONDS);
+        let elapsed = phase.min(LOOP_SECONDS - phase);
+        self.velocity[axis] * elapsed
+            + 0.5 * self.acceleration * elapsed * elapsed
+            + 0.001 * amplitude
+    }
 }
 
 struct Mode {
@@ -184,6 +263,10 @@ struct Mode {
 }
 
 impl ShortBand {
+    pub(super) fn geometry_weight(&self, spacing: f64) -> f64 {
+        super::cascade_geometry_weight(self.length, spacing)
+    }
+
     pub(super) fn new(cascade: &Cascade) -> Self {
         let amplitude = cascade.components().iter().map(|mode| mode.amplitude).sum();
         let modes = if amplitude > 0.0 {
@@ -196,13 +279,24 @@ impl ShortBand {
             .map(|mode| mode.cycle)
             .max()
             .map_or_else(Vec::new, |last| vec![[0.0; 2]; last + 1]);
+        // One prepared reference field can bound dense spectra near their
+        // phase origin without enumerating thousands of modes every frame.
+        let initial = (modes.len() > 512).then(|| InitialField::new(cascade));
         Self {
             length: cascade.length(),
             amplitude,
             modes,
             phases,
             taps: HashMap::new(),
+            initial,
         }
+    }
+
+    pub(super) fn horizontal_bound(&self, seconds: f64) -> f64 {
+        self.initial.as_ref().map_or(self.amplitude, |field| {
+            self.amplitude
+                .min(field.horizontal + field.margin(seconds, 0, self.amplitude))
+        })
     }
 
     #[expect(
@@ -252,8 +346,24 @@ impl ShortBand {
         if self.modes.is_empty() {
             return self.amplitude;
         }
-        let Some(keys) = self.footprint(centre, radius) else {
-            return self.amplitude;
+        let fallback = if let Some(field) = &self.initial {
+            let margin = field.margin(seconds, 1, self.amplitude);
+            if margin >= 2.0 * self.amplitude {
+                self.amplitude
+            } else if let Some(keys) = self.footprint(centre, radius, 4096) {
+                let peak = keys
+                    .into_iter()
+                    .map(|[x, z]| field.heights[z * GRID_SIZE + x])
+                    .fold(f64::NEG_INFINITY, f64::max);
+                self.amplitude.min(peak + margin)
+            } else {
+                self.amplitude
+            }
+        } else {
+            self.amplitude
+        };
+        let Some(keys) = self.footprint(centre, radius, MAX_FOOTPRINT_TAPS) else {
+            return fallback;
         };
         if self.taps.len() + keys.len() > MAX_RETAINED_TAPS {
             self.taps.retain(|key, _| keys.contains(key));
@@ -280,14 +390,19 @@ impl ShortBand {
         }
         // The level-zero bilinear lookup cannot exceed any upper bound on
         // its contributing taps. Leave room for GPU phase and FFT packing.
-        peak + self.amplitude * 0.001
+        fallback.min(peak + self.amplitude * 0.001)
     }
 
     #[expect(
         clippy::cast_possible_truncation,
         reason = "use the shader's f32 patch length and checked, floored lattice coordinates"
     )]
-    fn footprint(&self, centre: [f64; 2], radius: [f64; 2]) -> Option<Vec<[usize; 2]>> {
+    fn footprint(
+        &self,
+        centre: [f64; 2],
+        radius: [f64; 2],
+        limit: usize,
+    ) -> Option<Vec<[usize; 2]>> {
         let texels = f64::from(u16::try_from(GRID_SIZE).expect("fixed sea lattice"));
         let length = f64::from(self.length as f32);
         let axis = |i: usize| {
@@ -305,7 +420,7 @@ impl ShortBand {
         let width = x.end() - x.start() + 1;
         let height = z.end() - z.start() + 1;
         let count = usize::try_from(width.checked_mul(height)?).ok()?;
-        if count > MAX_FOOTPRINT_TAPS {
+        if count > limit {
             return None;
         }
         let mut keys = Vec::with_capacity(count);

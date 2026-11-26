@@ -9,6 +9,28 @@ pub struct SheetPoint {
     pub height: f64,
 }
 
+/// Highest intersection of a world column with displaced mesh triangles.
+/// The caller supplies vertices after assembling their displacement at rest.
+#[must_use]
+pub fn highest_triangle(
+    point: [f64; 2],
+    triangles: impl IntoIterator<Item = [SheetPoint; 3]>,
+) -> Option<f64> {
+    triangles
+        .into_iter()
+        .filter_map(|triangle| {
+            let weights = barycentric(triangle.map(|vertex| vertex.world), point)?;
+            Some(
+                weights
+                    .into_iter()
+                    .zip(triangle)
+                    .map(|(w, v)| w * v.height)
+                    .sum(),
+            )
+        })
+        .max_by(f64::total_cmp)
+}
+
 /// A continuous displaced sheet with a conservative, wave-independent reach.
 pub trait Sheet {
     /// Evaluate the assembled forward map at a rest place.

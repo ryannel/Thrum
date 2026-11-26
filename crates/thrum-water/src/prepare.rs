@@ -1,4 +1,4 @@
-mod hollow_tiles;
+pub(crate) mod hollow_tiles;
 
 use super::{
     Profile, SURFACE_PASS,
@@ -10,6 +10,7 @@ use super::{
     rain::Rain,
     records::Parameters,
     surf::{SurfGpu, cache::Cache},
+    underwater::cut_gpu::{self, Cut},
 };
 use std::ops::Range;
 use thrum_render::binding;
@@ -51,6 +52,7 @@ pub(super) struct Prepared {
     pub(super) mesh: wgpu::Buffer,
     pub(super) vertices: u32,
     pub(super) rest_mesh: Option<super::underwater::RestMesh>,
+    pub(super) lens_cut: Option<Cut>,
     pub(super) queue: wgpu::Queue,
     pub(super) map: Option<MapGpu>,
     pub(super) surf: Option<SurfGpu>,
@@ -204,6 +206,43 @@ impl Prepared {
             graph.after_opaque.push(film);
         }
         surface.accesses.extend(surf_cache);
+        if let Some(cut) = &self.lens_cut {
+            use thrum_render::{
+                contribution::EffectAccess,
+                graph::{AccessKind, ResourceDescriptor, ResourceScope},
+            };
+            let buffer = cut.output();
+            let resource = graph.resources.len();
+            graph.resources.push((
+                ResourceDescriptor::Buffer {
+                    bytes: buffer.size(),
+                    usage: buffer.usage(),
+                },
+                ResourceScope::Persistent {
+                    owner: 0x6c65_6e73,
+                    epoch: 0,
+                    initialized: true,
+                },
+            ));
+            let read = EffectAccess {
+                resource,
+                range: 0..buffer.size(),
+                kind: AccessKind::StorageRead,
+                view: None,
+                history: None,
+            };
+            let mut pass = Cut::declaration();
+            pass.accesses.clone_from(&surface.accesses);
+            pass.accesses.push(EffectAccess {
+                kind: AccessKind::StorageWrite,
+                ..read.clone()
+            });
+            // Its roster index follows the gather, before either water draw.
+            graph
+                .after_opaque
+                .insert(usize::from(self.gather.is_some()), pass);
+            surface.accesses.push(read);
+        }
         graph.after_opaque.push(surface);
         graph
     }
@@ -239,7 +278,7 @@ pub(super) fn new(
     let tidal_grid = mapped && map.surf_profile().is_none() && has_tidal_join(map);
     let geometry = surface_mesh(mapped.then_some(map), tidal_grid, profile.underwater);
     let count = u32::try_from(geometry.vertices.len()).map_err(|e| e.to_string())?;
-    let (mesh, indices) = geometry.upload(device, surf.is_some())?;
+    let (mesh, indices) = geometry.upload(device, surf.is_some() || profile.underwater)?;
     let surf_cache = surf
         .as_ref()
         .map(|surf| {
@@ -394,6 +433,19 @@ pub(super) fn new(
         entries.extend(Rain::bindings());
         bindings.extend(rain.entries());
     }
+    let lens_buffers = profile.underwater.then(|| cut_gpu::Buffers::new(device));
+    if let Some(buffers) = &lens_buffers {
+        entries.push(binding::storage(
+            cut_gpu::OUTPUT,
+            wgpu::ShaderStages::FRAGMENT,
+            true,
+            0,
+        ));
+        bindings.push(wgpu::BindGroupEntry {
+            binding: cut_gpu::OUTPUT,
+            resource: buffers.output.as_entire_binding(),
+        });
+    }
     let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
         label: Some("water field"),
         entries: &entries,
@@ -403,7 +455,7 @@ pub(super) fn new(
         layout: &layout,
         entries: &bindings,
     });
-    let (pipeline, river_pipeline, film, underwater) = surface_pipelines(
+    let (pipeline, river_pipeline, film, underwater, shader) = surface_pipelines(
         surface,
         &layout,
         &environment,
@@ -417,6 +469,16 @@ pub(super) fn new(
         tidal_grid,
         rain.is_some(),
     );
+    let lens_cut = lens_buffers.as_ref().map(|buffers| {
+        Cut::new(
+            surface,
+            &shader,
+            buffers.clone(),
+            &mesh,
+            &entries,
+            &bindings,
+        )
+    });
     let pattern = foam.as_ref().map(|_| Pattern {
         device: device.clone(),
         layout: layout.into_raw(),
@@ -443,6 +505,7 @@ pub(super) fn new(
         mesh,
         vertices: count,
         rest_mesh: geometry.rest_mesh,
+        lens_cut,
         queue: surface.queue.clone(),
         map: map_gpu,
         surf,
@@ -604,6 +667,7 @@ fn surface_pipelines(
     Option<wgpu::RenderPipeline>,
     Option<wgpu::RenderPipeline>,
     Option<wgpu::RenderPipeline>,
+    thrum_render::runtime::PipelineInput<wgpu::ShaderModule>,
 ) {
     let under = gather.is_some_and(|gather| gather.lens.is_some());
     let mut source = shader_source(
@@ -674,7 +738,7 @@ fn surface_pipelines(
         .then(|| create_pipeline(surface, layout, environment, &shader, SurfaceDraw::Film));
     let underwater =
         under.then(|| create_pipeline(surface, layout, environment, &shader, SurfaceDraw::Lens));
-    (pipeline, river, film, underwater)
+    (pipeline, river, film, underwater, shader)
 }
 
 fn shader_source(
@@ -829,6 +893,7 @@ fn shader_source(
         },
     );
     if underwater {
+        source.push_str(include_str!("underwater/cut_gpu.wgsl"));
         source.push_str(include_str!("underwater.wgsl"));
         source.push_str(if map.is_some() {
             "fn lens_row(p: vec2<f32>) -> SurfaceRow {\n
@@ -1177,7 +1242,12 @@ impl Geometry {
     fn hollows(&mut self, hollows: &thrum_water_model::Hollows, slot: f32) {
         let ([x, z], cell, [width, height]) = hollows.lattice();
         if let Some(rest) = &mut self.rest_mesh {
-            rest.hollows([x, z], cell, [width, height]);
+            rest.hollows(
+                [x, z],
+                cell,
+                [width, height],
+                u32::try_from(self.vertices.len()).expect("bounded mesh"),
+            );
         }
         for row in 0..height {
             for column in 0..width {
@@ -1235,10 +1305,20 @@ impl Geometry {
         inner_half_width: i32,
         surf: bool,
     ) {
-        if let Some(rest) = &mut self.rest_mesh {
-            rest.grid(start, end, spacing, inner_half_width, body == 0.0);
-        }
         let base = u32::try_from(self.vertices.len()).expect("bounded mesh");
+        if let Some(rest) = &mut self.rest_mesh {
+            rest.grid(
+                start,
+                end,
+                spacing,
+                inner_half_width,
+                body == 0.0,
+                super::underwater::Vertices::Indexed {
+                    first: base,
+                    surf_diagonal: surf,
+                },
+            );
+        }
         let width = u32::try_from(end[0] - start[0] + 1).expect("grid width");
         for (row, z) in (0..).zip(start[1]..=end[1]) {
             for (column, x) in (0..).zip(start[0]..=end[0]) {
@@ -1276,6 +1356,9 @@ fn mesh(mut rest: Option<&mut super::underwater::RestMesh>) -> Vec<[f32; 4]> {
                 spacing,
                 i32::from(inner),
                 true,
+                super::underwater::Vertices::Expanded {
+                    first: u32::try_from(vertices.len()).expect("bounded mesh"),
+                },
             );
         }
         for z in -half_width..half_width {

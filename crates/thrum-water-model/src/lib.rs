@@ -18,7 +18,7 @@ mod waves;
 
 pub use bed::Bed;
 pub use conformance::{Conformance, Provider, compare};
-pub use cut::{Column, CutConfig, Sheet, SheetPoint, WholeCut, cut};
+pub use cut::{Column, CutConfig, Sheet, SheetPoint, WholeCut, cut, highest_triangle};
 pub use fall::{
     Below, Births, Fall, FallSegment, GRAVITY, Impulse, PathPoint, PatternLoop, Plunge,
     PlungeProfile, SheetPattern, SheetProfile, SheetSample, WATER_DENSITY, loop_ticks,
