@@ -1241,7 +1241,7 @@
     {
       "id": "U1",
       "name": "The owner can read, in one reviewed document, what Thrum's Metal pipeline cache would offer wgpu and what to settle there first",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "quality_bar": "Notes the owner can speak from in public under their own name: every statement about wgpu, its issue or the patches is true on the day it was read and traceable to its source. The standard is a careful contributor's own preparation before a first comment on a project whose maintainers close pull requests their authors have not read. Nothing is judged against an image or a shipped game: each item is judged against the sources it cites.",
       "items": [
         {

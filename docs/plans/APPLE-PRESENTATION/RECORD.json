@@ -2006,6 +2006,32 @@
         "by": "plan",
         "task": "The design review of APPLE-PRESENTATION at .orchestrate/evidence/APPLE-PRESENTATION/design-review.md asked for changes, ",
         "at": "2026-11-26T13:01:01Z"
+      },
+      "ready_for_review": {
+        "commit": "a54decb8f7e7f5e16298a03e63641a79887f11b0",
+        "checked": "a54decb8f7e7f5e16298a03e63641a79887f11b0",
+        "at": "2026-11-26T18:14:44Z",
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.171.0-alpha.13.2",
+        "path": "visible",
+        "usage": {
+          "input": 117924,
+          "cached": 3079936,
+          "output": 16756,
+          "turns": 1
+        },
+        "session_usage": {
+          "input": 117924,
+          "cached": 3079936,
+          "output": 16756,
+          "turns": 1
+        }
       }
     },
     "U2": {
