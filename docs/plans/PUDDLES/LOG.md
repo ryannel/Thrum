@@ -196,3 +196,8 @@
   hollow. Metal checks cover map, submitted depth, float and history through a merge and a parting.
   Chrome WebGPU checks the selected yard and the float. The evidence includes both motion takes,
   native-size waterline crops and the paired cost record. [WP3 evidence](../../../.orchestrate/evidence/PUDDLES/WP3/README.md)
+- 2026-11-26 WP3 review repair. The ordinary GPU map reader samples hollows, and query snapshots
+  retain level-only changes. The yard float consumes actual body-query replies and the two dry
+  columns are checked through the same query. The surface submits the wet tiles and their margins
+  from a prepared index buffer. Submerged paving keeps visible grout with enough tint to follow
+  the sill from overhead. [Repaired Metal, Chrome and cost evidence](../../../.orchestrate/evidence/PUDDLES/WP3-repair/README.md)

@@ -3296,10 +3296,10 @@
       "contracts": ["C08", "C09"],
       "implementation": "partial",
       "scope": "PUDDLES WP1 and WP2 supply the CPU rain model. WP3 connects the opt-in island yard, its rain state, the GPU hollows body, paving and track optics, and a float.",
-      "correctness": "Metal compares GPU map samples with the CPU at five fills and verifies submitted yard depth. The yard keeps one body through filling and drying. It checks float waterline, dry ground under the roof and beside the float, and unchanged island body and stage behavior with rain absent.",
-      "visuals": "Mac Metal yard stills at three fills, four views and two Sun elevations, with native-size waterline crops. Two elapsed-time sequences show filling, spilling, merging and parting.",
-      "device": "Mac Metal on Apple M3 Max for map, surface and paired 1440p yard cost. Chrome WebGPU on the same Mac for submitted yard draws, changing puddle levels and float waterline.",
-      "evidence": "../../.orchestrate/evidence/PUDDLES/WP3/README.md"
+      "correctness": "Metal tests the ordinary GPU map reader against the CPU at five fills and reads submitted yard depth. The shared body query supplies the float height and dry replies beside it and under the roof. Its replies follow the requested ticks through a merge and parting with stable prepared resources and body identity.",
+      "visuals": "Mac Metal stills show the clear paving and muddy track water at three fills, four views and two Sun elevations. Submitted motion at eye height and from 15 m shows the gap closing and reopening. The level manifests identify which pit reaches its sill first.",
+      "device": "Mac Metal on Apple M3 Max for map, body query, depth and paired 1440p yard cost, including zero submitted hollow tiles when dry. Chrome WebGPU on the same Mac for variable yard draws and the floating waterline.",
+      "evidence": "../../.orchestrate/evidence/PUDDLES/WP3-repair/README.md"
     },
     {
       "id": "E1.water",
