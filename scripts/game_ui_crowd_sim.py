@@ -51,7 +51,9 @@ def prepare(out):
                    "--", sys.executable, __file__, str(out), str(app), str(store), str(runner)]
         if simulator.admission()[0] is None:
             command = simulator.lock_command(command)
-        run(command, env=env)
+        # A queued lock has no device time. The simulator supervisor bounds the
+        # run after admission and verifies shutdown before releasing the lock.
+        subprocess.run(command, cwd=ROOT, env=env, check=True)
 
 
 def worker(out, app, store, runner):
