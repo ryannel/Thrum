@@ -733,3 +733,7 @@ layer profile change. [Metal controls](../../../.orchestrate/evidence/CLOUDS/WP9
   presented submissions across the four cue windows, with separate capture-off pacing records.
   The new forced 120 Hz control measured 11.54/15.60 ms GPU span p50/p95 at the 50% governor floor.
   [Fullscreen captures, pass timings and present intervals](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP11/mac-60hz-closing/README.md)
+- 2026-11-26 WP11. Capture-off takes 37 and 38 served all 361 refresh intervals of the fullscreen
+  route at the unforced 60 Hz request. Their 50% governor-floor GPU spans were 11.06/12.66 ms and
+  11.15/12.55 ms p50/p95. WP17 owns full-refresh fullscreen cadence and the milestone.
+  [Pacing takes and host load](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP11/mac-60hz-closing/pacing-index.md)

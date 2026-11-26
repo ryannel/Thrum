@@ -1193,20 +1193,20 @@
           "statement": "Each clause of G4's sentence holds as the brief words it, on the evidence the design's closing table names, and the maturity ledger says what was and was not proved, with implementation, correctness, visuals and device results apart. EDR is recorded as values above SDR white given to a layer configured for EDR, not as light the panel emitted. Full-screen pacing on the built-in display is recorded as one present call in every 60 Hz refresh interval of the route at a requested 60 Hz, which is what the engine did and not what the panel showed. The display's full refresh at full screen is recorded as not reached and owed by WP17, and the milestone as not yet reached. Each 120 Hz take is described by what its own build did: the frame-rate request, the overrides, the GPU time at the governor's floor against 8.33 ms, each pass's time and the host load. The physical iPhone and external-display rows are named as owed.",
           "ask": "Take the brief's G4 sentence clause by clause: which item of WP3 to WP12 proves each, and is any clause proved only by a forced override that the ledger does not label? Then read the ledger and the evidence page for three things. 1. Is full-screen pacing given as present calls in refresh intervals, and nowhere as frames shown on the panel? 2. Is the display's full refresh at full screen given as owed by WP17, and is it said nowhere that the bar is met there, that 60 Hz is the target there, or that the milestone is reached? 3. Is the builder's retake described as its build ran it, with a 60 to 120 Hz request that preferred 120, an 8.33 ms interval and EDR headroom forced to 2, and is a take called forced-rate only where the launch setting set its rate?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP11/g4-closure.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D11.6",
           "statement": "At full screen on the built-in display, on the Mac's Apple recipe with MetalFX, EDR and the governor on, the game presents a steady 60 Hz, as an interim rate, and the route is sharp and stable. Pacing, in each of two capture-off takes: the game requests 60 Hz without a forcing launch setting, and every 60 Hz refresh interval from the route's first tick to its last is served, with refresh interval, served and missed as the design defines them. Image, in a complete cue window of consecutive captured frames for each: clean edges on the terrain silhouette and on thin props, steady stars, no ghost behind a moving prop, and no brightness lag through the time-of-day scrub.",
           "inspect": "Read two kinds of record from the merge candidate, and say which frames you read for each cue. First, the Mac host's refresh account for each of the two judged capture-off takes, beside the list of every take made, each with its host load and the cause of each missed interval. In both judged takes: 1. the requested frame rate is 60 Hz, not forced, and the governor's display interval is 16.67 ms; 2. the account has one interval for each 16.67 ms of the route from its first tick to its last, so a target that brought no callback is a row and not a gap; 3. every one of those intervals holds exactly one present call, made inside it, and none is missed for any cause. Second, the T2 engine capture in `realtime` mode at full screen, at the built-in display's pixel size and the same requested rate, with capture's own cost shown apart. Read each cue window's frames at native size, in captured order and timing: 4. each of the four windows is complete, with an image for every presented submission and no omission by the tap or the writer; 5. edges on the terrain silhouette and on thin props hold from frame to frame as the camera moves; 6. stars stay steady with the camera held and as it pans; 7. no copy or trail stays behind the moving prop; 8. brightness through the time-of-day scrub does not trail the comparison capture at the same captured time.",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP11/mac-60hz-closing/README.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D11.7",
