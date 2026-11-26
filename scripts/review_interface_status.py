@@ -93,6 +93,7 @@ def inspect(directory, output, insets):
     crop_dir = output / "native-crops"
     crop_dir.mkdir()
     size_set = set()
+    phase_samples = {}
     for entry, raw in records(directory):
         if entry["scale"] is None:
             if rows:
@@ -122,13 +123,32 @@ def inspect(directory, output, insets):
         for at in range((bar_y * width + bar_x) * 4, (bar_y * width + right - 10 * s) * 4, 4):
             r, g, b = raw[at:at + 3]
             green += g > 180 and g > r and g > b
+        track = iw - 20 * s
+        expected = int(track * abs(phase - 120) / 120 + 0.5)
+        if green != expected:
+            raise ValueError(f"health fill {green} != {expected} at submission {identifier}")
         entry.update(bounds=bounds, box_size=[iw, ih], green_pixels=green, phase=phase,
                      rgba_sha256=hashlib.sha256(raw).hexdigest())
         package(crop_pixels, crop_dir / f"{identifier:06d}.png", iw, ih)
-        if tuple(entry["extent"]) not in size_set or phase in [0, 1, 79, 80, 81, 119, 120, 121, 239]:
+        key = tuple(entry["extent"]), phase
+        phase_samples[key] = phase_samples.get(key, 0) + 1
+        if tuple(entry["extent"]) not in size_set or (
+                phase in [0, 1, 79, 80, 81, 119, 120, 121, 239] and phase_samples[key] <= 2):
             name = output / f"whole-{identifier:06d}.png"
             package(raw, name, width, height)
             entry["whole"] = name.name
+            parts = {
+                "bar": [bar_x, y + 33 * s, right - 10 * s, y + 39 * s],
+                "timer": [right - 64 * s, y + 8 * s, right - 10 * s, y + 29 * s],
+            }
+            group = (iw - 32 * s) / 3
+            for i, label in enumerate(("score", "gems", "wave")):
+                left = x + 10 * s + int(i * (group + 6 * s) + 0.5)
+                parts[label] = [left, y + 43 * s, left + round(group), y + 91 * s]
+            for name, bounds in parts.items():
+                l, t, r, b = bounds
+                package(crop(raw, entry["extent"], bounds),
+                        crop_dir / f"{identifier:06d}-{name}.png", r - l, b - t)
         size_set.add(tuple(entry["extent"]))
         rows.append(entry)
     if not rows:

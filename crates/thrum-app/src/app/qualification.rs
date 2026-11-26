@@ -440,7 +440,9 @@ impl Observer {
                 1,
                 CaptureLimits {
                     staging_slots: 6,
-                    cpu_buffers: 96,
+                    // The status sweep can grow to a 2560×1440 drawable.
+                    // Keep its lease pool within the same byte allowance.
+                    cpu_buffers: if status_markers.is_some() { 32 } else { 96 },
                     byte_allowance: 1024 * 1024 * 1024,
                 },
                 CaptureSource::Sdr,
