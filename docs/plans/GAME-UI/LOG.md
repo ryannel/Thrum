@@ -171,3 +171,8 @@
   a complete take only when shutdown was requested and all owned processes have exited. Both Chrome
   WebGPU release runs passed with 32 timed status updates each and normal browser exits.
   [Target proof](../../../.orchestrate/evidence/GAME-UI/WP3/chrome-cost-shutdown/index.md)
+- 2026-11-26 WP4. The interface routes complete key, pointer and touch contacts against the last
+  submitted layout. The V1 choice suspends and re-acquires the game's held input, and the scripted
+  join scene accepts whole tickets from the shells. Eight automated checks passed, including real
+  device replacement on both targets. The fixed stills, 1× motion take and two release measurements
+  per target are retained in the [WP4 proof](../../../.orchestrate/evidence/GAME-UI/WP4/index.md).
