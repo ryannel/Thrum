@@ -669,7 +669,23 @@ fn shader_source(
         ""
     };
     let has_rivers = map.is_some_and(MapGpu::has_rivers);
-    let (vertex, fragment) = surface_entries(has_rivers);
+    let (varying, vertex_geometry, vertex_output, fragment_entry, fragment_row) = if has_rivers {
+        (
+            "    @location(1) rest:vec2<f32>, @location(2) river:vec3<f32>,\n",
+            include_str!("map_gpu/river_vertex_geometry.wgsl"),
+            "vec3(row.level,swell,vertex.z)",
+            include_str!("map_gpu/river_fragment_entry.wgsl"),
+            "    var row=source;\n",
+        )
+    } else {
+        (
+            "    @location(1) rest:vec2<f32>, @location(2) velocity:vec3<f32>,\n",
+            "",
+            "f.velocity.xyz",
+            "@fragment fn water_fragment(input:VertexOut)->Output {\n",
+            "    var row=surface_pixel(input.rest,input.body);\n",
+        )
+    };
     format!(
         "{}\n{sun}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}",
         library,
@@ -690,9 +706,19 @@ fn shader_source(
         Interaction::sample_source(3, 7, 8, wake),
         concat!(include_str!("carriage.wgsl"), include_str!("surface.wgsl")).to_owned()
             + rain_geometry
-            + &vertex
+            + include_str!("surface_vertex.wgsl")
+            + varying
+            + include_str!("surface_vertex_entry.wgsl")
             + vertex_route
-            + &fragment
+            + include_str!("surface_vertex_geometry.wgsl")
+            + vertex_geometry
+            + "    return VertexOut(clip,world,rest,"
+            + vertex_output
+            + include_str!("surface_vertex_return.wgsl")
+            + include_str!("surface_fragment.wgsl")
+            + fragment_entry
+            + include_str!("surface_fragment_derivatives.wgsl")
+            + fragment_row
             + if has_hollows && gather {
                 include_str!("map_gpu/hollows_contact.wgsl")
             } else {
@@ -733,16 +759,7 @@ fn shader_source(
                     };
                     source.push_str(include_str!("map_gpu/hollows_surface.wgsl"));
                     source.push_str(motion);
-                    let pixel = include_str!("map_gpu/hollows_surface_pixel.wgsl");
-                    if has_rivers {
-                        source.push_str(&pixel.replacen(
-                            "vertex.xy, vec3(0.0), current",
-                            "vertex.xy, vec3(levels.x, 0.0, 0.0), current",
-                            1,
-                        ));
-                    } else {
-                        source.push_str(pixel);
-                    }
+                    source.push_str(include_str!("map_gpu/hollows_surface_pixel.wgsl"));
                 } else {
                     source.push_str(include_str!("mapped_surface_pixel.wgsl"));
                 }
@@ -757,38 +774,6 @@ fn shader_source(
                 .into()
         },
     )
-}
-
-fn surface_entries(
-    rivers: bool,
-) -> (
-    std::borrow::Cow<'static, str>,
-    std::borrow::Cow<'static, str>,
-) {
-    let vertex = include_str!("surface_vertex.wgsl");
-    let fragment = include_str!("surface_fragment.wgsl");
-    if !rivers {
-        return (vertex.into(), fragment.into());
-    }
-    // The receiver and chart entries share the vertex and all surface shading.
-    // Specialize the unused velocity varying only when the depth entry reads it.
-    let vertex = vertex.replacen("velocity:vec3<f32>", "river:vec3<f32>", 1);
-    let fragment = fragment
-        .replacen("    return VertexOut(clip,world,rest,f.velocity.xyz,", concat!(
-            "    var swell = 0.0;\n",
-            "    if surf_weight == 0.0 && row.gains.x * water.heights.x > 0.0 && (!sea || vertex.z <= 2.0) {\n",
-            "        swell = long_at(rest,vertex.z).displacement.y * row.gains.x;\n",
-            "    }\n",
-            "    return VertexOut(clip,world,rest,vec3(row.level,swell,vertex.z),",
-        ), 1)
-        .replacen("@fragment fn water_fragment(input:VertexOut)->Output {", concat!(
-            "@fragment fn water_fragment(input:VertexOut)->Output {\n",
-            "    return shade_water(input, surface_pixel(input.rest,input.body));\n",
-            "}\n",
-            "fn shade_water(input:VertexOut, source:SurfaceRow)->Output {",
-        ), 1)
-        .replacen("var row=surface_pixel(input.rest,input.body);", "var row=source;", 1);
-    (vertex.into(), fragment.into())
 }
 
 fn create_pipeline(
