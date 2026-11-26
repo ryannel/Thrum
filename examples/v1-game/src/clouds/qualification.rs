@@ -4,6 +4,27 @@ use crate::effect::qualification::read_texture_bytes;
 use thrum_cloud_model::Field;
 use thrum_clouds::{RowStamp, ShadeConfig};
 
+pub(crate) fn placed_capture_report(
+    input: &thrum_clouds::WeatherInput,
+) -> Option<serde_json::Value> {
+    let report = input.shapes_report()?;
+    let (_, _, state) = input.placed_map()?;
+    Some(serde_json::json!({
+        "volume_instances": report.volume_instances,
+        "volume_refusals": report.volume_refusals,
+        "directed_refusals": report.directed_refusals,
+        "resources": input.resource_bytes(),
+        "weather_tick": state.tick(),
+        "weather_seconds": state.time(),
+        "weather_rate": state.parameters().time_scale,
+        "procedural_share": state.procedural_share(),
+        "directed_shapes": state.shapes().iter().map(|shape| serde_json::json!({
+            "id": shape.id, "centre": shape.centre, "growth": shape.growth,
+            "envelope": shape.envelope,
+        })).collect::<Vec<_>>(),
+    }))
+}
+
 /// The committed axes, rows and products of a submitted Weather Map.
 #[derive(Clone, Copy)]
 pub struct WeatherSnapshot<'a> {

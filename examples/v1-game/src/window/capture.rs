@@ -1341,6 +1341,8 @@ fn write_runtime_report(
             "coverage": setup.cloud_weather.coverage,
             "kind": setup.cloud_weather.kind,
             "resource_bytes": driver.host().cloud_resource_bytes(),
+            "placed": driver.host().cloud_placed_input()
+                .and_then(crate::clouds::qualification::placed_capture_report),
         });
     }
     if parity_checkpoint {

@@ -929,16 +929,8 @@ impl BrowserGame {
     /// Latest submitted Shapes report as JSON for the browser proof.
     #[cfg(feature = "proving")]
     pub fn placed_cloud_report(&self) -> Option<String> {
-        let report = game::cloud_input(&self.page.shell)?.shapes_report()?;
-        Some(
-            serde_json::json!({
-                "volume_instances": report.volume_instances,
-                "volume_refusals": report.volume_refusals,
-                "directed_refusals": report.directed_refusals,
-                "resources": game::cloud_input(&self.page.shell)?.resource_bytes(),
-            })
-            .to_string(),
-        )
+        crate::clouds::qualification::placed_capture_report(&game::cloud_input(&self.page.shell)?)
+            .map(|report| report.to_string())
     }
 
     /// Draw the authored valley from fetched cooked products, with its authored camera.

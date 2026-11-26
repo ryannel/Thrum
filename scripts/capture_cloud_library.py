@@ -48,7 +48,7 @@ def capture(args, view):
     if destination.exists():
         raise ValueError(f'{destination} already exists')
     moving = args.group == 'motion'
-    params = {'world.paused': not moving, 'sky.solar_time': SOLAR[sun],
+    params = {'world.paused': True, 'sky.solar_time': SOLAR[sun],
               'camera.yaw': yaw, 'camera.pitch': pitch}
     extent = [960, 540] if moving else [1280, 720]
     eye = EYES[height] if isinstance(height, int) else height
