@@ -1363,7 +1363,49 @@
     },
     "WP10": {
       "definitions": "0f92017b376f1f2169ed832650d5e939dd7578234a9d1138936d827fd86d3cd6",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "5c0ce8ead2838e518052cbc029357935a1603abf",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP10-review.md",
+          "items": {
+            "D10.1": "fail",
+            "D10.2": "pass",
+            "D10.3": "pass",
+            "D10.4": "pass",
+            "D10.5": "pass",
+            "D10.6": "fail"
+          },
+          "findings": [
+            {
+              "name": "The route loads cooked stages outside the registered passthrough module path",
+              "item": "D10.1",
+              "repeat": false
+            },
+            {
+              "name": "The backend patch adds library substitution to the WGSL branch",
+              "item": "D10.6",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 100329,
+            "cached": 3040640,
+            "output": 8666,
+            "turns": 1
+          },
+          "at": "2026-11-26T01:17:56Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of APPLE-PRESENTATION at docs/evidence/APPLE-PRESENTATION/design-review.md asked for changes. Resolve ",
