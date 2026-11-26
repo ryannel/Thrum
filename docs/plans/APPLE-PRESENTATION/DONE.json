@@ -1183,10 +1183,10 @@
           "statement": "The registry's default reconstructor on the Apple recipe is the one the paired record supports, recorded as promotion evidence, and every tripwire this module raised has an assigned follow-up.",
           "ask": "Which reconstructor does the Apple recipe resolve by default at the closing commit, and which rows of D11.1's record support that? List each open tripwire and where its follow-up is written.",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP11/promotion.md",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D11.5",
