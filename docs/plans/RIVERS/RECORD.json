@@ -612,7 +612,7 @@
         {
           "verdict": "fail",
           "commit": "81457f0aa879f840f581790d23da481472dba967",
-          "review": ".orchestrate/evidence/RIVERS/WP4-review.md",
+          "review": ".orchestrate/evidence/RIVERS/WP4-review-5.md",
           "items": {
             "WP4.1": "pass",
             "WP4.2": "pass",
@@ -648,6 +648,46 @@
             "turns": 1
           },
           "at": "2026-11-26T22:04:50Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "696e1fb31995f93ba95d6e41742e8f554176ff62",
+          "review": ".orchestrate/evidence/RIVERS/WP4-review.md",
+          "items": {
+            "WP4.1": "pass",
+            "WP4.2": "pass",
+            "WP4.3": "fail",
+            "WP4.4": "pass",
+            "WP4.5": "pass",
+            "WP4.6": "pass",
+            "WP4.7": "pass",
+            "WP4.8": "pass",
+            "WP4.9": "pass"
+          },
+          "findings": [
+            {
+              "name": "A visible seam cuts across the spring pool highlights",
+              "item": "WP4.3",
+              "different": "The prior finding concerned the depth written at the tidal bank. Both named tidal depth series pass. This finding is the visible break in the spring pool under inspection line 3.",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 211613,
+            "cached": 12695680,
+            "output": 26513,
+            "turns": 1
+          },
+          "at": "2026-11-26T23:30:01Z"
         }
       ],
       "authorised": {
