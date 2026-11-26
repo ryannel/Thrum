@@ -3122,6 +3122,32 @@
         "by": "plan",
         "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 2 Must Fix find",
         "at": "2026-11-26T13:37:31Z"
+      },
+      "ready_for_review": {
+        "commit": "9acb9b110d1b1cd1299cc7d9e6a963999dae5363",
+        "checked": "8f6922ed15ae39739d92c845af3894ffb90ee7b1",
+        "at": "2026-11-26T14:11:18Z",
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.171.0-alpha.13.2",
+        "path": "visible",
+        "usage": {
+          "input": 152554,
+          "cached": 10023168,
+          "output": 17826,
+          "turns": 1
+        },
+        "session_usage": {
+          "input": 152554,
+          "cached": 10023168,
+          "output": 17826,
+          "turns": 1
+        }
       }
     }
   },
