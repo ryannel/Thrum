@@ -39,28 +39,30 @@ function compare(rgba, metadata, metrics, oracle, store) {
 export async function qualifyInterfaceStatus({ cdp, origin, fontOrigin, output, timeout, wasm,
   existingGame, waitFor, releaseGameGraphics, unloadGamePage, commit, encodePng, oracle, costs }) {
   const rows = [];
-  for (const dpr of costs ? [2] : [1, 2, 3]) {
-    const { targetId } = await cdp.call('Target.createTarget', { url: 'about:blank' });
+  // Keep one tab while each DPR loads a fresh document and device. Retire
+  // each page before changing the DPR so Chrome closes only one target.
+  const { targetId } = await cdp.call('Target.createTarget', { url: 'about:blank' });
+  try {
     const { sessionId } = await cdp.call('Target.attachToTarget', { targetId, flatten: true });
     const call = (method, args = {}) => cdp.call(method, args, sessionId);
-    try {
-      await call('Page.enable');
-      await call('Runtime.enable');
-      await installWasmReceipt(cdp, sessionId);
+    await call('Page.enable');
+    await call('Runtime.enable');
+    await installWasmReceipt(cdp, sessionId);
+    await call('Page.addScriptToEvaluateOnNewDocument', { source: `{
+      const scheduled = new Map();
+      let serial = 0, time = 0;
+      requestAnimationFrame = callback => { scheduled.set(++serial, callback); return serial; };
+      cancelAnimationFrame = id => scheduled.delete(id);
+      window.stepStatusFrame = () => {
+        const work = [...scheduled.values()];
+        scheduled.clear();
+        time += 17;
+        for (const callback of work) callback(time);
+      };
+    }` });
+    await cdp.call('Target.activateTarget', { targetId });
+    for (const dpr of costs ? [2] : [1, 2, 3]) {
       await call('Emulation.setDeviceMetricsOverride', { width: 900, height: 760, deviceScaleFactor: dpr, mobile: false });
-      await call('Page.addScriptToEvaluateOnNewDocument', { source: `{
-        const scheduled = new Map();
-        let serial = 0, time = 0;
-        requestAnimationFrame = callback => { scheduled.set(++serial, callback); return serial; };
-        cancelAnimationFrame = id => scheduled.delete(id);
-        window.stepStatusFrame = () => {
-          const work = [...scheduled.values()];
-          scheduled.clear();
-          time += 17;
-          for (const callback of work) callback(time);
-        };
-      }` });
-      await cdp.call('Target.activateTarget', { targetId });
       await call('Page.navigate', { url: `${origin}/?scene=interface&text-card=status&assets=${encodeURIComponent(fontOrigin)}` });
       await waitFor(async () => {
         const { result } = await call('Runtime.evaluate', { expression: 'document.querySelector("#status")?.textContent', returnByValue: true });
@@ -161,9 +163,9 @@ export async function qualifyInterfaceStatus({ cdp, origin, fontOrigin, output, 
       assert.equal(await game.invoke('return game.submitted_capture_omissions();'), 0);
       await game.invoke('game.end_submitted_capture();delete window.statusImage;');
       rows.push({ dpr, build, initial, resized, devices_retired: await retire() });
-    } finally {
-      await cdp.call('Target.closeTarget', { targetId });
     }
+  } finally {
+    await cdp.call('Target.closeTarget', { targetId });
   }
   const record = { case: 'interface-status', target: 'chrome-webgpu', commit, rows };
   await fs.writeFile(path.join(output, 'interface-status.json'), JSON.stringify(record, null, 2) + '\n');
