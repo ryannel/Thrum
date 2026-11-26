@@ -124,3 +124,7 @@
   bindings across reopen. A later independent PNG publishes all three profiles. Verified on the reviewer's
   archived store and a regression covering a previously public PNG proposed by a refused rename.
   [Target proofs](../../../.orchestrate/evidence/GAME-UI/WP2/round5/index.md)
+- 2026-11-26 WP2 review fix. Opening the reviewer's store after the old cooker refused a pixel font edit
+  now allows independent new PNGs to publish all three profiles. Reopens retain the font hash and keep
+  the original grid private. Restoring the valid description records the binding. Unrelated stat entries
+  continue to persist while the legacy font is unresolved. [Target proofs](../../../.orchestrate/evidence/GAME-UI/WP2/round6/index.md)
