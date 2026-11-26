@@ -48,20 +48,22 @@ pub(super) fn validation_key(device: &ProtocolObject<dyn MTLDevice>) -> Option<[
 /// A Metal binary archive, either under construction or opened for reading.
 #[derive(Debug)]
 pub struct PipelineCache {
-    raw: Option<Retained<NativeArchive>>,
-    mode: Mode,
+    archive: Mutex<Archive>,
 }
 
 #[derive(Debug)]
-enum Mode {
-    Harvest(Mutex<bool>),
-    ReadOnly,
+enum Archive {
+    Harvest {
+        raw: Retained<NativeArchive>,
+        populated: bool,
+    },
+    ReadOnly(Option<Retained<NativeArchive>>),
 }
 
-// Harvest serializes access to the mutable archive. A read-only archive is never
-// updated and can be searched by concurrent pipeline creations on the same device.
-unsafe impl Send for PipelineCache {}
-unsafe impl Sync for PipelineCache {}
+// The archive belongs to the Metal device, which can be used across threads.
+// The cache mutex protects all archive access, including the synchronous
+// descriptor call that searches it. No native reference escapes that call.
+unsafe impl Send for Archive {}
 
 impl PipelineCache {
     pub(super) fn new(
@@ -98,25 +100,29 @@ impl PipelineCache {
                 }
             }
         };
-        let mode = if data.is_some() {
-            Mode::ReadOnly
+        let archive = if data.is_some() {
+            Archive::ReadOnly(raw)
         } else {
-            Mode::Harvest(Mutex::new(false))
+            Archive::Harvest {
+                raw: raw.ok_or(crate::DeviceError::Unexpected)?,
+                populated: false,
+            }
         };
-        Ok(Self { raw, mode })
+        Ok(Self {
+            archive: Mutex::new(archive),
+        })
     }
 
     pub(super) fn data(&self) -> Option<Vec<u8>> {
-        let Mode::Harvest(populated) = &self.mode else {
+        let archive = self.archive.lock();
+        let Archive::Harvest { raw, populated } = &*archive else {
             return None;
         };
-        let populated = populated.lock();
         if !*populated {
             // Metal cannot serialize an empty archive. An empty payload opens a
             // fresh, read-only native archive on load.
             return Some(Vec::new());
         }
-        let raw = self.raw.as_ref()?;
         let serialize = || {
             let file = ArchiveFile::new()?;
             raw.serializeToURL_error(&file.url)
@@ -192,25 +198,37 @@ pub(super) fn create_pipeline<T>(
     let Some(cache) = cache else {
         return create(MTLPipelineOption::empty());
     };
-    let Some(raw) = &cache.raw else {
-        observe(ArchiveOutcome::Unavailable);
-        return create(MTLPipelineOption::empty());
-    };
-    let archives = NSArray::from_slice(&[&**raw]);
-    match &cache.mode {
-        Mode::Harvest(populated) => {
-            let mut populated = populated.lock();
+    let mut archive = cache.archive.lock();
+    match &mut *archive {
+        Archive::Harvest { raw, populated } => {
             add(raw)?;
             *populated = true;
+            let archives = NSArray::from_slice(&[&**raw]);
             attach(Some(&archives));
+            let result = create(MTLPipelineOption::empty());
+            attach(None);
+            result
+        }
+        Archive::ReadOnly(None) => {
+            observe(ArchiveOutcome::Unavailable);
             create(MTLPipelineOption::empty())
         }
-        Mode::ReadOnly => {
+        Archive::ReadOnly(Some(raw)) => {
+            let archives = NSArray::from_slice(&[&**raw]);
             attach(Some(&archives));
-            let Some((strict, _)) = ARCHIVE_POLICY.with(Cell::get) else {
-                return create(MTLPipelineOption::empty());
+            let policy = ARCHIVE_POLICY.with(Cell::get);
+            let options = if policy.is_some() {
+                MTLPipelineOption::FailOnBinaryArchiveMiss
+            } else {
+                MTLPipelineOption::empty()
             };
-            let result = create(MTLPipelineOption::FailOnBinaryArchiveMiss);
+            let result = create(options);
+            attach(None);
+            drop(archives);
+            drop(archive);
+            let Some((strict, _)) = policy else {
+                return result;
+            };
             let outcome = match &result {
                 Ok(_) => ArchiveOutcome::Hit,
                 Err(error) => {
@@ -227,7 +245,6 @@ pub(super) fn create_pipeline<T>(
             };
             observe(outcome);
             if outcome == ArchiveOutcome::Miss && !strict {
-                attach(None);
                 return create(MTLPipelineOption::empty());
             }
             result
