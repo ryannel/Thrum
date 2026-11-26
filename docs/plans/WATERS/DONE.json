@@ -1472,7 +1472,7 @@
     {
       "id": "WP8",
       "name": "Water reflects the sky, the Sun, its shores and the craft, shows the ground and hulls beneath it, glitters and dims under a cloud's shade, from dawn to night",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -1486,8 +1486,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP8/reopened-58cc6775/README.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/WP8-review.md"
         },
         {
           "id": "WP8.2",
@@ -1496,8 +1496,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP8/reopened-58cc6775/README.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/WP8-review.md"
         },
         {
           "id": "WP8.3",
@@ -1506,8 +1506,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP8/reopened-58cc6775/README.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/WP8-review.md"
         },
         {
           "id": "WP8.4",
@@ -1516,8 +1516,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP8/reopened-58cc6775/README.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/WP8-review.md"
         },
         {
           "id": "WP8.5",
@@ -1526,8 +1526,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP8/reopened-58cc6775/README.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/WP8-review.md"
         },
         {
           "id": "WP8.6",
@@ -1538,8 +1538,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP8/reopened-58cc6775/README.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/WP8-review.md"
         },
         {
           "id": "WP8.7",
@@ -1550,8 +1550,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP8/reopened-58cc6775/README.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/WP8-review.md"
         },
         {
           "id": "WP8.12",
@@ -1562,8 +1562,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP8/reopened-58cc6775/README.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/WP8-review.md"
         },
         {
           "id": "WP8.9",
@@ -1572,8 +1572,8 @@
           "target": "chrome-webgpu",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP8/reopened-58cc6775/README.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/WP8-review.md"
         },
         {
           "id": "WP8.10",
@@ -1583,8 +1583,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP8/reopened-58cc6775/cost.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/WP8-review.md"
         }
       ]
     },

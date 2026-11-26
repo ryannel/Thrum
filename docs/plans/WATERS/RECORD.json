@@ -1686,7 +1686,7 @@
         {
           "verdict": "fail",
           "commit": "8a4a3b70e540d23136af3a067b3de86bd2e529f9",
-          "review": ".orchestrate/evidence/WATERS/WP8-review.md",
+          "review": ".orchestrate/evidence/WATERS/WP8-review-9.md",
           "items": {
             "WP8.1": "pass",
             "WP8.2": "pass",
@@ -1729,6 +1729,39 @@
             "turns": 1
           },
           "at": "2026-11-26T03:15:13Z"
+        },
+        {
+          "verdict": "pass",
+          "commit": "598a8f41389b18ba412655ec92f7575d24b2c5fa",
+          "review": ".orchestrate/evidence/WATERS/WP8-review.md",
+          "items": {
+            "WP8.1": "pass",
+            "WP8.2": "pass",
+            "WP8.3": "pass",
+            "WP8.4": "pass",
+            "WP8.5": "pass",
+            "WP8.6": "pass",
+            "WP8.7": "pass",
+            "WP8.12": "pass",
+            "WP8.9": "pass",
+            "WP8.10": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 131485,
+            "cached": 4295168,
+            "output": 10728,
+            "turns": 1
+          },
+          "at": "2026-11-26T04:09:21Z"
         }
       ],
       "authorised": {
@@ -1761,6 +1794,13 @@
           "output": 17636,
           "turns": 1
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "598a8f41389b18ba412655ec92f7575d24b2c5fa",
+        "review": ".orchestrate/evidence/WATERS/WP8-review.md",
+        "checked": "84971df1ebe82335ae092d655f187ad81d96944e",
+        "at": "2026-11-26T04:09:21Z"
       }
     },
     "WP9": {
