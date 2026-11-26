@@ -126,13 +126,13 @@ pub(super) struct TargetPreparation {
 
 impl TargetPreparation {
     #[cfg(not(target_arch = "wasm32"))]
-    pub(super) fn resize_secondary(
+    pub(super) fn resize_contribution(
         &mut self,
-        extents: &[[u32; 2]],
-        job: crate::contribution::SecondaryResizeJob,
+        extents: Option<&[[u32; 2]]>,
+        job: crate::contribution::ExtentResizeJob,
     ) -> Result<
         (
-            crate::synthetic::secondary::SecondarySet,
+            Option<crate::synthetic::secondary::SecondarySet>,
             crate::contribution::SecondaryResize,
         ),
         FrameError,
@@ -140,8 +140,10 @@ impl TargetPreparation {
         let TargetInputs::ThreeD(inputs) = &mut self.inputs else {
             unreachable!("secondary views belong to 3D scenes");
         };
-        let views = inputs.resize_secondary(extents);
-        let replacement = job(views.handles())?;
+        let views = extents.map(|extents| inputs.resize_secondary(extents));
+        let replacement = job(views
+            .as_ref()
+            .map(crate::synthetic::secondary::SecondarySet::handles))?;
         replacement
             .graph
             .validate()

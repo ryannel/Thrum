@@ -17,6 +17,8 @@ pub(crate) mod diagnostic;
 pub(crate) mod light;
 mod overlay;
 pub(crate) mod prepare;
+#[cfg(not(target_arch = "wasm32"))]
+pub(crate) mod resize;
 mod temporal;
 
 pub(crate) const TRACE: &str = "cloud trace";
@@ -24,6 +26,8 @@ pub(crate) const COMPOSE: &str = "cloud compose";
 pub(crate) const FIELD: &str = "cloud internal field";
 pub(crate) const MAX_TRACE_SAMPLES: u32 = 768;
 pub(crate) use overlay::DEFAULT_OVERLAY_SLICES;
+const TRACE_TEXTURE_OWNER: u64 = 100;
+const HISTORY_TEXTURE_OWNER: u64 = 103;
 
 #[derive(Clone, Copy, PartialEq)]
 pub(crate) struct Quality {
@@ -132,11 +136,12 @@ pub(crate) struct Layer {
     textures: [wgpu::Texture; 2],
     detail_noise: Noise,
     trace: wgpu::ComputePipeline,
-    trace_stops: Option<wgpu::ComputePipeline>,
     compose: wgpu::RenderPipeline,
     field_pipeline: wgpu::RenderPipeline,
     field_overlay: crate::FieldOverlay,
     trace_group: wgpu::BindGroup,
+    #[cfg(not(target_arch = "wasm32"))]
+    resize_bindings: resize::Bindings,
     compose_group: wgpu::BindGroup,
     field_group: [wgpu::BindGroup; 2],
     has_placed_map: bool,
@@ -162,7 +167,7 @@ impl Layer {
             graph.resources.push((
                 ResourceDescriptor::of_texture(texture),
                 ResourceScope::Persistent {
-                    owner: 100 + i as u64,
+                    owner: TRACE_TEXTURE_OWNER + i as u64,
                     epoch,
                     initialized: false,
                 },
@@ -285,11 +290,11 @@ impl Layer {
         trace.cadence = EffectCadence::TimeSliced;
         graph.after_opaque.push(trace);
         let history = graph.resources.len();
-        for (i, texture) in self.temporal.textures[0].iter().enumerate() {
+        for (i, texture) in self.temporal.targets.textures[0].iter().enumerate() {
             graph.resources.push((
                 ResourceDescriptor::of_texture(texture),
                 ResourceScope::History {
-                    owner: 103 + i as u64,
+                    owner: HISTORY_TEXTURE_OWNER + i as u64,
                     epoch,
                     initialized: true,
                 },
@@ -393,12 +398,8 @@ impl Layer {
         let low_deck = ground.is_some_and(|field| {
             state.parameters().coverage > 0.0 && kind.base <= field.terrain_top()
         });
-        let per_pixel_stops =
-            low_deck || ground.is_some_and(crate::ground::GroundField::has_active_rows);
-        let mode_changed = self.per_pixel_stops != per_pixel_stops;
-        self.per_pixel_stops = per_pixel_stops;
+        let per_pixel_stops = self.per_pixel_stops;
         self.render_extent = frame.render_extent;
-        let reset = reset || mode_changed;
         let stride = self.quality.stride;
         let active_extent = self.active_extent();
         let parameters = state.parameters();
@@ -556,13 +557,7 @@ impl Layer {
             self.temporal.encode(pass, self.active_extent());
             return;
         }
-        pass.set_pipeline(if self.per_pixel_stops {
-            self.trace_stops
-                .as_ref()
-                .expect("Ground surface-stop pipeline")
-        } else {
-            &self.trace
-        });
+        pass.set_pipeline(&self.trace);
         pass.set_bind_group(0, self.environment.group(frame.exposure_side), &[]);
         pass.set_bind_group(2, &self.trace_group, &[]);
         if let Some(shapes) = shapes {
@@ -607,9 +602,9 @@ impl Layer {
     pub(crate) fn products(&self) -> SkyProducts {
         let side = self.temporal.clock.side(0, HistoryBinding::Previous);
         SkyProducts {
-            transport: self.temporal.textures[side][0].clone(),
+            transport: self.temporal.targets.textures[side][0].clone(),
             fresh_transport: self.textures[0].clone(),
-            front: self.temporal.textures[side][1].clone(),
+            front: self.temporal.targets.textures[side][1].clone(),
             fresh_front: self.textures[1].clone(),
             phase_tables: self.lighting.phase.clone(),
             hemisphere_light: self.lighting.ambient.clone(),
@@ -623,22 +618,13 @@ impl Layer {
     }
 
     pub(crate) fn resource_bytes(&self) -> Vec<(String, u64)> {
-        let mut resources = Vec::new();
-        for (i, texture) in self
-            .textures
-            .iter()
-            .chain(self.temporal.textures.iter().flatten())
-            .enumerate()
-        {
-            resources.push((
-                format!("cloud layer texture {i}"),
-                u64::from(texture.width())
-                    * u64::from(texture.height())
-                    * u64::from(texture.depth_or_array_layers())
-                    * 8,
-            ));
-        }
-        resources.extend([
+        let mut resources = target_bytes(&self.textures, &self.temporal.targets.textures);
+        resources.extend(self.fixed_resource_bytes());
+        resources
+    }
+
+    pub(crate) fn fixed_resource_bytes(&self) -> Vec<(String, u64)> {
+        let mut resources = vec![
             ("cloud detail noise".into(), self.detail_noise.bytes()),
             ("cloud layer parameters".into(), self.params.size()),
             ("cloud phase tables".into(), self.lighting.phase.size()),
@@ -646,7 +632,7 @@ impl Layer {
                 "cloud hemisphere light".into(),
                 self.lighting.ambient.size(),
             ),
-        ]);
+        ];
         if let Some(overlay) = &self.overlay {
             resources.push((
                 "cloud sky overlay".into(),
@@ -734,6 +720,26 @@ fn declaration(name: &str, kind: AfterOpaqueKind, accesses: Vec<EffectAccess>) -
         refraction: false,
         images: thrum_render::contribution::AfterOpaqueImages::None,
     }
+}
+
+fn target_bytes(
+    fresh: &[wgpu::Texture; 2],
+    history: &[[wgpu::Texture; 2]; 2],
+) -> Vec<(String, u64)> {
+    fresh
+        .iter()
+        .chain(history.iter().flatten())
+        .enumerate()
+        .map(|(index, texture)| {
+            (
+                format!("cloud layer texture {index}"),
+                u64::from(texture.width())
+                    * u64::from(texture.height())
+                    * u64::from(texture.depth_or_array_layers())
+                    * 8,
+            )
+        })
+        .collect()
 }
 
 pub(crate) fn parameter_buffer(device: &wgpu::Device) -> wgpu::Buffer {

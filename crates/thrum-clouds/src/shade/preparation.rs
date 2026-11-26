@@ -174,7 +174,6 @@ impl Shade {
             sun,
             ground,
             queue: surface.queue.clone(),
-            #[cfg(target_arch = "wasm32")]
             device: wgpu::Device::clone(device),
             #[cfg(target_arch = "wasm32")]
             ground_reference: None,
@@ -362,7 +361,7 @@ impl Prepared {
         graph
     }
 
-    fn resource_bytes(
+    pub(super) fn resource_bytes(
         &self,
         sky: Option<&Layer>,
         ground: &wgpu::Texture,

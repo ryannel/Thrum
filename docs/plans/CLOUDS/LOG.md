@@ -1150,3 +1150,11 @@ placed-volume probe checks the query, trace and sky overlay under portable Metal
 The mist-far validator covers the retained and fresh three-arm cost records and rejects
 missing arms, trace data and investigations.
 [Review repair evidence](../../../.orchestrate/evidence/CLOUDS/WP15/review-repair/REPAIR.md)
+
+
+Ground selects the four-stop trace for the whole profile, including a directed cloud with
+clear ground rows and zero procedural coverage. Metal readback keeps the far pixel's
+transmittance as its neighbours move in front of the placed cloud. The Mac extent worker
+prepares the larger trace and history targets with existing pipelines. The switch records
+zero pipeline creations and the first grown frame has all 2,405 fresh surface stops.
+[Review repair evidence](../../../.orchestrate/evidence/CLOUDS/WP15/review-repair-r2/REPAIR.md)

@@ -10,7 +10,7 @@ use {
         submitted_capture::{Tap, TapSpec},
     },
     crate::{
-        contribution::{SecondaryResize, SecondaryResizeJob, SecondaryViewSlot},
+        contribution::{ExtentResizeJob, SecondaryResize, SecondaryViewSlot},
         present::{PresenterInputs, SurfacePresenter},
         synthetic::{CaptureSource, secondary::SecondarySet},
     },
@@ -34,7 +34,7 @@ pub struct ExtentPrepareInputs {
     source: CaptureSource,
     capture: Option<TapSpec>,
     capture_owner: Option<Arc<()>>,
-    secondary: Option<(Vec<[u32; 2]>, SecondaryResizeJob)>,
+    contribution: Option<(Option<Vec<[u32; 2]>>, ExtentResizeJob)>,
 }
 
 /// A fully bound generation that can be taken after the surface configures.
@@ -42,7 +42,7 @@ pub struct ExtentPrepareInputs {
 pub struct PreparedExtent {
     capture: Option<Tap>,
     capture_owner: Option<Arc<()>>,
-    secondary: Option<(SecondarySet, SecondaryResize)>,
+    contribution: Option<(Option<SecondarySet>, SecondaryResize)>,
     extent: [u32; 2],
     slots: Vec<FrameSlot>,
     presenter: SurfacePresenter,
@@ -66,9 +66,9 @@ impl ExtentPrepareInputs {
         let allocation = self.device.push_error_scope(wgpu::ErrorFilter::OutOfMemory);
         let validation = self.device.push_error_scope(wgpu::ErrorFilter::Validation);
         let result = (|| {
-            let secondary = self
-                .secondary
-                .map(|(extents, job)| self.targets.resize_secondary(&extents, job))
+            let contribution = self
+                .contribution
+                .map(|(extents, job)| self.targets.resize_contribution(extents.as_deref(), job))
                 .transpose()?;
             let presenter = self
                 .presenter
@@ -102,7 +102,7 @@ impl ExtentPrepareInputs {
             Ok(Some(PreparedExtent {
                 capture,
                 capture_owner: self.capture_owner,
-                secondary,
+                contribution,
                 extent: self.extent,
                 slots,
                 presenter,
@@ -181,19 +181,20 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 "incompatible display mode transition",
             ));
         }
-        let mut secondary = None;
+        let mut replacement = None;
         if let (Some(scene), Some(contribution)) = (self.prepared.three_d(), &self.contribution) {
             let slots = contribution.secondary_view_slots();
             SecondaryViewSlot::validate(&slots, extent, self.prepared.capabilities().limits())
                 .map_err(FrameError::SecondaryView)?;
             let extents: Vec<_> = slots.iter().map(|slot| slot.extent(extent)).collect();
-            if extents.iter().copied().ne(scene.secondary_extents()) {
+            let resize_secondary = extents.iter().copied().ne(scene.secondary_extents());
+            if resize_secondary || contribution.needs_render_capacity(extent) {
                 let job = contribution
-                    .secondary_resize_job()?
+                    .extent_resize_job(extent, resize_secondary)?
                     .ok_or(FrameError::InvalidState(
-                        "missing secondary view resize job",
+                        "missing contribution extent resize job",
                     ))?;
-                secondary = Some((extents, job));
+                replacement = Some((resize_secondary.then_some(extents), job));
             }
         }
         Ok(ExtentPrepareInputs {
@@ -216,7 +217,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 .as_ref()
                 .and_then(|tap| tap.spec_for_generation(self.generation)),
             capture_owner: self.submitted_capture.as_ref().map(Tap::owner),
-            secondary,
+            contribution: replacement,
         })
     }
 
@@ -271,12 +272,14 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.retired_slots
             .extend(previous.into_iter().filter(FrameSlot::is_pending));
         self.presenter = Some(candidate.presenter);
-        if let Some((views, replacement)) = candidate.secondary {
-            self.prepared.publish_secondary_extent(views);
+        if let Some((views, replacement)) = candidate.contribution {
+            if let Some(views) = views {
+                self.prepared.publish_secondary_extent(views);
+            }
             let graph = replacement.publish(
                 self.contribution
                     .as_deref_mut()
-                    .expect("secondary view owner"),
+                    .expect("extent contribution owner"),
             );
             self.prepared.set_effect_graph(graph);
         }
@@ -286,13 +289,6 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.visual_owner = Arc::new(());
         if reset_history {
             self.reset_replacement_history();
-        }
-        if self
-            .contribution
-            .as_ref()
-            .is_some_and(|effect| effect.needs_render_capacity(self.render_extent))
-        {
-            self.rebuild_contribution();
         }
         true
     }

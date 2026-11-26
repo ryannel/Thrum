@@ -164,7 +164,6 @@ struct Prepared {
     sun: SunPath,
     ground: Option<GroundGpu>,
     queue: wgpu::Queue,
-    #[cfg(target_arch = "wasm32")]
     device: wgpu::Device,
     #[cfg(target_arch = "wasm32")]
     ground_reference: Option<crate::sun_path::ground_reference::GroundReference>,
@@ -262,6 +261,54 @@ impl SceneContribution for Shade {
                 .as_ref()
                 .and_then(|gpu| gpu.sky.as_ref())
                 .is_some_and(|layer| !layer.has_render_capacity(extent))
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    fn extent_resize_job(
+        &self,
+        extent: [u32; 2],
+        _resize_secondary: bool,
+    ) -> Result<Option<thrum_render::contribution::ExtentResizeJob>, FrameError> {
+        let Some(gpu) = &self.gpu else {
+            return Ok(None);
+        };
+        let Some(layer) = gpu
+            .sky
+            .as_ref()
+            .filter(|_| self.needs_render_capacity(extent))
+        else {
+            return Ok(None);
+        };
+        let device = gpu.device.clone();
+        let inputs = layer.resize_inputs(extent);
+        let mut graph = self.effect_graph();
+        let mut bytes = gpu.resource_bytes(
+            None,
+            gpu.sun.ground(),
+            gpu.sun.mapping(),
+            gpu.ground.as_ref().map(|ground| &ground.targets),
+        );
+        let fixed_layer_bytes = layer.fixed_resource_bytes();
+        Ok(Some(Box::new(move |_| {
+            let targets = inputs.prepare(&device);
+            targets.update_graph(&mut graph);
+            bytes.extend(targets.resource_bytes());
+            bytes.extend(fixed_layer_bytes);
+            Ok(thrum_render::contribution::SecondaryResize::new(
+                graph,
+                move |shade: &mut Self| {
+                    let gpu = shade.gpu.as_mut().expect("cloud resize owner");
+                    let layer = gpu.sky.as_mut().expect("cloud layer resize owner");
+                    targets.install(layer);
+                    let mut mailbox = shade
+                        .input
+                        .0
+                        .lock()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner);
+                    mailbox.resources = bytes;
+                },
+            ))
+        })))
     }
 
     fn quality_knobs(&self) -> Vec<QualityKnob> {

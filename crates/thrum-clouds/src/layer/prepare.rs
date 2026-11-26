@@ -27,7 +27,11 @@ fn validate_profile(profile: SkyProfile, max_extent: u32) -> Result<(), Error> {
     Ok(())
 }
 
-fn transport_textures(device: &wgpu::Device, extent: [u32; 2], ground: bool) -> [wgpu::Texture; 2] {
+pub(super) fn transport_textures(
+    device: &wgpu::Device,
+    extent: [u32; 2],
+    ground: bool,
+) -> [wgpu::Texture; 2] {
     std::array::from_fn(|_| {
         device.create_texture(&wgpu::TextureDescriptor {
             label: Some("cloud layer transport"),
@@ -219,6 +223,8 @@ impl Layer {
             entries.extend(field.entries(FIRST));
             entries.extend(phases.entries(band));
         }
+        #[cfg(not(target_arch = "wasm32"))]
+        let trace_bindings = super::resize::TraceBindings::new(&trace_layout, &entries);
         let trace_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some(TRACE),
             layout: &trace_layout,
@@ -234,7 +240,7 @@ impl Layer {
             bind_group_layouts: &layouts,
             immediate_size: 0,
         });
-        let source = trace_shader(&environment, shapes.is_some(), ground.is_some(), false);
+        let source = trace_shader(&environment, shapes.is_some(), ground_stops, ground_stops);
         let overlay = surface.sky_overlay_target().map(|target| {
             super::overlay::Overlay::new(
                 surface,
@@ -246,13 +252,6 @@ impl Layer {
             )
         });
         let trace = trace_pipeline(device, &source, &pipeline_layout);
-        let trace_stops = ground.is_some().then(|| {
-            trace_pipeline(
-                device,
-                &trace_shader(&environment, shapes.is_some(), true, true),
-                &pipeline_layout,
-            )
-        });
         let (field_layout, field_group) = field_bindings(
             device,
             weather,
@@ -276,6 +275,11 @@ impl Layer {
             &compose_layout,
             retained.map(|layer| &layer.temporal),
         );
+        #[cfg(not(target_arch = "wasm32"))]
+        let resize_bindings = super::resize::Bindings {
+            trace: trace_bindings,
+            compose_layout,
+        };
         Ok((
             Self {
                 quality: accepted.map_or(
@@ -300,15 +304,16 @@ impl Layer {
                 textures,
                 detail_noise,
                 trace,
-                trace_stops,
                 compose,
                 field_pipeline,
                 field_overlay: crate::FieldOverlay::Off,
                 trace_group,
+                #[cfg(not(target_arch = "wasm32"))]
+                resize_bindings,
                 compose_group,
                 field_group,
                 has_placed_map: placed_map.is_some(),
-                per_pixel_stops: false,
+                per_pixel_stops: ground_stops,
                 profile_extent: profile.extent,
                 render_extent: render_capacity,
                 overlay,
@@ -493,25 +498,7 @@ fn compose(
         label: Some(COMPOSE),
         entries: &[uniform_entry, sampled[0], sampled[1]],
     });
-    let compose_views = textures.each_ref().map(super::stop_view);
-    let compose_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-        label: Some(COMPOSE),
-        layout: &compose_layout,
-        entries: &[
-            wgpu::BindGroupEntry {
-                binding: 0,
-                resource: params.as_entire_binding(),
-            },
-            wgpu::BindGroupEntry {
-                binding: 1,
-                resource: wgpu::BindingResource::TextureView(&compose_views[0]),
-            },
-            wgpu::BindGroupEntry {
-                binding: 2,
-                resource: wgpu::BindingResource::TextureView(&compose_views[1]),
-            },
-        ],
-    });
+    let compose_group = super::temporal::compose_group(device, params, textures, &compose_layout);
     let compose_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: Some(COMPOSE),
         bind_group_layouts: &[

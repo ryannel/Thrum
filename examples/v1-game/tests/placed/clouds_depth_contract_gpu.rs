@@ -1,5 +1,8 @@
 //! The real V1 after-opaque trace sees a foreground occluder uncover a farther surface.
 
+#[expect(dead_code, reason = "the placement tests share this fixture")]
+mod fixture;
+
 use std::{
     sync::{
         Arc,
@@ -49,7 +52,7 @@ fn stop_channel(bytes: &[u8], [width, height]: [u32; 2], x: u32, y: u32, channel
     clippy::cast_precision_loss,
     reason = "the test pixel coordinates are at most 32"
 )]
-fn metal_uncovered_pixels_use_their_current_surface_stops_and_a_cut_refills_them() {
+fn metal_uncover_cut_and_worker_extent_use_current_surface_stops() {
     let Some(Opened {
         device,
         queue,
@@ -191,12 +194,68 @@ fn metal_uncovered_pixels_use_their_current_surface_stops_and_a_cut_refills_them
         host.poll_completed().expect("retire timing");
         (host.pending_frames() == 0).then_some(())
     });
-    assert!(host.resize_scene_surface(GROWN).expect("resize scene"));
+    publish_worker_extent(&mut host, &device);
     assert_eq!(host.contribution_error(), None);
     let grown_view =
         output_texture(&device, GROWN).create_view(&wgpu::TextureViewDescriptor::default());
     let grown = submit(&mut host, 75, &grown_view, GROWN);
     assert_grown_stops(&grown, eye, read);
+}
+
+#[expect(
+    clippy::print_stderr,
+    reason = "save publication counters in the Metal proof"
+)]
+fn publish_worker_extent(
+    host: &mut thrum_render::runtime::FrameHost<v1_game::GameWorld, v1_game::GameScene>,
+    device: &wgpu::Device,
+) {
+    let inputs = host
+        .extent_prepare_inputs(GROWN)
+        .expect("new extent inputs");
+    let pipelines = host.pipeline_creation_count();
+    let candidate = std::thread::Builder::new()
+        .name("cloud extent worker".into())
+        .spawn(move || {
+            inputs
+                .build(&std::sync::atomic::AtomicBool::new(false))
+                .expect("build new extent")
+                .expect("prepared extent")
+        })
+        .expect("extent worker")
+        .join()
+        .expect("worker completed");
+    assert_eq!(
+        host.pipeline_creation_count(),
+        pipelines,
+        "worker must reuse pipelines"
+    );
+
+    // Do not poll between these samples. Dropping renderer handles queues
+    // disposal, and the next frame has not yet created a scene input group.
+    let live = || {
+        let hal = device.get_internal_counters().hal;
+        [
+            hal.textures.read(),
+            hal.texture_views.read(),
+            hal.bind_groups.read(),
+        ]
+    };
+    let before = live();
+    assert!(host.publish_extent(candidate));
+    let creates = host.pipeline_creation_count();
+    let after = live();
+    assert_eq!(creates, pipelines, "pipeline events at publication");
+    assert!(
+        after
+            .iter()
+            .zip(before)
+            .all(|(after, before)| *after <= before),
+        "publication increased live textures, views or bind groups: {before:?} -> {after:?}"
+    );
+    eprintln!(
+        "Mac extent 32×18 -> 65×37: pipeline events {pipelines:?} -> {creates:?}, live textures/views/groups {before:?} -> {after:?}"
+    );
 }
 
 #[expect(
@@ -244,6 +303,97 @@ fn assert_grown_stops(
     }
 }
 
+#[test]
+fn metal_directed_cloud_keeps_its_far_stop_with_clear_ground_rows() {
+    let Some(gpu) = thrum_test_support::open(
+        "placed cloud behind mixed depth",
+        Some(wgpu::Backend::Metal),
+        thrum_test_support::Profile::Portable,
+        &Restriction::default(),
+    ) else {
+        return;
+    };
+    let mut fixture = fixture::Fixture::with_placements(true, &[[20.0, -1100.0]], [0.0; 2]);
+    let mut profile = fixture::Fixture::profile();
+    for kind in &mut profile.types {
+        kind.base = 125.0;
+    }
+    fixture.sky = fixture.sky.with_profile(profile);
+    let mut host = pollster::block_on(
+        fixture.host_with_clouds(&gpu, CloudSelection::Ground(GroundWeather::Clear)),
+    );
+    let position = Arc::new(AtomicU32::new(2));
+    host.set_game_contribution(Box::new(Occluder {
+        position: Arc::clone(&position),
+        pipeline: None,
+    }))
+    .expect("mixed depth control");
+    let camera = SceneCamera::perspective(
+        [80.0, 320.0, 0.0],
+        [80.0, 320.0, -1100.0],
+        0.25,
+        0.1,
+        4000.0,
+    )
+    .expect("look through the placed slab");
+    host.set_scene_camera(camera).expect("fixed camera");
+    let mut frames = fixture::Frames::new(&gpu);
+    frames.placed_submitted(&mut host, |report| {
+        report.volume_instances == 1 && !report.history_invalid
+    });
+    let read_centre = |host: &fixture::Host| {
+        let sky = host.cloud_sky_products().expect("submitted stops");
+        let read = |texture| readback::texture(&gpu.device, &gpu.queue, texture, Mip::level(0), ..);
+        let fresh = read(&sky.fresh_transport);
+        let resolved = read(&sky.transport);
+        let metadata = read(&sky.front);
+        let x = fixture::EXTENT[0] / 2;
+        let y = fixture::EXTENT[1] / 2;
+        std::array::from_fn::<_, 4, _>(|slot| {
+            let channel = |bytes| {
+                stop_channel(
+                    bytes,
+                    fixture::EXTENT,
+                    x + u32::try_from(slot % 2).unwrap(),
+                    y + u32::try_from(slot / 2).unwrap(),
+                    3,
+                )
+            };
+            let transmission = channel(&resolved);
+            assert_eq!(transmission.to_bits(), channel(&fresh).to_bits());
+            (transmission, channel(&metadata))
+        })
+    };
+    let level = read_centre(&host);
+    assert!(
+        level[2].0 < 0.2,
+        "all-far control must see the slab: {level:?}"
+    );
+    position.store(3, Ordering::Relaxed);
+    host.set_scene_camera(camera)
+        .expect("same camera, fresh stops");
+    frames.submit(&mut host);
+    let mixed = read_centre(&host);
+    for ((transmission, distance), expected) in mixed.into_iter().zip([0.42, 0.70, 2.0, 0.42]) {
+        assert!(
+            (distance - expected).abs() < 0.003,
+            "mixed stop depths: {mixed:?}"
+        );
+        if expected < 1.0 {
+            assert_eq!(
+                transmission.to_bits(),
+                1.0_f32.to_bits(),
+                "near stops: {mixed:?}"
+            );
+        }
+    }
+    assert!(
+        (mixed[2].0 - level[2].0).abs() < 0.02,
+        "the far pixel has the same view past its neighbours: {level:?} -> {mixed:?}"
+    );
+    eprintln!("Clear Ground at zero coverage, (transmittance, stop km): {level:?} -> {mixed:?}");
+}
+
 struct Occluder {
     position: Arc<AtomicU32>,
     pipeline: Option<wgpu::RenderPipeline>,
@@ -270,7 +420,12 @@ impl SceneContribution for Occluder {
                 @fragment fn fragment(v: Varying) -> @builtin(frag_depth) f32 {
                     let left = 8u + 8u * v.mover;
                     let x = u32(v.position.x);
-                    let distance = select(920.0, 340.0, x >= left && x < left + 8u);
+                    var distance = select(920.0, 340.0, x >= left && x < left + 8u);
+                    if v.mover >= 2u {
+                        let slot = x % 2u + 2u * (u32(v.position.y) % 2u);
+                        let mixed = array(420.0, 700.0, 2000.0, 420.0);
+                        distance = select(2000.0, mixed[slot], v.mover == 3u);
+                    }
                     return (1.0 / distance - 1.0 / 4000.0) / (1.0 / 0.1 - 1.0 / 4000.0);
                 }".into()),
         });

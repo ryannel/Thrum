@@ -6,8 +6,14 @@ pub(super) const PASS: &str = "cloud resolve";
 
 pub(super) struct Temporal {
     pub(super) clock: EffectState,
-    pub(super) textures: [[wgpu::Texture; 2]; 2],
+    pub(super) targets: Targets,
     pipeline: wgpu::ComputePipeline,
+    #[cfg(not(target_arch = "wasm32"))]
+    pub(super) layout: wgpu::BindGroupLayout,
+}
+
+pub(super) struct Targets {
+    pub(super) textures: [[wgpu::Texture; 2]; 2],
     groups: [wgpu::BindGroup; 2],
     compose: [wgpu::BindGroup; 2],
 }
@@ -21,27 +27,6 @@ impl Temporal {
         accepted: Option<&Self>,
     ) -> Self {
         let device = surface.device;
-        let textures = accepted.map_or_else(
-            || {
-                std::array::from_fn(|_| {
-                    std::array::from_fn(|_| {
-                        device.create_texture(&wgpu::TextureDescriptor {
-                            label: Some("cloud layer history"),
-                            size: fresh[0].size(),
-                            mip_level_count: 1,
-                            sample_count: 1,
-                            dimension: wgpu::TextureDimension::D2,
-                            format: wgpu::TextureFormat::Rgba16Float,
-                            usage: wgpu::TextureUsages::TEXTURE_BINDING
-                                | wgpu::TextureUsages::STORAGE_BINDING
-                                | wgpu::TextureUsages::COPY_SRC,
-                            view_formats: &[],
-                        })
-                    })
-                })
-            },
-            |temporal| temporal.textures.clone(),
-        );
         let mut entries = vec![binding::uniform(
             0,
             wgpu::ShaderStages::COMPUTE,
@@ -100,6 +85,71 @@ impl Temporal {
             compilation_options: wgpu::PipelineCompilationOptions::default(),
             cache: None,
         });
+        let targets = Targets::new(
+            device,
+            params,
+            fresh,
+            compose_layout,
+            &layout,
+            accepted.map(|temporal| &temporal.targets.textures),
+        );
+        let mut clock = EffectState::new(2);
+        clock.rebuild(surface.generation, 1);
+        Self {
+            clock,
+            targets,
+            pipeline,
+            #[cfg(not(target_arch = "wasm32"))]
+            layout: layout.into_raw(),
+        }
+    }
+
+    pub(super) fn encode(&mut self, pass: &mut wgpu::ComputePass<'_>, extent: [u32; 2]) {
+        pass.set_pipeline(&self.pipeline);
+        pass.set_bind_group(
+            2,
+            &self.targets.groups[self.clock.side(0, HistoryBinding::Previous)],
+            &[],
+        );
+        pass.dispatch_workgroups(extent[0].div_ceil(8), extent[1].div_ceil(8), 1);
+        self.clock.produced(0);
+        self.clock.produced(1);
+    }
+    pub(super) fn result_group(&self) -> &wgpu::BindGroup {
+        &self.targets.compose[self.clock.side(0, HistoryBinding::Result)]
+    }
+}
+
+impl Targets {
+    pub(super) fn new(
+        device: &wgpu::Device,
+        params: &wgpu::Buffer,
+        fresh: &[wgpu::Texture; 2],
+        compose_layout: &wgpu::BindGroupLayout,
+        layout: &wgpu::BindGroupLayout,
+        accepted: Option<&[[wgpu::Texture; 2]; 2]>,
+    ) -> Self {
+        let textures = accepted.map_or_else(
+            || {
+                std::array::from_fn(|_| {
+                    std::array::from_fn(|_| {
+                        device.create_texture(&wgpu::TextureDescriptor {
+                            label: Some("cloud layer history"),
+                            size: fresh[0].size(),
+                            mip_level_count: 1,
+                            sample_count: 1,
+                            dimension: wgpu::TextureDimension::D2,
+                            format: wgpu::TextureFormat::Rgba16Float,
+                            usage: wgpu::TextureUsages::TEXTURE_BINDING
+                                | wgpu::TextureUsages::STORAGE_BINDING
+                                | wgpu::TextureUsages::COPY_SRC,
+                            view_formats: &[],
+                        })
+                    })
+                })
+            },
+            Clone::clone,
+        );
         let groups =
             std::array::from_fn(|side| {
                 let views = [
@@ -123,66 +173,46 @@ impl Temporal {
                 }));
                 device.create_bind_group(&wgpu::BindGroupDescriptor {
                     label: Some(PASS),
-                    layout: &layout,
+                    layout,
                     entries: &entries,
                 })
             });
         let compose = std::array::from_fn(|side| {
-            compose_group(surface, params, &textures[side], compose_layout)
+            compose_group(device, params, &textures[side], compose_layout)
         });
-        let mut clock = EffectState::new(2);
-        clock.rebuild(surface.generation, 1);
         Self {
-            clock,
             textures,
-            pipeline,
             groups,
             compose,
         }
     }
-    pub(super) fn encode(&mut self, pass: &mut wgpu::ComputePass<'_>, extent: [u32; 2]) {
-        pass.set_pipeline(&self.pipeline);
-        pass.set_bind_group(
-            2,
-            &self.groups[self.clock.side(0, HistoryBinding::Previous)],
-            &[],
-        );
-        pass.dispatch_workgroups(extent[0].div_ceil(8), extent[1].div_ceil(8), 1);
-        self.clock.produced(0);
-        self.clock.produced(1);
-    }
-    pub(super) fn result_group(&self) -> &wgpu::BindGroup {
-        &self.compose[self.clock.side(0, HistoryBinding::Result)]
-    }
 }
 
 pub(super) fn compose_group(
-    surface: &SceneSurface<'_>,
+    device: &wgpu::Device,
     params: &wgpu::Buffer,
     textures: &[wgpu::Texture; 2],
     layout: &wgpu::BindGroupLayout,
 ) -> wgpu::BindGroup {
     let views = textures.each_ref().map(super::stop_view);
-    surface
-        .device
-        .create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some(COMPOSE),
-            layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: params.as_entire_binding(),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: wgpu::BindingResource::TextureView(&views[0]),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 2,
-                    resource: wgpu::BindingResource::TextureView(&views[1]),
-                },
-            ],
-        })
+    device.create_bind_group(&wgpu::BindGroupDescriptor {
+        label: Some(COMPOSE),
+        layout,
+        entries: &[
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: params.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 1,
+                resource: wgpu::BindingResource::TextureView(&views[0]),
+            },
+            wgpu::BindGroupEntry {
+                binding: 2,
+                resource: wgpu::BindingResource::TextureView(&views[1]),
+            },
+        ],
+    })
 }
 
 impl Layer {

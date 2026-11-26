@@ -296,28 +296,36 @@ impl SceneContribution for SceneContributions {
             .collect()
     }
     #[cfg(not(target_arch = "wasm32"))]
-    fn secondary_resize_job(&self) -> Result<Option<super::SecondaryResizeJob>, FrameError> {
+    fn extent_resize_job(
+        &self,
+        extent: [u32; 2],
+        resize_secondary: bool,
+    ) -> Result<Option<super::ExtentResizeJob>, FrameError> {
         let mut first = 0;
         let mut members = Vec::with_capacity(self.entries.len());
         for entry in &self.entries {
             let end = first + entry.secondary_view_slots().len();
             members.push((
                 first..end,
-                entry.secondary_resize_job()?,
+                entry.extent_resize_job(extent, resize_secondary)?,
                 entry.effect_graph(),
             ));
             first = end;
         }
-        if first == 0 {
+        if members.iter().all(|(_, job, _)| job.is_none()) {
             return Ok(None);
         }
         Ok(Some(Box::new(move |slots| {
             let mut replacements = Vec::with_capacity(members.len());
             let mut graphs = Vec::with_capacity(members.len());
             for (range, job, graph) in members {
-                let member_slots = slots.get(range).ok_or(FrameError::InvalidState(
-                    "secondary view declaration changed during preparation",
-                ))?;
+                let member_slots = slots
+                    .map(|views| {
+                        views.get(range).ok_or(FrameError::InvalidState(
+                            "secondary view declaration changed during preparation",
+                        ))
+                    })
+                    .transpose()?;
                 let replacement = job.map(|job| job(member_slots)).transpose()?;
                 graphs.push(
                     replacement

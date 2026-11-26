@@ -80,6 +80,14 @@ pub type SecondaryResizeJob =
 #[cfg(not(target_arch = "wasm32"))]
 type PublishSecondary = Box<dyn FnOnce(&mut dyn std::any::Any) + Send>;
 
+/// Worker-side bindings for a new scene extent. Secondary handles are
+/// supplied when the scene's secondary attachments also change.
+#[cfg(not(target_arch = "wasm32"))]
+pub type ExtentResizeJob = Box<
+    dyn FnOnce(Option<&[SecondaryView]>) -> Result<SecondaryResize, crate::runtime::FrameError>
+        + Send,
+>;
+
 /// Prepared contribution bindings and the graph they will record into.
 #[cfg(not(target_arch = "wasm32"))]
 pub struct SecondaryResize {
@@ -637,6 +645,30 @@ pub trait SceneContribution: wgpu::WasmNotSend + std::any::Any {
             ))
         }
     }
+    /// Snapshot the extent-dependent resources to replace on the worker.
+    /// # Errors
+    /// Refuses a resize that cannot be prepared without touching live state.
+    #[cfg(not(target_arch = "wasm32"))]
+    fn extent_resize_job(
+        &self,
+        extent: [u32; 2],
+        resize_secondary: bool,
+    ) -> Result<Option<ExtentResizeJob>, crate::runtime::FrameError> {
+        if self.needs_render_capacity(extent) {
+            return Err(crate::runtime::FrameError::InvalidState(
+                "contribution has no detached render capacity preparation",
+            ));
+        }
+        if !resize_secondary {
+            return Ok(None);
+        }
+        Ok(self.secondary_resize_job()?.map(|job| {
+            let resize: ExtentResizeJob =
+                Box::new(move |views| job(views.expect("replacement secondary views")));
+            resize
+        }))
+    }
+
     /// Whether a declared late compute or pre-tone pass runs, asked after upload.
     /// Scene render composition always runs.
     fn after_opaque_runs(&self, _index: usize, _frame: &ContributionFrame) -> bool {

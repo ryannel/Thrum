@@ -122,6 +122,18 @@ impl Fixture {
             state.add_from_library(shape_at(4, centres[0]), ShapeSource::Library(0)),
             Err(thrum_cloud_model::Error::Overlap)
         );
+        let sky = PlacedSky::from_state(store.into(), state.clone(), 1)
+            .expect("placed sky")
+            .with_profile(Self::profile());
+        Self {
+            state,
+            sky,
+            cooker,
+            source,
+        }
+    }
+
+    pub(super) fn profile() -> thrum_clouds::ShadeConfig {
         let mut profile = v1_game::clouds::shade_config();
         profile.weather.size = 64;
         profile.weather.texels[0] = TEXEL;
@@ -130,15 +142,7 @@ impl Fixture {
         for level in &mut profile.sun.levels {
             level.slices = 16;
         }
-        let sky = PlacedSky::from_state(store.into(), state.clone(), 1)
-            .expect("placed sky")
-            .with_profile(profile);
-        Self {
-            state,
-            sky,
-            cooker,
-            source,
-        }
+        profile
     }
 
     pub(super) fn replace_stack(&mut self) -> u64 {
