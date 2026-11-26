@@ -11,8 +11,8 @@ use thrum_render::synthetic::SyntheticView;
 use thrum_sea_model::{Cascade, Component, GRID_SIZE, LongWaves, Spectrum};
 use thrum_water::{Optics, Profile, Water};
 use thrum_water_model::{
-    Bed, Body, BodyKind, CutConfig, Field, Impulse, Map, Sheet, SheetPoint, Stage, SurfProfile,
-    cut, highest_triangle, limit,
+    Bed, Body, BodyKind, Field, Impulse, Map, Sheet, SheetPoint, Stage, SurfProfile,
+    highest_triangle, limit,
 };
 
 /// Simulation step shared by the wave probes.
@@ -343,18 +343,19 @@ impl Case {
                 (z - 0.1) as f32,
             ];
         }
-        let highest = highest_triangle(self.column, self.triangles().iter().copied())
+        let triangles = self.triangles();
+        let highest = highest_triangle(self.column, triangles.iter().copied())
             .expect("drawn sheet covers the lens centre");
         if self.name == "lip" {
-            let sheet = self
-                .map
-                .surf_sheet(&self.field, 0, 0.0)
-                .expect("two crossing trains");
+            let mut heights: Vec<_> = triangles
+                .into_iter()
+                .filter_map(|triangle| highest_triangle(self.column, [triangle]))
+                .collect();
+            heights.sort_unstable_by(f64::total_cmp);
+            heights.dedup_by(|a, b| (*a - *b).abs() < 1e-6);
             assert!(
-                cut(&sheet, self.column, CutConfig::default())
-                    .expect("fold")
-                    .hits
-                    >= 3
+                heights.len() >= 3,
+                "the lip must fold three drawn surfaces into the lens column: {heights:?}"
             );
         }
         let lens_height = if self.name == "trough-wet" {
