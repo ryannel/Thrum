@@ -177,6 +177,14 @@ pub trait Game {
     fn world(&self) -> Option<&dyn WorldLink> {
         None
     }
+    /// Lend the window render owner an inline clock for overload recovery.
+    /// Implement this for an inline world that can refuse elapsed time.
+    #[cfg(target_os = "macos")]
+    fn inline_world(
+        _world: &mut Self::World,
+    ) -> Option<&mut dyn InlineWorld<Page = <Self::World as FrameWorld>::Page>> {
+        None
+    }
     /// The controls model shown in the panel and edited by parameter files.
     fn controls(&self) -> &Controls;
     /// Mutable access for panel edits and parameter files.

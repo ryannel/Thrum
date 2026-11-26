@@ -37,6 +37,8 @@ mod ios_lease;
 
 pub mod frame;
 mod game;
+#[cfg(any(target_os = "macos", target_os = "ios", target_arch = "wasm32"))]
+mod inline_lifecycle;
 #[cfg(feature = "interface")]
 mod interface;
 /// Shared UIKit application shell.

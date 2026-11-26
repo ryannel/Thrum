@@ -1175,8 +1175,8 @@ impl<G: WindowGame + 'static> App<G> {
                 self.presented,
                 self.world_tick,
                 self.device_losses,
-                self.pause.overload_count(),
-                self.pause.refused_ticks()
+                self.pause.overload_count() + self.counters.inline_overloads.0,
+                self.pause.refused_ticks() + self.counters.inline_overloads.1
             ));
         }
         let tick = percentile(&presented, |sample| sample.tick_cpu.as_secs_f64() * 1e6);
@@ -1281,8 +1281,8 @@ impl<G: WindowGame + 'static> App<G> {
             frame_cpu.0,
             frame_cpu.1,
             self.device_losses,
-            self.pause.overload_count(),
-            self.pause.refused_ticks(),
+            self.pause.overload_count() + self.counters.inline_overloads.0,
+            self.pause.refused_ticks() + self.counters.inline_overloads.1,
             presented.len(),
         ))
     }

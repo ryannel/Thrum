@@ -13,7 +13,7 @@
 
 use std::{error::Error, fmt, rc::Rc, time::Duration};
 
-use thrum_core::sim::{WorldLifecycle, WorldLifecyclePolicy};
+use crate::inline_lifecycle::InlineLifecycle;
 use thrum_render::{
     capabilities::{DeviceWatch, HardwareLaunchError, SurfaceConfigError, configure_surface},
     contribution::SceneContribution,
@@ -153,8 +153,7 @@ pub struct WebShell<W: InlineWorld, V: SceneSource<W::Page>> {
     callbacks: u64,
     presented: u64,
     unavailable: u64,
-    lifecycle: WorldLifecyclePolicy,
-    queued_ticks: u32,
+    lifecycle: InlineLifecycle,
     needs_reconfigure: bool,
     resize_prepare: Option<Duration>,
     samples: Vec<FrameSample>,
@@ -253,8 +252,7 @@ where
         callbacks: 0,
         presented: 0,
         unavailable: 0,
-        lifecycle: WorldLifecyclePolicy::default(),
-        queued_ticks: 0,
+        lifecycle: InlineLifecycle::default(),
         needs_reconfigure: false,
         resize_prepare: None,
         samples: Vec::with_capacity(SAMPLES),
@@ -762,8 +760,8 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
             callbacks: self.callbacks,
             presented: self.presented,
             unavailable: self.unavailable,
-            overload_events: self.lifecycle.overload_count(),
-            refused_ticks: self.lifecycle.refused_ticks(),
+            overload_events: self.lifecycle.counts().0,
+            refused_ticks: self.lifecycle.counts().1,
             timestamp_clamps: self.clock.clamps(),
             last_frame: self.clock.last(),
             generation: self.recovery.generation,
@@ -793,8 +791,9 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
         user_paused: bool,
         now: Duration,
     ) -> Result<(), WebHostError> {
-        self.lifecycle.request(!visible || user_paused);
-        self.reconcile_world(now)?;
+        self.lifecycle
+            .set_paused(self.host.world_mut(), !visible || user_paused, now)
+            .map_err(WebHostError::Lifecycle)?;
         self.clock.set_play(visible, user_paused, now);
         Ok(())
     }
@@ -804,20 +803,8 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
         report: thrum_render::runtime::DriveReport,
         now: Duration,
     ) -> Result<(), WebHostError> {
-        self.queued_ticks = report.queued_ticks;
-        if let Some(refused) = report.overload {
-            self.lifecycle.overloaded(refused);
-        }
-        self.reconcile_world(now)
-    }
-
-    fn reconcile_world(&mut self, now: Duration) -> Result<(), WebHostError> {
-        let world = self.host.world_mut();
         self.lifecycle
-            .drive_inline(self.queued_ticks, |request| match request {
-                WorldLifecycle::Pause => world.pause(),
-                WorldLifecycle::Resume => world.resume(now),
-            })
+            .observe(self.host.world_mut(), report, now)
             .map_err(WebHostError::Lifecycle)
     }
 }

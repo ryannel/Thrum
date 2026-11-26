@@ -9,6 +9,7 @@ use thrum_app::{
     GameError, Gpu, InlineWorld, KeyCode, OutputMetrics,
     ios::{MobileGame, MobilePrepared, SceneRequest},
 };
+use thrum_render::runtime::FrameWorld;
 use thrum_ui::{Event, Viewport};
 
 use crate::{END_TICK, Host, Input, Readback, StatusScene, prepare, readback};
@@ -16,13 +17,24 @@ use crate::{END_TICK, Host, Input, Readback, StatusScene, prepare, readback};
 /// The Crowd game wired to the shared UIKit shell.
 pub struct MobileCrowd {
     store: PathBuf,
+    fixed_steps: bool,
 }
 
 impl MobileCrowd {
     /// Use the font store installed by the app.
     #[must_use]
     pub const fn new(store: PathBuf) -> Self {
-        Self { store }
+        Self {
+            store,
+            fixed_steps: false,
+        }
+    }
+
+    /// Hold deterministic checkpoints for the simulator journey.
+    #[must_use]
+    pub const fn with_fixed_steps(mut self) -> Self {
+        self.fixed_steps = true;
+        self
     }
 }
 
@@ -55,13 +67,13 @@ impl MobileGame for MobileCrowd {
         _: Instant,
         _: fn(),
         _: Option<SceneRequest>,
-        qualification: bool,
+        _: bool,
     ) -> Result<MobilePrepared<Self>, GameError> {
         let pan = Arc::new(Mutex::new([0.0; 2]));
         // The function proof advances by committed ticks. Its first checkpoint
         // keeps the replay available for rotation, and the second for backgrounding.
-        let first_stop = if qualification { 240 } else { END_TICK };
-        let host = prepare(gpu, self.store.clone().into(), first_stop, qualification).await?;
+        let first_stop = if self.fixed_steps { 240 } else { END_TICK };
+        let host = prepare(gpu, self.store.clone().into(), first_stop, self.fixed_steps).await?;
         Ok(MobilePrepared {
             host,
             scene: MobilePresentation {
@@ -107,10 +119,15 @@ impl MobileGame for MobileCrowd {
         Ok(())
     }
 
-    fn resume_inline(world: &mut CrowdWorld, now: Duration) -> Result<(), GameError> {
+    fn inline_world(
+        world: &mut CrowdWorld,
+    ) -> Option<&mut dyn InlineWorld<Page = <CrowdWorld as FrameWorld>::Page>> {
+        Some(world)
+    }
+
+    fn resume_inline(world: &mut CrowdWorld, _: Duration) -> Result<(), GameError> {
         world.extend_through(END_TICK);
-        world.pause()?;
-        world.resume(now)
+        Ok(())
     }
 
     fn wants_input(_: &MobileInput) -> bool {

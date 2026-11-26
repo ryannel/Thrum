@@ -29,6 +29,7 @@ const RECOVER_HOLD_MAX: Duration = Duration::from_secs(300);
 const HOLD_SLICE: Duration = Duration::from_millis(20);
 use crate::{
     frame::SAMPLE_SLOTS,
+    inline_lifecycle::InlineLifecycle,
     surface::{SurfaceAction, surface_action},
 };
 use wgpu::TextureViewDescriptor;
@@ -179,6 +180,7 @@ pub(super) struct FrameObservation<R> {
     /// Submission order and predecessor of an encoded frame cancelled in the background.
     pub(super) background_discard: Option<(u64, u64)>,
     pub(super) readback: Option<R>,
+    pub(super) inline_overloads: (u64, u64),
 }
 
 /// A published replacement device.
@@ -258,6 +260,7 @@ struct Gpu<G: MobileGame> {
     host: MobileHost<G>,
     request_epoch: Arc<AtomicU64>,
     presentation: G::Presentation,
+    inline_lifecycle: InlineLifecycle,
     format: wgpu::TextureFormat,
     host_extent: [u32; 2],
 }
@@ -391,6 +394,7 @@ fn frame_reply<R>(
             abandoned: false,
             background_discard: None,
             readback: None,
+            inline_overloads: (0, 0),
         },
     }
 }
@@ -412,7 +416,12 @@ impl<G: MobileGame> Owner<G> {
                 result: self.replace_scene(&request),
                 request,
             },
-            Job::Frame(request) => Reply::Frame(self.frame(&request)),
+            Job::Frame(request) => Reply::Frame(self.frame(&request).map(|mut reply| {
+                if let Some(gpu) = &self.gpu {
+                    reply.platform.inline_overloads = gpu.inline_lifecycle.counts();
+                }
+                reply
+            })),
             Job::Recover { from } => Reply::Recovered(self.recover(from)),
             Job::SampleActor => Reply::Actor(
                 self.gpu
@@ -496,6 +505,7 @@ impl<G: MobileGame> Owner<G> {
             destroyed: false,
             host,
             presentation,
+            inline_lifecycle: InlineLifecycle::default(),
             format,
             host_extent: extent,
             request_epoch,
@@ -748,6 +758,12 @@ impl<G: MobileGame> Owner<G> {
         if resumes != self.resumes {
             G::resume_inline(gpu.host.world_mut(), now)
                 .map_err(|error| FrameError::World(error.to_string()))?;
+            if let Some(world) = G::inline_world(gpu.host.world_mut()) {
+                gpu.inline_lifecycle
+                    .set_paused(world, true, now)
+                    .and_then(|()| gpu.inline_lifecycle.set_paused(world, false, now))
+                    .map_err(|error| FrameError::World(error.to_string()))?;
+            }
             self.resumes = resumes;
         }
         #[cfg(feature = "interface")]
@@ -802,14 +818,20 @@ impl<G: MobileGame> Owner<G> {
         } else if !usable || reply.platform.status == SurfaceStatus::Reconfigure {
             // Drain old-grid submissions before resizing. Encoding another old
             // view here can keep a busy ring occupied indefinitely.
-            drop(gpu.host.advance(now)?);
-            None
+            Some(gpu.host.advance_without_rendering(now)?)
         } else {
             Some(gpu.host.drive(now, None)?)
         };
         if reply.platform.status == SurfaceStatus::DeviceLost {
             // Lost inside the section: no completion poll on the lost device.
             return Ok(reply);
+        }
+        if let Some(report) = reply.outcome
+            && let Some(world) = G::inline_world(gpu.host.world_mut())
+        {
+            gpu.inline_lifecycle
+                .observe(world, report, self.origin.elapsed())
+                .map_err(|error| FrameError::World(error.to_string()))?;
         }
         if reply.platform.status == SurfaceStatus::Presented {
             reply.platform.readback = G::readback(&mut gpu.host);

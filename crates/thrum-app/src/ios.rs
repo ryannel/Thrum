@@ -893,9 +893,12 @@ impl<G: MobileGame> Shell<G> {
                     .as_ref()
                     .and_then(MobileControls::world)
                     .is_none()
-                    && let Some(report) = frame.outcome
                 {
-                    self.witness.world_tick = report.tick;
+                    (self.witness.overloads, self.witness.refused_ticks) =
+                        frame.platform.inline_overloads;
+                    if let Some(report) = frame.outcome {
+                        self.witness.world_tick = report.tick;
+                    }
                 }
                 if let Some(thread) = thread {
                     self.witness.frame_thread = thread;
@@ -1057,8 +1060,15 @@ impl<G: MobileGame> Shell<G> {
         self.witness.state = format!("{:?}", self.state);
         self.witness.epoch = self.lease.epoch();
         self.witness.world_paused = self.policy.confirmed_paused();
-        self.witness.overloads = self.policy.overload_count();
-        self.witness.refused_ticks = self.policy.refused_ticks();
+        if self
+            .controls
+            .as_ref()
+            .and_then(MobileControls::world)
+            .is_some()
+        {
+            self.witness.overloads = self.policy.overload_count();
+            self.witness.refused_ticks = self.policy.refused_ticks();
+        }
         self.witness.gesture = self.gesture.counters();
         self.witness.input_epoch = self.gesture.epoch();
         self.witness.stall_active = self.stalling;

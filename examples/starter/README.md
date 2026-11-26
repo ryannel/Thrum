@@ -299,7 +299,8 @@ shells. Its Rust package owns the world, scene, cooked font and interface. Its
 2. Implement `thrum_app::ios::MobileGame` in your game package. In `prepare`, reuse the
    frame-host builder used by the window and page. Return the host and your game-owned input
    and presentation state in `MobilePrepared`. An inline world can use `()` for its
-   `Controls` and implement `resume_inline` to restart its clock. A resident world hands back
+   `Controls` and return its clock from `inline_world` so the shell drains accepted ticks
+   and restarts it after foregrounding or an overload. A resident world hands back
    `MobileControls` exposing its `WorldLink` and uses the supplied wake callback after commits.
    Set `output_metrics` to receive safe-area geometry before encoding. Route touches in
    `event`, and in `submitted` retain the layout that actually reached the screen.

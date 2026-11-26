@@ -239,6 +239,17 @@ impl Game for CrowdStatus {
     type Edits = Update;
     type Readback = Readback;
 
+    #[cfg(target_os = "macos")]
+    fn inline_world(
+        world: &mut CrowdWorld,
+    ) -> Option<
+        &mut dyn thrum_app::InlineWorld<
+            Page = <CrowdWorld as thrum_render::runtime::FrameWorld>::Page,
+        >,
+    > {
+        Some(world)
+    }
+
     async fn prepare<'a>(
         &'a mut self,
         gpu: Gpu<'a>,

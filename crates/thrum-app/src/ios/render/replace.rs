@@ -75,6 +75,7 @@ impl<G: MobileGame> Owner<G> {
         };
         gpu.host_extent = extent;
         gpu.presentation = presentation;
+        gpu.inline_lifecycle = Default::default();
         if let Err(error) = self
             .capture
             .cancel(&mut previous, &self.signals, "scene replaced")

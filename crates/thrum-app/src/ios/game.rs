@@ -8,7 +8,7 @@ use std::{
 
 use thrum_render::runtime::{FrameHost, FrameWorld, SceneSource};
 
-use crate::{GameError, Gpu, WorldLink};
+use crate::{GameError, Gpu, InlineWorld, WorldLink};
 
 #[cfg(feature = "interface")]
 use crate::{KeyCode, OutputMetrics};
@@ -119,7 +119,15 @@ pub trait MobileGame: Sized + Send + 'static {
         Ok(())
     }
 
-    /// Reset an inline world's clock when the app returns to the foreground.
+    /// Lend the render owner an inline clock for overload and foreground recovery.
+    fn inline_world(
+        _world: &mut Self::World,
+    ) -> Option<&mut dyn InlineWorld<Page = <Self::World as FrameWorld>::Page>> {
+        None
+    }
+
+    /// Notify the game that it returned to the foreground. When the game lends
+    /// an inline clock, the shell applies the clock's pause, drain and restart.
     ///
     /// # Errors
     /// Returns a world lifecycle refusal.

@@ -5,7 +5,7 @@ use super::{
     qualification::TransitionProof,
     refresh_account::{Account, Place},
 };
-use crate::{Config, Game, frame::SAMPLE_SLOTS};
+use crate::{Config, Game, frame::SAMPLE_SLOTS, inline_lifecycle::InlineLifecycle};
 use objc2_quartz_core::CACurrentMediaTime;
 use std::{
     sync::{
@@ -56,6 +56,7 @@ pub(super) struct FrameCounters {
     pub(super) expired_views: u64,
     pub(super) missed_surfaces: u64,
     pub(super) lost_reports: u64,
+    pub(super) inline_overloads: (u64, u64),
 }
 impl FrameCounters {
     pub(super) fn read<W: FrameWorld, V: SceneSource<W::Page>>(host: &FrameHost<W, V>) -> Self {
@@ -64,6 +65,7 @@ impl FrameCounters {
             expired_views: host.dropped_stale_views(),
             missed_surfaces: host.dropped_surface(),
             lost_reports: host.dropped_reports(),
+            inline_overloads: (0, 0),
         }
     }
 }
@@ -156,6 +158,7 @@ pub(super) fn collect_observer<R, W: FrameWorld, V: SceneSource<W::Page>>(
 
 struct Actor<G: Game> {
     host: FrameHost<G::World, G::Scene>,
+    inline_lifecycle: InlineLifecycle,
     gpu: PlatformGpu,
     recipe: WindowDevice,
     surface_generation: Arc<AtomicU64>,
@@ -229,6 +232,7 @@ pub(super) fn start<G: Game<World: Send, Scene: Send> + 'static>(
         profile_revision: 0,
         refresh_account,
         host,
+        inline_lifecycle: InlineLifecycle::default(),
         gpu,
         recipe,
         surface_lease: SurfaceLease::new(surface_generation.load(Ordering::Acquire), false),
@@ -290,7 +294,16 @@ impl<G: Game> Actor<G> {
                 ));
                 let mut drawable_late = false;
                 let mut present_call = None;
-                let frame = self.frame(&request, &mut reply, &mut drawable_late, &mut present_call);
+                let frame = self
+                    .frame(&request, &mut reply, &mut drawable_late, &mut present_call)
+                    .and_then(|report| {
+                        if let Some(world) = G::inline_world(self.host.world_mut()) {
+                            self.inline_lifecycle
+                                .observe(world, report, self.origin.elapsed())
+                                .map_err(|error| FrameError::World(error.to_string()))?;
+                        }
+                        Ok(report)
+                    });
                 let place = match reply.platform.surface_status {
                     SurfaceStatus::FrameSlotsOccupied => Place::FrameSlot,
                     SurfaceStatus::DrawableTimeout
@@ -388,6 +401,7 @@ impl<G: Game> Actor<G> {
         reply.surface_extent = [self.gpu.config.width, self.gpu.config.height];
         reply.platform.surface_format = self.gpu.config.format;
         reply.platform.counters = FrameCounters::read(&self.host);
+        reply.platform.counters.inline_overloads = self.inline_lifecycle.counts();
         reply.platform.readback = G::readback(&self.host);
         reply.platform.worker_wall = start.elapsed();
         if let (Some(proof), Some((extent, scale, display))) = (&mut self.transition_proof, backing)
