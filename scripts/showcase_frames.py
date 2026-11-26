@@ -29,6 +29,30 @@ def wait_for_first_present(process, output, launched):
     raise ValueError(f'the Mac exit scene did not present; see {output / "game.log"}')
 
 
+def wait_for_route_record(process, output, first, last):
+    """Observe the end of the route and completion of every in-route present's timing sample."""
+    deadline = time.monotonic() + 90
+    pending = set()
+    past_end = False
+    with (output / 'frames.jsonl').open('rb') as stream:
+        while process.poll() is None and time.monotonic() < deadline:
+            position = stream.tell()
+            line = stream.readline()
+            if not line.endswith(b'\n'):
+                stream.seek(position)
+                time.sleep(0.025)
+                continue
+            row = json.loads(line)
+            if row['presented']:
+                if first <= row['world_tick'] <= last:
+                    pending.add(row['submission'])
+                past_end |= row['world_tick'] > last
+            pending.difference_update(sample['submission'] for sample in row['governor']['samples'])
+            if past_end and not pending:
+                return
+    raise ValueError(f'Mac exit window did not finish the route and its timing record; see {output / "game.log"}')
+
+
 def mac_window(output, binary, env, route, *, day):
     output.mkdir()
     display = output / 'display'
@@ -46,8 +70,7 @@ def mac_window(output, binary, env, route, *, day):
                   THRUM_PARAMS=str(parameters), THRUM_GOVERNOR_RECORD='observed',
                   THRUM_MAC_TRANSITION=str(output), THRUM_MAC_TRANSITION_ARM='route',
                   THRUM_SHOWCASE_CONTENT_REPORT=str(output / 'drawn.json'),
-                  THRUM_MAC_EDR_PROOF=str(display), THRUM_REPORT='1', THRUM_MAC_FRAME_RATE='60',
-                  THRUM_V1_FRAMES=str(last - first + 200))
+                  THRUM_MAC_EDR_PROOF=str(display), THRUM_REPORT='1', THRUM_MAC_FRAME_RATE='60')
     if day:
         launch['THRUM_MAC_SOLAR_SWEEP'] = json.dumps([[first, last], [0, 24]])
     with awake_display(), (output / 'game.log').open('w') as log:
@@ -60,8 +83,11 @@ def mac_window(output, binary, env, route, *, day):
                     resume = parameters.with_suffix('.partial')
                     resume.write_text('{"world.paused": false}\n')
                     resume.replace(parameters)
-                    if process.wait(timeout=90):
-                        raise ValueError(f'Mac exit window failed; see {output / "game.log"}')
+                    # A present quota would stop early on a fast run or time out on a loaded one.
+                    # The append-only receipts are flushed by the host before this observer stops it.
+                    wait_for_route_record(process, output, first, last)
+                    process.terminate()
+                    process.wait(timeout=10)
                 finally:
                     if process.poll() is None:
                         process.kill()
@@ -160,6 +186,7 @@ def mac_record(output, first, last, day, startup, load):
             'load': load, 'callbacks': timeline, 'misses': misses,
             'first_requested_tick': first, 'last_requested_tick': last,
             'first_measured_tick': measured[0]['world_tick'], 'last_measured_tick': measured[-1]['world_tick'],
+            'first_present_after_route': next(row['world_tick'] for row in presents if row['world_tick'] > last),
             'completed_frames': len(sampled), 'frame_timing': 'frames.jsonl'}
 
 
