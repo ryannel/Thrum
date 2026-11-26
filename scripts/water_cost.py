@@ -23,6 +23,7 @@ RECORDS = {'first-frame': ROOT / 'tests/fixtures/waters/first-frame-cost.json',
            'river': ROOT / '.orchestrate/evidence/RIVERS/WP4/river-cost.json',
            'rain-puddles': ROOT / 'tests/fixtures/puddles/yard-water-cost.json',
            'rain-rings': ROOT / 'tests/fixtures/puddles/rain-rings-cost.json',
+           'under': ROOT / 'tests/fixtures/waters/dive-cost-prior.json',
            'optics': ROOT / 'tests/fixtures/waters/optics-cost-prior.json'}
 WORKING = ROOT / '.orchestrate/evidence/WATERS'
 # The island record taken before the records moved to fixtures names the first-frame record by its old path,
@@ -902,6 +903,106 @@ def optics_investigations(summary, prior):
     return investigations
 
 
+def dive_summary(record, location):
+    assert record['target'] == 'mac-metal' and record['extent'] == [2560, 1440]
+    assert record['capture'] is False and record['commit']
+    assert record['location'] == location and record['wind'] == 'Calm'
+    summary = {}
+    expected = {'above': -2.0, 'half': 0.0, 'under': 2.0}
+    assert len(record['views']) == len(expected)
+    for view in record['views']:
+        name = view['view']
+        assert name not in summary and view['depth_m'] == expected[name]
+        frames = view['frames']
+        assert len(frames) == 12 and all(f['gpu_ms'] is not None and f['gpu_ms'] > 0 for f in frames)
+        passes = {}
+        for frame in frames:
+            assert any(label.endswith(': water surface') for label in frame['passes_ms'])
+            assert any(label.endswith(': water gather') for label in frame['passes_ms'])
+            for label, elapsed in frame['passes_ms'].items():
+                passes.setdefault(label, []).append(elapsed)
+        terms = {label: statistics.median(passes[label]) for label in sorted(passes)}
+        summary[name] = {'samples': len(frames), 'gpu_ms': statistics.median(f['gpu_ms'] for f in frames),
+                         'cpu_wall_ms': statistics.median(f['cpu_wall_ms'] for f in frames),
+                         'pass_samples': {label: len(passes[label]) for label in terms},
+                         'passes_ms': terms}
+    return summary
+
+
+def dive_investigations(summary, prior):
+    investigations = []
+    above = summary['above']
+    for view, current in summary.items():
+        water = {comparable_pass(key): duration for key, duration in current['passes_ms'].items()
+                 if key.endswith((': water gather', ': water surface'))}
+        facts = dict(view=view, gpu_ms=current['gpu_ms'], above_gpu_ms=above['gpu_ms'],
+                     prior_above_gpu_ms=prior['gpu_ms'], cpu_wall_ms=current['cpu_wall_ms'],
+                     water_gather_ms=water['water gather'], water_surface_ms=water['water surface'])
+        if current['gpu_ms'] > 1000 / 120:
+            largest = max(current['passes_ms'], key=current['passes_ms'].get)
+            investigations.append(dict(facts, wire='GPU pass sum exceeds one refresh interval',
+                largest_pass=largest, largest_ms=current['passes_ms'][largest],
+                disposition='The pass sum isolates named GPU work. The CPU bracket includes the '
+                            'diagnostic observer waits. This capture-off record measures shared device load.'))
+        for label, value in current['passes_ms'].items():
+            previous = prior['passes_ms'].get(label)
+            if previous is not None and previous > 0 and value >= previous * 1.25:
+                if label.endswith(': water gather'):
+                    disposition = ('Mapped optics can gather above water. A submerged lens widens it to the '
+                                   'full viewport. The matching current above arm measures the ordinary gather.')
+                elif label.endswith(': water surface'):
+                    disposition = ('The water surface pass includes the lens composition and underside '
+                                   'shader where active. The current above arm measures the same location '
+                                   'with the lens dry. Pass timestamps do not split the two draws.')
+                else:
+                    disposition = ('This pass has no underwater shader. Compare the current above arm to '
+                                   'separate this run from the earlier record. Lower camera positions also '
+                                   'change the opaque and atmospheric work presented to the renderer.')
+                investigations.append(dict(facts, wire='pass grows at least 25% from the prior above view',
+                    pass_name=label, prior_ms=previous, current_ms=value,
+                    paired_above_ms=above['passes_ms'].get(label), disposition=disposition))
+    return investigations
+
+
+def measure_dive(action):
+    prior = None if action == 'record' else json.loads(RECORDS['under'].read_text())
+    if prior is not None:
+        assert prior['extent'] == [2560, 1440] and prior['target'] == 'mac-metal'
+        assert prior['capture'] is False and prior['wind'] == 'Calm'
+        assert set(prior['locations']) == {'lake', 'sea'}
+    commit = run(['git', 'rev-parse', 'HEAD'], capture_output=True, text=True).stdout.strip()
+    proof = ['cargo', 'test', '--release', '--locked', '--offline', '-p', 'water-scene',
+             '--test', 'proof_gpu']
+    scratch = ROOT / 'tmp/waters-wp15'
+    scratch.mkdir(parents=True, exist_ok=True)
+    locations = {}
+    with tempfile.TemporaryDirectory(prefix='dive-cost-', dir=scratch) as staging:
+        store = Path(staging) / 'store'
+        run(['cargo', 'run', '--release', '--locked', '--offline', '-p', 'thrum-cook', '--',
+             'cook', 'examples/water/assets', str(store)])
+        env = dict(os.environ, THRUM_WATER_PROOF='dive-cost', THRUM_WATER_COMMIT=commit,
+                   THRUM_WATER_OUTPUT=staging, THRUM_ASSET_STORE=str(store),
+                   THRUM_REQUIRE_GPU='1', THRUM_WATER_DIVE='calm')
+        for location in ('lake', 'sea'):
+            run(proof, env=dict(env, THRUM_WATER_LOCATION=location))
+            inputs = json.loads((Path(staging) / f'{location}-dive-cost.json').read_text())
+            summary = dive_summary(inputs, location)
+            locations[location] = {'commit': commit, 'above': summary['above']}
+            if prior is not None:
+                history = prior['locations'][location]
+                assert history['commit'] and history['above']['samples'] == 12
+                locations[location].update(views=inputs['views'], summary=summary, prior=history,
+                    investigations=dive_investigations(summary, history['above']))
+    record = dict(commit=commit, extent=[2560, 1440], target='mac-metal', capture=False, wind='Calm',
+                  host=platform.platform(), load=run(['uptime'], capture_output=True, text=True).stdout.strip(),
+                  locations=locations)
+    destination = WORKING / 'WP15'
+    destination.mkdir(parents=True, exist_ok=True)
+    path = destination / f'dive-cost{"-prior" if prior is None else ""}-{commit[:12]}.json'
+    path.write_text(json.dumps(record, indent=2) + '\n')
+    print(f'PASS paired 1440p Metal dive cost record: {path.relative_to(ROOT)}')
+
+
 def rain_yard_cost(action):
     output = ROOT / 'tmp/puddles-wp3/cost-current'
     store = output / 'store'
@@ -1123,6 +1224,9 @@ def main():
         return
     if args.scene == 'optics':
         measure_optics(args.action)
+        return
+    if args.scene == 'under':
+        measure_dive(args.action)
         return
     if args.scene == 'surf':
         measure_surf()
