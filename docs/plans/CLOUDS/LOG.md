@@ -1084,3 +1084,10 @@ left its broad shape. Staggering two library clouds along the Sun direction narr
 bright patches. Adding a local bank concentrated the landing without preserving the diagonal
 through the mist. These controls used scratch builds.
 [Sampling and aperture comparisons](../../../.orchestrate/evidence/CLOUDS/WP14/shaft-target-pairs/README.md)
+
+A depth-clipped Metal probe sampled the local mist source before view integration. The close view's
+adjacent source peaks occurred at different distances, 4.05 km at image row 710 and 2.25 km at row
+760. Row 660 had no occupied mist samples in the probed range. Eight ordinary captures framed the
+far peak directly and still showed a shallow band of light. The stock render and authored selections
+are in use.
+[Scene-linear probe and peak views](../../../.orchestrate/evidence/CLOUDS/WP14/shaft-target-pairs/README.md)
