@@ -231,6 +231,19 @@ fn hidden_geometry_and_paint_edits_take_effect_only_on_reveal() {
     let expected = fresh.frame(viewport, inputs(&[])).expect("fresh frame");
     assert_eq!(revealed.rows, expected.rows);
     verify(&tree, &fresh, &root, viewport.safe());
+
+    let moved_anchor = [Anchor::Point(8.0); 2];
+    tree.set_anchor(3, moved_anchor);
+    root.children[0].children[0].children[0].anchor = moved_anchor;
+    let moved = tree.frame(viewport, inputs(&[])).expect("move shown fill");
+    assert_eq!(tree.stats().layouts, stats.layouts + 2);
+    assert_eq!(tree.bounds(3).expect("moved fill").origin, [8.0; 2]);
+    let mut fresh = Tree::new(root.clone()).expect("fresh moved tree");
+    let expected = fresh
+        .frame(viewport, inputs(&[]))
+        .expect("fresh moved frame");
+    assert_eq!(moved.rows, expected.rows);
+    verify(&tree, &fresh, &root, viewport.safe());
 }
 
 #[test]
