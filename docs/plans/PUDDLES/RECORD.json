@@ -526,7 +526,7 @@
         {
           "verdict": "fail",
           "commit": "b2f058eb1ef78a8b6ad7421a7b81e8f50f45a5da",
-          "review": ".orchestrate/evidence/PUDDLES/WP4-review.md",
+          "review": ".orchestrate/evidence/PUDDLES/WP4-review-1.md",
           "items": {
             "WP4.1": "fail",
             "WP4.2": "pass",
@@ -583,6 +583,49 @@
             "turns": 1
           },
           "at": "2026-11-26T16:22:49Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "dab0796fb9f131d7bb27097a7d4c8c054983eb4d",
+          "review": ".orchestrate/evidence/PUDDLES/WP4-review.md",
+          "items": {
+            "WP4.1": "fail",
+            "WP4.2": "pass",
+            "WP4.4": "pass",
+            "WP4.5": "pass",
+            "WP4.12": "pass",
+            "WP4.8": "pass",
+            "WP4.9": "pass",
+            "WP4.10": "pass"
+          },
+          "findings": [
+            {
+              "name": "Rain footprint evaluation stalls the simulation tick",
+              "repeat": false
+            },
+            {
+              "name": "Rain query slopes omit the spatial derivative of carriage",
+              "item": "WP4.1",
+              "different": "The repaired query samples the correct departure and carries height rate. On a spatially varying track its slope still lacks the departure and blend gradients needed for a world-space answer.",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 157051,
+            "cached": 8478080,
+            "output": 17621,
+            "turns": 1
+          },
+          "at": "2026-11-26T18:15:56Z"
         }
       ],
       "authorised": {

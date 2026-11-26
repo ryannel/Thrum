@@ -419,9 +419,9 @@
     {
       "id": "WP4",
       "name": "Rain rings every water it falls on, the puddles, the lake and the sea, more and rougher as it grows and not at all under the roof, and the rings run out when the rain stops",
-      "status": "ready_for_review",
-      "failed_reviews": 1,
-      "failed_reviews_with_repeat": 0,
+      "status": "in_progress",
+      "failed_reviews": 2,
+      "failed_reviews_with_repeat": 1,
       "diagnoses": 0,
       "depends_on": [],
       "quality_bar": "Rain on water as on the lakes of Red Dead Redemption 2 and the street puddles of The Last of Us Part II, and past both in that each ring is the water's own wave: it starts small and sharp, spreads leaving calm water inside it, gains crests and fades, with no grid, repeat or stamped circle.",
@@ -433,8 +433,8 @@
           "ask": "Do the bands keep any texture from one frame to the next?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/PUDDLES/WP4/schedule-repair.md",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/PUDDLES/WP4-review.md"
         },
@@ -456,7 +456,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/PUDDLES/WP4/schedule-repair.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/PUDDLES/WP4-review.md"
         },
         {
@@ -509,37 +509,19 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/PUDDLES/WP4/period-final-cost.json",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/PUDDLES/WP4-review.md"
         }
       ],
       "findings": [
         {
-          "name": "Rain queries ignore footprint radius",
+          "name": "Rain footprint evaluation stalls the simulation tick",
+          "repeat": false
+        },
+        {
+          "name": "Rain query slopes omit the spatial derivative of carriage",
           "item": "WP4.1",
-          "repeat": false
-        },
-        {
-          "name": "Rain queries omit current carriage",
-          "item": "WP4.1",
-          "repeat": false
-        },
-        {
-          "name": "Light rain repeats individual ring births across the puddle",
-          "item": "WP4.4",
-          "repeat": false
-        },
-        {
-          "name": "WP3-to-WP4 pass increases lack investigations",
-          "item": "WP4.10",
-          "repeat": false
-        },
-        {
-          "name": "Removing the rain model leaves the last wet GPU field active",
-          "repeat": false
-        },
-        {
-          "name": "Rain preparation departs from the agreed surface resource layout",
+          "different": "The repaired query samples the correct departure and carries height rate. On a spatially varying track its slope still lacks the departure and blend gradients needed for a world-space answer.",
           "repeat": false
         }
       ]
