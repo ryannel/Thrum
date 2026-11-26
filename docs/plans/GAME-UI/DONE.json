@@ -300,10 +300,10 @@
     {
       "id": "WP3",
       "name": "A status display of a health bar, a timer and counters stays readable and in place at every window size, density and safe area",
-      "failed_reviews": 0,
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
+      "status": "in_progress",
       "quality_bar": "A status display as legible over a crowd as those of Vampire Survivors, Brotato and Halls of Torment: health, time and counts read at a glance with thousands of sprites behind them. Laid out as steadily as a native app's: no element covers another, touches an edge, leaves the safe area or jumps when the window is resized.",
       "items": [
         {
@@ -312,10 +312,10 @@
           "check": "cargo test --locked --offline -p thrum-ui --test layout",
           "ask": "Read the test. Are the expected boxes worked out by hand for each case, including nesting three deep, two shares of unequal weight with a fixed sibling, a share held at its least, and a text whose wrap changes a parent's height?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/GAME-UI/WP3/checks/WP3.1.stdout",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/GAME-UI/WP3-review.md",
+          "builder_result": "open"
         },
         {
           "id": "WP3.2",
@@ -323,10 +323,10 @@
           "check": "cargo test --locked --offline -p thrum-ui --test layout_properties",
           "ask": "Does the generator build stacks, overlays, text and every kind of size, nested, and sweep extents and insets to both ends of the range? Would a layout that ignores insets, or lets a share go below nothing, fail it?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/GAME-UI/WP3/checks/WP3.2.stdout",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/GAME-UI/WP3-review.md",
+          "builder_result": "open"
         },
         {
           "id": "WP3.3",
@@ -334,10 +334,10 @@
           "check": "cargo test --locked --offline -p thrum-ui --test layout_properties",
           "ask": "Are layouts and list builds counted inside the tree, across many frames, with a change that does move a box as a control the counts see? Is the comparison with a fresh tree run over random sequences of changes?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/GAME-UI/WP3/index.md",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/GAME-UI/WP3-review.md",
+          "builder_result": "open"
         },
         {
           "id": "WP3.4",
@@ -347,8 +347,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/GAME-UI/WP3/checks/WP3.4.stdout",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GAME-UI/WP3-review.md",
           "builder_result": "pass"
         },
         {
@@ -358,8 +358,8 @@
           "ask": "Does the sweep lay out the same tree the scene draws, and read overflow, elision and boxes from the layout itself? Is overlap tested between the separately placed elements, and not between a text and its panel or a fill and its track?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/GAME-UI/WP3/checks/wrap-sweep.log",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GAME-UI/WP3-review.md",
           "builder_result": "pass"
         },
         {
@@ -370,8 +370,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/GAME-UI/WP3/window/summary.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GAME-UI/WP3-review.md",
           "builder_result": "pass"
         },
         {
@@ -381,8 +381,8 @@
           "lock": "chrome",
           "target": "chrome-webgpu",
           "evidence": ".orchestrate/evidence/GAME-UI/WP3/costs-chrome-retry/chrome-fixed/interface-status.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GAME-UI/WP3-review.md",
           "builder_result": "pass"
         },
         {
@@ -390,10 +390,10 @@
           "statement": "On the Mac the status display reads at a glance over the field of 10,000 sprites: health, time and each count can be told apart and read, over light and dark parts of the crowd; margins are even, no element touches an edge or another element, and the bar's level is plain.",
           "inspect": "Capture `fixed` stills of the interface scene with T2 engine capture: at 640\u00d7360 and 1280\u00d7720 points at a scale of 2, at 3456\u00d72234 pixels at scales of 1 and 2, and at a phone-sized extent in both orientations with insets, the bar at empty, a third and full. Judge each whole, at the size it is shown and in native-size crops of each node.",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/GAME-UI/WP3/visual-review.md",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/GAME-UI/WP3-review.md",
+          "builder_result": "open"
         },
         {
           "id": "WP3.9",
@@ -401,8 +401,8 @@
           "inspect": "Capture the interface scene at 1920\u00d71080 with T2 engine capture in `realtime` mode through a full drain and refill of the bar, and a second capture that steps the extent through several sizes across the claimed range. Judge consecutive frames at 1x, whole and in native-size crops of the bar, the timer and the counters.",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/GAME-UI/WP3/visual-review.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GAME-UI/WP3-review.md",
           "builder_result": "pass"
         },
         {
@@ -411,8 +411,8 @@
           "inspect": "Capture the interface scene in Chrome with T2 engine capture at each ratio: `fixed` stills at two canvas sizes, and `realtime` through a drain and refill of the bar. Judge stills whole and in native-size crops, and consecutive frames at 1x.",
           "target": "chrome-webgpu",
           "evidence": ".orchestrate/evidence/GAME-UI/WP3/visual-review.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GAME-UI/WP3-review.md",
           "builder_result": "pass"
         },
         {
@@ -423,8 +423,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/GAME-UI/WP3/costs-mac-metal/summary.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GAME-UI/WP3-review.md",
           "builder_result": "pass"
         },
         {
@@ -433,10 +433,10 @@
           "check": "python3 scripts/game_ui.py costs --target chrome-webgpu --layout",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/GAME-UI/WP3/costs-chrome-retry/final/summary.json",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/GAME-UI/WP3-review.md",
+          "builder_result": "open"
         },
         {
           "id": "WP3.14",
@@ -445,10 +445,42 @@
           "ask": "Is every submitted frame of each change captured and compared with both fresh references, with the bar and the counters changing throughout? Would boxes laid out for the old font drawn under the new glyphs fail it?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/GAME-UI/WP3/checks/wrap-switch.log",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/GAME-UI/WP3-review.md",
+          "builder_result": "open"
+        }
+      ],
+      "findings": [
+        {
+          "name": "A capped heavy share strands space needed by its sibling",
+          "item": "WP3.1",
+          "repeat": false
+        },
+        {
+          "name": "The generated tree sweep misses the maximum point extent",
+          "item": "WP3.2",
+          "repeat": false
+        },
+        {
+          "name": "Editing a fixed-size text leaf reruns layout",
+          "item": "WP3.3",
+          "repeat": false
+        },
+        {
+          "name": "At full Retina resolution and scale one the timer and captions do not read at a glance",
+          "item": "WP3.8",
+          "repeat": false
+        },
+        {
+          "name": "Chrome includes unchanged status frames in the all-values-changing cost record",
+          "item": "WP3.12",
+          "repeat": false
+        },
+        {
+          "name": "The switch proof advances ticks without exercising changing counters throughout",
+          "item": "WP3.14",
+          "repeat": false
         }
       ]
     },
