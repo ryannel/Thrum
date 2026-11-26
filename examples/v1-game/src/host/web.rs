@@ -25,7 +25,7 @@ pub(crate) const DEVICE_GENERATION: u64 = thrum_render::capabilities::FIRST_DEVI
 
 #[cfg(feature = "proving")]
 pub(crate) fn test_bank(shell: &Shell) -> bool {
-    shell.host().source().test_bank
+    shell.host().source().uses_test_bank()
 }
 
 pub(crate) fn cloud_input(shell: &Shell) -> Option<&thrum_clouds::WeatherInput> {

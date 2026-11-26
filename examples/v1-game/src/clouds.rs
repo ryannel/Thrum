@@ -160,7 +160,7 @@ pub enum CloudSelection {
 }
 
 impl CloudSelection {
-    pub(crate) const NAMES: &str = "off, shade, sky, world-light, ground-clear, ground-half, ground, ground-fog or ground-mist-bank";
+    pub(crate) const NAMES: &str = "off, shade, sky, world-light, ground-clear, ground-half, ground, ground-fog, ground-fog-edge, ground-fog-outside or ground-mist-bank";
 
     pub(crate) fn named(name: &str) -> Option<Self> {
         Some(match name {
@@ -172,6 +172,8 @@ impl CloudSelection {
             "ground-half" => Self::Ground(GroundWeather::HalfMist),
             "ground" => Self::Ground(GroundWeather::Mist),
             "ground-fog" => Self::Ground(GroundWeather::Fog),
+            "ground-fog-edge" => Self::Ground(GroundWeather::FogEdge),
+            "ground-fog-outside" => Self::Ground(GroundWeather::FogOutside),
             "ground-mist-bank" => Self::Ground(GroundWeather::MistAndBank),
             _ => return None,
         })

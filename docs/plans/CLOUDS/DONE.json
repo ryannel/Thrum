@@ -1404,8 +1404,8 @@
           "ask": "Does the test count creations by name with and without Ground, and compare the cloud band's ground field byte for byte?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP14/CORRECTNESS.md",
           "verdict": "",
           "review": ""
         },
@@ -1416,8 +1416,8 @@
           "ask": "Does the test run the drifting shore mask and the doubled extinction through the same assertions and show each fail? Is the sight line's expected value the public query's optical depth between the two points?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP14/CORRECTNESS.md",
           "verdict": "",
           "review": ""
         },
@@ -1428,8 +1428,8 @@
           "ask": "Does the test show both wrong substitutes fail? Does one case put a surface receiver in a ridge's shadow and show its shading unchanged by the surface visibility?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP14/CORRECTNESS.md",
           "verdict": "",
           "review": ""
         },
@@ -1440,8 +1440,8 @@
           "ask": "Are the sample points the ones the view volume names for that frame, jitter included?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP14/CORRECTNESS.md",
           "verdict": "",
           "review": ""
         },
@@ -1502,8 +1502,8 @@
           "check": "python3 scripts/cloud_cost.py check --scene mist-near",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP14/COST.md",
           "verdict": "",
           "review": ""
         },
@@ -1512,8 +1512,8 @@
           "statement": "The maturity ledger's `E1.clouds` row is current.",
           "ask": "Does the row claim only what this work package proved, on the targets it ran on, with visuals apart from correctness?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP14/CORRECTNESS.md",
           "verdict": "",
           "review": ""
         },
@@ -1523,8 +1523,8 @@
           "check": "sh -c '! git grep -qw Orders -- crates examples'",
           "ask": "Do the medium-coefficient pass and the trace call one Sun-term function and one depth function, with no second copy of either? Is the boundary weight 0 wherever the near weight is above 0? Do `thrum-cloud-model`'s tests still pass with no source that comes from `Orders`?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP14/CORRECTNESS.md",
           "verdict": "",
           "review": ""
         }

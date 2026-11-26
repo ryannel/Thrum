@@ -659,9 +659,9 @@ impl GameSetup {
             WorldDriver::for_setup(&setup, weather, weather_edits.clone())
                 .map_err(FrameError::World)?,
         )));
-        let ground = if matches!(setup.clouds, crate::CloudSelection::Ground(_)) {
+        let ground = if let crate::CloudSelection::Ground(preset) = setup.clouds {
             Some(
-                crate::clouds::ground::valley()
+                crate::clouds::ground::valley(preset)
                     .map_err(|error| FrameError::Scene(error.to_string()))?,
             )
         } else {
@@ -1023,7 +1023,7 @@ impl GameHost for Runtime {
             source.cloud_ground.as_ref(),
         )?;
         #[cfg(feature = "proving")]
-        let contribution = if source.test_bank {
+        let contribution = if source.uses_test_bank() {
             scene_source::test_bank::alongside(contribution)
         } else {
             contribution

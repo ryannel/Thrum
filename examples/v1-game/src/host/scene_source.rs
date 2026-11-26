@@ -358,6 +358,13 @@ fn omit_mirror(overlay: scene::RouteOverlay) -> bool {
     overlay == scene::RouteOverlay::MirrorOmit
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum MediumSource {
+    Ground,
+    #[cfg(feature = "proving")]
+    TestBank,
+}
+
 /// The game's scene: its content, camera, solar day and display choices, which
 /// the engine's frame host samples for each frame.
 pub struct GameScene {
@@ -385,9 +392,7 @@ pub struct GameScene {
     pub(super) cloud_shapes: Option<crate::PlacedSky>,
     #[cfg(feature = "proving")]
     haze: Option<thrum_render::atmosphere::Aerosol>,
-    #[cfg(feature = "proving")]
-    pub(super) test_bank: bool,
-    medium_epoch: Option<u64>,
+    medium: Option<MediumSource>,
     pub(super) cooked_rows: Option<thrum_asset_gpu::rows::CookedRows>,
     native_witness: thrum_render::synthetic::NativeWitness,
     content: GameContent,
@@ -612,6 +617,11 @@ impl GameScene {
             .is_some_and(|card| card.set_scale(scale))
     }
 
+    #[cfg(feature = "proving")]
+    pub(super) fn uses_test_bank(&self) -> bool {
+        self.medium == Some(MediumSource::TestBank)
+    }
+
     pub(super) fn new(setup: GameSetup) -> Self {
         #[cfg(feature = "proving")]
         let temporal: Option<serde_json::Value> =
@@ -650,16 +660,12 @@ impl GameScene {
             cloud_ground: None,
             #[cfg(feature = "proving")]
             haze: setup.haze,
-            #[cfg(feature = "proving")]
-            test_bank: setup.test_bank,
-            medium_epoch: if matches!(setup.clouds, crate::CloudSelection::Ground(_)) {
-                Some(1)
+            medium: if matches!(setup.clouds, crate::CloudSelection::Ground(_)) {
+                Some(MediumSource::Ground)
             } else {
                 #[cfg(feature = "proving")]
-                if setup.test_bank {
-                    Some(1)
-                } else {
-                    None
+                {
+                    setup.test_bank.then_some(MediumSource::TestBank)
                 }
                 #[cfg(not(feature = "proving"))]
                 None
@@ -1033,7 +1039,7 @@ impl SceneSource<PublishedPage> for GameScene {
                 camera_altitude_m,
                 #[cfg(feature = "proving")]
                 self.haze,
-                self.medium_epoch,
+                self.medium.is_some().then_some(1),
             )
         });
         let view = if self.valley_stars
@@ -1309,9 +1315,7 @@ mod tests {
             interface: None,
             #[cfg(feature = "proving")]
             haze: None,
-            #[cfg(feature = "proving")]
-            test_bank: false,
-            medium_epoch: None,
+            medium: None,
             #[cfg(feature = "proving")]
             sprite_scale: None,
             #[cfg(feature = "proving")]

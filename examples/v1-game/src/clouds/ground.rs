@@ -14,6 +14,10 @@ pub enum GroundWeather {
     Mist,
     /// Fog with 50 m visual range in the bank's core.
     Fog,
+    /// The same fog bank with its edge crossing the lookout's receivers.
+    FogEdge,
+    /// The same fog bank displaced beyond the lookout's receivers.
+    FogOutside,
     /// Full mist and a thinner bank in the same valley.
     MistAndBank,
 }
@@ -24,13 +28,18 @@ impl GroundWeather {
             Self::Clear => vec![0.0, 0.0],
             Self::HalfMist => vec![0.5, 0.0],
             Self::Mist => vec![1.0, 0.0],
-            Self::Fog => vec![0.0, 1.0],
+            Self::Fog | Self::FogEdge | Self::FogOutside => vec![0.0, 1.0],
             Self::MistAndBank => vec![1.0, 0.25],
         }
     }
 }
 
-pub(crate) fn valley() -> Result<GroundConfig, Error> {
+pub(crate) fn valley(preset: GroundWeather) -> Result<GroundConfig, Error> {
+    let bank_centre_x = match preset {
+        GroundWeather::FogEdge => 49.0,
+        GroundWeather::FogOutside => 72.0,
+        _ => 0.0,
+    };
     let fog = Ground::new(
         GroundProfile {
             shore_margin: 40.0,
@@ -66,7 +75,7 @@ pub(crate) fn valley() -> Result<GroundConfig, Error> {
                 affinity: Affinity::Land,
                 // The lookout bank thickens across the level shelf, giving
                 // the scene a shallow edge before the polished receiver.
-                centre: [0.0, 8.0],
+                centre: [bank_centre_x, 8.0],
                 radius: [60.0, 47.0],
                 noise: 0.08,
                 noise_scale: 30.0,

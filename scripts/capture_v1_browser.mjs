@@ -60,7 +60,7 @@ if (spriteField && (args.mode !== 'realtime' || args.control !== 'ordinary' || a
 }
 if (!['route','off'].includes(args.overlay)) throw new Error('Invalid overlay option');
 if (!['off','on'].includes(args['diagnostic-clouds'])) throw new Error('Invalid diagnostic-clouds option');
-if (!['off','shade','sky','world-light','ground-clear','ground-half','ground','ground-fog','ground-mist-bank'].includes(args.clouds) || (args.clouds !== 'off' && args['diagnostic-clouds'] === 'on')) throw new Error('Invalid cloud selection');
+if (!['off','shade','sky','world-light','ground-clear','ground-half','ground','ground-fog','ground-fog-edge','ground-fog-outside','ground-mist-bank'].includes(args.clouds) || (args.clouds !== 'off' && args['diagnostic-clouds'] === 'on')) throw new Error('Invalid cloud selection');
 if (args['cloud-view'] && (args.clouds === 'off' || args.control !== 'ordinary' || args.source !== 'sdr')) throw new Error('A cloud view requires an ordinary SDR cloud capture');
 if (args['cloud-store'] && !args['cloud-view']) throw new Error('A cloud store requires --cloud-view');
 if (!['off','taau'].includes(args.reconstruction)) throw new Error('Invalid reconstruction option');
@@ -341,7 +341,7 @@ try {
       if (record.final_report.presented - record.initial_report.presented !== manifest.records.length) throw new Error('Submission tail or head missing');
       const ids = manifest.records.map(row => row.submission_id);
       if (!ids.length || ids.some((id, i) => i > 0 && id !== ids[i - 1] + 1)) throw new Error('Noncontiguous submission IDs');
-      if (args.scene === 'exit' && args.mode === 'fixed') {
+      if (args.scene === 'exit' && args.mode === 'fixed' && !cloudView) {
         const first = route.origin_tick;
         const last = first + route.keys.at(-1).tick;
         const active = manifest.records.filter(row => row.source_tick >= first && row.source_tick <= last);

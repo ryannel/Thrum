@@ -109,7 +109,7 @@ async function runCapture() {
   record.effect = effect;
   game.attach_cooked_valley(await fetch_cooked_valley(query.get('assets')), effect === 'off' ? undefined : effect === 'slab');
   game.set_visible(true, 0);
-  if (view) {
+  if (view && !atmosphereMotion) {
     await captureCloudView(view, route.render_extent);
     return;
   }

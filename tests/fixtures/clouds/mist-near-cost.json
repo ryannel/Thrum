@@ -1,0 +1,756 @@
+{
+  "commit": "f90be1060ba8e3a35f2d3a3b6eb8a98b3afd263a",
+  "machine": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "load": {
+    "before": [
+      315.818359375,
+      203.31201171875,
+      156.5419921875
+    ],
+    "after": [
+      244.8212890625,
+      194.427734375,
+      154.4423828125
+    ]
+  },
+  "runs": [
+    {
+      "adapter": "AdapterInfo { name: \"Apple M3 Max\", vendor: 0, device: 0, device_type: IntegratedGpu, device_pci_bus_id: \"\", driver: \"\", driver_info: \"\", backend: Metal, subgroup_min_size: 4, subgroup_max_size: 64, transient_saves_memory: Some(true), limit_bucket: None }",
+      "capture": false,
+      "extent": [
+        2560,
+        1440
+      ],
+      "first_submission": {
+        "pass_gpu_ns": {
+          "atmosphere DFG integration": 2571084.0,
+          "atmosphere aerial perspective": 421291.0,
+          "atmosphere diffuse irradiance": 988042.0,
+          "atmosphere ground irradiance": 1090167.0,
+          "atmosphere multiple scattering": 3418958.0,
+          "atmosphere reflection mip 0": 60209.0,
+          "atmosphere reflection mip 1": 424458.0,
+          "atmosphere reflection mip 2": 593792.0,
+          "atmosphere reflection mip 3": 312625.0,
+          "atmosphere reflection mip 4": 287750.0,
+          "atmosphere reflection mip 5": 264417.0,
+          "atmosphere reflection mip 6": 244250.0,
+          "atmosphere sky view": 313833.0,
+          "atmosphere stars": 322542.0,
+          "atmosphere transmittance": 52166.0,
+          "camera visibility": 61875.0,
+          "synthetic Sun air shadow heights": 1403083.0,
+          "synthetic Sun horizon heights": 149833.0,
+          "synthetic Sun shadow far": 152542.0,
+          "synthetic Sun shadow near": 150291.0,
+          "synthetic cluster build": 361459.0,
+          "synthetic exposure resolve": 12291.0,
+          "synthetic forward opaque": 716792.0,
+          "synthetic tone encode": 595083.0,
+          "synthetic transform history": 23458.0,
+          "temporal exposure texture": 1016750.0
+        },
+        "whole_frame_gpu_ns": 16009041.0
+      },
+      "frames": 80,
+      "maximum_sun_refill_ns": 0.0,
+      "minimum_volume_instances": null,
+      "pass_gpu_ns": {
+        "atmosphere aerial perspective": 275713.0375,
+        "atmosphere diffuse irradiance": 472559.8375,
+        "atmosphere reflection mip 0": 92580.2125,
+        "atmosphere reflection mip 1": 220106.8,
+        "atmosphere reflection mip 2": 376962.0,
+        "atmosphere reflection mip 3": 194023.4125,
+        "atmosphere reflection mip 4": 184589.0375,
+        "atmosphere reflection mip 5": 164667.2,
+        "atmosphere reflection mip 6": 155320.9,
+        "atmosphere sky view": 140546.3875,
+        "atmosphere stars": 78767.1625,
+        "camera visibility": 141046.4125,
+        "contribution compute": 32027.5625,
+        "synthetic Sun air shadow heights": 484422.3625,
+        "synthetic Sun horizon heights": 122353.0625,
+        "synthetic Sun shadow far": 96605.1375,
+        "synthetic Sun shadow near": 97635.9125,
+        "synthetic cluster build": 35843.2,
+        "synthetic exposure resolve": 15019.325,
+        "synthetic forward opaque": 3647985.4875,
+        "synthetic tone encode": 213515.0875,
+        "synthetic transform history": 57450.0125,
+        "temporal exposure texture": 1562018.25
+      },
+      "quality": [],
+      "ray_statistics": null,
+      "resources": [],
+      "setup_pass_peaks_ns": {},
+      "storage": "slot=0\nday capture=false role=auxiliary resource=ResourceId { index: 25, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=auxiliary resource=ResourceId { index: 32, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=depth resource=ResourceId { index: 41, owner: () } reason=eligible usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=scene resource=ResourceId { index: 42, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=motion resource=ResourceId { index: 43, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=reactive resource=ResourceId { index: 44, owner: () } reason=eligible usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=resolved exposure resource=ResourceId { index: 52, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=output resource=ResourceId { index: 53, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=auxiliary resource=ResourceId { index: 25, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=auxiliary resource=ResourceId { index: 32, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=depth resource=ResourceId { index: 41, owner: () } reason=eligible usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=scene resource=ResourceId { index: 42, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=motion resource=ResourceId { index: 43, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=reactive resource=ResourceId { index: 44, owner: () } reason=eligible usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=resolved exposure resource=ResourceId { index: 52, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=output resource=ResourceId { index: 53, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=auxiliary resource=ResourceId { index: 25, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=auxiliary resource=ResourceId { index: 32, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=depth resource=ResourceId { index: 41, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=scene resource=ResourceId { index: 42, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=motion resource=ResourceId { index: 43, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=reactive resource=ResourceId { index: 44, owner: () } reason=later attachment use usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=resolved exposure resource=ResourceId { index: 52, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=output resource=ResourceId { index: 53, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=auxiliary resource=ResourceId { index: 25, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=auxiliary resource=ResourceId { index: 32, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=depth resource=ResourceId { index: 41, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=scene resource=ResourceId { index: 42, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=motion resource=ResourceId { index: 43, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=reactive resource=ResourceId { index: 44, owner: () } reason=later attachment use usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=resolved exposure resource=ResourceId { index: 52, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=output resource=ResourceId { index: 53, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nunique textures/nominal bytes=(8, 92094466) fallback-only bytes=0; retained generations accounted by FrameHost\nslot=1\nday capture=false role=auxiliary resource=ResourceId { index: 25, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=auxiliary resource=ResourceId { index: 32, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=depth resource=ResourceId { index: 41, owner: () } reason=eligible usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=scene resource=ResourceId { index: 42, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=motion resource=ResourceId { index: 43, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=reactive resource=ResourceId { index: 44, owner: () } reason=eligible usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=resolved exposure resource=ResourceId { index: 52, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=output resource=ResourceId { index: 53, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=auxiliary resource=ResourceId { index: 25, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=auxiliary resource=ResourceId { index: 32, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=depth resource=ResourceId { index: 41, owner: () } reason=eligible usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=scene resource=ResourceId { index: 42, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=motion resource=ResourceId { index: 43, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=reactive resource=ResourceId { index: 44, owner: () } reason=eligible usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=resolved exposure resource=ResourceId { index: 52, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=output resource=ResourceId { index: 53, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=auxiliary resource=ResourceId { index: 25, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=auxiliary resource=ResourceId { index: 32, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=depth resource=ResourceId { index: 41, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=scene resource=ResourceId { index: 42, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=motion resource=ResourceId { index: 43, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=reactive resource=ResourceId { index: 44, owner: () } reason=later attachment use usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=resolved exposure resource=ResourceId { index: 52, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=false role=output resource=ResourceId { index: 53, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=auxiliary resource=ResourceId { index: 25, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=auxiliary resource=ResourceId { index: 32, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=depth resource=ResourceId { index: 41, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=scene resource=ResourceId { index: 42, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=motion resource=ResourceId { index: 43, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=reactive resource=ResourceId { index: 44, owner: () } reason=later attachment use usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=resolved exposure resource=ResourceId { index: 52, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nstars capture=true role=output resource=ResourceId { index: 53, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nunique textures/nominal bytes=(8, 92094466) fallback-only bytes=0; retained generations accounted by FrameHost",
+      "view": [
+        35.0,
+        246.0,
+        16.0
+      ],
+      "view_angles": {
+        "pitch_degrees": 10.0,
+        "start_solar_hours": 6.947723865509033,
+        "start_sun_elevation_degrees": 10.000000953674316,
+        "yaw_degrees": 79.8441162109375
+      },
+      "whole_frame_gpu_ns": 8861757.8,
+      "selection": "off"
+    },
+    {
+      "adapter": "AdapterInfo { name: \"Apple M3 Max\", vendor: 0, device: 0, device_type: IntegratedGpu, device_pci_bus_id: \"\", driver: \"\", driver_info: \"\", backend: Metal, subgroup_min_size: 4, subgroup_max_size: 64, transient_saves_memory: Some(true), limit_bucket: None }",
+      "capture": false,
+      "extent": [
+        2560,
+        1440
+      ],
+      "first_submission": {
+        "pass_gpu_ns": {
+          "atmosphere DFG integration": 2450208.0,
+          "atmosphere aerial perspective": 643625.0,
+          "atmosphere diffuse irradiance": 368459.0,
+          "atmosphere ground irradiance": 164875.0,
+          "atmosphere multiple scattering": 983334.0,
+          "atmosphere reflection mip 0": 18375.0,
+          "atmosphere reflection mip 1": 111500.0,
+          "atmosphere reflection mip 2": 192000.0,
+          "atmosphere reflection mip 3": 102959.0,
+          "atmosphere reflection mip 4": 92000.0,
+          "atmosphere reflection mip 5": 89875.0,
+          "atmosphere reflection mip 6": 82167.0,
+          "atmosphere sky view": 2146500.0,
+          "atmosphere stars": 3253750.0,
+          "atmosphere transmittance": 18875.0,
+          "camera visibility": 31292.0,
+          "contribution compute": 81708.0,
+          "effect 0: effect 1: cloud weather map": 571667.0,
+          "effect 1: effect 1: cloud Sun path near": 2574625.0,
+          "effect 2: effect 1: cloud Sun path middle": 2826167.0,
+          "effect 3: effect 1: cloud Sun path far": 2392834.0,
+          "effect 4: effect 1: cloud ground field": 45083.0,
+          "effect 5: effect 1: cloud far transmittance": 93875.0,
+          "effect 6: effect 1: cloud ground band": 130875.0,
+          "effect 7: effect 1: cloud medium coefficients": 38708.0,
+          "effect 8: effect 1: cloud sky overlay": 156166.0,
+          "effect after 0: effect 1: cloud trace": 14762375.0,
+          "effect after 1: effect 1: cloud resolve": 113750.0,
+          "effect after 2: effect 1: cloud compose": 13333750.0,
+          "synthetic Sun horizon heights": 82375.0,
+          "synthetic Sun shadow far": 63166.0,
+          "synthetic Sun shadow near": 56584.0,
+          "synthetic cluster build": 4959.0,
+          "synthetic exposure resolve": 6916.0,
+          "synthetic forward opaque": 1700333.0,
+          "synthetic tone encode": 13382417.0,
+          "synthetic transform history": 1119208.0,
+          "temporal exposure texture": 1099500.0
+        },
+        "whole_frame_gpu_ns": 65386835.0
+      },
+      "frames": 80,
+      "maximum_sun_refill_ns": 22896251.0,
+      "minimum_volume_instances": null,
+      "pass_gpu_ns": {
+        "atmosphere aerial perspective": 1498165.625,
+        "atmosphere diffuse irradiance": 569757.25,
+        "atmosphere reflection mip 0": 443040.6125,
+        "atmosphere reflection mip 1": 289549.475,
+        "atmosphere reflection mip 2": 500986.0375,
+        "atmosphere reflection mip 3": 329376.6,
+        "atmosphere reflection mip 4": 376733.2875,
+        "atmosphere reflection mip 5": 312326.5,
+        "atmosphere reflection mip 6": 329246.9625,
+        "atmosphere sky view": 268637.5,
+        "atmosphere stars": 9190278.625,
+        "camera visibility": 238414.6125,
+        "contribution compute": 194339.5375,
+        "effect 0: effect 1: cloud weather map": 315882.8375,
+        "effect 1: effect 1: cloud Sun path near": 1113110.95,
+        "effect 2: effect 1: cloud Sun path middle": 1187325.05,
+        "effect 3: effect 1: cloud Sun path far": 823503.6,
+        "effect 4: effect 1: cloud ground field": 568496.4125,
+        "effect 5: effect 1: cloud far transmittance": 225790.6375,
+        "effect 6: effect 1: cloud ground band": 357190.55,
+        "effect 7: effect 1: cloud medium coefficients": 343994.2875,
+        "effect 8: effect 1: cloud sky overlay": 321902.5375,
+        "effect after 0: effect 1: cloud trace": 16743881.8,
+        "effect after 1: effect 1: cloud resolve": 896765.675,
+        "effect after 2: effect 1: cloud compose": 18916065.1625,
+        "synthetic Sun horizon heights": 1371428.125,
+        "synthetic Sun shadow far": 1168654.7,
+        "synthetic Sun shadow near": 897531.25,
+        "synthetic cluster build": 68662.425,
+        "synthetic exposure resolve": 193446.3875,
+        "synthetic forward opaque": 12227484.4,
+        "synthetic tone encode": 19901910.975,
+        "synthetic transform history": 410230.275,
+        "temporal exposure texture": 17265925.95
+      },
+      "quality": [
+        {
+          "name": "1/cloud weather map cadence",
+          "value": 100
+        },
+        {
+          "name": "1/cloud near Sun path cadence",
+          "value": 100
+        },
+        {
+          "name": "1/cloud middle Sun path cadence",
+          "value": 100
+        },
+        {
+          "name": "1/cloud far Sun path cadence",
+          "value": 100
+        },
+        {
+          "name": "1/cloud refresh exponent",
+          "value": 0
+        },
+        {
+          "name": "1/cloud local light samples",
+          "value": 3
+        },
+        {
+          "name": "1/cloud layer scale",
+          "value": 100
+        },
+        {
+          "name": "1/cloud trace step length",
+          "value": 100
+        },
+        {
+          "name": "1/cloud trace sample cap",
+          "value": 768
+        },
+        {
+          "name": "1/cloud sky overlay cadence",
+          "value": 8
+        }
+      ],
+      "ray_statistics": {
+        "mean_samples": 286.3504546440972,
+        "p95_samples": 447.0,
+        "rays_traced": 921600,
+        "refresh_fraction": 1.0,
+        "refresh_stride": 1,
+        "scope": "last completed capture-off frame, selected fresh texels, readback after timed interval"
+      },
+      "resources": [
+        [
+          "cloud texture 0 Rgba32Float",
+          4194304
+        ],
+        [
+          "cloud texture 1 Rgba32Float",
+          4194304
+        ],
+        [
+          "cloud texture 2 Rgba32Uint",
+          4194304
+        ],
+        [
+          "cloud texture 3 Rgba16Float",
+          12582912
+        ],
+        [
+          "cloud texture 4 Rgba16Float",
+          16777216
+        ],
+        [
+          "cloud texture 5 Rgba16Float",
+          16777216
+        ],
+        [
+          "cloud texture 6 Rgba16Float",
+          8388608
+        ],
+        [
+          "cloud shape noise",
+          9586980
+        ],
+        [
+          "cloud buffer 0",
+          128
+        ],
+        [
+          "cloud buffer 1",
+          128
+        ],
+        [
+          "cloud buffer 2",
+          128
+        ],
+        [
+          "cloud buffer 3",
+          128
+        ],
+        [
+          "cloud buffer 4",
+          160
+        ],
+        [
+          "cloud buffer 5",
+          160
+        ],
+        [
+          "cloud buffer 6",
+          160
+        ],
+        [
+          "cloud buffer 7",
+          160
+        ],
+        [
+          "cloud buffer 8",
+          8192
+        ],
+        [
+          "cloud buffer 9",
+          8192
+        ],
+        [
+          "cloud buffer 10",
+          8192
+        ],
+        [
+          "cloud buffer 11",
+          8192
+        ],
+        [
+          "cloud buffer 12",
+          96
+        ],
+        [
+          "cloud medium coefficient texture",
+          4608000
+        ],
+        [
+          "cloud surface field",
+          1449616
+        ],
+        [
+          "cloud ground frame",
+          64
+        ],
+        [
+          "cloud fog table",
+          128
+        ],
+        [
+          "cloud fog phase tables",
+          8256
+        ],
+        [
+          "cloud ground band",
+          304200
+        ],
+        [
+          "cloud ground band mapping",
+          32
+        ],
+        [
+          "cloud medium hemisphere light",
+          32
+        ],
+        [
+          "cloud layer texture 0",
+          7372800
+        ],
+        [
+          "cloud layer texture 1",
+          7372800
+        ],
+        [
+          "cloud layer texture 2",
+          7372800
+        ],
+        [
+          "cloud layer texture 3",
+          7372800
+        ],
+        [
+          "cloud layer texture 4",
+          7372800
+        ],
+        [
+          "cloud layer texture 5",
+          7372800
+        ],
+        [
+          "cloud detail noise",
+          1198372
+        ],
+        [
+          "cloud layer parameters",
+          368
+        ],
+        [
+          "cloud phase tables",
+          12300
+        ],
+        [
+          "cloud hemisphere light",
+          32
+        ],
+        [
+          "cloud sky overlay",
+          110592
+        ],
+        [
+          "cloud overlay rows",
+          16
+        ]
+      ],
+      "setup_pass_peaks_ns": {},
+      "storage": "slot=0\nday capture=false role=auxiliary resource=ResourceId { index: 73, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=depth resource=ResourceId { index: 98, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=scene resource=ResourceId { index: 99, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=motion resource=ResourceId { index: 100, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=reactive resource=ResourceId { index: 101, owner: () } reason=explicit store usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=resolved exposure resource=ResourceId { index: 113, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=output resource=ResourceId { index: 114, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=auxiliary resource=ResourceId { index: 73, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=depth resource=ResourceId { index: 98, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=scene resource=ResourceId { index: 99, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=motion resource=ResourceId { index: 100, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=reactive resource=ResourceId { index: 101, owner: () } reason=explicit store usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=resolved exposure resource=ResourceId { index: 113, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=output resource=ResourceId { index: 114, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nunique textures/nominal bytes=(7, 89997314) fallback-only bytes=0; retained generations accounted by FrameHost\nslot=1\nday capture=false role=auxiliary resource=ResourceId { index: 73, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=depth resource=ResourceId { index: 98, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=scene resource=ResourceId { index: 99, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=motion resource=ResourceId { index: 100, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=reactive resource=ResourceId { index: 101, owner: () } reason=explicit store usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=resolved exposure resource=ResourceId { index: 113, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=output resource=ResourceId { index: 114, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=auxiliary resource=ResourceId { index: 73, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=depth resource=ResourceId { index: 98, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=scene resource=ResourceId { index: 99, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=motion resource=ResourceId { index: 100, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=reactive resource=ResourceId { index: 101, owner: () } reason=explicit store usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=resolved exposure resource=ResourceId { index: 113, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=output resource=ResourceId { index: 114, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nunique textures/nominal bytes=(7, 89997314) fallback-only bytes=0; retained generations accounted by FrameHost",
+      "view": [
+        35.0,
+        246.0,
+        16.0
+      ],
+      "view_angles": {
+        "pitch_degrees": 10.0,
+        "start_solar_hours": 6.947723865509033,
+        "start_sun_elevation_degrees": 10.000000953674316,
+        "yaw_degrees": 79.8441162109375
+      },
+      "whole_frame_gpu_ns": 109860036.6125,
+      "selection": "ground-clear"
+    },
+    {
+      "adapter": "AdapterInfo { name: \"Apple M3 Max\", vendor: 0, device: 0, device_type: IntegratedGpu, device_pci_bus_id: \"\", driver: \"\", driver_info: \"\", backend: Metal, subgroup_min_size: 4, subgroup_max_size: 64, transient_saves_memory: Some(true), limit_bucket: None }",
+      "capture": false,
+      "extent": [
+        2560,
+        1440
+      ],
+      "first_submission": {
+        "pass_gpu_ns": {
+          "atmosphere DFG integration": 1498708.0,
+          "atmosphere aerial perspective": 667917.0,
+          "atmosphere diffuse irradiance": 276250.0,
+          "atmosphere ground irradiance": 118750.0,
+          "atmosphere multiple scattering": 791333.0,
+          "atmosphere reflection mip 0": 19000.0,
+          "atmosphere reflection mip 1": 152750.0,
+          "atmosphere reflection mip 2": 251167.0,
+          "atmosphere reflection mip 3": 124125.0,
+          "atmosphere reflection mip 4": 115708.0,
+          "atmosphere reflection mip 5": 106042.0,
+          "atmosphere reflection mip 6": 101708.0,
+          "atmosphere sky view": 65833.0,
+          "atmosphere stars": 11703375.0,
+          "atmosphere transmittance": 23542.0,
+          "camera visibility": 30750.0,
+          "contribution compute": 10333.0,
+          "effect 0: effect 1: cloud weather map": 346791.0,
+          "effect 1: effect 1: cloud Sun path near": 1819125.0,
+          "effect 2: effect 1: cloud Sun path middle": 2527083.0,
+          "effect 3: effect 1: cloud Sun path far": 2377667.0,
+          "effect 4: effect 1: cloud ground field": 47584.0,
+          "effect 5: effect 1: cloud far transmittance": 98000.0,
+          "effect 6: effect 1: cloud ground band": 123750.0,
+          "effect 7: effect 1: cloud medium coefficients": 51000.0,
+          "effect 8: effect 1: cloud sky overlay": 363417.0,
+          "effect after 0: effect 1: cloud trace": 25328000.0,
+          "effect after 1: effect 1: cloud resolve": 126417.0,
+          "effect after 2: effect 1: cloud compose": 24030084.0,
+          "synthetic Sun horizon heights": 78333.0,
+          "synthetic Sun shadow far": 64292.0,
+          "synthetic Sun shadow near": 55375.0,
+          "synthetic cluster build": 4667.0,
+          "synthetic exposure resolve": 8125.0,
+          "synthetic forward opaque": 1702167.0,
+          "synthetic tone encode": 24077500.0,
+          "synthetic transform history": 99584.0,
+          "temporal exposure texture": 1208000.0
+        },
+        "whole_frame_gpu_ns": 100594252.0
+      },
+      "frames": 80,
+      "maximum_sun_refill_ns": 20139374.0,
+      "minimum_volume_instances": null,
+      "pass_gpu_ns": {
+        "atmosphere aerial perspective": 1251641.7,
+        "atmosphere diffuse irradiance": 374927.575,
+        "atmosphere reflection mip 0": 210787.0125,
+        "atmosphere reflection mip 1": 362938.575,
+        "atmosphere reflection mip 2": 430131.7375,
+        "atmosphere reflection mip 3": 277028.075,
+        "atmosphere reflection mip 4": 238455.225,
+        "atmosphere reflection mip 5": 224381.3,
+        "atmosphere reflection mip 6": 187747.4,
+        "atmosphere sky view": 175032.8,
+        "atmosphere stars": 13644264.5625,
+        "camera visibility": 340883.925,
+        "contribution compute": 100564.0125,
+        "effect 0: effect 1: cloud weather map": 321277.125,
+        "effect 1: effect 1: cloud Sun path near": 1081402.1,
+        "effect 2: effect 1: cloud Sun path middle": 972106.2,
+        "effect 3: effect 1: cloud Sun path far": 801488.5125,
+        "effect 4: effect 1: cloud ground field": 260547.375,
+        "effect 5: effect 1: cloud far transmittance": 193516.1625,
+        "effect 6: effect 1: cloud ground band": 362865.6375,
+        "effect 7: effect 1: cloud medium coefficients": 384530.175,
+        "effect 8: effect 1: cloud sky overlay": 395467.1625,
+        "effect after 0: effect 1: cloud trace": 27592347.375,
+        "effect after 1: effect 1: cloud resolve": 667760.425,
+        "effect after 2: effect 1: cloud compose": 29213738.5625,
+        "synthetic Sun horizon heights": 939399.9625,
+        "synthetic Sun shadow far": 1038202.0,
+        "synthetic Sun shadow near": 857103.1125,
+        "synthetic cluster build": 104173.425,
+        "synthetic exposure resolve": 69962.4625,
+        "synthetic forward opaque": 8145576.0,
+        "synthetic tone encode": 30115615.65,
+        "synthetic transform history": 420162.025,
+        "temporal exposure texture": 28175357.7625
+      },
+      "quality": [
+        {
+          "name": "1/cloud weather map cadence",
+          "value": 100
+        },
+        {
+          "name": "1/cloud near Sun path cadence",
+          "value": 100
+        },
+        {
+          "name": "1/cloud middle Sun path cadence",
+          "value": 100
+        },
+        {
+          "name": "1/cloud far Sun path cadence",
+          "value": 100
+        },
+        {
+          "name": "1/cloud refresh exponent",
+          "value": 0
+        },
+        {
+          "name": "1/cloud local light samples",
+          "value": 3
+        },
+        {
+          "name": "1/cloud layer scale",
+          "value": 100
+        },
+        {
+          "name": "1/cloud trace step length",
+          "value": 100
+        },
+        {
+          "name": "1/cloud trace sample cap",
+          "value": 768
+        },
+        {
+          "name": "1/cloud sky overlay cadence",
+          "value": 8
+        }
+      ],
+      "ray_statistics": {
+        "mean_samples": 481.6030707465278,
+        "p95_samples": 726.0,
+        "rays_traced": 921600,
+        "refresh_fraction": 1.0,
+        "refresh_stride": 1,
+        "scope": "last completed capture-off frame, selected fresh texels, readback after timed interval"
+      },
+      "resources": [
+        [
+          "cloud texture 0 Rgba32Float",
+          4194304
+        ],
+        [
+          "cloud texture 1 Rgba32Float",
+          4194304
+        ],
+        [
+          "cloud texture 2 Rgba32Uint",
+          4194304
+        ],
+        [
+          "cloud texture 3 Rgba16Float",
+          12582912
+        ],
+        [
+          "cloud texture 4 Rgba16Float",
+          16777216
+        ],
+        [
+          "cloud texture 5 Rgba16Float",
+          16777216
+        ],
+        [
+          "cloud texture 6 Rgba16Float",
+          8388608
+        ],
+        [
+          "cloud shape noise",
+          9586980
+        ],
+        [
+          "cloud buffer 0",
+          128
+        ],
+        [
+          "cloud buffer 1",
+          128
+        ],
+        [
+          "cloud buffer 2",
+          128
+        ],
+        [
+          "cloud buffer 3",
+          128
+        ],
+        [
+          "cloud buffer 4",
+          160
+        ],
+        [
+          "cloud buffer 5",
+          160
+        ],
+        [
+          "cloud buffer 6",
+          160
+        ],
+        [
+          "cloud buffer 7",
+          160
+        ],
+        [
+          "cloud buffer 8",
+          8192
+        ],
+        [
+          "cloud buffer 9",
+          8192
+        ],
+        [
+          "cloud buffer 10",
+          8192
+        ],
+        [
+          "cloud buffer 11",
+          8192
+        ],
+        [
+          "cloud buffer 12",
+          96
+        ],
+        [
+          "cloud medium coefficient texture",
+          4608000
+        ],
+        [
+          "cloud surface field",
+          1449616
+        ],
+        [
+          "cloud ground frame",
+          64
+        ],
+        [
+          "cloud fog table",
+          128
+        ],
+        [
+          "cloud fog phase tables",
+          8256
+        ],
+        [
+          "cloud ground band",
+          304200
+        ],
+        [
+          "cloud ground band mapping",
+          32
+        ],
+        [
+          "cloud medium hemisphere light",
+          32
+        ],
+        [
+          "cloud layer texture 0",
+          7372800
+        ],
+        [
+          "cloud layer texture 1",
+          7372800
+        ],
+        [
+          "cloud layer texture 2",
+          7372800
+        ],
+        [
+          "cloud layer texture 3",
+          7372800
+        ],
+        [
+          "cloud layer texture 4",
+          7372800
+        ],
+        [
+          "cloud layer texture 5",
+          7372800
+        ],
+        [
+          "cloud detail noise",
+          1198372
+        ],
+        [
+          "cloud layer parameters",
+          368
+        ],
+        [
+          "cloud phase tables",
+          12300
+        ],
+        [
+          "cloud hemisphere light",
+          32
+        ],
+        [
+          "cloud sky overlay",
+          110592
+        ],
+        [
+          "cloud overlay rows",
+          16
+        ]
+      ],
+      "setup_pass_peaks_ns": {},
+      "storage": "slot=0\nday capture=false role=auxiliary resource=ResourceId { index: 73, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=depth resource=ResourceId { index: 98, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=scene resource=ResourceId { index: 99, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=motion resource=ResourceId { index: 100, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=reactive resource=ResourceId { index: 101, owner: () } reason=explicit store usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=resolved exposure resource=ResourceId { index: 113, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=output resource=ResourceId { index: 114, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=auxiliary resource=ResourceId { index: 73, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=depth resource=ResourceId { index: 98, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=scene resource=ResourceId { index: 99, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=motion resource=ResourceId { index: 100, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=reactive resource=ResourceId { index: 101, owner: () } reason=explicit store usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=resolved exposure resource=ResourceId { index: 113, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=output resource=ResourceId { index: 114, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nunique textures/nominal bytes=(7, 89997314) fallback-only bytes=0; retained generations accounted by FrameHost\nslot=1\nday capture=false role=auxiliary resource=ResourceId { index: 73, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=depth resource=ResourceId { index: 98, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=scene resource=ResourceId { index: 99, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=motion resource=ResourceId { index: 100, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=reactive resource=ResourceId { index: 101, owner: () } reason=explicit store usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=resolved exposure resource=ResourceId { index: 113, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=output resource=ResourceId { index: 114, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=auxiliary resource=ResourceId { index: 73, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=depth resource=ResourceId { index: 98, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=scene resource=ResourceId { index: 99, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=motion resource=ResourceId { index: 100, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=reactive resource=ResourceId { index: 101, owner: () } reason=explicit store usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=resolved exposure resource=ResourceId { index: 113, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=output resource=ResourceId { index: 114, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nunique textures/nominal bytes=(7, 89997314) fallback-only bytes=0; retained generations accounted by FrameHost",
+      "view": [
+        35.0,
+        246.0,
+        16.0
+      ],
+      "view_angles": {
+        "pitch_degrees": 10.0,
+        "start_solar_hours": 6.947723865509033,
+        "start_sun_elevation_degrees": 10.000000953674316,
+        "yaw_degrees": 79.8441162109375
+      },
+      "whole_frame_gpu_ns": 149931383.1125,
+      "selection": "ground-mist-bank"
+    }
+  ],
+  "investigations": {
+    "whole frame": "Off 8.862 ms, declared clear 109.860 ms, and mist with a bank 149.931 ms. Named Ground work: cloud ground band: 0.363 ms, cloud medium coefficients: 0.385 ms, atmosphere aerial perspective: 1.252 ms. The declared-clear control measures the cost of keeping the provider and view volume alive, including surface visibility; occupied minus clear includes marching and lighting the condensate. Device is shared and these figures use capture-off frames.",
+    "atmosphere reflection mip 1": "Same declared pipelines, dimensions and camera: 0.290 ms at zero amount and 0.363 ms with occupied mist and bank. Occupancy adds actual density, Sun-path and in-scatter work while clear skips it. Small or unrelated deltas can include shared load; all measured named passes are retained.",
+    "atmosphere stars": "Same declared pipelines, dimensions and camera: 9.190 ms at zero amount and 13.644 ms with occupied mist and bank. Occupancy adds actual density, Sun-path and in-scatter work while clear skips it. Small or unrelated deltas can include shared load; all measured named passes are retained.",
+    "camera visibility": "Same declared pipelines, dimensions and camera: 0.238 ms at zero amount and 0.341 ms with occupied mist and bank. Occupancy adds actual density, Sun-path and in-scatter work while clear skips it. Small or unrelated deltas can include shared load; all measured named passes are retained.",
+    "effect after 0: effect 1: cloud trace": "Same declared pipelines, dimensions and camera: 16.744 ms at zero amount and 27.592 ms with occupied mist and bank. Occupancy adds actual density, Sun-path and in-scatter work while clear skips it. Small or unrelated deltas can include shared load; all measured named passes are retained.",
+    "effect after 2: effect 1: cloud compose": "Same declared pipelines, dimensions and camera: 18.916 ms at zero amount and 29.214 ms with occupied mist and bank. Occupancy adds actual density, Sun-path and in-scatter work while clear skips it. Small or unrelated deltas can include shared load; all measured named passes are retained.",
+    "synthetic cluster build": "Same declared pipelines, dimensions and camera: 0.069 ms at zero amount and 0.104 ms with occupied mist and bank. Occupancy adds actual density, Sun-path and in-scatter work while clear skips it. Small or unrelated deltas can include shared load; all measured named passes are retained.",
+    "synthetic tone encode": "Same declared pipelines, dimensions and camera: 19.902 ms at zero amount and 30.116 ms with occupied mist and bank. Occupancy adds actual density, Sun-path and in-scatter work while clear skips it. Small or unrelated deltas can include shared load; all measured named passes are retained.",
+    "temporal exposure texture": "Same declared pipelines, dimensions and camera: 17.266 ms at zero amount and 28.175 ms with occupied mist and bank. Occupancy adds actual density, Sun-path and in-scatter work while clear skips it. Small or unrelated deltas can include shared load; all measured named passes are retained."
+  }
+}
