@@ -137,10 +137,16 @@
   work packages by ids that no longer exist (`M12`, `M11`, `M3` and others), so neither could pass; they now use
   the `WP` ids. WP7.1's statement is unchanged. WP7 and WP8 were Not Started.
   [What the exit waits for](DESIGN.md#the-exit-record)
-- 2026-11-26 Planner, from [the design review](../../../.orchestrate/evidence/SHOWCASE/design-review.md) (Must
+- 2026-11-26 Planner, from [a design review](../../../.orchestrate/evidence/SHOWCASE/design-review-8.md) (Must
   Fix 1: WP17 at full screen on the bare valley and WP8.6 on the populated exit in a window could both pass).
   WP8.6 is written again: the Apple recipe row holds the full refresh at full screen over the populated
   flythrough in two takes, with the resolved cooked root, drawable extent, requested rate and presented
   intervals. New WP8.14 keeps the portable flythrough and windowed startup. Took the suggestion on the
   exact-baseline paragraph. WP8 was Not Started.
   [The design section](DESIGN.md#the-full-refresh-at-full-screen-on-the-populated-exit)
+- 2026-11-26 Planner, from [the design review](../../../.orchestrate/evidence/SHOWCASE/design-review.md) (Must
+  Fix 1: WP8.6 wanted an exception for a one-refresh interval a fraction of a nanosecond over 1/120 s). WP8.6
+  and the design now judge by the qualified witness's classification: only a missed refresh, an interval it
+  rounds to two or more refresh periods, needs its place, its evidence and no recurrence in the other take.
+  Raw intervals stay in the record for diagnosis. WP8.14's item is unchanged. WP8 was Not Started.
+  [The rule](DESIGN.md#the-full-refresh-at-full-screen-on-the-populated-exit)

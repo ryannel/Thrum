@@ -377,7 +377,8 @@ whose cooked root is the one the claimed commit cooks, and WP8.8 asks for that.
 
 ### The full refresh at full screen, on the populated exit
 
-Added 26 November 2026, after [the design review](../../../.orchestrate/evidence/SHOWCASE/design-review.md).
+Added 26 November 2026, after [a design review](../../../.orchestrate/evidence/SHOWCASE/design-review-8.md), and
+its rule for a missed refresh after [the next](../../../.orchestrate/evidence/SHOWCASE/design-review.md).
 `APPLE-PRESENTATION` WP17 holds the display's full 120 Hz at full screen on its own route, and its full-screen
 driver runs the bare valley over `moving-v1.json`. The exit scene is another cooked root with 10,000 props on
 it, and its route file declares a 1280×720 render extent for the route check. So WP17 Done and a smooth exit
@@ -395,14 +396,21 @@ directly, in the sitting WP8 already takes with the other builders paused.
   yet tell the game one of these, that is a proposal to its owning module, as for
   [the exit configuration](#the-exit-configuration-one-file-three-rows-reported-and-not-echoed).
 - **The judge.** The presented-time witness `PLATFORM-RUNTIME-MAC` qualified: an OS-reported presented interval
-  for every submission, in multiples of the display's refresh period. `APPLE-PRESENTATION`'s refresh account
+  for every submission, and the witness's own classification of each. `APPLE-PRESENTATION`'s refresh account
   counts the engine's present calls. This counts when frames reached the panel.
-- **What holds means.** Two takes. In each, every presented interval is one refresh period. An interval that is
-  longer is listed with its place on the route, and is excused only when the record shows the delay lay outside
-  the game and no long interval sits at that place in the other take. A long interval the frame's own stages or
-  passes account for, or one that recurs at its place, is the game's: it is fixed and both takes are made again.
-  A proposal to another module does not answer it. Every full-screen take of the sitting is kept and listed with
-  the host's load, so two that hold are not two chosen from many without that being seen.
+- **A missed refresh is what the witness classifies as one.** Real presented times never sit exactly one nominal
+  period apart. In the retained capture-off trace at 120 Hz, two neighbouring drawables were 8,333,333.76 ns
+  apart, a fraction of a nanosecond over 1/120 s, and 238 of the 489 intervals over the marked route were over
+  the nominal period while four spanned a second refresh. So the witness rounds each interval to whole refresh
+  periods, and reports a **missed refresh** where that is two or more. An interval it rounds to one period is
+  one refresh, whichever side of the nominal period it falls. The witness also reports which intervals exceed
+  the nominal period, and the record keeps that and every raw interval for diagnosis. Neither decides anything.
+- **What holds means.** Two takes. In each, an interval the witness counts as one refresh passes with no entry.
+  Each missed refresh is listed with its place on the route, and is excused only when the record shows the delay
+  lay outside the game and no missed refresh sits at that place in the other take. A missed refresh the frame's
+  own stages or passes account for, or one that recurs at its place, is the game's: it is fixed and both takes
+  are made again. A proposal to another module does not answer it. Every full-screen take of the sitting is kept
+  and listed with the host's load, so two that hold are not two chosen from many without that being seen.
 - **If it does not hold.** The first remedy is content, by regenerating, as for
   [risk 1](#risks). A cause in another module's code is handled as
   [defects found in another module's code](#defects-found-in-another-modules-code) says. Accepting less than the
@@ -410,7 +418,8 @@ directly, in the sitting WP8 already takes with the other builders paused.
   with the record, and WP8.6 stays open.
 - **The portable recipe and startup (WP8.14).** The portable row runs the same flythrough at full screen with
   the same record and witness. It is the Mac's fallback recipe and no work package brings it to 120 Hz at the
-  panel's pixel extent, so its record says what it held, and each missed refresh is listed with a cause that is
+  panel's pixel extent, so its record says what it held, and each missed refresh, classified the same way,
+  is listed with a cause that is
   fixed, proposed to its owning module, or shown to lie outside the game. Startup to the first exit-scene frame
   is recorded windowed on both recipes, apart from the full-screen takes, so neither waits on the other.
 
