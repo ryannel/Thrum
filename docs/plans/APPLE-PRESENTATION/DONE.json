@@ -1269,8 +1269,8 @@
           "statement": "Part 5 of the notes gives Thrum's use case from WP12's launch record alone: launch-to-ready for each preparation path, cold and warm, with the machine, the cache conditions and the load that record states, and nothing measured anew. Part 6 sets out the three decisions the conversation on the issue has to settle before a change is written for trunk: who writes the Metal change, which parts of part 3 are offered, and whether the cache header and the archive go as one pull request or two. Each decision has its options, what the patches as they stand support, and the agents' recommendation, marked as theirs. Record: parts 5 and 6 of the notes.",
           "ask": "Does each figure in part 5 equal the figure in WP12's launch record, with that record's conditions beside it? Does each of the three decisions have its options, what the patches support and a recommendation marked as the agents' own? Can a reader who knows wgpu's public API and has not read the patches follow the notes from start to end without opening a patch?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/U1/launch-record-review.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/APPLE-PRESENTATION/U1-review.md"
         },

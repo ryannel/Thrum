@@ -751,3 +751,6 @@ layer profile change. [Metal controls](../../../.orchestrate/evidence/CLOUDS/WP9
   patch applies with the crate path mapped. The archive patch rejects four hunks across dependency features,
   render pipeline creation and adapter feature reporting. The notes recommend offering the header and base
   archive first, with the division of work and the PR structure to be settled upstream by the owner.
+- 2026-11-26 U1 review repair. The briefing now gives the libraries-only default as 44 stage loads across five
+  threads. The D12.4 process log confirms 31 events on the main thread and 13 across the four workers.
+  The publication audit also includes the Guardian auto-review child.
