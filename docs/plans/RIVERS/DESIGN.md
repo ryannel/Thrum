@@ -706,33 +706,77 @@ dependencies. In addition:
   the flow bands and the river's caustics is not held to an f64 reference or to a bound measured first, and
   nor are the rings: WP6.10 compares the step with itself. Parts 1 to 10 are the source of the bounds WP1 to WP3
   were proved with and of WP6.10's carriage figures, and part 12 of its half.
-- **The depth a river writes (WP4.3).** Lead's decision, 26 November 2026, after two reviews failed WP4.3 on
-  one clause: the depth the water writes inside a river stood up to 1.4 mm from `thrum-water-model`'s
-  surface in the first and 5.2 mm in the second, against the 0.040 mm of `WATERS` WP4.1's test. Each of WP4.3's three bounds is now set at the size
-  at which its fault shows, and the draw is held to the map's wet and dry at each wetting:
-  - *The map's rows, at that tolerance.* The map is what the query, the floats and the surface all read
-    ([ruling 2](../ARCHITECTURE.md#seam-rulings-for-rivers)). A wrong sample mix or wetting gauge there is
-    silent in a frame and costly to a game, and a compute pass reads the rows exactly.
-  - *Along a river, within 0.010 m.* 0.040 mm is no bound for a pixel. It is about one single-precision step
-    of a world coordinate at the island's rivers (0.031 mm at 330 m), so a place rebuilt from a frame's depth
+- **The depth a river writes (WP4.3).** Lead's decisions, 26 November 2026. Five reviews failed WP4.3 on one
+  clause, the depth the water writes inside a river, each at a place, a time or a camera the one before had
+  not tried:
+
+  | Review | Reading against the allowance | What it was |
+  |---|---|---|
+  | 1 and 2 | 1.4 mm and 5.2 mm against 0.040 mm | The wrong size of bound for a pixel. Set to 0.010 m (below) |
+  | 3 | 147 mm against 0.010 m, with the swell's choppiness on | A fault, fixed: the draw reads the column where the ray meets the water, and undoes the swell's sideways displacement there as the query does |
+  | 4 | 423 mm against 0.010 m at the tidal mouth in a trade wind | A fault, fixed (below) |
+  | 5 | 19.13 mm against 0.010 m from a bank camera; 0.0056 mm at the same place from above | No fault that shows. The clause was open, and is closed (below) |
+
+  - *The fault at the mouth, and the rule it leaves.* Near a mouth the draw mixed the river's wind-wave motion
+    into the receiving body's, while the body query moved the wind's waves with the river's own current and
+    track. The two surfaces stood up to 0.42 m apart in a trade wind, so a float rode a surface that was not
+    drawn. Through a receiving transition the draw and the query now take one wind-wave phase, the receiving
+    body's, which the prepared join selects; the bulk current is still the map's. After the fix the two agree
+    within 0.077 mm over 180 frames at the review's place, and within 0.231 mm at 143 places for each of four
+    gauge settings. One phase for both readers is the rule: a change to how waves cross a mouth changes the draw
+    and the query together.
+  - *What the fifth review found is not the depth buffer's precision.* The scene's depth is reverse-Z in
+    32-bit float: one step at 7 m is 0.4 µm, and a world coordinate at the island's rivers steps by 0.031 mm.
+    The reading was the same at 1281×721 and at 321×181 (19.13 and 19.14 mm), and from above the same place
+    read 0.0056 mm. It is the residue of the fragment's own search for where an oblique ray meets the waves,
+    which ends after eight steps with its best candidate, on a ray that runs nearly along a wave's face. Two
+    frames of 394 read over 0.010 m. Closing it costs steps in every river pixel, and it does not show: the
+    waves there stand 0.16 m, the float is 0.40 m across and draws 0.33 m, and 19 mm at that camera is 3.5
+    pixels of a 2560×1440 frame. By [the bar](../../../ORCHESTRATE.md#what-is-proved-and-how-hard) the draw
+    passes on its look, and a guard that costs more than its fault is not written.
+  - *Why the clause is closed.* A bound on any pixel from any camera has no end: each review can find one more
+    pose. The clause now names its two cameras, its places and its 7 s, and no other camera, place or time
+    decides it. The look from both cameras is judged by eye, which is the proof that a float sits on the
+    water; the numbers are a guard against a fault of the kinds in the table.
+
+  Each of WP4.3's bounds is set at the size at which its fault shows:
+  - *The map's rows, at the tolerance `WATERS` WP4.1's test states.* The map is what the query, the floats and
+    the surface all read ([ruling 2](../ARCHITECTURE.md#seam-rulings-for-rivers)). A wrong sample mix or wetting
+    gauge there is silent in a frame and costly to a game, and a compute pass reads the rows exactly.
+  - *Along a river from 2 m straight above, within 0.010 m.* 0.040 mm is no bound for a pixel. It is about one
+    single-precision step of a world coordinate at the island's rivers, so a place rebuilt from a frame's depth
     barely resolves it. The drawn surface is a mesh that carries its wave displacement between vertices,
     where the model evaluates each place; the two part by millimetres where the level curves and where the
     swell enters, smoothly, with nothing drawn beside the water to show it. 0.010 m is the size this design
     already works at: between samples the mix is itself up to 5.6 mm from a solve at that level
     ([part 3](#a-river-answers-its-source)), and WP9's off-sample comparison allows 1 cm. At 0.010 m a
     waterline moves at most 0.1 m on a bank of 1 in 10, and a float, which rides at the query's level, sits
-    at most 1 cm off the drawn surface, inside its own bob. The bound still fails water drawn from the wrong
-    sample or off its chart, which is wrong by centimetres. It is read along each river's whole wet length
-    and off the mesh's vertices, because both reviews found their misses between the stations the test had
-    chosen.
+    at most 1 cm off the drawn surface, inside its own bob. This camera holds every fault that does not depend
+    on the view: water drawn from the wrong sample or off its chart, and the two fixed faults in the table,
+    each wrong by centimetres or more from any camera. It is read along each river's whole wet length and off
+    the mesh's vertices, because the first two reviews found their misses between the stations the test had
+    chosen; against `thrum-water-model` with the swell alone, and against the body query with the wind's waves
+    running, since the query is what a float rides and the f64 comparison is run with the wind's cascades cleared.
+  - *Along a river from the bank, within the greater of 0.010 m and 4 pixels.* The camera is the fifth
+    review's: 2 m above the water and 6 m from the place it is aimed at, across and downstream, with a 55°
+    field of view. What a wrong depth can show is the water cutting a float or a bank at the wrong height, and
+    on screen that is the miss in height as the camera sees it. So the allowance is a count of pixels: with
+    `d` the distance from the camera to the place read, `θ` the ray's angle below the horizontal and `ω` the
+    angle one pixel of a 2560×1440 frame takes at that field of view (`2·tan(27.5°)/1440`), it is
+    `max(0.010 m, 4·d·ω / cos θ)`. That is 18.7 mm where the camera is aimed (6.1 m, 19°) and about 21.5 mm at the
+    fifth review's reading (7.1 m away), and it grows with distance and as the view flattens. The count of 4
+    is not derived from precision. The lead ruled the fifth review's reading, 3.5 pixels, no fault, and 4 is
+    that rounded up: about a twentieth of the float's width at that camera, where a search that failed outright
+    would leave the mesh's own depth, off by a share of a 0.16 m wave, or 30 pixels. If the count proves wrong
+    the owner changes it in [the plan](PLAN.md#open-for-the-human); no review widens the cameras.
   - *Either side of each wetting, drawn wet or dry as the map has it.* Design review, 26 November 2026. The
     map's rows can be right and the draw wrong: water drawn in the hollow from the upper sample while the
     ridge is dry is a pool cut off from its source, with every wet place at its height and every join whole.
     So the scene that proves [the wetting gauges](#a-river-answers-its-source) in the map is drawn too, and
-    read at the hollow and along the dry reach at gauges either side of each wetting: where the map has the
-    place dry the water writes nothing above the ground, and where the map has it wet the written depth is
-    within the same 0.010 m. That allowance holds wherever water is drawn, and excuses none drawn where the
-    map has none.
+    read from above at the hollow and along the dry reach at gauges either side of each wetting: where the map
+    has the place dry the water writes nothing above the ground, and where the map has it wet the written
+    depth is within the same 0.010 m. That allowance holds wherever water is drawn, and excuses none drawn
+    where the map has none.
   - *Across each end's edge, at that tolerance.* A step there is a crack along a line, seen from the bank
     however small, and [risk 5](#risks) is this. The step is what the two sides differ by beyond what the
     model's surface differs by between the same two places, so a wave both sides share cancels and the

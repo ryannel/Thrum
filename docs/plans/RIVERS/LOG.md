@@ -272,3 +272,9 @@
 
 - 2026-11-26 WP4 integration with WATERS WP15. The shared island material now takes a vertical datum.
   The river scene supplies its zero datum through the same material constructor as the ordinary island.
+
+- 2026-11-26 Lead: WP4.3 failed a fifth review, on 19.13 mm from a bank camera; the fourth review's 0.42 m
+  phase fault at the tidal mouth is fixed. The depth inside a river is now read from two named cameras at named
+  places and times: 0.010 m from above, the greater of 0.010 m and 4 pixels from the bank, and a new inspection
+  of the floats and the surface. The map's rows and the step at each end keep their tolerance.
+  [Fifth review](../../../.orchestrate/evidence/RIVERS/WP4-review.md) · [the bounds and why](DESIGN.md#proof-and-builder-handoff)

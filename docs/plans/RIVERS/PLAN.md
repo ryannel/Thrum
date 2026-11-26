@@ -9,6 +9,7 @@ Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-bu
 ## Open for the human
 
 - Assumption: aim for about 2 s per fast test when run alone on a quiet Mac. The owner can revise this target.
+- Assumption: from the bank, the depth a river writes may stand 4 pixels of a 2560×1440 frame from the surface a float rides (about 2 cm at 6 to 7 m). The lead ruled the fifth review's reading of 1.9 cm there, 3.5 pixels, no fault; rounding it to 4 is the planner's choice, and [the design](DESIGN.md#proof-and-builder-handoff) gives the reasoning. From above the bound stays 1 cm.
 - Assumption: a waterfall has no mist or spray cloud. Shipped waterfalls have one; here it needs a seam with the weather (`CLOUDS`) that cannot be built until late in its plan. The fall already records what a mist would need.
 - Assumption: "built cohesively" reaches a river's link to its lake, so raising a lake swells its outlet river and its falls, by the outlet's own sill. The whole river answers at once: no rise travels downstream, and nothing floods or bursts.
 - Assumption: a river's flow is still worked out ahead and stored, once for each of a few source levels, never while the game runs. A page in Chrome loads stored rivers and never solves one.
@@ -62,6 +63,8 @@ alone, before and after, in the workspace check's default Nextest build on the M
 ## WP4 On the island a stream runs from a spring through a pool and a narrows to the lake, and a river runs from the lake to the sea; raise the lake and the river swells, and a float rides from the spring to the sea
 
 The island's ground, its channel's cut and `scripts/water_cost.py` and `scripts/check_water_browser.mjs` are `WATERS`'; add the valley, cases and scenes behind the selection and change none of theirs. River files are generated beside the example's cooked content and are not committed. The fall is in the map from here and is drawn in WP6.
+
+WP4.3 was re-planned after its fifth review. What is new to build is the bank camera's readings, the two 7 s series and the views of the floats from above; [the design](DESIGN.md#proof-and-builder-handoff) says why. Nothing asks for a change to the surface's oblique search unless the bank bound or the inspection fails. If the longer series take `river_gpu` past the merge tier's limit, they run in the main tier, because only a whole swell period shows what one frame cannot.
 
 ## WP5 On a windless day the stream still reads as running water: its riffles are rough and glitter, its pools lie glassy, and foam forms below its ledges and behind its rocks and trails away downstream
 
