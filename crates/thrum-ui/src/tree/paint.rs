@@ -112,7 +112,11 @@ impl Tree {
                 entry.elided = run.elided();
                 rows.extend(run.rows(font.sheet, origin, text.tint, text.outline));
             }
-            NodeKind::Overlay | NodeKind::Stack { .. } => {}
+            NodeKind::Overlay
+            | NodeKind::Stack { .. }
+            | NodeKind::Scope(_)
+            | NodeKind::Button(_)
+            | NodeKind::DropTarget(_) => {}
         }
         entry.paint_dirty = false;
         Ok(())

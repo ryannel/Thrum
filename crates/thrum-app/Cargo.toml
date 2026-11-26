@@ -9,7 +9,7 @@ autotests = false
 
 [features]
 browser-capture = []
-interface = ["objc2-app-kit/NSResponder"]
+interface = ["dep:thrum-ui", "objc2-app-kit/NSResponder", "objc2-app-kit/NSPasteboard"]
 creation-counters = ["thrum-render/creation-counters"]
 
 [dependencies]
@@ -17,6 +17,7 @@ thrum-asset-gpu = { path = "../thrum-asset-gpu" }
 thrum-controls = { path = "../thrum-controls" }
 thrum-core = { path = "../thrum-core" }
 thrum-render = { path = "../thrum-render" }
+thrum-ui = { path = "../thrum-ui", optional = true }
 wgpu = { version = "=30.0.1", default-features = false, features = ["std"] }
 
 [target.'cfg(any(target_os = "macos", target_os = "ios"))'.dependencies]

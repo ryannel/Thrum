@@ -1,7 +1,12 @@
 //! Interface paint lists in output pixels.
 
+mod input;
 mod text;
 mod tree;
+pub use input::{
+    Button, ButtonState, Contact, Direction, Event, Held, InputLayout, Intent, Routed, Router,
+    Scope, TextSource,
+};
 pub use text::{Alignment, Elision, RunGlyph, TextError, TextOptions, TextRun};
 pub use tree::{
     Anchor, Axis, Box2, Font, Image, Insets, Node, NodeId, NodeKind, PaintInputs, Size, SizeRule,

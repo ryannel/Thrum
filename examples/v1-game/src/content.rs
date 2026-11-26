@@ -506,9 +506,10 @@ fn selected_interface_text(enabled: bool) -> Result<Option<crate::InterfaceText>
         Err(std::env::VarError::NotPresent) => Ok(None),
         Ok("type") => Ok(Some(crate::InterfaceText::Type)),
         Ok("counting") => Ok(Some(crate::InterfaceText::Counting)),
+        Ok("menu") => Ok(Some(crate::InterfaceText::Menu)),
         Ok("status") => Ok(Some(crate::InterfaceText::Status)),
         Ok("specimen") => Ok(Some(crate::InterfaceText::Specimen)),
-        _ => Err("THRUM_INTERFACE_TEXT must be type, counting, specimen or status".into()),
+        _ => Err("THRUM_INTERFACE_TEXT must be type, counting, specimen, status or menu".into()),
     }
 }
 
@@ -543,7 +544,9 @@ fn selected_interface(enabled: bool) -> Result<(Option<u8>, Option<u32>), String
         scale.or_else(|| {
             (!matches!(
                 selected_interface_text(enabled),
-                Ok(Some(crate::InterfaceText::Status))
+                Ok(Some(
+                    crate::InterfaceText::Status | crate::InterfaceText::Menu
+                ))
             ))
             .then_some(1)
         }),

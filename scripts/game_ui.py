@@ -13,6 +13,7 @@ import subprocess
 import tempfile
 
 import game_ui_status
+import game_ui_menu
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -260,27 +261,34 @@ def font_costs(destination, revision, target, scratch):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("mode", choices=["costs", "window"])
+    parser.add_argument("mode", choices=["costs", "window", "route", "drops"])
     parser.add_argument("--target", required=True, choices=["mac-metal", "chrome-webgpu"])
     parser.add_argument("--output", type=Path)
     parser.add_argument("--fonts", action="store_true")
     parser.add_argument("--layout", action="store_true")
+    parser.add_argument("--events", action="store_true")
     args = parser.parse_args()
     revision = output(["git", "rev-parse", "HEAD"])
     if args.fonts and args.target != "mac-metal":
         parser.error("--fonts requires --target mac-metal")
     if args.mode == "window" and args.target != "mac-metal":
         parser.error("window requires the Mac target")
-    package = "WP3" if args.layout or args.mode == "window" else "WP2" if args.fonts else "WP1"
+    menu = args.events or args.mode in {"route", "drops"}
+    if menu and args.target != "mac-metal":
+        parser.error("route, drops and --events require --target mac-metal")
+    package = "WP4" if menu else "WP3" if args.layout or args.mode == "window" else "WP2" if args.fonts else "WP1"
     scratch = ROOT / f"tmp/game-ui-{package.lower()}"
     scratch.mkdir(parents=True, exist_ok=True)
-    label = "window" if args.mode == "window" else f"costs-{args.target}"
+    label = args.mode if args.mode != "costs" else f"costs-{args.target}"
     destination = args.output or Path(".orchestrate/evidence/GAME-UI") / package / label
     destination = destination.resolve()
     destination.mkdir(parents=True, exist_ok=True)
     target = ROOT / "target"
     with tempfile.TemporaryDirectory(prefix="cost-", dir=scratch) as work:
-        if args.mode == "window":
+        if menu:
+            record = game_ui_menu.run(ROOT, destination, Path(work), revision, FIXED_ENV,
+                                      args.mode, load, digest)
+        elif args.mode == "window":
             record = game_ui_status.windows(ROOT, destination, Path(work), revision, FIXED_ENV)
         elif args.layout:
             record = game_ui_status.costs(ROOT, destination, Path(work), revision, FIXED_ENV,

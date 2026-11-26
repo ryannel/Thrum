@@ -511,7 +511,10 @@ impl GameSetup {
         }
         let world = GameWorld(WorldPort::Inline(Box::new(
             match setup.sprite_rows {
-                Some(count) => WorldDriver::sprite_field(count),
+                Some(count) => WorldDriver::sprite_field(
+                    count,
+                    setup.interface_text == Some(crate::InterfaceText::Menu),
+                ),
                 None => WorldDriver::new(setup.content, RouteOverlay::Off),
             }
             .map_err(FrameError::World)?,

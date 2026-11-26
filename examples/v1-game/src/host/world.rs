@@ -312,10 +312,10 @@ impl WorldDriver {
     }
 
     #[cfg(feature = "proving")]
-    pub(super) fn sprite_field(count: u32) -> Result<Self, String> {
+    pub(super) fn sprite_field(count: u32, interactive: bool) -> Result<Self, String> {
         Self::with_simulation(
             scene::RouteOverlay::Off,
-            crate::sprite_field::simulation(count)?,
+            crate::sprite_field::simulation(count, interactive)?,
             count as usize,
         )
     }

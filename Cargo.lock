@@ -3205,6 +3205,7 @@ dependencies = [
  "thrum-core",
  "thrum-render",
  "thrum-test-support",
+ "thrum-ui",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
@@ -3723,6 +3724,7 @@ name = "v1-game"
 version = "0.1.0"
 dependencies = [
  "bytemuck",
+ "cpu-time",
  "glam",
  "half",
  "image",

@@ -2,6 +2,7 @@
 
 mod admission;
 mod cloud_take;
+mod menu;
 mod native_recovery;
 pub(super) mod scene;
 mod sheet_edits;
@@ -101,6 +102,7 @@ pub(super) fn run(
             | "sprites-scroll"
             | "sprites-sheets"
             | "sprites-status"
+            | "sprites-menu"
     ) {
         return Err("unknown runtime capture scenario".to_owned());
     }
@@ -676,6 +678,7 @@ fn applies_yaw(scenario: &str, active_world: bool) -> bool {
                 | "sprites-field-cost"
                 | "sprites-sheets"
                 | "sprites-status"
+                | "sprites-menu"
                 | "atmosphere-scrub"
                 | "atmosphere-ground-pan"
                 | "sun-settle"
@@ -875,7 +878,7 @@ async fn record(
     if !measure_passes {
         driver.set_timing_requested(false);
     }
-    if scenario == "sprites-status" {
+    if matches!(scenario, "sprites-status" | "sprites-menu") {
         driver
             .host_mut()
             .continuous_source_mut()
@@ -883,6 +886,9 @@ async fn record(
     }
     let (preset_requested, preset_accepted) =
         prepare_parameters(&mut driver, scenario, &mode, haze_take, parity_checkpoint)?;
+    if scenario == "sprites-menu" {
+        menu::warm(&mut driver)?;
+    }
     reset_native_capture(&mut driver);
     let sprite_cost = scenario == "sprites-field-cost";
     let observer_only = sprite_cost
@@ -939,6 +945,8 @@ async fn record(
     }
     let mut clock =
         OpportunityClock::new(origin, requested_hz, timebase).map_err(|error| error.to_string())?;
+    let mut menu_take =
+        (scenario == "sprites-menu" && mode == "realtime").then(menu::Take::default);
     let mut running = false;
     let mut night_variant = false;
     let mut stalled = false;
@@ -971,7 +979,7 @@ async fn record(
     loop {
         if mode == "still"
             || held_sample(scenario)
-            || scenario == "sprites-status" && mode == "fixed"
+            || matches!(scenario, "sprites-status" | "sprites-menu") && mode == "fixed"
         {
             break;
         }
@@ -1001,7 +1009,7 @@ async fn record(
         let work = WorkClock::start().map_err(|e| e.to_string())?;
         let active_world = world_moves(scenario)
             || bank_mover
-            || scenario == "sprites-status" && mode == "realtime";
+            || matches!(scenario, "sprites-status" | "sprites-menu") && mode == "realtime";
         if active_world
             && t >= 1.0
             && (bank_mover || is_route(scenario) || t < world_end)
@@ -1077,6 +1085,9 @@ async fn record(
         } else {
             None
         };
+        if let Some(take) = &mut menu_take {
+            take.dispatch(&mut driver, origin, opportunity.scenario_time)?;
+        }
         let step = WorkClock::start().map_err(|e| e.to_string())?;
         let admission_usage = driver.capture_usage();
         let omissions_before = driver.omissions();
@@ -1170,7 +1181,7 @@ async fn record(
     let writer_result = trace.finish_writer(&mut driver, writer, origin, submitted)?;
     let interval_complete = mode == "still"
         || held_sample(scenario)
-        || scenario == "sprites-status" && mode == "fixed"
+        || matches!(scenario, "sprites-status" | "sprites-menu") && mode == "fixed"
         || (scenario == "exit-stop" && mode == "fixed" && trace.images.len() >= 24)
         || (mode == "fixed" && last_sample_time >= Duration::from_secs(4))
         || (mode == "realtime"
@@ -1229,6 +1240,15 @@ async fn record(
     if let Some(saves) = sheet_saves {
         result["sheet_saves"] = json!(saves.join().map_err(|_| "sheet-save thread panicked")??);
     }
+    if scenario == "sprites-menu" {
+        result["menu"] = driver
+            .game()
+            .0
+            .menu
+            .as_ref()
+            .map_or(Value::Null, crate::interface_menu::Menu::report);
+        result["menu_actions"] = json!(menu_take.map(|take| take.events));
+    }
     result["observer_only"] = json!(observer_only);
     result["world_overload_recoveries"] = json!(trace.world_overload_recoveries);
     result["interval_complete"] = json!(interval_complete);
@@ -1248,6 +1268,7 @@ fn is_motion_capture(scenario: &str) -> bool {
             scenario,
             "exit-route"
                 | "sprites-status"
+                | "sprites-menu"
                 | "sprites-sheets"
                 | "sun-settle"
                 | "sun-cut"
@@ -1279,10 +1300,14 @@ fn capture_game(
     let mut cooked = super::CaptureCooked::new(output, capture_output);
     let preview = (scenario == "content-edits").then(super::ContentPreviewCapture::default);
     cooked.preview.clone_from(&preview);
-    let game = super::capture_game_with_route_limit(
+    let mut game = super::capture_game_with_route_limit(
         matches!(scenario, "clouds-route" | "exit-route"),
         Some(cooked),
     )?;
+    if scenario == "sprites-menu" {
+        game.0.menu = Some(menu::setup()?);
+        game.0.interface_text = Some(crate::InterfaceText::Menu);
+    }
     Ok((game, preview))
 }
 
@@ -1588,6 +1613,7 @@ fn scenario_bounds(scenario: &str, recovery: super::NativeRecovery) -> (f64, f64
     match scenario {
         "sprites-field-cost" => (11.5, 10.0, 10.0),
         "sprites-status" => (6.75, 5.75, 5.75),
+        "sprites-menu" => (4.9, 4.4, 4.2),
         "sprites-scroll" => (5.5, 4.75, 4.25),
         "sprites-sheets" => (7.25, 6.25, 6.0),
         "clouds-drift" => (22.5, 22.0, 21.0),

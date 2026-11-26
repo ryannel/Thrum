@@ -11,7 +11,10 @@ use thrum_ui::{
     SpriteRow, TextOptions, TextRun,
 };
 
-use crate::interface_card::Card;
+use crate::{
+    interface_card::Card,
+    interface_menu::{MenuFrame, MenuView},
+};
 
 const TYPE: &str = "type";
 const PIXEL: &str = "pixel";
@@ -26,6 +29,8 @@ pub enum InterfaceText {
     Type,
     /// Health, timer and counters over the moving sprite field.
     Status,
+    /// The interactive choice and join screen.
+    Menu,
     /// Rigid, right-aligned counters and a slowly drifting label.
     Counting,
     /// Small specimen with known glyph strings for submitted-image comparisons.
@@ -43,6 +48,7 @@ pub(crate) struct FontCard {
     forced_scale: Option<u8>,
     measure_updates: bool,
     held_tick: Option<u64>,
+    menu: MenuView,
 }
 
 struct Layout {
@@ -51,6 +57,7 @@ struct Layout {
     value: u64,
     paint: PaintList,
     tree: Option<(crate::interface_status::Appearance, thrum_ui::Tree)>,
+    menu: Option<MenuFrame>,
 }
 
 impl FontCard {
@@ -63,7 +70,7 @@ impl FontCard {
         config.lease_font(TYPE);
         if mode == InterfaceText::Status {
             config.lease_sheet(STATUS);
-        } else {
+        } else if mode != InterfaceText::Menu {
             config.lease_font(PIXEL);
         }
         if mode == InterfaceText::Specimen {
@@ -89,6 +96,7 @@ impl FontCard {
                 forced_scale: scale,
                 measure_updates: false,
                 held_tick: None,
+                menu: MenuView::default(),
             },
             assets,
         ))
@@ -112,7 +120,11 @@ impl FontCard {
         )]
         let source = Arc::new(self.lease.clone());
         config.cooked = Some(InterfaceSheets {
-            names: [TYPE, second].map(str::to_owned).into(),
+            names: if self.mode == InterfaceText::Menu {
+                vec![TYPE.to_owned()]
+            } else {
+                [TYPE, second].map(str::to_owned).into()
+            },
             source,
         });
         config
@@ -124,7 +136,7 @@ impl FontCard {
 
     #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
     pub(crate) fn output(&mut self, density: f64, insets: [f64; 4]) {
-        if self.mode == InterfaceText::Status {
+        if matches!(self.mode, InterfaceText::Status | InterfaceText::Menu) {
             self.insets = insets;
             self.density = density;
             if self.forced_scale.is_none() {
@@ -160,9 +172,32 @@ impl FontCard {
             .map(|(_, tree)| tree.stats())
     }
 
+    pub(crate) const fn interactive(&self) -> bool {
+        matches!(self.mode, InterfaceText::Menu)
+    }
+
+    #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+    pub(crate) fn set_menu(&mut self, view: MenuView) {
+        self.menu = view;
+    }
+
+    #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+    pub(crate) fn submitted_menu(&self) -> Option<MenuFrame> {
+        if self.mode != InterfaceText::Menu {
+            return None;
+        }
+        let stamp = self.lease.committed_font()?.stamp;
+        self.prepared
+            .iter()
+            .chain(self.active.iter())
+            .find(|layout| layout.stamp == stamp)?
+            .menu
+            .clone()
+    }
+
     pub(crate) fn paint(&mut self, extent: [u32; 2], tick: u64) -> [Option<PaintList>; 2] {
         let value = match self.mode {
-            InterfaceText::Type => 0,
+            InterfaceText::Type | InterfaceText::Menu => 0,
             InterfaceText::Status => self.held_tick.unwrap_or(tick),
             InterfaceText::Counting => tick,
             InterfaceText::Specimen => tick / 4 % 10,
@@ -177,11 +212,29 @@ impl FontCard {
             self.active = self.prepared.take();
         }
         let view = (self.density, self.insets, self.measure_updates);
+        let menu = (self.mode == InterfaceText::Menu).then(|| self.menu.get());
         let active = committed.as_ref().and_then(|font| {
-            Self::layout(&mut self.active, self.mode, font, extent, value, view).ok()
+            Self::layout(
+                &mut self.active,
+                self.mode,
+                font,
+                extent,
+                value,
+                view,
+                menu.as_ref(),
+            )
+            .ok()
         });
         let prepared = if let Some(font) = self.lease.font_candidate() {
-            match Self::layout(&mut self.prepared, self.mode, &font, extent, value, view) {
+            match Self::layout(
+                &mut self.prepared,
+                self.mode,
+                &font,
+                extent,
+                value,
+                view,
+                menu.as_ref(),
+            ) {
                 Ok(paint) => {
                     self.lease.answer_font(font.stamp, Ok(()));
                     Some(paint)
@@ -206,9 +259,13 @@ impl FontCard {
         extent: [u32; 2],
         value: u64,
         view: (f64, [f64; 4], bool),
+        menu: Option<&Arc<crate::interface_menu::View>>,
     ) -> Result<PaintList, String> {
         if mode == InterfaceText::Status {
             return Self::status(cached, fonts, extent, value, view);
+        }
+        if let Some(menu) = menu {
+            return Self::menu(cached, fonts, extent, (view.0, view.1), menu);
         }
         #[expect(
             clippy::cast_possible_truncation,
@@ -233,7 +290,9 @@ impl FontCard {
             InterfaceText::Type => card.type_card()?,
             InterfaceText::Counting => card.counting_card(value)?,
             InterfaceText::Specimen => card.comparison(value)?,
-            InterfaceText::Status => unreachable!("status uses the retained tree"),
+            InterfaceText::Status | InterfaceText::Menu => {
+                unreachable!("tree-based interface already handled")
+            }
         }
         let paint = card.builder.finish();
         *cached = Some(Layout {
@@ -242,6 +301,41 @@ impl FontCard {
             value,
             paint: paint.clone(),
             tree: None,
+            menu: None,
+        });
+        Ok(paint)
+    }
+    fn menu(
+        cached: &mut Option<Layout>,
+        fonts: &FontCandidate,
+        extent: [u32; 2],
+        (density, insets): (f64, [f64; 4]),
+        view: &Arc<crate::interface_menu::View>,
+    ) -> Result<PaintList, String> {
+        let stamp = fonts.stamp;
+        let viewport = thrum_ui::Viewport {
+            extent,
+            insets: insets.map(|inset| inset * density / f64::from(stamp.scale)),
+            scale: stamp.scale,
+        };
+        if let Some(layout) = cached
+            && layout.stamp == stamp
+            && let Some(frame) = &layout.menu
+            && frame.viewport == viewport
+            && Arc::ptr_eq(&frame.view, view)
+        {
+            return Ok(layout.paint.clone());
+        }
+        let font = fonts.font(TYPE).ok_or("interface menu font is missing")?;
+        let (paint, frame) = crate::interface_menu::paint(Arc::clone(view), font, stamp, viewport)
+            .map_err(|error| error.to_string())?;
+        *cached = Some(Layout {
+            stamp,
+            extent,
+            value: 0,
+            paint: paint.clone(),
+            tree: None,
+            menu: Some(frame),
         });
         Ok(paint)
     }
@@ -317,6 +411,7 @@ impl FontCard {
             value: tick,
             paint: paint.clone(),
             tree: Some((appearance, tree)),
+            menu: None,
         });
         Ok(paint)
     }

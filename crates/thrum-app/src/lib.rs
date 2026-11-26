@@ -31,6 +31,8 @@ pub mod capture_writer;
 mod file_watch;
 pub mod frame;
 mod game;
+#[cfg(feature = "interface")]
+mod interface;
 mod key;
 #[cfg(target_os = "macos")]
 pub mod offscreen;
@@ -57,6 +59,8 @@ pub use game::OutputMetrics;
 #[cfg(not(target_arch = "wasm32"))]
 pub use game::WorldLink;
 pub use game::{Edits, Game, GameError, Gpu, InlineWorld, KeyResponse, Prepared};
+#[cfg(feature = "interface")]
+pub use interface::{ClipboardAccess, interface_key};
 pub use key::KeyCode;
 
 mod config;

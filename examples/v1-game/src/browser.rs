@@ -10,6 +10,8 @@ mod environment;
 #[cfg(feature = "proving")]
 mod governor;
 #[cfg(feature = "proving")]
+mod interface_menu;
+#[cfg(feature = "proving")]
 pub use governor::{GovernorBrowser, create_governor_game};
 #[cfg(feature = "draw-probe")]
 mod light_probe;
@@ -401,9 +403,10 @@ pub async fn create_interface_text_game(
         "counting" => crate::InterfaceText::Counting,
         "specimen" => crate::InterfaceText::Specimen,
         "status" => crate::InterfaceText::Status,
+        "menu" => crate::InterfaceText::Menu,
         _ => {
             return Err(js_error(
-                "interface text card must be type, counting, specimen or status",
+                "interface text card must be type, counting, specimen, status or menu",
             ));
         }
     };
@@ -412,7 +415,11 @@ pub async fn create_interface_text_game(
         crate::GameSetup {
             sprite_scale: Some(2),
             sprite_rows: Some(rows),
-            interface_scale: (mode != crate::InterfaceText::Status).then_some(scale),
+            interface_scale: (!matches!(
+                mode,
+                crate::InterfaceText::Status | crate::InterfaceText::Menu
+            ))
+            .then_some(scale),
             interface_text: Some(mode),
             ..crate::GameSetup::default()
         },
@@ -542,6 +549,9 @@ async fn create_game_with_content(
         sprite_store,
         #[cfg(feature = "proving")]
         status_cost: false,
+        #[cfg(feature = "proving")]
+        menu: (setup.interface_text == Some(crate::InterfaceText::Menu))
+            .then(|| crate::interface_menu::Menu::new(false)),
         initial_downlevel: String::new(),
     });
     let page = PageGame::new(

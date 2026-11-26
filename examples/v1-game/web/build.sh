@@ -47,6 +47,7 @@ for page in index route; do
 done
 if [ -n "$mode" ]; then
   cp examples/v1-game/web/temporal.html "$web_output/temporal.html"
+  cp examples/v1-game/web/interface-input.js "$web_output/interface-input.js"
   cp examples/v1-game/web/capture.html examples/v1-game/web/capture.mjs \
     examples/v1-game/web/capture_upload.mjs "$web_output/"
   cp examples/v1-game/routes/*.json "$web_output/"
@@ -57,7 +58,7 @@ if [ -n "$mode" ]; then
   chmod a+r "$witness"
   mv "$witness" "$web_output/temporal-witness.json"
 else
-  rm -f "$web_output/temporal.html" "$web_output/temporal-witness.json"
+  rm -f "$web_output/temporal.html" "$web_output/temporal-witness.json" "$web_output/interface-input.js"
   rm -f "$web_output/capture.html" "$web_output/capture.mjs" "$web_output/capture_upload.mjs"
   for route in examples/v1-game/routes/*.json; do
     name=${route##*/}

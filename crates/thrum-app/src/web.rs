@@ -320,6 +320,12 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
             });
         #[cfg(feature = "interface")]
         let mut reported = self.reported_interface_output;
+        #[cfg(feature = "interface")]
+        let before = self.presented;
+        #[cfg(feature = "interface")]
+        let now = Duration::try_from_secs_f64(timestamp_ms / 1000.0).unwrap_or_default();
+        #[cfg(feature = "interface")]
+        game.interface_tick(now);
         let result = self.frame_with_edits(timestamp_ms, |host, replaced| {
             #[cfg(feature = "interface")]
             if let Some(metrics) = metrics
@@ -333,6 +339,9 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
         #[cfg(feature = "interface")]
         {
             self.reported_interface_output = reported;
+            if self.presented != before {
+                game.interface_submitted(&G::readback(&self.host), self.presented, now);
+            }
         }
         result
     }

@@ -8,6 +8,21 @@ use crate::{
     host::{self, GameScene, GameWorld, Runtime},
 };
 
+#[cfg(feature = "proving")]
+use crate::interface_menu::{Menu, MenuFrame};
+#[cfg(feature = "proving")]
+use std::time::Duration;
+#[cfg(feature = "proving")]
+use thrum_ui::Event;
+
+pub(crate) struct Readback {
+    solar_time: f32,
+    #[cfg(feature = "proving")]
+    menu: Option<MenuFrame>,
+    #[cfg(feature = "proving")]
+    position: Option<[f64; 3]>,
+}
+
 pub(crate) struct HostedGame<T>(pub(crate) T);
 
 pub(crate) trait RuntimeSetup {
@@ -37,6 +52,28 @@ pub(crate) trait RuntimeSetup {
         ControlEdits::default()
     }
 
+    #[cfg(feature = "proving")]
+    fn menu(&self) -> Option<&Menu> {
+        None
+    }
+
+    #[cfg(feature = "proving")]
+    fn menu_mut(&mut self) -> Option<&mut Menu> {
+        None
+    }
+
+    #[cfg(feature = "proving")]
+    fn interface_input(
+        &mut self,
+        event: Event<KeyCode>,
+        now: Duration,
+    ) -> Result<KeyResponse, String> {
+        if let Some(menu) = self.menu_mut() {
+            menu.event(event, now);
+        }
+        Ok(KeyResponse::Input)
+    }
+
     fn key(&mut self, _key: KeyCode, _pressed: bool) -> Result<KeyResponse, String> {
         Ok(KeyResponse::Ignored)
     }
@@ -50,7 +87,7 @@ impl<T: RuntimeSetup> Game for HostedGame<T> {
     type World = GameWorld;
     type Scene = GameScene;
     type Edits = ControlEdits;
-    type Readback = f32;
+    type Readback = Readback;
 
     #[cfg(target_os = "macos")]
     fn hardware_requests(&self) -> &[thrum_render::capabilities::HardwareRequest] {
@@ -99,7 +136,7 @@ impl<T: RuntimeSetup> Game for HostedGame<T> {
 
     #[cfg(feature = "proving")]
     fn wants_interface_output(&self) -> bool {
-        self.0.status_display()
+        self.0.status_display() || self.0.menu().is_some()
     }
 
     #[cfg(feature = "proving")]
@@ -144,12 +181,69 @@ impl<T: RuntimeSetup> Game for HostedGame<T> {
         host::apply_cloud_edits(host, edits.clouds).map_err(GameError::Rejected)
     }
 
-    fn readback(host: &Runtime) -> f32 {
-        T::readback(host)
+    fn readback(host: &Runtime) -> Readback {
+        #[cfg(feature = "proving")]
+        let menu = host.source().submitted_menu();
+        Readback {
+            solar_time: T::readback(host),
+            #[cfg(feature = "proving")]
+            position: menu
+                .as_ref()
+                .and_then(|_| host.world().controlled_position()),
+            #[cfg(feature = "proving")]
+            menu,
+        }
     }
 
-    fn observe(&mut self, time_of_day: f32) {
-        self.0.demo_mut().observe_time(time_of_day);
+    fn observe(&mut self, readback: Readback) {
+        self.0.demo_mut().observe_time(readback.solar_time);
+    }
+
+    #[cfg(feature = "proving")]
+    fn wants_interface_input(&self) -> bool {
+        self.0.menu().is_some()
+    }
+
+    #[cfg(feature = "proving")]
+    fn interface_input(
+        &mut self,
+        event: Event<KeyCode>,
+        now: Duration,
+    ) -> Result<KeyResponse, GameError> {
+        self.0
+            .interface_input(event, now)
+            .map_err(GameError::Rejected)
+    }
+
+    #[cfg(feature = "proving")]
+    fn interface_tick(&mut self, now: Duration) {
+        if let Some(menu) = self.0.menu_mut() {
+            menu.tick(now);
+        }
+    }
+
+    #[cfg(feature = "proving")]
+    fn interface_submitted(&mut self, readback: &Readback, index: u64, now: Duration) {
+        if let (Some(menu), Some(frame)) = (self.0.menu_mut(), readback.menu.as_ref()) {
+            menu.submitted(frame, index, readback.position, now);
+        }
+    }
+
+    #[cfg(all(feature = "proving", target_os = "macos"))]
+    fn interface_witness(&self) -> Option<String> {
+        Some(self.0.menu()?.report().to_string())
+    }
+
+    #[cfg(feature = "proving")]
+    fn take_clipboard_copy(&mut self) -> Option<String> {
+        self.0.menu_mut()?.take_copy()
+    }
+
+    #[cfg(feature = "proving")]
+    fn clipboard_result(&mut self, access: thrum_app::ClipboardAccess, allowed: bool) {
+        if let Some(menu) = self.0.menu_mut() {
+            menu.clipboard(access, allowed);
+        }
     }
 
     fn observe_paused(&mut self, paused: bool) {

@@ -6,6 +6,10 @@ mod display;
 mod display_link;
 pub use display_link::thermal_state;
 mod edit_flow;
+#[cfg(feature = "interface")]
+mod interface;
+#[cfg(feature = "interface")]
+mod interface_script;
 mod profile_recording;
 mod qualification;
 mod qualification_signpost;
@@ -129,6 +133,10 @@ struct App<G: Game> {
     observed_extent: [u32; 2],
     #[cfg(feature = "interface")]
     interface_output: Option<crate::OutputMetrics>,
+    #[cfg(feature = "interface")]
+    interface_input: interface::WindowInput,
+    #[cfg(feature = "interface")]
+    interface_script: Option<interface_script::Script>,
     window_visibility: WindowVisibility,
     surface_generation: Arc<AtomicU64>,
     render_stopped: Arc<AtomicBool>,
@@ -259,6 +267,10 @@ impl<G: WindowGame + 'static> App<G> {
             observed_extent: [0, 0],
             #[cfg(feature = "interface")]
             interface_output: None,
+            #[cfg(feature = "interface")]
+            interface_input: interface::WindowInput::default(),
+            #[cfg(feature = "interface")]
+            interface_script: None,
             window_visibility: WindowVisibility::Visible,
             surface_generation: Arc::new(AtomicU64::new(1)),
             render_stopped: Arc::new(AtomicBool::new(false)),
@@ -550,6 +562,10 @@ impl<G: WindowGame + 'static> App<G> {
         event_loop: &ActiveEventLoop,
         wake: &EventLoopProxy<UserEvent>,
     ) -> Result<(), String> {
+        #[cfg(feature = "interface")]
+        if self.game.wants_interface_input() {
+            self.interface_script = interface_script::Script::from_environment()?;
+        }
         let attributes = self.extent_capture.as_ref().map_or_else(
             || {
                 let attributes =
@@ -824,6 +840,14 @@ impl<G: WindowGame + 'static> App<G> {
                     .configured(reply.platform.surface_format == wgpu::TextureFormat::Rgba16Float);
             }
         }
+        #[cfg(feature = "interface")]
+        if matches!(reply.platform.surface_status, SurfaceStatus::Presented) {
+            self.game.interface_submitted(
+                &reply.platform.readback,
+                self.presented as u64 + 1,
+                self.origin.elapsed(),
+            );
+        }
         if request.is_some_and(|request| self.edits.admits(request)) {
             self.game.observe(reply.platform.readback);
         }
@@ -836,6 +860,8 @@ impl<G: WindowGame + 'static> App<G> {
         match reply.platform.surface_status {
             SurfaceStatus::Presented => {
                 self.presented += 1;
+                #[cfg(feature = "interface")]
+                self.step_interface_script()?;
                 if self.surface_configuration_error.take().is_some() {
                     self.refresh_title();
                 }
@@ -969,6 +995,8 @@ impl<G: WindowGame + 'static> App<G> {
             return Ok(());
         }
         let now = self.origin.elapsed();
+        #[cfg(feature = "interface")]
+        self.game.interface_tick(now);
         self.last_call = now;
         self.callbacks += 1;
         let window = self.window.as_ref().ok_or("window missing")?;
@@ -1622,6 +1650,16 @@ impl<G: WindowGame + 'static> ApplicationHandler<UserEvent> for App<G> {
                 if let PhysicalKey::Code(code) = event.physical_key
                     && let Some(code) = KeyCode::from_winit(code)
                 {
+                    #[cfg(feature = "interface")]
+                    if self.game.wants_interface_input() {
+                        if let Err(error) =
+                            self.interface_key(code, event.state, event.repeat, false)
+                        {
+                            self.error = Some(error);
+                            event_loop.exit();
+                        }
+                        return;
+                    }
                     if code == KeyCode::KeyR && !self.recovery.ready() {
                         if self.recovery.failed()
                             && event.state == ElementState::Pressed
@@ -1658,6 +1696,32 @@ impl<G: WindowGame + 'static> ApplicationHandler<UserEvent> for App<G> {
                 } else {
                     Ok(())
                 }
+            }
+            #[cfg(feature = "interface")]
+            WindowEvent::ModifiersChanged(modifiers) if self.game.wants_interface_input() => {
+                self.interface_input.modifiers = modifiers.state();
+                Ok(())
+            }
+            #[cfg(feature = "interface")]
+            WindowEvent::CursorMoved { position, .. } if self.game.wants_interface_input() => {
+                self.interface_cursor([position.x, position.y])
+            }
+            #[cfg(feature = "interface")]
+            WindowEvent::CursorLeft { .. } if self.game.wants_interface_input() => {
+                self.interface_cursor_left()
+            }
+            #[cfg(feature = "interface")]
+            WindowEvent::MouseInput { state, button, .. } if self.game.wants_interface_input() => {
+                self.interface_mouse(button, state)
+            }
+            #[cfg(feature = "interface")]
+            WindowEvent::Touch(touch) if self.game.wants_interface_input() => {
+                self.interface_touch(touch)
+            }
+            #[cfg(feature = "interface")]
+            WindowEvent::Focused(false) if self.game.wants_interface_input() => {
+                self.interface_input = interface::WindowInput::default();
+                self.interface_event(thrum_ui::Event::Interrupted)
             }
             WindowEvent::Focused(false) => self
                 .game

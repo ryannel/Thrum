@@ -343,7 +343,7 @@ def run(args):
     else:
         environment.pop('THRUM_CAPTURE_OBSERVER_ONLY', None)
     environment['THRUM_CAPTURE_EXTENT'] = ','.join(map(str,extent))
-    if args.case == 'sprites-status':
+    if args.case in ('sprites-status', 'sprites-menu'):
         environment.setdefault('THRUM_CAPTURE_STATUS_DENSITY', '2')
     for option, variable in [('reconstruction','THRUM_RECONSTRUCTION'),('overlay','THRUM_ROUTE_OVERLAY'),('recipe','THRUM_RECIPE')]:
         if getattr(args,option,None) is not None:
@@ -485,7 +485,7 @@ if __name__ == "__main__":
         "atmosphere-scrub", "atmosphere-ground-pan", "clouds-inspect", "clouds-drift", "clouds-wind", "clouds-life-fast",
         *LONG_WEATHER_CASES, "clouds-placed", "clouds-dusk", "clouds-still", "checkpoint", "clouds-route",
         "exit-route", "exit-drift", "exit-stop", "sun-settle", "sun-cut", "sun-set", "sun-motion",
-        "sprites-field", "sprites-field-cost", "sprites-scroll", "sprites-sheets", "sprites-status",
+        "sprites-field", "sprites-field-cost", "sprites-scroll", "sprites-sheets", "sprites-status", "sprites-menu",
     ], default="pan")
     parser.add_argument("--defer", action="store_true", help="record pending evidence; finalize after consecutive sessions")
     parser.add_argument("--finalize", action="store_true", help="decode/hash and finalize a previously recorded session")

@@ -149,7 +149,7 @@
         }
         if (textCard && !spriteStore) throw new Error("The text card requires a cooked font store");
         const interfaceScale = Math.min(3, Math.max(1, Math.round(devicePixelRatio)));
-        const safeProbe = textCard === "status" ? document.createElement("div") : null;
+        const safeProbe = ["status", "menu"].includes(textCard) ? document.createElement("div") : null;
         if (safeProbe) {
           safeProbe.style.cssText = "position:absolute;visibility:hidden;pointer-events:none;" +
             "padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)";
@@ -314,6 +314,14 @@
           document.querySelector("#reload-material").addEventListener("click", loadMaterial);
           await loadMaterial();
         }
+        let menuInput = null;
+        // @proving
+        if (textCard === "menu") {
+          const { mountInterfaceInput } = await import("./interface-input.js");
+          if (probe.has("menu-record")) game.record_menu_events();
+          menuInput = mountInterfaceInput(game, canvas);
+        }
+        // @end
         const movementKeys = new Set(["KeyW", "KeyA", "KeyS", "KeyD", "ArrowUp", "ArrowLeft", "ArrowDown", "ArrowRight"]);
         const updateControls = () => {
           const x = Number(pressed.has("KeyD") || pressed.has("ArrowRight"))
@@ -323,11 +331,15 @@
           game.set_controls(x, y);
         };
         const clearControls = () => {
+          if (menuInput) {
+            menuInput.interrupt();
+            return;
+          }
           pressed.clear();
           updateControls();
         };
         window.addEventListener("keydown", (event) => {
-          if (!movementKeys.has(event.code) || stopped) return;
+          if (menuInput || !movementKeys.has(event.code) || stopped) return;
           if (event.target instanceof Element && event.target.closest("input, button")) return;
           event.preventDefault();
           if (pressed.has(event.code)) return;
@@ -335,7 +347,7 @@
           updateControls();
         });
         window.addEventListener("keyup", (event) => {
-          if (!movementKeys.has(event.code) || stopped) return;
+          if (menuInput || !movementKeys.has(event.code) || stopped) return;
           event.preventDefault();
           if (!pressed.has(event.code)) return;
           pressed.delete(event.code);

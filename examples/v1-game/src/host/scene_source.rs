@@ -515,7 +515,18 @@ impl GameScene {
         self.sheet_stats.clone()
     }
 
-    /// Update the platform density and safe area before painting the status display.
+    #[cfg(all(feature = "proving", any(target_os = "macos", target_arch = "wasm32")))]
+    pub(crate) fn set_menu(&mut self, menu: crate::interface_menu::MenuView) {
+        if let Some(card) = self.font_card.as_mut() {
+            card.set_menu(menu);
+        }
+    }
+
+    #[cfg(all(feature = "proving", any(target_os = "macos", target_arch = "wasm32")))]
+    pub(crate) fn submitted_menu(&self) -> Option<crate::interface_menu::MenuFrame> {
+        self.font_card.as_ref()?.submitted_menu()
+    }
+
     #[cfg(all(feature = "proving", any(target_os = "macos", target_arch = "wasm32")))]
     pub(crate) fn set_interface_output(&mut self, density: f64, insets: [f64; 4]) {
         if let Some(card) = &mut self.font_card {
@@ -812,8 +823,13 @@ impl SceneSource<PublishedPage> for GameScene {
                     tick: page.id().tick,
                 },
             );
-        } else if self.sprite_rows.is_some() {
-            crate::sprite_field::extract(into, page, self.field_sheets.as_ref());
+        } else if let Some(count) = self.sprite_rows {
+            let player = self
+                .font_card
+                .as_ref()
+                .is_some_and(|card| card.interactive())
+                .then_some(count - 1);
+            crate::sprite_field::extract(into, page, self.field_sheets.as_ref(), player);
         }
     }
 

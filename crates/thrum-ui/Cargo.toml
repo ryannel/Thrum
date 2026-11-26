@@ -43,3 +43,15 @@ name = "layout"
 
 [[test]]
 name = "layout_properties"
+
+[[test]]
+name = "routing"
+
+[[test]]
+name = "controls"
+
+[[test]]
+name = "focus"
+
+[[test]]
+name = "drops"

@@ -34,7 +34,7 @@ const MARK: [SpriteRow; 2] = [
     },
 ];
 
-pub(crate) fn simulation(count: u32) -> Result<Simulation, String> {
+pub(crate) fn simulation(count: u32, interactive: bool) -> Result<Simulation, String> {
     let maximum = u32::try_from(ENTITY_COUNT).expect("V1 grid fits in u32");
     let peers = u32::try_from(PEER_COUNT).expect("V1 peer count fits in u32");
     if !(peers..=maximum).contains(&count) {
@@ -50,7 +50,7 @@ pub(crate) fn simulation(count: u32) -> Result<Simulation, String> {
             entity_capacity: count as usize,
             peer_capacity: PEER_COUNT,
             actions_per_frame: 8,
-            movement_speed: 6.0,
+            movement_speed: if interactive { 0.9 } else { 6.0 },
         },
         false,
     )
@@ -82,16 +82,21 @@ pub(crate) fn simulation(count: u32) -> Result<Simulation, String> {
                 slot * 37,
             )
         };
+        let player = interactive && slot + 1 == count;
         sim.seed_drift(
             ComponentEntity {
                 id: StableId(u128::from(slot)),
-                position: drift.at(0),
+                position: if player {
+                    crate::simulation::Position([-1.0, -0.93, 0.0])
+                } else {
+                    drift.at(0)
+                },
                 velocity: Velocity::default(),
                 health: 100,
                 ownership: peer_ownership(count as usize, slot as usize)?,
                 visual: Some(u64::from(group)),
             },
-            Some(drift),
+            (!player).then_some(drift),
         )
         .map_err(|err| format!("sprite field entity {slot}: {err:?}"))?;
     }
@@ -168,6 +173,7 @@ pub(crate) fn extract(
     into: &mut SpriteSink<'_>,
     page: &PublishedPage,
     cooked: Option<&FieldSheets>,
+    player: Option<u32>,
 ) {
     const TINTS: [[f32; 4]; 4] = [
         [0.24, 0.80, 0.69, 1.0],
@@ -203,6 +209,14 @@ pub(crate) fn extract(
             row.tint = [1.0; 4];
             row.flash = [0.0; 4];
             row.additive = 0.0;
+        }
+        if player == Some(handle.slot) {
+            row.sheet = 0;
+            row.frame = 3;
+            row.tint = [1.0, 0.77, 0.19, 1.0];
+            row.additive = 0.2;
+            row.layer = 2;
+            row.scale = [3.0; 2];
         }
         // Every field entity is seeded with a visual for its entire lifetime.
         // The tick page guards the previous position by identity and generation.

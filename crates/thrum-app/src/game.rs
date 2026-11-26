@@ -150,7 +150,7 @@ pub trait Game {
     /// Edits applied by the render owner before a frame.
     type Edits: Edits;
     /// A small value read on the render owner after each job and observed on the main thread.
-    type Readback: Copy + Send + 'static;
+    type Readback: Send + 'static;
 
     /// Explicit launch hardware preferences and requirements, retained on device recovery.
     fn hardware_requests(&self) -> &[thrum_render::capabilities::HardwareRequest] {
@@ -198,6 +198,49 @@ pub trait Game {
     #[cfg(feature = "interface")]
     fn interface_output(&mut self, _output: OutputMetrics) -> Self::Edits {
         Self::Edits::default()
+    }
+
+    /// Opt in to key, pointer, touch and text events from the shell.
+    #[cfg(feature = "interface")]
+    fn wants_interface_input(&self) -> bool {
+        false
+    }
+
+    /// Route a shell event. Positions are in backing pixels and converted by the game
+    /// using the scale of its last submitted interface layout.
+    /// # Errors
+    /// Returns a game input refusal.
+    #[cfg(feature = "interface")]
+    fn interface_input(
+        &mut self,
+        _event: thrum_ui::Event<crate::KeyCode>,
+        _now: Duration,
+    ) -> Result<KeyResponse, GameError> {
+        Ok(KeyResponse::Ignored)
+    }
+
+    /// The full string the game asks the shell to copy.
+    #[cfg(feature = "interface")]
+    fn take_clipboard_copy(&mut self) -> Option<String> {
+        None
+    }
+
+    /// Report whether the shell accepted the clipboard operation.
+    #[cfg(feature = "interface")]
+    fn clipboard_result(&mut self, _access: crate::ClipboardAccess, _allowed: bool) {}
+
+    /// Observe every actual surface submission, even if a newer edit superseded its controls.
+    #[cfg(feature = "interface")]
+    fn interface_submitted(&mut self, _readback: &Self::Readback, _index: u64, _now: Duration) {}
+
+    /// Advance game-owned delays in the interface on the shell's monotonic clock.
+    #[cfg(feature = "interface")]
+    fn interface_tick(&mut self, _now: Duration) {}
+
+    /// Report game-owned observations for the window's input qualification script.
+    #[cfg(all(feature = "interface", target_os = "macos"))]
+    fn interface_witness(&self) -> Option<String> {
+        None
     }
 
     /// The whole desired presentation state, sent again after GPU recovery.

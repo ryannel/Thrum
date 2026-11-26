@@ -1,5 +1,6 @@
 //! Retained interface nodes, point-space boxes and cached paint.
 
+mod input;
 mod layout;
 mod paint;
 
@@ -7,7 +8,7 @@ use std::{collections::BTreeMap, fmt};
 
 use thrum_asset::FontProduct;
 
-use crate::{PaintList, PaintStamp, SpriteRow, TextError, TextOptions};
+use crate::{Button, PaintList, PaintStamp, Scope, SpriteRow, TextError, TextOptions};
 
 /// Stable identity supplied by the game.
 pub type NodeId = u32;
@@ -168,6 +169,12 @@ pub enum NodeKind {
     },
     /// Place children by their anchors.
     Overlay,
+    /// A focus scope using overlay placement.
+    Scope(Scope),
+    /// An activatable control using overlay placement.
+    Button(Button),
+    /// Receives a whole drop in its scope, up to this many Unicode scalar values.
+    DropTarget(usize),
     /// Cooked text.
     Text(Text),
     /// Art drawn into the fitted box.
@@ -403,7 +410,11 @@ impl Tree {
         if !node.children.is_empty()
             && !matches!(
                 node.kind,
-                NodeKind::Stack { .. } | NodeKind::Overlay | NodeKind::Panel(_)
+                NodeKind::Stack { .. }
+                    | NodeKind::Overlay
+                    | NodeKind::Panel(_)
+                    | NodeKind::Scope(_)
+                    | NodeKind::Button(_)
             )
         {
             return Err(TreeError::LeafChildren(id));

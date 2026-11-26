@@ -119,7 +119,6 @@ pub(in crate::window) async fn run(
     if output.exists() {
         return Err("capture output must be a new directory".to_owned());
     }
-    let output = output.to_owned();
     let motion_frames = motion::requested_frames(request)?;
     let moving_route = route::requested(request)?;
     let mut setup = crate::selected_setup()?;
@@ -179,6 +178,7 @@ pub(in crate::window) async fn run(
         held_keys: 0,
         replay_controls: false,
         interface_text: None,
+        menu: None,
         capture_route: None,
         governor_enabled: false,
         capture_eye: None,
@@ -246,7 +246,7 @@ pub(in crate::window) async fn run(
     if let Some(ready) = &creation {
         ready.first_draw(&mut driver, &device, cooked_generation)?;
     }
-    std::fs::create_dir_all(&output).map_err(|error| error.to_string())?;
+    std::fs::create_dir_all(output).map_err(|error| error.to_string())?;
     if let Some((text, _, _)) = &moving_route {
         let overlay = match request.display_overlay.as_deref() {
             None | Some("off") => DisplayOverlay::Off,
@@ -260,7 +260,7 @@ pub(in crate::window) async fn run(
             &queue,
             &mut driver,
             request,
-            &output,
+            output,
             text,
             cooked_generation,
         )?;
@@ -268,12 +268,12 @@ pub(in crate::window) async fn run(
         if let Some(ready) = creation
             && request.creation_proof != Some(CreationProof::Launch)
         {
-            ready.finish(capabilities.site(), driver.host(), &output)?;
+            ready.finish(capabilities.site(), driver.host(), output)?;
         }
         return Ok(());
     }
     if let Some(frames) = motion_frames {
-        return motion::record(&mut driver, request, &output, frames, cooked_generation);
+        return motion::record(&mut driver, request, output, frames, cooked_generation);
     }
     if request.edr_headroom.is_some()
         || matches!(
@@ -286,7 +286,7 @@ pub(in crate::window) async fn run(
         }
         let records = display::record(
             &mut driver,
-            &output,
+            output,
             params.ok_or("submitted stills need parameter files")?,
             request.edr_headroom,
             request.source.as_deref() == Some("submitted-linear"),
@@ -306,10 +306,10 @@ pub(in crate::window) async fn run(
         "cloud_shade": if setup.diagnostic_clouds { "diagnostic stand-in, plane 2000 m, XZ drift [160,40] m/s" } else { "off" },
     });
     if !route_only {
-        capture_diagnostics(host, request, &output, &mut manifest)?;
+        capture_diagnostics(host, request, output, &mut manifest)?;
     }
     if let Some(params) = params {
-        manifest["route"] = serde_json::Value::Array(route(host, &output, params)?);
+        manifest["route"] = serde_json::Value::Array(route(host, output, params)?);
     }
     manifest["world_tick"] = serde_json::json!(host.world().tick());
     std::fs::write(

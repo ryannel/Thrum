@@ -28,6 +28,8 @@ mod hosted;
 #[cfg(feature = "proving")]
 mod interface_card;
 #[cfg(feature = "proving")]
+mod interface_menu;
+#[cfg(feature = "proving")]
 #[doc(hidden)]
 pub mod interface_status;
 #[cfg(feature = "proving")]

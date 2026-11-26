@@ -3,7 +3,7 @@
 macro_rules! physical_keys {
     ($($key:ident),+ $(,)?) => {
         /// A physical key, independent of the platform and active keyboard layout.
-        #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+        #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
         #[non_exhaustive]
         pub enum KeyCode {
             $(

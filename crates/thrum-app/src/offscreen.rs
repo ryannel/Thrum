@@ -281,6 +281,20 @@ impl<G: Game> Offscreen<G> {
         &self.game
     }
 
+    /// Drive the game's ordinary interface router for a headless capture.
+    /// # Errors
+    /// Returns a game input refusal.
+    #[cfg(feature = "interface")]
+    pub fn interface_input(
+        &mut self,
+        event: thrum_ui::Event<crate::KeyCode>,
+    ) -> Result<(), OffscreenError> {
+        self.game
+            .interface_input(event, self.origin.elapsed())
+            .map_err(OffscreenError::Game)?;
+        Ok(())
+    }
+
     /// The game's accepted control values, in engine units, for provenance.
     pub fn controls(&self) -> &thrum_controls::Controls {
         self.game.controls()
@@ -391,6 +405,10 @@ impl<G: Game> Offscreen<G> {
     }
 
     fn drive(&mut self, observation: Duration) -> Result<DriveReport, OffscreenError> {
+        #[cfg(feature = "interface")]
+        if self.game.wants_interface_input() {
+            self.game.interface_tick(observation);
+        }
         apply_frame_edits(&mut self.game, &mut self.host, self.replay_pending)
             .map_err(OffscreenError::Game)?;
         self.replay_pending = false;
@@ -404,7 +422,15 @@ impl<G: Game> Offscreen<G> {
                 }),
             )
             .map_err(OffscreenError::Frame)?;
-        self.game.observe(G::readback(&self.host));
+        let readback = G::readback(&self.host);
+        #[cfg(feature = "interface")]
+        if report.submitted
+            && self.game.wants_interface_input()
+            && let Some(index) = self.last_submission()
+        {
+            self.game.interface_submitted(&readback, index, observation);
+        }
+        self.game.observe(readback);
         Ok(report)
     }
 

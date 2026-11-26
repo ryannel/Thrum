@@ -91,6 +91,8 @@ pub(crate) struct PageGame {
     pub(crate) sprite_store: Option<thrum_asset_gpu::RemoteFeed>,
     #[cfg(feature = "proving")]
     pub(crate) status_cost: bool,
+    #[cfg(feature = "proving")]
+    pub(crate) menu: Option<crate::interface_menu::Menu>,
     pub(crate) initial_downlevel: String,
 }
 
@@ -106,6 +108,16 @@ impl RuntimeSetup for PageGame {
             status_cost: self.status_cost,
             ..ControlEdits::default()
         }
+    }
+
+    #[cfg(feature = "proving")]
+    fn menu(&self) -> Option<&crate::interface_menu::Menu> {
+        self.menu.as_ref()
+    }
+
+    #[cfg(feature = "proving")]
+    fn menu_mut(&mut self) -> Option<&mut crate::interface_menu::Menu> {
+        self.menu.as_mut()
     }
 
     fn demo(&self) -> &GameControls {
@@ -134,7 +146,7 @@ impl RuntimeSetup for PageGame {
         };
         #[cfg(feature = "proving")]
         if let Some(store) = self.sprite_store.take() {
-            let host = self
+            let mut host = self
                 .setup
                 .prepare_with_sheet_source(
                     gpu.device,
@@ -145,6 +157,9 @@ impl RuntimeSetup for PageGame {
                 )
                 .await
                 .map_err(|error| error.to_string())?;
+            if let Some(menu) = &self.menu {
+                host.continuous_source_mut().set_menu(menu.mailbox());
+            }
             return Ok(thrum_app::Prepared::inline(host));
         }
         let host = if let Some(shapes) = self.shapes.take() {

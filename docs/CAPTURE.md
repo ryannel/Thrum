@@ -200,6 +200,21 @@ Use `node scripts/capture_v1_browser.mjs --scene sprites-status --mode realtime 
 for the matching Chrome take. Run `python3 scripts/review_interface_status.py <capture> <review-folder>` to
 check the submitted bar widths and extract native-size crops. Pass the same `--insets` to review an inset take.
 
+### Modal choice and join screen
+
+Select `THRUM_SCENE=interface` and `THRUM_INTERFACE_TEXT=menu` with the same cooked font store.
+The scene opens the choice with M, Join with J and Host with H. On Mac,
+`--join-ticket TICKET` passes the whole launch argument to the join screen. In the browser use
+`?scene=interface&text-card=menu&assets=STORE#TICKET`. The game uses a scripted host and roster
+in this proving scene.
+
+For Mac capture, build `cargo build --release --locked --offline -p v1-game --bin v1-game`
+and run `python3 scripts/review_interface_menu.py --output tmp/menu-review` under the GPU lock.
+The fixed captures use the `sprites-menu` T2 case with `THRUM_CAPTURE_MENU_STATE` taking values
+such as `choice:pressed` and `joining:ticket`. The realtime capture plays a scripted choice
+with the player holding a direction and retains its event times beside the submitted frames.
+The Chrome `interface-modal` check captures the menu through the submitted-output tap at DPR 1 and 2.
+
 ## Artifacts and bounds
 
 `runtime.json` joins opportunities, requested/accepted controls, exact submission IDs, adjacent endpoint ticks,

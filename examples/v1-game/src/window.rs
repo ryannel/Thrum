@@ -251,6 +251,8 @@ pub fn run_window(
             #[cfg(feature = "proving")]
             interface_text,
             #[cfg(feature = "proving")]
+            menu: (interface_text == Some(crate::InterfaceText::Menu)).then(window_menu),
+            #[cfg(feature = "proving")]
             capture_route: governor.route,
             governor_enabled: governor.enabled,
             #[cfg(feature = "proving")]
@@ -294,6 +296,23 @@ fn write_card_texels(output: &std::path::Path) {
     );
 }
 
+#[cfg(feature = "proving")]
+fn window_menu() -> crate::interface_menu::Menu {
+    let mut menu =
+        crate::interface_menu::Menu::new(std::env::var_os("THRUM_UI_EVENT_SCRIPT").is_some());
+    if let Some(ticket) = std::env::args()
+        .skip_while(|arg| arg != "--join-ticket")
+        .nth(1)
+    {
+        menu.launch(
+            ticket,
+            thrum_ui::TextSource::Launch,
+            std::time::Duration::ZERO,
+        );
+    }
+    menu
+}
+
 struct WindowGame {
     /// Solar time and camera controls shared by keys and the panel.
     demo: GameControls,
@@ -302,6 +321,8 @@ struct WindowGame {
     replay_controls: bool,
     #[cfg(feature = "proving")]
     interface_text: Option<crate::InterfaceText>,
+    #[cfg(feature = "proving")]
+    menu: Option<crate::interface_menu::Menu>,
     #[cfg(feature = "proving")]
     capture_route: Option<String>,
     governor_enabled: bool,
@@ -372,6 +393,7 @@ fn capture_game_with_route_limit(
         held_keys: 0,
         replay_controls: false,
         interface_text: None,
+        menu: None,
         scene: None,
         cloud_capture,
         capture_cooked,
@@ -414,6 +436,35 @@ impl RuntimeSetup for WindowGame {
     #[cfg(feature = "proving")]
     fn status_display(&self) -> bool {
         self.interface_text == Some(crate::InterfaceText::Status)
+    }
+
+    #[cfg(feature = "proving")]
+    fn menu(&self) -> Option<&crate::interface_menu::Menu> {
+        self.menu.as_ref()
+    }
+
+    #[cfg(feature = "proving")]
+    fn menu_mut(&mut self) -> Option<&mut crate::interface_menu::Menu> {
+        self.menu.as_mut()
+    }
+
+    #[cfg(feature = "proving")]
+    fn interface_input(
+        &mut self,
+        event: thrum_ui::Event<KeyCode>,
+        now: std::time::Duration,
+    ) -> Result<KeyResponse, String> {
+        let Some(menu) = &mut self.menu else {
+            return Ok(KeyResponse::Ignored);
+        };
+        let before = menu.axes();
+        menu.event(event, now);
+        if let Some(world) = &self.world
+            && before.map(f32::to_bits) != menu.axes().map(f32::to_bits)
+        {
+            world.set_controls(menu.axes())?;
+        }
+        Ok(KeyResponse::Input)
     }
 
     fn demo(&self) -> &GameControls {
@@ -592,6 +643,10 @@ impl RuntimeSetup for WindowGame {
         let origin = Instant::now()
             .checked_sub(offset)
             .ok_or("capture route origin underflow")?;
+        #[cfg(feature = "proving")]
+        if let Some(menu) = &self.menu {
+            host.continuous_source_mut().set_menu(menu.mailbox());
+        }
         let (host, controls) = host.into_threaded(origin, world_advanced)?;
         self.world = Some(controls);
         Ok(Prepared {

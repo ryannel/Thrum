@@ -108,7 +108,7 @@ manifest = "crates/thrum-app/Cargo.toml"
 # step. Generic over a game's runtime; it names no game types and no content package. Its sky kit draws cooked meshes through
 # thrum-asset-gpu and the verified G5 browser client (the engine's shipping residency path), so a creator's scene needs no
 # status or store plumbing of its own.
-allowed_workspace_dependencies = ["thrum-asset", "thrum-asset-gpu", "thrum-controls", "thrum-core", "thrum-render", "thrum-test-support"]
+allowed_workspace_dependencies = ["thrum-asset", "thrum-asset-gpu", "thrum-controls", "thrum-core", "thrum-render", "thrum-test-support", "thrum-ui"]
 
 [packages.thrum-asset]
 manifest = "crates/thrum-asset/Cargo.toml"
@@ -442,8 +442,8 @@ target_cost = "Capture hashes run on the macOS/iOS writer thread. Session proof 
 [external_dependencies.cpu-time]
 requirement = "=1.0.0"
 license = "MIT OR Apache-2.0"
-purpose = "Separate actual render-thread CPU consumption from callback wall time and scheduling waits during capture observer diagnosis"
-target_cost = "macOS offscreen diagnostics: thread CPU clock observations per opportunity, no world-clock authority or GPU work"
+purpose = "Separate thread CPU consumption from scheduling waits for render capture and interface input diagnostics"
+target_cost = "macOS diagnostics only: thread CPU clock observations around capture opportunities and interface routing"
 
 [external_dependencies.cc]
 requirement = "=1.10.0"

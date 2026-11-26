@@ -16,7 +16,7 @@ workspace = true
 
 [features]
 default = ["proving"]
-proving = ["dep:thrum-ui", "thrum-app/interface"]
+proving = ["dep:cpu-time", "dep:thrum-ui", "thrum-app/interface"]
 creation-counters = ["thrum-app/creation-counters"]
 draw-probe = ["proving", "thrum-asset-gpu/draw-probe", "thrum-render/creation-counters"]
 # The browser page's material hook reload (`?material=`), a development control that compiles
@@ -53,6 +53,7 @@ wgpu = { version = "=30.0.1", default-features = false, features = ["std", "wgsl
 wgpu = { version = "=30.0.1", default-features = false, features = ["metal"] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
+cpu-time = { version = "=1.0.0", optional = true }
 thrum-app = { path = "../../crates/thrum-app" }
 
 [target.'cfg(any(target_os = "windows", target_os = "linux", target_os = "android"))'.dependencies]
