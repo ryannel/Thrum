@@ -268,7 +268,7 @@ impl Archive {
         let loaded = identity
             .as_ref()
             .map_err(|cause| *cause)
-            .and_then(|identity| Self::load(device, &path, identity));
+            .and_then(|identity| Self::load(device, &path, identity, repair && !strict));
         match loaded {
             Ok(cache) => Some(Self {
                 cache,
@@ -303,6 +303,7 @@ impl Archive {
         device: &wgpu::Device,
         path: &Path,
         identity: &Identity,
+        repair: bool,
     ) -> Result<wgpu::PipelineCache, &'static str> {
         let file = fs::read(path).map_err(|error| {
             if error.kind() == io::ErrorKind::NotFound {
@@ -315,7 +316,12 @@ impl Archive {
         let validation = device.push_error_scope(wgpu::ErrorFilter::Validation);
         let internal = device.push_error_scope(wgpu::ErrorFilter::Internal);
         report(format_args!("THRUM_METAL_ARCHIVE_IMPORT {}", data.len()));
-        let (cache, outcome) = with_archive_policy(false, || create_cache(device, Some(data)));
+        let create = || create_cache(device, Some(data));
+        let (cache, outcome) = if repair {
+            with_archive_repair(create)
+        } else {
+            with_archive_policy(false, create)
+        };
         let internal = pollster::block_on(internal.pop());
         let validation = pollster::block_on(validation.pop());
         if internal.is_some() {

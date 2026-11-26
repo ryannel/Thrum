@@ -1807,6 +1807,7 @@ impl crate::Device for super::Device {
                 MetalGenericRenderPipelineDescriptor::Standard(d) => {
                     use super::archive::create_pipeline;
                     create_pipeline(
+                        &self.shared.device,
                         desc.cache,
                         |archives| d.setBinaryArchives(archives),
                         |archive| archive.addRenderPipelineFunctionsWithDescriptor_error(&d),
@@ -1823,6 +1824,7 @@ impl crate::Device for super::Device {
                     )
                 }
                 MetalGenericRenderPipelineDescriptor::Mesh(d) => super::archive::create_pipeline(
+                    &self.shared.device,
                     desc.cache.filter(|_| available!(macos = 15.0, ios = 18.0, visionos = 2.0)),
                     |archives| d.setBinaryArchives(archives),
                     |archive| archive.addMeshRenderPipelineFunctionsWithDescriptor_error(&d),
@@ -1912,6 +1914,7 @@ impl crate::Device for super::Device {
             }
 
             let raw = super::archive::create_pipeline(
+                &self.shared.device,
                 desc.cache,
                 |archives| descriptor.setBinaryArchives(archives),
                 |archive| archive.addComputePipelineFunctionsWithDescriptor_error(&descriptor),

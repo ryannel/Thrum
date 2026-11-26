@@ -53,7 +53,9 @@ pub struct PipelineCache {
 
 #[derive(Debug)]
 struct Archive {
-    raw: Option<Retained<NativeArchive>>,
+    read: Vec<Retained<NativeArchive>>,
+    source: Option<Vec<u8>>,
+    output: Option<Retained<NativeArchive>>,
     harvest: bool,
     changed: bool,
     repair_failed: bool,
@@ -64,63 +66,110 @@ struct Archive {
 // descriptor call that searches it. No native reference escapes that call.
 unsafe impl Send for Archive {}
 
+// Metal cannot serialize an imported archive with new entries without losing
+// existing entries. Preserve immutable archive bytes and append each repair as
+// a separate native archive. A single archive still uses the original format.
+const BUNDLE: &[u8] = b"MTLBA\x01\0\0";
+
+fn load_archive(
+    device: &ProtocolObject<dyn MTLDevice>,
+    bytes: &[u8],
+) -> io::Result<Retained<NativeArchive>> {
+    let descriptor = MTLBinaryArchiveDescriptor::new();
+    let file = if bytes.is_empty() {
+        None
+    } else {
+        let file = ArchiveFile::new()?;
+        fs::write(&file.path, bytes)?;
+        descriptor.setUrl(Some(&file.url));
+        Some(file)
+    };
+    let result = device.newBinaryArchiveWithDescriptor_error(&descriptor);
+    drop(file);
+    result.map_err(io::Error::other)
+}
+
+fn load_bundle(
+    device: &ProtocolObject<dyn MTLDevice>,
+    bytes: &[u8],
+) -> io::Result<Vec<Retained<NativeArchive>>> {
+    let Some(mut tail) = bytes.strip_prefix(BUNDLE) else {
+        return Ok(alloc::vec![load_archive(device, bytes)?]);
+    };
+    let invalid = || io::Error::new(io::ErrorKind::InvalidData, "malformed Metal archive bundle");
+    let mut archives = Vec::new();
+    while !tail.is_empty() {
+        let (length, remaining) = tail.split_first_chunk::<8>().ok_or_else(invalid)?;
+        let length = usize::try_from(u64::from_le_bytes(*length)).map_err(|_| invalid())?;
+        let (archive, remaining) = remaining.split_at_checked(length).ok_or_else(invalid)?;
+        if archive.is_empty() {
+            return Err(invalid());
+        }
+        archives.push(load_archive(device, archive)?);
+        tail = remaining;
+    }
+    if archives.is_empty() {
+        return Err(invalid());
+    }
+    Ok(archives)
+}
+
+fn append_segment(bundle: &mut Vec<u8>, archive: &[u8]) {
+    bundle.extend_from_slice(&(archive.len() as u64).to_le_bytes());
+    bundle.extend_from_slice(archive);
+}
+
 impl PipelineCache {
     pub(super) fn new(
         device: &ProtocolObject<dyn MTLDevice>,
         data: Option<&[u8]>,
     ) -> Result<Self, crate::PipelineCacheError> {
-        let load = || {
-            let descriptor = MTLBinaryArchiveDescriptor::new();
-            let file = if let Some(bytes) = data.filter(|bytes| !bytes.is_empty()) {
-                let file = ArchiveFile::new()?;
-                fs::write(&file.path, bytes)?;
-                descriptor.setUrl(Some(&file.url));
-                Some(file)
-            } else {
-                None
-            };
-            let result = device.newBinaryArchiveWithDescriptor_error(&descriptor);
-            drop(file);
-            result.map_err(io::Error::other)
-        };
         if !supported(device) {
             return Err(crate::DeviceError::Unexpected.into());
         }
-        let raw = match load() {
-            Ok(raw) => Some(raw),
-            Err(error) => {
-                log::warn!("opening Metal binary archive: {error}");
-                // wgpu-core treats all HAL cache creation errors as device loss.
-                // Report an unavailable cache separately when the caller handles it.
-                let policy = ARCHIVE_POLICY.with(Cell::get);
-                if policy.is_some_and(|(mode, _)| data.is_some() || mode == Policy::Repair) {
-                    observe(ArchiveOutcome::Unavailable);
-                    None
-                } else {
-                    return Err(crate::DeviceError::Unexpected.into());
-                }
-            }
+        let mut archive = Archive {
+            read: Vec::new(),
+            source: None,
+            output: None,
+            harvest: data.is_none(),
+            changed: false,
+            repair_failed: false,
         };
-        Ok(Self {
-            archive: Mutex::new(Archive {
-                raw,
-                harvest: data.is_none(),
-                changed: false,
-                repair_failed: false,
+        let mode = ARCHIVE_POLICY.with(Cell::get).map(|(mode, _)| mode);
+        let load = match data {
+            Some(bytes) => load_bundle(device, bytes).map(|read| {
+                archive.read = read;
+                if mode == Some(Policy::Repair) {
+                    archive.source = Some(bytes.to_vec());
+                }
             }),
+            None => load_archive(device, &[]).map(|raw| archive.output = Some(raw)),
+        };
+        if let Err(error) = load {
+            log::warn!("opening Metal binary archive: {error}");
+            // wgpu-core treats all HAL cache creation errors as device loss.
+            // Report an unavailable cache separately when the caller handles it.
+            if mode.is_some_and(|mode| data.is_some() || mode == Policy::Repair) {
+                observe(ArchiveOutcome::Unavailable);
+            } else {
+                return Err(crate::DeviceError::Unexpected.into());
+            }
+        }
+        Ok(Self {
+            archive: Mutex::new(archive),
         })
     }
 
     pub(super) fn data(&self) -> Option<Vec<u8>> {
         let archive = self.archive.lock();
-        let raw = archive.raw.as_ref()?;
-        if archive.repair_failed || (!archive.harvest && !archive.changed) {
+        let raw = archive.output.as_ref()?;
+        if archive.repair_failed {
             return None;
         }
         if !archive.changed {
             // Metal cannot serialize an empty archive. An empty payload opens a
             // fresh, read-only native archive on load.
-            return Some(Vec::new());
+            return archive.harvest.then(Vec::new);
         }
         let serialize = || {
             let file = ArchiveFile::new()?;
@@ -128,9 +177,21 @@ impl PipelineCache {
                 .map_err(io::Error::other)?;
             fs::read(&file.path)
         };
-        serialize()
+        let added = serialize()
             .map_err(|error| log::error!("serializing Metal binary archive: {error}"))
-            .ok()
+            .ok()?;
+        let Some(source) = archive.source.as_deref().filter(|bytes| !bytes.is_empty()) else {
+            return Some(added);
+        };
+        let mut bundle = if source.starts_with(BUNDLE) {
+            source.to_vec()
+        } else {
+            let mut bundle = BUNDLE.to_vec();
+            append_segment(&mut bundle, source);
+            bundle
+        };
+        append_segment(&mut bundle, &added);
+        Some(bundle)
     }
 }
 
@@ -208,6 +269,7 @@ fn with_policy<T>(mode: Policy, create: impl FnOnce() -> T) -> (T, ArchiveOutcom
 }
 
 pub(super) fn create_pipeline<T>(
+    device: &ProtocolObject<dyn MTLDevice>,
     cache: Option<&PipelineCache>,
     attach: impl Fn(Option<&NSArray<NativeArchive>>),
     add: impl FnOnce(&NativeArchive) -> Result<(), Retained<NSError>>,
@@ -217,12 +279,12 @@ pub(super) fn create_pipeline<T>(
         return create(MTLPipelineOption::empty());
     };
     let mut archive = cache.archive.lock();
-    let Some(raw) = archive.raw.as_ref() else {
-        observe(ArchiveOutcome::Unavailable);
-        return create(MTLPipelineOption::empty());
-    };
     let mode = ARCHIVE_POLICY.with(Cell::get).map(|(mode, _)| mode);
     if archive.harvest {
+        let Some(raw) = archive.output.as_ref() else {
+            observe(ArchiveOutcome::Unavailable);
+            return create(MTLPipelineOption::empty());
+        };
         if let Err(error) = add(raw) {
             if mode != Some(Policy::Repair) {
                 return Err(error);
@@ -238,8 +300,11 @@ pub(super) fn create_pipeline<T>(
         attach(None);
         return result;
     }
-
-    let archives = NSArray::from_slice(&[&**raw]);
+    if archive.read.is_empty() {
+        observe(ArchiveOutcome::Unavailable);
+        return create(MTLPipelineOption::empty());
+    }
+    let archives = NSArray::from_retained_slice(&archive.read);
     attach(Some(&archives));
     let options = if mode.is_some() {
         MTLPipelineOption::FailOnBinaryArchiveMiss
@@ -269,8 +334,17 @@ pub(super) fn create_pipeline<T>(
     if outcome != ArchiveOutcome::Miss || mode == Policy::Strict {
         return result;
     }
-    if mode == Policy::Repair && !archive.repair_failed {
-        match add(raw) {
+    if mode == Policy::Repair && archive.source.is_some() && !archive.repair_failed {
+        let repair = (|| {
+            if archive.output.is_none() {
+                archive.output = Some(load_archive(device, &[])?);
+            }
+            if let Some(raw) = &archive.output {
+                add(raw).map_err(io::Error::other)?;
+            }
+            Ok::<_, io::Error>(())
+        })();
+        match repair {
             Ok(()) => archive.changed = true,
             Err(error) => {
                 log::warn!("repairing Metal binary archive: {error}");
