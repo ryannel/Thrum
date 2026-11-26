@@ -91,7 +91,7 @@ fn trace_source(
 // occluder that was already in front of the ray does not create a crossing.
 fn trace(
     origin: vec3<f32>, ray: vec3<f32>, interval: vec2<f32>,
-    body: OpticsBody, registered: bool,
+    body: OpticsBody, registered: bool, offset: vec2<f32>,
 ) -> GatherHit {
     if interval.x >= interval.y { return empty_hit(); }
     // The scene's silhouettes need finer brackets over the full reach.
@@ -108,7 +108,7 @@ fn trace(
         let p = origin + ray * t;
         let projected = optics_project(p);
         if projected.z < 0.0 { return empty_hit(); }
-        let hit = gather_at(projected.xy);
+        let hit = gather_at(projected.xy + offset);
         if hit.distance == 0.0 {
             previous = t;
             clear = true;
@@ -130,7 +130,7 @@ fn trace(
             for (var j = 0u; j < refine; j++) {
                 let middle = 0.5 * (left + right);
                 let q = origin + ray * middle;
-                let candidate = gather_at(optics_project(q).xy);
+                let candidate = gather_at(optics_project(q).xy + offset);
                 if candidate.distance > 0.0 && length(q - view.camera_xyz_time.xyz) >= candidate.distance
                     && (registered || trace_source(candidate, origin, body, false)) {
                     right = middle;
@@ -171,7 +171,7 @@ fn trace_bodies(origin: vec3<f32>, ray: vec3<f32>, reach: f32, mask: u32) -> Gat
         remaining &= remaining - 1u;
         let body = optics.bodies[index];
         let interval = box_interval(origin, ray, body, closest);
-        let hit = trace(origin, ray, interval, body, true);
+        let hit = trace(origin, ray, interval, body, true, vec2(0.0));
         if hit.distance > 0.0 {
             closest = dot(hit.point - origin, ray);
             best = hit;
@@ -268,11 +268,49 @@ fn nearby_bank(point: vec3<f32>, uv: vec2<f32>) -> GatherHit {
     return best;
 }
 
+fn foreground_agreement(hit: GatherHit) -> f32 {
+    if hit.distance == 0.0 { return 0.0; }
+    return hit.edge * smoothstep(0.22, 0.4, above_bank(hit.point));
+}
+
+// A steep reflected ray can skip a narrow run of the copied foreground
+// depth and reach mapped ground instead. Resolve a single source from the
+// adjacent projected rays while the bank is known to be occluded. Each
+// candidate still has to agree with the original world-space ray.
+fn trace_scene(
+    origin: vec3<f32>, ray: vec3<f32>, limit: f32, crossing: f32, hidden: bool,
+) -> GatherHit {
+    let scenery = OpticsBody(vec4(0.0), vec4(0.0));
+    var hit = trace(origin, ray, vec2(0.06, limit), scenery, false, vec2(0.0));
+    if !hidden { return hit; }
+    var support = foreground_agreement(hit);
+    if support >= 1.0 { return hit; }
+
+    let range = min(crossing + 0.3, limit);
+    let radius = 1.7 * view_aux.viewport_inv_viewport.zw;
+    let directions = array(vec2(0.0, 1.0), vec2(0.0, -1.0), vec2(1.0, 0.0), vec2(-1.0, 0.0));
+    for (var i = 0u; i < 4u; i++) {
+        let candidate = trace(origin, ray, vec2(0.06, range), scenery, false, directions[i] * radius);
+        let next = foreground_agreement(candidate);
+        if next > support {
+            support = next;
+            hit = candidate;
+            if support >= 1.0 { break; }
+        }
+    }
+    return hit;
+}
+
+struct SceneReflection {
+    layer: ReflectionLayer,
+    sky_visibility: f32,
+}
+
 fn scene_reflection(
     origin: vec3<f32>, ray: vec3<f32>, reach: f32, still: f32, body_layer: ReflectionLayer,
-) -> ReflectionLayer {
+) -> SceneReflection {
     let limit = select(reach, body_layer.along, body_layer.weight >= 1.0);
-    if limit <= 0.06 { return no_reflection(reach); }
+    if limit <= 0.06 { return SceneReflection(no_reflection(reach), 1.0); }
     let crossing = bank_crossing(origin, ray, limit);
     let mapped = crossing < limit;
     let point = origin + ray * crossing;
@@ -291,27 +329,21 @@ fn scene_reflection(
         }
     }
 
-    let scenery = OpticsBody(vec4(0.0), vec4(0.0));
-    var hit = trace(origin, ray, vec2(0.06, limit), scenery, false);
+    var hit = trace_scene(origin, ray, limit, crossing, hidden);
     var along = select(crossing, dot(hit.point - origin, ray), hit.distance > 0.0);
     var border = scene_edge(optics_uv(hit.pixel));
     var strength = hit.edge;
+    var shade = 0.0;
     if hit.distance > 0.0 && mapped {
         let height = above_bank(hit.point);
         let ground = (1.0 - smoothstep(0.20, 0.36, abs(height)))
             * (1.0 - smoothstep(1.0, 2.5, abs(along - crossing)));
-        // With a verified bank behind it, accept the foreground only
-        // inside the projected silhouette. Both opaque materials already
-        // have a source there; grazing march errors must not expose sky.
-        let ground_support = smoothstep(0.35, 0.92, agreement);
-        if ground < 0.5 && ground_support > 0.0 {
-            if hit.edge <= 0.55 {
-                strength *= 1.0 - ground_support;
-            } else {
-                strength = mix(strength, 1.0, ground_support);
-            }
-        }
-        let before = 1.0 - smoothstep(0.0, 0.4, along - crossing);
+        // Depth agreement changes coverage continuously. A confirmed bank
+        // behind the foreground also limits grazing sky through the fringe.
+        let foreground = smoothstep(0.22, 0.45, height);
+        shade = foreground * agreement;
+        strength = mix(strength, smoothstep(0.0, 0.075, strength), foreground);
+        let before = 1.0 - smoothstep(0.25, 0.8, along - crossing);
         if hidden { strength *= max(before, ground); }
         if !hidden && agreement > 0.0 && ground > 0.0 {
             // Close estimates of the same ground refine one lookup.
@@ -327,16 +359,20 @@ fn scene_reflection(
             border = scene_edge(uv);
         }
     }
-    if agreement > 0.0 && (strength <= 0.0 || (hit.edge <= 0.55 && strength < agreement * 0.5)) {
+    if strength <= 0.0 && agreement > 0.0 {
         hit = bank;
         along = crossing;
         strength = agreement;
         border = bank_border;
+        shade = 0.0;
     }
 
     let weight = select(0.0, still * reach_weight(along, reach) * border * strength,
         hit.distance > 0.0);
-    return ReflectionLayer(hit, along, weight);
+    // A partly covered foreground texel over a bank also blocks the
+    // bright grazing sky lobe. Both fades vanish with the reflected source.
+    let sky_visibility = 1.0 - still * reach_weight(along, reach) * border * shade;
+    return SceneReflection(ReflectionLayer(hit, along, weight), sky_visibility);
 }
 
 fn water_optical_paths(
@@ -364,15 +400,23 @@ fn water_optical_paths(
         let weight = reflected.edge * slope_weight * reach_weight(along, reach);
         body = ReflectionLayer(reflected, along, weight);
     }
-    var scene = no_reflection(reach);
+    var scene = SceneReflection(no_reflection(reach), 1.0);
     if optics.reach_slope_scene.z != 0.0 && still > 0.0 && reflected_ray.y > 0.0 {
         scene = scene_reflection(world, reflected_ray, reach, still, body);
     }
+    var background = sky;
+    if scene.sky_visibility < 1.0 && scene.layer.weight < 1.0 {
+        let low_sun = 1.0 - smoothstep(0.02, 0.25, environment_sun_direction().y);
+        if low_sun > 0.0 {
+            let upper = fresnel * 0.65 * environment_sky_radiance(vec3(0.0, 1.0, 0.0));
+            background = mix(sky, upper, low_sun * (1.0 - scene.sky_visibility));
+        }
+    }
     var outgoing: vec3<f32>;
-    if body.along < scene.along {
-        outgoing = reflect_layer(body, reflect_layer(scene, sky, fresnel), fresnel);
+    if body.along < scene.layer.along {
+        outgoing = reflect_layer(body, reflect_layer(scene.layer, background, fresnel), fresnel);
     } else {
-        outgoing = reflect_layer(scene, reflect_layer(body, sky, fresnel), fresnel);
+        outgoing = reflect_layer(scene.layer, reflect_layer(body, background, fresnel), fresnel);
     }
 
     var edge_depth = depth;
