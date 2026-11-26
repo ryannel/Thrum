@@ -1325,7 +1325,7 @@
     {
       "id": "WP10",
       "name": "The twelve accepted cloud volumes and the growing congestus each read as themselves in the finished sky",
-      "status": "not_started",
+      "status": "blocked",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -1383,7 +1383,17 @@
           "verdict": "",
           "review": ""
         }
-      ]
+      ],
+      "blocked": {
+        "reason": "needs_context",
+        "what": "The lead needs to reopen the placed-cloud lighting work so the noon gallery can be fixed and the four remaining target checks completed.",
+        "work": {
+          "commit": "69d530ffef67a7729c59606815dc8ac5f2d88ff7",
+          "branch": "build/clouds",
+          "pushed": false
+        },
+        "handoff": ".orchestrate/evidence/CLOUDS/WP10-handoff.md"
+      }
     },
     {
       "id": "WP14",
