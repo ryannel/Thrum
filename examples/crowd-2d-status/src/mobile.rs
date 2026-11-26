@@ -35,10 +35,16 @@ pub struct MobileInput {
     row_mismatches: u64,
 }
 
+/// Render-owner state for the Crowd camera and its inline clock.
+pub struct MobilePresentation {
+    pan: Arc<Mutex<[f64; 2]>>,
+    clock_started: bool,
+}
+
 impl MobileGame for MobileCrowd {
     type World = CrowdWorld;
     type Scene = StatusScene;
-    type Presentation = Arc<Mutex<[f64; 2]>>;
+    type Presentation = MobilePresentation;
     type Controls = ();
     type Input = MobileInput;
     type Readback = Readback;
@@ -58,7 +64,10 @@ impl MobileGame for MobileCrowd {
         let host = prepare(gpu, self.store.clone().into(), first_stop, qualification).await?;
         Ok(MobilePrepared {
             host,
-            scene: Arc::clone(&pan),
+            scene: MobilePresentation {
+                pan: Arc::clone(&pan),
+                clock_started: false,
+            },
             controls: (),
             input: MobileInput {
                 input: Input::default(),
@@ -80,11 +89,18 @@ impl MobileGame for MobileCrowd {
 
     fn frame(
         host: &mut Host,
-        pan: &mut Self::Presentation,
+        scene: &mut Self::Presentation,
         _: u64,
-        _: Duration,
+        now: Duration,
     ) -> Result<(), GameError> {
-        let latest = pan.try_lock().ok().map(|pan| *pan);
+        // Scene preparation can outlast the inline world's catch-up window.
+        // Start its clock at the first frame rather than at preparation.
+        if !scene.clock_started {
+            host.world_mut().pause()?;
+            host.world_mut().resume(now)?;
+            scene.clock_started = true;
+        }
+        let latest = scene.pan.try_lock().ok().map(|pan| *pan);
         if let Some(latest) = latest {
             host.continuous_source_mut().set_pan(latest);
         }
