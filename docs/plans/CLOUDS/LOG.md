@@ -944,3 +944,11 @@ contribution using the replacement profiles.
   [the noon-relief follow-up](DESIGN.md#the-noon-relief-follow-up) holds its work for the lead to schedule, with
   a motion check under MetalFX and a cost question asked of each Sun. No mechanism or interface changed.
   [What changed for each finding](../../../.orchestrate/evidence/CLOUDS/design-revision-2026-11-26-noon-relief-2.md)
+- 2026-11-26 WP10 ended `NEEDS_CONTEXT`: its finished gallery shows two more shapes flat at noon only, the
+  upper left lobe of congestus-forked and the merged head and middle lobe of fair-head-tail, outside the two
+  named exceptions. Lead: the same cause as the core and the twin turrets (diffuse sunlight into broad lobes
+  at a high Sun), not four defects; excuse noon relief on the broad lobes of any shape whose 10° view passes,
+  and have the follow-up (the lead's "WP21") fix all four and any other shape with the cue to the bar of
+  shipped games, without holding up WP12 or the module's close. Planner: [risk 14](DESIGN.md#risks), WP10.1,
+  WP10.4 and WP12.9 now go by the cue, and [the follow-up](DESIGN.md#the-noon-relief-follow-up) answers for
+  every shape WP10's evidence names. WP10.2 to WP10.5 stand as proved. No mechanism or interface changed.

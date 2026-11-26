@@ -32,7 +32,7 @@ Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-bu
 - Assumption: the fair cumulus's close-up form (shelves, folds, repeated caps) waits for WP17, just before the module closes; every sky until then shows those flaws.
 - Assumption: the module closes only after `APPLE-PRESENTATION`'s governor and MetalFX work packages. Fog waits for `ATMOSPHERE` WP8, and the sea for `WATERS` WP8.
 - Assumption: the game WP20 measures is the release V1 game in its 1920×1080 window, on the Apple recipe with TAAU under the fair preset. WP20 comes before WP8 and pauses every other agent for one attended series of eleven recorded runs.
-- Assumption: the module finishes at WP12 with weak noon relief on the congestus core and the mediocris twin turrets as a listed weakness. The relief work is no work package: [the noon-relief follow-up](DESIGN.md#the-noon-relief-follow-up) holds its investigation and what it must show, and waits for the lead to schedule it (the lead parked it on 26 November).
+- Assumption: the module finishes at WP12 with weak noon relief on broad lobes of library shapes as a listed weakness ([risk 14](DESIGN.md#risks)). The relief work is no work package: [the noon-relief follow-up](DESIGN.md#the-noon-relief-follow-up) holds it, and waits for the lead to schedule it.
 
 ## WP1 The weather over any place and time is computed on the CPU alone, from a clear sky to overcast, and repeats exactly: done
 [review](../../../.orchestrate/evidence/CLOUDS/WP1-review.md)
@@ -92,9 +92,12 @@ so their cadences are WP16.7's, and nothing of Ground is built here.
 `B3-HANDOFF.md` at Broadsides `79637f789` names each shape's intended read and its accepted weaknesses, which
 are not this work package's to fix.
 
-Try no further noon-relief look: [risk 14](DESIGN.md#risks) parks it, outside this module's work packages. `63f4e85794fe` on `build/clouds`
-holds the light to close on, and [its handoff](../../../.orchestrate/evidence/CLOUDS/WP10-handoff.md) the proofs
-of WP10.2, WP10.3 and WP10.5.
+Try no further noon-relief look: [risk 14](DESIGN.md#risks) parks it. `f2bdb692ab3d` on `build/clouds` holds
+the light to close on, and [its handoff](../../../.orchestrate/evidence/CLOUDS/WP10-handoff.md) the proofs of
+WP10.2 to WP10.5, which stand: record them again and capture nothing new for them.
+
+Only WP10.1 is left, and the gallery already taken can pass it: the flat noon lobes the handoff reports are
+risk 14's weakness. Name in the evidence every shape and lobe that shows the cue.
 
 ## WP14 Mist lies in the valley's hollows and fades the land near the camera, in the land's own light
 

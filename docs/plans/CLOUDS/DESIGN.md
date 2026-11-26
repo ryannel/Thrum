@@ -50,10 +50,14 @@ is taken up later from the diagnosis in [risk 14](#risks). Revised twice more th
 [the reviews of that parking](../../../.orchestrate/evidence/CLOUDS/design-review.md) (four findings, then
 three). The relief work is no work package of this module, which is finished when WP12 is Done:
 [the noon-relief follow-up](#the-noon-relief-follow-up) holds its investigation and what it must show, for the
-lead to schedule. Only the congestus core and the mediocris twin turrets are excused, at noon. The follow-up
+lead to schedule. At that revision only the congestus core and the mediocris twin turrets were excused, at
+noon. The follow-up
 is judged by the cues of the bar, with no starting still to beat, and in motion under MetalFX; and its cost is
 recorded under the noon Sun and the 10° Sun, before and after, each Sun answering for the work that runs at
-it. No mechanism and no interface changed.
+it. Revised once more that day on the lead's decision after WP10 found the same cue on congestus-forked and
+fair-head-tail: the four shapes share one cause, so [risk 14](#risks) excuses a flat noon lobe by the cue and
+not by the shape's name, on any shape whose 10° view tells that lobe apart, and the follow-up answers for
+every shape that shows it. No mechanism and no interface changed.
 
 ## The request
 
@@ -1944,24 +1948,34 @@ is judged for the weather sky in WP20's wind series and recorded for the finishe
    `exact-images` verifies every registered image after each merge.
 14. **A high Sun flattens the broad lobes of a placed cloud.** WP10 found it on Metal and in Chrome alike: at
    noon the lower right face of the congestus core, from 40 m, and the left lobe and bridge of the mediocris
-   twin turrets, from 2 m, read as one even grey. The other shapes at noon, and all twelve at a 10° Sun, show
-   their depth. The lead parked the cue on 26 November 2026, after three looks: at the bar of shipped games a
-   high Sun that flattens a broad lobe is plausible. So the weakness is a known limitation, and this module
-   finishes with it: WP10 closes on the light it retained, and WP12 closes the module on that light, with the
-   weakness listed in the maturity ledger (WP12.9). The relief is taken up afterwards by
-   [the noon-relief follow-up](#the-noon-relief-follow-up), which is no work package of this module. Nothing
-   waits for it, the module's close included.
+   twin turrets, from 2 m, read as one even grey. WP10's finished gallery then showed the same on two more
+   shapes at noon, from both heights: the upper left lobe of congestus-forked reads as one even grey, and
+   the head and middle lobe of fair-head-tail merge into one face. All twelve shapes show their depth at a
+   10° Sun, these four included. The lead parked the cue on 26 November 2026, after three looks: at the bar
+   of shipped games a high Sun that flattens a broad lobe is plausible. The lead decided the same day that
+   the four shapes are one cause, the Sun's diffuse light into a broad lobe under a high Sun, and not four
+   defects. So the weakness is a known limitation, and this module finishes with it: WP10 closes on the light
+   it retained, and WP12 closes the module on that light, with the weakness listed in the maturity ledger
+   (WP12.9). The relief is taken up afterwards by [the noon-relief follow-up](#the-noon-relief-follow-up),
+   which is no work package of this module. Nothing waits for it, the module's close included.
 
-   The limitation is those two shapes' at noon, and no other cloud's. In every work package of this module
-   still to build (WP10, WP14 to WP16, WP11, WP17 and WP12), a broad lobe of the congestus core or of the
-   mediocris twin turrets that reads flat at noon fails no inspected item: a reviewer who sees it says so and
-   judges the item's own list. Nothing else is excused. The other ten shapes at noon, and all twelve at a 10°
-   Sun, are held to their shading by the fifth line of WP10.1's list in WP10, and again by the follow-up once
-   the light has changed.
+   The limitation is known by its cue, not by a list of shapes. The cue: at noon a broad lobe of a library
+   shape reads as one even tone, or merges with the lobe beside it, and the same shape seen from the same
+   height at a 10° Sun tells that lobe apart by its shading. The 10° view is the test, because it shows that
+   the voxels hold the relief and only the high Sun's light loses it. In WP10 a noon lobe that shows the cue
+   fails no inspected item, on any of the twelve shapes: the reviewer says which shape and lobe, and judges
+   the rest of the item's list. WP10's evidence names every shape and lobe that shows it, the four above
+   among them. WP10 holds all twelve shapes to their shading at a 10° Sun, so in the work packages after it
+   (WP14 to WP16, WP11, WP17 and WP12) a broad lobe of a library shape that reads flat at noon fails no
+   inspected item either. Nothing else is excused: a broad lobe that reads flat at a 10° Sun fails on any
+   shape, in WP10 by the fifth line of WP10.1's list; and at noon every shape is still held to the other
+   four lines of that list, so one that is no longer recognisable as itself, is lit apart from its
+   neighbours, or shows a box, seam, voxel step or filtering band fails. The follow-up holds every shape to
+   its shading at both Suns once the light has changed.
 
    What WP10 found, in [its handoff](../../../.orchestrate/evidence/CLOUDS/WP10-handoff.md) and
    [its lighting controls](../../../.orchestrate/evidence/CLOUDS/WP10/lighting-controls/README.md), with the
-   light it retained at `63f4e85794fe`:
+   light it retained, on `build/clouds` at `f2bdb692ab3d`:
 
    - The fault is in the Sun's diffuse light. WP10 began with curved arcs on a ridge at noon. Captures of each
      light term alone put them in the solar diffuse term, and the forward lobes and the sky's ambient light
@@ -1981,6 +1995,12 @@ is judged for the weather sky in WP20's wind series and recorded for the finishe
      diffuse light is nearly even across the lobe's faces, and the ambient light reads only the column above
      and below a sample. None of these says how open a point is to the lit cloud and the sky around it, which
      is what tells a crease from a crown.
+   - Not shown by any control: that congestus-forked and fair-head-tail lose their relief to the same term.
+     The controls above were drawn on WP10's ridge view at noon, before the finished gallery showed these
+     two shapes. The lead's decision rests on the pattern, which is relief at a 10° Sun and none at noon on
+     a broad lobe ([the forked lobe](../../../.orchestrate/evidence/CLOUDS/WP10/qualification-forked.md),
+     [the head and tail](../../../.orchestrate/evidence/CLOUDS/WP10/qualification-head-tail.md)), and the
+     follow-up's control is drawn on each shape.
 
 ## The noon-relief follow-up
 
@@ -1996,12 +2016,15 @@ builder who passes it takes the weakness out.
 apart by soft shaded creases and darker sheltered faces under bright crowns, still bright and soft as a whole,
 and in one light with the clouds around it. The relief is judged by those cues and nothing else.
 [WP10's retained noon stills](../../../.orchestrate/evidence/CLOUDS/WP10/lighting-controls/qualified-noon.png)
+and its crops of [the forked lobe](../../../.orchestrate/evidence/CLOUDS/WP10/parked-forked-noon-comparison.png)
+and of [the head and tail](../../../.orchestrate/evidence/CLOUDS/WP10/parked-head-tail-noon-comparison.png)
 say where to look and set no bar. The faces they show as one even grey fail the first two cues of line 1 as
 they stand, so the retained light cannot pass as a remedy, and a view that already meets the cues passes
 without gaining contrast.
 
 **The investigation.** It starts from the cause, as WP17 does: a control on the light terms drawn alone that
-brings out the creases of the two shapes at noon, before any look. [Risk 12](#risks)'s constants come first.
+brings out the creases of each of line 1's shapes at noon, before any look. [Risk 12](#risks)'s constants come
+first.
 The remedy keeps one Sun term for every consumer and one density, keeps a placed cloud and the procedural
 clouds beside it in one light, and leaves the accepted voxels as they are. Shipped hero clouds add terms
 tuned by depth inside the cloud and by height ([Research and selection](#research-and-selection)). A field of
@@ -2015,14 +2038,17 @@ cost record are taken before the light changes.
 It starts after WP12 is Done, so it answers for what its light does to the finished sky. Every line is judged
 with the changed light.
 
-1. **The two shapes stand in relief at noon.** From 2 m and from 40 m on the Mac, the congestus core and the
-   mediocris twin turrets, each alone in WP10's gallery view of it so that no other cloud's relief can pass
-   for its own, show their broad lobes in relief. In each of the four views, on the core's lower right face
-   and on the twin turrets' left lobe and bridge as on the rest of the cloud: neighbouring lobes are told
-   apart by a soft shaded crease; a sheltered face is darker than the crown above it; no arc, band, chain of
-   pale marks or drawn outline shows; and the cloud is still bright, with soft edges. Judged from `fixed`
-   stills, whole and in native-size crops of those faces.
-2. **The accepted looks hold.** From 2 m and from 40 m, the other ten shapes at noon and all twelve at a 10°
+1. **Every shape that lost its relief stands in relief at noon.** The shapes are the congestus core, the
+   mediocris twin turrets, congestus-forked and fair-head-tail, and any other shape WP10's evidence names
+   for [risk 14](#risks)'s cue. From 2 m and from 40 m on the Mac, each alone in WP10's gallery view of it
+   so that no other cloud's relief can pass for its own, they show their broad lobes in relief. In each
+   view, on the faces that read flat (the core's lower right face, the twin turrets' left lobe and bridge,
+   the forked shape's upper left lobe, the head-tail's head and middle lobe, and each lobe WP10's evidence
+   names) as on the rest of the cloud: neighbouring lobes are told apart by a soft shaded crease; a
+   sheltered face is darker than the crown above it; no arc, band, chain of pale marks or drawn outline
+   shows; and the cloud is still bright, with soft edges. Judged from `fixed` stills, whole and in
+   native-size crops of those faces.
+2. **The accepted looks hold.** From 2 m and from 40 m, every other shape at noon and all twelve at a 10°
    Sun pass all five lines of WP10.1's list, with no lobe excused; for line 5, each shape's shaded faces are
    found in [WP10's gallery](../../../.orchestrate/evidence/CLOUDS/WP10/qualification-metal/) and judged as
    they look now, so a remedy cannot flatten a face the gallery shows shaded. A placed cloud among procedural
@@ -2030,7 +2056,7 @@ with the changed light.
    noon and WP5.3's at a 10° and a 4° Sun, and at sunset a library cloud and the procedural clouds beside it
    are in one light. At noon with the placed share at 0, no procedural cloud shows a flaw WP17.1 names.
    Judged from `fixed` stills, and in native-size crops where a library cloud meets a procedural one.
-3. **Chrome agrees.** In Chrome at noon the two shapes pass line 1's list from 2 m and from 40 m, and one
+3. **Chrome agrees.** In Chrome at noon line 1's shapes pass its list from 2 m and from 40 m, and one
    shape of each family passes all five lines of WP10.1's list at noon and at a 10° Sun, with no lobe
    excused. Native-size crops are compared with the Mac's for a difference in outline, base or light.
 4. **The cost is on record where the work runs.** WP10.5's record is taken at a 10° Sun, whose vertical
@@ -2056,10 +2082,11 @@ with the changed light.
 6. **The changed light is stable in motion under MetalFX.** A lobe that shows its crease in a held frame can
    still shimmer when the camera moves, so the stills of lines 1 and 5 do not answer for motion. On the Apple
    recipe with MetalFX resolved, the sky passes WP9.5's list again from WP9.5's `realtime` sequences. Beside
-   them, at the noon Sun of line 1's stills, where the remedy runs, a fast pan and a 40 m walk are taken with
-   the congestus core and the mediocris twin turrets in view. In both, by WP9.5's cues, no cloud shimmers, no
-   cloud edge crawls and no ghost trails a cloud against sky or terrain, and the creases and sheltered faces
-   of line 1 hold still on the two shapes, with no flicker or crawl in their shading. Judged in consecutive
+   them, at the noon Sun of line 1's stills, where the remedy runs, a fast pan and a 40 m walk are taken so
+   that each of line 1's shapes is in view in one pan and one walk, several to a take where the view holds
+   them. In each, by WP9.5's cues, no cloud shimmers, no cloud edge crawls and no ghost trails a cloud
+   against sky or terrain, and the creases and sheltered faces of line 1 hold still on those shapes, with no
+   flicker or crawl in their shading. Judged in consecutive
    frames at 1x, whole and in native-size crops of the faces line 1 names and of each shape's edge.
 
 ## Proof and builder handoff
@@ -2093,10 +2120,10 @@ water scene, WP11.5 uses `scripts/check_water_browser.mjs`.
   reference is there to find a cause, never to pass or fail. Three failed looks on one cue go to the log and
   end `BLOCKED`. The form flaws [risk 2](#risks) names fail no inspected item of a work package built before WP17.
   From WP17 on they fail any inspected item whose view shows one on a procedural fair-weather cloud. A broad
-  lobe of the congestus core or of the mediocris twin turrets that reads flat at noon ([risk 14](#risks))
-  fails no inspected item of this module's work packages, and is judged by
-  [the noon-relief follow-up](#the-noon-relief-follow-up) after them. On any other shape, or at any other
-  Sun, nothing excuses it.
+  lobe of a library shape that reads flat at noon, where the shape's 10° view tells it apart
+  ([risk 14](#risks)), fails no inspected item of this module's work packages, and is judged by
+  [the noon-relief follow-up](#the-noon-relief-follow-up) after them. At a 10° Sun nothing excuses it, on
+  any shape.
 
 ## Open questions
 
