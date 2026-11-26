@@ -3338,10 +3338,10 @@
         "functional_validation": "target_guards_passed",
         "experienced_quality": "builder_inspected_review_owed",
         "scope": "WATERS WP8 adds screen-space reflection, see-through water and registered opaque bodies. Mirror views and under-water transport belong to later work packages.",
-        "correctness": "The gather keeps see-through rectangles when unresolved slopes rule out a scene mirror. Metal covers body admission, exposure, air and cloud shade. A hardware Chrome diagnostic verifies the original environment contribution at partial scene hits over the visible bank.",
+        "correctness": "The gather keeps see-through rectangles when unresolved slopes rule out a scene mirror. Basin reflection admission checks visible tiles against the mapped depth and unresolved slope bound, and Metal verifies that a deep rough basin skips the gather. Metal covers body admission, exposure, air and cloud shade. A hardware Chrome diagnostic verifies the original environment contribution at partial scene hits over the visible bank.",
         "visuals": "Native Metal and hardware Chrome submitted stills cover the shore and reflected pines. Elapsed Metal pans and breeze replays cover loss of reflection sources and increasing roughness.",
         "device": "Apple M3 Max Metal and hardware Chrome WebGPU. The 2560 × 1440 capture-off Metal cost record pairs all seven views with optics disabled and records tripwire investigations under shared load.",
-        "evidence": "../../.orchestrate/evidence/WATERS/WP8/roughness-and-blending/README.md"
+        "evidence": "../../.orchestrate/evidence/WATERS/WP8/basin-admission/README.md"
       },
       "waters_whitewater": {
         "implementation": "partial",

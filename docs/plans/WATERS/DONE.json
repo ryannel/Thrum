@@ -1530,8 +1530,8 @@
           "ask": "Does the test hold the receiving rectangles to rays reflected and refracted on the CPU, from cameras 1 m to 40 m up, on flat water and with waves, including a body whose reflection lies wholly outside its own source rectangle? Does it hold the see-through rectangles to the map's depths and the water type's sight depth?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP8/basin-admission/README.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/WATERS/WP8-review.md"
         },
@@ -1564,7 +1564,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP8/roughness-and-blending/cost-final.json",
+          "evidence": ".orchestrate/evidence/WATERS/WP8/optics-cost-51cf9dd69275.json",
           "verdict": "pass",
           "review": ".orchestrate/evidence/WATERS/WP8-review.md"
         }

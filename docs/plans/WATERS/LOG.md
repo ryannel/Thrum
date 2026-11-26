@@ -1250,3 +1250,9 @@
   hardware Chrome. Metal target checks, original-size Metal and Chrome inspections, elapsed Metal
   pans, and the paired 1440p cost record are retained.
   [Target evidence](../../../.orchestrate/evidence/WATERS/WP8/roughness-and-blending/README.md).
+- 2026-11-26 WP8 basin gather admission. The gather uses the mapped depth of each visible basin tile
+  to bound its unresolved slope, projecting the displaced surface separately from the see-through
+  bed. Mac Metal checks distinguish a deep rough basin with a short wave, a calm basin, a visible
+  mirror-capable shelf and a registered panel. All four WP8 checks pass. The paired 1440p Metal
+  record retains the shared-load tripwires.
+  [Target evidence](../../../.orchestrate/evidence/WATERS/WP8/basin-admission/README.md).
