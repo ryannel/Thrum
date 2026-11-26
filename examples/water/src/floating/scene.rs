@@ -1009,12 +1009,9 @@ impl YardFloat {
         Self { fleet, ground }
     }
 
-    pub(crate) fn install(&self, game: SkyGame, water: &Water) -> SkyGame {
+    pub(crate) fn install(&self, game: SkyGame, bounds: thrum_water::OpticsBodies) -> SkyGame {
         game.with_contribution(
-            Box::new(
-                Draw::new(Arc::clone(&self.fleet), water.optics_bodies(), 1)
-                    .with_float_scale(Self::SCALE),
-            ),
+            Box::new(Draw::new(Arc::clone(&self.fleet), bounds, 1).with_float_scale(Self::SCALE)),
             || ContentStatus::Drawn(1),
         )
     }

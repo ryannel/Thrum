@@ -146,7 +146,7 @@ pub(super) fn input_controls(
                 controls
                     .slider(
                         "rain.stone_left",
-                        "Drop stone into the left puddle",
+                        "Drop a stone into the pothole",
                         0.0..=1.0,
                     )
                     .step(1.0)
@@ -156,7 +156,7 @@ pub(super) fn input_controls(
                 controls
                     .slider(
                         "rain.stone_right",
-                        "Drop stone into the right puddle",
+                        "Drop a stone into the paving puddle",
                         0.0..=1.0,
                     )
                     .step(1.0)
@@ -275,12 +275,13 @@ impl Yard {
         let water_report = water.report();
         let points = self.query_points();
         let game = if self.draw_float {
-            float.install(game, water)
+            float.install(game, water.optics_bodies())
         } else {
             game
         };
         let game = if let Some(marker) = &marker {
-            marker.install(game, water)
+            // The walking marker is a visual cue. The float alone publishes the water's opaque bounds.
+            marker.install(game, thrum_water::OpticsBodies::default())
         } else {
             game
         };

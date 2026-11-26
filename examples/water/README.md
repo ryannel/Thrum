@@ -84,6 +84,15 @@ sill view to flood and drain the second hollow. The island bed is rasterized
 from the same triangles the cooker draws. Regenerate those triangles from
 `python3 examples/water/make_island.py`.
 
+## Rain yard
+
+Run `THRUM_WATER_RAIN=calm ./dev scene examples/water` on Metal or add
+`?rain=calm` to the web scene URL. Raise **Rain time scale** to fill the
+paving puddles, then set **Rain (mm/h)** to zero to hold their levels and
+let the rain rings fade. **Yard view** 8 shows both puddles from eye height.
+Use **Walk through the puddles** to send a marker across the paving, or
+drop a stone into either hollow. Return a control to zero to use it again.
+
 ## Floating bodies
 
 Run `THRUM_WATER_BODIES=gale ./dev scene examples/water` for the craft and eight buoys. Use
