@@ -393,10 +393,10 @@
           "inspect": "Run the comparison yourself and look at its submitted stills of the three rows at each of the six stops, side by side at native size, and at a native-size crop of the grid cell where each pair of rows differs most at each stop. Entries 2 to 7 name what each stop must show: a cue missing from all three rows fails, as one missing from a single row does. 1. At every stop the three rows show the same view: the same terrain, horizon and sky, and the same props and balloons in the same places. 2. Sunrise: the sphere and the rock are in the same places on all three rows, and each casts a long shadow across the lookout, of the same direction and length on all three. 3. Noon: the sphere and the rock are in the same places on all three rows, and each has a short shadow on the ground toward the camera on all three. 4. Sunset with the clear Sun, 17.4 h: the Sun's disk is clear above the west ridge on all three rows, in the same place and of the same size. The view is turned 90\u00b0 from the sphere and the rock, so neither is in the frame. 5. Sunset with the Sun hidden, 17.9 h: on all three rows the west ridge hides the Sun's disk and the sky glows behind the ridge. No row shows the disk. The sphere and the rock are again out of the frame. 6. Twilight: the sphere and the rock are in the same places on all three rows, lit by the sky alone, with the last glow low in the sky. On no row does either cast a shadow from the Sun. 7. Night: on all three rows the ridge line stands against the night sky. No row shows the Sun or a Moon; the scene has no Moon. 8. At every stop sky, ground and props are as bright and of the same colour on each row: no row is visibly lighter, darker or tinted. 9. Anything else one row draws, the others draw in the same place: haze on the far slopes, the sphere's reflection where the sphere is in view, stars at night. 10. Where two rows differ, it is in how an edge, a thin line or a glint is resolved, as when a shipped game's upscaler option is changed, and not in what is drawn or how it is lit.",
           "ask": "Are the rows compared in an encoding all three produce, and does the record say which? Is the median threshold 1.0 at every stop, and were the other thresholds computed by the design's rule in one calibration run and left alone since?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SHOWCASE/WP7/review-fixes/comparison/inspection.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/SHOWCASE/WP7-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP7.6",
@@ -439,10 +439,10 @@
           "lock": "gpu",
           "ask": "Does each late frame have either a cause that is fixed, proposed to its owning module in the log or shown by the record to lie outside the game, or the mark unresolved under load, with the evidence read, kept for WP8.13? Is load alone given as a cause anywhere? Is any row about a quarter slower than WP5's baseline at the same stop, and if so is it explained?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SHOWCASE/WP7/review-fixes/mac-frames/run.json",
           "verdict": "fail",
           "review": ".orchestrate/evidence/SHOWCASE/WP7-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP7.10",
@@ -451,10 +451,10 @@
           "lock": "chrome",
           "ask": "Does each long interval have either a cause that is fixed, proposed to its owning module in the log or shown by the record to lie outside the page, or the mark unresolved under load, with the evidence read, kept for WP8.13? Is load alone given as a cause anywhere?",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/SHOWCASE/WP7/review-fixes/chrome-frames/run.json",
           "verdict": "fail",
           "review": ".orchestrate/evidence/SHOWCASE/WP7-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         }
       ],
       "failed_reviews": 1,

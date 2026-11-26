@@ -207,3 +207,13 @@
 - 2026-11-26 WP7 verified capture-off flythrough and day-cycle records on each row. The latest Mac records
   keep the missed opportunities and named stages that crossed deadlines. Attribution between engine work
   and scheduling remains open for WP8.13. [Timing evidence](../../../.orchestrate/evidence/SHOWCASE/WP7/verified/timing-investigation.md)
+- 2026-11-27 WP7 review repair. The Chrome sizing sweep retains report timing demand and supplied 500 usable rows
+  with the panel profiler off. The interactive profiler still produced live readings. The noon comparison retints
+  the terrain texture, and the fixed thresholds passed. A scratch `exit --compare --refresh-baseline CAUSE
+  --refresh-row mac-apple --baseline PATH` refreshed only the stale noon grid and retained all thresholds.
+  [Review repair evidence](../../../.orchestrate/evidence/SHOWCASE/WP7/review-fixes/README.md)
+- 2026-11-27 WP7 timing repair. The Mac reports each missed deadline's full host present-call gap and all
+  observed render-owner work spanning the deadline. Chrome includes long intervals across route boundaries
+  and identifies page work that accounts for the delay. The real Chrome control caught both timed holds.
+  Timing still unresolved under load is recorded for WP8.13.
+  [Timing investigation](../../../.orchestrate/evidence/SHOWCASE/WP7/review-fixes/timing-investigation.md)
