@@ -431,7 +431,7 @@
       }
     },
     "WP4": {
-      "definitions": "189ec8742f31bb5d2369240511a71686bf02659fbe35ef7d5fbc3c9962f81246",
+      "definitions": "0893c78bafc2f2e8e946acab0d2a353551013f0acb1186da93147da1d984578f",
       "reviews": [
         {
           "verdict": "fail",
@@ -533,8 +533,8 @@
       ],
       "authorised": {
         "by": "plan",
-        "task": "Lead decision on RIVERS WP4.3 (failed review twice on the same clause; see .orchestrate/evidence/RIVERS/WP4-review.md an",
-        "at": "2026-11-26T17:33:50Z"
+        "task": "The design review of RIVERS at .orchestrate/evidence/RIVERS/design-review.md asked for changes, with its 1 Must Fix find",
+        "at": "2026-11-26T18:31:04Z"
       }
     },
     "WP5": {
@@ -855,11 +855,15 @@
     {
       "task": "Lead decision on RIVERS WP4.3 (failed review twice on the same clause; see .orchestrate/evidence/RIVERS/WP4-review.md and WP4-review-1.md in the rivers worktree). Interior submitted river depth differs from the model by up to 1.5-5 mm against a 0.040 mm bound. By the project's bar (plausible shipped-game look; proof proportional to risk) that bound is not meaningful for interior pixels: millimetre errors are invisible, and the bound is near what a reconstructed depth-buffer float can resolve at these distances. Change WP4.3 so interior submitted depth is judged at a visible scale (for example within 1 cm, or a screen-space bound you justify), while the seam and join step checks at the three ends keep their tight bound, since a step there is visible as a crack. Record the reasoning in the design. Leave everything else in WP4 as it is, and leave the builder's branch untouched.",
       "at": "2026-11-26T17:33:50Z"
+    },
+    {
+      "task": "The design review of RIVERS at .orchestrate/evidence/RIVERS/design-review.md asked for changes, with its 1 Must Fix findings.",
+      "at": "2026-11-26T18:31:04Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-26T17:33:50Z"
+    "at": "2026-11-26T18:31:04Z"
   },
   "design_history": [
     {
