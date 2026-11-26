@@ -408,8 +408,13 @@ mod tests {
         let step = Duration::from_micros(16_667);
         let mut merged = false;
         let mut separated = false;
+        let mut first_spill = None;
+        let tree = &yard.patches[PAVING].tree;
+        assert_eq!(tree.hollow_count(), 2, "the paving has two hollows");
+        let sill = tree.node(0).sill;
+        assert_eq!(sill.to_bits(), tree.node(1).sill.to_bits());
         for tick in 1..=1200 {
-            yard.step(Weather::new(100.0, 0.0, 600.0), step, &mut map)
+            yard.step(Weather::new(100.0, 0.0, 150.0), step, &mut map)
                 .expect("rain tick");
             float.advance(tick, &map);
             if let (Some(left), Some(right)) = (wet(&map, pits[0]), wet(&map, pits[1])) {
@@ -419,9 +424,20 @@ mod tests {
                     break;
                 }
                 separated = true;
+                for (hollow, level) in [left.row.level, right.row.level].into_iter().enumerate() {
+                    if (level - sill).abs() < 1e-7 && first_spill.is_none() {
+                        first_spill = Some(hollow);
+                        eprintln!("yard spill from pit {hollow} at {tick} ticks, {sill:.6} m");
+                    }
+                }
             }
         }
         assert!(separated && merged, "both pits fill separately, then join");
+        assert_eq!(
+            first_spill,
+            Some(0),
+            "the lower pit spills into the higher pit first"
+        );
         assert!(float.waterline() > initial_float_line);
         assert!(
             (float.waterline()

@@ -96,7 +96,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
     if yard {
         runtime
             .parameters(&format!(
-                r#"{{"camera.island":{island_view},"rain.rate":0}}"#
+                r#"{{"camera.island":{island_view},"sun.elevation":8,"rain.rate":0}}"#
             ))
             .expect("initial dry yard");
     }
@@ -309,7 +309,8 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
         assert!(
             yard_levels[..merge]
                 .iter()
-                .any(|row| row.iter().all(Option::is_some) && !joined(row))
+                .any(|row| matches!(row, [Some(lower), Some(upper)] if lower > upper)),
+            "the lower hollow spills into the upper hollow before joining"
         );
         assert!(
             yard_levels[merge + 1..]

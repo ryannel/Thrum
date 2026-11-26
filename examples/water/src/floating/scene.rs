@@ -952,7 +952,7 @@ pub(crate) struct YardFloat {
 }
 
 impl YardFloat {
-    const SCALE: f32 = 0.20;
+    const SCALE: f32 = 0.15;
 
     pub(crate) fn new(position: [f64; 2], ground: f64) -> Self {
         let mut initial = Body::new(0, Hull::Float, position, ground, 0.0);

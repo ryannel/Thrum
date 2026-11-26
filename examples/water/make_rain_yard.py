@@ -17,7 +17,7 @@ SUBDIVISIONS = 20
 TRACK_EDGE = 3
 POTHOLE = (3.2, 5.2)
 SHALLOW_DIP = (5.75, 5.35)
-ROOF = ((6.7, 6.15), (9.25, 7.45))
+ROOF = ((7.45, 6.60), (9.25, 7.45))
 POST_WIDTH = 0.13
 
 
@@ -31,10 +31,10 @@ def dip(x, z, centre, radii, depth, angle=0.0):
 
 
 def paving(x, z):
-    # The two depressions overlap at their lowest pass. The larger catches
-    # the sloping apron and the shallow one fills later.
-    pothole = dip(x, z, POTHOLE, (2.2, 1.5), 0.150, 0.09)
-    shallow = dip(x, z, SHALLOW_DIP, (2.2, 1.34), 0.104, -0.04)
+    # The two depressions overlap at their lowest pass. The narrow lower pit
+    # reaches that pass before the broad depression on the raised paving.
+    pothole = dip(x, z, POTHOLE, (1.9, 0.64), 0.150, 0.09)
+    shallow = dip(x, z, SHALLOW_DIP, (2.65, 2.32), 0.150, -0.04)
     slope = 0.013 * smoothstep((x - 4.8) / 1.5) * smoothstep((z - TRACK_EDGE) / 0.45)
     joint = min(abs(math.remainder(x, 0.5)), abs(math.remainder(z, 0.5)))
     relief = 0.002 * (1.0 - smoothstep(joint / 0.05))
