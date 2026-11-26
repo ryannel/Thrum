@@ -189,3 +189,7 @@
   miss are retained for WP8.13. The portable sunrise tripwire found higher costs with TAAU, including tone
   encode and surface present. The remaining offscreen p95 gap and browser callback gaps are recorded under
   load for WP8.13. [Frame investigation](../../../.orchestrate/evidence/SHOWCASE/WP7/frame-investigation.md)
+- 2026-11-26 WP7 added `exit --row` and ran all three rows through the six submitted stops and flythrough
+  tick 1381. Each verified its resolved render selections and failed on the missing drawn cooked root.
+  The portable row reached the final tick on retry after the first attempt missed the window's present count.
+  [Row receipts](../../../.orchestrate/evidence/SHOWCASE/WP7/row-launches/)
