@@ -465,12 +465,27 @@ mod tests {
         let mut merged = false;
         let mut separated = false;
         let mut first_spill = None;
+        let mut transferred = 0.0_f64;
         let tree = &yard.patches[PAVING].tree;
         assert_eq!(tree.hollow_count(), 2, "the paving has two hollows");
         let sill = tree.node(0).sill;
         let brim = tree.node(tree.node(0).parent.expect("paving joins")).sill;
         assert_eq!(sill.to_bits(), tree.node(1).sill.to_bits());
+        let [lower, upper] = if tree.node(0).lower < tree.node(1).lower {
+            [0, 1]
+        } else {
+            [1, 0]
+        };
+        assert_eq!(tree.node(lower).over, Some(upper));
+        let upper_volume = |yard: &Yard| {
+            yard.patches[PAVING]
+                .rain
+                .puddles()
+                .find_map(|(node, volume)| (node == upper).then_some(volume))
+                .unwrap_or(0.0)
+        };
         for tick in 1..=1200 {
+            let before = upper_volume(&yard);
             yard.step(Weather::new(100.0, 0.0, 150.0), step, &mut map)
                 .expect("rain tick");
             if let (Some(left), Some(right)) = (wet(&map, pits[0]), wet(&map, pits[1])) {
@@ -480,6 +495,17 @@ mod tests {
                     break;
                 }
                 separated = true;
+                if (left.row.level - sill).abs() < 1e-7 && right.row.level < sill {
+                    // The upper catchment charges its own rain and runoff separately.
+                    // While the pools are separate, any additional volume crossed the sill.
+                    let gain = yard.patches[PAVING].report.hollows[upper as usize];
+                    let own = gain.on_water + gain.runoff + gain.held_runoff + gain.joined
+                        - gain.left
+                        - gain.topped
+                        - gain.bed
+                        - gain.dried;
+                    transferred += (upper_volume(&yard) - before - own).max(0.0);
+                }
                 for (hollow, level) in [left.row.level, right.row.level].into_iter().enumerate() {
                     if (level - sill).abs() < 1e-7 && first_spill.is_none() {
                         first_spill = Some(hollow);
@@ -493,6 +519,14 @@ mod tests {
             first_spill,
             Some(0),
             "the lower pit spills into the higher pit first"
+        );
+        assert!(
+            transferred > 1e-5,
+            "the upper pit receives water across the sill"
+        );
+        eprintln!(
+            "yard spill before merge: {:.3} litres to the upper pit",
+            transferred * 1_000.0
         );
         assert!(wet(&map, shelter).is_none());
         assert!(
