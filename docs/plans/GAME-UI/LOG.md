@@ -176,3 +176,9 @@
   join scene accepts whole tickets from the shells. Eight automated checks passed, including real
   device replacement on both targets. The fixed stills, 1× motion take and two release measurements
   per target are retained in the [WP4 proof](../../../.orchestrate/evidence/GAME-UI/WP4/index.md).
+- 2026-11-26 WP4 review fixes. Disarming suspends game contacts and returns those that worked no control.
+  Touch motion and release hide focus styling. The Mac route records the player position from the first
+  choice submission onward, and the T2 take shows opening, focus moves and closing on the next submission.
+  Chrome recorded renderer-thread CPU batches from actual routed browser events and confirmed focus and
+  press increased paint-list work without new trees or layout passes. Both release targets and the
+  workspace check passed. [Target proof](../../../.orchestrate/evidence/GAME-UI/WP4/repair/index.md)

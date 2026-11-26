@@ -467,20 +467,20 @@
           "check": "cargo test --locked --offline -p thrum-ui --test routing",
           "ask": "Read the test. Does it generate interleavings at random, in the thousands, with scopes opened and closed while contacts are down, and check each stated property after every event from what the game was actually handed? Are a direction held through a modal choice, and a touch held on a stick while a second finger chooses, written out as cases?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP4/repair/WP4.1.log",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GAME-UI/WP4-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP4.2",
           "statement": "A button is activated once, when the contact that pressed it is released inside it, and not when it slides off or the button is removed or disabled. A pointer over a control focuses it; a touch shows no focus style. While a font edit or a change of scale waits to be shown, a press is tested against the layout the shell last saw drawn. A control's hit box is at least 44 points a side, and a point inside two grown boxes goes to the control whose drawn box is nearest.",
           "check": "cargo test --locked --offline -p thrum-ui --test controls",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP4/repair/WP4.2.log",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GAME-UI/WP4-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP4.3",
@@ -488,17 +488,17 @@
           "check": "cargo test --locked --offline -p thrum-ui --test focus",
           "ask": "Are reachability and reversal checked over the whole stated family of grids, with several cell shapes and gaps, and is the ragged layout of three cards above two present as a case that names its neighbours?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP4/repair/WP4.3.log",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GAME-UI/WP4-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP4.4",
           "statement": "A text drop reaches the node in the top scope that accepts drops, or the game when none does, whole and with its source. A drop longer than the node allows, or holding a control character, is refused and counted. A ticket of 100 characters shows its two ends around an ellipsis and is handed to the game unshortened. A copy request reaches the shell with the whole string.",
           "check": "cargo test --locked --offline -p thrum-ui --test drops",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/GAME-UI/WP4/WP4.4.log",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP4/repair/WP4.4.log",
           "verdict": "pass",
           "review": ".orchestrate/evidence/GAME-UI/WP4-review.md",
           "builder_result": "pass"
@@ -510,10 +510,10 @@
           "ask": "Do the scripted events enter at the same function the window's own key and pointer events enter, with positions in the window's own units? Is the player's position read from the game, and the activation count from what the game was handed?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP4/repair/native/route/route-1-record.json",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GAME-UI/WP4-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP4.6",
@@ -522,7 +522,7 @@
           "ask": "Does the run pass on the launch argument and the device replacement alone when the system withholds the clipboard, and say so in its record, without waiting on a prompt?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/GAME-UI/WP4/drops/drops-1-record.json",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP4/repair/native/drops/drops-1-record.json",
           "verdict": "pass",
           "review": ".orchestrate/evidence/GAME-UI/WP4-review.md",
           "builder_result": "pass"
@@ -533,7 +533,7 @@
           "check": "node scripts/check_v1_browser.mjs --case interface-modal",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/GAME-UI/WP4/chrome-final/interface-modal.json",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP4/repair/chrome/interface-modal.json",
           "verdict": "pass",
           "review": ".orchestrate/evidence/GAME-UI/WP4-review.md",
           "builder_result": "pass"
@@ -543,7 +543,7 @@
           "statement": "On the Mac the modal choice reads at a glance in every state: four cards of equal size with their text inside them, the focused one unmistakable, pressed and disabled cards distinct from it, the scrim even, and the crowd still legible behind.",
           "inspect": "Capture `fixed` stills of the interface scene's choice with T2 engine capture at 640\u00d7360 and 1280\u00d7720 points at a scale of 2, at 3456\u00d72234 pixels at a scale of 2 and at a phone-sized extent in both orientations: idle, each card focused, one pressed, one disabled, and disarmed. Judge each whole, at the size it is shown and in native-size crops of the focused card.",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/GAME-UI/WP4/index.md",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP4/repair/index.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/GAME-UI/WP4-review.md",
           "builder_result": "pass"
@@ -553,17 +553,17 @@
           "statement": "In real time on the Mac, opening the choice during play, moving focus across the cards, choosing and closing reads as immediate and clean: each response shows as soon as one of the game's own edits would, nothing flickers or is drawn half laid out, the player does not twitch while the choice is open and walks on when it closes.",
           "inspect": "Capture the scripted modal choice at 1920\u00d71080 with T2 engine capture in `realtime` mode, with the event times from the run's record beside the frames. Judge the consecutive frames around each event (opening, each move of focus, the choice, closing) at 1x, whole and in native-size crops of the cards and of the player.",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP4/repair/motion/realtime/transitions.json",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GAME-UI/WP4-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP4.10",
           "statement": "On the Mac the join screen reads plainly in each state: hosting with its ticket and Copy; joining with no ticket, with a pasted ticket, connecting, joined with a roster of four, refused with its reason, closed with its reason. The ticket's two ends are legible, a reason is never cut off, and no element covers another at the smallest window.",
           "inspect": "Capture `fixed` stills of each state of the interface scene's join screen with T2 engine capture at 640\u00d7360 and 1280\u00d7720 points at a scale of 2 and at a phone-sized extent in both orientations. Judge each whole and in native-size crops of the ticket, the reason and the roster.",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/GAME-UI/WP4/index.md",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP4/repair/index.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/GAME-UI/WP4-review.md",
           "builder_result": "pass"
@@ -573,7 +573,7 @@
           "statement": "In Chrome, at device pixel ratios of 1 and 2, the choice and the join screen read as on the Mac.",
           "inspect": "Capture `fixed` stills in Chrome with T2 engine capture at each ratio: the choice idle, focused and pressed, and the join screen joining with a ticket, joined and refused. Judge each whole and in native-size crops.",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/GAME-UI/WP4/chrome-final/interface-modal.json",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP4/repair/chrome/interface-modal.json",
           "verdict": "pass",
           "review": ".orchestrate/evidence/GAME-UI/WP4-review.md",
           "builder_result": "pass"
@@ -585,10 +585,10 @@
           "ask": "Were both retained runs release builds of the claimed commit, with the load on the machine recorded? Does the command succeed or fail on the record being complete, and never on a time? Is the Chrome record present beside the Mac's, taken with events sent through the browser?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP4/repair/event-costs.json",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GAME-UI/WP4-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         }
       ],
       "findings": [
