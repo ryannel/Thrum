@@ -1291,7 +1291,7 @@
     {
       "id": "U2",
       "name": "The owner has said go ahead or stop on offering the Metal pipeline cache to wgpu, and the answer is on record with whatever the issue's thread settled",
-      "status": "not_started",
+      "status": "blocked",
       "quality_bar": "A record from which the next planner can drop the trunk change or plan it without asking the owner again, and which says of the public thread only what the thread says. Nothing is judged against an image or a shipped game.",
       "items": [
         {
@@ -1320,7 +1320,20 @@
         }
       ],
       "failed_reviews": 0,
-      "failed_reviews_with_repeat": 0
+      "failed_reviews_with_repeat": 0,
+      "blocked": {
+        "reason": "needs_human_feedback",
+        "items": [
+          "U2.2"
+        ],
+        "what": "Do you choose go ahead or stop on offering Thrum\u2019s Metal pipeline cache to wgpu?",
+        "work": {
+          "commit": "91189ecd38bab8aa7fbfc9ad332451c961f047e5",
+          "branch": "build/apple-presentation",
+          "pushed": false
+        },
+        "handoff": ".orchestrate/evidence/APPLE-PRESENTATION/U2-handoff.md"
+      }
     }
   ]
 }
