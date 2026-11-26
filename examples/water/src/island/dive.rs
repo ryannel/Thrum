@@ -66,6 +66,25 @@ pub fn build_dive(
     site: DiveSite,
     draw_water: bool,
 ) -> Result<(SkyGame, SharedReport), Box<dyn Error>> {
+    build(wind, site, draw_water, true)
+}
+
+/// The unchanged opaque scene used by the paired above-water cost record.
+/// # Errors
+/// Returns invalid map, spectrum, control or cooked asset declarations.
+pub fn build_dive_cost(
+    wind: Wind,
+    site: DiveSite,
+) -> Result<(SkyGame, SharedReport), Box<dyn Error>> {
+    build(wind, site, true, false)
+}
+
+fn build(
+    wind: Wind,
+    site: DiveSite,
+    draw_water: bool,
+    draw_craft: bool,
+) -> Result<(SkyGame, SharedReport), Box<dyn Error>> {
     let (eye_at_surface, vertical_offset, initial_depth, max_depth) = match site {
         DiveSite::Lake => ([183.0, LAKE_LEVEL, 5.0], 0.0, 1.0, 3.4),
         DiveSite::HighLake => ([183.0, LAKE_LEVEL + HIGH_LAKE_STAGE, 5.0], 0.0, 1.0, 5.3),
@@ -166,7 +185,7 @@ pub fn build_dive(
                 .scale(0.38),
         );
     }
-    if site == DiveSite::Sea {
+    if site == DiveSite::Sea && !draw_craft {
         meshes.push(
             MeshPlacement::new("meshes/float", "textures/white")
                 .at([x + 2.5, level, z + 0.7])
@@ -183,6 +202,17 @@ pub fn build_dive(
         Some(("water island", &island_material(vertical_offset))),
         &[],
     )?;
+    let game = if draw_craft && !surf {
+        crate::floating::install_moored_craft(
+            game,
+            &water,
+            [f64::from(x) + 1.7, f64::from(z)],
+            f64::from(level),
+            std::f64::consts::FRAC_PI_2,
+        )
+    } else {
+        game
+    };
     let game = if draw_water {
         game.with_contribution(Box::new(water), || ContentStatus::Drawn(1))
     } else {

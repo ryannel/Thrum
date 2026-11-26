@@ -232,7 +232,8 @@ fn driver(gpu: &thrum_test_support::Gpu) {
             "use the recorded lake or sea cost site"
         );
         let location = site.name();
-        let (game, report) = proof_game(true);
+        let (game, report) =
+            water_scene::island::build_dive_cost(wind, site).expect("dive cost scene");
         let mut fixture = support::Fixture::from_game(gpu, [2560, 1440], game, report);
         fixture.warm_cooked();
         let views: Vec<_> = [("above", -2.0), ("half", 0.0), ("under", 2.0)]

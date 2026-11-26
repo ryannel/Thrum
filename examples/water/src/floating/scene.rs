@@ -847,6 +847,30 @@ fn browser_status(
 mod river;
 pub(crate) use river::install_river_floats;
 
+pub(crate) fn install_moored_craft(
+    game: SkyGame,
+    water: &Water,
+    position: [f64; 2],
+    waterline: f64,
+    heading: f64,
+) -> SkyGame {
+    let initial = Body::new(0, Hull::Craft, position, waterline, heading);
+    let fleet = Arc::new(Mutex::new(Fleet {
+        previous: vec![initial],
+        current: vec![initial],
+        craft_present: true,
+        tick: 0,
+        observe: None,
+        #[cfg(target_arch = "wasm32")]
+        reply_ages: std::collections::VecDeque::new(),
+        #[cfg(target_arch = "wasm32")]
+        wake_sample: None,
+    }));
+    game.with_contribution(Box::new(Draw::new(fleet, water.optics_bodies(), 1)), || {
+        ContentStatus::Drawn(1)
+    })
+}
+
 pub(crate) fn install_channel_float(
     game: SkyGame,
     map: crate::SharedMap,

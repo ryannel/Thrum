@@ -1,7 +1,7 @@
 //! Game-owned buoyancy, drag, propulsion and rigid-body integration.
 mod draw;
 mod scene;
-pub(crate) use scene::{YardFloat, install_channel_float, install_river_floats};
+pub(crate) use scene::{YardFloat, install_channel_float, install_moored_craft, install_river_floats};
 
 use glam::{DQuat, DVec2, DVec3};
 pub use scene::{
