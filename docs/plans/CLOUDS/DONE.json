@@ -1226,9 +1226,9 @@
     {
       "id": "WP9",
       "name": "A visitor changes coverage, cloud type, wind and time of day with the controls, and the sky holds up in motion, on the Mac and in Chrome",
-      "status": "ready_for_review",
-      "failed_reviews": 2,
-      "failed_reviews_with_repeat": 1,
+      "status": "in_progress",
+      "failed_reviews": 3,
+      "failed_reviews_with_repeat": 2,
       "diagnoses": 0,
       "depends_on": [
         "APPLE-PRESENTATION:WP3",
@@ -1262,8 +1262,8 @@
           "statement": "Each control, moved while the scene runs, changes the sky with no pop, rebuild or restart.",
           "inspect": "Capture `realtime` sequences on the Mac, one for each control swept across its range in about 20 seconds. Judge consecutive frames at 1x.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP9/review-fixes/README.md",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/CLOUDS/WP9-review.md"
         },
@@ -1274,7 +1274,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP9/review-fixes/README.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP9-review.md"
         },
         {
@@ -1284,7 +1284,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP9/review-fixes/README.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP9-review.md"
         },
         {
@@ -1323,19 +1323,13 @@
       ],
       "findings": [
         {
-          "name": "Solar-time sweep washes the daylight sky to white",
+          "name": "Solar-time sweep flashes at dusk",
           "item": "WP9.3",
+          "different": "The earlier sweep lost the sky and terrain for the daylight interval including noon. Noon now remains legible. The new discontinuity is a pale foreground dropping to dark grey and rebounding between successive twilight submissions.",
           "repeat": false
         },
         {
-          "name": "Disabling the field overlay leaves its history in the TAAU image",
-          "item": "WP9.4",
-          "repeat": false
-        },
-        {
-          "name": "Distant clouds flicker when the stopped camera returns to stride 4",
-          "item": "WP9.5",
-          "different": "The previous defect was a stepped incoming contour during rotation at stride 2. The new defect begins after rotation stops, as the trace returns from full density to stride 4.",
+          "name": "Replacing a valid sky profile is refused",
           "repeat": false
         }
       ]
