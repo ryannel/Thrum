@@ -597,7 +597,10 @@ fn surface_pipelines(
     }
     let has_rivers = map.is_some_and(MapGpu::has_rivers);
     if has_rivers {
-        source.push_str(include_str!("map_gpu/river_surface_depth.wgsl"));
+        source.push_str(concat!(
+            include_str!("map_gpu/river_surface_waves.wgsl"),
+            include_str!("map_gpu/river_surface_depth.wgsl"),
+        ));
     }
     let shader = surface
         .device
@@ -705,8 +708,16 @@ fn shader_source(
         include_str!("field.wgsl"),
         Interaction::sample_source(3, 7, 8, wake),
         concat!(include_str!("carriage.wgsl"), include_str!("surface.wgsl")).to_owned()
+            + if has_rivers {
+                "    let motion = river_surface_motion(point, row);\n"
+            } else {
+                "    let motion = cascade_motion(point, row.current, row.track, water.carriage.w, water.carriage.y);\n"
+            }
+            + include_str!("surface_cascades.wgsl")
             + rain_geometry
             + include_str!("surface_vertex.wgsl")
+            + if has_rivers { "    body: u32,\n" } else { "" }
+            + include_str!("surface_vertex_output.wgsl")
             + varying
             + include_str!("surface_vertex_entry.wgsl")
             + vertex_route
@@ -723,6 +734,11 @@ fn shader_source(
                 include_str!("map_gpu/hollows_contact.wgsl")
             } else {
                 ""
+            }
+            + if has_rivers {
+                "    let motion = river_surface_motion(input.rest, row);\n"
+            } else {
+                "    let motion = cascade_motion(input.rest, row.current, row.track, water.carriage.w, water.carriage.y);\n"
             }
             + include_str!("surface_shading.wgsl")
             + rain_normal
@@ -750,7 +766,11 @@ fn shader_source(
         map.map_or_else(
             || include_str!("open_surface.wgsl").to_owned(),
             |map| {
-                let mut source = map.source(3) + include_str!("mapped_surface.wgsl");
+                let mut source = map.source(3)
+                    + include_str!("mapped_surface.wgsl")
+                    + "        owned, swash, loss, loss_without_long, row.water.yz, map_wave_track(point, body, row.water.yz)"
+                    + if has_rivers { ", body);\n" } else { ");\n" }
+                    + include_str!("mapped_surface_geometry.wgsl");
                 if has_hollows {
                     let motion = if rain {
                         include_str!("map_gpu/hollows_rain_motion.wgsl")

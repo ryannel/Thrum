@@ -11,6 +11,3 @@ struct SurfaceRow {
     loss_without_long: f32,
     current: vec2<f32>,
     track: vec4<f32>,
-}
-struct VertexOut {
-    @builtin(position) clip:vec4<f32>, @location(0) world:vec3<f32>,

@@ -54,8 +54,3 @@ fn transported_field(motion: CascadeMotion, band: u32) -> Field {
 fn field_at(point:vec2<f32>,spacing:f32,row:SurfaceRow)->Field {
     let long=long_at(point,spacing);
     var f=add_field(Field(vec4(0.0),vec4(0.0),vec4(0.0)),long,row.gains.x);
-    let motion = cascade_motion(point, row.current, row.track, water.carriage.w, water.carriage.y);
-    for(var band=0u;band<3u;band++) {
-        let fade=1.0-smoothstep(water.lengths[band]/128.0,water.lengths[band]/32.0,spacing);
-        f=add_field(f,transported_field(motion,band),row.gains[band+1u]*fade);
-    }

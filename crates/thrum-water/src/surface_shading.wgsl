@@ -1,4 +1,3 @@
-    let motion = cascade_motion(input.rest, row.current, row.track, water.carriage.w, water.carriage.y);
     let departure_dx = dpdx(motion.departure);
     let departure_dy = dpdy(motion.departure);
     let second_dx = dpdx(motion.second);
