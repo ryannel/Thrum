@@ -26,7 +26,11 @@ fn transform_twiddles() -> [[f32; 2]; TRANSFORM_SIZE as usize / 2] {
     })
 }
 
-pub(super) fn new(device: &DeviceSite, profile: Profile) -> Result<Ambient, AmbientError> {
+pub(super) fn new(
+    device: &DeviceSite,
+    profile: Profile,
+    rain: bool,
+) -> Result<Ambient, AmbientError> {
     if profile.transform_size != TRANSFORM_SIZE {
         return Err(AmbientError::UnsupportedProfile(
             crate::ProfileField::TransformSize,
@@ -48,6 +52,15 @@ pub(super) fn new(device: &DeviceSite, profile: Profile) -> Result<Ambient, Ambi
         ));
     }
     let limits = device.limits();
+    if rain
+        && (limits.max_texture_dimension_2d < crate::rain::SIZE
+            || limits.max_texture_array_layers < crate::rain::SHARED_LAYERS)
+    {
+        return Err(AmbientError::DeviceLimit {
+            resource: "shared wind and rain cascade array".into(),
+            limit: "cascade texture extent or array layers",
+        });
+    }
     let resources = spec::resources();
     for resource in &resources {
         if resource.size > limits.max_buffer_size {
@@ -187,6 +200,7 @@ pub(super) fn new(device: &DeviceSite, profile: Profile) -> Result<Ambient, Ambi
             device,
             &buffers[&BufferKey::Cascades],
             &buffers[&BufferKey::LongField],
+            rain,
         ),
         profile,
         buffers,

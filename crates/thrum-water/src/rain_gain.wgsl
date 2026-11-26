@@ -4,11 +4,11 @@ struct RainSurface {
     grid: vec4<u32>,
 }
 @group(3) @binding(19) var<uniform> rain: RainSurface;
-@group(3) @binding(20) var<storage, read> rain_columns: array<vec4<f32>>;
+@group(3) @binding(20) var rain_columns: texture_2d<f32>;
 
 fn rain_column(cell: vec2<i32>, level: f32) -> f32 {
     if any(cell < vec2(0)) || any(vec2<u32>(cell) >= rain.grid.xy) { return 1.0; }
-    let column = rain_columns[rain.grid.z + u32(cell.y) * rain.grid.x + u32(cell.x)];
+    let column = textureLoad(rain_columns, cell, 0);
     return select(1.0, column.y, level < column.x) * select(1.0, column.w, level < column.z);
 }
 
@@ -32,14 +32,20 @@ fn rain_exposure(point: vec2<f32>, level: f32) -> f32 {
     return min(1.0, sum / (4.0 * half_width * half_width));
 }
 
+fn rain_response(index: u32) -> vec2<f32> {
+    let width = max(1u, rain.grid.x);
+    let texel = vec2<u32>(index % width, rain.grid.y + index / width);
+    return textureLoad(rain_columns, vec2<i32>(texel), 0).xy;
+}
+
 fn rain_gain(point: vec2<f32>, row: SurfaceRow) -> f32 {
     let depth = row.level - row.bed;
     if rain.grid.w == 0u || depth <= 0.0 { return 0.0; }
-    let deepest = rain_columns[rain.grid.z - 1u].xy;
+    let deepest = rain_response(rain.grid.z - 1u);
     var response = deepest.y;
-    var previous = rain_columns[0].xy;
+    var previous = rain_response(0u);
     for (var i = 1u; depth < deepest.x && i < rain.grid.z; i += 1u) {
-        let next = rain_columns[i].xy;
+        let next = rain_response(i);
         if depth < next.x {
             response = mix(previous.y, next.y, clamp((depth-previous.x)/(next.x-previous.x), 0.0, 1.0));
             break;

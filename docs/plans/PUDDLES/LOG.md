@@ -208,3 +208,13 @@
   depth gain, repeat and endpoint capture, and the tick query at two display cadences. Chrome WebGPU
   drew the yard and lake and skipped the passes after decay. The paired 1440p record covers the authored
   island at the yard and lake and includes interaction region labelling. [Evidence](../../../.orchestrate/evidence/PUDDLES/WP4/README.md)
+
+- 2026-11-26 WP4 repair. The tick query filters rain by its footprint and follows the prepared current
+  tracks, including their renewal and height-rate correction. Clearing a prepared map's rain model clears
+  the visible field and skips rain compute. The rain planes share the cascade array and the canopy is a
+  sampled texture. The cost check investigates passes against WP3's matching yard-brim arms as well as
+  against the current controls. [Repair evidence](../../../.orchestrate/evidence/PUDDLES/WP4/review-repair.md)
+- Proposal for the planner, WP4.4. At sparse rates an individual birth in a periodic field repeats at that
+  field's period, even when the second field gives the combined pattern a longer period. Give the scheduled
+  patterns a world-space repeat distance beyond the 6 m inspection span. Recheck crest sharpness, stop and
+  restart, and the memory and dispatch costs before settling the physical profile and resolution.

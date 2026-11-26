@@ -360,6 +360,7 @@ pub struct Drop {
 pub struct RainBands {
     profile: RainBandsProfile,
     table: Arc<RingTable>,
+    ring_means: Arc<[Vec<[f64; 2]>]>,
     history: RateHistory,
     exposure: Arc<dyn Exposure>,
 }
@@ -433,6 +434,33 @@ impl RainBands {
         }
         let out = Self {
             profile,
+            ring_means: table
+                .classes
+                .iter()
+                .map(|class| {
+                    class
+                        .height
+                        .chunks_exact(table.radii)
+                        .zip(class.rate.chunks_exact(table.radii))
+                        .map(|(height, rate)| {
+                            let integrate = |row: &[f64]| {
+                                row.windows(2)
+                                    .enumerate()
+                                    .map(|(i, ends)| {
+                                        // Integral of the linear table segment times radius.
+                                        let i = i as f64;
+                                        (i / 2.0 + 1.0 / 6.0) * ends[0]
+                                            + (i / 2.0 + 1.0 / 3.0) * ends[1]
+                                    })
+                                    .sum::<f64>()
+                                    * std::f64::consts::TAU
+                                    * table.radius_step.powi(2)
+                            };
+                            [integrate(height), integrate(rate)]
+                        })
+                        .collect()
+                })
+                .collect(),
             table,
             history: RateHistory::dry(1.0, 0, 0),
             exposure,
@@ -576,47 +604,122 @@ impl RainBands {
     /// The two bands at unit gain: height, slopes and height's rate at a world point and
     /// time.
     pub fn sample(&self, point: [f64; 2], time: f64) -> Sample {
+        self.sample_footprint(point, time, 0.0)
+    }
+
+    /// Filter height, slope and height rate over a column's footprint in metres.
+    /// At a complete patch's mip the mean slope is exactly zero.
+    pub fn sample_footprint(&self, point: [f64; 2], time: f64, radius: f64) -> Sample {
         let mut out = Sample::default();
         if !self.active(time) {
             // No tick of the last second held rain: the bands are exactly nothing.
             return out;
         }
+        let mut drops = Vec::new();
+        for band in 0..2 {
+            let length = self.profile.patches[band];
+            let mip = (radius * 512.0 / length).max(1.0).log2().min(9.0);
+            let lower = mip.floor();
+            for (level, weight) in [(lower, 1.0 - mip.fract()), (lower + 1.0, mip.fract())] {
+                if weight == 0.0 {
+                    continue;
+                }
+                let sample = if level >= 9.0 {
+                    self.patch_mean(band, time)
+                } else if level == 0.0 {
+                    self.sample_band(band, point, time, &mut drops)
+                } else {
+                    // Integrate the square mip footprint by midpoint quadrature.
+                    // Four subdivisions along a side track the resolved crests of
+                    // small footprints. Larger mips resolve successively less detail.
+                    let extent = length * level.exp2() / 512.0;
+                    let mut sample = Sample::default();
+                    for z in 0..4 {
+                        for x in 0..4 {
+                            let offset = |i| extent * (f64::from(i) - 1.5) / 4.0;
+                            let p = [point[0] + offset(x), point[1] + offset(z)];
+                            accumulate(
+                                &mut sample,
+                                self.sample_band(band, p, time, &mut drops),
+                                1.0 / 16.0,
+                            );
+                        }
+                    }
+                    sample
+                };
+                accumulate(&mut out, sample, weight);
+            }
+        }
+        out
+    }
+
+    fn patch_mean(&self, band: usize, time: f64) -> Sample {
+        let mut sample = Sample::default();
+        let area = self.profile.patches[band].powi(2);
+        for drop in self
+            .drops(band, time)
+            .into_iter()
+            .filter(|drop| drop.weight > 0.0)
+        {
+            let f = (time - drop.time) / self.table.age_step;
+            #[expect(
+                clippy::cast_possible_truncation,
+                clippy::cast_sign_loss,
+                reason = "live drop age indexes the ring table"
+            )]
+            let lower = (f.floor() as usize).min(self.table.ages - 2);
+            let [a, b] = [
+                self.ring_means[drop.class][lower],
+                self.ring_means[drop.class][lower + 1],
+            ];
+            let w = f - lower as f64;
+            sample.height += drop.weight * (a[0] + w * (b[0] - a[0])) / area;
+            sample.height_dt += drop.weight * (a[1] + w * (b[1] - a[1])) / area;
+        }
+        sample
+    }
+
+    fn sample_band(
+        &self,
+        band: usize,
+        point: [f64; 2],
+        time: f64,
+        drops: &mut Vec<Drop>,
+    ) -> Sample {
+        let mut out = Sample::default();
         let life = self.table.life();
         let reach = self.table.reach();
         let (b0, b1) = self.bins(time - life, time);
-        let mut drops = Vec::new();
-        for band in 0..2 {
-            let l = self.profile.patches[band];
-            let side = l / self.profile.cells as f64;
-            let u = [point[0].rem_euclid(l), point[1].rem_euclid(l)];
-            #[expect(clippy::cast_possible_truncation, reason = "cell indices in a patch")]
-            let (ci, cj, span) = (
-                (u[0] / side).floor() as i64,
-                (u[1] / side).floor() as i64,
-                (reach / side).ceil() as i64,
-            );
-            for dj in -span..=span {
-                for di in -span..=span {
-                    for bin in b0..=b1 {
-                        drops.clear();
-                        self.cell_drops(band, [ci + di, cj + dj], bin, &mut drops);
-                        for d in &drops {
-                            let age = time - d.time;
-                            if d.weight <= 0.0 || age < 0.0 || age >= life {
-                                continue;
-                            }
-                            let v = [u[0] - d.place[0], u[1] - d.place[1]];
-                            let r = v[0].hypot(v[1]);
-                            if r >= reach {
-                                continue;
-                            }
-                            let [h, dr, dt] = self.table.ring(d.class, r, age);
-                            out.height += d.weight * h;
-                            out.height_dt += d.weight * dt;
-                            if r > 0.0 {
-                                out.slope[0] += d.weight * dr * v[0] / r;
-                                out.slope[1] += d.weight * dr * v[1] / r;
-                            }
+        let l = self.profile.patches[band];
+        let side = l / self.profile.cells as f64;
+        let u = [point[0].rem_euclid(l), point[1].rem_euclid(l)];
+        #[expect(clippy::cast_possible_truncation, reason = "cell indices in a patch")]
+        let (ci, cj, span) = (
+            (u[0] / side).floor() as i64,
+            (u[1] / side).floor() as i64,
+            (reach / side).ceil() as i64,
+        );
+        for dj in -span..=span {
+            for di in -span..=span {
+                for bin in b0..=b1 {
+                    drops.clear();
+                    self.cell_drops(band, [ci + di, cj + dj], bin, drops);
+                    for d in &*drops {
+                        let age = time - d.time;
+                        if d.weight <= 0.0 || age < 0.0 || age >= life {
+                            continue;
+                        }
+                        let v = [u[0] - d.place[0], u[1] - d.place[1]];
+                        let r = v[0].hypot(v[1]);
+                        if r >= reach {
+                            continue;
+                        }
+                        let [h, dr, dt] = self.table.ring(d.class, r, age);
+                        out.height += d.weight * h;
+                        out.height_dt += d.weight * dt;
+                        if r > 0.0 {
+                            out.slope[0] += d.weight * dr * v[0] / r;
+                            out.slope[1] += d.weight * dr * v[1] / r;
                         }
                     }
                 }
@@ -686,6 +789,14 @@ impl RainBands {
                     .sum()
             },
         )
+    }
+}
+
+fn accumulate(out: &mut Sample, sample: Sample, weight: f64) {
+    out.height += weight * sample.height;
+    out.height_dt += weight * sample.height_dt;
+    for (slope, delta) in out.slope.iter_mut().zip(sample.slope) {
+        *slope += weight * delta;
     }
 }
 
@@ -774,9 +885,13 @@ impl Map {
         if gain <= 0.0 {
             return;
         }
-        let s = rain.sample(point, time);
+        let current = map.row.current;
+        let departure = std::array::from_fn(|axis| current[axis].mul_add(-time, point[axis]));
+        let s = rain.sample(departure, time);
         sample.height += gain * s.height;
-        sample.height_dt += gain * s.height_dt;
+        sample.height_dt +=
+            gain * (s.height_dt - (s.slope[0] * current[0] + s.slope[1] * current[1]));
+        sample.velocity[1] += gain * s.height_dt;
         sample.slope[0] += gain * s.slope[0];
         sample.slope[1] += gain * s.slope[1];
     }

@@ -769,7 +769,8 @@
                 "temporal input witness": 4.5534165
               },
               "investigations": [
-                "Pass sum 19.107 ms. Largest pass V1 surface present 4.648 ms. Synchronous completion 25.132 ms includes polling and shared GPU wait."
+                "Pass sum 19.107 ms. Largest pass V1 surface present 4.648 ms. Synchronous completion 25.132 ms includes polling and shared GPU wait.",
+                "WP3 yard brim temporal exposure texture rose from 0.1372 to 0.1844 ms (current bands-off control 0.1844 ms); the increase is present with bands disabled, so the band dispatch cannot account for it; compare matched captures at similar shared-device load if the increase persists."
               ]
             }
           ]
@@ -2436,7 +2437,8 @@
                 "temporal input witness": 8.628771
               },
               "investigations": [
-                "Pass sum 45.907 ms. Largest pass water surface 9.138 ms. Synchronous completion 38.321 ms includes polling and shared GPU wait."
+                "Pass sum 45.907 ms. Largest pass water surface 9.138 ms. Synchronous completion 38.321 ms includes polling and shared GPU wait.",
+                "WP3 yard brim temporal exposure texture rose from 0.0183 to 3.4355 ms (current bands-off control 3.4355 ms); the increase is present with bands disabled, so the band dispatch cannot account for it; compare matched captures at similar shared-device load if the increase persists."
               ]
             },
             {
@@ -2482,7 +2484,8 @@
                 "temporal input witness": 8.958625
               },
               "investigations": [
-                "Pass sum 52.180 ms. Largest pass water surface 9.501 ms. Synchronous completion 34.903 ms includes polling and shared GPU wait."
+                "Pass sum 52.180 ms. Largest pass water surface 9.501 ms. Synchronous completion 34.903 ms includes polling and shared GPU wait.",
+                "WP3 yard brim temporal exposure texture rose from 0.0804 to 4.4343 ms (current bands-off control 4.4343 ms); the increase is present with bands disabled, so the band dispatch cannot account for it; compare matched captures at similar shared-device load if the increase persists."
               ]
             }
           ]
@@ -4614,7 +4617,8 @@
               "investigations": [
                 "Pass sum 41.601 ms. Largest pass water surface 7.795 ms. Synchronous completion 17.533 ms includes polling and shared GPU wait.",
                 "Same-view rain dispatch and mips total 0.765 ms. CPU upload was 0.146 ms, versus 0.229 ms with bands disabled.",
-                "synthetic Sun shadow near rose from 0.0682 to 0.1097 ms; the pass has the same inputs and commands in both arms, so the observed difference includes shared device load."
+                "synthetic Sun shadow near rose from 0.0682 to 0.1097 ms; the pass has the same inputs and commands in both arms, so the observed difference includes shared device load.",
+                "WP3 yard brim temporal exposure texture rose from 0.0183 to 4.0711 ms (current bands-off control 3.4355 ms); the increase is present with bands disabled, so the band dispatch cannot account for it; compare matched captures at similar shared-device load if the increase persists."
               ]
             },
             {
@@ -4673,7 +4677,8 @@
                 "Pass sum 42.811 ms. Largest pass water surface 7.979 ms. Synchronous completion 27.129 ms includes polling and shared GPU wait.",
                 "Same-view rain dispatch and mips total 0.719 ms. CPU upload was 0.216 ms, versus 0.224 ms with bands disabled.",
                 "interaction waves rose from 0.2034 to 0.8319 ms; the pass has the same inputs and commands in both arms, so the observed difference includes shared device load.",
-                "synthetic exposure resolve rose from 0.0305 to 0.0441 ms; the pass has the same inputs and commands in both arms, so the observed difference includes shared device load."
+                "synthetic exposure resolve rose from 0.0305 to 0.0441 ms; the pass has the same inputs and commands in both arms, so the observed difference includes shared device load.",
+                "WP3 yard brim temporal exposure texture rose from 0.0804 to 4.1871 ms (current bands-off control 4.4343 ms); the increase is present with bands disabled, so the band dispatch cannot account for it; compare matched captures at similar shared-device load if the increase persists."
               ]
             }
           ]

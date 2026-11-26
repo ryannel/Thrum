@@ -1,5 +1,6 @@
 //! Game-facing tick pages and asynchronous query answers.
 mod gpu;
+mod rain;
 
 pub(super) use gpu::Readback;
 pub(super) use gpu::validate;
@@ -188,6 +189,7 @@ impl QueryCutTap {
 
 #[derive(Default)]
 struct State {
+    rain_tracks: Option<Arc<crate::map_gpu::WaveTracks>>,
     pages: VecDeque<Page>,
     maps: VecDeque<(u64, Arc<Map>)>,
     last_post: Option<u64>,
@@ -275,7 +277,7 @@ pub struct QueryMailbox {
     map: Arc<Mutex<Map>>,
     correction: Arc<Correction>,
     limits: QueryLimits,
-    rain_variances: Option<[f64; 4]>,
+    rain: Option<rain::QueryRain>,
 }
 
 impl QueryMailbox {
@@ -290,46 +292,22 @@ impl QueryMailbox {
             map,
             correction: Arc::new(Correction::new(long_waves, heights)),
             limits,
-            rain_variances: None,
+            rain: None,
         }
     }
 
-    pub(super) fn with_rain(mut self, variances: [f64; 4]) -> Self {
-        self.rain_variances = Some(variances);
+    pub(super) fn with_rain(mut self, variances: [f64; 4], period: Option<Duration>) -> Self {
+        self.rain = Some(rain::QueryRain {
+            variances,
+            period: period.unwrap_or(Duration::from_secs(4)).as_secs_f64(),
+        });
         self
     }
 
-    // Analytic rings use the actual use time and committed rate history. The
-    // GPU answer's cascade and wake carry stays independent of render cadence.
-    fn add_rain(&self, answer: &mut BodyAnswers, map: &Map, tick: u64, step: Duration) {
-        let Some((rain, variances)) = map.rain().zip(self.rain_variances) else {
-            return;
-        };
-        let time = tick as f64 * step.as_secs_f64();
-        if !rain.active(time) {
-            return;
-        }
-        for point in &mut answer.points {
-            let world = point.point.position.map(f64::from);
-            let Some(column) = map
-                .sample(world)
-                .filter(|column| Some(column.body) == point.surface.body)
-            else {
-                continue;
-            };
-            let gain = map.rain_gain_with_variances(variances, world, time, column);
-            if gain <= 0.0 {
-                continue;
-            }
-            let rain = rain.sample(world, time);
-            let surface = &mut point.surface.sample;
-            surface.height += gain * rain.height;
-            surface.height_dt += gain * rain.height_dt;
-            surface.velocity[1] += gain * rain.height_dt;
-            for (slope, delta) in surface.slope.iter_mut().zip(rain.slope) {
-                *slope += gain * delta;
-            }
-            point.surface.wet = point.bed.is_none_or(|bed| surface.height > f64::from(bed));
+    pub(super) fn set_rain_tracks(&self, map: Option<&crate::map_gpu::MapGpu>) {
+        if self.rain.is_some() {
+            self.state.lock().expect("water query mailbox").rain_tracks =
+                map.map(crate::map_gpu::MapGpu::wave_tracks);
         }
     }
 
@@ -478,10 +456,17 @@ impl QueryMailbox {
                     last_taken: tick,
                 },
             );
-            self.add_rain(&mut taken, &map, tick, step);
+            if let Some(rain) = &self.rain {
+                rain.add(&mut taken, &map, state.rain_tracks.as_deref(), tick, step);
+            }
             answers.push(taken);
         }
-        let State { held, stats, .. } = &mut *state;
+        let State {
+            held,
+            stats,
+            rain_tracks,
+            ..
+        } = &mut *state;
         let new_answers = answers.len();
         for body in held.values_mut() {
             if tick <= body.last_taken {
@@ -492,7 +477,9 @@ impl QueryMailbox {
             body.last_taken = tick;
             carry_heights(&mut taken, tick, step);
             stats.held_points += taken.points.len() as u64;
-            self.add_rain(&mut taken, &map, tick, step);
+            if let Some(rain) = &self.rain {
+                rain.add(&mut taken, &map, rain_tracks.as_deref(), tick, step);
+            }
             answers.push(taken);
         }
         if answers.len() != new_answers {

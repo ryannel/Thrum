@@ -13,6 +13,7 @@ pub(super) const SHADER: &str = concat!(
 );
 pub(super) const PACK_PASS: &str = "sea filtered pack";
 const PLANES: u32 = 5;
+pub(super) const CASCADE_PLANES: u32 = super::spec::CASCADES * PLANES;
 const FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba16Float;
 const USAGE: wgpu::TextureUsages = wgpu::TextureUsages::STORAGE_BINDING
     .union(wgpu::TextureUsages::TEXTURE_BINDING)
@@ -25,19 +26,32 @@ struct Pass {
 pub(super) struct Filtered {
     pub(super) textures: [wgpu::Texture; 2],
     pub(super) views: [wgpu::TextureView; 2],
+    pub(super) surface_views: Option<[wgpu::TextureView; 2]>,
+    cascade_mip: u32,
     passes: Vec<Pass>,
 }
 impl Filtered {
-    pub(super) fn new(device: &DeviceSite, cascades: &wgpu::Buffer, long: &wgpu::Buffer) -> Self {
+    pub(super) fn new(
+        device: &DeviceSite,
+        cascades: &wgpu::Buffer,
+        long: &wgpu::Buffer,
+        rain: bool,
+    ) -> Self {
+        let cascade_mip = u32::from(rain);
         let textures = std::array::from_fn(|i| {
-            let width = if i == 0 { 256 } else { 128 };
-            let layers = if i == 0 { 3 } else { 8 };
+            let (width, layers) = match i {
+                0 => (
+                    256_u32 << cascade_mip,
+                    CASCADE_PLANES + if rain { super::rain::LAYERS } else { 0 },
+                ),
+                _ => (128_u32, 8 * PLANES),
+            };
             device.create_texture(&wgpu::TextureDescriptor {
                 label: Some("sea filtered fields"),
                 size: wgpu::Extent3d {
                     width,
                     height: width,
-                    depth_or_array_layers: layers * PLANES,
+                    depth_or_array_layers: layers,
                 },
                 mip_level_count: width.ilog2() + 1,
                 sample_count: 1,
@@ -47,8 +61,23 @@ impl Filtered {
                 view_formats: &[],
             })
         });
-        let views = std::array::from_fn(|i| {
-            textures[i].create_view(&wgpu::TextureViewDescriptor::default())
+        let wind_view = |mip_level_count| {
+            textures[0].create_view(&wgpu::TextureViewDescriptor {
+                base_mip_level: cascade_mip,
+                mip_level_count,
+                array_layer_count: Some(CASCADE_PLANES),
+                ..Default::default()
+            })
+        };
+        let views = [
+            wind_view(None),
+            textures[1].create_view(&wgpu::TextureViewDescriptor::default()),
+        ];
+        let surface_views = rain.then(|| {
+            [
+                textures[0].create_view(&wgpu::TextureViewDescriptor::default()),
+                views[1].clone(),
+            ]
         });
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("sea filtered fields"),
@@ -99,8 +128,9 @@ impl Filtered {
         let reduce_pipeline = pipeline(&reduce_layout, "reduce_texture");
         let mip_view = |i: usize, mip| {
             textures[i].create_view(&wgpu::TextureViewDescriptor {
-                base_mip_level: mip,
+                base_mip_level: mip + if i == 0 { cascade_mip } else { 0 },
                 mip_level_count: Some(1),
+                array_layer_count: (i == 0).then_some(CASCADE_PLANES),
                 ..Default::default()
             })
         };
@@ -133,7 +163,8 @@ impl Filtered {
             dispatch: [32, 32, 40],
         }];
         for (i, texture) in textures.iter().enumerate() {
-            for mip in 1..texture.mip_level_count() {
+            let first = if i == 0 { cascade_mip } else { 0 };
+            for mip in 1..texture.mip_level_count() - first {
                 let parent = mip_view(i, mip - 1);
                 let child = mip_view(i, mip);
                 let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
@@ -150,14 +181,18 @@ impl Filtered {
                         },
                     ],
                 });
-                let width = texture.width() >> mip;
+                let width = texture.width() >> (mip + first);
                 passes.push(Pass {
                     pipeline: reduce_pipeline.clone(),
                     group,
                     dispatch: [
                         width.div_ceil(8),
                         width.div_ceil(8),
-                        texture.depth_or_array_layers(),
+                        if i == 0 {
+                            CASCADE_PLANES
+                        } else {
+                            texture.depth_or_array_layers()
+                        },
                     ],
                 });
             }
@@ -165,6 +200,8 @@ impl Filtered {
         Self {
             textures,
             views,
+            surface_views,
+            cascade_mip,
             passes,
         }
     }
@@ -177,11 +214,19 @@ impl Filtered {
     }
     pub(super) fn append_graph(&self, graph: &mut EffectGraph) {
         let offset = graph.resources.len();
-        for texture in &self.textures {
-            graph.resources.push((
-                ResourceDescriptor::of_texture(texture),
-                ResourceScope::Transient,
-            ));
+        for (i, texture) in self.textures.iter().enumerate() {
+            let scope = if i == 0 && self.cascade_mip != 0 {
+                ResourceScope::Persistent {
+                    owner: 0x7261_696e,
+                    epoch: 0,
+                    initialized: true,
+                }
+            } else {
+                ResourceScope::Transient
+            };
+            graph
+                .resources
+                .push((ResourceDescriptor::of_texture(texture), scope));
         }
         let buffer_access = |buffer| {
             let resource = super::spec::resources()
@@ -212,7 +257,8 @@ impl Filtered {
         };
         graph.passes.push(pass(PACK_PASS.into(), accesses));
         for (i, texture) in self.textures.iter().enumerate() {
-            for mip in 1..texture.mip_level_count() {
+            let first = if i == 0 { self.cascade_mip } else { 0 };
+            for mip in 1..texture.mip_level_count() - first {
                 graph.passes.push(pass(
                     format!("sea filtered {i} mip {mip}"),
                     vec![
@@ -225,15 +271,31 @@ impl Filtered {
     }
     fn access(&self, offset: usize, i: usize, mip: u32, kind: AccessKind) -> EffectAccess {
         let layers = u64::from(self.textures[i].depth_or_array_layers());
+        let first = if i == 0 { self.cascade_mip } else { 0 };
+        let offset_layer = u64::from(mip + first) * layers;
+        let count = if i == 0 {
+            u64::from(CASCADE_PLANES)
+        } else {
+            layers
+        };
         EffectAccess {
             resource: offset + i,
-            range: u64::from(mip) * layers..u64::from(mip + 1) * layers,
+            range: offset_layer..offset_layer + count,
             kind,
             view: Some(wgpu::TextureViewDimension::D2Array),
             history: None,
         }
     }
     pub(super) fn surface_accesses(&self, offset: usize) -> Vec<EffectAccess> {
+        if self.cascade_mip != 0 {
+            let mut accesses: Vec<_> = (0..self.textures[0].mip_level_count() - self.cascade_mip)
+                .map(|mip| self.access(offset, 0, mip, AccessKind::SampledRead))
+                .collect();
+            let mut long = self.access(offset, 1, 0, AccessKind::SampledRead);
+            long.range.end *= u64::from(self.textures[1].mip_level_count());
+            accesses.push(long);
+            return accesses;
+        }
         (0..2)
             .map(|i| {
                 let mut a = self.access(offset, i, 0, AccessKind::SampledRead);
