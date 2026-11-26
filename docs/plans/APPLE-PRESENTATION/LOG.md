@@ -740,3 +740,9 @@ layer profile change. [Metal controls](../../../.orchestrate/evidence/CLOUDS/WP9
 - 2026-11-26 WP11. The merged D11.1 run read the idle screen flag before its asynchronous wake took effect.
   The proof now checks the wake before the timed hold, with a single display cycle for a persistent idle flag.
   The paired replay still measures the same window route.
+- 2026-11-26 WP11 review repair. Replay scale now follows the exact extracted publication, and all
+  2,475 routed comparison samples passed the per-submission extent check. The new proof checks repeated
+  ticks and the first rendered samples after skipped ticks. EDR prepares compatible backing for surface
+  variants and includes the SDR encode only when the graph reads it. Six Mac Metal renderer tests passed.
+  [Paired evidence](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP11/review-repair-paired/README.md) ·
+  [EDR graph tests](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP11/review-repair-render-final.log)

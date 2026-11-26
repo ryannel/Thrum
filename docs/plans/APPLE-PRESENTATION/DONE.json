@@ -1151,10 +1151,10 @@
           "lock": "gpu",
           "ask": "Are the two arms run alternately in one session from the same commit and scale trace? Is every row either a figure with its conditions or marked as not measured, with none left blank?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP11/review-repair-paired/README.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP11-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D11.2",
@@ -1193,10 +1193,10 @@
           "statement": "Each clause of G4's sentence holds as the brief words it, on the evidence the design's closing table names, and the maturity ledger says what was and was not proved, with implementation, correctness, visuals and device results apart. EDR is recorded as values above SDR white given to a layer configured for EDR, not as light the panel emitted. Full-screen pacing on the built-in display is recorded as one present call in every 60 Hz refresh interval of the route at a requested 60 Hz, which is what the engine did and not what the panel showed. The display's full refresh at full screen is recorded as not reached and owed by WP17, and the milestone as not yet reached. Each 120 Hz take is described by what its own build did: the frame-rate request, the overrides, the GPU time at the governor's floor against 8.33 ms, each pass's time and the host load. The physical iPhone and external-display rows are named as owed.",
           "ask": "Take the brief's G4 sentence clause by clause: which item of WP3 to WP12 proves each, and is any clause proved only by a forced override that the ledger does not label? Then read the ledger and the evidence page for three things. 1. Is full-screen pacing given as present calls in refresh intervals, and nowhere as frames shown on the panel? 2. Is the display's full refresh at full screen given as owed by WP17, and is it said nowhere that the bar is met there, that 60 Hz is the target there, or that the milestone is reached? 3. Is the builder's retake described as its build ran it, with a 60 to 120 Hz request that preferred 120, an 8.33 ms interval and EDR headroom forced to 2, and is a take called forced-rate only where the launch setting set its rate?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP11/g4-closure.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP11-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D11.6",
