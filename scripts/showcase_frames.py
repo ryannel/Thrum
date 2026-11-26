@@ -3,6 +3,7 @@
 import json
 import subprocess
 import time
+from bisect import bisect_left, bisect_right
 
 from apple_governor_proof import awake_display
 from apple_presentation import read_rows
@@ -104,8 +105,12 @@ def mac_record(output, first, last, day, startup, load):
             while present_index < len(presents) and presents[present_index]['present_media'] < begin:
                 latest = presents[present_index]
                 present_index += 1
-            delivered = present_index < len(presents) and presents[present_index]['present_media'] < end
-            if not delivered:
+            following_present = present_index
+            while (following_present < len(presents)
+                   and presents[following_present]['present_media'] < end):
+                following_present += 1
+            interval_presents = presents[present_index:following_present]
+            if len(interval_presents) != 1:
                 nearby_frames = [by_sequence[row['sequence']] for row in (previous, current)
                                  if row['sequence'] in by_sequence]
                 crossing_work = [{'stage': stage, 'submission': frame['submission'],
@@ -120,12 +125,14 @@ def mac_record(output, first, last, day, startup, load):
                 misses.append({'position': position, 'duration_ms': (end - begin) * 1000,
                                'target_media': end, 'callback_interval_ms': interval * 1000,
                                'previous_submission': latest['submission'],
-                               'next_submission': presents[present_index]['submission'] if present_index < len(presents) else None,
+                               'interval_submissions': [frame['submission'] for frame in interval_presents],
+                               'next_submission': presents[following_present]['submission']
+                               if following_present < len(presents) else None,
                                'preceding_callback': previous, 'following_callback': current,
                                'nearby_frame_reports': nearby_frames, 'work_crossing_deadline': crossing_work,
                                'previous_sample': samples.get(latest['submission']),
-                               'next_sample': samples.get(presents[present_index]['submission'])
-                               if present_index < len(presents) else None,
+                               'next_sample': samples.get(presents[following_present]['submission'])
+                               if following_present < len(presents) else None,
                                'investigation': ('render-owner wall-time work crossed the deadline'
                                                  if crossing_work else 'unresolved under load'),
                                'evidence_read': 'display-link targets and callback intervals, neighbouring render-owner stages and GPU-complete samples'})
@@ -166,9 +173,7 @@ def chrome_record(output, wasm_hash, day):
     samples = [row for row in runtime['exit_frames'] if first <= row['tick'] <= last and row['presented']]
     if not samples or not all(row['timing_requested'] for row in samples):
         raise ValueError('Chrome had no completed frames with timestamp queries requested')
-    by_tick = {}
-    for row in samples:
-        by_tick.setdefault(row['tick'], []).append(row)
+    samples.sort(key=lambda row: (row['tick'], row['submission']))
     measured = [row for row in callbacks if first <= row['tick'] <= last]
     misses = []
     for previous, current in zip(measured, measured[1:]):
@@ -180,9 +185,12 @@ def chrome_record(output, wasm_hash, day):
         position = {'world_tick': current['tick'], 'route_tick': current['tick'] - first}
         if day:
             position['solar_hours'] = 24 * (current['tick'] - first) / (last - first)
+        earlier = bisect_left(samples, previous['tick'], key=lambda row: row['tick'])
+        later = bisect_right(samples, current['tick'], key=lambda row: row['tick'])
         misses.append({'position': position, 'duration_ms': interval,
                        'preceding_callback': previous, 'following_callback': current,
-                       'available_frame_samples': by_tick.get(previous['tick'], []) + by_tick.get(current['tick'], []),
+                       'preceding_driver_ms': previous['drain_finished_ms'] - previous['requested_ms'],
+                       'available_frame_samples': samples[max(0, earlier - 1):later + 1],
                        'investigation': 'unresolved under load',
                        'evidence_read': 'animation-frame timestamps, JS driver times and available GPU pass samples'})
     return {'selections': runtime['exit_selections'], 'target': 'chrome-webgpu',
