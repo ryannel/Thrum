@@ -272,7 +272,76 @@
     },
     "WP7": {
       "definitions": "b7247b5bb2c79fdc87a86f3901dc4c2180f56ee2a3eb92067774334f7d22294a",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "d36a6de6460874a9f52814737b1b3709f54f95b0",
+          "review": ".orchestrate/evidence/SHOWCASE/WP7-review.md",
+          "items": {
+            "WP7.1": "pass",
+            "WP7.2": "pass",
+            "WP7.3": "pass",
+            "WP7.4": "pass",
+            "WP7.5": "fail",
+            "WP7.6": "pass",
+            "WP7.7": "pass",
+            "WP7.8": "pass",
+            "WP7.9": "fail",
+            "WP7.10": "fail"
+          },
+          "findings": [
+            {
+              "name": "Exit profiler disables the Chrome sizing sweep",
+              "repeat": false
+            },
+            {
+              "name": "Chrome drops a long interval across the route boundary",
+              "item": "WP7.10",
+              "repeat": false
+            },
+            {
+              "name": "Chrome assigns known page stalls to unresolved load",
+              "item": "WP7.10",
+              "repeat": false
+            },
+            {
+              "name": "Mac miss duration measures the opportunity instead of the frame gap",
+              "item": "WP7.9",
+              "repeat": false
+            },
+            {
+              "name": "Mac misses render work spanning later callbacks",
+              "item": "WP7.9",
+              "repeat": false
+            },
+            {
+              "name": "Noon texture control edits the prop texture instead of the ground",
+              "item": "WP7.5",
+              "repeat": false
+            },
+            {
+              "name": "Reviewed refresh cannot update the three row baselines",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 186519,
+            "cached": 8915072,
+            "output": 21646,
+            "turns": 1
+          },
+          "at": "2026-11-26T22:34:34Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of SHOWCASE at .orchestrate/evidence/SHOWCASE/design-review.md asked for changes, with its 1 Must Fix ",
