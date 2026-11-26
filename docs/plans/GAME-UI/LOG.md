@@ -146,3 +146,7 @@
 - 2026-11-26 WP3.7 verifier fix. Chrome reuses one tab and unloads each DPR's page after retiring its
   device. The three DPRs matched the CPU reference before and after resize and Chrome exited cleanly.
   [Target proof](../../../.orchestrate/evidence/GAME-UI/WP3/costs-chrome-retry/chrome-fixed/run.json)
+- 2026-11-26 WP3.12 cold-start fix. A Chrome canvas can present before the status sheets are resident.
+  The probe tracks retirement of each presented frame and collects costs once a timed status frame is
+  available. The clean-checkout command passed both release runs, with 32 timed status frames in each.
+  [Target proof](../../../.orchestrate/evidence/GAME-UI/WP3/costs-chrome-retry/final/summary.json)

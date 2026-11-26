@@ -433,7 +433,7 @@
           "check": "python3 scripts/game_ui.py costs --target chrome-webgpu --layout",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/GAME-UI/WP3/costs-chrome-retry/summary.json",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP3/costs-chrome-retry/final/summary.json",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
