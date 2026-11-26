@@ -1896,21 +1896,21 @@
       }
     },
     "U1": {
-      "definitions": "7cd876a6b56b2970a8c3a7ef527a5ec8938a85cf097e0b5109b073ff24ff89a5",
+      "definitions": "5f2bbd5cf0f81dc4e077c214eda9dd63fe83403f00aceddb55fec713d87f5678",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan the next work packages of module APPLE-PRESENTATION, up to U1: write their items in its done-when file. Its plan na",
-        "at": "2026-11-26T11:58:54Z"
+        "task": "The design review of APPLE-PRESENTATION at .orchestrate/evidence/APPLE-PRESENTATION/design-review.md asked for changes, ",
+        "at": "2026-11-26T13:01:01Z"
       }
     },
     "U2": {
-      "definitions": "63d0eef1deec7f256a51e29ab262797f1f362448d2de98d816ed051b077ab588",
+      "definitions": "ee1f92583cd7bbd9283bedff5b5e7afb7aa17f183c5e8c0dde4c51bfc553e175",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Plan the next work packages of module APPLE-PRESENTATION, up to U1: write their items in its done-when file. Its plan na",
-        "at": "2026-11-26T11:58:54Z"
+        "task": "The design review of APPLE-PRESENTATION at .orchestrate/evidence/APPLE-PRESENTATION/design-review.md asked for changes, ",
+        "at": "2026-11-26T13:01:01Z"
       },
       "ends_stretch": true
     }
@@ -1995,11 +1995,15 @@
     {
       "task": "Plan the next work packages of module APPLE-PRESENTATION, up to U1: write their items in its done-when file. Its plan names them already. Where the user chose one of a set of options, or answered a question, in an earlier work package, its User Feedback and the settings' References: folder hold the answer; write the new items against it",
       "at": "2026-11-26T11:58:54Z"
+    },
+    {
+      "task": "The design review of APPLE-PRESENTATION at .orchestrate/evidence/APPLE-PRESENTATION/design-review.md asked for changes, with its Must Fix findings. An earlier revise turn was paused because it tried to resume a session already open; start fresh.",
+      "at": "2026-11-26T13:01:01Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-26T11:58:54Z"
+    "at": "2026-11-26T13:01:01Z"
   },
   "design_history": [
     {
