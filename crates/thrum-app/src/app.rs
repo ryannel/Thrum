@@ -393,6 +393,17 @@ impl<G: WindowGame + 'static> App<G> {
         }
     }
 
+    fn window_interface_input(&self) -> bool {
+        #[cfg(feature = "interface")]
+        {
+            self.game.wants_interface_input()
+        }
+        #[cfg(not(feature = "interface"))]
+        {
+            false
+        }
+    }
+
     /// Continuous game input changed: the next display target renders it.
     fn input_changed(&mut self) {
         self.edits.request();
@@ -1662,16 +1673,6 @@ impl<G: WindowGame + 'static> ApplicationHandler<UserEvent> for App<G> {
                 if let PhysicalKey::Code(code) = event.physical_key
                     && let Some(code) = KeyCode::from_winit(code)
                 {
-                    #[cfg(feature = "interface")]
-                    if self.game.wants_interface_input() {
-                        if let Err(error) =
-                            self.interface_key(code, event.state, event.repeat, false)
-                        {
-                            self.error = Some(error);
-                            event_loop.exit();
-                        }
-                        return;
-                    }
                     if code == KeyCode::KeyR && !self.recovery.ready() {
                         if self.recovery.failed()
                             && event.state == ElementState::Pressed
@@ -1693,6 +1694,12 @@ impl<G: WindowGame + 'static> ApplicationHandler<UserEvent> for App<G> {
                         } else {
                             Ok(())
                         }
+                    } else if self.window_interface_input() {
+                        #[cfg(feature = "interface")]
+                        let result = self.interface_key(code, event.state, event.repeat, false);
+                        #[cfg(not(feature = "interface"))]
+                        let result = Ok(());
+                        result
                     } else if code == KeyCode::KeyP && self.game.world().is_some() {
                         if event.state == ElementState::Pressed && !event.repeat {
                             self.pause.request(!self.pause.desired());

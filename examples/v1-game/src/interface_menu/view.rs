@@ -76,8 +76,10 @@ fn play_prompt(edited: bool) -> Node {
     panel.anchor = [Anchor::Centre, Anchor::Point(8.0)];
     let line = if edited {
         "Field display updated"
-    } else {
+    } else if cfg!(target_os = "macos") {
         "M  Choice     J  Join     H  Host"
+    } else {
+        "M  Choice     J  Join"
     };
     panel.children = Vec::new();
     let mut prompt = label(91, line, 12.0, CREAM);

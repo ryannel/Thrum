@@ -202,7 +202,9 @@ impl Menu {
                 match contact {
                     Contact::Key(KeyCode::KeyM) => self.screen(Screen::Choice, now),
                     Contact::Key(KeyCode::KeyJ) => self.screen(Screen::Joining, now),
-                    Contact::Key(KeyCode::KeyH) => self.screen(Screen::Hosting, now),
+                    Contact::Key(KeyCode::KeyH) if cfg!(target_os = "macos") => {
+                        self.screen(Screen::Hosting, now);
+                    }
                     Contact::Key(KeyCode::KeyE) => self.view.edit = !self.view.edit,
                     _ => {}
                 }
