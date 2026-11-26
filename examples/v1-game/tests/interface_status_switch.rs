@@ -5,15 +5,15 @@ mod status_store;
 
 use status_metal as metal;
 use status_store as store;
-use v1_game::interface_status::proof;
+use v1_game::interface_status::{self as status, proof};
 
-use std::{path::Path, time::Duration};
+use std::time::Duration;
 
 use thrum_asset::{FontProduct, Head, SheetProduct};
 use thrum_cook::Cooker;
 use thrum_render::runtime::{FrameConfig, SubmittedImage};
 use thrum_test_support::{Opened, Scratch};
-use thrum_ui::{PaintStamp, Viewport};
+use thrum_ui::{Font, Image, PaintInputs, PaintStamp, Viewport};
 use v1_game::{GameHost, GameScene, GameSetup, GameWorld, InterfaceText};
 
 const EXTENT: [u32; 2] = [704, 280];
@@ -163,37 +163,37 @@ fn check_transition(
     panic!("publication did not switch");
 }
 
-fn widen_advances(path: &Path) {
-    // Roboto's horizontal metrics hold a two-byte advance before each bearing.
-    // Increase every recorded advance so timer width must be remeasured.
-    let mut bytes = std::fs::read(path).expect("Roboto source");
-    let offsets = |tag: [u8; 4]| {
-        let tables = usize::from(u16::from_be_bytes(
-            bytes[4..6].try_into().expect("table count"),
-        ));
-        let index = (0..tables)
-            .map(|index| 12 + 16 * index)
-            .find(|offset| bytes[*offset..*offset + 4] == tag)
-            .expect("font table");
-        u32::from_be_bytes(
-            bytes[index + 8..index + 12]
-                .try_into()
-                .expect("table position"),
-        ) as usize
-    };
-    let header = offsets(*b"hhea");
-    let table = offsets(*b"hmtx");
-    let count = u16::from_be_bytes(
-        bytes[header + 34..header + 36]
-            .try_into()
-            .expect("horizontal metric count"),
-    );
-    for index in 0..usize::from(count) {
-        let offset = table + index * 4;
-        let advance = u16::from_be_bytes(bytes[offset..offset + 2].try_into().expect("advance"));
-        bytes[offset..offset + 2].copy_from_slice(&(advance + 300).to_be_bytes());
-    }
-    std::fs::write(path, bytes).expect("save widened font");
+fn caption_height(publication: &Publication) -> f64 {
+    let frame = publication.art.frame_at(0).expect("health badge");
+    let mut tree = status::tree(Image {
+        sheet: 2,
+        frame: 0,
+        texels: frame.size,
+    })
+    .expect("status tree");
+    tree.prepare_layout(
+        Viewport {
+            extent: EXTENT,
+            scale: publication.scale,
+            insets: [0.0; 4],
+        },
+        PaintInputs {
+            stamp: None,
+            fonts: &[Font {
+                product: &publication.font,
+                sheet: 1,
+            }],
+            white: status::WHITE_TILE,
+        },
+    )
+    .expect("layout from this publication");
+    tree.bounds(25).expect("Gems Found caption").size[1]
+}
+
+fn ink_width(font: &FontProduct) -> u32 {
+    let strike = font.strike(12.0, 1).expect("display strike");
+    let glyph = strike.glyph('6').expect("timer digit");
+    strike.frame(glyph.frame).expect("ink frame").size[0]
 }
 
 #[test]
@@ -224,25 +224,23 @@ fn font_art_and_scale_switch_only_with_their_fresh_status_layout() {
             (stamp(&frame) == Some(before.stamp())).then_some(frame)
         },
     );
-    widen_advances(&source.join("type/Roboto-Regular.ttf"));
+    let edited = store::fixture()
+        .with_file_name("status-wide")
+        .join("Roboto-StatusWide.ttf");
+    std::fs::copy(edited, source.join("type/Roboto-Regular.ttf"))
+        .expect("save wide outline and advances");
     assert_eq!(
         cooker.cook_all().expect("widened font publication").failed,
         []
     );
     let after_font = Publication::from(&cooker, 1);
     assert!(
-        after_font
-            .font
-            .strike(12.0, 1)
-            .expect("new strike")
-            .metrics
-            .widest_digit
-            > before
-                .font
-                .strike(12.0, 1)
-                .expect("old strike")
-                .metrics
-                .widest_digit
+        ink_width(&after_font.font) > ink_width(&before.font),
+        "the edit widens the rasterized outline"
+    );
+    assert!(
+        caption_height(&after_font) > caption_height(&before),
+        "the widened font moves the second word to a new line"
     );
     let frame = check_transition(&mut rig, &before, &after_font, frame);
 

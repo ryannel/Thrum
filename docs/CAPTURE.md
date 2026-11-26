@@ -171,6 +171,18 @@ admission and timing. This native inspection case supports the ten-second pan,
 validation still apply. The route sets solar time and camera, and the ordinary
 world runs at 1x unless the selected parameters explicitly change it.
 
+### Status display
+
+Set `THRUM_SCENE=interface`, `THRUM_INTERFACE_TEXT=status` and `THRUM_FONT_STORE` to the cooked
+`tests/fixtures/game-ui/font-source` store on the Mac. The `sprites-status` case records a held checkpoint
+with `--mode fixed` or the moving field with `--mode realtime`. A fixed checkpoint can set
+`THRUM_CAPTURE_STATUS_TICK` to 0, 80 or 120 for a full, one-third or empty health bar. Set
+`THRUM_CAPTURE_STATUS_INSETS` to four point insets in left, top, right and bottom order.
+
+Use `node scripts/capture_v1_browser.mjs --scene sprites-status --mode realtime --dpr 2 --output tmp/status-chrome`
+for the matching Chrome take. Run `python3 scripts/review_interface_status.py <capture> <review-folder>` to
+check the submitted bar widths and extract native-size crops. Pass the same `--insets` to review an inset take.
+
 ## Artifacts and bounds
 
 `runtime.json` joins opportunities, requested/accepted controls, exact submission IDs, adjacent endpoint ticks,

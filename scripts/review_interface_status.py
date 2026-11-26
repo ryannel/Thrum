@@ -76,7 +76,7 @@ def edges(extent, scale, insets):
     panel = min(304, inner)
     x = (left + 8 + (inner - panel) * 0.5) * scale
     y = (top + 8) * scale
-    return int(x + 0.50000001), int(y + 0.50000001), int(x + panel * scale + 0.50000001), min(height, int(y + 100 * scale + 0.50000001))
+    return int(x + 0.50000001), int(y + 0.50000001), int(x + panel * scale + 0.50000001), min(height, int(y + 116 * scale + 0.50000001))
 
 
 def crop(raw, extent, bounds):
@@ -144,7 +144,7 @@ def inspect(directory, output, insets):
             group = (iw - 32 * s) / 3
             for i, label in enumerate(("score", "gems", "wave")):
                 left = x + 10 * s + int(i * (group + 6 * s) + 0.5)
-                parts[label] = [left, y + 43 * s, left + round(group), y + 91 * s]
+                parts[label] = [left, y + 43 * s, left + round(group), y + 108 * s]
             for name, bounds in parts.items():
                 l, t, r, b = bounds
                 package(crop(raw, entry["extent"], bounds),

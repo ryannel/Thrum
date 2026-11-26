@@ -98,7 +98,7 @@ pub fn tree(badge: Image) -> Result<Tree, TreeError> {
             most: 304.0,
             ..FILL
         },
-        Size::fixed(100.0),
+        Size::fixed(116.0),
     ];
     panel.padding = [10.0, 8.0, 10.0, 8.0];
     panel.anchor[0] = Anchor::Centre;
@@ -125,16 +125,21 @@ pub fn tree(badge: Image) -> Result<Tree, TreeError> {
     );
     bar.size = [FILL, Size::fixed(6.0)];
     let mut counters = stack(8, Axis::Row, 6.0);
-    counters.size = [FILL, Size::fixed(49.0)];
-    for (counter, name) in COUNTS.into_iter().zip(["SCORE", "GEMS", "WAVE"]) {
+    counters.size = [FILL, Size::fixed(64.0)];
+    for (counter, name) in COUNTS.into_iter().zip(["SCORE", "GEMS FOUND", "WAVE"]) {
         let mut group = stack(counter - 2, Axis::Column, 1.0);
-        group.size = [FILL, Size::fixed(45.0)];
+        group.size = [FILL, Size::fixed(64.0)];
         let mut line = Node::new(counter - 1, NodeKind::Fill([0.11, 0.19, 0.24, 1.0]));
         line.size = [FILL, Size::fixed(1.0)];
+        let mut caption = label(counter + 1, name, 12, MUTED, false, Alignment::Centre);
+        if let NodeKind::Text(text) = &mut caption.kind {
+            text.options.wrap = true;
+            caption.size[0] = FILL;
+        }
         group.children = vec![
             line,
             label(counter, "000", 16, WHITE, true, Alignment::Centre),
-            label(counter + 1, name, 12, MUTED, false, Alignment::Centre),
+            caption,
         ];
         counters.children.push(group);
     }

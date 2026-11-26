@@ -73,6 +73,11 @@ pub(crate) const DECLARED_EDGES: &[Edge] = &[
         package: "v1-game",
         reader: "interface_text_gpu reads the font sources",
     },
+    Edge {
+        path: "tests/fixtures/game-ui/status-wide/",
+        package: "v1-game",
+        reader: "interface_status_switch cooks the widened font edit",
+    },
 ];
 
 /// One workspace package: its folder relative to the workspace root, and the workspace packages it
