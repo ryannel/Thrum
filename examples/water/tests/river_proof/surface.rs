@@ -64,8 +64,8 @@ impl TradeDepth {
         }
     }
 
-    fn advance(&mut self) {
-        self.tick += 1;
+    fn submit_tick(&mut self, tick: u32) {
+        self.tick = tick;
         let use_tick = u64::from(self.tick);
         let submitted = self
             .scene
@@ -85,7 +85,7 @@ impl TradeDepth {
         inverse: glam::DMat4,
         station_radius: f64,
     ) -> Option<(f64, [f32; 3])> {
-        self.advance();
+        self.submit_tick(self.tick + 1);
         let use_tick = u64::from(self.tick);
         let [column, row] = EXTENT.map(|axis| axis / 2);
         let depth = self.tap.read(&self.scene)[(row * EXTENT[0] + column) as usize];
@@ -232,9 +232,10 @@ pub(crate) fn check_bank_depth(gpu: &thrum_test_support::Gpu) {
     let view = Camera::look_at([x + 4.5, level + 2.0, z + 3.6], [x, level, z], 55.0);
     *probe.camera.lock().expect("trade depth camera") = view;
     let inverse = support::depth::matrix(view, EXTENT).as_dmat4().inverse();
-    // Advance the live cascades to the wave train that crosses this bank ray.
-    for _ in 0..379 {
-        probe.advance();
+    // Start before the wave train that crosses this bank ray, then submit
+    // each display tick so the short-wave cascades reach their normal cadence.
+    for tick in 376..380 {
+        probe.submit_tick(tick);
     }
     let mut maximum_error = 0.0_f64;
     for _ in 380..=400 {
