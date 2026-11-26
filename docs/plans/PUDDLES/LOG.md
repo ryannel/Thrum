@@ -269,3 +269,8 @@
   departure and blend gradients on varying currents. Metal verifies the faded-edge oracle and a stop
   between posting and use. The final proof records the 54-station drain, region labelling, native
   inspections and Chrome WebGPU. [Target evidence and cost investigations](../../../.orchestrate/evidence/PUDDLES/WP4/footprint-delivery.md)
+
+- 2026-11-26 WP4 review repair. Finer distance spacing and a rung at the carried craft radius give
+  the station's prepared disc read more margin against the direct f64 average. Metal verifies all
+  three reported stations, the 0.2784 m craft request radius, the faded edge and the use-tick history.
+  The authored coefficients use 96.3 MB, up from 34.4 MB. [WP4.13 evidence](../../../.orchestrate/evidence/PUDDLES/WP4/footprint-delivery.md#steady-rain-disc-accuracy)

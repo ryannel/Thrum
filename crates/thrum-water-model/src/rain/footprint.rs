@@ -5,9 +5,11 @@ use crate::{Map, MapSample};
 use std::f64::consts::{PI, TAU};
 use thrum_sea_model::Sample;
 
-// Fractions of a ring's reach. Include the yard's float and craft footprints.
-const RADII: [f64; 14] = [
-    0.0625, 0.125, 0.1875, 0.25, 0.3125, 0.4, 0.5, 0.625, 0.75, 0.86875, 1.0, 1.25, 1.5625, 2.0,
+// Fractions of a ring's reach. At the standard reach, include both the
+// nominal 0.278 m disc and the 0.2784 m disc carried in craft requests.
+const RADII: [f64; 15] = [
+    0.0625, 0.125, 0.1875, 0.25, 0.3125, 0.4, 0.5, 0.625, 0.75, 0.86875, 0.87, 1.0, 1.25, 1.5625,
+    2.0,
 ];
 
 type Ring = [f64; 3];
@@ -19,7 +21,8 @@ pub(super) struct Footprints {
 
 impl Footprints {
     pub(super) fn new(table: &RingTable) -> Self {
-        let means = convolve(table, &kernel(table, 0.0, table.reach(), 1.0));
+        let mut means = vec![Vec::new(); table.classes.len()];
+        convolve(table, &kernel(table, 0.0, table.reach(), 1.0), &mut means);
         let rungs = RADII
             .map(|fraction| Rung::new(table, fraction * table.reach()))
             .into();
@@ -37,11 +40,17 @@ struct Rung {
 impl Rung {
     fn new(table: &RingTable, radius: f64) -> Self {
         let support = table.reach() + radius;
-        let intervals =
-            grid_index((support / (radius / 36.0).max(table.radius_step * 0.5)).ceil()).max(1);
+        // The disc smooths the ring, but its remaining curvature still
+        // matters when the height errors of many overlapping drops add up.
+        let max_spacing = (radius / 108.0).max(table.radius_step * 0.25);
+        let intervals = grid_index((support / max_spacing).ceil()).max(1);
         let spacing = support / intervals as f64;
         let distances = intervals + 1;
-        let mut classes = vec![Vec::with_capacity(distances * table.ages); table.classes.len()];
+        let mut classes: Vec<_> = table
+            .classes
+            .iter()
+            .map(|_| Vec::with_capacity(distances * table.ages))
+            .collect();
         for i in 0..intervals {
             let weights = kernel(
                 table,
@@ -49,9 +58,7 @@ impl Rung {
                 radius,
                 1.0 / (PI * radius * radius),
             );
-            for (class, samples) in classes.iter_mut().zip(convolve(table, &weights)) {
-                class.extend(samples);
-            }
+            convolve(table, &weights, &mut classes);
         }
         for class in &mut classes {
             class.resize(distances * table.ages, [0.0; 3]);
@@ -145,32 +152,24 @@ fn kernel(table: &RingTable, distance: f64, radius: f64, normalization: f64) -> 
     weights
 }
 
-fn convolve(table: &RingTable, weights: &[[f64; 2]]) -> Vec<Vec<Ring>> {
+fn convolve(table: &RingTable, weights: &[[f64; 2]], classes: &mut [Vec<Ring>]) {
     let first = weights.iter().position(|w| w[0] > 0.0).unwrap_or(0);
     let last = weights
         .iter()
         .rposition(|w| w[0] > 0.0)
         .map_or(first, |i| i + 1);
-    table
-        .classes
-        .iter()
-        .map(|class| {
-            (0..table.ages)
-                .map(|age| {
-                    let start = age * table.radii;
-                    let mut ring = [0.0; 3];
-                    for (i, &[mean, slope]) in
-                        (start + first..start + last).zip(&weights[first..last])
-                    {
-                        ring[0] += mean * class.height[i];
-                        ring[1] += slope * class.slope[i];
-                        ring[2] += mean * class.rate[i];
-                    }
-                    ring
-                })
-                .collect()
-        })
-        .collect()
+    for (class, samples) in table.classes.iter().zip(classes) {
+        samples.extend((0..table.ages).map(|age| {
+            let start = age * table.radii;
+            let mut ring = [0.0; 3];
+            for (i, &[mean, slope]) in (start + first..start + last).zip(&weights[first..last]) {
+                ring[0] += mean * class.height[i];
+                ring[1] += slope * class.slope[i];
+                ring[2] += mean * class.rate[i];
+            }
+            ring
+        }));
+    }
 }
 
 struct LiveDrop {

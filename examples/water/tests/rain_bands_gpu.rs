@@ -514,6 +514,23 @@ fn the_disc_averages_the_drawn_ring_including_its_edge_fade() {
         }
     }
 
+    for (point, radius, label) in [
+        ([4.807, 3.249], 0.04, "small review station"),
+        ([5.349, 3.443], 0.128, "float review station"),
+        ([1.826, 2.182], 0.278, "craft review station"),
+        (
+            [5.352, 0.369],
+            f64::from(0.2784_f32),
+            "craft request radius",
+        ),
+    ] {
+        compare(
+            label,
+            as_array(query.sample(point, radius)),
+            direct_disc(&rain, point, time, radius),
+        );
+    }
+
     // Find a committed interval containing exactly one local drop, then make
     // every other interval dry. Observe that drop at age 0.8, one reach away.
     let (point, time) = (0..2)

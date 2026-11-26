@@ -518,8 +518,8 @@
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test rain_bands_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP4/footprint-delivery.md#steady-rain-disc-accuracy",
           "verdict": "fail",
           "review": ".orchestrate/evidence/PUDDLES/WP4-review.md"
         }
