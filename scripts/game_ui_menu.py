@@ -2,11 +2,10 @@
 
 import json
 from itertools import groupby
-import os
-from pathlib import Path
+import re
 import subprocess
 
-from game_ui_status import prepare_store, wake_window_display
+from game_ui_status import prepare_store, wake_window_display, window_console
 
 CARDS = [110, 120, 130, 140]
 TICKET = "THRUM-ALPHA-29406-A82EXACL79FTG2OXQ4X65SPPDLX2OUF6KR18PJH5902C01W64NFQVE82NHXQ33DM0-COAST-8432"
@@ -151,12 +150,38 @@ def validate_costs(report):
     assert not required, required
 
 
+def run_window(command, root, env, witness):
+    stem = witness.stem.removesuffix("-record")
+    launch_log = witness.with_name(f"{stem}-launch.json")
+    attempts = []
+    for attempt in (1, 2):
+        before, awake = wake_window_display()
+        log_path = witness.with_name(f"{stem}-attempt-{attempt}.log")
+        with log_path.open("wb") as log:
+            result = subprocess.run(command, cwd=root, env=env, timeout=70,
+                                    stdout=log, stderr=subprocess.STDOUT)
+        output = log_path.read_text(errors="replace")
+        no_display_callbacks = (
+            result.returncode == 1 and not witness.exists()
+            and re.search(r"^v1-game: \d+ presented frames unavailable: presented=0, tick=\d+, "
+                          r"display_link_callbacks=0, render_callbacks=0,", output, re.MULTILINE) is not None
+            and "the display never asked for a frame" in output
+        )
+        attempts.append({"log": log_path.name, "exit_code": result.returncode,
+                         "no_display_callbacks": no_display_callbacks, "before_wake": before,
+                         "after_wake": awake, "after_run": window_console()})
+        launch_log.write_text(json.dumps(attempts, indent=2) + "\n")
+        if result.returncode == 0 and witness.is_file():
+            return attempts
+        if not no_display_callbacks or attempt == 2:
+            raise RuntimeError(f"Window witness unavailable. See {log_path}\n{output[-4000:]}")
+
+
 def run(root, destination, scratch, revision, environment, mode, load, digest):
     subprocess.run(["cargo", "build", "--release", "--locked", "--offline", "-p", "v1-game",
                     "--bin", "v1-game"], cwd=root, check=True)
     store = prepare_store(root, scratch)
     binary = root / "target/release/v1-game"
-    wake_window_display()
     actions = {"route": route_script, "drops": drops_script, "costs": costs_script}[mode]()
     capacity = max(360, 24 + sum(step.get("after", 1) for step in actions))
     records = []
@@ -172,13 +197,12 @@ def run(root, destination, scratch, revision, environment, mode, load, digest):
         if mode == "drops":
             command.extend(["--join-ticket", TICKET])
         before = load()
-        with (destination / f"{mode}-{index}.log").open("wb") as log:
-            subprocess.run(command, cwd=root, env=env, check=True, timeout=70,
-                           stdout=log, stderr=subprocess.STDOUT)
+        attempts = run_window(command, root, env, witness)
         record = json.loads(witness.read_text())
         record["final"] = json.loads(record["final"])
         record.update(commit=revision, target="mac-metal", build="release", command=command,
-                      binary_sha256=digest(binary), load_before=before, load_after=load())
+                      binary_sha256=digest(binary), load_before=before, load_after=load(),
+                      launch_attempts=attempts)
         witness.write_text(json.dumps(record, indent=2) + "\n")
         if mode == "route":
             validate_route(record)

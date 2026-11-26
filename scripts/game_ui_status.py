@@ -3,6 +3,7 @@
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import time
@@ -52,18 +53,20 @@ def compare_window(sample, window, directory, stem, oracle, store):
             "rgba_sha256": package(actual, image, width, height), "png": str(image.name)}
 
 
-def wake_window_display():
-    def observe():
-        summary, raw = console_observation()
-        return {**summary, "display_idle": '"CGSSessionScreenIsLocked"=Yes' in raw}
+def window_console():
+    summary, raw = console_observation()
+    display_idle = re.search(r'"CGSSessionScreenIsLocked"\s*=\s*Yes', raw) is not None
+    return {**summary, "display_idle": display_idle}
 
-    before = observe()
+
+def wake_window_display():
+    before = window_console()
     subprocess.run(["/usr/bin/caffeinate", "-u", "-t", "3"], check=True)
-    if observe()["display_idle"]:
+    if window_console()["display_idle"]:
         subprocess.run(["/usr/bin/pmset", "displaysleepnow"], check=True)
         time.sleep(3)
         subprocess.run(["/usr/bin/caffeinate", "-u", "-t", "3"], check=True)
-    return before, observe()
+    return before, window_console()
 
 
 def windows(root, destination, scratch, revision, environment):
