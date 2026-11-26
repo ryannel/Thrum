@@ -59,6 +59,25 @@ impl Ready {
         })
     }
 
+    pub(super) fn first_draw(
+        &self,
+        driver: &mut super::Driver,
+        device: &wgpu::Device,
+        generation: Option<u64>,
+    ) -> Result<(), String> {
+        let generation = generation.ok_or("creation proof requires a cooked draw")?;
+        let now = epoch_ns()?;
+        writeln!(
+            std::io::stderr().lock(),
+            "THRUM_METAL_COOKED_DRAW {now} {generation}"
+        )
+        .map_err(|error| error.to_string())?;
+        if self.arm == CreationProof::Metallib {
+            align_route_history(driver, device)?;
+        }
+        Ok(())
+    }
+
     pub(super) fn finish(
         self,
         site: &DeviceSite,
@@ -91,10 +110,7 @@ impl Ready {
 }
 
 /// Give paired captures the same submission cursor regardless of when cooked assets first draw.
-pub(super) fn align_route_history(
-    driver: &mut super::Driver,
-    device: &wgpu::Device,
-) -> Result<(), String> {
+fn align_route_history(driver: &mut super::Driver, device: &wgpu::Device) -> Result<(), String> {
     const WARMUP_FRAMES: u64 = 32;
     let frames = driver.host().creation_report().frames;
     if frames > WARMUP_FRAMES {
@@ -126,16 +142,6 @@ pub(super) fn align_route_history(
     {}
     driver.host_mut().invalidate_history();
     Ok(())
-}
-
-pub(super) fn first_cooked_draw(cooked_generation: Option<u64>) -> Result<(), String> {
-    let generation = cooked_generation.ok_or("creation proof requires a cooked draw")?;
-    let now = epoch_ns()?;
-    writeln!(
-        std::io::stderr().lock(),
-        "THRUM_METAL_COOKED_DRAW {now} {generation}"
-    )
-    .map_err(|error| error.to_string())
 }
 
 fn epoch_ns() -> Result<u128, String> {

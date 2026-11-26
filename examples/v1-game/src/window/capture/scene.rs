@@ -242,12 +242,8 @@ pub(in crate::window) async fn run(
         })
         .transpose()?;
     #[cfg(feature = "creation-counters")]
-    if creation.is_some() {
-        creation::first_cooked_draw(cooked_generation)?;
-    }
-    #[cfg(feature = "creation-counters")]
-    if request.creation_proof == Some(CreationProof::Metallib) {
-        creation::align_route_history(&mut driver, &device)?;
+    if let Some(ready) = &creation {
+        ready.first_draw(&mut driver, &device, cooked_generation)?;
     }
     std::fs::create_dir_all(&output).map_err(|error| error.to_string())?;
     if let Some((text, _, _)) = &moving_route {
