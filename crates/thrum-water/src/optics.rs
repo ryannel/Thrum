@@ -178,6 +178,7 @@ struct Inputs {
     downwelling_mirror: [f32; 4],
     reach_slope_scene: [f32; 4],
     dispatch: [u32; 4],
+    inverse_raster_view_proj: [[f32; 4]; 4],
     mask: [[[u32; 4]; GRID_WIDTH / 4]; GRID_HEIGHT],
     bodies: [BodyBounds; BODY_CAPACITY],
     sources: [[u32; 4]; BODY_CAPACITY],
@@ -379,6 +380,7 @@ mod tests {
                     downwelling_mirror,
                     reach_slope_scene,
                     dispatch,
+                    inverse_raster_view_proj,
                     mask,
                     bodies,
                     sources

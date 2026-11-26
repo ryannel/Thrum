@@ -13,7 +13,10 @@ const opticsRoute = mode === 'fixed' ? process.env.THRUM_WATER_BROWSER_OPTICS : 
 const diveRoute = ['fixed','realtime'].includes(mode) ? process.env.THRUM_WATER_BROWSER_DIVE : undefined;
 const surfInspection = process.env.THRUM_WATER_INSPECT_SURF === '1' && ['fixed','realtime'].includes(mode);
 const handoffCut = surfInspection && mode === 'realtime' && process.env.THRUM_WATER_ROUTE === 'handoff-cut';
-const [width,height] = mode === 'under' ? [48,27] : mode==='rain-rings' ? [960,540] : [2560,1440];
+const [width,height] = mode === 'under' ? [48,27]
+  : mode === 'realtime' && diveRoute ? [1280,720]
+  : mode==='rain-rings' ? [960,540]
+  : [2560,1440];
 const output = path.resolve(process.env.THRUM_WATER_OUTPUT ?? `tmp/waters-M3/${mode}-${Date.now()}`);
 await fs.mkdir(output,{recursive:true});
 const delay = ms => new Promise(r=>setTimeout(r,ms));
@@ -1142,10 +1145,17 @@ try {
     const routeParams=new URLSearchParams(route);
     const dive=routeParams.has('dive');
     const diveDepth=routeParams.get('location')==='swash'?0.35:0.6;
+    const diveView=dive?new Map([
+      ['dive-up-1m',[1,89.99]],['dive-inclined-1m',[1,45]],
+      ['dive-up-5m',[5,89.99]],['dive-inclined-5m',[5,45]],['dive-hold',[0,0]],
+    ]).get(process.env.THRUM_WATER_ROUTE):undefined;
+    const sweepDive=dive&&!diveView;
     const duration=offshore?22000:surfInspection?12000:dive?5000:1000;
     const spacing=offshore?200:surfInspection?100:dive?50:0;
     if(dive){
-      await evaluate(`game.edit_control('camera.pitch',0);game.edit_control('camera.depth',${-diveDepth})`);
+      const [depth,pitch]=diveView??[-diveDepth,0];
+      result.dive_camera=diveView?{depth,pitch}:{sweep_depth:diveDepth,pitch};
+      await evaluate(`game.edit_control('camera.pitch',${pitch});game.edit_control('camera.depth',${depth})`);
       await until(async()=>{
         const status=await evaluate('game.frame(performance.now());game.report()');
         return /^Cooked generation [0-9]+ drawn/.test(status);
@@ -1184,8 +1194,8 @@ try {
       const loop=timestamp=>{
         __start??=timestamp;const elapsed=timestamp-__start;
         __intervals.push(timestamp);collect();
-        if(${dive})game.edit_control('camera.depth',${-diveDepth}*Math.cos(2*Math.PI*elapsed/${duration}));
-        else if(!${surfInspection})game.edit_control('camera.bearing',90+elapsed*0.012);
+        if(${sweepDive})game.edit_control('camera.depth',${-diveDepth}*Math.cos(2*Math.PI*elapsed/${duration}));
+        else if(!${dive}&&!${surfInspection})game.edit_control('camera.bearing',90+elapsed*0.012);
         if(${handoffCut}&&elapsed>=5000&&__cameraCut===null){
           game.edit_control('camera.island',8);
           __cameraCut={from:7,to:8,driver_elapsed:elapsed/1000,next_capture_index:presented()-__firstPresented};
@@ -1202,10 +1212,11 @@ try {
       assert(result.camera_cut!==null,'capture did not reach the camera change');
     }
     const count=await evaluate('__motion.length');
+    const clockOrigin=dive?await evaluate('__start'):now;
     for(let i=0;i<count;i++){
       const image=await evaluate(`({identity:__motion[${i}].identity,frame:__motion[${i}].frame})`),rgba=await pixels(`__motion[${i}].rgba`);
       image.observation_seconds=Number(/observation=([0-9.]+)/.exec(image.frame)[1]);
-      image.elapsed=image.observation_seconds-now/1000;
+      image.elapsed=image.observation_seconds-clockOrigin/1000;
       assert(rgba.length===width*height*4,'motion extent differs');
       const file=`motion-${String(i).padStart(4,'0')}.png`;await fs.writeFile(path.join(output,file),png(rgba,width,height));result.frames.push({...image,file,sha256_rgba:hash(rgba)});
     }

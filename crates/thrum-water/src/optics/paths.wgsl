@@ -26,7 +26,7 @@ fn gather_depth(pixel: vec2<u32>) -> f32 {
 }
 
 fn gather_point(pixel: vec2<u32>, distance: f32) -> vec3<f32> {
-    let near_point = view_aux.inverse_view_proj * optics_ndc(optics_uv(pixel), 1.0);
+    let near_point = optics_unproject(optics_uv(pixel), 1.0);
     let camera = view.camera_xyz_time.xyz;
     let direction = normalize(near_point.xyz - camera * near_point.w);
     return camera + direction * distance;
@@ -156,7 +156,9 @@ fn trace(
             if along > 0.02 && along <= interval.y + 0.03 && error < 2.0 * tolerance
                 && (!registered || in_box(best.point, body)) {
                 let agreement = 1.0 - smoothstep(0.75 * tolerance, 2.0 * tolerance, error);
-                if registered {
+                if registered || side != 0.0 {
+                    // Underwater paths use this weight directly. Keep the
+                    // gather's viewport fade as the refracted ray leaves it.
                     best.edge *= agreement;
                 } else {
                     best.edge = agreement;

@@ -385,6 +385,7 @@ impl Shallows {
             grid: extent.min(GRID),
         };
         let mut packed = Inputs::zeroed();
+        packed.inverse_raster_view_proj = view.inverse.to_cols_array_2d();
         let sight = profile.sight_depth();
         let [r, g, b] = profile.extinction;
         packed.extinction_sight = [r, g, b, sight];

@@ -130,6 +130,18 @@ mod metal {
             (0.15..0.85).contains(&fraction),
             "subpixel meniscus did not grade the waterline: dry {dry}, edge {edge}, wet {wet}"
         );
+
+        // At a fixed pose the centre texel samples both sides of the middle
+        // of the meniscus as the raster jitter moves its near-plane point.
+        rig.host.continuous_source_mut().view =
+            view(-0.5 * pixel_height).with_jitter_phase(0, EXTENT);
+        let jittered: [f32; 4] = std::array::from_fn(|_| rig.scene_colour().1[middle][0]);
+        let low = jittered.into_iter().fold(f32::INFINITY, f32::min);
+        let high = jittered.into_iter().fold(f32::NEG_INFINITY, f32::max);
+        assert!(
+            high - low > 0.30 * (dry - wet),
+            "meniscus ignored the jittered raster position: {jittered:?}"
+        );
     }
 }
 

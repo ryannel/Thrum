@@ -14,7 +14,7 @@ fn gather(@builtin(global_invocation_id) id: vec3<u32>) {
     var distance = 0.0;
     if raw_depth > 0.0 {
         let uv = optics_uv(pixel);
-        let homogeneous = view_aux.inverse_view_proj * optics_ndc(uv, raw_depth);
+        let homogeneous = optics_unproject(uv, raw_depth);
         let world = homogeneous.xyz / homogeneous.w;
         let path = length(world - view.camera_xyz_time.xyz);
         if path <= 4000.0 {

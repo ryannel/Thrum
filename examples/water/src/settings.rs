@@ -129,7 +129,10 @@ impl Settings {
     fn parse(get: impl Fn((&str, &str)) -> Option<String>) -> Self {
         if let Some(wind) = get(("dive", "THRUM_WATER_DIVE"))
             .as_deref()
-            .and_then(Wind::named)
+            .and_then(|name| match name {
+                "breeze" => Some(Wind::Breeze),
+                _ => Wind::named(name),
+            })
         {
             let site = match get(LOCATION).as_deref() {
                 Some("sea") => DiveSite::Sea,
@@ -245,6 +248,10 @@ mod tests {
         assert_eq!(
             Settings::from_query("?dive=calm&location=lake-high-stage"),
             Settings::Dive(Wind::Calm, DiveSite::HighLake)
+        );
+        assert_eq!(
+            Settings::from_query("?dive=breeze&location=lake-high-stage"),
+            Settings::Dive(Wind::Breeze, DiveSite::HighLake)
         );
     }
 

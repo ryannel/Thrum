@@ -123,6 +123,7 @@ Use `THRUM_WATER_DIVE=calm ./dev scene examples/water` on the Mac or
 `?dive=calm` in the browser for the island lake. Add
 `THRUM_WATER_LOCATION=sea` on the Mac or `&location=sea` in the browser for
 the offshore shelf. The dive routes expose camera depth, pitch and Sun elevation.
+Choose `breeze` for a 5 m/s local wind without swell or `trade` for wind and swell.
 The offshore route lifts the terrain and water levels 16 m so the sky camera
 can reach 10 m underwater within its supported altitude range.
 Choose `THRUM_WATER_LOCATION=swash` or `&location=swash` to cross the
@@ -130,6 +131,12 @@ waterline on the beach. This view uses the same raised datum and the island
 breaker section.
 Choose `lake-high-stage` as the location to inspect the island lake from 5 m
 under its surface. This route raises the lake's stage 2 m over the surveyed bed.
+
+For a submitted `realtime` capture, set `THRUM_WATER_ROUTE` to
+`dive-up-1m`, `dive-inclined-1m`, `dive-up-5m`, or `dive-inclined-5m` to hold
+that view while the waves move. Use a deep site for the 5 m views. The overhead
+presets use 89.99° within the sky camera's pitch range. Use `dive-hold` to keep
+the camera at mean water level or leave the route unset to lower and raise it.
 
 ## Lake outlet
 

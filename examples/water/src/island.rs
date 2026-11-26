@@ -29,6 +29,8 @@ pub(crate) fn island_material(vertical_offset: f32) -> String {
 pub enum Wind {
     /// Motionless water for shoreline inspection.
     Calm,
+    /// A light local wind without the open-sea swell.
+    Breeze,
     /// Wind and swell approaching the beach.
     Trade,
     /// Strong breeze with the trade swell.
@@ -55,6 +57,10 @@ impl Wind {
         match self {
             Self::Calm => {
                 forcing.wind_speed = 0.0;
+                forcing.swells.clear();
+            }
+            Self::Breeze => {
+                forcing.wind_speed = 5.0;
                 forcing.swells.clear();
             }
             Self::Trade | Self::Strong => {

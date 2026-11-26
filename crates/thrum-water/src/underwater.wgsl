@@ -7,7 +7,7 @@ struct LensColumns {
 const WATER_INDEX = 1.333;
 
 fn lens_point(uv: vec2<f32>) -> vec3<f32> {
-    let p = view_aux.inverse_view_proj * optics_ndc(uv, 1.0);
+    let p = optics_unproject(uv, 1.0);
     return p.xyz / p.w;
 }
 
@@ -198,8 +198,8 @@ fn water_underside(input: VertexOut, n: vec3<f32>, v: vec3<f32>, variance: f32, 
     let uv = optics_uv(vec2<u32>(input.clip.xy));
     let eye = read_lens(uv);
     let coverage = lens_coverage(eye.signed_depth, fwidth(eye.signed_depth));
-    if eye.signed_depth <= 0.0 { return vec4(0.0); }
+    if coverage == 0.0 { return vec4(0.0); }
     let light = underside_light(input.world, n, v, variance, foam, eye);
     let colour = mix(lens_grazing_light(-v), light, coverage);
-    return vec4(colour * environment_storage_scale(), 1.0);
+    return vec4(colour * environment_storage_scale(), coverage);
 }

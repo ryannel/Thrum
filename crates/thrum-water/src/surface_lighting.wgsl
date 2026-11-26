@@ -39,12 +39,11 @@
     let variance=max(0.0,covariance.x+covariance.z);
     let n=normalize(vec3(-slope.x,1.0,-slope.y));
     let v=normalize(view.camera_xyz_time.xyz-input.world);
+    var screen_motion=(input.previous.xy/input.previous.w-input.current.xy/input.current.w)*vec2(0.5,-0.5)*view_aux.viewport_inv_viewport.xy;
+    if water.level_dt_reset.z>0.5 {screen_motion=vec2(65504.0);}
     let under = water_underside(input, n, v, variance, whitewater.y);
-    if under.a > 0.0 {
-        var motion = (input.previous.xy / input.previous.w - input.current.xy / input.current.w)
-            * vec2(0.5, -0.5) * view_aux.viewport_inv_viewport.xy;
-        if water.level_dt_reset.z > 0.5 { motion = vec2(65504.0); }
-        return Output(under, motion, 1.0);
+    if under.a == 1.0 {
+        return Output(under, screen_motion, 1.0);
     }
     let nv=max(dot(n,v),0.001);
     // GGX's perceptual roughness is sqrt(alpha); alpha is the RMS unresolved slope.
