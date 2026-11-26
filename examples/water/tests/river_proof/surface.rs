@@ -64,6 +64,16 @@ impl TradeDepth {
         }
     }
 
+    fn advance(&mut self) {
+        self.tick += 1;
+        let use_tick = u64::from(self.tick);
+        let submitted = self
+            .scene
+            .frame_without_timings((STEP * (self.tick + 1)).as_secs_f64());
+        assert_eq!(submitted.tick, use_tick + 1);
+        assert!(submitted.presentation_alpha.abs() < 1e-5);
+    }
+
     #[expect(
         clippy::cast_possible_truncation,
         reason = "query coordinates use GPU metres"
@@ -73,14 +83,10 @@ impl TradeDepth {
         point: [f32; 2],
         body: usize,
         inverse: glam::DMat4,
+        station_radius: f64,
     ) -> Option<(f64, [f32; 3])> {
-        self.tick += 1;
+        self.advance();
         let use_tick = u64::from(self.tick);
-        let submitted = self
-            .scene
-            .frame_without_timings((STEP * (self.tick + 1)).as_secs_f64());
-        assert_eq!(submitted.tick, use_tick + 1);
-        assert!(submitted.presentation_alpha.abs() < 1e-5);
         let [column, row] = EXTENT.map(|axis| axis / 2);
         let depth = self.tap.read(&self.scene)[(row * EXTENT[0] + column) as usize];
         let hit = (depth > 0.0).then(|| ray_hit(inverse, column, row, depth));
@@ -113,7 +119,7 @@ impl TradeDepth {
         let hit =
             hit.unwrap_or_else(|| panic!("missing trade depth at {point:?}, tick {use_tick}"));
         assert!(
-            (hit.x - f64::from(point[0])).hypot(hit.z - f64::from(point[1])) < 0.002,
+            (hit.x - f64::from(point[0])).hypot(hit.z - f64::from(point[1])) < station_radius,
             "trade depth ray missed its station at {point:?}, tick {use_tick}: {hit:?}"
         );
         let display_time = (STEP * self.tick).as_secs_f64();
@@ -140,12 +146,7 @@ impl TradeDepth {
     }
 }
 
-#[expect(
-    clippy::cast_possible_truncation,
-    clippy::print_stdout,
-    reason = "proof camera uses GPU metres and logs retain the measured residuals"
-)]
-pub(crate) fn check_live_depth(gpu: &thrum_test_support::Gpu, stage: f64, tidal_station: bool) {
+fn trade_depth(gpu: &thrum_test_support::Gpu, stage: f64) -> (TradeDepth, Map) {
     let mut forcing = channel::forcing(Wind::Trade);
     forcing.wind_direction = 0.42;
     let (mut map, files) =
@@ -159,7 +160,16 @@ pub(crate) fn check_live_depth(gpu: &thrum_test_support::Gpu, stage: f64, tidal_
     };
     map.set_gauge(0, spring).expect("spring gauge");
     let spectrum = thrum_sea_model::Spectrum::build(&forcing).expect("trade spectrum");
-    let mut probe = TradeDepth::new(gpu, map.clone(), spectrum);
+    (TradeDepth::new(gpu, map.clone(), spectrum), map)
+}
+
+#[expect(
+    clippy::cast_possible_truncation,
+    clippy::print_stdout,
+    reason = "proof camera uses GPU metres and logs retain the measured residuals"
+)]
+pub(crate) fn check_live_depth(gpu: &thrum_test_support::Gpu, stage: f64, tidal_station: bool) {
+    let (mut probe, map) = trade_depth(gpu, stage);
     let sites = if tidal_station {
         vec![(5, [337.83, 5.23])]
     } else {
@@ -176,7 +186,7 @@ pub(crate) fn check_live_depth(gpu: &thrum_test_support::Gpu, stage: f64, tidal_
         let inverse = support::depth::matrix(view, EXTENT).as_dmat4().inverse();
         let mut observed = 0;
         for _ in 0..if tidal_station { 180 } else { 240 } {
-            if let Some((error, short_waves)) = probe.pair([x, z], body, inverse) {
+            if let Some((error, short_waves)) = probe.pair([x, z], body, inverse, 0.002) {
                 maximum_error = maximum_error.max(error);
                 for (peak, height) in waves.iter_mut().zip(short_waves) {
                     *peak = peak.max(height.abs());
@@ -207,6 +217,35 @@ pub(crate) fn check_live_depth(gpu: &thrum_test_support::Gpu, stage: f64, tidal_
         "Metal full-trade stage {stage}: {} spring, {} plunge reach, {} outlet pairs, maximum residual {maximum_error:.7} m, short-wave peaks {waves:?} m",
         count[3], count[4], count[5]
     );
+}
+
+#[expect(
+    clippy::cast_possible_truncation,
+    clippy::print_stdout,
+    reason = "proof camera uses GPU metres and logs retain the measured residuals"
+)]
+pub(crate) fn check_bank_depth(gpu: &thrum_test_support::Gpu) {
+    let (mut probe, map) = trade_depth(gpu, 0.0);
+    let site = [340.71, 5.8];
+    let [x, z] = site.map(|v| v as f32);
+    let level = map.sample(site).expect("wet tidal station").row.level as f32;
+    let view = Camera::look_at([x + 4.5, level + 2.0, z + 3.6], [x, level, z], 55.0);
+    *probe.camera.lock().expect("trade depth camera") = view;
+    let inverse = support::depth::matrix(view, EXTENT).as_dmat4().inverse();
+    // Advance the live cascades to the wave train that crosses this bank ray.
+    for _ in 0..379 {
+        probe.advance();
+    }
+    let mut maximum_error = 0.0_f64;
+    for _ in 380..=400 {
+        // The ray moves across the reach as the level rises. Use the actual
+        // reconstructed hit for the query and require it to belong to the outlet.
+        let (error, _) = probe
+            .pair([x, z], 5, inverse, 2.0)
+            .expect("wet depth at the oblique tidal station");
+        maximum_error = maximum_error.max(error);
+    }
+    println!("Metal full-trade bank view, ticks 380–400: maximum residual {maximum_error:.7} m");
 }
 
 #[expect(

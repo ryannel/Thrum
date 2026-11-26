@@ -172,7 +172,10 @@ fn river_refinement(point: vec2<f32>, id: u32, spacing: f32) -> f32 {
         var previous_height = 0.0;
         var previous_residual = 0.0;
         var best_error = 1e30;
-        for (var i = 0u; i < 8u; i++) {
+        var bracketed = false;
+        var opposite_height = 0.0;
+        var opposite_residual = 0.0;
+        for (var i = 0u; i < 12u; i++) {
             let shift = fma(direction, vec2(height), origin);
             if abs(height) > max(0.25, water.heights.x) { break; }
             let screen = solve_horizontal(x.xz, y.xz, shift, mesh_det);
@@ -199,17 +202,27 @@ fn river_refinement(point: vec2<f32>, id: u32, spacing: f32) -> f32 {
                 depth = clamp(corrected.x / corrected.y, 0.0, 1.0);
             }
             if error <= 0.000002 { break; }
-            // Use the prior reading to estimate the residual's slope along
-            // an oblique ray while limiting the step at cell creases.
-            var step = residual;
-            if i > 0u {
-                let drop = previous_residual - residual;
-                let rise = height - previous_height;
-                if drop * rise > 0.0 { step *= clamp(rise / drop, 0.25, 4.0); }
+            if i > 0u && (residual < 0.0) != (previous_residual < 0.0) {
+                bracketed = true;
+                opposite_height = previous_height;
+                opposite_residual = previous_residual;
+            }
+            var next = height + residual;
+            if bracketed {
+                // A secant must stay within the crossing. Bisect when the
+                // secant crowds either endpoint so the bracket keeps shrinking.
+                let fraction = residual / (residual - opposite_residual);
+                next = mix(height, opposite_height, select(0.5, fraction,
+                    fraction >= 0.1 && fraction <= 0.9));
+            } else if i > 0u && abs(previous_residual - residual) > 0.000002 {
+                // At bank angles a short wave can rise faster than the ray.
+                // Keep the sign of the measured slope through those crests.
+                let scale = (height - previous_height) / (previous_residual - residual);
+                next = height + residual * clamp(scale, -4.0, 4.0);
             }
             previous_height = height;
             previous_residual = residual;
-            height += step;
+            height = next;
         }
     }
     let shaded = shade_water(surface, row);

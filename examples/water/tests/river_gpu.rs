@@ -48,6 +48,14 @@ fn submitted_trade_depth_matches_the_live_river_query() {
 }
 }
 
+thrum_test_support::macos_gpu_test! {
+fn submitted_trade_depth_from_the_tidal_bank_matches_the_live_river_query() {
+    let Some(gpu) = thrum_test_support::gpu("oblique tidal depth", Some(wgpu::Backend::Metal))
+    else { return };
+    river_proof::surface::check_bank_depth(&gpu);
+}
+}
+
 #[cfg(target_os = "macos")]
 fn check_trade_transect(stage: f64) {
     let Some(gpu) =
