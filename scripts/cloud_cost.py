@@ -400,6 +400,8 @@ def investigate_overcast(record):
 
 
 def validate_overcast(record, prior):
+    if record['wp7_overcast']['arm'] != prior:
+        raise ValueError('cost record needs the committed WP7 overcast reference')
     off, sky, lit = record['runs']
     if [row['selection'] for row in (off, sky, lit)] != ['off', 'sky', 'world-light']:
         raise ValueError('cost record needs matched Off, Sky and World light arms')
@@ -420,9 +422,13 @@ def validate_overcast(record, prior):
                 not positive(row['ray_statistics']['mean_samples']) or
                 not row['resources'] or any(not positive(size) for _, size in row['resources'])):
             raise ValueError('visible cloud arm lacks ray work or resource bytes')
-    if (any(name.startswith('cloud ') for name in named_passes(off))
+    if (off['resources'] or any(name.startswith('cloud ') for name in named_passes(off))
             or 'cloud sky overlay' in named_passes(sky)):
         raise ValueError('a control ran a cloud capability it omits')
+    named = {name: value for name, value in lit['pass_gpu_ns'].items()
+             if name.rsplit(': ', 1)[-1] in WORLD_LIGHT_PASSES}
+    if record['world_light_pass_gpu_ns'] != named:
+        raise ValueError('named overlay timings must agree with the visible arm')
     triggered = overcast_tripwires(record)
     if record['tripwires'] != triggered or set(record['investigation']) != set(triggered):
         raise ValueError('each measured overcast tripwire needs its investigation')
