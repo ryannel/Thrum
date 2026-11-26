@@ -746,3 +746,8 @@ layer profile change. [Metal controls](../../../.orchestrate/evidence/CLOUDS/WP9
   variants and includes the SDR encode only when the graph reads it. Six Mac Metal renderer tests passed.
   [Paired evidence](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP11/review-repair-paired/README.md) ·
   [EDR graph tests](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP11/review-repair-render-final.log)
+- 2026-11-26 U1 records the upstream issue, contributor rules, patch comparison and WP12 launch figures in
+  `.orchestrate/evidence/APPLE-PRESENTATION/U1/upstream-notes.md`. On wgpu trunk `60cef2be`, the core header
+  patch applies with the crate path mapped. The archive patch rejects four hunks across dependency features,
+  render pipeline creation and adapter feature reporting. The notes recommend offering the header and base
+  archive first, with the division of work and the PR structure to be settled upstream by the owner.
