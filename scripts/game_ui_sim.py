@@ -257,10 +257,11 @@ class Case:
                     and any(effect["effect"] == {"text": TICKET, "source": "Link"}
                             for effect in report["effects"]))
 
+        # Follow the invitation from outside the game, as a player would.
+        self.simctl("launch", self.device, "com.apple.Preferences")
+        self.expect(lambda s: s.get("state") == "Suspended", "the game is behind Settings")
         self.simctl("openurl", self.device, url)
-        observed = self.expect(lambda s: delivered(s) or s.get("state") == "Suspended",
-                               "UIKit link delivery or confirmation")
-        if not delivered(observed):
+        if not delivered(self.state()):
             self.simctl("io", self.device, "screenshot", str(self.out / "invite-confirmation.png"))
             self.finish_test(self.test("testConfirmInterfaceInvite"))
         state = self.expect(delivered, "UIKit URL delivered a complete ticket")
