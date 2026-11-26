@@ -15,7 +15,7 @@
 //!
 //! [ruling 3 for `PUDDLES`]: ../../../docs/plans/ARCHITECTURE.md
 use crate::{Field, Map, MapSample, WaterError};
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 use thrum_sea_model::Sample;
 
 mod footprint;
@@ -364,7 +364,7 @@ pub struct Drop {
 pub struct RainBands {
     profile: RainBandsProfile,
     table: Arc<RingTable>,
-    footprints: Arc<Footprints>,
+    footprints: Arc<OnceLock<Footprints>>,
     history: RateHistory,
     exposure: Arc<dyn Exposure>,
 }
@@ -438,7 +438,7 @@ impl RainBands {
         }
         let out = Self {
             profile,
-            footprints: Arc::new(Footprints::new(&table)),
+            footprints: Arc::default(),
             table,
             history: RateHistory::dry(1.0, 0, 0),
             exposure,
@@ -610,6 +610,10 @@ impl RainBands {
         RainQuery::new(self, time)
     }
 
+    fn footprints(&self) -> &Footprints {
+        self.footprints.get_or_init(|| Footprints::new(&self.table))
+    }
+
     fn sample_band(
         &self,
         band: usize,
@@ -761,8 +765,12 @@ fn accumulate(out: &mut Sample, sample: Sample, weight: f64) {
 }
 
 impl Map {
-    /// Give the map rain bands, or take them away. With none, every answer is what it was.
+    /// Give the map rain bands and prepare their query footprints before the next tick.
+    /// With none, every answer is what it was without rain.
     pub fn set_rain(&mut self, rain: Option<RainBands>) {
+        if let Some(bands) = &rain {
+            bands.footprints();
+        }
         self.rain = rain;
     }
 

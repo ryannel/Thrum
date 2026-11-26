@@ -189,7 +189,7 @@ struct Band {
 }
 
 impl Band {
-    fn new(rain: &RainBands, band: usize, time: f64) -> Self {
+    fn new(rain: &RainBands, footprints: &Footprints, band: usize, time: f64) -> Self {
         let period = rain.profile.patches[band];
         let cells = grid_index(period / rain.table.reach()).max(1);
         let mut bins: Vec<Vec<_>> = (0..cells * cells).map(|_| Vec::new()).collect();
@@ -203,7 +203,7 @@ impl Band {
             let f = (time - drop.time) / rain.table.age_step;
             let age = grid_index(f).min(rain.table.ages - 2);
             let fraction = f - age as f64;
-            let row = &rain.footprints.means[drop.class];
+            let row = &footprints.means[drop.class];
             let v = lerp(row[age], row[age + 1], fraction);
             mean.height += drop.weight * v[0] / area;
             mean.height_dt += drop.weight * v[2] / area;
@@ -254,21 +254,23 @@ impl Band {
 /// The rain bands at one tick, shared by every station of a query batch.
 pub struct RainQuery<'a> {
     rain: &'a RainBands,
-    bands: Option<[Band; 2]>,
+    fields: Option<(&'a Footprints, [Band; 2])>,
     height: f64,
 }
 
 impl<'a> RainQuery<'a> {
     pub(super) fn new(rain: &'a RainBands, time: f64) -> Self {
-        let bands = rain
-            .active(time)
-            .then(|| std::array::from_fn(|band| Band::new(rain, band, time)));
-        let height = bands
+        let fields = rain.active(time).then(|| {
+            let footprints = rain.footprints();
+            let bands = std::array::from_fn(|band| Band::new(rain, footprints, band, time));
+            (footprints, bands)
+        });
+        let height = fields
             .as_ref()
             .map_or(0.0, |_| 4.0 * rain.variance(time).sqrt());
         Self {
             rain,
-            bands,
+            fields,
             height,
         }
     }
@@ -281,14 +283,14 @@ impl<'a> RainQuery<'a> {
 
     /// Height, world-axis slopes and height rate at unit gain, before current carriage.
     pub fn sample(&self, point: [f64; 2], radius: f64) -> Sample {
-        let Some(bands) = &self.bands else {
+        let Some((footprints, bands)) = &self.fields else {
             return Sample::default();
         };
         let table = &self.rain.table;
         let reach = table.reach();
         let radius = radius.max(0.0);
         let broad = (radius / reach - 1.0).clamp(0.0, 1.0);
-        let rungs = &self.rain.footprints.rungs;
+        let rungs = &footprints.rungs;
         let upper = rungs
             .partition_point(|rung| rung.radius < radius)
             .min(rungs.len() - 1);

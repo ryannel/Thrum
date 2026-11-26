@@ -29,7 +29,6 @@ pub(super) fn drains(gpu: &thrum_test_support::Gpu) -> Value {
         }
         .table(),
     );
-    let start = Instant::now();
     let rain = RainBands::new(
         schedule,
         table,
@@ -37,18 +36,25 @@ pub(super) fn drains(gpu: &thrum_test_support::Gpu) -> Value {
         Arc::new(OpenSky),
     )
     .expect("prepared rain model");
+    let mut map = channel();
+    let start = Instant::now();
+    map.set_rain(Some(rain));
     let footprint_prepare_ms = start.elapsed().as_secs_f64() * 1000.0;
-    let arms = [0.0, 50.0].map(|rate| measure(gpu, rain.clone(), rate));
+    let arms = [0.0, 50.0].map(|rate| measure(gpu, map.clone(), rate));
     json!({"stations": STATIONS, "step_ns": STEP.as_nanos(), "arms": arms,
         "footprint_prepare_ms": footprint_prepare_ms})
 }
 
-fn measure(gpu: &thrum_test_support::Gpu, mut rain: RainBands, rate: f64) -> Value {
-    let mut history = rain.history().clone();
+fn measure(gpu: &thrum_test_support::Gpu, mut map: Map, rate: f64) -> Value {
+    let mut history = map
+        .rain()
+        .expect("prepared fleet rain model")
+        .history()
+        .clone();
     history.rates.fill(rate / 3600.0);
-    rain.set_history(history.clone())
+    map.set_rate_history(history.clone())
         .expect("initial rain history");
-    let map = Arc::new(Mutex::new(channel(rain)));
+    let map = Arc::new(Mutex::new(map));
     let spectrum = Spectrum {
         long: Vec::new(),
         tail_slope_variance: 0.0,
@@ -116,7 +122,7 @@ fn measure(gpu: &thrum_test_support::Gpu, mut rain: RainBands, rate: f64) -> Val
     json!({"rate_mm_h": rate, "drain_ns": nanos})
 }
 
-fn channel(rain: RainBands) -> Map {
+fn channel() -> Map {
     let size = [25, 17];
     let footprint: Vec<_> = (0..size[1])
         .flat_map(|z| {
@@ -142,7 +148,7 @@ fn channel(rain: RainBands) -> Map {
         footprint,
         ends: Vec::new(),
     };
-    let mut map = Map::prepare(
+    Map::prepare(
         bed,
         vec![Body {
             name: "Fleet cost channel".into(),
@@ -161,7 +167,5 @@ fn channel(rain: RainBands) -> Map {
             swash_ratio: 0.0,
         },
     )
-    .expect("fleet channel");
-    map.set_rain(Some(rain));
-    map
+    .expect("fleet channel")
 }

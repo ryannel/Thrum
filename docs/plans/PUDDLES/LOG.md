@@ -264,13 +264,8 @@
 - 2026-11-26 Items: WP4.13 written again; no other item changed. The review made no suggestions. Not run:
   WP4.13's check, whose command is unchanged and whose test the builder writes.
 
-- 2026-11-26 WP4 review repair. The water model prepares disc averages from the faded ring table. The
-  mailbox drain shares the use tick's live drops, patch means and depth-limit height across its stations.
-  The query applies the departure and blend gradients of a varying current. The Metal reply agrees with
-  the committed history when the rain stops after posting. The direct disc proof includes the largest
-  class's outer fade, and the six field and query checks pass. The 54-station drain took 1.001 ms median
-  and 1.256 ms maximum in rain on the final exclusive GPU-lock run. A preceding shared run tripped the
-  drain wire under concurrent load. The f64 ladder holds 34.4 MB of coefficients and takes about 79 ms to
-  prepare on this Mac. Metal captures cover the two heights, rates, distance, stop and restart. Hardware
-  Chrome drew the yard and lake and skipped the rain passes after expiry.
-  [Target evidence and wire investigation](../../../.orchestrate/evidence/PUDDLES/WP4/footprint-delivery.md)
+- 2026-11-26 WP4 review repair. The mailbox shares the use tick's drop lists, patch means and rain
+  height across stations. It reads prepared disc averages from the faded ring table and applies both
+  departure and blend gradients on varying currents. Metal verifies the faded-edge oracle and a stop
+  between posting and use. The final proof records the 54-station drain, region labelling, native
+  inspections and Chrome WebGPU. [Target evidence and cost investigations](../../../.orchestrate/evidence/PUDDLES/WP4/footprint-delivery.md)
