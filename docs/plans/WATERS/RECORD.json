@@ -1490,7 +1490,7 @@
         {
           "verdict": "fail",
           "commit": "a1e5ad7db8278697b89f966166a1aed81c6983a8",
-          "review": ".orchestrate/evidence/WATERS/WP8-review.md",
+          "review": ".orchestrate/evidence/WATERS/WP8-review-5.md",
           "items": {
             "WP8.1": "pass",
             "WP8.2": "pass",
@@ -1537,6 +1537,53 @@
             "turns": 1
           },
           "at": "2026-11-26T00:08:46Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "254ad9cc72757b98159412c7d1b1f5b8edd049a0",
+          "review": ".orchestrate/evidence/WATERS/WP8-review.md",
+          "items": {
+            "WP8.1": "pass",
+            "WP8.2": "pass",
+            "WP8.3": "pass",
+            "WP8.4": "pass",
+            "WP8.5": "fail",
+            "WP8.6": "pass",
+            "WP8.7": "pass",
+            "WP8.12": "pass",
+            "WP8.9": "fail",
+            "WP8.10": "pass"
+          },
+          "findings": [
+            {
+              "name": "Diagonal gaps cut through the reflected pine crowns at 10 m",
+              "item": "WP8.5",
+              "different": "The former grey sky patches around the trunks have cleared. Narrow bands of ground now cut into the inverted foliage where the foreground-hit confidence crosses a hard threshold.",
+              "repeat": false
+            },
+            {
+              "name": "Chrome shows diagonal gaps through the reflected pine crowns at noon",
+              "item": "WP8.9",
+              "different": "The former blue-grey caps around the trunks have cleared. The 10 m noon view shows narrow diagonal gaps within the foliage, reproduced at the foreground confidence switch.",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 100178,
+            "cached": 3782528,
+            "output": 10674,
+            "turns": 1
+          },
+          "at": "2026-11-26T00:35:11Z"
         }
       ],
       "authorised": {
