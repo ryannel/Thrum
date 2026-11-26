@@ -18,6 +18,7 @@ pub struct InterfaceScript {
     /// Read the scripted actions from this JSON file.
     pub input: PathBuf,
     /// Write the game's record of those actions here.
+    /// A checkpoint action also writes the steps so far with extension `checkpoint.json`.
     pub output: PathBuf,
 }
 
@@ -76,13 +77,14 @@ impl<G: WindowGame + 'static> App<G> {
         let action = step["action"]
             .as_str()
             .ok_or("interface step needs an action")?;
+        let checkpoint = action == "checkpoint";
         let point = self.perform_interface_step(action, step, &witness)?;
         script.last = self.presented;
         script.log.push(json!({
             "step": script.steps.pop_front(), "time_ms": event_at, "presented": self.presented,
             "device": self.recovery.active, "before": witness, "position_px": point,
         }));
-        if action == "checkpoint" {
+        if checkpoint {
             let checkpoint = json!({"steps": script.log});
             std::fs::write(
                 script.output.with_extension("checkpoint.json"),
