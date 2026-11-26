@@ -358,6 +358,19 @@ impl std::fmt::Debug for StillWorld {
 }
 
 impl StillWorld {
+    /// Create a still world whose clock advances at the given fixed step.
+    /// # Errors
+    /// Refuses a step shorter than one microsecond.
+    pub fn with_tick_duration(step: Duration) -> Result<Self, WorldClockError> {
+        if step < Duration::from_micros(1) {
+            return Err(WorldClockError::StepTooShort);
+        }
+        Ok(Self {
+            tick_duration: Some(step),
+            ..Self::default()
+        })
+    }
+
     /// Stop the clock, discarding its partial tick and holding the committed endpoint.
     ///
     /// # Panics

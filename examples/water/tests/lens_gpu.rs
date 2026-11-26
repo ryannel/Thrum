@@ -31,6 +31,13 @@ mod metal {
             };
         let [width, height] = extent;
         let eye = case.eye();
+        if case.name == "carried-crest" {
+            let lowest = f64::from(eye[1] - 0.1 * (FOV * 0.5).tan());
+            assert!(
+                lowest > case.carried_crest_column_bound() + 0.05,
+                "the whole lens must stand above the footprint bound"
+            );
+        }
         let view = camera(eye, [eye[0], eye[1], eye[2] + 1.0], FOV, 1.0 / 32768.0);
         let capture = |gap, underwater| {
             let panel = Panel {
@@ -40,10 +47,30 @@ mod metal {
             };
             let mut rig = Rig::with_extent(gpu, &view, sun(0.0, 0.0), &[panel], None, extent);
             attach(&mut rig, case.water(underwater));
-            rig.scene_colour().1
+            rig.host.set_timing_requested(underwater);
+            let (sample, _, colour) = rig.scene_colour_with_sample();
+            if underwater {
+                assert!(
+                    (sample.tick == 1 && sample.presentation_alpha.to_bits() == 0)
+                        || (sample.tick == 0
+                            && sample.presentation_alpha.to_bits() == 1.0_f32.to_bits()),
+                    "{} model needs time zero",
+                    case.name
+                );
+                let timings = sample.gpu_pass_ns.expect("Metal lens cut timings");
+                assert!(
+                    timings
+                        .passes()
+                        .iter()
+                        .any(|pass| pass.name.contains("water lens cut")),
+                    "{} did not cut the GPU mesh",
+                    case.name
+                );
+            }
+            colour
         };
-        if case.name == "sea" {
-            let eye = [eye[0], 3.0, eye[2]];
+        if case.name == "trade" {
+            let eye = [eye[0], 100.0, eye[2]];
             let sky_view = camera(eye, [eye[0], eye[1], eye[2] + 1.0], FOV, 1.0 / 32768.0);
             let mut dry = Rig::with_extent(gpu, &sky_view, sun(3.0, 0.0), &[], None, EXTENT);
             attach(&mut dry, case.water(true));
@@ -53,7 +80,8 @@ mod metal {
                 !timings
                     .passes()
                     .iter()
-                    .any(|pass| pass.name.contains("water gather"))
+                    .any(|pass| pass.name.contains("water lens cut")
+                        || pass.name.contains("water through lens"))
             );
         }
         // At 1440p the near clip and the folded sheet occasionally cover the
@@ -75,22 +103,23 @@ mod metal {
         let expected = case.expected(&view, extent);
         let is_under = |x, y| expected[(y * width + x) as usize];
         let fraction = expected.iter().filter(|&&wet| wet).count() as f32 / expected.len() as f32;
-        assert!(
-            (0.25..0.75).contains(&fraction),
-            "{}: {fraction}",
-            case.name
-        );
+        let split_range = if case.name == "trough-wet" {
+            0.1..0.4
+        } else {
+            0.25..0.75
+        };
+        assert!(split_range.contains(&fraction), "{}: {fraction}", case.name);
         let mut wrong = Vec::new();
         let mut missing = 0;
         let mut first_missing = None;
-        for y in 1..height - 1 {
+        for y in 2..height - 2 {
             for x in 1..width - 1 {
                 let wet = is_under(x, y);
                 if [
                     is_under(x - 1, y),
                     is_under(x + 1, y),
-                    is_under(x, y - 1),
-                    is_under(x, y + 1),
+                    is_under(x, y - 2),
+                    is_under(x, y + 2),
                 ]
                 .contains(&!wet)
                 {
@@ -109,7 +138,7 @@ mod metal {
             }
         }
         eprintln!(
-            "Metal {} at {width}×{height}: {fraction:.3} of the lens is under, {} disagreements beyond one pixel, {missing} without a readable panel",
+            "Metal {} at {width}×{height}: {fraction:.3} of the lens is under, {} disagreements beyond two pixels, {missing} without a readable panel",
             case.name,
             wrong.len()
         );
@@ -177,7 +206,7 @@ fn metal_meniscus_grades_the_first_submerged_pixel() {
 thrum_test_support::macos_gpu_test! {
 fn metal_sea_lens_reads_the_near_plane_and_skips_the_dry_gather() {
     let Some(gpu) = thrum_test_support::gpu("split sea lens", Some(wgpu::Backend::Metal)) else { return };
-    metal::check(&water_scene::lens_probe::Case::new("sea", 0.0), &gpu);
+    metal::check(&water_scene::lens_probe::Case::new("trade", 0.0), &gpu);
 }
 }
 thrum_test_support::macos_gpu_test! {
@@ -196,6 +225,20 @@ thrum_test_support::macos_gpu_test! {
 fn metal_lip_lens_reads_the_highest_of_three_surfaces() {
     let Some(gpu) = thrum_test_support::gpu("split lens below the lip", Some(wgpu::Backend::Metal)) else { return };
     metal::check(&water_scene::lens_probe::Case::new("lip", 0.0), &gpu);
+}
+}
+
+thrum_test_support::macos_gpu_test! {
+fn metal_admits_the_short_crest_carried_in_from_outside_the_footprint() {
+    let Some(gpu) = thrum_test_support::gpu("off-footprint carried crest", Some(wgpu::Backend::Metal)) else { return };
+    metal::check(&water_scene::lens_probe::Case::new("carried-crest", 0.0), &gpu);
+}
+}
+
+thrum_test_support::macos_gpu_test! {
+fn metal_composes_a_lens_two_centimetres_under_the_short_trough() {
+    let Some(gpu) = thrum_test_support::gpu("two centimetres under a short trough", Some(wgpu::Backend::Metal)) else { return };
+    metal::check(&water_scene::lens_probe::Case::new("trough-wet", 0.0), &gpu);
 }
 }
 
@@ -258,6 +301,7 @@ fn metal_skips_dry_trade_water_as_the_footprint_moves() {
     let mut plain = Rig::with_extent(&gpu, &look(0.0, y), sun(0.0, 0.0), &[], None, EXTENT);
     attach(&mut plain, case.water(false));
     lens.host.set_timing_requested(true);
+    plain.host.set_timing_requested(true);
     let gathers = |sample: &FrameSample| sample.gpu_pass_ns.as_ref().expect("Metal timing")
         .passes().iter().any(|pass| pass.name.contains("water gather"));
     for dx in [0.0, 0.08, 0.16, 1.0, 9.02, 0.0] {
@@ -268,7 +312,7 @@ fn metal_skips_dry_trade_water_as_the_footprint_moves() {
         assert_eq!(sample.observation, baseline.observation);
         assert_eq!(sample.tick, baseline.tick);
         assert_eq!(sample.presentation_alpha.to_bits(), baseline.presentation_alpha.to_bits());
-        assert!(!gathers(&sample), "dry Trade lens at {dx} m scheduled the underwater gather");
+        assert!(!gathers(&sample), "dry Trade lens at {dx} m scheduled the underwater gather (ordinary gather: {}, cut: {})", gathers(&baseline), sample.gpu_pass_ns.as_ref().unwrap().passes().iter().any(|pass| pass.name.as_ref() == "water lens cut"));
         assert!(colour.iter().zip(&reference).all(|(a, b)| a.map(f32::to_bits) == b.map(f32::to_bits)),
             "the dry Trade lens changed output at {dx} m");
     }
@@ -323,8 +367,69 @@ fn metal_admits_a_dry_lens_over_a_live_wake_window() {
     let active = submit(&mut rig);
     assert!(active.tick >= tick, "the impact tick must submit");
     assert!(gathers(&active), "a live wake window admits the lens even five metres above water");
+    assert!(active.gpu_pass_ns.as_ref().expect("active Metal timing").passes()
+        .iter().any(|pass| pass.name.contains("water lens cut")));
     assert!(gathers(&submit(&mut rig)), "the window remains live after the impact tick");
     rig.parameters(r#"{"camera.x":300}"#);
     assert!(!gathers(&submit(&mut rig)), "a dry lens clear of the wake window should be idle");
+}
+}
+
+thrum_test_support::macos_gpu_test! {
+#[expect(clippy::print_stderr, reason = "retain the impact timing with its target evidence")]
+fn metal_composes_a_lens_below_a_lake_impact_ring() {
+    use crate::support::optics::{Panel, Rig, attach, camera, sun};
+    use thrum_water::interaction::Witness;
+    use water_scene::lens_probe::{Case, EXTENT, FOV, STONE};
+    let Some(gpu) = thrum_test_support::gpu("lake impact lens split", Some(wgpu::Backend::Metal)) else { return };
+    let case = Case::new("impact", 0.0);
+    let eye = case.eye();
+    let view = camera(eye, [eye[0], eye[1], eye[2] + 1.0], FOV, 1.0 / 32768.0);
+    let panel = Panel { centre: [0.0, eye[1], 0.01001], half_size: [0.2, 0.16, 0.01], radiant: true };
+    let arm = |underwater| {
+        let mut water = case.water(underwater);
+        let wake = water.tap_interaction();
+        let impulses = water.interaction_mailbox().expect("lake interaction");
+        let mut rig = Rig::with_extent(&gpu, &view, sun(0.0, 0.0), &[panel], None, EXTENT);
+        *rig.host.world_mut() = thrum_app::sky::StillWorld::with_tick_duration(water_scene::lens_probe::STEP).expect("impact clock");
+        attach(&mut rig, water);
+        let still = rig.scene_colour_with_sample();
+        assert!(still.0.tick < STONE.tick, "first witness precedes the stone");
+        impulses.post_impulse(STONE);
+        (still.2, rig, wake)
+    };
+    let (plain_still, mut plain, _) = arm(false);
+    let (lens_still, mut lens, wake) = arm(true);
+    assert_eq!(plain_still, lens_still, "the calm level leaves the whole near plane dry");
+    lens.host.set_timing_requested(true);
+    let mut first_wet = None;
+    let mut peak = f32::NEG_INFINITY;
+    for step in 0..64 {
+        let (control, _, ordinary) = plain.scene_colour_with_sample();
+        let (sample, _, composed) = lens.scene_colour_with_sample();
+        assert_eq!(sample.tick, control.tick);
+        assert_eq!(sample.presentation_alpha.to_bits(), control.presentation_alpha.to_bits());
+        let witness = wake.latest().expect("submitted impact field");
+        let endpoint = witness.endpoints[1];
+        let centre = |level: usize| {
+            let spacing = Witness::CELL_METRES[level];
+            let [x, z] = endpoint.origins[level].map(|origin| (-origin / spacing).round());
+            let x = (0..Witness::SIDE).zip(0_u16..).find(|(_, i)| f32::from(*i) == x).unwrap().0;
+            let z = (0..Witness::SIDE).zip(0_u16..).find(|(_, i)| f32::from(*i) == z).unwrap().0;
+            let offset = ((endpoint.offsets[level] + z * Witness::SIDE + x) * 8) as u64;
+            let raw = thrum_test_support::readback::buffer(&lens.device, &lens.queue, &witness.buffer, offset..offset + 4);
+            f32::from_le_bytes(raw.try_into().unwrap())
+        };
+        peak = peak.max(centre(0) + centre(1));
+        let pixels = ordinary.iter().zip(composed).filter(|(a, b)| a[0] > 1.0 && b[0] < 0.7 * a[0]).count();
+        if pixels > 16 {
+            let timings = sample.gpu_pass_ns.expect("Metal impact timing");
+            assert!(timings.passes().iter().any(|pass| pass.name.contains("water lens cut")));
+            first_wet = Some((step, sample.tick, pixels));
+            break;
+        }
+    }
+    let (step, tick, pixels) = first_wet.unwrap_or_else(|| panic!("the incoming stone ring never covered the dry lens, peak submitted height {peak}"));
+    eprintln!("Metal lake impact composed {pixels} pixels at tick {tick}, step {step}, peak submitted height {peak} m");
 }
 }

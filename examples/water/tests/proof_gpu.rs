@@ -265,6 +265,10 @@ fn driver(gpu: &thrum_test_support::Gpu) {
         .expect("retain lake dive cost");
         return;
     }
+    if mode == "dive-wake-cost" {
+        dive_wake_cost(gpu, &directory);
+        return;
+    }
     if matches!(mode.as_str(), "optics-cost" | "optics-cost-views") {
         optics_cost::run(gpu, &directory, mode == "optics-cost-views");
         return;
@@ -642,6 +646,51 @@ fn driver(gpu: &thrum_test_support::Gpu) {
         serde_json::to_vec_pretty(&result).expect("json"),
     )
     .expect("record");
+}
+
+#[cfg(target_os = "macos")]
+fn dive_wake_cost(gpu: &thrum_test_support::Gpu, directory: &std::path::Path) {
+    use water_scene::floating::{WakeDemo, WakeView, build_wake};
+    let arms: Vec<_> = [false, true]
+        .into_iter()
+        .map(|live| {
+            let scene = build_wake(
+                Wind::Calm,
+                false,
+                6.0,
+                std::f32::consts::PI,
+                WakeDemo {
+                    view: WakeView::LensCost,
+                    disabled: !live,
+                    ..WakeDemo::default()
+                },
+            )
+            .expect("craft wake lens cost scene");
+            let mut fixture =
+                support::Fixture::from_game(gpu, [2560, 1440], scene.game, scene.report);
+            let frames: Vec<_> = (0..36)
+                .filter_map(|index| {
+                    let sample = fixture.frame(f64::from(index) / 120.0);
+                    (index >= 24).then(|| {
+                        let mut record = sample_json(&sample);
+                        let water = fixture.report.lock().expect("submitted water cost report");
+                        record["underwater_admitted"] = json!(water.underwater_admitted);
+                        record["completion_upper_ms"] = json!(fixture.last_elapsed.as_secs_f64() * 1000.0);
+                        record
+                    })
+                })
+                .collect();
+            json!({"live": live, "frames": frames, "timing_stats": format!("{:?}", fixture.host.timing_stats())})
+        })
+        .collect();
+    let record = json!({"target": "mac-metal", "extent": [2560, 1440], "capture": false,
+        "height_m": 5.0, "speed_mps": 6.0, "wind": "Calm",
+        "commit": std::env::var("THRUM_WATER_COMMIT").expect("cost revision"), "arms": arms});
+    std::fs::write(
+        directory.join("wake-dive-cost.json"),
+        serde_json::to_vec_pretty(&record).expect("cost JSON"),
+    )
+    .expect("retain live wake dive cost");
 }
 
 #[cfg(target_os = "macos")]

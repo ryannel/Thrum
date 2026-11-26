@@ -107,6 +107,8 @@ pub struct WaterReport {
     pub resources: Vec<(String, u64)>,
     /// Last submitted interaction counters, when enabled.
     pub interaction: Option<interaction::Report>,
+    /// Whether the last submitted lens admitted underwater composition, when enabled.
+    pub underwater_admitted: Option<bool>,
     /// Last submitted foam counters, when enabled.
     pub foam: Option<foam::Report>,
     /// Serial of the pattern last used by a history-advancing submission.
@@ -398,9 +400,6 @@ impl Water {
             }
             if let Some(gather) = &p.gather {
                 resources.push(("water gather regions".into(), gather.bytes()));
-                if let Some(lens) = &gather.lens {
-                    resources.push(("water lens columns".into(), lens.size()));
-                }
             }
             if let Some(map) = &p.map {
                 let size = map.texture.size();
@@ -597,6 +596,7 @@ impl SceneContribution for Water {
             bodies: self.prepared.as_ref().expect("prepared").bodies.clone(),
             resources: self.resource_bytes(),
             interaction,
+            underwater_admitted: None,
             foam,
             foam_pattern: None,
             foam_pattern_invalidations,
@@ -685,11 +685,11 @@ impl SceneContribution for Water {
             interaction.record(&p.queue, encoder, frame, &map);
         }
         if let Some(gather) = &mut p.gather {
-            let lens = self
+            let underwater_admitted = self
                 .underwater
                 .as_mut()
                 .zip(p.rest_mesh.as_ref())
-                .map(|(water, mesh)| {
+                .is_some_and(|(water, mesh)| {
                     let horizontal = if displayed_map.surf_profile().is_some() {
                         self.lens_horizontal
                     } else {
@@ -714,7 +714,7 @@ impl SceneContribution for Water {
                             level: row.level,
                         },
                     );
-                    let gpu_cut = p.lens_cut.as_mut().expect("underwater cut").record(
+                    p.lens_cut.as_mut().expect("underwater cut").record(
                         &p.queue,
                         frame,
                         mesh,
@@ -722,7 +722,7 @@ impl SceneContribution for Water {
                         horizontal,
                         p.hollow_tiles.as_ref(),
                     );
-                    water.lens(frame, displayed_map, now, admitted, gpu_cut)
+                    admitted
                 });
             gather.record(
                 &p.queue,
@@ -732,7 +732,7 @@ impl SceneContribution for Water {
                 row.level,
                 self.offshore_displacement,
                 self.mirror_roughness.with_foam(p.foam.is_some()),
-                lens.as_ref(),
+                underwater_admitted,
             );
         }
         if let Some(cache) = &mut p.surf_cache {
@@ -977,6 +977,16 @@ impl SceneContribution for Water {
         }
     }
     fn submitted(&mut self, history_advanced: bool) {
+        if self.underwater.is_some() {
+            self.report
+                .lock()
+                .expect("water report")
+                .underwater_admitted = self
+                .prepared
+                .as_ref()
+                .and_then(|p| p.gather.as_ref())
+                .map(|gather| gather.under);
+        }
         if let Some(rain) = self
             .prepared
             .as_mut()

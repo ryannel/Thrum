@@ -22,6 +22,19 @@ pub(crate) enum Vertices {
 pub(crate) struct RestMesh(Vec<Grid>);
 
 impl RestMesh {
+    pub(crate) fn cell_capacity(&self) -> u64 {
+        self.0
+            .iter()
+            .map(|grid| {
+                let [width, height] = std::array::from_fn(|i| {
+                    u64::try_from(grid.last[i] - grid.first[i]).expect("ordered water grid")
+                });
+                let hole = 2 * u64::try_from(grid.inner).expect("nonnegative ring hole");
+                width * height - hole * hole
+            })
+            .sum()
+    }
+
     pub(crate) fn grid(
         &mut self,
         first: [i32; 2],

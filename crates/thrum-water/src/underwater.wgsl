@@ -1,50 +1,8 @@
-struct LensColumns {
-    state: vec4<u32>,
-    columns: array<array<vec4<f32>, 33>, 33>,
-}
-@group(3) @binding(15) var<uniform> lens: LensColumns;
-
 const WATER_INDEX = 1.333;
 
 fn lens_point(uv: vec2<f32>) -> vec3<f32> {
     let p = optics_unproject(uv, 1.0);
     return p.xyz / p.w;
-}
-
-fn strip_sample(i: u32) -> vec4<f32> {
-    return lens.columns[i / 33u][i % 33u];
-}
-
-fn strip_column(x: f32) -> vec4<f32> {
-    var a = 0u;
-    var b = lens.state.y - 1u;
-    while b - a > 1u {
-        let mid = (a + b) / 2u;
-        if x < strip_sample(mid).z { b = mid; } else { a = mid; }
-    }
-    let low = strip_sample(a);
-    let high = strip_sample(b);
-    let t = clamp((x - low.z) / (high.z - low.z), 0.0, 1.0);
-    if min(low.w, high.w) == 0.0 { return select(low, high, t >= 0.5); }
-    return mix(low, high, t);
-}
-
-fn lens_column(uv: vec2<f32>) -> vec4<f32> {
-    if lens.state.w == 1u { return strip_column(uv.x); }
-    let last = lens.state.yz - vec2(1u);
-    let coord = clamp(uv, vec2(0.0), vec2(1.0)) * vec2<f32>(last);
-    let cell = vec2<u32>(coord);
-    let next = min(cell + vec2(1u), last);
-    let f = fract(coord);
-    let a = lens.columns[cell.y][cell.x];
-    let b = lens.columns[cell.y][next.x];
-    let c = lens.columns[next.y][cell.x];
-    let d = lens.columns[next.y][next.x];
-    if min(min(a.w, b.w), min(c.w, d.w)) == 0.0 {
-        let nearest = vec2<u32>(round(coord));
-        return lens.columns[nearest.y][nearest.x];
-    }
-    return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
 }
 
 struct LensPoint {
@@ -55,32 +13,11 @@ struct LensPoint {
 
 fn read_lens(uv: vec2<f32>) -> LensPoint {
     let point = lens_point(uv);
-    if lens_faces.enabled != 0u {
-        var highest = -1e30;
-        for (var i = 0u; i < lens_faces.count; i++) {
-            highest = lens_face_height(lens_faces.faces[i], point.xz, highest);
-        }
-        let row = lens_row(point.xz);
-        if !row.owned || highest <= row.bed {
-            return LensPoint(point, point.y, -1.0);
-        }
-        return LensPoint(point, highest, highest - point.y);
-    }
-    let column = lens_column(uv);
-    if column.w == 0.0 {
+    let highest = highest_lens_face(point.xz);
+    if highest <= reflection_bed(point.xz) {
         return LensPoint(point, point.y, -1.0);
     }
-    let row = lens_row(point.xz);
-    let motion = cascade_motion(point.xz, row.current, row.track, water.carriage.w, water.carriage.y);
-    let short_weight = column.w - 1.0;
-    var height = column.x + wake_at(point.xz, 0.0).x;
-    for (var band = 0u; band < 3u; band++) {
-        if short_weight * row.gains[band + 1u] * water.heights[band + 1u] > 0.0 {
-            height += short_weight * row.gains[band + 1u] * transported_field(motion, band).displacement.y;
-        }
-    }
-    let depth = height - point.y;
-    return LensPoint(point, height, select(-abs(depth), depth, height > column.y && row.owned));
+    return LensPoint(point, highest, highest - point.y);
 }
 
 // Evaluate the integral in a bounded form at either endpoint. Near c == K*m,
@@ -211,7 +148,7 @@ fn underside_light(world: vec3<f32>, n: vec3<f32>, v: vec3<f32>, variance: f32, 
 }
 
 fn water_underside(input: VertexOut, n: vec3<f32>, v: vec3<f32>, variance: f32, foam: f32) -> vec4<f32> {
-    if lens.state.x == 0u { return vec4(0.0); }
+    if lens_faces.enabled == 0u { return vec4(0.0); }
     let uv = optics_uv(vec2<u32>(input.clip.xy));
     let eye = read_lens(uv);
     let pixel_depth = max(fwidth(eye.signed_depth), 0.00001);

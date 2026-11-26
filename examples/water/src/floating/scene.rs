@@ -75,6 +75,8 @@ pub enum WakeView {
     Waterline,
     /// Look out across the sea from forty metres.
     Vista,
+    /// Follow the craft five metres above the wake for the paired lens cost.
+    LensCost,
 }
 
 impl WakeView {
@@ -269,6 +271,7 @@ fn build_scene(
     profile.optics = optics_arm
         .is_none_or(|(enabled, _)| enabled)
         .then(thrum_water::Optics::default);
+    profile.underwater = demo.is_some_and(|demo| demo.view == WakeView::LensCost);
     profile.query = Some(QueryLimits {
         points: 2048,
         max_age: 3,
@@ -385,7 +388,7 @@ fn build_scene(
         Some(WakeView::Shore) if demo.is_some_and(|demo| demo.stone) => (15.0, 23.0),
         Some(WakeView::Shore) => (14.0, 43.0),
         Some(WakeView::Chase) => (23.0, 251.0),
-        Some(WakeView::Waterline | WakeView::Vista) => (56.0, 235.0),
+        Some(WakeView::Waterline | WakeView::Vista | WakeView::LensCost) => (56.0, 235.0),
         None => (35.0, 128.0),
     };
     let craft_control = whitewater
@@ -720,8 +723,13 @@ fn camera(body: &Body, chase: bool, level: f64, demo: Option<WakeDemo>) -> Camer
             WakeView::Overhead => {
                 return Camera::look_at([190.0, 52.0, 27.5], [184.0, 12.0, 27.0], 65.0);
             }
-            WakeView::Chase | WakeView::Waterline | WakeView::Vista => {}
+            WakeView::Chase | WakeView::Waterline | WakeView::Vista | WakeView::LensCost => {}
         }
+    }
+    if demo.is_some_and(|demo| demo.view == WakeView::LensCost) {
+        let eye = centre - 4.0 * heading + 5.0 * DVec3::Y;
+        let target = centre + 9.0 * heading;
+        return Camera::look_at(eye.as_vec3().to_array(), target.as_vec3().to_array(), 65.0);
     }
     if demo.is_some_and(|demo| demo.view == WakeView::Shore) {
         return crate::island::CAMERAS[1];

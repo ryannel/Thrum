@@ -191,7 +191,7 @@ pub(super) struct Gather {
     pipeline: wgpu::ComputePipeline,
     fields: regions::Shallows,
     dispatch: [u32; 2],
-    pub(super) lens: Option<wgpu::Buffer>,
+    pub(super) underwater: bool,
     pub(super) under: bool,
 }
 
@@ -281,14 +281,7 @@ impl Gather {
             pipeline,
             fields: regions::Shallows::default(),
             dispatch: [0; 2],
-            lens: underwater.then(|| {
-                device.create_buffer(&wgpu::BufferDescriptor {
-                    label: Some("water lens columns"),
-                    size: size_of::<super::underwater::Lens>() as u64,
-                    usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-                    mapped_at_creation: false,
-                })
-            }),
+            underwater,
             under: false,
         }
     }
@@ -302,7 +295,7 @@ impl Gather {
         water_level: f64,
         displacement: [f32; 2],
         roughness: MirrorRoughness,
-        lens: Option<&super::underwater::Lens>,
+        underwater_admitted: bool,
     ) {
         let boxes = opaque.0.lock().expect("water optics bodies");
         let mut inputs = self.fields.inputs(
@@ -314,15 +307,7 @@ impl Gather {
             displacement,
             roughness,
         );
-        self.under = lens.is_some_and(|lens| lens.state[0] != 0);
-        if let Some((lens, buffer)) = lens.zip(self.lens.as_ref()) {
-            let bytes = if self.under {
-                bytemuck::bytes_of(lens)
-            } else {
-                bytemuck::bytes_of(&lens.state)
-            };
-            queue.write_buffer(buffer, 0, bytes);
-        }
+        self.under = underwater_admitted;
         if self.under {
             inputs.dispatch = [0, 0, frame.render_extent[0], frame.render_extent[1]];
             for row in &mut inputs.mask {

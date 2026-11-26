@@ -24,7 +24,7 @@ const assert = (ok,text) => {if(!ok) throw Error(text);};
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const lensRoute = (fixture, arm) => `?lens=${fixture}&arm=${arm}`;
 const lensObserver = `
-  globalThis.__lensPasses={gather:0,composition:0};
+  globalThis.__lensPasses={gather:0,cut:0,composition:0};
   let lensGame;
   Object.defineProperty(window,'game',{
     configurable:true,
@@ -47,6 +47,7 @@ const lensObserver = `
   };
   watchLensPipeline(GPUComputePassEncoder.prototype,'water gather','gather');
   watchLensPipeline(GPURenderPassEncoder.prototype,'water through lens','composition');
+  watchLensPipeline(GPUComputePassEncoder.prototype,'water lens cut','cut');
 `;
 const frameInfo = text => Object.fromEntries(
   text.split(' ').map(pair => pair.split('=')).map(([key, value]) => [key, Number(value)]),
@@ -529,7 +530,7 @@ result.dirty_diff_sha256=hash(execFileSync('git',['diff','HEAD']));
 result.source_sha256={};
 for(const file of ['crates/thrum-app/src/sky.rs','crates/thrum-app/src/sky/browser.rs','crates/thrum-app/web/scene.js','crates/thrum-render/src/runtime.rs','crates/thrum-render/src/runtime/device.rs','examples/water/src/lib.rs','examples/water/src/main.rs','examples/water/examples/field_oracle.rs','scripts/check_water_browser.mjs'])result.source_sha256[file]=hash(await fs.readFile(file));
 if(mode==='under'){
-  for(const file of ['crates/thrum-water/src/underwater.rs','crates/thrum-water/src/underwater.wgsl','examples/water/src/lens_probe.rs','examples/water/examples/lens_oracle.rs','examples/water/assets/meshes/lens-panel.gltf']){
+  for(const file of ['crates/thrum-water-model/src/cut.rs','crates/thrum-water/src/underwater.rs','crates/thrum-water/src/underwater.wgsl','crates/thrum-water/src/underwater/cut_gpu.wgsl','crates/thrum-water/src/surface_vertex_geometry.wgsl','examples/water/src/lens_probe.rs','examples/water/examples/lens_oracle.rs','examples/water/assets/meshes/lens-panel.gltf']){
     result.source_sha256[file]=hash(await fs.readFile(file));
   }
   const shortAdmission='crates/thrum-water/src/underwater/short.rs';
@@ -641,7 +642,7 @@ try {
     result.extent=oracle.extent;
     result.lens={};
     const lensFailures=[];
-    const take=async (fixture,arm)=>{
+    const take=async (fixture,arm,targetTick=1)=>{
       const search=lensRoute(fixture,arm);
       const instantiated_wasm=search===route?result.instantiated_wasm:await navigate(search);
       now=await lensClockOrigin();
@@ -652,31 +653,36 @@ try {
         if(status.startsWith('Asset load failed:'))throw Error(status);
         return /^Cooked generation [0-9]+ drawn/.test(status);
       },'lens witness panel drawn');
-      await evaluate('__lensPasses={gather:0,composition:0}');
+      for(let tick=1;tick<targetTick;tick++){
+        await until(()=>evaluate('game.frame_ready()'),'impact frame slot');
+        await drive(oracle.step_ns/1e6);
+      }
+      await evaluate('__lensPasses={gather:0,cut:0,composition:0}');
       // Water presents between committed states. Tick one at alpha zero
       // gives model time zero, while the initial presentation is a step early.
-      const frame=await capture(`${fixture}-${arm}`,oracle.step_ns/1e6);
+      const frame=await capture(`${fixture}-${arm}${targetTick===1?'':`-tick-${targetTick}`}`,oracle.step_ns/1e6);
       frame.lens_passes=await evaluate('__lensPasses');
       frame.instantiated_wasm=instantiated_wasm;
       frame.faults=await evaluate('__faults');
       assert(frame.faults.length===0,JSON.stringify(frame.faults));
       assert(!(await evaluate('document.querySelector("#problems").textContent')),'lens page reports a problem');
-      assert(frame.tick===1&&frame.alpha===0,`the fixture requires tick one at alpha zero: ${frame.frame}`);
+      assert(Math.abs(frame.tick+frame.alpha-targetTick)<1e-5,`the fixture requires endpoint ${targetTick}: ${frame.frame}`);
       return {frame,rgba:await pixels('__capturePixels')};
     };
-    for(const fixture of ['sea','lake','swash','lip']){
+    for(const fixture of ['trade','lake','swash','lip','carried-crest','trough-wet']){
       const expected=oracle.cases[fixture];
       assert(expected?.length===width*height,`missing model pixels for ${fixture}`);
       const baseline=await take(fixture,'baseline'),split=await take(fixture,'split');
       const fraction=expected.filter(Boolean).length/expected.length;
       const proof={fraction,checked:0,checkedWet:0,checkedDry:0,obscured:[],wrong:[]};
       result.lens[fixture]=proof;
-      assert(fraction>0.25&&fraction<0.75,`${fixture} camera must be half under`);
+      const range=fixture==='trough-wet'?[0.1,0.4]:[0.25,0.75];
+      assert(fraction>range[0]&&fraction<range[1],`${fixture} camera must have the modelled split`);
       assert(baseline.frame.lens_passes.composition===0,'baseline used lens composition');
-      assert(split.frame.lens_passes.composition===1&&split.frame.lens_passes.gather===1,'split lens did not compose the gathered panel');
-      for(let y=1;y<height-1;y++)for(let x=1;x<width-1;x++){
+      assert(split.frame.lens_passes.composition===1&&split.frame.lens_passes.gather===1&&split.frame.lens_passes.cut===1,'split lens did not cut the mesh and compose the gathered panel');
+      for(let y=2;y<height-2;y++)for(let x=1;x<width-1;x++){
         const i=y*width+x,wet=expected[i];
-        if([i-1,i+1,i-width,i+width].some(n=>expected[n]!==wet))continue;
+        if([i-1,i+1,i-2*width,i+2*width].some(n=>expected[n]!==wet))continue;
         const ordinary=baseline.rgba[4*i],measured=split.rgba[4*i];
         if(ordinary<40){proof.obscured.push({x,y,ordinary});continue;}
         proof.checked++;
@@ -702,6 +708,16 @@ try {
     const tradeDry=await take('trade-admission','dry'),tradeWet=await take('trade-admission','split');
     assert(tradeDry.frame.lens_passes.gather===0&&tradeDry.frame.lens_passes.composition===0,'dry Trade lens encoded underwater work');
     assert(tradeWet.frame.lens_passes.gather===1&&tradeWet.frame.lens_passes.composition===1,'submerged Trade lens omitted underwater work');
+    const impactStill=await take('impact','split');
+    assert(impactStill.frame.lens_passes.cut===0&&impactStill.frame.lens_passes.composition===0,'the calm lake lens must be dry before the impact');
+    const ordinary=await take('impact','baseline',8),impact=await take('impact','split',8);
+    let impactPixels=0;
+    for(let i=0;i<ordinary.rgba.length;i+=4){
+      if(ordinary.rgba[i]>40&&impact.rgba[i]<0.85*ordinary.rgba[i])impactPixels++;
+    }
+    result.lens.impact={pixels:impactPixels,tick:impact.frame.tick,alpha:impact.frame.alpha};
+    assert(ordinary.frame.tick===impact.frame.tick&&ordinary.frame.alpha===impact.frame.alpha,'impact arms sampled different endpoints');
+    assert(impactPixels>16&&impact.frame.lens_passes.cut===1&&impact.frame.lens_passes.composition===1,'the lake impact did not wet the lens');
     assert(lensFailures.length===0,lensFailures.join('; '));
   }else if(mode==='rain-rings'){
     await until(async()=>{

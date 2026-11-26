@@ -964,6 +964,58 @@ def dive_investigations(summary, prior):
     return investigations
 
 
+def dive_wake_summary(record, commit):
+    assert record['target'] == 'mac-metal' and record['extent'] == [2560, 1440]
+    assert record['capture'] is False and record['commit'] == commit
+    assert record['height_m'] == 5.0 and record['speed_mps'] == 6.0 and record['wind'] == 'Calm'
+    assert [arm['live'] for arm in record['arms']] == [False, True]
+    summary = {}
+    for arm in record['arms']:
+        frames = arm['frames']
+        assert len(frames) == 12 and all(frame['completion_upper_ms'] > 0 for frame in frames)
+        assert all(frame['underwater_admitted'] is arm['live'] for frame in frames)
+        timed = [frame for frame in frames if frame['gpu_ms'] is not None]
+        terms = {}
+        for frame in timed:
+            passes = frame['passes_ms']
+            assert any(label.endswith(': water surface') for label in passes)
+            assert any(label.endswith(': water lens cut') for label in passes) == arm['live']
+            if arm['live']:
+                assert any(label.endswith(': water gather') for label in passes)
+            for label, elapsed in passes.items():
+                terms.setdefault(label, []).append(elapsed)
+        summary['live' if arm['live'] else 'clear'] = {
+            'gpu_ms': statistics.median(frame['gpu_ms'] for frame in timed) if timed else None,
+            'cpu_wall_ms': statistics.median(frame['cpu_wall_ms'] for frame in frames),
+            'completion_upper_ms': statistics.median(frame['completion_upper_ms'] for frame in frames),
+            'timestamped_samples': len(timed),
+            'timing_stats': arm['timing_stats'],
+            'passes_ms': {label: statistics.median(samples) for label, samples in terms.items()},
+        }
+    clear, live = summary['clear'], summary['live']
+    investigations = []
+    for arm, measurement in summary.items():
+        if measurement['timestamped_samples'] != 12:
+            investigations.append(dict(arm=arm, wire='missing pass timestamps',
+                timing_stats=measurement['timing_stats'],
+                disposition='The native host refused those batches. Keep the independently measured submission-to-completion bracket and leave missing GPU pass durations empty.'))
+        if max(measurement['gpu_ms'] or 0.0, measurement['completion_upper_ms']) > 1000 / 120:
+            largest = max(measurement['passes_ms'], key=measurement['passes_ms'].get, default=None)
+            investigations.append(dict(arm=arm, wire='measured frame or completion bracket exceeds one refresh interval',
+                gpu_ms=measurement['gpu_ms'], largest_pass=largest,
+                largest_ms=measurement['passes_ms'].get(largest),
+                completion_upper_ms=measurement['completion_upper_ms'],
+                disposition='Both arms run at the same extent and craft speed. The completion bracket includes the observer waits and shared device load.'))
+    for label, current in live['passes_ms'].items():
+        previous = clear['passes_ms'].get(label)
+        if previous is None or current >= 1.25 * previous:
+            explanation = ('The live window adds the wake update, vertex cut and full-screen gather. '
+                           'The dry lens keeps no composition pixel. Both arms include the ordinary surface.')
+            investigations.append(dict(arm='live', wire='additional pass or at least 25% growth',
+                pass_name=label, clear_ms=previous, live_ms=current, disposition=explanation))
+    return dict(record=record, summary=summary, investigations=investigations)
+
+
 def measure_dive(action):
     prior = None if action == 'record' else json.loads(RECORDS['under'].read_text())
     if prior is not None:
@@ -976,6 +1028,7 @@ def measure_dive(action):
     scratch = ROOT / 'tmp/waters-wp15'
     scratch.mkdir(parents=True, exist_ok=True)
     locations = {}
+    wake = None
     with tempfile.TemporaryDirectory(prefix='dive-cost-', dir=scratch) as staging:
         store = Path(staging) / 'store'
         run(['cargo', 'run', '--release', '--locked', '--offline', '-p', 'thrum-cook', '--',
@@ -993,9 +1046,14 @@ def measure_dive(action):
                 assert history['commit'] and history['above']['samples'] == 12
                 locations[location].update(views=inputs['views'], summary=summary, prior=history,
                     investigations=dive_investigations(summary, history['above']))
+        if prior is not None:
+            run(proof, env=dict(env, THRUM_WATER_PROOF='dive-wake-cost'))
+            wake = dive_wake_summary(json.loads((Path(staging) / 'wake-dive-cost.json').read_text()), commit)
     record = dict(commit=commit, extent=[2560, 1440], target='mac-metal', capture=False, wind='Calm',
                   host=platform.platform(), load=run(['uptime'], capture_output=True, text=True).stdout.strip(),
                   locations=locations)
+    if wake is not None:
+        record['wake'] = wake
     destination = WORKING / 'WP15'
     destination.mkdir(parents=True, exist_ok=True)
     path = destination / f'dive-cost{"-prior" if prior is None else ""}-{commit[:12]}.json'

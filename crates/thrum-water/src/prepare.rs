@@ -135,9 +135,9 @@ impl Prepared {
                 }
                 if let Some(gather) = &self.gather {
                     entries.push(optics::entry(&gather.buffer));
-                    if let Some(lens) = &gather.lens {
-                        entries.push(lens_entry(lens));
-                    }
+                }
+                if let Some(cut) = &self.lens_cut {
+                    entries.extend(cut.render_entries(&self.mesh));
                 }
                 (
                     product.serial,
@@ -433,18 +433,14 @@ pub(super) fn new(
         entries.extend(Rain::bindings());
         bindings.extend(rain.entries());
     }
-    let lens_buffers = profile.underwater.then(|| cut_gpu::Buffers::new(device));
+    let lens_buffers = geometry
+        .rest_mesh
+        .as_ref()
+        .map(|rest| cut_gpu::Buffers::new(device, rest, mesh.size()))
+        .transpose()?;
     if let Some(buffers) = &lens_buffers {
-        entries.push(binding::storage(
-            cut_gpu::OUTPUT,
-            wgpu::ShaderStages::FRAGMENT,
-            true,
-            0,
-        ));
-        bindings.push(wgpu::BindGroupEntry {
-            binding: cut_gpu::OUTPUT,
-            resource: buffers.output.as_entire_binding(),
-        });
+        entries.extend(cut_gpu::Buffers::render_bindings());
+        bindings.extend(buffers.render_entries(&mesh));
     }
     let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
         label: Some("water field"),
@@ -469,16 +465,9 @@ pub(super) fn new(
         tidal_grid,
         rain.is_some(),
     );
-    let lens_cut = lens_buffers.as_ref().map(|buffers| {
-        Cut::new(
-            surface,
-            &shader,
-            buffers.clone(),
-            &mesh,
-            &entries,
-            &bindings,
-        )
-    });
+    let lens_cut = lens_buffers
+        .as_ref()
+        .map(|buffers| Cut::new(surface, &shader, buffers.clone(), &entries, &bindings));
     let pattern = foam.as_ref().map(|_| Pattern {
         device: device.clone(),
         layout: layout.into_raw(),
@@ -631,21 +620,6 @@ fn bind_optics<'a>(
     if let Some(gather) = gather {
         entries.push(optics::uniform(wgpu::ShaderStages::FRAGMENT));
         bindings.push(optics::entry(&gather.buffer));
-        if let Some(lens) = &gather.lens {
-            entries.push(binding::uniform(
-                15,
-                wgpu::ShaderStages::FRAGMENT,
-                lens.size(),
-            ));
-            bindings.push(lens_entry(lens));
-        }
-    }
-}
-
-fn lens_entry(buffer: &wgpu::Buffer) -> wgpu::BindGroupEntry<'_> {
-    wgpu::BindGroupEntry {
-        binding: 15,
-        resource: buffer.as_entire_binding(),
     }
 }
 
@@ -669,7 +643,7 @@ fn surface_pipelines(
     Option<wgpu::RenderPipeline>,
     thrum_render::runtime::PipelineInput<wgpu::ShaderModule>,
 ) {
-    let under = gather.is_some_and(|gather| gather.lens.is_some());
+    let under = gather.is_some_and(|gather| gather.underwater);
     let mut source = shader_source(
         surface,
         library,
@@ -750,7 +724,7 @@ fn shader_source(
     gather: Option<&Gather>,
     rain: bool,
 ) -> String {
-    let underwater = gather.is_some_and(|gather| gather.lens.is_some());
+    let underwater = gather.is_some_and(|gather| gather.underwater);
     let gather = gather.is_some();
     let sun = if surface.sun_optical_depth {
         "fn water_sun(point: vec3<f32>) -> vec3<f32> { return sun_irradiance(point) * cloud_factor(point); }"
@@ -895,15 +869,6 @@ fn shader_source(
     if underwater {
         source.push_str(include_str!("underwater/cut_gpu.wgsl"));
         source.push_str(include_str!("underwater.wgsl"));
-        source.push_str(if map.is_some() {
-            "fn lens_row(p: vec2<f32>) -> SurfaceRow {\n
-                let a = map_sample(p);
-                if a.body == NO_BODY { var empty: SurfaceRow; return empty; }
-                return surface_row(p, map_cell(p), a.row, a.body, true);
-            }"
-        } else {
-            "fn lens_row(p: vec2<f32>) -> SurfaceRow { return surface_vertex(p, 0u); }"
-        });
     } else {
         source.push_str(
             "fn water_underside(input: VertexOut, n: vec3<f32>, v: vec3<f32>, variance: f32, foam: f32) -> vec4<f32> {

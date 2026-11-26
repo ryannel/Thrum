@@ -8,9 +8,12 @@ use std::{
 };
 use thrum_app::sky::{Camera, ContentStatus, Controls, MeshPlacement, SkyGame};
 use thrum_render::synthetic::SyntheticView;
-use thrum_sea_model::{Cascade, Component, LongWaves, Spectrum};
+use thrum_sea_model::{Cascade, Component, GRID_SIZE, LongWaves, Spectrum};
 use thrum_water::{Optics, Profile, Water};
-use thrum_water_model::{Bed, Body, BodyKind, CutConfig, Field, Map, Stage, SurfProfile, cut};
+use thrum_water_model::{
+    Bed, Body, BodyKind, CutConfig, Field, Impulse, Map, Sheet, SheetPoint, Stage, SurfProfile,
+    cut, highest_triangle, limit,
+};
 
 /// Simulation step shared by the wave probes.
 pub const STEP: Duration = Duration::from_nanos(16_666_667);
@@ -21,9 +24,17 @@ pub const FOV: f32 = 0.85;
 /// Vertical translation that puts the browser fixtures within the sky shell's camera range.
 pub const BROWSER_DATUM: f64 = 8.0;
 /// The four model fixtures submitted by the lens tests.
-pub const NAMES: [&str; 4] = ["sea", "lake", "swash", "lip"];
+pub const NAMES: [&str; 4] = ["trade", "lake", "swash", "lip"];
 /// Submitted grid used by the matching checks.
 pub const EXTENT: [u32; 2] = [48, 27];
+/// The same off-lens stone impulse used by both submitted witnesses.
+pub const STONE: Impulse = Impulse {
+    id: 1,
+    tick: 2,
+    place: [0.0, -1.5],
+    vertical: 5000.0,
+    radius: 0.58,
+};
 
 /// The plane beach and crossing wave trains used by the surf probes.
 /// # Panics
@@ -162,17 +173,54 @@ impl Case {
                 .expect("offshore wave gains");
             return case;
         }
+        if name == "trough-wet" {
+            let mut case = Self::new("mapped-trough", datum);
+            case.name = name;
+            return case;
+        }
+        if name == "impact" {
+            let mut case = Self::new("lake", datum);
+            case.name = name;
+            case.spectrum.long.clear();
+            return case;
+        }
+        if name == "carried-crest" {
+            let mut case = Self::new("sea", datum);
+            case.name = name;
+            let k = TAU / 80.0;
+            case.spectrum.long = vec![Component {
+                wave_vector: [0.0, k],
+                amplitude: 1.0,
+                phase: TAU / 4.0 - 2.0 * k,
+            }];
+            case.spectrum.cascades[0] =
+                Cascade::new(160.0, &[(0, 48, 0.125, -1.875 * 48.0 * TAU / 160.0)])
+                    .expect("short crest at the long wave's rest place");
+            case.field.layers[0] =
+                LongWaves::new(case.spectrum.long.clone(), 2.0).expect("long horizontal throw");
+            case.map
+                .set_wave_gains(0, [1.0, 1.0, 0.0, 0.0])
+                .expect("two geometric bands");
+            return case;
+        }
         let column = match name {
             "sea" => [81.0, 0.0],
+            "trade" => [-293.0, 20.0],
             "lake" => [0.0, 0.0],
             "swash" => [2.5, 0.0],
             "lip" => [-28.755, 3.2295],
             _ => panic!("unknown water lens fixture {name}"),
         };
         let (mut map, mut spectrum, _) = beach(datum);
-        let mapped = name != "sea";
-        if name == "lake" || name == "sea" {
+        let mapped = !matches!(name, "sea" | "trade");
+        if matches!(name, "lake" | "sea" | "trade") {
             map = test_map(name == "lake", datum);
+            if name == "trade" {
+                spectrum =
+                    Spectrum::build(&crate::island::Wind::Trade.forcing()).expect("Trade spectrum");
+                map.set_wave_gains(0, [1.0; 4])
+                    .expect("offshore wave gains");
+            }
         } else {
             map.enable_surf(SurfProfile::default())
                 .expect("shore transform");
@@ -190,7 +238,11 @@ impl Case {
                     } else {
                         Vec::new()
                     },
-                    CHOPPINESS,
+                    if name == "trade" {
+                        crate::profile(&spectrum).waves.choppiness
+                    } else {
+                        CHOPPINESS
+                    },
                 )
                 .expect("oracle field")
             }),
@@ -236,7 +288,7 @@ impl Case {
     pub fn water(&self, underwater: bool) -> Water {
         let mut profile = Profile {
             optics: Some(Optics {
-                extinction: [if self.name == "mapped-trough" {
+                extinction: [if matches!(self.name, "mapped-trough" | "trough-wet") {
                     100.0
                 } else {
                     10.0
@@ -247,7 +299,10 @@ impl Case {
             underwater,
             ..Profile::default()
         };
-        profile.waves.choppiness = CHOPPINESS;
+        profile.waves.choppiness = self.field.layers[0].choppiness();
+        if self.name == "impact" {
+            profile.interaction = Some(thrum_water::interaction::Limits::default());
+        }
         let live = Arc::new(Mutex::new(self.map.clone()));
         if self.mapped {
             Water::mapped(live, self.spectrum.clone(), profile)
@@ -266,6 +321,13 @@ impl Case {
         reason = "the camera uses GPU metres"
     )]
     pub fn eye(&self) -> [f32; 3] {
+        if self.name == "impact" {
+            return [
+                0.0,
+                (self.map.row(0, self.column).level + 0.07) as f32,
+                -0.1,
+            ];
+        }
         if matches!(self.name, "short-trough" | "mapped-trough") {
             return [
                 self.column[0] as f32,
@@ -281,11 +343,8 @@ impl Case {
                 (z - 0.1) as f32,
             ];
         }
-        let highest = self
-            .map
-            .surface(&self.field, self.column, 0.0)
-            .expect("model at the lens centre");
-        assert!(highest.wet);
+        let highest = highest_triangle(self.column, self.triangles().iter().copied())
+            .expect("drawn sheet covers the lens centre");
         if self.name == "lip" {
             let sheet = self
                 .map
@@ -298,9 +357,14 @@ impl Case {
                     >= 3
             );
         }
+        let lens_height = if self.name == "trough-wet" {
+            highest + f64::from(0.1 * (0.5 * FOV).tan()) - 0.02
+        } else {
+            highest
+        };
         [
             self.column[0] as f32,
-            highest.sample.height as f32,
+            lens_height as f32,
             self.column[1] as f32 - 0.1,
         ]
     }
@@ -327,26 +391,149 @@ impl Case {
         };
         // A level near plane repeats its world columns down the image. Solve
         // each column once, then compare to each pixel's own vertical point.
+        let triangles = (NAMES.contains(&self.name)
+            || matches!(self.name, "sea" | "carried-crest" | "trough-wet"))
+        .then(|| self.triangles());
         let columns: Vec<_> = (0..width)
             .map(|x| {
                 let p = point(x, 0);
                 let xz = [p.x, p.z];
-                let answer = self
-                    .map
-                    .surface(&self.field, xz.map(f64::from), 0.0)
-                    .expect("per-column lens oracle");
-                (xz, answer)
+                let point = xz.map(f64::from);
+                let height = if let Some(faces) = &triangles {
+                    highest_triangle(point, faces.iter().copied())
+                } else {
+                    let surface = self
+                        .map
+                        .surface(&self.field, point, 0.0)
+                        .expect("per-column admission fixture oracle");
+                    surface.wet.then_some(surface.sample.height)
+                };
+                (xz, height)
             })
             .collect();
         let mut expected = Vec::with_capacity(width as usize * height as usize);
         for y in 0..height {
-            for (x, &(xz, answer)) in (0..width).zip(&columns) {
+            for (x, &(xz, height)) in (0..width).zip(&columns) {
                 let p = point(x, y);
                 assert_eq!(xz, [p.x, p.z]);
-                expected.push(answer.wet && answer.sample.height > f64::from(p.y));
+                expected.push(height.is_some_and(|surface| surface > f64::from(p.y)));
             }
         }
         expected
+    }
+
+    /// The old footprint bound for the synthetic carried-crest witness.
+    /// Both trains run along z, and this fixture's level near plane has fixed z.
+    /// # Panics
+    /// Panics when called on another fixture.
+    #[must_use]
+    pub fn carried_crest_column_bound(&self) -> f64 {
+        assert_eq!(self.name, "carried-crest");
+        let long = self.field.layers[0]
+            .forward(self.column, 0.0)
+            .expect("long wave")
+            .displacement[1];
+        let band = &self.spectrum.cascades[0];
+        let short = texels(self.column, band.length() / 256.0, |p| {
+            band.direct(p, 0.0).displacement
+        })[1];
+        self.map.row(0, self.column).level + long + short
+    }
+
+    fn triangles(&self) -> Vec<[SheetPoint; 3]> {
+        let mut variances = self.field.variances();
+        let short = self.spectrum.cascades.each_ref().map(Cascade::variance);
+        let grids = self.spectrum.cascades.each_ref().map(|cascade| {
+            (!cascade.components().is_empty()).then(|| cascade.inverse_transform(0.0))
+        });
+        variances[1..].copy_from_slice(&short);
+        let surf = self
+            .map
+            .surf_sheet(&self.field, 0, 0.0)
+            .ok()
+            .map(|sheet| sheet.with_short_wave_variances(short));
+        // These witnesses are in the near grid, away from every ring seam.
+        let spacing = if self.name == "lake" { 0.5 } else { 0.25 };
+        let origin = self.column.map(|v| v.floor());
+        let vertex = |rest| {
+            let row = self.map.sample(rest).expect("lens witness has one body");
+            let gains = limit(row.row, row.depth, variances, self.map.profile()).gains;
+            let long = surf.as_ref().map_or_else(
+                || {
+                    let displacement = texels(rest, 1.0, |p| {
+                        self.field.layers[0]
+                            .forward(p, 0.0)
+                            .expect("long wave")
+                            .displacement
+                    })
+                    .map(|value| value * gains[0]);
+                    SheetPoint {
+                        world: [rest[0] + displacement[0], rest[1] + displacement[2]],
+                        height: displacement[1],
+                    }
+                },
+                |sheet| sheet.forward(rest),
+            );
+            let mut point = SheetPoint {
+                height: row.row.level + long.height,
+                ..long
+            };
+            let weight = self
+                .map
+                .surf_short_wave_weight(rest, row, variances, point.height);
+            for (band, cascade) in self.spectrum.cascades.iter().enumerate() {
+                if gains[band + 1] == 0.0 || short[band] == 0.0 {
+                    continue;
+                }
+                let length = cascade.length();
+                let blend = ((spacing - length / 128.0) / (3.0 * length / 128.0)).clamp(0.0, 1.0);
+                let gain = weight * gains[band + 1] * (1.0 - blend * blend * (3.0 - 2.0 * blend));
+                let step = length / 256.0;
+                let grid = grids[band].as_ref().expect("active cascade");
+                let [x, y, z] = texels(rest, step, |p| {
+                    let [x, z] = p.map(|v| periodic_texel(v, step));
+                    grid[z * GRID_SIZE + x].displacement
+                });
+                point.world[0] += gain * x;
+                point.world[1] += gain * z;
+                point.height += gain * y;
+            }
+            point
+        };
+        let reach = surf.as_ref().map_or(0.0, |sheet| sheet.reach(self.column));
+        let radius = if self.name == "lake" {
+            8
+        } else if reach > 4.0 {
+            40
+        } else {
+            20
+        };
+        let stride = 2 * radius + 1;
+        let vertices: Vec<_> = (-radius..=radius)
+            .flat_map(|z| (-radius..=radius).map(move |x| [x, z]))
+            .map(|offset| {
+                vertex(std::array::from_fn(|axis| {
+                    f64::from(offset[axis]).mul_add(spacing, origin[axis])
+                }))
+            })
+            .collect();
+        let stride = usize::try_from(stride).expect("bounded witness grid");
+        (0..stride - 1)
+            .flat_map(|z| {
+                let vertices = &vertices;
+                let surf = surf.is_some();
+                (0..stride - 1).flat_map(move |x| {
+                    let a = z * stride + x;
+                    let [b, c, d] = [a + 1, a + stride, a + stride + 1];
+                    if surf {
+                        [[a, c, d], [a, d, b]]
+                    } else {
+                        [[a, c, b], [b, c, d]]
+                    }
+                    .map(|triangle| triangle.map(|i| vertices[i]))
+                })
+            })
+            .collect()
     }
 
     /// Model expectation in the browser proof's translated frame.
@@ -369,6 +556,31 @@ impl Case {
     }
 }
 
+#[expect(
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    reason = "indices wrap into the fixed periodic grid"
+)]
+fn periodic_texel(point: f64, step: f64) -> usize {
+    (point / step - 0.5).round().rem_euclid(256.0) as usize
+}
+
+fn texels(point: [f64; 2], step: f64, sample: impl Fn([f64; 2]) -> [f64; 3]) -> [f64; 3] {
+    let grid = point.map(|value| value / step - 0.5);
+    let base = grid.map(f64::floor);
+    let fraction: [f64; 2] = std::array::from_fn(|axis| grid[axis] - base[axis]);
+    let mut sum = [0.0; 3];
+    for offset in [[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]] {
+        let tap = std::array::from_fn(|axis| (base[axis] + offset[axis] + 0.5) * step);
+        let weight =
+            (1.0 - (fraction[0] - offset[0]).abs()) * (1.0 - (fraction[1] - offset[1]).abs());
+        for (value, component) in sum.iter_mut().zip(sample(tap)) {
+            *value += weight * component;
+        }
+    }
+    sum
+}
+
 fn target([x, y, z]: [f32; 3]) -> [f32; 3] {
     [x, y, z + 1.0]
 }
@@ -376,6 +588,8 @@ fn target([x, y, z]: [f32; 3]) -> [f32; 3] {
 /// The browser test entry point, using the ordinary sky shell and cooked opaque pass.
 /// # Errors
 /// Returns an error for invalid controls, cooked assets or clock setup.
+/// # Panics
+/// Panics if the authored impact fixture lacks its interaction capability.
 pub fn browser_game(case: &Case, underwater: bool, dry: bool) -> Result<SkyGame, Box<dyn Error>> {
     let mut eye = case.eye();
     if matches!(case.name, "short-trough" | "mapped-trough") {
@@ -408,7 +622,18 @@ pub fn browser_game(case: &Case, underwater: bool, dry: bool) -> Result<SkyGame,
             return out;
         }
     ";
+    let water = case.water(underwater);
+    let game = if case.name == "impact" {
+        let wake = water.interaction_mailbox().expect("lake interaction");
+        game.with_fixed_update(move |tick, _| {
+            if tick == STONE.tick {
+                wake.post_impulse(STONE);
+            }
+        })
+    } else {
+        game
+    };
     Ok(game
         .with_meshes_and_material(vec![panel], Some(("lens witness", shader)))?
-        .with_contribution(Box::new(case.water(underwater)), || ContentStatus::Drawn(1)))
+        .with_contribution(Box::new(water), || ContentStatus::Drawn(1)))
 }

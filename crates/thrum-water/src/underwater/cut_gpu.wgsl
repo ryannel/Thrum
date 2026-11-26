@@ -2,6 +2,8 @@ struct LensFace {
     a: vec4<f32>,
     b: vec4<f32>,
     c: vec4<f32>,
+    rest_z: vec3<f32>,
+    body: u32,
 }
 struct LensWork {
     count: vec4<u32>,
@@ -20,30 +22,42 @@ struct LensRead {
     padding: vec2<u32>,
     faces: array<LensFace>,
 }
-@group(2) @binding(23) var<storage, read> lens_mesh: array<vec4<f32>>;
-@group(2) @binding(24) var<storage, read> lens_work: LensWork;
 @group(2) @binding(25) var<storage, read_write> lens_write: LensWrite;
 @group(3) @binding(22) var<storage, read> lens_faces: LensRead;
+@group(3) @binding(23) var<storage, read> lens_mesh: array<vec4<f32>>;
+@group(3) @binding(24) var<storage, read> lens_work: LensWork;
 
-fn admit_lens_face(a: vec3<f32>, b: vec3<f32>, c: vec3<f32>) {
-    let lo = min(a.xz, min(b.xz, c.xz));
-    let hi = max(a.xz, max(b.xz, c.xz));
+fn lens_face(a: VertexOut, b: VertexOut, c: VertexOut) -> LensFace {
+    return LensFace(vec4(a.world, a.rest.x), vec4(b.world, b.rest.x),
+        vec4(c.world, c.rest.x), vec3(a.rest.y, b.rest.y, c.rest.y), a.body);
+}
+
+fn lens_vertices(cell: u32) -> array<VertexOut, 4> {
+    let nodes = lens_work.cells[cell];
+    return array(displaced_water_vertex(lens_mesh[nodes.x], nodes.x),
+        displaced_water_vertex(lens_mesh[nodes.y], nodes.y),
+        displaced_water_vertex(lens_mesh[nodes.z], nodes.z),
+        displaced_water_vertex(lens_mesh[nodes.w], nodes.w));
+}
+
+fn admit_lens_face(a: VertexOut, b: VertexOut, c: VertexOut) {
+    let lo = min(a.world.xz, min(b.world.xz, c.world.xz));
+    let hi = max(a.world.xz, max(b.world.xz, c.world.xz));
     let pad = max(max(abs(lo), abs(hi)), vec2(1.0)) * 0.000001;
     if any(hi + pad < lens_work.bounds.xy) || any(lo - pad > lens_work.bounds.zw) { return; }
     let index = atomicAdd(&lens_write.count, 1u);
-    lens_write.faces[index] = LensFace(vec4(a, 0.0), vec4(b, 0.0), vec4(c, 0.0));
+    if index < arrayLength(&lens_write.faces) {
+        lens_write.faces[index] = lens_face(a, b, c);
+    }
 }
 
 @compute @workgroup_size(64)
 fn displace_lens_faces(@builtin(global_invocation_id) id: vec3<u32>) {
-    if id.x >= lens_work.count.x { return; }
-    let nodes = lens_work.cells[id.x];
-    let a = displaced_water_vertex(lens_mesh[nodes.x], nodes.x).world;
-    let b = displaced_water_vertex(lens_mesh[nodes.y], nodes.y).world;
-    let c = displaced_water_vertex(lens_mesh[nodes.z], nodes.z).world;
-    let d = displaced_water_vertex(lens_mesh[nodes.w], nodes.w).world;
-    admit_lens_face(a, c, b);
-    admit_lens_face(b, c, d);
+    let cell = id.x + lens_work.count.y * id.y;
+    if cell >= lens_work.count.x { return; }
+    let nodes = lens_vertices(cell);
+    admit_lens_face(nodes[0], nodes[2], nodes[1]);
+    admit_lens_face(nodes[1], nodes[2], nodes[3]);
 }
 
 fn lens_cross(a: vec2<f32>, b: vec2<f32>) -> f32 {
@@ -59,5 +73,31 @@ fn lens_face_height(face: LensFace, point: vec2<f32>, current: f32) -> f32 {
     let b = lens_cross(at, ac) / determinant;
     let c = lens_cross(ab, at) / determinant;
     if min(min(b, c), 1.0-b-c) < -0.000001 { return current; }
-    return max(current, face.a.y + b * (face.b.y-face.a.y) + c * (face.c.y-face.a.y));
+    let height = face.a.y + b * (face.b.y-face.a.y) + c * (face.c.y-face.a.y);
+    if height <= current { return current; }
+    // The draw masks ownership at the interpolated material rest place.
+    // In a fold, faces landing in one column can come from different rows.
+    let rest_a = vec2(face.a.w, face.rest_z.x);
+    let rest_b = vec2(face.b.w, face.rest_z.y);
+    let rest_c = vec2(face.c.w, face.rest_z.z);
+    let rest = rest_a + b * (rest_b-rest_a) + c * (rest_c-rest_a);
+    return select(current, height, surface_pixel(rest, face.body).owned);
+}
+
+fn highest_lens_face(point: vec2<f32>) -> f32 {
+    var highest = -1e30;
+    if lens_faces.count <= arrayLength(&lens_faces.faces) {
+        for (var i = 0u; i < lens_faces.count; i++) {
+            highest = lens_face_height(lens_faces.faces[i], point, highest);
+        }
+    } else {
+        // A densely folded footprint can exceed the compact face buffer.
+        // Resolve that pixel from the same submitted vertices and topology.
+        for (var cell = 0u; cell < lens_work.count.x; cell++) {
+            let nodes = lens_vertices(cell);
+            highest = lens_face_height(lens_face(nodes[0], nodes[2], nodes[1]), point, highest);
+            highest = lens_face_height(lens_face(nodes[1], nodes[2], nodes[3]), point, highest);
+        }
+    }
+    return highest;
 }

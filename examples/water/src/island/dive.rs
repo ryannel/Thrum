@@ -135,7 +135,7 @@ fn build(
     let mut optics = Optics::default();
     if lake {
         optics = Optics {
-            extinction: [0.56, 0.29, 0.38],
+            extinction: [0.37, 0.18, 0.25],
             downwelling: [0.24, 0.12, 0.16],
             reflection_reach: 48.0,
             ..Optics::default()
