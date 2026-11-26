@@ -79,11 +79,17 @@ pub(crate) fn check(gpu: &thrum_test_support::Gpu) {
         }
         // Sweep the two main reaches through the incoming swell, then sample
         // the short reach below the fall and the previously failing outlet site.
-        let sites = transect_points().chain([(4, [180.05, -24.65]), (5, [320.87, 6.17])]);
-        for (owner, point) in sites {
+        let close = transect_points()
+            .chain([(4, [180.05, -24.65]), (5, [320.87, 6.17])])
+            .map(|(owner, point)| (owner, point, [0.14, 0.25, 0.08]));
+        let from_bank = [
+            (3, [179.35, -61.97], [7.0, 2.0, 0.8]),
+            (5, [237.98, 6.17], [7.0, 2.0, 0.8]),
+        ];
+        for (owner, point, [dx, dy, dz]) in close.chain(from_bank) {
             if !map
                 .lock()
-                .unwrap()
+                .expect("river map")
                 .sample(point)
                 .is_some_and(|s| s.body == owner && s.depth > 0.08)
             {
@@ -99,7 +105,7 @@ pub(crate) fn check(gpu: &thrum_test_support::Gpu) {
                 .height as f32;
             let [x, z] = point.map(|p| p as f32);
             let view = Camera::look_at(
-                [x + 0.14, (height + 0.25).max(0.12), z + 0.08],
+                [x + dx, (height + dy).max(0.12), z + dz],
                 [x, height, z],
                 4.0,
             );

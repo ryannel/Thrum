@@ -1,3 +1,33 @@
+// Recover the rounding errors in a projected sum. A close camera on an
+// island hundreds of metres from the origin otherwise loses depth precision
+// when its translation nearly cancels the world position.
+fn river_sum_error(a: vec4<f32>, b: vec4<f32>, sum: vec4<f32>) -> vec4<f32> {
+    let b_part = sum - a;
+    return (a - (sum - b_part)) + (b - b_part);
+}
+
+fn river_clip(world: vec3<f32>) -> vec4<f32> {
+    let m = view.view_proj;
+    let x = m[0] * world.x;
+    let y = m[1] * world.y;
+    let z = m[2] * world.z;
+    let a = m[3] + x;
+    let b = a + y;
+    let c = b + z;
+    let product_error = fma(m[0], vec4(world.x), -x)
+        + fma(m[1], vec4(world.y), -y) + fma(m[2], vec4(world.z), -z);
+    return c + (product_error + river_sum_error(m[3], x, a)
+        + river_sum_error(a, y, b) + river_sum_error(b, z, c));
+}
+
+fn cross2(a: vec2<f32>, b: vec2<f32>) -> f32 {
+    return a.x * b.y - a.y * b.x;
+}
+
+fn solve_horizontal(a: vec2<f32>, b: vec2<f32>, rhs: vec2<f32>, det: f32) -> vec2<f32> {
+    return vec2(cross2(rhs, b), cross2(a, rhs)) / det;
+}
+
 struct RiverOutput {
     @location(0) colour: vec4<f32>,
     @location(1) motion: vec2<f32>,
@@ -69,68 +99,68 @@ fn river_refinement(point: vec2<f32>, id: u32, spacing: f32) -> f32 {
 }
 
 @fragment fn river_fragment(input: VertexOut) -> RiverOutput {
-    // Intersect the pixel ray with the sampled chart and swell. The mesh
-    // carries the short waves and wake and supplies an initial intersection.
+    // Derivatives describe the rasterized triangle's map back to rest space.
     let x = dpdx(input.world);
     let y = dpdy(input.world);
     let rest_x = dpdx(input.rest);
     let rest_y = dpdy(input.rest);
     let rebuild_swell = input.surf_weight == 0.0;
     let mesh_level = input.river.x + select(0.0, input.river.y, rebuild_swell);
-    let level_gradient = vec2(dpdx(mesh_level), dpdy(mesh_level));
-    let normal = cross(x, y);
-    let ray = normalize(input.world - view.camera_xyz_time.xyz);
-    let facing = dot(normal, ray);
-    let area_squared = dot(normal, normal);
+    let retained = input.world.y - mesh_level;
+    let retained_gradient = vec2(dpdx(retained), dpdy(retained));
+    let mesh_gradient = vec2(x.y, y.y);
+    let mesh_det = cross2(x.xz, y.xz);
     var surface = input;
     var row = surface_pixel(input.rest, input.body);
     var depth = input.clip.z;
-    // Preserve coverage at a grazing silhouette, where a small height
-    // correction could otherwise jump across another part of the sheet.
     let weight = river_refinement(input.rest, surface_body(input.body), input.river.z);
-    if weight > 0.0 && row.owned && facing * facing > 0.0001 * area_squared {
-        let ray_per_height = normal.y / facing;
-        let tangent = ray * ray_per_height - vec3(0.0, 1.0, 0.0);
-        let screen_per_height = vec2(dot(cross(tangent, y), normal),
-            dot(cross(x, tangent), normal)) / area_squared;
-        let rest_per_height = rest_x * screen_per_height.x + rest_y * screen_per_height.y;
-        let level_per_height = dot(level_gradient, screen_per_height);
+    let ndc = fma(input.clip.xy * view_aux.viewport_inv_viewport.zw, vec2(2.0, -2.0), vec2(-1.0, 1.0));
+    let m = view.view_proj;
+    let a = fma(-ndc, vec2(m[0].w), m[0].xy);
+    let b = fma(-ndc, vec2(m[2].w), m[2].xy);
+    let det = cross2(a, b);
+    if weight > 0.0 && row.owned && abs(det) > 0.001 && abs(mesh_det) > 1e-12 {
+        // At a fixed height, the pixel's clip x/w and y/w are two linear
+        // constraints on world x/z. Work in offsets from the mesh hit.
+        let clip = river_clip(input.world);
+        let error = fma(-ndc, vec2(clip.w), clip.xy);
+        let origin = solve_horizontal(a, b, -error, det);
+        let vertical = fma(-ndc, vec2(m[1].w), m[1].xy);
+        let direction = solve_horizontal(a, b, -vertical, det);
         var height = 0.0;
         var previous_height = 0.0;
         var previous_residual = 0.0;
         for (var i = 0u; i < 8u; i++) {
-            var physical_level = row.level;
-            if rebuild_swell { physical_level += river_swell(surface.rest, input.river.z, row); }
-            let raster_level = fma(height, level_per_height, mesh_level);
-            let residual = fma(weight, physical_level - raster_level, -height);
-            if abs(residual) <= 0.000004 { break; }
-            // The second reading also estimates the slope of the residual
-            // along the ray, which accelerates oblique hits over bank slopes.
+            let shift = fma(direction, vec2(height), origin);
+            if length(vec3(shift, height)) > 0.25 { break; }
+            let screen = solve_horizontal(x.xz, y.xz, shift, mesh_det);
+            let rest = input.rest + screen.x * rest_x + screen.y * rest_y;
+            let sample = surface_pixel(rest, input.body);
+            if !sample.owned { break; }
+            var physical_level = sample.level;
+            if rebuild_swell { physical_level += river_swell(rest, input.river.z, sample); }
+            let raster_height = dot(mesh_gradient, screen);
+            let physical_height = (physical_level - mesh_level) + dot(retained_gradient, screen);
+            let residual = mix(raster_height, physical_height, weight) - height;
+            // Commit only intersections that stay within this body's coverage.
+            surface.rest = rest;
+            surface.world = input.world + vec3(shift.x, height, shift.y);
+            row = sample;
+            let corrected = fma(m[2].zw, vec2(shift.y),
+                fma(m[1].zw, vec2(height), fma(m[0].zw, vec2(shift.x), clip.zw)));
+            depth = clamp(corrected.x / corrected.y, 0.0, 1.0);
+            if abs(residual) <= 0.000002 { break; }
+            // Use the prior reading to estimate the residual's slope along
+            // an oblique ray while limiting the step at cell creases.
             var step = residual;
             if i > 0u {
                 let drop = previous_residual - residual;
                 let rise = height - previous_height;
-                if drop * rise > 0.0 {
-                    step *= clamp(rise / drop, 0.25, 4.0);
-                }
+                if drop * rise > 0.0 { step *= clamp(rise / drop, 0.25, 4.0); }
             }
-            let next = height + step;
-            let distance = next * ray_per_height;
-            if abs(distance) > 0.25 { break; }
-            let rest = input.rest + next * rest_per_height;
-            let sample = surface_pixel(rest, input.body);
-            if !sample.owned { break; }
             previous_height = height;
             previous_residual = residual;
-            height = next;
-            row = sample;
-            surface.rest = rest;
-            surface.world = input.world + distance * ray;
-            // Fragment position w is the reciprocal of the original clip w.
-            // Project the offset as a vector to retain the rasterizer's precision.
-            let delta_clip = view.view_proj * vec4(distance * ray, 0.0);
-            depth = clamp((input.clip.z + delta_clip.z * input.clip.w) /
-                (1.0 + delta_clip.w * input.clip.w), 0.0, 1.0);
+            height += step;
         }
     }
     let shaded = shade_water(surface, row);
