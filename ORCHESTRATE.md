@@ -333,6 +333,6 @@ judges the record and reruns what it retains.
 
 ## Agents
 
-| Role    | Codex              |
-|---------|--------------------|
-| Builder | gpt-6.2-sol medium |
+| Role    | Codex              | Antigravity        |
+|---------|--------------------|--------------------|
+| Builder | gpt-6.2-sol medium | gemini-4-neon high |
