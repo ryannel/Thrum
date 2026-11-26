@@ -1,6 +1,9 @@
 //! UIKit output geometry and first-chance input routing for the V1 interface.
 
-use std::ffi::c_void;
+use std::{
+    ffi::{CStr, c_char, c_void},
+    path::PathBuf,
+};
 
 use thrum_app::KeyCode;
 use thrum_ui::{Contact, Event, Routed};
@@ -41,10 +44,15 @@ pub(super) fn output(window: &Window) -> Option<Output> {
 
 #[expect(
     unsafe_code,
-    reason = "Swift forwards a borrowed UTF-8 buffer through this C ABI"
+    reason = "Swift forwards borrowed ticket and font store strings through this C ABI"
 )]
 #[unsafe(no_mangle)]
-extern "C" fn thrum_v1_open_invite(bytes: *const u8, len: usize, connecting: i32) {
+extern "C" fn thrum_v1_open_invite(
+    bytes: *const u8,
+    len: usize,
+    connecting: i32,
+    font_store: *const c_char,
+) {
     let ticket = if bytes.is_null() || len == 0 {
         None
     } else {
@@ -53,7 +61,12 @@ extern "C" fn thrum_v1_open_invite(bytes: *const u8, len: usize, connecting: i32
         std::str::from_utf8(bytes).ok().map(str::to_owned)
     };
     let event = if connecting != 0 {
-        Some(ShellEvent::SceneConnected(ticket))
+        let invite = ticket.filter(|_| !font_store.is_null()).and_then(|ticket| {
+            // SAFETY: Swift keeps this NUL-terminated path live through the call.
+            let store = unsafe { CStr::from_ptr(font_store) }.to_str().ok()?;
+            Some((ticket, PathBuf::from(store)))
+        });
+        Some(ShellEvent::SceneConnected(invite))
     } else {
         ticket.map(ShellEvent::Invite)
     };

@@ -49,7 +49,8 @@ private func thrumV1DisplayTarget(_ targetMediaSeconds: Double, _ headroom: Doub
 private func thrumV1ShellCommand(_ code: Int32)
 
 @_silgen_name("thrum_v1_open_invite")
-private func thrumV1OpenInvite(_ bytes: UnsafePointer<UInt8>?, _ count: Int, _ connecting: Int32)
+private func thrumV1OpenInvite(_ bytes: UnsafePointer<UInt8>?, _ count: Int,
+                              _ connecting: Int32, _ fontStore: UnsafePointer<CChar>?)
 
 private func inviteTicket(_ url: URL) -> String? {
     guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
@@ -62,7 +63,13 @@ private func inviteTicket(_ url: URL) -> String? {
 
 private func forwardInvite(_ ticket: String?, connecting: Bool) {
     Array((ticket ?? "").utf8).withUnsafeBufferPointer { buffer in
-        thrumV1OpenInvite(buffer.baseAddress, buffer.count, connecting ? 1 : 0)
+        if connecting, ticket != nil {
+            let store = ProcessInfo.processInfo.environment["THRUM_FONT_STORE"]
+                ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Documents/interface-store").path
+            store.withCString { thrumV1OpenInvite(buffer.baseAddress, buffer.count, 1, $0) }
+        } else {
+            thrumV1OpenInvite(buffer.baseAddress, buffer.count, connecting ? 1 : 0, nil)
+        }
     }
 }
 

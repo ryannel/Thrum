@@ -65,7 +65,7 @@ enum ShellEvent {
     #[cfg(feature = "proving")]
     Command(Command),
     #[cfg(feature = "proving")]
-    SceneConnected(Option<String>),
+    SceneConnected(Option<(String, std::path::PathBuf)>),
     #[cfg(feature = "proving")]
     Invite(String),
 }
@@ -465,7 +465,11 @@ impl Shell {
         Ok(())
     }
 
-    fn start(&mut self, event_loop: &ActiveEventLoop) -> Result<(), String> {
+    fn start(
+        &mut self,
+        event_loop: &ActiveEventLoop,
+        #[cfg(feature = "proving")] join_store: Option<std::path::PathBuf>,
+    ) -> Result<(), String> {
         // No render owner exists yet, so nothing can hold the slot.
         let epoch = self
             .attach_surface(event_loop)?
@@ -500,7 +504,7 @@ impl Shell {
             extent: self.observed_extent,
             origin: self.origin,
             #[cfg(feature = "proving")]
-            open_join: self.pending_invite.is_some(),
+            join_store,
             world_advanced: Box::new(move || {
                 WORLD_THREAD.get_or_init(thread_name);
                 drop(world.send_event(ShellEvent::WorldAdvanced));
@@ -1115,11 +1119,14 @@ impl ApplicationHandler<ShellEvent> for Shell {
             #[cfg(feature = "proving")]
             ShellEvent::Command(command) => shell.command(event_loop, command),
             #[cfg(feature = "proving")]
-            ShellEvent::SceneConnected(ticket) => {
+            ShellEvent::SceneConnected(invite) => {
                 if shell.render.is_none() {
-                    shell.pending_invite = ticket;
-                    shell.start(event_loop)
-                } else if let Some(ticket) = ticket {
+                    let join_store = invite.map(|(ticket, store)| {
+                        shell.pending_invite = Some(ticket);
+                        store
+                    });
+                    shell.start(event_loop, join_store)
+                } else if let Some((ticket, _)) = invite {
                     shell.invite(ticket)
                 } else {
                     Ok(())

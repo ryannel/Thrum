@@ -45,7 +45,7 @@ pub(super) enum Job {
         extent: [u32; 2],
         origin: Instant,
         #[cfg(feature = "proving")]
-        open_join: bool,
+        join_store: Option<std::path::PathBuf>,
         world_advanced: Box<dyn Fn() + Send>,
     },
     Frame(FrameRequest),
@@ -364,7 +364,7 @@ impl Owner {
                 extent,
                 origin,
                 #[cfg(feature = "proving")]
-                open_join,
+                join_store,
                 world_advanced,
             } => {
                 self.origin = origin;
@@ -373,7 +373,7 @@ impl Owner {
                     epoch,
                     extent,
                     #[cfg(feature = "proving")]
-                    open_join,
+                    join_store,
                     world_advanced,
                 ))
             }
@@ -392,7 +392,7 @@ impl Owner {
         instance: &wgpu::Instance,
         epoch: u64,
         extent: [u32; 2],
-        #[cfg(feature = "proving")] open_join: bool,
+        #[cfg(feature = "proving")] join_store: Option<std::path::PathBuf>,
         world_advanced: Box<dyn Fn() + Send>,
     ) -> Result<Prepared, String> {
         if self.gpu.is_some() {
@@ -434,7 +434,7 @@ impl Owner {
             &capabilities,
             config,
             #[cfg(feature = "proving")]
-            open_join,
+            join_store,
         ))?;
         if self.diagnostics && std::env::var("THRUM_CULLING_ORACLE").as_deref() == Ok("1") {
             super::culling::record(&mut host, &device, &queue, &capabilities, config, setup)?;
@@ -1051,32 +1051,23 @@ impl Gpu {
     }
 }
 
-/// Abandon a recorded frame on a lost device. A healthy skip would flush
-/// staging with an empty submit to the lost queue; this makes no queue call.
 async fn prepare_host(
     device: &wgpu::Device,
     queue: &wgpu::Queue,
     capabilities: &thrum_render::capabilities::DeviceCapabilities,
     config: FrameConfig,
-    #[cfg(feature = "proving")] open_join: bool,
+    #[cfg(feature = "proving")] join_store: Option<std::path::PathBuf>,
 ) -> Result<(v1_game::GameSetup, super::Host), String> {
     #[cfg(feature = "proving")]
-    if open_join {
+    if let Some(store) = join_store {
         let setup = v1_game::GameSetup {
             interface_text: Some(v1_game::InterfaceText::Menu),
             sprite_scale: Some(2),
             sprite_rows: Some(10_000),
             ..v1_game::GameSetup::default()
         };
-        let source = if let Some(path) = std::env::var_os("THRUM_FONT_STORE") {
-            std::path::PathBuf::from(path)
-        } else {
-            std::env::home_dir()
-                .ok_or("iOS app container home is unavailable")?
-                .join("Documents/interface-store")
-        };
         let host = setup
-            .prepare_with_sheet_source(device, queue, capabilities, config, source.into())
+            .prepare_with_sheet_source(device, queue, capabilities, config, store.into())
             .await
             .map_err(|error| error.to_string())?;
         return Ok((setup, host));
@@ -1086,6 +1077,8 @@ async fn prepare_host(
     Ok((setup, host))
 }
 
+/// Abandon a recorded frame on a lost device. A healthy skip would flush
+/// staging with an empty submit to the lost queue; this makes no queue call.
 fn abandon(
     encoded: EncodedFrame<'_, GameWorld, GameScene>,
     reply: &mut FrameReply,
