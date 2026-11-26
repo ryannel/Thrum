@@ -618,10 +618,10 @@
           "check": "python3 scripts/game_ui_sim.py touch",
           "lock": "simulator",
           "target": "ios-sim",
-          "evidence": "",
-          "verdict": "fail",
-          "review": ".orchestrate/evidence/GAME-UI/WP5-review.md",
-          "builder_result": "open"
+      "evidence": ".orchestrate/evidence/GAME-UI/WP5/invite-touch/result.json",
+      "verdict": "fail",
+      "review": ".orchestrate/evidence/GAME-UI/WP5-review.md",
+      "builder_result": "pass"
         },
         {
           "id": "WP5.3",

@@ -193,3 +193,8 @@
   handoff and a whole invite ticket. The builder inspected the six paired stills. On Mac Metal the
   creator guide's example and window commands ran, and the dependency and maturity audits passed.
   [Proof index](../../../.orchestrate/evidence/GAME-UI/WP5/index.md)
+- 2026-11-26 WP5.2 now selects the Join screen from UIKit's scene connection options before the
+  iOS renderer prepares. A cold invite uses the cooked font store installed in `Documents/interface-store`.
+  The iPhone 18 Pro simulator proved the intact ticket and visible Connect button both in the running game
+  and after termination. The same run proved all four real card taps and held-stick handoff again.
+  [Simulator run](../../../.orchestrate/evidence/GAME-UI/WP5/invite-touch/result.json)
