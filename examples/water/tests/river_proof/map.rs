@@ -187,22 +187,31 @@ fn metal_map_keeps_bulk_current_through_the_backwater() {
     }
 }
 
-fn fixture() -> Map {
+pub(super) const WETTING_GAUGES: [f64; 7] = [0.0, 0.33, 0.35, 0.46, 0.48, 0.73, 1.0];
+pub(super) const HOLLOW: [f32; 2] = [5.0, 5.0];
+pub(super) const FALL_REACH: [[f32; 2]; 4] = [[9.0, 5.0], [9.0, 6.0], [9.0, 7.0], [9.0, 8.0]];
+
+pub(super) fn wetting_fixture() -> Map {
     const SIDE: usize = 12;
     const CELLS: usize = SIDE * SIDE;
     let cell = |x, z| z * SIDE + x;
     let mut heights = vec![8.0; CELLS];
-    for x in 3..=8 {
+    for x in 3..=10 {
         heights[cell(x, 3)] = 3.0;
     }
     // The ridge crosses above the channel's low stage. Behind it is a hollow
     // deeper than the low stage that takes the ridge's wetting gauge.
-    heights[cell(5, 4)] = 3.6;
-    heights[cell(5, 5)] = 2.9;
+    for x in 4..=6 {
+        heights[cell(x, 4)] = 3.6;
+        heights[cell(x, 5)] = 2.9;
+        heights[cell(x, 6)] = 2.9;
+    }
     // The upper-only lip drops into a reach which is entirely dry at low stage.
-    heights[cell(8, 4)] = 3.5;
-    for z in 5..=8 {
-        heights[cell(8, z)] = 0.5;
+    for x in 8..=10 {
+        heights[cell(x, 4)] = 3.5;
+        for z in 5..=8 {
+            heights[cell(x, z)] = 0.5;
+        }
     }
     let dry = FlowSample {
         levels: heights.iter().map(|&h| h - 0.05).collect(),
@@ -213,23 +222,27 @@ fn fixture() -> Map {
     let mut low = dry.clone();
     let mut high = dry.clone();
     let mut wetting = vec![None; CELLS];
-    for x in 3..=8 {
+    for x in 3..=10 {
         let i = cell(x, 3);
         low.levels[i] = 3.25;
         low.currents[i] = [0.4, 0.0];
         high.levels[i] = 4.0;
         high.currents[i] = [0.8, 0.1];
     }
-    for (x, z, gate) in [(5, 4, 0.47), (5, 5, 0.47), (8, 4, 0.34)] {
+    let hollow = (4..=6).flat_map(|x| (4..=6).map(move |z| (x, z, 0.47)));
+    let lip = (8..=10).map(|x| (x, 4, 0.34));
+    let gated = hollow.chain(lip);
+    for (x, z, gate) in gated.clone() {
         high.levels[cell(x, z)] = 4.0;
         wetting[cell(x, z)] = Some(gate);
     }
     let mut lower = dry.clone();
     let mut lower_wetting = vec![None; CELLS];
-    for z in 5..=8 {
-        lower.levels[cell(8, z)] = 1.1;
-        lower.currents[cell(8, z)] = [0.0, 0.6];
-        lower_wetting[cell(8, z)] = Some(0.34);
+    let receiver = (8..=10).flat_map(|x| (5..=8).map(move |z| (x, z)));
+    for (x, z) in receiver.clone() {
+        lower.levels[cell(x, z)] = 1.1;
+        lower.currents[cell(x, z)] = [0.0, 0.6];
+        lower_wetting[cell(x, z)] = Some(0.34);
     }
     let make_body = |name: &str, sample: &FlowSample, footprint: Vec<bool>, ends: Vec<End>| Body {
         name: name.into(),
@@ -255,8 +268,10 @@ fn fixture() -> Map {
         }
         cells
     };
-    let mut main_points: Vec<_> = (3..=8).map(|x| (x, 3)).collect();
-    main_points.extend([(5, 4), (5, 5), (8, 4)]);
+    let main_points: Vec<_> = (3..=10)
+        .map(|x| (x, 3))
+        .chain(gated.map(|(x, z, _)| (x, z)))
+        .collect();
     let bodies = vec![
         make_body(
             "Ridge and lip",
@@ -264,7 +279,7 @@ fn fixture() -> Map {
             footprint(&main_points),
             vec![End {
                 body: BRINK,
-                segment: [[7.5, 4.0], [8.5, 4.0]],
+                segment: [[8.0, 4.0], [10.0, 4.0]],
                 length: 0.5,
                 mouth: false,
             }],
@@ -272,7 +287,7 @@ fn fixture() -> Map {
         make_body(
             "Fall receiver",
             &dry,
-            footprint(&[(8, 5), (8, 6), (8, 7), (8, 8)]),
+            footprint(&receiver.collect::<Vec<_>>()),
             Vec::new(),
         ),
     ];
@@ -320,18 +335,12 @@ fn metal_samples_the_ridge_and_the_dry_reach_at_their_wetting_gauges() {
     ) else {
         return;
     };
-    let mut map = fixture();
-    let points = [
-        [4.5, 3.0],
-        [5.0, 4.0],
-        [5.0, 5.0],
-        [8.0, 4.0],
-        [8.0, 5.0],
-        [8.0, 6.0],
-        [8.0, 7.0],
-        [8.0, 8.0],
-    ];
-    for gauge in [0.0, 0.33, 0.35, 0.46, 0.48, 0.73, 1.0] {
+    let mut map = wetting_fixture();
+    let points = [[4.5, 3.0], [5.0, 4.0], HOLLOW, [9.0, 4.0]]
+        .into_iter()
+        .chain(FALL_REACH)
+        .collect::<Vec<_>>();
+    for gauge in WETTING_GAUGES {
         map.set_gauge(0, gauge).expect("fixture stage");
         let wet = |point: [f32; 2]| {
             map.sample(point.map(f64::from))

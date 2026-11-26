@@ -315,6 +315,25 @@ impl Map {
         }
         let id = self.rivers.len();
         for (k, c) in river.charts.iter().enumerate() {
+            if g.len() > 1
+                && let BodyKind::Chart(chart) = &self.bodies[c.body].kind
+            {
+                // The surface mesh is prepared once, even for reaches that
+                // have no support at the first sample. Wetting gates still
+                // select the pixels within this coverage at display time.
+                let footprint = chart
+                    .footprint
+                    .iter()
+                    .enumerate()
+                    .filter_map(|(i, &inside)| inside.then_some(i));
+                if let Some([min, max]) = self.surface_bounds_for(footprint) {
+                    let [lo, hi] = self.surface_bounds[c.body].unwrap_or([min, max]);
+                    self.surface_bounds[c.body] = Some([
+                        std::array::from_fn(|axis| lo[axis].min(min[axis])),
+                        std::array::from_fn(|axis| hi[axis].max(max[axis])),
+                    ]);
+                }
+            }
             self.sampled[c.body] = Some((id, k));
         }
         self.rivers.push(river);

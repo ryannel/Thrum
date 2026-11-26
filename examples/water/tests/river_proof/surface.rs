@@ -6,7 +6,7 @@ use thrum_app::sky::{Camera, ContentStatus, Controls, SkyGame};
 use thrum_water_model::{Field, Map, RiverFile};
 use water_scene::{channel, island::Wind, river};
 
-use super::map::{REACHES, transect_points};
+use super::map::{FALL_REACH, HOLLOW, REACHES, WETTING_GAUGES, transect_points, wetting_fixture};
 use crate::support::{self, Fixture};
 
 const EXTENT: [u32; 2] = [95, 13];
@@ -17,6 +17,115 @@ fn ray_hit(inverse: glam::DMat4, column: u32, row: u32, depth: f32) -> glam::DVe
     let u = (f64::from(column) + 0.5) / f64::from(EXTENT[0]);
     let v = (f64::from(row) + 0.5) / f64::from(EXTENT[1]);
     inverse.project_point3(glam::dvec3(2.0 * u - 1.0, 1.0 - 2.0 * v, f64::from(depth)))
+}
+
+#[expect(
+    clippy::cast_possible_truncation,
+    clippy::print_stdout,
+    reason = "fixture camera uses GPU metres and the proof records submitted depths"
+)]
+pub(crate) fn check_wetting(gpu: &thrum_test_support::Gpu) {
+    let map = Arc::new(Mutex::new(wetting_fixture()));
+    let spectrum = thrum_sea_model::Spectrum::build(&channel::forcing(Wind::Calm))
+        .expect("calm fixture spectrum");
+    let profile = water_scene::profile(&spectrum);
+    let field = water_scene::floating::fallback(&spectrum, profile.waves.choppiness)
+        .expect("calm model field");
+    let water =
+        thrum_water::Water::mapped(Arc::clone(&map), spectrum, profile).expect("sampled water");
+    let report = water.report();
+    let initial = Camera::look_at([5.02, 5.0, 5.0], [5.0, 2.9, 5.0], 4.0);
+    let camera = Arc::new(Mutex::new(initial));
+    let on_tick = Arc::clone(&camera);
+    let tap = support::depth::DepthTap::default();
+    // With no opaque ground, an early water write cannot hide behind it.
+    // The chart's own bed still determines which part of a ray is above ground.
+    let game = SkyGame::new(Controls::new(), initial, |_, _| {})
+        .with_presentation_camera(move |_| *on_tick.lock().expect("wetting camera"))
+        .with_tick_duration(STEP)
+        .expect("elapsed surface clock")
+        .with_ground(None)
+        .with_contribution(Box::new(water), || ContentStatus::Drawn(1))
+        .with_contribution(Box::new(tap.contribution(EXTENT)), || {
+            ContentStatus::Drawn(1)
+        });
+    let mut scene = Fixture::from_game(gpu, EXTENT, game, report);
+    scene.frame_without_timings(0.0);
+    let mut time = 0.0;
+    for gauge in WETTING_GAUGES {
+        map.lock()
+            .expect("wetting map")
+            .set_gauge(0, gauge)
+            .expect("fixture gauge");
+        for (feature, point, threshold) in std::iter::once(("hollow", HOLLOW, 0.47))
+            .chain(FALL_REACH.map(|[x, z]| ("fall reach", [x, z.clamp(5.02, 7.98)], 0.34)))
+        {
+            let bed = map
+                .lock()
+                .expect("wetting map")
+                .bed()
+                .height(point.map(f64::from))
+                .expect("fixture ground");
+            let [x, z] = point;
+            let y = bed as f32;
+            let view = Camera::look_at([x + 0.02, y + 2.0, z], [x, y, z], 4.0);
+            *camera.lock().expect("wetting camera") = view;
+            time += 0.25;
+            scene.frame_without_timings(time + STEP.as_secs_f64());
+            let depth = tap.read(&scene);
+            let [column, row] = EXTENT.map(|axis| axis / 2);
+            let written = depth[(row * EXTENT[0] + column) as usize];
+            let map = map.lock().expect("wetting map");
+            let expected = map
+                .surface(&field, point.map(f64::from), time)
+                .expect("model column");
+            assert_eq!(
+                expected.wet,
+                gauge > threshold,
+                "{feature} {point:?}, gauge {gauge}"
+            );
+            if written == 0.0 {
+                assert!(
+                    !expected.wet,
+                    "{feature} {point:?} missing wet depth at gauge {gauge}"
+                );
+                println!(
+                    "Metal wetting draw {feature} {point:?}, gauge {gauge:.2}, t {time:.2}: clear"
+                );
+                continue;
+            }
+            let inverse = support::depth::matrix(view, EXTENT).as_dmat4().inverse();
+            let hit = ray_hit(inverse, column, row, written);
+            let place = [hit.x, hit.z];
+            let model = map
+                .surface(&field, place, time)
+                .expect("model at submitted hit");
+            assert_eq!(
+                model.wet, expected.wet,
+                "{feature} {point:?}, gauge {gauge}"
+            );
+            if expected.wet {
+                let error = (hit.y - model.sample.height).abs();
+                assert!(
+                    error <= EPS_INTERIOR,
+                    "{feature} {point:?}, gauge {gauge}: depth residual {error:.7} m"
+                );
+                println!(
+                    "Metal wetting draw {feature} {point:?}, gauge {gauge:.2}, t {time:.2}: depth residual {error:.7} m"
+                );
+            } else {
+                let ground = map.bed().height(place).expect("ground at submitted hit");
+                assert!(
+                    hit.y <= ground,
+                    "{feature} {point:?} wrote above ground at dry gauge {gauge}: {:.7} m above bed",
+                    hit.y - ground
+                );
+                println!(
+                    "Metal wetting draw {feature} {point:?}, gauge {gauge:.2}, t {time:.2}: depth below ground"
+                );
+            }
+        }
+    }
 }
 
 #[expect(

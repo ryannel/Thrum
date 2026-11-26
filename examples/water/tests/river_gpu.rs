@@ -25,6 +25,14 @@ fn submitted_depth_follows_river_interiors_and_all_three_joins_in_swell() {
 }
 
 thrum_test_support::macos_gpu_test! {
+fn submitted_depth_follows_the_hollow_and_fall_reach_wetting() {
+    let Some(gpu) = thrum_test_support::gpu("river wetting draw", Some(wgpu::Backend::Metal))
+    else { return };
+    river_proof::surface::check_wetting(&gpu);
+}
+}
+
+thrum_test_support::macos_gpu_test! {
 fn submitted_depth_follows_the_whole_wet_length_at_lower_gauges() {
     let Some(gpu) = thrum_test_support::gpu("lower river gauges", Some(wgpu::Backend::Metal))
     else { return };

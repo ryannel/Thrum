@@ -162,7 +162,7 @@ pub struct Map {
     pub(crate) sampled: Vec<Option<(usize, usize)>>,
     spatial_revision: u64,
     pub(crate) hollow_revision: u64,
-    surface_bounds: Vec<Option<[[f64; 2]; 2]>>,
+    pub(crate) surface_bounds: Vec<Option<[[f64; 2]; 2]>>,
 }
 
 impl Map {
@@ -258,22 +258,12 @@ impl Map {
             .support
             .iter()
             .map(|support| {
-                let mut points = support
-                    .iter()
-                    .enumerate()
-                    .filter(|(_, origin)| origin.is_some())
-                    .map(|(i, _)| map.bed.point(i));
-                let first = points.next()?;
-                let [min, max] = points.fold([first, first], |[min, max], point| {
-                    [
-                        std::array::from_fn(|axis| min[axis].min(point[axis])),
-                        std::array::from_fn(|axis| max[axis].max(point[axis])),
-                    ]
-                });
-                Some([
-                    min.map(|v| v - map.bed.spacing),
-                    max.map(|v| v + map.bed.spacing),
-                ])
+                map.surface_bounds_for(
+                    support
+                        .iter()
+                        .enumerate()
+                        .filter_map(|(i, origin)| origin.is_some().then_some(i)),
+                )
             })
             .collect();
         for (b, s) in map.bodies.iter_mut().zip(stages) {
@@ -281,6 +271,24 @@ impl Map {
         }
         map.rebuild();
         Ok(map)
+    }
+
+    pub(crate) fn surface_bounds_for(
+        &self,
+        cells: impl Iterator<Item = usize>,
+    ) -> Option<[[f64; 2]; 2]> {
+        let mut points = cells.map(|i| self.bed.point(i));
+        let first = points.next()?;
+        let [min, max] = points.fold([first, first], |[min, max], point| {
+            [
+                std::array::from_fn(|axis| min[axis].min(point[axis])),
+                std::array::from_fn(|axis| max[axis].max(point[axis])),
+            ]
+        });
+        Some([
+            min.map(|v| v - self.bed.spacing),
+            max.map(|v| v + self.bed.spacing),
+        ])
     }
 
     /// Set a stage, counting range clamps and rebuilding stage-dependent support.

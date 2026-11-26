@@ -248,3 +248,10 @@
   wetting. [The design](DESIGN.md#proof-and-builder-handoff) gives the reason. The map's rows, the 0.010 m
   along the island's rivers and the joins' bound are unchanged, and no other item changed.
   [Review](../../../.orchestrate/evidence/RIVERS/design-review.md)
+
+- 2026-11-26 WP4.3 now draws the wetting scene as well as sampling its map. The fall reach starts
+  dry, so its first-sample bounds supplied no mesh. Sampled chart bounds now cover the declared
+  footprint for all gauges. The Metal depth test covers the hollow and four stations along the
+  fall reach at seven gauges. Forcing either feature to draw from the upper sample below its
+  wetting fails the depth test while the map test passes.
+  [Target evidence](../../../.orchestrate/evidence/RIVERS/WP4/wetting-draw/README.md)
