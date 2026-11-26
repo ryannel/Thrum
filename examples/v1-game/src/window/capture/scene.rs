@@ -205,11 +205,6 @@ pub(in crate::window) async fn run(
         .map(|arm| creation::Ready::mark(arm, driver.host_mut(), &capabilities))
         .transpose()?;
     driver.host_mut().finish_preparation();
-    if let Some(display) = request.still_governor
-        && !driver.host_mut().enable_governor(display)
-    {
-        return Err("the prepared exit scene refused the still governor".to_owned());
-    }
     if let Some(eye) = request.fixed_eye {
         if moving_route.is_some() || motion_frames.is_some() {
             return Err("a fixed eye requires a still capture".to_owned());
@@ -298,8 +293,7 @@ pub(in crate::window) async fn run(
             &capabilities,
             output,
             params.ok_or("submitted stills need parameter files")?,
-            request.edr_headroom,
-            request.source.as_deref() == Some("submitted-linear"),
+            request,
         );
     }
     let host = driver.host_mut();

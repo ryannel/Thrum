@@ -1,5 +1,5 @@
 //! Frozen-world route checkpoints from the same submission that wrote the surface.
-use super::{Driver, EXTENT, motion};
+use super::{Driver, EXTENT, SceneCaptureRequest, motion};
 use crate::host::GameHost as _;
 use std::{
     path::{Path, PathBuf},
@@ -14,12 +14,17 @@ pub(super) fn record(
     capabilities: &DeviceCapabilities,
     directory: &Path,
     files: &[PathBuf],
-    headroom: Option<f32>,
-    scene_linear: bool,
+    request: &SceneCaptureRequest,
 ) -> Result<(), String> {
+    if let Some(display) = request.still_governor
+        && !driver.host_mut().enable_governor(display)
+    {
+        return Err("the prepared exit scene refused the still governor".to_owned());
+    }
+    let headroom = request.edr_headroom;
     let source = if headroom.is_some() {
         CaptureSource::Edr
-    } else if scene_linear {
+    } else if request.source.as_deref() == Some("submitted-linear") {
         CaptureSource::SceneLinear
     } else {
         CaptureSource::Sdr
