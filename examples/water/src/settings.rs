@@ -40,6 +40,8 @@ pub enum Settings {
     },
     /// The island's rain yard, with a named wind.
     RainYard(Wind),
+    /// The lake, with a continuous camera depth control.
+    LakeDive(Wind),
     /// Island beach with refraction of the long waves and the breaker section.
     Surf(Wind),
     /// Hand-authored outlet from the island's lake.
@@ -116,6 +118,12 @@ impl Settings {
     }
 
     fn parse(get: impl Fn((&str, &str)) -> Option<String>) -> Self {
+        if let Some(wind) = get(("dive", "THRUM_WATER_DIVE"))
+            .as_deref()
+            .and_then(Wind::named)
+        {
+            return Self::LakeDive(wind);
+        }
         if let Some(wind) = get(RAIN).as_deref().and_then(Wind::named) {
             return Self::RainYard(wind);
         }

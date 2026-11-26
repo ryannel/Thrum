@@ -44,6 +44,7 @@ pub(super) struct Prepared {
     pub(super) pipeline: wgpu::RenderPipeline,
     pub(super) river_pipeline: Option<wgpu::RenderPipeline>,
     pub(super) film: Option<wgpu::RenderPipeline>,
+    pub(super) underwater: Option<wgpu::RenderPipeline>,
     pub(super) parameters: wgpu::Buffer,
     pub(super) group: wgpu::BindGroup,
     pattern: Option<Pattern>,
@@ -131,6 +132,9 @@ impl Prepared {
                 }
                 if let Some(gather) = &self.gather {
                     entries.push(optics::entry(&gather.buffer));
+                    if let Some(lens) = &gather.lens {
+                        entries.push(lens_entry(lens));
+                    }
                 }
                 (
                     product.serial,
@@ -303,7 +307,7 @@ pub(super) fn new(
     let library = environment.shader_source.replace("@group(0)", "@group(2)");
     let gather = profile
         .optics
-        .map(|profile| Gather::new(surface, &environment, profile, &library));
+        .map(|optics| Gather::new(surface, &environment, optics, &library, profile.underwater));
     let parameters = device.create_buffer(&wgpu::BufferDescriptor {
         label: Some("water parameters"),
         size: size_of::<Parameters>() as u64,
@@ -384,10 +388,7 @@ pub(super) fn new(
         entries.push(cache.surface_binding());
         bindings.push(cache.surface_entry());
     }
-    if let Some(gather) = &gather {
-        entries.push(optics::uniform(wgpu::ShaderStages::FRAGMENT));
-        bindings.push(optics::entry(&gather.buffer));
-    }
+    bind_optics(gather.as_ref(), &mut entries, &mut bindings);
     if let Some(rain) = &rain {
         entries.extend(Rain::bindings());
         bindings.extend(rain.entries());
@@ -401,7 +402,7 @@ pub(super) fn new(
         layout: &layout,
         entries: &bindings,
     });
-    let (pipeline, river_pipeline, film) = surface_pipelines(
+    let (pipeline, river_pipeline, film, underwater) = surface_pipelines(
         surface,
         &layout,
         &environment,
@@ -434,6 +435,7 @@ pub(super) fn new(
         pipeline,
         river_pipeline,
         film,
+        underwater,
         parameters,
         group,
         pattern,
@@ -556,6 +558,32 @@ fn pattern_entry(view: &wgpu::TextureView) -> wgpu::BindGroupEntry<'_> {
     }
 }
 
+fn bind_optics<'a>(
+    gather: Option<&'a Gather>,
+    entries: &mut Vec<wgpu::BindGroupLayoutEntry>,
+    bindings: &mut Vec<wgpu::BindGroupEntry<'a>>,
+) {
+    if let Some(gather) = gather {
+        entries.push(optics::uniform(wgpu::ShaderStages::FRAGMENT));
+        bindings.push(optics::entry(&gather.buffer));
+        if let Some(lens) = &gather.lens {
+            entries.push(binding::uniform(
+                15,
+                wgpu::ShaderStages::FRAGMENT,
+                lens.size(),
+            ));
+            bindings.push(lens_entry(lens));
+        }
+    }
+}
+
+fn lens_entry(buffer: &wgpu::Buffer) -> wgpu::BindGroupEntry<'_> {
+    wgpu::BindGroupEntry {
+        binding: 15,
+        resource: buffer.as_entire_binding(),
+    }
+}
+
 fn surface_pipelines(
     surface: &SceneSurface<'_>,
     layout: &wgpu::BindGroupLayout,
@@ -573,7 +601,9 @@ fn surface_pipelines(
     wgpu::RenderPipeline,
     Option<wgpu::RenderPipeline>,
     Option<wgpu::RenderPipeline>,
+    Option<wgpu::RenderPipeline>,
 ) {
+    let under = gather.is_some_and(|gather| gather.lens.is_some());
     let mut source = shader_source(
         surface,
         library,
@@ -582,6 +612,7 @@ fn surface_pipelines(
         foam,
         gather.is_some(),
         rain,
+        under,
     ) + &Cache::source(cache, tidal_grid);
     if rain {
         use std::fmt::Write;
@@ -622,9 +653,10 @@ fn surface_pipelines(
         layout,
         environment,
         &shader,
-        map.is_some(),
-        "water_fragment",
-        gather.is_some(),
+        SurfaceDraw::Sheet {
+            mapped: map.is_some(),
+            gather: gather.is_some(),
+        },
     );
     let river = has_rivers.then(|| {
         create_pipeline(
@@ -632,23 +664,14 @@ fn surface_pipelines(
             layout,
             environment,
             &shader,
-            true,
-            "river_fragment",
-            gather.is_some(),
+            SurfaceDraw::River { gather: gather.is_some() },
         )
     });
-    let film = (foam.is_some() && shore).then(|| {
-        create_pipeline(
-            surface,
-            layout,
-            environment,
-            &shader,
-            true,
-            "film_fragment",
-            false,
-        )
-    });
-    (pipeline, river, film)
+    let film = (foam.is_some() && shore)
+        .then(|| create_pipeline(surface, layout, environment, &shader, SurfaceDraw::Film));
+    let underwater =
+        under.then(|| create_pipeline(surface, layout, environment, &shader, SurfaceDraw::Lens));
+    (pipeline, river, film, underwater)
 }
 
 fn shader_source(
@@ -659,6 +682,7 @@ fn shader_source(
     foam: Option<&Foam>,
     gather: bool,
     rain: bool,
+    underwater: bool,
 ) -> String {
     let sun = if surface.sun_optical_depth {
         "fn water_sun(point: vec3<f32>) -> vec3<f32> { return sun_irradiance(point) * cloud_factor(point); }"
@@ -696,7 +720,7 @@ fn shader_source(
             "    var row=surface_pixel(input.rest,input.body);\n",
         )
     };
-    format!(
+    let mut source = format!(
         "{}\n{sun}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}",
         library,
         super::VIEW_RECORDS,
@@ -799,7 +823,34 @@ fn shader_source(
              fn foam_surface(_p: vec3<f32>, _r: SurfaceRow, _v: f32, _d: f32, _face: f32) -> vec4<f32> { return vec4(0.0); }"
                 .into()
         },
-    )
+    );
+    if underwater {
+        source.push_str(include_str!("underwater.wgsl"));
+        source.push_str(if map.is_some() {
+            "fn lens_row(p: vec2<f32>) -> SurfaceRow {\n
+                let a = map_sample(p);
+                if a.body == NO_BODY { var empty: SurfaceRow; return empty; }
+                return surface_row(p, map_cell(p), a.row, a.body, true);
+            }"
+        } else {
+            "fn lens_row(p: vec2<f32>) -> SurfaceRow { return surface_vertex(p, 0u); }"
+        });
+    } else {
+        source.push_str(
+            "fn water_underside(input: VertexOut, n: vec3<f32>, v: vec3<f32>, variance: f32, foam: f32) -> vec4<f32> {
+                return vec4(0.0);
+            }",
+        );
+    }
+    source
+}
+
+#[derive(Clone, Copy)]
+enum SurfaceDraw {
+    Sheet { mapped: bool, gather: bool },
+    River { gather: bool },
+    Film,
+    Lens,
 }
 
 fn create_pipeline(
@@ -807,20 +858,35 @@ fn create_pipeline(
     layout: &wgpu::BindGroupLayout,
     environment: &EnvironmentProducts,
     shader: &wgpu::ShaderModule,
-    mapped: bool,
-    fragment: &str,
-    gather: bool,
+    draw: SurfaceDraw,
 ) -> wgpu::RenderPipeline {
     let device = surface.device;
-    let film = fragment == "film_fragment";
-    let pass = if film {
-        film_declaration()
+    let (pass, vertex, fragment) = match draw {
+        SurfaceDraw::Sheet { gather, .. } => {
+            (declaration(gather), "water_vertex", "water_fragment")
+        }
+        SurfaceDraw::River { gather } => (declaration(gather), "water_vertex", "river_fragment"),
+        SurfaceDraw::Film => (film_declaration(), "film_vertex", "film_fragment"),
+        SurfaceDraw::Lens => (
+            declaration(true),
+            "underwater_vertex",
+            "underwater_fragment",
+        ),
+    };
+    let film = matches!(draw, SurfaceDraw::Film);
+    let underwater = matches!(draw, SurfaceDraw::Lens);
+    let mapped = matches!(
+        draw,
+        SurfaceDraw::Sheet { mapped: true, .. } | SurfaceDraw::River { .. } | SurfaceDraw::Film
+    );
+    let name = if underwater {
+        super::underwater::DRAW
     } else {
-        declaration(gather)
+        &pass.name
     };
     let inputs = pass.input_layout(device);
     let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-        label: Some(&pass.name),
+        label: Some(name),
         bind_group_layouts: &[
             Some(surface.view_layout),
             Some(&inputs),
@@ -838,7 +904,7 @@ fn create_pipeline(
                 format: *f,
                 blend: match i {
                     0 if mapped => Some(wgpu::BlendState::ALPHA_BLENDING),
-                    2 if film => {
+                    2 if film || underwater => {
                         let max = wgpu::BlendComponent {
                             src_factor: wgpu::BlendFactor::One,
                             dst_factor: wgpu::BlendFactor::One,
@@ -851,7 +917,7 @@ fn create_pipeline(
                     }
                     _ => None,
                 },
-                write_mask: if film && i == 1 {
+                write_mask: if (film || underwater) && i == 1 {
                     wgpu::ColorWrites::empty()
                 } else {
                     wgpu::ColorWrites::ALL
@@ -860,13 +926,13 @@ fn create_pipeline(
         })
         .collect();
     device.render(&wgpu::RenderPipelineDescriptor {
-        label: Some(&pass.name),
+        label: Some(name),
         layout: Some(&pipeline_layout),
         vertex: wgpu::VertexState {
             module: shader,
-            entry_point: Some(if film { "film_vertex" } else { "water_vertex" }),
+            entry_point: Some(vertex),
             compilation_options: wgpu::PipelineCompilationOptions::default(),
-            buffers: if film {
+            buffers: if film || underwater {
                 &[]
             } else {
                 &[Some(wgpu::VertexBufferLayout {
@@ -886,8 +952,12 @@ fn create_pipeline(
         },
         depth_stencil: (!film).then_some(wgpu::DepthStencilState {
             format: surface.depth_format,
-            depth_write_enabled: Some(true),
-            depth_compare: Some(wgpu::CompareFunction::GreaterEqual),
+            depth_write_enabled: Some(!underwater),
+            depth_compare: Some(if underwater {
+                wgpu::CompareFunction::Always
+            } else {
+                wgpu::CompareFunction::GreaterEqual
+            }),
             stencil: wgpu::StencilState::default(),
             bias: wgpu::DepthBiasState::default(),
         }),

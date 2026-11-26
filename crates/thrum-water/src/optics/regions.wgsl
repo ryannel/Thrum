@@ -15,6 +15,7 @@ struct OpticsInputs {
 
 const GATHER_SOURCE: u32 = 0x80000000u;
 const GATHER_SHALLOW: u32 = 0x40000000u;
+const GATHER_UNDER: u32 = 0x20000000u;
 const GATHER_BODY_MASK: u32 = 0xffffu;
 
 fn optics_extent() -> vec2<u32> {
@@ -30,7 +31,7 @@ fn optics_mask(pixel: vec2<u32>) -> u32 {
 fn optics_source(pixel: vec2<u32>) -> bool {
     let mask = optics_mask(pixel);
     if (mask & GATHER_SOURCE) == 0u { return false; }
-    if (mask & GATHER_SHALLOW) != 0u || optics.reach_slope_scene.z != 0.0 {
+    if (mask & (GATHER_SHALLOW | GATHER_UNDER)) != 0u || optics.reach_slope_scene.z != 0.0 {
         return true;
     }
     let body_count = u32(optics.reach_slope_scene.w);

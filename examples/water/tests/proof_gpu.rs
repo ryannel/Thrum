@@ -77,6 +77,7 @@ fn whitewater() -> bool {
         Settings::OpenSea
         | Settings::OpticsSea(_)
         | Settings::OpticsShade(_)
+        | Settings::LakeDive(_)
         | Settings::RainYard(_)
         | Settings::Channel(_)
         | Settings::River(_) => false,
@@ -94,6 +95,9 @@ fn proof_game(water: bool) -> (thrum_app::sky::SkyGame, water_scene::SharedRepor
             let (game, report, _, _) =
                 water_scene::island::build_foam(wind, water, foam).expect("island");
             (game, report)
+        }
+        Settings::LakeDive(wind) => {
+            water_scene::island::build_lake_dive(wind, water).expect("lake dive")
         }
         Settings::RainYard(wind) => {
             let (game, report, _, _) =
@@ -252,7 +256,7 @@ fn driver(gpu: &thrum_test_support::Gpu) {
         || island_wind().is_some()
         || matches!(
             settings(),
-            Settings::OpticsSea(_) | Settings::OpticsShade(_)
+            Settings::OpticsSea(_) | Settings::OpticsShade(_) | Settings::LakeDive(_)
         )
     {
         let (game, report) = proof_game(true);
@@ -464,6 +468,16 @@ fn driver(gpu: &thrum_test_support::Gpu) {
                 && (floating().is_some() || island_wind().is_some())
             {
                 optics_checkpoints()
+            } else if matches!(settings(), Settings::LakeDive(_)) {
+                [
+                    ("up-1m", 1.0, 89.99, 60.0), ("inclined-1m", 1.0, 45.0, 60.0),
+                    ("level-0.5m", 0.5, 0.0, 60.0), ("down-3m", 3.0, -35.0, 60.0),
+                    ("dawn-level-3m", 3.0, 0.0, 1.0), ("twilight-level-3m", 3.0, 0.0, -5.0),
+                ].into_iter().map(|(name, depth, pitch, sun)| (
+                    name.into(),
+                    format!(r#"{{"camera.depth":{depth},"camera.pitch":{pitch},"sun.elevation":{sun}}}"#),
+                    10.0,
+                )).collect()
             } else if island_wind().is_some() {
                 ["beach", "lake", "pond", "hill"]
                     .into_iter()

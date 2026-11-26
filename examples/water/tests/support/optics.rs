@@ -87,9 +87,12 @@ impl Panel {
 
 pub(crate) struct Rig {
     pub(crate) device: wgpu::Device,
+    pub(crate) queue: wgpu::Queue,
     pub(crate) host: FrameHost<StillWorld, Fixed>,
+    pub(crate) witness: Option<wgpu::Texture>,
     output: wgpu::TextureView,
     submitted: u32,
+    extent: [u32; 2],
 }
 
 impl Rig {
@@ -99,6 +102,17 @@ impl Rig {
         light: FrameLighting,
         panels: &[Panel],
         cloud: Option<SunOpticalDepth>,
+    ) -> Self {
+        Self::with_extent(gpu, view, light, panels, cloud, EXTENT)
+    }
+
+    pub(crate) fn with_extent(
+        gpu: &thrum_test_support::Gpu,
+        view: &SyntheticView,
+        light: FrameLighting,
+        panels: &[Panel],
+        cloud: Option<SunOpticalDepth>,
+        extent: [u32; 2],
     ) -> Self {
         let (device, queue, caps) = crate::support::device(&gpu.fresh_adapter());
         let mut scene =
@@ -135,10 +149,10 @@ impl Rig {
             &caps,
             &queue,
             FrameConfig {
-                render_extent: EXTENT,
+                render_extent: extent,
                 surface: Some(SurfaceProfile {
                     format: OUTPUT_FORMAT,
-                    extent: EXTENT,
+                    extent,
                 }),
             },
             StillWorld::default(),
@@ -151,8 +165,8 @@ impl Rig {
             .create_texture(&wgpu::TextureDescriptor {
                 label: Some("optics measurement surface"),
                 size: wgpu::Extent3d {
-                    width: EXTENT[0],
-                    height: EXTENT[1],
+                    width: extent[0],
+                    height: extent[1],
                     depth_or_array_layers: 1,
                 },
                 mip_level_count: 1,
@@ -165,9 +179,12 @@ impl Rig {
             .create_view(&wgpu::TextureViewDescriptor::default());
         Self {
             device,
+            queue,
             host,
+            witness: None,
             output,
             submitted: 0,
+            extent,
         }
     }
 
@@ -178,10 +195,11 @@ impl Rig {
                 Duration::from_secs_f64(f64::from(self.submitted) / 60.0),
                 Some(&SurfaceOutput {
                     view: &self.output,
-                    extent: EXTENT,
+                    extent: self.extent,
                 }),
             )
             .expect("drive optical fixture");
+        self.witness = self.host.submitted_temporal_witness().cloned();
         thrum_test_support::wait::until("fixed optical frame", Duration::from_secs(30), || {
             self.device.poll(wgpu::PollType::Poll).expect("device");
             self.host.poll_completed().expect("completion")
@@ -232,6 +250,14 @@ pub(crate) fn camera(eye: [f32; 3], target: [f32; 3], fov: f32, exposure: f32) -
 }
 
 pub(crate) fn water(bottom: Option<(f64, [f64; 2], f64)>, optics: bool) -> Water {
+    water_with_profile(bottom, optics, false)
+}
+
+pub(crate) fn water_with_profile(
+    bottom: Option<(f64, [f64; 2], f64)>,
+    optics: bool,
+    underwater: bool,
+) -> Water {
     let (depth, origin, step) = bottom.unwrap_or((-1000.0, [-2.0; 2], 4.0));
     let map = Map::prepare(
         Bed::new(origin, step, [2, 2], vec![depth; 4]).expect("bed"),
@@ -262,6 +288,7 @@ pub(crate) fn water(bottom: Option<(f64, [f64; 2], f64)>, optics: bool) -> Water
     };
     let profile = Profile {
         optics: optics.then(Optics::default),
+        underwater,
         deep_scatter: [0.004, 0.035, 0.065],
         ..Profile::default()
     };

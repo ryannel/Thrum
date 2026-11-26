@@ -23,6 +23,7 @@ const GRID_WIDTH: usize = 32;
 const GRID_HEIGHT: usize = 18;
 const SOURCE: u32 = 1 << 31;
 const SHALLOW: u32 = 1 << 30;
+const UNDER: u32 = 1 << 29;
 
 /// Maximum number of opaque body boxes read by one water contribution.
 const BODY_CAPACITY: usize = 16;
@@ -189,6 +190,8 @@ pub(super) struct Gather {
     pipeline: wgpu::ComputePipeline,
     fields: regions::Shallows,
     dispatch: [u32; 2],
+    pub(super) lens: Option<wgpu::Buffer>,
+    pub(super) under: bool,
 }
 
 pub(super) fn declaration() -> AfterOpaquePass {
@@ -225,6 +228,7 @@ impl Gather {
         environment: &EnvironmentProducts,
         profile: Optics,
         library: &str,
+        underwater: bool,
     ) -> Self {
         let device = surface.device;
         let buffer = device.create_buffer(&wgpu::BufferDescriptor {
@@ -276,6 +280,15 @@ impl Gather {
             pipeline,
             fields: regions::Shallows::default(),
             dispatch: [0; 2],
+            lens: underwater.then(|| {
+                device.create_buffer(&wgpu::BufferDescriptor {
+                    label: Some("water lens columns"),
+                    size: size_of::<super::underwater::Lens>() as u64,
+                    usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+                    mapped_at_creation: false,
+                })
+            }),
+            under: false,
         }
     }
 
@@ -288,9 +301,10 @@ impl Gather {
         water_level: f64,
         displacement: [f32; 2],
         roughness: MirrorRoughness,
+        lens: Option<&super::underwater::Lens>,
     ) {
         let boxes = opaque.0.lock().expect("water optics bodies");
-        let inputs = self.fields.inputs(
+        let mut inputs = self.fields.inputs(
             self.profile,
             frame,
             map,
@@ -299,6 +313,18 @@ impl Gather {
             displacement,
             roughness,
         );
+        self.under = lens.is_some_and(|lens| lens.state[0] != 0);
+        if let Some((lens, buffer)) = lens.zip(self.lens.as_ref()) {
+            queue.write_buffer(buffer, 0, bytemuck::bytes_of(lens));
+        }
+        if self.under {
+            inputs.dispatch = [0, 0, frame.render_extent[0], frame.render_extent[1]];
+            for row in &mut inputs.mask {
+                for cell in row.iter_mut().flatten() {
+                    *cell |= SOURCE | UNDER;
+                }
+            }
+        }
         self.dispatch = [
             inputs.dispatch[2].div_ceil(8),
             inputs.dispatch[3].div_ceil(8),

@@ -81,9 +81,10 @@ fn registered_source(hit: GatherHit) -> bool {
 }
 
 fn trace_source(
-    hit: GatherHit, origin: vec3<f32>, body: OpticsBody, registered: bool,
+    hit: GatherHit, origin: vec3<f32>, body: OpticsBody, registered: bool, side: f32,
 ) -> bool {
     if registered { return in_box(hit.point, body); }
+    if side != 0.0 { return side * (hit.point.y - origin.y) > 0.01; }
     return hit.point.y > origin.y - 0.04 && !registered_source(hit);
 }
 
@@ -91,7 +92,7 @@ fn trace_source(
 // occluder that was already in front of the ray does not create a crossing.
 fn trace(
     origin: vec3<f32>, ray: vec3<f32>, interval: vec2<f32>,
-    body: OpticsBody, registered: bool, offset: vec2<f32>,
+    body: OpticsBody, registered: bool, offset: vec2<f32>, side: f32,
 ) -> GatherHit {
     if interval.x >= interval.y { return empty_hit(); }
     // The scene's silhouettes need finer brackets over the full reach.
@@ -115,12 +116,12 @@ fn trace(
             continue;
         }
         let delta = length(p - view.camera_xyz_time.xyz) - hit.distance;
-        if !registered && registered_source(hit) {
+        if !registered && side == 0.0 && registered_source(hit) {
             previous = t;
             clear = true;
             continue;
         }
-        let eligible = select(hit.point.y > origin.y - 0.04, in_box(hit.point, body), registered);
+        let eligible = trace_source(hit, origin, body, registered, side);
         let projected_step = max(step, t - previous);
         if delta >= 0.0 && eligible && (clear || delta < 0.75 * projected_step + 0.04) {
             var left = previous;
@@ -132,7 +133,7 @@ fn trace(
                 let q = origin + ray * middle;
                 let candidate = gather_at(optics_project(q).xy + offset);
                 if candidate.distance > 0.0 && length(q - view.camera_xyz_time.xyz) >= candidate.distance
-                    && (registered || trace_source(candidate, origin, body, false)) {
+                    && (registered || trace_source(candidate, origin, body, false, side)) {
                     right = middle;
                     best = candidate;
                 } else {
@@ -171,7 +172,7 @@ fn trace_bodies(origin: vec3<f32>, ray: vec3<f32>, reach: f32, mask: u32) -> Gat
         remaining &= remaining - 1u;
         let body = optics.bodies[index];
         let interval = box_interval(origin, ray, body, closest);
-        let hit = trace(origin, ray, interval, body, true, vec2(0.0));
+        let hit = trace(origin, ray, interval, body, true, vec2(0.0), 0.0);
         if hit.distance > 0.0 {
             closest = dot(hit.point - origin, ray);
             best = hit;
@@ -281,7 +282,7 @@ fn trace_scene(
     origin: vec3<f32>, ray: vec3<f32>, limit: f32, crossing: f32, hidden: bool,
 ) -> GatherHit {
     let scenery = OpticsBody(vec4(0.0), vec4(0.0));
-    var hit = trace(origin, ray, vec2(0.06, limit), scenery, false, vec2(0.0));
+    var hit = trace(origin, ray, vec2(0.06, limit), scenery, false, vec2(0.0), 0.0);
     if !hidden { return hit; }
     var support = foreground_agreement(hit);
     if support >= 1.0 { return hit; }
@@ -290,7 +291,7 @@ fn trace_scene(
     let radius = 1.7 * view_aux.viewport_inv_viewport.zw;
     let directions = array(vec2(0.0, 1.0), vec2(0.0, -1.0), vec2(1.0, 0.0), vec2(-1.0, 0.0));
     for (var i = 0u; i < 4u; i++) {
-        let candidate = trace(origin, ray, vec2(0.06, range), scenery, false, directions[i] * radius);
+        let candidate = trace(origin, ray, vec2(0.06, range), scenery, false, directions[i] * radius, 0.0);
         let next = foreground_agreement(candidate);
         if next > support {
             support = next;

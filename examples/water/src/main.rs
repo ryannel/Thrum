@@ -20,6 +20,9 @@ fn main() {
                 Settings::Island { wind, foam } => {
                     water_scene::island::build_foam(wind, true, foam).map(|(game, _, _, _)| game)
                 }
+                Settings::LakeDive(wind) => {
+                    water_scene::island::build_lake_dive(wind, true).map(|(game, _)| game)
+                }
                 Settings::RainYard(wind) => {
                     water_scene::island::build_rain_yard(wind, true).map(|(game, _, _, _)| game)
                 }

@@ -115,3 +115,13 @@ name = "river_gpu"
 # PUDDLES WP4 compares the submitted Metal bands with the model.
 [[test]]
 name = "rain_bands_gpu"
+
+# The open WATERS underwater items name these test targets.
+[[test]]
+name = "under_once_gpu"
+
+[[test]]
+name = "under_frame_gpu"
+
+[[test]]
+name = "lens_gpu"

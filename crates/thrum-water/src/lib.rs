@@ -13,6 +13,7 @@ mod records;
 #[cfg(test)]
 mod sampling_tests;
 mod surf;
+mod underwater;
 pub use optics::{BodyBounds, Optics, OpticsBodies};
 use std::sync::{Arc, Mutex};
 pub use surf::cache::{SurfTap, SurfWitness};
@@ -40,6 +41,8 @@ pub struct Profile {
     pub deep_scatter: [f32; 3],
     /// Optional see-through water and screen-space reflections.
     pub optics: Option<Optics>,
+    /// Compose the view through water when some of the lens is submerged. Requires optics.
+    pub underwater: bool,
     /// Optional body query capacity and age limits.
     pub query: Option<query::QueryLimits>,
     /// Optional two-level interaction waves.
@@ -136,6 +139,7 @@ pub struct Water {
     surf_tap: Option<SurfTap>,
     foam_pattern: thrum_asset_gpu::ProductLease,
     opaque: OpticsBodies,
+    underwater: Option<underwater::Underwater>,
     prepared: Option<prepare::Prepared>,
     rain_quality: Option<QualitySettings>,
     previous: Option<(f64, u64, f64)>,
@@ -186,7 +190,8 @@ impl Water {
         }) {
             return Err(WaterError::InvalidInteractionLimits);
         }
-        if profile.optics.is_some_and(|optics| !optics.valid())
+        if (profile.underwater && profile.optics.is_none())
+            || profile.optics.is_some_and(|optics| !optics.valid())
             || profile
                 .deep_scatter
                 .iter()
@@ -236,6 +241,9 @@ impl Water {
             return Err(WaterError::InvalidLevel);
         }
         let layer_heights = records::layer_heights(&spectrum);
+        let underwater = profile
+            .underwater
+            .then(|| underwater::Underwater::new(long_waves.clone(), &spectrum));
         let query = profile
             .query
             .filter(|limits| limits.points != 0)
@@ -278,6 +286,7 @@ impl Water {
             layer_heights,
             offshore_displacement,
             surf_cache_bounds,
+            underwater,
             spectrum,
             profile,
             query,
@@ -381,6 +390,9 @@ impl Water {
             }
             if let Some(gather) = &p.gather {
                 resources.push(("water gather regions".into(), gather.bytes()));
+                if let Some(lens) = &gather.lens {
+                    resources.push(("water lens columns".into(), lens.size()));
+                }
             }
             if let Some(map) = &p.map {
                 let size = map.texture.size();
@@ -624,6 +636,10 @@ impl SceneContribution for Water {
                 row.level,
                 self.offshore_displacement,
                 self.mirror_roughness.with_foam(p.foam.is_some()),
+                self.underwater
+                    .as_ref()
+                    .map(|water| water.lens(frame, displayed_map, now))
+                    .as_ref(),
             );
         }
         if let Some(tiles) = &mut p.hollow_tiles {
@@ -805,6 +821,13 @@ impl SceneContribution for Water {
             if film.is_some() {
                 pass.draw(0..3, 0..1);
                 return;
+            }
+            if let Some(underwater) = &p.underwater
+                && p.gather.as_ref().is_some_and(|gather| gather.under)
+            {
+                pass.set_pipeline(underwater);
+                pass.draw(0..3, 0..1);
+                pass.set_pipeline(&p.pipeline);
             }
             pass.set_vertex_buffer(0, p.mesh.slice(..));
             let mut river_active = false;

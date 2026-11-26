@@ -971,7 +971,14 @@ try {
       },'optics content drawn');
     }
     let checkpoints;
-    if(routeParams.has('island')){
+    if(routeParams.has('dive')){
+      checkpoints=[
+        ['up-1m',{'camera.depth':1,'camera.pitch':89.99}],
+        ['inclined-1m',{'camera.depth':1,'camera.pitch':45}],
+        ['level-0.5m',{'camera.depth':0.5,'camera.pitch':0}],
+        ['down-3m',{'camera.depth':3,'camera.pitch':-35}],
+      ];
+    }else if(routeParams.has('island')){
       checkpoints=[['beach-noon',{'camera.island':0}],['lake-noon',{'camera.island':1}],
         ['pond-noon',{'camera.island':2}],['lake-high-noon',{'camera.island':7}],['lake-shore-noon',{'camera.island':11}],
         ['beach-down-noon',{'camera.island':8}],['lake-down-noon',{'camera.island':9}],

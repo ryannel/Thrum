@@ -13,7 +13,9 @@ use thrum_water_model::{
 
 use crate::{SharedMap, SharedReport};
 
+mod dive;
 mod rain_yard;
+pub use dive::build_lake_dive;
 
 /// Weather selected when the island is loaded.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
