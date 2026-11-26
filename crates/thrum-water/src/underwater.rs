@@ -40,7 +40,7 @@ impl Underwater {
     }
 
     pub(super) fn lens(
-        &self,
+        &mut self,
         frame: &ContributionFrame,
         map: &Map,
         seconds: f64,
@@ -71,7 +71,7 @@ impl Underwater {
     }
 
     fn proves_dry(
-        &self,
+        &mut self,
         lens: &Lens,
         lowest: f64,
         centre: [f64; 2],
@@ -95,7 +95,7 @@ impl Underwater {
         }
         let short = self
             .short
-            .iter()
+            .iter_mut()
             .zip(&gains[1..])
             .filter(|(_, gain)| **gain > 0.0)
             .map(|(band, gain)| gain * band.height_bound(centre, radius, seconds))

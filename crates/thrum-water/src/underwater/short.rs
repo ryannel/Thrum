@@ -1,8 +1,12 @@
-use std::{collections::HashSet, f64::consts::TAU};
-use thrum_sea_model::{Cascade, GRID_SIZE, LOOP_SECONDS, cascade_frequency};
+use std::{collections::HashMap, f64::consts::TAU};
+use thrum_sea_model::{Cascade, GRID_SIZE, LOOP_SECONDS, loop_cycles};
 use thrum_water_model::{BodyKind, Map};
 
-const PHASE_BOUND_MODES: usize = 64;
+const GRID: i64 = 256;
+const MAX_FOOTPRINT_TAPS: usize = 64;
+const MAX_RETAINED_TAPS: usize = 128;
+const MAX_CYCLE: usize = 8192;
+const _: () = assert!(GRID_SIZE == 256);
 
 pub(crate) enum ShortWaveDomain {
     Open([f64; 4]),
@@ -48,83 +52,202 @@ impl ShortWaveDomain {
 pub(super) struct ShortBand {
     length: f64,
     pub(super) amplitude: f64,
-    remainder: f64,
-    modes: Vec<PhaseMode>,
+    modes: Vec<Mode>,
+    phases: Vec<[f64; 2]>,
+    taps: HashMap<[usize; 2], Box<[[f64; 2]]>>,
 }
 
-struct PhaseMode {
-    amplitude: f64,
-    wave_vector: [f64; 2],
-    phase: f64,
-    frequency: f64,
+struct Mode {
+    lattice: [usize; 2],
+    cycle: usize,
+    coefficient: [f64; 2],
 }
 
 impl ShortBand {
+    pub(super) fn new(cascade: &Cascade) -> Self {
+        let amplitude = cascade.components().iter().map(|mode| mode.amplitude).sum();
+        let modes = if amplitude > 0.0 {
+            Self::pack_modes(cascade).unwrap_or_default()
+        } else {
+            Vec::new()
+        };
+        let phases = modes
+            .iter()
+            .map(|mode| mode.cycle)
+            .max()
+            .map_or_else(Vec::new, |last| vec![[0.0; 2]; last + 1]);
+        Self {
+            length: cascade.length(),
+            amplitude,
+            modes,
+            phases,
+            taps: HashMap::new(),
+        }
+    }
+
     #[expect(
         clippy::cast_possible_truncation,
         reason = "the sea upload rounds each supported Fourier lattice index to i32"
     )]
-    pub(super) fn new(cascade: &Cascade) -> Self {
-        let amplitude = cascade.components().iter().map(|mode| mode.amplitude).sum();
-        let length = cascade.length();
-        let mut bins = HashSet::with_capacity(cascade.components().len());
-        let mut strongest = Vec::new();
+    fn pack_modes(cascade: &Cascade) -> Option<Vec<Mode>> {
+        let mut occupied = vec![false; GRID_SIZE * GRID_SIZE];
+        let mut modes = Vec::with_capacity(cascade.components().len());
         for mode in cascade.components() {
-            let bin = mode.wave_vector.map(|k| (k * length / TAU).round() as i32);
-            if !bins.insert(bin) || mode.phase.abs() > 2.0 * TAU {
-                // The upload can overwrite a repeated bin. Keep the whole
-                // amplitude envelope unless CPU and GPU realize the same sum.
-                return Self {
-                    length,
-                    amplitude,
-                    remainder: amplitude,
-                    modes: Vec::new(),
-                };
+            let [x, z] = mode
+                .wave_vector
+                .map(|k| (k * cascade.length() / TAU).round() as i32);
+            let [x, z] = [
+                usize::try_from(x.checked_add(128)?).ok()?,
+                usize::try_from(z.checked_add(128)?).ok()?,
+            ];
+            let cycle = usize::try_from(loop_cycles(*mode)).ok()?;
+            if x >= GRID_SIZE
+                || z >= GRID_SIZE
+                || cycle > MAX_CYCLE
+                || mode.phase.abs() > 2.0 * TAU
+                || !mode.amplitude.is_finite()
+            {
+                return None;
             }
+            let slot = &mut occupied[z * GRID_SIZE + x];
+            if *slot {
+                // Ambient upload overwrites repeated bins. Keep the amplitude
+                // envelope whenever the CPU and GPU sums could differ.
+                return None;
+            }
+            *slot = true;
             if mode.amplitude > 0.0 {
-                strongest.push(mode);
+                let (sin, cos) = mode.phase.sin_cos();
+                modes.push(Mode {
+                    lattice: [x, z],
+                    cycle,
+                    coefficient: [mode.amplitude * cos, mode.amplitude * sin],
+                });
             }
         }
-        if strongest.len() > PHASE_BOUND_MODES {
-            strongest.select_nth_unstable_by(PHASE_BOUND_MODES, |a, b| {
-                b.amplitude.total_cmp(&a.amplitude)
-            });
-            strongest.truncate(PHASE_BOUND_MODES);
-        }
-        let kept: f64 = strongest.iter().map(|mode| mode.amplitude).sum();
-        Self {
-            length,
-            amplitude,
-            remainder: (amplitude - kept).max(0.0),
-            modes: strongest
-                .into_iter()
-                .map(|mode| PhaseMode {
-                    amplitude: mode.amplitude,
-                    wave_vector: mode.wave_vector,
-                    phase: mode.phase,
-                    frequency: cascade_frequency(*mode),
-                })
-                .collect(),
-        }
+        Some(modes)
     }
 
-    pub(super) fn height_bound(&self, centre: [f64; 2], radius: [f64; 2], seconds: f64) -> f64 {
-        // A bilinear level-zero read is a convex combination of texels at
-        // most one texel away. Expand the box for both the filter and f32 UVs.
-        let padding = self.length / f64::from(u16::try_from(GRID_SIZE).expect("fixed sea lattice"));
-        let radius: [f64; 2] = std::array::from_fn(|i| {
-            (centre[i].abs().max(self.length) * 2e-6 + padding) + radius[i]
-        });
+    pub(super) fn height_bound(&mut self, centre: [f64; 2], radius: [f64; 2], seconds: f64) -> f64 {
+        if self.modes.is_empty() {
+            return self.amplitude;
+        }
+        let Some(keys) = self.footprint(centre, radius) else {
+            return self.amplitude;
+        };
+        if self.taps.len() + keys.len() > MAX_RETAINED_TAPS {
+            self.taps.retain(|key, _| keys.contains(key));
+        }
         let time = seconds.rem_euclid(LOOP_SECONDS);
-        let upper = self.modes.iter().map(|mode| {
-            let [kx, kz] = mode.wave_vector;
-            let phase = (kx * centre[0] + kz * centre[1] + mode.phase - mode.frequency * time)
-                .rem_euclid(TAU);
-            let nearest_peak = phase.min(TAU - phase);
-            let spread = kx.abs() * radius[0] + kz.abs() * radius[1];
-            mode.amplitude * (nearest_peak - spread).max(0.0).cos()
-        });
-        // Allow for the packed FFT coefficients, phase word and reconstruction.
-        self.remainder + upper.sum::<f64>() + self.amplitude * 0.001
+        for (cycle, phase) in (0_u32..).zip(&mut self.phases) {
+            let (sin, cos) = (TAU * time / LOOP_SECONDS * f64::from(cycle)).sin_cos();
+            *phase = [cos, sin];
+        }
+        let count = self.phases.len();
+        let modes = &self.modes;
+        let mut peak = f64::NEG_INFINITY;
+        for key in keys {
+            let coefficients = self
+                .taps
+                .entry(key)
+                .or_insert_with(|| tap_coefficients(modes, count, key));
+            let height = coefficients
+                .iter()
+                .zip(&self.phases)
+                .map(|(&[re, im], &[cos, sin])| re * cos + im * sin)
+                .sum::<f64>();
+            peak = peak.max(height);
+        }
+        // The level-zero bilinear lookup cannot exceed any upper bound on
+        // its contributing taps. Leave room for GPU phase and FFT packing.
+        peak + self.amplitude * 0.001
+    }
+
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "use the shader's f32 patch length and checked, floored lattice coordinates"
+    )]
+    fn footprint(&self, centre: [f64; 2], radius: [f64; 2]) -> Option<Vec<[usize; 2]>> {
+        let texels = f64::from(u16::try_from(GRID_SIZE).expect("fixed sea lattice"));
+        let length = f64::from(self.length as f32);
+        let axis = |i: usize| {
+            // Allow for f32 unprojection and normalized UV division before
+            // enumerating the centre-based texels that can reach the lens.
+            let padding = centre[i].abs().max(length) * 2e-6;
+            let coordinate =
+                |side: f64| (centre[i] + side * (radius[i] + padding)) / length * texels - 0.5;
+            let low = coordinate(-1.0).floor();
+            let high = coordinate(1.0).floor() + 1.0;
+            (low.abs() <= 1e12 && high.abs() <= 1e12).then_some(low as i64..=high as i64)
+        };
+        let x = axis(0)?;
+        let z = axis(1)?;
+        let width = x.end() - x.start() + 1;
+        let height = z.end() - z.start() + 1;
+        let count = usize::try_from(width.checked_mul(height)?).ok()?;
+        if count > MAX_FOOTPRINT_TAPS {
+            return None;
+        }
+        let mut keys = Vec::with_capacity(count);
+        let wrap = |i: i64| usize::try_from(i.rem_euclid(GRID)).expect("wrapped sea texel");
+        for row in z {
+            keys.extend(x.clone().map(|column| [wrap(column), wrap(row)]));
+        }
+        Some(keys)
+    }
+}
+
+fn tap_coefficients(modes: &[Mode], count: usize, key: [usize; 2]) -> Box<[[f64; 2]]> {
+    let tables = key.map(|index| {
+        let position = f64::from(u16::try_from(index).expect("sea texel")) + 0.5;
+        let mut lane = -128_i32;
+        std::array::from_fn::<_, GRID_SIZE, _>(|_| {
+            let phase = TAU * f64::from(lane) * position / f64::from(256);
+            lane += 1;
+            phase.sin_cos()
+        })
+    });
+    let mut coefficients = vec![[0.0; 2]; count];
+    for mode in modes {
+        let [x, z] = mode.lattice;
+        let [re, im] = mode.coefficient;
+        let (sx, cx) = tables[0][x];
+        let (sz, cz) = tables[1][z];
+        let sin = sx * cz + cx * sz;
+        let cos = cx * cz - sx * sz;
+        let sum = &mut coefficients[mode.cycle];
+        sum[0] += re * cos - im * sin;
+        sum[1] += im * cos + re * sin;
+    }
+    coefficients.into_boxed_slice()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn grouped_taps_match_the_full_field_across_spatial_and_time_wraps() {
+        let cascade = Cascade::new(
+            9.0,
+            &[
+                (21, -14, 0.08, 0.4),
+                (-21, 14, 0.01, 1.9),
+                (127, 1, 0.02, 3.0),
+            ],
+        )
+        .expect("physical spectrum");
+        let mut band = ShortBand::new(&cascade);
+        let texels = [0.5 * 9.0 / 256.0, 255.5 * 9.0 / 256.0];
+        for time in [-0.01, 0.0, 3.7, 86_400.03] {
+            let exact = texels
+                .into_iter()
+                .flat_map(|x| texels.map(|z| [x, z]))
+                .map(|point| cascade.direct(point, time).displacement[1])
+                .fold(f64::NEG_INFINITY, f64::max);
+            let upper = band.height_bound([0.0; 2], [0.001; 2], time);
+            assert!((upper - exact - band.amplitude * 0.001).abs() < 1e-12);
+        }
+        assert_eq!(band.taps.len(), 4);
     }
 }

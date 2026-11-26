@@ -139,6 +139,18 @@ impl Case {
         if name == "short-trough" {
             return Self::short_trough(true, datum);
         }
+        if name == "trade-admission" {
+            let mut case = Self::new("sea", datum);
+            case.name = name;
+            case.column = [-293.0, 20.0];
+            case.mapped = true;
+            case.spectrum =
+                Spectrum::build(&crate::island::Wind::Trade.forcing()).expect("trade spectrum");
+            case.map
+                .set_wave_gains(0, [1.0; 4])
+                .expect("offshore wave gains");
+            return case;
+        }
         let column = match name {
             "sea" => [81.0, 0.0],
             "lake" => [0.0, 0.0],
@@ -237,6 +249,14 @@ impl Case {
                 81.0,
                 (self.map.row(0, self.column).level - 0.03) as f32,
                 -0.1,
+            ];
+        }
+        if self.name == "trade-admission" {
+            let [x, z] = self.column;
+            return [
+                x as f32,
+                (self.map.row(0, self.column).level + 2.0) as f32,
+                (z - 0.1) as f32,
             ];
         }
         let highest = self
@@ -339,6 +359,10 @@ pub fn browser_game(case: &Case, underwater: bool, dry: bool) -> Result<SkyGame,
     if case.name == "short-trough" {
         if !dry {
             eye[2] += 160.0 / 24.0;
+        }
+    } else if case.name == "trade-admission" {
+        if !dry {
+            eye[1] -= 4.0;
         }
     } else if dry {
         eye[1] += 3.0;

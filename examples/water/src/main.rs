@@ -146,12 +146,14 @@ fn lens_probe() -> Option<(&'static str, bool, bool)> {
     let name = params("lens")?;
     let name = water_scene::lens_probe::NAMES
         .into_iter()
-        .chain(["short-trough"])
+        .chain(["short-trough", "trade-admission"])
         .find(|&known| name == known)?;
     match params("arm")? {
         "baseline" => Some((name, false, false)),
         "split" => Some((name, true, false)),
-        "dry" if name == "sea" || name == "short-trough" => Some((name, true, true)),
+        "dry" if matches!(name, "sea" | "short-trough" | "trade-admission") => {
+            Some((name, true, true))
+        }
         _ => None,
     }
 }

@@ -637,7 +637,7 @@ impl SceneContribution for Water {
                 self.offshore_displacement,
                 self.mirror_roughness.with_foam(p.foam.is_some()),
                 self.underwater
-                    .as_ref()
+                    .as_mut()
                     .map(|water| {
                         let short_domain = self.interaction.is_none().then_some(if self.mapped {
                             underwater::ShortWaveDomain::Mapped

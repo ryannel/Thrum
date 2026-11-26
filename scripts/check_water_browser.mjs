@@ -691,6 +691,9 @@ try {
     const trough=await take('short-trough','dry'),crest=await take('short-trough','split');
     assert(trough.frame.lens_passes.gather===0&&trough.frame.lens_passes.composition===0,'dry short-wave trough encoded underwater work');
     assert(crest.frame.lens_passes.gather===1&&crest.frame.lens_passes.composition===1,'short-wave crest omitted underwater work');
+    const tradeDry=await take('trade-admission','dry'),tradeWet=await take('trade-admission','split');
+    assert(tradeDry.frame.lens_passes.gather===0&&tradeDry.frame.lens_passes.composition===0,'dry Trade lens encoded underwater work');
+    assert(tradeWet.frame.lens_passes.gather===1&&tradeWet.frame.lens_passes.composition===1,'submerged Trade lens omitted underwater work');
     assert(lensFailures.length===0,lensFailures.join('; '));
   }else if(mode==='rain-rings'){
     await until(async()=>{
