@@ -1076,3 +1076,11 @@ edge. Seven deeper and more diffuse mist profiles raised the lit pool on Metal a
 unresolved. Localizing the bank made the footprint brighter and the narrowest takes developed a
 blocky edge. The stock profile gave the clearest view.
 [Closest target stills and mist controls](../../../.orchestrate/evidence/CLOUDS/WP14/shaft-target-pairs/README.md)
+
+Metal controls reduced the ground band's node spacing from 80 to 20 m horizontally and from 12
+to 4 m vertically. Mean absolute luma change at the shaft and landing stayed below one SDR level
+in both poses. Suppressing the mist's diffuse solar component darkened the surrounding pool and
+left its broad shape. Staggering two library clouds along the Sun direction narrowed competing
+bright patches. Adding a local bank concentrated the landing without preserving the diagonal
+through the mist. These controls used scratch builds.
+[Sampling and aperture comparisons](../../../.orchestrate/evidence/CLOUDS/WP14/shaft-target-pairs/README.md)
