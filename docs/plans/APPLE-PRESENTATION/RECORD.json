@@ -1510,12 +1510,12 @@
       }
     },
     "WP12": {
-      "definitions": "4ae2b38de4268a99f38c358eacc5e844f38f7cd82f64d8f187bb1f6cb789974f",
+      "definitions": "47ac266fa842b541e90b8c86483ae0730bb0a3816b023fbf210a184cedebadff",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "APPLE-PRESENTATION WP12 is blocked on a dependency conflict, described in its handoff at .orchestrate/evidence/APPLE-PRE",
-        "at": "2026-11-26T05:37:59Z"
+        "task": "The design review of APPLE-PRESENTATION at .orchestrate/evidence/APPLE-PRESENTATION/design-review.md asked for changes, ",
+        "at": "2026-11-26T05:45:17Z"
       }
     },
     "WP11": {
@@ -1867,11 +1867,15 @@
     {
       "task": "APPLE-PRESENTATION WP12 is blocked on a dependency conflict, described in its handoff at .orchestrate/evidence/APPLE-PRESENTATION/WP12-handoff.md: wgpu-core 30.0.1 implements pipeline_cache::adapter_key only for Vulkan, so the public get_data() panics on Metal in add_cache_header and cache import returns Unsupported, and the design pins only wgpu-hal. The builder proposes a narrow wgpu-core 30.0.1 pin for Metal cache-header identity and its tests, with the archive itself staying in the wgpu-hal patch. Lead decision: take that route. Revise the design and WP12 so the pin covers wgpu-core for Metal cache headers (adapter key, header write and import validation) and nothing else, keep it shaped so it could be offered upstream for gfx-rs/wgpu issue #8526, and keep the public PipelineCache round trip as what D12.1 proves. Do not change other work packages.",
       "at": "2026-11-26T05:37:59Z"
+    },
+    {
+      "task": "The design review of APPLE-PRESENTATION at .orchestrate/evidence/APPLE-PRESENTATION/design-review.md asked for changes, with its 1 Must Fix findings.",
+      "at": "2026-11-26T05:45:17Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-26T05:37:59Z"
+    "at": "2026-11-26T05:45:17Z"
   },
   "design_history": [
     {
