@@ -5835,6 +5835,14 @@
     },
     {
       "kind": "local",
+      "path": "docs/evidence/PUDDLES/WP3/fixed-png.tar",
+      "size": 81823744,
+      "sha256": "313a2240dfa50e2d09dc6d7887a10201fed782a36bd9dfabfedb071ec02e28f8",
+      "date": "2026-11-26T09:20:33.722429+00:00",
+      "store": "/Users/ryannel/Workspace/thrum/.git/orchestrate/evidence/PUDDLES/WP3/store"
+    },
+    {
+      "kind": "local",
       "path": "docs/evidence/RAY-TRACING/M3/fixed-pairs.zip",
       "size": 67698732,
       "sha256": "31dc396a93871748d95239a7bf9c71f3df22a127add6678eba6bd251d263b452",

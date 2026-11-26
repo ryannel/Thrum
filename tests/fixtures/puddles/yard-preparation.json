@@ -1,16 +1,16 @@
 {
-  "prepare_seconds": 0.007856958,
+  "prepare_seconds": 0.006739541,
   "cells": 32000,
   "hollows": 4,
-  "commit": "8dad67a9323be2434b502f571d639083fda3e21b",
-  "dirty": true,
+  "commit": "cb36a7fd5e802a2809496bb1773af3eaa87c2792",
+  "dirty": false,
   "build": "release (cargo run --release)",
   "load_average": [
-    579.84,
-    351.1,
-    240.89
+    142.58,
+    188.23,
+    219.16
   ],
   "machine": "arm64 26.6.2",
-  "date": "2026-11-26T08:51:32+00:00",
+  "date": "2026-11-26T09:18:03+00:00",
   "note": "taken while other builders share the machine; a tripwire, not a budget"
 }

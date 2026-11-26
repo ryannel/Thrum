@@ -190,3 +190,9 @@
   publishing one hollows rectangle with stable labels. Optional per-hollow sediment optics let the
   track hide its bed and leave the paving on the ordinary clear-water path. The selected route uses
   the common water gather and tapers only the thin compositing contact after transmission.
+- 2026-11-26 WP3 connects the rain selection to one hollows body on the island. Paving and track have
+  separate ground stores and share stable labels and display levels. The rendered opaque bed now
+  supplies the optical contact depth. The lower paving pit reaches the sill before the upper
+  hollow. Metal checks cover map, submitted depth, float and history through a merge and a parting.
+  Chrome WebGPU checks the selected yard and the float. The evidence includes both motion takes,
+  native-size waterline crops and the paired cost record. [WP3 evidence](../../../.orchestrate/evidence/PUDDLES/WP3/README.md)
