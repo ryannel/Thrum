@@ -8,6 +8,9 @@ use glam::{Mat4, UVec2, Vec2, Vec3, Vec4};
 use thrum_render::contribution::ContributionFrame;
 use thrum_water_model::{BodyKind, Map};
 
+mod charts;
+use charts::ChartTile;
+
 const GRID: UVec2 = UVec2::new(32, 18);
 const TILE_CELLS: usize = 8;
 
@@ -214,9 +217,17 @@ fn receiving(body: Bounds, water_level: f32, a: f32, theta: f32, reach: f32) -> 
 
 #[derive(Default)]
 pub(super) struct Shallows {
-    revision: Option<(u64, [u32; 4], MirrorRoughness)>,
+    revision: Option<Revision>,
     shallow_tiles: Vec<(Bounds, bool)>,
     surface_mirrors: Vec<Bounds>,
+}
+
+#[derive(PartialEq)]
+struct Revision {
+    map: u64,
+    stages: [u64; BODY_LIMIT],
+    profile: [u32; 4],
+    roughness: MirrorRoughness,
 }
 
 impl Shallows {
@@ -229,9 +240,14 @@ impl Shallows {
     ) {
         let [horizontal, amplitude] = displacement.map(f64::from);
         let sight = profile.sight_depth();
-        let revision = (
-            map.spatial_revision(),
-            [
+        let revision = Revision {
+            map: map.spatial_revision(),
+            // Distinct presentation samples of the same tick share a map
+            // revision but can have different levels and backwater reach.
+            stages: std::array::from_fn(|id| {
+                map.body(id).map_or(0, |body| body.stage.value.to_bits())
+            }),
+            profile: [
                 displacement[0],
                 displacement[1],
                 sight,
@@ -239,8 +255,8 @@ impl Shallows {
             ]
             .map(f32::to_bits),
             roughness,
-        );
-        if self.revision == Some(revision) {
+        };
+        if self.revision.as_ref() == Some(&revision) {
             return;
         }
         self.revision = Some(revision);
@@ -248,22 +264,11 @@ impl Shallows {
         self.surface_mirrors.clear();
         let bed = map.bed();
         let (_, spacing, [width, length]) = bed.lattice();
-        let mut gain_floors = [0.0_f64; BODY_LIMIT];
         let mut body_index = 0;
         while let Some(body) = map.body(body_index) {
             let support = map.support_origins(body_index);
-            let surface_mirror = matches!(body.kind, BodyKind::Basin { .. } | BodyKind::Chart(_));
-            let mut gain_floor = body.gains[3];
-            let mut joined = false;
-            if let BodyKind::Chart(chart) = &body.kind {
-                // Every join and bank continuation is a convex mix. Ends
-                // reference earlier bodies, so their floors include their own joins.
-                for end in chart.ends.iter().filter(|end| !end.is_brink()) {
-                    gain_floor = gain_floor.min(gain_floors[end.body]);
-                    joined = true;
-                }
-            }
-            gain_floors[body_index] = gain_floor;
+            let chart = matches!(body.kind, BodyKind::Chart(_));
+            let surface_mirror = chart || matches!(body.kind, BodyKind::Basin { .. });
             for z in (0..length - 1).step_by(TILE_CELLS) {
                 for x in (0..width - 1).step_by(TILE_CELLS) {
                     let last_x = (x + TILE_CELLS).min(width - 1);
@@ -272,6 +277,7 @@ impl Shallows {
                     let mut level_max = f64::NEG_INFINITY;
                     let mut bed_min = f64::INFINITY;
                     let mut bed_max = f64::NEG_INFINITY;
+                    let mut has_support = false;
                     for j in z..=last_z {
                         for i in x..=last_x {
                             let index = j * width + i;
@@ -279,27 +285,37 @@ impl Shallows {
                             bed_min = bed_min.min(height);
                             bed_max = bed_max.max(height);
                             if support.get(index).is_some_and(Option::is_some) {
-                                let level = map.row(body_index, bed.point(index)).level;
-                                level_min = level_min.min(level);
-                                level_max = level_max.max(level);
+                                has_support = true;
+                                if !chart {
+                                    let level = map.row(body_index, bed.point(index)).level;
+                                    level_min = level_min.min(level);
+                                    level_max = level_max.max(level);
+                                }
                             }
                         }
                     }
-                    if !level_min.is_finite() {
+                    if !has_support || (!chart && !level_min.is_finite()) {
                         continue;
                     }
                     // The shader limits the shortest-band gain at the rest
                     // point. Bilinear bed interpolation cannot exceed bed_max.
-                    let depth = level_min - bed_max;
+                    let tile = ChartTile {
+                        low: [x, z],
+                        high: [last_x, last_z],
+                    };
+                    let (depth, gain_floor) = if chart {
+                        let row = tile.row_bounds(map, body_index, bed_max);
+                        [level_min, level_max] = row.level;
+                        (row.depth, row.gain)
+                    } else {
+                        (level_min - bed_max, body.gains[3])
+                    };
                     let shallow = depth - amplitude < f64::from(sight);
                     if !shallow && !surface_mirror {
                         continue;
                     }
-                    // A depth minimum sampled at lattice centres need not
-                    // bound the varying join mix between them.
-                    let mirror_depth = if joined { 0.0 } else { depth };
                     let mirror = matches!(body.kind, BodyKind::Hollows(_))
-                        || roughness.can_mirror(gain_floor, mirror_depth, profile.mirror_limit);
+                        || roughness.can_mirror(gain_floor, depth, profile.mirror_limit);
                     if !shallow && !mirror {
                         continue;
                     }

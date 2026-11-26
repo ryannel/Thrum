@@ -238,3 +238,95 @@ fn scenery_in_front_of_a_registered_reflection_stays_in_front() {
     );
 }
 }
+
+thrum_test_support::macos_gpu_test! {
+fn rough_deep_chart_and_basin_skip_the_gather() {
+    use thrum_water_model::{Bed, Body, BodyKind, Chart, Map, Stage};
+    use thrum_sea_model::{Cascade, Spectrum};
+    use thrum_water::{Optics, Profile, Water};
+    use std::sync::{Arc, Mutex};
+    let Some(gpu) = thrum_test_support::gpu("joined chart", Some(wgpu::Backend::Metal)) else { return };
+    let wet: Vec<_> = (0..65)
+        .flat_map(|z| (0..65).map(move |x| (1..64).contains(&x) && (1..64).contains(&z)))
+        .collect();
+    let heights = wet
+        .iter()
+        .enumerate()
+        .map(|(i, &inside)| match (inside, i % 65 < 32) {
+            (false, _) => 2.0,
+            (true, true) => -0.5,
+            (true, false) => -3.0,
+        })
+        .collect();
+    let bed = Bed::new([-80.0; 2], 2.5, [65, 65], heights).expect("split bed");
+    let chart = Chart {
+        levels: vec![0.0; wet.len()],
+        currents: vec![[0.0; 2]; wet.len()],
+        footprint: wet.clone(),
+        ends: vec![],
+    };
+    let joined = Chart {
+        footprint: wet.iter().enumerate().map(|(i, &inside)| inside && i % 65 >= 5).collect(),
+        ends: vec![thrum_water_model::End {
+            body: 0,
+            segment: [[-67.5, -77.5], [-67.5, 77.5]],
+            length: 2.5,
+            mouth: false,
+        }],
+        ..chart.clone()
+    };
+    let spectrum = Spectrum {
+        long: vec![],
+        cascades: [
+            Cascade::new(160.0, &[]).expect("long cascade"),
+            Cascade::new(37.0, &[]).expect("middle cascade"),
+            Cascade::new(9.0, &[(1, 0, 0.015, 0.0)]).expect("short resolved wave"),
+        ],
+        tail_slope_variance: 0.01,
+    };
+    let mut profile = Profile {
+        optics: Some(Optics { extinction: [4.0; 3], ..Optics::default() }),
+        ..Profile::default()
+    };
+    profile.waves.choppiness = 0.0;
+    for (name, kind, has_source) in [
+        ("basin", BodyKind::Basin { seed: [0.0; 2] }, false),
+        ("unjoined chart", BodyKind::Chart(chart), false),
+        ("joined chart", BodyKind::Chart(joined), true),
+    ] {
+        let body = Body {
+            name: name.into(),
+            kind,
+            level: 0.0,
+            stage: Stage { min: 0.0, max: 0.0, value: 0.0 },
+            fetch: 150.0,
+            gains: [1.0; 4],
+        };
+        let mut bodies = Vec::new();
+        if has_source {
+            bodies.push(Body {
+                name: "joined basin".into(),
+                kind: BodyKind::Basin { seed: [-75.0, 0.0] },
+                ..body.clone()
+            });
+        }
+        bodies.push(body);
+        let map = Arc::new(Mutex::new(Map::prepare(
+            bed.clone(), bodies,
+            thrum_water_model::Profile { margin_height: 0.3, swash_ratio: 0.0 },
+        ).expect("level water map")));
+        for (x, height, gather_expected) in [(32.0, 10.0, false), (0.0, 30.0, true)] {
+            let view = camera([x, height, 0.0], [x, 0.0, 1.0], 46_f32.to_radians(), 1.0 / 1024.0);
+            let mut rig = Rig::new(&gpu, &view, sun(2.0, 0.000_01), &[], None);
+            let water = Water::mapped(Arc::clone(&map), spectrum.clone(), profile).expect("mapped water");
+            let _bodies = attach(&mut rig, water);
+            rig.host.set_timing_requested(true);
+            let times = rig.frame().gpu_pass_ns.expect("Metal pass timings");
+            assert!(times.passes().iter().any(|p| p.name.contains("water surface")));
+            let gather = times.passes().iter().any(|p| p.name.contains("water gather"));
+            println!("{name}: Metal at x={x}, height={height}, gather={gather}");
+            assert_eq!(gather, gather_expected, "{name} at x={x}, height={height}");
+        }
+    }
+}
+}

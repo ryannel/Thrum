@@ -3293,9 +3293,9 @@
         "functional_validation": "passed",
         "experienced_quality": "not_applicable",
         "scope": "WATERS WP24: gather admission and scene reflection for level charts, with the same basin cases as controls. Running channel joins are covered by later work.",
-        "correctness": "A Metal test verifies reflection of an unregistered panel over deep calm water. A CPU test verifies a shallow-only copy mask and dispatch for rough water over a split bed.",
+        "correctness": "Metal verifies unregistered-panel reflection over deep calm water and skips the rough deep-only gather even with an offscreen chart join. CPU masks verify shallow-only copies in the split-bed cases and a mirror following a mouth's backwater at sampled stages.",
         "device": "Apple M3 Max Metal for the scene reflection test. The mask test runs on the same host CPU.",
-        "evidence": "../../.orchestrate/evidence/WATERS/WP24/README.md"
+        "evidence": "../../.orchestrate/evidence/WATERS/WP24/review-fix/README.md"
       },
       "waters_cpu_model": {
         "implementation": "partial",

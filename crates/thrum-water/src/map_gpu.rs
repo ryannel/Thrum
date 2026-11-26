@@ -33,6 +33,7 @@ pub struct MapGpu {
     pub(crate) info: wgpu::Buffer,
     revision: Option<u64>,
     uploaded_stages: [f64; BODY_LIMIT],
+    sampled_map: Option<Map>,
     recorded: Option<StageEndpoints>,
     submitted: Option<StageEndpoints>,
     previous_levels: Option<[f32; BODY_LIMIT]>,
@@ -240,6 +241,7 @@ impl MapGpu {
             info,
             revision: None,
             uploaded_stages: [0.0; BODY_LIMIT],
+            sampled_map: None,
             recorded: None,
             submitted: None,
             previous_levels: None,
@@ -273,11 +275,17 @@ impl MapGpu {
         ]
     }
 
-    pub(crate) fn record(&mut self, queue: &wgpu::Queue, map: &Map, time: EffectTime) {
+    pub(crate) fn record<'a>(
+        &'a mut self,
+        queue: &wgpu::Queue,
+        map: &'a Map,
+        time: EffectTime,
+    ) -> &'a Map {
         let authored = stages(map);
         let recorded = StageEndpoints::record(time, authored, self.submitted.as_ref());
         self.upload(queue, map, authored, recorded.stages());
         self.recorded = Some(recorded);
+        self.sampled_map.as_ref().unwrap_or(map)
     }
 
     pub(crate) fn record_query(&mut self, queue: &wgpu::Queue, map: &Map, frame: &Self) {
@@ -308,12 +316,14 @@ impl MapGpu {
         let displayed_bits = displayed.map(f64::to_bits);
         let uploaded_bits = self.uploaded_stages.map(f64::to_bits);
         let changed = self.revision != Some(revision) || uploaded_bits != displayed_bits;
-        let sample = (changed && authored.map(f64::to_bits) != displayed_bits).then(|| {
-            let count = self.record.size_count_sea[2] as usize;
-            map.sample_stages(&displayed[..count])
-                .expect("bounded tick stages")
-        });
-        let map = sample.as_ref().unwrap_or(map);
+        if changed {
+            self.sampled_map = (authored.map(f64::to_bits) != displayed_bits).then(|| {
+                let count = self.record.size_count_sea[2] as usize;
+                map.sample_stages(&displayed[..count])
+                    .expect("bounded tick stages")
+            });
+        }
+        let map = self.sampled_map.as_ref().unwrap_or(map);
         let mut write = changed;
         for id in 0..self.record.size_count_sea[2] as usize {
             let body = map.body(id).expect("prepared body");

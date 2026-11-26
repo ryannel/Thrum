@@ -519,14 +519,15 @@ impl SceneContribution for Water {
         let previous = self.previous.map_or(now, |(time, _, _)| time);
         let map = self.map.lock().expect("water map lock");
         let row = map.row(self.body, [0.0; 2]);
-        if let Some(gpu) = &mut p.map {
-            gpu.record(&p.queue, &map, frame.time);
-        }
+        let displayed_map = match &mut p.map {
+            Some(gpu) => gpu.record(&p.queue, &map, frame.time),
+            None => &map,
+        };
         if let Some(gather) = &mut p.gather {
             gather.record(
                 &p.queue,
                 frame,
-                self.mapped.then_some(&*map),
+                self.mapped.then_some(displayed_map),
                 &self.opaque,
                 row.level,
                 self.offshore_displacement,

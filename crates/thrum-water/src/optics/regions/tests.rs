@@ -364,7 +364,7 @@ fn basin_mirror_admission_projects_only_tiles_that_can_mirror_at_their_depth() {
 
 #[test]
 fn rough_chart_and_basin_copy_only_shallow_tiles() {
-    use thrum_water_model::{Bed, Body, Chart, Stage};
+    use thrum_water_model::{Bed, Body, Chart, End, Stage};
 
     let wet: Vec<_> = (0..65)
         .flat_map(|z| (0..65).map(move |x| (1..64).contains(&x) && (1..64).contains(&z)))
@@ -379,15 +379,26 @@ fn rough_chart_and_basin_copy_only_shallow_tiles() {
         })
         .collect();
     let bed = Bed::new([-80.0; 2], 2.5, [65, 65], heights).expect("split bed");
-    let kinds = [
-        BodyKind::Basin { seed: [0.0; 2] },
-        BodyKind::Chart(Chart {
-            levels: vec![0.0; wet.len()],
-            currents: vec![[0.0; 2]; wet.len()],
-            footprint: wet,
-            ends: vec![],
-        }),
-    ];
+    let chart = Chart {
+        levels: vec![0.0; wet.len()],
+        currents: vec![[0.0; 2]; wet.len()],
+        footprint: wet.clone(),
+        ends: vec![],
+    };
+    let joined = Chart {
+        footprint: wet
+            .iter()
+            .enumerate()
+            .map(|(i, &inside)| inside && i % 65 >= 5)
+            .collect(),
+        ends: vec![End {
+            body: 0,
+            segment: [[-67.5, -77.5], [-67.5, 77.5]],
+            length: 2.5,
+            mouth: false,
+        }],
+        ..chart.clone()
+    };
     let mut view = frame(30.0);
     view.view_proj = thrum_render::synthetic::SyntheticView::perspective(
         view.camera,
@@ -406,33 +417,79 @@ fn rough_chart_and_basin_copy_only_shallow_tiles() {
     };
     let roughness = MirrorRoughness {
         tail_rms_floor: 0.1,
-        shortest_height: 0.0,
+        shortest_height: 0.02,
     };
     assert!((0.5..3.0).contains(&profile.sight_depth()));
     assert!(!roughness.can_mirror(1.0, 0.5, profile.mirror_limit));
-    for (name, kind) in ["basin", "chart"].into_iter().zip(kinds) {
-        let map = Map::prepare(
+    let make_map = |name: &str, kind, source| {
+        let body = Body {
+            name: name.into(),
+            kind,
+            level: 0.0,
+            stage: Stage {
+                min: 0.0,
+                max: 0.0,
+                value: 0.0,
+            },
+            fetch: 150.0,
+            gains: [1.0; 4],
+        };
+        let mut bodies = Vec::new();
+        if let Some((gain, stage)) = source {
+            bodies.push(Body {
+                name: "joined basin".into(),
+                kind: BodyKind::Basin { seed: [-75.0, 0.0] },
+                gains: [gain; 4],
+                stage,
+                ..body.clone()
+            });
+        }
+        bodies.push(body);
+        Map::prepare(
             bed.clone(),
-            vec![Body {
-                name: name.into(),
-                kind,
-                level: 0.0,
-                stage: Stage {
-                    min: 0.0,
-                    max: 0.0,
-                    value: 0.0,
-                },
-                fetch: 150.0,
-                gains: [1.0; 4],
-            }],
+            bodies,
             thrum_water_model::Profile {
                 margin_height: 0.3,
                 swash_ratio: 0.0,
             },
         )
-        .expect("level water map");
+        .expect("level water map")
+    };
+    let fixed = Stage {
+        min: 0.0,
+        max: 0.0,
+        value: 0.0,
+    };
+    for (name, kind, source) in [
+        ("basin", BodyKind::Basin { seed: [0.0; 2] }, None),
+        ("unjoined chart", BodyKind::Chart(chart), None),
+        (
+            "chart with a rough source",
+            BodyKind::Chart(joined.clone()),
+            Some((1.0, fixed)),
+        ),
+        (
+            "chart with a sheltered source offscreen",
+            BodyKind::Chart(joined.clone()),
+            Some((
+                0.2,
+                Stage {
+                    min: 0.05,
+                    max: 0.05,
+                    value: 0.05,
+                },
+            )),
+        ),
+    ] {
+        let map = make_map(name, kind, source);
         let inputs =
             Shallows::default().inputs(profile, &view, Some(&map), &[], 0.0, [0.0; 2], roughness);
+        println!(
+            "{name}: mirror={} dispatch={:?} deep={:?}",
+            inputs.reach_slope_scene[2],
+            inputs.dispatch,
+            bits(&inputs, &view, Vec3::new(32.0, 0.0, 1.0))
+        );
         assert_eq!(inputs.reach_slope_scene[2], 0.0, "{name} scene mirror");
         let shallow = Vec3::new(-20.0, 0.0, 1.0);
         let deep = Vec3::new(32.0, 0.0, 1.0);
@@ -450,6 +507,44 @@ fn rough_chart_and_basin_copy_only_shallow_tiles() {
         println!(
             "{name}: {copied_cells} shallow cells copied, dispatch {:?}",
             inputs.dispatch
+        );
+    }
+
+    // Backwater can carry the receiving body's gains beyond its geometric
+    // join. Presentation maps from the same tick have the same revision.
+    let mut mouth = joined;
+    mouth.ends[0].mouth = true;
+    let stages = Stage {
+        min: -0.4,
+        max: 0.05,
+        value: 0.0,
+    };
+    let map = make_map(
+        "chart with a mouth",
+        BodyKind::Chart(mouth),
+        Some((0.2, stages)),
+    );
+    let low = map
+        .sample_stages(&[-0.4, 0.0])
+        .expect("low receiving stage");
+    let high = map
+        .sample_stages(&[0.05, 0.0])
+        .expect("high receiving stage");
+    assert_eq!(low.spatial_revision(), high.spatial_revision());
+    let mut fields = Shallows::default();
+    for (name, map, expected) in [
+        ("low", &low, 0.0),
+        ("high", &high, 1.0),
+        ("low again", &low, 0.0),
+    ] {
+        let inputs = fields.inputs(profile, &view, Some(map), &[], 0.0, [0.0; 2], roughness);
+        println!(
+            "{name} receiving stage: mirror={}",
+            inputs.reach_slope_scene[2]
+        );
+        assert_eq!(
+            inputs.reach_slope_scene[2], expected,
+            "{name} receiving stage"
         );
     }
 }

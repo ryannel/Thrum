@@ -1279,3 +1279,9 @@
   a mirror conservatively near a join or elsewhere on a joined chart. The Mac tests reproduce
   both original failures and verify calm reflection on Metal and shallow-only copy bounds.
   [WP24 target evidence](../../../.orchestrate/evidence/WATERS/WP24/README.md).
+- 2026-11-26 WP24 review fix. Chart tiles now bound depth and shortest-band gain from the
+  rows that can reach them, including shore continuations and backwater at the displayed
+  stage. A level chart joined to a basin offscreen matches the basin's shallow-only mask
+  and skips the Metal gather in the deep-only view. The calm Metal reflection and the
+  existing sea and basin cases pass again.
+  [WP24 review-fix evidence](../../../.orchestrate/evidence/WATERS/WP24/review-fix/README.md).
