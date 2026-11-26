@@ -1990,6 +1990,40 @@
         "by": "plan",
         "task": "Diagnose WATERS WP9. It has failed review 4 times, 3 of them on an item or a finding an earlier review had failed, so th",
         "at": "2026-11-26T10:24:11Z"
+      },
+      "ready_for_review": {
+        "commit": "9c0593cee8eae23369248018be4be6fad5056dbb",
+        "checked": "9c0593cee8eae23369248018be4be6fad5056dbb",
+        "at": "2026-11-26T11:03:06Z",
+        "reused": [
+          "WP9.1",
+          "WP9.2",
+          "WP9.4",
+          "WP9.5",
+          "WP9.7",
+          "WP9.8"
+        ],
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.171.0-alpha.13.2",
+        "path": "visible",
+        "usage": {
+          "input": 131885,
+          "cached": 28465920,
+          "output": 32235,
+          "turns": 1
+        },
+        "session_usage": {
+          "input": 401869,
+          "cached": 59559040,
+          "output": 95032,
+          "turns": 2
+        }
       }
     },
     "WP10": {
