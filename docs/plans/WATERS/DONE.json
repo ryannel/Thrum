@@ -1613,8 +1613,8 @@
     {
       "id": "WP9",
       "name": "Water runs down a channel from the lake to the sea: its surface follows the slope, its ripples and foam travel with the current, and a float is carried down to the sea",
-      "status": "ready_for_review",
-      "failed_reviews": 0,
+      "status": "in_progress",
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [],
@@ -1629,8 +1629,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP9/final-metal.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/WP9-review.md"
         },
         {
           "id": "WP9.2",
@@ -1638,20 +1638,20 @@
           "check": "cargo test --locked --offline -p water-scene --test carriage_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP9/final-metal.log",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/WATERS/WP9-review.md"
         },
         {
           "id": "WP9.3",
           "statement": "The channel reads as running water: ripples and foam move downstream, faster where the channel narrows, with no texture sliding as one sheet and no pulse at the carriage's period. Where it leaves the lake and where it meets the sea there is no seam, step or change of look, in a swell and while the lake's level and the tide are moved.",
           "inspect": "`realtime` sequences from the bank at 2 m, looking across and along the channel, at its narrows and at each end, one of each end while the lake's level and the tide are moved through their ranges in a trade wind with a swell running, the mouth held at low tide among them, and one from 40 m above its whole length.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP9/visual.md",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/WATERS/WP9-review.md"
         },
         {
           "id": "WP9.4",
@@ -1659,10 +1659,10 @@
           "check": "cargo test --locked --offline -p water-scene --test channel_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP9/final-metal.log",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/WATERS/WP9-review.md"
         },
         {
           "id": "WP9.5",
@@ -1670,10 +1670,10 @@
           "check": "node scripts/check_water_browser.mjs --case channel",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP9/final-chrome/run.json",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/WATERS/WP9-review.md"
         },
         {
           "id": "WP9.6",
@@ -1682,8 +1682,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP9/chart-contract.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/WP9-review.md"
         },
         {
           "id": "WP9.7",
@@ -1691,10 +1691,37 @@
           "check": "python3 scripts/water_cost.py check --scene channel",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP9/final-cost.json",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/WATERS/WP9-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "name": "Ripple carriage reverses during renewal",
+          "item": "WP9.2",
+          "repeat": false
+        },
+        {
+          "name": "Bank ripples pulse in phase across the reach",
+          "item": "WP9.3",
+          "repeat": false
+        },
+        {
+          "name": "A downstream force carries the float through still water",
+          "item": "WP9.4",
+          "repeat": false
+        },
+        {
+          "name": "Chrome ripple carriage reverses while the transport check passes",
+          "item": "WP9.5",
+          "repeat": false
+        },
+        {
+          "name": "The paired record skips comparable full-screen pass tripwires",
+          "item": "WP9.7",
+          "repeat": false
         }
       ]
     },

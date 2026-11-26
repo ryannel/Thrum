@@ -1805,7 +1805,65 @@
     },
     "WP9": {
       "definitions": "a306952d7445f5c5bd416a4fb14b70a886ef3365e699190be362109a33c80c74",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "85c5d81dad166c50cb5d6e10ef78465b00b52ba3",
+          "review": ".orchestrate/evidence/WATERS/WP9-review.md",
+          "items": {
+            "WP9.1": "pass",
+            "WP9.2": "fail",
+            "WP9.3": "fail",
+            "WP9.4": "fail",
+            "WP9.5": "fail",
+            "WP9.6": "pass",
+            "WP9.7": "fail"
+          },
+          "findings": [
+            {
+              "name": "Ripple carriage reverses during renewal",
+              "item": "WP9.2",
+              "repeat": false
+            },
+            {
+              "name": "Bank ripples pulse in phase across the reach",
+              "item": "WP9.3",
+              "repeat": false
+            },
+            {
+              "name": "A downstream force carries the float through still water",
+              "item": "WP9.4",
+              "repeat": false
+            },
+            {
+              "name": "Chrome ripple carriage reverses while the transport check passes",
+              "item": "WP9.5",
+              "repeat": false
+            },
+            {
+              "name": "The paired record skips comparable full-screen pass tripwires",
+              "item": "WP9.7",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 152592,
+            "cached": 5334784,
+            "output": 15912,
+            "turns": 1
+          },
+          "at": "2026-11-26T07:01:30Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
