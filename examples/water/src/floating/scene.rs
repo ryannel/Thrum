@@ -849,7 +849,7 @@ pub(crate) fn install_channel_float(
     foam: thrum_water::foam::Input,
     wind_speed: f64,
 ) -> (SkyGame, Box<dyn Fn() -> Body>) {
-    use crate::channel::{POST, RELEASE};
+    use crate::channel::{POST, RELEASE, WIDE_POST};
     let initial = Body::new(
         0,
         Hull::Float,
@@ -895,13 +895,13 @@ pub(crate) fn install_channel_float(
         );
         foam.post(
             endpoint.tick,
-            [thrum_water::foam::Hull {
-                place: POST,
+            [POST, WIDE_POST].map(|place| thrum_water::foam::Hull {
+                place,
                 forward: [1.0, 0.0],
                 extent: [0.32, 0.32],
                 velocity: [0.0; 2],
                 drag_power: 0.0,
-            }],
+            }),
         );
     });
     #[cfg(target_arch = "wasm32")]

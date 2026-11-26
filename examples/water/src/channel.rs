@@ -23,6 +23,7 @@ pub const MOUTH: f64 = 350.0;
 pub const CENTRE: f64 = 5.0;
 /// The fixed post in the narrows, in world x/z.
 pub const POST: [f32; 2] = [257.0, 4.2];
+pub(crate) const WIDE_POST: [f32; 2] = [233.0, 4.2];
 /// The float is released just inside the source join, in world x/z.
 pub const RELEASE: [f64; 2] = [213.5, CENTRE];
 
@@ -127,7 +128,7 @@ pub const VIEWS: [Camera; 6] = [
     Camera::look_at([252.0, 10.2, 9.0], [265.0, 6.9, 4.8], 60.0),
     Camera::look_at([342.5, 2.25, 18.0], [352.0, -0.1, 5.0], 61.0),
     Camera::look_at([280.0, 45.5, 24.0], [280.0, 5.5, 5.0], 96.0),
-    Camera::look_at([317.0, 4.2, 12.0], [305.0, 2.4, 5.0], 61.0),
+    Camera::look_at([257.0, 9.5, 13.0], [257.0, 7.2, 3.0], 61.0),
 ];
 
 /// The authored channel and its live float, with diagnostics for submitted foam.
@@ -177,7 +178,7 @@ pub fn build(wind: Wind, draw_water: bool, running: bool) -> Result<Scene, Box<d
     let camera = controls
         .slider(
             "camera.channel",
-            "Source / Bank / Narrows / Mouth / Top / Lower",
+            "Source / Bank / Narrows / Mouth / Top / Cross",
             0.0..=5.0,
         )
         .step(1.0)
@@ -214,17 +215,22 @@ pub fn build(wind: Wind, draw_water: bool, running: bool) -> Result<Scene, Box<d
     .with_ground(None)
     .with_temporal_sampling(cfg!(target_arch = "wasm32"))
     .with_tick_duration(Duration::from_nanos(16_666_667))?;
-    let mut meshes = vec![
-        MeshPlacement::new("meshes/channel-island", "textures/white"),
-        MeshPlacement::new("meshes/pine-bark", "textures/white")
-            .at([POST[0], 6.25, POST[1]])
-            .scale(0.32)
-            .material(thrum_app::sky::CookedMaterial {
-                base_colour: [0.18, 0.084, 0.039, 1.0],
-                roughness: 0.94,
-                metalness: 0.0,
-            }),
-    ];
+    let mut meshes = vec![MeshPlacement::new(
+        "meshes/channel-island",
+        "textures/white",
+    )];
+    for ([x, z], y) in [(POST, 6.25), (WIDE_POST, 8.52)] {
+        meshes.push(
+            MeshPlacement::new("meshes/pine-bark", "textures/white")
+                .at([x, y, z])
+                .scale(0.32)
+                .material(thrum_app::sky::CookedMaterial {
+                    base_colour: [0.18, 0.084, 0.039, 1.0],
+                    roughness: 0.94,
+                    metalness: 0.0,
+                }),
+        );
+    }
     let trees = [
         [208.0, 18.0, 1.0],
         [218.0, 19.0, 0.75],
