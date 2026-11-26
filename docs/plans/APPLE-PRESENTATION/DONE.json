@@ -1151,10 +1151,10 @@
           "lock": "gpu",
           "ask": "Are the two arms run alternately in one session from the same commit and scale trace? Is every row either a figure with its conditions or marked as not measured, with none left blank?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP11/paired-wake-recovery/paired.json",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP11-review.md",
+          "builder_result": "open"
         },
         {
           "id": "D11.2",
@@ -1163,8 +1163,8 @@
           "lock": "chrome",
           "target": "chrome-webgpu",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP11/gate-chrome/g4-route.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP11-review.md",
           "builder_result": "pass"
         },
         {
@@ -1174,8 +1174,8 @@
           "lock": "simulator",
           "target": "ios-sim",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP11/gate-ios/g4.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP11-review.md",
           "builder_result": "pass"
         },
         {
@@ -1184,8 +1184,8 @@
           "ask": "Which reconstructor does the Apple recipe resolve by default at the closing commit, and which rows of D11.1's record support that? List each open tripwire and where its follow-up is written.",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP11/promotion.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP11-review.md",
           "builder_result": "pass"
         },
         {
@@ -1193,10 +1193,10 @@
           "statement": "Each clause of G4's sentence holds as the brief words it, on the evidence the design's closing table names, and the maturity ledger says what was and was not proved, with implementation, correctness, visuals and device results apart. EDR is recorded as values above SDR white given to a layer configured for EDR, not as light the panel emitted. Full-screen pacing on the built-in display is recorded as one present call in every 60 Hz refresh interval of the route at a requested 60 Hz, which is what the engine did and not what the panel showed. The display's full refresh at full screen is recorded as not reached and owed by WP17, and the milestone as not yet reached. Each 120 Hz take is described by what its own build did: the frame-rate request, the overrides, the GPU time at the governor's floor against 8.33 ms, each pass's time and the host load. The physical iPhone and external-display rows are named as owed.",
           "ask": "Take the brief's G4 sentence clause by clause: which item of WP3 to WP12 proves each, and is any clause proved only by a forced override that the ledger does not label? Then read the ledger and the evidence page for three things. 1. Is full-screen pacing given as present calls in refresh intervals, and nowhere as frames shown on the panel? 2. Is the display's full refresh at full screen given as owed by WP17, and is it said nowhere that the bar is met there, that 60 Hz is the target there, or that the milestone is reached? 3. Is the builder's retake described as its build ran it, with a 60 to 120 Hz request that preferred 120, an 8.33 ms interval and EDR headroom forced to 2, and is a take called forced-rate only where the launch setting set its rate?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP11/g4-closure.md",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP11-review.md",
+          "builder_result": "open"
         },
         {
           "id": "D11.6",
@@ -1204,8 +1204,8 @@
           "inspect": "Read two kinds of record from the merge candidate, and say which frames you read for each cue. First, the Mac host's refresh account for each of the two judged capture-off takes, beside the list of every take made, each with its host load and the cause of each missed interval. In both judged takes: 1. the requested frame rate is 60 Hz, not forced, and the governor's display interval is 16.67 ms; 2. the account has one interval for each 16.67 ms of the route from its first tick to its last, so a target that brought no callback is a row and not a gap; 3. every one of those intervals holds exactly one present call, made inside it, and none is missed for any cause. Second, the T2 engine capture in `realtime` mode at full screen, at the built-in display's pixel size and the same requested rate, with capture's own cost shown apart. Read each cue window's frames at native size, in captured order and timing: 4. each of the four windows is complete, with an image for every presented submission and no omission by the tap or the writer; 5. edges on the terrain silhouette and on thin props hold from frame to frame as the camera moves; 6. stars stay steady with the camera held and as it pans; 7. no copy or trail stays behind the moving prop; 8. brightness through the time-of-day scrub does not trail the comparison capture at the same captured time.",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP11/mac-60hz-closing/README.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP11-review.md",
           "builder_result": "pass"
         },
         {
@@ -1214,8 +1214,8 @@
           "inspect": "Capture the route with T2 engine capture in `realtime` mode in Chrome and judge the same crops. Note any stop where Chrome differs from the Mac.",
           "target": "chrome-webgpu",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP11/chrome-route-review/README.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP11-review.md",
           "builder_result": "pass"
         },
         {
@@ -1224,19 +1224,35 @@
           "ask": "Does the evidence page carry the request, and the ledger its status, kept apart from the agent and device evidence? Does any sentence there, or in the closing report, offer captured values as proof of what the panel emits, or make G4's close wait for the owner?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP11/owner-edr-observation.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP11-review.md",
           "builder_result": "pass"
         }
       ],
       "depends_on": [
         "APPLE-TILE:WP12"
       ],
-      "failed_reviews": 0,
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
-      "quality_bar": "The whole presentation path at the level of a shipped high-end Mac game: sharp and stable at the display's full resolution, highlights above SDR white in the frame the XDR display's surface is given, no hitch or compile during play, and smooth at the display's full refresh, with the Apple path's win over the portable one measured and not assumed. At full screen this work package is judged at a steady, evenly paced 60 Hz, which is an interim rate and not the bar: the display's full 120 Hz there stays part of the bar, is recorded as owed, and is WP17's to reach."
+      "status": "in_progress",
+      "quality_bar": "The whole presentation path at the level of a shipped high-end Mac game: sharp and stable at the display's full resolution, highlights above SDR white in the frame the XDR display's surface is given, no hitch or compile during play, and smooth at the display's full refresh, with the Apple path's win over the portable one measured and not assumed. At full screen this work package is judged at a steady, evenly paced 60 Hz, which is an interim rate and not the bar: the display's full 120 Hz there stays part of the bar, is recorded as owed, and is WP17's to reach.",
+      "findings": [
+        {
+          "name": "Paired arms apply different scales at the same routed tick",
+          "item": "D11.1",
+          "repeat": false
+        },
+        {
+          "name": "Ending scene-linear capture leaves the SDR tone pass in ordinary EDR frames",
+          "repeat": false
+        },
+        {
+          "name": "Closure credits the comparison before its replay condition holds",
+          "item": "D11.5",
+          "repeat": false
+        }
+      ]
     },
     {
       "id": "U1",

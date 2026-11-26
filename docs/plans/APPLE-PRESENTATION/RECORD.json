@@ -1621,7 +1621,55 @@
     },
     "WP11": {
       "definitions": "678d87e81d14ef8c60d1a8f4b3767c1d7ff382564242fa6d50dc00db96d3734e",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "93d51441336f41e90ee9027ca4b4d4b705335bfd",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP11-review.md",
+          "items": {
+            "D11.1": "fail",
+            "D11.2": "pass",
+            "D11.3": "pass",
+            "D11.4": "pass",
+            "D11.5": "fail",
+            "D11.6": "pass",
+            "D11.7": "pass",
+            "D11.8": "pass"
+          },
+          "findings": [
+            {
+              "name": "Paired arms apply different scales at the same routed tick",
+              "item": "D11.1",
+              "repeat": false
+            },
+            {
+              "name": "Ending scene-linear capture leaves the SDR tone pass in ordinary EDR frames",
+              "repeat": false
+            },
+            {
+              "name": "Closure credits the comparison before its replay condition holds",
+              "item": "D11.5",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 201439,
+            "cached": 15399424,
+            "output": 27937,
+            "turns": 1
+          },
+          "at": "2026-11-26T16:56:15Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of APPLE-PRESENTATION at .orchestrate/evidence/APPLE-PRESENTATION/design-review.md asked for changes, ",
