@@ -64,8 +64,10 @@ pub(crate) fn valley() -> Result<GroundConfig, Error> {
                 pooling: 0.0,
                 drifting: true,
                 affinity: Affinity::Land,
-                centre: [0.0, 90.0],
-                radius: [130.0, 148.0],
+                // The lookout bank thickens across the level shelf, giving
+                // the scene a shallow edge before the polished receiver.
+                centre: [0.0, 8.0],
+                radius: [60.0, 47.0],
                 noise: 0.08,
                 noise_scale: 30.0,
                 radiative: false,
