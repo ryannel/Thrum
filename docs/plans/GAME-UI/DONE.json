@@ -458,7 +458,7 @@
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
+      "status": "done",
       "quality_bar": "A choice as easy to work as Vampire Survivors' level-up or Hades' boon choice: the focused card is obvious at a glance, keys, pointer and touch all work and never disagree, and a held direction carries on when the choice closes. A join screen as plain as Factorio's or Stardew Valley's: a player sees what they are joining and why a join failed.",
       "items": [
         {
@@ -468,7 +468,7 @@
           "ask": "Read the test. Does it generate interleavings at random, in the thousands, with scopes opened and closed while contacts are down, and check each stated property after every event from what the game was actually handed? Are a direction held through a modal choice, and a touch held on a stick while a second finger chooses, written out as cases?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/GAME-UI/WP4/repair/WP4.1.log",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/GAME-UI/WP4-review.md",
           "builder_result": "pass"
         },
@@ -478,7 +478,7 @@
           "check": "cargo test --locked --offline -p thrum-ui --test controls",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/GAME-UI/WP4/repair/WP4.2.log",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/GAME-UI/WP4-review.md",
           "builder_result": "pass"
         },
@@ -489,7 +489,7 @@
           "ask": "Are reachability and reversal checked over the whole stated family of grids, with several cell shapes and gaps, and is the ragged layout of three cards above two present as a case that names its neighbours?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/GAME-UI/WP4/repair/WP4.3.log",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/GAME-UI/WP4-review.md",
           "builder_result": "pass"
         },
@@ -511,7 +511,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/GAME-UI/WP4/repair/native/route/route-1-record.json",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/GAME-UI/WP4-review.md",
           "builder_result": "pass"
         },
@@ -554,7 +554,7 @@
           "inspect": "Capture the scripted modal choice at 1920\u00d71080 with T2 engine capture in `realtime` mode, with the event times from the run's record beside the frames. Judge the consecutive frames around each event (opening, each move of focus, the choice, closing) at 1x, whole and in native-size crops of the cards and of the player.",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/GAME-UI/WP4/repair/motion/realtime/transitions.json",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/GAME-UI/WP4-review.md",
           "builder_result": "pass"
         },
@@ -586,45 +586,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/GAME-UI/WP4/repair/event-costs.json",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/GAME-UI/WP4-review.md",
           "builder_result": "pass"
-        }
-      ],
-      "findings": [
-        {
-          "name": "A direction pressed during disarming is lost on close",
-          "item": "WP4.1",
-          "repeat": false
-        },
-        {
-          "name": "The player advances after the modal is drawn",
-          "item": "WP4.5",
-          "repeat": false
-        },
-        {
-          "name": "The extra step is visible on the opening frames",
-          "item": "WP4.9",
-          "repeat": false
-        },
-        {
-          "name": "Touch motion and release leave pointer focus visible",
-          "item": "WP4.2",
-          "repeat": false
-        },
-        {
-          "name": "A disarmed nonexclusive scope passes held input through",
-          "item": "WP4.3",
-          "repeat": false
-        },
-        {
-          "name": "Chrome records elapsed time as the routing CPU measurement",
-          "item": "WP4.12",
-          "repeat": false
-        },
-        {
-          "name": "A focus-only edit rebuilds and lays out the entire menu",
-          "repeat": false
         }
       ]
     },
