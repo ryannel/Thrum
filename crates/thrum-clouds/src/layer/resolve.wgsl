@@ -81,8 +81,16 @@ fn resolve(@builtin(global_invocation_id) id:vec3<u32>) {
             // A vanished front is a disocclusion, never a carried opaque cloud.
             if old_front.y>0.0 && sample.opacity>0.0 {
                 if !traced {
-                    value=clamp(old,sample.low,sample.high);
-                    age=min(old_front.w+1.0, f32(stride*stride-1u));
+                    // A large change in sampling position or optical depth makes
+                    // the old contour less representative of this ray.
+                    let motion = length((old_uv - uv) * vec2<f32>(size));
+                    let positional_agreement = 1.0 - smoothstep(0.5, f32(stride), motion);
+                    let opacity_agreement = 1.0 - smoothstep(0.025, 0.15, abs(old.a - value.a));
+                    let history_weight = positional_agreement * opacity_agreement;
+                    value = mix(value, clamp(old, sample.low, sample.high), history_weight);
+                    if history_weight > 0.0 {
+                        age = min(old_front.w + 1.0, f32(stride * stride - 1u));
+                    }
                 }
                 reactive=abs(value.a-old.a)*(1.0-value.a);
             }
