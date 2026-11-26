@@ -286,7 +286,7 @@ impl Gather {
         map: Option<&Map>,
         opaque: &OpticsBodies,
         water_level: f64,
-        amplitude: f32,
+        displacement: [f32; 2],
         roughness: MirrorRoughness,
     ) {
         let boxes = opaque.0.lock().expect("water optics bodies");
@@ -296,7 +296,7 @@ impl Gather {
             map,
             &boxes,
             water_level,
-            amplitude,
+            displacement,
             roughness,
         );
         self.dispatch = [

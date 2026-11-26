@@ -77,7 +77,7 @@ fn receiving_rectangles_hold_rays_whose_surface_pixel_is_outside_the_source() {
                 None,
                 &[body],
                 0.0,
-                a,
+                [0.0, a],
                 MirrorRoughness::default(),
             );
             assert_ne!(inputs.dispatch, [0; 4]);
@@ -141,7 +141,7 @@ fn a_raised_panel_has_separate_source_and_reflected_regions() {
         None,
         &[body],
         0.0,
-        0.0,
+        [0.0; 2],
         MirrorRoughness::default(),
     );
     let eye = Vec3::from_array(frame.camera);
@@ -209,7 +209,7 @@ fn see_through_admission_tracks_sight_depth_and_leaves_deep_map_tiles_uncopied()
         tail_slope_variance: 0.01,
     };
     let roughness = MirrorRoughness::new(&spectrum, 4.0, 0.0);
-    let inputs = fields.inputs(profile, &view, Some(&map), &[], 0.0, 0.2, roughness);
+    let inputs = fields.inputs(profile, &view, Some(&map), &[], 0.0, [0.0, 0.2], roughness);
     let wet = Vec3::new(-12.0, 0.0, 35.0);
     let deep = Vec3::new(31.0, 0.0, 42.0);
     let shallow_bits = bits(&inputs, &view, wet).expect("shallow sight point");
@@ -224,7 +224,7 @@ fn see_through_admission_tracks_sight_depth_and_leaves_deep_map_tiles_uncopied()
         Some(&map),
         &[],
         0.0,
-        0.2,
+        [0.0, 0.2],
         roughness.with_foam(true),
     );
     assert_eq!(foamy.dispatch, inputs.dispatch);
@@ -233,14 +233,14 @@ fn see_through_admission_tracks_sight_depth_and_leaves_deep_map_tiles_uncopied()
     // same spectrum can mirror when whitewater removes slope variance.
     spectrum.tail_slope_variance = 0.0025;
     let slight = MirrorRoughness::new(&spectrum, 4.0, 0.0);
-    let bare = fields.inputs(profile, &view, Some(&map), &[], 0.0, 0.2, slight);
+    let bare = fields.inputs(profile, &view, Some(&map), &[], 0.0, [0.0, 0.2], slight);
     let foam = fields.inputs(
         profile,
         &view,
         Some(&map),
         &[],
         0.0,
-        0.2,
+        [0.0, 0.2],
         slight.with_foam(true),
     );
     assert_eq!(bare.dispatch, inputs.dispatch);
@@ -250,7 +250,7 @@ fn see_through_admission_tracks_sight_depth_and_leaves_deep_map_tiles_uncopied()
         extinction: [0.06; 3],
         ..profile
     };
-    let clear_inputs = fields.inputs(clear, &view, Some(&map), &[], 0.0, 0.2, roughness);
+    let clear_inputs = fields.inputs(clear, &view, Some(&map), &[], 0.0, [0.0, 0.2], roughness);
     assert_eq!(
         bits(&clear_inputs, &view, deep).expect("depth on screen") & (SOURCE | SHALLOW),
         SOURCE | SHALLOW
@@ -258,12 +258,107 @@ fn see_through_admission_tracks_sight_depth_and_leaves_deep_map_tiles_uncopied()
     assert_eq!(clear_inputs.reach_slope_scene[2], 0.0);
 
     map.set_wave_gains(0, [0.25; 4]).expect("sheltered sea");
-    let sheltered = fields.inputs(profile, &view, Some(&map), &[], 0.0, 0.2, roughness);
+    let sheltered = fields.inputs(profile, &view, Some(&map), &[], 0.0, [0.0, 0.2], roughness);
     assert_eq!(sheltered.reach_slope_scene[2], 1.0);
     assert_eq!(sheltered.dispatch, [0, 0, 853, 479]);
     assert_eq!(
         bits(&sheltered, &view, deep).expect("deep mirror point"),
         SOURCE
+    );
+}
+
+#[test]
+fn basin_mirror_admission_projects_only_tiles_that_can_mirror_at_their_depth() {
+    use thrum_water_model::{Bed, Body, Stage};
+
+    let map = Map::prepare(
+        Bed::new(
+            [-128.0; 2],
+            8.0,
+            [33, 33],
+            (0..33)
+                .flat_map(|z| {
+                    (0..33).map(move |x| match (x, z) {
+                        (0 | 32, _) | (_, 0 | 32) => 3.0,
+                        (1..=7, _) => -0.2,
+                        _ => -45.0,
+                    })
+                })
+                .collect(),
+        )
+        .expect("bed"),
+        vec![Body {
+            name: "test lake".into(),
+            kind: BodyKind::Basin { seed: [0.0; 2] },
+            level: 0.0,
+            stage: Stage {
+                min: 0.0,
+                max: 0.0,
+                value: 0.0,
+            },
+            fetch: 100.0,
+            gains: [1.0; 4],
+        }],
+        thrum_water_model::Profile {
+            margin_height: 1.0,
+            swash_ratio: 0.7,
+        },
+    )
+    .expect("map");
+    let down = |x| {
+        let mut frame = frame(10.0);
+        frame.camera = [x, 10.0, 0.0];
+        frame.view_proj = thrum_render::synthetic::SyntheticView::perspective(
+            frame.camera,
+            [x, 0.0, 1.0],
+            [0.0, 1.0, 0.0],
+            60_f32.to_radians(),
+            1.77,
+            0.1,
+            30_000.0,
+        )
+        .expect("fixture view")
+        .view_proj_columns();
+        frame
+    };
+    let rough = MirrorRoughness {
+        tail_rms_floor: 0.1,
+        shortest_height: 0.49,
+    };
+    let profile = Optics::default();
+    let mut fields = Shallows::default();
+    let mut inputs = |x, profile, roughness| {
+        fields.inputs(
+            profile,
+            &down(x),
+            Some(&map),
+            &[],
+            0.0,
+            [0.0, 0.2],
+            roughness,
+        )
+    };
+    let deep = inputs(16.0, profile, rough);
+    assert_eq!(deep.dispatch, [0; 4]);
+    assert_eq!(deep.reach_slope_scene[2], 0.0);
+    let calm = inputs(16.0, profile, MirrorRoughness::default());
+    assert_eq!(calm.dispatch, [0, 0, 853, 479]);
+    assert_eq!(calm.reach_slope_scene[2], 1.0);
+    assert_eq!(
+        bits(&calm, &down(16.0), Vec3::new(16.0, 0.0, 1.0)),
+        Some(SOURCE)
+    );
+    let shelf = inputs(-96.0, profile, rough);
+    assert_eq!(shelf.dispatch, [0, 0, 853, 479]);
+    assert_eq!(shelf.reach_slope_scene[2], 1.0);
+    assert_eq!(
+        bits(&shelf, &down(-96.0), Vec3::new(-96.0, 0.0, 1.0)),
+        Some(SOURCE | SHALLOW)
+    );
+    assert_eq!(inputs(16.0, profile, rough).dispatch, [0; 4]);
+    assert_eq!(
+        inputs(185.0, profile, MirrorRoughness::default()).dispatch,
+        [0; 4]
     );
 }
 

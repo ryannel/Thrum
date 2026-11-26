@@ -529,7 +529,7 @@ impl SceneContribution for Water {
                 self.mapped.then_some(&*map),
                 &self.opaque,
                 row.level,
-                self.offshore_displacement[1],
+                self.offshore_displacement,
                 self.mirror_roughness.with_foam(p.foam.is_some()),
             );
         }

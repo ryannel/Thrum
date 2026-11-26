@@ -44,6 +44,87 @@ fn gather_admits_visible_bodies_and_preserves_the_waterless_graph() {
 }
 
 thrum_test_support::macos_gpu_test! {
+fn gather_skips_a_deep_rough_basin_and_keeps_visible_readers() {
+    use std::sync::{Arc, Mutex};
+    use thrum_sea_model::{Cascade, Spectrum};
+    use thrum_water::{Optics, Profile, Water};
+    use thrum_water_model::{Bed, Body, BodyKind, Map, Stage};
+
+    let Some(gpu) = thrum_test_support::gpu("basin gather", Some(wgpu::Backend::Metal)) else {
+        return;
+    };
+    let map = Arc::new(Mutex::new(Map::prepare(
+        Bed::new(
+            [-128.0; 2],
+            8.0,
+            [33, 33],
+            (0..33)
+                .flat_map(|z| (0..33).map(move |x| match (x, z) {
+                    (0 | 32, _) | (_, 0 | 32) => 3.0,
+                    (1..=7, _) => -0.2,
+                    _ => -45.0,
+                }))
+                .collect(),
+        )
+        .expect("bed"),
+        vec![Body {
+            name: "test lake".into(),
+            kind: BodyKind::Basin { seed: [0.0; 2] },
+            level: 0.0,
+            stage: Stage { min: 0.0, max: 0.0, value: 0.0 },
+            fetch: 100.0,
+            gains: [1.0; 4],
+        }],
+        thrum_water_model::Profile { margin_height: 1.0, swash_ratio: 0.7 },
+    )
+    .expect("map")));
+    let assert_gather = |rig: &mut Rig, expected| {
+        let times = rig.frame().gpu_pass_ns.expect("Metal pass timings");
+        assert!(times.passes().iter().any(|p| p.name.contains("water surface")));
+        assert_eq!(
+            times.passes().iter().any(|p| p.name.contains("water gather")),
+            expected
+        );
+    };
+    let make_water = |variance, shortest_wave| {
+        let modes = [(1, 0, 0.015, 0.0)];
+        let spectrum = Spectrum {
+            long: vec![],
+            cascades: [
+                Cascade::new(160.0, &[]).expect("long cascade"),
+                Cascade::new(37.0, &[]).expect("middle cascade"),
+                Cascade::new(9.0, if shortest_wave { &modes } else { &[] }).expect("short cascade"),
+            ],
+            tail_slope_variance: variance,
+        };
+        let mut profile = Profile { optics: Some(Optics::default()), ..Profile::default() };
+        profile.waves.choppiness = 0.0;
+        Water::mapped(Arc::clone(&map), spectrum, profile).expect("basin water")
+    };
+    let view = |x| camera([x, 10.0, 0.0], [x, 0.0, 1.0], 60_f32.to_radians(), 1.0 / 1024.0);
+    let panel = Panel { centre: [0.0, 1.0, 1.0], half_size: [0.5; 3], radiant: true };
+    let mut deep = Rig::new(&gpu, &view(0.0), sun(10.0, 0.000_01), &[panel], None);
+    deep.host.set_timing_requested(true);
+    for shortest_wave in [false, true] {
+        let sources = attach(&mut deep, make_water(0.01, shortest_wave));
+        assert_gather(&mut deep, false);
+        if shortest_wave {
+            assert!(sources.publish(&[panel.bounds()]));
+            assert_gather(&mut deep, true);
+            assert!(sources.publish(&[]));
+            assert_gather(&mut deep, false);
+        }
+    }
+    let _calm_sources = attach(&mut deep, make_water(0.0, false));
+    assert_gather(&mut deep, true);
+    let mut shelf = Rig::new(&gpu, &view(-96.0), sun(10.0, 0.000_01), &[], None);
+    shelf.host.set_timing_requested(true);
+    let _shelf_sources = attach(&mut shelf, make_water(0.01, true));
+    assert_gather(&mut shelf, true);
+}
+}
+
+thrum_test_support::macos_gpu_test! {
 fn scenery_in_front_of_a_registered_reflection_stays_in_front() {
     let Some(gpu) = thrum_test_support::gpu("reflection layering", Some(wgpu::Backend::Metal)) else {
         return;

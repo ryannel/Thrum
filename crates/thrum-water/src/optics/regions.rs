@@ -213,42 +213,44 @@ fn receiving(body: Bounds, water_level: f32, a: f32, theta: f32, reach: f32) -> 
 
 #[derive(Default)]
 pub(super) struct Shallows {
-    revision: Option<(u64, [u32; 3], MirrorRoughness)>,
-    tiles: Vec<(Bounds, bool)>,
-    mirrors: Vec<Bounds>,
+    revision: Option<(u64, [u32; 4], MirrorRoughness)>,
+    shallow_tiles: Vec<(Bounds, bool)>,
+    basin_mirrors: Vec<Bounds>,
 }
 
 impl Shallows {
-    fn refresh(&mut self, map: &Map, profile: Optics, amplitude: f32, roughness: MirrorRoughness) {
+    fn refresh(
+        &mut self,
+        map: &Map,
+        profile: Optics,
+        displacement: [f32; 2],
+        roughness: MirrorRoughness,
+    ) {
+        let [horizontal, amplitude] = displacement.map(f64::from);
         let sight = profile.sight_depth();
         let revision = (
             map.spatial_revision(),
-            [amplitude, sight, profile.mirror_limit].map(f32::to_bits),
+            [
+                displacement[0],
+                displacement[1],
+                sight,
+                profile.mirror_limit,
+            ]
+            .map(f32::to_bits),
             roughness,
         );
         if self.revision == Some(revision) {
             return;
         }
         self.revision = Some(revision);
-        self.tiles.clear();
-        self.mirrors.clear();
+        self.shallow_tiles.clear();
+        self.basin_mirrors.clear();
         let bed = map.bed();
         let (_, spacing, [width, length]) = bed.lattice();
         let mut body_index = 0;
         while let Some(body) = map.body(body_index) {
             let support = map.support_origins(body_index);
-            if let BodyKind::Basin { seed } = body.kind
-                && let Some([lo, hi]) = map.surface_bounds(body_index)
-                && roughness.can_mirror(body.gains[3], 0.0, profile.mirror_limit)
-            {
-                let row = map.row(body_index, seed);
-                self.mirrors.push(bounds(
-                    lo,
-                    hi,
-                    row.level - f64::from(amplitude),
-                    row.level + f64::from(amplitude),
-                ));
-            }
+            let basin = matches!(body.kind, BodyKind::Basin { .. });
             for z in (0..length - 1).step_by(TILE_CELLS) {
                 for x in (0..width - 1).step_by(TILE_CELLS) {
                     let last_x = (x + TILE_CELLS).min(width - 1);
@@ -270,35 +272,51 @@ impl Shallows {
                             }
                         }
                     }
-                    // All bilinearly interpolated depths in the tile are
-                    // bounded by the extrema of its lattice values. Include
-                    // the displaced surface and the bed in the projection.
-                    let a = f64::from(amplitude);
-                    if level_min.is_finite() && level_min - a - bed_max < f64::from(sight) {
-                        let mut lo = bed.point(z * width + x);
-                        let mut hi = bed.point(last_z * width + last_x);
-                        for axis in 0..2 {
-                            lo[axis] -= spacing;
-                            hi[axis] += spacing;
+                    if !level_min.is_finite() {
+                        continue;
+                    }
+                    // The shader limits the shortest-band gain at the rest
+                    // point. Bilinear bed interpolation cannot exceed bed_max.
+                    let depth = level_min - bed_max;
+                    let shallow = depth - amplitude < f64::from(sight);
+                    if !shallow && !basin {
+                        continue;
+                    }
+                    let mirror = match body.kind {
+                        BodyKind::Sea | BodyKind::Basin { .. } => {
+                            roughness.can_mirror(body.gains[3], depth, profile.mirror_limit)
                         }
-                        let mirror = match body.kind {
-                            BodyKind::Sea | BodyKind::Basin { .. } => roughness.can_mirror(
-                                body.gains[3],
-                                level_min - bed_max,
-                                profile.mirror_limit,
-                            ),
-                            // Joined charts and hollows can vary their gains
-                            // across a tile. Keep the conservative candidate.
-                            _ => true,
-                        };
-                        self.tiles.push((
+                        // Joined charts and hollows can vary their gains across a tile.
+                        _ => true,
+                    };
+                    if !shallow && !mirror {
+                        continue;
+                    }
+                    let mut lo = bed.point(z * width + x);
+                    let mut hi = bed.point(last_z * width + last_x);
+                    for axis in 0..2 {
+                        lo[axis] -= spacing;
+                        hi[axis] += spacing;
+                    }
+                    if shallow {
+                        self.shallow_tiles.push((
                             bounds(
                                 lo,
                                 hi,
-                                bed_min.max(level_min - a - f64::from(sight)),
-                                level_max + a,
+                                bed_min.max(level_min - amplitude - f64::from(sight)),
+                                level_max + amplitude,
                             ),
-                            mirror,
+                            !basin && mirror,
+                        ));
+                    }
+                    // Basin reflection visibility is independent of bed
+                    // visibility. Project the displaced surface alone.
+                    if basin && mirror {
+                        self.basin_mirrors.push(bounds(
+                            lo.map(|v| v - horizontal),
+                            hi.map(|v| v + horizontal),
+                            level_min - amplitude,
+                            level_max + amplitude,
                         ));
                     }
                 }
@@ -314,7 +332,7 @@ impl Shallows {
         map: Option<&Map>,
         boxes: &[BodyBounds],
         level: f64,
-        amplitude: f32,
+        displacement: [f32; 2],
         roughness: MirrorRoughness,
     ) -> Inputs {
         let extent = UVec2::from_array(frame.render_extent);
@@ -353,16 +371,22 @@ impl Shallows {
             packed.reach_slope_scene[3] =
                 f32::from(u8::try_from(index + 1).expect("bounded body count"));
             mark(&mut packed.mask, view.coarse(source), SOURCE);
-            for area in receiving(body, body_level, amplitude, theta, profile.reflection_reach) {
+            for area in receiving(
+                body,
+                body_level,
+                displacement[1],
+                theta,
+                profile.reflection_reach,
+            ) {
                 if let Some(rect) = view.project(area) {
                     mark(&mut packed.mask, view.coarse(rect), 1u32 << index);
                 }
             }
         }
         if let Some(map) = map {
-            self.refresh(map, profile, amplitude, roughness);
+            self.refresh(map, profile, displacement, roughness);
             let mut mirror_visible = false;
-            for &(tile, mirror) in &self.tiles {
+            for &(tile, mirror) in &self.shallow_tiles {
                 if let Some(rect) = view.project(tile) {
                     mirror_visible |= mirror;
                     mark(&mut packed.mask, view.coarse(rect), SOURCE | SHALLOW);
@@ -371,7 +395,7 @@ impl Shallows {
             // An unbounded sea with an empty bed never requests a scene mirror.
             let mirror = mirror_visible
                 || self
-                    .mirrors
+                    .basin_mirrors
                     .iter()
                     .any(|&area| view.project(area).is_some());
             if mirror {
