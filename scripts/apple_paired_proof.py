@@ -9,7 +9,7 @@ import re
 from statistics import median
 import subprocess
 
-from apple_governor_proof import awake_display
+from apple_governor_proof import InvalidDisplayEnvironment, awake_display
 from apple_presentation import RECIPE, ROOT, SCALE_STEPS, annotate_display_ticks, read_rows, scale_environment, scale_reference
 from run_v1_showcase import MOVING_ROUTE
 from t2_load import LoadRecord
@@ -102,6 +102,15 @@ def window_arm(output, binary, env, route, name, recipe, reconstruction, headroo
             with (arm / "game.log").open("w") as log:
                 subprocess.run([binary], cwd=ROOT, env=launch, stdout=log, stderr=subprocess.STDOUT,
                                check=True, timeout=130)
+        except subprocess.CalledProcessError as error:
+            log_text = (arm / "game.log").read_text()
+            if (re.search(r"presented frames unavailable:.*\boccluded=[1-9]\d*\b", log_text)
+                    and "device_losses=0" in log_text and "configuration_error=false" in log_text):
+                trace = arm / "frames.jsonl"
+                frames = read_rows(trace) if trace.is_file() else []
+                if frames and frames[-1]["status"] == "Occluded":
+                    raise InvalidDisplayEnvironment(f"{name}: window occluded before the route finished") from error
+            raise
         finally:
             observed_load = load.finish()
             (arm / "host-load.json").write_text(json.dumps(observed_load, indent=2) + "\n")
@@ -161,6 +170,21 @@ def window_arm(output, binary, env, route, name, recipe, reconstruction, headroo
     if replay:
         report["verified_replay_samples"] = len(samples)
     return report
+
+
+def paired_window_arm(output, binary, env, route, name, recipe, reconstruction, headroom, **options):
+    interrupted = []
+    for attempt in range(1, 4):
+        try:
+            report = window_arm(output, binary, env, route, name, recipe, reconstruction, headroom, **options)
+        except InvalidDisplayEnvironment as error:
+            if attempt == 3:
+                raise
+            retained = f"{name}-interrupted-{attempt}"
+            (output / name).rename(output / retained)
+            interrupted.append(dict(directory=retained, reason=str(error)))
+        else:
+            return dict(report, invalid_display_attempts=interrupted)
 
 
 def fullscreen_account(arm, ticks, route_frames, samples, start, end):
@@ -224,13 +248,13 @@ def mac_paired(output):
             ("apple", "apple-tile", "metalfx", "2"),
             ("portable", "portable", "taau", "sdr"),
         ):
-            arms.append(window_arm(output, binary, env, route_path, f"{repeat}-{name}",
-                                   recipe, reconstructor, headroom))
-    sdr = window_arm(output, binary, env, route_path, "sdr", "apple-tile", "metalfx", "sdr")
-    floating = window_arm(output, binary, env, route_path, "float-h1", "apple-tile",
-                          "metalfx", "step:2:1:12:1")
-    governor = window_arm(output, binary, env, route_path, "governor", "apple-tile",
-                          "metalfx", "2", replay=False)
+            arms.append(paired_window_arm(output, binary, env, route_path, f"{repeat}-{name}",
+                                          recipe, reconstructor, headroom))
+    sdr = paired_window_arm(output, binary, env, route_path, "sdr", "apple-tile", "metalfx", "sdr")
+    floating = paired_window_arm(output, binary, env, route_path, "float-h1", "apple-tile",
+                                 "metalfx", "step:2:1:12:1")
+    governor = paired_window_arm(output, binary, env, route_path, "governor", "apple-tile",
+                                 "metalfx", "2", replay=False)
     colour = {}
     for recipe in RECIPE:
         reference = output / f"reference-{recipe}"

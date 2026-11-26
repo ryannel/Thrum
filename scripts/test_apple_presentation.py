@@ -9,7 +9,7 @@ from apple_governor_proof import (
     InvalidDisplayEnvironment, awake_display, compare_live_load, measure_window, require_unlocked_display,
 )
 from apple_presentation import annotate_display_ticks
-from apple_paired_proof import verify_replayed_scale
+from apple_paired_proof import paired_window_arm, verify_replayed_scale
 
 
 def callback(sequence, media, dispatched, busy=False):
@@ -112,6 +112,27 @@ class PairedReplayTests(unittest.TestCase):
         samples[2]["render_extent"] = [1286, 724]
         with self.assertRaisesRegex(ValueError, "submission 3 at routed tick 144"):
             verify_replayed_scale("apple", samples, frames, 180, [1920, 1080])
+
+    def test_interrupted_window_is_retained_before_retrying_the_same_arm(self):
+        def arm(output, _binary, _env, _route, name, *_):
+            (output / name).mkdir()
+            if not (output / f"{name}-interrupted-1").exists():
+                raise InvalidDisplayEnvironment("window occluded")
+            return dict(name=name)
+
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory)
+            args = (output, Path("game"), {}, Path("route"), "apple", "apple-tile", "metalfx", "2")
+            with patch("apple_paired_proof.window_arm", side_effect=arm) as window:
+                report = paired_window_arm(*args)
+            self.assertEqual(window.call_args_list, [call(*args), call(*args)])
+            self.assertEqual(report["invalid_display_attempts"], [
+                dict(directory="apple-interrupted-1", reason="window occluded"),
+            ])
+            with patch("apple_paired_proof.window_arm", side_effect=ValueError("replay diverged")) as window:
+                with self.assertRaisesRegex(ValueError, "replay diverged"):
+                    paired_window_arm(*args)
+                window.assert_called_once_with(*args)
 
 
 class GovernorProofTests(unittest.TestCase):
