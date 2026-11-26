@@ -45,13 +45,17 @@ pub(crate) fn check(gpu: &thrum_test_support::Gpu) {
     let mut scene = Fixture::from_game(gpu, EXTENT, game, report);
     scene.frame_without_timings(0.0);
     let mut time = 0.0;
-    let [low, high] = files[0].gauge_range();
+    let [low, middle, high] = files[0].gauges().try_into().expect("three spring samples");
     let mut max_error: f64 = 0.0;
-    for stage in [0.0, 0.37, 0.5, 1.0] {
+    for (spring, stage) in [
+        (low, 0.0),
+        ((high - low).mul_add(0.37, low), 0.37),
+        (middle, 0.5),
+        (high, 1.0),
+    ] {
         {
             let mut map = map.lock().expect("river stage");
-            map.set_gauge(0, (high - low).mul_add(stage, low))
-                .expect("spring stage");
+            map.set_gauge(0, spring).expect("spring stage");
             map.set_stage(1, stage).expect("lake stage");
         }
         // Sample off the mesh nodes and away from the joins. Hit the pool,
