@@ -902,3 +902,11 @@ and both cuts and profile changes reset for one submission. The controls,
 fixed field views and 1440p cost replay were repeated. Chrome and the
 same-endpoint Metal readback restored the ordinary sky byte for byte.
 [Retake evidence](../../../.orchestrate/evidence/CLOUDS/WP9/filtered/README.md)
+
+The cloud resolve interpolates current sparse samples and reduces history
+weight where the projected position or opacity changes. A turn across a
+refresh block or a coverage or type update uses a full trace. Portable Metal
+TAAU retakes at requested strides 2 and 4 preserved cloud contours through
+the pan. The preset filled in through intermediate frames. The cut and layer
+profile change each reset history for one submission. The 1440p range replay
+passed. [Sparse refresh evidence](../../../.orchestrate/evidence/CLOUDS/WP9/sparse-refresh/README.md)
