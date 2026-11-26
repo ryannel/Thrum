@@ -31,6 +31,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - APPLE-PRESENTATION assumes: the governor drops scale after three frames over budget, recovers at most one step per second, ([plan](APPLE-PRESENTATION/PLAN.md))
 - APPLE-PRESENTATION assumes: at full window size the frame rate may dip until the governor lands in WP7. Record times for ([plan](APPLE-PRESENTATION/PLAN.md))
 - APPLE-PRESENTATION assumes: WP10 pins wgpu-hal 30.0.1 for the Metal library loader. WP12 adds the archive to that copy. ([plan](APPLE-PRESENTATION/PLAN.md))
+- APPLE-PRESENTATION assumes: WP12 also pins wgpu-core 30.0.1, changed only so that a pipeline cache's header can be written and ([plan](APPLE-PRESENTATION/PLAN.md))
 - APPLE-PRESENTATION assumes: WP16 keeps the device safe for timestamp query sets created at the engine's one call site. Code ([plan](APPLE-PRESENTATION/PLAN.md))
 - APPLE-PRESENTATION assumes: a viewer cannot see a brightness difference under 1% of a frame's mean luminance, so D8.3 allows ([plan](APPLE-PRESENTATION/PLAN.md))
 - ATMOSPHERE assumes: WP3 ends with a CPU diagnosis. The authored-spur replay and an in-game correction remain open under G3s. A later proposal needs the original inputs and the fixed and realtime captures specified in the design. ([plan](ATMOSPHERE/PLAN.md))
@@ -338,7 +339,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Now and next
 
-- A warm launch compiles no pipeline: the local pipeline archive is proved by a strict fresh-process run (APPLE-PRESENTATION WP12): Not Started · [plan](APPLE-PRESENTATION/PLAN.md)
+- APPLE-PRESENTATION's design: Design Ready for Review · [design](APPLE-PRESENTATION/DESIGN.md) · [plan](APPLE-PRESENTATION/PLAN.md)
 - Water runs down a channel from the lake to the sea: its surface follows the slope, its ripples and foam travel with the current, and a float is carried down to the sea (WATERS WP9): Not Started · [plan](WATERS/PLAN.md)
 - A visitor changes coverage, cloud type, wind and time of day with the controls, and the sky holds up in motion, on the Mac and in Chrome (CLOUDS WP9): Ready for Review · [plan](CLOUDS/PLAN.md) · [latest review](../../.orchestrate/evidence/CLOUDS/WP9-review.md)
 - On the island, rain fills the hollows of a yard: puddles lie level in the ground, grow, join and shrink with a clean waterline, show the ground through them and mirror the sky, and a float sits in one (PUDDLES WP3): Not Started · [plan](PUDDLES/PLAN.md)
@@ -475,7 +476,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 4 | COOKED-DRAW | Cooked scenes draw on devices that cannot run GPU-driven draws, such as the iPhone simulator | PLATFORM-RUNTIME-IOS WP7 | Done 9 Nov |
 | 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE WP0 and WP1, PLATFORM-RUNTIME-MAC WP1, COOKED-DRAW WP1 | Done 25 Nov |
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE WP3 | Done 24 Nov |
-| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE WP0, WP2, WP3, WP11, WP12 and WP13 | WP12 of 17 · Not Started |
+| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE WP0, WP2, WP3, WP11, WP12 and WP13 | Design Ready for Review |
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | CONTENT-LOOP WP4 for its WP9 to pass the full check; APPLE-PRESENTATION WP3 and SHOWCASE WP9 for its WP6 | Done 25 Nov |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is found on main within about two hours and traced to the commit that made it |  | Done 25 Nov |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE WP2, BASELINE-GUARD WP1 | Done 17 Nov |
