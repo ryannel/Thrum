@@ -1325,7 +1325,7 @@
     {
       "id": "WP10",
       "name": "The twelve accepted cloud volumes and the growing congestus each read as themselves in the finished sky",
-      "status": "blocked",
+      "status": "not_started",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -1383,17 +1383,7 @@
           "verdict": "",
           "review": ""
         }
-      ],
-      "blocked": {
-        "reason": "needs_context",
-        "what": "The retained-light plan needs a lead decision on the noon shading failures for `congestus-forked` and `fair-head-tail`, which fall outside its named exceptions.",
-        "work": {
-          "commit": "f2bdb692ab3d52ba34da1db36e30ab57f4245f89",
-          "branch": "build/clouds",
-          "pushed": false
-        },
-        "handoff": ".orchestrate/evidence/CLOUDS/WP10-handoff.md"
-      }
+      ]
     },
     {
       "id": "WP14",

@@ -1462,12 +1462,12 @@
       }
     },
     "WP10": {
-      "definitions": "8d139adb153efa377d839731527e30901d6419b71ef77f532f0a167ccf43d678",
+      "definitions": "36409e13d6e5394f6b64c903b68f99500c0890d010f82fdc085d8e8e6c6bf365",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its 3 Must Fix find",
-        "at": "2026-11-26T10:47:04Z"
+        "task": "Unblock CLOUDS WP10 (handoff .orchestrate/evidence/CLOUDS/WP10-handoff.md, branch build/clouds at f2bdb692ab3d). Two mor",
+        "at": "2026-11-26T11:25:38Z"
       }
     },
     "WP11": {
@@ -1480,12 +1480,12 @@
       }
     },
     "WP12": {
-      "definitions": "b8811841736c7618ea0981471e74fb96f844bb3340f7ea988336d4d561c9024d",
+      "definitions": "1c76c80d763f027234bc9b63399956751c74992a3e0bace809f9ce26da055c02",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its 4 Must Fix find",
-        "at": "2026-11-26T10:36:24Z"
+        "task": "Unblock CLOUDS WP10 (handoff .orchestrate/evidence/CLOUDS/WP10-handoff.md, branch build/clouds at f2bdb692ab3d). Two mor",
+        "at": "2026-11-26T11:25:38Z"
       },
       "ends_stretch": true
     },
@@ -2125,11 +2125,15 @@
     {
       "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its 3 Must Fix findings. That makes 2 design reviews in a row that asked for changes, so the script approves the design you leave without another review, and building starts from it.",
       "at": "2026-11-26T10:47:04Z"
+    },
+    {
+      "task": "Unblock CLOUDS WP10 (handoff .orchestrate/evidence/CLOUDS/WP10-handoff.md, branch build/clouds at f2bdb692ab3d). Two more shapes, congestus-forked (flat upper-left lobe) and fair-head-tail (head and middle lobe merge), lose relief only under the noon Sun, as the core and twin turrets do; at 10 degrees all read well. Lead's decision: this is the same cause (diffuse sunlight into broad lobes at high Sun), not four separate defects. Widen risk 14 and WP10.1 to cover noon relief on broad lobes of any shape whose 10-degree view passes, and widen WP21 to fix all four named shapes (and any other shape that shows the same cue) to the shipped-game bar. WP21 still must not hold up WP12 or the module's close. Everything else WP10 qualified stands. A plan you keep ends with KEEP CLOUDS WP10: builder: <where the plan provides it>.",
+      "at": "2026-11-26T11:25:38Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-26T10:47:04Z"
+    "at": "2026-11-26T11:25:38Z"
   },
   "design_history": [
     {
