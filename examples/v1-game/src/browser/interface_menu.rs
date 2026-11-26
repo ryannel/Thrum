@@ -91,6 +91,19 @@ impl BrowserGame {
     pub fn menu_report(&self) -> Option<String> {
         Some(self.page.game.0.menu.as_ref()?.report().to_string())
     }
+
+    /// Trace routed copies of the real event and its pre-event state in this renderer.
+    pub fn profile_menu_routing(&self) -> Option<String> {
+        Some(
+            self.page
+                .game
+                .0
+                .menu
+                .as_ref()?
+                .profile_routes()?
+                .to_string(),
+        )
+    }
 }
 
 impl BrowserGame {

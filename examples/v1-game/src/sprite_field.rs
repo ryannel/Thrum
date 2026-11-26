@@ -210,7 +210,8 @@ pub(crate) fn extract(
             row.flash = [0.0; 4];
             row.additive = 0.0;
         }
-        if player == Some(handle.slot) {
+        let controlled = player == Some(handle.slot);
+        if controlled {
             row.sheet = 0;
             row.frame = 3;
             row.tint = [1.0, 0.77, 0.19, 1.0];
@@ -220,10 +221,16 @@ pub(crate) fn extract(
         }
         // Every field entity is seeded with a visual for its entire lifetime.
         // The tick page guards the previous position by identity and generation.
-        let previous = page.previous_position(handle).map(|position| SpritePose {
-            position: [position.0[0], position.0[1]],
-            ..row.into()
-        });
+        // The interface can present a modal with the final moving endpoint.
+        // Only the controlled sprite must already show that exact position.
+        let previous = if controlled {
+            None
+        } else {
+            page.previous_position(handle).map(|position| SpritePose {
+                position: [position.0[0], position.0[1]],
+                ..row.into()
+            })
+        };
         into.push_pair(handle.slot, handle.generation, id.0, row, previous);
     });
 }

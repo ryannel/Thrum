@@ -41,6 +41,8 @@ struct Proof {
     submitted: Option<Arc<View>>,
     work: Option<(u64, thrum_ui::TreeStats)>,
     choice_frames: Vec<(u64, [f64; 3])>,
+    #[cfg(target_arch = "wasm32")]
+    route_samples: BTreeMap<&'static str, RouteSample>,
 }
 
 impl Menu {
@@ -136,17 +138,14 @@ impl Menu {
         let kind = input_kind(&event);
         let event = points(event, self.viewport_scale);
         #[cfg(target_arch = "wasm32")]
-        let marks = self
+        let sample = self
             .proof
             .as_ref()
-            .and_then(|proof| RouteMarks::start(proof.timing.len()));
+            .filter(|proof| !proof.route_samples.contains_key(kind))
+            .and_then(|proof| RouteSample::before(proof.timing.len(), &self.router, &event, now));
         #[cfg(target_os = "macos")]
         let start = self.proof.as_ref().map(|_| cpu_time::ThreadTime::now());
         let routed = self.router.route(event, now);
-        #[cfg(target_arch = "wasm32")]
-        if let Some(marks) = marks {
-            marks.end();
-        }
         #[cfg(target_os = "macos")]
         let cpu_ms = start.map(|start| start.elapsed().as_secs_f64() * 1000.0);
         if let Some(proof) = &mut self.proof {
@@ -171,7 +170,25 @@ impl Menu {
         {
             let id = u64::try_from(proof.timing.len() - 1).expect("bounded event log");
             proof.awaiting.push((id, after));
+            #[cfg(target_arch = "wasm32")]
+            if let Some(sample) = sample
+                && (kind != "touch press"
+                    || self.view.cards.contains(&thrum_ui::ButtonState::Pressed))
+            {
+                proof.route_samples.insert(kind, sample);
+            }
         }
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    pub(crate) fn profile_routes(&self) -> Option<Value> {
+        let samples = &self.proof.as_ref()?.route_samples;
+        let clock = web_sys::window()?.performance()?;
+        let mut record = BTreeMap::new();
+        for (&kind, sample) in samples {
+            record.insert(kind, sample.profile(&clock)?);
+        }
+        Some(json!(record))
     }
 
     fn receive(&mut self, routed: Option<Routed<KeyCode>>, now: Duration) {
@@ -447,26 +464,60 @@ fn points(event: Event<KeyCode>, scale: f64) -> Event<KeyCode> {
 }
 
 #[cfg(target_arch = "wasm32")]
-struct RouteMarks {
-    clock: web_sys::Performance,
-    names: [String; 3],
+struct RouteSample {
+    id: usize,
+    router: Router<KeyCode>,
+    event: Event<KeyCode>,
+    now: Duration,
 }
 
 #[cfg(target_arch = "wasm32")]
-impl RouteMarks {
-    fn start(id: usize) -> Option<Self> {
-        let clock = web_sys::window()?.performance()?;
-        let names = ["empty", "start", "end"].map(|phase| format!("thrum-menu-route-{id}-{phase}"));
-        // Consecutive marks give the measurement floor on the same thread.
-        clock.mark(&names[0]).ok()?;
-        clock.mark(&names[1]).ok()?;
-        Some(Self { clock, names })
+impl RouteSample {
+    fn before(
+        id: usize,
+        router: &Router<KeyCode>,
+        event: &Event<KeyCode>,
+        now: Duration,
+    ) -> Option<Self> {
+        use thrum_ui::Intent;
+        matches!(
+            event,
+            Event::Press {
+                contact: Contact::Pointer(_) | Contact::Touch(_) | Contact::Key(KeyCode::KeyE),
+                ..
+            } | Event::Press {
+                intent: Some(Intent::Direction(_)),
+                ..
+            }
+        )
+        .then(|| Self {
+            id,
+            router: router.clone(),
+            event: event.clone(),
+            now,
+        })
     }
 
-    fn end(self) {
-        let _ = self.clock.mark(&self.names[2]);
-        for name in self.names {
-            self.clock.clear_marks_with_mark_name(&name);
+    fn profile(&self, clock: &web_sys::Performance) -> Option<Value> {
+        use std::hint::black_box;
+        const COUNT: usize = 4096;
+        let mut trials = vec![self.router.clone(); COUNT];
+        let names =
+            ["empty", "start", "end"].map(|phase| format!("thrum-menu-route-{}-{phase}", self.id));
+        // Separate setup and the loop's event copying from the cost of routing.
+        clock.mark(&names[0]).ok()?;
+        for trial in &mut trials {
+            black_box(trial);
+            black_box(self.event.clone());
         }
+        clock.mark(&names[1]).ok()?;
+        for trial in &mut trials {
+            black_box(trial.route(black_box(self.event.clone()), self.now));
+        }
+        clock.mark(&names[2]).ok()?;
+        for name in names {
+            clock.clear_marks_with_mark_name(&name);
+        }
+        Some(json!({"event_id": self.id, "count": COUNT}))
     }
 }

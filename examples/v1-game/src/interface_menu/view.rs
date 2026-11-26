@@ -3,11 +3,11 @@ use std::sync::Arc;
 use thrum_ui::{
     Alignment, Anchor, Axis, Button, ButtonState, Elision, Font, Node, NodeId, NodeKind,
     PaintInputs, PaintList, PaintStamp, Size, SizeRule, Text, TextOptions, Tree, TreeError,
-    TreeStats, Viewport,
+    Viewport,
 };
 
 #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
-use thrum_ui::InputLayout;
+use thrum_ui::{InputLayout, TreeStats};
 
 use super::{CARDS, CHOICE, COPY, HOST_TICKET, JOIN, SUBMIT, Screen, TICKET_DROP, View, policy};
 
@@ -42,7 +42,6 @@ impl MenuLayout {
         font: &thrum_asset::FontProduct,
         stamp: PaintStamp,
         viewport: Viewport,
-        geometry_matches: bool,
     ) -> Result<(PaintList, Self), TreeError> {
         let (mut tree, constructions, previous) = match retained {
             Some(layout)
@@ -72,10 +71,8 @@ impl MenuLayout {
         )?;
         #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
         let input = previous
-            .filter(|previous| geometry_matches && previous.work.1.layouts == tree.stats().layouts)
+            .filter(|previous| previous.work.1.layouts == tree.stats().layouts)
             .map_or_else(|| Arc::new(tree.input_layout()), |previous| previous.input);
-        #[cfg(not(any(target_os = "macos", target_arch = "wasm32")))]
-        let _ = geometry_matches;
         let frame = MenuFrame {
             view,
             #[cfg(any(target_os = "macos", target_arch = "wasm32"))]

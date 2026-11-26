@@ -321,14 +321,13 @@ impl FontCard {
         };
         if let Some(layout) = cached
             && layout.stamp == stamp
-            && let Some(frame) = &layout.menu
-            && frame.frame.viewport == viewport
-            && Arc::ptr_eq(&frame.frame.view, view)
+            && let Some(menu) = &layout.menu
+            && menu.frame.viewport == viewport
+            && Arc::ptr_eq(&menu.frame.view, view)
         {
             return Ok(layout.paint.clone());
         }
         let font = fonts.font(TYPE).ok_or("interface menu font is missing")?;
-        let matching_stamp = cached.as_ref().is_some_and(|layout| layout.stamp == stamp);
         let retained = cached.as_mut().and_then(|layout| layout.menu.take());
         let (paint, menu) = crate::interface_menu::MenuLayout::paint(
             retained,
@@ -336,7 +335,6 @@ impl FontCard {
             font,
             stamp,
             viewport,
-            matching_stamp,
         )
         .map_err(|error| error.to_string())?;
         *cached = Some(Layout {

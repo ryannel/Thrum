@@ -184,6 +184,7 @@ impl InputLayout {
     }
 }
 
+#[derive(Clone)]
 struct OpenScope {
     id: NodeId,
     policy: Scope,
@@ -203,12 +204,14 @@ enum Owner {
     },
 }
 
+#[derive(Clone)]
 struct Press {
     owner: Owner,
     position: Option<[f64; 2]>,
 }
 
 /// Routes complete contacts and keeps focus on the layout last submitted.
+#[derive(Clone)]
 pub struct Router<K> {
     shown: InputLayout,
     scopes: Vec<OpenScope>,
@@ -345,7 +348,8 @@ impl<K: Copy + Ord> Router<K> {
         self.clipboard_copy.take()
     }
 
-    /// Route one event at the shell's monotonic time.
+    /// Route one event at the shell's monotonic time. Before routing at or after
+    /// a nonexclusive scope's arming deadline, deliver the result of [Self::advance].
     pub fn route(&mut self, event: Event<K>, now: Duration) -> Option<Routed<K>> {
         // A timed nonexclusive scope can return a resumption and an event at
         // the same instant. Its shell delivers the resumption via advance.

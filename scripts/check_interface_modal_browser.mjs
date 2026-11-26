@@ -25,7 +25,7 @@ export async function qualifyInterfaceModal(options) {
     for (const dpr of [1, 2]) {
       const [row, marks] = await traceRoutes(cdp, options.timeout,
         () => arm(options, call, sessionId, dpr));
-      row.routeCpu = routeCpu(row.final, marks);
+      row.routeCpu = routeCpu(row.final, row.routeSamples, marks);
       rows.push(row);
     }
   } finally {
@@ -70,13 +70,18 @@ async function traceRoutes(cdp, timeout, run) {
   }
 }
 
-function routeCpu(report, marks) {
+function routeCpu(report, samples, marks) {
   const byName = new Map(marks.map(mark => [mark.name, mark]));
   assert.equal(byName.size, marks.length, 'duplicate route marks');
+  assert.equal(marks.length, 3 * Object.keys(samples).length);
   const byKind = {};
-  for (const row of report.timing) {
+  for (const kind of ['key press', 'pointer press', 'touch press', 'presentation edit']) {
+    const { event_id, count } = samples[kind];
+    const row = report.timing.find(row => row.id === event_id);
+    assert(row?.kind === kind && row.frames >= 1, `routing sample did not come from submitted ${kind}`);
+    assert(Number.isSafeInteger(count) && count > 0);
     const [empty, start, end] = ['empty', 'start', 'end'].map(phase =>
-      byName.get(`thrum-menu-route-${row.id}-${phase}`));
+      byName.get(`thrum-menu-route-${event_id}-${phase}`));
     assert(empty && start && end, `missing route marks for ${row.id}`);
     for (const mark of [empty, start, end]) {
       assert.equal(mark.ph, 'I');
@@ -87,16 +92,13 @@ function routeCpu(report, marks) {
     const cpu_us = end.tts - start.tts;
     const empty_us = start.tts - empty.tts;
     assert(cpu_us >= 0 && empty_us >= 0, 'nonmonotonic renderer clock');
-    row.route_cpu = { pid: start.pid, tid: start.tid, thread_ticks_us: [empty.tts, start.tts, end.tts],
-      cpu_us, empty_us };
-    const sample = byKind[row.kind] ??= { count: 0, cpu_us: 0, empty_us: 0 };
-    sample.count++;
-    sample.cpu_us += cpu_us;
-    sample.empty_us += empty_us;
+    byKind[kind] = { event_id, count, pid: start.pid, tid: start.tid,
+      thread_ticks_us: [empty.tts, start.tts, end.tts], cpu_us, empty_us,
+      net_us_per_route: (cpu_us - empty_us) / count };
   }
   return { clock: 'Chromium trace tts, renderer thread CPU microseconds',
-    scope: 'Actual browser events, with adjacent empty marks retained to show tracing overhead',
-    byKind, teardown_marks: marks.length - 3 * report.timing.length };
+    scope: 'Batches replay the actual browser event against independent copies of its pre-event router state. The control loop measures event copying and traversal.',
+    byKind };
 }
 
 async function arm(opts, call, sessionId, dpr) {
@@ -284,9 +286,10 @@ async function arm(opts, call, sessionId, dpr) {
     assert(final.timing.some(row => row.kind === kind && row.frames >= 1), kind);
   }
 
+  const routeSamples = await game.invoke('return JSON.parse(game.profile_menu_routing());');
   const devices = await releaseGameGraphics(cdp, sessionId, game);
   await unloadGamePage(cdp, sessionId, timeout);
-  return { dpr, build, loadBefore, loadAfter: os.loadavg(), stills, holds, final,
+  return { dpr, build, loadBefore, loadAfter: os.loadavg(), stills, holds, final, routeSamples,
     beforeRecovery: beforeRecovery.focus, afterRecovery: recovered.focus, devices };
 }
 

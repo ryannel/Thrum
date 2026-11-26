@@ -75,7 +75,7 @@ def realtime(source, destination, env):
     for file in ("manifest.json", "runtime.json", "preview-1x.mp4", "contact.png"):
         shutil.copy2(source / file, destination / file)
     actions = runtime["menu_actions"]
-    assert len(actions) == 12
+    assert len(actions) == 14
     records = sorted(manifest["records"], key=lambda row: row["submit_ns"])
     marks = []
     for entry in actions:
@@ -93,7 +93,17 @@ def realtime(source, destination, env):
             crop(whole, folder / f"{name}-player.png", [434, 950, 752, 122])
         marks.append({"event": entry["code"], "event_ns": entry["accepted_ns"],
                       "images": sequence})
-    write(destination / "transitions.json", marks)
+    menu = runtime["menu"]
+    positions = menu["choice_frames"]
+    assert len(positions) > 1 and all(pos == positions[0][1] for _, pos in positions)
+    assert [index for index, _ in positions] == list(range(positions[0][0], positions[-1][0] + 1))
+    changed = [row for row in menu["timing"] if "first_submission" in row]
+    frame_counts = {action["code"]: row["frames"] for action, row in zip(
+        [action for action in actions if action["down"] and action["code"] != "KeyD"],
+        changed, strict=True)}
+    assert all(frames <= frame_counts["KeyE"] for frames in frame_counts.values()), frame_counts
+    write(destination / "transitions.json", {"events": marks, "frames_to_effect": frame_counts,
+                                            "choice_frames": positions})
     shutil.rmtree(source)
     return {"extent": extent, "directory": destination.name, "frames": len(records)}
 

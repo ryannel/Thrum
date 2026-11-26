@@ -158,6 +158,7 @@ def run(root, destination, scratch, revision, environment, mode, load, digest):
     binary = root / "target/release/v1-game"
     wake_window_display()
     actions = {"route": route_script, "drops": drops_script, "costs": costs_script}[mode]()
+    capacity = max(360, 24 + sum(step.get("after", 1) for step in actions))
     records = []
     for index in range(1, 3 if mode == "costs" else 2):
         steps = destination / f"{mode}-{index}-input.json"
@@ -165,7 +166,7 @@ def run(root, destination, scratch, revision, environment, mode, load, digest):
         witness = destination / f"{mode}-{index}-record.json"
         witness.unlink(missing_ok=True)
         env = dict(environment, THRUM_SCENE="interface", THRUM_INTERFACE_TEXT="menu",
-                   THRUM_FONT_STORE=str(store), THRUM_V1_FRAMES="360",
+                   THRUM_FONT_STORE=str(store), THRUM_V1_FRAMES=str(capacity),
                    THRUM_UI_EVENT_SCRIPT=str(steps), THRUM_UI_EVENT_REPORT=str(witness))
         command = ["/usr/bin/caffeinate", "-d", "-i", "-u", str(binary)]
         if mode == "drops":

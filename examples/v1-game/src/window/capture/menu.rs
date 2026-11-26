@@ -68,7 +68,9 @@ pub(super) fn warm(driver: &mut Driver) -> Result<(), String> {
     }
 }
 
-const STEPS: [(u64, KeyCode, bool); 12] = [
+const STEPS: [(u64, KeyCode, bool); 14] = [
+    (800, KeyCode::KeyE, true),
+    (850, KeyCode::KeyE, false),
     (1200, KeyCode::KeyD, true),
     (1700, KeyCode::KeyM, true),
     (1730, KeyCode::KeyM, false),

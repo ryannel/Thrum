@@ -122,10 +122,10 @@ impl MenuView {
 
     pub(crate) fn for_frame(&self, tick: u64) -> Arc<View> {
         let state = self.0.lock().expect("menu view mailbox");
-        // A modal may first appear when both interpolation endpoints are
-        // stationary. A world step already sampling movement can still finish.
+        // The player sprite uses the committed endpoint. A modal can draw
+        // with the last moving tick, including a step already in flight.
         if state.view.screen != Screen::Play
-            && state.last_moving_tick.is_some_and(|last| tick <= last)
+            && state.last_moving_tick.is_some_and(|last| tick < last)
         {
             Arc::clone(&state.play)
         } else {
