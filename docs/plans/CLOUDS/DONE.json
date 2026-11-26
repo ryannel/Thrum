@@ -1116,7 +1116,7 @@
     {
       "id": "WP8",
       "name": "Under a clouded sky the land is lit by the clouds: an overcast valley is grey and soft, haze dims with it, and polished surfaces reflect the clouds",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 2,
       "failed_reviews_with_repeat": 1,
       "diagnoses": 0,
@@ -1143,7 +1143,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP8/clear-exposure/README.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP8-review.md"
         },
         {
@@ -1220,14 +1220,6 @@
           "evidence": ".orchestrate/evidence/CLOUDS/WP8-rework/WP8.9.log",
           "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP8-review.md"
-        }
-      ],
-      "findings": [
-        {
-          "name": "Clear sunset activates cloud exposure adaptation",
-          "item": "WP8.2",
-          "different": "The held-noon reflection and irradiance mismatch is fixed. During a continuously changing clear sunset the display adaptation branch lags the clear exposure, even with an entirely transparent overlay.",
-          "repeat": false
         }
       ]
     },
