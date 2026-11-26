@@ -111,14 +111,12 @@ fn post_foams_downstream_and_a_float_reaches_the_sea() {
 )]
 fn check_post_and_float(gpu: &thrum_test_support::Gpu) {
     let extent = [112, 64];
+    check_query_join(gpu, extent);
     for running in [false, true] {
         let wind = if running { Wind::Trade } else { Wind::Calm };
         let route = channel::build(wind, true, running).expect("channel game");
         let mut scene = support::Fixture::from_game(gpu, extent, route.game, route.report);
         scene.frame_without_timings(0.0);
-        if running {
-            check_query_join(&mut scene, &route.query);
-        }
         for tick in 1..=12 {
             scene.frame_without_timings(f64::from(tick) / 30.0);
         }
@@ -197,11 +195,15 @@ fn check_post_and_float(gpu: &thrum_test_support::Gpu) {
     clippy::print_stdout,
     reason = "retain the actual Metal target readings"
 )]
-fn check_query_join(scene: &mut support::Fixture, mailbox: &thrum_water::query::QueryMailbox) {
+fn check_query_join(gpu: &thrum_test_support::Gpu, extent: [u32; 2]) {
     use std::time::Duration;
     use thrum_water::query::{BodyQuery, QueryPoint};
     const STEP: Duration = Duration::from_nanos(16_666_667);
     const PROBE: u32 = 40;
+    let route = channel::build(Wind::Trade, true, true).expect("query fixture");
+    let mailbox = route.query;
+    let game = route.game.with_fixed_update_endpoint(|_, _| {});
+    let mut scene = support::Fixture::from_game(gpu, extent, game, route.report);
     mailbox.post(
         scene.endpoint(0),
         vec![BodyQuery {
@@ -217,7 +219,8 @@ fn check_query_join(scene: &mut support::Fixture, mailbox: &thrum_water::query::
                 .collect(),
         }],
     );
-    scene.finish_tick_queries();
+    scene.frame_without_timings(0.0);
+    scene.frame_without_timings(STEP.as_secs_f64());
     let replies = mailbox.drain(scene.endpoint(2), STEP);
     let reply = replies
         .iter()

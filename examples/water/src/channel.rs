@@ -99,9 +99,9 @@ pub fn map(forcing: &Forcing, running: bool) -> Result<Map, Box<dyn Error>> {
 
 /// Inspection views from the source, bank, narrows, mouth and above the whole outlet.
 pub const VIEWS: [Camera; 6] = [
-    Camera::look_at([205.0, 14.2, 13.0], [215.0, 11.6, 4.0], 61.0),
+    Camera::look_at([205.0, 14.2, 10.5], [215.0, 11.6, 4.5], 61.0),
     Camera::look_at([233.0, 11.7, 13.0], [233.0, 9.4, 3.0], 61.0),
-    Camera::look_at([249.0, 10.2, 11.0], [266.0, 6.8, 5.0], 60.0),
+    Camera::look_at([252.0, 10.2, 9.0], [265.0, 6.9, 4.8], 60.0),
     Camera::look_at([343.0, 2.35, 12.0], [353.0, -0.1, 5.0], 61.0),
     Camera::look_at([280.0, 45.5, 64.0], [280.0, 5.5, 5.0], 84.0),
     Camera::look_at([317.0, 4.2, 12.0], [305.0, 2.4, 5.0], 61.0),

@@ -16,11 +16,15 @@ use thrum_render::runtime::{CaptureLimits, FrameSample};
 // Even a stalled writer can retain this complete interval in its finite queue.
 // Keep ordinary elapsed-time stepping and pan speed; bound the observer, not time.
 const MAX_SUBMISSIONS: usize = 120;
+const CHANNEL_SUBMISSIONS: usize = 180;
 const WRITER_QUEUE: usize = 192;
 const CPU_LEASES: usize = 200;
 const PIXEL_ALLOWANCE: u64 = 3 * 1024 * 1024 * 1024;
 const _: () = assert!(MAX_SUBMISSIONS < WRITER_QUEUE);
 const _: () = assert!(MAX_SUBMISSIONS < CPU_LEASES);
+const _: () = assert!(CHANNEL_SUBMISSIONS < WRITER_QUEUE);
+const _: () = assert!(CHANNEL_SUBMISSIONS < CPU_LEASES);
+const _: () = assert!(CHANNEL_SUBMISSIONS as u64 * 1280 * 720 * 4 < PIXEL_ALLOWANCE);
 const _: () = assert!(MAX_SUBMISSIONS as u64 * 2560 * 1440 * 4 < PIXEL_ALLOWANCE);
 
 #[expect(
@@ -57,7 +61,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
     } else if surf && island_view == "9" {
         ([2560, 1440], 18.0, 6.5, MAX_SUBMISSIONS)
     } else if channel {
-        ([1280, 720], 9.0, 20.0, MAX_SUBMISSIONS)
+        ([1280, 720], 9.0, 20.0, CHANNEL_SUBMISSIONS)
     } else if surf {
         ([2560, 1440], 12.0, 10.0, MAX_SUBMISSIONS)
     } else if whitewater && route == "stop" {
