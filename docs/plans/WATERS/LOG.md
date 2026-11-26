@@ -1540,3 +1540,11 @@
   now compare the opaque near-plane panel bit for bit and check the omitted
   passes on those same frames. They run serially to fit the Metal timestamp
   pool. [Lens proof](../../../.orchestrate/evidence/WATERS/WP15/lens-proof.md)
+
+- 2026-11-26 Repaired the reviewed lens cut and dry admission. The solved
+  river and lens share the final depth refinement. Zero-rate rain preserves
+  wind displacement, active rings admit the lens, and independent cases
+  exercise carried gain and weight. Metal verifies actual GPU exposure words.
+  Chrome and Metal show the bank, moving whitecaps and a coherent hull at the
+  crossing. The 1440p cost comparison now tracks a pass across renumbering.
+  [Lens](../../../.orchestrate/evidence/WATERS/WP15/review-lens-proof.md) · [Views](../../../.orchestrate/evidence/WATERS/WP15/review-visual-proof.md) · [Cost](../../../.orchestrate/evidence/WATERS/WP15/review-cost-proof.md).
