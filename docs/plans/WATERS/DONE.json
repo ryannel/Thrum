@@ -1761,8 +1761,8 @@
           "ask": "Would composing the water over an under-water pixel twice, and multiplying the exposure scale twice, each fail?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP15/mapped-admission/WP15.11.stdout",
           "verdict": "",
           "review": ""
         },
@@ -1781,8 +1781,8 @@
           "statement": "Under water the bed, the hull and a sunk float are seen through water that takes their colour toward its own with distance. Deeper water is darker, the lake differs from the sea as their water types do, and nothing clips to flat black or white at dawn, noon or twilight.",
           "inspect": "`fixed` stills from 0.5 m, 3 m and 10 m under the sea and from 0.5 m and 3 m under the lake, looking level and down, at the three hours: the bed near and far, the hull and the open water.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP15/craft-views/lighting.md",
           "verdict": "",
           "review": ""
         },
@@ -1802,8 +1802,8 @@
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test under_frame_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP15/mapped-admission/WP15.6.stdout",
           "verdict": "",
           "review": ""
         },

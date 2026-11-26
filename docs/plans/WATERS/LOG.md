@@ -1392,3 +1392,113 @@
   live wake admits the lens, and WP15.9 records that cost. (3) On a current the lens cut reads the draw's
   carried place. WP15.1 and WP15.9 rewritten.
   [What changed](../../../.orchestrate/evidence/WATERS/WP15/design-review-fixes.md).
+
+## WP15 branch checkpoints before the revised plan
+
+- 2026-11-26 WP15 checkpoint. The optional water view reuses the opaque gather, classifies
+  points on the jittered near plane and draws the underside with the surface's depth and
+  history. Metal fixture tests cover the per-column line through a three-surface lip,
+  water transport and exposure, and the temporal attachments. The current lens samples
+  still need qualification on short waves and at capture resolution.
+  [WP15 evidence](../../../.orchestrate/evidence/WATERS/WP15/README.md).
+- 2026-11-26 WP15 needs a camera seam ruling. The shared sky kit rejects an eye below
+  world sea level and a vertical view by design. Its lighting path also uses the
+  eye's world height as the atmosphere's nonnegative altitude. Permit below-sea view
+  positions and an explicit up axis while keeping the atmosphere's altitude valid, or
+  approve an inspection route with separately authored water levels and views.
+  The existing island lake also needs an authored deep inspection spot for the 5 m look.
+  [WP15 handoff](../../../.orchestrate/evidence/WATERS/WP15-handoff.md).
+
+- 2026-11-26 WP15 checkpoint. Optics unprojects copied depth and lens points with the inverse raster
+  projection. On Metal a stationary camera sees the meniscus move across the centre texel with jitter.
+  Restoring the unjittered inverse makes that test fail. The draw blends the two surface compositions across
+  the first submerged pixel, and underwater traces preserve the gather's viewport fade. Both hosts can
+  capture a held waterline or a submerged view in elapsed time. The 1440p folded-lip witness and swash
+  crossing are still open. The shared sky camera still needs a vertical basis decision for the overhead
+  inspection. [Target results](../../../.orchestrate/evidence/WATERS/WP15/resume-diagnostic/README.md).
+
+- 2026-11-26 WP15 lens proof. At the flagged folded-lip pixels, the Metal frame's uploaded
+  strip height agrees with the model to within 0.001 of a vertical pixel. The folded sheet
+  can hide the near-plane witness even inside the model's wet region. Near-plane panel pairs
+  now use the brightest ordinary witness for each pixel and compare its matching underwater
+  arm. All four 1440p lens cases agree beyond one pixel with full witness coverage. Dry
+  admission with active short waves is still open.
+  [Metal evidence](../../../.orchestrate/evidence/WATERS/WP15/seam-diagnosis/README.md).
+
+- 2026-11-26 WP15 offshore admission. A uniform, uncarried sea row now bounds the realized
+  short-wave height over the near-plane footprint and its texture taps. The bound uses the
+  strongest 64 modes per band and the full amplitude of the remaining modes. The Metal
+  trough reproduced earlier skips the gather on both open and mapped water. The same lens
+  at the crest still gathers. Transport, wakes, shallow gain changes and uncertain offshore
+  bounds retain conservative admission. WP15.1 still needs strict dry admission there.
+  [Target evidence](../../../.orchestrate/evidence/WATERS/WP15/short-admission/README.md).
+- 2026-11-26 WP15 admission follow-up. The 64-mode bound stays above 17 m on the sample
+  offshore Trade footprint, while the direct short-wave height at its centre stays within
+  0.4 m. A CPU prototype groups the complete spectrum by temporal frequency and computes
+  only the interpolation taps near the lens. It agrees with the f64 reference at those taps.
+  A fixed footprint is cheap once warm. Moving the footprint introduces cold rebuilds that
+  need further work before the approach can be used on a frame's submission path.
+  [Spectrum and timings](../../../.orchestrate/evidence/WATERS/WP15/short-admission/README.md#trade-spectrum-follow-up).
+
+- 2026-11-26 WP15 Trade admission. The offshore short-wave bound now reads the full
+  spectrum at the near-plane footprint's periodic texture taps. The CPU groups
+  coefficients by temporal frequency, reuses taps as the lens moves and retains a
+  bounded cache. On Metal the dry Trade lens skips the gather at six poses, including
+  a move longer than the shortest patch. On Chrome the dry Trade lens encodes neither
+  underwater pass. Both targets still gather when the lens is under. Static inshore
+  gains, transport and wakes need separate qualification.
+  [Trade evidence](../../../.orchestrate/evidence/WATERS/WP15/trade-admission/README.md).
+
+- 2026-11-26 WP15 swash alignment. Matched Metal frames put the old lens cutoff
+  0.197 m above the drawn shore sheet at the centre column. The lens now applies
+  the model's short-wave contour weight and includes the short-band power when
+  solving the long-wave sheet. The ten matched Metal views lose the wide detached
+  dark band. A thin line and darker underside patches still need the crossing
+  inspection. Chrome's trade lake hold still has dark and pale waterline bands.
+  The exact overhead views need an opt-in up vector in the shared sky camera.
+  [Metal and Chrome evidence](../../../.orchestrate/evidence/WATERS/WP15/trade-admission/README.md).
+
+- 2026-11-26 WP15 target rerun. All five configured commands passed on the clean
+  swash renderer at `53d6dcf14`. Chrome submitted its 13 lens frames with zero
+  validation faults. Metal recorded the paired 1440p sea and lake costs.
+  [Configured commands](../../../.orchestrate/evidence/WATERS/WP15/trade-admission/swash-items.json) ·
+  [Chrome](../../../.orchestrate/evidence/WATERS/WP15/trade-admission/chrome-swash-exact/run.json) ·
+  [Metal costs](../../../.orchestrate/evidence/WATERS/WP15/dive-cost-53d6dcf14304.json).
+
+- 2026-11-26 WP15 near-clip handoff. The tagged 1440p Metal comparison places
+  the narrow swash stripe on the drawn underside, beside a fullscreen ray
+  with an opaque bed sample. The two water paths now blend at the near clip
+  around the lens line. The strong stripe becomes a faint line in the matched
+  views. Darker underside patches remain visible in motion.
+  [Metal comparison](../../../.orchestrate/evidence/WATERS/WP15/residual-line/README.md).
+
+- 2026-11-26 WP15 Trade sea gap. The fixed 1440p Metal tags leave 182–184
+  centre-column rows of bare bed between the dry sheet and the underwater
+  draw. Both heights are reconstructed on the CPU to about two rows.
+  The drawn rest grid cuts the summed displacement. The lens adds short
+  waves sampled in world coordinates to a long-wave cut, as the existing
+  body query does. The builder proposes making the lens and reference
+  model use a combined world-column cut, with the body-query contract
+  resolved by the planner. All configured checks pass at `237ffe0bd`.
+  [Target evidence](../../../.orchestrate/evidence/WATERS/WP15/residual-line/README.md).
+
+- 2026-11-26 WP15 mapped admission. The dry proof now bounds the short-wave
+  gains across a footprint within mapped still water. A Metal fixture over
+  a sloping bed skips the work while wholly dry and gathers when lowered
+  two centimetres into the attenuated trough. The model checks both pixel
+  sets. Disabling the mapped proof makes the dry check fail.
+  [Metal evidence](../../../.orchestrate/evidence/WATERS/WP15/mapped-admission/README.md).
+
+- 2026-11-26 WP15 mapped admission evidence. All five configured commands
+  passed at `32a3d8367`. Chrome's dry mapped frames match with the capability
+  enabled and disabled. The moving Metal Trade fixture now records timing
+  and colour from one submission at the same frame clock as its ordinary
+  arm. The synchronized supplemental 1440p run passes all seven tests.
+  [Target evidence](../../../.orchestrate/evidence/WATERS/WP15/mapped-admission/README.md).
+
+- 2026-11-26 WP15 lake window. At 5 m and 45° off vertical, Metal tags
+  show direct refracted sky inside the lake window and the bank compressed
+  at its left edge. An arm omitting only the water path to the eye makes
+  both readable. The declared lake attenuation accounts for their muted
+  appearance in the ordinary frame. The diagnostic stays in evidence.
+  [Window comparison](../../../.orchestrate/evidence/WATERS/WP15/window-traces/README.md).
