@@ -854,6 +854,82 @@ def validate_mist_near(record):
         raise ValueError('mist-near tripwire investigation missing')
 
 
+MIST_FAR_FIXTURE = ROOT / 'tests/fixtures/clouds/mist-far-cost.json'
+MIST_FAR_ARMS = (('off', 'clear'), ('ground-mist-far', 'clear'),
+                 ('ground-low-deck', 'overcast'))
+
+
+def mist_far_tripwires(row, off, earlier):
+    passed = row['pass_gpu_ns']
+    result = {
+        name for name, ns in passed.items()
+        if any(baseline['pass_gpu_ns'].get(name, 0) > 0
+               and ns >= 1.25 * baseline['pass_gpu_ns'][name]
+               for baseline in (off, earlier))
+    }
+    if row['whole_frame_gpu_ns'] > 1e9 / 120:
+        result.add('whole frame')
+    return result
+
+
+def validate_mist_far(record):
+    baseline = json.loads(MIST_NEAR_FIXTURE.read_text())
+    earlier = baseline['runs'][-1]
+    if record.get('paired_wp14', {}).get('run') != earlier:
+        raise ValueError('mist-far requires the occupied WP14 dawn reference')
+    rows = record.get('runs', [])
+    if [row.get('selection') for row in rows] != [selection for selection, _ in MIST_FAR_ARMS]:
+        raise ValueError('mist-far requires off, far mist and low deck measurements')
+    off = rows[0]
+    for row in rows:
+        if (row['extent'] != [2560, 1440] or row['capture'] or row['frames'] < 30
+                or row['view'] != earlier['view'] or row['view_angles'] != earlier['view_angles']
+                or 'Metal' not in row['adapter'] or not positive(row['whole_frame_gpu_ns'])):
+            raise ValueError('mist-far requires the retained WP14 dawn pose and capture-off Metal timings')
+        passes = row['pass_gpu_ns']
+        if not passes or any(not positive(ns) for ns in passes.values()):
+            raise ValueError('mist-far requires positive named pass timings')
+        stats = row['ray_statistics']
+        if row is off:
+            if stats or any('cloud trace' in name for name in passes):
+                raise ValueError('mist-far off arm contains cloud work')
+        else:
+            if not stats or any(not positive(stats.get(key))
+                                for key in ('rays_traced', 'mean_samples', 'p95_samples')):
+                raise ValueError(f"{row['selection']} is missing the trace work record")
+            for name in ('cloud trace', 'cloud resolve', 'cloud compose', 'cloud ground band',
+                         'cloud medium coefficients', 'atmosphere aerial perspective'):
+                if not any(name in key for key in passes):
+                    raise ValueError(f"{row['selection']} is missing the positive timing for {name}")
+        if any(not row.get('investigations', {}).get(name)
+               for name in mist_far_tripwires(row, off, earlier)):
+            raise ValueError(f"{row['selection']} is missing a tripwire investigation")
+
+
+def refuse_incomplete_mist_far(record):
+    validate_mist_far(record)
+    off, mist, deck = record['runs']
+    for rows in ([off], [off, off, off], [mist, deck],
+                 [off, dict(mist, ray_statistics=None), deck]):
+        try:
+            validate_mist_far(dict(record, runs=rows))
+        except ValueError:
+            continue
+        raise ValueError('mist-far validator accepted an incomplete record')
+    for index, row in enumerate(record['runs']):
+        for name in mist_far_tripwires(row, off, record['paired_wp14']['run']):
+            rows = record['runs'].copy()
+            plan = dict(row['investigations'])
+            del plan[name]
+            rows[index] = dict(row, investigations=plan)
+            try:
+                validate_mist_far(dict(record, runs=rows))
+            except ValueError:
+                continue
+            raise ValueError(f'mist-far validator accepted a missing investigation: {name}')
+
+
+
 def mist_far_cost():
     """Replay WP14's 1440p Metal dawn camera with far mist and the low deck."""
     baseline = json.loads(MIST_NEAR_FIXTURE.read_text())
@@ -870,46 +946,41 @@ def mist_far_cost():
         run(['target/release/thrum-cook', 'cook', 'examples/v1-game/assets/showcase', str(valley)], timeout=180)
     before = os.getloadavg()
     rows = []
-    for selection, preset in [('ground-mist-far', 'clear'), ('ground-low-deck', 'overcast')]:
+    for selection, preset in MIST_FAR_ARMS:
         environment = dict(os.environ, THRUM_SCENE='valley', THRUM_ASSET_STORE=str(valley),
                            THRUM_CLOUDS=selection, THRUM_CLOUD_PRESET=preset, THRUM_CLOUD_WIND='0',
                            THRUM_CLOUD_TIME_SCALE='1', THRUM_CAMERA_X='35', THRUM_CAMERA_Z='16',
                            THRUM_CAMERA_HEIGHT='246')
         row = json.loads(run(['target/release/examples/cloud_cost', '--device-profile', 'portable',
                               '--dawn'], env=environment, timeout=360))
-        row['selection'] = selection
-        if (row['extent'] != [2560, 1440] or row['capture'] or row['frames'] < 30
-                or row['view'] != earlier['view'] or row['view_angles'] != earlier['view_angles']
-                or 'Metal' not in row['adapter'] or not positive(row['whole_frame_gpu_ns'])):
-            raise ValueError('mist-far requires the retained WP14 dawn pose and capture-off Metal timings')
+        rows.append(dict(row, selection=selection))
+    off = rows[0]
+    for row in rows:
         stats = row['ray_statistics']
-        if not stats or any(not positive(stats[key]) for key in ('rays_traced', 'mean_samples', 'p95_samples')):
-            raise ValueError(f'{selection} is missing the trace work record')
-        passes = row['pass_gpu_ns']
-        for name in ('cloud trace', 'cloud resolve', 'cloud compose', 'cloud ground band',
-                     'cloud medium coefficients', 'atmosphere aerial perspective'):
-            if not any(name in key and positive(ns) for key, ns in passes.items()):
-                raise ValueError(f'{selection} is missing the positive timing for {name}')
-        reference = earlier['ray_statistics']
-        examples = {}
-        if row['whole_frame_gpu_ns'] > 1e9 / 120:
-            examples['whole frame'] = (
-                f"{row['whole_frame_gpu_ns']/1e6:.3f} ms against 8.333 ms. WP14's occupied arm "
-                f"took {earlier['whole_frame_gpu_ns']/1e6:.3f} ms. The paired trace counts and "
-                "named pass times show where work moved. Device load is recorded for each run."
-            )
-        for name, ns in passes.items():
-            old = earlier['pass_gpu_ns'].get(name, 0)
-            if old > 0 and ns >= 1.25 * old:
-                examples[name] = (
-                    f"Pass increased from {old/1e6:.3f} to {ns/1e6:.3f} ms. "
-                    f"Trace rays {reference['rays_traced']} to {stats['rays_traced']}, mean samples "
-                    f"{reference['mean_samples']:.2f} to {stats['mean_samples']:.2f}. "
-                    "Ground trace stores four surface stops and the low deck uses the weather columns "
-                    "in the medium pass. Timing includes shared-device scheduling."
+        if stats:
+            work = (f"{stats['rays_traced']} rays at {stats['mean_samples']:.2f} mean samples. "
+                    "Far transport clips at the last surface stop and skips empty intervals. "
+                    "The low deck occupies a shorter altitude interval than the high cloud bank.")
+        else:
+            work = "This camera has no cloud passes or trace work. Scene and atmosphere work remain."
+        investigations = {}
+        for name in sorted(mist_far_tripwires(row, off, earlier)):
+            if name == 'whole frame':
+                calculations = (
+                    f"{row['whole_frame_gpu_ns']/1e6:.3f} ms against 8.333 ms. "
+                    f"Current off {off['whole_frame_gpu_ns']/1e6:.3f} ms, "
+                    f"WP14 occupied {earlier['whole_frame_gpu_ns']/1e6:.3f} ms."
                 )
-        row['investigations'] = examples
-        rows.append(row)
+            else:
+                measured = row['pass_gpu_ns'][name] / 1e6
+                prior_off = off['pass_gpu_ns'].get(name, 0) / 1e6
+                prior_mist = earlier['pass_gpu_ns'].get(name, 0) / 1e6
+                calculations = (
+                    f"{measured:.3f} ms. Current off {prior_off:.3f} ms, "
+                    f"WP14 occupied {prior_mist:.3f} ms (0 denotes an absent pass)."
+                )
+            investigations[name] = f"{calculations} {work} Device load was shared."
+        row['investigations'] = investigations
     return {
         'commit': run(['git', 'rev-parse', 'HEAD']), 'machine': platform.platform(),
         'paired_wp14': {'commit': baseline['commit'], 'load': baseline['load'], 'run': earlier},
@@ -934,8 +1005,17 @@ def main():
     if args.command in ('cadence', 'hold') and args.scene == 'wind':
         from cloud_cadence_capture import run_wind
         return run_wind(args.command, args.output, resume=args.resume)
-    if args.scene == 'mist-far' and args.command in ('check', 'record'):
-        encoded = json.dumps(mist_far_cost(), indent=2) + '\n'
+    if args.scene == 'mist-far' and args.command in ('check', 'record', 'refuse'):
+        if args.command != 'record':
+            retained = json.loads(MIST_FAR_FIXTURE.read_text())
+            validate_mist_far(retained)
+            refuse_incomplete_mist_far(retained)
+        if args.command == 'refuse':
+            print('Refused clouds-absent, missing-arm and missing-investigation records')
+            return
+        record = mist_far_cost()
+        validate_mist_far(record)
+        encoded = json.dumps(record, indent=2) + '\n'
         if args.output:
             args.output.write_text(encoded)
         print(encoded, end='')
