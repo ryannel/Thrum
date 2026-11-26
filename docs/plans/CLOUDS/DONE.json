@@ -1116,8 +1116,8 @@
     {
       "id": "WP8",
       "name": "Under a clouded sky the land is lit by the clouds: an overcast valley is grey and soft, haze dims with it, and polished surfaces reflect the clouds",
-      "status": "ready_for_review",
-      "failed_reviews": 0,
+      "status": "in_progress",
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [],
@@ -1132,8 +1132,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP8/WP8.1.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/WP8-review.md"
         },
         {
           "id": "WP8.2",
@@ -1141,10 +1141,10 @@
           "check": "cargo test --locked --offline -p thrum-render --test haze_scale_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP8/WP8.2.log",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/CLOUDS/WP8-review.md"
         },
         {
           "id": "WP8.3",
@@ -1155,8 +1155,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP8/WP8.3.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/WP8-review.md"
         },
         {
           "id": "WP8.4",
@@ -1165,8 +1165,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP8/qualification-retake-review.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/WP8-review.md"
         },
         {
           "id": "WP8.5",
@@ -1175,18 +1175,18 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP8/qualification/broken-moving/motion.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/WP8-review.md"
         },
         {
           "id": "WP8.6",
           "statement": "As coverage sweeps from clear to overcast and back in motion, the land's light, the haze and the exposure follow with no step and no pumping.",
           "inspect": "Capture a `realtime` sequence of the sweep, a minute each way, from 40 m. Judge consecutive frames at 1x.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP8/qualification/coverage-sweep/motion.json",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/CLOUDS/WP8-review.md"
         },
         {
           "id": "WP8.7",
@@ -1195,8 +1195,8 @@
           "target": "chrome-webgpu",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP8/qualification/fixed-crops.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/WP8-review.md"
         },
         {
           "id": "WP8.8",
@@ -1204,10 +1204,10 @@
           "check": "python3 scripts/cloud_cost.py check --scene overcast-lit",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP8/overcast-cost.json",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/CLOUDS/WP8-review.md"
         },
         {
           "id": "WP8.9",
@@ -1218,8 +1218,42 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP8/WP8.9.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CLOUDS/WP8-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "name": "Exposure pumps as the shadow crosses the metering point",
+          "item": "WP8.6",
+          "repeat": false
+        },
+        {
+          "name": "Clear World light changes submitted valley pixels",
+          "item": "WP8.2",
+          "repeat": false
+        },
+        {
+          "name": "Matched cost series omits the clouds-absent arm",
+          "item": "WP8.8",
+          "repeat": false
+        },
+        {
+          "name": "Individual pass regressions lack tripwire investigations",
+          "item": "WP8.8",
+          "repeat": false
+        },
+        {
+          "name": "Sky overlay bypasses the shared coarse density for cloud edges",
+          "repeat": false
+        },
+        {
+          "name": "Sky overlay replaces hemisphere irradiance with two direction samples",
+          "repeat": false
+        },
+        {
+          "name": "Held weather retraces the overlay and refilters valid lighting products",
+          "repeat": false
         }
       ]
     },

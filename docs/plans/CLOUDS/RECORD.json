@@ -1078,7 +1078,74 @@
     },
     "WP8": {
       "definitions": "4bf1aea3f19acbbe8264a8db5a0398a6d538d9f1a98ea20f86214c89a5bcf7ae",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "c1efd84db1494edb71dfa54da65be1514282f299",
+          "review": ".orchestrate/evidence/CLOUDS/WP8-review.md",
+          "items": {
+            "WP8.1": "pass",
+            "WP8.2": "fail",
+            "WP8.3": "pass",
+            "WP8.4": "pass",
+            "WP8.5": "pass",
+            "WP8.6": "fail",
+            "WP8.7": "pass",
+            "WP8.8": "fail",
+            "WP8.9": "pass"
+          },
+          "findings": [
+            {
+              "name": "Exposure pumps as the shadow crosses the metering point",
+              "item": "WP8.6",
+              "repeat": false
+            },
+            {
+              "name": "Clear World light changes submitted valley pixels",
+              "item": "WP8.2",
+              "repeat": false
+            },
+            {
+              "name": "Matched cost series omits the clouds-absent arm",
+              "item": "WP8.8",
+              "repeat": false
+            },
+            {
+              "name": "Individual pass regressions lack tripwire investigations",
+              "item": "WP8.8",
+              "repeat": false
+            },
+            {
+              "name": "Sky overlay bypasses the shared coarse density for cloud edges",
+              "repeat": false
+            },
+            {
+              "name": "Sky overlay replaces hemisphere irradiance with two direction samples",
+              "repeat": false
+            },
+            {
+              "name": "Held weather retraces the overlay and refilters valid lighting products",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 178716,
+            "cached": 11182592,
+            "output": 20076,
+            "turns": 1
+          },
+          "at": "2026-11-26T00:51:35Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
