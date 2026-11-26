@@ -197,7 +197,7 @@ pub const VIEWS: [(&str, Camera); 17] = [
     ),
     (
         "Lake inlet across",
-        Camera::look_at([172.0, 14.5, -15.0], [184.4, 12.4, -20.5], 72.0),
+        Camera::look_at([175.7, 14.45, -19.8], [183.5, 12.4, -19.8], 72.0),
     ),
     (
         "Stream overlook",

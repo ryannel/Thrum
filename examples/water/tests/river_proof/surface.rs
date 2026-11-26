@@ -7,7 +7,7 @@ use water_scene::{channel, island::Wind, river};
 
 use crate::support::{self, Fixture};
 
-const EXTENT: [u32; 2] = [96, 12];
+const EXTENT: [u32; 2] = [95, 13];
 const STEP: Duration = Duration::from_nanos(16_666_667);
 const EPS_DEPTH: f64 = 0.000_04;
 
@@ -90,7 +90,7 @@ pub(crate) fn check(gpu: &thrum_test_support::Gpu) {
             let view = Camera::look_at(
                 [x + offset[0], (y + 0.25).max(0.12), z + offset[1]],
                 [x, y, z],
-                12.0,
+                4.0,
             );
             *camera.lock().expect("proof camera") = view;
             let matrix = support::depth::matrix(view, EXTENT);
@@ -99,7 +99,10 @@ pub(crate) fn check(gpu: &thrum_test_support::Gpu) {
             let depth = tap.read(&scene);
             let map = map.lock().expect("river map");
             let row = EXTENT[1] / 2;
-            let [left, right] = [EXTENT[0] / 2 - 2, EXTENT[0] / 2 + 1].map(|column| {
+            // An odd target samples the seam line through the centre of the
+            // middle row. Adjacent columns then resolve the two ownership
+            // sides within millimetres of the shared mesh edge.
+            let [left, right] = [EXTENT[0] / 2 - 1, EXTENT[0] / 2 + 1].map(|column| {
                 let d = depth[(row * EXTENT[0] + column) as usize];
                 assert!(
                     d > 0.0,

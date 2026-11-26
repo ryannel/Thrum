@@ -304,3 +304,42 @@ fn metal_samples_the_ridge_and_the_dry_reach_at_their_wetting_gauges() {
         &frozen[1..]
     );
 }
+
+#[test]
+fn metal_matches_the_island_depths_at_and_between_samples() {
+    let Some(gpu) = thrum_test_support::open(
+        "island river samples",
+        Some(wgpu::Backend::Metal),
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
+    ) else {
+        return;
+    };
+    let products = thrum_test_support::Scratch::new("island-river-samples");
+    let forcing = water_scene::channel::forcing(water_scene::island::Wind::Trade);
+    let (mut map, files) =
+        water_scene::river::map(&forcing, Some(products.path())).expect("prepared island");
+    let stream = files[0].gauges();
+    let river = files[1].gauges();
+    let points = [
+        [180.0, -85.0],
+        [180.5, -65.0],
+        [180.0, -42.5],
+        [180.0, -25.0],
+        [222.5, 5.0],
+        [257.5, 5.0],
+        [289.5, 5.5],
+        [317.5, 5.0],
+    ];
+    for (spring, lake) in [
+        (stream[0], river[0]),
+        (stream[0].midpoint(stream[1]), river[1].midpoint(river[2])),
+        (stream[1], river[2]),
+        (stream[2], river[4]),
+    ] {
+        map.set_gauge(0, spring).expect("spring stage");
+        map.set_stage(1, lake - 12.0).expect("lake stage");
+        compare(&gpu, &map, &points);
+        println!("Metal river and stream depths matched at lake {lake:.3} m, spring {spring:.6} m");
+    }
+}
