@@ -168,3 +168,51 @@
 - 2026-11-26 Planner's choices in this revision, each for the owner to overturn, are in the plan's
   assumptions. Left open for builders: how a game of fewer than four players keeps `SESSION`'s other slots
   closed, and the width of a button's count.
+- 2026-11-26 Second design review of the rewrite asked for changes, with 10 Must Fix findings
+  ([the review](../../../.orchestrate/evidence/GAME-SDK/design-review.md)). It was the second in a row, so no
+  review reads these fixes before the owner does; each was checked against its finding. `SESSION` is still
+  used as built, and no other module's file changed.
+- 2026-11-26 Finding 1 (a restore and the host's frame): the pieces of a save are budgeted against the host's
+  whole 920-byte frame, after that tick's commands and answers, about 850 bytes a tick, so 64 KiB takes about
+  80 ticks. A failed restore is undone and the tick stepped again inside the SDK's one world step, so
+  `SESSION` sees no error (mechanisms 7 and 12, the tick walk). WP5's carried proof restores a save near the
+  limit while the host sends commands.
+- 2026-11-26 Finding 2 (the clock a control function reads): the predicted controller's state carries the
+  ticks the scene and the phase were entered at, beside the game's tick, so `in_scene()`, `in_phase()` and
+  `Phase::time()` are run ahead from a baseline at any tick. Equality with the host is promised for a step
+  whose frame the host admitted and whose dependencies had not changed (mechanisms 6 and 15, WP5's proof).
+- 2026-11-26 Finding 3 (one effect, seen once): an emission is named by control line, tick, event type and
+  ordinal. The SDK keeps how many of each it has shown for each recent tick, so a confirmed tick that sends
+  one more than prediction did shows only that one. Predicted emissions leave the step through a note in the
+  `Rules` value the SDK gives the controller, and confirmed ones through the ring (mechanism 10).
+- 2026-11-26 Finding 4 (accesses inside one parameter): the conflict is defined on accesses, between two
+  parameters and inside one. A component named twice in one `Query`, or twice by a control function, with a
+  writer, is refused at startup. A control function's query is tested against the character its player has,
+  after `possess` too (mechanisms 3, 6 and 16). WP1.4 and WP2.4.
+- 2026-11-26 Finding 5 (the seat limit): the SDK keeps it over `SESSION`'s four slots. It hands `SESSION` no
+  link while people hold every seat and none is away, and a newcomer admitted while an away player's seat is
+  kept gets no seat, is told full and leaves. `TestGame::join`, `test_match` and `TestMatch::join` return
+  results, as example F writes them (mechanisms 6, 15 and 17). WP2.1, and WP5's proof. The open question on
+  closing `SESSION`'s other slots is settled and removed.
+- 2026-11-26 Finding 6 (a boss nobody defined): every `prefabs!` block registers itself with the built
+  program at link time, so the SDK knows every declared name before play with no line of the game rooting a
+  block. No authored reference is first checked at use (mechanism 5, the mistakes table, risk 10). WP11.3
+  holds the block the description never names, and WP2.5 to WP2.7 carry a witness on the three targets.
+- 2026-11-26 Finding 7 (two floors in one record): each tile map in cooked content has an identity of its
+  own, its record and the path of fields to it, which the recipe holds and the built collision is kept under
+  (mechanisms 8 and 12). Rule-added shapes stay in the recipe. Carried into WP12.
+- 2026-11-26 Finding 8 (a phase asked for by a leaving scene): a held phase request stands only if its scene
+  is running once the landing ends. From an exit function of a scene being left it returns `false`, holds
+  nothing and does not reserve the next tick. Scene requests are held as before (mechanism 4). WP1.2 (5).
+- 2026-11-26 Finding 9 (a tap during a pause): the presser's machine keeps pause and play apart. It counts no
+  press while its own screen shows the pause, and the world reads no input in a paused tick. A press made in
+  play that reaches a paused match is read when the pause ends (mechanisms 4 and 6). Carried into WP3 and WP5.
+- 2026-11-26 Finding 10 (exact reparenting): `keep_world` promises a bound, one part in 2^17, and exactness
+  only where every number composes exactly. It is refused under a parent scaled to zero or outside 1/10,000
+  to 10,000, for shear, and past the bound (mechanism 5). WP11.2 uses whole-number children and proves the
+  bound at x = 1/10, WP11.3 the refusals, WP11.4 asks whether the bound is tested on every call.
+- 2026-11-26 The review's suggestions, both taken: the sentence that says a press is never lost carries the
+  count's bound; and the query reference gives overlaps distance order and sweeps contact order.
+- 2026-11-26 Planner's choices in this revision, each for the owner to overturn, are three new assumptions in
+  the plan: what counts as a press during a pause, how a small match is kept to its seats, and the bound on
+  `keep_world`.
