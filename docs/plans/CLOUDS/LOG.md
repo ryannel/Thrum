@@ -992,3 +992,15 @@ and independent comparison found its accepted fixed lighting, shade, overlap and
 [Growth](../../../.orchestrate/evidence/CLOUDS/WP10/qualification-growth.md) ·
 [Fair sky](../../../.orchestrate/evidence/CLOUDS/WP10/qualification-fair.md) ·
 [Cost](../../../.orchestrate/evidence/CLOUDS/WP10/qualification-cost.md)
+
+With risk 14 in force, the retained light was checked on rebuilt Metal and Chrome captures. WP10.4 passed
+the current checklist. Eighteen Chrome WebGPU submissions reported both R8 stacks resident and agreed with
+Metal in the shape, mixed sky, full-share and shade views.
+[Chrome proof](../../../.orchestrate/evidence/CLOUDS/WP10/qualification-chrome-parked.md)
+
+WP10.1 has two noon findings outside risk 14's named shapes. At both heights, the upper-left face of
+congestus-forked reads as even grey despite the visible crease between the forks. The head and adjoining
+middle lobe of fair-head-tail merge into one grey face. The 10° Sun separates both shapes' lobes.
+The plan holds the retained light, so the findings go back to the lead before the gallery can pass.
+[Forked crops and receipts](../../../.orchestrate/evidence/CLOUDS/WP10/qualification-forked.md) ·
+[Head-tail crops and receipts](../../../.orchestrate/evidence/CLOUDS/WP10/qualification-head-tail.md)
