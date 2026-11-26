@@ -225,31 +225,14 @@ async fn measure(
         .into_iter()
         .map(|(name, values)| (name, mean(&values)))
         .collect();
-    let mut resources = host.cloud_resource_bytes();
     let volume = host.view_volume_storage();
-    if let Some(volume) = &volume {
-        // The provider writes a texture owned by the view volume. Include it
-        // once, with the other allocations reported by its owner.
-        if volume
-            .resources
-            .iter()
-            .any(|&(name, _)| name == "view volume medium coefficients")
-        {
-            resources.retain(|(name, _)| name != "cloud medium coefficient texture");
-        }
-        resources.extend(
-            volume
-                .resources
-                .iter()
-                .map(|&(name, bytes)| (name.to_owned(), bytes)),
-        );
-    }
     println!(
         "{}",
         serde_json::json!({
             "adapter":format!("{:?}",adapter.get_info()), "extent":[2560,1440], "capture":false,
             "frames":whole.len(), "whole_frame_gpu_ns":mean(&whole), "pass_gpu_ns":pass_means,
-            "maximum_sun_refill_ns":refill, "resources":resources,
+            "maximum_sun_refill_ns":refill,
+            "resources":resources(host.cloud_resource_bytes(), volume.as_ref()),
             "view_volume_grid":volume.map(|volume| volume.grid),
             "storage":host.storage_report(), "view":host.scene_camera().map(v1_game::SceneCamera::eye),
             "view_angles":view_angles,
@@ -260,6 +243,30 @@ async fn measure(
         })
     );
     Ok(())
+}
+
+fn resources(
+    mut cloud: Vec<(String, u64)>,
+    volume: Option<&thrum_render::atmosphere::ViewVolumeStorage>,
+) -> Vec<(String, u64)> {
+    if let Some(volume) = volume {
+        // The provider writes a texture owned by the view volume. Include it
+        // once, with the other allocations reported by its owner.
+        if volume
+            .resources
+            .iter()
+            .any(|&(name, _)| name == "view volume medium coefficients")
+        {
+            cloud.retain(|(name, _)| name != "cloud medium coefficient texture");
+        }
+        cloud.extend(
+            volume
+                .resources
+                .iter()
+                .map(|&(name, bytes)| (name.to_owned(), bytes)),
+        );
+    }
+    cloud
 }
 
 fn ray_statistics(
