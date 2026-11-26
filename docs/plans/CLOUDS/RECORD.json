@@ -1263,7 +1263,7 @@
         {
           "verdict": "fail",
           "commit": "6c5dd0bcf751a691d2ee92f559c67b5937c128ee",
-          "review": ".orchestrate/evidence/CLOUDS/WP9-review.md",
+          "review": ".orchestrate/evidence/CLOUDS/WP9-review-1.md",
           "items": {
             "WP9.1": "pass",
             "WP9.2": "pass",
@@ -1297,6 +1297,55 @@
             "turns": 1
           },
           "at": "2026-11-26T04:54:47Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "55d7f4b3b3fbd5e0c8a3c59fbc6a51a53e4f1735",
+          "review": ".orchestrate/evidence/CLOUDS/WP9-review.md",
+          "items": {
+            "WP9.1": "pass",
+            "WP9.2": "pass",
+            "WP9.3": "fail",
+            "WP9.4": "fail",
+            "WP9.5": "fail",
+            "WP9.6": "pass",
+            "WP9.7": "pass",
+            "WP9.8": "pass"
+          },
+          "findings": [
+            {
+              "name": "Solar-time sweep washes the daylight sky to white",
+              "item": "WP9.3",
+              "repeat": false
+            },
+            {
+              "name": "Disabling the field overlay leaves its history in the TAAU image",
+              "item": "WP9.4",
+              "repeat": false
+            },
+            {
+              "name": "Distant clouds flicker when the stopped camera returns to stride 4",
+              "item": "WP9.5",
+              "different": "The previous defect was a stepped incoming contour during rotation at stride 2. The new defect begins after rotation stops, as the trace returns from full density to stride 4.",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 170441,
+            "cached": 11924864,
+            "output": 24182,
+            "turns": 1
+          },
+          "at": "2026-11-26T05:41:47Z"
         }
       ],
       "authorised": {

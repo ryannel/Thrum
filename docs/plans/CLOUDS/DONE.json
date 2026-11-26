@@ -1226,9 +1226,9 @@
     {
       "id": "WP9",
       "name": "A visitor changes coverage, cloud type, wind and time of day with the controls, and the sky holds up in motion, on the Mac and in Chrome",
-      "status": "ready_for_review",
-      "failed_reviews": 1,
-      "failed_reviews_with_repeat": 0,
+      "status": "in_progress",
+      "failed_reviews": 2,
+      "failed_reviews_with_repeat": 1,
       "diagnoses": 0,
       "depends_on": [
         "APPLE-PRESENTATION:WP3",
@@ -1262,9 +1262,9 @@
           "statement": "Each control, moved while the scene runs, changes the sky with no pop, rebuild or restart.",
           "inspect": "Capture `realtime` sequences on the Mac, one for each control swept across its range in about 20 seconds. Judge consecutive frames at 1x.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP9/filtered/control-sweeps.json",
-          "verdict": "pass",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
           "review": ".orchestrate/evidence/CLOUDS/WP9-review.md"
         },
         {
@@ -1272,9 +1272,9 @@
           "statement": "The overlay shows the weather map's coverage, type, top and age, the placed slots, the Sun-path optical depth and the layer's refresh age, on the Mac and in Chrome. Turning it off restores the sky exactly.",
           "inspect": "Capture `fixed` stills of each overlay under the fair preset on both targets. Judge that each shows the field it names, where the sky and the ground show its effect.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP9/filtered/overlay-restoration.json",
-          "verdict": "pass",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
           "review": ".orchestrate/evidence/CLOUDS/WP9-review.md"
         },
         {
@@ -1282,8 +1282,8 @@
           "statement": "Under TAAU on the Mac's portable recipe the sky is stable in motion: no shimmer in far clouds, no crawl on cloud edges, no ghost behind a cloud against sky or terrain. A cut and a profile change each reset in one frame.",
           "inspect": "Capture `realtime` sequences with temporal sampling selected: a fast pan under the broken preset at a 10\u00b0 Sun, a 40 m walk, a 60x time-lapse, a preset change, a cut and a profile change. Judge consecutive frames at 1x, whole and in native-size crops of far clouds, of a near cloud's edge and of a ridge against cloud.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP9/sparse-refresh/README.md",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/CLOUDS/WP9-review.md"
         },
@@ -1323,8 +1323,19 @@
       ],
       "findings": [
         {
-          "name": "Sparse cloud refresh makes edges crawl during a fast pan",
+          "name": "Solar-time sweep washes the daylight sky to white",
+          "item": "WP9.3",
+          "repeat": false
+        },
+        {
+          "name": "Disabling the field overlay leaves its history in the TAAU image",
+          "item": "WP9.4",
+          "repeat": false
+        },
+        {
+          "name": "Distant clouds flicker when the stopped camera returns to stride 4",
           "item": "WP9.5",
+          "different": "The previous defect was a stepped incoming contour during rotation at stride 2. The new defect begins after rotation stops, as the trace returns from full density to stride 4.",
           "repeat": false
         }
       ]
