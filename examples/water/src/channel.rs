@@ -43,10 +43,11 @@ pub fn forcing(wind: Wind) -> Forcing {
 fn bed_centre_level(x: f64) -> f64 {
     // Ease the grade before the tidal sill, where a small change in level
     // moves the backwater a long way along the chart.
-    let start = 11.75 + (0.78 - 11.75) * ((x - SOURCE) / (329.0 - SOURCE)).clamp(0.0, 1.0);
-    let approach = (-0.44 - 0.78) * ((x - 329.0) / 19.0).clamp(0.0, 1.0);
+    let start = 11.75 + (5.30 - 11.75) * ((x - SOURCE) / 70.0).clamp(0.0, 1.0);
+    let lower_reach = (1.0 - 5.30) * ((x - 280.0) / 30.0).clamp(0.0, 1.0);
+    let approach = (-0.44 - 1.0) * ((x - 310.0) / 38.0).clamp(0.0, 1.0);
     let sill = (-0.80 + 0.44) * ((x - 348.0) / 2.0).clamp(0.0, 1.0);
-    start + approach + sill
+    start + lower_reach + approach + sill
 }
 
 fn outlet(bed: &Bed, running: bool) -> Body {
