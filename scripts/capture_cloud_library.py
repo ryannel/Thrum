@@ -25,7 +25,7 @@ def views(group):
             for sun in ('noon', 'low'):
                 for height in EYES:
                     side = '-side-lit' if sun == 'low' else ''
-                    yaw = 20 if side else -35
+                    yaw = 20 if side else 70
                     yield f'shape-{index:02}-{sun}-{height:02}', f'library-{index}{side}', sun, height, 1, 0, yaw, 18
     if group in ('mix', 'chrome'):
         for sun in (SOLAR if group == 'mix' else ('noon',)):
@@ -33,7 +33,7 @@ def views(group):
                 yield f'mixed-{sun}-{height:02}', 'library-mixed', sun, height, 4, 10, -39, 13
         for sun in (('noon', 'low') if group == 'mix' else ('noon',)):
             for height in EYES:
-                yield f'full-{sun}-{height:02}', 'library-only', sun, height, 60, 0, -39, 10
+                yield f'full-{sun}-{height:02}', 'library-only', sun, height, 60, 0, 55, 10
         yield 'shade-mixed', 'library-mixed', 'noon', SHADE_EYE, 4, 10, -75, -27
         yield 'shade-procedural', 'library-procedural', 'noon', SHADE_EYE, 4, 10, -75, -27
     if group == 'cost-view':
