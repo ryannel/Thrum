@@ -43,5 +43,8 @@ fn fill_ground_band(@builtin(global_invocation_id) id: vec3<u32>) {
         if visibility == 0.0 && end >= fog_end { break; }
         distance = end;
     }
-    textureStore(band_out, vec3<i32>(id), vec4(min(65000.0, tau), terrain, visibility, 0.0));
+    // The combined depth serves ground receivers. The deck adds just the
+    // fog depth to its finer, world-height Sun path.
+    textureStore(band_out, vec3<i32>(id),
+        vec4(min(65000.0, tau), terrain, visibility, min(65000.0, max(0.0, tau - cloud))));
 }

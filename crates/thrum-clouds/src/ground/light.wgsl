@@ -3,7 +3,8 @@ struct GroundOptics {
     phase: array<f32, GROUND_PHASE_ENTRIES>,
 }
 
-fn ground_sun_depths(point: vec3<f32>, surface: f32) -> vec3<f32> {
+// The last channel holds the depth contributed by the ground rows alone.
+fn ground_sun_depths(point: vec3<f32>, surface: f32) -> vec4<f32> {
     let size = vec3<f32>(textureDimensions(ground_band_light));
     let region = ground_light_window.region;
     let uv = ((point.xz - region.xy) / (region.zw - region.xy) * (size.xy - 1.0) + 0.5) / size.xy;
@@ -13,10 +14,11 @@ fn ground_sun_depths(point: vec3<f32>, surface: f32) -> vec3<f32> {
     let layer = (fraction * (size.z - 1.0) + 0.5) / size.z;
     let band = textureSampleLevel(ground_band_light, noise_sampler, vec3(uv, layer), 0.0);
     let bottom = textureSampleLevel(ground_band_light, noise_sampler, vec3(uv, 0.5 / size.z), 0.0).r;
-    if w >= 1.0 && fraction < 1.0 { return vec3(band.r, max(band.r, bottom), band.b); }
+    let depths = vec4(band.r, max(band.r, bottom), band.b, band.a);
+    if w >= 1.0 && fraction < 1.0 { return depths; }
     let cloud = cloud_window_depths(point, point.y, ground_frame.upper_heights).xy;
     let share = select(w, 0.0, fraction >= 1.0);
-    return mix(vec3(cloud, 1.0), vec3(band.r, max(band.r, bottom), band.b), share);
+    return mix(vec4(cloud, 1.0, 0.0), depths, share);
 }
 
 fn ground_light(point: vec3<f32>, ray: vec3<f32>, true_sun: vec3<f32>,
@@ -32,7 +34,7 @@ fn ground_light(point: vec3<f32>, ray: vec3<f32>, true_sun: vec3<f32>,
         let local = ground_row(point, surface, ground_rows[row], coarse);
         if local.x == 0.0 { continue; }
         if result.extinction == 0.0 {
-            depths = ground_sun_depths(point, surface.x);
+            depths = ground_sun_depths(point, surface.x).xyz;
             result.surface_visibility = depths.z;
         }
         let droplet = ground_phase[row].droplet;
