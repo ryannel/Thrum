@@ -593,7 +593,32 @@
     },
     "WP6": {
       "definitions": "c5af83480bc957dfea975ba0b704b427be063a85e79636f05ac99fbac4d84d96",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "pass",
+          "commit": "2e7dff160b72461127ad649880608700ddbb8a16",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/WP6-review.md",
+          "items": {
+            "WP6.1": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 92636,
+            "cached": 1742976,
+            "output": 7524,
+            "turns": 1
+          },
+          "at": "2026-11-26T21:36:06Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Unblock SHOWCASE WP7 (Blocked, Needs Dependency; handoff .orchestrate/evidence/SHOWCASE/WP7-handoff.md in the showcase w",
@@ -625,6 +650,13 @@
           "output": 30800,
           "turns": 1
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "2e7dff160b72461127ad649880608700ddbb8a16",
+        "review": ".orchestrate/evidence/CONTENT-LOOP/WP6-review.md",
+        "checked": "451e612211c3322dc57b20700cb1f8f17de52529",
+        "at": "2026-11-26T21:36:06Z"
       }
     }
   },

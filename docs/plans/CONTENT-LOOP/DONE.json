@@ -495,7 +495,7 @@
     {
       "id": "WP6",
       "name": "A running game can say exactly which cooked content it is drawing, so two stores at the same generation cannot be mistaken for each other",
-      "status": "ready_for_review",
+      "status": "done",
       "quality_bar": "As exact as a shipped game's benchmark report, which names the build and content that actually ran: the identity of what was drawn, never of what was requested, fetched or pinned.",
       "items": [
         {
@@ -507,8 +507,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CONTENT-LOOP/WP6/README.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/CONTENT-LOOP/WP6-review.md"
         }
       ],
       "failed_reviews": 0,
