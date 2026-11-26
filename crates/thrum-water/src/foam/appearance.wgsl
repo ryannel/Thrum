@@ -58,6 +58,14 @@ fn ranked_cover(stocks: vec4<f32>, point: vec2<f32>, footprint: f32) -> f32 {
     return mix(near, filtered, smoothstep(0.16, 1.0, footprint)) * smoothstep(0.008, 0.028, cover);
 }
 
+// Renew a reading's pattern only at its own wrap, when its weight is
+// zero. A steady obstruction then keeps shedding different foam shapes.
+fn foam_renewal(cycle: u32, salt: f32) -> vec2<f32> {
+    let seed = f32(cycle & 255u);
+    return 2.0 * vec2(noise_hash(vec2(seed, salt)),
+        noise_hash(vec2(seed, salt + 13.0))) - 1.0;
+}
+
 fn gaussian_lower_tail(x: f32) -> f32 {
     return 0.5 * (1.0 + sign(x) * sqrt(1.0 - exp(-0.63662 * x * x)));
 }
@@ -138,8 +146,13 @@ fn foam_surface(point: vec3<f32>, row: SurfaceRow, footprint: f32, jacobian: f32
     var lace: f32;
     if any(row.current != vec2(0.0)) {
         let reading = carried_points(point.xz, row.current, water.carriage.xy);
-        lace = mix(ranked_cover(stocks, reading.second, footprint),
-            ranked_cover(stocks, reading.first, footprint), reading.weight);
+        let cycle = u32(water.carriage.z);
+        let other = cycle + u32(water.carriage.x >= 0.5);
+        let renewal = 1.4 * smoothstep(0.0, 0.8, length(row.current));
+        let a = reading.first + renewal * foam_renewal(cycle, 11.0);
+        let b = reading.second + renewal * foam_renewal(other, 32.0);
+        lace = mix(ranked_cover(stocks, b, footprint),
+            ranked_cover(stocks, a, footprint), reading.weight);
     } else {
         lace = ranked_cover(stocks, point.xz, footprint);
     }

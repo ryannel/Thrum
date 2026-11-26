@@ -142,11 +142,17 @@ pub(super) fn jacobian_variance(spectrum: &Spectrum, choppiness: f64) -> [f32; 4
 // The display clock is reduced in f64 before it is sent to the shader.
 pub(super) fn carriage(seconds: f64, period: Option<std::time::Duration>) -> [f32; 4] {
     let period = period.unwrap_or(std::time::Duration::from_secs(4));
-    let phase = (seconds / period.as_secs_f64()).rem_euclid(1.0);
+    let elapsed_periods = seconds / period.as_secs_f64();
+    let phase = elapsed_periods.rem_euclid(1.0);
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "the foam seed is an exact small integer"
+    )]
+    let cycle = elapsed_periods.floor().rem_euclid(256.0) as f32;
     #[expect(
         clippy::cast_possible_truncation,
         reason = "unit interval shader phase"
     )]
     let phase = phase as f32;
-    [phase, period.as_secs_f32(), 0.0, 0.0]
+    [phase, period.as_secs_f32(), cycle, 0.0]
 }
