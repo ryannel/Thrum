@@ -11,6 +11,8 @@ use crate::{GameError, InlineWorld};
 pub(crate) struct InlineLifecycle {
     policy: WorldLifecyclePolicy,
     queued_ticks: u32,
+    #[cfg(target_os = "ios")]
+    started: bool,
 }
 
 impl InlineLifecycle {
@@ -39,16 +41,22 @@ impl InlineLifecycle {
     }
 
     #[cfg(target_os = "ios")]
-    pub(crate) fn restart_after_gap(
+    pub(crate) fn prepare_frame(
         &mut self,
         world: &mut (impl InlineWorld + ?Sized),
         now: Duration,
+        foreground_changed: bool,
     ) -> Result<(), GameError> {
+        if self.started && !foreground_changed {
+            return Ok(());
+        }
         // A dropped frame can have advanced the queue without returning a
-        // report. Stop admission now and use the next report to certify drain.
+        // report. Exclude preparation and foreground gaps, and use the next
+        // real advance to certify the drain.
         self.queued_ticks = self.queued_ticks.max(1);
         self.set_paused(world, true, now)?;
         self.policy.request(false);
+        self.started = true;
         Ok(())
     }
 

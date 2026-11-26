@@ -755,15 +755,16 @@ impl<G: MobileGame> Owner<G> {
         }
         let lead = display_target_lead(request.target_media_seconds, media_time_now());
         let resumes = self.signals.resumes.load(Ordering::Acquire);
-        if resumes != self.resumes {
+        let foreground_changed = resumes != self.resumes;
+        if foreground_changed {
             G::resume_inline(gpu.host.world_mut(), now)
                 .map_err(|error| FrameError::World(error.to_string()))?;
-            if let Some(world) = G::inline_world(gpu.host.world_mut()) {
-                gpu.inline_lifecycle
-                    .restart_after_gap(world, now)
-                    .map_err(|error| FrameError::World(error.to_string()))?;
-            }
             self.resumes = resumes;
+        }
+        if let Some(world) = G::inline_world(gpu.host.world_mut()) {
+            gpu.inline_lifecycle
+                .prepare_frame(world, now, foreground_changed)
+                .map_err(|error| FrameError::World(error.to_string()))?;
         }
         #[cfg(feature = "interface")]
         if let Some(output) = request.platform.interface {
