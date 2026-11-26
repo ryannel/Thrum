@@ -1262,8 +1262,8 @@
           "statement": "Each control, moved while the scene runs, changes the sky with no pop, rebuild or restart.",
           "inspect": "Capture `realtime` sequences on the Mac, one for each control swept across its range in about 20 seconds. Judge consecutive frames at 1x.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP9/dusk/README.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/CLOUDS/WP9-review.md"
         },

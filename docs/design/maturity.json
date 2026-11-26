@@ -3139,11 +3139,11 @@
         "record": "../../.orchestrate/evidence/CLOUDS/WP8-rework/README.md"
       },
       "weather_controls_evidence": {
-        "implementation": "CLOUDS WP9 adds shared typed weather controls, preset files, a field overlay and discoverable runtime knobs for the sky without Ground. Weather edits enter the authoritative tick. The field overlay reads the prepared GPU products. The cloud composite filters sky transport at render pixel centres.",
-        "correctness": "Mac and Chrome accepted all four presets and the parameter file. The Metal test exercised all eleven available sky knobs with unchanged weather columns and no GPU creations. The ground band and medium coefficients await WP14 and their cadence knobs are assigned to WP16.7.",
-        "visuals": "Fixed captures show the fair-preset fields on both targets. Chrome and the same-endpoint Metal probe restored the ordinary sky byte for byte. The six portable TAAU motion takes on each target include one-submission cloud history resets at cuts and profile switches.",
+        "implementation": "CLOUDS WP9 adds shared typed weather controls, preset files, a field overlay and discoverable runtime knobs for the sky without Ground. Weather edits enter the authoritative tick. The field overlay reads the prepared GPU products. The cloud composite filters sky transport at render pixel centres. Rapid solar edits refresh the whole World light cube in one submission.",
+        "correctness": "Mac and Chrome accepted all four presets and the parameter file. The Metal test exercised all eleven available sky knobs with unchanged weather columns and no GPU creations. A CPU client replaced Sky and Shapes profiles before preparation and reproduced the descriptors of a fresh contribution. The ground band and medium coefficients await WP14 and their cadence knobs are assigned to WP16.7.",
+        "visuals": "Fixed captures show the fair-preset fields on both targets. Chrome and the same-endpoint Metal probe restored the ordinary sky byte for byte. The six portable TAAU motion takes on each target include one-submission cloud history resets at cuts and profile switches. Metal solar-time retakes show the valley foreground darkening continuously through dusk in fair and broken weather.",
         "device": "The latest loaded 1440p portable Metal replay measured 3.99 to 6.76 ms with clouds absent and 41.33 to 580.81 ms across the eight library and World light arms. Earlier views and tripwire investigations are retained alongside.",
-        "record": "../../.orchestrate/evidence/CLOUDS/WP9/README.md"
+        "record": "../../.orchestrate/evidence/CLOUDS/WP9/dusk/README.md"
       },
       "name": "Cloud fields and projections",
       "scope": "selectable",

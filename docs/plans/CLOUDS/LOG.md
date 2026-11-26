@@ -918,3 +918,12 @@ the ordinary sky byte for byte, and the held-host Metal check also passed.
 In settled views, sparse resolve carries a texel through its refresh cycle.
 Metal captures at 960×540 and 1920×1080 preserved the detached cloud at
 the return to stride 4. [Target evidence](../../../.orchestrate/evidence/CLOUDS/WP9/review-fixes/README.md)
+
+Rapid solar edits now refresh the whole World light cube in one
+submission. The cube carries absolute in-scatter, so mixing strips lit
+at different times made the foreground flash at dusk. The fair and
+broken portable Metal sweeps retain the dusk transition across
+consecutive submissions. Valid Sky and Shapes profiles can also be
+replaced during setup. Their public descriptors match those of a fresh
+contribution using the replacement profiles.
+[Solar sweeps and setup proof](../../../.orchestrate/evidence/CLOUDS/WP9/dusk/README.md)
