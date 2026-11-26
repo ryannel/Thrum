@@ -10,6 +10,7 @@ from apple_governor_proof import awake_display
 from t2_load import LoadRecord
 
 MAC_ROUTE_TIMEOUT = 90
+CHROME_HITCH_MS = 25
 
 
 def wait_for_first_present(process, output, launched):
@@ -230,6 +231,20 @@ def mac_record(output, first, last, day, startup, load):
             'completed_frames': len(sampled), 'frame_timing': 'frames.jsonl'}
 
 
+def chrome_position(tick, first, last, day):
+    tick = min(last, max(first, tick))
+    position = {'world_tick': tick, 'route_tick': tick - first}
+    if day:
+        position['solar_hours'] = 24 * (tick - first) / (last - first)
+    return position
+
+
+def chrome_neighboring_samples(samples, first_tick, last_tick):
+    earlier = bisect_left(samples, first_tick, key=lambda row: row['tick'])
+    later = bisect_right(samples, last_tick, key=lambda row: row['tick'])
+    return samples[max(0, earlier - 1):later + 1]
+
+
 def chrome_callback_misses(callbacks, samples, first, last, day):
     period_ms = 1000 / 60
     misses = []
@@ -239,14 +254,8 @@ def chrome_callback_misses(callbacks, samples, first, last, day):
         interval = current['raf_ms'] - previous['raf_ms']
         if interval <= 0:
             raise ValueError('Chrome animation timestamps are not increasing')
-        if interval < 25:
+        if interval < CHROME_HITCH_MS:
             continue
-        tick = min(last, current['tick'])
-        position = {'world_tick': tick, 'route_tick': tick - first}
-        if day:
-            position['solar_hours'] = 24 * (tick - first) / (last - first)
-        earlier = bisect_left(samples, previous['tick'], key=lambda row: row['tick'])
-        later = bisect_right(samples, current['tick'], key=lambda row: row['tick'])
         start = previous['requested_ms']
         expected = start + period_ms
         wake = current['requested_ms']
@@ -264,16 +273,61 @@ def chrome_callback_misses(callbacks, samples, first, last, day):
         # At most one normal callback period may pass after the page releases the thread.
         # A longer residual remains unresolved even when the trace locates part of the delay.
         accounted_for = blocking_work and remaining_wait <= period_ms
-        misses.append({'position': position, 'duration_ms': interval,
+        misses.append({'kind': 'animation callback interval',
+                       'position': chrome_position(current['tick'], first, last, day), 'duration_ms': interval,
                        'preceding_callback': previous, 'following_callback': current,
                        'preceding_driver_ms': driver_end - start,
                        'page_work_past_callback_budget': blocking_work,
                        'remaining_wait_ms': remaining_wait,
-                       'available_frame_samples': samples[max(0, earlier - 1):later + 1],
+                       'available_frame_samples': chrome_neighboring_samples(samples, previous['tick'], current['tick']),
                        'investigation': ('observed page work overran the callback budget'
                                          if accounted_for else 'unresolved under load'),
                        'evidence_read': 'animation-frame timestamps, page driver and post-frame work, available GPU pass samples'})
     return misses
+
+
+def chrome_present_gaps(callbacks, samples, first, last, day, presented_at_start):
+    """Bracket each game present with its frame call on the page clock."""
+    gaps = []
+    previous_index = None
+    count = presented_at_start
+    for index, current in enumerate(callbacks):
+        presented = current['presented']
+        if presented == count:
+            continue
+        if presented != count + 1:
+            raise ValueError('Chrome present counter must advance by one per presenting frame call')
+        count = presented
+        prior_index, previous_index = previous_index, index
+        if prior_index is None:
+            continue
+        previous = callbacks[prior_index]
+        if current['tick'] < first or previous['tick'] > last:
+            continue
+        duration = current['raf_ms'] - previous['raf_ms']
+        lower = current['requested_ms'] - previous['returned_ms']
+        upper = current['returned_ms'] - previous['requested_ms']
+        if not 0 <= lower <= upper or duration <= 0:
+            raise ValueError('Chrome presenting callbacks must have ordered page-clock timestamps')
+        if max(duration, upper) < CHROME_HITCH_MS:
+            continue
+        gaps.append({
+            'kind': 'game present gap',
+            'position': chrome_position(previous['tick'], first, last, day),
+            'end_position': chrome_position(current['tick'], first, last, day),
+            'duration_ms': duration,
+            'duration_scope': 'animation timestamps of callbacks that called game present',
+            'present_call_gap_ms': {'lower': lower, 'upper': upper},
+            'preceding_callback': previous, 'following_callback': current,
+            'callbacks_without_present': callbacks[prior_index + 1:index],
+            'available_frame_samples': chrome_neighboring_samples(samples, previous['tick'], current['tick']),
+            'investigation': 'unresolved under load',
+            'evidence_read': 'game present counter, page frame-call bounds, intervening callbacks and available GPU pass samples',
+        })
+    if (previous_index is None or callbacks[previous_index]['tick'] <= last
+            or not any(row['tick'] < first and row['presented'] > presented_at_start for row in callbacks)):
+        raise ValueError('Chrome game presents do not bracket the measurement window')
+    return gaps
 
 
 def chrome_record(output, wasm_hash, day):
@@ -295,11 +349,15 @@ def chrome_record(output, wasm_hash, day):
         raise ValueError('Chrome had no completed frames with timestamp queries requested')
     measured = [row for row in callbacks if first <= row['tick'] <= last]
     misses = chrome_callback_misses(callbacks, presented, first, last, day)
+    misses.extend(chrome_present_gaps(callbacks, presented, first, last, day, runtime['presented_at_start']))
+    misses.sort(key=lambda miss: miss['preceding_callback']['raf_ms'])
     content = runtime.get('exit_cooked', {})
     return {'selections': runtime['exit_selections'], 'cooked_root': content.get('cooked_root'),
             'cooked_generation': content.get('drawn'), 'target': 'chrome-webgpu',
             'phase': 'day cycle' if day else 'flythrough', 'capture': 'off',
             'startup_proxy': runtime['startup_proxy'], 'misses': misses,
+            'present_gap_scope': ('page-side queue.present calls; '
+                                  'a gap is listed if the callback interval or the upper bound reaches 25 ms'),
             'first_requested_tick': first, 'last_requested_tick': last,
             'first_measured_tick': measured[0]['tick'], 'last_measured_tick': measured[-1]['tick'],
             'completed_frames': len(samples),

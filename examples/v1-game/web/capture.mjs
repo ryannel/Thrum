@@ -285,6 +285,7 @@ async function runCapture() {
   let ordinal = 0;
   let acted = false;
   let released = false;
+  if (exitRecord) record.presented_at_start = Number(game.presented());
   while (atmosphere === 'checkpoint' ? ordinal < 1 : atmosphere === 'cost' ? ordinal < 96 :
     atmosphereMotion ? performance.now() - start < duration :
     witness !== 'off' ? ordinal < 270 : mode === 'fixed' ? ordinal < route.keys.at(-1).tick + 121 :
