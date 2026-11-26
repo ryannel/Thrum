@@ -140,8 +140,11 @@ thrum_app::export_page_methods!(BrowserGame);
 impl BrowserGame {
     /// Time the same layout and paint workloads as the native cost command.
     /// # Errors
-    /// Returns an unavailable browser clock or a refused measured tree.
+    /// Returns an inactive status scene, an unavailable clock or a refused measured tree.
     pub fn status_layout_costs(&self) -> Result<String, JsValue> {
+        if self.page.game.0.setup.interface_text != Some(crate::InterfaceText::Status) {
+            return Err(js_error("status costs need the status display scene"));
+        }
         let performance = web_sys::window()
             .and_then(|window| window.performance())
             .ok_or_else(|| js_error("performance clock is unavailable"))?;
