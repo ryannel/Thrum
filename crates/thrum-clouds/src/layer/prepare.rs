@@ -3,7 +3,7 @@ use super::{
     declaration,
 };
 use crate::noise::{DETAIL_SIZE, Noise};
-use thrum_render::binding;
+use thrum_render::{binding, runtime::PipelineInput};
 
 fn validate_profile(profile: SkyProfile, max_extent: u32) -> Result<(), Error> {
     if profile.extent.contains(&0)
@@ -369,12 +369,12 @@ pub(super) fn overlay_source(
 }
 
 fn field_bindings(
-    device: &wgpu::Device,
+    device: &thrum_render::runtime::DeviceSite,
     weather: &WeatherMap,
     sun: &wgpu::Texture,
     placed_map: Option<&wgpu::Texture>,
     exposure: &[wgpu::Buffer; 2],
-) -> (wgpu::BindGroupLayout, [wgpu::BindGroup; 2]) {
+) -> (PipelineInput<wgpu::BindGroupLayout>, [wgpu::BindGroup; 2]) {
     use wgpu::TextureViewDimension::{D2, D2Array};
     let fields = [
         (&weather.textures()[0], D2Array),
