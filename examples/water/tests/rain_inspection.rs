@@ -58,9 +58,10 @@ pub(super) fn costs(gpu: &thrum_test_support::Gpu, directory: &Path) {
             time += 1.0 / 15.0;
             let frame = fixture.frame_without_timings(time);
             let report = fixture.report.lock().expect("water report");
-            let regions = report.interaction.expect("interaction labelling report");
+            let regions = report.interaction;
             fills.push(json!({
-                "tick": frame.tick, "label_ms": regions.labelling_ms, "regions": regions.regions,
+                "tick": frame.tick, "label_ms": regions.map_or(0.0, |report| report.labelling_ms),
+                "regions": regions.map(|report| report.regions),
                 "levels": super::rain_cost::levels(&map.lock().expect("yard map")),
             }));
             if wet_paving(&map.lock().expect("yard map")) {
@@ -89,7 +90,7 @@ pub(super) fn costs(gpu: &thrum_test_support::Gpu, directory: &Path) {
         }
         let report = fixture.report.lock().expect("water report");
         arms.push(
-            json!({"rings": rings, "resources": report.resources, "fills": fills, "views": views}),
+            json!({"water":water, "rings": rings, "resources": report.resources, "fills": fills, "views": views}),
         );
     }
     write(

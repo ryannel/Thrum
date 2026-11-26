@@ -1031,7 +1031,7 @@ def rain_rings_cost(action):
                                                   f'{passes[name]:.4f} ms; {context}.')
                 row = {'tick_frame': tick, 'gpu_ms': gpu, 'completion_upper_ms': upper,
                        'upload_cpu_ms': upload, 'passes_ms': passes, 'investigations': investigations}
-                if not arm['rings']:
+                if arm['water'] and not arm['rings']:
                     controls[key] = row
                 summary.append(row)
             view['summary'] = summary
@@ -1048,16 +1048,20 @@ def validate_rain_rings(data):
     assert data['target'] == 'mac-metal' and data['extent'] == [2560, 1440]
     assert data['capture'] is False and data['rate_mm_h'] == 50
     assert data['commit'] and data['load'] and data['wp3']['brim']
-    assert [arm['rings'] for arm in data['arms']] == [False, True]
+    assert [(arm['water'], arm['rings']) for arm in data['arms']] == [
+        (False, False), (True, False), (True, True)]
+    assert len({tuple(arm['fills'][-1]['levels']) for arm in data['arms']}) == 1
     for arm in data['arms']:
-        assert len(arm['fills']) >= 3 and any(row['label_ms'] > 0 for row in arm['fills'])
+        assert len(arm['fills']) >= 3
+        assert any(row['label_ms'] > 0 for row in arm['fills']) == arm['water']
         assert [view['name'] for view in arm['views']] == ['yard', 'lake']
-        assert arm['resources']
+        assert bool(arm['resources']) == arm['water']
         for view in arm['views']:
             assert [row['tick_frame'] for row in view['summary']] == [False, True]
             for row in view['summary']:
                 passes = row['passes_ms']
-                assert row['gpu_ms'] > 0 and 'water surface' in passes
+                assert row['gpu_ms'] > 0 and passes
+                assert ('water surface' in passes) == arm['water']
                 assert ('rain bands' in passes) == arm['rings']
                 if arm['rings'] or max(row['gpu_ms'], row['completion_upper_ms']) > 1000 / 120:
                     assert row['investigations']

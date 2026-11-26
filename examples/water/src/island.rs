@@ -438,7 +438,7 @@ pub fn build_rain_yard_cost(wind: Wind, draw_water: bool) -> Result<RainYardScen
     build_yard(wind, draw_water, YardRoute::Cost)
 }
 
-/// Build the two rain cost arms with equal weather, water geometry and region labelling.
+/// Build a rain cost arm with the same weather and authored ground as the other arms.
 ///
 /// # Errors
 /// Propagates scene construction errors.
