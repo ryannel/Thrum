@@ -939,3 +939,8 @@ contribution using the replacement profiles.
   WP12, with new WP21.5 for the finished views; the waiver names two shapes at noon; WP21.4 records cost at the
   noon Sun, before and after; WP21.1 and WP21.3 judge by the cues alone. [Risk 14](DESIGN.md#risks) carries
   all four. [What changed for each finding](../../../.orchestrate/evidence/CLOUDS/design-revision-2026-11-26-noon-relief.md)
+- 2026-11-26 Second design review of the parking: three Must Fix, all settled; last round, so no review follows.
+  WP21 is out of the done-when file and the plan, so the module finishes at WP12, and
+  [the noon-relief follow-up](DESIGN.md#the-noon-relief-follow-up) holds its work for the lead to schedule, with
+  a motion check under MetalFX and a cost question asked of each Sun. No mechanism or interface changed.
+  [What changed for each finding](../../../.orchestrate/evidence/CLOUDS/design-revision-2026-11-26-noon-relief-2.md)

@@ -45,12 +45,15 @@ nothing; the account's memory is bounded; and a frame's step is judged by its di
 that day after [the second review](../../../.orchestrate/evidence/CLOUDS/design-review.md) (one finding): a
 cloud run holds by how many refreshes it loses and by how long it stalls at once, so equal totals cannot pass
 a freeze at the wind turn or give it to the window. Revised 26 November 2026 on the lead's decision to park
-the weak noon relief on the broad lobes of placed clouds: WP10 closes on the light it retained, and WP21 takes
-the relief up from the diagnosis in [risk 14](#risks). Revised again that day after
-[the review of that parking](../../../.orchestrate/evidence/CLOUDS/design-review.md) (four findings): WP21
-comes last, after WP12, and nothing waits for it; only the congestus core and the mediocris twin turrets are
-excused, at noon; WP21's cost is recorded under the noon Sun, before and after; and its relief is judged by
-the cues of the bar, with no starting still to beat. No mechanism and no interface changed.
+the weak noon relief on the broad lobes of placed clouds: WP10 closes on the light it retained, and the relief
+is taken up later from the diagnosis in [risk 14](#risks). Revised twice more that day after
+[the reviews of that parking](../../../.orchestrate/evidence/CLOUDS/design-review.md) (four findings, then
+three). The relief work is no work package of this module, which is finished when WP12 is Done:
+[the noon-relief follow-up](#the-noon-relief-follow-up) holds its investigation and what it must show, for the
+lead to schedule. Only the congestus core and the mediocris twin turrets are excused, at noon. The follow-up
+is judged by the cues of the bar, with no starting still to beat, and in motion under MetalFX; and its cost is
+recorded under the noon Sun and the 10° Sun, before and after, each Sun answering for the work that runs at
+it. No mechanism and no interface changed.
 
 ## The request
 
@@ -1854,7 +1857,8 @@ is judged for the weather sky in WP20's wind series and recorded for the finishe
    The flaws are excused only until WP17 starts. In a work package built before it (WP3 to WP16, and WP11) the four
    are known: they fail no inspected item, and a reviewer who sees them says so and judges the item's own
    list. From WP17 on nothing excuses them. One that shows on a procedural fair-weather cloud fails the
-   inspected item whose view shows it, in WP17, in WP12 and in WP21.
+   inspected item whose view shows it, in WP17 and in WP12, and in
+   [the noon-relief follow-up](#the-noon-relief-follow-up) after them.
 
    What WP3 found, in [the erosion notes](../../../.orchestrate/evidence/CLOUDS/WP3-erosion/README.md) and
    [the type-plane notes](../../../.orchestrate/evidence/CLOUDS/WP3-type-plane/README.md). At `5f84d354a3bf`
@@ -1942,27 +1946,18 @@ is judged for the weather sky in WP20's wind series and recorded for the finishe
    noon the lower right face of the congestus core, from 40 m, and the left lobe and bridge of the mediocris
    twin turrets, from 2 m, read as one even grey. The other shapes at noon, and all twelve at a 10° Sun, show
    their depth. The lead parked the cue on 26 November 2026, after three looks: at the bar of shipped games a
-   high Sun that flattens a broad lobe is plausible. So the weakness is a known limitation, WP10 closes on the
-   light it retained, and **WP21** takes the relief up last, after WP12. Nothing waits for it. WP12 closes the
-   module on the retained light, with the weakness listed in the maturity ledger (WP12.9), and a WP21 that
-   ends `BLOCKED` holds up no work package. When WP21 passes, its builder takes the weakness out of the ledger.
+   high Sun that flattens a broad lobe is plausible. So the weakness is a known limitation, and this module
+   finishes with it: WP10 closes on the light it retained, and WP12 closes the module on that light, with the
+   weakness listed in the maturity ledger (WP12.9). The relief is taken up afterwards by
+   [the noon-relief follow-up](#the-noon-relief-follow-up), which is no work package of this module. Nothing
+   waits for it, the module's close included.
 
-   The limitation is those two shapes' at noon, and no other cloud's. In every work package built before WP21
-   (WP10, WP14 to WP16, WP11, WP17 and WP12), a broad lobe of the congestus core or of the mediocris twin
-   turrets that reads flat at noon fails no inspected item: a reviewer who sees it says so and judges the
-   item's own list. Nothing else is excused. The other ten shapes at noon, and all twelve at a 10° Sun, are
-   held to their shading by the fifth line of WP10.1's list: in WP10, and again in WP21.2 and WP21.3 once the
-   light has changed, so a remedy cannot flatten a face that
-   [WP10's gallery](../../../.orchestrate/evidence/CLOUDS/WP10/qualification-metal/) shows shaded.
-
-   WP21.1 on the Mac and WP21.3 in Chrome judge the two shapes, each alone in WP10's gallery view of it, from
-   2 m and from 40 m, so no other cloud's relief can pass for theirs. They judge by the cues of the bar and
-   nothing else: neighbouring lobes told apart by a soft shaded crease, a sheltered face darker than the crown
-   above it, no mark of the remedy, and a cloud still bright and soft.
-   [WP10's retained noon stills](../../../.orchestrate/evidence/CLOUDS/WP10/lighting-controls/qualified-noon.png)
-   say where to look and set no bar. The faces they show as one even grey fail the first two cues as they
-   stand, so the retained light cannot pass as a remedy, and a view that already meets the cues passes without
-   gaining contrast.
+   The limitation is those two shapes' at noon, and no other cloud's. In every work package of this module
+   still to build (WP10, WP14 to WP16, WP11, WP17 and WP12), a broad lobe of the congestus core or of the
+   mediocris twin turrets that reads flat at noon fails no inspected item: a reviewer who sees it says so and
+   judges the item's own list. Nothing else is excused. The other ten shapes at noon, and all twelve at a 10°
+   Sun, are held to their shading by the fifth line of WP10.1's list in WP10, and again by the follow-up once
+   the light has changed.
 
    What WP10 found, in [its handoff](../../../.orchestrate/evidence/CLOUDS/WP10-handoff.md) and
    [its lighting controls](../../../.orchestrate/evidence/CLOUDS/WP10/lighting-controls/README.md), with the
@@ -1987,25 +1982,85 @@ is judged for the weather sky in WP20's wind series and recorded for the finishe
      and below a sample. None of these says how open a point is to the lit cloud and the sky around it, which
      is what tells a crease from a crown.
 
-   WP21 starts from the cause, as WP17 does: a control on the light terms drawn alone that brings out the
-   creases of the two shapes at noon, before any look. Risk 12's constants come first. The remedy keeps one
-   Sun term for every consumer and one density, keeps a placed cloud and the procedural clouds beside it in
-   one light (WP21.2), and leaves the accepted voxels as they are. Shipped hero clouds add terms tuned by
-   depth inside the cloud and by height ([Research and selection](#research-and-selection)). A field of that
-   depth, cooked beside a shape's density or derived from it, is a product this design lacks: a cause that
-   asks for it, or for any other mechanism this design lacks, ends `BLOCKED` with `needs_context` and the
-   cause, for a planner. Three failed looks on one cue go to the log and end `BLOCKED`.
+## The noon-relief follow-up
 
-   WP21 comes after the finished sky, so it answers for what its light does there: WP21.5 judges the four
-   presets, the mist views and WP12.7's scene again on the Apple recipe under MetalFX.
+This is the relief work [risk 14](#risks) parks. It is no work package of this module: it is in neither the
+done-when file nor the plan file, so the module is finished when WP12 is Done, whether or not the follow-up has
+been scheduled, has started or has ended `BLOCKED`. The lead schedules it apart from this module's work
+packages (the lead's decision of 26 November 2026). A planner then writes it as a work package in the module
+the lead names, with one item for each line of [what it must show](#what-the-follow-up-must-show), and until
+then no builder builds it. Until it passes, the weakness stays in the maturity ledger (WP12.9), and the
+builder who passes it takes the weakness out.
 
-   Its cost is recorded where it runs. WP10.5's record is taken at a 10° Sun, whose vertical component, 0.17,
-   is below the 0.20 where the retained light's broader column begins, so it times none of the high-Sun work.
-   WP21.4 records the `relief` scene: WP10.5's view, with all twelve shapes and the track in view, on both
-   recipes, at the noon Sun of WP21.1's stills and at the 10° Sun, with each arm taken at the commit WP21
-   started from and again at its end, with the same tool on the same machine. The starting arm is its end
-   arm's last comparable record for [the wires](#cost-account). `cloud_cost.py check` measures the end arms
-   again and holds the record to that list.
+**The bar.** Hero clouds under a high Sun as in Horizon Forbidden West: a broad cloud whose lobes are told
+apart by soft shaded creases and darker sheltered faces under bright crowns, still bright and soft as a whole,
+and in one light with the clouds around it. The relief is judged by those cues and nothing else.
+[WP10's retained noon stills](../../../.orchestrate/evidence/CLOUDS/WP10/lighting-controls/qualified-noon.png)
+say where to look and set no bar. The faces they show as one even grey fail the first two cues of line 1 as
+they stand, so the retained light cannot pass as a remedy, and a view that already meets the cues passes
+without gaining contrast.
+
+**The investigation.** It starts from the cause, as WP17 does: a control on the light terms drawn alone that
+brings out the creases of the two shapes at noon, before any look. [Risk 12](#risks)'s constants come first.
+The remedy keeps one Sun term for every consumer and one density, keeps a placed cloud and the procedural
+clouds beside it in one light, and leaves the accepted voxels as they are. Shipped hero clouds add terms
+tuned by depth inside the cloud and by height ([Research and selection](#research-and-selection)). A field of
+that depth, cooked beside a shape's density or derived from it, is a product this design lacks: a cause that
+asks for it, or for any other mechanism this design lacks, ends `BLOCKED` with `needs_context` and the cause,
+for a planner. Three failed looks on one cue go to the log and end `BLOCKED`. The starting arms of line 4's
+cost record are taken before the light changes.
+
+### What the follow-up must show
+
+It starts after WP12 is Done, so it answers for what its light does to the finished sky. Every line is judged
+with the changed light.
+
+1. **The two shapes stand in relief at noon.** From 2 m and from 40 m on the Mac, the congestus core and the
+   mediocris twin turrets, each alone in WP10's gallery view of it so that no other cloud's relief can pass
+   for its own, show their broad lobes in relief. In each of the four views, on the core's lower right face
+   and on the twin turrets' left lobe and bridge as on the rest of the cloud: neighbouring lobes are told
+   apart by a soft shaded crease; a sheltered face is darker than the crown above it; no arc, band, chain of
+   pale marks or drawn outline shows; and the cloud is still bright, with soft edges. Judged from `fixed`
+   stills, whole and in native-size crops of those faces.
+2. **The accepted looks hold.** From 2 m and from 40 m, the other ten shapes at noon and all twelve at a 10°
+   Sun pass all five lines of WP10.1's list, with no lobe excused; for line 5, each shape's shaded faces are
+   found in [WP10's gallery](../../../.orchestrate/evidence/CLOUDS/WP10/qualification-metal/) and judged as
+   they look now, so a remedy cannot flatten a face the gallery shows shaded. A placed cloud among procedural
+   ones passes WP6.4's list at noon and at a 10° Sun. Under the fair preset the sky passes WP5.2's list at
+   noon and WP5.3's at a 10° and a 4° Sun, and at sunset a library cloud and the procedural clouds beside it
+   are in one light. At noon with the placed share at 0, no procedural cloud shows a flaw WP17.1 names.
+   Judged from `fixed` stills, and in native-size crops where a library cloud meets a procedural one.
+3. **Chrome agrees.** In Chrome at noon the two shapes pass line 1's list from 2 m and from 40 m, and one
+   shape of each family passes all five lines of WP10.1's list at noon and at a 10° Sun, with no lobe
+   excused. Native-size crops are compared with the Mac's for a difference in outline, base or light.
+4. **The cost is on record where the work runs.** WP10.5's record is taken at a 10° Sun, whose vertical
+   component, 0.17, is below the 0.20 where the retained light's broader column begins, so it times none of
+   the high-Sun work. The follow-up records the cost tool's `relief` scene: WP10.5's view at 2560×1440, with
+   all twelve shapes and the track resident and in view, on both of the Mac's recipes, at the noon Sun of
+   line 1's stills and at the 10° Sun. Each of the four arms is taken with the same tool on the same machine
+   at the commit the follow-up started from and again at its end, and the record states each arm's Sun
+   elevation and the bytes of each resource. Each end arm is held to [the wires](#cost-account) with the
+   starting arm of the same recipe and Sun as its last comparable record, and each wire it trips has its
+   investigation beside it. No figure decides the line. Each Sun answers for the work that runs at it: the
+   remedy runs in the noon arms, and light work the follow-up changed that runs at the 10° Sun runs in the
+   10° arms. A path that runs at only one of the two Suns is measured at that Sun, and nothing asks it to run
+   at the other. The reviewer's question is therefore three: do the noon arms run at the Sun elevation of
+   line 1's stills with the remedy running in them; does the light work changed at a 10° Sun run in the 10°
+   arms; and is each end arm compared with the starting arm of the same recipe, Sun and view, that view being
+   WP10.5's?
+5. **The finished sky holds under MetalFX.** On the Apple recipe with MetalFX resolved, the four presets pass
+   WP7.1's list at noon and at a 15° Sun; the dawn valley, the far mist and the climb through the deck pass
+   WP14.5's, WP15.4's and WP15.5's lists; and the whole scene, from a 15° Sun through sunset to dusk, still
+   passes WP12.7. Judged from those items' stills and sequences, whole and in the native-size crops they
+   name.
+6. **The changed light is stable in motion under MetalFX.** A lobe that shows its crease in a held frame can
+   still shimmer when the camera moves, so the stills of lines 1 and 5 do not answer for motion. On the Apple
+   recipe with MetalFX resolved, the sky passes WP9.5's list again from WP9.5's `realtime` sequences. Beside
+   them, at the noon Sun of line 1's stills, where the remedy runs, a fast pan and a 40 m walk are taken with
+   the congestus core and the mediocris twin turrets in view. In both, by WP9.5's cues, no cloud shimmers, no
+   cloud edge crawls and no ghost trails a cloud against sky or terrain, and the creases and sheltered faces
+   of line 1 hold still on the two shapes, with no flicker or crawl in their shading. Judged in consecutive
+   frames at 1x, whole and in native-size crops of the faces line 1 names and of each shape's edge.
 
 ## Proof and builder handoff
 
@@ -2039,8 +2094,9 @@ water scene, WP11.5 uses `scripts/check_water_browser.mjs`.
   end `BLOCKED`. The form flaws [risk 2](#risks) names fail no inspected item of a work package built before WP17.
   From WP17 on they fail any inspected item whose view shows one on a procedural fair-weather cloud. A broad
   lobe of the congestus core or of the mediocris twin turrets that reads flat at noon ([risk 14](#risks))
-  fails no inspected item of a work package built before WP21, and fails WP21.1 and WP21.3. On any other
-  shape, or at any other Sun, nothing excuses it.
+  fails no inspected item of this module's work packages, and is judged by
+  [the noon-relief follow-up](#the-noon-relief-follow-up) after them. On any other shape, or at any other
+  Sun, nothing excuses it.
 
 ## Open questions
 
@@ -2055,7 +2111,7 @@ water scene, WP11.5 uses `scripts/check_water_browser.mjs`.
 | Does a far side at a low Sun stay dark enough under a plane held for the whole cloud? | WP5's stills at a 10° and a 4° Sun |
 | Do turrets that only the cell's envelope raises and lowers read as a cloud growing, or do they need lives of their own? | WP7's time-lapse |
 | What draws the shelves, the fold and the repeated caps on turrets, when the lit plane and the erosion strength do not? | WP17 finds each cause by a control before any look ([risk 2](#risks)) |
-| What brings out the creases of a broad lobe under a high Sun, when a finer Sun march, a broader diffuse column and density probes do not? | WP21 finds the cause by a control before any look ([risk 14](#risks)) |
+| What brings out the creases of a broad lobe under a high Sun, when a finer Sun march, a broader diffuse column and density probes do not? | [The noon-relief follow-up](#the-noon-relief-follow-up), after the module is finished, finds the cause by a control before any look |
 | Does a far cloud read as cumulus on the map level that samples turrets it cannot resolve, and does its crossing into that level show? | WP3.2's crops |
 | Does the droplet's forward peak hold steady in the part-extent trace? | WP5 |
 | How many entries does the phase table need to hold its integral and its values near the Sun? | WP1 measures first, beside part G's 1,025 |
