@@ -493,28 +493,7 @@ impl<G: Game> Actor<G> {
             && self.transition.surface.usable()
             && !self.surface_lease.refused(request.surface_generation)
             && !self.surface_lease.pending();
-        let now = self.origin.elapsed();
-        let observed = request.platform.governor_display;
-        let display = self.transition_proof.as_ref().map_or(observed, |proof| {
-            proof.display_record(observed, request.platform.display_tick)
-        });
-        self.host
-            .governor_display(display, self.transition.holds_governor());
-        self.host
-            .governor_display_tick(now, request.platform.display_tick);
-        if let Some(replay) = self
-            .transition_proof
-            .as_ref()
-            .and_then(|proof| proof.scale_replay)
-        {
-            let tick = self
-                .host
-                .world()
-                .source()
-                .tick
-                .saturating_sub(replay.origin);
-            self.host.set_render_scale((replay.scale_at)(tick))?;
-        }
+        self.prepare_quality(request)?;
         if ready && !self.host.has_free_slot() {
             // A callback can arrive while an older packet is retiring. Give
             // it the part of this opportunity that encoding can spare.
@@ -658,6 +637,32 @@ impl<G: Game> Actor<G> {
         }
         self.observe_submission(request, report)?;
         Ok(report)
+    }
+
+    fn prepare_quality(&mut self, request: &FrameRequest<G::Edits>) -> Result<(), FrameError> {
+        let now = self.origin.elapsed();
+        let observed = request.platform.governor_display;
+        let display = self.transition_proof.as_ref().map_or(observed, |proof| {
+            proof.display_record(observed, request.platform.display_tick)
+        });
+        self.host
+            .governor_display(display, self.transition.holds_governor());
+        self.host
+            .governor_display_tick(now, request.platform.display_tick);
+        if let Some(replay) = self
+            .transition_proof
+            .as_ref()
+            .and_then(|proof| proof.scale_replay)
+        {
+            let tick = self
+                .host
+                .world()
+                .source()
+                .tick
+                .saturating_sub(replay.origin);
+            self.host.set_render_scale((replay.scale_at)(tick))?;
+        }
+        Ok(())
     }
 
     fn present(&mut self, frame: wgpu::SurfaceTexture) -> (f64, u64) {
