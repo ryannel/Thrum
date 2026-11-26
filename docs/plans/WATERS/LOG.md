@@ -1526,3 +1526,10 @@
   cost record includes the dry craft view with and without a live wake.
   [Lens evidence](../../../.orchestrate/evidence/WATERS/WP15/lens-proof.md) ·
   [Paired cost](../../../.orchestrate/evidence/WATERS/WP15/dive-cost-316a8b7139c0.json).
+
+- 2026-11-26 Inspected the underwater windows, lighting and lens crossings on
+  Mac Metal and checked the noon lake views on Chrome WebGPU against the Metal
+  portable recipe. The [visual proof](../../../.orchestrate/evidence/WATERS/WP15/visual-proof.md)
+  indexes the stills and elapsed sequences, including the Trade swash foam and
+  the held crossing. The deep inclined lake view retains the compressed bank
+  on both targets.

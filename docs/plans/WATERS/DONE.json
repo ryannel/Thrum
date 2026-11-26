@@ -1771,8 +1771,8 @@
           "statement": "Looking up through calm water, the sky, the bank and the craft's hull at its waterline show inside a bright disc about the vertical, squeezed toward its rim, and outside it the surface mirrors the water below. Waves break the rim into moving shards with no hole, streak or hard seam, and foam overhead is a pale ceiling.",
           "inspect": "`fixed` stills and `realtime` sequences from 1 m and 5 m under the lake and the sea, in a calm, a breeze and a trade wind with whitecaps, looking straight up and 45\u00b0 off it: the disc, its rim and the water round it.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP15/visual-proof.md",
           "verdict": "",
           "review": ""
         },
@@ -1782,7 +1782,7 @@
           "inspect": "`fixed` stills from 0.5 m, 3 m and 10 m under the sea and from 0.5 m and 3 m under the lake, looking level and down, at the three hours: the bed near and far, the hull and the open water.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP15/craft-views/lighting.md",
+          "evidence": ".orchestrate/evidence/WATERS/WP15/visual-proof.md",
           "verdict": "",
           "review": ""
         },
@@ -1791,8 +1791,8 @@
           "statement": "The camera sinks through the surface and rises again. The waterline crosses the lens as one clean line with a thin meniscus, each side of it is right in the same frame, the line follows the waves, and nothing flashes, pops or shows a gap: in a calm, in a trade wind, on the lake and in the swash on the beach.",
           "inspect": "`realtime` sequences of the camera lowered through the surface and raised again in each of those places, and held half under in a trade wind: the line on the lens and both sides of it, frame by frame.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP15/visual-proof.md",
           "verdict": "",
           "review": ""
         },
@@ -1823,8 +1823,8 @@
           "statement": "In Chrome the views from under the lake pass WP15.3's and WP15.5's lists at noon.",
           "inspect": "`fixed` stills and `realtime` sequences in Chrome at those items' views on the lake at noon, judged by their lists and against the Mac's portable recipe.",
           "target": "chrome-webgpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP15/visual-proof.md",
           "verdict": "",
           "review": ""
         },
