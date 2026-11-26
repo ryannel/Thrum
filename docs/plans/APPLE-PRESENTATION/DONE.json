@@ -1117,7 +1117,7 @@
           "ask": "Does the default follow the record, and can each path still be forced for a comparison?",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP12/review-repair/registry-first-run/launch.json",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP12-review.md",
           "builder_result": "pass"
         },
@@ -1137,19 +1137,8 @@
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
-      "quality_bar": "A warm start as a shipped Metal game with binary archives has it: the second launch compiles nothing, a damaged or outdated archive costs one slower launch and never a crash or a hitch in play, and the proof is a run that is not allowed to fall back.",
-      "findings": [
-        {
-          "name": "Successive launches reuse the rejected archive",
-          "repeat": false
-        },
-        {
-          "name": "A libraries-only launch bypasses the measured preparation default",
-          "item": "D12.4",
-          "repeat": false
-        }
-      ]
+      "status": "done",
+      "quality_bar": "A warm start as a shipped Metal game with binary archives has it: the second launch compiles nothing, a damaged or outdated archive costs one slower launch and never a crash or a hitch in play, and the proof is a run that is not allowed to fall back."
     },
     {
       "id": "WP11",
