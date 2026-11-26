@@ -82,7 +82,7 @@ class Case:
         self.device = simulator.worker_device()
         self.sessions = 0
         self.report = dict(target="ios-sim", scope="function only", device=self.device,
-                           commit=git("rev-parse", "HEAD"), app_sha256=digest(APP / "ThrumV1"),
+                           commit=os.environ["THRUM_UI_SIM_COMMIT"], app_sha256=digest(APP / "ThrumV1"),
                            load=subprocess.check_output(["uptime"], text=True).strip(),
                            commands=[], images={}, tests={})
         self.simctl("install", self.device, str(APP))
@@ -374,6 +374,7 @@ def main():
     if not args.worker:
         out.mkdir(parents=True)
         simulator.admission()
+        os.environ["THRUM_UI_SIM_COMMIT"] = git("rev-parse", "HEAD")
         os.environ["RUSTC_WRAPPER"] = ""
         prepare_store(ROOT, out)
         if args.case == "layout":
@@ -382,6 +383,8 @@ def main():
         for cmd in [["examples/v1-game-ios/ios/build-simulator.sh", "--proving"],
                     ["examples/v1-game-ios/ios/build-uitest.sh"]]:
             subprocess.run(cmd, check=True, timeout=600)
+        require(os.environ["THRUM_UI_SIM_COMMIT"] == git("rev-parse", "HEAD"),
+                "the source revision changed while the proof was building")
         os.environ[simulator.RECORD_ENV] = str(out / "simulator-lifecycle.jsonl")
         simulator.exec_with_admission(["/usr/bin/caffeinate", "-d", "-i", "-u",
                                        sys.executable, simulator.__file__, "fresh", "--",
