@@ -246,26 +246,34 @@ fn check_held_overlay(
     use std::time::Duration;
     use thrum_render::runtime::SurfaceOutput;
 
-    let mut sample = |elapsed| {
-        host.drive(
-            elapsed,
-            Some(&SurfaceOutput {
-                view: output,
-                extent,
-            }),
-        )
-        .expect("submit overlay cadence frame");
-        gpu.device
-            .poll(wgpu::PollType::wait_indefinitely())
-            .expect("cadence frame complete");
-        host.poll_completed()
-            .expect("cadence completion")
-            .expect("submitted frame")
+    let sample = |host: &mut thrum_render::runtime::FrameHost<_, _>, elapsed| {
+        let report = host
+            .drive(
+                elapsed,
+                Some(&SurfaceOutput {
+                    view: output,
+                    extent,
+                }),
+            )
+            .expect("submit overlay cadence frame");
+        assert!(report.submitted);
+        let submission = host.last_submission().expect("cadence submission");
+        thrum_test_support::wait::until("cadence completion", Duration::from_secs(2), || {
+            gpu.device
+                .poll(wgpu::PollType::wait_indefinitely())
+                .expect("cadence GPU poll");
+            while let Some(frame) = host.poll_completed().expect("cadence completion") {
+                if frame.submission_order == submission {
+                    return Some(frame);
+                }
+            }
+            None
+        })
     };
     for i in 1..=9 {
-        sample(now + Duration::from_millis(i * 17));
+        sample(host, now + Duration::from_millis(i * 17));
     }
-    let quiet = sample(now + Duration::from_millis(170));
+    let quiet = sample(host, now + Duration::from_millis(170));
     let passes = |frame: thrum_render::runtime::FrameSample| {
         frame
             .gpu_pass_ns
@@ -277,22 +285,7 @@ fn check_held_overlay(
     };
     let quiet = passes(quiet);
     host.continuous_source_mut().view = placed_fixture::column_view(8.0);
-    host.drive(
-        now + Duration::from_millis(187),
-        Some(&SurfaceOutput {
-            view: output,
-            extent,
-        }),
-    )
-    .expect("submit moved overlay");
-    gpu.device
-        .poll(wgpu::PollType::wait_indefinitely())
-        .expect("moved frame complete");
-    let moved = passes(
-        host.poll_completed()
-            .expect("moved completion")
-            .expect("submitted frame"),
-    );
+    let moved = passes(sample(host, now + Duration::from_millis(187)));
     for name in [
         "cloud sky overlay",
         "atmosphere diffuse irradiance",
@@ -305,7 +298,7 @@ fn check_held_overlay(
         );
         assert!(
             moved.iter().any(|pass| pass.ends_with(name)),
-            "moved frame omitted {name}"
+            "moved frame omitted {name}: {moved:?}"
         );
     }
 }
