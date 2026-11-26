@@ -530,7 +530,7 @@ impl SceneContribution for Water {
                 &self.opaque,
                 row.level,
                 self.offshore_displacement[1],
-                self.mirror_roughness,
+                self.mirror_roughness.with_foam(p.foam.is_some()),
             );
         }
         if let Some(cache) = &mut p.surf_cache {

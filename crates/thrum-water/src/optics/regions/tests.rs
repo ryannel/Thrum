@@ -202,7 +202,7 @@ fn see_through_admission_tracks_sight_depth_and_leaves_deep_map_tiles_uncopied()
     let mut fields = Shallows::default();
     // No resolved wave height at all, but an unresolved RMS slope of 0.1
     // makes this rougher than the scene shader's mirror limit.
-    let spectrum = thrum_sea_model::Spectrum {
+    let mut spectrum = thrum_sea_model::Spectrum {
         long: vec![],
         cascades: [160.0, 37.0, 9.0]
             .map(|length| thrum_sea_model::Cascade::new(length, &[]).expect("empty cascade")),
@@ -218,6 +218,33 @@ fn see_through_admission_tracks_sight_depth_and_leaves_deep_map_tiles_uncopied()
     assert_eq!(deep_bits & (SOURCE | SHALLOW), 0);
     assert_eq!(inputs.reach_slope_scene[2], 0.0);
     assert!(inputs.dispatch[2] < view.render_extent[0]);
+    let foamy = fields.inputs(
+        profile,
+        &view,
+        Some(&map),
+        &[],
+        0.0,
+        0.2,
+        roughness.with_foam(true),
+    );
+    assert_eq!(foamy.dispatch, inputs.dispatch);
+
+    // With whitewater disabled, a slope of 0.05 still cannot mirror. The
+    // same spectrum can mirror when whitewater removes slope variance.
+    spectrum.tail_slope_variance = 0.0025;
+    let slight = MirrorRoughness::new(&spectrum, 4.0, 0.0);
+    let bare = fields.inputs(profile, &view, Some(&map), &[], 0.0, 0.2, slight);
+    let foam = fields.inputs(
+        profile,
+        &view,
+        Some(&map),
+        &[],
+        0.0,
+        0.2,
+        slight.with_foam(true),
+    );
+    assert_eq!(bare.dispatch, inputs.dispatch);
+    assert_eq!(foam.dispatch, [0, 0, 853, 479]);
 
     let clear = Optics {
         extinction: [0.06; 3],

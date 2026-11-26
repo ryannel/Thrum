@@ -56,12 +56,19 @@ impl MirrorRoughness {
         // shader clamps its determinant, use the adjugate's smaller axis.
         let minimum_transform =
             (1.0 / (1.0 + deformation)).min((1.0 - deformation).max(0.0) / 0.05);
-        // Whitewater can leave as little as 35% of the slope variance. The
-        // other variance terms can only add to the tail in exact arithmetic.
+        // The other variance terms can only add to the tail in exact arithmetic.
         Self {
-            tail_rms_floor: (0.35 * spectrum.tail_slope_variance).sqrt() * minimum_transform,
+            tail_rms_floor: spectrum.tail_slope_variance.sqrt() * minimum_transform,
             shortest_height: f64::from(shortest_height),
         }
+    }
+
+    pub(super) fn with_foam(mut self, enabled: bool) -> Self {
+        // Whitewater can leave as little as 35% of the slope variance.
+        if enabled {
+            self.tail_rms_floor *= 0.35_f64.sqrt();
+        }
+        self
     }
 
     fn can_mirror(self, gain: f64, depth: f64, limit: f32) -> bool {
