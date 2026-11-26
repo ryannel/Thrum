@@ -312,10 +312,10 @@
           "check": "cargo test --locked --offline -p thrum-ui --test layout",
           "ask": "Read the test. Are the expected boxes worked out by hand for each case, including nesting three deep, two shares of unequal weight with a fixed sibling, a share held at its least, and a text whose wrap changes a parent's height?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP3/second-review-fixes/WP3.1.log",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GAME-UI/WP3-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP3.2",
@@ -334,10 +334,10 @@
           "check": "cargo test --locked --offline -p thrum-ui --test layout_properties",
           "ask": "Are layouts and list builds counted inside the tree, across many frames, with a change that does move a box as a control the counts see? Is the comparison with a fresh tree run over random sequences of changes?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP3/second-review-fixes/WP3.3.log",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GAME-UI/WP3-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP3.4",
@@ -357,10 +357,10 @@
           "check": "cargo test --locked --offline -p v1-game --test interface_status_sweep",
           "ask": "Does the sweep lay out the same tree the scene draws, and read overflow, elision and boxes from the layout itself? Is overlap tested between the separately placed elements, and not between a text and its panel or a fill and its track?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP3/second-review-fixes/index.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GAME-UI/WP3-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP3.6",

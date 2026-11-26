@@ -156,3 +156,8 @@
   one-tick update, and the Metal switch test compares changing values on every submission. All ten
   automated checks and the 18 fixed Metal retakes passed.
   [Review fix evidence](../../../.orchestrate/evidence/GAME-UI/WP3/review-fixes/index.md)
+- 2026-11-26 WP3 second review fixes. Fitting stacks measure their cross-axis alignment. Hidden text edits
+  keep the visible paint list and appear when the subtree is shown. The status scene selects compact sizes
+  when the safe area is too short for the large panel. Mac layout tests and the 97,435-case sweep passed.
+  Fixed Metal captures show all three counts in the short safe area and preserve the larger Retina text.
+  [Target proof](../../../.orchestrate/evidence/GAME-UI/WP3/second-review-fixes/index.md)
