@@ -769,7 +769,7 @@ try {
       samples.push({tick,...fine});
     }
     const first=samples.find(row=>row.source>0.0004);
-    const crossing=samples.find(row=>first&&row.tick>first.tick+3&&row.front>0.00025);
+    const crossing=samples.find(row=>first&&row.tick>first.tick+3&&row.front>Math.max(0.00025,4*first.front));
     assert(first&&crossing,`no footfall propagated in the source puddle: ${JSON.stringify(samples)}`);
     assert(samples.every(row=>row.beyond===0&&row.beyondPotential===0),'wave leaked across the dry sill');
     await capture('footfall-in-motion',0);

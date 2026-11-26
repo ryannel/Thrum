@@ -121,13 +121,15 @@ pub(super) fn footfall_costs(gpu: &thrum_test_support::Gpu, directory: &Path) {
         let start = start + 64.0 / 60.0;
         fixture.parameters(r#"{"rain.walk":1}"#);
         let mut frames = Vec::new();
-        for sample in 1..=360 {
+        for sample in 1..=528 {
             let time = start + f64::from(sample) / 120.0;
-            // Traverse the whole 3 s path. Sample the same 24 consecutive
-            // opportunities around each of the two puddles in both arms.
-            let measure = (9..33).contains(&sample) || (295..319).contains(&sample);
+            // Follow the whole marker path at 60 Hz. Sample the same 24
+            // consecutive 120 Hz opportunities in each of the two puddles.
+            let measure = (9..33).contains(&sample) || (475..499).contains(&sample);
             if !measure {
-                fixture.frame_without_timings(time);
+                if sample % 2 == 0 {
+                    fixture.frame_without_timings(time);
+                }
                 continue;
             }
             let frame = fixture.frame(time);

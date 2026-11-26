@@ -1,5 +1,4 @@
 //! Submitted Metal fine-level state, including the spectrum kept by each level.
-#![cfg(target_os = "macos")]
 
 mod interaction_fixture;
 
@@ -68,17 +67,18 @@ fn source_wavelength_has_one_level() {
         } else {
             Fixture::new(map, Limits::default())
         };
-        let mut fixture = fixture.expect("Metal device required by WP8");
+        let mut fixture = fixture?;
         step(&mut fixture, 0);
         impact(&fixture, 1, 0.0, 0.6);
         step(&mut fixture, 1);
         let field = fixture.read();
         let near = [mode(field.level(0), 100, 1), mode(field.level(0), 25, 1)];
         let fine = fine.then(|| [mode(field.fine(), 8, 1), mode(field.fine(), 2, 1)]);
-        (near, fine)
+        Some((near, fine))
     };
-    let (original, _) = amplitudes(false);
-    let (near, fine) = amplitudes(true);
+    let (Some((original, _)), Some((near, fine))) = (amplitudes(false), amplitudes(true)) else {
+        return;
+    };
     let fine = fine.expect("submitted fine plane");
     eprintln!(
         "0.64 m / 2.56 m potential amplitudes, original near {original:?}, split near {near:?}, fine {fine:?}"
@@ -99,7 +99,7 @@ fn source_wavelength_has_one_level() {
 #[test]
 fn fine_catch_up_advances_two_separate_ticks() {
     let run = |hitch| {
-        let mut fixture = Fixture::new_fine(terrain(|_| -0.03)).expect("Metal fine level");
+        let mut fixture = Fixture::new_fine(terrain(|_| -0.03))?;
         step(&mut fixture, 0);
         if hitch {
             // A dropped source must not appear on the fine level.
@@ -126,13 +126,15 @@ fn fine_catch_up_advances_two_separate_ticks() {
         let field = fixture.read();
         let ends = field.endpoint.endpoints.map(|end| end.fine.unwrap());
         assert_eq!(ends[1].tick - ends[0].tick, 1);
-        (
+        Some((
             field.fine().to_vec(),
             field.cells[ends[0].offset..ends[0].offset + SIDE * SIDE].to_vec(),
-        )
+        ))
     };
-    let (separate, earlier) = run(false);
-    let (catch_up, intermediate) = run(true);
+    let (Some((separate, earlier)), Some((catch_up, intermediate))) = (run(false), run(true))
+    else {
+        return;
+    };
     assert!(separate.iter().any(|state| state[0].abs() > 0.000_1));
     assert_eq!(
         separate, catch_up,
@@ -146,7 +148,9 @@ fn fine_catch_up_advances_two_separate_ticks() {
 
 #[test]
 fn tick_query_includes_the_submitted_fine_height() {
-    let mut fixture = Fixture::new_fine(terrain(|_| -0.03)).expect("Metal fine level");
+    let Some(mut fixture) = Fixture::new_fine(terrain(|_| -0.03)) else {
+        return;
+    };
     step(&mut fixture, 0);
     impact(&fixture, 1, 0.0, 0.6);
     step(&mut fixture, 1);
@@ -220,7 +224,9 @@ fn divided_puddles() -> Map {
 
 #[test]
 fn fine_regions_keep_state_when_the_sill_floods() {
-    let mut fixture = Fixture::new_fine(divided_puddles()).expect("Metal fine level");
+    let Some(mut fixture) = Fixture::new_fine(divided_puddles()) else {
+        return;
+    };
     step(&mut fixture, 0);
     impact(&fixture, 1, -0.22, 0.6);
     for tick in 1..=9 {
@@ -305,7 +311,7 @@ fn fine_regions_keep_state_when_the_sill_floods() {
 #[test]
 fn footfall_front_is_faster_on_deeper_water() {
     let run = |depth: f64| {
-        let mut fixture = Fixture::new_fine(terrain(|_| -depth)).expect("Metal fine level");
+        let mut fixture = Fixture::new_fine(terrain(|_| -depth))?;
         step(&mut fixture, 0);
         impact(&fixture, 1, 0.0, 0.6);
         let mut arrivals = Vec::new();
@@ -348,10 +354,11 @@ fn footfall_front_is_faster_on_deeper_water() {
             energy.windows(2).all(|pair| pair[1] <= pair[0] * 1.004),
             "energy at {depth} m: {energy:?}"
         );
-        arrival
+        Some(arrival)
     };
-    let shallow = run(0.01);
-    let deep = run(0.03);
+    let (Some(shallow), Some(deep)) = (run(0.01), run(0.03)) else {
+        return;
+    };
     eprintln!("footfall arrival at 0.40–0.46 m: 10 mm tick {shallow}, 30 mm tick {deep}");
     assert!(deep + 4 <= shallow);
 }

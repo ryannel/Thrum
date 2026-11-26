@@ -544,11 +544,13 @@ fn build_yard(
         YardRoute::Game | YardRoute::BandsCost { rings: true } | YardRoute::FootfallCost { .. }
     );
     rain.measure_regions = matches!(route, YardRoute::BandsCost { .. });
-    rain.footfalls = matches!(route, YardRoute::Game | YardRoute::FootfallCost { .. });
-    rain.fine = matches!(
-        route,
-        YardRoute::Game | YardRoute::FootfallCost { fine: true }
-    );
+    rain.footfalls = match route {
+        YardRoute::Game | YardRoute::FootfallCost { fine: true } => {
+            Some(rain_yard::FootfallLevels::WithFine)
+        }
+        YardRoute::FootfallCost { fine: false } => Some(rain_yard::FootfallLevels::NearAndFar),
+        _ => None,
+    };
     let replies = rain.replies();
     let (game, report, map, _) =
         build_island(wind, draw_water, false, None, true, Some(rain), |_| {})?;
@@ -629,15 +631,13 @@ fn build_island(
             solves: 1,
         });
     }
-    if let Some(yard) = &rain
-        && yard.footfalls
-    {
+    if let Some(levels) = rain.as_ref().and_then(|yard| yard.footfalls) {
         profile.interaction = Some(thrum_water::interaction::Limits {
             bodies: 1,
             impulses: 3,
             solves: 16,
         });
-        profile.fine_interaction = yard.fine;
+        profile.fine_interaction = matches!(levels, rain_yard::FootfallLevels::WithFine);
     }
     let mut water = Water::mapped(Arc::clone(&map), spectrum, profile)?;
     configure(&mut water);
@@ -656,7 +656,7 @@ fn build_island(
     let mut controls = Controls::new();
     let rain_controls = rain
         .as_ref()
-        .map(|yard| rain_yard::input_controls(&mut controls, yard.footfalls))
+        .map(|yard| rain_yard::input_controls(&mut controls, yard.footfalls.is_some()))
         .transpose()?;
     let float_readout = yard
         .then(|| rain_yard::float_readout(&mut controls))
@@ -709,6 +709,17 @@ fn build_island(
             60.0
         })
         .add()?;
+    let footfall_sun = rain
+        .as_ref()
+        .is_some_and(|yard| yard.footfalls.is_some())
+        .then(|| {
+            controls
+                .slider("sun.azimuth", "Sun azimuth", 0.0..=360.0)
+                .step(1.0)
+                .default(12.0)
+                .add()
+        })
+        .transpose()?;
     let tide = surf_route
         .then(|| {
             controls
@@ -764,7 +775,7 @@ fn build_island(
         sky.sun_azimuth_degrees = match (yard, index, surf_route && wind == Wind::Trade) {
             (true, 6, _) => 40.0,
             (true, 7, _) => 11.0,
-            (true, 8, _) => 12.0,
+            (true, 8, _) => footfall_sun.map_or(12.0, |azimuth| c.get(azimuth)),
             (_, _, true) => 224.0,
             _ => 228.0,
         };

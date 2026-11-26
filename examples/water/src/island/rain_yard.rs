@@ -81,8 +81,9 @@ const BODY: usize = 3;
 const TRACK_ROWS: usize = 60;
 const PAVING: usize = 1;
 const PITS: [[f64; 2]; 2] = [[147.0, 66.18], [149.64, 66.32]];
-const WALK_SECONDS: f64 = 3.0;
-const STEP_SECONDS: f64 = 0.43;
+const STONES: [[f64; 2]; 2] = [[147.83, 66.23], PITS[1]];
+const WALK_SECONDS: f64 = 4.4;
+const STEP_SECONDS: f64 = 0.34;
 const FOOT_IMPULSE_PER_METRE: f64 = 20.0;
 const MARKER_ID: u32 = 1;
 const FLOAT_CELL: [usize; 2] = [71, 104 - TRACK_ROWS];
@@ -205,6 +206,12 @@ struct GroundPatch {
     report: TickReport,
 }
 
+#[derive(Clone, Copy)]
+pub(super) enum FootfallLevels {
+    NearAndFar,
+    WithFine,
+}
+
 pub(super) struct Yard {
     patches: [GroundPatch; 2],
     canopy: Arc<Canopy>,
@@ -214,8 +221,7 @@ pub(super) struct Yard {
     pub(super) draw_float: bool,
     pub(super) draw_rings: bool,
     pub(super) measure_regions: bool,
-    pub(super) footfalls: bool,
-    pub(super) fine: bool,
+    pub(super) footfalls: Option<FootfallLevels>,
 }
 
 impl Yard {
@@ -265,6 +271,7 @@ impl Yard {
         let interaction = water.interaction_mailbox();
         let marker = self
             .footfalls
+            .is_some()
             .then(|| crate::floating::YardFloat::new(PITS[0], 0.0));
         let mut walk = Walk::default();
         #[cfg(target_arch = "wasm32")]
@@ -447,8 +454,7 @@ impl Yard {
             draw_float: true,
             draw_rings: true,
             measure_regions: false,
-            footfalls: false,
-            fine: false,
+            footfalls: None,
         };
         yard.refresh_levels();
         Ok(yard)
@@ -538,6 +544,7 @@ struct Walk {
     elapsed: f64,
     next_step: f64,
     stones: [bool; 2],
+    right_foot: bool,
 }
 
 impl Walk {
@@ -568,7 +575,7 @@ impl Walk {
         };
         for (i, (drop, was_down)) in weather.stone.into_iter().zip(&mut self.stones).enumerate() {
             if drop && !*was_down {
-                let place = PITS[i];
+                let place = STONES[i];
                 if depth(place) > 0.0 {
                     impulse(place, 0.42, 0.036, 1 + i as u64);
                 }
@@ -580,8 +587,13 @@ impl Walk {
             let place =
                 std::array::from_fn(|axis| PITS[0][axis] + phase * (PITS[1][axis] - PITS[0][axis]));
             if self.elapsed >= self.next_step && self.elapsed <= WALK_SECONDS {
-                impulse(place, FOOT_IMPULSE_PER_METRE * depth(place), 0.065, 0);
+                let foot = [
+                    place[0],
+                    place[1] + if self.right_foot { 0.045 } else { -0.045 },
+                ];
+                impulse(foot, FOOT_IMPULSE_PER_METRE * depth(foot), 0.065, 0);
                 self.next_step += STEP_SECONDS;
+                self.right_foot = !self.right_foot;
             }
             self.elapsed += dt.as_secs_f64();
             let floor = map.hollow_bed_at(place).expect("footpath is in the yard");
@@ -593,8 +605,9 @@ impl Walk {
         } else {
             self.elapsed = 0.0;
             self.next_step = 0.0;
+            self.right_foot = false;
             (
-                std::array::from_fn(|axis| (PITS[0][axis] + PITS[1][axis]) * 0.5),
+                std::array::from_fn(|axis| f64::midpoint(PITS[0][axis], PITS[1][axis])),
                 0.0,
             )
         };
