@@ -126,6 +126,89 @@ fn gather_skips_a_deep_rough_basin_and_keeps_visible_readers() {
 }
 
 thrum_test_support::macos_gpu_test! {
+fn calm_deep_chart_and_basin_reflect_an_unregistered_panel() {
+    use std::sync::{Arc, Mutex};
+    use thrum_sea_model::{Cascade, Spectrum};
+    use thrum_water::{Optics, Profile, Water};
+    use thrum_water_model::{Bed, Body, BodyKind, Chart, Map, Stage};
+
+    let Some(gpu) = thrum_test_support::gpu("calm inland gather", Some(wgpu::Backend::Metal)) else {
+        return;
+    };
+    let wet: Vec<_> = (0..65)
+        .flat_map(|z| (0..65).map(move |x| (1..64).contains(&x) && (1..64).contains(&z)))
+        .collect();
+    let bed = Bed::new(
+        [-80.0; 2],
+        2.5,
+        [65, 65],
+        wet.iter().map(|&inside| if inside { -3.0 } else { 2.0 }).collect(),
+    )
+    .expect("deep bed");
+    let kinds = [
+        BodyKind::Basin { seed: [0.0; 2] },
+        BodyKind::Chart(Chart {
+            levels: vec![0.0; wet.len()],
+            currents: vec![[0.0; 2]; wet.len()],
+            footprint: wet,
+            ends: vec![],
+        }),
+    ];
+    let spectrum = Spectrum {
+        long: vec![],
+        cascades: [160.0, 37.0, 9.0].map(|length| Cascade::new(length, &[]).expect("empty band")),
+        tail_slope_variance: 0.0,
+    };
+    let optics = Optics { extinction: [4.0; 3], ..Optics::default() };
+    // At 3 m the bed transmits exp(-4 * 3), below the 1% sight threshold.
+    let profile = Profile { optics: Some(optics), ..Profile::default() };
+    let view = camera([0.0, 10.0, 0.0], [0.0, 0.0, 7.0], 46_f32.to_radians(), 1.0 / 16384.0);
+    let [width, _] = support::optics::EXTENT.map(|size| usize::try_from(size).expect("extent"));
+
+    for (name, kind) in ["basin", "chart"].into_iter().zip(kinds) {
+        let map = Arc::new(Mutex::new(Map::prepare(
+            bed.clone(),
+            vec![Body {
+                name: name.into(),
+                kind,
+                level: 0.0,
+                stage: Stage { min: 0.0, max: 0.0, value: 0.0 },
+                fetch: 150.0,
+                gains: [1.0; 4],
+            }],
+            thrum_water_model::Profile { margin_height: 0.3, swash_ratio: 0.0 },
+        ).expect("level water map")));
+        let measure = |radiant| {
+            let panel = Panel { centre: [0.0, 1.5, 7.0], half_size: [1.8, 1.0, 0.25], radiant };
+            let mut rig = Rig::new(&gpu, &view, sun(10.0, 0.000_01), &[panel], None);
+            let dry = rig.scene_colour().1;
+            // The panel is ordinary opaque scene geometry. No optics body is published.
+            let water = Water::mapped(Arc::clone(&map), spectrum.clone(), profile).expect("mapped water");
+            let _bodies = attach(&mut rig, water);
+            rig.host.set_timing_requested(true);
+            let times = rig.frame().gpu_pass_ns.expect("Metal pass timings");
+            assert!(times.passes().iter().any(|pass| pass.name.contains("water surface")));
+            let gather = times.passes().iter().any(|pass| pass.name.contains("water gather"));
+            (gather, dry, rig.scene_colour().1)
+        };
+        let (dark_gather, dry_dark, wet_dark) = measure(false);
+        let (bright_gather, dry_bright, wet_bright) = measure(true);
+        let changed = |dark: &[f32; 3], bright: &[f32; 3]| bright[0] - dark[0] > 0.0001;
+        let last_panel_row = dry_dark.iter().zip(&dry_bright)
+            .rposition(|(dark, bright)| changed(dark, bright))
+            .expect("radiant panel visible with water detached") / width;
+        let reflected = wet_dark.iter().zip(&wet_bright)
+            .skip((last_panel_row + 1) * width)
+            .filter(|(dark, bright)| changed(dark, bright))
+            .count();
+        println!("{name}: gather={dark_gather}/{bright_gather}, {reflected} changed water pixels below row {last_panel_row}");
+        assert!(dark_gather && bright_gather, "{name} must gather for the scene mirror");
+        assert!(reflected > 14, "{name} panel reflection: {reflected} pixels");
+    }
+}
+}
+
+thrum_test_support::macos_gpu_test! {
 fn scenery_in_front_of_a_registered_reflection_stays_in_front() {
     let Some(gpu) = thrum_test_support::gpu("reflection layering", Some(wgpu::Backend::Metal)) else {
         return;

@@ -1272,3 +1272,10 @@
   motion, cloud shade, the single application of camera air and exposure, and the repeated 1440p
   cost runs are recorded against the tested revision.
   [WP8 target evidence](../../../.orchestrate/evidence/WATERS/WP8/reopened-58cc6775/README.md).
+- 2026-11-26 WP24. Level charts use the basin's surface projection for scene mirrors and the
+  existing shallow-tile projection for refraction. On a joined chart the lowest shortest-band
+  gain of the chart and its joined bodies bounds the mix. The admission assumes zero minimum
+  depth there because weight changes can move the depth minimum between samples. This can admit
+  a mirror conservatively near a join or elsewhere on a joined chart. The Mac tests reproduce
+  both original failures and verify calm reflection on Metal and shallow-only copy bounds.
+  [WP24 target evidence](../../../.orchestrate/evidence/WATERS/WP24/README.md).

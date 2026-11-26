@@ -363,6 +363,98 @@ fn basin_mirror_admission_projects_only_tiles_that_can_mirror_at_their_depth() {
 }
 
 #[test]
+fn rough_chart_and_basin_copy_only_shallow_tiles() {
+    use thrum_water_model::{Bed, Body, Chart, Stage};
+
+    let wet: Vec<_> = (0..65)
+        .flat_map(|z| (0..65).map(move |x| (1..64).contains(&x) && (1..64).contains(&z)))
+        .collect();
+    let heights = wet
+        .iter()
+        .enumerate()
+        .map(|(i, &inside)| match (inside, i % 65 < 32) {
+            (false, _) => 2.0,
+            (true, true) => -0.5,
+            (true, false) => -3.0,
+        })
+        .collect();
+    let bed = Bed::new([-80.0; 2], 2.5, [65, 65], heights).expect("split bed");
+    let kinds = [
+        BodyKind::Basin { seed: [0.0; 2] },
+        BodyKind::Chart(Chart {
+            levels: vec![0.0; wet.len()],
+            currents: vec![[0.0; 2]; wet.len()],
+            footprint: wet,
+            ends: vec![],
+        }),
+    ];
+    let mut view = frame(30.0);
+    view.view_proj = thrum_render::synthetic::SyntheticView::perspective(
+        view.camera,
+        [0.0, 0.0, 1.0],
+        [0.0, 1.0, 0.0],
+        70_f32.to_radians(),
+        1.77,
+        0.1,
+        30_000.0,
+    )
+    .expect("split bed view")
+    .view_proj_columns();
+    let profile = Optics {
+        extinction: [4.0; 3],
+        ..Optics::default()
+    };
+    let roughness = MirrorRoughness {
+        tail_rms_floor: 0.1,
+        shortest_height: 0.0,
+    };
+    assert!((0.5..3.0).contains(&profile.sight_depth()));
+    assert!(!roughness.can_mirror(1.0, 0.5, profile.mirror_limit));
+    for (name, kind) in ["basin", "chart"].into_iter().zip(kinds) {
+        let map = Map::prepare(
+            bed.clone(),
+            vec![Body {
+                name: name.into(),
+                kind,
+                level: 0.0,
+                stage: Stage {
+                    min: 0.0,
+                    max: 0.0,
+                    value: 0.0,
+                },
+                fetch: 150.0,
+                gains: [1.0; 4],
+            }],
+            thrum_water_model::Profile {
+                margin_height: 0.3,
+                swash_ratio: 0.0,
+            },
+        )
+        .expect("level water map");
+        let inputs =
+            Shallows::default().inputs(profile, &view, Some(&map), &[], 0.0, [0.0; 2], roughness);
+        assert_eq!(inputs.reach_slope_scene[2], 0.0, "{name} scene mirror");
+        let shallow = Vec3::new(-20.0, 0.0, 1.0);
+        let deep = Vec3::new(32.0, 0.0, 1.0);
+        assert_eq!(
+            bits(&inputs, &view, shallow),
+            Some(SOURCE | SHALLOW),
+            "{name} shelf"
+        );
+        assert_eq!(bits(&inputs, &view, deep), Some(0), "{name} deep water");
+        let cells = inputs.mask.iter().flatten().flatten();
+        let shallow_cells = cells.clone().filter(|&&flags| flags & SHALLOW != 0).count();
+        let copied_cells = cells.filter(|&&flags| flags & SOURCE != 0).count();
+        assert_eq!(copied_cells, shallow_cells, "{name} copied cells");
+        assert!((0..view.render_extent[0]).contains(&inputs.dispatch[2]) && inputs.dispatch[2] > 0);
+        println!(
+            "{name}: {copied_cells} shallow cells copied, dispatch {:?}",
+            inputs.dispatch
+        );
+    }
+}
+
+#[test]
 fn source_clips_to_the_actual_frustum_when_the_box_straddles_near_depth() {
     let matrix = glam::camera::rh::proj::directx::perspective_infinite_reverse(
         70_f32.to_radians(),

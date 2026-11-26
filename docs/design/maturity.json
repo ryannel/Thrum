@@ -3281,6 +3281,15 @@
         "device": "Apple M3 Max, native and portable Metal and hardware Chrome WebGPU. The paired 1440p Metal cost record is a concurrent-load tripwire.",
         "evidence": "../../.orchestrate/evidence/WATERS/WP8/ground-continuity/README.md"
       },
+      "waters_chart_optics": {
+        "implementation": "partial",
+        "functional_validation": "passed",
+        "experienced_quality": "not_applicable",
+        "scope": "WATERS WP24: gather admission and scene reflection for level charts, with the same basin cases as controls. Running channel joins are covered by later work.",
+        "correctness": "A Metal test verifies reflection of an unregistered panel over deep calm water. A CPU test verifies a shallow-only copy mask and dispatch for rough water over a split bed.",
+        "device": "Apple M3 Max Metal for the scene reflection test. The mask test runs on the same host CPU.",
+        "evidence": "../../.orchestrate/evidence/WATERS/WP24/README.md"
+      },
       "waters_cpu_model": {
         "implementation": "partial",
         "functional_validation": "passed",
