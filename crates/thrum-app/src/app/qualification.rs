@@ -200,6 +200,10 @@ impl ExtentCapture {
                         .map_err(|error| FrameError::Scene(error.to_string()))?;
                 } else {
                     host.disable_submitted_capture();
+                    if self.status {
+                        wake.send_event(super::UserEvent::ExtentCaptured)
+                            .map_err(|error| FrameError::Scene(error.to_string()))?;
+                    }
                     return Ok(true);
                 }
             }

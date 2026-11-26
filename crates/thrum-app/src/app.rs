@@ -94,6 +94,7 @@ enum UserEvent {
     DeviceLost(u64),
     ControlsEdited,
     ExtentResize([u32; 2]),
+    ExtentCaptured,
     /// A watched parameter or game file settled on new bytes; [`FileWatch::take`] says which.
     FilesSaved,
 }
@@ -1400,6 +1401,10 @@ impl<G: WindowGame + 'static> ApplicationHandler<UserEvent> for App<G> {
             return;
         }
         match event {
+            UserEvent::ExtentCaptured => {
+                event_loop.exit();
+                return;
+            }
             UserEvent::ExtentResize([width, height]) => {
                 if let Some(window) = &self.window {
                     window.set_min_inner_size(None::<winit::dpi::LogicalSize<u32>>);
