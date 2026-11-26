@@ -571,7 +571,19 @@ fn shader_source(
         Interaction::sample_source(3, 7, 8, wake),
         concat!(include_str!("carriage.wgsl"), include_str!("surface.wgsl")).to_owned()
             + vertex_route
-            + include_str!("surface_shading.wgsl"),
+            + include_str!("surface_shading.wgsl")
+            + if has_hollows && gather {
+                include_str!("map_gpu/hollows_transport.wgsl")
+            } else {
+                ""
+            }
+            + include_str!("surface_atmosphere.wgsl")
+            + if has_hollows && gather {
+                include_str!("map_gpu/hollows_composite.wgsl")
+            } else {
+                ""
+            }
+            + include_str!("surface_composite.wgsl"),
         if gather {
             concat!(
                 include_str!("optics/regions.wgsl"),

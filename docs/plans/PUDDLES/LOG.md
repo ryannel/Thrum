@@ -186,3 +186,7 @@
   the lake's allowed shore margin. The model test now observes the paving depressions fill separately,
   join and part, the float's sampled level, dry ground under the roof and stable body identity. This
   checkpoint uses one uniform ground class and one optical profile across the yard.
+- 2026-11-26 Paving and track now keep separate ground stores behind their raised divider while
+  publishing one hollows rectangle with stable labels. Optional per-hollow sediment optics let the
+  track hide its bed and leave the paving on the ordinary clear-water path. The selected route uses
+  the common water gather and tapers only the thin compositing contact after transmission.

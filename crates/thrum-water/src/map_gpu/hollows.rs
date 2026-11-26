@@ -13,6 +13,7 @@ const BINDING: u32 = 18;
 struct Rectangle {
     origin_spacing: [f32; 4],
     size_offsets: [u32; 4],
+    optics_offset: [u32; 4],
 }
 
 type Cell = [u32; 2];
@@ -40,6 +41,7 @@ impl HollowsGpu {
     pub(super) fn new(device: &wgpu::Device, map: &Map) -> Result<Option<Self>, WaterError> {
         let mut rectangles = [Rectangle::zeroed(); BODY_LIMIT];
         let mut cells = Vec::new();
+        let mut optical_types = Vec::<Cell>::new();
         let mut from: Levels = std::array::from_fn(|_| Vec::new());
         let mut level_count = 0;
         let limit = device.limits();
@@ -62,7 +64,12 @@ impl HollowsGpu {
                 return Err(unsupported());
             }
             let byte_count = size_of::<[Rectangle; BODY_LIMIT]>()
-                + (cells.len() + hollows.cell_count() + level_count + hollows.hollow_count())
+                + (cells.len()
+                    + hollows.cell_count()
+                    + level_count
+                    + hollows.hollow_count()
+                    + optical_types.len()
+                    + 2 * hollows.optical_types().len())
                     * size_of::<Cell>();
             if byte_count as u64 > limit.max_storage_buffer_binding_size
                 || byte_count as u64 > limit.max_buffer_size
@@ -77,7 +84,23 @@ impl HollowsGpu {
                     u32::try_from(cells.len()).map_err(|_| unsupported())?,
                     u32::try_from(level_count).map_err(|_| unsupported())?,
                 ],
+                optics_offset: [
+                    if hollows.optical_types().is_empty() {
+                        u32::MAX
+                    } else {
+                        u32::try_from(optical_types.len()).map_err(|_| unsupported())?
+                    },
+                    0,
+                    0,
+                    0,
+                ],
             };
+            optical_types.extend(hollows.optical_types().iter().flat_map(|optics| {
+                optics.map_or([[0; 2]; 2], |optics| {
+                    let [r, g, b] = optics.scatter.map(f32::to_bits);
+                    [[r, g], [b, optics.extinction.to_bits()]]
+                })
+            }));
             cells.extend(
                 hollows
                     .heights()
@@ -92,14 +115,19 @@ impl HollowsGpu {
             return Ok(None);
         }
         let cell_count = u32::try_from(cells.len()).map_err(|_| unsupported())?;
+        let types_start = u32::try_from(cells.len() + level_count).map_err(|_| unsupported())?;
         for rectangle in &mut rectangles {
             rectangle.size_offsets[3] += cell_count;
+            if rectangle.optics_offset[0] != u32::MAX {
+                rectangle.optics_offset[0] += types_start;
+            }
         }
         let mut contents = bytemuck::cast_slice(&rectangles).to_vec();
         contents.extend_from_slice(bytemuck::cast_slice(&cells));
         let level_offset = contents.len() as u64;
         let display = vec![[0; 2]; level_count];
         contents.extend_from_slice(bytemuck::cast_slice(&display));
+        contents.extend_from_slice(bytemuck::cast_slice(&optical_types));
         // A WGSL runtime array requires space for at least one cell. Every prepared
         // rectangle has at least one bed cell, even when there are no labelled hollows.
         let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {

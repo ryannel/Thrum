@@ -945,6 +945,7 @@ pub(crate) fn install_channel_float(
 }
 
 /// A small float at rest over one still-water column in the rain yard.
+#[derive(Clone)]
 pub(crate) struct YardFloat {
     fleet: Arc<Mutex<Fleet>>,
     ground: f64,
@@ -995,7 +996,6 @@ impl YardFloat {
             });
     }
 
-    #[cfg(test)]
     pub(crate) fn waterline(&self) -> f64 {
         let float = self.fleet.lock().expect("yard float").current[0];
         float.position.y + f64::from(Self::SCALE) * float.draft()

@@ -376,7 +376,7 @@ pub type FoamScene = (SkyGame, SharedReport, SharedMap, Option<FoamProbes>);
 /// # Panics
 /// Panics if a scene lock is poisoned or a bounded control fails.
 pub fn build_foam(wind: Wind, draw_water: bool, foam: bool) -> Result<FoamScene, Box<dyn Error>> {
-    build_island(wind, draw_water, foam, None, true, false, |_| {})
+    build_island(wind, draw_water, foam, None, true, None, |_| {})
 }
 
 /// Use the island's surf profile and tide and beach inspection controls.
@@ -394,7 +394,7 @@ pub fn build_surf_paired(
     draw_water: bool,
     surf: bool,
 ) -> Result<FoamScene, Box<dyn Error>> {
-    build_island(wind, draw_water, true, Some(surf), false, false, |_| {})
+    build_island(wind, draw_water, true, Some(surf), false, None, |_| {})
 }
 
 /// Build the surf island with an observer for the cache's evaluated nodes and table reads.
@@ -404,7 +404,7 @@ pub fn build_surf_measured(
     wind: Wind,
 ) -> Result<(FoamScene, thrum_water::SurfTap), Box<dyn Error>> {
     let mut tap = None;
-    let scene = build_island(wind, true, true, Some(true), false, false, |water| {
+    let scene = build_island(wind, true, true, Some(true), false, None, |water| {
         tap = Some(water.tap_surf_work());
     })?;
     Ok((scene, tap.ok_or("missing surf work observer")?))
@@ -414,7 +414,7 @@ pub fn build_surf_measured(
 /// # Errors
 /// Propagates scene construction errors.
 pub fn build_optics_arm(wind: Wind, optics: bool) -> Result<FoamScene, Box<dyn Error>> {
-    build_island(wind, true, false, None, optics, false, |_| {})
+    build_island(wind, true, false, None, optics, None, |_| {})
 }
 
 /// Build the island with the rain yard's ground and inspection cameras.
@@ -422,7 +422,8 @@ pub fn build_optics_arm(wind: Wind, optics: bool) -> Result<FoamScene, Box<dyn E
 /// # Errors
 /// Propagates scene construction errors.
 pub fn build_rain_yard(wind: Wind, draw_water: bool) -> Result<FoamScene, Box<dyn Error>> {
-    build_island(wind, draw_water, false, None, true, true, |_| {})
+    let rain = rain_yard::Yard::prepare()?;
+    build_island(wind, draw_water, false, None, true, Some(rain), |_| {})
 }
 
 fn build_island(
@@ -431,7 +432,7 @@ fn build_island(
     foam: bool,
     surf: Option<bool>,
     optics: bool,
-    yard: bool,
+    rain: Option<rain_yard::Yard>,
     configure: impl FnOnce(&mut Water),
 ) -> Result<FoamScene, Box<dyn Error>> {
     let surf_route = surf.is_some();
@@ -440,7 +441,7 @@ fn build_island(
     } else {
         wind.forcing()
     };
-    let rain = yard.then(rain_yard::Yard::prepare).transpose()?;
+    let yard = rain.is_some();
     let map = prepare_island_map(&forcing, surf, rain.as_ref())?;
     let spectrum = if surf_route {
         surf_spectrum(wind, &forcing)
@@ -481,28 +482,15 @@ fn build_island(
     let basin_gains = map.lock().expect("island map").body(1).expect("lake").gains;
     let display_map = Arc::clone(&map);
     let mut controls = Controls::new();
-    let rain_controls = if yard {
-        Some((
-            controls
-                .slider("rain.rate", "Rain (mm/h)", 0.0..=100.0)
-                .default(60.0)
-                .step(1.0)
-                .add()?,
-            controls
-                .slider("rain.drying", "Drying (mm/h)", 0.0..=100.0)
-                .default(0.0)
-                .step(1.0)
-                .add()?,
-            controls
-                .slider("rain.time_scale", "Rain time scale", 1.0..=600.0)
-                .default(1.0)
-                .step(1.0)
-                .add()?,
-        ))
-    } else {
-        None
-    };
-    let weather = rain_controls.map(|_| Arc::new(Mutex::new(rain_yard::Weather::default())));
+    let rain_controls = yard
+        .then(|| rain_yard::input_controls(&mut controls))
+        .transpose()?;
+    let float_readout = yard
+        .then(|| rain_yard::float_readout(&mut controls))
+        .transpose()?;
+    let weather = rain_controls
+        .as_ref()
+        .map(|_| Arc::new(Mutex::new(rain_yard::Weather::default())));
     let tick_weather = weather.clone();
     let camera = controls
         .slider(
@@ -575,9 +563,8 @@ fn build_island(
         CAMERAS[3]
     };
     let game = SkyGame::new(controls, initial_camera, move |c, sky| {
-        if let (Some((rain, drying, scale)), Some(weather)) = (rain_controls, &weather) {
-            *weather.lock().expect("yard weather") =
-                rain_yard::Weather::new(c.get(rain), c.get(drying), c.get(scale));
+        if let (Some(read), Some(weather)) = (&rain_controls, &weather) {
+            *weather.lock().expect("yard weather") = read(c);
         }
         #[expect(
             clippy::cast_possible_truncation,
@@ -624,20 +611,9 @@ fn build_island(
     .with_ground(None)
     .with_temporal_sampling(cfg!(target_arch = "wasm32"))
     .with_tick_duration(Duration::from_secs_f64(1.0 / 60.0))?;
-    let game = if let (Some(mut yard), Some(input)) = (rain, tick_weather) {
-        let water_map = Arc::clone(&map);
-        let float = yard.float();
-        float
-            .install(game, &water)
-            .with_fixed_update(move |tick, dt| {
-                if tick > 0 {
-                    let weather = *input.lock().expect("yard weather");
-                    let mut map = water_map.lock().expect("yard water map");
-                    yard.step(weather, dt, &mut map)
-                        .expect("prepared yard rain tick");
-                    float.advance(tick, &map);
-                }
-            })
+    let game = if let (Some(yard), Some(input), Some(readout)) = (rain, tick_weather, float_readout)
+    {
+        yard.install(game, &water, Arc::clone(&map), input, readout)
     } else {
         game
     };

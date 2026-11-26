@@ -24,7 +24,7 @@ pub use fall::{
     PlungeProfile, SheetPattern, SheetProfile, SheetSample, WATER_DENSITY, loop_ticks,
 };
 pub use flow::{FlowBands, FlowBandsProfile, flow_frequency};
-pub use hollows::{Hollows, HollowsProfile, NO_HOLLOW};
+pub use hollows::{HollowOptics, Hollows, HollowsProfile, NO_HOLLOW};
 pub use map::{BRINK, Body, BodyKind, Chart, End, Map, MapSample, Profile, Row, Stage};
 pub use pyramid::BedPyramid;
 pub use rain::{

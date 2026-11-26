@@ -7,6 +7,15 @@ use crate::{BodyKind, Map, MapSample, Row, WaterError};
 /// Label of a cell that belongs to no hollow: its water leaves over the rectangle's edge.
 pub const NO_HOLLOW: u32 = u32::MAX;
 
+/// Additional optical attenuation and backscatter for a hollow's water.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct HollowOptics {
+    /// Sediment extinction in inverse metres.
+    pub extinction: f32,
+    /// RGB backscatter divided by sediment extinction, in the unit interval.
+    pub scatter: [f32; 3],
+}
+
 /// Limits a profile sets on hollows bodies, counted at preparation.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct HollowsProfile {
@@ -35,6 +44,7 @@ pub struct Hollows {
     pub(crate) bed: Vec<f64>,
     pub(crate) labels: Vec<u32>,
     pub(crate) levels: Vec<f64>,
+    optical_types: Vec<Option<HollowOptics>>,
 }
 
 impl Hollows {
@@ -70,7 +80,35 @@ impl Hollows {
             bed,
             labels,
             levels,
+            optical_types: Vec::new(),
         })
+    }
+
+    /// Author the additional optical type of each hollow. An empty table uses the water
+    /// contribution's optical type throughout. A missing entry names that same base type.
+    /// # Errors
+    /// Refuses a wrong table length or invalid attenuation or backscatter.
+    pub fn with_optical_types(
+        mut self,
+        table: Vec<Option<HollowOptics>>,
+    ) -> Result<Self, WaterError> {
+        if (!table.is_empty() && table.len() != self.hollow_count())
+            || table.iter().flatten().any(|optics| {
+                !optics.extinction.is_finite()
+                    || optics.extinction < 0.0
+                    || optics.scatter.iter().any(|x| !(0.0..=1.0).contains(x))
+            })
+        {
+            return Err(WaterError::new("hollows", "invalid optical types"));
+        }
+        self.optical_types = table;
+        Ok(self)
+    }
+
+    /// Authored optical overrides in hollow-label order, or an empty table.
+    #[must_use]
+    pub fn optical_types(&self) -> &[Option<HollowOptics>] {
+        &self.optical_types
     }
 
     /// Number of hollows.

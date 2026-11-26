@@ -92,3 +92,11 @@ name = "channel_gpu"
 
 [[test]]
 name = "carriage_gpu"
+
+# PUDDLES WP3.4–6 run this proof on Metal.
+[[test]]
+name = "puddles_gpu"
+
+# PUDDLES WP3.1 proves the deployed scene selection on Metal.
+[[test]]
+name = "rain_selection_gpu"

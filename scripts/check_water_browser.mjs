@@ -8,7 +8,7 @@ import zlib from 'node:zlib';
 import {installWasmReceipt,readWasmReceipt} from './wasm_receipt.mjs';
 
 const mode = process.argv[process.argv.indexOf('--case') + 1];
-if (!['first-frame','frames','fixed','realtime','island','bodies','wake','foam','surf','channel'].includes(mode)) throw Error('use --case first-frame|frames|fixed|realtime|island|bodies|wake|foam|surf|channel');
+if (!['first-frame','frames','fixed','realtime','island','bodies','wake','foam','surf','channel','rain-puddles'].includes(mode)) throw Error('use --case first-frame|frames|fixed|realtime|island|bodies|wake|foam|surf|channel|rain-puddles');
 const opticsRoute = mode === 'fixed' ? process.env.THRUM_WATER_BROWSER_OPTICS : undefined;
 const surfInspection = process.env.THRUM_WATER_INSPECT_SURF === '1' && ['fixed','realtime'].includes(mode);
 const handoffCut = surfInspection && mode === 'realtime' && process.env.THRUM_WATER_ROUTE === 'handoff-cut';
@@ -509,8 +509,8 @@ try {
   await cdp.call('Page.enable',{},sid);await cdp.call('Runtime.enable',{},sid);
   await installWasmReceipt(cdp,sid);
   const surfRoute=mode==='surf'||surfInspection;
-  await cdp.call('Page.addScriptToEvaluateOnNewDocument',{source:observer+(['island','surf','channel'].includes(mode)?islandObserver:'')+`\ndocument.addEventListener('DOMContentLoaded',()=>{document.querySelector('canvas').width=${width};document.querySelector('canvas').height=${height};});`},sid);
-  const route=opticsRoute??(surfRoute?(handoffCut?'?surf=gale':'?surf=trade'):mode==='foam'?'?foam=calm&speed=6&view=overhead&wake-bodies=1':mode==='wake'?'?wake=calm&speed=6&view=overhead&wake-bodies=1':mode==='bodies'?'?bodies=trade&speed=5':mode==='island'?'?island=trade':mode==='channel'?'?channel=trade':'');
+  await cdp.call('Page.addScriptToEvaluateOnNewDocument',{source:observer+(['island','surf','channel','rain-puddles'].includes(mode)?islandObserver:'')+`\ndocument.addEventListener('DOMContentLoaded',()=>{document.querySelector('canvas').width=${width};document.querySelector('canvas').height=${height};});`},sid);
+  const route=opticsRoute??(surfRoute?(handoffCut?'?surf=gale':'?surf=trade'):mode==='foam'?'?foam=calm&speed=6&view=overhead&wake-bodies=1':mode==='wake'?'?wake=calm&speed=6&view=overhead&wake-bodies=1':mode==='bodies'?'?bodies=trade&speed=5':mode==='island'?'?island=trade':mode==='channel'?'?channel=trade':mode==='rain-puddles'?'?rain=calm':'');
   result.route=route;
   await cdp.call('Page.navigate',{url:url+route},sid);
   await until(async()=>{const state=await evaluate('({ready:!!window.game,status:document.querySelector("#status")?.textContent})');if(state.status?.includes('could not start'))throw Error(state.status);return state.ready;},'scene constructed');
@@ -562,7 +562,43 @@ try {
     const anchor=await capture('surf-clock-anchor',0);
     surfClockOrigin=now-anchor.observation*1000;
   }
-  if(mode==='channel'){
+  if(mode==='rain-puddles'){
+    await until(async()=>{
+      const status=await evaluate(`game.frame(${now});game.report()`);
+      return /^Cooked generation [0-9]+ drawn/.test(status);
+    },'cooked rain yard drawn');
+    const status=()=>evaluate('(game.report(),globalThis.waterRainYard)');
+    const step=async()=>{
+      await until(()=>evaluate('game.frame_ready()'),'yard frame slot');
+      await drive(1000/60);
+      return status();
+    };
+    await evaluate("game.edit_control('camera.island',3);game.edit_control('rain.rate',100);game.edit_control('rain.time_scale',600)");
+    const first=await until(async()=>{
+      const state=await step();
+      return state[0]!==null && state[1]!==null && state[0]!==state[1] ? state : null;
+    },'separate paving puddles');
+    await capture('rain-separate',0);
+    const joined=await until(async()=>{
+      const state=await step();
+      return state[0]!==null && state[0]===state[1] && state[2]!==null &&
+        Math.abs(state[2]-state[4])<0.0001 ? state : null;
+    },'joined paving puddles and afloat float');
+    await capture('rain-joined',200);
+    const high=await status();
+    await evaluate("game.edit_control('rain.rate',0);game.edit_control('rain.drying',100)");
+    const parted=await until(async()=>{
+      const state=await step();
+      return state[0]!==null && state[1]!==null && state[0]!==state[1] ? state : null;
+    },'puddles part while drying');
+    await capture('rain-parted',0);
+    const draws=await evaluate('__island.draws.filter(row=>row[1]===192000).length');
+    assert(draws>=3,'the selected WebGPU surface never drew the yard tiles');
+    assert(first[4]<joined[4]&&high[4]>parted[4]&&[first,joined,high,parted].every(s=>s[3]===null),
+      'the float must rise and fall, with dry ground under the roof');
+    assert(new Set(result.frames.map(frame=>frame.sha256_rgba)).size===3,'the submitted yard states must differ');
+    result.rain={first,joined,high,parted,draws};
+  } else if(mode==='channel'){
     const float=()=>evaluate('(game.report(),globalThis.waterChannelFloat)');
     await until(async()=>{
       const status=await evaluate(`game.frame(${now});game.report()`);
