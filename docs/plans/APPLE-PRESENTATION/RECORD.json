@@ -2001,7 +2001,42 @@
     },
     "U1": {
       "definitions": "5f2bbd5cf0f81dc4e077c214eda9dd63fe83403f00aceddb55fec713d87f5678",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "9a32137a28e6cb7975158d9883119e4ad51123af",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/U1-review.md",
+          "items": {
+            "U1.1": "pass",
+            "U1.2": "pass",
+            "U1.3": "fail",
+            "U1.4": "pass"
+          },
+          "findings": [
+            {
+              "name": "Part 5 attributes all 44 stage loads to workers",
+              "item": "U1.3",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 97691,
+            "cached": 1823872,
+            "output": 7009,
+            "turns": 1
+          },
+          "at": "2026-11-26T18:18:50Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of APPLE-PRESENTATION at .orchestrate/evidence/APPLE-PRESENTATION/design-review.md asked for changes, ",
