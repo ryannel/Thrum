@@ -247,7 +247,7 @@ fn ray_statistics(
         .map_err(|e| e.to_string())?
         .map_err(|e| e.to_string())?;
     let mapped = output.get_mapped_range(..).map_err(|e| e.to_string())?;
-    let refresh = sky.refresh_stride;
+    let refresh = sky.trace_stride;
     let phase = sky.submitted_frames.wrapping_sub(1) % (refresh * refresh);
     let mut samples = Vec::new();
     for y in 0..texture.height() {

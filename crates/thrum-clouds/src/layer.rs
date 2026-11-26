@@ -1,6 +1,7 @@
 //! Visible transport, recorded after the scene's opaque and celestial passes.
 use crate::noise::{DETAIL_PERIOD, Noise, SHAPE_PERIOD};
 use crate::{Error, WeatherMap};
+use glam::{Mat4, Vec2, Vec3};
 use thrum_cloud_model::State;
 use thrum_render::{
     atmosphere::EnvironmentProducts,
@@ -41,8 +42,9 @@ pub struct SkyProfile {
     pub step: f32,
     /// Number of local full-density Sun samples, from zero to three.
     pub light_samples: u32,
-    /// Trace one texel per square block; 1, 2 or 4. A reset traces all texels.
-    /// One refresh cycle is this stride squared, in submitted frames.
+    /// Trace one texel per square block; 1, 2 or 4. Resets and frames where
+    /// the sparse samples cannot carry the contour trace every texel.
+    /// One sparse refresh cycle is this stride squared, in submitted frames.
     pub refresh_stride: u32,
 }
 
@@ -66,6 +68,8 @@ pub struct SkyProducts {
     pub history_valid: bool,
     /// Layer texels per side of a refresh block.
     pub refresh_stride: u32,
+    /// Layer texels per side actually used by the last submitted trace.
+    pub trace_stride: u32,
     /// Number of submitted non-capture layer frames since preparation.
     pub submitted_frames: u32,
     /// Jittered projection used by that submission's trace and resolve.
@@ -98,9 +102,11 @@ struct Uniform {
 #[derive(Clone, Copy)]
 struct LayerSample {
     travel: [f64; 2],
+    coverage_and_kind: [u32; 2],
     environment: thrum_render::atmosphere::EnvironmentEpoch,
     history_valid: bool,
     raster: [[f32; 4]; 4],
+    trace_stride: u32,
 }
 
 pub(crate) struct Layer {
@@ -343,29 +349,50 @@ impl Layer {
                 .is_none_or(|old| old.environment != environment.epoch);
         let previous = self.committed.map_or(travel, |old| old.travel);
         let previous_raster = self.committed.map_or(frame.view_proj, |old| old.raster);
+        let inverse_raster = Mat4::from_cols_array_2d(&frame.view_proj).inverse();
         // Preserve the air lattice at long travel without subtracting large
         // rounded floats in the shader. Noise keeps the anchor's wrapped phase.
         let anchor = std::array::from_fn::<_, 2, _>(|i| {
             ((f64::from(frame.camera[[0, 2][i]]) - travel[i]) / 200.0).floor() * 200.0
         });
+        let stride = self.quality.stride;
+        let active_extent = self.active_extent();
+        let parameters = state.parameters();
+        let coverage_and_kind =
+            [parameters.coverage, parameters.kind].map(|value| (value as f32).to_bits());
+        let unreliable_sparse_trace = stride > 1
+            && self.committed.is_some_and(|old| {
+                // A coverage or type ramp can change optical depth across the
+                // whole layer independently of advection.
+                old.coverage_and_kind != coverage_and_kind
+                    || view_crosses_refresh_block(
+                        inverse_raster,
+                        Mat4::from_cols_array_2d(&old.raster),
+                        Vec3::from_array(frame.camera),
+                        active_extent,
+                        stride,
+                    )
+            });
+        let full_trace = reset
+            || frame.time.capture
+            || active_extent.iter().any(|&side| side < stride)
+            || unreliable_sparse_trace;
+        self.trace_stride = if full_trace { 1 } else { stride };
         self.pending = (!frame.time.capture).then_some(LayerSample {
             travel,
+            coverage_and_kind,
             environment: environment.epoch,
             history_valid: !reset,
             raster: frame.view_proj,
+            trace_stride: self.trace_stride,
         });
-        let stride = self.quality.stride;
-        let active_extent = self.active_extent();
-        let full_trace =
-            reset || frame.time.capture || active_extent.iter().any(|&side| side < stride);
-        self.trace_stride = if full_trace { 1 } else { stride };
         let mut heights = weather.height_range();
         if let Some(shapes) = shapes {
             heights = shapes.heights(state, kind, heights);
         }
         let (phase, scattering) = self
             .lighting
-            .type_parameters(state.parameters().kind, (1.0 - kind.deck) * 0.33);
+            .type_parameters(parameters.kind, (1.0 - kind.deck) * 0.33);
         let uniform = Uniform {
             weather: std::array::from_fn(|i| {
                 [
@@ -422,9 +449,7 @@ impl Layer {
             active_extent,
             sample_cap: self.quality.cap,
             field_overlay: field_overlay as u32,
-            inverse_raster: glam::Mat4::from_cols_array_2d(&frame.view_proj)
-                .inverse()
-                .to_cols_array_2d(),
+            inverse_raster: inverse_raster.to_cols_array_2d(),
             previous_raster,
         };
         self.queue
@@ -518,6 +543,7 @@ impl Layer {
             hemisphere_light: self.lighting.ambient.clone(),
             history_valid: self.committed.is_some_and(|s| s.history_valid),
             refresh_stride: self.quality.stride,
+            trace_stride: self.committed.map_or(1, |s| s.trace_stride),
             submitted_frames: self.ordinal,
             raster_view_projection: self.committed.map_or([[0.0; 4]; 4], |s| s.raster),
         }
@@ -577,6 +603,40 @@ impl Layer {
             overlay.set_cadence(slices);
         }
     }
+}
+
+#[expect(
+    clippy::cast_precision_loss,
+    reason = "layer dimensions and the refresh stride are representable in f32"
+)]
+fn view_crosses_refresh_block(
+    inverse_raster: Mat4,
+    previous_raster: Mat4,
+    camera: Vec3,
+    extent: [u32; 2],
+    stride: u32,
+) -> bool {
+    let half_extent = Vec2::from_array(extent.map(|side| side as f32)) * 0.5;
+    let block = stride as f32;
+    // The corners bound the turn's screen-space displacement. Directions
+    // isolate rotation and projection from translation, which cloud history
+    // already reprojects through its front. Subtexel raster jitter fits inside
+    // a sparse block.
+    [
+        Vec2::new(-1.0, -1.0),
+        Vec2::new(1.0, -1.0),
+        Vec2::new(-1.0, 1.0),
+        Vec2::new(1.0, 1.0),
+    ]
+    .into_iter()
+    .any(|corner| {
+        let world = inverse_raster * corner.extend(0.0).extend(1.0);
+        let ray = world.truncate() - camera * world.w;
+        let old = previous_raster * ray.extend(0.0);
+        old.w <= 0.0
+            || ((old.truncate().truncate() / old.w - corner) * half_extent).length_squared()
+                > block * block
+    })
 }
 
 fn declaration(name: &str, kind: AfterOpaqueKind, accesses: Vec<EffectAccess>) -> AfterOpaquePass {

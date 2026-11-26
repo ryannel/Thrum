@@ -1143,12 +1143,10 @@ async fn record(
         if cloud_take.is_some() {
             record["cloud_edit"] = json!(cloud_edit);
             if report.submitted {
-                record["cloud_history_valid"] = json!(
-                    driver
-                        .host()
-                        .cloud_sky_products()
-                        .map(|layer| layer.history_valid)
-                );
+                let layer = driver.host().cloud_sky_products();
+                record["cloud_history_valid"] =
+                    json!(layer.as_ref().map(|layer| layer.history_valid));
+                record["cloud_trace_stride"] = json!(layer.map(|layer| layer.trace_stride));
             }
         }
         if let Some(idle_gpu_progress) = idle_gpu_progress {
