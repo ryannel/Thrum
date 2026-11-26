@@ -1264,6 +1264,32 @@
         "by": "plan",
         "task": "CLOUDS WP9 needs something no plan provides yet. The builder wrote: Land the Ground producers in WP14 and the cadence co",
         "at": "2026-11-26T04:02:10Z"
+      },
+      "ready_for_review": {
+        "commit": "fd12d6ded5d74ec21308d095a3968c1363b3cbf5",
+        "checked": "fd12d6ded5d74ec21308d095a3968c1363b3cbf5",
+        "at": "2026-11-26T04:40:51Z",
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.171.0-alpha.13.2",
+        "path": "visible",
+        "usage": {
+          "input": 874076,
+          "cached": 116908672,
+          "output": 210999,
+          "turns": 2
+        },
+        "session_usage": {
+          "input": 874076,
+          "cached": 116908672,
+          "output": 210999,
+          "turns": 2
+        }
       }
     },
     "WP10": {
