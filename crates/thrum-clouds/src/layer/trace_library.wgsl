@@ -134,17 +134,20 @@ fn cloud_local_sun(point:vec3<f32>,world:vec3<f32>,distance:f32,footprint:f32,su
     // The coarse path cannot resolve the authored volume's internal lobes.
     // Use the same density at both ends of the grazing ray before handing it
     // back to the cached path as the Sun rises.
-    let rim_begin = select(0.10, 0.18, placed);
-    let rim_end = select(0.17, 0.28, placed);
-    let rim_detail=(1.0-smoothstep(rim_begin,rim_end,path.y))*smoothstep(0.75,0.94,sun_alignment)
+    let rim_detail=(1.0-smoothstep(0.10,0.17,path.y))*smoothstep(0.75,0.94,sun_alignment)
         *(1.0-smoothstep(10000.0,13500.0,distance));
+    // Authored lobes can be narrower than a Sun-path column even at noon.
+    // Resolve their column on the same density as the view ray, including
+    // the unlit side. Blend back to the cached path beyond the placed range.
+    let placed_detail=select(0.0,1.0-smoothstep(19000.0,32000.0,distance),placed);
+    let direct_weight=max(rim_detail,placed_detail);
     var direct=vec2(0.0);
-    if rim_detail>0.0 {
-        let near_step=select(120.0, 45.0, placed)/f32(samples);
+    if direct_weight>0.0 {
+        let near_step=select(120.0, 66.0, placed)/f32(samples);
         let outside=cloud_march_sun_depth(point,path,(cloud.heights.y-point.y)/path.y,footprint,near_step);
         let inside=cloud_march_sun_depth(point,-path,(point.y-cloud.heights.x)/path.y,footprint,near_step);
         direct=vec2(outside,outside+inside);
-        if rim_detail==1.0 {return direct;}
+        if direct_weight==1.0 {return direct;}
     }
     // A grazing ray can stay inside the same lobe for hundreds of metres.
     // Resolve that relief in the full density before asking the cached path
@@ -186,7 +189,7 @@ fn cloud_local_sun(point:vec3<f32>,world:vec3<f32>,distance:f32,footprint:f32,su
         let midpoint=cloud_density(point+path*(0.5*reach),footprint)*reach+depths.x;
         cached=mix(cached,vec2(midpoint,max(midpoint,depths.y)),short_column);
     }
-    return mix(cached,direct,rim_detail);
+    return mix(cached,direct,direct_weight);
 }
 
 fn cloud_air_part(part:CloudTransport,weighted:f32,mass:f32,camera:vec3<f32>,ray:vec3<f32>,uv:vec2<f32>)->CloudTransport {

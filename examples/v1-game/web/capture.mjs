@@ -167,8 +167,7 @@ async function runCapture() {
       await wait(1);
     }
     if (game.committed_tick() !== 0) fail('reconstruction witness advanced during warmup');
-    if (query.has('cloud-store')) record.placed_clouds = JSON.parse(game.placed_cloud_report());
-  record.held_warmup_submissions = 128;
+    record.held_warmup_submissions = 128;
   }
   record.initial_report = JSON.parse(game.route_report(0));
   if (query.has('renderer-signature')) record.renderer_signature = JSON.parse(game.renderer_signature());
