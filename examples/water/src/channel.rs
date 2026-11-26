@@ -78,7 +78,11 @@ fn outlet(bed: &Bed, running: bool) -> Body {
         chart
             .currents
             .push([f64::from(running) * (0.5 + narrows), 0.0]);
-        let half_width = if x < 322.5 {
+        // Keep the head's flared wet bank inside the chart footprint
+        // through the full lake rise before the bed narrows downstream.
+        let half_width = if x <= 225.0 {
+            7.5
+        } else if x < 322.5 {
             5.0
         } else if x < 330.0 {
             7.5
@@ -165,8 +169,8 @@ pub fn build(wind: Wind, draw_water: bool, running: bool) -> Result<Scene, Box<d
     });
     let fallback = crate::floating::fallback(&spectrum, profile.waves.choppiness)?;
     let mut water = Water::mapped(Arc::clone(&map), spectrum, profile)?;
-    let (north, east) = forcing.wind_direction.sin_cos();
-    let wind = glam::DVec2::new(east, north) * forcing.wind_speed;
+    let (z, x) = forcing.wind_direction.sin_cos();
+    let wind = glam::DVec2::new(x, z) * forcing.wind_speed;
     let hulls = water.enable_foam(wind.as_vec2().to_array())?;
     let report = water.report();
     let foam = water.tap_foam();
