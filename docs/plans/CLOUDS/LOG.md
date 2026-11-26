@@ -884,6 +884,7 @@ with clouds absent and documents the triggered cost comparisons.
 Both ends of eleven available sky knobs passed on Metal with the same
 authoritative state and byte-identical weather columns, and without creating GPU
 resources. WP9.7 also includes two cadences for cloud Ground, whose producers
-belong to WP14. WP16.7 owns their knob proof. The low-Sun TAAU pan also shows a
-short horizontal streak at the revealed edge on both targets. The work stays on
-the builder branch. [Target evidence](../../../.orchestrate/evidence/CLOUDS/WP9/README.md)
+belong to WP14. WP16.7 owns their knob proof. Stationary controls at the same
+yaw as the low-Sun pan show much of the same lower cloud detail on both targets.
+Chrome shows extra smearing at cloud edges during the pan, and the motion items
+remain open. The work stays on the builder branch. [Target evidence](../../../.orchestrate/evidence/CLOUDS/WP9/README.md)

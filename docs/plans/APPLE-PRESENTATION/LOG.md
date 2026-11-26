@@ -613,9 +613,12 @@
 
 ### CLOUDS WP9 fast-pan observation
 
-A 95° elapsed pan under the broken preset at a 10° Sun shows short horizontal
+An 85° elapsed pan under the broken preset at a 10° Sun shows short horizontal
 streaks at the newly revealed right edge with portable TAAU on Mac and Chrome.
-A Metal take with TAAU off at closely matched yaw retains more local detail in
-that region. Both cloud histories reset for one frame at a cut and at the layer
-profile change. The captures do not isolate the cloud motion and reactive inputs
-from the reconstructor's response. [Paired Metal crops and target takes](../../../.orchestrate/evidence/CLOUDS/WP9/README.md)
+Stationary controls at the same yaw show much of the same detail above the
+ridge. The moving Chrome frame still shows extra smearing on cloud edges near
+the right of the crop. A nearby moving capture with reconstruction off shows
+sharper, stair-stepped detail. On Metal, the lower cloud bands persist with
+negligible TAAU history and in a separate take that preserves the sky's motion
+under clouds. Both cloud histories reset for one frame at a cut and at the
+layer profile change. [Metal controls](../../../.orchestrate/evidence/CLOUDS/WP9/metal/pan-isolation/README.md) and [Chrome controls](../../../.orchestrate/evidence/CLOUDS/WP9/chrome/pan-isolation/README.md).
