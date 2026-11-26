@@ -484,19 +484,18 @@ fn driver(gpu: &thrum_test_support::Gpu) {
 
 #[cfg(target_os = "macos")]
 fn yard_checkpoints() -> Vec<(String, String, f64)> {
-    [("noon", 60), ("low-sun", 8)]
+    [("first", 0.2), ("separate", 0.5), ("brim", 1.5)]
         .into_iter()
-        .flat_map(|(light, elevation)| {
-            ["west", "east", "roof", "overhead"]
-                .into_iter()
-                .enumerate()
-                .map(move |(camera, view)| {
-                    (
-                        format!("yard-{view}-{light}"),
-                        format!(r#"{{"camera.island":{camera},"sun.elevation":{elevation}}}"#),
-                        1.0,
-                    )
-                })
+        .flat_map(|(fill, time)| {
+            [("noon", 60), ("low-sun", 8)].into_iter().flat_map(move |(light, elevation)| {
+                ["west", "east", "roof", "overhead"].into_iter().enumerate().map(
+                    move |(camera, view)| (
+                        format!("yard-{fill}-{view}-{light}"),
+                        format!(r#"{{"camera.island":{camera},"sun.elevation":{elevation},"rain.rate":100,"rain.time_scale":600}}"#),
+                        time,
+                    ),
+                )
+            })
         })
         .collect()
 }

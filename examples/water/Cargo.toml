@@ -44,6 +44,7 @@ workspace = true
 thrum-app = { path = "../../crates/thrum-app" }
 thrum-water = { path = "../../crates/thrum-water" }
 thrum-water-model = { path = "../../crates/thrum-water-model" }
+thrum-rain-model = { path = "../../crates/thrum-rain-model" }
 thrum-sea-model = { path = "../../crates/thrum-sea-model" }
 thrum-render = { path = "../../crates/thrum-render" }
 wgpu = { version = "=30.0.1", default-features = false, features = ["std", "wgsl"] }

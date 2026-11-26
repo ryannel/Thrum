@@ -266,6 +266,21 @@ impl Shallows {
         let (_, spacing, [width, length]) = bed.lattice();
         let mut body_index = 0;
         while let Some(body) = map.body(body_index) {
+            if let BodyKind::Hollows(hollows) = &body.kind {
+                // A rain yard is supplied on its own fine bed and has no
+                // nodes in the coarser bed's shore-support lattice.
+                let (lo, spacing, size) = hollows.lattice();
+                let hi = std::array::from_fn(|axis| lo[axis] + size[axis] as f64 * spacing);
+                let [low, high] = hollows
+                    .heights()
+                    .iter()
+                    .fold([f64::INFINITY, f64::NEG_INFINITY], |[low, high], &y| {
+                        [low.min(y), high.max(y)]
+                    });
+                self.shallow_tiles.push((bounds(lo, hi, low, high), true));
+                body_index += 1;
+                continue;
+            }
             let support = map.support_origins(body_index);
             let chart = matches!(body.kind, BodyKind::Chart(_));
             let surface_mirror = chart || matches!(body.kind, BodyKind::Basin { .. });
@@ -314,8 +329,7 @@ impl Shallows {
                     if !shallow && !surface_mirror {
                         continue;
                     }
-                    let mirror = matches!(body.kind, BodyKind::Hollows(_))
-                        || roughness.can_mirror(gain_floor, depth, profile.mirror_limit);
+                    let mirror = roughness.can_mirror(gain_floor, depth, profile.mirror_limit);
                     if !shallow && !mirror {
                         continue;
                     }

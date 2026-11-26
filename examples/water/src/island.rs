@@ -165,13 +165,21 @@ pub fn surf_water_profile(spectrum: &Spectrum) -> thrum_water::Profile {
 }
 
 fn island_map(forcing: &Forcing, surf: Option<bool>) -> Result<Map, Box<dyn Error>> {
+    prepare_island_map(forcing, surf, None)
+}
+
+fn prepare_island_map(
+    forcing: &Forcing,
+    surf: Option<bool>,
+    yard: Option<&rain_yard::Yard>,
+) -> Result<Map, Box<dyn Error>> {
     let bed = terrain_bed(include_bytes!("../assets/meshes/island.bin"))?;
-    let mut map = Map::prepare(
-        bed,
-        bodies(forcing, if surf.is_some() { 0.5 } else { 0.0 }),
-        map_profile(surf.is_some()),
-    )
-    .map_err(|e| format!("{e:?}"))?;
+    let mut declarations = bodies(forcing, if surf.is_some() { 0.5 } else { 0.0 });
+    if let Some(yard) = yard {
+        declarations.push(yard.body()?);
+    }
+    let mut map = Map::prepare(bed, declarations, map_profile(surf.is_some()))
+        .map_err(|e| format!("{e:?}"))?;
     map.set_forcing(forcing).map_err(|e| format!("{e:?}"))?;
     if surf == Some(true) {
         map.enable_surf(SurfProfile {
@@ -184,7 +192,15 @@ fn island_map(forcing: &Forcing, surf: Option<bool>) -> Result<Map, Box<dyn Erro
 }
 
 pub(crate) fn terrain_bed(mesh: &[u8]) -> Result<Bed, Box<dyn Error>> {
-    let positions: Vec<[f64; 3]> = mesh[..POSITIONS_BYTES]
+    let triangles = mesh_triangles(mesh, POSITIONS_BYTES, INDEX_BYTES);
+    Ok(
+        Bed::from_triangles([-320.0, -225.0], 2.5, SIZE, -12.0, &triangles)
+            .map_err(|e| format!("{e:?}"))?,
+    )
+}
+
+fn mesh_triangles(mesh: &[u8], positions_bytes: usize, index_bytes: usize) -> Vec<[[f64; 3]; 3]> {
+    let positions: Vec<[f64; 3]> = mesh[..positions_bytes]
         .as_chunks::<12>()
         .0
         .iter()
@@ -193,7 +209,7 @@ pub(crate) fn terrain_bed(mesh: &[u8]) -> Result<Bed, Box<dyn Error>> {
             std::array::from_fn(|i| f64::from(f32::from_le_bytes(components[i])))
         })
         .collect();
-    let triangles: Vec<_> = mesh[POSITIONS_BYTES..POSITIONS_BYTES + INDEX_BYTES]
+    mesh[positions_bytes..positions_bytes + index_bytes]
         .as_chunks::<12>()
         .0
         .iter()
@@ -201,11 +217,7 @@ pub(crate) fn terrain_bed(mesh: &[u8]) -> Result<Bed, Box<dyn Error>> {
             let (indices, _) = indices.as_chunks::<4>();
             std::array::from_fn(|i| positions[u32::from_le_bytes(indices[i]) as usize])
         })
-        .collect();
-    Ok(
-        Bed::from_triangles([-320.0, -225.0], 2.5, SIZE, -12.0, &triangles)
-            .map_err(|e| format!("{e:?}"))?,
-    )
+        .collect()
 }
 
 pub(crate) fn bodies(forcing: &Forcing, tide: f64) -> Vec<Body> {
@@ -428,7 +440,8 @@ fn build_island(
     } else {
         wind.forcing()
     };
-    let map = island_map(&forcing, surf)?;
+    let rain = yard.then(rain_yard::Yard::prepare).transpose()?;
+    let map = prepare_island_map(&forcing, surf, rain.as_ref())?;
     let spectrum = if surf_route {
         surf_spectrum(wind, &forcing)
     } else {
@@ -468,6 +481,29 @@ fn build_island(
     let basin_gains = map.lock().expect("island map").body(1).expect("lake").gains;
     let display_map = Arc::clone(&map);
     let mut controls = Controls::new();
+    let rain_controls = if yard {
+        Some((
+            controls
+                .slider("rain.rate", "Rain (mm/h)", 0.0..=100.0)
+                .default(60.0)
+                .step(1.0)
+                .add()?,
+            controls
+                .slider("rain.drying", "Drying (mm/h)", 0.0..=100.0)
+                .default(0.0)
+                .step(1.0)
+                .add()?,
+            controls
+                .slider("rain.time_scale", "Rain time scale", 1.0..=600.0)
+                .default(1.0)
+                .step(1.0)
+                .add()?,
+        ))
+    } else {
+        None
+    };
+    let weather = rain_controls.map(|_| Arc::new(Mutex::new(rain_yard::Weather::default())));
+    let tick_weather = weather.clone();
     let camera = controls
         .slider(
             "camera.island",
@@ -539,6 +575,10 @@ fn build_island(
         CAMERAS[3]
     };
     let game = SkyGame::new(controls, initial_camera, move |c, sky| {
+        if let (Some((rain, drying, scale)), Some(weather)) = (rain_controls, &weather) {
+            *weather.lock().expect("yard weather") =
+                rain_yard::Weather::new(c.get(rain), c.get(drying), c.get(scale));
+        }
         #[expect(
             clippy::cast_possible_truncation,
             clippy::cast_sign_loss,
@@ -584,6 +624,23 @@ fn build_island(
     .with_ground(None)
     .with_temporal_sampling(cfg!(target_arch = "wasm32"))
     .with_tick_duration(Duration::from_secs_f64(1.0 / 60.0))?;
+    let game = if let (Some(mut yard), Some(input)) = (rain, tick_weather) {
+        let water_map = Arc::clone(&map);
+        let float = yard.float();
+        float
+            .install(game, &water)
+            .with_fixed_update(move |tick, dt| {
+                if tick > 0 {
+                    let weather = *input.lock().expect("yard weather");
+                    let mut map = water_map.lock().expect("yard water map");
+                    yard.step(weather, dt, &mut map)
+                        .expect("prepared yard rain tick");
+                    float.advance(tick, &map);
+                }
+            })
+    } else {
+        game
+    };
     let mut meshes = placements(&map, !surf_route);
     if yard {
         meshes.extend(rain_yard::placements());

@@ -3902,6 +3902,7 @@ dependencies = [
  "serde_json",
  "thrum-app",
  "thrum-cook",
+ "thrum-rain-model",
  "thrum-render",
  "thrum-sea-model",
  "thrum-test-support",

@@ -46,6 +46,7 @@ pub(super) struct Draw {
     recorded: Vec<Matrix>,
     opaque: OpticsBodies,
     visible_count: usize,
+    float_scale: f32,
 }
 
 impl Draw {
@@ -61,7 +62,13 @@ impl Draw {
             recorded: Vec::new(),
             opaque,
             visible_count,
+            float_scale: 1.0,
         }
+    }
+
+    pub(super) fn with_float_scale(mut self, scale: f32) -> Self {
+        self.float_scale = scale;
+        self
     }
 }
 
@@ -86,6 +93,11 @@ impl SceneContribution for Draw {
             )
         })?;
         float(&mut vertices);
+        if self.float_scale.to_bits() != 1.0_f32.to_bits() {
+            for vertex in &mut vertices[split as usize..] {
+                vertex.position = vertex.position.map(|value| value * self.float_scale);
+            }
+        }
         let end = u32::try_from(vertices.len()).map_err(|_| {
             thrum_render::runtime::FrameError::InvalidState(
                 "floating mesh exceeds the vertex index range",

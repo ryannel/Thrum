@@ -181,3 +181,8 @@
   baked mesh triangles share the paving-track edge, the 15 cm paving pit joins the shallow dip at a sill below
   the outlet, both ruts retain water, and the roof covers four posts. The fifth post crosses the pit floor.
   [Geometry and cooker records](../../../.orchestrate/evidence/PUDDLES/WP3/yard.md)
+- 2026-11-26 Connected the yard mesh, canopy, rain model, level uploads and small float to the selected island
+  world. The yard moved from (146, 42) to (144, 61) after full-stage map preparation caught the old plot in
+  the lake's allowed shore margin. The model test now observes the paving depressions fill separately,
+  join and part, the float's sampled level, dry ground under the roof and stable body identity. This
+  checkpoint uses one uniform ground class and one optical profile across the yard.

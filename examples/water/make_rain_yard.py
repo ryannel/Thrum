@@ -10,9 +10,9 @@ from pathlib import Path
 from make_island import height as island_height
 from make_island import smoothstep
 
-ORIGIN = (146.0, 42.0)
+ORIGIN = (144.0, 61.0)
 SIDE = (10, 8)
-DATUM = 16.55
+DATUM = 18.12
 SUBDIVISIONS = 20
 TRACK_EDGE = 3
 POTHOLE = (3.2, 5.2)

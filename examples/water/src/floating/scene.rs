@@ -943,3 +943,61 @@ pub(crate) fn install_channel_float(
         Box::new(move || fleet.lock().expect("channel float").current[0]),
     )
 }
+
+/// A small float at rest over one still-water column in the rain yard.
+pub(crate) struct YardFloat {
+    fleet: Arc<Mutex<Fleet>>,
+    ground: f64,
+}
+
+impl YardFloat {
+    const SCALE: f32 = 0.20;
+
+    pub(crate) fn new(position: [f64; 2], ground: f64) -> Self {
+        let mut initial = Body::new(0, Hull::Float, position, ground, 0.0);
+        initial.position.y = ground + f64::from(Self::SCALE) * initial.hull.keel_depth();
+        let fleet = Arc::new(Mutex::new(Fleet {
+            previous: vec![initial],
+            current: vec![initial],
+            craft_present: false,
+            tick: 0,
+            observe: None,
+            #[cfg(target_arch = "wasm32")]
+            reply_ages: std::collections::VecDeque::new(),
+            #[cfg(target_arch = "wasm32")]
+            wake_sample: None,
+        }));
+        Self { fleet, ground }
+    }
+
+    pub(crate) fn install(&self, game: SkyGame, water: &Water) -> SkyGame {
+        game.with_contribution(
+            Box::new(
+                Draw::new(Arc::clone(&self.fleet), water.optics_bodies(), 1)
+                    .with_float_scale(Self::SCALE),
+            ),
+            || ContentStatus::Drawn(1),
+        )
+    }
+
+    pub(crate) fn advance(&self, tick: u64, map: &Map) {
+        let mut fleet = self.fleet.lock().expect("yard float");
+        let fleet = &mut *fleet;
+        fleet.previous[0] = fleet.current[0];
+        fleet.tick = tick;
+        let float = &mut fleet.current[0];
+        let floor = self.ground + f64::from(Self::SCALE) * float.hull.keel_depth();
+        float.position.y = map
+            .sample([float.position.x, float.position.z])
+            .filter(|hit| hit.depth > 0.0)
+            .map_or(floor, |hit| {
+                (hit.row.level - f64::from(Self::SCALE) * float.draft()).max(floor)
+            });
+    }
+
+    #[cfg(test)]
+    pub(crate) fn waterline(&self) -> f64 {
+        let float = self.fleet.lock().expect("yard float").current[0];
+        float.position.y + f64::from(Self::SCALE) * float.draft()
+    }
+}
