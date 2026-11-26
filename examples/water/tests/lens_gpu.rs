@@ -268,11 +268,15 @@ fn metal_sea_lens_reads_the_near_plane_and_skips_the_dry_gather() {
 }
 }
 thrum_test_support::macos_gpu_test! {
-fn metal_lake_and_swash_lenses_read_the_near_plane() {
-    let Some(gpu) = thrum_test_support::gpu("split lake and swash lens", Some(wgpu::Backend::Metal)) else { return };
-    for (name, column) in [("lake", [0.0, 0.0]), ("swash", [2.5, 0.0])] {
-        metal::Case::new(name, column).check(&gpu);
-    }
+fn metal_lake_lens_reads_the_near_plane() {
+    let Some(gpu) = thrum_test_support::gpu("split lake lens", Some(wgpu::Backend::Metal)) else { return };
+    metal::Case::new("lake", [0.0, 0.0]).check(&gpu);
+}
+}
+thrum_test_support::macos_gpu_test! {
+fn metal_swash_lens_reads_the_near_plane() {
+    let Some(gpu) = thrum_test_support::gpu("split swash lens", Some(wgpu::Backend::Metal)) else { return };
+    metal::Case::new("swash", [2.5, 0.0]).check(&gpu);
 }
 }
 thrum_test_support::macos_gpu_test! {
