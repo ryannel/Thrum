@@ -1809,7 +1809,7 @@
         {
           "verdict": "fail",
           "commit": "85c5d81dad166c50cb5d6e10ef78465b00b52ba3",
-          "review": ".orchestrate/evidence/WATERS/WP9-review.md",
+          "review": ".orchestrate/evidence/WATERS/WP9-review-1.md",
           "items": {
             "WP9.1": "pass",
             "WP9.2": "fail",
@@ -1862,6 +1862,48 @@
             "turns": 1
           },
           "at": "2026-11-26T07:01:30Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "9e7eb617ff0d77c83c85c275ced53d579242d640",
+          "review": ".orchestrate/evidence/WATERS/WP9-review.md",
+          "items": {
+            "WP9.1": "pass",
+            "WP9.2": "fail",
+            "WP9.3": "pass",
+            "WP9.4": "pass",
+            "WP9.5": "pass",
+            "WP9.6": "pass",
+            "WP9.7": "pass"
+          },
+          "findings": [
+            {
+              "name": "Varying chart currents flatten ripple detail",
+              "item": "WP9.2",
+              "different": "Uniform-current renewal reversal is fixed. On a varying current the continuous fallback collapses the spatial wave phase as elapsed time grows.",
+              "repeat": false
+            },
+            {
+              "name": "Chart queries return slope in the wave coordinate instead of world space",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 130105,
+            "cached": 4330112,
+            "output": 14731,
+            "turns": 1
+          },
+          "at": "2026-11-26T08:03:17Z"
         }
       ],
       "authorised": {

@@ -1613,9 +1613,9 @@
     {
       "id": "WP9",
       "name": "Water runs down a channel from the lake to the sea: its surface follows the slope, its ripples and foam travel with the current, and a float is carried down to the sea",
-      "status": "ready_for_review",
-      "failed_reviews": 1,
-      "failed_reviews_with_repeat": 0,
+      "status": "in_progress",
+      "failed_reviews": 2,
+      "failed_reviews_with_repeat": 1,
       "diagnoses": 0,
       "depends_on": [],
       "quality_bar": "A running stream as in Red Dead Redemption 2: water that visibly moves downstream at its own speed, faster in the narrows, carrying foam and anything afloat, with no sliding sheet, pulse or seam where it joins still water.",
@@ -1638,8 +1638,8 @@
           "check": "cargo test --locked --offline -p water-scene --test carriage_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP9/revision-1/selected-metal.log",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/WATERS/WP9-review.md"
         },
@@ -1650,7 +1650,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP9/revision-1/visual.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/WATERS/WP9-review.md"
         },
         {
@@ -1661,7 +1661,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP9/revision-1/selected-metal.log",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/WATERS/WP9-review.md"
         },
         {
@@ -1672,7 +1672,7 @@
           "target": "chrome-webgpu",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP9/revision-1/selected-chrome/run.json",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/WATERS/WP9-review.md"
         },
         {
@@ -1693,34 +1693,19 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP9/revision-1/selected-cost.json",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/WATERS/WP9-review.md"
         }
       ],
       "findings": [
         {
-          "name": "Ripple carriage reverses during renewal",
+          "name": "Varying chart currents flatten ripple detail",
           "item": "WP9.2",
+          "different": "Uniform-current renewal reversal is fixed. On a varying current the continuous fallback collapses the spatial wave phase as elapsed time grows.",
           "repeat": false
         },
         {
-          "name": "Bank ripples pulse in phase across the reach",
-          "item": "WP9.3",
-          "repeat": false
-        },
-        {
-          "name": "A downstream force carries the float through still water",
-          "item": "WP9.4",
-          "repeat": false
-        },
-        {
-          "name": "Chrome ripple carriage reverses while the transport check passes",
-          "item": "WP9.5",
-          "repeat": false
-        },
-        {
-          "name": "The paired record skips comparable full-screen pass tripwires",
-          "item": "WP9.7",
+          "name": "Chart queries return slope in the wave coordinate instead of world space",
           "repeat": false
         }
       ]
