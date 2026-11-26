@@ -803,6 +803,17 @@ def main() -> None:
         background_history_reset()
         return
     s = startup()
+    if rows == "g4":
+        s = rotate("g4-landscape", "testLandscape", s, landscape=True, retain_motion=False)
+        resumed = background(s, "g4")
+        for state in (s, resumed):
+            check(state.get("reconstructor") == "Some(Taau)", "TAAU did not resolve", state)
+            check(state.get("surface_format") in ("Some(Bgra8Unorm)", "Some(Bgra8UnormSrgb)",
+                                                  "Some(Rgba8Unorm)", "Some(Rgba8UnormSrgb)"),
+                  "simulator did not use an SDR format", state)
+            extent_proof(state)
+        log("G4 simulator function passed; physical iPhone EDR and timing are owed")
+        return
     if rows == "edr":
         snapshot("edr-before", s, screenshot=False)
         post("force-headroom")

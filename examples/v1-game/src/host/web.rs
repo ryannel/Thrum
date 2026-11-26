@@ -339,6 +339,7 @@ pub(crate) fn route_report(shell: &Shell, from_tick: u64) -> serde_json::Value {
                 "render_extent": sample.render_extent, "surface_presented": sample.surface_presented,
                 "history_sample": sample.history_identity[0], "history_predecessor": sample.history_identity[1],
                 "jitter_phase":sample.jitter_phase,
+                "governor_scale": sample.governor.as_ref().map(|row| row.state.scale.percent()),
                 "rendered_solar_hours": rendered, "rendered_solar_bits": rendered.to_bits(),
                 "eye": pose.map(|pose| pose.eye), "yaw": pose.map(|pose| pose.yaw),
                 "pitch": pose.map(|pose| pose.pitch), "epoch": pose.map(|pose| pose.epoch),

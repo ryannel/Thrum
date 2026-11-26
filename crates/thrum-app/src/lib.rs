@@ -62,10 +62,10 @@ pub use app::InterfaceScript;
 #[cfg(target_os = "macos")]
 pub use app::{
     DisplayOverride, DisplayOverrideError, ExtentWindow, GovernorProof, REPORT_VARIABLE,
-    TransitionArm, WindowDisplayOptions, WindowExtentCapture, WindowGame, WindowQualification,
-    WindowTransitionProof, run, run_until_closed, run_with_display, run_with_extent_capture,
-    run_with_qualification, run_with_qualification_and_display, run_with_transition_proof,
-    thermal_state,
+    ScaleReplay, TransitionArm, WindowDisplayOptions, WindowExtentCapture, WindowGame,
+    WindowQualification, WindowTransitionProof, run, run_until_closed, run_with_display,
+    run_with_extent_capture, run_with_qualification, run_with_qualification_and_display,
+    run_with_transition_proof, thermal_state,
 };
 #[cfg(feature = "interface")]
 pub use game::OutputMetrics;

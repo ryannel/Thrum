@@ -21,8 +21,8 @@ mod render_actor;
 
 pub use display::{DisplayOverride, DisplayOverrideError, WindowDisplayOptions};
 pub use qualification::{
-    ExtentWindow, GovernorProof, TransitionArm, WindowExtentCapture, WindowQualification,
-    WindowTransitionProof,
+    ExtentWindow, GovernorProof, ScaleReplay, TransitionArm, WindowExtentCapture,
+    WindowQualification, WindowTransitionProof,
 };
 
 use std::{
@@ -617,6 +617,13 @@ impl<G: WindowGame + 'static> App<G> {
             capture.prepare_window(&window)?;
         }
         if let Some(proof) = &self.transition_proof {
+            if proof.arm == TransitionArm::Fullscreen {
+                use winit::platform::macos::WindowExtMacOS;
+                window.set_borderless_game(true);
+                if !window.set_simple_fullscreen(true) {
+                    return Err("could not enter fullscreen for the route proof".to_owned());
+                }
+            }
             self.transition_ticks = Some(qualification::TransitionTicks::start(proof)?);
             let id = display_link::window_number(&window)?;
             std::fs::write(proof.output.join("window-id"), id.to_string())
@@ -632,7 +639,12 @@ impl<G: WindowGame + 'static> App<G> {
         );
         if self.game.supports_edr()
             && self.extent_capture.is_none()
-            && self.transition_proof.is_none()
+            && (self.transition_proof.is_none()
+                || self.display_options.is_some()
+                || self
+                    .transition_proof
+                    .as_ref()
+                    .is_some_and(|proof| proof.arm == TransitionArm::Fullscreen))
         {
             let mut display = display::MacDisplay::attach(&window, self.display_options.as_ref())?;
             display.sample(0, window.scale_factor());
@@ -1890,6 +1902,7 @@ pub fn run_with_extent_capture<G: WindowGame + 'static, E: std::error::Error>(
 pub fn run_with_transition_proof<G: WindowGame + 'static, E: std::error::Error>(
     config: Config,
     proof: WindowTransitionProof,
+    display: Option<WindowDisplayOptions>,
     game: impl FnOnce() -> Result<G, E>,
 ) {
     run_with(
@@ -1898,7 +1911,7 @@ pub fn run_with_transition_proof<G: WindowGame + 'static, E: std::error::Error>(
         None,
         Some(proof),
         None,
-        None,
+        display,
         game,
     );
 }

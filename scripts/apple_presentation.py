@@ -690,6 +690,14 @@ def ios_edr(output):
                 before=str(route / "edr-before.txt"), after=str(route / "edr-after.txt"))
 
 
+def ios_g4(output):
+    route = output / "route"
+    v1_simulator_route.presentation("g4", route)
+    return dict(target="ios-sim", scope="simulator function only",
+                owed=["physical iPhone EDR", "physical iPhone timing"],
+                simulator_build=json.loads((route / "identity.json").read_text()))
+
+
 def ios_reset(output):
     route = output / "route"
     v1_simulator_route.presentation("reset", route)
@@ -706,7 +714,7 @@ def ios_reset(output):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("check", choices=["wgpu-pin", "metallib", "archive-harvest", "archive-witness", "archive-faults", "launch", "no-compile", "extent", "transition", "configure-fault", "transition-capture", "scale", "scale-costs", "edr", "edr-identity", "edr-modes", "edr-headroom", "edr-route", "governor", "governor-identity", "governor-thermal", "reset", "metalfx", "metalfx-quality", "metalfx-exposure", "metalfx-motion"])
+    parser.add_argument("check", choices=["wgpu-pin", "metallib", "archive-harvest", "archive-witness", "archive-faults", "launch", "no-compile", "extent", "transition", "configure-fault", "transition-capture", "scale", "scale-costs", "paired", "fullscreen-motion", "g4", "edr", "edr-identity", "edr-modes", "edr-headroom", "edr-route", "governor", "governor-identity", "governor-thermal", "reset", "metalfx", "metalfx-quality", "metalfx-exposure", "metalfx-motion"])
     parser.add_argument("--crate", action="append", help="registry patch to verify with wgpu-pin")
     parser.add_argument("--target", choices=["mac-metal", "ios-sim"])
     parser.add_argument("--output", type=Path)
@@ -746,11 +754,14 @@ def main():
     from apple_creation_proof import mac_launch, mac_no_compile
     from apple_metallib_proof import launch_paths, parity
     from apple_archive_proof import archive_faults, archive_harvest, archive_witness, launch_final
+    from apple_paired_proof import mac_fullscreen_motion, mac_paired
 
     if (args.steady or args.realtime_capture) and args.check != "governor":
         parser.error("governor options require the governor check")
     launch = launch_final if args.final else launch_paths if args.paths else mac_launch
     checks = {("launch", "mac-metal"): launch,
+              ("paired", "mac-metal"): mac_paired,
+              ("fullscreen-motion", "mac-metal"): mac_fullscreen_motion,
               ("archive-harvest", "mac-metal"): archive_harvest,
               ("archive-witness", "mac-metal"): archive_witness,
               ("archive-faults", "mac-metal"): archive_faults,
@@ -761,6 +772,7 @@ def main():
               ("governor-identity", "mac-metal"): mac_governor_identity,
               ("governor-thermal", "mac-metal"): mac_governor_thermal,("edr", "ios-sim"): ios_edr,
               ("reset", "ios-sim"): ios_reset,
+              ("g4", "ios-sim"): ios_g4,
               ("metalfx", "mac-metal"): mac_metalfx,
               ("metalfx-quality", "mac-metal"): mac_metalfx_quality,
               ("metalfx-exposure", "mac-metal"): mac_metalfx_exposure,

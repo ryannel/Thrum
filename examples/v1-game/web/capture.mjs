@@ -8,6 +8,7 @@ const query = new URL(location.href).searchParams;
 const mode = query.get('mode');
 const control = query.get('control');
 const source = query.get('source') ?? 'sdr';
+const governed = query.get('governor') === 'on';
 const scene = query.get('scene') ?? 'day';
 const spriteScroll = scene === 'sprites-scroll';
 const spriteSheets = scene === 'sprites-sheets';
@@ -21,10 +22,10 @@ const clouds = query.get('clouds') ?? 'off';
 const cloudView = query.has('cloud-view');
 const configuredExportSlots = Number(query.get('export-slots'));
 const allowedExportSlots = atmosphereMotion || cloudView ? [24, 32, 64, 128] : [24, 32, 64];
-const exportSlots = (spriteField || scene === 'exit' || heldSetup || clouds !== 'off') && allowedExportSlots.includes(configuredExportSlots) ? configuredExportSlots : 8;
+const exportSlots = (governed || spriteField || scene === 'exit' || heldSetup || clouds !== 'off') && allowedExportSlots.includes(configuredExportSlots) ? configuredExportSlots : 8;
 const useUploadWorker = mode === 'realtime' && control === 'ordinary' &&
-  (spriteField || scene === 'exit' || heldSetup || clouds !== 'off');
-const useAnimationFrame = (scene === 'exit' || atmosphereMotion || clouds !== 'off') && mode === 'realtime' &&
+  (governed || spriteField || scene === 'exit' || heldSetup || clouds !== 'off');
+const useAnimationFrame = (governed || scene === 'exit' || atmosphereMotion || clouds !== 'off') && mode === 'realtime' &&
   (control === 'ordinary' || control === 'off');
 if (!['day', 'night', 'noon', 'exit', 'sprites-field', 'sprites-scroll', 'sprites-sheets', 'sprites-status'].includes(scene)) throw new Error('Unknown route scene');
 if (!['sdr', 'scene-linear'].includes(source)) throw new Error('Unknown capture source');
@@ -140,6 +141,10 @@ async function runCapture() {
     game.set_time_of_day(witness === 'stars' ? 0 : 0.5);
     if (witness === 'stars') game.set_camera_pitch(7*Math.PI/180);
   }
+  if (governed) {
+    game.route_render_scale(108);
+    if (!game.enable_route_governor()) fail('the prepared capture route refused the governor');
+  }
   const base = game.route_step_ms(0.5) - 1000 / 60;
   game.set_paused(true, base);
   if (atmosphere !== 'off') {
@@ -190,6 +195,7 @@ async function runCapture() {
   record.start_after_ms = performance.now();
   record.base_world_ms = base;
   record.mode = mode;
+  record.governor = governed;
   record.gpu_pass_timing = !useAnimationFrame;
   record.witness = witness;
   record.extent = route.render_extent;
@@ -307,7 +313,7 @@ async function runCapture() {
     if (performance.now() - start > (mode === 'fixed' ? 120000 : Math.max(20000, duration + 6000))) fail('scenario deadline');
     game.frame(timestamp);
     const opportunity = { ordinal, requested_ms: requested, frame_ms: timestamp, returned_ms: performance.now(), tick: game.committed_tick() };
-    if (clouds !== 'off' && useAnimationFrame) opportunity.raf_ms = rafMs;
+    if ((governed || clouds !== 'off') && useAnimationFrame) opportunity.raf_ms = rafMs;
     if (control === 'off' && scene === 'exit') opportunity.presented = Number(game.presented());
     record.opportunities.push(opportunity);
     ordinal++;

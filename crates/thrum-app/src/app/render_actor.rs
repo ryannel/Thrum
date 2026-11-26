@@ -203,7 +203,13 @@ pub(super) fn start<G: Game<World: Send, Scene: Send> + 'static>(
         assert!(FrameHost::<G::World, G::Scene>::MAX_IN_FLIGHT == SAMPLE_SLOTS);
     }
     let signal = wake.clone();
-    let observer = super::qualification::Observer::start(&mut host, origin, proof, qualification)?;
+    let observer = super::qualification::Observer::start(
+        &mut host,
+        origin,
+        [gpu.config.width, gpu.config.height],
+        proof,
+        qualification,
+    )?;
     let extent_capture = extent_output
         .map(|output| {
             super::qualification::ExtentCapture::start(
@@ -496,6 +502,19 @@ impl<G: Game> Actor<G> {
             .governor_display(display, self.transition.holds_governor());
         self.host
             .governor_display_tick(now, request.platform.display_tick);
+        if let Some(replay) = self
+            .transition_proof
+            .as_ref()
+            .and_then(|proof| proof.scale_replay)
+        {
+            let tick = self
+                .host
+                .world()
+                .source()
+                .tick
+                .saturating_sub(replay.origin);
+            self.host.set_render_scale((replay.scale_at)(tick))?;
+        }
         if ready && !self.host.has_free_slot() {
             // A callback can arrive while an older packet is retiring. Give
             // it the part of this opportunity that encoding can spare.
@@ -987,6 +1006,15 @@ impl<G: Game> Actor<G> {
                 Err(error) => return Err(error.to_string()),
             }
             if self.host.pending_frames() == 0 {
+                #[cfg(feature = "creation-counters")]
+                if let Some(path) = self
+                    .transition_proof
+                    .as_ref()
+                    .and_then(|proof| proof.creation_record.as_ref())
+                {
+                    std::fs::write(path, format!("{:#?}", self.host.creation_report()))
+                        .map_err(|error| error.to_string())?;
+                }
                 if let Some(proof) = &mut self.display_proof {
                     proof.finish(&mut self.host)?;
                 }

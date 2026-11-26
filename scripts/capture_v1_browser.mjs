@@ -17,6 +17,7 @@ const compress = promisify(gzip);
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 const args = { mode: 'realtime', source: 'sdr', scene: 'day', reconstruction: 'off', witness: 'off', 'diagnostic-clouds': 'off', overlay: 'route', 'route-file': '', control: 'ordinary', output: '', 'web-root': '', cook: 'target/debug/thrum-cook', 'assets-source': 'examples/v1-game/assets/showcase', chrome: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' };
 args.effect = 'off';
+args.governor = 'off';
 args.clouds = 'off';
 args['cloud-view'] = '';
 args['cloud-store'] = '';
@@ -39,6 +40,10 @@ if (!['fixed', 'realtime'].includes(args.mode) || !['ordinary', 'stall', 'satura
 if (!['sdr', 'scene-linear'].includes(args.source) || (args.source === 'scene-linear' && args.control !== 'ordinary')) throw new Error('Unsupported capture source/control');
 if (!['day', 'night', 'noon', 'exit', 'sprites-field', 'sprites-scroll', 'sprites-sheets', 'sprites-status'].includes(args.scene)) throw new Error('Unknown route scene');
 if (!['off', 'on'].includes(args['wasm-receipt'])) throw new Error('Invalid Wasm receipt option');
+const governed = args.governor === 'on';
+if (!['off', 'on'].includes(args.governor) || (governed && (args.mode !== 'realtime' || args.reconstruction !== 'taau'))) {
+  throw new Error('Governor capture requires realtime TAAU');
+}
 const spriteScroll = args.scene === 'sprites-scroll';
 const spriteSheets = args.scene === 'sprites-sheets';
 const spriteStatus = args.scene === 'sprites-status';
@@ -132,13 +137,13 @@ const route = JSON.parse(captureRoute ?? files.movingRoute);
 const extent = spriteField ? [1920, 1080] : cloudView ? JSON.parse(cloudView).extent : route.render_extent;
 const frameBytes = extent[0] * extent[1] * (args.source === 'scene-linear' ? 8 : 4);
 const spoolRaw = args.mode === 'realtime' && args.control === 'ordinary' &&
-  ( args.scene === 'exit' || args.witness !== 'off' || args.clouds !== 'off' || args.atmosphere !== 'off');
+  (governed || args.scene === 'exit' || args.witness !== 'off' || args.clouds !== 'off' || args.atmosphere !== 'off');
 const manifest = { complete: false, target: 'chrome-webgpu', source: args.source, scene: args.scene, reconstruction: args.reconstruction, witness: args.witness, diagnostic_clouds: args['diagnostic-clouds'], overlay: args.overlay, mode: args.mode, control: args.control, records: [], export_peak: 0, export_working_byte_cap: 32 * frameBytes, output_allowance: 16 * 1024 ** 3,
   source_revision: execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(), dirty_diff_sha256: sha(execFileSync('git', ['diff', 'HEAD'])),
   route_file: args['route-file'] || null, route_sha256: sha(captureRoute ?? files.movingRoute),
   source_files: sourceHashes, artifacts: Object.fromEntries([...files].map(([name, value]) => [name, value.sha256])) };
 if (spriteField || args.scene === 'exit' || spoolRaw) {
-  manifest.record_limit = cloudMotion ? 4096 : spriteField || args.scene === 'exit' || args.clouds !== 'off' ? 1800 : args.atmosphere !== 'off' ? 1024 : 270;
+  manifest.record_limit = cloudMotion ? 4096 : spriteField || args.scene === 'exit' || args.clouds !== 'off' ? 1800 : governed || args.atmosphere !== 'off' ? 1024 : 270;
   // A suspended request still owns its image. Give the 720p motion take a
   // bounded backlog without increasing the larger or fixed capture profiles.
   manifest.export_slots = spriteField ? 32 : spoolRaw && frameBytes <= 1280 * 720 * 4
@@ -277,7 +282,7 @@ try {
     if (spriteScroll) manifest.sprite_scroll = { scale: Number(args['sprite-scale']), speed: Number(args['sprite-speed']), dpr: spriteDpr };
   }
   manifest.load_before = loadavg();
-  await cdp.call('Page.navigate', { url: `${manifest.origin}/capture.html?mode=${args.mode}&control=${args.control}&source=${args.source}&scene=${args.scene}&reconstruction=${args.reconstruction}&witness=${args.witness}&atmosphere=${args.atmosphere}&diagnostic-clouds=${args['diagnostic-clouds']}&overlay=${args.overlay}&effect=${args.effect}&route=${captureRoute ? 'capture-route.json' : 'moving-v1.json'}&assets=${encodeURIComponent(cookedOrigin ?? '')}${manifest.export_slots ? `&export-slots=${manifest.export_slots}` : ''}&clouds=${args.clouds}${args.haze ? `&haze=${encodeURIComponent(args.haze)}` : ''}${args['haze-take'] ? '&haze-take' : ''}${args['renderer-signature'] === 'on' ? '&renderer-signature' : ''}${cloudView ? '&cloud-view' : ''}${cloudOrigin ? '&cloud-store=' + encodeURIComponent(cloudOrigin) : ''}${spriteQuery}` }, sessionId);
+  await cdp.call('Page.navigate', { url: `${manifest.origin}/capture.html?mode=${args.mode}&control=${args.control}&source=${args.source}&scene=${args.scene}&reconstruction=${args.reconstruction}&governor=${args.governor}&witness=${args.witness}&atmosphere=${args.atmosphere}&diagnostic-clouds=${args['diagnostic-clouds']}&overlay=${args.overlay}&effect=${args.effect}&route=${captureRoute ? 'capture-route.json' : 'moving-v1.json'}&assets=${encodeURIComponent(cookedOrigin ?? '')}${manifest.export_slots ? `&export-slots=${manifest.export_slots}` : ''}&clouds=${args.clouds}${args.haze ? `&haze=${encodeURIComponent(args.haze)}` : ''}${args['haze-take'] ? '&haze-take' : ''}${args['renderer-signature'] === 'on' ? '&renderer-signature' : ''}${cloudView ? '&cloud-view' : ''}${cloudOrigin ? '&cloud-store=' + encodeURIComponent(cloudOrigin) : ''}${spriteQuery}` }, sessionId);
   let destroyed = false;
   const record = await waitFor(async () => {
     if (completionSignal && !captureDone) return undefined;
@@ -298,6 +303,10 @@ try {
     if (receipt.result.value) manifest.instantiated_wasm_sha256 = receipt.result.value;
   }
   await fs.writeFile(path.join(output, 'runtime.json'), JSON.stringify(record, null, 2));
+  if (governed && (!record.governor || record.final_report?.reconstruction !== 'Taau' ||
+      !record.final_report.samples?.some(sample => sample.governor_scale != null))) {
+    throw new Error('Capture did not retain the resolved governor and TAAU');
+  }
   if ((spriteScroll || spriteStatus) && (record.device_pixel_ratio !== spriteDpr ||
       JSON.stringify(record.css_extent.map(side => side * spriteDpr)) !== JSON.stringify(extent))) {
     throw new Error('Sprite capture did not run at one canvas backing pixel per device pixel');

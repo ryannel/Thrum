@@ -1,7 +1,7 @@
 //! Opt-in Mac qualification observer; ordinary presentation remains the only producer.
 
 mod transition;
-pub use transition::{GovernorProof, TransitionArm, WindowTransitionProof};
+pub use transition::{GovernorProof, ScaleReplay, TransitionArm, WindowTransitionProof};
 pub(super) use transition::{TransitionProof, TransitionTicks};
 
 use crate::{
@@ -405,6 +405,7 @@ impl Observer {
     pub(super) fn start<W: FrameWorld, V: SceneSource<W::Page>>(
         host: &mut FrameHost<W, V>,
         origin: Instant,
+        extent: [u32; 2],
         transition: Option<&WindowTransitionProof>,
         qualification: Option<&WindowQualification>,
     ) -> Result<Option<Self>, String> {
@@ -438,6 +439,14 @@ impl Observer {
         };
         let capture = transition.is_some() || qualification.is_some_and(|options| options.capture);
         let writer = if capture {
+            let fullscreen =
+                transition.is_some_and(|options| options.arm == TransitionArm::Fullscreen);
+            let max_bytes = 1024 * 1024 * 1024;
+            // Reserve for six staging copies and row padding at the native backing size.
+            let frame_bytes = u64::from(extent[0]) * u64::from(extent[1]) * 4;
+            let fullscreen_buffers = usize::try_from(max_bytes / frame_bytes)
+                .unwrap_or(0)
+                .saturating_sub(7);
             // The qualification spool and its readers exchange RGBA8.
             // Request that engine stage without changing the window's display mode.
             host.enable_submitted_capture_from(
@@ -446,7 +455,13 @@ impl Observer {
                     staging_slots: 6,
                     // The 2560×1440 status sweep needs enough leases for the
                     // old grid's last copies and the new grid's first copies.
-                    cpu_buffers: if status_markers.is_some() { 64 } else { 96 },
+                    cpu_buffers: if fullscreen {
+                        fullscreen_buffers
+                    } else if status_markers.is_some() {
+                        64
+                    } else {
+                        96
+                    },
                     byte_allowance: if status_markers.is_some() { 2 } else { 1 }
                         * 1024
                         * 1024
@@ -455,11 +470,12 @@ impl Observer {
                 CaptureSource::Sdr,
             )
             .map_err(|e| e.to_string())?;
-            let (name, encoding) = if transition.is_some() {
-                ("frames.rgba", SpoolEncoding::Raw)
-            } else {
-                ("frames.zst", SpoolEncoding::ZstdDelta)
-            };
+            let (name, encoding) =
+                if transition.is_some_and(|options| options.arm != TransitionArm::Fullscreen) {
+                    ("frames.rgba", SpoolEncoding::Raw)
+                } else {
+                    ("frames.zst", SpoolEncoding::ZstdDelta)
+                };
             let file = File::create(output.join(name)).map_err(|e| e.to_string())?;
             Some(
                 ImageWriter::start(

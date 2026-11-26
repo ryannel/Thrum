@@ -278,12 +278,14 @@ fn window_extent_capture() -> Result<Option<thrum_app::WindowExtentCapture>, Str
 
 #[cfg(all(target_os = "macos", feature = "proving"))]
 fn window_transition_proof() -> Result<Option<thrum_app::WindowTransitionProof>, String> {
-    use thrum_app::{TransitionArm, WindowTransitionProof};
+    use thrum_app::{ScaleReplay, TransitionArm, WindowTransitionProof};
     let Some(output) = std::env::var_os("THRUM_MAC_TRANSITION") else {
         return Ok(None);
     };
     let arm = match std::env::var("THRUM_MAC_TRANSITION_ARM").as_deref() {
         Ok("baseline") => TransitionArm::Baseline,
+        Ok("fullscreen") => TransitionArm::Fullscreen,
+        Ok("route") => TransitionArm::Route,
         Ok("sweep") => TransitionArm::Sweep,
         Ok("status") => TransitionArm::Status,
         Ok("synchronous") => TransitionArm::Synchronous,
@@ -291,18 +293,32 @@ fn window_transition_proof() -> Result<Option<thrum_app::WindowTransitionProof>,
         Ok("skip-restore") => TransitionArm::SkipRestore,
         _ => return Err("unknown Mac transition proof arm".to_owned()),
     };
+    let record = std::env::var("THRUM_GOVERNOR_RECORD");
+    let scale_replay = if record.as_deref() == Ok("replay") {
+        let origin = std::env::var("THRUM_G4_SCALE_ORIGIN")
+            .map_err(|error| format!("scale replay origin: {error}"))?
+            .parse::<u64>()
+            .map_err(|error| format!("scale replay origin: {error}"))?;
+        Some(ScaleReplay {
+            origin,
+            scale_at: v1_game::route_render_scale,
+        })
+    } else {
+        None
+    };
     Ok(Some(WindowTransitionProof {
         output: output.into(),
         arm,
         tap: std::env::var_os("THRUM_MAC_TRANSITION_TAP").is_some(),
-        governor: match std::env::var("THRUM_GOVERNOR_RECORD").as_deref() {
+        scale_replay,
+        governor: match record.as_deref() {
             Ok("thermal") => Some(thrum_app::GovernorProof::Thermal {
                 from: 90,
                 until: 210,
             }),
-            Ok("observed") => Some(thrum_app::GovernorProof::Observed),
+            Ok("observed" | "replay") => Some(thrum_app::GovernorProof::Observed),
             Err(std::env::VarError::NotPresent) => None,
-            _ => return Err("THRUM_GOVERNOR_RECORD must be observed or thermal".to_owned()),
+            _ => return Err("THRUM_GOVERNOR_RECORD must be observed, replay or thermal".to_owned()),
         },
     }))
 }

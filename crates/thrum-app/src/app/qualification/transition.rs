@@ -18,6 +18,10 @@ use thrum_render::{
 pub enum TransitionArm {
     /// Keep the window at its original size.
     Baseline,
+    /// Keep the window at its monitor's fullscreen extent.
+    Fullscreen,
+    /// Keep the window at its initial size during the presentation comparison.
+    Route,
     /// Capture a status display across a series of real window sizes.
     Status,
     /// Sweep the window and inject a display backing-scale observation.
@@ -37,7 +41,7 @@ impl TransitionArm {
             (Self::Status, 48) => Some([320, 568]),
             (Self::Status, 72) => Some([568, 320]),
             (Self::Status, 96) => Some([1280, 720]),
-            (Self::Status | Self::Baseline, _) => None,
+            (Self::Status | Self::Baseline | Self::Fullscreen | Self::Route, _) => None,
             (_, 24..48) => {
                 let step = u32::try_from(frame - 24).expect("resize sweep step fits u32");
                 Some([960 - step * 8, 540 - step * 4])
@@ -66,6 +70,17 @@ pub struct WindowTransitionProof {
     pub tap: bool,
     /// Record governor samples and optionally inject a platform thermal excursion.
     pub governor: Option<GovernorProof>,
+    /// Authored scale replay for a comparison, indexed by the published world tick.
+    pub scale_replay: Option<ScaleReplay>,
+}
+
+/// Scale trace used in place of the live governor for a paired comparison.
+#[derive(Clone, Copy)]
+pub struct ScaleReplay {
+    /// First tick of the authored route in the published world.
+    pub origin: u64,
+    /// Drawn scale at a tick relative to the route's origin.
+    pub scale_at: fn(u64) -> thrum_render::synthetic::RenderScale,
 }
 
 /// Governor observations on the same real surface and display link as the transition proof.
@@ -145,6 +160,10 @@ pub(in crate::app) struct TransitionProof {
     drawable: Option<([u32; 2], [u32; 2])>,
     frame_extent: Option<FrameExtent>,
     switch: Option<Value>,
+    identity: Option<PathBuf>,
+    #[cfg(feature = "creation-counters")]
+    pub(in crate::app) creation_record: Option<PathBuf>,
+    pub(in crate::app) scale_replay: Option<ScaleReplay>,
 }
 
 impl TransitionProof {
@@ -153,7 +172,15 @@ impl TransitionProof {
             File::create(options.output.join("frames.jsonl")).map_err(|error| error.to_string())?;
         let configure = File::create(options.output.join("configure.jsonl"))
             .map_err(|error| error.to_string())?;
+        let closing_route = matches!(
+            options.arm,
+            TransitionArm::Fullscreen | TransitionArm::Route
+        );
         Ok(Self {
+            identity: closing_route.then(|| options.output.join("prepared.json")),
+            #[cfg(feature = "creation-counters")]
+            creation_record: closing_route.then(|| options.output.join("creations.txt")),
+            scale_replay: options.scale_replay,
             output: BufWriter::new(file),
             configure_log: BufWriter::new(configure),
             configure_error: None,
@@ -295,6 +322,20 @@ impl TransitionProof {
         if let Some(error) = self.configure_error.take() {
             return Err(error);
         }
+        if let Some(path) = self.identity.take() {
+            let caps = host.device_capabilities();
+            let graph = host.scene_graph().map_err(io::Error::other)?;
+            std::fs::write(path, json!({
+                "adapter": caps.adapter().name,
+                "recipe": format!("{:?}", caps.recipe()),
+                "registry_digest": caps.registry_digest(),
+                "reconstruction": format!("{:?}", host.reconstruction()),
+                "registry_default_reconstructor": format!("{:?}", caps.reconstructor()),
+                "storage": host.storage_report(),
+                "graph_attachment_load_store_bytes": graph.declared_attachment_bytes().collect::<Vec<_>>(),
+                "graph": format!("{graph:?}"),
+            }).to_string())?;
+        }
         self.stage("idle");
         self.sequence = None;
         let presented =
@@ -306,6 +347,12 @@ impl TransitionProof {
                 "observation_ns": sample.observation.as_nanos(),
                 "render_extent": sample.render_extent,
                 "gpu_ns": sample.gpu_pass_ns.as_ref().map(|gpu| gpu.sum() + sample.gpu_present_ns.unwrap_or_default()),
+                "gpu_pass_ns": sample.gpu_pass_ns.as_ref().map(thrum_render::timing::SceneGpuTimings::values),
+                "gpu_present_ns": sample.gpu_present_ns,
+                "native_segment": sample.native_segment.as_ref().map(|segment| json!({
+                    "pass": segment.pass_name(),
+                    "outcome": format!("{:?}", segment.outcome()),
+                })),
                 "gpu_span_ns": sample.gpu_pass_ns.as_ref().and_then(thrum_render::timing::SceneGpuTimings::timed_pass_span_nanoseconds),
                 "render_cpu_ns": sample.render_cpu.as_nanos(),
                 "debug_load_ns": sample.gpu_pass_ns.as_ref().and_then(|gpu| gpu.passes().iter().find(|pass| pass.name.ends_with("debug load")).map(|pass| pass.nanoseconds)),

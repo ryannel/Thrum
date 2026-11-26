@@ -243,9 +243,10 @@ pub fn run_window(
         frame_budget: None,
         metal_preparation,
         #[cfg(feature = "proving")]
-        window_size: if display
-            .as_ref()
-            .is_some_and(|options| options.output.is_some())
+        window_size: if transition.is_none()
+            && display
+                .as_ref()
+                .is_some_and(|options| options.output.is_some())
         {
             [640, 360]
         } else {
@@ -290,7 +291,7 @@ pub fn run_window(
         if sprite_card && proof.tap {
             write_card_texels(&proof.output);
         }
-        thrum_app::run_with_transition_proof(config, proof, game);
+        thrum_app::run_with_transition_proof(config, proof, display, game);
     } else if let Some(qualification) = qualification {
         thrum_app::run_with_qualification_and_display(config, qualification, display, game);
     } else if let Some(display) = display {
@@ -408,11 +409,7 @@ fn capture_game_with_route_limit(
         scene: None,
         cloud_capture,
         capture_cooked,
-        capture_eye: crate::content::launch_value("THRUM_CAPTURE_FIXED_EYE")
-            .ok()
-            .map(|value| serde_json::from_str(&value))
-            .transpose()
-            .map_err(|error| format!("fixed capture eye: {error}"))?,
+        capture_eye: fixed_capture_eye()?,
         hardware: Vec::new(),
         governor_enabled: false,
         capture_route: std::env::var_os("THRUM_CAPTURE_RUNTIME_ROUTE")
@@ -420,6 +417,15 @@ fn capture_game_with_route_limit(
             .transpose()
             .map_err(|error| error.to_string())?,
     }))
+}
+
+#[cfg(feature = "proving")]
+fn fixed_capture_eye() -> Result<Option<[f32; 3]>, String> {
+    crate::content::launch_value("THRUM_CAPTURE_FIXED_EYE")
+        .ok()
+        .map(|value| serde_json::from_str(&value))
+        .transpose()
+        .map_err(|error| format!("fixed capture eye: {error}"))
 }
 
 impl WindowGame {
@@ -601,7 +607,11 @@ impl RuntimeSetup for WindowGame {
         crate::attach_cooked_scene(&mut host)?;
         host.finish_preparation();
         #[cfg(feature = "proving")]
-        if let Some(eye) = self.capture_eye {
+        if let Some(eye) = if self.replay_controls {
+            fixed_capture_eye()?
+        } else {
+            self.capture_eye
+        } {
             if self.capture_route.is_some() {
                 return Err("a fixed capture eye cannot override an active route".to_owned());
             }

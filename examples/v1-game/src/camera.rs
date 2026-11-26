@@ -114,7 +114,7 @@ impl SceneCamera {
 /// Descend and return through adjacent scales during the moving route. The authored
 /// camera cut at routed tick 200 deliberately falls between scale changes.
 #[cfg(all(feature = "proving", any(target_arch = "wasm32", target_os = "macos")))]
-pub(crate) fn route_render_scale(routed_tick: u64) -> thrum_render::synthetic::RenderScale {
+pub fn route_render_scale(routed_tick: u64) -> thrum_render::synthetic::RenderScale {
     use thrum_render::synthetic::RenderScale::{Half, Native, Percent67, Percent75, Percent85};
     match routed_tick {
         0..36 | 300.. => Native,

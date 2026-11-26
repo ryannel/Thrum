@@ -84,14 +84,19 @@
         const valley = await fetch_cooked_valley(query.get("assets"));
         game.attach_cooked_valley(valley);
         game.set_visible(true, 0);
-        if (exit) {
+        // @proving
+        const governed = query.has('g4-route');
+        // @shipping
+        const governed = false;
+        // @end
+        if (exit || governed) {
           const deadline = performance.now() + 15000;
           while (JSON.parse(game.cooked_status()).drawn !== route.cooked_generation) {
-            if (performance.now() > deadline) fail('exit cooked residency deadline');
+            if (performance.now() > deadline) fail('cooked residency deadline');
             if (game.route_slot_ready()) game.frame(0);
             await wait(1);
           }
-          if (game.committed_tick() !== 0) fail('exit advanced during residency');
+          if (game.committed_tick() !== 0) fail('world advanced during residency');
         }
         // @proving
         // The route's phase; ?phi replaces it only for the negative control, and the header logs the one used.
@@ -121,7 +126,7 @@
         let before = JSON.parse(game.route_report(Number.MAX_SAFE_INTEGER));
         if (before.timestamp_clamps !== 0) fail("the clock clamped before the route");
         // Exit residency submits at tick zero before the half-phase route driver starts.
-        let nextSample = exit ? 1 : 0;
+        let nextSample = exit || governed ? 1 : 0;
         let frames = 0;
         record.slot_waits = 0;
         record.slot_wait_max_ms = 0;
@@ -136,7 +141,15 @@
           if (hidden || document.hidden) fail("the page was hidden during the route");
           const tick = game.committed_tick();
           if (tick !== expectedTick) fail(`the committed tick moved from ${expectedTick} to ${tick} outside the route's steps`);
-          if (tick === origin - 1) game.install_route(text);
+          if (tick === origin - 1) {
+            game.install_route(text);
+            // @proving
+            if (governed) {
+              game.route_render_scale(108);
+              if (!game.enable_route_governor()) fail('the prepared route refused the governor');
+            }
+            // @end
+          }
           const routed = tick >= last;
           if (routed) {
             const missing = [];
@@ -154,7 +167,7 @@
           // @proving
           const checkpointCapture = query.has('culling-proof') && checkpoints.has(tick + 1) && !routed;
           if (checkpointCapture) game.begin_submitted_capture(tick + 1);
-          if (scaleProof) game.route_render_scale(Math.max(0, tick + 1 - origin));
+          if (scaleProof && !governed) game.route_render_scale(Math.max(0, tick + 1 - origin));
           const creationBefore = scaleProof && creations();
           // @end
           game.frame(game.route_step_ms(phi));
@@ -229,6 +242,7 @@
         if (exit) record.exit = JSON.parse(game.exit_status());
         // @proving
         if (query.has('no-compile-proof')) record.compile_creations.push(window.thrumCompileCreations());
+        if (governed) record.final_creations = creations();
         // @end
         record.done = true;
         status.textContent = "Moving route complete.";

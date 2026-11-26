@@ -914,6 +914,12 @@ impl BrowserGame {
             .map_err(|error| js_error(error.to_string()))
     }
 
+    /// Enable the quality governor on a prepared browser proof route.
+    #[cfg(feature = "proving")]
+    pub fn enable_route_governor(&mut self) -> bool {
+        self.page.shell.enable_governor()
+    }
+
     /// Route identity as JSON: counters, solar hours and retained samples from `from_tick`.
     #[must_use]
     pub fn route_report(&self, from_tick: f64) -> String {

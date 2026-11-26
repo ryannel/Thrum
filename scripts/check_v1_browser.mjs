@@ -21,7 +21,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repo = fileURLToPath(new URL('../', import.meta.url));
-const cases = ['temporal', 'effect-state', 'environment-off-parity', 'environment-cost', 'environment', 'normal', 'pause', 'resize', 'overload', 'input', 'controls', 'tabs', 'params', 'device-loss', 'late-device-loss', 'device-recovery', 'device-recovery-retry', 'device-recovery-acquire', 'sky-reflections', 'valley', 'valley-recovery', 'valley-late-attach', 'material', 'material-disabled', 'field', 'field-direct', 'field-occlusion', 'field-oracle', 'route', 'moving-route', 'moving-route-controls'];
+const cases = ['temporal', 'effect-state', 'environment-off-parity', 'environment-cost', 'environment', 'normal', 'pause', 'resize', 'overload', 'input', 'controls', 'tabs', 'params', 'device-loss', 'late-device-loss', 'device-recovery', 'device-recovery-retry', 'device-recovery-acquire', 'sky-reflections', 'valley', 'valley-recovery', 'valley-late-attach', 'material', 'material-disabled', 'field', 'field-direct', 'field-occlusion', 'field-oracle', 'route', 'moving-route', 'moving-route-controls', 'g4-route'];
 const configureFailureSentinel = 'THRUM_CONFIGURE_FAILURE';
 const acquireFailureSentinel = 'THRUM_ACQUIRE_ONCE';
 cases.push('lent-products');
@@ -1456,7 +1456,8 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
   const routeCase = (mode.startsWith('route-') && !routeDiagnostic) || exitStop;
   const exitCase = mode === 'exit-scene' || mode === 'exit-sweep';
   const sweep = mode === 'exit-sweep';
-  const scaleCase = mode === 'scale';
+  const g4Case = mode === 'g4-route';
+  const scaleCase = mode === 'scale' || g4Case;
   const noCompile = mode === 'no-compile';
   const movingCase = scaleCase || noCompile || mode === 'moving-route' || mode.startsWith('moving-route-');
   const movingControl = mode.startsWith('moving-route-') ? mode.slice('moving-route-'.length) : undefined;
@@ -1469,7 +1470,7 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
     ? `${origin}/?scene=exit&assets=${encodeURIComponent(assetsOrigin)}${sweep ? `&measure&qualify&params=${encodeURIComponent(`showcase-${process.env.THRUM_EXIT_SWEEP_STOP || 'noon'}.params.json`)}` : ''}`
     : movingCase ? `${origin}/route.html?route=${files.movingRouteFile}&assets=${encodeURIComponent(assetsOrigin)}${movingControl === 'phi' ? '&phi=0.1' : ''}${files.movingRouteFile === 'exit-flythrough.json' ? '&scene=exit' : ''}` : routeCase ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&params=${routeFile}&route-check` : routeDiagnostic ? `${origin}/?route-check` : materialCase || materialDisabled ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&material=case.material.wgsl` : valleyCase || valleyRecovery || lateAttach ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}` : mode === 'params' ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&params=case.params.json` : mode === 'controls' || tabCase || destroyCase || skyCase ? `${origin}/` : mode === 'field' ? `${origin}/?qualify&field` : mode === 'field-direct' ? `${origin}/?qualify&field&culling=direct` : mode === 'field-occlusion' ? `${origin}/?qualify&field&culling=occlusion` : oracleCase ? `${origin}/?field&culling=${mode.slice('field-oracle-'.length)}&params=field-oracle.params.json` : `${origin}/?qualify${['normal', 'input'].includes(mode) ? '' : `&${mode}-probe`}`;
   const log = line => { timeline.push(line); console.log(`${mode}: ${line}`); };
-  const cullingQuery = scaleCase ? '&reconstruction=taau&scale-proof' : noCompile ? '&reconstruction=taau&no-compile-proof' : movingCase ? `&culling=${process.env.THRUM_ROUTE_CULLING ?? 'default'}&meshes=${process.env.THRUM_VALLEY_MESHES ?? 'off'}&reconstruction=${process.env.THRUM_RECONSTRUCTION ?? 'off'}${process.env.THRUM_CULLING_PROOF === 'on' ? '&culling-proof' : ''}` : '';
+  const cullingQuery = scaleCase ? `&reconstruction=taau&scale-proof${g4Case ? '&g4-route' : ''}` : noCompile ? '&reconstruction=taau&no-compile-proof' : movingCase ? `&culling=${process.env.THRUM_ROUTE_CULLING ?? 'default'}&meshes=${process.env.THRUM_VALLEY_MESHES ?? 'off'}&reconstruction=${process.env.THRUM_RECONSTRUCTION ?? 'off'}${process.env.THRUM_CULLING_PROOF === 'on' ? '&culling-proof' : ''}` : '';
   try {
     ({ sessionId } = await cdp.call('Target.attachToTarget', { targetId, flatten: true }));
     cdp.event = packet => {
@@ -1506,7 +1507,9 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
     })()` }, sessionId);
     if (scaleCase) await cdp.call('Page.addScriptToEvaluateOnNewDocument', { source: `(() => {
       const methods = ['createTexture', 'createView', 'createBindGroup', 'createComputePipeline',
-        'createRenderPipeline', 'createComputePipelineAsync', 'createRenderPipelineAsync'];
+        'createRenderPipeline', 'createComputePipelineAsync', 'createRenderPipelineAsync',
+        'createBuffer', 'createSampler', 'createQuerySet', 'createBindGroupLayout', 'createPipelineLayout',
+        'createShaderModule'];
       const counts = Object.fromEntries(methods.map(method => [method, 0]));
       // Canvas acquisition supplies one drawable per present at every scale.
       const drawables = new WeakSet();
@@ -1899,7 +1902,7 @@ async function qualifyMovingRoute(cdp, sessionId, poll, timeout, output, files, 
       throw new Error(`WebGPU creation across readiness: ${JSON.stringify(record.compile_creations)}`);
     }
   }
-  if (mode === 'scale') {
+  if (mode === 'scale' || mode === 'g4-route') {
     if (record.header.reconstruction !== 'Taau' ||
         ['createTexture', 'createView', 'createBindGroup', 'createComputePipeline', 'createRenderPipeline']
           .some(method => record.creation_baseline[method] <= 0)) {
@@ -1919,8 +1922,17 @@ async function qualifyMovingRoute(cdp, sessionId, poll, timeout, output, files, 
     }
     const expected = [85, 75, 67, 50, 67, 75, 85, 100]
       .map(percent => route.render_extent.map(axis => Math.round(axis * percent / 100)));
-    if (JSON.stringify(changes.map(row => row.extent)) !== JSON.stringify(expected)) {
+    if (mode === 'scale' && JSON.stringify(changes.map(row => row.extent)) !== JSON.stringify(expected)) {
       throw new Error(`Unexpected sequence of scale steps ${JSON.stringify(changes)}`);
+    }
+    if (mode === 'g4-route') {
+      if (JSON.stringify(record.creation_baseline) !== JSON.stringify(record.final_creations) ||
+          !changes.length || Object.values(record.samples)
+            .filter(sample => sample.tick >= origin && sample.tick <= last)
+            .some(sample => sample.governor_scale == null ||
+              !sample.render_extent.every((axis, index) => axis === Math.round(route.render_extent[index] * sample.governor_scale / 100)))) {
+        throw new Error('G4 route created GPU resources after readiness or lost its governor');
+      }
     }
     await fs.writeFile(path.join(output, 'scale-steps.json'), JSON.stringify(changes, null, 2));
   }
@@ -2527,7 +2539,7 @@ async function qualifyExtent(cdp, origin, output, timeout, wasm) {
 
 async function main() {
   const args = options(process.argv.slice(2));
-  if (!args) { console.log('node scripts/check_v1_browser.mjs [--case all|effect-state|effect-tick|shipping-boundary|normal|pause|resize|overload|input|controls|tabs|params|device-loss|late-device-loss|device-recovery|device-recovery-retry|device-recovery-acquire|sky-reflections|valley|valley-recovery|valley-late-attach|material|material-disabled|field|field-direct|field-occlusion|field-oracle|route|moving-route|moving-route-controls|no-compile|clouds-first-frame|clouds-state|clouds-placed|clouds-controls|sprite-sheets] [--web-root target/v1-game-web] [--cook target/debug/thrum-cook] [--assets-source examples/v1-game/assets/showcase] [--chrome /path/to/Chrome] [--output tmp/new-run] [--timeout-ms 90000]\nRequires Node 24+, an already-built game, and this Mac\'s Apple M3 Max/Metal Chrome. Controls checks manual pause with ongoing RAF; tabs switches real Chrome tabs and checks authority, input release and manual pause; params applies, explains and reloads a parameter file; visibility checks use the explicit hook, not tab hiding. Recovery uses the real Restore button. The retry case throws once during canvas configure and checks that a second click admits a new candidate. The acquire case throws once after configure and checks recovery on the same candidate. Sky reflections saves nine paused phases and 24 camera/Sun samples; valley repeats them on the cooked valley served by thrum-cook; valley-recovery runs device recovery with that valley attached; valley-late-attach holds the valley requests until the device is lost, then proves the attach made no GPU call on the lost device and the valley draws on the replacement; material reloads a WGSL hook on that valley (valid, refused, and outstanding across a destroyed device) and records contended frame intervals around the valid reload; it needs the development page (web/build.sh --dev), so all leaves it out. material-disabled loads the default page with ?material and proves it starts no material work. Field qualifies the 100,513-instance flythrough with Frustum camera culling; field-direct and field-occlusion qualify it with Direct and Occlusion for a paired comparison; field-oracle pauses three fresh pages and compares Frustum and Occlusion captures with Direct byte for byte. Route launches one fresh page per checked-in examples/v1-game/params/showcase-*.params.json preset with the cooked valley, after requiring the web root to ship each byte for byte and no others; it proves the preset applied and the valley drew, brackets navigation to the first observed cooked draw on the page clock, and captures the paused canvas. Moving-route (not in all) loads route.html with the checked-in examples/v1-game/routes/moving-v1.json against the served cooked store it names, captures the presented canvas at each checkpoint hold and saves the page\'s per-tick record; moving-route-controls runs its negative controls, one fresh page each: hidden at start, hidden mid-route, a clamped timestamp, refused edits plus a performance-stamped frame, a canvas resize, an undeclared second cooked generation (each must end in its named refusal), and phase 0.1 for the comparator. The other cases make no timing claim.'); return; }
+  if (!args) { console.log('node scripts/check_v1_browser.mjs [--case all|effect-state|effect-tick|shipping-boundary|normal|pause|resize|overload|input|controls|tabs|params|device-loss|late-device-loss|device-recovery|device-recovery-retry|device-recovery-acquire|sky-reflections|valley|valley-recovery|valley-late-attach|material|material-disabled|field|field-direct|field-occlusion|field-oracle|route|moving-route|moving-route-controls|g4-route|no-compile|clouds-first-frame|clouds-state|clouds-placed|clouds-controls|sprite-sheets] [--web-root target/v1-game-web] [--cook target/debug/thrum-cook] [--assets-source examples/v1-game/assets/showcase] [--chrome /path/to/Chrome] [--output tmp/new-run] [--timeout-ms 90000]\nRequires Node 24+, an already-built game, and this Mac\'s Apple M3 Max/Metal Chrome. Controls checks manual pause with ongoing RAF; tabs switches real Chrome tabs and checks authority, input release and manual pause; params applies, explains and reloads a parameter file; visibility checks use the explicit hook, not tab hiding. Recovery uses the real Restore button. The retry case throws once during canvas configure and checks that a second click admits a new candidate. The acquire case throws once after configure and checks recovery on the same candidate. Sky reflections saves nine paused phases and 24 camera/Sun samples; valley repeats them on the cooked valley served by thrum-cook; valley-recovery runs device recovery with that valley attached; valley-late-attach holds the valley requests until the device is lost, then proves the attach made no GPU call on the lost device and the valley draws on the replacement; material reloads a WGSL hook on that valley (valid, refused, and outstanding across a destroyed device) and records contended frame intervals around the valid reload; it needs the development page (web/build.sh --dev), so all leaves it out. material-disabled loads the default page with ?material and proves it starts no material work. Field qualifies the 100,513-instance flythrough with Frustum camera culling; field-direct and field-occlusion qualify it with Direct and Occlusion for a paired comparison; field-oracle pauses three fresh pages and compares Frustum and Occlusion captures with Direct byte for byte. Route launches one fresh page per checked-in examples/v1-game/params/showcase-*.params.json preset with the cooked valley, after requiring the web root to ship each byte for byte and no others; it proves the preset applied and the valley drew, brackets navigation to the first observed cooked draw on the page clock, and captures the paused canvas. Moving-route (not in all) loads route.html with the checked-in examples/v1-game/routes/moving-v1.json against the served cooked store it names, captures the presented canvas at each checkpoint hold and saves the page\'s per-tick record; moving-route-controls runs its negative controls, one fresh page each: hidden at start, hidden mid-route, a clamped timestamp, refused edits plus a performance-stamped frame, a canvas resize, an undeclared second cooked generation (each must end in its named refusal), and phase 0.1 for the comparator. The other cases make no timing claim.'); return; }
   if (Number(process.versions.node.split('.')[0]) < 24 || typeof WebSocket !== 'function') throw new Error('Node 24+ with builtin WebSocket is required');
   if (args.case === 'sprite-sheets') {
     if (args.cook === 'target/debug/thrum-cook') {
@@ -2551,7 +2563,7 @@ async function main() {
       { cwd: repo, env: { ...process.env, CARGO_TARGET_DIR: 'target', RUSTC_WRAPPER: '' }, stdio: 'inherit' });
     if (proving) args['web-root'] = 'target/v1-game-web-proving';
   }
-  if (['exit-scene', 'scale', 'no-compile', 'interface-text', 'interface-text-visual', 'interface-status', 'interface-status-cost', 'interface-modal'].includes(args.case) && args.cook === 'target/debug/thrum-cook') {
+  if (['exit-scene', 'scale', 'g4-route', 'no-compile', 'interface-text', 'interface-text-visual', 'interface-status', 'interface-status-cost', 'interface-modal'].includes(args.case) && args.cook === 'target/debug/thrum-cook') {
     execFileSync('rustup', ['run', 'stable', 'cargo', 'build', '--locked', '--offline', '--target-dir', 'target', '-p', 'thrum-cook', '--bin', 'thrum-cook'],
       { cwd: repo, env: { ...process.env, RUSTC_WRAPPER: '' }, stdio: 'inherit' });
   }
@@ -2639,10 +2651,10 @@ async function main() {
     // `all` checks the default page; `material` needs the development page, so it runs on its own.
     const modes = [];
     // The moving route is its own run: it needs route.html and makes a separate evidence record.
-    for (const mode of args.case === 'all' ? cases.filter(mode => mode !== 'mesh-rows' && mode !== 'material' && mode !== 'shipping-boundary' && mode !== 'sprites-2d-cost' && mode !== 'sprites-crisp' && mode !== 'sprite-sheets' && mode !== 'route-diagnostic' && mode !== 'no-compile' && mode !== 'scale' && mode !== 'governor' && !mode.startsWith('interface-') && !mode.startsWith('sprites-field') && !mode.startsWith('moving-route') && !mode.startsWith('environment-') && !mode.startsWith('exit-')) : [args.case]) {
+    for (const mode of args.case === 'all' ? cases.filter(mode => mode !== 'mesh-rows' && mode !== 'material' && mode !== 'shipping-boundary' && mode !== 'sprites-2d-cost' && mode !== 'sprites-crisp' && mode !== 'sprite-sheets' && mode !== 'route-diagnostic' && mode !== 'no-compile' && mode !== 'scale' && mode !== 'g4-route' && mode !== 'governor' && !mode.startsWith('interface-') && !mode.startsWith('sprites-field') && !mode.startsWith('moving-route') && !mode.startsWith('environment-') && !mode.startsWith('exit-')) : [args.case]) {
       modes.push(...(mode === 'moving-route-controls' ? Object.keys(movingControls).map(control => `moving-route-${control}`) : mode === 'field-oracle' ? ['field-oracle-direct', 'field-oracle-frustum', 'field-oracle-occlusion'] : mode === 'route' || mode === 'exit-stops' ? (await routeStops(files, directory)).map(stop => mode === 'exit-stops' ? stop.replace(/^route-/, 'exit-stop-') : stop) : [mode]));
     }
-    if (modes.some(mode => mode === 'scale' || mode === 'no-compile' || mode.startsWith('moving-route'))) {
+    if (modes.some(mode => mode === 'scale' || mode === 'g4-route' || mode === 'no-compile' || mode.startsWith('moving-route'))) {
       await movingRouteFiles(files, directory, args.case === 'moving-route' && process.env.THRUM_SCENE === 'exit'
         ? 'exit-flythrough.json' : undefined);
     }
@@ -2652,7 +2664,7 @@ async function main() {
     let assetsOrigin;
     let assetsSource;
     if (modes.includes('route-diagnostic')) await routeStops(files, directory);
-    if (modes.some(mode => mode.startsWith('environment-') || ['scale', 'no-compile', 'temporal', 'valley', 'valley-recovery', 'valley-late-attach', 'params', 'material', 'material-disabled'].includes(mode) || (mode.startsWith('route-') && mode !== 'route-diagnostic') || mode.startsWith('moving-route') || mode.startsWith('exit-'))) ({ cook, origin: assetsOrigin, source: assetsSource } = await serveCooked(args, output, temporalDefinition));
+    if (modes.some(mode => mode.startsWith('environment-') || ['scale', 'g4-route', 'no-compile', 'temporal', 'valley', 'valley-recovery', 'valley-late-attach', 'params', 'material', 'material-disabled'].includes(mode) || (mode.startsWith('route-') && mode !== 'route-diagnostic') || mode.startsWith('moving-route') || mode.startsWith('exit-'))) ({ cook, origin: assetsOrigin, source: assetsSource } = await serveCooked(args, output, temporalDefinition));
     if (args.case.startsWith('interface-text') || args.case.startsWith('interface-status') || args.case === 'interface-modal') {
       ({ cook, origin: assetsOrigin, source: assetsSource } = await serveCooked({
         ...args, 'assets-source': 'tests/fixtures/game-ui/font-source',

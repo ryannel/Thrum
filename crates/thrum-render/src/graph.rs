@@ -1075,6 +1075,63 @@ impl GraphTextures {
 }
 
 impl CompiledGraph {
+    /// Logical load and store bytes for each pass's declared attachments.
+    ///
+    /// This counts complete declared subresources once per operation. It does not
+    /// estimate raster coverage, shader access, compression or device-memory traffic.
+    /// An unknown format's contribution is reported as `None`.
+    pub fn declared_attachment_bytes(
+        &self,
+    ) -> impl Iterator<Item = (&str, Option<u64>, Option<u64>)> {
+        self.passes
+            .iter()
+            .filter(|pass| !pass.attachments.is_empty())
+            .map(|pass| {
+                let bytes = |attachment: &CompiledAttachment| {
+                    let ResourceDescriptor::Texture {
+                        width,
+                        height,
+                        layers,
+                        samples,
+                        format,
+                        ..
+                    } = self.resources[attachment.resource.index].descriptor
+                    else {
+                        return None;
+                    };
+                    let (block_width, block_height) = format.block_dimensions();
+                    let block_bytes = u64::from(format.block_copy_size(None)?);
+                    Some(
+                        attachment
+                            .range
+                            .clone()
+                            .map(|unit| {
+                                let mip =
+                                    u32::try_from(unit / u64::from(layers)).unwrap_or(u32::MAX);
+                                u64::from((width >> mip).max(1).div_ceil(block_width))
+                                    * u64::from((height >> mip).max(1).div_ceil(block_height))
+                                    * u64::from(samples)
+                                    * block_bytes
+                            })
+                            .sum::<u64>(),
+                    )
+                };
+                let loads = pass
+                    .attachments
+                    .iter()
+                    .filter(|attachment| attachment.load)
+                    .map(bytes)
+                    .sum();
+                let stores = pass
+                    .attachments
+                    .iter()
+                    .filter(|attachment| attachment.store)
+                    .map(bytes)
+                    .sum();
+                (pass.name.as_ref(), loads, stores)
+            })
+    }
+
     pub(crate) fn surface_resource(&self) -> Option<ResourceId> {
         self.surface_resource.clone()
     }
