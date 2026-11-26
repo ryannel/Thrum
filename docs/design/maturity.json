@@ -3210,11 +3210,11 @@
         "record": "../../.orchestrate/evidence/CLOUDS/WP14/CORRECTNESS.md"
       },
       "far_ground_evidence": {
-        "implementation": "Ground uses the depth of every render pixel in its trace texel. The view volume and far trace share the low deck's weather columns, shape erosion and Sun term. The deck reads Sun depth on the cloud height grid and adds fog from the ground band. Ground traces all required texels on the submitted frame.",
-        "correctness": "On Metal, the middle of three surface depths distinguishes two bank positions and the no-Ground upper-cloud frame matches all 230,400 retained bytes. The moving V1 occluder refreshes the 144 newly uncovered stops at their current depths and the cut composes its fresh layer.",
+        "implementation": "Ground allocates four surface stops per 2 by 2 render-pixel block and grows the stop textures with the prepared scene capacity. It advertises a fixed 100 percent layer scale. The view volume and far trace share the low deck's procedural density and Sun term. Placed condensate is included in the visible trace and sky overlay. Elevated cloud keeps its near samples when ground rows are active.",
+        "correctness": "On Metal, the middle of three surface depths distinguishes two bank positions and the no-Ground upper-cloud frame matches all 230,400 retained bytes. The moving V1 occluder refreshes 144 uncovered stops. A cut composes its fresh layer. A grow from 32 by 18 to 65 by 37 matches fresh and resolved depths for all 2,405 render pixels. A portable Metal test observes an above-deck placed volume in the point query, trace and sky overlay.",
         "visuals": "Metal and Chrome show clean mist edges and a gradual handover over the 240 m approach. The Metal bank comparison has continuous shading at 200, 350, 450 and 700 m. Metal shows the ridge and cloud shadows darkening far mist at a 5-degree Sun. Metal and Chrome show a soft base against the mesa, interior ground detail fading over tens of metres and a sunlit deck below exposed summits. The climbs cross the base and top continuously on both targets.",
-        "device": "The capture-off 1440p Apple M3 Max Metal comparison uses the WP14 dawn camera. It records 921,600 rays, 156.56 mean and 476 p95 steps for the far mist, and 128.94 mean and 471 p95 for the low deck with far bank. Shared-load frame means were 58.50 and 54.30 ms. Chrome evidence covers WebGPU submitted frames.",
-        "record": "../../.orchestrate/evidence/CLOUDS/WP15/VISUAL.md"
+        "device": "The capture-off 1440p Apple M3 Max Metal comparison uses the WP14 dawn camera. Current clouds-off, far-mist and low-deck whole GPU frames average 9.74, 88.46 and 103.61 ms under shared load. The two visible arms trace 921,600 rays each, at 156.56 mean and 476 p95 samples for far mist, and 128.94 mean and 471 p95 for the low deck. Chrome evidence covers WebGPU submitted frames.",
+        "record": "../../.orchestrate/evidence/CLOUDS/WP15/review-repair/REPAIR.md"
       },
       "name": "Cloud fields and projections",
       "scope": "selectable",

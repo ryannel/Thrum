@@ -1140,3 +1140,13 @@ and a continuous climb through the base and top. Inside, surveyed surface textur
 over roughly 20 to 53 m. The cost pair was rerun at the same 1440p Metal dawn camera.
 [Metal deck](../../../.orchestrate/evidence/CLOUDS/WP15/continuation/DECK.md) ·
 [Chrome mist and deck](../../../.orchestrate/evidence/CLOUDS/WP15/continuation/CHROME.md)
+
+
+The WP15 review repair keeps elevated-cloud samples in the trace with active ground rows.
+Metal replays at three altitudes preserve the upper sky when mist is enabled, and the
+no-Ground control matches the starting frame byte for byte. The 65×37 resize probe reads
+all 2,405 pixel stops. Ground declares its fixed layer scale. A combined low deck and
+placed-volume probe checks the query, trace and sky overlay under portable Metal limits.
+The mist-far validator covers the retained and fresh three-arm cost records and rejects
+missing arms, trace data and investigations.
+[Review repair evidence](../../../.orchestrate/evidence/CLOUDS/WP15/review-repair/REPAIR.md)
