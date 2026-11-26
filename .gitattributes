@@ -8,3 +8,5 @@
 dev text eol=lf
 vendor/wgpu-hal-patches/*.patch whitespace=-blank-at-eol
 vendor/wgpu-hal-30.0.1/** -text -eol
+vendor/wgpu-core-patches/*.patch whitespace=-blank-at-eol
+vendor/wgpu-core-30.0.1/** -text -eol whitespace=-blank-at-eol
