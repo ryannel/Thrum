@@ -574,7 +574,7 @@
         {
           "verdict": "fail",
           "commit": "dab0796fb9f131d7bb27097a7d4c8c054983eb4d",
-          "review": ".orchestrate/evidence/PUDDLES/WP4-review.md",
+          "review": ".orchestrate/evidence/PUDDLES/WP4-review-2.md",
           "items": {
             "WP4.1": "fail",
             "WP4.2": "pass",
@@ -613,6 +613,45 @@
             "turns": 1
           },
           "at": "2026-11-26T18:15:56Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "84107d11bc0a4956bb3c5a9b8dd2c7614f3dc139",
+          "review": ".orchestrate/evidence/PUDDLES/WP4-review.md",
+          "items": {
+            "WP4.1": "pass",
+            "WP4.2": "pass",
+            "WP4.4": "pass",
+            "WP4.5": "pass",
+            "WP4.12": "pass",
+            "WP4.8": "pass",
+            "WP4.9": "pass",
+            "WP4.10": "pass",
+            "WP4.13": "fail"
+          },
+          "findings": [
+            {
+              "name": "Rain footprint heights exceed the stated disc-average tolerance",
+              "item": "WP4.13",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 182688,
+            "cached": 9618816,
+            "output": 23865,
+            "turns": 1
+          },
+          "at": "2026-11-26T21:54:17Z"
         }
       ],
       "authorised": {

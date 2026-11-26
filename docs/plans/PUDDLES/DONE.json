@@ -419,8 +419,8 @@
     {
       "id": "WP4",
       "name": "Rain rings every water it falls on, the puddles, the lake and the sea, more and rougher as it grows and not at all under the roof, and the rings run out when the rain stops",
-      "status": "ready_for_review",
-      "failed_reviews": 0,
+      "status": "in_progress",
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [],
@@ -435,8 +435,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/PUDDLES/WP4/footprint-delivery.md#field-gain-cadence-and-carriage",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/PUDDLES/WP4-review.md"
         },
         {
           "id": "WP4.2",
@@ -446,8 +446,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/PUDDLES/WP4/footprint-install-metal.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/PUDDLES/WP4-review.md"
         },
         {
           "id": "WP4.4",
@@ -456,8 +456,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/PUDDLES/WP4/footprint-delivery.md#native-metal-inspections",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/PUDDLES/WP4-review.md"
         },
         {
           "id": "WP4.5",
@@ -466,8 +466,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/PUDDLES/WP4/footprint-delivery.md#native-metal-inspections",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/PUDDLES/WP4-review.md"
         },
         {
           "id": "WP4.12",
@@ -475,8 +475,8 @@
           "inspect": "`realtime` sequences of the yard's largest puddle from 0.5 m and 1.7 m at 10 and 50 mm/h through a stop, two seconds of no rain and a restart; consecutive frames across the stop and across the restart at native size.",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/PUDDLES/WP4/footprint-delivery.md#native-metal-inspections",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/PUDDLES/WP4-review.md",
           "builder_result": "pass"
         },
         {
@@ -487,8 +487,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/PUDDLES/WP4/footprint-install-metal.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/PUDDLES/WP4-review.md"
         },
         {
           "id": "WP4.9",
@@ -498,8 +498,8 @@
           "target": "chrome-webgpu",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/PUDDLES/WP4/footprint-install-chrome/run.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/PUDDLES/WP4-review.md"
         },
         {
           "id": "WP4.10",
@@ -509,8 +509,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/PUDDLES/WP4/footprint-install-fleet-cost.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/PUDDLES/WP4-review.md"
         },
         {
           "id": "WP4.13",
@@ -518,10 +518,17 @@
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test rain_bands_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/PUDDLES/WP4/footprint-delivery.md#wp413-footprint-and-use-tick",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/PUDDLES/WP4-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "name": "Rain footprint heights exceed the stated disc-average tolerance",
+          "item": "WP4.13",
+          "repeat": false
         }
       ]
     },
