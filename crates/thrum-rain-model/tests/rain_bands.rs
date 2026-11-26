@@ -300,6 +300,14 @@ fn scheduled_rings_follow_the_rain_up_to_the_profile_s_count() {
     let p = RainBandsProfile::default();
     for rate in [2.0, 5.0, 10.0, 50.0] {
         let share = (big_drops(rate) / p.count).min(1.0);
+        // Integrate the linear birth ramp over a uniform threshold in [0, 1].
+        // At low rates its bias is a fixed part of the ramp's width, which
+        // larger patches resolve separately from the Poisson counting noise.
+        let cutoff = share * (1.0 + p.soft);
+        let area_above = |threshold: f64| 0.5 * (cutoff - threshold).max(0.0).powi(2);
+        let mean_weight = (area_above(0.0) - area_above(1.0) - area_above(p.soft)
+            + area_above(1.0 + p.soft))
+            / p.soft;
         for band in 0..2 {
             let l = p.patches[band];
             // Disjoint seconds: each drop counted in the second it lands.
@@ -310,10 +318,10 @@ fn scheduled_rings_follow_the_rain_up_to_the_profile_s_count() {
                 let b = bands(history(t, |_| mm_h(rate)));
                 n += b.drops(band, t).iter().map(|d| d.weight).sum::<f64>();
             }
-            let want = 0.5 * p.count * l * l * f64::from(seconds) * share;
-            // Counting noise, three deviations, and the soft threshold's bias.
-            let tol = 3.0 * want.sqrt() + 0.02 * want;
-            println!("{rate} mm/h band {band}: {n:.0} rings, the rate gives {want:.0}");
+            let want = 0.5 * p.count * l * l * f64::from(seconds) * mean_weight;
+            // The variance of the weighted count is at most its mean.
+            let tol = 3.0 * want.sqrt();
+            println!("{rate} mm/h band {band}: {n:.0} rings, the softened rate gives {want:.0}");
             assert!(
                 (n - want).abs() <= tol,
                 "{rate} mm/h band {band}: {n} against {want}"
