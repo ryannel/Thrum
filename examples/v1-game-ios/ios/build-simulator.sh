@@ -31,6 +31,9 @@ thrum_out="$thrum_target/v1-game-ios-sim"
 thrum_app="$thrum_out/ThrumV1.app"
 mkdir -p "$thrum_app" "$thrum_out/module-cache"
 cp "$thrum_plist" "$thrum_app/Info.plist"
+if [[ "${1:-}" == "--proving" ]]; then
+    plutil -insert CFBundleURLTypes -json '[{"CFBundleURLName":"org.thrum.v1.invite","CFBundleURLSchemes":["thrum-v1"]}]'         "$thrum_app/Info.plist"
+fi
 thrum_sdk="$(xcrun --sdk iphonesimulator --show-sdk-path)"
 SDKROOT="$thrum_sdk" \
 CLANG_MODULE_CACHE_PATH="$thrum_out/module-cache" \

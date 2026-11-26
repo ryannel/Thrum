@@ -141,6 +141,10 @@ pub(super) struct Witness {
     pub(super) detached_windows: u64,
     pub(super) old_window_touches: u64,
     pub(super) last_axes: [f32; 3],
+    #[cfg(feature = "proving")]
+    pub(super) interface_viewport: Option<serde_json::Value>,
+    #[cfg(feature = "proving")]
+    pub(super) interface_menu: Option<serde_json::Value>,
     pub(super) actor_samples: u64,
     pub(super) actor_position: Option<[f64; 3]>,
     pub(super) gesture: GestureCounters,
@@ -427,6 +431,13 @@ impl Witness {
         let actor = self
             .actor_position
             .map_or_else(|| "none".to_owned(), |[x, y, z]| format!("{x},{y},{z}"));
+        #[cfg(feature = "proving")]
+        if let Some(menu) = &self.interface_menu {
+            let _ = writeln!(out, "interface_menu={menu}");
+            if let Some(viewport) = &self.interface_viewport {
+                let _ = writeln!(out, "interface_viewport={viewport}");
+            }
+        }
         let tail = [
             ("screen_headroom", self.screen_headroom.to_string()),
             ("render_headroom", self.render_headroom.to_string()),

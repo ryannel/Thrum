@@ -34,6 +34,9 @@ mod interface_menu;
 pub mod interface_status;
 #[cfg(feature = "proving")]
 mod interface_text;
+#[cfg(all(feature = "proving", target_os = "ios"))]
+#[doc(hidden)]
+pub mod mobile_interface;
 #[cfg(feature = "proving")]
 pub use interface_text::InterfaceText;
 #[cfg(feature = "proving")]

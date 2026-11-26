@@ -3762,6 +3762,7 @@ dependencies = [
  "thrum-core",
  "thrum-render",
  "thrum-test-support",
+ "thrum-ui",
  "v1-game",
  "wgpu",
  "winit",

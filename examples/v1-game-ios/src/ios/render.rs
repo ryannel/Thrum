@@ -79,10 +79,16 @@ pub(super) struct FrameAdmission {
     pub(super) present: bool,
     /// Qualification only: hold an acquired drawable inside the lease section.
     pub(super) stall: Option<(StallPoint, Duration)>,
+    #[cfg(feature = "proving")]
+    pub(super) interface: Option<super::interface::Output>,
 }
 
 pub(super) struct Prepared {
     pub(super) controls: WorldControls,
+    #[cfg(feature = "proving")]
+    pub(super) interface_output: bool,
+    #[cfg(feature = "proving")]
+    pub(super) interface_menu: Option<v1_game::mobile_interface::MobileInterface>,
     pub(super) adapter: String,
     pub(super) format: wgpu::TextureFormat,
 }
@@ -146,6 +152,8 @@ pub(super) struct FrameObservation {
     pub(super) abandoned: bool,
     /// Submission order and predecessor of an encoded frame cancelled in the background.
     pub(super) background_discard: Option<(u64, u64)>,
+    #[cfg(feature = "proving")]
+    pub(super) interface: Option<v1_game::mobile_interface::InterfaceFrame>,
 }
 
 /// A published replacement device.
@@ -339,6 +347,8 @@ fn frame_reply(request: &FrameRequest, generation: u64, target: TargetLeadStatus
             empty_submit: false,
             abandoned: false,
             background_discard: None,
+            #[cfg(feature = "proving")]
+            interface: None,
         },
     }
 }
@@ -419,6 +429,13 @@ impl Owner {
             )
             .map_err(|error| error.to_string())?;
         }
+        #[cfg(feature = "proving")]
+        let interface_menu =
+            (setup.interface_text == Some(v1_game::InterfaceText::Menu)).then(|| {
+                let menu = v1_game::mobile_interface::MobileInterface::new(self.diagnostics);
+                menu.view().attach(host.continuous_source_mut());
+                menu
+            });
         let cooked = v1_game::attach_cooked_scene(&mut host)?;
         let cooked_view = super::cooked_view::View::prepare(&mut host)?;
         let (mut host, controls) = host.into_threaded(self.origin, world_advanced)?;
@@ -453,6 +470,13 @@ impl Owner {
         });
         Ok(Prepared {
             controls,
+            #[cfg(feature = "proving")]
+            interface_output: matches!(
+                setup.interface_text,
+                Some(v1_game::InterfaceText::Status | v1_game::InterfaceText::Menu)
+            ),
+            #[cfg(feature = "proving")]
+            interface_menu,
             adapter: name,
             format,
         })
@@ -699,6 +723,14 @@ impl Owner {
             )
             .map_err(FrameError::Scene)?;
         }
+        #[cfg(feature = "proving")]
+        if let Some(output) = request.platform.interface {
+            v1_game::mobile_interface::set_output(
+                gpu.host.continuous_source_mut(),
+                output.density,
+                output.insets,
+            );
+        }
         gpu.host.set_presentation_lead(lead.duration);
         let mut reply = frame_reply(request, gpu.watch.generation, lead.status);
         let bits = u32::try_from(self.signals.headroom.load(Ordering::Acquire)).unwrap_or_default();
@@ -748,6 +780,14 @@ impl Owner {
         if reply.platform.status == SurfaceStatus::DeviceLost {
             // Lost inside the section: no completion poll on the lost device.
             return Ok(reply);
+        }
+        #[cfg(feature = "proving")]
+        if reply.platform.status == SurfaceStatus::Presented
+            && let Some(frame) =
+                v1_game::mobile_interface::InterfaceFrame::read(gpu.host.continuous_source_mut())
+            && frame.viewport().extent == request.extent
+        {
+            reply.platform.interface = Some(frame);
         }
         for slot in &mut reply.samples {
             *slot = gpu.host.poll_completed()?;

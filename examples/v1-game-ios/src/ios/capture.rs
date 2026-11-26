@@ -177,9 +177,16 @@ impl Recorder {
             .map_err(|error| error.to_string())?;
             let started = Instant::now();
             host.enable_submitted_capture_with_limits(self.next, LIMITS)?;
+            #[cfg(feature = "proving")]
+            let interface_output = request
+                .platform
+                .interface
+                .map(|output| json!({"density":output.density,"insets":output.insets}));
+            #[cfg(not(feature = "proving"))]
+            let interface_output = serde_json::Value::Null;
             fs::write(path.join("identity.json"), json!({"session":self.next,"adapter":format!("{:?}",adapter.get_info()),
                 "downlevel":format!("{:?}",adapter.get_downlevel_capabilities()),"backend":"Metal",
-                "surface_extent":request.extent,"surface_epoch":request.surface_generation,"device_generation":generation,
+                "interface_output":interface_output,"surface_extent":request.extent,"surface_epoch":request.surface_generation,"device_generation":generation,
                 "mode":"realtime-windowed-tap","clock":"Instant monotonic elapsed / ordinary world lane / UIKit CADisplayLink",
                 "scope":"simulator function only; final SDR engine output before surface presentation; UIKit and native UI excluded",
                 "passes":host.scene_graph().map_err(|e| e.to_string())?.pass_names().collect::<Vec<_>>(),
@@ -236,6 +243,14 @@ impl Recorder {
             row["cooked"] = json!(reply.platform.cooked);
         }
         if !s.ending && reply.outcome.is_some_and(|r| r.submitted) {
+            #[cfg(feature = "proving")]
+            if s.mode == STILL
+                && let Some(bounds) =
+                    v1_game::mobile_interface::status_bounds(host.continuous_source_mut())
+            {
+                fs::write(s.path.join("status-bounds.json"), bounds.to_string())
+                    .map_err(|error| error.to_string())?;
+            }
             s.expected += 1;
             if s.mode == STILL {
                 s.ending = true;
@@ -263,6 +278,7 @@ impl Recorder {
                     "sprite_world_rows":image.sample.sprites.map(|s| s.world_rows),
                     "sprite_frame_rows":image.sample.sprites.map(|s| s.frame_rows),
                     "sprite_draws":image.sample.sprites.map(|s| s.draws),
+                    "interface_scale":image.sample.interface.and_then(|stage| stage.stamp.map(|stamp| stamp.scale)),
                     "visual_revision":image.sample.visual_revision,"presentation_lead_ns":image.presentation_lead.as_nanos(),
                     "observation_ns":image.sample.observation.as_nanos(),"display_phase":image.sample.display_phase,
                     "clock_interpolating":image.sample.clock_interpolating,

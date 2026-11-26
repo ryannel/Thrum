@@ -35,6 +35,16 @@ final class ThrumV1Touch: XCTestCase {
         origin.press(forDuration: 0.1, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 30)
     }
 
+    /// Tap the centre of a button in the app's submitted layout.
+    func testInterfaceTap() throws {
+        let point = try XCTUnwrap(ProcessInfo.processInfo.environment["THRUM_INTERFACE_TEST_POINT"])
+            .split(separator: ",").compactMap { Double($0) }
+        XCTAssertEqual(point.count, 2)
+        guard point.count == 2 else { return }
+        let app = XCUIApplication(bundleIdentifier: "org.thrum.v1")
+        app.coordinate(withNormalizedOffset: CGVector(dx: point[0], dy: point[1])).tap()
+    }
+
     /// Rotate the device to landscape (home indicator on the right).
     func testLandscape() {
         XCUIDevice.shared.orientation = .landscapeLeft

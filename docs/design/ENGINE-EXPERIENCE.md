@@ -1,6 +1,7 @@
 # Building a game with this engine
 
-To build a 2D scene, follow the [sprite scene guide](../SPRITE-SCENES.md).
+To build a 2D scene, follow the [sprite scene guide](../SPRITE-SCENES.md). For status displays and menus
+inside the game frame, follow the [game interface guide](../GAME-INTERFACE.md).
 
 For authoritative 2D games, [portable rules](../SIM2D-RULES.md) documents the working
 number profile, spatial queries, package guard and three-target trace runner.

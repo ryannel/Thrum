@@ -1,7 +1,9 @@
 use std::{collections::BTreeMap, sync::Arc, time::Duration};
 
 use serde_json::{Value, json};
-use thrum_app::{ClipboardAccess, KeyCode};
+#[cfg(not(target_os = "ios"))]
+use thrum_app::ClipboardAccess;
+use thrum_app::KeyCode;
 use thrum_ui::{Contact, Event, Held, InputLayout, Routed, Router, TextSource};
 
 use super::{CARDS, CHOICE, COPY, HOST_TICKET, MenuFrame, MenuView, SUBMIT, Screen, View, policy};
@@ -22,6 +24,8 @@ pub(crate) struct Menu {
     launch: Option<(String, TextSource)>,
     held: BTreeMap<Contact<KeyCode>, Option<[f64; 2]>>,
     proof: Option<Proof>,
+    #[cfg(target_os = "ios")]
+    pub(crate) mobile_input: Vec<Routed<KeyCode>>,
     #[cfg(target_os = "macos")]
     frozen: bool,
     #[cfg(target_os = "macos")]
@@ -60,6 +64,8 @@ impl Menu {
             launch: None,
             held: BTreeMap::new(),
             proof: proof.then(Proof::default),
+            #[cfg(target_os = "ios")]
+            mobile_input: Vec::new(),
             #[cfg(target_os = "macos")]
             frozen: false,
             #[cfg(target_os = "macos")]
@@ -192,6 +198,11 @@ impl Menu {
     }
 
     fn receive(&mut self, routed: Option<Routed<KeyCode>>, now: Duration) {
+        #[cfg(target_os = "ios")]
+        if let Some(output @ (Routed::Game(_) | Routed::Interrupted | Routed::Resumed(_))) = &routed
+        {
+            self.mobile_input.push(output.clone());
+        }
         match routed {
             Some(Routed::Interrupted) => {
                 self.held.clear();
@@ -204,6 +215,8 @@ impl Menu {
                 self.effect(json!({"resumed": held.iter().map(|contact| format!("{contact:?}")).collect::<Vec<_>>() }), now);
             }
             Some(Routed::Game(event)) => self.game_event(event, now),
+            #[cfg(target_os = "ios")]
+            Some(Routed::Activated(super::OPEN_CHOICE)) => self.screen(Screen::Choice, now),
             Some(Routed::Activated(id)) if id == COPY => {
                 self.router.request_copy(HOST_TICKET.to_owned());
                 self.effect(json!({"copy": HOST_TICKET}), now);
@@ -266,6 +279,7 @@ impl Menu {
         }
     }
 
+    #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
     fn axes(&self) -> [f32; 3] {
         let key = |code| self.held.contains_key(&Contact::Key(code));
         let [left, right, down, up] = [
@@ -339,10 +353,12 @@ impl Menu {
         self.refresh(now);
     }
 
+    #[cfg(not(target_os = "ios"))]
     pub(crate) fn take_copy(&mut self) -> Option<String> {
         self.router.take_copy()
     }
 
+    #[cfg(not(target_os = "ios"))]
     pub(crate) fn clipboard(&mut self, access: ClipboardAccess, allowed: bool) {
         if let Some(proof) = &mut self.proof {
             proof
@@ -379,11 +395,18 @@ impl Menu {
             } else {
                 SUBMIT
             });
-        self.mailbox.set(&self.view, self.axes());
+        self.mailbox.set(
+            &self.view,
+            #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+            self.axes(),
+        );
     }
 
     pub(crate) fn report(&self) -> Value {
-        let controls = [CARDS.as_slice(), &[COPY, SUBMIT]].concat();
+        let controls = [CARDS.as_slice(), &[COPY, SUBMIT]];
+        #[cfg(target_os = "ios")]
+        let controls = [controls[0], controls[1], &[super::OPEN_CHOICE]];
+        let controls = controls.into_iter().flatten().copied();
         let boxes = controls
             .into_iter()
             .filter_map(|id| {

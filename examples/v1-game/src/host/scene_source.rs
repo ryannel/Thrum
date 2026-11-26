@@ -515,19 +515,28 @@ impl GameScene {
         self.sheet_stats.clone()
     }
 
-    #[cfg(all(feature = "proving", any(target_os = "macos", target_arch = "wasm32")))]
+    #[cfg(all(
+        feature = "proving",
+        any(target_os = "macos", target_os = "ios", target_arch = "wasm32")
+    ))]
     pub(crate) fn set_menu(&mut self, menu: crate::interface_menu::MenuView) {
         if let Some(card) = self.font_card.as_mut() {
             card.set_menu(menu);
         }
     }
 
-    #[cfg(all(feature = "proving", any(target_os = "macos", target_arch = "wasm32")))]
+    #[cfg(all(
+        feature = "proving",
+        any(target_os = "macos", target_os = "ios", target_arch = "wasm32")
+    ))]
     pub(crate) fn submitted_menu(&self) -> Option<crate::interface_menu::MenuFrame> {
         self.font_card.as_ref()?.submitted_menu()
     }
 
-    #[cfg(all(feature = "proving", any(target_os = "macos", target_arch = "wasm32")))]
+    #[cfg(all(
+        feature = "proving",
+        any(target_os = "macos", target_os = "ios", target_arch = "wasm32")
+    ))]
     pub(crate) fn set_interface_output(&mut self, density: f64, insets: [f64; 4]) {
         if let Some(card) = &mut self.font_card {
             card.output(density, insets);
@@ -542,6 +551,11 @@ impl GameScene {
         now_ms: impl Fn() -> f64,
     ) -> Result<Vec<[f64; 3]>, thrum_ui::TreeError> {
         crate::interface_status::measure_layout(now_ms)
+    }
+
+    #[cfg(all(feature = "proving", target_os = "ios"))]
+    pub(crate) fn status_bounds(&self) -> Option<serde_json::Value> {
+        self.font_card.as_ref()?.status_bounds()
     }
 
     /// Counts of actual retained status layout and paint work.

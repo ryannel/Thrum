@@ -134,7 +134,7 @@ impl FontCard {
         self.scale.set(scale)
     }
 
-    #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+    #[cfg(any(target_os = "macos", target_os = "ios", target_arch = "wasm32"))]
     pub(crate) fn output(&mut self, density: f64, insets: [f64; 4]) {
         if matches!(self.mode, InterfaceText::Status | InterfaceText::Menu) {
             self.insets = insets;
@@ -172,16 +172,43 @@ impl FontCard {
             .map(|(_, tree)| tree.stats())
     }
 
+    #[cfg(target_os = "ios")]
+    pub(crate) fn status_bounds(&self) -> Option<serde_json::Value> {
+        let stamp = self.lease.committed_font()?.stamp;
+        let (_, tree) = self
+            .prepared
+            .iter()
+            .chain(self.active.iter())
+            .find(|layout| layout.stamp == stamp)?
+            .tree
+            .as_ref()?;
+        let nodes = (0..=8).chain(
+            crate::interface_status::COUNTS
+                .into_iter()
+                .flat_map(|counter| counter - 2..=counter + 1),
+        );
+        Some(serde_json::json!(
+            nodes
+                .map(|id| {
+                    (
+                        id,
+                        tree.bounds(id).map(|bounds| [bounds.origin, bounds.end()]),
+                    )
+                })
+                .collect::<Vec<_>>()
+        ))
+    }
+
     pub(crate) const fn interactive(&self) -> bool {
         matches!(self.mode, InterfaceText::Menu)
     }
 
-    #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+    #[cfg(any(target_os = "macos", target_os = "ios", target_arch = "wasm32"))]
     pub(crate) fn set_menu(&mut self, view: MenuView) {
         self.menu = view;
     }
 
-    #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+    #[cfg(any(target_os = "macos", target_os = "ios", target_arch = "wasm32"))]
     pub(crate) fn submitted_menu(&self) -> Option<MenuFrame> {
         if self.mode != InterfaceText::Menu {
             return None;

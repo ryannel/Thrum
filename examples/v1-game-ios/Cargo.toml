@@ -14,7 +14,7 @@ crate-type = ["staticlib", "rlib"]
 workspace = true
 
 [features]
-proving = ["v1-game/proving"]
+proving = ["v1-game/proving", "dep:thrum-ui"]
 
 [dependencies]
 thrum-core = { path = "../../crates/thrum-core" }
@@ -26,6 +26,7 @@ wgpu = { version = "=30.0.1", default-features = false, features = ["std", "meta
 [target.'cfg(target_os = "ios")'.dependencies]
 thrum-app = { path = "../../crates/thrum-app" }
 serde_json = "=1.0.154"
+thrum-ui = { path = "../../crates/thrum-ui", optional = true }
 thrum-asset-gpu = { path = "../../crates/thrum-asset-gpu" }
 winit = { version = "=0.30.13", default-features = false, features = ["rwh_06"] }
 

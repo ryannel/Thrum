@@ -14,7 +14,12 @@ private enum SceneBridge {
               let scene = connectedScene,
               let window = view.window,
               let delegate else { return }
+        // Winit created the controller before the window joined a scene. Reattach
+        // it afterwards so UIKit updates the view's safe area when the scene rotates.
+        let controller = window.rootViewController
+        window.rootViewController = nil
         window.windowScene = scene
+        window.rootViewController = controller
         window.makeKeyAndVisible()
         delegate.window = window
         pendingView = nil
@@ -43,6 +48,33 @@ private func thrumV1DisplayTarget(_ targetMediaSeconds: Double, _ headroom: Doub
 @_silgen_name("thrum_v1_shell_command")
 private func thrumV1ShellCommand(_ code: Int32)
 
+@_silgen_name("thrum_v1_open_invite")
+private func thrumV1OpenInvite(_ bytes: UnsafePointer<UInt8>, _ count: Int)
+
+private func openInvite(_ url: URL) {
+    guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+          components.scheme == "thrum-v1", components.host == "join",
+          components.query == nil, components.fragment == nil,
+          let ticket = components.percentEncodedPath.dropFirst().removingPercentEncoding,
+          !ticket.isEmpty else { return }
+    let bytes = Array(ticket.utf8)
+    bytes.withUnsafeBufferPointer { buffer in
+        if let base = buffer.baseAddress {
+            thrumV1OpenInvite(base, buffer.count)
+        }
+    }
+}
+
+@_cdecl("thrum_v1_safe_area")
+func thrumV1SafeArea(_ rawView: UnsafeMutableRawPointer, _ insets: UnsafeMutablePointer<Double>) {
+    let view = Unmanaged<UIView>.fromOpaque(rawView).takeUnretainedValue()
+    let area = view.safeAreaInsets
+    insets[0] = Double(area.left)
+    insets[1] = Double(area.top)
+    insets[2] = Double(area.right)
+    insets[3] = Double(area.bottom)
+}
+
 // Qualification commands arrive as Darwin notifications on the main run loop
 // (`notifyutil -p org.thrum.v1.<command>` inside the simulator). Opened URLs
 // would ask the user to confirm. The Rust shell honours them only when the app
@@ -70,6 +102,8 @@ private let shellCommands: [String: Int32] = [
     "hold-world": 19,
     "run-world": 20,
     "capture-still": 21,
+    "open-choice": 22,
+    "close-choice": 23,
 ]
 
 // Route commands also arrive as files dropped into the app's temporary
@@ -148,8 +182,15 @@ final class ThrumV1SceneDelegate: UIResponder, UIWindowSceneDelegate {
         SceneBridge.attachIfReady()
         #if THRUM_PROVING
         observeShellCommands()
+        for context in connectionOptions.urlContexts { openInvite(context.url) }
         #endif
     }
+
+    #if THRUM_PROVING
+    func scene(_ scene: UIScene, openURLContexts contexts: Set<UIOpenURLContext>) {
+        for context in contexts { openInvite(context.url) }
+    }
+    #endif
 
     func sceneDidDisconnect(_ scene: UIScene) {
         thrumV1StopDisplayLink()

@@ -6,7 +6,7 @@ use thrum_ui::{
     Viewport,
 };
 
-#[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+#[cfg(any(target_os = "macos", target_os = "ios", target_arch = "wasm32"))]
 use thrum_ui::{InputLayout, TreeStats};
 
 use super::{CARDS, CHOICE, COPY, HOST_TICKET, JOIN, SUBMIT, Screen, TICKET_DROP, View, policy};
@@ -22,10 +22,10 @@ const TEAL: [f32; 4] = [0.30, 0.76, 0.67, 1.0];
 #[derive(Clone)]
 pub(crate) struct MenuFrame {
     pub(crate) view: Arc<View>,
-    #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+    #[cfg(any(target_os = "macos", target_os = "ios", target_arch = "wasm32"))]
     pub(crate) input: Arc<InputLayout>,
     pub(crate) viewport: Viewport,
-    #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+    #[cfg(any(target_os = "macos", target_os = "ios", target_arch = "wasm32"))]
     pub(crate) work: (u64, TreeStats),
 }
 
@@ -69,16 +69,16 @@ impl MenuLayout {
                 white: crate::interface_status::WHITE_TILE,
             },
         )?;
-        #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+        #[cfg(any(target_os = "macos", target_os = "ios", target_arch = "wasm32"))]
         let input = previous
             .filter(|previous| previous.work.1.layouts == tree.stats().layouts)
             .map_or_else(|| Arc::new(tree.input_layout()), |previous| previous.input);
         let frame = MenuFrame {
             view,
-            #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+            #[cfg(any(target_os = "macos", target_os = "ios", target_arch = "wasm32"))]
             input,
             viewport,
-            #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+            #[cfg(any(target_os = "macos", target_os = "ios", target_arch = "wasm32"))]
             work: (constructions, tree.stats()),
         };
         Ok((
@@ -154,6 +154,8 @@ fn play_line(edited: bool) -> &'static str {
         "Field display updated"
     } else if cfg!(target_os = "macos") {
         "M  Choice     J  Join     H  Host"
+    } else if cfg!(target_os = "ios") {
+        "Choose an upgrade"
     } else {
         "M  Choice     J  Join"
     }
@@ -165,9 +167,17 @@ fn play_prompt(edited: bool) -> Node {
     panel.anchor = [Anchor::Centre, Anchor::Point(8.0)];
     let mut prompt = label(91, play_line(edited), 12.0, CREAM);
     prompt.anchor = [Anchor::Centre; 2];
+    #[cfg(target_os = "ios")]
+    let mut group = Node::new(super::OPEN_CHOICE, NodeKind::Button(Button::default()));
+    #[cfg(not(target_os = "ios"))]
     let mut group = Node::new(92, NodeKind::Overlay);
     group.size = panel.size;
     group.anchor = panel.anchor;
+    #[cfg(target_os = "ios")]
+    {
+        group.size[1] = Size::fixed(44.0);
+        panel.size[1] = FILL;
+    }
     panel.anchor = [Anchor::Start; 2];
     group.children = vec![panel, prompt];
     group
@@ -223,6 +233,8 @@ fn choice(view: &View, viewport: Viewport) -> Node {
 fn choice_prompt(disarmed: bool) -> &'static str {
     if disarmed {
         "Get ready"
+    } else if cfg!(target_os = "ios") {
+        "Tap a card to choose"
     } else {
         "Arrow keys or touch to choose"
     }
@@ -318,7 +330,11 @@ fn join(view: &View, viewport: Viewport) -> Node {
         Screen::Joining if view.ticket.is_empty() => (
             "Join a game",
             "Waiting for a ticket",
-            "Paste a ticket or open an invite link.",
+            if cfg!(target_os = "ios") {
+                "Open an invite link."
+            } else {
+                "Paste a ticket or open an invite link."
+            },
         ),
         Screen::Joining => (
             "Join a game",

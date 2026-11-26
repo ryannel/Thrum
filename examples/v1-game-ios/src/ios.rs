@@ -29,6 +29,8 @@ type Host = thrum_render::runtime::FrameHost<v1_game::GameWorld, v1_game::GameSc
 mod capture;
 mod cooked_view;
 mod culling;
+#[cfg(feature = "proving")]
+mod interface;
 mod render;
 mod witness;
 
@@ -49,7 +51,7 @@ const RETIRED_WINDOWS: usize = 4;
 /// Failed recovery attempts (not deferrals) before the shell gives up.
 const RECOVER_ATTEMPTS: u32 = 3;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Debug)]
 enum ShellEvent {
     Target(f64, f32),
     RenderDone,
@@ -62,6 +64,8 @@ enum ShellEvent {
     RecoverHeld,
     #[cfg(feature = "proving")]
     Command(Command),
+    #[cfg(feature = "proving")]
+    Invite(String),
 }
 
 /// Qualification commands from Darwin notifications, honoured only when the
@@ -90,6 +94,8 @@ enum Command {
     ForceHeadroom,
     HoldWorld,
     RunWorld,
+    OpenChoice,
+    CloseChoice,
 }
 
 #[expect(
@@ -103,10 +109,10 @@ enum Command {
 )]
 extern "C" fn thrum_v1_display_target(target_media_seconds: f64, headroom: f64) {
     if let Some(shell) = SHELL.get() {
-        let _ = shell.send_event(ShellEvent::Target(
+        drop(shell.send_event(ShellEvent::Target(
             target_media_seconds,
             headroom.clamp(1.0, 65_504.0) as f32,
-        ));
+        )));
     }
 }
 
@@ -139,10 +145,12 @@ extern "C" fn thrum_v1_shell_command(code: i32) {
         19 => Command::HoldWorld,
         20 => Command::RunWorld,
         21 => Command::CaptureStill,
+        22 => Command::OpenChoice,
+        23 => Command::CloseChoice,
         _ => return,
     };
     if let Some(shell) = SHELL.get() {
-        let _ = shell.send_event(ShellEvent::Command(command));
+        drop(shell.send_event(ShellEvent::Command(command)));
     }
 }
 
@@ -293,6 +301,14 @@ struct Shell {
     controls: Option<v1_game::WorldControls>,
     policy: WorldLifecyclePolicy,
     gesture: Gesture,
+    #[cfg(feature = "proving")]
+    interface_output: bool,
+    #[cfg(feature = "proving")]
+    interface_menu: Option<v1_game::mobile_interface::MobileInterface>,
+    #[cfg(feature = "proving")]
+    interface_scale: f64,
+    #[cfg(feature = "proving")]
+    pending_invite: Option<String>,
     witness: Witness,
     error: Option<String>,
 }
@@ -331,6 +347,14 @@ impl Shell {
             controls: None,
             policy: WorldLifecyclePolicy::default(),
             gesture: Gesture::new(),
+            #[cfg(feature = "proving")]
+            interface_output: false,
+            #[cfg(feature = "proving")]
+            interface_menu: None,
+            #[cfg(feature = "proving")]
+            interface_scale: 1.0,
+            #[cfg(feature = "proving")]
+            pending_invite: None,
             witness: Witness::new(),
             error: None,
         }
@@ -453,16 +477,16 @@ impl Shell {
             Arc::clone(&self.signals),
             Wakes {
                 reply: Box::new(move || {
-                    let _ = wake.send_event(ShellEvent::RenderDone);
+                    drop(wake.send_event(ShellEvent::RenderDone));
                 }),
                 stalling: Box::new(move || {
-                    let _ = stalling.send_event(ShellEvent::Stalling);
+                    drop(stalling.send_event(ShellEvent::Stalling));
                 }),
                 lost: Arc::new(move |generation| {
-                    let _ = lost.send_event(ShellEvent::DeviceLost(generation));
+                    drop(lost.send_event(ShellEvent::DeviceLost(generation)));
                 }),
                 recover_held: Box::new(move || {
-                    let _ = held.send_event(ShellEvent::RecoverHeld);
+                    drop(held.send_event(ShellEvent::RecoverHeld));
                 }),
             },
         )?;
@@ -475,7 +499,7 @@ impl Shell {
             origin: self.origin,
             world_advanced: Box::new(move || {
                 WORLD_THREAD.get_or_init(thread_name);
-                let _ = world.send_event(ShellEvent::WorldAdvanced);
+                drop(world.send_event(ShellEvent::WorldAdvanced));
             }),
         };
         if render.try_send(job).is_err() {
@@ -538,6 +562,8 @@ impl Shell {
     }
 
     fn clear_input(&mut self) -> Result<(), String> {
+        #[cfg(feature = "proving")]
+        self.interface_event(thrum_ui::Event::Interrupted)?;
         if let Some(axes) = self.gesture.clear() {
             self.send_axes(axes)?;
         }
@@ -556,7 +582,13 @@ impl Shell {
         Ok(())
     }
 
-    fn touch(&mut self, id: u64, phase: TouchPhase, location: [f64; 2]) -> Result<(), String> {
+    fn touch(
+        &mut self,
+        id: u64,
+        phase: TouchPhase,
+        location: [f64; 2],
+        current_window: bool,
+    ) -> Result<(), String> {
         if self.route && self.witness.touch_thread.is_empty() {
             // Thread roles are recorded once, and only for the route.
             self.witness.touch_thread = thread_name();
@@ -567,6 +599,12 @@ impl Shell {
             TouchPhase::Ended => Phase::Ended,
             TouchPhase::Cancelled => Phase::Cancelled,
         };
+        #[cfg(feature = "proving")]
+        if current_window && self.interface_menu.is_some() {
+            self.interface_touch(id, phase, location)?;
+            return Ok(());
+        }
+        let _ = current_window;
         let scale = self
             .window
             .as_ref()
@@ -632,6 +670,12 @@ impl Shell {
             Command::CaptureMove => self.send_axes([1.0, 0.0, 0.0])?,
             Command::CaptureRest => self.send_axes([0.0; 3])?,
             Command::ForceHeadroom => self.force_headroom = true,
+            Command::OpenChoice | Command::CloseChoice => {
+                if let Some(menu) = &mut self.interface_menu {
+                    menu.set_choice(command == Command::OpenChoice, self.origin.elapsed());
+                    self.interface_input()?;
+                }
+            }
             Command::HoldWorld | Command::RunWorld => {
                 if self.state == State::Active {
                     self.policy.request(command == Command::HoldWorld);
@@ -715,6 +759,11 @@ impl Shell {
             let size = layer_extent(window);
             self.resized([size.width, size.height]);
         }
+        #[cfg(feature = "proving")]
+        if let Some(menu) = &mut self.interface_menu {
+            menu.tick(self.origin.elapsed());
+            self.interface_input()?;
+        }
         // A stall request stays until a frame reaches the section and holds it.
         let stall = self.stall_next.map(|point| (point, STALL));
         let request = FrameRequest {
@@ -730,6 +779,11 @@ impl Shell {
             platform: render::FrameAdmission {
                 present: !self.hidden && self.window.is_some(),
                 stall,
+                #[cfg(feature = "proving")]
+                interface: self
+                    .interface_output
+                    .then(|| self.window.as_deref().and_then(interface::output))
+                    .flatten(),
             },
         };
         let render = self.render.as_ref().ok_or("iOS render owner missing")?;
@@ -764,6 +818,14 @@ impl Shell {
                 self.witness.adapter = prepared.adapter;
                 self.witness.format = format!("{:?}", prepared.format);
                 self.controls = Some(prepared.controls);
+                #[cfg(feature = "proving")]
+                {
+                    self.interface_output = prepared.interface_output;
+                    self.interface_menu = prepared.interface_menu;
+                    if let Some(ticket) = self.pending_invite.take() {
+                        self.invite(ticket)?;
+                    }
+                }
                 self.witness.device_generation = self.device_generation;
                 if self.state == State::Starting {
                     self.state = State::Active;
@@ -798,6 +860,19 @@ impl Shell {
                     self.witness.stall_status = format!("{:?}", frame.platform.status);
                 }
                 self.witness.frame(&frame);
+                #[cfg(feature = "proving")]
+                if self.state == State::Active
+                    && self.lease.is_current(frame.platform.epoch)
+                    && let Some(shown) = &frame.platform.interface
+                {
+                    let viewport = shown.viewport();
+                    self.witness.interface_viewport = Some(serde_json::json!({
+                        "extent": viewport.extent, "scale": viewport.scale, "insets": viewport.insets,
+                    }));
+                    if self.interface_submitted(shown)? {
+                        self.write();
+                    }
+                }
                 if frame.platform.status == render::SurfaceStatus::DeviceLost
                     && frame.platform.acquired
                     && self.state == State::Active
@@ -925,6 +1000,13 @@ impl Shell {
         self.witness.stall_active = self.stalling;
         self.witness.world_thread = WORLD_THREAD.get().cloned().unwrap_or_default();
         self.witness.live_detached_windows = live_detached_windows();
+        #[cfg(feature = "proving")]
+        {
+            self.witness.interface_menu = self
+                .interface_menu
+                .as_ref()
+                .map(v1_game::mobile_interface::MobileInterface::report);
+        }
         self.witness.write();
     }
 
@@ -989,6 +1071,8 @@ impl ApplicationHandler<ShellEvent> for Shell {
             ShellEvent::RecoverHeld => "recover-held",
             #[cfg(feature = "proving")]
             ShellEvent::Command(_) => "command",
+            #[cfg(feature = "proving")]
+            ShellEvent::Invite(_) => "invite",
         };
         self.timed(event_loop, kind, |shell, event_loop| match event {
             ShellEvent::Target(target, headroom) => {
@@ -1022,6 +1106,8 @@ impl ApplicationHandler<ShellEvent> for Shell {
             }
             #[cfg(feature = "proving")]
             ShellEvent::Command(command) => shell.command(event_loop, command),
+            #[cfg(feature = "proving")]
+            ShellEvent::Invite(ticket) => shell.invite(ticket),
         });
     }
 
@@ -1035,7 +1121,12 @@ impl ApplicationHandler<ShellEvent> for Shell {
             {
                 self.witness.old_window_touches += 1;
                 self.timed(event_loop, "touch", |shell, _| {
-                    shell.touch(touch.id, touch.phase, [touch.location.x, touch.location.y])
+                    shell.touch(
+                        touch.id,
+                        touch.phase,
+                        [touch.location.x, touch.location.y],
+                        false,
+                    )
                 });
             }
             return;
@@ -1045,9 +1136,12 @@ impl ApplicationHandler<ShellEvent> for Shell {
                 event_loop.exit();
                 Ok(())
             }
-            WindowEvent::Touch(touch) => {
-                shell.touch(touch.id, touch.phase, [touch.location.x, touch.location.y])
-            }
+            WindowEvent::Touch(touch) => shell.touch(
+                touch.id,
+                touch.phase,
+                [touch.location.x, touch.location.y],
+                true,
+            ),
             WindowEvent::Resized(_) => {
                 // winit also queues `Resized` at window creation and layout
                 // with sizes that can lag the layer; read the one source.

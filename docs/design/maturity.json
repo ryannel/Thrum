@@ -4,6 +4,28 @@
   "as_of": "2026-11-06",
   "contract_revision": "C4",
   "scope_note": "6 Nov 11:15 owner policy: foundation by best practice, regression/visible tripwires, later performance tuning. Numeric targets are retired; correctness, lifecycle, oracle tolerance and visuals remain. Historical device facts are unchanged.",
+  "game_ui": {
+    "scope": "GAME-UI through WP5, the V1 status display, choice and join screen",
+    "implementation": "Retained interface trees and font-backed paint lists feed the frame host's interface stage. Cooked font and art publications switch with matching layouts. The router owns each contact through release. V1 supplies the screens, their actions and the join ticket. The iOS proving shell translates touches and invite URLs, and provides its view's density and safe area.",
+    "functional_validation": "Mac Metal and Chrome WebGPU proved the interface stage, font strikes and publication changes, status layout, modal event ownership and text drops in WP1 through WP4. WP5 adds simulator scale-3 status captures compared against the CPU compositor, orientation and foreground recovery, all four cards activated by XCTest touches, stick interruption and return, and an intact UIKit URL ticket.",
+    "experienced_quality": "Reviewed Mac and Chrome captures cover the V1 status display, modal interaction and join screen. WP5 builder inspection covers held simulator engine and screen stills in portrait and landscape.",
+    "platform_cost_baselines": {
+      "mac-metal": "Stage, layout and input cost observations under load in WP1, WP3 and WP4. The float stage was checked in stored output.",
+      "chrome-webgpu": "Stage, layout and route cost observations under load in WP1, WP3 and WP4.",
+      "ios-sim": "iPhone 18 Pro simulator, iOS 27.2, Metal. Function only."
+    },
+    "not_run": [
+      "System-delivered key and pointer events in the Mac game window",
+      "A physical iPhone",
+      "How the interface feels under the hand",
+      "The interface's look on a physical EDR panel, including whether text over a scrim remains readable over a highlight brighter than white",
+      "Displays of fractional density",
+      "Arabic, Hebrew, Indic and CJK scripts, right-to-left layout, localisation, typed text and IME",
+      "Accessibility bridges and screen readers, gamepad input and iOS pasteboard input",
+      "Scrolling, clipped regions, animation and transition systems, authored tree files, rich text, text selection, sound, and continuously sized fonts"
+    ],
+    "evidence": ".orchestrate/evidence/GAME-UI/WP5/index.md"
+  },
   "render_2d": {
     "scope": "RENDER-2D sprite scenes and the retained Crowd replay",
     "implementation": "2D hosts prepare the sprite and display-output graph on the drawable pixel grid. Embedded and cooked sheets feed one ordered draw. World rows use adjacent immutable tick endpoints. Frame rows use the first strict sort crossing on their layer. On an EDR surface the present pass writes sprite colours directly up to the current headroom. The submitted-image tap can capture that float drawable or request the ordinary 8-bit display image.",
@@ -4141,7 +4163,7 @@
     ],
     "report_sha256": {
       "FIRST-USE-WALKTHROUGHS.md": "914bfecf62a725806e17b5c919f248bca3ae33dab6b0989e4d807cf44d708c62",
-      "ENGINE-EXPERIENCE.md": "b6cabfa1bd4c636c06497537d846d8e3df33718883153909bb29096da6053d69",
+      "ENGINE-EXPERIENCE.md": "154980f3dc59d682d84450312c34ac1a0a240c1453d29e686fdf6e97064284e2",
       "COMPOSITION.md": "74b4c7da44687f941c16829a2c05bb58dd8e14144d4eab02c818daa36f65155f",
       "CONSTRUCTION-PLAN.md": "982253e764a4a960813f37f55f633578ea7d87e825ff17e859742ed7c9f72e28",
       "modules/TOOLS-DELIVERY.md": "b47aa58079dcee7c447bfd411dd18ba62cb95f250d40bbe5a61f0cc80d00f819",
@@ -4188,7 +4210,7 @@
     ],
     "report_sha256": {
       "FROM-SCRATCH-WALKTHROUGHS.md": "54820a6520ef781a20dc1c424a644d44a2246a11fe41dce810c170e02d68b7c6",
-      "ENGINE-EXPERIENCE.md": "dea75477d981ae688f24da776e2acf7fc5070b147130b06701c039511ac168a6",
+      "ENGINE-EXPERIENCE.md": "154980f3dc59d682d84450312c34ac1a0a240c1453d29e686fdf6e97064284e2",
       "COMPOSITION.md": "b4439134c0fe9a22be2586545307efe9400bf6c683209eec4871ab490dcdb216",
       "CONSTRUCTION-PLAN.md": "db2b932b51f117146d1d9dbb9d38f60600fe95f36350e08c6ddddde0541013f1",
       "modules/TOOLS-DELIVERY.md": "a90544e55ac1122cdd36dc89a9371bb0d79b953e8b898521945405fb093098cb"
@@ -4223,7 +4245,7 @@
     "analytical_workflow_count": 3,
     "report_sha256": {
       "AI-DEVELOPMENT.md": "5c3f68a8f354025dc52932a200ab300b572be00833276f9148c8f5e627f7a077",
-      "ENGINE-EXPERIENCE.md": "5ba66d7593c94aeaef52b797a8c2122944ff40691830c7b3249bf744fa1861cc",
+      "ENGINE-EXPERIENCE.md": "154980f3dc59d682d84450312c34ac1a0a240c1453d29e686fdf6e97064284e2",
       "SYSTEM-DESIGN.md": "edceb9be8632b32ac476069dc1ce4d226cb9d69de4284cf058981d51d88ccb68",
       "CONSTRUCTION-PLAN.md": "1ffde3673ecd0d5e7f21ac69197f94897eb2fc1fe1a3d987649cdf2f8f718de2",
       "modules/TOOLS-DELIVERY.md": "2bb4cf20a7e4d2ab562c33cc4e60eb9856025fddce1ad2dedd618078ecc77f84",
@@ -5066,7 +5088,7 @@
       "CONSTRUCTION-PACKAGES.md": "76881c954b2c929849f52a27eb999faa0c2aa9638df1ab7c0ef28f133c8fc59d",
       "CONTRACTS.md": "f5cbc245b2529e1486a968ac886d82d3397529c6f24ec895fe86be77b28935fa",
       "DESIGN-PROGRAMME.md": "6394461315309427c702aa26a13d8caa9367e7886e8cb283180e899e9918d5ba",
-      "ENGINE-EXPERIENCE.md": "b8486b29481b81f3570b896d7b118ec1f5f8ca03364052b7bf19a46c6af20fc1",
+      "ENGINE-EXPERIENCE.md": "154980f3dc59d682d84450312c34ac1a0a240c1453d29e686fdf6e97064284e2",
       "ENGINE-STRUCTURE-RESEARCH.md": "aa05d06102a9dc9bd53505538188c728fa13ab58f72d33597c6d945e2ddc9a28",
       "FIRST-USE-WALKTHROUGHS.md": "29aecdada136f1b3d99da34bf4a8f8482b63f3813bcffe5b3113e2c26c8585ff",
       "FOUNDATION-SPEC.md": "9293b1eb3beb690d96f88d5fcb8260fc42a1d21c2688fbe515a05e8f3027c1e0",

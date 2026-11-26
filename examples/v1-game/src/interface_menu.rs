@@ -3,15 +3,17 @@
 mod view;
 pub(crate) use view::{MenuFrame, MenuLayout};
 
-#[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+#[cfg(any(target_os = "macos", target_os = "ios", target_arch = "wasm32"))]
 mod play;
-#[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+#[cfg(any(target_os = "macos", target_os = "ios", target_arch = "wasm32"))]
 pub(crate) use play::Menu;
 
 use std::sync::{Arc, Mutex};
 
 use thrum_ui::{ButtonState, NodeId, Scope};
 
+#[cfg(target_os = "ios")]
+pub(crate) const OPEN_CHOICE: NodeId = 92;
 pub(crate) const CHOICE: NodeId = 100;
 pub(crate) const JOIN: NodeId = 200;
 pub(crate) const TICKET_DROP: NodeId = 201;
@@ -21,7 +23,7 @@ pub(crate) const CARDS: [NodeId; 4] = [110, 120, 130, 140];
 pub(crate) const HOST_TICKET: &str = "THRUM-ALPHA-29406-A82EXACL79FTG2OXQ4X65SPPDLX2OUF6KR18PJH5902C01W64NFQVE82NHXQ33DM0-COAST-8432";
 
 #[cfg_attr(
-    not(any(target_os = "macos", target_arch = "wasm32")),
+    not(any(target_os = "macos", target_os = "ios", target_arch = "wasm32")),
     expect(
         dead_code,
         reason = "only the window and browser drive the menu states in this work package"
@@ -41,7 +43,7 @@ pub(crate) enum Screen {
 }
 
 impl Screen {
-    #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+    #[cfg(any(target_os = "macos", target_os = "ios", target_arch = "wasm32"))]
     pub(crate) fn scope(self) -> Option<NodeId> {
         match self {
             Self::Play => None,
@@ -115,7 +117,7 @@ struct MenuState {
 }
 
 impl MenuView {
-    #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+    #[cfg(any(target_os = "macos", target_os = "ios", target_arch = "wasm32"))]
     pub(crate) fn get(&self) -> Arc<View> {
         Arc::clone(&self.0.lock().expect("menu view mailbox").view)
     }
@@ -142,10 +144,17 @@ impl MenuView {
         state.axes
     }
 
-    #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
-    fn set(&self, view: &View, axes: [f32; 3]) {
+    #[cfg(any(target_os = "macos", target_os = "ios", target_arch = "wasm32"))]
+    fn set(
+        &self,
+        view: &View,
+        #[cfg(any(target_os = "macos", target_arch = "wasm32"))] axes: [f32; 3],
+    ) {
         let mut state = self.0.lock().expect("menu view mailbox");
-        state.axes = axes;
+        #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+        {
+            state.axes = axes;
+        }
         if *state.view != *view {
             state.view = Arc::new(view.clone());
             if view.screen == Screen::Play {
