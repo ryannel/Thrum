@@ -1773,12 +1773,12 @@
       }
     },
     "WP14": {
-      "definitions": "198af0c7d8bce88254b5f5bab4e87b5de0d549cf92dc4497e620144c89ccdad2",
+      "definitions": "0228f7825f1cb465bc19135a2747c604510fc2218b2edad4bff29a43cf6b3e8e",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Lead decision on CLOUDS WP14 (Blocked, Needs Context; handoff .orchestrate/evidence/CLOUDS/WP14-handoff.md in the clouds",
-        "at": "2026-11-26T16:49:04Z"
+        "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its 4 Must Fix find",
+        "at": "2026-11-26T16:59:29Z"
       }
     },
     "WP15": {
@@ -2101,12 +2101,12 @@
       }
     },
     "WP22": {
-      "definitions": "d7860ba670be7e5cbcbd55cf3fbc9b3c06a96cfd4fdba0ea8fc48130399f9fa3",
+      "definitions": "7c04482959cf2c2936f32e9ed1061ce91586435e33637fef20aecb62b332067f",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Lead decision on CLOUDS WP14 (Blocked, Needs Context; handoff .orchestrate/evidence/CLOUDS/WP14-handoff.md in the clouds",
-        "at": "2026-11-26T16:49:04Z"
+        "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its 4 Must Fix find",
+        "at": "2026-11-26T16:59:29Z"
       },
       "ends_stretch": true
     }
@@ -2255,11 +2255,15 @@
     {
       "task": "Lead decision on CLOUDS WP14 (Blocked, Needs Context; handoff .orchestrate/evidence/CLOUDS/WP14-handoff.md in the clouds worktree, branch build/clouds at bf2635c8e). Over 40 matched Metal and Chrome experiments (deeper and localized mist banks, aperture changes, finer ground-band sampling, source isolation, a Sun-path atlas) could not make a distinct sunlight shaft below BROKEN CLOUD read inside the mist; the diagonal reaches the mist and diffuses. Park that one cue, as we did with WP10's noon relief: do not author a dedicated proof scene to pass the check, and do not reopen the mist lighting model inside WP14. Trim WP14.6 (and WP14.9's Chrome copy of it) so the broken-cloud shaft inside mist is a recorded known limitation, keeping every other clause (mist in the land's light, glow toward a low Sun, grey away, prop shadows weakening with mist depth, shafts below a ridge line, shaded ground never black). Move the broken-cloud shaft cue to a later CLOUDS work package that does not block WP14's close or later work packages, with the handoff's findings as its starting evidence (the diffuse spread persists in the beam-only control, so it is likely the transport model, not sampling or placement). Keep the ten passed items as they are. Leave the builder's branch untouched.\\",
       "at": "2026-11-26T16:49:04Z"
+    },
+    {
+      "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its 4 Must Fix findings.",
+      "at": "2026-11-26T16:59:29Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-26T16:49:04Z"
+    "at": "2026-11-26T16:59:29Z"
   },
   "design_history": [
     {
