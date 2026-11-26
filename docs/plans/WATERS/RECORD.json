@@ -2700,7 +2700,7 @@
         {
           "verdict": "fail",
           "commit": "72e0f1fe033edd3d2a5607530f5d203fee82116b",
-          "review": ".orchestrate/evidence/WATERS/WP24-review.md",
+          "review": ".orchestrate/evidence/WATERS/WP24-review-1.md",
           "items": {
             "WP24.1": "fail"
           },
@@ -2727,6 +2727,38 @@
             "turns": 1
           },
           "at": "2026-11-26T04:26:49Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "f275daaecff749f2ff3121926b6a000586ccd333",
+          "review": ".orchestrate/evidence/WATERS/WP24-review.md",
+          "items": {
+            "WP24.1": "fail"
+          },
+          "findings": [
+            {
+              "name": "A partial join retains a mirror-capable gain that no visible water has",
+              "item": "WP24.1",
+              "different": "The former zero-depth substitution fired outside a short join. The new case has positive join influence across the view and retains the unmixed chart gain even with no resolved waves.",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 74403,
+            "cached": 1553792,
+            "output": 7238,
+            "turns": 1
+          },
+          "at": "2026-11-26T04:53:48Z"
         }
       ],
       "authorised": {

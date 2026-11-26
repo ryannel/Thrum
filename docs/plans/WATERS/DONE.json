@@ -1591,7 +1591,7 @@
     {
       "id": "WP24",
       "name": "Calm chart water reflects the scene, and rough chart water copies only its shallows",
-      "status": "ready_for_review",
+      "status": "in_progress",
       "quality_bar": "Over a chart the gather admits what it admits over a basin: the scene's reflection wherever the water is still enough to show it, and on rough water no more of the screen than the shallows need. No look is judged here: the running channel is judged in WP9, against the stream of Red Dead Redemption 2.",
       "items": [
         {
@@ -1601,18 +1601,19 @@
           "ask": "Is each case made with a chart a game could declare through the public map interface, beside the same case on a basin? Would case (a) fail if a deep chart tile were dropped before its mirror was considered, and case (b) fail if a shallow chart tile in view asked for the scene's mirror on water that cannot mirror?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP24/review-fix/README.md",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/WATERS/WP24-review.md"
         }
       ],
-      "failed_reviews": 1,
-      "failed_reviews_with_repeat": 0,
+      "failed_reviews": 2,
+      "failed_reviews_with_repeat": 1,
       "findings": [
         {
-          "name": "An offscreen join makes rough chart water request a full-screen mirror",
+          "name": "A partial join retains a mirror-capable gain that no visible water has",
           "item": "WP24.1",
+          "different": "The former zero-depth substitution fired outside a short join. The new case has positive join influence across the view and retains the unmixed chart gain even with no resolved waves.",
           "repeat": false
         }
       ]
