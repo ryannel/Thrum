@@ -419,7 +419,7 @@
     {
       "id": "WP4",
       "name": "Rain rings every water it falls on, the puddles, the lake and the sea, more and rougher as it grows and not at all under the roof, and the rings run out when the rain stops",
-      "status": "not_started",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -433,8 +433,8 @@
           "ask": "Do the bands keep any texture from one frame to the next?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP4/footprint-delivery.md#field-gain-cadence-and-carriage",
           "verdict": "",
           "review": ""
         },
@@ -444,8 +444,8 @@
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test rain_bands_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP4/footprint-gain-metal.log",
           "verdict": "",
           "review": ""
         },
@@ -454,8 +454,8 @@
           "statement": "From 0.5 m and from 1.7 m the rings read as rain on water: each starts small and sharp, spreads leaving calm water inside it, gains crests and fades. Light rain is a few rings, heavy rain a crowded, roughened surface. No grid, repeat or pair of like rings shows across a puddle 6 m long. Under the roof's edge the rings stop along a soft line, and on the thinnest water they are faint.",
           "inspect": "`realtime` sequences of the yard's largest puddle from 0.5 m and 1.7 m at 2, 10 and 50 mm/h, one framed on the roof's edge and one on a puddle's shallow margin; `fixed` stills cropped at native size of single rings at three ages.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP4/footprint-delivery.md#native-metal-inspections",
           "verdict": "",
           "review": ""
         },
@@ -464,8 +464,8 @@
           "statement": "From a distance rained-on water dulls and its reflections soften, more as the rain grows, on the lake and the sea as on the puddles, with no line where the rings end and no shimmer.",
           "inspect": "`realtime` sequences from 30 m above the lake and from the beach looking out to sea, at no rain, 10 and 50 mm/h, in a calm and in a breeze.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP4/footprint-delivery.md#native-metal-inspections",
           "verdict": "",
           "review": ""
         },
@@ -474,10 +474,10 @@
           "statement": "Stopping the rain reads as rain stopping: the rings on the water spread out and fade over a second and no new one starts, the water does not snap to still, and when the rain starts again the first rings are small and new.",
           "inspect": "`realtime` sequences of the yard's largest puddle from 0.5 m and 1.7 m at 10 and 50 mm/h through a stop, two seconds of no rain and a restart; consecutive frames across the stop and across the restart at native size.",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP4/footprint-delivery.md#native-metal-inspections",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP4.8",
@@ -485,8 +485,8 @@
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test rain_bands_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP4/footprint-gain-metal.log",
           "verdict": "",
           "review": ""
         },
@@ -496,8 +496,8 @@
           "check": "node scripts/check_water_browser.mjs --case rain-rings",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP4/footprint-gain-chrome/run.json",
           "verdict": "",
           "review": ""
         },
@@ -507,8 +507,8 @@
           "check": "python3 scripts/water_cost.py check --scene rain-rings",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP4/footprint-gain-fleet-cost.json",
           "verdict": "",
           "review": ""
         },
@@ -518,8 +518,8 @@
           "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test rain_bands_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP4/footprint-delivery.md#wp413-footprint-and-use-tick",
           "verdict": "",
           "review": ""
         }
