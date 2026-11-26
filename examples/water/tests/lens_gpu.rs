@@ -2,9 +2,7 @@
 #[cfg(target_os = "macos")]
 mod support;
 
-#[cfg(target_os = "macos")]
-#[path = "lens_gpu/review.rs"]
-mod review;
+mod lens_review;
 
 #[cfg(target_os = "macos")]
 mod metal {

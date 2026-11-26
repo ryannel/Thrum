@@ -1,22 +1,31 @@
 //! Submitted-depth controls for refined river surfaces and the shared rain array.
+#[cfg(target_os = "macos")]
 use crate::support::{
     half_value,
     optics::{Panel, Rig, attach, camera, sun},
 };
+#[cfg(target_os = "macos")]
 use std::sync::{Arc, Mutex};
+#[cfg(target_os = "macos")]
 use thrum_render::synthetic::{DisplayOverlay, SyntheticView};
+#[cfg(target_os = "macos")]
 use thrum_sea_model::{Cascade, Spectrum};
+#[cfg(target_os = "macos")]
 use thrum_test_support::readback::{Mip, texture};
+#[cfg(target_os = "macos")]
 use thrum_water::{Optics, Profile, Water};
+#[cfg(target_os = "macos")]
 use thrum_water_model::{
     Bed, Body, BodyKind, Map, OpenSky, RainBands, RainBandsProfile, RateHistory, Stage,
 };
 
+#[cfg(target_os = "macos")]
 fn depth_view(view: &SyntheticView) -> SyntheticView {
     view.with_temporal_inputs(true)
         .with_display_overlay(DisplayOverlay::TemporalInputs)
 }
 
+#[cfg(target_os = "macos")]
 fn depth_pixels(rig: &Rig) -> Vec<f32> {
     texture(
         &rig.device,
@@ -32,6 +41,7 @@ fn depth_pixels(rig: &Rig) -> Vec<f32> {
     .collect()
 }
 
+#[cfg(target_os = "macos")]
 fn rain_sea(rain_rate: Option<f64>, amplitude: f64, underwater: bool) -> Water {
     let mut map = Map::prepare(
         Bed::new([-10.0; 2], 10.0, [3, 3], vec![-20.0; 9]).expect("deep sea"),
@@ -91,7 +101,7 @@ fn rain_sea(rain_rate: Option<f64>, amplitude: f64, underwater: bool) -> Water {
     .expect("rain sea")
 }
 
-#[test]
+thrum_test_support::macos_gpu_test! {
 fn metal_keeps_wind_displacement_in_the_shared_rain_array() {
     let Some((_serial, gpu)) = super::metal::gpu("wind displacement with zero rainfall") else {
         return;
@@ -115,8 +125,9 @@ fn metal_keeps_wind_displacement_in_the_shared_rain_array() {
     );
     assert!(ordinary > 0.6 && (shared - ordinary).abs() < 0.002);
 }
+}
 
-#[test]
+thrum_test_support::macos_gpu_test! {
 fn metal_admits_rain_rings_that_reach_a_dry_still_water_lens() {
     let Some((_serial, gpu)) = super::metal::gpu("rain ring lens admission") else {
         return;
@@ -154,12 +165,13 @@ fn metal_admits_rain_rings_that_reach_a_dry_still_water_lens() {
         assert_eq!(clipped > 0, active);
     }
 }
+}
 
-#[test]
-#[expect(
+thrum_test_support::macos_gpu_test! {
+#[cfg_attr(target_os = "macos", expect(
     clippy::cast_possible_truncation,
     reason = "bounded GPU stations and recorded centre rows"
-)]
+))]
 fn metal_lens_cuts_the_final_solved_river_depth() {
     use water_scene::{channel::forcing, island::Wind, river};
     let Some((_serial, gpu)) = super::metal::gpu("refined river lens depth") else {
@@ -253,4 +265,5 @@ fn metal_lens_cuts_the_final_solved_river_depth() {
         );
         assert_eq!(mismatches, 0, "lens and submitted river depth at {x}, {z}");
     }
+}
 }
