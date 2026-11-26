@@ -1,27 +1,14 @@
 {
   "module": "PUDDLES",
   "design": {
-    "verdict": "changes",
-    "review": ".orchestrate/evidence/PUDDLES/design-review.md",
-    "commit": "5235be4394dd8318de0fb85854c64334e3224a47",
-    "hash": "150ec894f959474e11bc2a9054d6504eb37b211f1d70789ab09435f58cf19d69",
-    "by": "review",
-    "host": "codex",
-    "model": "gpt-6.2-astra",
-    "effort": "high",
-    "observed": {
-      "model": "gpt-6.2-astra",
-      "effort": "high"
-    },
-    "cli": "codex-cli 0.171.0-alpha.13.2",
-    "path": "headless",
-    "usage": {
-      "input": 94032,
-      "cached": 1180928,
-      "output": 5868,
-      "turns": 1
-    },
-    "at": "2026-11-26T19:50:37Z"
+    "verdict": "ok",
+    "by": "review_limit",
+    "hash": "dae5eb2c5acc6bf5fab35d0dcf529610184560f72fa315365737cc6f778e81dd",
+    "after": [
+      ".orchestrate/evidence/PUDDLES/design-review-7.md",
+      ".orchestrate/evidence/PUDDLES/design-review.md"
+    ],
+    "at": "2026-11-26T20:12:49Z"
   },
   "work_packages": {
     "WP1": {
@@ -521,7 +508,7 @@
       }
     },
     "WP4": {
-      "definitions": "f325474e23736042e9a341bc1e6e41f79a3877146bc77c58b44c0e08da5f132c",
+      "definitions": "92015d2b162d015b6e2a7f100850970d37ab15592184417bfe72af87d45610bc",
       "reviews": [
         {
           "verdict": "fail",
@@ -630,8 +617,8 @@
       ],
       "authorised": {
         "by": "plan",
-        "task": "The design review of PUDDLES at .orchestrate/evidence/PUDDLES/design-review.md asked for changes, with its Must Fix find",
-        "at": "2026-11-26T19:46:25Z"
+        "task": "The design review of PUDDLES at .orchestrate/evidence/PUDDLES/design-review.md asked for changes, with its 2 Must Fix fi",
+        "at": "2026-11-26T20:12:49Z"
       }
     },
     "WP5": {
@@ -712,11 +699,15 @@
     {
       "task": "The design review of PUDDLES at .orchestrate/evidence/PUDDLES/design-review.md asked for changes, with its Must Fix findings.",
       "at": "2026-11-26T19:46:25Z"
+    },
+    {
+      "task": "The design review of PUDDLES at .orchestrate/evidence/PUDDLES/design-review.md asked for changes, with its 2 Must Fix findings. That makes 2 design reviews in a row that asked for changes, so the script approves the design you leave without another review, and building starts from it.",
+      "at": "2026-11-26T20:12:49Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-26T19:46:25Z"
+    "at": "2026-11-26T20:12:49Z"
   },
   "design_history": [
     {
@@ -879,6 +870,29 @@
         "turns": 1
       },
       "at": "2026-11-26T18:19:41Z"
+    },
+    {
+      "verdict": "changes",
+      "review": ".orchestrate/evidence/PUDDLES/design-review.md",
+      "commit": "5235be4394dd8318de0fb85854c64334e3224a47",
+      "hash": "150ec894f959474e11bc2a9054d6504eb37b211f1d70789ab09435f58cf19d69",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6.2-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6.2-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.171.0-alpha.13.2",
+      "path": "headless",
+      "usage": {
+        "input": 94032,
+        "cached": 1180928,
+        "output": 5868,
+        "turns": 1
+      },
+      "at": "2026-11-26T19:50:37Z"
     }
   ]
 }
