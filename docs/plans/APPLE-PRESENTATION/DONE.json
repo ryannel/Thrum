@@ -1137,7 +1137,7 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "in_progress",
+      "status": "ready_for_review",
       "quality_bar": "A warm start as a shipped Metal game with binary archives has it: the second launch compiles nothing, a damaged or outdated archive costs one slower launch and never a crash or a hitch in play, and the proof is a run that is not allowed to fall back."
     },
     {
