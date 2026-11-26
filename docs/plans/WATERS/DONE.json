@@ -1834,8 +1834,8 @@
           "check": "python3 scripts/water_cost.py check --scene under",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP15/dive-cost-6a65866c3368.json",
           "verdict": "",
           "review": ""
         }
