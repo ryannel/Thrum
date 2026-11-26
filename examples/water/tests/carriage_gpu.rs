@@ -20,7 +20,9 @@ fn submitted_detail_moves_with_chart_current() {
         ],
         tail_slope_variance: 0.0,
     };
-    let k = spectrum.cascades[0].components()[0].wave_vector[0];
+    let mode = spectrum.cascades[0].components()[0];
+    let k = mode.wave_vector[0];
+    let intrinsic_frequency = thrum_sea_model::cascade_frequency(mode);
     let step = 1.0 / 60.0;
     let duration = 12.0 * step;
     let extent = [320, 192];
@@ -45,6 +47,8 @@ fn submitted_detail_moves_with_chart_current() {
     scene.frame_without_timings(duration + 0.000_000_01);
     let after = phase(&tap.read(&scene), extent, matrix, centres, k);
     let control = after[0] - before[0];
+    assert!((control + intrinsic_frequency * duration).abs() < 0.02,
+        "the still-water control must have only the marker wave's intrinsic phase change");
     for (i, speed) in speeds.into_iter().enumerate() {
         let measured = -(after[i] - before[i] - control) / (k * duration);
         let residual = (measured - speed).abs();

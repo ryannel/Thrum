@@ -113,8 +113,7 @@ fn check_post_and_float(gpu: &thrum_test_support::Gpu) {
     let extent = [112, 64];
     check_query_join(gpu, extent);
     for running in [false, true] {
-        let wind = if running { Wind::Trade } else { Wind::Calm };
-        let route = channel::build(wind, true, running).expect("channel game");
+        let route = channel::build(Wind::Trade, true, running).expect("channel game");
         let mut scene = support::Fixture::from_game(gpu, extent, route.game, route.report);
         scene.frame_without_timings(0.0);
         for tick in 1..=12 {
