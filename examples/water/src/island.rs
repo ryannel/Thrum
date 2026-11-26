@@ -449,6 +449,7 @@ pub fn build_rain_bands_cost(
     build_yard(wind, true, YardRoute::BandsCost { rings: draw_rings })
 }
 
+#[derive(Clone, Copy)]
 enum YardRoute {
     Game,
     Cost,

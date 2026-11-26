@@ -219,3 +219,34 @@ fn surface_gain_uses_depth_and_the_soft_roof_edge() {
     println!("Metal shelter, soft edge, 2mm, deep, off-bed sea and above-shelter gains: {samples:?}");
 }
 }
+
+thrum_test_support::macos_gpu_test! {
+fn query_is_identical_at_both_rain_cadences() {
+    use water_scene::island::{self, Wind};
+    let Some(gpu) = thrum_test_support::gpu("rain query cadence", Some(wgpu::Backend::Metal)) else { return; };
+    support::island::with_cooked_island("query_is_identical_at_both_rain_cadences", || {
+        let sample = |cadence| {
+            let (game, report, _, replies) = island::build_rain_yard(Wind::Calm, true).expect("rain yard");
+            let mut fixture = support::Fixture::from_game(&gpu, [112, 64], game, report);
+            fixture.parameters(r#"{"rain.rate":0,"camera.island":4}"#);
+            fixture.warm_cooked();
+            let knob = fixture.host.quality_knobs().into_iter()
+                .find(|knob| knob.name.ends_with("/water.rain_cadence")).expect("rain cadence");
+            fixture.host.set_quality_knob(&knob.name, cadence).expect("cadence setting");
+            fixture.parameters(r#"{"rain.rate":50,"rain.time_scale":600}"#);
+            fixture.frame_without_timings(1.4);
+            for step in 1..=12 {
+                fixture.frame_without_timings(1.4 + f64::from(step) / 60.0);
+                fixture.finish_tick_queries();
+            }
+            let reply = replies.lock().expect("yard replies");
+            let reply = reply.as_ref().expect("delivered tick query");
+            let water = reply.points[0].surface;
+            assert!(water.wet && water.body == Some(3));
+            assert_ne!(water.sample.slope, [0.0; 2], "the query took the ring field");
+            (reply.posted, water)
+        };
+        assert_eq!(sample(1), sample(4));
+    });
+}
+}
