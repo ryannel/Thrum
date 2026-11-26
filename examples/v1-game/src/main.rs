@@ -301,7 +301,7 @@ fn window_transition_proof() -> Result<Option<thrum_app::WindowTransitionProof>,
             .map_err(|error| format!("scale replay origin: {error}"))?;
         Some(ScaleReplay {
             origin,
-            scale_at: v1_game::route_render_scale,
+            scale_at: v1_game::route_scale_replay,
         })
     } else {
         None

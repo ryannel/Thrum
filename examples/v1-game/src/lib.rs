@@ -81,7 +81,7 @@ pub use browser::{
     qualify_effect_tick, qualify_lent_products,
 };
 #[cfg(all(target_os = "macos", feature = "proving"))]
-pub use camera::route_render_scale;
+pub use camera::route_scale_replay;
 pub use camera::{CameraRoute, RouteCheckpoint, RouteKey, RoutePose, SceneCamera};
 #[cfg(all(feature = "draw-probe", not(target_arch = "wasm32")))]
 pub use content::attach_cooked_scene_with_probe;
