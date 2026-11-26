@@ -910,3 +910,11 @@ TAAU retakes at requested strides 2 and 4 preserved cloud contours through
 the pan. The preset filled in through intermediate frames. The cut and layer
 profile change each reset history for one submission. The 1440p range replay
 passed. [Sparse refresh evidence](../../../.orchestrate/evidence/CLOUDS/WP9/sparse-refresh/README.md)
+
+World light now bounds the exposure residual around the current meter.
+The seven Metal control sweeps retained daylight detail. Field diagnostics
+draw after reconstruction. The first restored Chrome submission matched
+the ordinary sky byte for byte, and the held-host Metal check also passed.
+In settled views, sparse resolve carries a texel through its refresh cycle.
+Metal captures at 960×540 and 1920×1080 preserved the detached cloud at
+the return to stride 4. [Target evidence](../../../.orchestrate/evidence/CLOUDS/WP9/review-fixes/README.md)
