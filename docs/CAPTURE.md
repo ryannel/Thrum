@@ -215,6 +215,13 @@ such as `choice:pressed` and `joining:ticket`. The realtime capture plays a scri
 with the player holding a direction and retains its event times beside the submitted frames.
 The Chrome `interface-modal` check captures the menu through the submitted-output tap at DPR 1 and 2.
 
+### Placed cloud library
+
+Build the release V1 game, `thrum-cook` and the `cook_cloud_library` example. Cook the valley and the cloud library
+once, then run `python3 scripts/capture_cloud_library.py --help` for the gallery, growth, mixed sky and cost views.
+Each fixed capture supplies its own held camera and weather setup. The motion group uses elapsed engine time.
+The Chrome group uses the proving web build and the same cooked library publication.
+
 ## Artifacts and bounds
 
 `runtime.json` joins opportunities, requested/accepted controls, exact submission IDs, adjacent endpoint ticks,

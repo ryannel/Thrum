@@ -466,8 +466,8 @@ async function captureSpriteField() {
 
 async function captureCloudView(view, extent) {
   game.set_paused(true, 0);
-  const ready = async (predicate, description) => {
-    const deadline = performance.now() + 15000;
+  const ready = async (predicate, description, budgetMs = 15000) => {
+    const deadline = performance.now() + budgetMs;
     while (!predicate()) {
       if (performance.now() >= deadline) fail(description);
       await wait(2);
@@ -499,7 +499,7 @@ async function captureCloudView(view, extent) {
           game.frame(time);
         }
         return false;
-      }, 'placed cloud weather did not settle at tick 300');
+      }, 'placed cloud weather did not settle at tick 300', 45000);
       game.set_paused(true, time);
     }
   }
