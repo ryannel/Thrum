@@ -2,16 +2,17 @@ use bytemuck::{Pod, Zeroable};
 use glam::{Mat4, Vec3, Vec3Swizzles, Vec4};
 use thrum_render::contribution::ContributionFrame;
 use thrum_sea_model::{LongWaves, Spectrum};
-use thrum_water_model::{Field, Map};
+use thrum_water_model::{Field, Map, WholeCut};
 
 const LENS_SIDE: usize = 33;
 const SMOOTH_SIDE: usize = 9;
+const MAX_STRIP_SAMPLES: usize = 384;
 pub(super) const DRAW: &str = "water through lens";
 
 #[repr(C)]
 #[derive(Clone, Copy, Pod, Zeroable)]
 pub(super) struct Lens {
-    pub(super) state: [u32; 4], // gather required, columns wide and high, reserved
+    pub(super) state: [u32; 4], // gather required, columns wide and high, adaptive strip
     columns: [[[f32; 4]; LENS_SIDE]; LENS_SIDE],
 }
 
@@ -42,10 +43,107 @@ impl Underwater {
         let plane = Plane::new(frame);
         let mut lens = Lens::zeroed();
         let may_fold = self.sample(&mut lens, &plane, map, seconds, SMOOTH_SIDE);
-        if may_fold {
+        if may_fold
+            && self
+                .level_strip(&plane, map, seconds, frame.render_extent, &mut lens)
+                .is_none()
+        {
             self.sample(&mut lens, &plane, map, seconds, LENS_SIDE);
         }
         lens
+    }
+
+    #[expect(
+        clippy::cast_possible_truncation,
+        clippy::cast_precision_loss,
+        reason = "slice limits and projected GPU metres are bounded"
+    )]
+    fn level_strip(
+        &self,
+        plane: &Plane,
+        map: &Map,
+        seconds: f64,
+        [width, height]: [u32; 2],
+        lens: &mut Lens,
+    ) -> Option<()> {
+        if width < LENS_SIDE as u32
+            || plane.corners[0].xz() != plane.corners[2].xz()
+            || plane.corners[0].xz() == plane.corners[1].xz()
+        {
+            return None;
+        }
+        let profile = map.surf_profile()?;
+        let xz = |x| {
+            let uv = (x as f32 + 0.5) / width as f32;
+            let p = plane.point(uv.mul_add(2.0, -1.0), 0.0);
+            [f64::from(p.x), f64::from(p.z)]
+        };
+        let last = width - 1;
+        let anchors: Vec<_> = (0..LENS_SIDE as u32)
+            .map(|i| i * last / (LENS_SIDE as u32 - 1))
+            .collect();
+        let world: Vec<_> = anchors.iter().copied().map(xz).collect();
+        let body = map.sample(xz(last / 2))?.body;
+        let sheet = map.surf_sheet(&self.field, body, seconds).ok()?;
+        let a = world[0];
+        let b = world[world.len() - 1];
+        let prepared = WholeCut::new(&sheet, &world, profile.cut)
+            .ok()?
+            .with_projection(
+                std::array::from_fn(|i| a[i].min(b[i])),
+                std::array::from_fn(|i| a[i].max(b[i])),
+            );
+        let mut cached = vec![None; width as usize];
+        let mut budget = MAX_STRIP_SAMPLES;
+        let mut under = false;
+        let mut query = |x| {
+            let slot = &mut cached[x as usize];
+            if let Some(value) = *slot {
+                return Some(value);
+            }
+            budget = budget.checked_sub(1)?;
+            let position = xz(x);
+            let uv = (x as f32 + 0.5) / width as f32;
+            let value = if let Some(row) = map.sample(position) {
+                let result = if row.body == body && row.bed.is_some() {
+                    sheet
+                        .surface_with_cut(position, row, &prepared)
+                        .or_else(|_| map.surface_on_row(&self.field, position, seconds, row))
+                } else {
+                    map.surface_on_row(&self.field, position, seconds, row)
+                }
+                .ok()?;
+                let roof = result.sample.height;
+                let bed = row.bed.unwrap_or(-1e30);
+                under |= roof + self.short_bound(&row.row.gains) > plane.lowest.max(bed);
+                [roof as f32, bed as f32, uv, 1.0]
+            } else {
+                [-1e30, -1e30, uv, 0.0]
+            };
+            *slot = Some(value);
+            Some(value)
+        };
+        let tolerance = ((plane.highest - plane.lowest) / f64::from(height) * 0.25) as f32;
+        let mut samples = Vec::with_capacity(LENS_SIDE * 2);
+        samples.push(query(0)?);
+        for span in anchors.windows(2) {
+            let a = (span[0], query(span[0])?);
+            let b = (span[1], query(span[1])?);
+            refine_strip(a, b, tolerance, &mut query, &mut samples)?;
+        }
+        lens.state = [u32::from(under), samples.len() as u32, 1, 1];
+        for (column, sample) in lens.columns.iter_mut().flatten().zip(samples) {
+            *column = sample;
+        }
+        Some(())
+    }
+
+    fn short_bound(&self, gains: &[f64; 4]) -> f64 {
+        self.short_amplitudes
+            .iter()
+            .zip(&gains[1..])
+            .map(|(amplitude, gain)| amplitude * gain)
+            .sum()
     }
 
     #[expect(
@@ -78,12 +176,7 @@ impl Underwater {
                 let bed = sample.bed.unwrap_or(-1e30);
                 // The surface can attenuate these gains further in shallow
                 // water. Open-sea detail cannot admit a sheltered lens.
-                let short_bound: f64 = self
-                    .short_amplitudes
-                    .iter()
-                    .zip(&sample.row.gains[1..])
-                    .map(|(amplitude, gain)| amplitude * gain)
-                    .sum();
+                let short_bound = self.short_bound(&sample.row.gains);
                 let bound = sample.row.gains[0] * self.long_amplitude + short_bound;
                 let plain = map.surf_profile().is_none() || sample.bed.is_none();
                 if plain && sample.row.level + bound < plane.lowest {
@@ -116,6 +209,41 @@ impl Underwater {
         }
         may_fold
     }
+}
+
+#[expect(
+    clippy::cast_precision_loss,
+    reason = "render extents are small enough for exact indices"
+)]
+fn refine_strip(
+    (first, a): (u32, [f32; 4]),
+    (last, b): (u32, [f32; 4]),
+    tolerance: f32,
+    query: &mut impl FnMut(u32) -> Option<[f32; 4]>,
+    output: &mut Vec<[f32; 4]>,
+) -> Option<()> {
+    let span = last - first;
+    if span > 1 {
+        let mut refine = false;
+        for part in 1..=3 {
+            let x = first + (span * part / 4).max(1);
+            let p = query(x)?;
+            let t = (x - first) as f32 / span as f32;
+            refine |= (p[3] > 0.0) != (a[3] > 0.0)
+                || (p[3] > 0.0) != (b[3] > 0.0)
+                || (0..2).any(|axis| {
+                    (p[axis] - (b[axis] - a[axis]).mul_add(t, a[axis])).abs() > tolerance
+                });
+        }
+        if refine {
+            let middle = first + span / 2;
+            let centre = (middle, query(middle)?);
+            refine_strip((first, a), centre, tolerance, query, output)?;
+            return refine_strip(centre, (last, b), tolerance, query, output);
+        }
+    }
+    output.push(b);
+    Some(())
 }
 
 #[expect(

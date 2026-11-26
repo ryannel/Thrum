@@ -1,6 +1,6 @@
 use crate::{
     BedPyramid, BodyKind, BreakerSection, CutConfig, Field, Map, MapSample, Sheet, SheetPoint,
-    ShoreConfig, ShoreTransform, Source, Surface, WaterError, cut, limit, shoaling,
+    ShoreConfig, ShoreTransform, Source, Surface, WaterError, WholeCut, cut, limit, shoaling,
 };
 use std::{
     collections::HashMap,
@@ -235,9 +235,6 @@ impl Surf {
         time: f64,
         row: MapSample,
     ) -> Result<Surface, WaterError> {
-        if !time.is_finite() || point.iter().any(|v| !v.is_finite()) {
-            return Err(WaterError::new("surf", "nonfinite point or time"));
-        }
         let sheet = SurfSheet {
             surf: self,
             map,
@@ -245,8 +242,34 @@ impl Surf {
             time,
             body: row.body,
         };
+        self.surface_from(&sheet, point, row, None)
+    }
+
+    fn surface_from(
+        &self,
+        sheet: &SurfSheet<'_>,
+        point: [f64; 2],
+        row: MapSample,
+        prepared: Option<&WholeCut<'_, SurfSheet<'_>>>,
+    ) -> Result<Surface, WaterError> {
+        let SurfSheet {
+            map,
+            field,
+            time,
+            body,
+            ..
+        } = *sheet;
+        if row.body != body {
+            return Err(WaterError::new("surf", "row belongs to another body"));
+        }
+        if !time.is_finite() || point.iter().any(|v| !v.is_finite()) {
+            return Err(WaterError::new("surf", "nonfinite point or time"));
+        }
         let (rest, height) = if sheet.can_throw(point) {
-            let column = cut(&sheet, point, self.profile.cut)?;
+            let column = prepared.map_or_else(
+                || cut(sheet, point, self.profile.cut),
+                |group| group.column(point),
+            )?;
             (column.rest, column.height)
         } else {
             let mut rest = point;
@@ -647,6 +670,26 @@ impl SurfSheet<'_> {
             velocity,
             height_dt: velocity[1] - slope[0] * velocity[0] - slope[1] * velocity[2],
         }
+    }
+}
+
+impl SurfSheet<'_> {
+    /// Sample a column of this sheet using its prepared cut for overhanging crests.
+    /// # Errors
+    /// Refuses a mismatched row, an invalid point or a surface solve failure.
+    pub fn surface_with_cut(
+        &self,
+        point: [f64; 2],
+        row: MapSample,
+        prepared: &WholeCut<'_, Self>,
+    ) -> Result<Surface, WaterError> {
+        if !prepared.is_for(self) {
+            return Err(WaterError::new("surf", "cut belongs to another sheet"));
+        }
+        let mut surface = self.surf.surface_from(self, point, row, Some(prepared))?;
+        self.map
+            .add_rain(self.field, point, self.time, row, &mut surface.sample);
+        Ok(surface)
     }
 }
 

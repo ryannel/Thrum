@@ -229,40 +229,48 @@ impl Lattice {
     fn scan(&self, bounds: Bounds, point: [f64; 2], best: &mut Option<Hit>, hits: &mut usize) {
         for z in bounds.lo[1]..bounds.hi[1] {
             for x in bounds.lo[0]..bounds.hi[0] {
-                let corners = self.corners([x, z]);
-                if !in_landing_box(corners, point, 1e-9) {
-                    continue;
-                }
-                let origin = [x, z].map(|v| f64::from(v) * self.cell);
-                let offsets = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]];
-                for (face, ids) in [[0, 1, 2], [0, 2, 3]].into_iter().enumerate() {
-                    let triangle = ids.map(|j| corners[j]);
-                    if let Some(weights) = barycentric(triangle.map(|p| p.world), point) {
-                        *hits += 1;
-                        let height = (0..3).map(|j| weights[j] * triangle[j].height).sum::<f64>();
-                        let order = (z, x, face);
-                        if best.is_none_or(|h| {
-                            height > h.height
-                                || (height
-                                    .partial_cmp(&h.height)
-                                    .is_some_and(std::cmp::Ordering::is_eq)
-                                    && order < h.order)
-                        }) {
-                            let rest = std::array::from_fn(|a| {
-                                (0..3)
-                                    .map(|j| {
-                                        weights[j] * (origin[a] + self.cell * offsets[ids[j]][a])
-                                    })
-                                    .sum()
-                            });
-                            *best = Some(Hit {
-                                height,
-                                rest,
-                                origin,
-                                order,
-                            });
-                        }
-                    }
+                self.scan_cell([x, z], point, best, hits);
+            }
+        }
+    }
+
+    fn scan_cell(
+        &self,
+        [x, z]: [i32; 2],
+        point: [f64; 2],
+        best: &mut Option<Hit>,
+        hits: &mut usize,
+    ) {
+        let corners = self.corners([x, z]);
+        if !in_landing_box(corners, point, 1e-9) {
+            return;
+        }
+        let origin = [x, z].map(|v| f64::from(v) * self.cell);
+        let offsets = [[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]];
+        for (face, ids) in [[0, 1, 2], [0, 2, 3]].into_iter().enumerate() {
+            let triangle = ids.map(|j| corners[j]);
+            if let Some(weights) = barycentric(triangle.map(|p| p.world), point) {
+                *hits += 1;
+                let height = (0..3).map(|j| weights[j] * triangle[j].height).sum::<f64>();
+                let order = (z, x, face);
+                if best.is_none_or(|h| {
+                    height > h.height
+                        || (height
+                            .partial_cmp(&h.height)
+                            .is_some_and(std::cmp::Ordering::is_eq)
+                            && order < h.order)
+                }) {
+                    let rest = std::array::from_fn(|a| {
+                        (0..3)
+                            .map(|j| weights[j] * (origin[a] + self.cell * offsets[ids[j]][a]))
+                            .sum()
+                    });
+                    *best = Some(Hit {
+                        height,
+                        rest,
+                        origin,
+                        order,
+                    });
                 }
             }
         }
@@ -351,15 +359,26 @@ fn finish(
     })
 }
 
-/// Diagnostic whole cut on one fine lattice covering every supplied column's reach.
+/// A cut on one fine lattice covering every supplied column's reach.
 /// Shares forward evaluations across the columns; it does no coarse filtering.
 pub struct WholeCut<'a, S> {
     sheet: &'a S,
     grid: Lattice,
     config: CutConfig,
+    projection: Option<ProjectedCells>,
+}
+
+struct ProjectedCells {
+    lo: [f64; 2],
+    hi: [f64; 2],
+    cells: Vec<[i32; 2]>,
 }
 
 impl<'a, S: Sheet + Sync> WholeCut<'a, S> {
+    pub(crate) fn is_for(&self, sheet: &S) -> bool {
+        std::ptr::eq(self.sheet, sheet)
+    }
+
     /// Sample the union bounds of all requested columns.
     /// # Errors
     /// Refuses empty, invalid or oversized lattices.
@@ -392,7 +411,29 @@ impl<'a, S: Sheet + Sync> WholeCut<'a, S> {
             sheet,
             grid,
             config,
+            projection: None,
         })
+    }
+
+    /// Keep the cells whose displaced bounds overlap a rectangle in world x/z.
+    /// Columns outside it continue to scan their full lattice reach.
+    #[must_use]
+    pub fn with_projection(mut self, lo: [f64; 2], hi: [f64; 2]) -> Self {
+        let bounds = self.grid.bounds;
+        let mut cells = Vec::new();
+        for z in bounds.lo[1]..bounds.hi[1] {
+            for x in bounds.lo[0]..bounds.hi[0] {
+                let corners = self.grid.corners([x, z]);
+                if (0..2).all(|axis| {
+                    corners.iter().any(|p| p.world[axis] <= hi[axis] + 1e-9)
+                        && corners.iter().any(|p| p.world[axis] >= lo[axis] - 1e-9)
+                }) {
+                    cells.push([x, z]);
+                }
+            }
+        }
+        self.projection = Some(ProjectedCells { lo, hi, cells });
+        self
     }
 
     /// Find and refine the highest triangle across this column's whole reach.
@@ -409,7 +450,17 @@ impl<'a, S: Sheet + Sync> WholeCut<'a, S> {
         }
         let mut best = None;
         let mut hits = 0;
-        self.grid.scan(bounds, point, &mut best, &mut hits);
+        if let Some(region) = &self.projection
+            && (0..2).all(|i| point[i] >= region.lo[i] && point[i] <= region.hi[i])
+        {
+            for &[x, z] in &region.cells {
+                if x >= bounds.lo[0] && x < bounds.hi[0] && z >= bounds.lo[1] && z < bounds.hi[1] {
+                    self.grid.scan_cell([x, z], point, &mut best, &mut hits);
+                }
+            }
+        } else {
+            self.grid.scan(bounds, point, &mut best, &mut hits);
+        }
         finish(
             self.sheet,
             point,

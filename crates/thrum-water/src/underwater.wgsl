@@ -11,7 +11,26 @@ fn lens_point(uv: vec2<f32>) -> vec3<f32> {
     return p.xyz / p.w;
 }
 
+fn strip_sample(i: u32) -> vec4<f32> {
+    return lens.columns[i / 33u][i % 33u];
+}
+
+fn strip_column(x: f32) -> vec4<f32> {
+    var a = 0u;
+    var b = lens.state.y - 1u;
+    while b - a > 1u {
+        let mid = (a + b) / 2u;
+        if x < strip_sample(mid).z { b = mid; } else { a = mid; }
+    }
+    let low = strip_sample(a);
+    let high = strip_sample(b);
+    let t = clamp((x - low.z) / (high.z - low.z), 0.0, 1.0);
+    if min(low.w, high.w) == 0.0 { return select(low, high, t >= 0.5); }
+    return mix(low, high, t);
+}
+
 fn lens_column(uv: vec2<f32>) -> vec4<f32> {
+    if lens.state.w == 1u { return strip_column(uv.x); }
     let last = lens.state.yz - vec2(1u);
     let coord = clamp(uv, vec2(0.0), vec2(1.0)) * vec2<f32>(last);
     let cell = vec2<u32>(coord);

@@ -22,7 +22,9 @@ mod metal {
         let eye = case.eye();
         let view = camera(eye, [eye[0], eye[1], eye[2] + 1.0], FOV, 1.0 / 32768.0);
         let panel = Panel {
-            centre: [eye[0], eye[1], eye[2] + 0.111],
+            // Minimize the gap between the near plane and the reference
+            // face, where the rendered sheet can obscure the probe.
+            centre: [eye[0], eye[1], eye[2] + 0.110_001],
             half_size: [0.2, 0.16, 0.01],
             radiant: true,
         };
