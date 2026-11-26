@@ -3,8 +3,8 @@
   "design": {
     "verdict": "changes",
     "review": ".orchestrate/evidence/PUDDLES/design-review.md",
-    "commit": "8505e79f4a630d87d2729b7263ba3abb67e76af9",
-    "hash": "cf151380b510521e60cc5d433099d51a7476a2b25561aaf9c55dcd466ca0187e",
+    "commit": "5235be4394dd8318de0fb85854c64334e3224a47",
+    "hash": "150ec894f959474e11bc2a9054d6504eb37b211f1d70789ab09435f58cf19d69",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",
@@ -14,14 +14,14 @@
       "effort": "high"
     },
     "cli": "codex-cli 0.171.0-alpha.13.2",
-    "path": "visible",
+    "path": "headless",
     "usage": {
-      "input": 104852,
-      "cached": 1568896,
-      "output": 6416,
+      "input": 94032,
+      "cached": 1180928,
+      "output": 5868,
       "turns": 1
     },
-    "at": "2026-11-26T18:19:41Z"
+    "at": "2026-11-26T19:50:37Z"
   },
   "work_packages": {
     "WP1": {
@@ -856,6 +856,29 @@
         "turns": 1
       },
       "at": "2026-11-18T04:07:51Z"
+    },
+    {
+      "verdict": "changes",
+      "review": ".orchestrate/evidence/PUDDLES/design-review-7.md",
+      "commit": "8505e79f4a630d87d2729b7263ba3abb67e76af9",
+      "hash": "cf151380b510521e60cc5d433099d51a7476a2b25561aaf9c55dcd466ca0187e",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6.2-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6.2-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.171.0-alpha.13.2",
+      "path": "visible",
+      "usage": {
+        "input": 104852,
+        "cached": 1568896,
+        "output": 6416,
+        "turns": 1
+      },
+      "at": "2026-11-26T18:19:41Z"
     }
   ]
 }
