@@ -13,13 +13,13 @@ use super::{HostedGame, WindowGame};
 
 type Driver = Offscreen<HostedGame<WindowGame>>;
 
-pub(super) fn setup() -> Result<Menu, String> {
+pub(super) fn setup(state: Option<&str>) -> Result<Menu, String> {
     let mut menu = Menu::new(true);
-    let Ok(state) = std::env::var("THRUM_CAPTURE_MENU_STATE") else {
+    let Some(state) = state else {
         return Ok(menu);
     };
     let mut view = View::default();
-    let (screen, style) = state.split_once(':').unwrap_or((&state, ""));
+    let (screen, style) = state.split_once(':').unwrap_or((state, ""));
     view.screen = Screen::named(screen).ok_or("unknown menu capture screen")?;
     if view.screen == Screen::Choice {
         match style {

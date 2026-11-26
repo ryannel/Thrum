@@ -3,8 +3,7 @@
 #[expect(dead_code, reason = "drop layout needs no button or contact press")]
 mod input_support;
 
-#[path = "layout_support/font.rs"]
-mod font;
+mod text_support;
 
 use input_support::{NOW, SCOPE, tree};
 use thrum_ui::{
@@ -39,11 +38,11 @@ fn drops_are_whole_and_source_tagged_or_refused_and_counted() {
 #[test]
 fn a_hundred_character_ticket_keeps_both_ends_and_copies_the_entire_value() {
     let ticket = format!("AB{}CD", "1234".repeat(24));
-    let font = font::pixel();
+    let font = text_support::font("type");
     let options = TextOptions {
-        points: 8.0,
+        points: 12.0,
         scale: 1,
-        extent: [56, 8],
+        extent: [82, 20],
         alignment: Alignment::Left,
         wrap: false,
         elision: Elision::Middle,
@@ -59,7 +58,7 @@ fn a_hundred_character_ticket_keeps_both_ends_and_copies_the_entire_value() {
         panic!("ticket was not handed to the game");
     };
     let visible = TextRun::new(font, &received, options).expect("cooked pixel strike");
-    let strike = font.strike(8.0, 1).expect("8-point strike");
+    let strike = font.strike(12.0, 1).expect("12-point strike");
     let frame = |character| strike.glyph(character).expect("cooked glyph").frame;
     let frames = visible
         .glyphs()

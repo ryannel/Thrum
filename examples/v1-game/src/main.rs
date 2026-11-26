@@ -65,6 +65,7 @@ fn main() {
             recovery,
             capture_output,
             status_capture().unwrap_or_else(|error| report_capture_failure(&error)),
+            std::env::var("THRUM_CAPTURE_MENU_STATE").ok(),
             hardware,
         ) {
             report_capture_failure(&error);
@@ -116,9 +117,29 @@ fn main() {
         qualification,
         #[cfg(feature = "proving")]
         display,
+        #[cfg(feature = "proving")]
+        window_menu().unwrap_or_else(|error| report_capture_failure(&error)),
         governor,
         metal_preparation(),
     );
+}
+
+#[cfg(all(target_os = "macos", feature = "proving"))]
+fn window_menu() -> Result<v1_game::WindowMenu, String> {
+    let ticket = std::env::args()
+        .skip_while(|arg| arg != "--join-ticket")
+        .nth(1);
+    let script = std::env::var_os("THRUM_UI_EVENT_SCRIPT")
+        .map(|input| {
+            Ok::<_, String>(thrum_app::InterfaceScript {
+                input: input.into(),
+                output: std::env::var_os("THRUM_UI_EVENT_REPORT")
+                    .ok_or("interface script needs THRUM_UI_EVENT_REPORT")?
+                    .into(),
+            })
+        })
+        .transpose()?;
+    Ok(v1_game::WindowMenu { ticket, script })
 }
 
 #[cfg(target_os = "macos")]

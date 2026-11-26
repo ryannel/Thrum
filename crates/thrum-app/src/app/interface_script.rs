@@ -9,8 +9,17 @@ use winit::{
     keyboard::ModifiersState,
 };
 
-use super::{App, WindowGame};
+use super::{App, RenderJob, WindowGame};
 use crate::KeyCode;
+
+/// File paths for an unattended input qualification run in the ordinary window.
+#[derive(Clone)]
+pub struct InterfaceScript {
+    /// Read the scripted actions from this JSON file.
+    pub input: PathBuf,
+    /// Write the game's record of those actions here.
+    pub output: PathBuf,
+}
 
 pub(super) struct Script {
     steps: VecDeque<Value>,
@@ -20,25 +29,19 @@ pub(super) struct Script {
 }
 
 impl Script {
-    pub(super) fn from_environment() -> Result<Option<Self>, String> {
-        let Some(path) = std::env::var_os("THRUM_UI_EVENT_SCRIPT") else {
-            return Ok(None);
-        };
-        let bytes = std::fs::read(path).map_err(|error| error.to_string())?;
+    pub(super) fn new(config: &InterfaceScript) -> Result<Self, String> {
+        let bytes = std::fs::read(&config.input).map_err(|error| error.to_string())?;
         let steps: VecDeque<Value> =
             serde_json::from_slice(&bytes).map_err(|error| error.to_string())?;
         if steps.is_empty() || steps.len() > 256 {
             return Err("interface script requires 1..=256 actions".into());
         }
-        Ok(Some(Self {
+        Ok(Self {
             steps,
             log: Vec::new(),
             last: 0,
-            output: PathBuf::from(
-                std::env::var_os("THRUM_UI_EVENT_REPORT")
-                    .ok_or("interface script needs THRUM_UI_EVENT_REPORT")?,
-            ),
-        }))
+            output: config.output.clone(),
+        })
     }
 }
 
@@ -131,8 +134,12 @@ impl<G: WindowGame + 'static> App<G> {
                 return Ok(Some(point));
             }
             "recover" => {
-                self.device_lost(self.recovery.active)?;
-                self.admit_recovery()?;
+                self.render
+                    .as_ref()
+                    .ok_or("render worker missing")?
+                    .try_send(RenderJob::LoseForInterfaceProof)
+                    .map_err(|_| "render worker refused the scripted device loss")?;
+                self.render_in_flight = Some(0);
             }
             "observe" => {}
             _ => return Err(format!("unknown interface step {action}")),

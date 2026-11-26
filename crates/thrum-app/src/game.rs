@@ -237,6 +237,12 @@ pub trait Game {
     #[cfg(feature = "interface")]
     fn interface_tick(&mut self, _now: Duration) {}
 
+    /// Optional proof inputs for the window's ordinary translated event handlers.
+    #[cfg(all(feature = "interface", target_os = "macos"))]
+    fn interface_script(&self) -> Option<&crate::InterfaceScript> {
+        None
+    }
+
     /// Report game-owned observations for the window's input qualification script.
     #[cfg(all(feature = "interface", target_os = "macos"))]
     fn interface_witness(&self) -> Option<String> {

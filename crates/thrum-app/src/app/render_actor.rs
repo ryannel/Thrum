@@ -40,6 +40,8 @@ pub(super) struct FrameEdits<E> {
 }
 pub(super) enum RenderJob<E> {
     Frame(FrameRequest<E>),
+    #[cfg(feature = "interface")]
+    LoseForInterfaceProof,
     Recover {
         from_generation: u64,
         generation: u64,
@@ -338,6 +340,11 @@ impl<G: Game> Actor<G> {
                     }
                     Err(error) => frame_failure(error, self.gpu.watch.is_lost()),
                 }
+            }
+            #[cfg(feature = "interface")]
+            RenderJob::LoseForInterfaceProof => {
+                self.gpu.device.destroy();
+                RenderOutcome::DeviceLost
             }
             RenderJob::Recover {
                 from_generation,

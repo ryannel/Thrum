@@ -1,37 +1,9 @@
 //! Pen positions calculated from the table, with separate cases for each fitting rule.
 
-use std::sync::OnceLock;
+mod text_support;
 
-use thrum_asset::{FontProduct, Profile};
-use thrum_cook::{CookConfig, Cooker, Durability, Quality};
-use thrum_test_support::Scratch;
+use text_support::font;
 use thrum_ui::{Alignment, Elision, PaintListBuilder, TextOptions, TextRun};
-
-static FONTS: OnceLock<[FontProduct; 2]> = OnceLock::new();
-
-fn font(name: &str) -> &'static FontProduct {
-    let fonts = FONTS.get_or_init(|| {
-        let scratch = Scratch::new("text-runs");
-        let mut cooker = Cooker::open(CookConfig {
-            source: std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-                .join("../../tests/fixtures/game-ui/font-source"),
-            store: scratch.join("store"),
-            profiles: vec![Profile::Portable],
-            quality: Quality::Fast,
-            durability: Durability::Process,
-        })
-        .expect("cooker");
-        assert_eq!(cooker.cook_all().expect("cook").failed, []);
-        let store = cooker.store();
-        let head = store.read_head().expect("HEAD").expect("publication");
-        let manifest = store.load_manifest(&head).expect("manifest");
-        ["type", "pixel"].map(|name| {
-            let entry = manifest.resolve(name, &[Profile::Portable]).expect("font");
-            FontProduct::open(store.map(&entry.product).expect("map")).expect("font")
-        })
-    });
-    &fonts[usize::from(name == "pixel")]
-}
 
 const fn opts(points: f32, extent: [u32; 2]) -> TextOptions {
     TextOptions {

@@ -230,6 +230,11 @@ impl<T: RuntimeSetup> Game for HostedGame<T> {
     }
 
     #[cfg(all(feature = "proving", target_os = "macos"))]
+    fn interface_script(&self) -> Option<&thrum_app::InterfaceScript> {
+        self.0.menu()?.script.as_ref()
+    }
+
+    #[cfg(all(feature = "proving", target_os = "macos"))]
     fn interface_witness(&self) -> Option<String> {
         Some(self.0.menu()?.report().to_string())
     }

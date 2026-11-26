@@ -101,6 +101,7 @@ pub fn run_runtime_capture(
     recovery: NativeRecovery,
     capture_output: RuntimeCaptureOutput,
     status: StatusCapture,
+    menu_state: Option<String>,
     hardware: Vec<HardwareRequest>,
 ) -> Result<(), String> {
     capture::run(
@@ -111,6 +112,7 @@ pub fn run_runtime_capture(
         recovery,
         capture_output,
         status,
+        menu_state,
         hardware,
     )
 }
@@ -149,6 +151,16 @@ pub struct WindowGovernor {
     pub route: Option<String>,
 }
 
+/// Options passed from the process edge to the interface scene.
+#[cfg(feature = "proving")]
+#[derive(Default)]
+pub struct WindowMenu {
+    /// Optional join ticket supplied as one complete argument.
+    pub ticket: Option<String>,
+    /// Scripted qualification input and report paths.
+    pub script: Option<thrum_app::InterfaceScript>,
+}
+
 /// Run the V1 scene in a macOS window and print its frames report when it closes.
 /// `THRUM_V1_FRAMES` bounds the run; `THRUM_PARAMS` names a parameter file applied at
 /// start and on `L`. Failures are reported on standard error with a nonzero exit.
@@ -159,6 +171,7 @@ pub fn run_window(
     #[cfg(feature = "proving")] transition: Option<thrum_app::WindowTransitionProof>,
     #[cfg(feature = "proving")] qualification: Option<thrum_app::WindowQualification>,
     #[cfg(feature = "proving")] display: Option<thrum_app::WindowDisplayOptions>,
+    #[cfg(feature = "proving")] menu: WindowMenu,
     governor: WindowGovernor,
     metal_preparation: Option<thrum_render::capabilities::metallib::Preparation>,
 ) {
@@ -251,7 +264,7 @@ pub fn run_window(
             #[cfg(feature = "proving")]
             interface_text,
             #[cfg(feature = "proving")]
-            menu: (interface_text == Some(crate::InterfaceText::Menu)).then(window_menu),
+            menu: (interface_text == Some(crate::InterfaceText::Menu)).then(|| window_menu(menu)),
             #[cfg(feature = "proving")]
             capture_route: governor.route,
             governor_enabled: governor.enabled,
@@ -297,13 +310,10 @@ fn write_card_texels(output: &std::path::Path) {
 }
 
 #[cfg(feature = "proving")]
-fn window_menu() -> crate::interface_menu::Menu {
-    let mut menu =
-        crate::interface_menu::Menu::new(std::env::var_os("THRUM_UI_EVENT_SCRIPT").is_some());
-    if let Some(ticket) = std::env::args()
-        .skip_while(|arg| arg != "--join-ticket")
-        .nth(1)
-    {
+fn window_menu(config: WindowMenu) -> crate::interface_menu::Menu {
+    let mut menu = crate::interface_menu::Menu::new(config.script.is_some());
+    menu.script = config.script;
+    if let Some(ticket) = config.ticket {
         menu.launch(
             ticket,
             thrum_ui::TextSource::Launch,

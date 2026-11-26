@@ -60,6 +60,7 @@ pub(super) fn run(
     recovery: super::NativeRecovery,
     capture_output: RuntimeCaptureOutput,
     status: super::StatusCapture,
+    menu_state: Option<String>,
     hardware: Vec<super::HardwareRequest>,
 ) -> Result<(), String> {
     if !matches!(
@@ -119,6 +120,7 @@ pub(super) fn run(
                 recovery,
                 capture_output,
                 status,
+                menu_state.as_deref(),
                 &hardware,
             ))
         })
@@ -846,6 +848,7 @@ async fn record(
     recovery_mode: super::NativeRecovery,
     capture_output: RuntimeCaptureOutput,
     status: super::StatusCapture,
+    menu_state: Option<&str>,
     hardware: &[super::HardwareRequest],
 ) -> Result<(), String> {
     let mode = capture_mode(scenario)?;
@@ -857,7 +860,7 @@ async fn record(
     let instance = metal_instance();
     let (adapter, device, queue, capabilities) =
         metal_device(&instance, FIRST_DEVICE_GENERATION, hardware).await?;
-    let (game, preview) = capture_game(output, scenario, capture_output)?;
+    let (game, preview) = capture_game(output, scenario, capture_output, menu_state)?;
     let mut driver = Offscreen::new(game, &device, &capabilities, &queue, extent)
         .map_err(|error| error.to_string())?;
     let haze_take = crate::content::launch_value("THRUM_HAZE_TAKE")
@@ -1296,6 +1299,7 @@ fn capture_game(
     output: &Path,
     scenario: &str,
     capture_output: RuntimeCaptureOutput,
+    menu_state: Option<&str>,
 ) -> Result<(HostedGame<WindowGame>, Option<super::ContentPreviewCapture>), String> {
     let mut cooked = super::CaptureCooked::new(output, capture_output);
     let preview = (scenario == "content-edits").then(super::ContentPreviewCapture::default);
@@ -1305,7 +1309,7 @@ fn capture_game(
         Some(cooked),
     )?;
     if scenario == "sprites-menu" {
-        game.0.menu = Some(menu::setup()?);
+        game.0.menu = Some(menu::setup(menu_state)?);
         game.0.interface_text = Some(crate::InterfaceText::Menu);
     }
     Ok((game, preview))

@@ -46,6 +46,8 @@ mod web_cadence;
 #[cfg(any(target_arch = "wasm32", test))]
 mod web_clock;
 
+#[cfg(all(feature = "interface", target_os = "macos"))]
+pub use app::InterfaceScript;
 #[cfg(target_os = "macos")]
 pub use app::{
     DisplayOverride, DisplayOverrideError, ExtentWindow, GovernorProof, REPORT_VARIABLE,

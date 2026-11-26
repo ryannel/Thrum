@@ -117,8 +117,8 @@ pub use window::CreationProof;
 #[cfg(all(target_os = "macos", feature = "proving"))]
 pub use window::{
     CAPTURE_OBSERVER_VARIABLE, NATIVE_RECOVERY_VARIABLE, NativeRecovery, RenderScaleTrace,
-    RuntimeCaptureOutput, SceneCaptureRequest, StatusCapture, capture_game, run_runtime_capture,
-    run_scene_capture,
+    RuntimeCaptureOutput, SceneCaptureRequest, StatusCapture, WindowMenu, capture_game,
+    run_runtime_capture, run_scene_capture,
 };
 #[cfg(target_os = "macos")]
 pub use window::{WindowGovernor, run_window};

@@ -24,6 +24,8 @@ pub(crate) struct Menu {
     proof: Option<Proof>,
     #[cfg(target_os = "macos")]
     frozen: bool,
+    #[cfg(target_os = "macos")]
+    pub(crate) script: Option<thrum_app::InterfaceScript>,
 }
 
 #[derive(Default)]
@@ -56,6 +58,8 @@ impl Menu {
             proof: proof.then(Proof::default),
             #[cfg(target_os = "macos")]
             frozen: false,
+            #[cfg(target_os = "macos")]
+            script: None,
         }
     }
 

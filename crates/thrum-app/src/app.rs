@@ -10,6 +10,8 @@ mod edit_flow;
 mod interface;
 #[cfg(feature = "interface")]
 mod interface_script;
+#[cfg(feature = "interface")]
+pub use interface_script::InterfaceScript;
 mod profile_recording;
 mod qualification;
 mod qualification_signpost;
@@ -564,7 +566,11 @@ impl<G: WindowGame + 'static> App<G> {
     ) -> Result<(), String> {
         #[cfg(feature = "interface")]
         if self.game.wants_interface_input() {
-            self.interface_script = interface_script::Script::from_environment()?;
+            self.interface_script = self
+                .game
+                .interface_script()
+                .map(interface_script::Script::new)
+                .transpose()?;
         }
         let attributes = self.extent_capture.as_ref().map_or_else(
             || {
@@ -799,7 +805,13 @@ impl<G: WindowGame + 'static> App<G> {
                     self.edits.recovered(self.game.replay());
                     self.pending_display_target = self.display_target.is_some();
                 }
-                Err(RecoveryFailure::Unavailable(error)) => self.recovery_error = Some(error),
+                Err(RecoveryFailure::Unavailable(error)) => {
+                    #[cfg(feature = "interface")]
+                    if self.interface_script.is_some() {
+                        return Err(format!("interface replacement failed: {error}"));
+                    }
+                    self.recovery_error = Some(error);
+                }
                 Err(RecoveryFailure::Fatal(error)) => return Err(error),
             }
             self.refresh_title();
