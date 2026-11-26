@@ -3,7 +3,7 @@ mod correction;
 
 use super::{
     BodyAnswers, BodyQuery, QueryAnswer, QueryCutRecord, QueryLimits, QueryMailbox,
-    QuerySubmissionRecord, record_event, seconds_between,
+    QuerySubmissionRecord, record_event, sampling_source, seconds_between,
 };
 use crate::{
     column::{COMPONENT_LIMIT, Component},
@@ -52,18 +52,6 @@ fn sample_query(@builtin(global_invocation_id) invocation: vec3<u32>) {
     if point.body != 0xffffffffu { result = plain_query(point, gains.x); }
     write_answer(index, point, gains, result);
 }";
-
-pub(crate) fn sampling_source(rivers: bool) -> &'static str {
-    if rivers {
-        concat!(
-            include_str!("sample.wgsl"),
-            include_str!("../map_gpu/river_carriage.wgsl"),
-            include_str!("river.wgsl"),
-        )
-    } else {
-        concat!(include_str!("sample.wgsl"), include_str!("plain.wgsl"))
-    }
-}
 
 #[repr(C)]
 #[derive(Clone, Copy, Pod, Zeroable)]

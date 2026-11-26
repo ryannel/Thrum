@@ -3,8 +3,6 @@ mod gpu;
 mod rain;
 
 pub(super) use gpu::Readback;
-#[cfg(test)]
-pub(super) use gpu::sampling_source;
 pub(super) use gpu::validate;
 use gpu::{Correction, ReadyBody};
 use std::{
@@ -16,6 +14,21 @@ use std::{
 use thrum_render::extract::SourceTick;
 use thrum_sea_model::LongWaves;
 use thrum_water_model::{Map, Surface};
+
+pub(super) fn sampling_source(rivers: bool) -> &'static str {
+    if rivers {
+        concat!(
+            include_str!("query/sample.wgsl"),
+            include_str!("map_gpu/river_carriage.wgsl"),
+            include_str!("query/river.wgsl"),
+        )
+    } else {
+        concat!(
+            include_str!("query/sample.wgsl"),
+            include_str!("query/plain.wgsl")
+        )
+    }
+}
 
 /// Query capacity in points and the maximum age in ticks since posting.
 #[derive(Clone, Copy, Debug)]
