@@ -95,9 +95,10 @@ export async function qualifyInterfaceStatus({ cdp, origin, fontOrigin, output, 
           `), timeout, 'status cost frame presentation');
           const arm = await waitFor(async () => {
             const newest = await report();
-            return newest.frame?.submission > (before.frame?.submission ?? -1) && newest;
+            return newest.retired !== null && newest.retired > (before.retired ?? -1) && newest;
           }, timeout, 'status cost frame retirement');
-          if (arm.frame.stamp !== dpr || !before.counts || !arm.counts) continue;
+          // Startup frames can retire before their status sheets are resident.
+          if (arm.frame?.stamp !== dpr || !before.counts || !arm.counts) continue;
           const [layouts, lists, rows] = arm.counts.map((count, index) => count - before.counts[index]);
           samples.push({ ...arm.frame, layouts, lists, rows });
         }

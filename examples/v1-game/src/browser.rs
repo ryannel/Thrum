@@ -153,7 +153,7 @@ impl BrowserGame {
         Ok(serde_json::json!(rows).to_string())
     }
 
-    /// Return the latest completed interface cost sample.
+    /// Report retirement separately from timing eligibility while the status display becomes resident.
     pub fn status_cost_report(&self) -> String {
         let host = self.page.shell.host();
         let counts = host
@@ -178,7 +178,8 @@ impl BrowserGame {
                 "submission":frame.submission_order,
             }))
         });
-        serde_json::json!({"counts":counts,"frame":frame}).to_string()
+        let retired = latest_presented.map(|frame| frame.submission_order);
+        serde_json::json!({"counts":counts,"retired":retired,"frame":frame}).to_string()
     }
 
     /// Select the measured every-tick status workload via the page's controls.
