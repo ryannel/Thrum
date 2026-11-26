@@ -44,7 +44,7 @@ thrum_test_support::macos_gpu_test! {
 fn submitted_trade_depth_matches_the_live_river_query() {
     let Some(gpu) = thrum_test_support::gpu("trade depth and query", Some(wgpu::Backend::Metal))
     else { return };
-    river_proof::surface::check_live_depth(&gpu, 0.0, true);
+    river_proof::surface::check_tidal_depth(&gpu, false, 1..=180);
 }
 }
 
@@ -52,40 +52,82 @@ thrum_test_support::macos_gpu_test! {
 fn submitted_trade_depth_from_the_tidal_bank_matches_the_live_river_query() {
     let Some(gpu) = thrum_test_support::gpu("oblique tidal depth", Some(wgpu::Backend::Metal))
     else { return };
-    river_proof::surface::check_bank_depth(&gpu);
+    river_proof::surface::check_tidal_depth(&gpu, true, 380..=400);
 }
 }
 
 #[cfg(target_os = "macos")]
-fn check_trade_transect(stage: f64) {
+fn check_trade_transect(stage: f64, from_bank: bool) {
     let Some(gpu) =
         thrum_test_support::gpu("full trade river transects", Some(wgpu::Backend::Metal))
     else {
         return;
     };
-    river_proof::surface::check_live_depth(&gpu, stage, false);
+    river_proof::surface::check_live_depth(&gpu, stage, from_bank);
 }
 
 thrum_test_support::macos_gpu_test! {
 fn submitted_trade_depth_at_the_lowest_gauges() {
-    check_trade_transect(0.0);
+    check_trade_transect(0.0, false);
 }
 }
 
 thrum_test_support::macos_gpu_test! {
 fn submitted_trade_depth_between_gauge_samples() {
-    check_trade_transect(0.37);
+    check_trade_transect(0.37, false);
 }
 }
 
 thrum_test_support::macos_gpu_test! {
 fn submitted_trade_depth_at_the_middle_gauge_samples() {
-    check_trade_transect(0.5);
+    check_trade_transect(0.5, false);
 }
 }
 
 thrum_test_support::macos_gpu_test! {
 fn submitted_trade_depth_at_the_highest_gauges() {
-    check_trade_transect(1.0);
+    check_trade_transect(1.0, false);
+}
+}
+
+thrum_test_support::macos_gpu_test! {
+fn submitted_bank_trade_depth_at_the_lowest_gauges() {
+    check_trade_transect(0.0, true);
+}
+}
+
+thrum_test_support::macos_gpu_test! {
+fn submitted_bank_trade_depth_between_gauge_samples() {
+    check_trade_transect(0.37, true);
+}
+}
+
+thrum_test_support::macos_gpu_test! {
+fn submitted_bank_trade_depth_at_the_middle_gauge_samples() {
+    check_trade_transect(0.5, true);
+}
+}
+
+thrum_test_support::macos_gpu_test! {
+fn submitted_bank_trade_depth_at_the_highest_gauges() {
+    check_trade_transect(1.0, true);
+}
+}
+
+thrum_test_support::macos_gpu_test! {
+#[ignore = "long: seven seconds of submitted swell at the tidal column from above"]
+fn submitted_tidal_depth_from_above_through_the_first_seven_seconds() {
+    let Some(gpu) = thrum_test_support::gpu("tidal depth series from above", Some(wgpu::Backend::Metal))
+    else { return };
+    river_proof::surface::check_tidal_depth(&gpu, false, 1..=420);
+}
+}
+
+thrum_test_support::macos_gpu_test! {
+#[ignore = "long: seven seconds of oblique intersections against the live wind-wave field"]
+fn submitted_tidal_depth_from_the_bank_through_the_first_seven_seconds() {
+    let Some(gpu) = thrum_test_support::gpu("tidal depth series from the bank", Some(wgpu::Backend::Metal))
+    else { return };
+    river_proof::surface::check_tidal_depth(&gpu, true, 1..=420);
 }
 }

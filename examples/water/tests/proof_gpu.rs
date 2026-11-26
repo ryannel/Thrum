@@ -8,6 +8,8 @@ mod rain_inspection;
 #[cfg(target_os = "macos")]
 mod realtime;
 #[cfg(target_os = "macos")]
+mod river_inspection;
+#[cfg(target_os = "macos")]
 mod support;
 #[cfg(target_os = "macos")]
 mod surf_cost;
@@ -107,7 +109,12 @@ fn proof_game(water: bool) -> (thrum_app::sky::SkyGame, water_scene::SharedRepor
         Settings::River(wind) => {
             let scene = water_scene::river::build(wind, water, Some(&support::river_store()))
                 .expect("river scene");
-            (scene.game, scene.report)
+            let game = if let Some(shot) = river_inspection::shot() {
+                scene.game.with_presentation_camera(move |_| shot.camera)
+            } else {
+                scene.game
+            };
+            (game, scene.report)
         }
         Settings::Channel(wind) => {
             let scene = water_scene::channel::build(wind, water, true).expect("channel scene");
@@ -477,6 +484,10 @@ fn driver(gpu: &thrum_test_support::Gpu) {
             ];
             let checkpoints: Vec<_> = if matches!(settings(), Settings::RainYard(_)) {
                 yard_checkpoints()
+            } else if river_route()
+                && let Some(shot) = river_inspection::shot()
+            {
+                vec![(shot.name, "{}".into(), shot.start + 0.8)]
             } else if river_route() {
                 water_scene::river::VIEWS
                     .iter()

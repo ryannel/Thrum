@@ -1,4 +1,5 @@
 use std::{
+    ops::RangeInclusive,
     sync::{Arc, Mutex},
     time::Duration,
 };
@@ -18,6 +19,49 @@ fn ray_hit(inverse: glam::DMat4, column: u32, row: u32, depth: f32) -> glam::DVe
     let u = (f64::from(column) + 0.5) / f64::from(EXTENT[0]);
     let v = (f64::from(row) + 0.5) / f64::from(EXTENT[1]);
     inverse.project_point3(glam::dvec3(2.0 * u - 1.0, 1.0 - 2.0 * v, f64::from(depth)))
+}
+
+#[derive(Clone, Copy)]
+enum TradeView {
+    Above,
+    Bank,
+}
+
+impl TradeView {
+    fn camera(self, [x, z]: [f32; 2], level: f32, axis: usize) -> Camera {
+        let [dx, dz] = match self {
+            Self::Above => [0.001, 0.0],
+            Self::Bank if axis == 0 => [4.5, 3.6],
+            Self::Bank => [3.6, 4.5],
+        };
+        let fov = match self {
+            Self::Above => 12.0,
+            Self::Bank => 55.0,
+        };
+        Camera::look_at([x + dx, level + 2.0, z + dz], [x, level, z], fov)
+    }
+
+    fn station_radius(self) -> f64 {
+        match self {
+            Self::Above => 0.002,
+            Self::Bank => 2.0,
+        }
+    }
+
+    fn allowance(self, camera: Camera, hit: glam::DVec3) -> f64 {
+        match self {
+            Self::Above => EPS_INTERIOR,
+            Self::Bank => {
+                // For the centre ray use the exact vertical projection scale
+                // at the hit. The compact test emulates a 1440-pixel-high frame.
+                let ray = hit - glam::DVec3::from_array(camera.position.map(f64::from));
+                let distance = ray.length();
+                let cosine = ray.x.hypot(ray.z) / distance;
+                let pixel_angle = 2.0 * 27.5_f64.to_radians().tan() / 1440.0;
+                EPS_INTERIOR.max(4.0 * distance * pixel_angle / cosine)
+            }
+        }
+    }
 }
 
 struct TradeDepth {
@@ -82,13 +126,14 @@ impl TradeDepth {
         &mut self,
         point: [f32; 2],
         body: usize,
-        inverse: glam::DMat4,
-        station_radius: f64,
+        camera: Camera,
+        view: TradeView,
     ) -> Option<(f64, [f32; 3])> {
         self.submit_tick(self.tick + 1);
         let use_tick = u64::from(self.tick);
         let [column, row] = EXTENT.map(|axis| axis / 2);
         let depth = self.tap.read(&self.scene)[(row * EXTENT[0] + column) as usize];
+        let inverse = support::depth::matrix(camera, EXTENT).as_dmat4().inverse();
         let hit = (depth > 0.0).then(|| ray_hit(inverse, column, row, depth));
         let position = hit.map_or(point, |p| [p.x as f32, p.z as f32]);
         // Dispatch from the field of the submitted frame. A predicted query
@@ -119,7 +164,8 @@ impl TradeDepth {
         let hit =
             hit.unwrap_or_else(|| panic!("missing trade depth at {point:?}, tick {use_tick}"));
         assert!(
-            (hit.x - f64::from(point[0])).hypot(hit.z - f64::from(point[1])) < station_radius,
+            (hit.x - f64::from(point[0])).hypot(hit.z - f64::from(point[1]))
+                < view.station_radius(),
             "trade depth ray missed its station at {point:?}, tick {use_tick}: {hit:?}"
         );
         let display_time = (STEP * self.tick).as_secs_f64();
@@ -133,7 +179,7 @@ impl TradeDepth {
         );
         let error = (hit.y - answer.surface.sample.height).abs();
         assert!(
-            error <= EPS_INTERIOR,
+            error <= view.allowance(camera, hit),
             "trade depth at {position:?}, tick {use_tick}: {error:.7} m, field sources {:?}",
             answer.sources
         );
@@ -168,37 +214,36 @@ fn trade_depth(gpu: &thrum_test_support::Gpu, stage: f64) -> (TradeDepth, Map) {
     clippy::print_stdout,
     reason = "proof camera uses GPU metres and logs retain the measured residuals"
 )]
-pub(crate) fn check_live_depth(gpu: &thrum_test_support::Gpu, stage: f64, tidal_station: bool) {
+pub(crate) fn check_live_depth(gpu: &thrum_test_support::Gpu, stage: f64, from_bank: bool) {
     let (mut probe, map) = trade_depth(gpu, stage);
-    let sites = if tidal_station {
-        vec![(5, [337.83, 5.23])]
+    let view = if from_bank {
+        TradeView::Bank
     } else {
-        transect_points(&map)
+        TradeView::Above
     };
+    let sites = transect_points(&map);
     let mut count = [0; 6];
     let mut maximum_error = 0.0_f64;
     let mut waves = [0.0_f32; 3];
     for (body, site) in sites {
         let [x, z] = site.map(|v| v as f32);
         let level = map.sample(site).expect("wet river station").row.level as f32;
-        let view = Camera::look_at([x + 0.001, level + 2.0, z], [x, level, z], 12.0);
-        *probe.camera.lock().expect("trade depth camera") = view;
-        let inverse = support::depth::matrix(view, EXTENT).as_dmat4().inverse();
+        let axis = usize::from(body != 5);
+        let camera = view.camera([x, z], level, axis);
+        *probe.camera.lock().expect("trade depth camera") = camera;
         let mut observed = 0;
-        for _ in 0..if tidal_station { 180 } else { 240 } {
-            if let Some((error, short_waves)) = probe.pair([x, z], body, inverse, 0.002) {
+        for _ in 0..240 {
+            if let Some((error, short_waves)) = probe.pair([x, z], body, camera, view) {
                 maximum_error = maximum_error.max(error);
                 for (peak, height) in waves.iter_mut().zip(short_waves) {
                     *peak = peak.max(height.abs());
                 }
                 observed += 1;
-                if !tidal_station {
-                    break;
-                }
+                break;
             }
         }
         assert!(
-            observed >= if tidal_station { 135 } else { 1 },
+            observed == 1,
             "only {observed} wet pairs at {site:?}, stage {stage}"
         );
         count[body] += observed;
@@ -207,14 +252,12 @@ pub(crate) fn check_live_depth(gpu: &thrum_test_support::Gpu, stage: f64, tidal_
         waves.iter().all(|&height| height > 0.001),
         "inactive trade cascades: {waves:?}"
     );
-    if !tidal_station {
-        assert!(
-            count[3] >= 46 && count[4] >= 3 && count[5] >= 90,
-            "{count:?}"
-        );
-    }
+    assert!(
+        count[3] >= 46 && count[4] >= 3 && count[5] >= 90,
+        "{count:?}"
+    );
     println!(
-        "Metal full-trade stage {stage}: {} spring, {} plunge reach, {} outlet pairs, maximum residual {maximum_error:.7} m, short-wave peaks {waves:?} m",
+        "Metal full-trade stage {stage}, bank {from_bank}: {} spring, {} plunge reach, {} outlet pairs, maximum residual {maximum_error:.7} m, short-wave peaks {waves:?} m",
         count[3], count[4], count[5]
     );
 }
@@ -224,29 +267,36 @@ pub(crate) fn check_live_depth(gpu: &thrum_test_support::Gpu, stage: f64, tidal_
     clippy::print_stdout,
     reason = "proof camera uses GPU metres and logs retain the measured residuals"
 )]
-pub(crate) fn check_bank_depth(gpu: &thrum_test_support::Gpu) {
+pub(crate) fn check_tidal_depth(
+    gpu: &thrum_test_support::Gpu,
+    from_bank: bool,
+    ticks: RangeInclusive<u32>,
+) {
     let (mut probe, map) = trade_depth(gpu, 0.0);
-    let site = [340.71, 5.8];
+    let (view, site) = if from_bank {
+        (TradeView::Bank, [340.71, 5.8])
+    } else {
+        (TradeView::Above, [337.83, 5.23])
+    };
     let [x, z] = site.map(|v| v as f32);
     let level = map.sample(site).expect("wet tidal station").row.level as f32;
-    let view = Camera::look_at([x + 4.5, level + 2.0, z + 3.6], [x, level, z], 55.0);
-    *probe.camera.lock().expect("trade depth camera") = view;
-    let inverse = support::depth::matrix(view, EXTENT).as_dmat4().inverse();
-    // Start before the wave train that crosses this bank ray, then submit
-    // each display tick so the short-wave cascades reach their normal cadence.
-    for tick in 376..380 {
+    let camera = view.camera([x, z], level, 0);
+    *probe.camera.lock().expect("trade depth camera") = camera;
+    // Start a few published fields before the compact regression window.
+    let first = *ticks.start();
+    for tick in first.saturating_sub(4).max(1)..first {
         probe.submit_tick(tick);
     }
     let mut maximum_error = 0.0_f64;
-    for _ in 380..=400 {
-        // The ray moves across the reach as the level rises. Use the actual
-        // reconstructed hit for the query and require it to belong to the outlet.
+    for _ in ticks.clone() {
         let (error, _) = probe
-            .pair([x, z], 5, inverse, 2.0)
-            .expect("wet depth at the oblique tidal station");
+            .pair([x, z], 5, camera, view)
+            .expect("wet depth at the tidal station");
         maximum_error = maximum_error.max(error);
     }
-    println!("Metal full-trade bank view, ticks 380–400: maximum residual {maximum_error:.7} m");
+    println!(
+        "Metal full-trade tidal series, bank {from_bank}, ticks {ticks:?}: maximum residual {maximum_error:.7} m"
+    );
 }
 
 #[expect(
@@ -298,7 +348,7 @@ pub(crate) fn check_wetting(gpu: &thrum_test_support::Gpu) {
                 .expect("fixture ground");
             let [x, z] = point;
             let y = bed as f32;
-            let view = Camera::look_at([x + 0.02, y + 2.0, z], [x, y, z], 4.0);
+            let view = Camera::look_at([x + 0.001, y + 2.0, z], [x, y, z], 4.0);
             *camera.lock().expect("wetting camera") = view;
             time += 0.25;
             scene.frame_without_timings(time + STEP.as_secs_f64());
@@ -426,7 +476,7 @@ pub(crate) fn check(gpu: &thrum_test_support::Gpu, upper: bool) {
         let close = sites
             .into_iter()
             .chain([(5, [320.87, 6.17])])
-            .map(|(owner, point)| (owner, point, [0.14, 0.25, 0.08]));
+            .map(|(owner, point)| (owner, point, [0.001, 2.0, 0.0]));
         let from_bank = [
             (3, [179.35, -61.97], [7.0, 2.0, 0.8]),
             (5, [237.98, 6.17], [7.0, 2.0, 0.8]),
