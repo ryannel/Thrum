@@ -166,3 +166,8 @@
   tree. The layout properties suite passed on macOS, and the Metal comparison confirmed idle
   submissions upload zero interface bytes.
   [Target proof](../../../.orchestrate/evidence/GAME-UI/WP3/hidden-edits/index.md)
+- 2026-11-26 WP3.12 verifier fix. The cost check gives Chrome time to drain after the status page
+  unloads and records the owned process group's exit. It accepts the logged teardown watchdog after
+  a complete take only when shutdown was requested and all owned processes have exited. Both Chrome
+  WebGPU release runs passed with 32 timed status updates each and normal browser exits.
+  [Target proof](../../../.orchestrate/evidence/GAME-UI/WP3/chrome-cost-shutdown/index.md)
