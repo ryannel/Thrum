@@ -330,6 +330,7 @@ pub struct TreeStats {
 )]
 struct Entry {
     node: Node,
+    parent: Option<usize>,
     children: Vec<usize>,
     natural: [f64; 2],
     rect: Box2,
@@ -374,7 +375,7 @@ impl Tree {
         Ok(tree)
     }
 
-    fn insert(&mut self, mut node: Node, parent: Option<[Size; 2]>) -> Result<usize, TreeError> {
+    fn insert(&mut self, mut node: Node, parent: Option<usize>) -> Result<usize, TreeError> {
         let id = node.id;
         if node.size.iter().any(|size| !valid_size(*size))
             || node.padding.into_iter().any(|value| !valid_length(value))
@@ -387,7 +388,7 @@ impl Tree {
         if !node.full_bleed
             && parent.is_some_and(|parent| {
                 (0..2).any(|axis| {
-                    parent[axis].rule == SizeRule::Fit
+                    self.nodes[parent].node.size[axis].rule == SizeRule::Fit
                         && matches!(node.size[axis].rule, SizeRule::Fraction(_))
                 })
             })
@@ -412,9 +413,9 @@ impl Tree {
             return Err(TreeError::Duplicate(id));
         }
         let children = std::mem::take(&mut node.children);
-        let size = node.size;
         self.nodes.push(Entry {
             node,
+            parent,
             children: Vec::with_capacity(children.len()),
             natural: [0.0; 2],
             rect: Box2::default(),
@@ -427,7 +428,7 @@ impl Tree {
             rows: Vec::new(),
         });
         for child in children {
-            let child = self.insert(child, Some(size))?;
+            let child = self.insert(child, Some(index))?;
             self.nodes[index].children.push(child);
         }
         Ok(index)
@@ -474,7 +475,7 @@ impl Tree {
         {
             *value = fraction;
             entry.paint_dirty = true;
-            self.paint_dirty = true;
+            self.paint_dirty |= entry.visible;
         }
     }
 
@@ -492,7 +493,7 @@ impl Tree {
         if value.map(f32::to_bits) != tint.map(f32::to_bits) {
             *value = tint;
             entry.paint_dirty = true;
-            self.paint_dirty = true;
+            self.paint_dirty |= entry.visible;
         }
     }
 
@@ -502,7 +503,11 @@ impl Tree {
             && self.nodes[index].node.shown != shown
         {
             self.nodes[index].node.shown = shown;
-            self.layout_dirty = true;
+            // A pending ancestor change already dirties layout. Otherwise
+            // its last laid-out visibility tells whether this child can take space.
+            self.layout_dirty |= self.nodes[index]
+                .parent
+                .is_none_or(|parent| self.nodes[parent].visible);
         }
     }
 
@@ -513,7 +518,12 @@ impl Tree {
             && self.nodes[index].node.anchor != anchor
         {
             self.nodes[index].node.anchor = anchor;
-            self.layout_dirty = true;
+            let entry = &self.nodes[index];
+            self.layout_dirty |= entry.visible
+                && !entry.node.full_bleed
+                && entry.parent.is_some_and(|parent| {
+                    !matches!(self.nodes[parent].node.kind, NodeKind::Stack { .. })
+                });
         }
     }
 

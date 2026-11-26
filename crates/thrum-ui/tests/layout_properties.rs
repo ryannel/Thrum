@@ -172,6 +172,103 @@ fn editing_hidden_intrinsic_text_reuses_the_visible_frame() {
 }
 
 #[test]
+fn hidden_geometry_and_paint_edits_take_effect_only_on_reveal() {
+    let viewport = view([320, 320]);
+    let mut root = Node::new(0, NodeKind::Overlay);
+    let mut group = Node::new(1, NodeKind::Overlay);
+    group.shown = false;
+    let mut nested = Node::new(2, NodeKind::Overlay);
+    nested.children.push(fill(3, [20.0; 2]));
+    let mut bar = fill(4, [20.0; 2]);
+    let track = [0.0, 0.0, 0.0, 1.0];
+    let tint = [1.0, 0.0, 0.0, 1.0];
+    bar.kind = NodeKind::Bar {
+        fraction: 0.0,
+        track,
+        fill: tint,
+    };
+    nested.children.push(bar);
+    group.children.push(nested);
+    root.children = vec![group, fill(5, [50.0; 2])];
+    let mut tree = Tree::new(root.clone()).expect("tree");
+    let baseline = tree.frame(viewport, inputs(&[])).expect("visible sibling");
+    let stats = tree.stats();
+    let sibling = tree.bounds(5);
+    let anchor = [Anchor::Point(4.0); 2];
+    let check_hidden = |tree: &mut Tree| {
+        let frame = tree.frame(viewport, inputs(&[])).expect("hidden group");
+        assert_eq!(tree.stats(), stats);
+        assert!(Arc::ptr_eq(&baseline.rows, &frame.rows));
+        assert!(tree.bounds(3).is_none());
+        assert_eq!(tree.bounds(5), sibling);
+    };
+    tree.set_anchor(3, anchor);
+    check_hidden(&mut tree);
+    tree.set_shown(3, false);
+    check_hidden(&mut tree);
+    tree.set_shown(3, true);
+    check_hidden(&mut tree);
+    tree.set_tint(3, tint);
+    check_hidden(&mut tree);
+    tree.set_fraction(4, 0.5);
+    check_hidden(&mut tree);
+
+    root.children[0].shown = true;
+    let children = &mut root.children[0].children[0].children;
+    children[0].anchor = anchor;
+    children[0].kind = NodeKind::Fill(tint);
+    children[1].kind = NodeKind::Bar {
+        fraction: 0.5,
+        track,
+        fill: tint,
+    };
+    tree.set_shown(1, true);
+    let revealed = tree.frame(viewport, inputs(&[])).expect("reveal");
+    assert_eq!(tree.stats().layouts, stats.layouts + 1);
+    assert_eq!(tree.stats().lists, stats.lists + 1);
+    assert_eq!(tree.bounds(3).expect("shown fill").origin, [4.0; 2]);
+    let mut fresh = Tree::new(root.clone()).expect("fresh tree");
+    let expected = fresh.frame(viewport, inputs(&[])).expect("fresh frame");
+    assert_eq!(revealed.rows, expected.rows);
+    verify(&tree, &fresh, &root, viewport.safe());
+}
+
+#[test]
+fn anchors_ignored_by_layout_reuse_the_visible_frame() {
+    let viewport = view([320, 320]);
+    let mut root = Node::new(0, NodeKind::Overlay);
+    let mut stack = Node::new(
+        1,
+        NodeKind::Stack {
+            axis: Axis::Column,
+            gap: 0.0,
+            align: Anchor::Start,
+        },
+    );
+    stack.children.push(fill(2, [20.0; 2]));
+    let mut bleed = fill(3, [20.0; 2]);
+    bleed.full_bleed = true;
+    root.children = vec![stack, bleed];
+    let mut tree = Tree::new(root.clone()).expect("tree");
+    let baseline = tree.frame(viewport, inputs(&[])).expect("visible nodes");
+    let stats = tree.stats();
+    let anchor = [Anchor::Point(4.0); 2];
+    for id in [0, 2, 3] {
+        tree.set_anchor(id, anchor);
+        let frame = tree.frame(viewport, inputs(&[])).expect("ignored anchor");
+        assert_eq!(tree.stats(), stats);
+        assert!(Arc::ptr_eq(&baseline.rows, &frame.rows));
+    }
+    root.anchor = anchor;
+    root.children[0].children[0].anchor = anchor;
+    root.children[1].anchor = anchor;
+    let mut fresh = Tree::new(root.clone()).expect("fresh tree");
+    let expected = fresh.frame(viewport, inputs(&[])).expect("fresh frame");
+    assert_eq!(baseline.rows, expected.rows);
+    verify(&tree, &fresh, &root, viewport.safe());
+}
+
+#[test]
 fn random_edits_match_fresh_layout_and_rebuild_only_what_is_dirty() {
     let fonts = font();
     let mut rng = Random(114);
