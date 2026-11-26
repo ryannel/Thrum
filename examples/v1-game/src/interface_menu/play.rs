@@ -440,7 +440,13 @@ impl Menu {
             "effects": proof.map(|proof| &proof.effects),
             "clipboard": proof.map(|proof| &proof.clipboard),
             "timing": proof.map(|proof| &proof.timing),
-            "route_clock": if cfg!(target_os = "macos") { "thread CPU time" } else { "Chromium trace thread ticks" },
+            "route_clock": if cfg!(target_os = "macos") {
+                "thread CPU time"
+            } else if cfg!(target_os = "ios") {
+                "monotonic event times (simulator function only)"
+            } else {
+                "Chromium trace thread ticks"
+            },
         })
     }
 }

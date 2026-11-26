@@ -1,6 +1,11 @@
 //! Companion to docs/GAME-INTERFACE.md, using the same public APIs as a game.
 
-use std::{io, path::PathBuf, sync::Arc, time::Duration};
+use std::{
+    io::{self, Write},
+    path::PathBuf,
+    sync::Arc,
+    time::Duration,
+};
 
 use thrum_asset::{AssetStore, FontProduct, Profile};
 use thrum_asset_gpu::{CookedAssets, CookedConfig};
@@ -197,10 +202,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     tree.set_shown(CHOICE, false);
     let _closed = tree.frame(viewport, inputs)?;
     router.submitted(tree.input_layout());
-    println!(
+    writeln!(
+        io::stdout().lock(),
         "At scale {scale}, status drew {} rows and the choice drew {}. The ticket and activation both arrived.",
         status.rows.len(),
         choice.rows.len()
-    );
+    )?;
     Ok(())
 }
