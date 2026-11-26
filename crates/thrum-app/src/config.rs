@@ -1,5 +1,6 @@
 /// The game's window settings, worker name and diagnostic labels.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
+#[cfg_attr(not(target_os = "macos"), derive(Copy))]
 pub struct Config {
     /// Prefix of every standard-error diagnostic, for example the binary name.
     pub name: &'static str,
@@ -24,6 +25,9 @@ pub struct Config {
     /// Mac time reserved before the display target for advancing and drawing.
     /// When unset, the render owner starts as soon as the frame is ready.
     pub frame_budget: Option<std::time::Duration>,
+    /// Build-authored Metal libraries and preparation mode for initial setup and recovery.
+    #[cfg(target_os = "macos")]
+    pub metal_preparation: Option<thrum_render::capabilities::metallib::Preparation>,
 }
 
 impl Config {
@@ -43,6 +47,8 @@ impl Config {
             window_position: None,
             window_always_on_top: false,
             frame_budget: None,
+            #[cfg(target_os = "macos")]
+            metal_preparation: None,
         }
     }
 }

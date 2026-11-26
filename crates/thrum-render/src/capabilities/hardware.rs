@@ -10,6 +10,9 @@ pub enum HardwareFeature {
     MeshStages,
     /// Ray queries in shaders.
     RayQuery,
+    /// Direct loading of Metal shader libraries in the stage record witness.
+    #[cfg(target_os = "macos")]
+    MetalShaderPassthrough,
 }
 
 impl HardwareFeature {
@@ -19,6 +22,8 @@ impl HardwareFeature {
         match self {
             Self::MeshStages => "mesh-stages",
             Self::RayQuery => "ray-query",
+            #[cfg(target_os = "macos")]
+            Self::MetalShaderPassthrough => "metal-shader-passthrough",
         }
     }
 
@@ -26,6 +31,8 @@ impl HardwareFeature {
         match self {
             Self::MeshStages => wgpu::Features::EXPERIMENTAL_MESH_SHADER,
             Self::RayQuery => wgpu::Features::EXPERIMENTAL_RAY_QUERY,
+            #[cfg(target_os = "macos")]
+            Self::MetalShaderPassthrough => wgpu::Features::PASSTHROUGH_SHADERS,
         }
     }
 
@@ -58,6 +65,8 @@ impl HardwareFeature {
                 base.max_mesh_output_vertices = base.max_mesh_output_vertices.max(64);
                 base.max_mesh_output_primitives = base.max_mesh_output_primitives.max(124);
             }
+            #[cfg(target_os = "macos")]
+            Self::MetalShaderPassthrough => {}
             Self::RayQuery => {
                 let minimum =
                     wgpu::Limits::default().using_minimum_supported_acceleration_structure_values();
@@ -108,6 +117,8 @@ impl HardwareRequest {
             let feature = match name {
                 "mesh-stages" => HardwareFeature::MeshStages,
                 "ray-query" => HardwareFeature::RayQuery,
+                #[cfg(target_os = "macos")]
+                "metal-shader-passthrough" => HardwareFeature::MetalShaderPassthrough,
                 _ => return Err(HardwareLaunchError::Unknown(name.to_owned())),
             };
             if requests.iter().any(|request| request.feature == feature) {

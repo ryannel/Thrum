@@ -16,6 +16,7 @@ pub(super) struct WindowDevice {
     pub(super) instance: wgpu::Instance,
     pub(super) surface: Arc<wgpu::Surface<'static>>,
     pub(super) hardware: Vec<HardwareRequest>,
+    pub(super) metal_preparation: Option<thrum_render::capabilities::metallib::Preparation>,
     pub(super) headroom: Option<Arc<Headroom>>,
 }
 
@@ -58,7 +59,7 @@ impl WindowDevice {
             adapter,
             device,
             queue,
-            capabilities,
+            mut capabilities,
             watch,
         } = DeviceRecipe {
             generation,
@@ -70,6 +71,7 @@ impl WindowDevice {
         })
         .await
         .map_err(|error| error.to_string())?;
+        capabilities.set_metal_preparation(self.metal_preparation.clone());
         let config = sdr_surface_config(&self.surface, &adapter, extent)
             .ok_or("no compatible SDR surface configuration")?;
         let edr = self.headroom.as_ref().and_then(|_| {

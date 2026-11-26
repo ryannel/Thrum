@@ -179,7 +179,7 @@ pub(super) type RenderWorker<G> =
     reason = "the render owner takes every platform handle it serializes in one move"
 )]
 pub(super) fn start<G: Game<World: Send, Scene: Send> + 'static>(
-    config: Config,
+    config: &Config,
     mut host: FrameHost<G::World, G::Scene>,
     gpu: PlatformGpu,
     recipe: WindowDevice,

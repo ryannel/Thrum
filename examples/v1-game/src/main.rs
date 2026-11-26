@@ -116,7 +116,28 @@ fn main() {
         #[cfg(feature = "proving")]
         display,
         governor,
+        metal_preparation(),
     );
+}
+
+#[cfg(target_os = "macos")]
+#[expect(
+    unsafe_code,
+    reason = "the user selects a Metal library store from their local build"
+)]
+fn metal_preparation() -> Option<thrum_render::capabilities::metallib::Preparation> {
+    use thrum_render::capabilities::metallib::Preparation;
+
+    if let Some(store) = std::env::var_os("THRUM_METALLIB_STORE") {
+        let parallel = std::env::var_os("THRUM_METALLIB_PARALLEL").is_some();
+        // SAFETY: This explicit process option accepts the local cook's output with
+        // the same trust as the local binary. The loader also checks key and digest.
+        Some(unsafe { Preparation::trusted_store(store.into(), parallel) })
+    } else if let Some(output) = std::env::var_os("THRUM_METALLIB_HARVEST") {
+        Some(Preparation::harvest(output.into()))
+    } else {
+        std::env::var_os("THRUM_METALLIB_MANIFEST").map(|_| Preparation::default())
+    }
 }
 
 #[cfg(all(target_os = "macos", feature = "proving"))]
@@ -299,10 +320,12 @@ fn scene_capture_request() -> Result<v1_game::SceneCaptureRequest, String> {
         pan_to_degrees: text("THRUM_CAPTURE_PAN_TO_DEGREES")?,
         initial_params: path("THRUM_PARAMS"),
         route: path("THRUM_CAPTURE_ROUTE"),
+        metal_preparation: metal_preparation(),
         #[cfg(feature = "creation-counters")]
         creation_proof: match text("THRUM_CREATION_PROOF")?.as_deref() {
             None => None,
             Some("launch") => Some(v1_game::CreationProof::Launch),
+            Some("metallib") => Some(v1_game::CreationProof::Metallib),
             Some("route") => Some(v1_game::CreationProof::Route),
             Some("late-pipeline") => Some(v1_game::CreationProof::LatePipeline),
             Some(_) => return Err("unknown THRUM_CREATION_PROOF arm".to_owned()),

@@ -89,3 +89,6 @@ undocumented_unsafe_blocks = "warn"
 multiple_unsafe_ops_per_block = "warn"
 # One module layout: `foo.rs` plus `foo/`, never `foo/mod.rs`.
 mod_module_files = "warn"
+
+[patch.crates-io]
+wgpu-hal = { path = "vendor/wgpu-hal-30.0.1" }

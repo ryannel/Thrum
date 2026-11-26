@@ -2,6 +2,9 @@
 //! Render preparation consumes this record; pass recording never probes a device.
 
 use crate::runtime::DeviceSite;
+#[cfg(target_os = "macos")]
+pub mod metallib;
+
 mod device;
 mod hardware;
 mod recipe;
@@ -183,6 +186,15 @@ impl DeviceCapabilities {
         }
         record.resolve_environment();
         record
+    }
+
+    /// Select the build's offline stage libraries and preparation mode for this Metal generation.
+    /// Call before sharing the capabilities with the host or creating pipelines through its site.
+    #[cfg(target_os = "macos")]
+    pub fn set_metal_preparation(&mut self, preparation: Option<metallib::Preparation>) {
+        if self.adapter.backend == wgpu::Backend::Metal {
+            self.site.set_metal_preparation(preparation);
+        }
     }
 
     /// Capture from a device when the adapter handle is no longer retained.

@@ -31,7 +31,7 @@ const IDLE_FRAME: Duration = Duration::from_millis(20);
     reason = "capture failures are explained to the person who asked for them"
 )]
 pub(super) fn run(
-    config: Config,
+    config: &Config,
     game: impl FnOnce() -> Result<SkyGame, super::SkyBuildError>,
     path: &Path,
 ) {
@@ -46,7 +46,7 @@ pub(super) fn run(
 }
 
 fn live(
-    config: Config,
+    config: &Config,
     game: impl FnOnce() -> Result<SkyGame, super::SkyBuildError>,
     path: &Path,
 ) -> Result<(), String> {

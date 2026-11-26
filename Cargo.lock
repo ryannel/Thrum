@@ -3345,6 +3345,7 @@ dependencies = [
 name = "thrum-render"
 version = "0.1.0"
 dependencies = [
+ "blake3",
  "bytemuck",
  "glam",
  "half",
@@ -3356,6 +3357,7 @@ dependencies = [
  "profiling",
  "serde_json",
  "thrum-asset",
+ "thrum-cook",
  "thrum-core",
  "thrum-fixtures",
  "thrum-test-support",
@@ -4061,8 +4063,6 @@ dependencies = [
 [[package]]
 name = "wgpu-hal"
 version = "30.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b6b7fb58561a792bc237628ba0792e332de418fefe145f13b5ed8201e6d52f58"
 dependencies = [
  "android_system_properties",
  "arrayvec",

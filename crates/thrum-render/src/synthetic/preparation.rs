@@ -818,20 +818,37 @@ impl PreparedSynthetic {
             bucket_route.as_ref(),
             &mesh_arena,
         )?;
-        let pipeline = create_pipeline(Some(wgpu::Face::Back), CameraDraw::Forward);
-        let pipeline_two_sided = create_pipeline(None, CameraDraw::Forward);
-        let depth_prepass = (camera_mode == CullMode::Occlusion).then(|| {
-            [
-                create_pipeline(Some(wgpu::Face::Back), CameraDraw::Depth),
-                create_pipeline(None, CameraDraw::Depth),
-            ]
-        });
-        let ambient_receiver_pipelines = ambient.as_ref().map(|_| {
-            [
-                create_pipeline(Some(wgpu::Face::Back), CameraDraw::AmbientReceiver),
-                create_pipeline(None, CameraDraw::AmbientReceiver),
-            ]
-        });
+        let front_pipelines = || {
+            let pipeline = create_pipeline(Some(wgpu::Face::Back), CameraDraw::Forward);
+            let depth = (camera_mode == CullMode::Occlusion)
+                .then(|| create_pipeline(Some(wgpu::Face::Back), CameraDraw::Depth));
+            let ambient = ambient
+                .as_ref()
+                .map(|_| create_pipeline(Some(wgpu::Face::Back), CameraDraw::AmbientReceiver));
+            (pipeline, depth, ambient)
+        };
+        let two_sided_pipelines = || {
+            let pipeline = create_pipeline(None, CameraDraw::Forward);
+            let depth = (camera_mode == CullMode::Occlusion)
+                .then(|| create_pipeline(None, CameraDraw::Depth));
+            let ambient = ambient
+                .as_ref()
+                .map(|_| create_pipeline(None, CameraDraw::AmbientReceiver));
+            (pipeline, depth, ambient)
+        };
+        #[cfg(target_os = "macos")]
+        let (front, two_sided) =
+            prepare_pipeline_pair(device, front_pipelines, two_sided_pipelines)?;
+        #[cfg(not(target_os = "macos"))]
+        let (front, two_sided) = (front_pipelines(), two_sided_pipelines());
+        let (pipeline, depth_front, ambient_front) = front;
+        let (pipeline_two_sided, depth_two_sided, ambient_two_sided) = two_sided;
+        let depth_prepass = depth_front
+            .zip(depth_two_sided)
+            .map(|(front, two_sided)| [front, two_sided]);
+        let ambient_receiver_pipelines = ambient_front
+            .zip(ambient_two_sided)
+            .map(|(front, two_sided)| [front, two_sided]);
         let shadow_members = shadow
             .as_ref()
             .and_then(ShadowPrepared::member_layout)
@@ -906,10 +923,24 @@ impl PreparedSynthetic {
             queue,
             scene.view.exposure_policy(exposure, atmosphere.is_some()),
         );
-        let display = SdrToneStage::new(
-            device,
-            PipelineRole::Display.pipeline_key(generation, SYNTHETIC_REVISION),
-        );
+        let prepare_display = || {
+            SdrToneStage::new(
+                device,
+                PipelineRole::Display.pipeline_key(generation, SYNTHETIC_REVISION),
+            )
+        };
+        let prepare_temporal = || {
+            let temporal = temporal::TemporalInputs::new(device);
+            let taau = scene.view.reconstruction().then(|| {
+                taau::Taau::new(device, scene.view.reconstruction_reference(), view_volume)
+            });
+            (temporal, taau)
+        };
+        #[cfg(target_os = "macos")]
+        let (display, (temporal, taau)) =
+            prepare_pipeline_pair(device, prepare_display, prepare_temporal)?;
+        #[cfg(not(target_os = "macos"))]
+        let (display, (temporal, taau)) = (prepare_display(), prepare_temporal());
         let stars = if atmosphere.is_some() {
             scene
                 .star_catalogue
@@ -926,11 +957,6 @@ impl PreparedSynthetic {
         } else {
             None
         };
-        let temporal = temporal::TemporalInputs::new(device);
-        let taau = scene
-            .view
-            .reconstruction()
-            .then(|| taau::Taau::new(device, scene.view.reconstruction_reference(), view_volume));
         let traced_view = (scene.view.traced_geometry() && ray_structure.is_some())
             .then(|| Box::new(raytrace::TracedView::new(device, &view_layout)));
         let mut pipeline_error = None;
@@ -1060,4 +1086,47 @@ impl PreparedSynthetic {
             },
         })
     }
+}
+
+// The scoped worker owns its wgpu error scopes. The parent still records errors
+// in the existing preparation transaction, and neither side can outlive it.
+#[cfg(target_os = "macos")]
+fn prepare_pipeline_pair<A: Send, B: Send>(
+    device: &crate::runtime::DeviceSite,
+    front: impl FnOnce() -> A + Send,
+    two_sided: impl FnOnce() -> B + Send,
+) -> Result<(A, B), RenderError> {
+    let Some((phase, label)) = device.pipeline_worker_scope() else {
+        return Ok((front(), two_sided()));
+    };
+    let detached = device.ledger().detach();
+    std::thread::scope(|scope| {
+        let first = scope.spawn(|| {
+            let _region = detached.region(phase, label);
+            run_pipeline_worker(device, front)
+        });
+        let second = scope.spawn(|| {
+            let _region = detached.region(phase, label);
+            run_pipeline_worker(device, two_sided)
+        });
+        let first = first.join().expect("pipeline worker completed")?;
+        let second = second.join().expect("pipeline worker completed")?;
+        Ok((first, second))
+    })
+}
+
+#[cfg(target_os = "macos")]
+fn run_pipeline_worker<T>(
+    device: &crate::runtime::DeviceSite,
+    create: impl FnOnce() -> T,
+) -> Result<T, RenderError> {
+    let validation = device.push_error_scope(wgpu::ErrorFilter::Validation);
+    let internal = device.push_error_scope(wgpu::ErrorFilter::Internal);
+    let memory = device.push_error_scope(wgpu::ErrorFilter::OutOfMemory);
+    let result = create();
+    let mut error = None;
+    for scope in [memory, internal, validation] {
+        error = pollster::block_on(scope.pop()).or(error);
+    }
+    error.map_or(Ok(result), |error| Err(RenderError::Gpu(error)))
 }

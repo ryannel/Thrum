@@ -17,7 +17,7 @@ from t2_load import LoadRecord
 
 RECONSTRUCTION = {"portable": ("taau", "Taau"), "apple-tile": ("metalfx", "MetalFx")}
 STAGES = ("wgsl_parse", "wgsl_validate", "wgsl_specialize", "wgsl_to_msl",
-          "msl_compile", "pipeline_state", "shader_module", "metalfx")
+          "msl_compile", "pipeline_state", "shader_module", "metalfx", "metallib_load")
 READY = re.compile(r"^THRUM_METAL_READY (\d+) (\d+) (\d+) (\d+) (\d+)$")
 COOKED_DRAW = re.compile(r"^THRUM_METAL_COOKED_DRAW (\d+) (\d+)$")
 FINISHED = re.compile(r"^THRUM_METAL_FINISHED (\d+) (\d+) (\d+)$")
@@ -48,7 +48,7 @@ def probe_build(scratch):
     return binary, env, route, build
 
 
-def witness(output, binary, env, recipe, proof, cache=None):
+def witness(output, binary, env, recipe, proof, cache=None, *, stage_path="wgsl"):
     output.mkdir()
     capture = output / "route"
     select, expected = RECONSTRUCTION[recipe]
@@ -98,8 +98,20 @@ def witness(output, binary, env, recipe, proof, cache=None):
     after = Counter(name for index, name, _ in rows if index > boundary)
     if set(after) - set(STAGES) or any(name not in STAGES for _, name, _ in rows):
         raise ValueError("unknown Metal boundary event")
-    if any(not before[stage] for stage in STAGES if stage != "metalfx"):
-        raise ValueError(f"missing startup stage in {output}: {list(map(len, before.values()))}")
+    translated = ("wgsl_specialize", "wgsl_to_msl", "msl_compile")
+    always = ("wgsl_parse", "wgsl_validate", "pipeline_state", "shader_module")
+    required = always + (translated if stage_path == "wgsl" else ("metallib_load",))
+    internal = [(index, line.removeprefix("THRUM_METAL_INTERNAL "))
+                for index, line in enumerate(lines[:boundary]) if line.startswith("THRUM_METAL_INTERNAL ")]
+    first_game_shader = next((index for index, name, _ in rows if name == "wgsl_parse"), boundary)
+    translated_internal = {name: [ns for index, stage, ns in rows
+                                  if index < first_game_shader and stage == name]
+                           for name in translated}
+    unexpected = (any(len(before[name]) != len(internal)
+                      or before[name] != translated_internal[name] for name in translated)
+                  if stage_path == "cooked" else bool(before["metallib_load"]))
+    if any(not before[name] for name in required) or unexpected:
+        raise ValueError(f"unexpected startup stages in {output}: {list(map(len, before.values()))}; {internal}")
     if metalfx_calls != int(recipe == "apple-tile"):
         raise ValueError(f"MetalFX count did not match the selected launch arm: {metalfx_calls}")
     finished = [list(map(int, match.groups())) for line in lines
@@ -115,7 +127,8 @@ def witness(output, binary, env, recipe, proof, cache=None):
                 launch_to_ready_ns=now - started, device_generation=generation,
                 submitted_at_ready=submitted, first_cooked_draw_epoch_ns=cooked_epoch_ns,
                 launch_to_first_cooked_draw_ns=cooked_epoch_ns - started, header=header,
-                stages=stage_totals,
+                stages=stage_totals, wgpu_internal_started=[label for _, label in internal],
+                wgpu_internal_translation_ns=sum(sum(samples) for samples in translated_internal.values()),
                 wgsl_translation_ns=sum(sum(times) for stage, times in before.items() if stage.startswith("wgsl_")),
                 after_ready=dict.fromkeys(STAGES, 0) | dict(after), finished=finished,
                 cache_path=reported_cache[0] if reported_cache else None, load=observed_load,
@@ -173,6 +186,7 @@ def mac_no_compile(output):
             counts = result["after_ready"]
             want = dict.fromkeys(STAGES, expected)
             want["metalfx"] = 0
+            want["metallib_load"] = 0
             if (result["routed_ticks"] != ticks or counts != want or len(result["finished"]) != 1
                     or result["finished"][0][0] < len(ticks) or result["finished"][0][1] != expected):
                 raise ValueError(f"{arm} did not detect exactly the expected late creation(s): {result}")

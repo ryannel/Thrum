@@ -2,6 +2,7 @@
 //!
 //! - `thrum-cook demo <source>` writes the deterministic demo sources;
 //! - `thrum-cook cook <source> <store> [--final]` runs one incremental cycle;
+//! - `thrum-cook metallib <stage> <blob>` compiles one Metal stage (macOS);
 //! - `thrum-cook watch <source> <store> [--serve <address> [--allow-origin <origin>]...]` cooks
 //!   on every change and optionally serves the store over HTTP (use a loopback address unless
 //!   exposure is intended). Pages on loopback may read it; a page from another device needs its
@@ -18,7 +19,7 @@ use thrum_cook::{
     demo, watch,
 };
 
-const USAGE: &str = "usage: thrum-cook demo <source> | cook <source> <store> [--final] | watch <source> <store> [--serve <address> [--allow-origin <origin>]...]";
+const USAGE: &str = "usage: thrum-cook demo <source> | cook <source> <store> [--final] | metallib <stage> <blob> | watch <source> <store> [--serve <address> [--allow-origin <origin>]...]";
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -52,6 +53,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let mut cooker = Cooker::open(config()?)?;
             let report = cooker.cook_all()?;
             describe(&mut out, &report)?;
+        }
+        #[cfg(target_os = "macos")]
+        Some("metallib") if args.len() == 3 => {
+            thrum_cook::metallib::cook_keyed_stage(&arg(1)?, &arg(2)?)?;
         }
         Some("watch") => {
             let config = config()?;

@@ -48,6 +48,10 @@ impl Ready {
         )
         .map_err(|error| error.to_string())?;
         writeln!(log, "THRUM_METAL_READY_LEDGER {report}").map_err(|error| error.to_string())?;
+        let pipelines =
+            serde_json::to_string(&report.named_pipelines).map_err(|error| error.to_string())?;
+        writeln!(log, "THRUM_METAL_READY_PIPELINES {pipelines}")
+            .map_err(|error| error.to_string())?;
         Ok(Self {
             arm,
             generation: report.generation,

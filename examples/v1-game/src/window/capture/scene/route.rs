@@ -347,7 +347,7 @@ pub(super) fn record(
             }
             host.recycle_submitted_image(image);
             host.disable_submitted_capture();
-            if let Some(name) = checkpoint
+            if let Some(name) = &checkpoint
                 && request.present_control.as_deref() == Some("on")
             {
                 let pixels = surface_pixels(driver.output(), device, queue)?;
@@ -357,6 +357,19 @@ pub(super) fn record(
                 )
                 .map_err(|error| error.to_string())?;
             }
+        }
+        #[cfg(feature = "creation-counters")]
+        if request.creation_proof == Some(CreationProof::Metallib)
+            && let Some(name) = &checkpoint
+        {
+            // Read the submitted surface directly. The timed capture tap would
+            // introduce a diagnostic dependency-marker pipeline at each still.
+            let pixels = surface_pixels(driver.output(), device, queue)?;
+            std::fs::write(
+                checkpoints_dir.join(format!("{name}.surface-bgra8")),
+                pixels,
+            )
+            .map_err(|error| error.to_string())?;
         }
     }
     #[cfg(feature = "creation-counters")]

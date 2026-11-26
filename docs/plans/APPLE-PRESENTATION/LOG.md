@@ -587,3 +587,12 @@
   separately. The prepared-path fixture now advances the same surface lease recovery used by the Mac
   render actor and presents real Metal drawables on each side of the same-extent configure.
   [Review follow-up](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP9/review-fix/README.md)
+
+- 2026-11-26 WP10. The pinned Metal backend exports translation records for the offline cook and loads
+  matching native stages during pipeline creation. The creation ledger covers every V1 route pipeline
+  in the parity witness. Mac Metal verified both recipes and all five submitted stills per recipe, the
+  visibility and diffuse dispatches, and rejection of stale keys. Launch records include serial WGSL,
+  serial cooked libraries and parallel cooked libraries under shared load. Offline libraries are opt-in
+  while WP12 measures the archive. wgpu-core still parses and validates WGSL interfaces, and its two
+  device-internal validation pipelines still translate at device setup.
+  [WP10 evidence](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP10/README.md)

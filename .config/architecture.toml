@@ -128,7 +128,7 @@ allowed_workspace_dependencies = ["thrum-asset", "thrum-asset-gpu", "thrum-core"
 
 [packages.thrum-render]
 manifest = "crates/thrum-render/Cargo.toml"
-allowed_workspace_dependencies = ["thrum-asset", "thrum-core", "thrum-test-support", "thrum-fixtures"]
+allowed_workspace_dependencies = ["thrum-asset", "thrum-core", "thrum-test-support", "thrum-fixtures", "thrum-cook"]
 implicit_dependencies = { profiling = "Enable native wgpu resource-creation spans for the opt-in creation counter proof" }
 
 [packages.thrum-ui]
@@ -485,3 +485,12 @@ requirement = "=0.1.26"
 license = "(MIT OR Apache-2.0) AND Unicode-3.0"
 purpose = "Build a font's canonical composition table"
 target_cost = "Authoring-only during font cooking"
+
+[registry_patches.wgpu-hal]
+version = "=30.0.1"
+manifest = "vendor/wgpu-hal-30.0.1/Cargo.toml"
+patches = "vendor/wgpu-hal-patches"
+release = "vendor/releases/wgpu-hal-30.0.1.crate"
+sha256 = "b6b7fb58561a792bc237628ba0792e332de418fefe145f13b5ed8201e6d52f58"
+license = "MIT OR Apache-2.0"
+purpose = "Carry Metal stage records in offline library passthrough without changing WGSL translation"

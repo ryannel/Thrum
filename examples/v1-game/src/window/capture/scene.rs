@@ -41,6 +41,8 @@ pub enum RenderScaleTrace {
 /// field; content selection still comes from `selected_setup`'s launch settings.
 #[derive(Clone, Debug, Default)]
 pub struct SceneCaptureRequest {
+    /// Optional Metal library preparation mode for the capture's device.
+    pub metal_preparation: Option<thrum_render::capabilities::metallib::Preparation>,
     /// `THRUM_SCENE`: the selected content's name, for the record and the exit route.
     pub scene: Option<String>,
     /// `THRUM_CAPTURE_MOTION_FRAMES`: record this many consecutive ticks as a motion sequence.
@@ -96,6 +98,8 @@ pub struct SceneCaptureRequest {
 pub enum CreationProof {
     /// Measure readiness and confirm the first cooked draw after it.
     Launch,
+    /// Capture checkpoints while auditing the normal Metal readiness boundary.
+    Metallib,
     /// Drive every route tick without readback diagnostics.
     Route,
     /// Drive the route and deliberately build one late pipeline.
@@ -165,9 +169,10 @@ pub(in crate::window) async fn run(
             ),
         },
     };
-    let instance = super::metal_instance();
-    let (_, device, queue, capabilities) =
+    let instance = super::metal_instance(request.metal_preparation.is_some());
+    let (_, device, queue, mut capabilities) =
         super::metal_device(&instance, FIRST_DEVICE_GENERATION, hardware).await?;
+    capabilities.set_metal_preparation(request.metal_preparation.clone());
     let game = HostedGame(WindowGame {
         demo: GameControls::new().map_err(|error| error.to_string())?,
         world: None,

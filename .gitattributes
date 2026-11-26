@@ -6,3 +6,4 @@
 *.py text eol=lf
 *.yml text eol=lf
 dev text eol=lf
+vendor/wgpu-hal-patches/*.patch whitespace=-blank-at-eol

@@ -34,7 +34,7 @@ const RELOAD_WAIT: Duration = Duration::from_secs(30);
     reason = "capture failures are explained to the person who asked for them"
 )]
 pub(super) fn run(
-    config: Config,
+    config: &Config,
     game: impl FnOnce() -> Result<SkyGame, super::SkyBuildError>,
     path: &Path,
 ) {
@@ -55,7 +55,7 @@ pub(super) fn run(
 
 #[cfg(target_os = "macos")]
 fn capture(
-    config: Config,
+    config: &Config,
     game: impl FnOnce() -> Result<SkyGame, super::SkyBuildError>,
     path: &Path,
 ) -> Result<[u32; 2], String> {

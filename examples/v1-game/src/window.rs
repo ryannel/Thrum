@@ -146,6 +146,7 @@ pub fn run_window(
     #[cfg(feature = "proving")] qualification: Option<thrum_app::WindowQualification>,
     #[cfg(feature = "proving")] display: Option<thrum_app::WindowDisplayOptions>,
     governor: WindowGovernor,
+    metal_preparation: Option<thrum_render::capabilities::metallib::Preparation>,
 ) {
     // The window title names the content and the requested culling mode;
     // the profiler title adds the mode the renderer runs. Invalid selections
@@ -204,6 +205,7 @@ pub fn run_window(
         window_position: None,
         window_always_on_top: false,
         frame_budget: None,
+        metal_preparation,
         #[cfg(feature = "proving")]
         window_size: if display
             .as_ref()

@@ -706,12 +706,25 @@ def ios_reset(output):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("check", choices=["launch", "no-compile", "extent", "transition", "configure-fault", "transition-capture", "scale", "scale-costs", "edr", "edr-identity", "edr-modes", "edr-headroom", "edr-route", "governor", "governor-identity", "governor-thermal", "reset", "metalfx", "metalfx-quality", "metalfx-exposure", "metalfx-motion"])
-    parser.add_argument("--target", choices=["mac-metal", "ios-sim"], required=True)
+    parser.add_argument("check", choices=["wgpu-pin", "metallib", "launch", "no-compile", "extent", "transition", "configure-fault", "transition-capture", "scale", "scale-costs", "edr", "edr-identity", "edr-modes", "edr-headroom", "edr-route", "governor", "governor-identity", "governor-thermal", "reset", "metalfx", "metalfx-quality", "metalfx-exposure", "metalfx-motion"])
+    parser.add_argument("--target", choices=["mac-metal", "ios-sim"])
     parser.add_argument("--output", type=Path)
     parser.add_argument("--steady", action="store_true", help="qualify the unloaded governor arm")
     parser.add_argument("--realtime-capture", action="store_true", help="retain the T2 governor tap")
+    parser.add_argument("--paths", action="store_true", help="record the WGSL, cooked and parallel launch paths")
+    parser.add_argument("--build-only", action="store_true", help="build the route's offline Metal libraries")
     args = parser.parse_args()
+    if args.paths and args.check != "launch":
+        parser.error("--paths requires the launch check")
+    if args.build_only and args.check != "metallib":
+        parser.error("--build-only requires the metallib check")
+    if args.check == "wgpu-pin":
+        from apple_wgpu_pin import verify
+
+        print(json.dumps(verify(ROOT), indent=2))
+        return
+    if args.target is None:
+        parser.error("--target is required")
     scratch = ROOT / "tmp"
     scratch.mkdir(exist_ok=True)
     if args.output is None:
@@ -724,10 +737,12 @@ def main():
     from apple_governor_proof import mac_governor, mac_governor_identity, mac_governor_thermal
 
     from apple_creation_proof import mac_launch, mac_no_compile
+    from apple_metallib_proof import launch_paths, parity
 
     if (args.steady or args.realtime_capture) and args.check != "governor":
         parser.error("governor options require the governor check")
-    checks = {("launch", "mac-metal"): mac_launch,
+    checks = {("launch", "mac-metal"): launch_paths if args.paths else mac_launch,
+              ("metallib", "mac-metal"): lambda output: parity(output, build_only=args.build_only),
               ("no-compile", "mac-metal"): mac_no_compile,
               ("governor", "mac-metal"): lambda output: mac_governor(
                   output, steady=args.steady, capture=args.realtime_capture),

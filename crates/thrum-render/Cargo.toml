@@ -24,6 +24,9 @@ glam = { version = "=0.33.12", default-features = false, features = ["std"] }
 half = { version = "=2.7.1", default-features = false }
 wgpu = { version = "=30.0.1", default-features = false, features = ["std", "wgsl"] }
 
+[target.'cfg(target_os = "macos")'.dependencies]
+blake3 = { version = "=1.8.7", default-features = false }
+
 [target.'cfg(any(target_os = "macos", target_os = "ios"))'.dependencies]
 objc2-metal = { version = "=0.3.2", default-features = false, features = ["std", "objc2-core-foundation", "MTLDevice", "MTLResource", "MTLTexture", "MTLCommandBuffer", "MTLCommandEncoder", "MTLBlitCommandEncoder", "MTLComputeCommandEncoder", "MTLComputePipeline", "MTLCounters", "MTLEvent", "MTLLibrary", "MTLTypes"] }
 objc2 = { version = "=0.6.5", default-features = false, features = ["std"] }
@@ -50,6 +53,7 @@ tracing = { version = "=0.1.44", default-features = false, features = ["std"] }
 tracing-subscriber = { version = "=0.3.23", default-features = false, features = ["registry"] }
 
 [target.'cfg(target_os = "macos")'.dev-dependencies]
+thrum-cook = { path = "../thrum-cook" }
 objc2-quartz-core = { version = "=0.3.2", default-features = false, features = ["CALayer", "CAMetalLayer"] }
 
 # Every test file here is a target of its own, not a module of one `it` target (GATE-TIME mechanism
@@ -396,3 +400,13 @@ path = "tests/sky_overlay_gpu.rs"
 [[test]]
 name = "haze_scale_gpu"
 path = "tests/haze_scale_gpu.rs"
+
+# APPLE-PRESENTATION D10.2 names this target.
+[[test]]
+name = "metallib_reflection"
+path = "tests/metallib_reflection.rs"
+
+# APPLE-PRESENTATION D10.3 names this target.
+[[test]]
+name = "metallib_keys"
+path = "tests/metallib_keys.rs"

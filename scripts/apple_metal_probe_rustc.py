@@ -35,9 +35,18 @@ def instrument_hal(device):
     source = bracket(source, "naga::back::pipeline_constants::process_overrides(", "stage.constants,\n                )", "wgsl_specialize")
     source = bracket(source, "naga::back::msl::write_string(", "&pipeline_options,\n                )", "wgsl_to_msl")
     source = bracket(source, "self\n                    .shared\n                    .device\n                    .newLibraryWithSource_options_error(", "Some(&options),\n                    )", "msl_compile")
+    source = bracket(source, "super::library_from_metallib::new_library_from_metallib_bytes(", "file,\n        )", "metallib_load")
     source = bracket(source, "match descriptor {\n                MetalGenericRenderPipelineDescriptor::Standard", "\n            }", "pipeline_state")
     source = bracket(source, "self\n                .shared\n                .device\n                .newComputePipelineStateWithDescriptor_options_reflection_error(", "None,\n                )", "pipeline_state")
     source = once(source, "        self.counters.shader_modules.add(1);", '''        thrum_probe("shader_module", || self.counters.shader_modules.add(1));''')
+    source = once(
+        source,
+        "            let descriptor = MTLComputePipelineDescriptor::new();",
+        """            if let Some(label) = desc.label.filter(|label| label.starts_with("(wgpu internal) ")) {
+                std::eprintln!("THRUM_METAL_INTERNAL {label}");
+            }
+            let descriptor = MTLComputePipelineDescriptor::new();""",
+    )
     device.write_text(source + TIMER)
 
 

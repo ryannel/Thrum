@@ -1389,9 +1389,9 @@ pub fn run(config: Config, game: impl FnOnce() -> Result<SkyGame, SkyBuildError>
     };
     match std::env::var_os(CAPTURE_VARIABLE) {
         Some(path) if std::env::var_os(live_capture::LIVE_VARIABLE).is_some() => {
-            live_capture::run(config, named, std::path::Path::new(&path));
+            live_capture::run(&config, named, std::path::Path::new(&path));
         }
-        Some(path) => capture::run(config, named, std::path::Path::new(&path)),
+        Some(path) => capture::run(&config, named, std::path::Path::new(&path)),
         None => crate::run_until_closed(config, named),
     }
 }

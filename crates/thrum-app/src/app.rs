@@ -585,6 +585,9 @@ impl<G: WindowGame + 'static> App<G> {
         }
         let mut descriptor = wgpu::InstanceDescriptor::new_without_display_handle();
         descriptor.backends = wgpu::Backends::METAL;
+        if self.config.metal_preparation.is_some() {
+            thrum_render::capabilities::metallib::Preparation::configure_instance(&mut descriptor);
+        }
         let instance = wgpu::Instance::new(descriptor);
         let surface = Arc::new(
             instance
@@ -604,6 +607,7 @@ impl<G: WindowGame + 'static> App<G> {
             instance,
             surface,
             hardware: self.game.hardware_requests().to_vec(),
+            metal_preparation: self.config.metal_preparation.clone(),
             headroom: self
                 .display
                 .as_ref()
@@ -684,7 +688,7 @@ impl<G: WindowGame + 'static> App<G> {
         self.surface_extent = [gpu.config.width, gpu.config.height];
         self.observed_extent = self.surface_extent;
         self.render = Some(render_actor::start::<G>(
-            self.config,
+            &self.config,
             host,
             gpu,
             recipe,
@@ -1924,7 +1928,7 @@ fn run_with<G: WindowGame + 'static, E: std::error::Error>(
             )
         };
         if let Err(error) = samples {
-            eprintln!("{}: sample record: {error}", config.name);
+            eprintln!("{}: sample record: {error}", app.config.name);
             if observer.options.refresh_measurement.is_some() && result.is_ok() {
                 result = Err(format!("cadence samples: {error}"));
             }
@@ -1937,7 +1941,7 @@ fn run_with<G: WindowGame + 'static, E: std::error::Error>(
             }
         }
         Err(error) => {
-            eprintln!("{}: {error}", config.name);
+            eprintln!("{}: {error}", app.config.name);
             drop(app);
             std::process::exit(1);
         }

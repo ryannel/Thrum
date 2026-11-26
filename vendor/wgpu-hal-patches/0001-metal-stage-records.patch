@@ -1,0 +1,497 @@
+diff --git a/src/metal/device.rs b/src/metal/device.rs
+index d7287b977..b5b338aca 100644
+--- a/src/metal/device.rs
++++ b/src/metal/device.rs
+@@ -159,6 +159,11 @@ const fn convert_vertex_format_to_naga(format: wgt::VertexFormat) -> nt::VertexF
+ }
+ 
+ impl super::Device {
++    /// The Metal language version used by this device's translator and compiler.
++    pub fn shader_language_version(&self) -> usize {
++        self.shared.private_caps.msl_version.0
++    }
++
+     fn load_shader(
+         &self,
+         stage: &crate::ProgrammableStage<super::ShaderModule>,
+@@ -170,16 +175,6 @@ impl super::Device {
+         match stage.module.source {
+             ShaderModuleSource::Naga(ref naga_shader) => {
+                 let stage_bit = map_naga_stage(naga_stage);
+-                let (module, module_info) = naga::back::pipeline_constants::process_overrides(
+-                    &naga_shader.module,
+-                    &naga_shader.info,
+-                    Some((naga_stage, stage.entry_point)),
+-                    stage.constants,
+-                )
+-                .map_err(|e| {
+-                    crate::PipelineError::PipelineConstants(stage_bit, format!("MSL: {e:?}"))
+-                })?;
+-
+                 let ep_resources = &layout.per_stage_map[naga_stage];
+ 
+                 let bounds_check_policy = if stage.module.runtime_checks.bounds_checks {
+@@ -254,6 +249,39 @@ impl super::Device {
+                     binding_array_length_map: layout.binding_array_length_map.clone(),
+                 };
+ 
++                let preserve_invariance = available!(
++                    macos = 11.0, ios = 13.0, tvos = 14.0, visionos = 1.0
++                );
++                let mut key = None;
++                if let Some(resolver) = super::stage_record::resolver() {
++                    let selected = resolver.resolve(&super::StageInputs {
++                        wgsl: naga_shader.debug_source.as_ref().map(|source| source.source_code.as_ref()),
++                        options: &options,
++                        pipeline: &pipeline_options,
++                        constants: stage.constants,
++                        language_version: self.shader_language_version(),
++                        preserve_invariance,
++                    });
++                    if let Some(bytes) = selected.bytes {
++                        let shader = self.load_cooked_stage(&bytes, naga_stage);
++                        resolver.loaded(&selected.key, shader.is_some());
++                        if let Some(shader) = shader {
++                            return Ok(shader);
++                        }
++                    }
++                    key = Some(selected.key);
++                }
++
++                let (module, module_info) = naga::back::pipeline_constants::process_overrides(
++                    &naga_shader.module,
++                    &naga_shader.info,
++                    Some((naga_stage, stage.entry_point)),
++                    stage.constants,
++                )
++                .map_err(|e| {
++                    crate::PipelineError::PipelineConstants(stage_bit, format!("MSL: {e:?}"))
++                })?;
++
+                 let (source, info) = naga::back::msl::write_string(
+                     &module,
+                     &module_info,
+@@ -273,7 +301,7 @@ impl super::Device {
+                 options.setLanguageVersion(self.shared.private_caps.msl_version);
+ 
+                 // https://developer.apple.com/documentation/metal/mtlcompileoptions/preserveinvariance
+-                if available!(macos = 11.0, ios = 13.0, tvos = 14.0, visionos = 1.0) {
++                if preserve_invariance {
+                     options.setPreserveInvariance(true);
+                 }
+ 
+@@ -370,6 +398,22 @@ impl super::Device {
+                     }
+                 }
+ 
++                super::stage_record::observe(|| super::StageTranslation {
++                    stage: naga_stage,
++                    entry_point: stage.entry_point.to_owned(),
++                    source,
++                    language_version: self.shader_language_version(),
++                    preserve_invariance,
++                    key,
++                    record: super::StageRecord {
++                        function: translated_ep_name.to_owned(),
++                        workgroup_size: ep.workgroup_size,
++                        workgroup_memory_sizes: wg_memory_sizes.clone(),
++                        sized_bindings: sized_bindings.clone(),
++                        immutable_buffer_mask,
++                    },
++                });
++
+                 Ok(CompiledShader {
+                     library,
+                     function,
+@@ -380,26 +424,83 @@ impl super::Device {
+                 })
+             }
+             ShaderModuleSource::Passthrough(ref shader) => {
+-                let size = shader.num_workgroups[stage.entry_point];
+-                Ok(CompiledShader {
+-                    library: shader.library.clone(),
+-                    function: shader
+-                        .library
+-                        .newFunctionWithName(&NSString::from_str(stage.entry_point))
+-                        .ok_or(crate::PipelineError::EntryPoint(naga_stage))?,
+-                    wg_size: MTLSize {
+-                        width: size.0 as usize,
+-                        height: size.1 as usize,
+-                        depth: size.2 as usize,
+-                    },
+-                    wg_memory_sizes: vec![],
+-                    sized_bindings: vec![],
+-                    immutable_buffer_mask: 0,
+-                })
++                Self::load_passthrough_stage(shader, stage.entry_point, naga_stage)
+             }
+         }
+     }
+ 
++    fn load_passthrough_stage(
++        shader: &PassthroughShader,
++        entry_point: &str,
++        naga_stage: naga::ShaderStage,
++    ) -> Result<CompiledShader, crate::PipelineError> {
++        let (size, wg_memory_sizes, sized_bindings, immutable_buffer_mask) =
++            if let Some(records) = &shader.stage_records {
++                let record = records
++                    .iter()
++                    .find(|record| record.function == entry_point)
++                    .ok_or_else(|| {
++                        crate::PipelineError::Linkage(
++                            map_naga_stage(naga_stage),
++                            format!("Metal stage record missing for '{}'", entry_point),
++                        )
++                    })?;
++                (
++                    record.workgroup_size,
++                    record.workgroup_memory_sizes.clone(),
++                    record.sized_bindings.clone(),
++                    record.immutable_buffer_mask,
++                )
++            } else {
++                let (x, y, z) = shader.num_workgroups[entry_point];
++                ([x, y, z], vec![], vec![], 0)
++            };
++        Ok(CompiledShader {
++            library: shader.library.clone(),
++            function: shader
++                .library
++                .newFunctionWithName(&NSString::from_str(entry_point))
++                .ok_or(crate::PipelineError::EntryPoint(naga_stage))?,
++            wg_size: MTLSize {
++                width: size[0] as usize,
++                height: size[1] as usize,
++                depth: size[2] as usize,
++            },
++            wg_memory_sizes,
++            sized_bindings,
++            immutable_buffer_mask,
++        })
++    }
++
++    // wgpu-core already validated the WGSL interface and derived the layout.
++    // Only the native stage is replaced, through the ordinary MetalLib loader.
++    fn load_cooked_stage(
++        &self,
++        bytes: &[u8],
++        naga_stage: naga::ShaderStage,
++    ) -> Option<CompiledShader> {
++        let (records, library) = super::split_stage_records(bytes).ok()?;
++        let [record] = records.as_deref()? else {
++            return None;
++        };
++        let shader = self.load_metallib(library, records.clone(), Default::default()).ok()?;
++        Self::load_passthrough_stage(&shader, &record.function, naga_stage).ok()
++    }
++
++    fn load_metallib(
++        &self,
++        file: &[u8],
++        stage_records: Option<Vec<super::StageRecord>>,
++        num_workgroups: super::HashMap<alloc::string::String, (u32, u32, u32)>,
++    ) -> Result<PassthroughShader, crate::ShaderError> {
++        let library = super::library_from_metallib::new_library_from_metallib_bytes(
++            &self.shared.device,
++            file,
++        )
++        .map_err(|e| crate::ShaderError::Compilation(format!("Metallib: {e:?}")))?;
++        Ok(PassthroughShader { library, stage_records, num_workgroups })
++    }
++
+     fn set_buffers_mutability(
+         buffers: &MTLPipelineBufferDescriptorArray,
+         mut immutable_mask: usize,
+@@ -1281,17 +1382,11 @@ impl crate::Device for super::Device {
+                 file,
+                 num_workgroups,
+             } => {
+-                // SAFETY: this creates a reference to `file` that is dropped before `file` is dropped.
+-                let library = super::library_from_metallib::new_library_from_metallib_bytes(
+-                    &self.shared.device,
+-                    file,
+-                )
+-                .map_err(|e| crate::ShaderError::Compilation(format!("Metallib: {e:?}")))?;
++                let (stage_records, file) = super::split_stage_records(file)
++                    .map_err(|err| crate::ShaderError::Compilation(err.into()))?;
++                let shader = self.load_metallib(file, stage_records, num_workgroups)?;
+                 Ok(super::ShaderModule {
+-                    source: ShaderModuleSource::Passthrough(PassthroughShader {
+-                        library,
+-                        num_workgroups,
+-                    }),
++                    source: ShaderModuleSource::Passthrough(shader),
+                     // This goes unused for passthrough shaders
+                     runtime_checks: wgt::ShaderRuntimeChecks::unchecked(),
+                 })
+@@ -1310,6 +1405,7 @@ impl crate::Device for super::Device {
+                 Ok(super::ShaderModule {
+                     source: ShaderModuleSource::Passthrough(PassthroughShader {
+                         library,
++                        stage_records: None,
+                         num_workgroups,
+                     }),
+                     runtime_checks: desc.runtime_checks,
+@@ -1806,33 +1902,13 @@ impl crate::Device for super::Device {
+         autoreleasepool(|_| {
+             let descriptor = MTLComputePipelineDescriptor::new();
+ 
+-            let module = desc.stage.module;
+-            let cs = if let ShaderModuleSource::Passthrough(passthrough_desc) = &module.source {
+-                let size = passthrough_desc.num_workgroups[desc.stage.entry_point];
+-                CompiledShader {
+-                    library: passthrough_desc.library.clone(),
+-                    function: passthrough_desc
+-                        .library
+-                        .newFunctionWithName(&NSString::from_str(desc.stage.entry_point))
+-                        .ok_or(crate::PipelineError::EntryPoint(naga::ShaderStage::Compute))?,
+-                    wg_size: MTLSize {
+-                        width: size.0 as usize,
+-                        height: size.1 as usize,
+-                        depth: size.2 as usize,
+-                    },
+-                    wg_memory_sizes: vec![],
+-                    sized_bindings: vec![],
+-                    immutable_buffer_mask: 0,
+-                }
+-            } else {
+-                self.load_shader(
+-                    &desc.stage,
+-                    &[],
+-                    desc.layout,
+-                    MTLPrimitiveTopologyClass::Unspecified,
+-                    naga::ShaderStage::Compute,
+-                )?
+-            };
++            let cs = self.load_shader(
++                &desc.stage,
++                &[],
++                desc.layout,
++                MTLPrimitiveTopologyClass::Unspecified,
++                naga::ShaderStage::Compute,
++            )?;
+ 
+             descriptor.setComputeFunction(Some(&cs.function));
+ 
+diff --git a/src/metal/mod.rs b/src/metal/mod.rs
+index e227590e5..649a29e77 100644
+--- a/src/metal/mod.rs
++++ b/src/metal/mod.rs
+@@ -24,6 +24,12 @@ mod adapter;
+ mod command;
+ mod conv;
+ mod device;
++mod stage_record;
++
++pub use stage_record::{
++    capture_stage_translations, encode_stage_records, split_stage_records, with_stage_resolver,
++    StageInputs, StageLibrary, StageRecord, StageResolver, StageTranslation,
++};
+ mod library_from_metallib;
+ mod surface;
+ mod time;
+@@ -1106,6 +1112,7 @@ pub enum ShaderModuleSource {
+ 
+ #[derive(Debug)]
+ pub struct PassthroughShader {
++    stage_records: Option<Vec<StageRecord>>,
+     pub library: Retained<ProtocolObject<dyn MTLLibrary>>,
+     pub num_workgroups: HashMap<String, (u32, u32, u32)>,
+ }
+diff --git a/src/metal/stage_record.rs b/src/metal/stage_record.rs
+new file mode 100644
+index 000000000..54cb4a5c0
+--- /dev/null
++++ b/src/metal/stage_record.rs
+@@ -0,0 +1,190 @@
++//! Reflection collected alongside the Metal source in the WGSL pipeline path.
++
++use alloc::{string::String, sync::Arc, vec::Vec};
++use core::cell::RefCell;
++
++const MAGIC: &[u8] = b"wgpu-metal-stage\x00\x01";
++
++/// A Metal function and the host bindings required by its generated MSL.
++#[derive(Clone, Debug, Eq, PartialEq)]
++pub struct StageRecord {
++    pub function: String,
++    pub workgroup_size: [u32; 3],
++    pub workgroup_memory_sizes: Vec<u32>,
++    pub sized_bindings: Vec<(naga::ResourceBinding, u32)>,
++    pub immutable_buffer_mask: usize,
++}
++
++/// A stage's actual compiler input and the record used by the live pipeline.
++#[derive(Debug)]
++pub struct StageTranslation {
++    pub stage: naga::ShaderStage,
++    pub entry_point: String,
++    pub source: String,
++    /// The raw `MTLLanguageVersion` used by Metal's compile options.
++    pub language_version: usize,
++    pub preserve_invariance: bool,
++    pub record: StageRecord,
++    pub key: Option<String>,
++}
++
++/// Inputs to the existing Metal translation, before override specialization or MSL emission.
++#[derive(Debug)]
++pub struct StageInputs<'a> {
++    pub wgsl: Option<&'a str>,
++    pub options: &'a naga::back::msl::Options,
++    pub pipeline: &'a naga::back::msl::PipelineOptions,
++    pub constants: &'a naga::back::PipelineConstants,
++    pub language_version: usize,
++    pub preserve_invariance: bool,
++}
++
++/// A caller's selection for one validated stage.
++#[derive(Debug)]
++pub struct StageLibrary {
++    pub key: String,
++    pub bytes: Option<Vec<u8>>,
++}
++
++/// Lookup restricted to the pipeline creation on the calling thread.
++pub trait StageResolver: Send + Sync {
++    fn resolve(&self, inputs: &StageInputs<'_>) -> StageLibrary;
++    fn loaded(&self, key: &str, success: bool);
++}
++
++std::thread_local! {
++    static RESOLVER: RefCell<Option<Arc<dyn StageResolver>>> = const { RefCell::new(None) };
++}
++
++/// Supply offline libraries while creating a pipeline on this thread.
++///
++/// # Safety
++///
++/// Any bytes returned by the resolver must be trusted output from the same
++/// WGSL, stage, layout and Metal translation settings as the live pipeline.
++pub unsafe fn with_stage_resolver<T>(
++    resolver: Arc<dyn StageResolver>,
++    create: impl FnOnce() -> T,
++) -> T {
++    struct Resolve(Option<Arc<dyn StageResolver>>);
++    impl Drop for Resolve {
++        fn drop(&mut self) {
++            RESOLVER.with_borrow_mut(|current| *current = self.0.take());
++        }
++    }
++
++    let _resolve = Resolve(RESOLVER.with_borrow_mut(|current| current.replace(resolver)));
++    create()
++}
++
++pub(super) fn resolver() -> Option<Arc<dyn StageResolver>> {
++    RESOLVER.with_borrow(|current| current.clone())
++}
++
++std::thread_local! {
++    static CAPTURE: RefCell<Option<Vec<StageTranslation>>> = const { RefCell::new(None) };
++}
++
++/// Observe stages translated by the calling thread during `create`.
++/// Nested captures collect only the stages in their own scope.
++pub fn capture_stage_translations<T>(create: impl FnOnce() -> T) -> (T, Vec<StageTranslation>) {
++    struct Capture(Option<Vec<StageTranslation>>);
++    impl Drop for Capture {
++        fn drop(&mut self) {
++            CAPTURE.with_borrow_mut(|current| *current = self.0.take());
++        }
++    }
++
++    let _capture = Capture(CAPTURE.with_borrow_mut(|current| current.replace(Vec::new())));
++    let value = create();
++    let stages = CAPTURE.with_borrow_mut(|current| current.take().unwrap());
++    (value, stages)
++}
++
++pub(super) fn observe(translation: impl FnOnce() -> StageTranslation) {
++    CAPTURE.with_borrow_mut(|current| {
++        if let Some(stages) = current {
++            stages.push(translation());
++        }
++    });
++}
++
++fn put(output: &mut Vec<u8>, value: u32) {
++    output.extend(value.to_le_bytes());
++}
++
++/// Prefix a Metal library with the records of the functions available to the caller.
++pub fn encode_stage_records(records: &[StageRecord], metallib: &[u8]) -> Vec<u8> {
++    let mut output = MAGIC.to_vec();
++    put(&mut output, records.len().try_into().unwrap());
++    for record in records {
++        put(&mut output, record.function.len().try_into().unwrap());
++        output.extend(record.function.as_bytes());
++        for size in record.workgroup_size {
++            put(&mut output, size);
++        }
++        put(
++            &mut output,
++            record.workgroup_memory_sizes.len().try_into().unwrap(),
++        );
++        for size in &record.workgroup_memory_sizes {
++            put(&mut output, *size);
++        }
++        put(&mut output, record.sized_bindings.len().try_into().unwrap());
++        for (binding, index) in &record.sized_bindings {
++            put(&mut output, binding.group);
++            put(&mut output, binding.binding);
++            put(&mut output, *index);
++        }
++        output.extend((record.immutable_buffer_mask as u64).to_le_bytes());
++    }
++    output.extend(metallib);
++    output
++}
++
++fn take<const N: usize>(input: &mut &[u8]) -> Option<[u8; N]> {
++    let (word, rest) = input.split_first_chunk()?;
++    *input = rest;
++    Some(*word)
++}
++
++fn word(input: &mut &[u8]) -> Option<u32> {
++    Some(u32::from_le_bytes(take(input)?))
++}
++
++fn list<T>(input: &mut &[u8], read: impl Fn(&mut &[u8]) -> Option<T>) -> Option<Vec<T>> {
++    let len = word(input)?;
++    (0..len).map(|_| read(input)).collect()
++}
++
++fn decode(input: &mut &[u8]) -> Option<StageRecord> {
++    let len = word(input)? as usize;
++    let function = core::str::from_utf8(input.split_off(..len)?).ok()?.into();
++    let workgroup_size = [word(input)?, word(input)?, word(input)?];
++    let workgroup_memory_sizes = list(input, word)?;
++    let sized_bindings = list(input, |input| {
++        let group = word(input)?;
++        let binding = word(input)?;
++        Some((naga::ResourceBinding { group, binding }, word(input)?))
++    })?;
++    let immutable_buffer_mask = u64::from_le_bytes(take(input)?).try_into().ok()?;
++    Some(StageRecord {
++        function,
++        workgroup_size,
++        workgroup_memory_sizes,
++        sized_bindings,
++        immutable_buffer_mask,
++    })
++}
++
++/// Split cooked stage records from a library, or leave a plain library intact.
++/// Returns an error if a record section is present but malformed.
++pub fn split_stage_records(
++    bytes: &[u8],
++) -> Result<(Option<Vec<StageRecord>>, &[u8]), &'static str> {
++    let Some(mut bytes) = bytes.strip_prefix(MAGIC) else {
++        return Ok((None, bytes));
++    };
++    let records = list(&mut bytes, decode).ok_or("malformed Metal stage records")?;
++    Ok((Some(records), bytes))
++}

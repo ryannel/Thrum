@@ -14,6 +14,8 @@ mod cooker;
 pub mod demo;
 mod font;
 mod mesh;
+#[cfg(target_os = "macos")]
+pub mod metallib;
 mod server;
 mod sheet;
 mod stat_cache;

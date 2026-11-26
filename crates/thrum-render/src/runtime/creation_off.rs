@@ -2,39 +2,81 @@
 //! Enable the `creation-counters` feature for the diagnostic in `creation.rs`.
 
 /// The pipeline creation authority of one device generation. In default
-/// builds it is the device alone, and [`render`](Self::render) and
-/// [`compute`](Self::compute) are the direct wgpu calls.
+/// builds [`render`](Self::render) and [`compute`](Self::compute) call
+/// wgpu directly unless the Mac launch selects offline Metal stages.
 #[derive(Clone, Debug)]
-pub struct DeviceSite(wgpu::Device);
+pub struct DeviceSite(
+    wgpu::Device,
+    #[cfg(target_os = "macos")] Option<std::sync::Arc<crate::capabilities::metallib::Preparation>>,
+);
 
 impl DeviceSite {
     #[inline]
     pub(crate) fn mint(device: &wgpu::Device, _generation: u64) -> Self {
-        Self(device.clone())
+        Self(
+            device.clone(),
+            #[cfg(target_os = "macos")]
+            None,
+        )
     }
 
     /// A site for a raw device. Identical to a minted one in default builds.
     #[inline]
     #[must_use]
     pub fn untracked(device: wgpu::Device) -> Self {
-        Self(device)
+        Self(
+            device,
+            #[cfg(target_os = "macos")]
+            None,
+        )
+    }
+
+    #[cfg(target_os = "macos")]
+    pub(crate) fn set_metal_preparation(
+        &mut self,
+        preparation: Option<crate::capabilities::metallib::Preparation>,
+    ) {
+        self.1 = preparation.map(std::sync::Arc::new);
     }
 
     /// `create_render_pipeline`.
     #[inline]
     pub fn render(&self, desc: &wgpu::RenderPipelineDescriptor<'_>) -> wgpu::RenderPipeline {
-        self.0.create_render_pipeline(desc)
+        let create = || self.0.create_render_pipeline(desc);
+        #[cfg(target_os = "macos")]
+        if let Some(metal) = &self.1 {
+            return metal.pipeline("render", desc.label, create);
+        }
+        create()
     }
 
     /// `create_compute_pipeline`.
     #[inline]
     pub fn compute(&self, desc: &wgpu::ComputePipelineDescriptor<'_>) -> wgpu::ComputePipeline {
-        self.0.create_compute_pipeline(desc)
+        let create = || self.0.create_compute_pipeline(desc);
+        #[cfg(target_os = "macos")]
+        if let Some(metal) = &self.1 {
+            return metal.pipeline("compute", desc.label, create);
+        }
+        create()
     }
 
     /// `create_mesh_pipeline` when diagnostics are disabled.
     pub fn mesh(&self, desc: &wgpu::MeshPipelineDescriptor<'_>) -> wgpu::RenderPipeline {
-        self.0.create_mesh_pipeline(desc)
+        let create = || self.0.create_mesh_pipeline(desc);
+        #[cfg(target_os = "macos")]
+        if let Some(metal) = &self.1 {
+            return metal.pipeline("mesh", desc.label, create);
+        }
+        create()
+    }
+
+    #[cfg(target_os = "macos")]
+    pub(crate) fn pipeline_worker_scope(&self) -> Option<(CreationPhase, &'static str)> {
+        self.1
+            .as_ref()?
+            .parallel
+            .then_some((CreationPhase::Build, "pipeline preparation"))
     }
 
     #[cfg(any(target_os = "macos", target_os = "ios"))]

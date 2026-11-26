@@ -363,8 +363,11 @@ impl fmt::Display for CreationReport {
 #[derive(Clone)]
 pub struct DeviceSite(Arc<SiteCore>);
 
+#[derive(Clone)]
 struct SiteCore {
     device: wgpu::Device,
+    #[cfg(target_os = "macos")]
+    metal: Option<Arc<crate::capabilities::metallib::Preparation>>,
     /// `None` for an [`untracked`](DeviceSite::untracked) site.
     ledger: Option<Arc<CreationLedger>>,
 }
@@ -382,6 +385,8 @@ impl DeviceSite {
         Self(Arc::new(SiteCore {
             device: device.clone(),
             ledger: Some(CreationLedger::start(device, generation)),
+            #[cfg(target_os = "macos")]
+            metal: None,
         }))
     }
 
@@ -400,12 +405,30 @@ impl DeviceSite {
         Self(Arc::new(SiteCore {
             device,
             ledger: None,
+            #[cfg(target_os = "macos")]
+            metal: None,
         }))
+    }
+
+    #[cfg(target_os = "macos")]
+    pub(crate) fn set_metal_preparation(
+        &mut self,
+        preparation: Option<crate::capabilities::metallib::Preparation>,
+    ) {
+        Arc::make_mut(&mut self.0).metal = preparation.map(Arc::new);
     }
 
     /// `create_render_pipeline`, unchanged, then one event on this site's ledger.
     pub fn render(&self, desc: &wgpu::RenderPipelineDescriptor<'_>) -> wgpu::RenderPipeline {
-        let pipeline = self.0.device.create_render_pipeline(desc);
+        let create = || self.0.device.create_render_pipeline(desc);
+        #[cfg(target_os = "macos")]
+        let pipeline = self
+            .0
+            .metal
+            .as_ref()
+            .map_or_else(create, |metal| metal.pipeline("render", desc.label, create));
+        #[cfg(not(target_os = "macos"))]
+        let pipeline = create();
         if let Some(ledger) = &self.0.ledger {
             record(ledger, PipelineKind::Render, desc.label);
         }
@@ -414,7 +437,13 @@ impl DeviceSite {
 
     /// `create_compute_pipeline`, unchanged, then one event on this site's ledger.
     pub fn compute(&self, desc: &wgpu::ComputePipelineDescriptor<'_>) -> wgpu::ComputePipeline {
-        let pipeline = self.0.device.create_compute_pipeline(desc);
+        let create = || self.0.device.create_compute_pipeline(desc);
+        #[cfg(target_os = "macos")]
+        let pipeline = self.0.metal.as_ref().map_or_else(create, |metal| {
+            metal.pipeline("compute", desc.label, create)
+        });
+        #[cfg(not(target_os = "macos"))]
+        let pipeline = create();
         if let Some(ledger) = &self.0.ledger {
             record(ledger, PipelineKind::Compute, desc.label);
         }
@@ -423,11 +452,29 @@ impl DeviceSite {
 
     /// `create_mesh_pipeline`, followed by one event on this site's ledger.
     pub fn mesh(&self, desc: &wgpu::MeshPipelineDescriptor<'_>) -> wgpu::RenderPipeline {
-        let pipeline = self.0.device.create_mesh_pipeline(desc);
+        let create = || self.0.device.create_mesh_pipeline(desc);
+        #[cfg(target_os = "macos")]
+        let pipeline = self
+            .0
+            .metal
+            .as_ref()
+            .map_or_else(create, |metal| metal.pipeline("mesh", desc.label, create));
+        #[cfg(not(target_os = "macos"))]
+        let pipeline = create();
         if let Some(ledger) = &self.0.ledger {
             record(ledger, PipelineKind::Mesh, desc.label);
         }
         pipeline
+    }
+
+    #[cfg(target_os = "macos")]
+    pub(crate) fn pipeline_worker_scope(&self) -> Option<(CreationPhase, &'static str)> {
+        if !self.0.metal.as_ref()?.parallel {
+            return None;
+        }
+        let ledger = self.0.ledger.as_ref()?;
+        let scope = event_scope(ledger);
+        event_region(&ledger.lock(), scope).filter(|(phase, _)| *phase != CreationPhase::Play)
     }
 
     #[cfg(any(target_os = "macos", target_os = "ios"))]
@@ -493,10 +540,13 @@ impl std::ops::Deref for DeviceSite {
 
 impl fmt::Debug for DeviceSite {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("DeviceSite")
+        let mut device = f.debug_struct("DeviceSite");
+        device
             .field("device", &self.0.device)
-            .field("tracked", &self.0.ledger.is_some())
-            .finish()
+            .field("tracked", &self.0.ledger.is_some());
+        #[cfg(target_os = "macos")]
+        device.field("metal_preparation", &self.0.metal);
+        device.finish()
     }
 }
 
