@@ -464,7 +464,8 @@ world's one field, beside the wind's cascades and the flow's bands. The schedule
 The earlier 1.28 m and 2.1 m periods made individual sparse births visibly repeat even when the two bands'
 combined pattern had a longer period. Both patches still use 512² samples. A 64² tile grid rejects drops
 whose reach misses the tile. Periodic images are placed when building the lists, and hardware bilinearly
-samples the normalized ring table once per contributing drop. Drops fall on a schedule drawn from a hash of
+samples the normalized ring table once per contributing drop. The surface's filtering transition stays at
+fixed world-space footprints as the periods grow. Drops fall on a schedule drawn from a hash of
 place and time, by size class, and a texel's height and slopes are the sum of the rings of the drops that
 landed within reach in the last second, each read from a prepared table of a ring's height by radius and age.
 

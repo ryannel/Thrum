@@ -21,15 +21,15 @@ fn rain_geometry(point: vec2<f32>, spacing: f32, row: SurfaceRow, motion: Cascad
     return gain * result;
 }
 
-fn filtered_rain(uv: vec2<f32>, dx: vec2<f32>, dy: vec2<f32>, layer: i32) -> FilteredLayer {
+fn filtered_rain(uv: vec2<f32>, dx: vec2<f32>, dy: vec2<f32>, layer: i32, footprint_scale: f32) -> FilteredLayer {
     // A grazing footprint can cover the short crests lengthwise while the
     // hardware filter runs out of anisotropy across them. Move their energy
     // continuously into the patch's coarsest moment before they can alias.
-    let unresolved = smoothstep(0.018, 0.075, max(length(dx), length(dy)));
+    let unresolved = smoothstep(0.018, 0.075, footprint_scale * max(length(dx), length(dy)));
     var m = FilteredLayer(vec2(0.0), vec3(0.0), vec3(0.0));
     if unresolved < 1.0 {
-        m.slope = sample_field(cascades, rain_periodic, uv, layer, dx, dy).yz;
-        m.second = sample_field(cascades, rain_periodic, uv, layer+1, dx, dy).xyz;
+        m.slope = sample_scaled_field(cascades, rain_periodic, uv, layer, dx, dy, footprint_scale).yz;
+        m.second = sample_scaled_field(cascades, rain_periodic, uv, layer+1, dx, dy, footprint_scale).xyz;
     }
     if unresolved > 0.0 {
         let mean_square = textureSampleLevel(cascades, rain_periodic, uv, layer+1, 9.0).xyz;
@@ -49,9 +49,12 @@ fn rain_normal(point: vec2<f32>, row: SurfaceRow, motion: CascadeMotion,
     for (var band = 0u; band < 2u; band += 1u) {
         let side = rain.lengths[band];
         let layer = i32(RAIN_FIRST_LAYER + 2u * band);
-        var m = filtered_rain(motion.departure / side, dx / side, dy / side, layer);
+        // The resolved detail transitions at fixed physical footprints.
+        // The schedule period can grow without extending costly fine sampling.
+        let footprint_scale = rain.footprint_scale[band];
+        var m = filtered_rain(motion.departure / side, dx / side, dy / side, layer, footprint_scale);
         if motion.blend < 1.0 {
-            let other = filtered_rain(motion.second / side, second_dx / side, second_dy / side, layer);
+            let other = filtered_rain(motion.second / side, second_dx / side, second_dy / side, layer, footprint_scale);
             m.slope = mix(other.slope, m.slope, motion.blend);
             m.second = mix(other.second, m.second, motion.blend);
         }

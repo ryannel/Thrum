@@ -638,6 +638,21 @@ fn surface_pipelines(
     (pipeline, river, film)
 }
 
+fn surface_sampling(rain: bool) -> String {
+    let source = include_str!("sampling.wgsl");
+    if !rain {
+        return source.to_owned();
+    }
+    source.replace(
+        "let extent=vec2<f32>(textureDimensions(t));",
+        &format!("let wind = textureNumLayers(t) == {}u && layer < {};\n    let extent=vec2<f32>(textureDimensions(t, select(0, 1, wind)));", thrum_sea::rain::SHARED_LAYERS, thrum_sea::rain::FIRST_LAYER),
+    )
+    .replace("fn sample_field(", "fn sample_scaled_field(")
+    .replace("dy:vec2<f32>)->vec4<f32> {", "dy:vec2<f32>,footprint_scale:f32)->vec4<f32> {")
+    .replace("smoothstep(0.5,1.0,minor)", "smoothstep(0.5,1.0,minor*footprint_scale)")
+        + "\nfn sample_field(t:texture_2d_array<f32>,s:sampler,uv:vec2<f32>,layer:i32,dx:vec2<f32>,dy:vec2<f32>)->vec4<f32> {\n    return sample_scaled_field(t,s,uv,layer,dx,dy,1.0);\n}\n"
+}
+
 fn shader_source(
     surface: &SceneSurface<'_>,
     library: &str,
@@ -672,14 +687,7 @@ fn shader_source(
         library,
         super::VIEW_RECORDS,
         include_str!("fresnel.wgsl"),
-        if rain {
-            include_str!("sampling.wgsl").replace(
-                "let extent=vec2<f32>(textureDimensions(t));",
-                &format!("let wind = textureNumLayers(t) == {}u && layer < {};\n    let extent=vec2<f32>(textureDimensions(t, select(0, 1, wind)));", thrum_sea::rain::SHARED_LAYERS, thrum_sea::rain::FIRST_LAYER),
-            )
-        } else {
-            include_str!("sampling.wgsl").to_owned()
-        },
+        surface_sampling(rain),
         include_str!("field.wgsl"),
         Interaction::sample_source(3, 7, 8, wake),
         concat!(include_str!("carriage.wgsl"), include_str!("surface.wgsl")).to_owned()

@@ -26,6 +26,7 @@ struct RainSurface {
     lengths: [f32; 4],
     canopy: [f32; 4],
     grid: [u32; 4],
+    footprint_scale: [f32; 4],
 }
 pub(super) struct Rain {
     pub(super) bands: Bands,
@@ -122,6 +123,8 @@ impl Rain {
                 grid.edge_width as f32,
             ],
             grid: [columns as u32, height as u32, response.len() as u32, 0],
+            // Preserve the physical filtering range used by the two bands.
+            footprint_scale: [(a / 1.28) as f32, (b / 2.1) as f32, 0.0, 0.0],
         };
         Ok(Self {
             bands: Bands::in_cascades(device, model, cascades)
@@ -236,7 +239,7 @@ mod tests {
         records::named(
             "rain surface",
             &records::declarations(crate::RAIN_GAIN_WGSL),
-            &[record!(RainSurface, lengths, canopy, grid)],
+            &[record!(RainSurface, lengths, canopy, grid, footprint_scale)],
         );
     }
 }

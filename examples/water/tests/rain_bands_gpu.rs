@@ -169,6 +169,7 @@ fn surface_gain_uses_depth_and_the_soft_roof_edge() {
     let responses = height - 1;
     let mut settings = bytemuck::cast_slice(&[1.28_f32, 2.1, 0.0, 0.001, 0.0, 0.0, 1.0, 0.2]).to_vec();
     settings.extend_from_slice(bytemuck::cast_slice(&[1u32, 1, responses, 1]));
+    settings.extend_from_slice(bytemuck::cast_slice(&[1.0_f32, 1.0, 0.0, 0.0]));
     let buffer = |label, contents, usage| device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
         label: Some(label), contents, usage,
     });

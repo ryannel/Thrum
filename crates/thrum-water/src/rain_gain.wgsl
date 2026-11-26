@@ -2,6 +2,7 @@ struct RainSurface {
     lengths: vec4<f32>,
     canopy: vec4<f32>,
     grid: vec4<u32>,
+    footprint_scale: vec4<f32>,
 }
 @group(3) @binding(19) var<uniform> rain: RainSurface;
 @group(3) @binding(20) var rain_columns: texture_2d<f32>;
