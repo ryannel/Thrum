@@ -1240,5 +1240,6 @@
 - 2026-11-26 WP8 crown continuity. The reflection march resolves nearby foreground depth only at a
   verified occluder. Depth agreement controls the foreground weight continuously. Ordinary 1440p
   Metal and hardware Chrome frames show the 10 m crowns without the diagonally exposed bank.
-  The 2 m contacts, screen margins and Metal pan and breeze transitions were retaken.
+  The sky contribution is limited behind the foreground, clearing the bright fringe during the
+  low-Sun pan. The screen margin and breeze transitions were retaken on Metal.
   [Target evidence](../../../.orchestrate/evidence/WATERS/WP8/crown-coverage/README.md).

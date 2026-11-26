@@ -1564,7 +1564,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP8/optics-cost-529c63c9ecd9.json",
+          "evidence": ".orchestrate/evidence/WATERS/WP8/optics-cost-9f0585832a14.json",
           "verdict": "pass",
           "review": ".orchestrate/evidence/WATERS/WP8-review.md"
         }
