@@ -146,10 +146,10 @@ fn check_post_and_float(gpu: &thrum_test_support::Gpu) {
         }
         println!("Metal current={running} post upstream={upstream:.6} downstream={downstream:.6}");
         assert!(upstream < 0.002);
-        if !running {
-            assert!(downstream < 0.002);
-        } else {
+        if running {
             assert!(downstream > 0.03);
+        } else {
+            assert!(downstream < 0.002);
         }
 
         // Drive the same game world at fixed ticks, without encoding unobserved frames.
