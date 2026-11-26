@@ -1,12 +1,12 @@
 """Observe the capture-off showcase on the Mac and in Chrome."""
 
 import json
+import signal
 import subprocess
 import time
 from bisect import bisect_left, bisect_right
 
 from apple_governor_proof import awake_display
-from apple_presentation import read_rows
 from t2_load import LoadRecord
 
 MAC_ROUTE_TIMEOUT = 90
@@ -55,6 +55,11 @@ def wait_for_route_record(process, output, first, last):
     raise ValueError(f'Mac exit window did not finish the route and its timing record; see {output / "game.log"}')
 
 
+def read_flushed_rows(path):
+    with path.open('rb') as stream:
+        return [json.loads(line) for line in stream if line.endswith(b'\n')]
+
+
 def mac_window(output, binary, env, route, *, day):
     output.mkdir()
     display = output / 'display'
@@ -92,7 +97,8 @@ def mac_window(output, binary, env, route, *, day):
                     # The append-only receipts are flushed by the host before this observer stops it.
                     wait_for_route_record(process, output, first, last)
                     process.terminate()
-                    process.wait(timeout=10)
+                    if process.wait(timeout=10) != -signal.SIGTERM:
+                        raise ValueError(f'Mac exit window failed after the route; see {output / "game.log"}')
                 finally:
                     if process.poll() is None:
                         process.kill()
@@ -103,8 +109,8 @@ def mac_window(output, binary, env, route, *, day):
 
 
 def mac_record(output, first, last, day, startup, load):
-    frames = read_rows(output / 'frames.jsonl')
-    callbacks = read_rows(output / 'display.jsonl')
+    frames = read_flushed_rows(output / 'frames.jsonl')
+    callbacks = read_flushed_rows(output / 'display.jsonl')
     presents = [row for row in frames if row['presented']]
     samples = {sample['submission']: sample for row in frames for sample in row['governor']['samples']}
     if not presents or presents[0]['world_tick'] >= first or presents[-1]['world_tick'] <= last:
@@ -171,7 +177,7 @@ def mac_record(output, first, last, day, startup, load):
         timeline.append({'sequence': previous['sequence'], 'callback_interval_ms': interval * 1000,
                          'opportunities': opportunities})
     prepared = json.loads((output / 'prepared.json').read_text())
-    surfaces = read_rows(output / 'display/frames.jsonl')
+    surfaces = read_flushed_rows(output / 'display/frames.jsonl')
     presented_surfaces = {row['format'] for row in surfaces if row.get('presented')}
     display = 'Edr' if presented_surfaces == {'Rgba16Float'} else (
         'Sdr' if presented_surfaces and all(name.startswith(('Bgra8', 'Rgba8'))
