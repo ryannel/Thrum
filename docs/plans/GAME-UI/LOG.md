@@ -187,3 +187,9 @@
   visible, and the shell filters unrelated desk input while the script runs. The release window
   retained Guard through Metal device generation 1 to 2 and completed both pasteboard calls.
   [Target proof](../../../.orchestrate/evidence/GAME-UI/WP4/drops-display/index.md)
+- 2026-11-26 WP5 connected the V1 status display, choice and join screen to UIKit's view geometry, touch
+  stream and opened URLs. The iPhone 18 Pro simulator proved scale-3 status pixels and safe areas in two
+  orientations, choice and focus retention across backgrounding, one activation per card, and held-stick
+  handoff and a whole invite ticket. The builder inspected the six paired stills. On Mac Metal the
+  creator guide's example and window commands ran, and the dependency and maturity audits passed.
+  [Proof index](../../../.orchestrate/evidence/GAME-UI/WP5/index.md)
