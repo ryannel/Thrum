@@ -2,19 +2,18 @@
 const WORLD_LIGHT_ADAPTING: u32 = 32u;
 
 fn adapt_world_light_ev(raw_ev: f32, lux: f32, limits: vec2<f32>) -> vec2<f32> {
-    // Meter display gain against an open horizontal receiver with the
-    // current sky diffuse. Keep its correction small and independent of
-    // cloud visibility at the camera, even after the deck closes.
-    let clear = environment_light.sky_diffuse[3].w;
+    let clear_sky = environment_light.sky_diffuse[2].w == 0.0;
     var desired_ev = raw_ev;
-    if clear > 1e-8 && lux > 1e-8 {
+    let clear = environment_light.sky_diffuse[3].w;
+    if !clear_sky && clear > 1e-8 && lux > 1e-8 {
+        // Meter display gain against an open horizontal receiver with the
+        // current sky diffuse, independently of local cloud shade.
         let direct = dot(directional.irradiance.rgb, REC709_LUMA)
             * max(0.0, directional.direction_to_light.y);
         let diffuse = dot(environment_light.horizontal_irradiance.rgb, REC709_LUMA);
         let broad_diffuse = clamp(log2((direct + diffuse) / clear), 0.0, 0.18);
         desired_ev += log2(clear / lux) + broad_diffuse;
     }
-    let clear_sky = environment_light.sky_diffuse[2].w == 0.0;
     desired_ev = clamp(desired_ev, limits.x, limits.y);
     let previous = vec2(serials.previous_lo, serials.previous_hi);
     let was_adapting = (previous_exposure.metadata.x & WORLD_LIGHT_ADAPTING) != 0u;
@@ -24,7 +23,9 @@ fn adapt_world_light_ev(raw_ev: f32, lux: f32, limits: vec2<f32>) -> vec2<f32> {
         return vec2(desired_ev, select(0.0, 1.0, !clear_sky));
     }
     let change = desired_ev - previous_exposure.values.z;
-    if clear_sky && (abs(change) <= 0.0005 || (!was_adapting && abs(change) <= 0.025)) {
+    // A transparent overlay can finish a weather handover already in progress.
+    // Changes in clear-sky lighting alone always use the ordinary meter.
+    if clear_sky && (!was_adapting || abs(change) <= 0.0005) {
         return vec2(desired_ev, 0.0);
     }
     // Ease display gain only. Keep the current storage scale and the measured

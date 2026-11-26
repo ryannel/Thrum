@@ -2,14 +2,59 @@
 mod support;
 mod world_light_fixture;
 
-use thrum_render::atmosphere::AtmosphereFrame;
-use world_light_fixture::{BINDINGS, prepare, probe};
+use std::time::Duration;
+use thrum_render::{atmosphere::AtmosphereFrame, synthetic::FrameLighting};
+use world_light_fixture::{BINDINGS, prepare, prepare_host, probe};
 
 fn clear(_: u32, _: u32, _: u32, _: u32) -> [f32; 4] {
     [0.0, 0.0, 0.0, 1.0]
 }
 fn overlay(_: u32, _: u32, _: u32, _: u32) -> [f32; 4] {
     [0.0, 0.0, 0.0, 0.375]
+}
+
+async fn clear_exposure_follows_falling_sun(gpu: &thrum_test_support::Opened) {
+    let frame = |solar_irradiance| {
+        AtmosphereFrame::new([0.0, 1.0, 0.0], solar_irradiance, [1.0; 3], 40.0, 1)
+            .expect("clear day")
+    };
+    let (base, _) = prepare_host(gpu, frame(4_000.0), None).await;
+    let (identity, _) = prepare_host(gpu, frame(4_000.0), Some(clear)).await;
+    let mut hosts = [base, identity];
+    for host in &mut hosts {
+        let source = host.source_mut();
+        source.view = source
+            .view
+            .with_incident_exposure(0.0, -12.0, 18.0)
+            .expect("incident meter");
+        host.enable_submitted_capture(1).expect("open capture");
+    }
+    let mut previous_ev = None;
+    for (step, irradiance) in [(0, 4_000.0), (1, 2_000.0), (2, 1_000.0)] {
+        let mut captures = hosts.iter_mut().map(|host| {
+            host.source_mut().lighting = FrameLighting::Atmosphere(frame(irradiance));
+            assert!(
+                host.drive(Duration::from_millis(step * 16), None)
+                    .expect("drive frame")
+                    .submitted
+            );
+            thrum_test_support::wait::until("clear-sky submission", Duration::from_secs(5), || {
+                gpu.device.poll(wgpu::PollType::Poll).expect("poll Metal");
+                host.try_submitted_image().expect("read submitted pixels")
+            })
+        });
+        let base = captures.next().unwrap();
+        let identity = captures.next().unwrap();
+        let base_exposure = base.exposure_gpu_words.expect("ordinary exposure");
+        let overlay_exposure = identity.exposure_gpu_words.expect("overlay exposure");
+        assert_eq!(base_exposure, overlay_exposure, "step {step}");
+        assert_eq!(base.rgba, identity.rgba, "step {step}");
+        let ev = f32::from_bits(base_exposure[2]);
+        if let Some(previous_ev) = previous_ev {
+            assert!(ev < previous_ev - 0.5, "fixture must change exposure");
+        }
+        previous_ev = Some(ev);
+    }
 }
 
 #[test]
@@ -41,6 +86,7 @@ fn metal_clear_is_identity_and_clouds_scale_only_solar_scatter() {
         [25_000.0, 0.0, 0.0, 0.0],
     ];
     pollster::block_on(async {
+        clear_exposure_follows_falling_sun(&gpu).await;
         for night in [false, true] {
             let frame = AtmosphereFrame::new([0.0, -0.2, 0.979_795_9], 70_000.0, [1.0; 3], 40.0, 1)
                 .expect("twilight");

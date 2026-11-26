@@ -61,6 +61,21 @@ pub(super) async fn prepare(
     frame: AtmosphereFrame,
     overlay: Option<Overlay>,
 ) -> (EnvironmentProducts, Vec<u8>) {
+    let (mut host, products) = prepare_host(opened, frame, overlay).await;
+    let pixels = host.capture_pixels().expect("submit world light");
+    let environment = products
+        .lock()
+        .expect("observer")
+        .take()
+        .expect("lent products");
+    (environment, pixels)
+}
+
+pub(super) async fn prepare_host(
+    opened: &thrum_test_support::Opened,
+    frame: AtmosphereFrame,
+    overlay: Option<Overlay>,
+) -> (crate::support::Host, Arc<Mutex<Option<EnvironmentProducts>>>) {
     let caps = DeviceCapabilities::capture(&opened.gpu.adapter, &opened.device, 1);
     let mut scene = SyntheticScene::grid(1).expect("scene");
     scene.sky_overlay = overlay.is_some();
@@ -88,13 +103,7 @@ pub(super) async fn prepare(
         overlay,
     }))
     .expect("attach observer");
-    let pixels = host.capture_pixels().expect("submit world light");
-    let environment = products
-        .lock()
-        .expect("observer")
-        .take()
-        .expect("lent products");
-    (environment, pixels)
+    (host, products)
 }
 
 pub(super) fn probe(
