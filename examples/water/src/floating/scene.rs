@@ -584,7 +584,10 @@ fn build_scene(
         } else {
             Vec::new()
         };
-        let material = lake.then_some(("water island", include_str!("../../island.wgsl")));
+        let island_material = lake.then(|| crate::island::island_material(0.0));
+        let material = island_material
+            .as_deref()
+            .map(|source| ("water island", source));
         let (game, lease) = game.with_meshes_and_texture_lease(
             meshes,
             material,

@@ -117,6 +117,15 @@ the craft and watch the water carry its remaining trail. Choose `THRUM_WATER_LOC
 for the island's sand, aerial and lake views. The Chrome options use the same names, for
 example `?foam=gale&location=beach`. The browser proof is `node scripts/check_water_browser.mjs --case foam`.
 
+## Underwater inspection
+
+Use `THRUM_WATER_DIVE=calm ./dev scene examples/water` on the Mac or
+`?dive=calm` in the browser for the island lake. Add
+`THRUM_WATER_LOCATION=sea` on the Mac or `&location=sea` in the browser for
+the offshore shelf. Both routes expose camera depth, pitch and Sun elevation.
+The offshore route lifts the terrain and water levels 16 m so the sky camera
+can reach 10 m underwater within its supported altitude range.
+
 ## Lake outlet
 
 Run `THRUM_WATER_CHANNEL=trade ./dev scene examples/water` on the Mac, or open

@@ -42,6 +42,8 @@ pub enum Settings {
     RainYard(Wind),
     /// The lake, with a continuous camera depth control.
     LakeDive(Wind),
+    /// Offshore island shelf with a continuous camera depth control.
+    SeaDive(Wind),
     /// Island beach with refraction of the long waves and the breaker section.
     Surf(Wind),
     /// Hand-authored outlet from the island's lake.
@@ -100,6 +102,15 @@ impl Wake {
 }
 
 impl Settings {
+    /// The diver's wind, when a dive scene was selected.
+    #[must_use]
+    pub fn dive_wind(self) -> Option<Wind> {
+        match self {
+            Self::LakeDive(wind) | Self::SeaDive(wind) => Some(wind),
+            _ => None,
+        }
+    }
+
     /// Parse the settings from `THRUM_WATER_*` variables, given a lookup of a variable's value by name,
     /// such as the process environment.
     pub fn from_variables(variable: impl Fn(&str) -> Option<String>) -> Self {
@@ -122,7 +133,11 @@ impl Settings {
             .as_deref()
             .and_then(Wind::named)
         {
-            return Self::LakeDive(wind);
+            return if get(LOCATION).as_deref() == Some("sea") {
+                Self::SeaDive(wind)
+            } else {
+                Self::LakeDive(wind)
+            };
         }
         if let Some(wind) = get(RAIN).as_deref().and_then(Wind::named) {
             return Self::RainYard(wind);
@@ -203,6 +218,26 @@ mod tests {
     fn no_setting_opens_the_sea() {
         assert_eq!(Settings::from_query(""), Settings::OpenSea);
         assert_eq!(Settings::from_query("?island=storm"), Settings::OpenSea);
+    }
+
+    #[test]
+    fn dive_location_is_shared_by_window_and_browser() {
+        assert_eq!(
+            Settings::from_query("?dive=calm"),
+            Settings::LakeDive(Wind::Calm)
+        );
+        assert_eq!(
+            Settings::from_query("?dive=trade&location=sea"),
+            Settings::SeaDive(Wind::Trade)
+        );
+        assert_eq!(
+            Settings::from_variables(|name| match name {
+                "THRUM_WATER_DIVE" => Some("trade".into()),
+                "THRUM_WATER_LOCATION" => Some("sea".into()),
+                _ => None,
+            }),
+            Settings::SeaDive(Wind::Trade)
+        );
     }
 
     #[test]

@@ -272,7 +272,7 @@ pub fn build(wind: Wind, draw_water: bool, running: bool) -> Result<Scene, Box<d
     }
     let (game, _) = game.with_meshes_and_texture_lease(
         meshes,
-        Some(("water island", include_str!("../island.wgsl"))),
+        Some(("water island", &island::island_material(0.0))),
         &[],
     )?;
     let (game, float) = crate::floating::install_channel_float(

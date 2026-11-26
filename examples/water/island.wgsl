@@ -18,7 +18,7 @@ fn ground_noise(point: vec2<f32>) -> f32 {
 
 fn cooked_surface(surface: CookedSurface, at: CookedSurfacePoint) -> CookedSurface {
     let xz = at.world.xz;
-    let height = at.world.y;
+    let height = at.world.y - ISLAND_DATUM;
     let low = ground_noise(xz * 0.07);
     let cover = ground_noise(xz * 0.31 + vec2(low * 2.0)) * 0.5 + low * 0.5;
     let coarse = ground_noise(xz * vec2(2.7, 3.2));

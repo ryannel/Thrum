@@ -15,7 +15,14 @@ use crate::{SharedMap, SharedReport};
 
 mod dive;
 mod rain_yard;
-pub use dive::build_lake_dive;
+pub use dive::{build_lake_dive, build_sea_dive};
+
+pub(crate) fn island_material(vertical_offset: f32) -> String {
+    format!(
+        "const ISLAND_DATUM = {vertical_offset:?};\n{}",
+        include_str!("../island.wgsl")
+    )
+}
 
 /// Weather selected when the island is loaded.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -175,10 +182,31 @@ fn prepare_island_map(
     surf: Option<bool>,
     yard: Option<&rain_yard::Yard>,
 ) -> Result<Map, Box<dyn Error>> {
-    let bed = terrain_bed(include_bytes!("../assets/meshes/island.bin"))?;
+    prepare_island_map_at(forcing, surf, yard, 0.0)
+}
+
+fn prepare_island_map_at(
+    forcing: &Forcing,
+    surf: Option<bool>,
+    yard: Option<&rain_yard::Yard>,
+    vertical_offset: f64,
+) -> Result<Map, Box<dyn Error>> {
+    let mut bed = terrain_bed(include_bytes!("../assets/meshes/island.bin"))?;
     let mut declarations = bodies(forcing, if surf.is_some() { 0.5 } else { 0.0 });
     if let Some(yard) = yard {
         declarations.push(yard.body()?);
+    }
+    if vertical_offset != 0.0 {
+        let (origin, spacing, size) = bed.lattice();
+        let heights = bed
+            .heights()
+            .iter()
+            .map(|height| height + vertical_offset)
+            .collect();
+        bed = Bed::new(origin, spacing, size, heights).map_err(|e| format!("{e:?}"))?;
+        for body in &mut declarations {
+            body.level += vertical_offset;
+        }
     }
     let mut map = Map::prepare(bed, declarations, map_profile(surf.is_some()))
         .map_err(|e| format!("{e:?}"))?;
@@ -718,13 +746,13 @@ fn build_island(
     } else {
         game
     };
-    let mut meshes = placements(&map, !surf_route);
+    let mut meshes = placements(&map, !surf_route, 0.0);
     if yard {
         meshes.extend(rain_yard::placements());
     }
     let (game, lease) = game.with_meshes_and_texture_lease(
         meshes,
-        Some(("water island", include_str!("../island.wgsl"))),
+        Some(("water island", &island_material(0.0))),
         if foam { &["textures/foam-rank"] } else { &[] },
     )?;
     if foam {
@@ -742,8 +770,9 @@ fn build_island(
     clippy::cast_possible_truncation,
     reason = "the authored lake placements use GPU metres"
 )]
-fn placements(map: &SharedMap, decorate: bool) -> Vec<MeshPlacement> {
-    let mut meshes = vec![MeshPlacement::new("meshes/island", "textures/white")];
+fn placements(map: &SharedMap, decorate: bool, vertical_offset: f32) -> Vec<MeshPlacement> {
+    let mut meshes =
+        vec![MeshPlacement::new("meshes/island", "textures/white").at([0.0, vertical_offset, 0.0])];
     if !decorate {
         return meshes;
     }

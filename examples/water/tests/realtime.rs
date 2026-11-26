@@ -34,7 +34,7 @@ const _: () = assert!(MAX_SUBMISSIONS as u64 * 2560 * 1440 * 4 < PIXEL_ALLOWANCE
 pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value {
     let (device, queue, caps) = super::support::device(gpu);
     let island = super::island_wind();
-    let dive = matches!(super::settings(), super::Settings::LakeDive(_));
+    let dive = super::settings().dive_wind().is_some();
     let yard = matches!(super::settings(), super::Settings::RainYard(_));
     let channel = super::channel_route();
     let channel_view = std::env::var("THRUM_WATER_CHANNEL_CAMERA").unwrap_or_else(|_| "2".into());
@@ -106,7 +106,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
     if dive {
         runtime
             .parameters(r#"{"camera.depth":-0.6,"camera.pitch":0}"#)
-            .expect("above the lake");
+            .expect("above the water");
     }
     if yard {
         runtime

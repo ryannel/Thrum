@@ -78,6 +78,7 @@ fn whitewater() -> bool {
         | Settings::OpticsSea(_)
         | Settings::OpticsShade(_)
         | Settings::LakeDive(_)
+        | Settings::SeaDive(_)
         | Settings::RainYard(_)
         | Settings::Channel(_)
         | Settings::River(_) => false,
@@ -98,6 +99,9 @@ fn proof_game(water: bool) -> (thrum_app::sky::SkyGame, water_scene::SharedRepor
         }
         Settings::LakeDive(wind) => {
             water_scene::island::build_lake_dive(wind, water).expect("lake dive")
+        }
+        Settings::SeaDive(wind) => {
+            water_scene::island::build_sea_dive(wind, water).expect("sea dive")
         }
         Settings::RainYard(wind) => {
             let (game, report, _, _) =
@@ -223,11 +227,16 @@ fn driver(gpu: &thrum_test_support::Gpu) {
         .expect("record");
         return;
     }
-    if mode == "lake-dive-cost" {
-        let Settings::LakeDive(wind) = settings() else {
-            panic!("lake dive cost requires THRUM_WATER_DIVE");
+    if mode == "dive-cost" {
+        let wind = settings()
+            .dive_wind()
+            .expect("dive cost requires THRUM_WATER_DIVE");
+        let location = if matches!(settings(), Settings::SeaDive(_)) {
+            "sea"
+        } else {
+            "lake"
         };
-        let (game, report) = water_scene::island::build_lake_dive(wind, true).expect("lake dive");
+        let (game, report) = proof_game(true);
         let mut fixture = support::Fixture::from_game(gpu, [2560, 1440], game, report);
         fixture.warm_cooked();
         let views: Vec<_> = [("above", -2.0), ("half", 0.0), ("under", 2.0)]
@@ -250,10 +259,10 @@ fn driver(gpu: &thrum_test_support::Gpu) {
         let record = json!({
             "target": "mac-metal", "extent": [2560, 1440], "capture": false,
             "commit": std::env::var("THRUM_WATER_COMMIT").expect("cost revision"),
-            "wind": format!("{wind:?}"), "views": views,
+            "wind": format!("{wind:?}"), "location": location, "views": views,
         });
         std::fs::write(
-            directory.join("lake-dive-cost.json"),
+            directory.join(format!("{location}-dive-cost.json")),
             serde_json::to_vec_pretty(&record).expect("cost JSON"),
         )
         .expect("retain lake dive cost");
@@ -290,9 +299,10 @@ fn driver(gpu: &thrum_test_support::Gpu) {
     } else if channel_route()
         || river_route()
         || island_wind().is_some()
+        || settings().dive_wind().is_some()
         || matches!(
             settings(),
-            Settings::OpticsSea(_) | Settings::OpticsShade(_) | Settings::LakeDive(_)
+            Settings::OpticsSea(_) | Settings::OpticsShade(_)
         )
     {
         let (game, report) = proof_game(true);
@@ -504,12 +514,24 @@ fn driver(gpu: &thrum_test_support::Gpu) {
                 && (floating().is_some() || island_wind().is_some())
             {
                 optics_checkpoints()
-            } else if matches!(settings(), Settings::LakeDive(_)) {
-                [
-                    ("up-1m", 1.0, 89.99, 60.0), ("inclined-1m", 1.0, 45.0, 60.0),
-                    ("level-0.5m", 0.5, 0.0, 60.0), ("down-3m", 3.0, -35.0, 60.0),
-                    ("dawn-level-3m", 3.0, 0.0, 1.0), ("twilight-level-3m", 3.0, 0.0, -5.0),
-                ].into_iter().map(|(name, depth, pitch, sun)| (
+            } else if settings().dive_wind().is_some() {
+                let mut views = vec![
+                    ("up-1m", 1.0, 89.99, 60.0),
+                    ("inclined-1m", 1.0, 45.0, 60.0),
+                    ("level-0.5m", 0.5, 0.0, 60.0),
+                    ("down-3m", 3.0, -35.0, 60.0),
+                    ("dawn-level-3m", 3.0, 0.0, 1.0),
+                    ("twilight-level-3m", 3.0, 0.0, -5.0),
+                ];
+                if matches!(settings(), Settings::SeaDive(_)) {
+                    views.extend([
+                        ("up-5m", 5.0, 89.99, 60.0),
+                        ("inclined-5m", 5.0, 45.0, 60.0),
+                        ("level-10m", 10.0, 0.0, 60.0),
+                        ("down-10m", 10.0, -35.0, 60.0),
+                    ]);
+                }
+                views.into_iter().map(|(name, depth, pitch, sun)| (
                     name.into(),
                     format!(r#"{{"camera.depth":{depth},"camera.pitch":{pitch},"sun.elevation":{sun}}}"#),
                     10.0,

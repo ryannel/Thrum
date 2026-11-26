@@ -979,6 +979,14 @@ try {
         ['level-0.5m',{'camera.depth':0.5,'camera.pitch':0}],
         ['down-3m',{'camera.depth':3,'camera.pitch':-35}],
       ];
+      if(routeParams.get('location')==='sea'){
+        checkpoints.push(
+          ['up-5m',{'camera.depth':5,'camera.pitch':89.99}],
+          ['inclined-5m',{'camera.depth':5,'camera.pitch':45}],
+          ['level-10m',{'camera.depth':10,'camera.pitch':0}],
+          ['down-10m',{'camera.depth':10,'camera.pitch':-35}],
+        );
+      }
     }else if(routeParams.has('island')){
       checkpoints=[['beach-noon',{'camera.island':0}],['lake-noon',{'camera.island':1}],
         ['pond-noon',{'camera.island':2}],['lake-high-noon',{'camera.island':7}],['lake-shore-noon',{'camera.island':11}],
