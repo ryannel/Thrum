@@ -85,7 +85,7 @@ pub(super) fn record(
             "submission": submission, "presenter_generation": image.presenter_generation,
             "exposure": image.exposure_gpu_words, "headroom": host.display_headroom(),
             "time_of_day": host.time_of_day(), "pitch": pitch, "yaw": yaw,
-            "surface_presented": image.sample.surface_presented, "source": format!("{source:?}"),
+            "surface_presented": image.sample.surface_presented, "source": format!("{:?}", image.pixel_source),
             "cooked_generation": cooked_generation, "cooked_root": cooked_root,
         }));
         host.recycle_submitted_image(image);

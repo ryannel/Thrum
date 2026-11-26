@@ -402,7 +402,7 @@ def native_exit_stops(run, store, row, stops, *, keys=ROUTE, empty=False):
     env = dict(native_exit_environment(store, row), THRUM_CAPTURE_SCENE=str(run),
                THRUM_CAPTURE_ROUTE_ONLY='1', THRUM_CAPTURE_SOURCE='submitted-sdr',
                THRUM_CAPTURE_PARAMS=os.pathsep.join(map(str, presets)))
-    if row['expect']['display'] == 'Edr':
+    if row['select']['display'] != 'sdr':
         env['THRUM_CAPTURE_EDR_HEADROOM'] = '1'
     if empty:
         env['THRUM_EXIT_NO_ENTITIES'] = '1'
@@ -482,9 +482,10 @@ def exit_compare(rows, stops, *, calibrate):
     def capture_native(name, row, *, path=store, keys=ROUTE, empty=False):
         target = run / name
         manifest = native_exit_stops(target, path, row, stops, keys=keys, empty=empty)
+        expected_root = store_root(path)
         values = {}
         for frame, key in zip(manifest['stills'], keys, strict=True):
-            if frame['cooked_root'] != store_root(path):
+            if frame['cooked_root'] != expected_root:
                 raise Failure(f'{name} {key}: captured another cooked publication')
             extent = manifest['extent']
             filename = target / frame['file']
@@ -591,7 +592,7 @@ def exit_compare(rows, stops, *, calibrate):
             'identity': identity, 'cross_row_thresholds': report['cross_row_thresholds'], 'rows': saved_rows,
             'calibration': {'run': run.name, 'builds': builds},
         }
-        write_json(run / EXIT_BASELINE.name, baseline)
+        (run / EXIT_BASELINE.name).write_text(json.dumps(baseline, indent=1) + '\n')
         print(f'Staged for inspection: {run / EXIT_BASELINE.name}')
     else:
         print(f'PASS: {run / "run.json"}')
