@@ -1162,7 +1162,7 @@
           "check": "node scripts/check_v1_browser.mjs --case g4-route",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP11/chrome-function/g4-route.json",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP11/gate-chrome/g4-route.json",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
@@ -1173,7 +1173,7 @@
           "check": "python3 scripts/apple_presentation.py g4 --target ios-sim",
           "lock": "simulator",
           "target": "ios-sim",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP11/ios-second/g4.json",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP11/gate-ios/g4.json",
           "verdict": "",
           "review": "",
           "builder_result": "pass"

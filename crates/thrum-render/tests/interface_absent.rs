@@ -21,7 +21,7 @@ fn presented_metalfx_and_its_twin_match_before_the_interface() {
     let (revision, expected) = include_str!("fixtures/interface_presented.txt")
         .split_once('\n')
         .expect("baseline revision and graph records");
-    assert_eq!(revision, "91d2cf2880314e6446721cb9f396d4deb3203ee9");
+    assert_eq!(revision, "d5acaa456002d9aa9979fbe86ae7bb5bcc45e57b");
     let actual = support::interface_presented_snapshot::snapshot(&gpu);
     for (line, (before, after)) in expected.lines().zip(actual.lines()).enumerate() {
         assert_eq!(before, after, "no-interface presented graph line {line}");
