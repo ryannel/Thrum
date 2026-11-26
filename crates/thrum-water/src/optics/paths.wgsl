@@ -337,6 +337,12 @@ fn scene_reflection(
         strength = mix(strength, smoothstep(0.0, 0.075, strength), foreground);
         let before = 1.0 - smoothstep(0.25, 0.8, along - crossing);
         if hidden { strength *= max(before, ground); }
+        // A depth-verified bank behind the silhouette supports scene
+        // coverage. At a hidden crossing the nearby ground estimate
+        // supplies that support only within its own distance falloff.
+        let coverage = agreement * foreground * before * bank_border
+            * reach_weight(crossing, reach);
+        strength = mix(strength, 1.0, coverage);
         if !hidden && agreement > 0.0 && ground > 0.0 {
             // Close estimates of the same ground refine one lookup.
             let contribution = agreement * ground * (1.0 - strength);
