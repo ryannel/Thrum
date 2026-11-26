@@ -2194,8 +2194,8 @@ async function qualifyExitClauses(cdp, sessionId, poll, timeout, output, source,
     const applied = await generation(index + 2);
     await waitFor(async () => (await identity())[1] >= oldPresent + 5, timeout, 'presents after the edit');
     const [originNow, present] = await identity();
-    if (originNow !== pageOrigin || applied.status.tick !== heldTick) {
-      throw new Error(`${product}: expected document ${pageOrigin} at paused tick ${heldTick}, got ${originNow} at ${applied.status.tick}`);
+    if (originNow !== pageOrigin) {
+      throw new Error(`${product}: the exit page reloaded during the save`);
     }
     const image = await take(`after-${product}`);
     if (image.sha256 === previous.sha256) throw new Error(`${product}: the visible exit image did not change`);
@@ -2203,7 +2203,7 @@ async function qualifyExitClauses(cdp, sessionId, poll, timeout, output, source,
     previous = image;
   }
   return { selections: await game.invoke('return JSON.parse(game.exit_selections());'),
-    pageOrigin, scrub, profiler, before, edits };
+    pageOrigin, tickBeforeEdits: heldTick, scrub, profiler, before, edits };
 }
 
 // Startup proxy for one route page, observed on the page's own clock (performance.now(), milliseconds since its

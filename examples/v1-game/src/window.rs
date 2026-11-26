@@ -154,6 +154,12 @@ pub struct WindowGovernor {
     /// A continuous solar-time sweep for a fullscreen proof cue.
     #[cfg(feature = "proving")]
     pub solar_sweep: Option<WindowSolarSweep>,
+    /// Hold the exit route at its starting pose until the saved controls resume it.
+    #[cfg(feature = "proving")]
+    pub exit_route_starts_paused: bool,
+    /// Opt-in observation of the cooked generations drawn by the ordinary exit window.
+    #[cfg(feature = "proving")]
+    pub exit_content_report: Option<std::path::PathBuf>,
 }
 
 /// Options passed from the process edge to the interface scene.
@@ -271,7 +277,7 @@ pub fn run_window(
                 content: crate::GameContent::Exit,
                 ..
             })
-        ) && std::env::var_os("THRUM_SHOWCASE_ROUTE_START_PAUSED").is_some())
+        ) && governor.exit_route_starts_paused)
     {
         RouteStart::Paused
     } else {
@@ -306,6 +312,8 @@ pub fn run_window(
             scene: None,
             #[cfg(feature = "proving")]
             exit_content: None,
+            #[cfg(feature = "proving")]
+            exit_content_output: governor.exit_content_report,
             hardware,
         }))
     };
@@ -376,6 +384,8 @@ struct WindowGame {
     scene: Option<SceneCapture>,
     #[cfg(feature = "proving")]
     exit_content: Option<ExitContentReport>,
+    #[cfg(feature = "proving")]
+    exit_content_output: Option<std::path::PathBuf>,
     hardware: Vec<HardwareRequest>,
 }
 
@@ -488,6 +498,7 @@ fn capture_game_with_route_limit(
         menu: None,
         scene: None,
         exit_content: None,
+        exit_content_output: None,
         cloud_capture,
         capture_cooked,
         capture_eye: fixed_capture_eye()?,
@@ -701,12 +712,12 @@ impl RuntimeSetup for WindowGame {
         crate::attach_cooked_scene(&mut host)?;
         #[cfg(feature = "proving")]
         if setup.content == crate::GameContent::Exit
-            && let Some(output) = std::env::var_os("THRUM_SHOWCASE_CONTENT_REPORT")
+            && let Some(output) = self.exit_content_output.clone()
             && let Some(stats) = content.as_ref()
         {
             self.exit_content = Some(ExitContentReport {
                 stats: std::sync::Arc::clone(stats),
-                output: output.into(),
+                output,
                 last_generation: std::cell::Cell::new(None),
             });
         }

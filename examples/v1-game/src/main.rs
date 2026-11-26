@@ -110,6 +110,10 @@ fn main() {
         #[cfg(feature = "proving")]
         solar_sweep: window_solar_sweep().unwrap_or_else(|error| report_capture_failure(&error)),
         #[cfg(feature = "proving")]
+        exit_route_starts_paused: std::env::var_os("THRUM_SHOWCASE_ROUTE_START_PAUSED").is_some(),
+        #[cfg(feature = "proving")]
+        exit_content_report: std::env::var_os("THRUM_SHOWCASE_CONTENT_REPORT").map(Into::into),
+        #[cfg(feature = "proving")]
         route: std::env::var_os("THRUM_GOVERNOR_ROUTE")
             .map(std::fs::read_to_string)
             .transpose()
