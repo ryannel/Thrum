@@ -522,7 +522,7 @@
           "ask": "Does the run pass on the launch argument and the device replacement alone when the system withholds the clipboard, and say so in its record, without waiting on a prompt?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/GAME-UI/WP4/repair/native/drops/drops-1-record.json",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP4/drops-display/run/drops-1-record.json",
           "verdict": "pass",
           "review": ".orchestrate/evidence/GAME-UI/WP4-review.md",
           "builder_result": "pass"

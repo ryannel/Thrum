@@ -182,3 +182,8 @@
   Chrome recorded renderer-thread CPU batches from actual routed browser events and confirmed focus and
   press increased paint-list work without new trees or layout passes. Both release targets and the
   workspace check passed. [Target proof](../../../.orchestrate/evidence/GAME-UI/WP4/repair/index.md)
+- 2026-11-26 WP4.6 merged-check fix. Each scripted Mac launch wakes the display and retries once
+  on the zero-callback startup failure. The existing always-on-top mode keeps the proof window
+  visible, and the shell filters unrelated desk input while the script runs. The release window
+  retained Guard through Metal device generation 1 to 2 and completed both pasteboard calls.
+  [Target proof](../../../.orchestrate/evidence/GAME-UI/WP4/drops-display/index.md)
