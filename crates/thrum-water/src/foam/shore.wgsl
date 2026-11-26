@@ -41,7 +41,9 @@ fn prepare_shore_births(@builtin(global_invocation_id) id: vec3<u32>) {
             let chop = foam_settings.camera.w;
             let sample = surf_forward(point, answer.body, answer.row, stage, foam_settings.camera.xy,
                 dt, chop, water.heights, foam_settings.banks.w);
-            let short = foam_column(point, vec4(0.0, gains.yzw * sample.short_weight), dt, answer);
+            let current = answer.row.water.yz;
+            let track = map_wave_track(point, answer.body, current);
+            let short = foam_column(point, vec4(0.0, gains.yzw * sample.short_weight), dt, current, track);
             let wake = wake_at(point, dt);
             let thickness = depth + sample.displacement.y + short.displacement.y + wake.x;
             let wet = thickness > 0.0;

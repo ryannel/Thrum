@@ -22,14 +22,12 @@ struct FoamEndpoints {
 
 fn column_component(index: u32) -> Component { return foam_settings.components[index]; }
 
-fn foam_column(point: vec2<f32>, gains: vec4<f32>, dt: f32, row: MapAnswer) -> Wave {
+fn foam_column(point: vec2<f32>, gains: vec4<f32>, dt: f32, current: vec2<f32>, track: vec4<f32>) -> Wave {
     var field = long_wave(point - foam_settings.camera.xy, dt, gains.x,
         foam_settings.camera.w, foam_settings.banks.w);
     let slope = world_slope(field);
     field.velocity.y -= dot(slope, field.velocity.xz);
     field.slope = slope;
-    let current = row.row.water.yz;
-    let track = map_wave_track(point, row.body, current);
     let motion = cascade_motion(point, current, track, water.carriage.w);
     for (var band = 0u; band < 3u; band++) {
         let gain = gains[band + 1u];
