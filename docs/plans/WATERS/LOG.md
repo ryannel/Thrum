@@ -1231,3 +1231,9 @@
   camera. The dawn screen-edge seam is gone at native frame size. The Metal and hardware
   Chrome retakes show the shore and pines fading into the sky across the updated inspection views.
   [Target evidence](../../../.orchestrate/evidence/WATERS/WP8/composed-reflections/README.md).
+- 2026-11-26 WP8 hidden-bank follow-up. The scene reflection resolves hidden ground from one nearby
+  verified source. The search runs only after opaque depth confirms a foreground obstruction at the
+  mapped crossing. Builder inspection on native Metal and hardware Chrome shows ground continuity
+  around the pines and a gradual screen-edge fade. The Metal pan and breeze use 1440p submitted
+  output. The matched cost record retains the concurrent-load tripwire investigations.
+  [Target evidence](../../../.orchestrate/evidence/WATERS/WP8/ground-continuity/README.md).

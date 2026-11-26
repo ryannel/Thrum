@@ -3260,9 +3260,9 @@
         "experienced_quality": "builder_inspected_review_owed",
         "scope": "WATERS WP8: screen-space reflections for registered bodies and still water, shallow refraction, waterline fades, direct Sun and sky lighting. The off-screen mirror view belongs to WP14.",
         "correctness": "Metal target tests cover gather admission, empty and off-screen cases, waterless graph behaviour, 16× exposure invariance, 3 km aerial transport, and direct cloud attenuation of glitter, water and transported foam. A Metal reflection test covers an unregistered foreground panel over a registered body. CPU ray witnesses cover source and receiving regions.",
-        "visuals": "Builder-inspected Metal and hardware Chrome stills show the reflected lake bank fading at the screen edges and a soft transition where foreground silhouettes obscure it. Metal pan and breeze replays show the reflection fading. The sea stills retain graduated glint cores and readable dark water.",
+        "visuals": "Builder-inspected Metal and hardware Chrome stills show the reflected lake bank fading at the screen edges and continuous nearby ground where foreground silhouettes hide it. Metal pan and breeze replays show the reflection fading. The sea stills retain graduated glint cores and readable dark water.",
         "device": "Apple M3 Max, native and portable Metal and hardware Chrome WebGPU. The paired 1440p Metal cost record is a concurrent-load tripwire.",
-        "evidence": "../../.orchestrate/evidence/WATERS/WP8/composed-reflections/README.md"
+        "evidence": "../../.orchestrate/evidence/WATERS/WP8/ground-continuity/README.md"
       },
       "waters_cpu_model": {
         "implementation": "partial",
