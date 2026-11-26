@@ -1226,7 +1226,7 @@
     {
       "id": "WP9",
       "name": "A visitor changes coverage, cloud type, wind and time of day with the controls, and the sky holds up in motion, on the Mac and in Chrome",
-      "status": "blocked",
+      "status": "not_started",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -1320,17 +1320,7 @@
           "verdict": "",
           "review": ""
         }
-      ],
-      "blocked": {
-        "reason": "needs_dependency",
-        "what": "Land the Ground producers in WP14 and the cadence controls in WP16.7, or have the planner revise WP9.7 to cover the sky knobs.",
-        "work": {
-          "commit": "593d2970e844ce1c77c8e546b59a9e885e8e7cba",
-          "branch": "build/clouds",
-          "pushed": false
-        },
-        "handoff": ".orchestrate/evidence/CLOUDS/WP9-handoff.md"
-      }
+      ]
     },
     {
       "id": "WP10",
