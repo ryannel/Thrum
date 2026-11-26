@@ -65,7 +65,10 @@ sky still closes at WP12, and the module's work packages now end with WP22. No m
 changed. Revised that day after [the review of that parking](../../../.orchestrate/evidence/CLOUDS/design-review.md)
 (four findings): the views WP14 kept under the broken preset are judged by every line but the shaft's; WP22's
 two controls are judged by what each takes away; the shaft is followed in motion under TAAU in Chrome; and a
-changed broken preset is judged again as a broken sky (WP22.8).
+changed broken preset is judged again as a broken sky (WP22.8). Revised once more that day after the review
+of those fixes (three findings, the last round): WP22.8 judges every preset whose cloud WP22 changes, overcast
+and fair as well as broken, and judges broken's banks whole; and a moving shaft may fade or end while its
+opening stays open, where the scene accounts for it (WP22.2). No mechanism and no interface changed.
 
 ## The request
 
@@ -2035,12 +2038,14 @@ is judged for the weather sky in WP20's wind series and recorded for the finishe
 
    The limitation excuses the missing shaft and no frame. Under the broken preset a blocky edge, a tile, a
    step or banding in the mist that sunlight reaches fails as it would anywhere in mist, and so does shaded
-   ground in mist that is black. WP14.6 and WP14.9 judge that in the six views WP14 kept under the broken
-   preset as it ships, on Metal and in Chrome: the four matched takes of
+   ground in mist that is black. WP14.6 and WP14.9 judge that in six selected stock views, taken under the
+   broken preset as it ships, on Metal and in Chrome: the four matched takes of
    [its record](../../../.orchestrate/evidence/CLOUDS/WP14/shaft-target-pairs/README.md) and the close and
-   near-top views at a 16° Sun. The record's other frames are trials with a placed cloud, a placed bank or a
-   changed shader, and are not judged. The kept views are enough, and nothing more is captured for them unless
-   one of those lines fails, which is then a defect of WP14 to fix and show.
+   near-top views at a 16° Sun. The record's other frames are not judged. Some are also stock, such as the
+   western and near-cross framings and the weather scouts, which change only the camera and the clear air's
+   visual range; the rest are trials with a placed cloud, a placed bank or a changed shader. The six selected
+   views are enough, and nothing more is captured for them unless one of those lines fails, which is then a
+   defect of WP14 to fix and show.
 
    What WP14 found, in [its handoff](../../../.orchestrate/evidence/CLOUDS/WP14-handoff.md),
    [its matched frames and controls](../../../.orchestrate/evidence/CLOUDS/WP14/shaft-target-pairs/README.md),
@@ -2084,8 +2089,8 @@ is judged for the weather sky in WP20's wind series and recorded for the finishe
 WP22 is the work [risk 15](#risks) parks. It is the last work package, after WP12, so it holds up no other.
 The finished sky closes at WP12 with the limitation listed (WP12.9), and the builder who passes WP22 takes
 it out of the ledger (WP22.7). It changes light that WP14 to WP12 closed on, so it answers for what the
-change does to the mist they accepted (WP22.2 to WP22.5), and to the broken sky if it changes the preset
-(WP22.8).
+change does to the mist they accepted (WP22.2 to WP22.5), and to the sky of every preset whose cloud it
+changes (WP22.8).
 
 **The bar.** Low sunlight through broken cloud into valley mist as in Red Dead Redemption 2: a beam below an
 opening that keeps its direction and both its edges from the air into the mist, brighter than the shaded mist
@@ -2104,11 +2109,16 @@ shows it. So neither control has to be empty of light. The controls are judged o
 the Mac and in Chrome (WP22.1, WP22.2). The Apple recipe resolves the same light with MetalFX, so WP22.4
 takes no control there and judges the shaft itself and its motion.
 
-**Motion.** K6 holds over the shaft under both reconstructions. A shaft follows its opening: it stays below
-it along the Sun's direction as the field drifts, and leaves nothing where it stood. WP22.4 follows it under
-MetalFX, and WP22.2 under TAAU in Chrome, in one view that holds a shaft and its opening together, at 1× and
-at 60×. The walks and pans borrowed from WP14 and WP15 show dawn fog and a far bank and do not stand in for
-that.
+**Motion.** K6 holds over the shaft under both reconstructions. A shaft follows its opening: for as long as
+it shows, it stays below the opening along the Sun's direction as the field drifts, and leaves nothing where
+it stood. It need not last as long as its opening does. K4's weather and K8's hollows end shafts in ordinary
+ways: the opening closes; a widening gap joins its neighbour, the mist between the two lit regions
+brightens, and the beam loses its edge though the opening has grown; or the beam moves out of a mist-filled
+hollow. A shaft that fades or ends for a cause the frames show fails nothing. What fails is the
+reconstruction's: a flicker, a crawl, a pop, a beam that lags its opening, or a ghost where it stood. WP22.4
+follows the shaft under MetalFX, and WP22.2 under TAAU in Chrome, in one view that holds a shaft and its
+opening together, at 1× and at 60×, by the same four lines. The walks and pans borrowed from WP14 and WP15
+show dawn fog and a far bank and do not stand in for that.
 
 **The investigation.** It starts from the cause, as WP17's does: a control that shows why the beam stops
 reading at the mist, before any look. Risk 15 lists what WP14's controls ruled out, which is not tried
@@ -2119,11 +2129,23 @@ does not change.
 
 **The remedy** keeps [one density, one Sun's path](#condensate-that-meets-the-ground-mist-fog-and-low-cloud)
 and one Sun term for the view volume, the trace and the sky overlay, with no gain on one integrator and no
-term that only shafts read (WP22.5). The valley's fog table and the broken preset are game data and may
-change, and then WP22.3 judges the mist they change. A changed broken preset is also still the broken sky
-WP7.1 passed and WP12 closed on: connected lumpy banks with irregular gaps and bright gap edges, to the
-horizon, from 2 m and from 40 m, at noon and at a 15° Sun (WP22.8). A nearly solid deck with one opening
-gives a beam and is overcast, so it does not pass. A cause that asks for a mechanism this design lacks,
+term that only shafts read (WP22.5). The valley's fog table, the broken preset and the type table are game
+data and may change, and then WP22.3 judges the mist they change.
+
+**The skies it may change.** A preset's cloud is its coverage, its type and what the type table gives at
+that type, and the table's rows are shared: as it ships, overcast at type 0 takes the first row alone, fair
+at type 1 the last alone, and broken at type 0.42 takes 16% of the first row and 84% of the second. So a row
+tuned for broken's shaft can keep the broken sky and take the overcast ceiling away. Every preset whose
+cloud WP22 changes is therefore still the sky WP7.1 passed and WP12 closed on, by WP7.1's words for it, to
+the horizon, from 2 m and from 40 m, at noon and at a 15° Sun (WP22.8): broken has connected lumpy banks
+with irregular gaps and bright gap edges; overcast is a continuous low ceiling with soft relief and the Sun
+hidden; fair has scattered cumulus; clear has no cloud. A change only broken resolves to, its own coverage
+and type or the second row, has only the broken sky to show again, so prefer it where it serves. The bank is
+the unit of WP7.1's judgement: a connected bank of rounded crowns over a common, nearly level condensation
+base is a lumpy bank, and its underside need not be lumpy. A nearly solid deck with one opening gives a beam
+and is overcast, so it does not pass as broken.
+
+**Where it stops.** A cause that asks for a mechanism this design lacks,
 such as a Sun path resolved more finely near the camera or light carried sideways in the mist, ends
 `BLOCKED` with `needs_context` and the cause, for a planner. Three failed looks go to the log and end
 `BLOCKED`. Either way nothing else waits. The starting arms of WP22.6's cost record are taken before

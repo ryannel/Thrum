@@ -1031,3 +1031,10 @@ growth and fair-sky motion, and the paired Metal cost check cover the original f
   shaft's; WP22.1's controls are judged by what each takes away, and WP22.4 claims lines 1 to 4; WP22.2
   follows the shaft in motion under TAAU in Chrome. No mechanism or interface changed.
   [What changed for each finding](../../../.orchestrate/evidence/CLOUDS/design-revision-2026-11-26-broken-cloud-shaft-2.md)
+- 2026-11-26 Second design review of the parking: three Must Fix, all settled; last round, so no review
+  follows. WP22.8 judges every preset whose cloud WP22 changes by WP7.1's words (overcast and fair as well as
+  broken, since type-table rows are shared), and judges broken's banks whole, not their tops and bases. WP22.2
+  lets a moving shaft fade or end while its opening stays open where the frames show the cause, and WP22.4
+  judges MetalFX motion by the same four lines. Took the suggestion: risk 15 calls WP14's six views the
+  selected stock views. WP14's items are unchanged. No mechanism or interface changed.
+  [What changed for each finding](../../../.orchestrate/evidence/CLOUDS/design-revision-2026-11-26-broken-cloud-shaft-3.md)
