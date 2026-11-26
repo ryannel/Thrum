@@ -1082,7 +1082,7 @@
         {
           "verdict": "fail",
           "commit": "c1efd84db1494edb71dfa54da65be1514282f299",
-          "review": ".orchestrate/evidence/CLOUDS/WP8-review.md",
+          "review": ".orchestrate/evidence/CLOUDS/WP8-review-1.md",
           "items": {
             "WP8.1": "pass",
             "WP8.2": "fail",
@@ -1144,6 +1144,46 @@
             "turns": 1
           },
           "at": "2026-11-26T00:51:35Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "bf83d881d7b0bbb3acf98f09c218ec30293185b9",
+          "review": ".orchestrate/evidence/CLOUDS/WP8-review.md",
+          "items": {
+            "WP8.1": "pass",
+            "WP8.2": "fail",
+            "WP8.3": "pass",
+            "WP8.4": "pass",
+            "WP8.5": "pass",
+            "WP8.6": "pass",
+            "WP8.7": "pass",
+            "WP8.8": "pass",
+            "WP8.9": "pass"
+          },
+          "findings": [
+            {
+              "name": "Clear sunset activates cloud exposure adaptation",
+              "item": "WP8.2",
+              "different": "The held-noon reflection and irradiance mismatch is fixed. During a continuously changing clear sunset the display adaptation branch lags the clear exposure, even with an entirely transparent overlay.",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 139224,
+            "cached": 5410944,
+            "output": 15157,
+            "turns": 1
+          },
+          "at": "2026-11-26T01:44:45Z"
         }
       ],
       "authorised": {

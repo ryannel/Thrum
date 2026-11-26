@@ -1116,9 +1116,9 @@
     {
       "id": "WP8",
       "name": "Under a clouded sky the land is lit by the clouds: an overcast valley is grey and soft, haze dims with it, and polished surfaces reflect the clouds",
-      "status": "ready_for_review",
-      "failed_reviews": 1,
-      "failed_reviews_with_repeat": 0,
+      "status": "in_progress",
+      "failed_reviews": 2,
+      "failed_reviews_with_repeat": 1,
       "diagnoses": 0,
       "depends_on": [],
       "quality_bar": "Overcast and broken light as in Red Dead Redemption 2: flat grey daylight with no Sun shadows under a closed deck, sunlit and shaded land that agrees with the sky above it, and reflections that show the same clouds.",
@@ -1141,8 +1141,8 @@
           "check": "cargo test --locked --offline -p thrum-render --test haze_scale_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP8-rework/clear-parity.json",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/CLOUDS/WP8-review.md"
         },
@@ -1185,7 +1185,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP8-rework/steady-visual.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP8-review.md"
         },
         {
@@ -1206,7 +1206,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP8-rework/overcast-cost-steady.json",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP8-review.md"
         },
         {
@@ -1224,35 +1224,9 @@
       ],
       "findings": [
         {
-          "name": "Exposure pumps as the shadow crosses the metering point",
-          "item": "WP8.6",
-          "repeat": false
-        },
-        {
-          "name": "Clear World light changes submitted valley pixels",
+          "name": "Clear sunset activates cloud exposure adaptation",
           "item": "WP8.2",
-          "repeat": false
-        },
-        {
-          "name": "Matched cost series omits the clouds-absent arm",
-          "item": "WP8.8",
-          "repeat": false
-        },
-        {
-          "name": "Individual pass regressions lack tripwire investigations",
-          "item": "WP8.8",
-          "repeat": false
-        },
-        {
-          "name": "Sky overlay bypasses the shared coarse density for cloud edges",
-          "repeat": false
-        },
-        {
-          "name": "Sky overlay replaces hemisphere irradiance with two direction samples",
-          "repeat": false
-        },
-        {
-          "name": "Held weather retraces the overlay and refilters valid lighting products",
+          "different": "The held-noon reflection and irradiance mismatch is fixed. During a continuously changing clear sunset the display adaptation branch lags the clear exposure, even with an entirely transparent overlay.",
           "repeat": false
         }
       ]
