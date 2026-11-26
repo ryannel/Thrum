@@ -171,3 +171,9 @@
   the module handoff and ruling 2 now name `WATERS:M6`'s GPU interaction step, not a CPU reference. M2's note left the plan, as
   M2 is Done.
 - 2026-11-20 Planner, from the cleanup review (L8-07): M7.12's ask named the design proof under `docs/evidence`, a path that no longer exists; it now names the copy in the module's evidence folder. M7 was Not Started.
+- 2026-11-26 WP3 partial checkpoint `bdb8cdccb`. Verified on Metal: unchanged island body and stage tests, the
+  hollows point test at five fills across a merge, and surface pipeline submission in an engine fixture.
+  The yard, float and device costs remain unproved. The yard specifies multiple ground classes and water
+  types inside one hollows body, while the model steps one ground class per body and the renderer binds one
+  optical type per contribution. Proposal: separate paving and packed-earth hollows bodies and authorize
+  per-body optics. [Handoff](../../../.orchestrate/evidence/PUDDLES/WP3-handoff.md)

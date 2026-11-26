@@ -285,7 +285,7 @@
     {
       "id": "WP3",
       "name": "On the island, rain fills the hollows of a yard: puddles lie level in the ground, grow, join and shrink with a clean waterline, show the ground through them and mirror the sky, and a float sits in one",
-      "status": "not_started",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -312,8 +312,8 @@
           "check": "cargo test --locked --offline -p water-scene --test bodies_gpu && cargo test --locked --offline -p water-scene --test stage_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP3/README.md",
           "verdict": "",
           "review": ""
         },
@@ -324,8 +324,8 @@
           "ask": "Is a hollows body reached only through declarations any game can make, with no path in `thrum-water` that knows the island? Does the test fail when the GPU reads one level for the whole body?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP3/README.md",
           "verdict": "",
           "review": ""
         },
@@ -409,8 +409,8 @@
           "statement": "The maturity ledger has a row for `E1.rain` with implementation, correctness, visuals and device apart, and it claims no more than this work package proved.",
           "ask": "Does the row keep the four apart, and does any entry claim visuals or device results that no item here judged?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP3/README.md",
           "verdict": "",
           "review": ""
         }

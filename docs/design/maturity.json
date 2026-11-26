@@ -3288,6 +3288,20 @@
       }
     },
     {
+      "id": "E1.rain",
+      "name": "Rain and puddles",
+      "design": "../plans/PUDDLES/DESIGN.md",
+      "current_design_sha256": "90d296bb8c5fa49458d8bf2d0a8aa17a8643d74cf3ca93ad395fd7758f2b12e4",
+      "parent": "E1",
+      "contracts": ["C08", "C09"],
+      "implementation": "partial",
+      "scope": "PUDDLES WP1 and WP2 supply the CPU rain model. WP3 adds hollow labels, bed heights and display levels to the Metal map and submits horizontal cells in an engine fixture. The island rain selection and yard are pending.",
+      "correctness": "Metal readback matches the CPU map at five fills across a merge. The existing island body and stage tests pass with rain absent.",
+      "visuals": "Yard inspection pending.",
+      "device": "Mac Metal map and surface submission tests only. Chrome and paired yard costs are pending.",
+      "evidence": "../../.orchestrate/evidence/PUDDLES/WP3/README.md"
+    },
+    {
       "id": "E1.water",
       "name": "Water regions and dynamics",
       "waters_open_sea": {
