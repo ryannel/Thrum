@@ -1518,3 +1518,11 @@
   existing cases. The per-pixel summed cut remains open.
   [CPU bounds](../../../.orchestrate/evidence/WATERS/WP15/rest-lattice.log) ·
   [Metal lens](../../../.orchestrate/evidence/WATERS/WP15/rest-lattice-metal.log).
+
+- 2026-11-26 WP15 summed lens cut. The lens and sheet share the submitted
+  displaced vertices and carriage. Metal matches the f64 reference to
+  two pixels at 1440p and composes the trough, carried crest and stone
+  ring witnesses. Chrome passes the corresponding lens cases. The 1440p
+  cost record includes the dry craft view with and without a live wake.
+  [Lens evidence](../../../.orchestrate/evidence/WATERS/WP15/lens-proof.md) ·
+  [Paired cost](../../../.orchestrate/evidence/WATERS/WP15/dive-cost-316a8b7139c0.json).

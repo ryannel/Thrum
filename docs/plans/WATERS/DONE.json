@@ -1749,8 +1749,8 @@
           "ask": "Is the expected side of each pixel worked out from the model's surface at that pixel's own near-plane point, and would a test of the camera's centre alone fail? Does the lip's case put the lens in a column that holds three surfaces? Would adding the short waves at the world column to a cut of the long waves alone fail the trade wind's case? Would a bound that took a layer's highest value, a gain or a short-wave weight over the lens's own footprint, and not over the rest places that can reach the lens, fail the carried crest's case? Is the lens admitted wherever a wake window that is not at rest overlaps those rest places, with no ceiling standing in for the wake's height? For the cascades on a current, does the bound take a ceiling and never a value sampled on the CPU? On a chart with a current, do the lens cut and the draw read each cascade through the same carried place, worked out from the same row, clock and carriage values of the submitted frame, so that the lens cannot cut a ripple where it would lie on still water while the draw shows it carried downstream?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP15/lens-proof.md",
           "verdict": "",
           "review": ""
         },
@@ -1762,7 +1762,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP15/mapped-admission/WP15.11.stdout",
+          "evidence": ".orchestrate/evidence/WATERS/WP15/lens-metal-316a8b713.log",
           "verdict": "",
           "review": ""
         },
@@ -1803,7 +1803,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP15/mapped-admission/WP15.6.stdout",
+          "evidence": ".orchestrate/evidence/WATERS/WP15/lens-metal-316a8b713.log",
           "verdict": "",
           "review": ""
         },
@@ -1813,8 +1813,8 @@
           "check": "node scripts/check_water_browser.mjs --case under",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP15/lens-chrome-316a8b713/run.json",
           "verdict": "",
           "review": ""
         },
@@ -1834,8 +1834,8 @@
           "check": "python3 scripts/water_cost.py check --scene under",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP15/dive-cost-316a8b7139c0.json",
           "verdict": "",
           "review": ""
         }
