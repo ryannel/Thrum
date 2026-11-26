@@ -4579,6 +4579,22 @@
     },
     {
       "kind": "local",
+      "path": "docs/evidence/CLOUDS/WP8-rework/broken-moving.zst",
+      "size": 287836816,
+      "sha256": "5ee94d992885bd4c11b00c38376fdd08c9387f023e6e1875deb04e987d4e7678",
+      "date": "2026-11-26T01:14:50.009162+00:00",
+      "store": "/Users/ryannel/Workspace/thrum/.git/orchestrate/evidence/CLOUDS/WP8-rework/lossless-store"
+    },
+    {
+      "kind": "local",
+      "path": "docs/evidence/CLOUDS/WP8-rework/sweep.zst",
+      "size": 77383899,
+      "sha256": "dd0f40ee3cfec37007caa050cdd00fe3c58ed86c76ddcd479185f03051080956",
+      "date": "2026-11-26T01:14:49.460209+00:00",
+      "store": "/Users/ryannel/Workspace/thrum/.git/orchestrate/evidence/CLOUDS/WP8-rework/lossless-store"
+    },
+    {
+      "kind": "local",
       "path": "docs/evidence/CLOUDS/WP8/broken-moving-continuous.zst",
       "size": 346395392,
       "sha256": "d5e42cebc5c14755e77ab5d62e13418d3fd6210550a157756596763ebecf048a",

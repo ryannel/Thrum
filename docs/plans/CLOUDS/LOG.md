@@ -842,3 +842,22 @@ the coverage sweep. The apparent hard edge follows the authored lookout geometry
 The paired 1440p Metal record compares World light against Sky alone and the WP7
 reference and times the overlay, diffuse projection and reflection mips by name.
 [Qualification and limits](../../../.orchestrate/evidence/CLOUDS/WP8/README.md)
+
+### WP8 review rework
+
+A transparent overlay now retains the original diffuse and reflection arithmetic.
+The matched Metal noon valley images agree for every pixel. The incident meter keeps
+local shadow and lux, while display gain uses an open horizontal reference with a
+bounded diffuse correction. The 1× Metal retake shows the shadow and haze moving
+across the valley without the exposure rebound. Fixed daylight and broken reflections
+were inspected again on Metal and Chrome.
+
+The visible layer and overlay share the clear-sky hemisphere integral. Coarse
+procedural and placed samples use the profile's detail mean through the shared
+erosion functions. A settled overlay sleeps with its diffuse and reflection
+passes, then refreshes on a changed camera in the Metal timing test.
+
+The 1440p record now includes Off, Sky and World light at the same view. The
+validator checks the retained record and fresh timings, and requires an investigation
+for each triggered pass. The repeat series documents timing variability.
+[Rework qualification](../../../.orchestrate/evidence/CLOUDS/WP8-rework/README.md)

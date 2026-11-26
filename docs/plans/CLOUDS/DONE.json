@@ -1131,7 +1131,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP8/WP8.1.log",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP8-rework/WP8.1.log",
           "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP8-review.md"
         },
@@ -1141,8 +1141,8 @@
           "check": "cargo test --locked --offline -p thrum-render --test haze_scale_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP8-rework/clear-parity.json",
           "verdict": "fail",
           "review": ".orchestrate/evidence/CLOUDS/WP8-review.md"
         },
@@ -1154,7 +1154,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP8/WP8.3.log",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP8-rework/WP8.3.log",
           "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP8-review.md"
         },
@@ -1164,7 +1164,7 @@
           "inspect": "Capture `fixed` stills of the valley at noon under the overcast and the clear presets, from 2 m and from 40 m. Judge each whole, the pair side by side, and native-size crops of near ground, a grey object and the far ridges.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP8/qualification-retake-review.md",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP8-rework/steady-visual.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP8-review.md"
         },
@@ -1174,7 +1174,7 @@
           "inspect": "Capture `fixed` stills at noon and at a 15\u00b0 Sun with the polished sphere in frame, and a `realtime` 20-second sequence at 8x. Judge the sphere's reflection against the sky in native-size crops and across the sequence.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP8/qualification/broken-moving/motion.json",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP8-rework/steady-visual.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP8-review.md"
         },
@@ -1183,8 +1183,8 @@
           "statement": "As coverage sweeps from clear to overcast and back in motion, the land's light, the haze and the exposure follow with no step and no pumping.",
           "inspect": "Capture a `realtime` sequence of the sweep, a minute each way, from 40 m. Judge consecutive frames at 1x.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP8-rework/steady-visual.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/CLOUDS/WP8-review.md"
         },
@@ -1194,7 +1194,7 @@
           "inspect": "Capture the same `fixed` stills in Chrome. Judge them by those lists, then compare native-size crops with the Mac's.",
           "target": "chrome-webgpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP8/qualification/fixed-crops.json",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP8-rework/fixed/index.json",
           "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP8-review.md"
         },
@@ -1204,8 +1204,8 @@
           "check": "python3 scripts/cloud_cost.py check --scene overcast-lit",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP8-rework/overcast-cost-steady.json",
           "verdict": "fail",
           "review": ".orchestrate/evidence/CLOUDS/WP8-review.md"
         },
@@ -1217,7 +1217,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP8/WP8.9.log",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP8-rework/WP8.9.log",
           "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP8-review.md"
         }

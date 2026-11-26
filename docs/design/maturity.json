@@ -3122,11 +3122,11 @@
         "record": "../../.orchestrate/evidence/CLOUDS/WP7/README.md"
       },
       "world_light_evidence": {
-        "implementation": "CLOUDS WP8 adds the opt-in physical sky overlay, incident metering through the Sun path, and solar aerial scaling where a view volume is absent. Display gain eases through changing cloud cover.",
-        "correctness": "Metal verifies the diffuse and reflection composition, isolated solar aerial scaling, physical horizontal incident lux, six capability sets and ground-field byte parity with a resident placed volume.",
-        "visuals": "Matched Metal and Chrome stills show neutral overcast daylight and directional broken-cloud reflections. The Metal coverage sweep preserves a continuous exposure response through closing and reopening. The capture record identifies the submission gaps and the additional Chrome props.",
-        "device": "The Apple M3 Max portable Metal 1440p overcast pairs measured 20.20 ms with World light and 19.29 ms with Sky alone. The WP7 reference measured 35.60 ms. The diffuse projection, reflection mips and cloud overlay have named GPU timings in the paired record.",
-        "record": "../../.orchestrate/evidence/CLOUDS/WP8/README.md"
+        "implementation": "CLOUDS WP8 adds the opt-in physical sky overlay, local incident metering and solar aerial scaling where a view volume is absent. Shared clear-sky hemispheres and coarse cloud erosion feed the overlay. Display gain uses a bounded open-sky reference.",
+        "correctness": "Metal verifies exact clear daylight pixels, physical diffuse and reflection composition, isolated solar aerial scaling, incident lux, six capability sets and ground-field byte parity with a resident placed volume. Submitted timings verify that settled overlays and dependent filtering sleep and resume when the camera moves.",
+        "visuals": "The review retakes show neutral overcast daylight at both heights and directional broken-cloud reflections on Metal and Chrome. A 125-second Metal coverage sweep shows continuous shade and haze without a gain rebound after the shadow crosses the lookout.",
+        "device": "The latest 1440p portable Metal series measured 3.78 ms Off, 22.91 ms with Sky and 24.61 ms with World light on the Apple M3 Max. The WP7 overcast reference measured 35.60 ms. The record holds named timings and investigations for all triggered comparisons.",
+        "record": "../../.orchestrate/evidence/CLOUDS/WP8-rework/README.md"
       },
       "name": "Cloud fields and projections",
       "scope": "selectable",
