@@ -1638,8 +1638,8 @@
           "check": "cargo test --locked --offline -p water-scene --test carriage_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP9/revision-1/selected-metal.log",
           "verdict": "fail",
           "review": ".orchestrate/evidence/WATERS/WP9-review.md"
         },
@@ -1648,8 +1648,8 @@
           "statement": "The channel reads as running water: ripples and foam move downstream, faster where the channel narrows, with no texture sliding as one sheet and no pulse at the carriage's period. Where it leaves the lake and where it meets the sea there is no seam, step or change of look, in a swell and while the lake's level and the tide are moved.",
           "inspect": "`realtime` sequences from the bank at 2 m, looking across and along the channel, at its narrows and at each end, one of each end while the lake's level and the tide are moved through their ranges in a trade wind with a swell running, the mouth held at low tide among them, and one from 40 m above its whole length.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP9/revision-1/visual.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/WATERS/WP9-review.md"
         },
@@ -1659,8 +1659,8 @@
           "check": "cargo test --locked --offline -p water-scene --test channel_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP9/revision-1/selected-metal.log",
           "verdict": "fail",
           "review": ".orchestrate/evidence/WATERS/WP9-review.md"
         },
@@ -1670,8 +1670,8 @@
           "check": "node scripts/check_water_browser.mjs --case channel",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP9/revision-1/selected-chrome/run.json",
           "verdict": "fail",
           "review": ".orchestrate/evidence/WATERS/WP9-review.md"
         },
@@ -1691,8 +1691,8 @@
           "check": "python3 scripts/water_cost.py check --scene channel",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP9/revision-1/selected-cost.json",
           "verdict": "fail",
           "review": ".orchestrate/evidence/WATERS/WP9-review.md"
         }

@@ -3311,11 +3311,11 @@
         "implementation": "partial",
         "functional_validation": "passed",
         "experienced_quality": "builder_inspected_review_owed",
-        "scope": "WATERS WP9 joins an authored lake outlet to the sea. A chart supplies level and current through the shared map. The ambient cascades and foam detail advect through the current, the fixed posts shed foam downstream, and the example float drifts through the drowned reach.",
-        "correctness": "Metal checks full-precision depth across the two joins and along the fall, the low-tide swell limit, the high-tide sea row, visible motion of a marker wave under three currents, the float's course, matched post foam, and the paired GPU mouth answers.",
-        "visuals": "Elapsed Metal sequences show the source and mouth through both stage ranges, the held low-tide mouth, matched bank views, a downstream narrows view and the whole reach from 40 m.",
+        "scope": "WATERS WP9 joins an authored lake outlet to the sea. A chart supplies level and current through the shared map. A prepared travel coordinate advects the cascades through steady parallel reaches. The fixed posts shed foam downstream, and water drag and the shared scene wind carry the example float to sea.",
+        "correctness": "Metal checks full-precision depth across the two joins and along the fall, the low-tide swell limit, the high-tide sea row, marker motion under three currents through both former blend windows and wraps, paired float courses with the current on and off, matched post foam, and the GPU mouth answers.",
+        "visuals": "Elapsed Metal sequences show both stage ranges, held low tide, matched bank views, the narrows after one minute, and the reach from 40 m.",
         "device": "Apple M3 Max Metal and hardware Chrome WebGPU. The paired 1440p record crossed timing tripwires under concurrent load and records per-pass investigations.",
-        "evidence": "../../.orchestrate/evidence/WATERS/WP9/README.md"
+        "evidence": "../../.orchestrate/evidence/WATERS/WP9/revision-1/README.md"
       },
       "waters_cpu_model": {
         "implementation": "partial",

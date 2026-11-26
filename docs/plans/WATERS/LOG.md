@@ -1304,3 +1304,9 @@
   and carry the cascades continuously through their periodic domain. Steady parallel reaches
   use a prepared travel coordinate, keeping the spatial deformation independent of elapsed
   time. Source and mouth blend the running and receiving waves by the joined current.
+  Metal observes the marker over the full former renewal cycle and matches the
+  current-on and current-off float courses. The browser checks the submitted
+  carriage code and live map. The paired cost record investigates comparable
+  scene and output passes along with the water passes. The widened source footprint
+  keeps the flared bank wet at high lake stage.
+  [Review follow-up evidence](../../../.orchestrate/evidence/WATERS/WP9/revision-1/README.md).
