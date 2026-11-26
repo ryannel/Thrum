@@ -3,8 +3,8 @@
   "design": {
     "verdict": "changes",
     "review": ".orchestrate/evidence/APPLE-PRESENTATION/design-review.md",
-    "commit": "04ba8a8dbee7ca7f8aeb5d385cee99334034d169",
-    "hash": "40c84d3f5a40d2691603454f7419cf5c51156ba665ee61e187aa7cf79aea56af",
+    "commit": "e1e08024d95d9c0265c50bffb3e0057e3b28d62c",
+    "hash": "a6e6864e194055c2aee3acbe00f9277ac39df0462b2b0ccf3feeeaee97ce7e80",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",
@@ -16,12 +16,12 @@
     "cli": "codex-cli 0.171.0-alpha.13.2",
     "path": "headless",
     "usage": {
-      "input": 65298,
-      "cached": 714624,
-      "output": 5587,
+      "input": 62976,
+      "cached": 749056,
+      "output": 4584,
       "turns": 1
     },
-    "at": "2026-11-26T13:53:02Z"
+    "at": "2026-11-26T14:10:06Z"
   },
   "work_packages": {
     "WP1": {
@@ -2439,6 +2439,29 @@
         "turns": 1
       },
       "at": "2026-11-26T13:03:13Z"
+    },
+    {
+      "verdict": "changes",
+      "review": ".orchestrate/evidence/APPLE-PRESENTATION/design-review-19.md",
+      "commit": "04ba8a8dbee7ca7f8aeb5d385cee99334034d169",
+      "hash": "40c84d3f5a40d2691603454f7419cf5c51156ba665ee61e187aa7cf79aea56af",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6.2-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6.2-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.171.0-alpha.13.2",
+      "path": "headless",
+      "usage": {
+        "input": 65298,
+        "cached": 714624,
+        "output": 5587,
+        "turns": 1
+      },
+      "at": "2026-11-26T13:53:02Z"
     }
   ]
 }
