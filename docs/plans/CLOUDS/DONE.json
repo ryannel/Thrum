@@ -1325,7 +1325,7 @@
     {
       "id": "WP10",
       "name": "The twelve accepted cloud volumes and the growing congestus each read as themselves in the finished sky",
-      "status": "in_progress",
+      "status": "blocked",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -1383,7 +1383,17 @@
           "verdict": "",
           "review": ""
         }
-      ]
+      ],
+      "blocked": {
+        "reason": "needs_context",
+        "what": "CLOUDS\u2019 three-look rule requires a new lead decision before another attempt to restore noon relief on Metal and Chrome.",
+        "work": {
+          "commit": "63f4e85794fe6a1cbc893ca86712eb5544933460",
+          "branch": "build/clouds",
+          "pushed": false
+        },
+        "handoff": ".orchestrate/evidence/CLOUDS/WP10-handoff.md"
+      }
     },
     {
       "id": "WP14",
