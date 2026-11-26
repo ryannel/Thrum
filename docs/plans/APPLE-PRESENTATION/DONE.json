@@ -1151,10 +1151,10 @@
           "lock": "gpu",
           "ask": "Are the two arms run alternately in one session from the same commit and scale trace? Is every row either a figure with its conditions or marked as not measured, with none left blank?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP11/paired-check/paired.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D11.2",
