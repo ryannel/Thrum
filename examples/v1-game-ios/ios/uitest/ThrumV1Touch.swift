@@ -45,6 +45,21 @@ final class ThrumV1Touch: XCTestCase {
         app.coordinate(withNormalizedOffset: CGVector(dx: point[0], dy: point[1])).tap()
     }
 
+    /// Open the app through UIKit with a real invite URL.
+    func testInterfaceInvite() throws {
+        let environment = ProcessInfo.processInfo.environment
+        let address = try XCTUnwrap(environment["THRUM_INTERFACE_TEST_URL"])
+        let url = try XCTUnwrap(URL(string: address))
+        let app = XCUIApplication(bundleIdentifier: "org.thrum.v1")
+        app.launchEnvironment = [
+            "THRUM_V1_ROUTE": "1",
+            "THRUM_SCENE": "interface",
+            "THRUM_INTERFACE_TEXT": "menu",
+            "THRUM_FONT_STORE": try XCTUnwrap(environment["THRUM_INTERFACE_TEST_STORE"]),
+        ]
+        app.open(url)
+    }
+
     /// Return the existing app to the foreground after another UIKit scene took focus.
     func testInterfaceForeground() {
         XCUIApplication(bundleIdentifier: "org.thrum.v1").activate()

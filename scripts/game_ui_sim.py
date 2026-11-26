@@ -128,38 +128,39 @@ class Case:
         return self.expect(lambda s: menu(s).get("drawn") == name and
                            menu(s).get("drawn_disarmed") is False, f"submitted {name}")
 
-    def launch(self, screen):
-        # Restarting for the second scene keeps the two authored scene selections independent.
+    def reset_capture(self):
         for path in self.temp.glob("thrum-capture-*"):
             if path.is_dir():
                 shutil.rmtree(path)
             else:
                 path.unlink()
         self.witness.unlink(missing_ok=True)
+        self.sessions = 0
+
+    def launch(self, screen):
+        self.reset_capture()
         child = dict(os.environ, SIMCTL_CHILD_THRUM_V1_ROUTE="1", SIMCTL_CHILD_THRUM_SCENE="interface",
                      SIMCTL_CHILD_THRUM_INTERFACE_TEXT=screen, SIMCTL_CHILD_THRUM_FONT_STORE=str(self.store))
-        self.sessions = 0
         self.simctl("launch", self.device, BUNDLE, env=child)
         return self.expect(lambda s: int(s.get("presented", 0)) >= 10, f"presented {screen}")
 
     def post(self, command):
         self.route["post"](command)
 
-    def test(self, name, point=None):
+    def test(self, name, *, arguments=None):
         tests = self.report["tests"]
         label = f"{name}-{len(tests) + 1}"
         config = RUNNER
-        if point:
+        if arguments:
             # Keep __TESTROOT__ resolving to the actual test bundle.
             config = RUNNER.with_name("ThrumV1Interface.xctestrun")
             data = plistlib.loads(RUNNER.read_bytes())
-            data["ThrumV1UITests"]["TestingEnvironmentVariables"]["THRUM_INTERFACE_TEST_POINT"] = (
-                f"{point[0]:.9f},{point[1]:.9f}")
+            data["ThrumV1UITests"]["TestingEnvironmentVariables"].update(arguments)
             config.write_bytes(plistlib.dumps(data))
         command = ["xcodebuild", "test-without-building", "-xctestrun", str(config),
                    "-destination", f"id={self.device}", "-resultBundlePath", str(self.out / f"{label}.xcresult"),
                    f"-only-testing:ThrumV1UITests/ThrumV1Touch/{name}"]
-        tests[label] = dict(point=point, command=command, log=f"{label}.log")
+        tests[label] = dict(arguments=arguments, command=command, log=f"{label}.log")
         with (self.out / tests[label]["log"]).open("w") as log:
             return subprocess.Popen(command, cwd=ROOT, stdout=log, stderr=subprocess.STDOUT)
 
@@ -241,15 +242,24 @@ class Case:
         shown = viewport(state)
         point = [(origin[i] + size[i] / 2) * shown["scale"] / shown["extent"][i] for i in range(2)]
         require(all(side >= 44 for side in size), f"undersized control {box}")
-        self.finish_test(self.test("testInterfaceTap", point))
+        self.finish_test(self.test("testInterfaceTap", arguments={
+            "THRUM_INTERFACE_TEST_POINT": f"{point[0]:.9f},{point[1]:.9f}",
+        }))
 
     def open_url(self):
         url = "thrum-v1://join/" + quote(TICKET, safe="")
-        self.simctl("openurl", self.device, url)
+        process = self.state()["pid"]
+        self.simctl("terminate", self.device, BUNDLE)
+        self.reset_capture()
+        self.finish_test(self.test("testInterfaceInvite", arguments={
+            "THRUM_INTERFACE_TEST_URL": url,
+            "THRUM_INTERFACE_TEST_STORE": str(self.store),
+        }))
         state = self.expect(lambda s: menu(s).get("drawn") == "Joining" and
                             menu(s).get("ticket") == TICKET and
                             any(effect["effect"] == {"text": TICKET, "source": "Link"}
                                 for effect in menu(s).get("effects", [])), "UIKit URL delivered a complete ticket")
+        require(state["pid"] != process, "the invite did not launch a fresh app process")
         self.report["invite"] = dict(url=url, expected=TICKET, state=state)
         return self.screen("Joining")
 
@@ -288,7 +298,10 @@ class Case:
                 all(menu(before)[key] == menu(resumed)[key] for key in ("screen", "focus", "boxes", "drawn_cards"))
                 and viewport(before) == viewport(resumed), "background discarded the choice layout or focus")
         self.report["lifecycle"] = dict(before=before, suspended=suspended, resumed=resumed)
-        self.open_url()
+        joined = self.open_url()
+        width, height = viewport(joined)["extent"]
+        if width > height:
+            self.rotate(False)
         self.grab("join-portrait")
         self.rotate(True)
         self.screen("Joining")
