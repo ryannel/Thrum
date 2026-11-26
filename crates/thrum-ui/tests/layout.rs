@@ -133,6 +133,36 @@ fn overlay_anchors_nested_column_and_rejects_circular_fraction() {
 }
 
 #[test]
+fn fitting_stack_uses_its_cross_axis_alignment() {
+    for axis in [Axis::Row, Axis::Column] {
+        for (align, start) in [(Anchor::Start, 0.0), (Anchor::Point(7.0), 7.0)] {
+            let mut root = Node::new(0, NodeKind::Overlay);
+            let mut stack = Node::new(
+                1,
+                NodeKind::Stack {
+                    axis,
+                    gap: 0.0,
+                    align,
+                },
+            );
+            let mut child = fill(2, [20.0; 2]);
+            child.anchor = [Anchor::Point(50.0); 2];
+            stack.children.push(child);
+            root.children.push(stack);
+            let mut tree = Tree::new(root).expect("fitting stack");
+            tree.frame(view([100, 100]), inputs(&[])).expect("layout");
+            let (size, origin) = match axis {
+                Axis::Row => ([20.0, 20.0 + start], [0.0, start]),
+                Axis::Column => ([20.0 + start, 20.0], [start, 0.0]),
+            };
+            assert_box(&tree, 1, [0.0; 2], size);
+            assert_box(&tree, 2, origin, [20.0; 2]);
+            assert_eq!(tree.overflows().count(), 0);
+        }
+    }
+}
+
+#[test]
 fn wrapped_text_sets_its_parent_height() {
     let mut root = Node::new(0, NodeKind::Overlay);
     root.size[0] = Size::fixed(72.0);

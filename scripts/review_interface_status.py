@@ -73,9 +73,11 @@ def records(directory):
 
 def edges(extent, scale, insets, display_density):
     width, height = extent
-    left, top, right, _bottom = insets
+    left, top, right, bottom = insets
     safe_width = width / scale - left - right
-    size = 2 if scale == 1 and display_density >= 1.5 and safe_width >= 640 else 1
+    safe_height = height / scale - top - bottom
+    large = scale == 1 and display_density >= 1.5 and safe_width >= 640 and safe_height >= 264
+    size = 2 if large else 1
     inner = safe_width - 16 * size
     panel = min(304 * size, inner)
     x = (left + 8 * size + (inner - panel) * 0.5) * scale

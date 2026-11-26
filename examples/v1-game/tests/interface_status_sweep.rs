@@ -4,6 +4,7 @@ mod status_store;
 
 use status_store as store;
 use v1_game::interface_status as status;
+use v1_game::interface_status::Appearance::{Large, Standard};
 
 use thrum_test_support::Scratch;
 use thrum_ui::{Box2, Font, Image, PaintInputs, Viewport};
@@ -96,70 +97,72 @@ fn status_fits_point_grid_at_all_three_densities() {
         fonts: &fonts,
         white: status::WHITE_TILE,
     };
-    let mut tree = status::tree(Image {
+    let badge = Image {
         sheet: 2,
         frame: 0,
         texels: badge.size,
-    })
-    .expect("status display");
+    };
+    let mut standard = status::tree(badge).expect("standard status display");
+    let mut large = status::tree_with_appearance(badge, Large).expect("large status display");
     let mut cases = 0;
+    let mut check = |viewport, density| {
+        let tree = match status::Appearance::for_output(viewport, density) {
+            Standard => &mut standard,
+            Large => &mut large,
+        };
+        check_extent(tree, inputs, viewport);
+        cases += 1;
+    };
     for scale in 1..=3 {
+        // Scale one can also be forced on a Retina display. At the other
+        // scales use the matching density as in the window and browser.
+        let density = f64::from(scale.max(2));
         // All combinations of logical widths and heights in the range at 16-point
         // intervals, plus the upper endpoints. Maximum insets bound the fit.
         for width in points(320, 3456) {
             for height in points(320, 2234) {
-                check_extent(
-                    &mut tree,
-                    inputs,
+                check(
                     Viewport {
                         extent: [width * scale, height * scale],
                         insets: [64.0; 4],
                         scale,
                     },
+                    density,
                 );
-                cases += 1;
             }
         }
         for [width, height] in [[320, 568], [568, 320], [390, 844], [844, 390]] {
             for inset in 0..=64 {
                 let i = f64::from(inset);
                 for insets in [[i; 4], [i, 64.0 - i, 0.0, i]] {
-                    check_extent(
-                        &mut tree,
-                        inputs,
+                    check(
                         Viewport {
                             extent: [width * scale, height * scale],
                             insets,
                             scale,
                         },
+                        density,
                     );
-                    cases += 1;
                 }
             }
         }
     }
-    for (width, appearance) in [
-        (767, status::Appearance::Standard),
-        (768, status::Appearance::Large),
-        (3456, status::Appearance::Large),
+    for (extent, insets, density, expected) in [
+        ([767, 392], [64.0; 4], 2.0, Standard),
+        ([768, 391], [64.0; 4], 2.0, Standard),
+        ([768, 392], [64.0; 4], 2.0, Large),
+        ([684, 320], [12.0, 48.0, 32.0, 8.0], 2.0, Large),
+        ([640, 320], [0.0; 4], 2.0, Large),
+        ([3456, 2234], [0.0; 4], 1.0, Standard),
+        ([3456, 2234], [0.0; 4], 2.0, Large),
     ] {
         let viewport = Viewport {
-            extent: [width, 2234],
-            insets: [64.0; 4],
+            extent,
+            insets,
             scale: 1,
         };
-        assert_eq!(status::Appearance::for_output(viewport, 2.0), appearance);
-        let mut tree = status::tree_with_appearance(
-            Image {
-                sheet: 2,
-                frame: 0,
-                texels: badge.size,
-            },
-            appearance,
-        )
-        .expect("density-aware status display");
-        check_extent(&mut tree, inputs, viewport);
-        cases += 1;
+        assert_eq!(status::Appearance::for_output(viewport, density), expected);
+        check(viewport, density);
     }
     println!("{cases} extent, inset and scale combinations");
 }

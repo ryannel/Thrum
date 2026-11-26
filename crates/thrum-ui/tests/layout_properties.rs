@@ -139,6 +139,39 @@ fn nested_boxes_are_deterministic_contained_and_never_overlap_in_stacks() {
 }
 
 #[test]
+fn editing_hidden_intrinsic_text_reuses_the_visible_frame() {
+    let fonts = font();
+    let viewport = view([320, 320]);
+    let mut root = Node::new(0, NodeKind::Overlay);
+    let mut group = Node::new(1, NodeKind::Overlay);
+    group.children.push(text(2, "00", false));
+    root.children = vec![group, fill(3, [10.0; 2])];
+    let mut tree = Tree::new(root.clone()).expect("tree");
+    tree.frame(viewport, inputs(&fonts)).expect("visible");
+    tree.set_shown(1, false);
+    let hidden = tree.frame(viewport, inputs(&fonts)).expect("hidden");
+    let stats = tree.stats();
+    tree.set_text(2, "1234");
+    let edited = tree.frame(viewport, inputs(&fonts)).expect("edited");
+    assert!(Arc::ptr_eq(&hidden.rows, &edited.rows));
+    assert_eq!(tree.stats(), stats);
+    assert!(tree.bounds(2).is_none());
+
+    tree.set_shown(1, true);
+    let shown = tree.frame(viewport, inputs(&fonts)).expect("shown again");
+    let NodeKind::Text(label) = &mut root.children[0].children[0].kind else {
+        unreachable!()
+    };
+    label.value = "1234".into();
+    let mut fresh = Tree::new(root.clone()).expect("fresh tree");
+    let expected = fresh.frame(viewport, inputs(&fonts)).expect("fresh frame");
+    assert_eq!(shown.rows, expected.rows);
+    assert_eq!(tree.stats().layouts, stats.layouts + 1);
+    assert!(tree.elisions().eq(fresh.elisions()));
+    verify(&tree, &fresh, &root, viewport.safe());
+}
+
+#[test]
 fn random_edits_match_fresh_layout_and_rebuild_only_what_is_dirty() {
     let fonts = font();
     let mut rng = Random(114);

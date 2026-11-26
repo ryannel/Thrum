@@ -526,7 +526,8 @@ impl Tree {
         if let NodeKind::Text(text) = &mut entry.node.kind
             && text.value != value
         {
-            let intrinsic = index != 0
+            let intrinsic = entry.visible
+                && index != 0
                 && !entry.node.full_bleed
                 && entry
                     .node
@@ -538,7 +539,7 @@ impl Tree {
             text.value.clear();
             text.value.push_str(value);
             entry.paint_dirty = true;
-            self.paint_dirty = true;
+            self.paint_dirty |= entry.visible;
         }
     }
 }

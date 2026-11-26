@@ -118,7 +118,11 @@ impl Tree {
                 total += length;
                 count += 1;
             } else {
-                let offset = match child.node.anchor[axis] {
+                let anchor = match entry.node.kind {
+                    NodeKind::Stack { align, .. } => align,
+                    _ => child.node.anchor[axis],
+                };
+                let offset = match anchor {
                     Anchor::Point(point) => point.max(0.0),
                     _ => 0.0,
                 };

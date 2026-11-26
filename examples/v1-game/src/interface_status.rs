@@ -13,6 +13,9 @@ use thrum_ui::{
 const WARM: [f32; 4] = [1.0, 0.77, 0.44, 1.0];
 const WHITE: [f32; 4] = [0.87, 0.93, 1.0, 1.0];
 const MUTED: [f32; 4] = [0.47, 0.66, 0.77, 1.0];
+const PANEL_SIZE: [f64; 2] = [304.0, 116.0];
+const PANEL_MARGIN: f64 = 8.0;
+const LARGE_MULTIPLIER: f64 = 2.0;
 /// Identity of the health bar in the status tree.
 pub const BAR: u32 = 6;
 /// Identity of the timer in the status tree.
@@ -100,7 +103,10 @@ impl Appearance {
     /// Preserve the display-point reading size when a density-two display uses
     /// scale one. Use the compact panel if the safe area cannot fit the large one.
     pub fn for_output(viewport: Viewport, density: f64) -> Self {
-        if viewport.scale == 1 && density >= 1.5 && viewport.safe().size[0] >= 640.0 {
+        let [width, height] = viewport.safe().size;
+        let [min_width, min_height] =
+            PANEL_SIZE.map(|side| (side + 2.0 * PANEL_MARGIN) * LARGE_MULTIPLIER);
+        if viewport.scale == 1 && density >= 1.5 && width >= min_width && height >= min_height {
             Self::Large
         } else {
             Self::Standard
@@ -121,18 +127,18 @@ pub fn tree(badge: Image) -> Result<Tree, TreeError> {
 pub fn tree_with_appearance(badge: Image, appearance: Appearance) -> Result<Tree, TreeError> {
     let (size, caption, value) = match appearance {
         Appearance::Standard => (1.0, 12, 16),
-        Appearance::Large => (2.0, 24, 24),
+        Appearance::Large => (LARGE_MULTIPLIER, 24, 24),
     };
     let mut root = Node::new(0, NodeKind::Overlay);
     root.size = [FILL; 2];
-    root.padding = [8.0 * size; 4];
+    root.padding = [PANEL_MARGIN * size; 4];
     let mut panel = Node::new(1, NodeKind::Panel(panel_tiles()));
     panel.size = [
         Size {
-            most: 304.0 * size,
+            most: PANEL_SIZE[0] * size,
             ..FILL
         },
-        Size::fixed(116.0 * size),
+        Size::fixed(PANEL_SIZE[1] * size),
     ];
     panel.padding = [10.0, 8.0, 10.0, 8.0].map(|side| side * size);
     panel.anchor[0] = Anchor::Centre;
