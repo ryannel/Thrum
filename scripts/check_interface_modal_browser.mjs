@@ -22,13 +22,81 @@ export async function qualifyInterfaceModal(options) {
     await call('Runtime.enable');
     await installWasmReceipt(cdp, sessionId);
     await cdp.call('Target.activateTarget', { targetId });
-    for (const dpr of [1, 2]) rows.push(await arm(options, call, sessionId, dpr));
+    for (const dpr of [1, 2]) {
+      const [row, marks] = await traceRoutes(cdp, options.timeout,
+        () => arm(options, call, sessionId, dpr));
+      row.routeCpu = routeCpu(row.final, marks);
+      rows.push(row);
+    }
   } finally {
     await cdp.call('Target.closeTarget', { targetId });
   }
   const record = { case: 'interface-modal', target: 'chrome-webgpu', commit, release: true, rows };
   await write(path.join(output, 'interface-modal.json'), record);
   return { case: record.case, target: record.target, commit, runs: rows.length };
+}
+
+async function traceRoutes(cdp, timeout, run) {
+  const previousEvents = cdp.event;
+  const marks = [];
+  let complete;
+  cdp.event = packet => {
+    previousEvents(packet);
+    if (packet.method === 'Tracing.dataCollected') {
+      for (const event of packet.params.value) {
+        if (event.name?.startsWith('thrum-menu-route-')) marks.push(event);
+      }
+    } else if (packet.method === 'Tracing.tracingComplete') {
+      complete = packet.params;
+    }
+  };
+  try {
+    await cdp.call('Tracing.start', { categories: 'blink.user_timing' });
+    let result;
+    try {
+      result = await run();
+    } finally {
+      await cdp.call('Tracing.end');
+      const deadline = Date.now() + timeout;
+      while (!complete) {
+        if (Date.now() >= deadline) throw new Error('Chrome route trace did not complete');
+        await sleep(20);
+      }
+    }
+    assert(!complete.dataLossOccurred, 'Chrome route trace lost events');
+    return [result, marks];
+  } finally {
+    cdp.event = previousEvents;
+  }
+}
+
+function routeCpu(report, marks) {
+  const byName = new Map(marks.map(mark => [mark.name, mark]));
+  assert.equal(byName.size, marks.length, 'duplicate route marks');
+  const byKind = {};
+  for (const row of report.timing) {
+    const [empty, start, end] = ['empty', 'start', 'end'].map(phase =>
+      byName.get(`thrum-menu-route-${row.id}-${phase}`));
+    assert(empty && start && end, `missing route marks for ${row.id}`);
+    for (const mark of [empty, start, end]) {
+      assert.equal(mark.ph, 'I');
+      assert.equal(mark.pid, start.pid);
+      assert.equal(mark.tid, start.tid);
+      assert(Number.isSafeInteger(mark.tts), 'thread clock missing');
+    }
+    const cpu_us = end.tts - start.tts;
+    const empty_us = start.tts - empty.tts;
+    assert(cpu_us >= 0 && empty_us >= 0, 'nonmonotonic renderer clock');
+    row.route_cpu = { pid: start.pid, tid: start.tid, thread_ticks_us: [empty.tts, start.tts, end.tts],
+      cpu_us, empty_us };
+    const sample = byKind[row.kind] ??= { count: 0, cpu_us: 0, empty_us: 0 };
+    sample.count++;
+    sample.cpu_us += cpu_us;
+    sample.empty_us += empty_us;
+  }
+  return { clock: 'Chromium trace tts, renderer thread CPU microseconds',
+    scope: 'Actual browser events, with adjacent empty marks retained to show tracing overhead',
+    byKind, teardown_marks: marks.length - 3 * report.timing.length };
 }
 
 async function arm(opts, call, sessionId, dpr) {
@@ -68,7 +136,7 @@ async function arm(opts, call, sessionId, dpr) {
   const tap = async name => { await key(name, true); await key(name, false); };
   const choice = async () => {
     await tap('KeyM');
-    return until(state => state.drawn === 'Choice' && !state.disarmed && state.boxes.length === 4, 'choice armed');
+    return until(state => state.drawn === 'Choice' && !state.drawn_disarmed && state.boxes.length === 4, 'choice armed');
   };
   const canvas = () => game.invoke(`const c = document.querySelector('canvas'), rect = c.getBoundingClientRect();
     return [rect.left, rect.top, rect.width / c.width, rect.height / c.height];`);
@@ -93,7 +161,8 @@ async function arm(opts, call, sessionId, dpr) {
   await sleep(130);
   assert.deepEqual((await report()).position, opened.position);
   await tap('ArrowRight');
-  const focused = await until(state => state.focus === 120, 'arrow focused Guard');
+  const focused = await until(state => state.drawn_cards[1] === 'Focused', 'arrow focused Guard');
+  assertRetained(opened.menu_work, focused.menu_work);
   await tap('Enter');
   await play();
   const resumed = await until(state => state.position[0] > opened.position[0], 'held key resumed');
@@ -121,19 +190,31 @@ async function arm(opts, call, sessionId, dpr) {
     const point = await at(id, state);
     if (id === 110) {
       const [left, top] = await canvas();
-      // A touch on the scrim selects touch modality without choosing a card.
+      // A pointer can focus a card while a finger is on the scrim.
       const idle = { x: Math.round(left + 24), y: Math.round(top + 24), id: 9 };
       await touch('touchStart', idle);
-      await touch('touchEnd', idle);
-      await capture('choice-idle', await report());
+      const guard = await at(120, state);
+      await mouse('mouseMoved', guard);
+      await until(state => state.drawn_cards[1] === 'Focused', 'Guard focused while scrim is held');
+      await touch('touchMove', { ...idle, x: idle.x + 12 });
+      await until(state => state.drawn_cards.every(card => card === 'Idle'), 'touch motion hid focus');
+      await mouse('mouseMoved', [guard[0] + 2, guard[1]]);
+      await until(state => state.drawn_cards[1] === 'Focused', 'pointer restored focus');
+      await touch('touchEnd');
+      const touchIdle = await until(state => state.drawn_cards.every(card => card === 'Idle'),
+        'touch release hid focus');
+      assert.equal(touchIdle.focus, 120);
+      await capture('choice-idle', touchIdle);
     }
     await mouse('mouseMoved', point);
-    await until(state => state.focus === id, 'mouse focused card');
-    if (id === 120) await capture('choice-focused', await report());
-    const beforePress = (await report()).timing.length;
+    const focusedCard = await until(state => state.focus === id &&
+      state.drawn_cards[cards.indexOf(id)] === 'Focused', 'mouse focused card');
+    if (id === 120) await capture('choice-focused', focusedCard);
+    const beforePress = focusedCard.timing.length;
     await mouse('mousePressed', point, { button: 'left', buttons: 1, clickCount: 1 });
-    await until(state => state.timing.slice(beforePress).some(row => row.kind === 'pointer press' && row.frames), 'pressed card submitted');
-    if (id === 120) await capture('choice-pressed', await report());
+    const pressedCard = await until(state => state.timing.slice(beforePress).some(row => row.kind === 'pointer press' && row.frames), 'pressed card submitted');
+    assertRetained(focusedCard.menu_work, pressedCard.menu_work);
+    if (id === 120) await capture('choice-pressed', pressedCard);
     await mouse('mouseReleased', point, { button: 'left', buttons: 0, clickCount: 1 });
     await play();
   }
@@ -200,14 +281,19 @@ async function arm(opts, call, sessionId, dpr) {
   assert(final.effects.some(row => row.effect.source === 'Link' && row.effect.text === ticket));
   assert(final.effects.some(row => row.effect.source === 'Paste' && row.effect.text === expired));
   for (const kind of ['key press', 'pointer press', 'touch press', 'presentation edit']) {
-    assert(final.timing.some(row => row.kind === kind && row.frames >= 1 &&
-      Number.isFinite(row.route_ms) && row.route_ms >= 0), kind);
+    assert(final.timing.some(row => row.kind === kind && row.frames >= 1), kind);
   }
 
   const devices = await releaseGameGraphics(cdp, sessionId, game);
   await unloadGamePage(cdp, sessionId, timeout);
   return { dpr, build, loadBefore, loadAfter: os.loadavg(), stills, holds, final,
     beforeRecovery: beforeRecovery.focus, afterRecovery: recovered.focus, devices };
+}
+
+function assertRetained(before, after) {
+  assert.equal(after.constructions, before.constructions, 'style edit rebuilt the choice tree');
+  assert.equal(after.layouts, before.layouts, 'style edit laid out the choice again');
+  assert(after.lists > before.lists, 'style edit did not rebuild the paint list');
 }
 
 async function takeFixed(game, waitFor, timeout, session, filename, encodePng) {

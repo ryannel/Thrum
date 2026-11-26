@@ -1,7 +1,7 @@
 //! The V1 choice and join screen, drawn by the ordinary interface stage.
 
 mod view;
-pub(crate) use view::{MenuFrame, paint};
+pub(crate) use view::{MenuFrame, MenuLayout};
 
 #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
 mod play;
@@ -101,20 +101,56 @@ impl Default for View {
     }
 }
 
-/// Game-owned presentation packet crossing to the render owner.
+/// Game-owned input and presentation, sampled by the world and render owners.
 #[derive(Clone, Default)]
-pub(crate) struct MenuView(Arc<Mutex<Arc<View>>>);
+pub(crate) struct MenuView(Arc<Mutex<MenuState>>);
+
+#[derive(Default)]
+struct MenuState {
+    view: Arc<View>,
+    play: Arc<View>,
+    #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+    axes: [f32; 3],
+    last_moving_tick: Option<u64>,
+}
 
 impl MenuView {
+    #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
     pub(crate) fn get(&self) -> Arc<View> {
-        Arc::clone(&self.0.lock().expect("menu view mailbox"))
+        Arc::clone(&self.0.lock().expect("menu view mailbox").view)
+    }
+
+    pub(crate) fn for_frame(&self, tick: u64) -> Arc<View> {
+        let state = self.0.lock().expect("menu view mailbox");
+        // A modal may first appear when both interpolation endpoints are
+        // stationary. A world step already sampling movement can still finish.
+        if state.view.screen != Screen::Play
+            && state.last_moving_tick.is_some_and(|last| tick <= last)
+        {
+            Arc::clone(&state.play)
+        } else {
+            Arc::clone(&state.view)
+        }
     }
 
     #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
-    fn set(&self, view: &View) {
-        let mut packet = self.0.lock().expect("menu view mailbox");
-        if **packet != *view {
-            *packet = Arc::new(view.clone());
+    pub(crate) fn axes_for_tick(&self, tick: u64) -> [f32; 3] {
+        let mut state = self.0.lock().expect("menu view mailbox");
+        if state.axes.iter().any(|axis| axis.abs() > 0.0) {
+            state.last_moving_tick = Some(tick);
+        }
+        state.axes
+    }
+
+    #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+    fn set(&self, view: &View, axes: [f32; 3]) {
+        let mut state = self.0.lock().expect("menu view mailbox");
+        state.axes = axes;
+        if *state.view != *view {
+            state.view = Arc::new(view.clone());
+            if view.screen == Screen::Play {
+                state.play = Arc::clone(&state.view);
+            }
         }
     }
 }

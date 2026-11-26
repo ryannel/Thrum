@@ -6,7 +6,60 @@ use std::collections::{BTreeSet, VecDeque};
 use std::time::Duration;
 
 use input_support::{NOW, SCOPE, button, layout, press, tree, viewport};
-use thrum_ui::{Contact, Direction, Event, Intent, Node, NodeKind, Routed, Router, Scope, Size};
+use thrum_ui::{
+    Contact, Direction, Event, Held, Intent, Node, NodeKind, Routed, Router, Scope, Size,
+};
+
+#[test]
+fn a_nonexclusive_scope_suspends_the_game_until_armed_or_closed() {
+    for close_early in [false, true] {
+        let mut router = Router::default();
+        let before = Duration::ZERO;
+        let policy = Scope {
+            exclusive: false,
+            initial: None,
+        };
+        let released = Contact::Key(0);
+        let touch = Contact::Touch(1);
+        let staying = Contact::Key(2);
+        for contact in [released, touch] {
+            assert!(matches!(
+                router.route(press(contact, None, None), before),
+                Some(Routed::Game(_))
+            ));
+        }
+        assert_eq!(router.open(SCOPE, policy, NOW), Some(Routed::Interrupted));
+        assert_eq!(router.route(Event::Release(released, None), before), None);
+        assert_eq!(router.route(Event::Move(touch, [3.0, 4.0]), before), None);
+        assert_eq!(
+            router.route(press(staying, None, Some(Intent::Activate)), before),
+            None
+        );
+        let resumed = if close_early {
+            router.close(SCOPE)
+        } else {
+            router.advance(NOW)
+        };
+        assert_eq!(
+            resumed,
+            Some(Routed::Resumed(vec![
+                Held {
+                    contact: staying,
+                    position: None
+                },
+                Held {
+                    contact: touch,
+                    position: Some([3.0, 4.0])
+                },
+            ]))
+        );
+        assert!(matches!(
+            router.route(Event::Release(staying, None), NOW),
+            Some(Routed::Game(_))
+        ));
+        assert_eq!(router.close(SCOPE), None);
+    }
+}
 
 const DIRECTIONS: [(Direction, Direction); 4] = [
     (Direction::Left, Direction::Right),

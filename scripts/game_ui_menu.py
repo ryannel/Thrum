@@ -1,6 +1,7 @@
 """Qualify the V1 menu with scripted input through the live macOS window."""
 
 import json
+from itertools import groupby
 import os
 from pathlib import Path
 import subprocess
@@ -51,7 +52,12 @@ def route_script():
         if index == 1:
             steps.append(key("KeyD", down=False))
     for card in CARDS:
-        steps.extend([*choice(), *click(card)])
+        if card == CARDS[0]:
+            steps.extend([key("KeyM"), key("ArrowRight", after=1), key("KeyM", down=False),
+                          observe("early-direction-armed", after=24), *click(card),
+                          observe("early-direction-resumed", after=6), key("ArrowRight", down=False)])
+        else:
+            steps.extend([*choice(), *click(card)])
     return steps + [observe("complete", after=8)]
 
 
@@ -95,12 +101,27 @@ def validate_route(record):
     assert [marks[f"focus-{card}"]["before"]["focus"] for card in CARDS] == CARDS
     assert marks["walking"]["before"]["position"][0] > marks["initial"]["before"]["position"][0]
     assert marks["stopped-a"]["before"]["position"] == marks["stopped-b"]["before"]["position"]
+    intervals = [list(rows) for _, rows in groupby(enumerate(report["choice_frames"]),
+                                                    key=lambda row: row[1][0] - row[0])]
+    assert len(intervals) == 8, [len(interval) for interval in intervals]
+    for interval in intervals:
+        positions = [item[1][1] for item in interval]
+        assert len(positions) >= 2 and all(pos == positions[0] for pos in positions), interval
     assert marks["resumed-b"]["before"]["position"][0] > marks["resumed-a"]["before"]["position"][0]
     opened = [row["ms"] for row in report["effects"] if row["effect"].get("scope_opened") == 100]
     interrupted = [row["ms"] for row in report["effects"] if row["effect"].get("interrupted")]
     assert len(opened) == 8 and all(interrupted.count(time) == 1 for time in opened)
     assert any("KeyD" in contacts[0] for contacts in effects(report, "resumed") if contacts)
-    assert all(not any(word in row["input"] for word in ["Arrow", "Enter", "Pointer"])
+    armed = marks["early-direction-armed"]["before"]
+    resumed = marks["early-direction-resumed"]["before"]
+    assert armed["focus"] == CARDS[0]
+    assert resumed["position"][0] > armed["position"][0]
+    early_press, = [row for row in record["steps"] if row["step"].get("code") == "ArrowRight"
+                    and row["step"].get("after") == 1]
+    assert early_press["before"]["disarmed"]
+    assert any("ArrowRight" in contact for contacts in effects(resumed, "resumed") for contact in contacts)
+    assert all(row["input"].startswith("Release(Key(ArrowRight)")
+               or not any(word in row["input"] for word in ["Arrow", "Enter", "Pointer"])
                for row in report["inputs"])
 
 

@@ -3,7 +3,7 @@ use std::sync::Arc;
 use thrum_ui::{
     Alignment, Anchor, Axis, Button, ButtonState, Elision, Font, Node, NodeId, NodeKind,
     PaintInputs, PaintList, PaintStamp, Size, SizeRule, Text, TextOptions, Tree, TreeError,
-    Viewport,
+    TreeStats, Viewport,
 };
 
 #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
@@ -25,14 +25,116 @@ pub(crate) struct MenuFrame {
     #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
     pub(crate) input: Arc<InputLayout>,
     pub(crate) viewport: Viewport,
+    #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+    pub(crate) work: (u64, TreeStats),
 }
 
-pub(crate) fn paint(
-    view: Arc<View>,
-    font: &thrum_asset::FontProduct,
-    stamp: PaintStamp,
-    viewport: Viewport,
-) -> Result<(PaintList, MenuFrame), TreeError> {
+pub(crate) struct MenuLayout {
+    pub(crate) frame: MenuFrame,
+    tree: Tree,
+    constructions: u64,
+}
+
+impl MenuLayout {
+    pub(crate) fn paint(
+        retained: Option<Self>,
+        view: Arc<View>,
+        font: &thrum_asset::FontProduct,
+        stamp: PaintStamp,
+        viewport: Viewport,
+        geometry_matches: bool,
+    ) -> Result<(PaintList, Self), TreeError> {
+        let (mut tree, constructions, previous) = match retained {
+            Some(layout)
+                if layout.frame.viewport == viewport
+                    && same_structure(&layout.frame.view, &view) =>
+            {
+                (layout.tree, layout.constructions, Some(layout.frame))
+            }
+            previous => {
+                let count = previous.map_or(0, |layout| layout.constructions) + 1;
+                (build_tree(&view, viewport)?, count, None)
+            }
+        };
+        if let Some(previous) = &previous {
+            edit_style(&mut tree, &previous.view, &view);
+        }
+        let paint = tree.frame(
+            viewport,
+            PaintInputs {
+                stamp: Some(stamp),
+                fonts: &[Font {
+                    product: font,
+                    sheet: 1,
+                }],
+                white: crate::interface_status::WHITE_TILE,
+            },
+        )?;
+        #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+        let input = previous
+            .filter(|previous| geometry_matches && previous.work.1.layouts == tree.stats().layouts)
+            .map_or_else(|| Arc::new(tree.input_layout()), |previous| previous.input);
+        #[cfg(not(any(target_os = "macos", target_arch = "wasm32")))]
+        let _ = geometry_matches;
+        let frame = MenuFrame {
+            view,
+            #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+            input,
+            viewport,
+            #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+            work: (constructions, tree.stats()),
+        };
+        Ok((
+            paint,
+            Self {
+                frame,
+                tree,
+                constructions,
+            },
+        ))
+    }
+}
+
+fn same_structure(previous: &View, next: &View) -> bool {
+    previous.screen == next.screen
+        && match next.screen {
+            Screen::Choice => previous.disabled == next.disabled,
+            Screen::Play => true,
+            _ => previous.ticket == next.ticket,
+        }
+}
+
+fn edit_style(tree: &mut Tree, previous: &View, view: &View) {
+    match view.screen {
+        Screen::Play if previous.edit != view.edit => tree.set_text(91, play_line(view.edit)),
+        Screen::Choice => {
+            if previous.disarmed != view.disarmed {
+                tree.set_text(106, choice_prompt(view.disarmed));
+            }
+            for (index, id) in CARDS.into_iter().enumerate() {
+                let old = card_style(previous, index);
+                let new = card_style(view, index);
+                if old != new || previous.disarmed != view.disarmed {
+                    let (background, edge, heading, detail) = card_tints(new, view.disarmed);
+                    for (offset, tint) in [(1, edge), (3, background), (5, heading), (6, detail)] {
+                        tree.set_tint(id + offset, tint);
+                    }
+                }
+            }
+        }
+        Screen::Hosting | Screen::Joining if previous.join_button != view.join_button => {
+            let id = if view.screen == Screen::Hosting {
+                COPY
+            } else {
+                SUBMIT
+            };
+            tree.set_tint(id + 1, join_tint(view.join_button));
+        }
+        _ => {}
+    }
+}
+
+fn build_tree(view: &View, viewport: Viewport) -> Result<Tree, TreeError> {
     let mut root = Node::new(99, NodeKind::Overlay);
     root.size = [FILL; 2];
     if view.screen == Screen::Play {
@@ -42,47 +144,29 @@ pub(crate) fn paint(
         scrim.full_bleed = true;
         root.children.push(scrim);
         root.children.push(if view.screen == Screen::Choice {
-            choice(&view, viewport)
+            choice(view, viewport)
         } else {
-            join(&view, viewport)
+            join(view, viewport)
         });
     }
-    let mut tree = Tree::new(root)?;
-    let paint = tree.frame(
-        viewport,
-        PaintInputs {
-            stamp: Some(stamp),
-            fonts: &[Font {
-                product: font,
-                sheet: 1,
-            }],
-            white: crate::interface_status::WHITE_TILE,
-        },
-    )?;
-    Ok((
-        paint,
-        MenuFrame {
-            view,
-            #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
-            input: Arc::new(tree.input_layout()),
-            viewport,
-        },
-    ))
+    Tree::new(root)
+}
+
+fn play_line(edited: bool) -> &'static str {
+    if edited {
+        "Field display updated"
+    } else if cfg!(target_os = "macos") {
+        "M  Choice     J  Join     H  Host"
+    } else {
+        "M  Choice     J  Join"
+    }
 }
 
 fn play_prompt(edited: bool) -> Node {
     let mut panel = fill(90, INK);
     panel.size = [Size::fixed(250.0), Size::fixed(36.0)];
     panel.anchor = [Anchor::Centre, Anchor::Point(8.0)];
-    let line = if edited {
-        "Field display updated"
-    } else if cfg!(target_os = "macos") {
-        "M  Choice     J  Join     H  Host"
-    } else {
-        "M  Choice     J  Join"
-    };
-    panel.children = Vec::new();
-    let mut prompt = label(91, line, 12.0, CREAM);
+    let mut prompt = label(91, play_line(edited), 12.0, CREAM);
     prompt.anchor = [Anchor::Centre; 2];
     let mut group = Node::new(92, NodeKind::Overlay);
     group.size = panel.size;
@@ -125,11 +209,7 @@ fn choice(view: &View, viewport: Viewport) -> Node {
         group.size = [FILL, Size::fixed(card_height)];
         for &id in pair {
             let index = usize::try_from((id - CARDS[0]) / 10).expect("four cards");
-            let state = if view.disabled == Some(id) {
-                ButtonState::Disabled
-            } else {
-                view.cards[index]
-            };
+            let state = card_style(view, index);
             let (title, detail) = names[index];
             group
                 .children
@@ -137,14 +217,26 @@ fn choice(view: &View, viewport: Viewport) -> Node {
         }
         body.children.push(group);
     }
-    let prompt = if view.disarmed {
+    body.children
+        .push(label(106, choice_prompt(view.disarmed), 12.0, MUTED));
+    panel.children = vec![background, body];
+    panel
+}
+
+fn choice_prompt(disarmed: bool) -> &'static str {
+    if disarmed {
         "Get ready"
     } else {
         "Arrow keys or touch to choose"
-    };
-    body.children.push(label(106, prompt, 12.0, MUTED));
-    panel.children = vec![background, body];
-    panel
+    }
+}
+
+fn card_style(view: &View, index: usize) -> ButtonState {
+    if view.disabled == Some(CARDS[index]) {
+        ButtonState::Disabled
+    } else {
+        view.cards[index]
+    }
 }
 
 fn card(
@@ -163,22 +255,7 @@ fn card(
         }),
     );
     card.size = [SHARE, FILL];
-    let (background, edge, heading, detail_tint) = match state {
-        ButtonState::Disabled => (
-            [0.038, 0.052, 0.063, 1.0],
-            [0.12, 0.17, 0.19, 1.0],
-            MUTED,
-            MUTED,
-        ),
-        ButtonState::Pressed => ([0.08, 0.47, 0.37, 1.0], TEAL, CREAM, CREAM),
-        ButtonState::Focused if !disarmed => ([0.18, 0.13, 0.066, 1.0], GOLD, CREAM, GOLD),
-        _ => (
-            [0.039, 0.078, 0.092, 1.0],
-            [0.13, 0.28, 0.30, 1.0],
-            CREAM,
-            MUTED,
-        ),
-    };
+    let (background, edge, heading, detail_tint) = card_tints(state, disarmed);
     let mut border = fill(id + 1, edge);
     border.size = [FILL; 2];
     card.padding = [0.0; 4];
@@ -206,6 +283,25 @@ fn card(
     interior.children = vec![surface, words];
     card.children = vec![border, interior];
     card
+}
+
+fn card_tints(state: ButtonState, disarmed: bool) -> ([f32; 4], [f32; 4], [f32; 4], [f32; 4]) {
+    match state {
+        ButtonState::Disabled => (
+            [0.038, 0.052, 0.063, 1.0],
+            [0.12, 0.17, 0.19, 1.0],
+            MUTED,
+            MUTED,
+        ),
+        ButtonState::Pressed => ([0.08, 0.47, 0.37, 1.0], TEAL, CREAM, CREAM),
+        ButtonState::Focused if !disarmed => ([0.18, 0.13, 0.066, 1.0], GOLD, CREAM, GOLD),
+        _ => (
+            [0.039, 0.078, 0.092, 1.0],
+            [0.13, 0.28, 0.30, 1.0],
+            CREAM,
+            MUTED,
+        ),
+    }
 }
 
 fn join(view: &View, viewport: Viewport) -> Node {
@@ -314,17 +410,20 @@ fn join(view: &View, viewport: Viewport) -> Node {
 fn join_action(id: NodeId, title: &str, state: ButtonState) -> Node {
     let mut node = Node::new(id, NodeKind::Button(Button::default()));
     node.size = [Size::fixed(112.0), Size::fixed(44.0)];
-    let tint = match state {
-        ButtonState::Pressed => [0.1, 0.52, 0.42, 1.0],
-        ButtonState::Focused => [0.22, 0.35, 0.22, 1.0],
-        _ => [0.061, 0.15, 0.17, 1.0],
-    };
-    let mut fill = fill(id + 1, tint);
+    let mut fill = fill(id + 1, join_tint(state));
     fill.size = [FILL; 2];
     let mut text = label(id + 2, title, 16.0, CREAM);
     text.anchor = [Anchor::Centre; 2];
     node.children = vec![fill, text];
     node
+}
+
+fn join_tint(state: ButtonState) -> [f32; 4] {
+    match state {
+        ButtonState::Pressed => [0.1, 0.52, 0.42, 1.0],
+        ButtonState::Focused => [0.22, 0.35, 0.22, 1.0],
+        _ => [0.061, 0.15, 0.17, 1.0],
+    }
 }
 
 fn fill(id: NodeId, color: [f32; 4]) -> Node {

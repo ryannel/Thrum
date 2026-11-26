@@ -281,6 +281,17 @@ impl thrum_render::runtime::FrameWorld for GameWorld {
     }
 }
 
+#[cfg(all(feature = "proving", any(target_os = "macos", target_arch = "wasm32")))]
+impl GameWorld {
+    pub(crate) fn set_menu(&mut self, menu: crate::interface_menu::MenuView) {
+        let driver = self
+            .0
+            .inline_lifecycle()
+            .expect("interface is attached before the world lane starts");
+        driver.world.game_mut().menu = Some(menu);
+    }
+}
+
 /// The game body stays here; scheduling and the fixed clock belong to core.
 pub(crate) struct WorldDriver {
     pub(super) world: ClockedWorld<GameRules>,
@@ -295,6 +306,8 @@ pub(super) struct GameRules {
     admitted_axes: [f32; 3],
     input_sequence: u64,
     weather_edits: Option<super::WeatherEdits>,
+    #[cfg(all(feature = "proving", any(target_os = "macos", target_arch = "wasm32")))]
+    menu: Option<crate::interface_menu::MenuView>,
 }
 
 impl WorldDriver {
@@ -376,6 +389,8 @@ impl WorldDriver {
             admitted_axes: [0.0; 3],
             input_sequence: 1,
             weather_edits: None,
+            #[cfg(all(feature = "proving", any(target_os = "macos", target_arch = "wasm32")))]
+            menu: None,
         };
         let world = ClockedWorld::new(game, ClockConfig::default(), Duration::ZERO)
             .map_err(|error| error.to_string())?;
@@ -556,6 +571,10 @@ impl WorldGame for GameRules {
     }
 
     fn step(&mut self) -> Result<WorldStep, Self::Error> {
+        #[cfg(all(feature = "proving", any(target_os = "macos", target_arch = "wasm32")))]
+        if let Some(menu) = &self.menu {
+            self.desired_axes = menu.axes_for_tick(self.sim.tick().saturating_add(1));
+        }
         if !Self::same_control(self.desired_axes, self.admitted_axes) {
             let tick = self
                 .sim

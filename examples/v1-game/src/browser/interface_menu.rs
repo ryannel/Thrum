@@ -4,7 +4,7 @@ use thrum_app::{Game, KeyCode};
 use thrum_ui::{Contact, Event, TextSource};
 use wasm_bindgen::prelude::*;
 
-use super::{BrowserGame, game, js_error};
+use super::{BrowserGame, js_error};
 
 #[wasm_bindgen]
 impl BrowserGame {
@@ -69,7 +69,7 @@ impl BrowserGame {
             if let Some(menu) = &mut self.page.game.0.menu {
                 menu.launch(text, TextSource::Link, event_time(now)?);
             }
-            game::set_controls(&mut self.page.shell, [0.0; 3]).map_err(js_error)
+            Ok(())
         }
     }
 
@@ -95,24 +95,11 @@ impl BrowserGame {
 
 impl BrowserGame {
     fn menu_event(&mut self, event: Event<KeyCode>, now: f64) -> Result<(), JsValue> {
-        let before = self
-            .page
-            .game
-            .0
-            .menu
-            .as_ref()
-            .map(|menu| menu.axes().map(f32::to_bits));
         self.page
             .game
             .interface_input(event, event_time(now)?)
-            .map_err(js_error)?;
-        if let Some(menu) = &mut self.page.game.0.menu {
-            let axes = menu.axes();
-            if Some(axes.map(f32::to_bits)) != before {
-                game::set_controls(&mut self.page.shell, axes).map_err(js_error)?;
-            }
-        }
-        Ok(())
+            .map(|_| ())
+            .map_err(js_error)
     }
 }
 

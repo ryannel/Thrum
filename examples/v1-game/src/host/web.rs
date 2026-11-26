@@ -158,6 +158,7 @@ impl RuntimeSetup for PageGame {
                 .await
                 .map_err(|error| error.to_string())?;
             if let Some(menu) = &self.menu {
+                host.world_mut().set_menu(menu.mailbox());
                 host.continuous_source_mut().set_menu(menu.mailbox());
             }
             return Ok(thrum_app::Prepared::inline(host));

@@ -39,6 +39,8 @@ struct Proof {
     activations: [u64; 4],
     position: Option<[f64; 3]>,
     submitted: Option<Arc<View>>,
+    work: Option<(u64, thrum_ui::TreeStats)>,
+    choice_frames: Vec<(u64, [f64; 3])>,
 }
 
 impl Menu {
@@ -67,7 +69,7 @@ impl Menu {
     pub(crate) fn hold(&mut self, view: View) {
         self.view = view;
         self.frozen = true;
-        self.mailbox.set(&self.view);
+        self.mailbox.set(&self.view, [0.0; 3]);
     }
 
     #[cfg(target_arch = "wasm32")]
@@ -110,6 +112,8 @@ impl Menu {
 
     pub(crate) fn tick(&mut self, now: Duration) {
         let now = self.observe_time(now);
+        let routed = self.router.advance(now);
+        self.receive(routed, now);
         if self.connects_at.is_some_and(|deadline| now >= deadline) {
             let screen = if self.view.ticket.as_ref() == HOST_TICKET {
                 Screen::Joined
@@ -126,17 +130,38 @@ impl Menu {
 
     pub(crate) fn event(&mut self, event: Event<KeyCode>, now: Duration) {
         let now = self.observe_time(now);
+        let resumed = self.router.advance(now);
+        self.receive(resumed, now);
         let before = self.mailbox.get();
         let kind = input_kind(&event);
         let event = points(event, self.viewport_scale);
-        let start = self.proof.as_ref().map(|_| route_start());
+        #[cfg(target_arch = "wasm32")]
+        let marks = self
+            .proof
+            .as_ref()
+            .and_then(|proof| RouteMarks::start(proof.timing.len()));
+        #[cfg(target_os = "macos")]
+        let start = self.proof.as_ref().map(|_| cpu_time::ThreadTime::now());
         let routed = self.router.route(event, now);
-        if let (Some(start), Some(proof)) = (start, self.proof.as_mut()) {
+        #[cfg(target_arch = "wasm32")]
+        if let Some(marks) = marks {
+            marks.end();
+        }
+        #[cfg(target_os = "macos")]
+        let cpu_ms = start.map(|start| start.elapsed().as_secs_f64() * 1000.0);
+        if let Some(proof) = &mut self.proof {
             let id = proof.timing.len();
-            proof.timing.push(json!({
-                "id": id, "kind": kind, "route_ms": route_elapsed(start),
+            let row = json!({
+                "id": id, "kind": kind,
                 "event_ms": now.as_secs_f64() * 1000.0, "seen_through": proof.latest
-            }));
+            });
+            #[cfg(target_os = "macos")]
+            let row = {
+                let mut row = row;
+                row["route_ms"] = json!(cpu_ms);
+                row
+            };
+            proof.timing.push(row);
         }
         self.receive(routed, now);
         self.refresh(now);
@@ -224,7 +249,7 @@ impl Menu {
         }
     }
 
-    pub(crate) fn axes(&self) -> [f32; 3] {
+    fn axes(&self) -> [f32; 3] {
         let key = |code| self.held.contains_key(&Contact::Key(code));
         let [left, right, down, up] = [
             key(KeyCode::KeyA) || key(KeyCode::ArrowLeft),
@@ -263,6 +288,12 @@ impl Menu {
             proof.latest = index;
             proof.position = player;
             proof.submitted = Some(Arc::clone(&frame.view));
+            proof.work = Some(frame.work);
+            if frame.view.screen == Screen::Choice
+                && let Some(position) = player
+            {
+                proof.choice_frames.push((index, position));
+            }
             proof.awaiting.retain(|(id, view)| {
                 if !Arc::ptr_eq(view, &frame.view) {
                     return true;
@@ -331,7 +362,7 @@ impl Menu {
             } else {
                 SUBMIT
             });
-        self.mailbox.set(&self.view);
+        self.mailbox.set(&self.view, self.axes());
     }
 
     pub(crate) fn report(&self) -> Value {
@@ -347,7 +378,11 @@ impl Menu {
         json!({
             "screen": format!("{:?}", self.view.screen),
             "drawn": proof.and_then(|proof| proof.submitted.as_ref()).map(|view| format!("{:?}", view.screen)),
+            "drawn_disarmed": proof.and_then(|proof| proof.submitted.as_ref()).map(|view| view.disarmed),
             "focus": self.router.focus(),
+            "drawn_cards": proof.and_then(|proof| proof.submitted.as_ref()).map(|view| {
+                view.cards.map(|state| format!("{state:?}"))
+            }),
             "disarmed": self.view.disarmed,
             "boxes": boxes,
             "scale": self.viewport_scale,
@@ -356,12 +391,16 @@ impl Menu {
             "refused": self.router.refused_drops(),
             "submitted": proof.map(|proof| proof.latest),
             "position": proof.and_then(|proof| proof.position),
+            "choice_frames": proof.map(|proof| &proof.choice_frames),
+            "menu_work": proof.and_then(|proof| proof.work).map(|(constructions, stats)| {
+                json!({"constructions": constructions, "layouts": stats.layouts, "lists": stats.lists})
+            }),
             "activations": proof.map(|proof| proof.activations),
             "inputs": proof.map(|proof| &proof.inputs),
             "effects": proof.map(|proof| &proof.effects),
             "clipboard": proof.map(|proof| &proof.clipboard),
             "timing": proof.map(|proof| &proof.timing),
-            "route_clock": if cfg!(target_os = "macos") { "thread CPU time" } else { "Performance.now" },
+            "route_clock": if cfg!(target_os = "macos") { "thread CPU time" } else { "Chromium trace thread ticks" },
         })
     }
 }
@@ -408,23 +447,26 @@ fn points(event: Event<KeyCode>, scale: f64) -> Event<KeyCode> {
 }
 
 #[cfg(target_arch = "wasm32")]
-fn route_start() -> f64 {
-    web_sys::window()
-        .and_then(|window| window.performance())
-        .map_or(0.0, |clock| clock.now())
+struct RouteMarks {
+    clock: web_sys::Performance,
+    names: [String; 3],
 }
 
 #[cfg(target_arch = "wasm32")]
-fn route_elapsed(start: f64) -> f64 {
-    (route_start() - start).max(0.0)
-}
+impl RouteMarks {
+    fn start(id: usize) -> Option<Self> {
+        let clock = web_sys::window()?.performance()?;
+        let names = ["empty", "start", "end"].map(|phase| format!("thrum-menu-route-{id}-{phase}"));
+        // Consecutive marks give the measurement floor on the same thread.
+        clock.mark(&names[0]).ok()?;
+        clock.mark(&names[1]).ok()?;
+        Some(Self { clock, names })
+    }
 
-#[cfg(target_os = "macos")]
-fn route_start() -> cpu_time::ThreadTime {
-    cpu_time::ThreadTime::now()
-}
-
-#[cfg(target_os = "macos")]
-fn route_elapsed(start: cpu_time::ThreadTime) -> f64 {
-    start.elapsed().as_secs_f64() * 1000.0
+    fn end(self) {
+        let _ = self.clock.mark(&self.names[2]);
+        for name in self.names {
+            self.clock.clear_marks_with_mark_name(&name);
+        }
+    }
 }

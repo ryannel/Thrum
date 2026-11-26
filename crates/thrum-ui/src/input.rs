@@ -213,6 +213,7 @@ pub struct Router<K> {
     shown: InputLayout,
     scopes: Vec<OpenScope>,
     presses: BTreeMap<Contact<K>, Press>,
+    now: Duration,
     show_focus: bool,
     refused: u64,
     clipboard_copy: Option<String>,
@@ -224,6 +225,7 @@ impl<K> Default for Router<K> {
             shown: InputLayout::default(),
             scopes: Vec::new(),
             presses: BTreeMap::new(),
+            now: Duration::ZERO,
             show_focus: true,
             refused: 0,
             clipboard_copy: None,
@@ -256,12 +258,13 @@ impl<K: Copy + Ord> Router<K> {
     }
 
     /// Open a declared scope immediately. Supply its policy from the current tree.
-    /// Returns an interruption only when entering the first exclusive scope.
+    /// Returns an interruption when the scope starts blocking the game.
+    /// Call [Self::advance] first if opening between routed events.
     pub fn open(&mut self, id: NodeId, policy: Scope, armed_at: Duration) -> Option<Routed<K>> {
         if self.scopes.iter().any(|scope| scope.id == id) {
             return None;
         }
-        let interrupts = policy.exclusive && !self.exclusive();
+        let blocked = self.blocks_game();
         self.cancel_scope_presses();
         self.scopes.push(OpenScope {
             id,
@@ -271,7 +274,7 @@ impl<K: Copy + Ord> Router<K> {
         });
         self.show_focus = true;
         self.reconcile_focus(None);
-        if interrupts {
+        if !blocked && self.blocks_game() {
             for press in self.presses.values_mut() {
                 if matches!(press.owner, Owner::Game) {
                     press.owner = Owner::Suspended;
@@ -287,11 +290,23 @@ impl<K: Copy + Ord> Router<K> {
         if self.top_id() != Some(id) {
             return None;
         }
-        let was_exclusive = self.exclusive();
+        let blocked = self.blocks_game();
         self.cancel_scope_presses();
         self.scopes.pop();
         self.reconcile_focus(None);
-        (was_exclusive && !self.exclusive()).then(|| {
+        self.resume_game(blocked)
+    }
+
+    /// Advance the clock and return held contacts when a nonexclusive scope arms.
+    /// Deliver the result before routing events at the new time.
+    pub fn advance(&mut self, now: Duration) -> Option<Routed<K>> {
+        let blocked = self.blocks_game();
+        self.now = self.now.max(now);
+        self.resume_game(blocked)
+    }
+
+    fn resume_game(&mut self, blocked: bool) -> Option<Routed<K>> {
+        (blocked && !self.blocks_game()).then(|| {
             let held = self.presses.iter_mut().filter_map(|(&contact, press)| {
                 if matches!(
                     press.owner,
@@ -332,6 +347,22 @@ impl<K: Copy + Ord> Router<K> {
 
     /// Route one event at the shell's monotonic time.
     pub fn route(&mut self, event: Event<K>, now: Duration) -> Option<Routed<K>> {
+        // A timed nonexclusive scope can return a resumption and an event at
+        // the same instant. Its shell delivers the resumption via advance.
+        if !self.blocks_game() || self.exclusive() {
+            self.now = self.now.max(now);
+        }
+        let contact = match &event {
+            Event::Press { contact, .. }
+            | Event::Repeat(contact)
+            | Event::Move(contact, _)
+            | Event::Release(contact, _)
+            | Event::Cancel(contact) => Some(contact),
+            Event::Hover(_) | Event::Interrupted | Event::Text(_, _) => None,
+        };
+        if let Some(contact) = contact {
+            self.show_focus = !matches!(contact, Contact::Touch(_));
+        }
         match event {
             Event::Interrupted => {
                 self.presses.clear();
@@ -356,6 +387,10 @@ impl<K: Copy + Ord> Router<K> {
 
     fn exclusive(&self) -> bool {
         self.scopes.iter().any(|scope| scope.policy.exclusive)
+    }
+
+    fn blocks_game(&self) -> bool {
+        self.exclusive() || self.scopes.iter().any(|scope| self.now < scope.armed_at)
     }
 
     fn top_id(&self) -> Option<NodeId> {
@@ -390,19 +425,16 @@ impl<K: Copy + Ord> Router<K> {
             intent.filter(|_| matches!(contact, Contact::Key(_)) && self.top_id().is_some());
         let hit = position.and_then(|point| self.hit(point));
         let disarmed = !self.armed(now);
-        let owner = if self.exclusive() || disarmed || hit.is_some() || intent.is_some() {
+        let owner = if self.blocks_game() || hit.is_some() || intent.is_some() {
             let button = hit.filter(|id| !disarmed && eligible(&self.shown, self.top_id(), *id));
-            if !disarmed {
-                self.show_focus = !matches!(contact, Contact::Touch(_));
-                if !matches!(contact, Contact::Key(_)) {
-                    self.set_focus(button);
-                }
+            if !disarmed && !matches!(contact, Contact::Key(_)) {
+                self.set_focus(button);
             }
             Owner::Interface {
                 scope: self.top_id(),
                 button,
                 intent: intent.filter(|_| !disarmed),
-                worked: hit.is_some() || intent.is_some(),
+                worked: !disarmed && (hit.is_some() || intent.is_some()),
             }
         } else {
             Owner::Game
@@ -436,7 +468,6 @@ impl<K: Copy + Ord> Router<K> {
                 && self.armed(now)
                 && !matches!(intent, Intent::Activate | Intent::Cancel) =>
             {
-                self.show_focus = true;
                 self.apply_intent(intent)
             }
             _ => None,
@@ -461,7 +492,6 @@ impl<K: Copy + Ord> Router<K> {
                     *button = None;
                 }
                 if armed && matches!(contact, Contact::Pointer(_)) {
-                    self.show_focus = true;
                     self.set_focus(hit);
                 }
                 None
@@ -477,7 +507,7 @@ impl<K: Copy + Ord> Router<K> {
         let hit = self.hit(position);
         self.show_focus = true;
         self.set_focus(hit);
-        (hit.is_none() && !self.exclusive()).then_some(Routed::Game(Event::Hover(position)))
+        (hit.is_none() && !self.blocks_game()).then_some(Routed::Game(Event::Hover(position)))
     }
 
     fn release(

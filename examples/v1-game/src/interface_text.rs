@@ -57,7 +57,7 @@ struct Layout {
     value: u64,
     paint: PaintList,
     tree: Option<(crate::interface_status::Appearance, thrum_ui::Tree)>,
-    menu: Option<MenuFrame>,
+    menu: Option<crate::interface_menu::MenuLayout>,
 }
 
 impl FontCard {
@@ -192,7 +192,8 @@ impl FontCard {
             .chain(self.active.iter())
             .find(|layout| layout.stamp == stamp)?
             .menu
-            .clone()
+            .as_ref()
+            .map(|menu| menu.frame.clone())
     }
 
     pub(crate) fn paint(&mut self, extent: [u32; 2], tick: u64) -> [Option<PaintList>; 2] {
@@ -212,7 +213,7 @@ impl FontCard {
             self.active = self.prepared.take();
         }
         let view = (self.density, self.insets, self.measure_updates);
-        let menu = (self.mode == InterfaceText::Menu).then(|| self.menu.get());
+        let menu = (self.mode == InterfaceText::Menu).then(|| self.menu.for_frame(tick));
         let active = committed.as_ref().and_then(|font| {
             Self::layout(
                 &mut self.active,
@@ -321,21 +322,30 @@ impl FontCard {
         if let Some(layout) = cached
             && layout.stamp == stamp
             && let Some(frame) = &layout.menu
-            && frame.viewport == viewport
-            && Arc::ptr_eq(&frame.view, view)
+            && frame.frame.viewport == viewport
+            && Arc::ptr_eq(&frame.frame.view, view)
         {
             return Ok(layout.paint.clone());
         }
         let font = fonts.font(TYPE).ok_or("interface menu font is missing")?;
-        let (paint, frame) = crate::interface_menu::paint(Arc::clone(view), font, stamp, viewport)
-            .map_err(|error| error.to_string())?;
+        let matching_stamp = cached.as_ref().is_some_and(|layout| layout.stamp == stamp);
+        let retained = cached.as_mut().and_then(|layout| layout.menu.take());
+        let (paint, menu) = crate::interface_menu::MenuLayout::paint(
+            retained,
+            Arc::clone(view),
+            font,
+            stamp,
+            viewport,
+            matching_stamp,
+        )
+        .map_err(|error| error.to_string())?;
         *cached = Some(Layout {
             stamp,
             extent,
             value: 0,
             paint: paint.clone(),
             tree: None,
-            menu: Some(frame),
+            menu: Some(menu),
         });
         Ok(paint)
     }

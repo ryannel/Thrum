@@ -467,13 +467,7 @@ impl RuntimeSetup for WindowGame {
         let Some(menu) = &mut self.menu else {
             return Ok(KeyResponse::Ignored);
         };
-        let before = menu.axes();
         menu.event(event, now);
-        if let Some(world) = &self.world
-            && before.map(f32::to_bits) != menu.axes().map(f32::to_bits)
-        {
-            world.set_controls(menu.axes())?;
-        }
         Ok(KeyResponse::Input)
     }
 
@@ -655,6 +649,7 @@ impl RuntimeSetup for WindowGame {
             .ok_or("capture route origin underflow")?;
         #[cfg(feature = "proving")]
         if let Some(menu) = &self.menu {
+            host.world_mut().set_menu(menu.mailbox());
             host.continuous_source_mut().set_menu(menu.mailbox());
         }
         let (host, controls) = host.into_threaded(origin, world_advanced)?;

@@ -3,7 +3,31 @@
 mod input_support;
 
 use input_support::{NOW, SCOPE, button, layout, press, tree, viewport};
-use thrum_ui::{ButtonState, Contact, Event, Routed, Router, Scope};
+use thrum_ui::{ButtonState, Contact, Event, Intent, Routed, Router, Scope};
+
+#[test]
+fn moving_and_releasing_a_touch_hide_pointer_focus_without_losing_identity() {
+    let tree = tree(vec![button(10, [60.0; 2], [50.0; 2])]);
+    let mut router = Router::default();
+    router.submitted(tree.input_layout());
+    router.open(SCOPE, Scope::default(), NOW);
+    let finger = Contact::Touch(1);
+    router.route(press(finger, Some([15.0; 2]), None), NOW);
+    for event in [
+        Event::Move(finger, [16.0; 2]),
+        Event::Release(finger, Some([16.0; 2])),
+    ] {
+        router.route(Event::Hover([85.0; 2]), NOW);
+        assert_eq!(router.button_state(10), ButtonState::Focused);
+        assert_eq!(router.route(event, NOW), None);
+        assert_eq!(router.focus(), Some(10));
+        assert_eq!(router.button_state(10), ButtonState::Idle);
+    }
+    assert_eq!(
+        router.route(press(Contact::Key(0), None, Some(Intent::Activate)), NOW),
+        Some(Routed::Activated(10))
+    );
+}
 
 #[test]
 fn matching_contact_activates_on_release_and_cannot_reenter_after_sliding_off() {

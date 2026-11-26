@@ -3,9 +3,10 @@
 mod input_support;
 
 use std::collections::BTreeMap;
+use std::time::Duration;
 
 use input_support::{NOW, SCOPE, button, press, tree};
-use thrum_ui::{Contact, Event, Held, Intent, Routed, Router, Scope};
+use thrum_ui::{Contact, Direction, Event, Held, Intent, Routed, Router, Scope};
 
 #[derive(Default)]
 struct Game {
@@ -61,8 +62,11 @@ fn generated_interleavings_match_the_game_contacts_after_every_event() {
         let mut game = Game::default();
         let mut down = BTreeMap::new();
         let mut depth = 0;
+        let mut deadlines = [NOW; 2];
         let mut interrupts = 0;
-        for _ in 0..40 {
+        for step in 0..40 {
+            let now = NOW + Duration::from_millis(step);
+            assert_eq!(router.advance(now), None);
             random = random
                 .wrapping_mul(6_364_136_223_846_793_005)
                 .wrapping_add(1);
@@ -82,26 +86,29 @@ fn generated_interleavings_match_the_game_contacts_after_every_event() {
                 0..=2 => {
                     let intent = (contact == Contact::Key(1)).then_some(Intent::Activate);
                     let position = (!matches!(contact, Contact::Key(_))).then_some(point);
-                    let used = depth == 1 && (intent.is_some() || position == Some([90.0; 2]))
-                        || depth == 2 && intent.is_some();
+                    let used = depth > 0
+                        && now >= deadlines[(depth - 1) as usize]
+                        && (intent.is_some() || depth == 1 && position == Some([90.0; 2]));
                     down.entry(contact).or_insert((position, used));
-                    router.route(press(contact, position, intent), NOW)
+                    router.route(press(contact, position, intent), now)
                 }
                 3 => {
                     down.remove(&contact);
-                    router.route(Event::Release(contact, None), NOW)
+                    router.route(Event::Release(contact, None), now)
                 }
                 4 if !matches!(contact, Contact::Key(_)) => {
                     if let Some((position, _)) = down.get_mut(&contact) {
                         *position = Some(point);
                     }
-                    router.route(Event::Move(contact, point), NOW)
+                    router.route(Event::Move(contact, point), now)
                 }
                 5 if depth < 2 => {
                     let id = SCOPE + depth;
+                    let armed_at = now + Duration::from_millis((random >> 24) % 5);
+                    deadlines[depth as usize] = armed_at;
                     interrupts += usize::from(depth == 0);
                     depth += 1;
-                    router.open(id, Scope::default(), NOW)
+                    router.open(id, Scope::default(), armed_at)
                 }
                 6 if depth > 0 => {
                     depth -= 1;
@@ -110,13 +117,13 @@ fn generated_interleavings_match_the_game_contacts_after_every_event() {
                 7 => {
                     down.clear();
                     interrupts += 1;
-                    router.route(Event::Interrupted, NOW)
+                    router.route(Event::Interrupted, now)
                 }
                 8 => {
                     down.remove(&contact);
-                    router.route(Event::Cancel(contact), NOW)
+                    router.route(Event::Cancel(contact), now)
                 }
-                _ => router.route(Event::Repeat(contact), NOW),
+                _ => router.route(Event::Repeat(contact), now),
             };
             game.accept(routed, depth != 0);
             let expected = down
@@ -129,6 +136,38 @@ fn generated_interleavings_match_the_game_contacts_after_every_event() {
             assert_eq!(game.interruptions, interrupts);
         }
     }
+}
+
+#[test]
+fn a_direction_pressed_before_arming_is_handed_back_if_still_down() {
+    let mut router = Router::default();
+    router.submitted(tree(vec![button(10, [60.0; 2], [50.0; 2])]).input_layout());
+    let direction = Contact::Key(0);
+    let before = Duration::ZERO;
+    assert_eq!(
+        router.open(SCOPE, Scope::default(), NOW),
+        Some(Routed::Interrupted)
+    );
+    assert_eq!(
+        router.route(
+            press(direction, None, Some(Intent::Direction(Direction::Right))),
+            before
+        ),
+        None
+    );
+    assert_eq!(router.advance(NOW), None);
+    assert_eq!(router.route(Event::Repeat(direction), NOW), None);
+    assert_eq!(
+        router.close(SCOPE),
+        Some(Routed::Resumed(vec![Held {
+            contact: direction,
+            position: None
+        }]))
+    );
+    assert!(matches!(
+        router.route(Event::Release(direction, None), NOW),
+        Some(Routed::Game(_))
+    ));
 }
 
 #[test]
