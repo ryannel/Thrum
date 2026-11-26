@@ -1000,6 +1000,8 @@ fn scene_linear_capture_uses_the_ordinary_submission_and_can_restore_sdr() {
 
 #[test]
 fn edr_graph_retains_the_sdr_encode_only_for_an_sdr_readback() {
+    use crate::runtime::CaptureLimits;
+
     let Some(test_gpu) = thrum_test_support::gpu(
         "edr_graph_retains_the_sdr_encode_only_for_an_sdr_readback",
         Some(wgpu::Backend::Metal),
