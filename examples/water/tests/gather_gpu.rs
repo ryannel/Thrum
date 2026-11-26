@@ -275,12 +275,12 @@ fn rough_deep_chart_and_basin_skip_the_gather() {
         }],
         ..chart.clone()
     };
-    let spectrum = Spectrum {
+    let spectrum = |resolved| Spectrum {
         long: vec![],
         cascades: [
             Cascade::new(160.0, &[]).expect("long cascade"),
             Cascade::new(37.0, &[]).expect("middle cascade"),
-            Cascade::new(9.0, &[(1, 0, 0.015, 0.0)]).expect("short resolved wave"),
+            Cascade::new(9.0, if resolved { &[(1, 0, 0.015, 0.0)] } else { &[] }).expect("short resolved wave"),
         ],
         tail_slope_variance: 0.01,
     };
@@ -289,10 +289,13 @@ fn rough_deep_chart_and_basin_skip_the_gather() {
         ..Profile::default()
     };
     profile.waves.choppiness = 0.0;
-    for (name, kind, has_source) in [
-        ("basin", BodyKind::Basin { seed: [0.0; 2] }, false),
-        ("unjoined chart", BodyKind::Chart(chart), false),
-        ("joined chart", BodyKind::Chart(joined), true),
+    let mut long_join = joined.clone();
+    long_join.ends[0].length = 200.0;
+    for (name, kind, has_source, gain, resolved) in [
+        ("basin", BodyKind::Basin { seed: [0.0; 2] }, false, 1.0, true),
+        ("unjoined chart", BodyKind::Chart(chart), false, 1.0, true),
+        ("short join", BodyKind::Chart(joined), true, 1.0, true),
+        ("partial join", BodyKind::Chart(long_join), true, 0.4, false),
     ] {
         let body = Body {
             name: name.into(),
@@ -300,13 +303,14 @@ fn rough_deep_chart_and_basin_skip_the_gather() {
             level: 0.0,
             stage: Stage { min: 0.0, max: 0.0, value: 0.0 },
             fetch: 150.0,
-            gains: [1.0; 4],
+            gains: [gain; 4],
         };
         let mut bodies = Vec::new();
         if has_source {
             bodies.push(Body {
                 name: "joined basin".into(),
                 kind: BodyKind::Basin { seed: [-75.0, 0.0] },
+                gains: [1.0; 4],
                 ..body.clone()
             });
         }
@@ -318,7 +322,7 @@ fn rough_deep_chart_and_basin_skip_the_gather() {
         for (x, height, gather_expected) in [(32.0, 10.0, false), (0.0, 30.0, true)] {
             let view = camera([x, height, 0.0], [x, 0.0, 1.0], 46_f32.to_radians(), 1.0 / 1024.0);
             let mut rig = Rig::new(&gpu, &view, sun(2.0, 0.000_01), &[], None);
-            let water = Water::mapped(Arc::clone(&map), spectrum.clone(), profile).expect("mapped water");
+            let water = Water::mapped(Arc::clone(&map), spectrum(resolved), profile).expect("mapped water");
             let _bodies = attach(&mut rig, water);
             rig.host.set_timing_requested(true);
             let times = rig.frame().gpu_pass_ns.expect("Metal pass timings");

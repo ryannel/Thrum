@@ -1601,8 +1601,8 @@
           "ask": "Is each case made with a chart a game could declare through the public map interface, beside the same case on a basin? Would case (a) fail if a deep chart tile were dropped before its mirror was considered, and case (b) fail if a shallow chart tile in view asked for the scene's mirror on water that cannot mirror?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/WATERS/WP24/partial-joins/README.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/WATERS/WP24-review.md"
         }

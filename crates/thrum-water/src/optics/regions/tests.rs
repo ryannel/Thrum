@@ -421,7 +421,7 @@ fn rough_chart_and_basin_copy_only_shallow_tiles() {
     };
     assert!((0.5..3.0).contains(&profile.sight_depth()));
     assert!(!roughness.can_mirror(1.0, 0.5, profile.mirror_limit));
-    let make_map = |name: &str, kind, source| {
+    let make_map = |name: &str, kind, body_gain, source| {
         let body = Body {
             name: name.into(),
             kind,
@@ -432,7 +432,7 @@ fn rough_chart_and_basin_copy_only_shallow_tiles() {
                 value: 0.0,
             },
             fetch: 150.0,
-            gains: [1.0; 4],
+            gains: [body_gain; 4],
         };
         let mut bodies = Vec::new();
         if let Some((gain, stage)) = source {
@@ -460,17 +460,22 @@ fn rough_chart_and_basin_copy_only_shallow_tiles() {
         max: 0.0,
         value: 0.0,
     };
-    for (name, kind, source) in [
-        ("basin", BodyKind::Basin { seed: [0.0; 2] }, None),
-        ("unjoined chart", BodyKind::Chart(chart), None),
+    let mut long_join = joined.clone();
+    long_join.ends[0].length = 200.0;
+    for (name, kind, body_gain, source, band_height) in [
+        ("basin", BodyKind::Basin { seed: [0.0; 2] }, 1.0, None, 0.02),
+        ("unjoined chart", BodyKind::Chart(chart), 1.0, None, 0.02),
         (
             "chart with a rough source",
             BodyKind::Chart(joined.clone()),
+            1.0,
             Some((1.0, fixed)),
+            0.02,
         ),
         (
             "chart with a sheltered source offscreen",
             BodyKind::Chart(joined.clone()),
+            1.0,
             Some((
                 0.2,
                 Stage {
@@ -479,35 +484,32 @@ fn rough_chart_and_basin_copy_only_shallow_tiles() {
                     value: 0.05,
                 },
             )),
+            0.02,
+        ),
+        (
+            "chart with a partial join",
+            BodyKind::Chart(long_join),
+            0.4,
+            Some((1.0, fixed)),
+            0.0,
         ),
     ] {
-        let map = make_map(name, kind, source);
+        let map = make_map(name, kind, body_gain, source);
+        let tail = MirrorRoughness {
+            shortest_height: band_height,
+            ..roughness
+        };
+        if body_gain < 1.0 {
+            // On the level chart the furthest wet edge has the least
+            // source influence and therefore the lowest mixed gain.
+            let mixed_gain = map.row(1, [77.5, 0.0]).gains[3];
+            assert!(tail.can_mirror(body_gain, 3.0, profile.mirror_limit));
+            assert!(!tail.can_mirror(mixed_gain, 3.0, profile.mirror_limit));
+            println!("{name}: declared gain {body_gain}, minimum wet gain {mixed_gain}");
+        }
         let inputs =
-            Shallows::default().inputs(profile, &view, Some(&map), &[], 0.0, [0.0; 2], roughness);
-        println!(
-            "{name}: mirror={} dispatch={:?} deep={:?}",
-            inputs.reach_slope_scene[2],
-            inputs.dispatch,
-            bits(&inputs, &view, Vec3::new(32.0, 0.0, 1.0))
-        );
-        assert_eq!(inputs.reach_slope_scene[2], 0.0, "{name} scene mirror");
-        let shallow = Vec3::new(-20.0, 0.0, 1.0);
-        let deep = Vec3::new(32.0, 0.0, 1.0);
-        assert_eq!(
-            bits(&inputs, &view, shallow),
-            Some(SOURCE | SHALLOW),
-            "{name} shelf"
-        );
-        assert_eq!(bits(&inputs, &view, deep), Some(0), "{name} deep water");
-        let cells = inputs.mask.iter().flatten().flatten();
-        let shallow_cells = cells.clone().filter(|&&flags| flags & SHALLOW != 0).count();
-        let copied_cells = cells.filter(|&&flags| flags & SOURCE != 0).count();
-        assert_eq!(copied_cells, shallow_cells, "{name} copied cells");
-        assert!((0..view.render_extent[0]).contains(&inputs.dispatch[2]) && inputs.dispatch[2] > 0);
-        println!(
-            "{name}: {copied_cells} shallow cells copied, dispatch {:?}",
-            inputs.dispatch
-        );
+            Shallows::default().inputs(profile, &view, Some(&map), &[], 0.0, [0.0; 2], tail);
+        assert_shallow_copy(name, &inputs, &view);
     }
 
     // Backwater can carry the receiving body's gains beyond its geometric
@@ -522,6 +524,7 @@ fn rough_chart_and_basin_copy_only_shallow_tiles() {
     let map = make_map(
         "chart with a mouth",
         BodyKind::Chart(mouth),
+        1.0,
         Some((0.2, stages)),
     );
     let low = map
@@ -547,6 +550,33 @@ fn rough_chart_and_basin_copy_only_shallow_tiles() {
             "{name} receiving stage"
         );
     }
+}
+
+fn assert_shallow_copy(name: &str, inputs: &Inputs, view: &ContributionFrame) {
+    println!(
+        "{name}: mirror={} dispatch={:?} deep={:?}",
+        inputs.reach_slope_scene[2],
+        inputs.dispatch,
+        bits(inputs, view, Vec3::new(32.0, 0.0, 1.0))
+    );
+    assert_eq!(inputs.reach_slope_scene[2], 0.0, "{name} scene mirror");
+    let shallow = Vec3::new(-20.0, 0.0, 1.0);
+    let deep = Vec3::new(32.0, 0.0, 1.0);
+    assert_eq!(
+        bits(inputs, view, shallow),
+        Some(SOURCE | SHALLOW),
+        "{name} shelf"
+    );
+    assert_eq!(bits(inputs, view, deep), Some(0), "{name} deep water");
+    let cells = inputs.mask.iter().flatten().flatten();
+    let shallow_cells = cells.clone().filter(|&&flags| flags & SHALLOW != 0).count();
+    let copied_cells = cells.filter(|&&flags| flags & SOURCE != 0).count();
+    assert_eq!(copied_cells, shallow_cells, "{name} copied cells");
+    assert!((0..view.render_extent[0]).contains(&inputs.dispatch[2]) && inputs.dispatch[2] > 0);
+    println!(
+        "{name}: {copied_cells} shallow cells copied, dispatch {:?}",
+        inputs.dispatch
+    );
 }
 
 #[test]

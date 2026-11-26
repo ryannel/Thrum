@@ -1285,3 +1285,8 @@
   and skips the Metal gather in the deep-only view. The calm Metal reflection and the
   existing sea and basin cases pass again.
   [WP24 review-fix evidence](../../../.orchestrate/evidence/WATERS/WP24/review-fix/README.md).
+- 2026-11-26 WP24 partial joins. Join admission uses both ends of the tile's weight interval
+  and bounds the normalised mix of overlapping ends. A full join retains declaration order.
+  The long-join reproduction on Metal skips the gather in the deep-only view and runs it
+  with the shelf in view. The split-bed mask matches the basin and the calm panel still reflects.
+  [WP24 partial-join evidence](../../../.orchestrate/evidence/WATERS/WP24/partial-joins/README.md).
