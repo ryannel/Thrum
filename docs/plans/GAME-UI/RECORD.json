@@ -546,7 +546,7 @@
         {
           "verdict": "fail",
           "commit": "4bcd09baf0b26528fa779d08e34f0ac86fecfb0c",
-          "review": ".orchestrate/evidence/GAME-UI/WP3-review.md",
+          "review": ".orchestrate/evidence/GAME-UI/WP3-review-2.md",
           "items": {
             "WP3.1": "fail",
             "WP3.2": "pass",
@@ -597,6 +597,50 @@
             "turns": 1
           },
           "at": "2026-11-26T04:06:47Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "068819b400433f80abd497ba69b48934528f8637",
+          "review": ".orchestrate/evidence/GAME-UI/WP3-review.md",
+          "items": {
+            "WP3.1": "pass",
+            "WP3.2": "pass",
+            "WP3.3": "fail",
+            "WP3.4": "pass",
+            "WP3.5": "pass",
+            "WP3.6": "pass",
+            "WP3.7": "pass",
+            "WP3.8": "pass",
+            "WP3.9": "pass",
+            "WP3.10": "pass",
+            "WP3.11": "pass",
+            "WP3.12": "pass",
+            "WP3.14": "pass"
+          },
+          "findings": [
+            {
+              "name": "Anchor and visibility edits beneath a hidden group rerun layout",
+              "item": "WP3.3",
+              "different": "The previous hidden-text and fixed-size text cases now pass. This reproduction uses a fill node, changes its anchor and shown flag while its parent stays hidden, and never edits text.",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 124709,
+            "cached": 3773440,
+            "output": 11239,
+            "turns": 1
+          },
+          "at": "2026-11-26T04:26:03Z"
         }
       ],
       "authorised": {
