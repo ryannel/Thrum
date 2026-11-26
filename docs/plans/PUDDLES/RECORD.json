@@ -372,7 +372,78 @@
     },
     "WP3": {
       "definitions": "96f0260d5f142f95572851f1dab6cb2eeda0bc26b650206fe9c736f484da970a",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "7f6984950d903250d2a4bbbaf5960f4d49d9385f",
+          "review": ".orchestrate/evidence/PUDDLES/WP3-review.md",
+          "items": {
+            "WP3.1": "pass",
+            "WP3.2": "pass",
+            "WP3.3": "fail",
+            "WP3.4": "pass",
+            "WP3.5": "fail",
+            "WP3.6": "fail",
+            "WP3.7": "fail",
+            "WP3.8": "fail",
+            "WP3.9": "pass",
+            "WP3.10": "pass",
+            "WP3.11": "fail"
+          },
+          "findings": [
+            {
+              "name": "The ordinary GPU map reader misses hollows",
+              "item": "WP3.3",
+              "repeat": false
+            },
+            {
+              "name": "Body-query snapshots miss changing hollow levels",
+              "item": "WP3.5",
+              "repeat": false
+            },
+            {
+              "name": "The yard float bypasses the shared water query",
+              "item": "WP3.6",
+              "repeat": false
+            },
+            {
+              "name": "The paving waterline loses its outline from above",
+              "item": "WP3.7",
+              "repeat": false
+            },
+            {
+              "name": "The spill and parting cannot be followed from 15 m",
+              "item": "WP3.8",
+              "repeat": false
+            },
+            {
+              "name": "The ledger overstates shared-map correctness and visible spill evidence",
+              "item": "WP3.11",
+              "repeat": false
+            },
+            {
+              "name": "Dry cells across the whole rectangle are submitted as puddle tiles",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 160076,
+            "cached": 5655936,
+            "output": 15832,
+            "turns": 1
+          },
+          "at": "2026-11-26T10:05:28Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
