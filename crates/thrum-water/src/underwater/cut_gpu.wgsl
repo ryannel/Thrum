@@ -12,13 +12,13 @@ struct LensWork {
 }
 struct LensWrite {
     count: atomic<u32>,
-    enabled: u32,
+    padding0: u32,
     padding: vec2<u32>,
     faces: array<LensFace>,
 }
 struct LensRead {
     count: u32,
-    enabled: u32,
+    padding0: u32,
     padding: vec2<u32>,
     faces: array<LensFace>,
 }

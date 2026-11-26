@@ -312,13 +312,11 @@ fn metal_skips_dry_trade_water_as_the_footprint_moves() {
         assert_eq!(sample.observation, baseline.observation);
         assert_eq!(sample.tick, baseline.tick);
         assert_eq!(sample.presentation_alpha.to_bits(), baseline.presentation_alpha.to_bits());
-        assert!(!gathers(&sample), "dry Trade lens at {dx} m scheduled the underwater gather (ordinary gather: {}, cut: {})", gathers(&baseline), sample.gpu_pass_ns.as_ref().unwrap().passes().iter().any(|pass| pass.name.as_ref() == "water lens cut"));
-        // A different shader variant can round the ordinary colour by a
-        // half-float step. The timed frame also establishes the pass omission.
-        let maximum = colour.iter().zip(&reference).flat_map(|(a, b)| a.iter().zip(b))
-            .map(|(&a, &b)| (a - b).abs() / a.abs().max(b.abs()).max(1e-6))
-            .fold(0.0_f32, f32::max);
-        assert!(maximum < 0.001, "the dry Trade lens changed output at {dx} m by {maximum}");
+        let cut = sample.gpu_pass_ns.as_ref().expect("Metal timing").passes().iter()
+            .any(|pass| pass.name.contains("water lens cut"));
+        assert!(!gathers(&sample) && !cut, "dry Trade lens at {dx} m scheduled underwater work");
+        assert!(colour.iter().zip(&reference).all(|(a, b)| a.map(f32::to_bits) == b.map(f32::to_bits)),
+            "the dry Trade lens changed output at {dx} m");
     }
     lens.host.continuous_source_mut().view = look(0.0, y - 4.0);
     assert!(gathers(&lens.frame()), "submerged Trade lens omitted its gather");
@@ -380,7 +378,6 @@ fn metal_admits_a_dry_lens_over_a_live_wake_window() {
 }
 
 thrum_test_support::macos_gpu_test! {
-#[expect(clippy::print_stderr, reason = "retain the impact timing with its target evidence")]
 fn metal_composes_a_lens_below_a_lake_impact_ring() {
     use crate::support::optics::{Panel, Rig, attach, camera, sun};
     use thrum_water::interaction::Witness;
@@ -418,8 +415,9 @@ fn metal_composes_a_lens_below_a_lake_impact_ring() {
         let centre = |level: usize| {
             let spacing = Witness::CELL_METRES[level];
             let [x, z] = endpoint.origins[level].map(|origin| (-origin / spacing).round());
-            let x = (0..Witness::SIDE).zip(0_u16..).find(|(_, i)| f32::from(*i) == x).unwrap().0;
-            let z = (0..Witness::SIDE).zip(0_u16..).find(|(_, i)| f32::from(*i) == z).unwrap().0;
+            let cell = |value: f32| (0..Witness::SIDE).zip(0_u16..)
+                .find(|(_, i)| f32::from(*i).to_bits() == value.to_bits()).expect("witness cell").0;
+            let [x, z] = [x, z].map(cell);
             let offset = ((endpoint.offsets[level] + z * Witness::SIDE + x) * 8) as u64;
             let raw = thrum_test_support::readback::buffer(&lens.device, &lens.queue, &witness.buffer, offset..offset + 4);
             f32::from_le_bytes(raw.try_into().unwrap())

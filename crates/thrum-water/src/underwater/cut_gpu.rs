@@ -197,20 +197,17 @@ impl Cut {
         hollows: Option<&crate::prepare::hollow_tiles::HollowTiles>,
     ) {
         self.cells.clear();
+        if !admitted {
+            return;
+        }
         let plane = Plane::new(frame);
         let bounds = plane.bounds();
         let anchor = [frame.camera[0].floor(), frame.camera[2].floor()].map(f64::from);
-        if admitted {
-            let [lo, hi] = bounds;
-            let expanded = [lo.map(|v| v - horizontal), hi.map(|v| v + horizontal)];
-            self.cells.extend(mesh.cells(expanded, anchor, hollows));
-        }
+        let [lo, hi] = bounds;
+        let expanded = [lo.map(|v| v - horizontal), hi.map(|v| v + horizontal)];
+        self.cells.extend(mesh.cells(expanded, anchor, hollows));
         let count = u32::try_from(self.cells.len()).expect("bounded lens cells");
-        queue.write_buffer(
-            &self.buffers.output,
-            0,
-            bytemuck::bytes_of(&[0u32, u32::from(admitted), 0, 0]),
-        );
+        queue.write_buffer(&self.buffers.output, 0, bytemuck::bytes_of(&0u32));
         if count > 0 {
             queue.write_buffer(
                 &self.buffers.input,

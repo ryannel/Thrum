@@ -455,7 +455,7 @@ impl Case {
             .map(|sheet| sheet.with_short_wave_variances(short));
         // These witnesses are in the near grid, away from every ring seam.
         let spacing = if self.name == "lake" { 0.5 } else { 0.25 };
-        let origin = self.column.map(|v| v.floor());
+        let origin = self.column.map(f64::floor);
         let vertex = |rest| {
             let row = self.map.sample(rest).expect("lens witness has one body");
             let gains = limit(row.row, row.depth, variances, self.map.profile()).gains;

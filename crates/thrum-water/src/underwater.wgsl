@@ -148,7 +148,6 @@ fn underside_light(world: vec3<f32>, n: vec3<f32>, v: vec3<f32>, variance: f32, 
 }
 
 fn water_underside(input: VertexOut, n: vec3<f32>, v: vec3<f32>, variance: f32, foam: f32) -> vec4<f32> {
-    if lens_faces.enabled == 0u { return vec4(0.0); }
     let uv = optics_uv(vec2<u32>(input.clip.xy));
     let eye = read_lens(uv);
     let pixel_depth = max(fwidth(eye.signed_depth), 0.00001);

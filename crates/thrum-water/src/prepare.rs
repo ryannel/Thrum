@@ -45,7 +45,7 @@ pub(super) struct Prepared {
     pub(super) pipeline: wgpu::RenderPipeline,
     pub(super) river_pipeline: Option<wgpu::RenderPipeline>,
     pub(super) film: Option<wgpu::RenderPipeline>,
-    pub(super) underwater: Option<wgpu::RenderPipeline>,
+    pub(super) underwater: Option<UnderwaterPipelines>,
     pub(super) parameters: wgpu::Buffer,
     pub(super) group: wgpu::BindGroup,
     pattern: Option<Pattern>,
@@ -62,6 +62,19 @@ pub(super) struct Prepared {
     pub(super) draws: Vec<WaterDraw>,
     pub(super) hollow_tiles: Option<hollow_tiles::HollowTiles>,
 }
+pub(super) struct UnderwaterPipelines {
+    pub(super) surface: wgpu::RenderPipeline,
+    pub(super) river: Option<wgpu::RenderPipeline>,
+    pub(super) through_lens: wgpu::RenderPipeline,
+}
+
+struct SurfacePipelines {
+    sheet: wgpu::RenderPipeline,
+    river: Option<wgpu::RenderPipeline>,
+    film: Option<wgpu::RenderPipeline>,
+    underwater: Option<UnderwaterPipelines>,
+}
+
 struct Pattern {
     device: DeviceSite,
     layout: wgpu::BindGroupLayout,
@@ -451,7 +464,7 @@ pub(super) fn new(
         layout: &layout,
         entries: &bindings,
     });
-    let (pipeline, river_pipeline, film, underwater, shader) = surface_pipelines(
+    let (pipelines, shader) = surface_pipelines(
         surface,
         &layout,
         &environment,
@@ -467,7 +480,8 @@ pub(super) fn new(
     );
     let lens_cut = lens_buffers
         .as_ref()
-        .map(|buffers| Cut::new(surface, &shader, buffers.clone(), &entries, &bindings));
+        .zip(shader.as_ref())
+        .map(|(buffers, shader)| Cut::new(surface, shader, buffers.clone(), &entries, &bindings));
     let pattern = foam.as_ref().map(|_| Pattern {
         device: device.clone(),
         layout: layout.into_raw(),
@@ -484,10 +498,10 @@ pub(super) fn new(
         foam,
         environment,
         gather,
-        pipeline,
-        river_pipeline,
-        film,
-        underwater,
+        pipeline: pipelines.sheet,
+        river_pipeline: pipelines.river,
+        film: pipelines.film,
+        underwater: pipelines.underwater,
         parameters,
         group,
         pattern,
@@ -637,11 +651,8 @@ fn surface_pipelines(
     tidal_grid: bool,
     rain: bool,
 ) -> (
-    wgpu::RenderPipeline,
-    Option<wgpu::RenderPipeline>,
-    Option<wgpu::RenderPipeline>,
-    Option<wgpu::RenderPipeline>,
-    thrum_render::runtime::PipelineInput<wgpu::ShaderModule>,
+    SurfacePipelines,
+    Option<thrum_render::runtime::PipelineInput<wgpu::ShaderModule>>,
 ) {
     let under = gather.is_some_and(|gather| gather.underwater);
     let mut source = shader_source(
@@ -681,38 +692,47 @@ fn surface_pipelines(
             }"
         });
     }
-    let shader = surface
-        .device
-        .create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some(SURFACE_PASS),
-            source: wgpu::ShaderSource::Wgsl(source.into()),
-        });
-    let pipeline = create_pipeline(
-        surface,
-        layout,
-        environment,
-        &shader,
-        SurfaceDraw::Sheet {
-            mapped: map.is_some(),
-            gather: gather.is_some(),
-        },
+    let module = |source: String| {
+        surface
+            .device
+            .create_shader_module(wgpu::ShaderModuleDescriptor {
+                label: Some(SURFACE_PASS),
+                source: wgpu::ShaderSource::Wgsl(source.into()),
+            })
+    };
+    let sheet = SurfaceDraw::Sheet {
+        mapped: map.is_some(),
+        gather: gather.is_some(),
+    };
+    let river = SurfaceDraw::River {
+        gather: gather.is_some(),
+    };
+    let ordinary = module(
+        source.clone()
+            + "fn water_underside(input: VertexOut, n: vec3<f32>, v: vec3<f32>, variance: f32, foam: f32) -> vec4<f32> { return vec4(0.0); }",
     );
-    let river = has_rivers.then(|| {
-        create_pipeline(
-            surface,
-            layout,
-            environment,
-            &shader,
-            SurfaceDraw::River {
-                gather: gather.is_some(),
-            },
-        )
-    });
+    let pipeline = create_pipeline(surface, layout, environment, &ordinary, sheet);
+    let river_pipeline =
+        has_rivers.then(|| create_pipeline(surface, layout, environment, &ordinary, river));
     let film = (foam.is_some() && shore)
-        .then(|| create_pipeline(surface, layout, environment, &shader, SurfaceDraw::Film));
-    let underwater =
-        under.then(|| create_pipeline(surface, layout, environment, &shader, SurfaceDraw::Lens));
-    (pipeline, river, film, underwater, shader)
+        .then(|| create_pipeline(surface, layout, environment, &ordinary, SurfaceDraw::Film));
+    let shader = under.then(|| {
+        module(source + include_str!("underwater/cut_gpu.wgsl") + include_str!("underwater.wgsl"))
+    });
+    let underwater = shader.as_ref().map(|shader| UnderwaterPipelines {
+        surface: create_pipeline(surface, layout, environment, shader, sheet),
+        river: has_rivers.then(|| create_pipeline(surface, layout, environment, shader, river)),
+        through_lens: create_pipeline(surface, layout, environment, shader, SurfaceDraw::Lens),
+    });
+    (
+        SurfacePipelines {
+            sheet: pipeline,
+            river: river_pipeline,
+            film,
+            underwater,
+        },
+        shader,
+    )
 }
 
 fn shader_source(
@@ -724,7 +744,6 @@ fn shader_source(
     gather: Option<&Gather>,
     rain: bool,
 ) -> String {
-    let underwater = gather.is_some_and(|gather| gather.underwater);
     let gather = gather.is_some();
     let sun = if surface.sun_optical_depth {
         "fn water_sun(point: vec3<f32>) -> vec3<f32> { return sun_irradiance(point) * cloud_factor(point); }"
@@ -762,7 +781,7 @@ fn shader_source(
             "    var row=surface_pixel(input.rest,input.body);\n",
         )
     };
-    let mut source = format!(
+    format!(
         "{}\n{sun}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}",
         library,
         super::VIEW_RECORDS,
@@ -865,18 +884,7 @@ fn shader_source(
              fn foam_surface(_p: vec3<f32>, _r: SurfaceRow, _v: f32, _d: f32, _face: f32) -> vec4<f32> { return vec4(0.0); }"
                 .into()
         },
-    );
-    if underwater {
-        source.push_str(include_str!("underwater/cut_gpu.wgsl"));
-        source.push_str(include_str!("underwater.wgsl"));
-    } else {
-        source.push_str(
-            "fn water_underside(input: VertexOut, n: vec3<f32>, v: vec3<f32>, variance: f32, foam: f32) -> vec4<f32> {
-                return vec4(0.0);
-            }",
-        );
-    }
-    source
+    )
 }
 
 #[derive(Clone, Copy)]

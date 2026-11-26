@@ -888,7 +888,15 @@ impl SceneContribution for Water {
             let film = p.film.as_ref().filter(|_| {
                 index == usize::from(p.gather.is_some()) + usize::from(p.lens_cut.is_some())
             });
-            pass.set_pipeline(film.unwrap_or(&p.pipeline));
+            let under = p
+                .underwater
+                .as_ref()
+                .filter(|_| p.gather.as_ref().is_some_and(|gather| gather.under));
+            let surface = under.map_or(&p.pipeline, |pipelines| &pipelines.surface);
+            let river = under.map_or(p.river_pipeline.as_ref(), |pipelines| {
+                pipelines.river.as_ref()
+            });
+            pass.set_pipeline(film.unwrap_or(surface));
             pass.set_bind_group(
                 2,
                 p.environment
@@ -901,12 +909,10 @@ impl SceneContribution for Water {
                 pass.draw(0..3, 0..1);
                 return;
             }
-            if let Some(underwater) = &p.underwater
-                && p.gather.as_ref().is_some_and(|gather| gather.under)
-            {
-                pass.set_pipeline(underwater);
+            if let Some(under) = under {
+                pass.set_pipeline(&under.through_lens);
                 pass.draw(0..3, 0..1);
-                pass.set_pipeline(&p.pipeline);
+                pass.set_pipeline(surface);
             }
             pass.set_vertex_buffer(0, p.mesh.slice(..));
             let mut river_active = false;
@@ -919,9 +925,9 @@ impl SceneContribution for Water {
                     {
                         if draw.river != river_active {
                             let pipeline = if draw.river {
-                                p.river_pipeline.as_ref().expect("sampled river pipeline")
+                                river.expect("sampled river pipeline")
                             } else {
-                                &p.pipeline
+                                surface
                             };
                             pass.set_pipeline(pipeline);
                             river_active = draw.river;
@@ -936,7 +942,7 @@ impl SceneContribution for Water {
                 && tiles.index_count() > 0
             {
                 if river_active {
-                    pass.set_pipeline(&p.pipeline);
+                    pass.set_pipeline(surface);
                 }
                 pass.set_index_buffer(tiles.buffer.slice(..), wgpu::IndexFormat::Uint32);
                 pass.draw_indexed(0..tiles.index_count(), 0, 0..1);
