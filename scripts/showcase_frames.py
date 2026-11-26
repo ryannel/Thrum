@@ -45,6 +45,7 @@ def mac_window(output, binary, env, route, *, day):
     launch = dict(env, THRUM_GOVERNOR_ROUTE=str(admitted), THRUM_SHOWCASE_ROUTE_START_PAUSED='1',
                   THRUM_PARAMS=str(parameters), THRUM_GOVERNOR_RECORD='observed',
                   THRUM_MAC_TRANSITION=str(output), THRUM_MAC_TRANSITION_ARM='route',
+                  THRUM_SHOWCASE_CONTENT_REPORT=str(output / 'drawn.json'),
                   THRUM_MAC_EDR_PROOF=str(display), THRUM_REPORT='1', THRUM_MAC_FRAME_RATE='60',
                   THRUM_V1_FRAMES=str(last - first + 200))
     if day:
@@ -150,7 +151,10 @@ def mac_record(output, first, last, day, startup, load):
                   'culling': next(iter(sampled.values()))['culling']}
     if any(sample['culling'] != selections['culling'] for sample in sampled.values()):
         raise ValueError('the culling mode changed during the measured run')
-    return {'selections': selections, 'target': 'mac-metal', 'adapter': prepared['adapter'],
+    content_path = output / 'drawn.json'
+    content = json.loads(content_path.read_text()) if content_path.is_file() else {}
+    return {'selections': selections, 'cooked_root': content.get('cooked_root'),
+            'target': 'mac-metal', 'adapter': prepared['adapter'],
             'phase': 'day cycle' if day else 'flythrough', 'capture': 'off', 'startup_proxy': startup,
             'load': load, 'callbacks': timeline, 'misses': misses,
             'first_requested_tick': first, 'last_requested_tick': last,
@@ -193,7 +197,8 @@ def chrome_record(output, wasm_hash, day):
                        'available_frame_samples': samples[max(0, earlier - 1):later + 1],
                        'investigation': 'unresolved under load',
                        'evidence_read': 'animation-frame timestamps, JS driver times and available GPU pass samples'})
-    return {'selections': runtime['exit_selections'], 'target': 'chrome-webgpu',
+    return {'selections': runtime['exit_selections'],
+            'cooked_root': runtime.get('exit_cooked', {}).get('cooked_root'), 'target': 'chrome-webgpu',
             'phase': 'day cycle' if day else 'flythrough', 'capture': 'off',
             'startup_proxy': runtime['startup_proxy'], 'misses': misses,
             'first_requested_tick': first, 'last_requested_tick': last,

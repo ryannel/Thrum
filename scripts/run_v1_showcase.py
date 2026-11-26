@@ -335,13 +335,13 @@ def mac_exit_controls(run, store, row, stops, *, edit_source=None):
     return result
 
 
-def chrome_exit_stops(run, source, row):
+def chrome_exit_stops(run, source, row, *, lock=True):
     command = ['node', str(CHECKER), '--case', 'exit-stops', '--cook', str(COOK), '--web-root', str(WEB),
                '--assets-source', str(source), '--output', str(run)]
     env = dict(os.environ, THRUM_SHOWCASE_EXIT_QUERY=urllib.parse.urlencode(row['select']))
     log_path = run.with_suffix('.log')
     with log_path.open('w') as log:
-        if bounded(locked_capture('chrome', command), log, 900, cwd=REPO, env=env):
+        if bounded(locked_capture('chrome', command) if lock else command, log, 900, cwd=REPO, env=env):
             raise Failure(f'Chrome exit stops failed; see {log_path}')
     wasm_hash = sha256(WASM)
     results = json.loads((run / 'run.json').read_text())['results']
@@ -362,6 +362,8 @@ def chrome_exit_stops(run, source, row):
 def exit_showcase(args):
     rows = exit_rows()
     stops = route()
+    if args.row:
+        return exit_row(args.row, rows[args.row], stops)
     if args.clauses:
         return exit_clauses(args, rows)
     if args.compare:
@@ -393,6 +395,64 @@ def exit_showcase(args):
     print(f'PASS: {run / "run.json"}')
 
 
+def native_exit_stops(run, store, row, stops, *, keys=ROUTE, empty=False):
+    presets = [PARAMS / f'showcase-{stop}.params.json' for stop in keys]
+    env = dict(native_exit_environment(store, row), THRUM_CAPTURE_SCENE=str(run),
+               THRUM_CAPTURE_ROUTE_ONLY='1', THRUM_CAPTURE_SOURCE='submitted-sdr',
+               THRUM_CAPTURE_PARAMS=os.pathsep.join(map(str, presets)))
+    if row['expect']['display'] == 'Edr':
+        env['THRUM_CAPTURE_EDR_HEADROOM'] = '1'
+    if empty:
+        env['THRUM_EXIT_NO_ENTITIES'] = '1'
+    with run.with_suffix('.log').open('w') as log:
+        if bounded([str(GAME)], log, 120, cwd=REPO, env=env):
+            raise Failure(f'{run.name}: native submitted stills failed')
+    manifest = json.loads((run / 'stills.json').read_text())
+    expected = row['expect']
+    resolved = {key: manifest[key] for key in ('recipe', 'reconstruction', 'culling', 'governor')}
+    if resolved != {key: f'Ok({value})' if key == 'recipe' else value
+                    for key, value in expected.items() if key != 'display'}:
+        raise Failure(f'{run.name}: stills resolved different render selections: {resolved}')
+    frames = manifest['stills']
+    for frame, stop in zip(frames, keys, strict=True):
+        preset = stops[stop]
+        if (not frame['surface_presented'] or frame['headroom'] != 1
+                or frame['source'] != expected['display']
+                or not close(frame['time_of_day'] * 24, preset['sky.solar_time'], 0.0051)
+                or not close(math.degrees(frame['yaw']), preset['camera.yaw'], 1e-3)
+                or not close(math.degrees(frame['pitch']), preset['camera.pitch'], 1e-3)):
+            raise Failure(f'{run.name}: submitted frame does not match {stop}')
+    return manifest
+
+
+def exit_row(name, row, stops):
+    web = name == 'chrome'
+    run = new_run(f'exit-row-{name}')
+    print(f'exit row: {run}', flush=True)
+    build(run, web=web, creation_counters=not web)
+    builds = identities(web=web, built=True)
+    source = copy_source(run, exit_assets=EXIT_SOURCE)
+    expected_root = json.loads(EXIT_FLYTHROUGH.read_text())['cooked_root']
+    store = cook_exit(run, source, expected_root)
+    if web:
+        stop_reports = chrome_exit_stops(run / 'stops', source, row, lock=False)
+        stop_roots = {stop: report['cooked'].get('cooked_root') for stop, report in stop_reports.items()}
+    else:
+        stop_reports = native_exit_stops(run / 'stops', store, row, stops)
+        stop_roots = dict.fromkeys(ROUTE, stop_reports.get('cooked_root'))
+    flythrough = record_exit_phase(run / 'flythrough', source, store, row, builds, web=web, day=False)
+    roots = {**stop_roots, 'flythrough': flythrough.get('cooked_root')}
+    write_json(run / 'run.json', {'builds': builds, 'row': name, 'target': flythrough['target'],
+                                 'stops': stop_reports, 'flythrough': flythrough, 'drawn_roots': roots})
+    absent = [phase for phase, root in roots.items() if root is None]
+    if absent:
+        raise Failure(f'{name}: game did not report the drawn cooked root for {", ".join(absent)}; see {run / "run.json"}')
+    wrong = [phase for phase, root in roots.items() if root != expected_root]
+    if wrong:
+        raise Failure(f'{name}: drawn cooked root differs from the route for {", ".join(wrong)}; see {run / "run.json"}')
+    print(f'PASS: {run / "run.json"}')
+
+
 def exit_compare(rows, stops):
     from apple_display_proof import half_components, HALF, srgb
 
@@ -410,35 +470,11 @@ def exit_compare(rows, stops):
 
     def capture_native(name, row, *, path=store, keys=ROUTE, empty=False):
         target = run / name
-        presets = [PARAMS / f'showcase-{stop}.params.json' for stop in keys]
-        env = dict(native_exit_environment(path, row), THRUM_CAPTURE_SCENE=str(target),
-                   THRUM_CAPTURE_ROUTE_ONLY='1', THRUM_CAPTURE_SOURCE='submitted-sdr',
-                   THRUM_CAPTURE_PARAMS=os.pathsep.join(map(str, presets)))
-        if row['expect']['display'] == 'Edr':
-            env['THRUM_CAPTURE_EDR_HEADROOM'] = '1'
-        if empty:
-            env['THRUM_EXIT_NO_ENTITIES'] = '1'
-        with (run / f'{name}.log').open('w') as log:
-            if bounded([str(GAME)], log, 120, cwd=REPO, env=env):
-                raise Failure(f'{name}: native submitted stills failed')
-        manifest = json.loads((target / 'stills.json').read_text())
-        expected_selection = row['expect']
-        if (manifest['recipe'] != f'Ok({expected_selection["recipe"]})'
-                or manifest['reconstruction'] != expected_selection['reconstruction']
-                or manifest['culling'] != expected_selection['culling']
-                or manifest['governor'] != expected_selection['governor']):
-            raise Failure(f'{name}: stills resolved different render selections')
+        manifest = native_exit_stops(target, path, row, stops, keys=keys, empty=empty)
         values = {}
         for frame, key in zip(manifest['stills'], keys, strict=True):
             extent = manifest['extent']
             filename = target / frame['file']
-            expected = stops[key]
-            if (not frame['surface_presented'] or frame['headroom'] != 1
-                    or frame['source'] != expected_selection['display']
-                    or not close(frame['time_of_day'] * 24, expected['sky.solar_time'], 0.0051)
-                    or not close(math.degrees(frame['yaw']), expected['camera.yaw'], 1e-3)
-                    or not close(math.degrees(frame['pitch']), expected['camera.pitch'], 1e-3)):
-                raise Failure(f'{name}: submitted frame does not match {key}')
             if frame['source'] == 'Edr':
                 transfer = bytes(srgb(value) for value in HALF)
                 pixels = bytes(transfer[word] for word in half_components(filename, extent))
@@ -563,10 +599,34 @@ def exit_clauses(args, rows):
     print(f'PASS: {run / "run.json"}')
 
 
-def exit_frames(args):
+def record_exit_phase(output, source, store, row, builds, *, web, day):
     import showcase_frames
     from apple_governor_proof import awake_display
 
+    phase = 'day' if day else 'flythrough'
+    route_path = EXIT_HELD if day else EXIT_FLYTHROUGH
+    if web:
+        command = ['node', 'scripts/capture_v1_browser.mjs', '--mode', 'realtime', '--control', 'off',
+                   '--scene', 'exit', '--overlay', 'off', '--exit-record', phase, '--wasm-receipt', 'on',
+                   '--route-file', str(route_path), '--web-root', str(WEB), '--cook', str(COOK),
+                   '--assets-source', str(source), '--output', str(output)]
+        for key, value in row['select'].items():
+            command.extend((f'--{key}', value))
+        log_path = output.with_suffix('.log')
+        with awake_display(), log_path.open('w') as log:
+            if bounded(command, log, 240, cwd=REPO):
+                raise Failure(f'{output.name}: browser record failed; see {log_path}')
+        record = showcase_frames.chrome_record(output, builds['wasm_sha256'], day)
+    else:
+        record = showcase_frames.mac_window(
+            output, GAME, native_exit_environment(store, row), route_path, day=day)
+    write_json(output / 'record.json', record)
+    if record['selections'] != row['expect']:
+        raise Failure(f'{output.name}: resolved {record["selections"]}, expected {row["expect"]}')
+    return record
+
+
+def exit_frames(args):
     rows = exit_rows()
     web = args.target == 'chrome-webgpu'
     run = new_run(f'exit-frames-{args.target}')
@@ -578,27 +638,9 @@ def exit_frames(args):
     store = cook_exit(run, source, root)
     report = {'builds': builds, 'target': args.target, 'rows': {}}
     for name in (('chrome',) if web else ('mac-apple', 'mac-portable')):
-        row = rows[name]
-        records = report['rows'][name] = {}
-        for phase, route_path in (('flythrough', EXIT_FLYTHROUGH), ('day', EXIT_HELD)):
-            output = run / f'{name}-{phase}'
-            if web:
-                command = ['node', 'scripts/capture_v1_browser.mjs', '--mode', 'realtime', '--control', 'off',
-                           '--scene', 'exit', '--overlay', 'off', '--exit-record', phase, '--wasm-receipt', 'on',
-                           '--route-file', str(route_path), '--web-root', str(WEB), '--cook', str(COOK),
-                           '--assets-source', str(source), '--output', str(output)]
-                for key, value in row['select'].items():
-                    command.extend((f'--{key}', value))
-                with awake_display(), output.with_suffix('.log').open('w') as log:
-                    if bounded(command, log, 240, cwd=REPO):
-                        raise Failure(f'{name} {phase}: browser record failed; see {output.with_suffix(".log")}')
-                records[phase] = showcase_frames.chrome_record(output, builds['wasm_sha256'], phase == 'day')
-            else:
-                records[phase] = showcase_frames.mac_window(
-                    output, GAME, native_exit_environment(store, row), route_path, day=phase == 'day')
-            if records[phase]['selections'] != row['expect']:
-                raise Failure(f'{name} {phase}: resolved {records[phase]["selections"]}, expected {row["expect"]}')
-            write_json(output / 'record.json', records[phase])
+        report['rows'][name] = {
+            phase: record_exit_phase(run / f'{name}-{phase}', source, store, rows[name], builds, web=web, day=day)
+            for phase, day in (('flythrough', False), ('day', True))}
     write_json(run / 'run.json', report)
     print(f'PASS: {run / "run.json"}')
 
@@ -1904,6 +1946,7 @@ def main():
     exit_mode = exit_command.add_mutually_exclusive_group(required=True)
     exit_mode.add_argument('--controls', action='store_true', help='check the exit controls and presets')
     exit_mode.add_argument('--clauses', action='store_true', help='check the exit time, content and profiler clauses')
+    exit_mode.add_argument('--row', choices=['mac-apple', 'mac-portable', 'chrome'], help='run one exit row through the stops and flythrough')
     exit_mode.add_argument('--compare', action='store_true', help='compare the three submitted exit rows')
     exit_command.add_argument('--target', choices=['mac-metal', 'chrome-webgpu'])
     frames_command = commands.add_parser('frames', help='record whole exit frames with capture off')

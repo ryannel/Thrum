@@ -360,6 +360,7 @@ async function runCapture() {
   record.renderer_omissions = game.submitted_capture_omissions();
   record.end_ms = performance.now();
   record.final_report = JSON.parse(game.route_report(0));
+  if (exitRecord) record.exit_cooked = JSON.parse(game.cooked_status());
   if (atmosphere === 'cost') record.haze_cost = JSON.parse(game.haze_cost());
   if (record.renderer_omissions || record.export_omissions || exportError) fail(`incomplete capture: renderer=${record.renderer_omissions}, export=${record.export_omissions ?? 0}, error=${exportError}`);
   record.complete = true;
