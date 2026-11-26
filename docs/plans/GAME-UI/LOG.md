@@ -223,3 +223,9 @@
   its frame target. The iOS Cloud capture report compiles only for its Mac and Wasm callers.
   The unchanged V1 platform, cooked-draw, capture, sprite, layout and touch checks passed.
   [Target proofs](../../../.orchestrate/evidence/GAME-UI/WP6/inline-overload/README.md)
+- 2026-11-26 WP6 polls frame completions before deciding whether the iOS surface can reconfigure.
+  The shell omits GPU timestamp queries that it never reads, so they no longer delay retirement.
+  Both unchanged V1 rotation routes presented the new extent on their first reply in each direction.
+  All 12 capture cases and the inherited platform, cooked-draw, sprite, layout and touch checks passed.
+  Crowd matched the retained simulator digest and passed the Mac and Chrome runs.
+  [Target proofs](../../../.orchestrate/evidence/GAME-UI/WP6/rotation-retirement/README.md)

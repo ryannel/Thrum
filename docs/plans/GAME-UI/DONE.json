@@ -686,7 +686,7 @@
           "lock": "simulator",
           "ask": "Is the touch a real one made by the UI test, and is the digest read from the app's own record?",
           "target": "ios-sim",
-          "evidence": ".orchestrate/evidence/GAME-UI/WP6/inline-overload/ios.md",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP6/rotation-retirement/README.md#crowd-on-the-simulator",
           "verdict": "pass",
           "review": ".orchestrate/evidence/GAME-UI/WP6-review.md",
           "builder_result": "pass"
@@ -698,17 +698,17 @@
           "lock": "simulator",
           "ask": "Which simulator checks do the done-when files of `PLATFORM-RUNTIME-IOS`, `COOKED-DRAW`, `T2-CAPTURE`, `RENDER-2D` and this module name for the V1 app? Does each pass at the claimed commit, and was any of those scripts or tests edited by this work package?",
           "target": "ios-sim",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP6/rotation-retirement/README.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GAME-UI/WP6-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP6.3",
           "statement": "The iOS shell both apps use is in `thrum-app`, generic over a game, and names nothing of either program. Neither app keeps a copy of its lifecycle, touch delivery, surface lease, rotation, device-loss recovery or its reports of extent, density and insets.",
           "ask": "Where does the shared shell live? Does it name a type, string or file of the V1 game or of the crowd view? What iOS code is left in each app's package, and is any of it the same policy written twice?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/GAME-UI/WP6/scene-request-repair/README.md",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP6/rotation-retirement/shell-audit.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/GAME-UI/WP6-review.md",
           "builder_result": "pass"
@@ -719,7 +719,7 @@
           "check": "python3 scripts/game_ui.py second-app --target mac-metal",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/GAME-UI/WP6/inline-overload/mac.md",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP6/mac-metal/1795706066921844000/result.json",
           "verdict": "pass",
           "review": ".orchestrate/evidence/GAME-UI/WP6-review.md",
           "builder_result": "pass"
@@ -730,7 +730,7 @@
           "check": "python3 scripts/game_ui.py second-app --target chrome-webgpu",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/GAME-UI/WP6/chrome-webgpu/1795700120489453000/result.json",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP6/chrome-webgpu/1795706093676928000/result.json",
           "verdict": "pass",
           "review": ".orchestrate/evidence/GAME-UI/WP6-review.md",
           "builder_result": "pass"
@@ -740,7 +740,7 @@
           "statement": "On the simulator's screen, in portrait and in landscape, the crowd and its status display are upright and inside the screen, clear of the Dynamic Island, the rounded corners and the home indicator, with crisp text.",
           "inspect": "Take `simctl` screenshots of the crowd view's app in both orientations, before and after a rotation. Judge each whole and in native-size crops of the status display and each corner.",
           "target": "ios-sim",
-          "evidence": ".orchestrate/evidence/GAME-UI/WP6/inline-overload/ios-visual.md",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP6/rotation-retirement/crowd-visual.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/GAME-UI/WP6-review.md",
           "builder_result": "pass"
@@ -750,7 +750,7 @@
           "statement": "The creator guide tells a game maker how to give a game a window, a page and an iPhone app from the shared shells, and the maturity ledger says what the shared iOS shell proved and that a physical iPhone is owed.",
           "ask": "Could a game maker make the iPhone app of a new game from the guide without reading `examples/v1-game-ios`? Does the ledger keep simulator function apart from any device claim?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/GAME-UI/WP6/index.md",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP6/rotation-retirement/shell-audit.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/GAME-UI/WP6-review.md",
           "builder_result": "pass"
