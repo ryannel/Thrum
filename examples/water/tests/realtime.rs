@@ -162,7 +162,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
                 t if t >= 7.8 => r#"{"rain.rate":0,"rain.drying":100,"rain.time_scale":600}"#,
                 t if t >= 3.9 => r#"{"rain.rate":100,"rain.drying":0,"rain.time_scale":600}"#,
                 t if t >= 1.10 => r#"{"rain.rate":100,"rain.drying":0,"rain.time_scale":150}"#,
-                t if t >= 0.25 => r#"{"rain.rate":100,"rain.drying":0,"rain.time_scale":15}"#,
+                t if t >= 0.25 => r#"{"rain.rate":100,"rain.drying":0,"rain.time_scale":5}"#,
                 _ => "",
             };
             if !change.is_empty() && change != applied {

@@ -34,16 +34,16 @@ def paving(x, z):
     # The two depressions overlap at their lowest pass. The narrow lower pit
     # reaches that pass before the broad depression on the raised paving.
     pothole = dip(x, z, POTHOLE, (1.9, 0.64), 0.150, 0.09)
-    bowl = dip(x, z, SHALLOW_DIP, (2.65, 2.32), 0.150, -0.04)
-    # The raised depression spreads the first rain over a broad, shallow floor.
-    # The steeper low pit develops a visible column first.
-    floor = -0.122
-    shallow = max(floor, bowl) + min(0.0, bowl - floor) * 0.08
     slope = 0.013 * smoothstep((x - 4.8) / 1.5) * smoothstep((z - TRACK_EDGE) / 0.45)
+    bowl = dip(x, z, SHALLOW_DIP, (2.65, 2.32), 0.150, -0.04) + slope
+    # Water spreads thinly across the shallow floor on the rise. The lower
+    # pit concentrates the first rain into a visible column.
+    floor = -0.115
+    shallow = max(floor, bowl) + min(0.0, bowl - floor) * 0.012
     joint = min(abs(math.remainder(x, 0.5)), abs(math.remainder(z, 0.5)))
     relief = 0.002 * (1.0 - smoothstep(joint / 0.05))
-    relief *= smoothstep((z - TRACK_EDGE) / 0.25) * (1.0 - 0.95 * smoothstep((floor - bowl) / 0.014))
-    return DATUM + min(pothole, shallow) + slope - relief
+    relief *= smoothstep((z - TRACK_EDGE) / 0.25) * (1.0 - smoothstep((floor - bowl) / 0.003))
+    return DATUM + min(pothole + slope, shallow) - relief
 
 
 def track(x, z):
