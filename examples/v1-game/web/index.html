@@ -385,7 +385,7 @@
           onHidden: clearControls,
           beforeFrame() {
             syncBackingSize();
-            if (exit) game.update_exit_profiler();
+            if (exit) game.update_exit_profiler(qualify);
             // @proving
             if (safeProbe) {
               const { density, insets } = interfaceOutput();
