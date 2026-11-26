@@ -960,8 +960,8 @@ try {
       assert(saturated.submission===after.submission+1,'post-saturation capture was not the next submission');
       result.frame_report_history={before,after};
     }
-  } else if(opticsRoute){
-    const routeParams=new URLSearchParams(opticsRoute.slice(1));
+  } else if(opticsRoute || (diveRoute && mode==='fixed')){
+    const routeParams=new URLSearchParams(route);
     if(!routeParams.has('bodies')){
       await until(async()=>{
         if(!await evaluate('game.frame_ready()'))return false;
