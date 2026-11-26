@@ -41,7 +41,7 @@ async fn clear_exposure_follows_falling_sun(gpu: &thrum_test_support::Opened) {
     let mut previous_ev = None;
     for (step, irradiance) in [(0, 4_000.0), (1, 2_000.0), (2, 1_000.0)] {
         let [base, identity] = hosts.each_mut().map(|host| {
-            host.source_mut().lighting = FrameLighting::Atmosphere(frame(irradiance));
+            host.continuous_source_mut().lighting = FrameLighting::Atmosphere(frame(irradiance));
             assert!(
                 host.drive(
                     Duration::from_millis(step * 16),
