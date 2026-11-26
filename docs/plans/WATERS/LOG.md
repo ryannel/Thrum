@@ -1267,3 +1267,8 @@
   fixture only on macOS. The test entries still use the shared macOS GPU test macro on each platform.
   The workspace cross-target check passed on the Mac for Linux and Windows, including all water
   scene test targets. [WP23 evidence](../../../.orchestrate/evidence/WATERS/WP23/README.md).
+- 2026-11-26 WP8 reproof after the chart cases moved to WP24. The existing optics passed the
+  revised sea and basin scope on Metal. Fixed Metal and hardware Chrome captures, elapsed Metal
+  motion, cloud shade, the single application of camera air and exposure, and the repeated 1440p
+  cost runs are recorded against the tested revision.
+  [WP8 target evidence](../../../.orchestrate/evidence/WATERS/WP8/reopened-58cc6775/README.md).
