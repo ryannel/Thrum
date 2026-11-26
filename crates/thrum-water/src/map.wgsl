@@ -4,7 +4,7 @@ struct BodyRecord {
     layers: vec4<u32>,
     ends: array<vec4<f32>, 2>,
     joins: array<vec4<f32>, 2>,
-    track: vec4<f32>, // parallel reference and axis, or general reference xy and period limit
+    track: vec4<f32>, // parallel reference and axis, or bounded layer, period limit and mode
 }
 struct MapRecord {
     origin_spacing_margin: vec4<f32>,
@@ -190,13 +190,30 @@ fn map_sample(point: vec2<f32>) -> MapAnswer {
     return best;
 }
 
-// The extra chart layer holds a section coordinate and its unjoined speed.
-// Read only the two adjacent sections. The prepared track is flat across
-// each section, including where the chart lends its row over a bank.
+// The extra chart layer holds either the bounded reference and authored
+// velocities or the parallel track's section coordinate and unjoined speed.
 fn map_wave_track(point: vec2<f32>, body: u32, current: vec2<f32>) -> vec4<f32> {
     if body == NO_BODY { return vec4(0.0); }
     let record = map.bodies[body];
-    if record.track.w < 0.0 { return record.track; }
+    if record.track.w < 0.0 {
+        if all(current == vec2(0.0)) { return vec4(0.0); }
+        let last = vec2<f32>(map.size_count_sea.xy - vec2(1u));
+        let grid = clamp((point - map.origin_spacing_margin.xy) / map.origin_spacing_margin.z,
+            vec2(0.0), last);
+        let first = vec2<i32>(min(floor(grid), last - vec2(1.0)));
+        let uv = grid - vec2<f32>(first);
+        let layer = i32(record.track.x);
+        let a = mix(textureLoad(bed_map, first, layer, 0),
+            textureLoad(bed_map, first + CORNERS[1], layer, 0), uv.x);
+        let b = mix(textureLoad(bed_map, first + CORNERS[2], layer, 0),
+            textureLoad(bed_map, first + CORNERS[3], layer, 0), uv.x);
+        let sample = mix(a, b, uv.y);
+        // As a joined speed tends to zero, both departure reads meet the
+        // receiving field continuously. Unjoined water keeps its reference.
+        let scale = clamp(sample.zw * current / max(sample.zw * sample.zw, vec2(1e-12)),
+            vec2(0.0), vec2(1.0));
+        return vec4(sample.xy * scale, record.track.zw);
+    }
     let axis_code = record.track.y;
     if axis_code == 0.0 || all(current == vec2(0.0)) { return vec4(0.0); }
     let axis = u32(axis_code) - 1u;

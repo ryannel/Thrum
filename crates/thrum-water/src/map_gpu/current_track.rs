@@ -1,5 +1,9 @@
 use thrum_water_model::{Bed, Chart};
 
+// Continue the travel coordinate across still water at a finite derivative.
+// Sampling blends to the uncarried field as the current falls below this speed.
+const SPEED_FLOOR: f64 = 0.05;
+
 /// A continuous phase coordinate for a steady current with parallel,
 /// section-uniform flow. Its spatial derivative is reference speed divided
 /// by local speed, so translating at the reference speed carries a phase
@@ -27,7 +31,7 @@ impl CurrentTrack {
                 continue;
             }
             let speed = current[axis] * direction;
-            if speed < 0.05 || current[1 - axis].abs() > 1e-6 {
+            if speed < 0.0 || current[1 - axis].abs() > 1e-6 {
                 return None;
             }
             let section = if axis == 0 { i % size[0] } else { i / size[0] };
@@ -49,11 +53,11 @@ impl CurrentTrack {
         }
         let reference = active.iter().sum::<f64>() / f64::from(u32::try_from(active.len()).ok()?);
         let inlet_distance = f64::from(u32::try_from(first).ok()?) * spacing;
-        let mut coordinate = origin[axis] + inlet_distance * (1.0 - reference / active[0]);
-        let mut previous_speed = active[0];
+        let mut previous_speed = active[0].max(SPEED_FLOOR);
+        let mut coordinate = origin[axis] + inlet_distance * (1.0 - reference / previous_speed);
         let sections = (0..size[axis])
             .map(|index| {
-                let speed = active[index.clamp(first, last) - first];
+                let speed = active[index.clamp(first, last) - first].max(SPEED_FLOOR);
                 let difference = speed - previous_speed;
                 // Exact travel time across a cell with linearly varying speed.
                 // The constant-speed limit also avoids dividing small differences.
@@ -104,5 +108,24 @@ mod tests {
         assert!((displacement / track.reference - 1.0 / 1.5).abs() < 1e-12);
         chart.currents[5][0] = 0.9;
         assert!(CurrentTrack::prepare(&chart, &bed).is_none());
+    }
+    #[test]
+    fn still_section_leaves_finite_tracks_at_both_running_speeds() {
+        let bed = Bed::new([0.0, 0.0], 1.0, [6, 2], vec![0.0; 12]).unwrap();
+        let chart = Chart {
+            levels: vec![1.0; 12],
+            currents: [0.0, 0.0, 0.5, 0.5, 1.5, 1.5]
+                .repeat(2)
+                .into_iter()
+                .map(|speed| [speed, 0.0])
+                .collect(),
+            footprint: vec![true; 12],
+            ends: Vec::new(),
+        };
+        let track = CurrentTrack::prepare(&chart, &bed).unwrap();
+        for (i, speed) in [(1, 0.05), (3, 0.5), (5, 1.5)] {
+            let derivative = track.at(i)[0] - track.at(i - 1)[0];
+            assert!((track.reference / derivative - speed).abs() < 1e-12);
+        }
     }
 }

@@ -1319,3 +1319,12 @@
   compares both speed sections with neighbouring heights at the sampled frame time.
   The Chrome course and the paired 1440p cost check also pass.
   [Target evidence](../../../.orchestrate/evidence/WATERS/WP9/revision-2/README.md).
+
+- 2026-11-26 WP9 third review follow-up. General charts prepare reference current by
+  same-direction runs on each map axis. The draw and query use the same reference at a
+  chart-to-chart join and scale it with the joined row's current. Steady parallel travel
+  continues through still sections at a finite derivative and blends to the still field.
+  On a single connected chart, the Metal depth marker tracks each running lane through
+  renewal and past 60 seconds. The still lane and the all-still control measure within
+  0.019 m/s of zero. The earlier varying-current height and parallel-query slope regressions
+  pass. [Target evidence](../../../.orchestrate/evidence/WATERS/WP9/revision-3/metal-carriage.md).

@@ -6,8 +6,108 @@ use thrum_render::contribution::EffectTime;
 use thrum_water_model::{BodyKind, Map};
 use wgpu::util::DeviceExt;
 
+mod bounded_track;
 mod current_track;
+use bounded_track::{BoundedTrack, uniform_current};
 use current_track::CurrentTrack;
+
+struct SharedTrack {
+    layer: u32,
+    track: BoundedTrack,
+}
+
+struct WaveTracks {
+    groups: [usize; BODY_LIMIT],
+    bounded: [Option<SharedTrack>; BODY_LIMIT],
+    parallel: [Option<CurrentTrack>; BODY_LIMIT],
+}
+
+impl WaveTracks {
+    fn new(map: &Map) -> Self {
+        // A fully joined row can be drawn by either chart. Connected charts
+        // share the same carriage even when their authored currents differ.
+        let mut groups = std::array::from_fn(|id| id);
+        for id in 0..BODY_LIMIT {
+            if let Some(BodyKind::Chart(chart)) = map.body(id).map(|body| &body.kind) {
+                for end in chart.ends.iter().filter(|end| !end.is_brink()) {
+                    if matches!(
+                        map.body(end.body).map(|body| &body.kind),
+                        Some(BodyKind::Chart(_))
+                    ) {
+                        let from = groups[id];
+                        let to = groups[end.body];
+                        for group in &mut groups {
+                            if *group == from {
+                                *group = to;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        Self {
+            groups,
+            bounded: std::array::from_fn(|_| None),
+            parallel: std::array::from_fn(|_| None),
+        }
+    }
+
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "prepared chart records use GPU metres"
+    )]
+    fn prepare(
+        &mut self,
+        map: &Map,
+        id: usize,
+        chart: &thrum_water_model::Chart,
+        layers: &mut u32,
+    ) -> [f32; 4] {
+        let group = self.groups[id];
+        let linked = self
+            .groups
+            .iter()
+            .enumerate()
+            .any(|(member, &value)| member != id && value == group);
+        if !linked && let Some(track) = CurrentTrack::prepare(chart, map.bed()) {
+            let record = [
+                track.reference as f32,
+                if track.axis == 0 { 1.0 } else { 2.0 },
+                0.0,
+                0.0,
+            ];
+            self.parallel[id] = Some(track);
+            *layers += 1;
+            return record;
+        }
+        if !linked
+            && chart.ends.iter().all(thrum_water_model::End::is_brink)
+            && uniform_current(chart)
+        {
+            return [0.0; 4];
+        }
+        let shared = self.bounded[group].get_or_insert_with(|| {
+            let charts: Vec<_> = self
+                .groups
+                .iter()
+                .enumerate()
+                .filter(|&(_, &value)| value == group)
+                .filter_map(|(member, _)| match &map.body(member)?.kind {
+                    BodyKind::Chart(chart) => Some(chart),
+                    _ => None,
+                })
+                .collect();
+            let (_, spacing, size) = map.bed().lattice();
+            let layer = *layers;
+            *layers += 1;
+            SharedTrack {
+                layer,
+                track: BoundedTrack::prepare(&charts, size, spacing),
+            }
+        });
+        [shared.layer as f32, 0.0, shared.track.period_limit, -1.0]
+    }
+}
 
 pub(crate) const BODY_LIMIT: usize = 16;
 
@@ -42,7 +142,7 @@ pub struct MapGpu {
     submitted: Option<StageEndpoints>,
     previous_levels: Option<[f32; BODY_LIMIT]>,
     record: MapRecord,
-    tracks: [Option<CurrentTrack>; BODY_LIMIT],
+    tracks: WaveTracks,
     support: Vec<[f32; 4]>,
 }
 
@@ -144,28 +244,14 @@ impl MapGpu {
         record.size_count_sea = [width, height, 0, u32::MAX];
         record.swash[0] = map.profile().swash_ratio as f32;
         let mut layers = 1;
-        let mut tracks = std::array::from_fn(|_| None);
         if map.body(BODY_LIMIT).is_some() {
             return Err(UnsupportedMap("water map body limit exceeded"));
         }
-        // Both sides of a chart-to-chart join must use the same phase
-        // convention, including a donor with no ends of its own.
-        let mut chart_joins = [false; BODY_LIMIT];
-        for id in 0..BODY_LIMIT {
-            if let Some(BodyKind::Chart(chart)) = map.body(id).map(|body| &body.kind) {
-                for end in chart.ends.iter().filter(|end| !end.is_brink()) {
-                    if matches!(
-                        map.body(end.body).map(|body| &body.kind),
-                        Some(BodyKind::Chart(_))
-                    ) {
-                        chart_joins[id] = true;
-                        chart_joins[end.body] = true;
-                    }
-                }
-            }
+        if width.max(height) > limits.max_texture_dimension_2d {
+            return Err(UnsupportedMap("water map exceeds the device lattice limit"));
         }
-        for (id, (destination, track_slot)) in record.bodies.iter_mut().zip(&mut tracks).enumerate()
-        {
+        let mut tracks = WaveTracks::new(map);
+        for (id, destination) in record.bodies.iter_mut().enumerate() {
             let Some(body) = map.body(id) else { break };
             record.size_count_sea[2] += 1;
             destination.layers[1] = layers;
@@ -177,16 +263,7 @@ impl MapGpu {
                     destination.layers[0] = 2;
                     destination.layers[2] = layers;
                     layers += 2;
-                    if !chart_joins[id]
-                        && let Some(track) = CurrentTrack::prepare(chart, map.bed())
-                    {
-                        destination.track[0] = track.reference as f32;
-                        destination.track[1] = if track.axis == 0 { 1.0 } else { 2.0 };
-                        *track_slot = Some(track);
-                        layers += 1;
-                    } else {
-                        destination.track = bounded_carriage(chart, chart_joins[id], size, spacing);
-                    }
+                    destination.track = tracks.prepare(map, id, chart, &mut layers);
                     for (n, end) in chart.ends.iter().filter(|end| !end.is_brink()).enumerate() {
                         let segment = destination
                             .ends
@@ -214,8 +291,7 @@ impl MapGpu {
                 }
             }
         }
-        if width.max(height) > limits.max_texture_dimension_2d
-            || layers > limits.max_texture_array_layers
+        if layers > limits.max_texture_array_layers
             || size_of::<MapRecord>() as u64 > limits.max_uniform_buffer_binding_size
             || record.origin_spacing_margin.iter().any(|n| !n.is_finite())
             || record.origin_spacing_margin[2] <= 0.0
@@ -261,7 +337,7 @@ impl MapGpu {
                     ];
                 }
                 write_layer(queue, &texture, body.layers[2], &support);
-                if let Some(track) = &tracks[id] {
+                if let Some(track) = &tracks.parallel[id] {
                     for (i, pixel) in support.iter_mut().enumerate() {
                         let section = if track.axis == 0 {
                             i % size[0]
@@ -274,6 +350,9 @@ impl MapGpu {
                     write_layer(queue, &texture, body.layers[2] + 2, &support);
                 }
             }
+        }
+        for shared in tracks.bounded.iter().flatten() {
+            write_layer(queue, &texture, shared.layer, shared.track.cells());
         }
         let info = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("water map records"),
@@ -310,8 +389,19 @@ impl MapGpu {
         current: [f64; 2],
         bed: &thrum_water_model::Bed,
     ) -> ([f32; 4], f32) {
-        let Some(track) = self.tracks.get(body).and_then(Option::as_ref) else {
-            return (self.record.bodies[body].track, 1.0);
+        let mut record = self.record.bodies[body].track;
+        if let Some(shared) = &self.tracks.bounded[self.tracks.groups[body]] {
+            let sample = shared.track.sample(world, bed);
+            for axis in 0..2 {
+                let authored = sample[2 + axis];
+                let scale = (authored * current[axis] as f32 / (authored * authored).max(1e-12))
+                    .clamp(0.0, 1.0);
+                record[axis] = sample[axis] * scale;
+            }
+            return (record, 1.0);
+        }
+        let Some(track) = &self.tracks.parallel[body] else {
+            return (record, 1.0);
         };
         let (origin, spacing, size) = bed.lattice();
         let axis = track.axis;
@@ -463,57 +553,6 @@ impl MapGpu {
         self.revision = Some(revision);
         self.uploaded_stages = displayed;
     }
-}
-
-/// General charts carry a coherent pattern at their mean flow and renew only
-/// the local departure from it. Keep each renewal shorter than the time the
-/// raw velocity gradient would take to fold the departure map.
-#[expect(
-    clippy::cast_possible_truncation,
-    reason = "GPU chart carriage uses f32 metres"
-)]
-fn bounded_carriage(
-    chart: &thrum_water_model::Chart,
-    chart_join: bool,
-    size: [usize; 2],
-    spacing: f64,
-) -> [f32; 4] {
-    // Linked rows use a common reference and period so the two owners can
-    // read the same phase wherever the chart lends its neighbour's row.
-    if chart_join || chart.ends.iter().any(|end| !end.is_brink()) {
-        return [0.0, 0.0, f32::MAX, -1.0];
-    }
-    let mut sum = [0.0; 2];
-    let mut count = 0.0;
-    let mut gradient = [0.0_f64; 2];
-    for (index, (&current, &inside)) in chart.currents.iter().zip(&chart.footprint).enumerate() {
-        if inside {
-            sum[0] += current[0];
-            sum[1] += current[1];
-            count += 1.0;
-        }
-        for (axis, stride) in [1, size[0]].into_iter().enumerate() {
-            let at = [index % size[0], index / size[0]];
-            if at[axis] + 1 < size[axis] {
-                let next = chart.currents[index + stride];
-                let difference = (next[0] - current[0]).hypot(next[1] - current[1]);
-                gradient[axis] = gradient[axis].max(difference / spacing);
-            }
-        }
-    }
-    if count == 0.0 {
-        return [0.0; 4];
-    }
-    let limit = gradient[0]
-        .hypot(gradient[1])
-        .recip()
-        .min(f64::from(f32::MAX));
-    [
-        (sum[0] / count) as f32,
-        (sum[1] / count) as f32,
-        limit as f32,
-        -1.0,
-    ]
 }
 
 fn write_layer(queue: &wgpu::Queue, texture: &wgpu::Texture, layer: u32, data: &[[f32; 4]]) {

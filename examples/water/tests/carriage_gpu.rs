@@ -9,40 +9,72 @@ fn submitted_detail_moves_with_chart_current() {
         Some(wgpu::Backend::Metal),
     ) else { return };
     let speeds = [0.0, 0.5, 1.5];
+    check_connected_chart(&gpu, speeds, |_, z| {
+        let lane = if z < -3 { 0 } else if z < 3 { 1 } else { 2 };
+        [speeds[lane], 0.0]
+    });
+}
+}
+
+thrum_test_support::macos_gpu_test! {
+fn still_chart_has_only_the_intrinsic_wave_motion() {
+    let Some(gpu) = thrum_test_support::gpu(
+        "still_chart_has_only_the_intrinsic_wave_motion", Some(wgpu::Backend::Metal),
+    ) else { return };
+    check_connected_chart(&gpu, [0.0; 3], |_, _| [0.0, 0.0]);
+}
+}
+
+#[cfg(target_os = "macos")]
+#[expect(
+    clippy::print_stdout,
+    reason = "print submitted Metal phase measurements for review"
+)]
+fn check_connected_chart(
+    gpu: &thrum_test_support::Gpu,
+    speeds: [f64; 3],
+    current: impl Fn(i32, i32) -> [f64; 2],
+) {
     let centres = [-6.0, 0.0, 6.0];
-    let (mut scene, tap, camera, extent, _) = fixture(&gpu, map(speeds.map(|speed| {
-        move |_, _| [speed, 0.0]
-    })), false);
+    let (mut scene, tap, camera, extent, _) = fixture(gpu, chart_map([current], true), false);
     let matrix = support::depth::matrix(camera, extent);
     let mode = marker().cascades[0].components()[0];
     let k = mode.wave_vector[0];
     let intrinsic_frequency = thrum_sea_model::cascade_frequency(mode);
     let duration = 12.0 / 60.0;
-    let wrapped = |angle: f64| {
-        (angle + std::f64::consts::PI).rem_euclid(std::f64::consts::TAU) - std::f64::consts::PI
-    };
-    let mut frame_phases = Vec::new();
-    // Observe both old blends, both wraps and successive periods with the
-    // same fixture and time step, including the windows that used to reverse.
-    for time in [0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.2,
-        2.4, 2.6, 2.8, 3.0, 3.2, 3.4, 3.6, 3.8, 4.0, 4.2, 4.4, 5.0, 5.2, 7.9, 8.1] {
-        scene.frame_without_timings(time + 0.000_000_01);
-        frame_phases.push((time, phase(&tap.read(&scene), extent, matrix, centres, k)));
+    let mut frames = Vec::new();
+    // Observe consecutive frames across both renewals, followed by late windows
+    // across several periods. Fit each lane independently, even in the control.
+    for time in [
+        0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0, 3.2, 3.4,
+        3.6, 3.8, 4.0, 4.2, 4.4, 5.0, 5.2, 7.9, 8.1, 24.9, 25.1, 59.9, 60.1,
+    ] {
+        scene.frame_without_timings(time + 1e-8);
+        frames.push((time, phase(&tap.read(&scene), extent, matrix, centres, k)));
     }
-    for pair in frame_phases.windows(2) {
+    for pair in frames.windows(2) {
         let (start, before) = pair[0];
         let (end, after) = pair[1];
-        if end - start > duration + 1e-6 { continue; }
-        let control = wrapped(after[0].0 - before[0].0);
-        assert!((control + intrinsic_frequency * duration).abs() < 0.02,
-            "the still-water control must have only the marker wave's intrinsic phase change");
+        if end - start > duration + 1e-6 {
+            continue;
+        }
         for (i, speed) in speeds.into_iter().enumerate() {
-            let measured = -wrapped(after[i].0 - before[i].0 - control) / (k * duration);
-            println!("Metal t={start:.1}–{end:.1}s, chart {speed:.2} m/s: {measured:.3} m/s after subtracting intrinsic phase");
-            assert!((measured - speed).abs() < 0.22, "carriage: {measured:.4} vs {speed}");
+            let delta = after[i].0 - before[i].0 + intrinsic_frequency * duration;
+            let measured = -delta.sin().atan2(delta.cos()) / (k * duration);
+            println!(
+                "Metal t={start:.1}–{end:.1}s, lane {speed:.2} m/s: {measured:.3} m/s after subtracting intrinsic phase"
+            );
+            let tolerance = if speed == 0.0 { 0.07 } else { 0.22 };
+            assert!(
+                (measured - speed).abs() < tolerance,
+                "carriage: {measured:.4} vs {speed}"
+            );
+            assert!(
+                before[i].1 > 0.08 && after[i].1 > 0.08,
+                "the marker collapsed at {start}s in lane {i}"
+            );
         }
     }
-}
 }
 
 thrum_test_support::macos_gpu_test! {
@@ -189,15 +221,31 @@ fn fixture(
 
 #[cfg(target_os = "macos")]
 fn map(currents: [impl Fn(i32, i32) -> [f64; 2]; 3]) -> thrum_water_model::Map {
+    chart_map(currents, false)
+}
+
+#[cfg(target_os = "macos")]
+fn chart_map<const N: usize>(
+    currents: [impl Fn(i32, i32) -> [f64; 2]; N],
+    connected: bool,
+) -> thrum_water_model::Map {
     use thrum_water_model::{Bed, Body, BodyKind, Chart, Map, Profile, Stage};
     let size = [37_usize, 21];
     let points: Vec<_> = (-10..=10)
         .flat_map(|z| (-18..=18).map(move |x| (x, z)))
         .collect();
-    let footprints = [-6, 0, 6].map(|centre| {
+    let footprints: [Vec<_>; N] = std::array::from_fn(|i| {
+        let centre = [-6, 0, 6][i];
         points
             .iter()
-            .map(|&(x, z): &(i32, i32)| x.abs() <= 16 && (z - centre).abs() <= 2)
+            .map(|&(x, z): &(i32, i32)| {
+                x.abs() <= 16
+                    && if connected {
+                        z.abs() <= 9
+                    } else {
+                        (z - centre).abs() <= 2
+                    }
+            })
             .collect::<Vec<_>>()
     });
     let heights = (0..points.len())
@@ -240,7 +288,7 @@ fn map(currents: [impl Fn(i32, i32) -> [f64; 2]; 3]) -> thrum_water_model::Map {
             swash_ratio: 0.5,
         },
     )
-    .expect("three charts")
+    .expect("prepared charts")
 }
 
 #[cfg(target_os = "macos")]
