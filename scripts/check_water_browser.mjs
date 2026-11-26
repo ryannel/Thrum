@@ -1212,11 +1212,12 @@ try {
       assert(result.camera_cut!==null,'capture did not reach the camera change');
     }
     const count=await evaluate('__motion.length');
-    const clockOrigin=dive?await evaluate('__start'):now;
+    let clockOrigin=dive?undefined:now/1000;
     for(let i=0;i<count;i++){
       const image=await evaluate(`({identity:__motion[${i}].identity,frame:__motion[${i}].frame})`),rgba=await pixels(`__motion[${i}].rgba`);
       image.observation_seconds=Number(/observation=([0-9.]+)/.exec(image.frame)[1]);
-      image.elapsed=image.observation_seconds-clockOrigin/1000;
+      clockOrigin??=image.observation_seconds;
+      image.elapsed=image.observation_seconds-clockOrigin;
       assert(rgba.length===width*height*4,'motion extent differs');
       const file=`motion-${String(i).padStart(4,'0')}.png`;await fs.writeFile(path.join(output,file),png(rgba,width,height));result.frames.push({...image,file,sha256_rgba:hash(rgba)});
     }
