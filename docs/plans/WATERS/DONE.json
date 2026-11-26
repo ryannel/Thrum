@@ -1613,9 +1613,9 @@
     {
       "id": "WP9",
       "name": "Water runs down a channel from the lake to the sea: its surface follows the slope, its ripples and foam travel with the current, and a float is carried down to the sea",
-      "status": "ready_for_review",
-      "failed_reviews": 2,
-      "failed_reviews_with_repeat": 1,
+      "status": "in_progress",
+      "failed_reviews": 3,
+      "failed_reviews_with_repeat": 2,
       "diagnoses": 0,
       "depends_on": [],
       "quality_bar": "A running stream as in Red Dead Redemption 2: water that visibly moves downstream at its own speed, faster in the narrows, carrying foam and anything afloat, with no sliding sheet, pulse or seam where it joins still water.",
@@ -1638,8 +1638,8 @@
           "check": "cargo test --locked --offline -p water-scene --test carriage_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP9/revision-2/metal-carriage.md",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/WATERS/WP9-review.md"
         },
@@ -1699,13 +1699,9 @@
       ],
       "findings": [
         {
-          "name": "Varying chart currents flatten ripple detail",
+          "name": "Still water inherits ripple drift from moving water on the same chart",
           "item": "WP9.2",
-          "different": "Uniform-current renewal reversal is fixed. On a varying current the continuous fallback collapses the spatial wave phase as elapsed time grows.",
-          "repeat": false
-        },
-        {
-          "name": "Chart queries return slope in the wave coordinate instead of world space",
+          "different": "The previous spatial collapse at 25 seconds is fixed. On a single chart with still and moving water, renewal around the chart mean carries the still lane and can make it move faster than the fast lane within the first second.",
           "repeat": false
         }
       ]

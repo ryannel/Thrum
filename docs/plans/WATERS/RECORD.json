@@ -1866,7 +1866,7 @@
         {
           "verdict": "fail",
           "commit": "9e7eb617ff0d77c83c85c275ced53d579242d640",
-          "review": ".orchestrate/evidence/WATERS/WP9-review.md",
+          "review": ".orchestrate/evidence/WATERS/WP9-review-2.md",
           "items": {
             "WP9.1": "pass",
             "WP9.2": "fail",
@@ -1904,6 +1904,44 @@
             "turns": 1
           },
           "at": "2026-11-26T08:03:17Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "08373df290736568a80b66381ac34ca5464cd072",
+          "review": ".orchestrate/evidence/WATERS/WP9-review.md",
+          "items": {
+            "WP9.1": "pass",
+            "WP9.2": "fail",
+            "WP9.3": "pass",
+            "WP9.4": "pass",
+            "WP9.5": "pass",
+            "WP9.6": "pass",
+            "WP9.7": "pass"
+          },
+          "findings": [
+            {
+              "name": "Still water inherits ripple drift from moving water on the same chart",
+              "item": "WP9.2",
+              "different": "The previous spatial collapse at 25 seconds is fixed. On a single chart with still and moving water, renewal around the chart mean carries the still lane and can make it move faster than the fast lane within the first second.",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 113724,
+            "cached": 3782016,
+            "output": 12557,
+            "turns": 1
+          },
+          "at": "2026-11-26T08:49:24Z"
         }
       ],
       "authorised": {
