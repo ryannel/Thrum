@@ -2,14 +2,19 @@
 const WORLD_LIGHT_ADAPTING: u32 = 32u;
 
 fn adapt_world_light_ev(raw_ev: f32, lux: f32, limits: vec2<f32>) -> vec2<f32> {
-    // Put camera gain on the unclouded daylight reference. Only broad sky
-    // closure lifts the gain, so a passing local shadow cannot brighten
-    // distant sunlit slopes. The incident lux remains the local reading.
+    // Meter display gain against an open horizontal receiver with the
+    // current sky diffuse. A passing local shadow cannot brighten the
+    // sunlit slopes. Lift gain only when the deck broadly closes.
     let clear = environment_light.sky_diffuse[3].w;
-    let closure = smoothstep(0.68, 0.98, environment_light.sky_diffuse[4].w);
+    let closure = smoothstep(0.88, 0.99, environment_light.sky_diffuse[4].w);
     var desired_ev = raw_ev;
     if clear > 1e-8 && lux > 1e-8 {
-        desired_ev += log2(clear / lux) - 0.48 * closure;
+        let direct = dot(directional.irradiance.rgb, REC709_LUMA)
+            * max(0.0, directional.direction_to_light.y);
+        let diffuse = dot(environment_light.horizontal_irradiance.rgb, REC709_LUMA);
+        let open = max(clear, direct + diffuse);
+        let display_lux = mix(open, clear, closure);
+        desired_ev += log2(display_lux / lux) - 0.48 * closure;
     }
     desired_ev = clamp(desired_ev, limits.x, limits.y);
     let previous = vec2(serials.previous_lo, serials.previous_hi);
