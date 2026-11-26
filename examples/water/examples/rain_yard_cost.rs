@@ -1,4 +1,5 @@
 //! Release preparation timing for the shipped rain-yard triangles and shelters.
+#[expect(clippy::print_stdout, reason = "the cost tool reads this JSON record")]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let (elapsed, cells, hollows) = water_scene::island::measure_rain_yard_preparation()?;
     println!(

@@ -25,7 +25,7 @@ fn check_yard_transitions(gpu: &thrum_test_support::Gpu) {
     const EXTENT: [u32; 2] = [96, 64];
     const PITS: [[f64; 2]; 2] = [[147.2, 66.2], [149.75, 66.35]];
     const FLOAT: [f64; 2] = [147.575, 66.225];
-    let (game, report, map, _) = build_rain_yard(Wind::Calm, true).unwrap();
+    let (game, report, map, _) = build_rain_yard(Wind::Calm, true).expect("rain yard");
     let mut scene = support::Fixture::from_game(gpu, EXTENT, game, report);
     scene.parameters(r#"{"camera.island":3,"rain.rate":0}"#);
     scene.warm_cooked();
@@ -33,20 +33,21 @@ fn check_yard_transitions(gpu: &thrum_test_support::Gpu) {
     scene.frame_without_timings(frame_time(60));
     scene.frame_without_timings(frame_time(61));
     let creations = scene.host.pipeline_creation_count();
-    let storage = scene.report.lock().unwrap().resources.clone();
-    let identity = map.lock().unwrap().generation(3);
+    let storage = scene.report.lock().expect("water report").resources.clone();
+    let identity = map.lock().expect("yard map").generation(3);
     let float_line = |scene: &mut support::Fixture| {
         scene.game.poll_status();
         let controls: serde_json::Value =
-            serde_json::from_str(&scene.game.controls_mut().describe_json()).unwrap();
+            serde_json::from_str(&scene.game.controls_mut().describe_json())
+                .expect("control description");
         controls["controls"]
             .as_array()
-            .unwrap()
+            .expect("controls array")
             .iter()
             .find(|item| item["key"] == "rain.float_level")
-            .unwrap()["value"]
+            .expect("float readout")["value"]
             .as_f64()
-            .unwrap()
+            .expect("float level in metres")
     };
     let initial = float_line(&mut scene);
     scene.parameters(r#"{"rain.rate":100,"rain.time_scale":600}"#);
@@ -65,7 +66,7 @@ fn check_yard_transitions(gpu: &thrum_test_support::Gpu) {
         );
         last_line = line;
         let (levels, float) = {
-            let published = map.lock().unwrap();
+            let published = map.lock().expect("yard map");
             let wet = |point| published.sample(point).filter(|hit| hit.depth > 0.0);
             (
                 PITS.map(|point| wet(point).map(|hit| hit.row.level)),
@@ -111,8 +112,11 @@ fn check_yard_transitions(gpu: &thrum_test_support::Gpu) {
     }
     assert!(merged && rising && parted);
     assert_eq!(scene.host.pipeline_creation_count(), creations);
-    assert_eq!(scene.report.lock().unwrap().resources, storage);
-    let published = map.lock().unwrap();
+    assert_eq!(
+        scene.report.lock().expect("water report").resources,
+        storage
+    );
+    let published = map.lock().expect("yard map");
     assert_eq!(published.generation(3), identity);
     assert_eq!(published.held_level_tables, 0);
 }

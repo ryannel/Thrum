@@ -379,6 +379,10 @@ mod tests {
     use super::*;
 
     #[test]
+    #[expect(
+        clippy::print_stderr,
+        reason = "retain the merge and parting tick witnesses"
+    )]
     fn yard_fills_and_parts_with_stable_map_identity() {
         let mut yard = Yard::prepare().expect("prepare authored yard triangles");
         let float = yard.float();
@@ -406,7 +410,7 @@ mod tests {
         let mut separated = false;
         for tick in 1..=1200 {
             yard.step(Weather::new(100.0, 0.0, 600.0), step, &mut map)
-                .unwrap();
+                .expect("rain tick");
             float.advance(tick, &map);
             if let (Some(left), Some(right)) = (wet(&map, pits[0]), wet(&map, pits[1])) {
                 if left.row.level.to_bits() == right.row.level.to_bits() {
@@ -419,7 +423,15 @@ mod tests {
         }
         assert!(separated && merged, "both pits fill separately, then join");
         assert!(float.waterline() > initial_float_line);
-        assert!((float.waterline() - wet(&map, float_point).unwrap().row.level).abs() < 0.000_001);
+        assert!(
+            (float.waterline()
+                - wet(&map, float_point)
+                    .expect("water beneath the float")
+                    .row
+                    .level)
+                .abs()
+                < 0.000_001
+        );
         assert!(wet(&map, shelter).is_none());
         assert!(
             yard.stores.store(0, 0).fill > 0.0,
@@ -431,7 +443,7 @@ mod tests {
         );
         for _ in 0..60 {
             yard.step(Weather::new(100.0, 0.0, 600.0), step, &mut map)
-                .unwrap();
+                .expect("rain tick");
         }
         assert!(
             wet(&map, [147.1, 62.1]).is_some(),
@@ -440,7 +452,7 @@ mod tests {
         let mut parted = false;
         for tick in 1..=1200 {
             yard.step(Weather::new(0.0, 100.0, 600.0), step, &mut map)
-                .unwrap();
+                .expect("drying tick");
             if let (Some(left), Some(right)) = (wet(&map, pits[0]), wet(&map, pits[1]))
                 && left.row.level.to_bits() != right.row.level.to_bits()
             {
