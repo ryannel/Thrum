@@ -43,6 +43,61 @@ pub(crate) fn check(gpu: &thrum_test_support::Gpu) {
             ContentStatus::Drawn(1)
         });
     let mut scene = Fixture::from_game(gpu, EXTENT, game, report);
+    scene.frame_without_timings(0.0);
+    let mut time = 0.0;
+    let [low, high] = files[0].gauge_range();
+    let mut max_error: f64 = 0.0;
+    for stage in [0.0, 0.37, 0.5, 1.0] {
+        {
+            let mut map = map.lock().expect("river stage");
+            map.set_gauge(0, (high - low).mul_add(stage, low))
+                .expect("spring stage");
+            map.set_stage(1, stage).expect("lake stage");
+        }
+        // Sample off the mesh nodes and away from the joins. Hit the pool,
+        // narrows and main outlet at each gauge, including the steep cross-cell bends.
+        for (owner, point) in [
+            (3, [180.5, -65.0]),
+            (3, [179.6, -41.3]),
+            (3, [181.1, -43.1]),
+            (5, [257.5, 5.0]),
+            (5, [258.2, 5.7]),
+            (5, [289.5, 5.5]),
+        ] {
+            time += 0.25;
+            let height = map
+                .lock()
+                .expect("river map")
+                .surface(&field, point, time)
+                .expect("model surface")
+                .sample
+                .height as f32;
+            let [x, z] = point.map(|p| p as f32);
+            let view = Camera::look_at([x + 0.14, height + 0.25, z + 0.08], [x, height, z], 4.0);
+            *camera.lock().expect("proof camera") = view;
+            let matrix = support::depth::matrix(view, EXTENT);
+            scene.frame_without_timings(time + STEP.as_secs_f64());
+            let depth = tap.read(&scene);
+            let map = map.lock().expect("river map");
+            let row = EXTENT[1] / 2;
+            for column in [EXTENT[0] / 2 - 8, EXTENT[0] / 2, EXTENT[0] / 2 + 8] {
+                let d = depth[(row * EXTENT[0] + column) as usize];
+                assert!(d > 0.0, "river interior at {point:?}, gauge {stage}");
+                let p = support::world_at(matrix, EXTENT, [column, row], d);
+                let place = [f64::from(p.x), f64::from(p.z)];
+                let expected = map.surface(&field, place, time).expect("model surface");
+                assert!(expected.wet, "model river at {place:?}, gauge {stage}");
+                assert_eq!(expected.body, Some(owner), "model owner at {place:?}");
+                let error = (f64::from(p.y) - expected.sample.height).abs();
+                assert!(
+                    error < EPS_DEPTH,
+                    "depth at {place:?}, gauge {stage}: {error:.7} m"
+                );
+                max_error = max_error.max(error);
+            }
+        }
+    }
+    println!("Metal river interiors, 72 off-grid ray hits, maximum residual {max_error:.7} m");
     let joins: Vec<_> = files
         .iter()
         .flat_map(|file| &file.reaches)
@@ -50,8 +105,6 @@ pub(crate) fn check(gpu: &thrum_test_support::Gpu) {
         .filter(|end| end.kind != thrum_water_model::EndKind::Brink)
         .collect();
     assert_eq!(joins.len(), 3);
-    scene.frame_without_timings(0.0);
-    let mut time = 0.0;
     let mut max_swell: f64 = 0.0;
     for (lake, tide) in [(0.0, -0.5), (1.0, -0.5), (0.0, 0.5), (1.0, 0.5)] {
         {

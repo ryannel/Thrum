@@ -251,8 +251,7 @@ pub struct Scene {
 /// Panics if the water map lock is poisoned or its bounded controls fail.
 pub fn build(wind: Wind, draw_water: bool, store: Option<&Path>) -> Result<Scene, Box<dyn Error>> {
     let mut forcing = crate::channel::forcing(wind);
-    // The exposed floats also take the prevailing wind. Water currents
-    // provide the transport in the channel. Wind carries them across joins.
+    // The exposed floats take the prevailing wind alongside the map's current.
     forcing.wind_direction = 0.42;
     let (map, files) = map(&forcing, store)?;
     #[cfg(target_arch = "wasm32")]

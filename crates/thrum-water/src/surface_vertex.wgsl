@@ -14,7 +14,7 @@ struct SurfaceRow {
 }
 struct VertexOut {
     @builtin(position) clip:vec4<f32>, @location(0) world:vec3<f32>,
-    @location(1) rest:vec2<f32>, @location(2) velocity:vec3<f32>,
+    @location(1) rest:vec2<f32>, @location(2) level:f32,
     @location(3) current:vec4<f32>, @location(4) previous:vec4<f32>,
     @location(5) @interpolate(flat) body:u32,
     @location(6) surf_weight:f32,

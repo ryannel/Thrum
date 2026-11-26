@@ -577,13 +577,20 @@ impl Map {
                 });
             }
             let own_level = row.level;
+            let current = self.river_of(body).and_then(|(river, _)| {
+                (self.river(river)?.gauges.len() > 1)
+                    .then(|| self.river_join_current(c, point, row.current))
+            });
             let mut total = 1.0;
             // A brink end joins no body: the row up to it is the chart's own.
             for end in c.ends.iter().filter(|e| !e.is_brink()) {
                 let other = self.row(end.body, point);
                 let weight = self.join_weight(end, point, own_level, other.level);
                 if weight >= 1.0 {
-                    return other;
+                    return Row {
+                        current: current.unwrap_or(other.current),
+                        ..other
+                    };
                 }
                 // Relative weights preserve each end's exact boundary even when
                 // transition regions overlap. A single end still mixes by weight.
@@ -591,8 +598,44 @@ impl Map {
                 total += relative;
                 row = row.mix(other, relative / total);
             }
+            if let Some(current) = current {
+                row.current = current;
+            }
         }
         row
+    }
+
+    fn river_join_current(
+        &self,
+        chart: &Chart,
+        point: [f64; 2],
+        mut current: [f64; 2],
+    ) -> [f64; 2] {
+        let mut total = 1.0;
+        for end in chart.ends.iter().filter(|end| !end.is_brink()) {
+            // Backwater can match the receiving level well before the mouth.
+            // Keep the solved discharge there, spreading the jet into the
+            // receiving current only across the last map cell.
+            let length = if end.mouth {
+                end.length.min(self.bed.lattice().1)
+            } else {
+                end.length
+            };
+            let fade = smooth(end.distance(point) / length);
+            if fade >= 1.0 {
+                continue;
+            }
+            let other = self.row(end.body, point).current;
+            if fade <= 0.0 {
+                return other;
+            }
+            let relative = (1.0 - fade) / fade;
+            total += relative;
+            for (component, target) in current.iter_mut().zip(other) {
+                *component += (target - *component) * (relative / total);
+            }
+        }
+        current
     }
 
     pub(crate) fn join_weight(

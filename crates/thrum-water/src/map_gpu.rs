@@ -244,21 +244,26 @@ fn map_source(group: u32, hollows: bool, rivers: bool) -> String {
         ""
     };
     // The steady specialization keeps its original source and texture layout.
-    let (chart_cell, river_source) = if rivers {
+    let (chart_cell, chart_join, river_source) = if rivers {
         (
             "river_chart_cell(cell, k, body)",
+            "river_chart_row(point, body, row, rows)",
             include_str!("map_gpu/rivers.wgsl"),
         )
     } else {
         (
             "textureLoad(bed_map, cell.corners[k], i32(body.layers.z), 0)",
+            "chart_row(point, body, row, rows)",
             "",
         )
     };
+    let chart_tail = include_str!("map_gpu/chart_tail.wgsl");
+    let (before, after) = chart_tail
+        .split_once("chart_row(point, body, row, rows)")
+        .expect("map body join call");
     let source = format!(
-        "const BODY_LIMIT = {BODY_LIMIT}u;\nconst WATER_MAP_GROUP = {group}u;\n{}            let raw = {chart_cell};\n{}{sample_hollows}{}\n{}{river_source}",
+        "const BODY_LIMIT = {BODY_LIMIT}u;\nconst WATER_MAP_GROUP = {group}u;\n{}            let raw = {chart_cell};\n{before}{chart_join}{after}{sample_hollows}{}\n{}{river_source}",
         include_str!("map.wgsl"),
-        include_str!("map_gpu/chart_tail.wgsl"),
         include_str!("map_sample.wgsl"),
         include_str!("gains.wgsl"),
     );
@@ -456,11 +461,11 @@ impl MapGpu {
 
     /// Map shader declarations specialized to the products that were prepared.
     pub fn source(&self, group: u32) -> String {
-        map_source(
-            group,
-            self.hollows.is_some(),
-            self.rivers.iter().any(Option::is_some),
-        )
+        map_source(group, self.hollows.is_some(), self.has_rivers())
+    }
+
+    pub(crate) fn has_rivers(&self) -> bool {
+        self.rivers.iter().any(Option::is_some)
     }
 
     pub(crate) fn hollows_bindings(

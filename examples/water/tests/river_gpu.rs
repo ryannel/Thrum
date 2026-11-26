@@ -16,7 +16,7 @@ fn submitted_queries_and_both_floats_follow_the_rivers() {
 }
 
 thrum_test_support::macos_gpu_test! {
-fn submitted_depth_follows_all_three_joins_in_swell() {
+fn submitted_depth_follows_river_interiors_and_all_three_joins_in_swell() {
     let Some(gpu) = thrum_test_support::gpu(
         "river joins", Some(wgpu::Backend::Metal),
     ) else { return };

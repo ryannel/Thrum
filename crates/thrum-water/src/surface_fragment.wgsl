@@ -53,7 +53,7 @@
     // A coarsely drawn crest still carries its breaking-face cue over the
     // foam-window blend. Fade it once the mesh also loses the crest itself.
     let resolved_face = 1.0 - smoothstep(2.0, 16.0, vertex.z);
-    return VertexOut(clip,world,rest,f.velocity.xyz,current,previous,body,surf_weight,
+    return VertexOut(clip,world,rest,row.level,current,previous,body,surf_weight,
         vec4(surf_normal, surf_variance), resolved_face * max(0.0, transformed.w - 1.0));
 }
 struct Output { @location(0) colour:vec4<f32>,@location(1) motion:vec2<f32>,@location(2) reactive:f32, }
@@ -86,7 +86,10 @@ fn reflected_sky(slope:vec2<f32>,covariance:vec3<f32>,v:vec3<f32>)->vec4<f32> {
     return result/max(visible,0.0000001);
 }
 @fragment fn water_fragment(input:VertexOut)->Output {
+    return shade_water(input, surface_pixel(input.rest,input.body));
+}
+fn shade_water(input:VertexOut, source:SurfaceRow)->Output {
     let dx=dpdx(input.rest);let dy=dpdy(input.rest);
     let wake_slope=wake_at(input.rest,0.0).yz;
     let wake_dx=dpdx(wake_slope);let wake_dy=dpdy(wake_slope);
-    var row=surface_pixel(input.rest,input.body);
+    var row=source;

@@ -42,6 +42,7 @@ pub(super) struct Prepared {
     pub(super) environment: EnvironmentProducts,
     pub(super) gather: Option<Gather>,
     pub(super) pipeline: wgpu::RenderPipeline,
+    pub(super) river_pipeline: Option<wgpu::RenderPipeline>,
     pub(super) film: Option<wgpu::RenderPipeline>,
     pub(super) parameters: wgpu::Buffer,
     pub(super) group: wgpu::BindGroup,
@@ -381,7 +382,7 @@ pub(super) fn new(
         layout: &layout,
         entries: &bindings,
     });
-    let (pipeline, film) = surface_pipelines(
+    let (pipeline, river_pipeline, film) = surface_pipelines(
         surface,
         &layout,
         &environment,
@@ -412,6 +413,7 @@ pub(super) fn new(
         environment,
         gather,
         pipeline,
+        river_pipeline,
         film,
         parameters,
         group,
@@ -547,7 +549,11 @@ fn surface_pipelines(
     shore: bool,
     tidal_grid: bool,
     rain: bool,
-) -> (wgpu::RenderPipeline, Option<wgpu::RenderPipeline>) {
+) -> (
+    wgpu::RenderPipeline,
+    Option<wgpu::RenderPipeline>,
+    Option<wgpu::RenderPipeline>,
+) {
     let mut source = shader_source(
         surface,
         library,
@@ -561,6 +567,10 @@ fn surface_pipelines(
         source.push_str(super::RAIN_GAIN_WGSL);
         source.push_str(include_str!("rain.wgsl"));
     }
+    let has_rivers = map.is_some_and(MapGpu::has_rivers);
+    if has_rivers {
+        source.push_str(include_str!("map_gpu/river_surface_depth.wgsl"));
+    }
     let shader = surface
         .device
         .create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -573,12 +583,32 @@ fn surface_pipelines(
         environment,
         &shader,
         map.is_some(),
-        false,
+        "water_fragment",
         gather.is_some(),
     );
-    let film = (foam.is_some() && shore)
-        .then(|| create_pipeline(surface, layout, environment, &shader, true, true, false));
-    (pipeline, film)
+    let river = has_rivers.then(|| {
+        create_pipeline(
+            surface,
+            layout,
+            environment,
+            &shader,
+            true,
+            "river_fragment",
+            gather.is_some(),
+        )
+    });
+    let film = (foam.is_some() && shore).then(|| {
+        create_pipeline(
+            surface,
+            layout,
+            environment,
+            &shader,
+            true,
+            "film_fragment",
+            false,
+        )
+    });
+    (pipeline, river, film)
 }
 
 fn shader_source(
@@ -686,10 +716,11 @@ fn create_pipeline(
     environment: &EnvironmentProducts,
     shader: &wgpu::ShaderModule,
     mapped: bool,
-    film: bool,
+    fragment: &str,
     gather: bool,
 ) -> wgpu::RenderPipeline {
     let device = surface.device;
+    let film = fragment == "film_fragment";
     let pass = if film {
         film_declaration()
     } else {
@@ -771,11 +802,7 @@ fn create_pipeline(
         multisample: wgpu::MultisampleState::default(),
         fragment: Some(wgpu::FragmentState {
             module: shader,
-            entry_point: Some(if film {
-                "film_fragment"
-            } else {
-                "water_fragment"
-            }),
+            entry_point: Some(fragment),
             compilation_options: wgpu::PipelineCompilationOptions::default(),
             targets: &targets,
         }),
@@ -786,6 +813,7 @@ fn create_pipeline(
 
 pub(super) struct WaterDraw {
     pub(super) indices: Range<u32>,
+    pub(super) river: bool,
     offshore: Option<OffshoreRing>,
 }
 
@@ -915,6 +943,7 @@ fn surface_mesh(map: Option<&thrum_water_model::Map>, tidal_grid: bool) -> Geome
                 let radius = half_width as f32 * spacing;
                 geometry.draws.push(WaterDraw {
                     indices: first_index..geometry.indices.len() as u32,
+                    river: false,
                     offshore: (radius < 524_288.0).then_some(OffshoreRing {
                         radius,
                         levels,
@@ -939,6 +968,9 @@ fn surface_mesh(map: Option<&thrum_water_model::Map>, tidal_grid: bool) -> Geome
             geometry.grid(start, end, spacing, (body + 1) as f32, 0, surf);
             geometry.draws.push(WaterDraw {
                 indices: first_index..geometry.indices.len() as u32,
+                river: map.river_of(body).is_some_and(|(river, _)| {
+                    map.river(river).is_some_and(|river| river.gauges.len() > 1)
+                }),
                 offshore: None,
             });
         }

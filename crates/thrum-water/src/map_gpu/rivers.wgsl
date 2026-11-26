@@ -20,3 +20,32 @@ fn river_chart_cell(cell: Cell, k: u32, body: BodyRecord) -> vec4<f32> {
     let rise = select(1.0, (weight - b.w) / (1.0 - b.w), b.w < 1.0);
     return mix(bed, b, rise);
 }
+
+fn river_chart_row(
+    point: vec2<f32>, body: BodyRecord, own: MapRow, rows: ptr<function, array<MapRow, BODY_LIMIT>>,
+) -> MapRow {
+    var row = chart_row(point, body, own, rows);
+    if body.joins[0].w == 0.0 { return row; }
+    var current = own.water.yz;
+    var total = 1.0;
+    for (var e = 0u; e < body.layers.w; e++) {
+        let segment = body.ends[e];
+        let join = body.joins[e];
+        let delta = segment.zw - segment.xy;
+        let offset = point - segment.xy;
+        let distance = length(offset - delta * clamp(dot(offset, delta) / dot(delta, delta), 0.0, 1.0));
+        let width = select(join.y, min(join.y, map.origin_spacing_margin.z), join.z > 0.0);
+        let fade = smoothstep(0.0, width, distance);
+        if fade >= 1.0 { continue; }
+        let other = (*rows)[u32(join.x)].water.yz;
+        if fade <= 0.0 {
+            current = other;
+            break;
+        }
+        let relative = (1.0 - fade) / fade;
+        total += relative;
+        current = mix(current, other, relative / total);
+    }
+    row.water = vec3(row.water.x, current);
+    return row;
+}

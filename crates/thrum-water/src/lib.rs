@@ -806,6 +806,7 @@ impl SceneContribution for Water {
                 return;
             }
             pass.set_vertex_buffer(0, p.mesh.slice(..));
+            let mut river_active = false;
             if let Some(indices) = &p.indices {
                 pass.set_index_buffer(indices.slice(..), wgpu::IndexFormat::Uint32);
                 for draw in &p.draws {
@@ -813,6 +814,15 @@ impl SceneContribution for Water {
                         && (self.interaction.is_some()
                             || draw.visible(frame, self.offshore_displacement))
                     {
+                        if draw.river != river_active {
+                            let pipeline = if draw.river {
+                                p.river_pipeline.as_ref().expect("sampled river pipeline")
+                            } else {
+                                &p.pipeline
+                            };
+                            pass.set_pipeline(pipeline);
+                            river_active = draw.river;
+                        }
                         pass.draw_indexed(draw.indices.clone(), 0, 0..1);
                     }
                 }
@@ -822,6 +832,9 @@ impl SceneContribution for Water {
             if let Some(tiles) = &p.hollow_tiles
                 && tiles.index_count() > 0
             {
+                if river_active {
+                    pass.set_pipeline(&p.pipeline);
+                }
                 pass.set_index_buffer(tiles.buffer.slice(..), wgpu::IndexFormat::Uint32);
                 pass.draw_indexed(0..tiles.index_count(), 0, 0..1);
             }

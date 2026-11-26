@@ -6,28 +6,45 @@ use crate::support::Fixture;
 
 const STEP: Duration = Duration::from_nanos(16_666_667);
 const EXTENT: [u32; 2] = [96, 48];
+const SUBMISSIONS_PER_SECOND: u32 = 30;
+
+pub(crate) fn check(gpu: &thrum_test_support::Gpu) {
+    query(gpu);
+    // The ordinary check advances the same world ticks without rendering the
+    // entire journey. The device evidence also runs every query submission.
+    let submit = std::env::var_os("THRUM_RIVER_SUBMITTED_TRANSPORT").is_some();
+    for wind in [Wind::Calm, Wind::Trade] {
+        transport(gpu, wind, submit);
+    }
+}
 
 #[expect(
     clippy::print_stdout,
-    reason = "retain measured Metal transport in the item's evidence"
+    reason = "record the float's receiving body and passage speed"
 )]
-pub(crate) fn check(gpu: &thrum_test_support::Gpu) {
-    query(gpu);
+fn transport(gpu: &thrum_test_support::Gpu, wind: Wind, submit: bool) {
     let route =
-        river::build(Wind::Trade, true, Some(&crate::support::river_store())).expect("river route");
+        river::build(wind, submit, Some(&crate::support::river_store())).expect("river route");
     let mut scene = Fixture::from_game(gpu, EXTENT, route.game, route.report);
-    scene.parameters(r#"{"sea.stage":-0.45}"#);
     scene.frame_without_timings(0.0);
     let mut entered = [false; 2];
     let mut pool_speed = None;
     let mut narrows_speed = None;
+    let mut frame = 0;
     for seconds in [
         6, 12, 18, 24, 30, 36, 42, 50, 60, 70, 85, 100, 125, 160, 200, 250,
     ] {
-        scene
-            .host
-            .advance_without_rendering(Duration::from_secs(seconds))
-            .expect("river tick page");
+        if submit {
+            while frame < seconds * SUBMISSIONS_PER_SECOND {
+                frame += 1;
+                scene.frame_without_timings(f64::from(frame) / f64::from(SUBMISSIONS_PER_SECOND));
+            }
+        } else {
+            scene
+                .host
+                .advance_without_rendering(Duration::from_secs(u64::from(seconds)))
+                .expect("river tick page");
+        }
         let floats = (route.floats)();
         let map = route.map.lock().expect("river map");
         for (i, float) in floats.into_iter().enumerate() {
@@ -36,7 +53,7 @@ pub(crate) fn check(gpu: &thrum_test_support::Gpu) {
             let owner = water.map(|row| row.body);
             let speed = float.velocity.x.hypot(float.velocity.z);
             println!(
-                "Metal float {i} at {seconds}s: position {:?}, speed {speed:.3}, owner {owner:?}",
+                "Metal {wind:?} float {i} at {seconds}s: position {:?}, speed {speed:.3}, owner {owner:?}",
                 float.position
             );
             assert!(float.position.is_finite());
@@ -57,9 +74,14 @@ pub(crate) fn check(gpu: &thrum_test_support::Gpu) {
     }
     assert_eq!(
         entered, [true; 2],
-        "stream-to-lake and river-to-sea float routes"
+        "{wind:?}: stream-to-lake and river-to-sea float routes at the default stages"
     );
     assert!(narrows_speed.expect("narrows traverse") > pool_speed.expect("pool traverse"));
+    if submit {
+        let stats = route.query.stats();
+        assert!(stats.dispatches > 0 && stats.age_one + stats.age_two + stats.age_older > 0);
+        println!("Metal {wind:?} submitted float course: {frame} frames, {stats:?}");
+    }
 }
 
 #[expect(
@@ -86,6 +108,8 @@ fn query(gpu: &thrum_test_support::Gpu) {
         [207.501, 5.0],
         [347.499, 5.0],
         [347.501, 5.0],
+        [179.668, -23.665],
+        [325.515, 5.289],
     ];
     query.post(
         scene.endpoint(0),
@@ -140,7 +164,7 @@ fn query(gpu: &thrum_test_support::Gpu) {
     }
     assert!(!answers[3].surface.wet, "under the falling sheet");
     assert!(answers[4].surface.wet, "plunge pool");
-    for pair in answers[5..].as_chunks::<2>().0 {
+    for pair in answers[5..11].as_chunks::<2>().0 {
         assert!(pair.iter().all(|row| row.surface.wet));
         assert_ne!(pair[0].surface.body, pair[1].surface.body);
         assert!((pair[0].surface.sample.height - pair[1].surface.sample.height).abs() < 0.000_04);
@@ -153,4 +177,12 @@ fn query(gpu: &thrum_test_support::Gpu) {
             assert!((a - b).abs() < 0.000_004);
         }
     }
+    assert!(
+        answers[11].surface.current[1] > 0.01,
+        "current into the lake"
+    );
+    assert!(
+        answers[12].surface.current[0] > 0.01,
+        "current into the sea"
+    );
 }
