@@ -1567,12 +1567,19 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
       const record = { case: mode, ...proof, actualWasmSha256,
         source_revision: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repo, encoding: 'utf8' }).trim() };
       await fs.writeFile(path.join(output, `${mode}.json`), JSON.stringify(record, null, 2));
+      if (mode === 'clouds-controls') {
+        // The control proof is complete. Drain the device while the page can
+        // still acknowledge its destruction, before unloading the document.
+        cdp.event = () => {};
+        const devices = await releaseGameGraphics(cdp, sessionId, game);
+        log(`Released ${devices} WebGPU device(s) after cloud controls`);
+      }
       if (mode === 'clouds-state' || mode === 'clouds-controls') {
         // Retire the WebGPU document before Chrome closes its target.
         // Target.closeTarget only accepts a close request and can overlap renderer teardown.
         await cdp.call('Runtime.releaseObject', { objectId: game.objectId }, sessionId);
         await unloadGamePage(cdp, sessionId, timeout);
-        log('WebGPU cloud page unloaded');
+        log(mode === 'clouds-state' ? 'Recovered WebGPU page unloaded' : 'WebGPU cloud page unloaded');
       }
       return record;
     }
@@ -2727,7 +2734,7 @@ async function main() {
   finally {
     cook?.kill();
     // The reflection referee releases its WebGPU probe resources when its tab closes.
-    const drainGpuResources = args.case === 'environment' || args.case === 'sprites-crisp' || args.case.startsWith('sprites-field');
+    const drainGpuResources = args.case === 'environment' || args.case === 'clouds-controls' || args.case === 'sprites-crisp' || args.case.startsWith('sprites-field');
     const shutdown = {};
     try {
       await cleanup(child, () => ended, cdp, server, profile, {
