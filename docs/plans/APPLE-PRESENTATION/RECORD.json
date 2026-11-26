@@ -1620,12 +1620,12 @@
       }
     },
     "WP11": {
-      "definitions": "2ff9c2679e3d7baaa1cc4fa4053ec8a0b9ca4fd70bca960a38542dcf8b96a05c",
+      "definitions": "678d87e81d14ef8c60d1a8f4b3767c1d7ff382564242fa6d50dc00db96d3734e",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Unblock APPLE-PRESENTATION WP11 (handoff .orchestrate/evidence/APPLE-PRESENTATION/WP11-handoff.md, branch build/apple-pr",
-        "at": "2026-11-26T13:49:00Z"
+        "task": "The design review of APPLE-PRESENTATION at .orchestrate/evidence/APPLE-PRESENTATION/design-review.md asked for changes, ",
+        "at": "2026-11-26T14:06:02Z"
       }
     },
     "WP13": {
@@ -1995,11 +1995,15 @@
     {
       "task": "Unblock APPLE-PRESENTATION WP11 (handoff .orchestrate/evidence/APPLE-PRESENTATION/WP11-handoff.md, branch build/apple-presentation at 1eacafa623d9). On the built-in 3456x2234 120 Hz display the fastest capture-off route (Apple Tile, MetalFX, EDR, governor at its 50% floor) has a 10.85 ms GPU p50 and 14.67 ms p95 against an 8.33 ms interval. Lead's decision (revise the target, don't commission more graph work in WP11): the bar is shipped high-end games, which on a Mac at native fullscreen resolution hold a steady 60 fps with an upscaler rather than 120. Revise D11.6 (and D11.5 where it depends on it) so G4 closes on steady, well-paced 60 Hz presentation on the built-in display (ProMotion pacing, no missed 60 Hz slots, p95 interval within one 60 Hz frame) with the measured 120 Hz shortfall and its pass breakdown recorded. Keep the builder's two local wins (skipping the unused SDR tone pass, float copy access only for the tap). Put reaching 120 Hz fullscreen (forward opaque, float present and MetalFX cost) in a later work package after G4, not ahead of it. The capture tap's omissions still need fixing for the motion evidence. A plan you keep ends with KEEP APPLE-PRESENTATION WP11: builder: <where the plan provides it>.",
       "at": "2026-11-26T13:49:00Z"
+    },
+    {
+      "task": "The design review of APPLE-PRESENTATION at .orchestrate/evidence/APPLE-PRESENTATION/design-review.md asked for changes, with its 3 Must Fix findings.",
+      "at": "2026-11-26T14:06:02Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-26T13:49:00Z"
+    "at": "2026-11-26T14:06:02Z"
   },
   "design_history": [
     {
