@@ -1475,12 +1475,12 @@
       }
     },
     "WP10": {
-      "definitions": "58e610534455a356903ebfce2343dad92f5955adc077e05b5270bcb4ac5a4072",
+      "definitions": "f45d9f546dba84c3ec1b59c10f56d30318ca624c8de877ab2c00b9668a639510",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Unblock CLOUDS WP10. The builder hit the CLOUDS three-look limit on one cue: weak noon relief on the congestus core and ",
-        "at": "2026-11-26T10:12:09Z"
+        "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its 4 Must Fix find",
+        "at": "2026-11-26T10:36:24Z"
       }
     },
     "WP11": {
@@ -1493,14 +1493,13 @@
       }
     },
     "WP12": {
-      "definitions": "e0efe71319e67f0a7213eb81a6a366a08e3da8756b313b45e9da9842291020bc",
+      "definitions": "b8811841736c7618ea0981471e74fb96f844bb3340f7ea988336d4d561c9024d",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "CLOUDS WP7 has failed review four times, three on WP7.4 (the ordinary 1920x1080 window holds 120 Hz targets during wind ",
-        "at": "2026-11-25T08:39:28Z"
-      },
-      "ends_stretch": true
+        "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its 4 Must Fix find",
+        "at": "2026-11-26T10:36:24Z"
+      }
     },
     "WP13": {
       "definitions": "eacf6e86c21eb631106b40d1e67e6f40c9f2095b50f4577b298c2d85fdafcdeb",
@@ -2002,13 +2001,14 @@
       }
     },
     "WP21": {
-      "definitions": "13330b46319ce0d21ed96de9cca3181552288fc6a50c0fe596a54b91d24104df",
+      "definitions": "bdfb34c00d091596bf9324ecfc223e9321497d664db339e379442fbb75982f60",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Unblock CLOUDS WP10. The builder hit the CLOUDS three-look limit on one cue: weak noon relief on the congestus core and ",
-        "at": "2026-11-26T10:12:09Z"
-      }
+        "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its 4 Must Fix find",
+        "at": "2026-11-26T10:36:24Z"
+      },
+      "ends_stretch": true
     }
   },
   "tasks": [
@@ -2139,11 +2139,15 @@
     {
       "task": "Unblock CLOUDS WP10. The builder hit the CLOUDS three-look limit on one cue: weak noon relief on the congestus core and the mediocris twin turrets (Metal and Chrome alike); see .orchestrate/evidence/CLOUDS/WP10-handoff.md and branch build/clouds at 63f4e85794fe. Lead's decision (park, don't push): the bar is the look of shipped high-end games, and a high Sun flattening broad lobes is plausible. Narrow WP10.1 and WP10.4 so WP10 can close on what is qualified (growth, fair sky, cost, the other volumes and the 10-degree and low-Sun looks), recording weak noon relief on broad lobes as a known limitation in the design's risks. Move the noon-relief work (diffuse sunlight into sheltered faces of broad lobes, keeping the accepted WP6 look) to a new, later work package or spike after the module's current milestone, not ahead of the remaining packages. A plan you keep ends with KEEP CLOUDS WP10: builder: <where the plan provides it>.",
       "at": "2026-11-26T10:12:09Z"
+    },
+    {
+      "task": "The design review of CLOUDS at .orchestrate/evidence/CLOUDS/design-review.md asked for changes, with its 4 Must Fix findings. An earlier turn on this was killed on the host. Lead: all four findings match my intent. WP21 must not hold up WP12 or the module's close; the waiver covers only the congestus core and the mediocris twin turrets at noon; WP21's cost check must use a Sun high enough to run the correction; and WP21 is judged against the shipped-game bar, not against being stronger than its starting commit.",
+      "at": "2026-11-26T10:36:24Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-26T10:12:09Z"
+    "at": "2026-11-26T10:36:24Z"
   },
   "design_history": [
     {
