@@ -513,6 +513,45 @@ impl GameScene {
         self.sheet_stats.clone()
     }
 
+    /// Update the platform density and safe area before painting the status display.
+    #[cfg(all(feature = "proving", any(target_os = "macos", target_arch = "wasm32")))]
+    pub(crate) fn set_interface_output(&mut self, density: f64, insets: [f64; 4]) {
+        if let Some(card) = &mut self.font_card {
+            card.output(density, insets);
+        }
+    }
+
+    /// Measure layout and paint builds with a monotonic millisecond clock.
+    /// # Errors
+    /// Returns a refused workload declaration.
+    #[cfg(feature = "proving")]
+    pub fn status_layout_costs(
+        now_ms: impl Fn() -> f64,
+    ) -> Result<Vec<[f64; 3]>, thrum_ui::TreeError> {
+        crate::interface_status::measure_layout(now_ms)
+    }
+
+    /// Counts of actual retained status layout and paint work.
+    #[cfg(feature = "proving")]
+    pub fn status_stats(&self) -> Option<thrum_ui::TreeStats> {
+        self.font_card.as_ref()?.status_stats()
+    }
+
+    /// Drive each status value at the simulation tick rate for the cost run.
+    #[cfg(feature = "proving")]
+    pub fn measure_status_updates(&mut self) {
+        if let Some(card) = &mut self.font_card {
+            card.measure_updates();
+        }
+    }
+
+    #[cfg(all(feature = "proving", target_os = "macos"))]
+    pub(crate) fn hold_status_capture(&mut self, tick: Option<u64>, insets: [f64; 4]) {
+        if let Some(card) = &mut self.font_card {
+            card.hold_status_capture(tick, insets);
+        }
+    }
+
     /// Request a different cooked interface scale.
     #[cfg(feature = "proving")]
     pub fn set_interface_scale(&self, scale: u32) -> bool {

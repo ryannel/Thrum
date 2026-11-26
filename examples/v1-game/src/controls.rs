@@ -32,6 +32,12 @@ pub struct ControlEdits {
     pub exposure_zones: Option<bool>,
     /// Whether motion replaces the tone-mapped scene.
     pub motion_view: Option<bool>,
+    /// Point grid and usable area reported by the platform shell.
+    #[cfg(all(feature = "proving", any(target_os = "macos", target_arch = "wasm32")))]
+    pub interface_output: Option<thrum_app::OutputMetrics>,
+    /// Exercise every value in the status cost proof.
+    #[cfg(all(feature = "proving", any(target_os = "macos", target_arch = "wasm32")))]
+    pub status_cost: bool,
 }
 
 impl ControlEdits {
@@ -207,6 +213,10 @@ impl GameControls {
             paused: None,
             exposure_zones: Some(self.model.is_on(self.exposure_zones)),
             motion_view: Some(self.model.is_on(self.motion_view)),
+            #[cfg(all(feature = "proving", any(target_os = "macos", target_arch = "wasm32")))]
+            interface_output: None,
+            #[cfg(all(feature = "proving", any(target_os = "macos", target_arch = "wasm32")))]
+            status_cost: false,
         }
     }
 

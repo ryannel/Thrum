@@ -39,6 +39,7 @@ pub async fn create_governor_game(
         },
         shapes: None,
         sprite_store: None,
+        status_cost: false,
         initial_downlevel: String::new(),
     });
     let mask = if timestamps {

@@ -506,8 +506,9 @@ fn selected_interface_text(enabled: bool) -> Result<Option<crate::InterfaceText>
         Err(std::env::VarError::NotPresent) => Ok(None),
         Ok("type") => Ok(Some(crate::InterfaceText::Type)),
         Ok("counting") => Ok(Some(crate::InterfaceText::Counting)),
+        Ok("status") => Ok(Some(crate::InterfaceText::Status)),
         Ok("specimen") => Ok(Some(crate::InterfaceText::Specimen)),
-        _ => Err("THRUM_INTERFACE_TEXT must be type, counting or specimen".into()),
+        _ => Err("THRUM_INTERFACE_TEXT must be type, counting, specimen or status".into()),
     }
 }
 
@@ -517,12 +518,14 @@ fn selected_interface(enabled: bool) -> Result<(Option<u8>, Option<u32>), String
         return Ok((None, None));
     }
     let scale = match launch_value("THRUM_INTERFACE_SCALE") {
-        Err(std::env::VarError::NotPresent) => 1,
-        Ok(value) => value
-            .parse::<u8>()
-            .ok()
-            .filter(|scale| (1..=3).contains(scale))
-            .ok_or("THRUM_INTERFACE_SCALE must be an integer from 1 to 3")?,
+        Err(std::env::VarError::NotPresent) => None,
+        Ok(value) => Some(
+            value
+                .parse::<u8>()
+                .ok()
+                .filter(|scale| (1..=3).contains(scale))
+                .ok_or("THRUM_INTERFACE_SCALE must be an integer from 1 to 3")?,
+        ),
         Err(error) => return Err(error.to_string()),
     };
     let rows = match launch_value("THRUM_INTERFACE_ROWS") {
@@ -536,7 +539,16 @@ fn selected_interface(enabled: bool) -> Result<(Option<u8>, Option<u32>), String
         ),
         Err(error) => return Err(error.to_string()),
     };
-    Ok((Some(scale), rows))
+    Ok((
+        scale.or_else(|| {
+            (!matches!(
+                selected_interface_text(enabled),
+                Ok(Some(crate::InterfaceText::Status))
+            ))
+            .then_some(1)
+        }),
+        rows,
+    ))
 }
 
 fn attach_selected(

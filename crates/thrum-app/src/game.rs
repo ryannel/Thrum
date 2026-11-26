@@ -188,6 +188,18 @@ pub trait Game {
     fn frame_edits(&mut self) -> Self::Edits {
         Self::Edits::default()
     }
+    /// Opt in to output extent, density and safe-area reports from the platform shell.
+    #[cfg(feature = "interface")]
+    fn wants_interface_output(&self) -> bool {
+        false
+    }
+
+    /// Convert the latest platform output report to an edit applied before drawing.
+    #[cfg(feature = "interface")]
+    fn interface_output(&mut self, _output: OutputMetrics) -> Self::Edits {
+        Self::Edits::default()
+    }
+
     /// The whole desired presentation state, sent again after GPU recovery.
     fn replay(&self) -> Self::Edits;
     /// Apply edits to the runtime on the render owner thread.
@@ -256,4 +268,16 @@ pub(crate) fn apply_params_file(
                 .apply_file(&text)
                 .map_err(|error| error.to_string())
         })
+}
+
+/// Window or canvas extent in pixels and its point-space safe area.
+#[cfg(feature = "interface")]
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct OutputMetrics {
+    /// Physical output pixels.
+    pub extent: [u32; 2],
+    /// Device pixels per operating-system point.
+    pub density: f64,
+    /// Left, top, right and bottom in operating-system points.
+    pub insets: [f64; 4],
 }

@@ -164,6 +164,11 @@ pub struct WebShell<W: InlineWorld, V: SceneSource<W::Page>> {
     held_contribution: Option<Box<dyn SceneContribution>>,
     attach_error: Option<String>,
     governor: Option<BrowserCadence>,
+    #[cfg(feature = "interface")]
+    interface_output: Option<(f64, [f64; 4])>,
+
+    #[cfg(feature = "interface")]
+    reported_interface_output: Option<crate::OutputMetrics>,
 }
 
 #[derive(Default)]
@@ -259,6 +264,10 @@ where
         held_contribution: None,
         attach_error: None,
         governor: None,
+        #[cfg(feature = "interface")]
+        interface_output: None,
+        #[cfg(feature = "interface")]
+        reported_interface_output: None,
     })
 }
 
@@ -283,6 +292,15 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
         Ok(())
     }
 
+    /// Update the density and safe area observed by the canvas's page.
+    #[cfg(feature = "interface")]
+    pub fn set_interface_output(&mut self, density: f64, insets: [f64; 4]) {
+        if density.is_finite() && density > 0.0 && insets.iter().all(|x| x.is_finite() && *x >= 0.0)
+        {
+            self.interface_output = Some((density, insets));
+        }
+    }
+
     /// Run the game's frame hooks and drive a browser animation callback.
     /// # Errors
     /// Returns a refused game edit or frame error.
@@ -291,9 +309,32 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
         G: Game<World = W, Scene = V>,
     {
         game.observe(G::readback(&self.host));
-        self.frame_with_edits(timestamp_ms, |host, replaced| {
+        #[cfg(feature = "interface")]
+        let metrics = self
+            .interface_output
+            .filter(|_| game.wants_interface_output())
+            .map(|(density, insets)| crate::OutputMetrics {
+                extent: [self.canvas.width(), self.canvas.height()],
+                density,
+                insets,
+            });
+        #[cfg(feature = "interface")]
+        let mut reported = self.reported_interface_output;
+        let result = self.frame_with_edits(timestamp_ms, |host, replaced| {
+            #[cfg(feature = "interface")]
+            if let Some(metrics) = metrics
+                && (replaced || reported != Some(metrics))
+            {
+                G::apply(host, game.interface_output(metrics)).map_err(WebHostError::Edit)?;
+                reported = Some(metrics);
+            }
             apply_frame_edits(game, host, replaced).map_err(WebHostError::Edit)
-        })
+        });
+        #[cfg(feature = "interface")]
+        {
+            self.reported_interface_output = reported;
+        }
+        result
     }
 
     /// Bind a declared profiler to this page. Report pages retain timing demand.

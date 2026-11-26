@@ -28,6 +28,9 @@ mod hosted;
 #[cfg(feature = "proving")]
 mod interface_card;
 #[cfg(feature = "proving")]
+#[doc(hidden)]
+pub mod interface_status;
+#[cfg(feature = "proving")]
 mod interface_text;
 #[cfg(feature = "proving")]
 pub use interface_text::InterfaceText;
@@ -112,7 +115,7 @@ pub use window::CreationProof;
 #[cfg(all(target_os = "macos", feature = "proving"))]
 pub use window::{
     CAPTURE_OBSERVER_VARIABLE, NATIVE_RECOVERY_VARIABLE, NativeRecovery, RenderScaleTrace,
-    RuntimeCaptureOutput, SceneCaptureRequest, capture_game, run_runtime_capture,
+    RuntimeCaptureOutput, SceneCaptureRequest, StatusCapture, capture_game, run_runtime_capture,
     run_scene_capture,
 };
 #[cfg(target_os = "macos")]

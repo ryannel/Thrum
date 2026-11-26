@@ -625,10 +625,12 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     }
 
     pub(super) fn resize_drawable_capture(&mut self) {
+        // The 2D scene grid follows the canvas. Its SDR and scene-linear taps
+        // change extent with the scene even when the drawable is also SDR.
         let replacement = self.submitted_capture.as_ref().and_then(|tap| {
             let extent = capture_extent(tap.source, &self.slots[0].target, self.presenter.as_ref());
             ((tap.source == CaptureSource::Edr
-                || (self.is_edr() && matches!(self.prepared, super::PreparedRenderer::TwoD(_))))
+                || matches!(self.prepared, super::PreparedRenderer::TwoD(_)))
                 && tap.generation == self.generation
                 && tap.extent != extent)
                 .then(|| Tap::replacement(tap.spec, tap.source, tap.generation, extent))

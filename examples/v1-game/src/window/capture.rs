@@ -57,6 +57,7 @@ pub(super) fn run(
     hold_full: Duration,
     recovery: super::NativeRecovery,
     capture_output: RuntimeCaptureOutput,
+    status: super::StatusCapture,
     hardware: Vec<super::HardwareRequest>,
 ) -> Result<(), String> {
     if !matches!(
@@ -97,6 +98,7 @@ pub(super) fn run(
             | "sprites-field-cost"
             | "sprites-scroll"
             | "sprites-sheets"
+            | "sprites-status"
     ) {
         return Err("unknown runtime capture scenario".to_owned());
     }
@@ -112,6 +114,7 @@ pub(super) fn run(
                 hold_full,
                 recovery,
                 capture_output,
+                status,
                 &hardware,
             ))
         })
@@ -312,6 +315,8 @@ impl Trace {
             "visual_revision":image.sample.visual_revision,"device_generation":image.device_generation,"surface_generation":image.presenter_generation,
             "presentation_lead_ns":image.presentation_lead.as_nanos(),"readback_copy_gpu_bracket_ns":image.copy_gpu_ns,
             "sprites":crate::sprite_field::sample_stats(&image.sample),
+            "interface":image.sample.interface.map(|stage| json!({"scale":stage.stamp.map(|stamp| stamp.scale),
+                "stamp_mismatch":stage.stamp_mismatch,"extent_mismatch":stage.extent_mismatch,"dropped_rows":stage.dropped_rows})) ,
             "submit_ns":image.submitted_at.saturating_duration_since(origin).as_nanos(),
             "map_observed_ns":origin.elapsed().as_nanos()}));
         if let Some(image) = writer.submit(image) {
@@ -667,6 +672,7 @@ fn applies_yaw(scenario: &str, active_world: bool) -> bool {
                 | "sprites-field"
                 | "sprites-field-cost"
                 | "sprites-sheets"
+                | "sprites-status"
                 | "atmosphere-scrub"
                 | "atmosphere-ground-pan"
                 | "sun-settle"
@@ -813,6 +819,7 @@ async fn record(
     hold_full: Duration,
     recovery_mode: super::NativeRecovery,
     capture_output: RuntimeCaptureOutput,
+    status: super::StatusCapture,
     hardware: &[super::HardwareRequest],
 ) -> Result<(), String> {
     let mode = capture_mode(scenario)?;
@@ -844,6 +851,12 @@ async fn record(
     let measure_passes = !(elapsed_observation || target_wind) || sprite_scroll_timings;
     if !measure_passes {
         driver.set_timing_requested(false);
+    }
+    if scenario == "sprites-status" {
+        driver
+            .host_mut()
+            .continuous_source_mut()
+            .hold_status_capture(status.tick, status.insets);
     }
     let (preset_requested, preset_accepted) =
         prepare_parameters(&mut driver, scenario, &mode, haze_take, parity_checkpoint)?;
@@ -919,7 +932,10 @@ async fn record(
         scenario_bounds(scenario, recovery_mode)
     };
     loop {
-        if mode == "still" || held_sample(scenario) {
+        if mode == "still"
+            || held_sample(scenario)
+            || scenario == "sprites-status" && mode == "fixed"
+        {
             break;
         }
         admission.wait(&mut driver, &mut trace, writer.as_ref(), origin, &mut clock)?;
@@ -946,7 +962,9 @@ async fn record(
             break;
         }
         let work = WorkClock::start().map_err(|e| e.to_string())?;
-        let active_world = world_moves(scenario) || bank_mover;
+        let active_world = world_moves(scenario)
+            || bank_mover
+            || scenario == "sprites-status" && mode == "realtime";
         if active_world
             && t >= 1.0
             && (bank_mover || is_route(scenario) || t < world_end)
@@ -1101,6 +1119,7 @@ async fn record(
     let writer_result = trace.finish_writer(&mut driver, writer, origin, submitted)?;
     let interval_complete = mode == "still"
         || held_sample(scenario)
+        || scenario == "sprites-status" && mode == "fixed"
         || (scenario == "exit-stop" && mode == "fixed" && trace.images.len() >= 24)
         || (mode == "fixed" && last_sample_time >= Duration::from_secs(4))
         || (mode == "realtime"
@@ -1177,6 +1196,7 @@ fn is_motion_capture(scenario: &str) -> bool {
         || matches!(
             scenario,
             "exit-route"
+                | "sprites-status"
                 | "sprites-sheets"
                 | "sun-settle"
                 | "sun-cut"
@@ -1511,6 +1531,7 @@ fn scenario_bounds(scenario: &str, recovery: super::NativeRecovery) -> (f64, f64
     }
     match scenario {
         "sprites-field-cost" => (11.5, 10.0, 10.0),
+        "sprites-status" => (6.75, 5.75, 5.75),
         "sprites-scroll" => (5.5, 4.75, 4.25),
         "sprites-sheets" => (7.25, 6.25, 6.0),
         "clouds-drift" => (22.5, 22.0, 21.0),

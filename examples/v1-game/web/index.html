@@ -149,6 +149,18 @@
         }
         if (textCard && !spriteStore) throw new Error("The text card requires a cooked font store");
         const interfaceScale = Math.min(3, Math.max(1, Math.round(devicePixelRatio)));
+        const safeProbe = textCard === "status" ? document.createElement("div") : null;
+        if (safeProbe) {
+          safeProbe.style.cssText = "position:absolute;visibility:hidden;pointer-events:none;" +
+            "padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)";
+          document.body.append(safeProbe);
+        }
+        const interfaceOutput = () => {
+          const css = getComputedStyle(safeProbe);
+          const insets = [css.paddingLeft, css.paddingTop, css.paddingRight, css.paddingBottom].map(parseFloat);
+          return { extent: [canvas.width, canvas.height], density: devicePixelRatio, insets };
+        };
+        if (safeProbe) window.thrumInterfaceOutput = interfaceOutput;
         const game = textCard
           ? await create_interface_text_game(canvas, spriteStore, interfaceScale, textCard, spriteRows ?? 10000)
           : spriteStore
@@ -348,6 +360,10 @@
           beforeFrame() {
             syncBackingSize();
             // @proving
+            if (safeProbe) {
+              const { density, insets } = interfaceOutput();
+              game.set_interface_output(density, ...insets);
+            }
             beforeCloudFrame = cloudCheck?.enabled ? game.presented() : undefined;
             if (beforeCloudFrame !== undefined) game.observe_next_cloud_submission(cloudCheck.ground);
             // @end

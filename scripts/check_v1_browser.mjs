@@ -6,6 +6,7 @@ import { prepareMeshRows } from './check_mesh_rows_browser.mjs';
 import { checkContentEdits, loadContentEdits } from './check_content_edits_browser.mjs';
 import { qualifyTemporal } from './check_temporal_browser.mjs';
 import { qualifySpriteCrisp, qualifySpriteField, qualifySprites } from './check_sprites_browser.mjs';
+import { qualifyInterfaceStatus } from './check_interface_status_browser.mjs';
 import { qualifyInterfaceText } from './check_interface_text_browser.mjs';
 import { qualifyInterface } from './check_interface_browser.mjs';
 import { installWasmReceipt, readWasmReceipt } from './wasm_receipt.mjs';
@@ -28,7 +29,7 @@ cases.push('effect-after-opaque', 'effect-tick');
 cases.push('exit-scene', 'exit-sweep', 'exit-stops', 'extent');
 cases.push('route-diagnostic', 'scale', 'governor', 'no-compile');
 cases.push('shipping-boundary');
-cases.push('interface-stage', 'interface-stage-cost', 'interface-text', 'interface-text-visual');
+cases.push('interface-stage', 'interface-stage-cost', 'interface-text', 'interface-text-visual', 'interface-status', 'interface-status-cost');
 cases.push('sprites-2d', 'sprites-2d-cost', 'sprites-field', 'sprites-field-cost', 'sprites-crisp', 'sprite-sheets');
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -311,7 +312,11 @@ async function serveCooked(args, output, temporalDefinition) {
   // Watch a copy, so the live-edit step never touches repository sources.
   const source = path.join(output, 'source');
   await fs.cp(path.resolve(repo, args['assets-source']), source, { recursive: true });
-  if (args.case === 'content-edits') {
+  if (args.case === 'interface-status') {
+    execFileSync('cargo', ['build', '--locked', '--offline', '-p', 'v1-game', '--example', 'interface_status'],
+      { cwd: repo, stdio: 'inherit' });
+  }
+  if (args.case === 'content-edits' ) {
     execFileSync('python3', ['scripts/edit_valley_content.py', source, 'prepare'], { cwd: repo });
   }
   if (args.case === 'exit-scene' || args.case === 'exit-stops') {
@@ -2531,7 +2536,7 @@ async function main() {
       { cwd: repo, env: { ...process.env, CARGO_TARGET_DIR: 'target', RUSTC_WRAPPER: '' }, stdio: 'inherit' });
     if (proving) args['web-root'] = 'target/v1-game-web-proving';
   }
-  if (['exit-scene', 'scale', 'no-compile', 'interface-text', 'interface-text-visual'].includes(args.case) && args.cook === 'target/debug/thrum-cook') {
+  if (['exit-scene', 'scale', 'no-compile', 'interface-text', 'interface-text-visual', 'interface-status', 'interface-status-cost'].includes(args.case) && args.cook === 'target/debug/thrum-cook') {
     execFileSync('rustup', ['run', 'stable', 'cargo', 'build', '--locked', '--offline', '--target-dir', 'target', '-p', 'thrum-cook', '--bin', 'thrum-cook'],
       { cwd: repo, env: { ...process.env, RUSTC_WRAPPER: '' }, stdio: 'inherit' });
   }
@@ -2620,7 +2625,7 @@ async function main() {
     let assetsSource;
     if (modes.includes('route-diagnostic')) await routeStops(files, directory);
     if (modes.some(mode => mode.startsWith('environment-') || ['scale', 'no-compile', 'temporal', 'valley', 'valley-recovery', 'valley-late-attach', 'params', 'material', 'material-disabled'].includes(mode) || (mode.startsWith('route-') && mode !== 'route-diagnostic') || mode.startsWith('moving-route') || mode.startsWith('exit-'))) ({ cook, origin: assetsOrigin, source: assetsSource } = await serveCooked(args, output, temporalDefinition));
-    if (args.case.startsWith('interface-text')) {
+    if (args.case.startsWith('interface-text') || args.case.startsWith('interface-status')) {
       ({ cook, origin: assetsOrigin, source: assetsSource } = await serveCooked({
         ...args, 'assets-source': 'tests/fixtures/game-ui/font-source',
       }, output));
@@ -2637,6 +2642,12 @@ async function main() {
         cdp, origin: serving.origin, output, timeout: args['timeout-ms'],
         wasm: files.get('/v1_game_bg.wasm'), existingGame, waitFor, releaseGameGraphics, unloadGamePage,
         commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repo, encoding: 'utf8' }).trim(),
+      }));
+      else if (mode.startsWith('interface-status')) results.push(await qualifyInterfaceStatus({
+        cdp, origin: serving.origin, fontOrigin: assetsOrigin, output,
+        timeout: args['timeout-ms'], wasm: files.get('/v1_game_bg.wasm'), existingGame, waitFor, releaseGameGraphics, unloadGamePage,
+        commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repo, encoding: 'utf8' }).trim(),
+        costs: mode === "interface-status-cost", encodePng, oracle: path.join(repo, 'target/debug/examples/interface_status'),
       }));
       else if (mode.startsWith('interface-text')) results.push(await qualifyInterfaceText({
         cdp, origin: serving.origin, fontOrigin: assetsOrigin, source: assetsSource, output,

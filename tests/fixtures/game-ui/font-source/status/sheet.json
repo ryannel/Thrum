@@ -1,0 +1,6 @@
+{
+  "kind": "pixel",
+  "density": 1,
+  "pivots": { "health": [0, 0] },
+  "tiles": ["health"]
+}

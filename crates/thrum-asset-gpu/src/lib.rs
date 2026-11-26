@@ -1178,6 +1178,16 @@ fn font_stamp(set: &load::ResidentSet) -> Option<thrum_render::sprite::PaintStam
 fn font_candidate(requests: &[LeaseRequest], set: &load::ResidentSet) -> Option<FontCandidate> {
     Some(FontCandidate {
         stamp: font_stamp(set)?,
+        sheets: requests
+            .iter()
+            .zip(&set.leased)
+            .filter_map(|(request, (_, _, _, texture))| {
+                if texture.font.is_some() {
+                    return None;
+                }
+                Some((request.name.clone(), texture.sheet.clone()?))
+            })
+            .collect(),
         fonts: requests
             .iter()
             .zip(&set.leased)

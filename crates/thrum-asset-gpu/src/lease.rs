@@ -197,9 +197,19 @@ pub struct FontCandidate {
     pub stamp: PaintStamp,
     /// Manifest names and validated font tables, in lease order.
     pub fonts: Vec<(String, Arc<FontProduct>)>,
+    /// Manifest names and metadata for accompanying interface art sheets.
+    pub sheets: Vec<(String, Arc<thrum_asset::SheetProduct>)>,
 }
 
 impl FontCandidate {
+    /// Find the exact art sheet paired with this publication.
+    pub fn sheet(&self, name: &str) -> Option<&thrum_asset::SheetProduct> {
+        self.sheets
+            .iter()
+            .find(|(key, _)| key == name)
+            .map(|(_, sheet)| sheet.as_ref())
+    }
+
     /// Find the validated table of a named font.
     pub fn font(&self, name: &str) -> Option<&FontProduct> {
         self.fonts

@@ -178,6 +178,7 @@ pub(in crate::window) async fn run(
         world: None,
         held_keys: 0,
         replay_controls: false,
+        interface_text: None,
         capture_route: None,
         governor_enabled: false,
         capture_eye: None,

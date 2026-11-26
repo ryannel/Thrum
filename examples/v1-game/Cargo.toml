@@ -16,7 +16,7 @@ workspace = true
 
 [features]
 default = ["proving"]
-proving = ["dep:thrum-ui"]
+proving = ["dep:thrum-ui", "thrum-app/interface"]
 creation-counters = ["thrum-app/creation-counters"]
 draw-probe = ["proving", "thrum-asset-gpu/draw-probe", "thrum-render/creation-counters"]
 # The browser page's material hook reload (`?material=`), a development control that compiles
@@ -65,7 +65,7 @@ thrum-app = { path = "../../crates/thrum-app" }
 wgpu = { version = "=30.0.1", default-features = false, features = ["webgpu"] }
 wasm-bindgen = "=0.2.129"
 wasm-bindgen-futures = "=0.4.79"
-web-sys = { version = "=0.3.106", features = ["HtmlCanvasElement", "console"] }
+web-sys = { version = "=0.3.106", features = ["HtmlCanvasElement", "Performance", "Window", "console"] }
 
 [dev-dependencies]
 thrum-asset-gpu = { path = "../../crates/thrum-asset-gpu", features = ["fault-probe"] }
@@ -241,3 +241,19 @@ required-features = ["proving"]
 [[test]]
 name = "clouds_meter_gpu"
 path = "tests/clouds_meter_gpu.rs"
+
+[[test]]
+name = "interface_status_sweep"
+required-features = ["proving"]
+
+[[test]]
+name = "interface_status_gpu"
+required-features = ["proving"]
+
+[[test]]
+name = "interface_status_switch"
+required-features = ["proving"]
+
+[[example]]
+name = "interface_status"
+required-features = ["proving"]

@@ -93,6 +93,8 @@ pub struct TextRun {
     missing: usize,
     magnification: u32,
     sheet_scale: u32,
+    size: [u32; 2],
+    elided: bool,
 }
 
 impl TextRun {
@@ -101,6 +103,23 @@ impl TextRun {
     /// # Errors
     /// Returns the missing size or scale when the request would require resampling the font.
     pub fn new(font: &FontProduct, text: &str, options: TextOptions) -> Result<Self, TextError> {
+        Self::build(font, text, options, false)
+    }
+
+    pub(crate) fn for_tree(
+        font: &FontProduct,
+        text: &str,
+        options: TextOptions,
+    ) -> Result<Self, TextError> {
+        Self::build(font, text, options, true)
+    }
+
+    fn build(
+        font: &FontProduct,
+        text: &str,
+        options: TextOptions,
+        stable_digits: bool,
+    ) -> Result<Self, TextError> {
         let (strike, magnification) = select(font, options)?;
         let mut layout = Layout {
             strike,
@@ -108,13 +127,36 @@ impl TextRun {
             magnification,
             glyphs: Vec::new(),
             missing: 0,
+            size: [0; 2],
+            elided: false,
+            digit_bounds: None,
         };
+        if stable_digits
+            && options.tabular_digits
+            && ('0'..='9').all(|ch| strike.glyph(ch).is_some())
+        {
+            layout.digit_bounds = Some(('0'..='9').map(|ch| layout.glyph(ch).0.bounds).fold(
+                [0; 4],
+                |a, b| {
+                    [
+                        a[0].min(b[0]),
+                        a[1].min(b[1]),
+                        a[2].max(b[2]),
+                        a[3].max(b[3]),
+                    ]
+                },
+            ));
+        }
         layout.shape(text);
         Ok(Self {
             glyphs: layout.glyphs,
             missing: layout.missing,
             magnification,
             sheet_scale: strike.metrics.scale,
+            size: layout
+                .size
+                .map(|side| u32::try_from(side).unwrap_or(u32::MAX)),
+            elided: layout.elided,
         })
     }
 
@@ -131,6 +173,21 @@ impl TextRun {
     /// Scale of the sheet the run was laid out against.
     pub const fn sheet_scale(&self) -> u32 {
         self.sheet_scale
+    }
+
+    /// Ink and advance extent of the fitted lines, including line metrics.
+    pub const fn size(&self) -> [u32; 2] {
+        self.size
+    }
+
+    /// Whether the requested text was shortened or could not be drawn in its box.
+    pub const fn elided(&self) -> bool {
+        self.elided
+    }
+
+    pub(crate) fn tabular_supported(font: &FontProduct, options: TextOptions) -> bool {
+        select(font, options)
+            .is_ok_and(|(strike, _)| ('0'..='9').all(|ch| strike.glyph(ch).is_some()))
     }
 
     /// Paint at a snapped output-pixel origin. The caller names the slot of the laid-out sheet.
@@ -241,6 +298,9 @@ struct Layout<'a> {
     magnification: u32,
     glyphs: Vec<RunGlyph>,
     missing: usize,
+    size: [i64; 2],
+    elided: bool,
+    digit_bounds: Option<[i64; 4]>,
 }
 
 #[expect(
@@ -272,7 +332,8 @@ impl Layout<'_> {
         let mut paragraphs = paragraphs.drain(..).peekable();
         while let Some(glyphs) = paragraphs.next() {
             if baseline + descent > height {
-                continue;
+                self.elided = true;
+                break;
             }
             let mut rest = glyphs.as_slice();
             loop {
@@ -282,8 +343,9 @@ impl Layout<'_> {
                 if fit < rest.len() && (!self.options.wrap || last_line || resume == 0)
                     || more && last_line
                 {
+                    self.elided = true;
                     let shortened = self.elide(rest, width, baseline, height);
-                    self.place(&shortened, baseline, width);
+                    self.place(&shortened, baseline, width, descent);
                     baseline += spacing;
                     break;
                 }
@@ -294,7 +356,7 @@ impl Layout<'_> {
                         fit -= 1;
                     }
                 }
-                self.place(&rest[..fit], baseline, width);
+                self.place(&rest[..fit], baseline, width, descent);
                 baseline += spacing;
                 if resume == rest.len() {
                     break;
@@ -359,7 +421,11 @@ impl Layout<'_> {
                 ch,
                 entry,
                 advance: i64::from(advance) * i64::from(self.magnification),
-                bounds,
+                bounds: if digit {
+                    self.digit_bounds.unwrap_or(bounds)
+                } else {
+                    bounds
+                },
             },
             missing,
         )
@@ -481,7 +547,7 @@ impl Layout<'_> {
         head
     }
 
-    fn place(&mut self, glyphs: &[Glyph], baseline: i64, width: i64) {
+    fn place(&mut self, glyphs: &[Glyph], baseline: i64, width: i64, descent: i64) {
         let start = self.glyphs.len();
         let mut line = Line::default();
         for &glyph in glyphs {
@@ -493,6 +559,8 @@ impl Layout<'_> {
             });
             line = updated;
         }
+        self.size[0] = self.size[0].max(line.width());
+        self.size[1] = baseline + descent;
         let margin = width - line.width();
         let align = match self.options.alignment {
             Alignment::Left => 0,

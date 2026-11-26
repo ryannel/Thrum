@@ -77,6 +77,16 @@ impl RuntimeCaptureOutput {
     }
 }
 
+/// Optional held status values and simulated insets for an offscreen capture.
+#[cfg(feature = "proving")]
+#[derive(Clone, Copy, Debug, Default)]
+pub struct StatusCapture {
+    /// Tick supplying values, when a fixed inspection calls for a particular bar level.
+    pub tick: Option<u64>,
+    /// Left, top, right and bottom in interface points.
+    pub insets: [f64; 4],
+}
+
 /// Run a declared unattended capture scenario through the ordinary game.
 /// # Errors
 /// Returns GPU, control, readback or output failure.
@@ -88,6 +98,7 @@ pub fn run_runtime_capture(
     hold_full: std::time::Duration,
     recovery: NativeRecovery,
     capture_output: RuntimeCaptureOutput,
+    status: StatusCapture,
     hardware: Vec<HardwareRequest>,
 ) -> Result<(), String> {
     capture::run(
@@ -97,6 +108,7 @@ pub fn run_runtime_capture(
         hold_full,
         recovery,
         capture_output,
+        status,
         hardware,
     )
 }
@@ -162,6 +174,8 @@ pub fn run_window(
             ..
         })
     );
+    #[cfg(feature = "proving")]
+    let interface_text = setup.as_ref().ok().and_then(|setup| setup.interface_text);
     let (window_title, title) = match setup {
         #[cfg(feature = "proving")]
         Ok(crate::GameSetup {
@@ -203,6 +217,12 @@ pub fn run_window(
         render_thread: "thrum-v1-render",
         panel_title: "Thrum demo",
         window_position: None,
+        #[cfg(feature = "proving")]
+        window_always_on_top: capture.as_ref().is_some_and(|proof| proof.status)
+            || transition
+                .as_ref()
+                .is_some_and(|proof| proof.arm == thrum_app::TransitionArm::Status),
+        #[cfg(not(feature = "proving"))]
         window_always_on_top: false,
         frame_budget: None,
         metal_preparation,
@@ -224,6 +244,8 @@ pub fn run_window(
             world: None,
             held_keys: 0,
             replay_controls: true,
+            #[cfg(feature = "proving")]
+            interface_text,
             #[cfg(feature = "proving")]
             capture_route: governor.route,
             governor_enabled: governor.enabled,
@@ -274,6 +296,8 @@ struct WindowGame {
     world: Option<WorldControls>,
     held_keys: u8,
     replay_controls: bool,
+    #[cfg(feature = "proving")]
+    interface_text: Option<crate::InterfaceText>,
     #[cfg(feature = "proving")]
     capture_route: Option<String>,
     governor_enabled: bool,
@@ -341,6 +365,7 @@ fn capture_game_with_route_limit(
         world: None,
         held_keys: 0,
         replay_controls: false,
+        interface_text: None,
         scene: None,
         cloud_capture,
         capture_cooked,
@@ -380,6 +405,11 @@ impl WindowGame {
 }
 
 impl RuntimeSetup for WindowGame {
+    #[cfg(feature = "proving")]
+    fn status_display(&self) -> bool {
+        self.interface_text == Some(crate::InterfaceText::Status)
+    }
+
     fn demo(&self) -> &GameControls {
         &self.demo
     }

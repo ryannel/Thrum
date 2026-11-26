@@ -135,6 +135,67 @@ impl BrowserGame {
 
 thrum_app::export_page_methods!(BrowserGame);
 
+#[cfg(feature = "proving")]
+#[wasm_bindgen]
+impl BrowserGame {
+    /// Time the same layout and paint workloads as the native cost command.
+    /// # Errors
+    /// Returns an unavailable browser clock or a refused measured tree.
+    pub fn status_layout_costs(&self) -> Result<String, JsValue> {
+        let performance = web_sys::window()
+            .and_then(|window| window.performance())
+            .ok_or_else(|| js_error("performance clock is unavailable"))?;
+        let rows = crate::GameScene::status_layout_costs(|| performance.now())
+            .map_err(|error| js_error(error.to_string()))?;
+        Ok(serde_json::json!(rows).to_string())
+    }
+
+    /// Return the latest completed interface cost sample.
+    pub fn status_cost_report(&self) -> String {
+        let host = self.page.shell.host();
+        let counts = host
+            .source()
+            .status_stats()
+            .map(|s| [s.layouts, s.lists, s.rows]);
+        let frame = self.page.shell.samples().last().and_then(|frame| {
+            let interface = frame.interface?;
+            let timings = frame.gpu_pass_ns.as_ref()?;
+            Some(serde_json::json!({
+                "stamp":interface.stamp.map(|stamp| stamp.scale),
+                "upload_bytes":interface.uploaded_bytes,
+                "cpu_ns":frame.render_cpu.as_nanos(),
+                "gpu_ns":timings.timed_pass_span_nanoseconds(),
+                "tick":frame.tick,
+                "submission":frame.submission_order,
+            }))
+        });
+        serde_json::json!({"counts":counts,"frame":frame}).to_string()
+    }
+
+    /// Select the measured every-tick status workload via the page's controls.
+    pub fn set_status_cost_workload(&mut self) {
+        use thrum_app::Game as _;
+        self.page.game.0.status_cost = true;
+        self.page
+            .shell
+            .update_profiler(self.page.game.controls_mut(), true);
+    }
+
+    /// Publish the page's current canvas density and safe-area insets.
+    pub fn set_interface_output(
+        &mut self,
+        density: f64,
+        left: f64,
+        top: f64,
+        right: f64,
+        bottom: f64,
+    ) {
+        self.page
+            .shell
+            .set_interface_output(density, [left, top, right, bottom]);
+    }
+}
+
 /// Prepare the existing V1 simulation and renderer for a WebGPU canvas.
 /// `valley_stars` selects the star catalogue before attaching the cooked valley.
 /// `cooked_valley` selects the measured valley default independently of its stars.
@@ -329,9 +390,10 @@ pub async fn create_interface_text_game(
         "type" => crate::InterfaceText::Type,
         "counting" => crate::InterfaceText::Counting,
         "specimen" => crate::InterfaceText::Specimen,
+        "status" => crate::InterfaceText::Status,
         _ => {
             return Err(js_error(
-                "interface text card must be type, counting or specimen",
+                "interface text card must be type, counting, specimen or status",
             ));
         }
     };
@@ -340,7 +402,7 @@ pub async fn create_interface_text_game(
         crate::GameSetup {
             sprite_scale: Some(2),
             sprite_rows: Some(rows),
-            interface_scale: Some(scale),
+            interface_scale: (mode != crate::InterfaceText::Status).then_some(scale),
             interface_text: Some(mode),
             ..crate::GameSetup::default()
         },
@@ -463,6 +525,8 @@ async fn create_game_with_content(
         shapes,
         #[cfg(feature = "proving")]
         sprite_store,
+        #[cfg(feature = "proving")]
+        status_cost: false,
         initial_downlevel: String::new(),
     });
     let page = PageGame::new(

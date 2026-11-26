@@ -36,12 +36,14 @@ for (let i = 2; i < process.argv.length; i += 2) {
 }
 if (!['fixed', 'realtime'].includes(args.mode) || !['ordinary', 'stall', 'saturation', 'resize', 'loss', 'slow', 'off'].includes(args.control)) throw new Error('Invalid mode/control');
 if (!['sdr', 'scene-linear'].includes(args.source) || (args.source === 'scene-linear' && args.control !== 'ordinary')) throw new Error('Unsupported capture source/control');
-if (!['day', 'night', 'noon', 'exit', 'sprites-field', 'sprites-scroll', 'sprites-sheets'].includes(args.scene)) throw new Error('Unknown route scene');
+if (!['day', 'night', 'noon', 'exit', 'sprites-field', 'sprites-scroll', 'sprites-sheets', 'sprites-status'].includes(args.scene)) throw new Error('Unknown route scene');
 if (!['off', 'on'].includes(args['wasm-receipt'])) throw new Error('Invalid Wasm receipt option');
 const spriteScroll = args.scene === 'sprites-scroll';
 const spriteSheets = args.scene === 'sprites-sheets';
-const spriteField = args.scene === 'sprites-field' || spriteScroll || spriteSheets;
+const spriteStatus = args.scene === 'sprites-status';
+const spriteField = args.scene === 'sprites-field' || spriteScroll || spriteSheets || spriteStatus;
 const spriteDpr = Number(args.dpr);
+if (spriteStatus && ![1, 2].includes(spriteDpr)) throw new Error('Invalid status display DPR');
 if (spriteScroll && (!['1.5', '2', '2.37'].includes(args['sprite-scale']) ||
     !['0.05', '0.3', '3'].includes(args['sprite-speed']) || ![1, 2].includes(spriteDpr))) {
   throw new Error('Invalid sprite scroll scale, speed or DPR');
@@ -170,6 +172,12 @@ try {
     spriteSource = serving.source;
     manifest.cooked = await cookedHead(output);
   }
+  if (spriteStatus) {
+    const serving = await serveCooked({ ...args, 'assets-source': 'tests/fixtures/game-ui/font-source' }, output);
+    cook = serving.cook;
+    cookedOrigin = serving.origin;
+    manifest.cooked = await cookedHead(output);
+  }
   if (!spriteField) {
     const serving = await serveCooked(args, output); cook = serving.cook;
     cookedOrigin = serving.origin;
@@ -234,15 +242,15 @@ try {
     };
   }
   let spriteQuery = '';
-  if (spriteScroll) {
+  if (spriteScroll || spriteStatus) {
     await cdp.call('Emulation.setDeviceMetricsOverride', {
       width: extent[0] / spriteDpr, height: extent[1] / spriteDpr,
       deviceScaleFactor: spriteDpr, mobile: false,
     }, sessionId);
-    spriteQuery = `&sprite-probe=scroll:${args['sprite-scale']}:${args['sprite-speed']}`;
+    if (spriteScroll) spriteQuery = `&sprite-probe=scroll:${args['sprite-scale']}:${args['sprite-speed']}`;
     if (process.env.THRUM_SPRITE_PASS_TIMING === '1') spriteQuery += '&sprite-pass-timing';
 
-    manifest.sprite_scroll = { scale: Number(args['sprite-scale']), speed: Number(args['sprite-speed']), dpr: spriteDpr };
+    if (spriteScroll) manifest.sprite_scroll = { scale: Number(args['sprite-scale']), speed: Number(args['sprite-speed']), dpr: spriteDpr };
   }
   manifest.load_before = loadavg();
   await cdp.call('Page.navigate', { url: `${manifest.origin}/capture.html?mode=${args.mode}&control=${args.control}&source=${args.source}&scene=${args.scene}&reconstruction=${args.reconstruction}&witness=${args.witness}&atmosphere=${args.atmosphere}&diagnostic-clouds=${args['diagnostic-clouds']}&overlay=${args.overlay}&effect=${args.effect}&route=${captureRoute ? 'capture-route.json' : 'moving-v1.json'}&assets=${encodeURIComponent(cookedOrigin ?? '')}${manifest.export_slots ? `&export-slots=${manifest.export_slots}` : ''}&clouds=${args.clouds}${args.haze ? `&haze=${encodeURIComponent(args.haze)}` : ''}${args['haze-take'] ? '&haze-take' : ''}${args['renderer-signature'] === 'on' ? '&renderer-signature' : ''}${cloudView ? '&cloud-view' : ''}${spriteQuery}` }, sessionId);
@@ -266,9 +274,9 @@ try {
     if (receipt.result.value) manifest.instantiated_wasm_sha256 = receipt.result.value;
   }
   await fs.writeFile(path.join(output, 'runtime.json'), JSON.stringify(record, null, 2));
-  if (spriteScroll && (record.device_pixel_ratio !== spriteDpr ||
+  if ((spriteScroll || spriteStatus) && (record.device_pixel_ratio !== spriteDpr ||
       JSON.stringify(record.css_extent.map(side => side * spriteDpr)) !== JSON.stringify(extent))) {
-    throw new Error('Scroll did not run at one canvas backing pixel per device pixel');
+    throw new Error('Sprite capture did not run at one canvas backing pixel per device pixel');
   }
   if ((args.witness !== 'off' || args.atmosphere !== 'off') && (record.initial_report?.reconstruction !== (args.reconstruction === 'taau' ? 'Taau' : 'Off') || record.final_report?.reconstruction !== record.initial_report?.reconstruction)) throw new Error('Prepared reconstruction provider did not match the capture arm');
   await Promise.all(pending);
@@ -331,6 +339,9 @@ try {
             raw = await decompress(await fs.readFile(path.join(output, row.file)));
           }
           if (spriteSheets) checkSheetFrame(raw, row);
+          if (spriteStatus && (row.paint_scale !== spriteDpr || row.paint_stamp_mismatch)) {
+            throw new Error(`Invalid submitted status stamp at ${row.submission_id}`);
+          }
           const digest = sha(raw);
           if (raw.length !== frameBytes || digest !== row.rgba_sha256) {
             throw new Error(`Lossless round-trip failed for submission ${row.submission_id}`);

@@ -18,6 +18,8 @@ use thrum_render::{
 pub enum TransitionArm {
     /// Keep the window at its original size.
     Baseline,
+    /// Capture a status display across a series of real window sizes.
+    Status,
     /// Sweep the window and inject a display backing-scale observation.
     Sweep,
     /// Force generation preparation and configuration on every size change.
@@ -29,8 +31,19 @@ pub enum TransitionArm {
 }
 
 impl TransitionArm {
-    pub(in crate::app) fn resizes(self) -> bool {
-        self != Self::Baseline
+    pub(in crate::app) fn window_step(self, frame: usize) -> Option<[u32; 2]> {
+        match (self, frame) {
+            (Self::Status, 24) => Some([640, 360]),
+            (Self::Status, 48) => Some([320, 568]),
+            (Self::Status, 72) => Some([568, 320]),
+            (Self::Status, 96) => Some([1280, 720]),
+            (Self::Status | Self::Baseline, _) => None,
+            (_, 24..48) => {
+                let step = u32::try_from(frame - 24).expect("resize sweep step fits u32");
+                Some([960 - step * 8, 540 - step * 4])
+            }
+            _ => None,
+        }
     }
 
     pub(in crate::app) fn backing_scale(self, actual: f64, frame: usize) -> f64 {

@@ -12,6 +12,8 @@ import statistics
 import subprocess
 import tempfile
 
+import game_ui_status
+
 
 ROOT = Path(__file__).resolve().parents[1]
 BEFORE = "cbb05f15bd17a87940bd913b51ffe61713ff822a"
@@ -258,23 +260,32 @@ def font_costs(destination, revision, target, scratch):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("mode", choices=["costs"])
+    parser.add_argument("mode", choices=["costs", "window"])
     parser.add_argument("--target", required=True, choices=["mac-metal", "chrome-webgpu"])
     parser.add_argument("--output", type=Path)
     parser.add_argument("--fonts", action="store_true")
+    parser.add_argument("--layout", action="store_true")
     args = parser.parse_args()
     revision = output(["git", "rev-parse", "HEAD"])
     if args.fonts and args.target != "mac-metal":
         parser.error("--fonts requires --target mac-metal")
-    package = "WP2" if args.fonts else "WP1"
+    if args.mode == "window" and args.target != "mac-metal":
+        parser.error("window requires the Mac target")
+    package = "WP3" if args.layout or args.mode == "window" else "WP2" if args.fonts else "WP1"
     scratch = ROOT / f"tmp/game-ui-{package.lower()}"
     scratch.mkdir(parents=True, exist_ok=True)
-    destination = args.output or Path(".orchestrate/evidence/GAME-UI") / package / f"costs-{args.target}"
+    label = "window" if args.mode == "window" else f"costs-{args.target}"
+    destination = args.output or Path(".orchestrate/evidence/GAME-UI") / package / label
     destination = destination.resolve()
     destination.mkdir(parents=True, exist_ok=True)
     target = ROOT / "target"
     with tempfile.TemporaryDirectory(prefix="cost-", dir=scratch) as work:
-        if args.fonts:
+        if args.mode == "window":
+            record = game_ui_status.windows(ROOT, destination, Path(work), revision, FIXED_ENV)
+        elif args.layout:
+            record = game_ui_status.costs(ROOT, destination, Path(work), revision, FIXED_ENV,
+                                          args.target, load, digest)
+        elif args.fonts:
             record = font_costs(destination, revision, target, Path(work))
         elif args.target == "mac-metal":
             record = costs_native(destination, revision, Path(work))

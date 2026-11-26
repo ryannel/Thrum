@@ -37,3 +37,9 @@ name = "stage_rows"
 
 [[test]]
 name = "text_runs"
+
+[[test]]
+name = "layout"
+
+[[test]]
+name = "layout_properties"

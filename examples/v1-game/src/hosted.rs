@@ -29,6 +29,14 @@ pub(crate) trait RuntimeSetup {
 
     fn readback(host: &Runtime) -> f32;
 
+    #[cfg(feature = "proving")]
+    fn status_display(&self) -> bool;
+
+    #[cfg(feature = "proving")]
+    fn frame_edits(&self) -> ControlEdits {
+        ControlEdits::default()
+    }
+
     fn key(&mut self, _key: KeyCode, _pressed: bool) -> Result<KeyResponse, String> {
         Ok(KeyResponse::Ignored)
     }
@@ -89,11 +97,38 @@ impl<T: RuntimeSetup> Game for HostedGame<T> {
         )
     }
 
+    #[cfg(feature = "proving")]
+    fn wants_interface_output(&self) -> bool {
+        self.0.status_display()
+    }
+
+    #[cfg(feature = "proving")]
+    fn interface_output(&mut self, output: thrum_app::OutputMetrics) -> ControlEdits {
+        ControlEdits {
+            interface_output: Some(output),
+            ..Default::default()
+        }
+    }
+
+    #[cfg(feature = "proving")]
+    fn frame_edits(&mut self) -> ControlEdits {
+        self.0.frame_edits()
+    }
+
     fn replay(&self) -> ControlEdits {
         self.0.replay()
     }
 
     fn apply(host: &mut Runtime, edits: ControlEdits) -> Result<(), GameError> {
+        #[cfg(feature = "proving")]
+        if let Some(output) = edits.interface_output {
+            host.continuous_source_mut()
+                .set_interface_output(output.density, output.insets);
+        }
+        #[cfg(feature = "proving")]
+        if edits.status_cost {
+            host.continuous_source_mut().measure_status_updates();
+        }
         if let Some(value) = edits.time_of_day {
             host::set_time_of_day(host, value).map_err(GameError::Rejected)?;
         }
@@ -139,6 +174,10 @@ impl Edits for ControlEdits {
             paused: newer.paused.or(self.paused),
             exposure_zones: newer.exposure_zones.or(self.exposure_zones),
             motion_view: newer.motion_view.or(self.motion_view),
+            #[cfg(feature = "proving")]
+            interface_output: newer.interface_output.or(self.interface_output),
+            #[cfg(feature = "proving")]
+            status_cost: newer.status_cost || self.status_cost,
         }
     }
 

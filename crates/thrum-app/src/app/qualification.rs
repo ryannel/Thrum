@@ -10,6 +10,7 @@ use crate::{
 };
 use objc2_quartz_core::CACurrentMediaTime;
 use std::{
+    collections::VecDeque,
     fs::File,
     io::{BufWriter, Write},
     path::PathBuf,
@@ -27,7 +28,10 @@ const RECORDS: usize = 4096;
 /// One identified submission from the ordinary Mac window.
 pub(super) struct ExtentCapture {
     output: PathBuf,
-    frame: Option<(FrameExtent, [u32; 2])>,
+    frames: VecDeque<(FrameExtent, [u32; 2])>,
+    status: bool,
+    resize: Option<[u32; 2]>,
+    resized_extent: Option<[u32; 2]>,
 }
 
 /// Requested AppKit bounds for a one-submission extent proof.
@@ -45,6 +49,10 @@ pub struct WindowExtentCapture {
     pub window: ExtentWindow,
     /// Existing output directory for the image and its extent witnesses.
     pub output: PathBuf,
+    /// Wait until the extent capture can see a resident interface publication.
+    pub status: bool,
+    /// Optional second window size, requested after the first image reaches the capture.
+    pub resize: Option<[u32; 2]>,
 }
 
 impl WindowExtentCapture {
@@ -83,10 +91,15 @@ impl WindowExtentCapture {
             let size = monitor.size();
             [size.width, size.height]
         });
+        #[cfg(feature = "interface")]
+        let insets = super::display::safe_area(window);
+        #[cfg(not(feature = "interface"))]
+        let insets = [0.0; 4];
         let record = serde_json::json!({
             "backing": [backing.width, backing.height],
             "points": [logical.width, logical.height],
             "scale": scale,
+            "insets": insets,
             "fullscreen": window.simple_fullscreen(),
             "monitor_backing": monitor,
         });
@@ -98,7 +111,8 @@ impl WindowExtentCapture {
 impl ExtentCapture {
     pub(super) fn start<W: FrameWorld, V: SceneSource<W::Page>>(
         host: &mut FrameHost<W, V>,
-        output: PathBuf,
+        capture: WindowExtentCapture,
+        backing_scale: f64,
     ) -> Result<Self, String> {
         host.enable_submitted_capture_with_limits(
             1,
@@ -109,39 +123,75 @@ impl ExtentCapture {
             },
         )
         .map_err(|error| error.to_string())?;
+        let resized_extent = capture.resize.map(|extent| {
+            let scale = winit::dpi::LogicalSize::new(extent[0], extent[1]);
+            let size = scale.to_physical::<u32>(backing_scale);
+            [size.width, size.height]
+        });
         Ok(Self {
-            output,
-            frame: None,
+            output: capture.output,
+            frames: VecDeque::new(),
+            status: capture.status,
+            resize: capture.resize,
+            resized_extent,
         })
     }
 
     pub(super) fn frame(&mut self, frame: FrameExtent, drawable: [u32; 2]) {
-        self.frame.get_or_insert((frame, drawable));
+        if self.frames.len() == 64 {
+            self.frames.pop_front();
+        }
+        self.frames.push_back((frame, drawable));
     }
 
     pub(super) fn collect<W: FrameWorld, V: SceneSource<W::Page>>(
-        &self,
+        &mut self,
         host: &mut FrameHost<W, V>,
         recipe: &str,
+        wake: &winit::event_loop::EventLoopProxy<super::UserEvent>,
     ) -> Result<bool, FrameError> {
-        let Some((frame, drawable)) = self.frame else {
-            return Ok(false);
-        };
         while let Some(image) = host.try_submitted_image()? {
-            if image.sample.surface_presented && image.sample.submission_order == frame.submission {
+            let order = image.sample.submission_order;
+            while self
+                .frames
+                .front()
+                .is_some_and(|(frame, _)| frame.submission < order)
+            {
+                self.frames.pop_front();
+            }
+            let frame = self
+                .frames
+                .front()
+                .filter(|(frame, _)| frame.submission == order)
+                .copied();
+            let paint = image.sample.interface.and_then(|interface| interface.stamp);
+            let resized = self.resized_extent.is_some() && self.resize.is_none();
+            let matches_extent = !resized || self.resized_extent == Some(image.extent);
+            if let Some((frame, drawable)) = frame
+                && image.sample.surface_presented
+                && matches_extent
+                && (!self.status || paint.is_some())
+            {
                 let record = serde_json::json!({
                     "mode": "still", "recipe": recipe, "submission": frame.submission,
+                    "tick": image.sample.tick, "paint_scale": paint.map(|stamp| stamp.scale),
                     "capture_extent": image.extent, "render_extent": image.sample.render_extent,
                     "attachment_extents": frame.attachments, "source": frame.source,
                     "destination": frame.destination, "drawable": drawable, "viewport": frame.viewport,
                     "device_generation": image.device_generation,
                 });
-                std::fs::write(self.output.join("submitted.rgba"), &image.rgba)
+                let stem = if resized { "resized" } else { "submitted" };
+                std::fs::write(self.output.join(format!("{stem}.rgba")), &image.rgba)
                     .map_err(|error| FrameError::Scene(error.to_string()))?;
-                std::fs::write(self.output.join("submitted.json"), record.to_string())
+                std::fs::write(self.output.join(format!("{stem}.json")), record.to_string())
                     .map_err(|error| FrameError::Scene(error.to_string()))?;
-                host.disable_submitted_capture();
-                return Ok(true);
+                if let Some(next) = self.resize.take() {
+                    wake.send_event(super::UserEvent::ExtentResize(next))
+                        .map_err(|error| FrameError::Scene(error.to_string()))?;
+                } else {
+                    host.disable_submitted_capture();
+                    return Ok(true);
+                }
             }
             host.recycle_submitted_image(image);
         }
@@ -323,6 +373,7 @@ type ImageMarker = (u64, u128, f64, u64, u64, u64, u64, f32);
 pub(super) struct Observer {
     output: PathBuf,
     extent_markers: Option<BufWriter<File>>,
+    status_markers: Option<BufWriter<File>>,
     writer: Option<ImageWriter>,
     images: Vec<ImageMarker>,
     frames: Vec<(u64, u128, f64, u64, u64, bool, bool)>,
@@ -364,6 +415,13 @@ impl Observer {
         } else {
             None
         };
+        let status_markers = if transition.is_some_and(|proof| proof.arm == TransitionArm::Status) {
+            let file =
+                File::create(output.join("status.jsonl")).map_err(|error| error.to_string())?;
+            Some(BufWriter::new(file))
+        } else {
+            None
+        };
         let capture = transition.is_some() || qualification.is_some_and(|options| options.capture);
         let writer = if capture {
             // The qualification spool and its readers exchange RGBA8.
@@ -399,6 +457,7 @@ impl Observer {
         Ok(Some(Self {
             output,
             extent_markers,
+            status_markers,
             writer,
             images: Vec::with_capacity(RECORDS),
             frames: Vec::with_capacity(RECORDS),
@@ -540,6 +599,19 @@ impl Observer {
                 )
                 .map_err(|error| FrameError::Scene(error.to_string()))?;
             }
+            if let Some(marks) = &mut self.status_markers {
+                let interface = image.sample.interface;
+                let record = serde_json::json!({
+                    "submission": image.sample.submission_order, "tick": image.sample.tick,
+                    "extent": image.extent, "surface_presented": image.sample.surface_presented,
+                    "scale": interface.and_then(|stage| stage.stamp).map(|stamp| stamp.scale),
+                    "extent_mismatch": interface.is_some_and(|stage| stage.extent_mismatch),
+                    "stamp_mismatch": interface.is_some_and(|stage| stage.stamp_mismatch),
+                    "dropped_rows": interface.map(|stage| stage.dropped_rows),
+                });
+                writeln!(marks, "{record}")
+                    .map_err(|error| FrameError::Scene(error.to_string()))?;
+            }
             self.images.push((
                 image.sample.submission_order,
                 image
@@ -572,6 +644,9 @@ impl Observer {
             host.poll_completed().map_err(|e| e.to_string())?;
             self.collect(host).map_err(|e| e.to_string())?;
             std::thread::sleep(Duration::from_millis(1));
+        }
+        if let Some(marks) = &mut self.status_markers {
+            marks.flush().map_err(|error| error.to_string())?;
         }
         let mut file = BufWriter::new(
             File::create(self.output.join("surface.tsv")).map_err(|e| e.to_string())?,

@@ -272,3 +272,21 @@ impl MacDisplay {
         layer.wantsExtendedDynamicRangeContent()
     }
 }
+
+#[cfg(feature = "interface")]
+#[expect(
+    unsafe_code,
+    reason = "the live main-thread AppKit view supplies the safe area"
+)]
+pub(super) fn safe_area(window: &Window) -> [f64; 4] {
+    let Ok(handle) = window.window_handle() else {
+        return [0.0; 4];
+    };
+    let RawWindowHandle::AppKit(handle) = handle.as_raw() else {
+        return [0.0; 4];
+    };
+    // SAFETY: The borrowed winit window owns this AppKit view on the main thread.
+    let view = unsafe { handle.ns_view.cast::<NSView>().as_ref() };
+    let insets = view.safeAreaInsets();
+    [insets.left, insets.top, insets.right, insets.bottom]
+}

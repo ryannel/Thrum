@@ -1,7 +1,12 @@
 //! Interface paint lists in output pixels.
 
 mod text;
+mod tree;
 pub use text::{Alignment, Elision, RunGlyph, TextError, TextOptions, TextRun};
+pub use tree::{
+    Anchor, Axis, Box2, Font, Image, Insets, Node, NodeId, NodeKind, PaintInputs, Size, SizeRule,
+    Text, Tree, TreeError, TreeStats, Viewport,
+};
 
 pub use thrum_render::sprite::{
     InterfaceConfig, InterfaceSheets, PaintList, PaintStamp, SpriteRow,

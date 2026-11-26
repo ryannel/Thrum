@@ -530,11 +530,8 @@ impl GameSetup {
             let source = sheet_source.ok_or(FrameError::InvalidState(
                 "interface text needs a cooked font store",
             ))?;
-            let (card, assets) = crate::interface_text::FontCard::attach(
-                source,
-                mode,
-                setup.interface_scale.unwrap_or(1),
-            )?;
+            let (card, assets) =
+                crate::interface_text::FontCard::attach(source, mode, setup.interface_scale)?;
             game.font_card = Some(Box::new(card));
             game.sheet_stats = Some(assets.stats());
             Some(assets)

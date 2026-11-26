@@ -93,6 +93,7 @@ enum UserEvent {
     RenderDone,
     DeviceLost(u64),
     ControlsEdited,
+    ExtentResize([u32; 2]),
     /// A watched parameter or game file settled on new bytes; [`FileWatch::take`] says which.
     FilesSaved,
 }
@@ -125,6 +126,8 @@ struct App<G: Game> {
     surface_format: Option<wgpu::TextureFormat>,
     surface_extent: [u32; 2],
     observed_extent: [u32; 2],
+    #[cfg(feature = "interface")]
+    interface_output: Option<crate::OutputMetrics>,
     window_visibility: WindowVisibility,
     surface_generation: Arc<AtomicU64>,
     render_stopped: Arc<AtomicBool>,
@@ -253,6 +256,8 @@ impl<G: WindowGame + 'static> App<G> {
             surface_format: None,
             surface_extent: [0, 0],
             observed_extent: [0, 0],
+            #[cfg(feature = "interface")]
+            interface_output: None,
             window_visibility: WindowVisibility::Visible,
             surface_generation: Arc::new(AtomicU64::new(1)),
             render_stopped: Arc::new(AtomicBool::new(false)),
@@ -670,7 +675,7 @@ impl<G: WindowGame + 'static> App<G> {
             })),
         )
         .map_err(|error| error.to_string())?;
-        if !governor_proof {
+        if !governor_proof && !self.config.window_always_on_top {
             panel.show(None);
         }
         self.panel = Some(panel);
@@ -693,7 +698,7 @@ impl<G: WindowGame + 'static> App<G> {
             Arc::clone(&self.render_stopped),
             self.origin,
             wake,
-            self.extent_capture.take().map(|capture| capture.output),
+            self.extent_capture.take(),
             backing_scale,
             self.transition_proof.as_ref(),
             self.qualification
@@ -706,8 +711,11 @@ impl<G: WindowGame + 'static> App<G> {
         self.watch = self.start_watch(wake);
         self.load_params(false)?;
         self.game.reload();
-        if let Some(observer) = &self.qualification
-            && observer.options.refresh_measurement.is_some()
+        if (self.config.window_always_on_top
+            || self
+                .qualification
+                .as_ref()
+                .is_some_and(|observer| observer.options.refresh_measurement.is_some()))
             && let Some(window) = &self.window
         {
             window.focus_window();
@@ -963,15 +971,12 @@ impl<G: WindowGame + 'static> App<G> {
         self.last_call = now;
         self.callbacks += 1;
         let window = self.window.as_ref().ok_or("window missing")?;
-        if self
+        if let Some([width, height]) = self
             .transition_proof
             .as_ref()
-            .is_some_and(|proof| proof.arm.resizes())
-            && (24..48).contains(&self.callbacks)
+            .and_then(|proof| proof.arm.window_step(self.callbacks))
         {
-            let step = u32::try_from(self.callbacks - 24).expect("resize sweep step fits u32");
-            let _ = window
-                .request_inner_size(winit::dpi::LogicalSize::new(960 - step * 8, 540 - step * 4));
+            let _ = window.request_inner_size(winit::dpi::LogicalSize::new(width, height));
         }
         let size = window.inner_size();
         let extent = [size.width, size.height];
@@ -984,6 +989,18 @@ impl<G: WindowGame + 'static> App<G> {
             })
             .to_bits();
         self.observed_extent = extent;
+        #[cfg(feature = "interface")]
+        if self.game.wants_interface_output() {
+            let metrics = crate::OutputMetrics {
+                extent,
+                density: actual_scale,
+                insets: display::safe_area(window),
+            };
+            if self.interface_output != Some(metrics) {
+                self.interface_output = Some(metrics);
+                self.edits.carry(self.game.interface_output(metrics));
+            }
+        }
         self.edits.carry(self.game.frame_edits());
         if let Some(pan) = &mut self.qualification {
             pan.request(
@@ -1383,6 +1400,12 @@ impl<G: WindowGame + 'static> ApplicationHandler<UserEvent> for App<G> {
             return;
         }
         match event {
+            UserEvent::ExtentResize([width, height]) => {
+                if let Some(window) = &self.window {
+                    window.set_min_inner_size(None::<winit::dpi::LogicalSize<u32>>);
+                    let _ = window.request_inner_size(winit::dpi::LogicalSize::new(width, height));
+                }
+            }
             UserEvent::DeviceLost(generation) => {
                 let result = self.device_lost(generation).and_then(|()| {
                     if self.poll_render()? && self.presented < self.target_frames {

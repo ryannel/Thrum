@@ -89,10 +89,25 @@ pub(crate) struct PageGame {
     pub(crate) shapes: Option<crate::PlacedSky>,
     #[cfg(feature = "proving")]
     pub(crate) sprite_store: Option<thrum_asset_gpu::RemoteFeed>,
+    #[cfg(feature = "proving")]
+    pub(crate) status_cost: bool,
     pub(crate) initial_downlevel: String,
 }
 
 impl RuntimeSetup for PageGame {
+    #[cfg(feature = "proving")]
+    fn status_display(&self) -> bool {
+        self.setup.interface_text == Some(crate::InterfaceText::Status)
+    }
+
+    #[cfg(feature = "proving")]
+    fn frame_edits(&self) -> ControlEdits {
+        ControlEdits {
+            status_cost: self.status_cost,
+            ..ControlEdits::default()
+        }
+    }
+
     fn demo(&self) -> &GameControls {
         &self.demo
     }

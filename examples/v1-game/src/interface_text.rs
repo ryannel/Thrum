@@ -15,6 +15,7 @@ use crate::interface_card::Card;
 
 const TYPE: &str = "type";
 const PIXEL: &str = "pixel";
+const STATUS: &str = "status";
 const WHITE: [f32; 4] = [1.0; 4];
 const DARK: [f32; 4] = [0.015, 0.024, 0.041, 1.0];
 
@@ -23,6 +24,8 @@ const DARK: [f32; 4] = [0.015, 0.024, 0.041, 1.0];
 pub enum InterfaceText {
     /// Light, dark and outlined text with European Latin samples.
     Type,
+    /// Health, timer and counters over the moving sprite field.
+    Status,
     /// Rigid, right-aligned counters and a slowly drifting label.
     Counting,
     /// Small specimen with known glyph strings for submitted-image comparisons.
@@ -35,6 +38,11 @@ pub(crate) struct FontCard {
     scale: FontScale,
     active: Option<Layout>,
     prepared: Option<Layout>,
+    insets: [f64; 4],
+    density: f64,
+    forced_scale: Option<u8>,
+    measure_updates: bool,
+    held_tick: Option<u64>,
 }
 
 struct Layout {
@@ -42,23 +50,27 @@ struct Layout {
     extent: [u32; 2],
     value: u64,
     paint: PaintList,
+    tree: Option<thrum_ui::Tree>,
 }
 
 impl FontCard {
     pub(crate) fn attach(
         source: CookedSource,
         mode: InterfaceText,
-        scale: u8,
+        scale: Option<u8>,
     ) -> Result<(Self, CookedAssets), FrameError> {
         let mut config = CookedConfig::new(source, Vec::new());
-        for name in [TYPE, PIXEL] {
-            config.lease_font(name);
+        config.lease_font(TYPE);
+        if mode == InterfaceText::Status {
+            config.lease_sheet(STATUS);
+        } else {
+            config.lease_font(PIXEL);
         }
         if mode == InterfaceText::Specimen {
             config.upload_budget = thrum_asset_gpu::COPY_UNIT;
         }
         let request = config.font_scale_request();
-        if !request.set(u32::from(scale)) {
+        if !request.set(u32::from(scale.unwrap_or(1))) {
             return Err(FrameError::InvalidState(
                 "interface scale must be 1, 2 or 3",
             ));
@@ -72,6 +84,11 @@ impl FontCard {
                 scale: request,
                 active: None,
                 prepared: None,
+                insets: [0.0; 4],
+                density: 1.0,
+                forced_scale: scale,
+                measure_updates: false,
+                held_tick: None,
             },
             assets,
         ))
@@ -80,6 +97,12 @@ impl FontCard {
     pub(crate) fn config(&self) -> InterfaceConfig {
         let mut config = Card::new(1, None, true).config();
         config.row_capacity = 2048;
+        let second = if self.mode == InterfaceText::Status {
+            config.sheets = vec![crate::interface_status::panel_sheet()];
+            STATUS
+        } else {
+            PIXEL
+        };
         #[cfg_attr(
             target_arch = "wasm32",
             expect(
@@ -89,7 +112,7 @@ impl FontCard {
         )]
         let source = Arc::new(self.lease.clone());
         config.cooked = Some(InterfaceSheets {
-            names: [TYPE, PIXEL].map(str::to_owned).into(),
+            names: [TYPE, second].map(str::to_owned).into(),
             source,
         });
         config
@@ -99,9 +122,46 @@ impl FontCard {
         self.scale.set(scale)
     }
 
+    #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+    pub(crate) fn output(&mut self, density: f64, insets: [f64; 4]) {
+        if self.mode == InterfaceText::Status {
+            self.insets = insets;
+            self.density = density;
+            if self.forced_scale.is_none() {
+                self.scale.set(if density < 1.5 {
+                    1
+                } else if density < 2.5 {
+                    2
+                } else {
+                    3
+                });
+            }
+        }
+    }
+
+    #[cfg(target_os = "macos")]
+    pub(crate) fn hold_status_capture(&mut self, tick: Option<u64>, insets: [f64; 4]) {
+        self.held_tick = tick;
+        self.insets = insets;
+        self.density = f64::from(self.scale.get());
+    }
+
+    pub(crate) const fn measure_updates(&mut self) {
+        self.measure_updates = true;
+    }
+
+    pub(crate) fn status_stats(&self) -> Option<thrum_ui::TreeStats> {
+        self.active
+            .as_ref()?
+            .tree
+            .as_ref()
+            .map(thrum_ui::Tree::stats)
+    }
+
     pub(crate) fn paint(&mut self, extent: [u32; 2], tick: u64) -> [Option<PaintList>; 2] {
         let value = match self.mode {
             InterfaceText::Type => 0,
+            InterfaceText::Status => self.held_tick.unwrap_or(tick),
             InterfaceText::Counting => tick,
             InterfaceText::Specimen => tick / 4 % 10,
         };
@@ -114,11 +174,12 @@ impl FontCard {
         {
             self.active = self.prepared.take();
         }
-        let active = committed
-            .as_ref()
-            .and_then(|font| Self::layout(&mut self.active, self.mode, font, extent, value).ok());
+        let view = (self.density, self.insets, self.measure_updates);
+        let active = committed.as_ref().and_then(|font| {
+            Self::layout(&mut self.active, self.mode, font, extent, value, view).ok()
+        });
         let prepared = if let Some(font) = self.lease.font_candidate() {
-            match Self::layout(&mut self.prepared, self.mode, &font, extent, value) {
+            match Self::layout(&mut self.prepared, self.mode, &font, extent, value, view) {
                 Ok(paint) => {
                     self.lease.answer_font(font.stamp, Ok(()));
                     Some(paint)
@@ -142,7 +203,11 @@ impl FontCard {
         fonts: &FontCandidate,
         extent: [u32; 2],
         value: u64,
+        view: (f64, [f64; 4], bool),
     ) -> Result<PaintList, String> {
+        if mode == InterfaceText::Status {
+            return Self::status(cached, fonts, extent, value, view);
+        }
         #[expect(
             clippy::cast_possible_truncation,
             reason = "font scale is restricted to 1..=3"
@@ -166,6 +231,7 @@ impl FontCard {
             InterfaceText::Type => card.type_card()?,
             InterfaceText::Counting => card.counting_card(value)?,
             InterfaceText::Specimen => card.comparison(value)?,
+            InterfaceText::Status => unreachable!("status uses the retained tree"),
         }
         let paint = card.builder.finish();
         *cached = Some(Layout {
@@ -173,6 +239,75 @@ impl FontCard {
             extent,
             value,
             paint: paint.clone(),
+            tree: None,
+        });
+        Ok(paint)
+    }
+    fn status(
+        cached: &mut Option<Layout>,
+        fonts: &FontCandidate,
+        extent: [u32; 2],
+        tick: u64,
+        (density, insets, measure_updates): (f64, [f64; 4], bool),
+    ) -> Result<PaintList, String> {
+        use crate::interface_status::{self, WHITE_TILE};
+        let font = fonts.font(TYPE).ok_or("status display font is missing")?;
+        let badge = fonts
+            .sheet(STATUS)
+            .and_then(|sheet| {
+                sheet
+                    .frames()
+                    .enumerate()
+                    .find(|(_, (name, _))| *name == "health")
+            })
+            .ok_or("status display badge is missing")?;
+        let (index, (_, badge)) = badge;
+        if badge.trim != [0; 2] || badge.pivot.into_iter().any(|value| value.abs() > 0.0) {
+            return Err("status display badge must use its top-left pivot and full cell".into());
+        }
+        let mut tree = cached
+            .as_mut()
+            .filter(|layout| layout.stamp == fonts.stamp)
+            .and_then(|layout| layout.tree.take())
+            .map_or_else(
+                || {
+                    interface_status::tree(thrum_ui::Image {
+                        sheet: 2,
+                        frame: u32::try_from(index).expect("validated sheet count fits u32"),
+                        texels: badge.size,
+                    })
+                    .map_err(|error| error.to_string())
+                },
+                Ok,
+            )?;
+        if measure_updates {
+            interface_status::update_values(&mut tree, tick, true);
+        } else {
+            interface_status::update(&mut tree, tick);
+        }
+        let paint = tree
+            .frame(
+                thrum_ui::Viewport {
+                    extent,
+                    insets: insets.map(|inset| inset * density / f64::from(fonts.stamp.scale)),
+                    scale: fonts.stamp.scale,
+                },
+                thrum_ui::PaintInputs {
+                    stamp: Some(fonts.stamp),
+                    fonts: &[thrum_ui::Font {
+                        product: font,
+                        sheet: 1,
+                    }],
+                    white: WHITE_TILE,
+                },
+            )
+            .map_err(|error| error.to_string())?;
+        *cached = Some(Layout {
+            stamp: fonts.stamp,
+            extent,
+            value: tick,
+            paint: paint.clone(),
+            tree: Some(tree),
         });
         Ok(paint)
     }

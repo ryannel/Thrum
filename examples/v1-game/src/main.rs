@@ -64,6 +64,7 @@ fn main() {
             hold,
             recovery,
             capture_output,
+            status_capture().unwrap_or_else(|error| report_capture_failure(&error)),
             hardware,
         ) {
             report_capture_failure(&error);
@@ -207,27 +208,53 @@ fn window_qualification() -> Result<Option<thrum_app::WindowQualification>, Stri
 }
 
 #[cfg(all(target_os = "macos", feature = "proving"))]
+fn status_capture() -> Result<v1_game::StatusCapture, String> {
+    let tick = std::env::var("THRUM_CAPTURE_STATUS_TICK")
+        .ok()
+        .map(|value| value.parse::<u64>())
+        .transpose()
+        .map_err(|error| error.to_string())?;
+    let insets = std::env::var("THRUM_CAPTURE_STATUS_INSETS")
+        .ok()
+        .map(|value| serde_json::from_str::<[f64; 4]>(&value))
+        .transpose()
+        .map_err(|error| error.to_string())?
+        .unwrap_or([0.0; 4]);
+    Ok(v1_game::StatusCapture { tick, insets })
+}
+
+#[cfg(all(target_os = "macos", feature = "proving"))]
 fn window_extent_capture() -> Result<Option<thrum_app::WindowExtentCapture>, String> {
     use thrum_app::{ExtentWindow, WindowExtentCapture};
 
     let Some(output) = std::env::var_os("THRUM_MAC_EXTENT_PROOF") else {
         return Ok(None);
     };
-    let requested = std::env::var("THRUM_MAC_EXTENT_WINDOW").map_err(|error| error.to_string())?;
-    let window = if requested == "fullscreen" {
-        ExtentWindow::Fullscreen
-    } else {
-        let (width, height) = requested.split_once('x').ok_or("expected widthxheight")?;
+    let read_points = |value: &str| {
+        let (width, height) = value.split_once('x').ok_or("expected widthxheight")?;
         let parse = |n: &str| n.parse::<u32>().map_err(|error| error.to_string());
         let extent = [parse(width)?, parse(height)?];
         if extent.contains(&0) {
             return Err("window point extent must be nonzero".to_owned());
         }
-        ExtentWindow::Points(extent)
+        Ok(extent)
     };
+    let requested = std::env::var("THRUM_MAC_EXTENT_WINDOW").map_err(|error| error.to_string())?;
+    let window = if requested == "fullscreen" {
+        ExtentWindow::Fullscreen
+    } else {
+        ExtentWindow::Points(read_points(&requested)?)
+    };
+    let status = std::env::var("THRUM_INTERFACE_TEXT").as_deref() == Ok("status");
+    let resize = std::env::var("THRUM_MAC_EXTENT_RESIZE")
+        .ok()
+        .map(|value| read_points(&value))
+        .transpose()?;
     Ok(Some(WindowExtentCapture {
         output: output.into(),
         window,
+        status,
+        resize,
     }))
 }
 
@@ -240,6 +267,7 @@ fn window_transition_proof() -> Result<Option<thrum_app::WindowTransitionProof>,
     let arm = match std::env::var("THRUM_MAC_TRANSITION_ARM").as_deref() {
         Ok("baseline") => TransitionArm::Baseline,
         Ok("sweep") => TransitionArm::Sweep,
+        Ok("status") => TransitionArm::Status,
         Ok("synchronous") => TransitionArm::Synchronous,
         Ok("restore") => TransitionArm::Restore,
         Ok("skip-restore") => TransitionArm::SkipRestore,

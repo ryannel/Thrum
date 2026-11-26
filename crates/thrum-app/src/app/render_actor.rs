@@ -187,7 +187,7 @@ pub(super) fn start<G: Game<World: Send, Scene: Send> + 'static>(
     stopped: Arc<AtomicBool>,
     origin: Instant,
     wake: &EventLoopProxy<UserEvent>,
-    extent_output: Option<std::path::PathBuf>,
+    extent_output: Option<super::WindowExtentCapture>,
     backing_scale: u64,
     proof: Option<&super::WindowTransitionProof>,
     qualification: Option<&super::WindowQualification>,
@@ -200,7 +200,13 @@ pub(super) fn start<G: Game<World: Send, Scene: Send> + 'static>(
     let signal = wake.clone();
     let observer = super::qualification::Observer::start(&mut host, origin, proof, qualification)?;
     let extent_capture = extent_output
-        .map(|output| super::qualification::ExtentCapture::start(&mut host, output))
+        .map(|output| {
+            super::qualification::ExtentCapture::start(
+                &mut host,
+                output,
+                f64::from_bits(backing_scale),
+            )
+        })
         .transpose()?;
     let current_extent = ExtentRequest {
         extent: [gpu.config.width, gpu.config.height],
@@ -360,10 +366,10 @@ impl<G: Game> Actor<G> {
             self.transition.cancel();
         }
         if matches!(reply.outcome, RenderOutcome::Frame(Ok(_)))
-            && let Some(capture) = &self.extent_capture
+            && let Some(capture) = &mut self.extent_capture
         {
             let recipe = format!("{:?}", self.gpu.capabilities.recipe());
-            match capture.collect(&mut self.host, &recipe) {
+            match capture.collect(&mut self.host, &recipe, &self.wake) {
                 Ok(true) => self.extent_capture = None,
                 Ok(false) => {}
                 Err(error) => reply.outcome = frame_failure(error, self.gpu.watch.is_lost()),

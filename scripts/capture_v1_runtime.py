@@ -477,7 +477,7 @@ if __name__ == "__main__":
         "atmosphere-scrub", "atmosphere-ground-pan", "clouds-drift", "clouds-wind", "clouds-life-fast",
         *LONG_WEATHER_CASES, "clouds-placed", "clouds-dusk", "clouds-still", "checkpoint", "clouds-route",
         "exit-route", "exit-drift", "exit-stop", "sun-settle", "sun-cut", "sun-set", "sun-motion",
-        "sprites-field", "sprites-field-cost", "sprites-scroll", "sprites-sheets",
+        "sprites-field", "sprites-field-cost", "sprites-scroll", "sprites-sheets", "sprites-status",
     ], default="pan")
     parser.add_argument("--defer", action="store_true", help="record pending evidence; finalize after consecutive sessions")
     parser.add_argument("--finalize", action="store_true", help="decode/hash and finalize a previously recorded session")

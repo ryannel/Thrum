@@ -9,6 +9,7 @@ autotests = false
 
 [features]
 browser-capture = []
+interface = ["objc2-app-kit/NSResponder"]
 creation-counters = ["thrum-render/creation-counters"]
 
 [dependencies]

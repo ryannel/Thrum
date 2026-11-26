@@ -70,6 +70,7 @@ impl BrowserGame {
         };
         let mut metadata = serde_json::json!({
             "session": image.session,
+            "extent": image.extent,
             "pixel_source": format!("{:?}", image.pixel_source),
             "exposure_gpu_words": image.exposure_gpu_words,
             "submission_id": image.sample.submission_order,
