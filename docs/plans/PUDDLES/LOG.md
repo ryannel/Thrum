@@ -201,3 +201,10 @@
   columns are checked through the same query. The surface submits the wet tiles and their margins
   from a prepared index buffer. Submerged paving keeps visible grout with enough tint to follow
   the sill from overhead. [Repaired Metal, Chrome and cost evidence](../../../.orchestrate/evidence/PUDDLES/WP3-repair/README.md)
+- 2026-11-26 WP4 adds the two GPU rain bands and their filtered moments to the water surface. The
+  schedule uses 256 drops per square metre per second at full share so 10 and 50 mm/h retain distinct
+  ring counts. The unresolved slope integral keeps the model's steady value and uses a smoother age
+  envelope at the first and last part of each ring's life. Metal checked band values, canopy and
+  depth gain, repeat and endpoint capture, and the tick query at two display cadences. Chrome WebGPU
+  drew the yard and lake and skipped the passes after decay. The paired 1440p record covers the authored
+  island at the yard and lake and includes interaction region labelling. [Evidence](../../../.orchestrate/evidence/PUDDLES/WP4/README.md)
