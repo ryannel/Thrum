@@ -191,6 +191,7 @@ pub(in crate::window) async fn run(
             omit,
             content: None,
         }),
+        exit_content: None,
         hardware: Vec::new(),
     });
     let mut driver = Driver::with_surface(game, &device, &capabilities, &queue, surface)
@@ -294,6 +295,8 @@ pub(in crate::window) async fn run(
         return std::fs::write(output.join("stills.json"), serde_json::to_vec_pretty(&serde_json::json!({
             "adapter": capabilities.adapter().name, "backend": format!("{:?}", capabilities.adapter().backend),
             "recipe": format!("{:?}", capabilities.recipe()), "extent": EXTENT,
+            "reconstruction": format!("{:?}", driver.host().reconstruction()),
+            "culling": format!("{:?}", driver.host().camera_culling()),
             "mode": "still", "headroom": request.edr_headroom, "stills": records
         })).map_err(|error| error.to_string())?).map_err(|error| error.to_string());
     }

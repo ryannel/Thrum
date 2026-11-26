@@ -156,10 +156,10 @@ fn window_solar_sweep() -> Result<Option<v1_game::WindowSolarSweep>, String> {
     let (ticks, hours): v1_game::WindowSolarSweep =
         serde_json::from_str(&value).map_err(|error| error.to_string())?;
     if ticks[0] >= ticks[1]
-        || ticks[1] - ticks[0] > 360
-        || hours.iter().any(|hour| !(0.0..24.0).contains(hour))
+        || ticks[1] - ticks[0] > 1800
+        || !((0.0..24.0).contains(&hours[0]) && (0.0..=24.0).contains(&hours[1]))
     {
-        return Err("invalid fullscreen solar sweep".to_owned());
+        return Err("invalid route solar sweep".to_owned());
     }
     Ok(Some((ticks, hours)))
 }

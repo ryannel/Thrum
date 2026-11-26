@@ -27,7 +27,7 @@ const acquireFailureSentinel = 'THRUM_ACQUIRE_ONCE';
 cases.push('lent-products');
 cases.push('mesh-rows');
 cases.push('effect-after-opaque', 'effect-tick');
-cases.push('exit-scene', 'exit-sweep', 'exit-stops', 'extent');
+cases.push('exit-scene', 'exit-sweep', 'exit-stops', 'exit-clauses', 'extent');
 cases.push('route-diagnostic', 'scale', 'governor', 'no-compile');
 cases.push('shipping-boundary');
 cases.push('interface-stage', 'interface-stage-cost', 'interface-text', 'interface-text-visual', 'interface-status', 'interface-status-cost', 'interface-modal');
@@ -1452,9 +1452,11 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
   const tabCase = mode === 'tabs';
   const oracleCase = mode.startsWith('field-oracle-');
   const exitStop = mode.startsWith('exit-stop-');
+  const exitClause = mode === 'exit-clauses';
+  const exitQuery = exitStop || exitClause ? process.env.THRUM_SHOWCASE_EXIT_QUERY : undefined;
   const routeDiagnostic = mode === 'route-diagnostic';
   const routeCase = (mode.startsWith('route-') && !routeDiagnostic) || exitStop;
-  const exitCase = mode === 'exit-scene' || mode === 'exit-sweep';
+  const exitCase = mode === 'exit-scene' || mode === 'exit-sweep' || exitClause;
   const sweep = mode === 'exit-sweep';
   const g4Case = mode === 'g4-route';
   const scaleCase = mode === 'scale' || g4Case;
@@ -1467,7 +1469,7 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
   let loss, recovery, sky, material, oracle, route, exit, intentionalDestroys = 0;
   const onDestroy = () => { intentionalDestroys++; };
   const url = exitCase
-    ? `${origin}/?scene=exit&assets=${encodeURIComponent(assetsOrigin)}${sweep ? `&measure&qualify&params=${encodeURIComponent(`showcase-${process.env.THRUM_EXIT_SWEEP_STOP || 'noon'}.params.json`)}` : ''}`
+    ? `${origin}/?scene=exit&assets=${encodeURIComponent(assetsOrigin)}${sweep ? `&measure&qualify&params=${encodeURIComponent(`showcase-${process.env.THRUM_EXIT_SWEEP_STOP || 'noon'}.params.json`)}` : exitClause ? '&route-check&params=showcase-noon.params.json' : ''}`
     : movingCase ? `${origin}/route.html?route=${files.movingRouteFile}&assets=${encodeURIComponent(assetsOrigin)}${movingControl === 'phi' ? '&phi=0.1' : ''}${files.movingRouteFile === 'exit-flythrough.json' ? '&scene=exit' : ''}` : routeCase ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&params=${routeFile}&route-check` : routeDiagnostic ? `${origin}/?route-check` : materialCase || materialDisabled ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&material=case.material.wgsl` : valleyCase || valleyRecovery || lateAttach ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}` : mode === 'params' ? `${origin}/?assets=${encodeURIComponent(assetsOrigin)}&params=case.params.json` : mode === 'controls' || tabCase || destroyCase || skyCase ? `${origin}/` : mode === 'field' ? `${origin}/?qualify&field` : mode === 'field-direct' ? `${origin}/?qualify&field&culling=direct` : mode === 'field-occlusion' ? `${origin}/?qualify&field&culling=occlusion` : oracleCase ? `${origin}/?field&culling=${mode.slice('field-oracle-'.length)}&params=field-oracle.params.json` : `${origin}/?qualify${['normal', 'input'].includes(mode) ? '' : `&${mode}-probe`}`;
   const log = line => { timeline.push(line); console.log(`${mode}: ${line}`); };
   const cullingQuery = scaleCase ? `&reconstruction=taau&scale-proof${g4Case ? '&g4-route' : ''}` : noCompile ? '&reconstruction=taau&no-compile-proof' : movingCase ? `&culling=${process.env.THRUM_ROUTE_CULLING ?? 'default'}&meshes=${process.env.THRUM_VALLEY_MESHES ?? 'off'}&reconstruction=${process.env.THRUM_RECONSTRUCTION ?? 'off'}${process.env.THRUM_CULLING_PROOF === 'on' ? '&culling-proof' : ''}` : '';
@@ -1546,7 +1548,7 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
     await cdp.call('Page.navigate', { url: mode === 'clouds-placed' ? `${origin}/?placed-clouds=${encodeURIComponent(origin)}&cloud-check`
       : mode === 'clouds-controls' ? `${origin}/?clouds=sky&cloud-check&reconstruction=taau&params=clouds-low-sun.params.json`
       : cloudCase ? `${origin}/?clouds=sky&cloud-check&reconstruction=taau&params=field-oracle.params.json` :
-      url + cullingQuery + (exitStop ? '&scene=exit' : '') + (oracleCase && mixedOracle ? '&field-meshes' : '') }, sessionId);
+      url + cullingQuery + (exitStop ? '&scene=exit' : '') + (exitQuery ? `&${exitQuery}` : '') + (oracleCase && mixedOracle ? '&field-meshes' : '') }, sessionId);
     let last = '', pressedAt, releasedAt;
     const poll = async () => {
       if (interrupted) throw interrupted;
@@ -1696,7 +1698,17 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
     else if (movingCase) route = await qualifyMovingRoute(cdp, sessionId, poll, timeout, output, files, mode);
     else if (routeCase) {
       route = await qualifyRoute(cdp, sessionId, poll, timeout, output, mode, routeFile, files);
+      if (exitQuery) {
+        game = await existingGame(cdp, sessionId);
+        route.selections = await game.invoke('return JSON.parse(game.exit_selections());');
+        route.controls = await game.invoke('return JSON.parse(game.controls_json()).controls;');
+      }
       if (timeline.some(line => /params|refused/.test(line))) throw new Error(`Parameter problem reached #status: ${JSON.stringify(timeline)}`);
+    }
+    else if (exitClause) {
+      await waitFor(async () => /^Running/.test((await poll()).status ?? ''), timeout, 'exit scene startup');
+      game = await existingGame(cdp, sessionId);
+      exit = await qualifyExitClauses(cdp, sessionId, poll, timeout, output, assetsSource, game);
     }
     else if (exitCase) {
       await waitFor(async () => /^Running|^adapter=/.test((await poll()).status ?? ''), timeout, 'exit scene startup');
@@ -2129,6 +2141,69 @@ async function qualifyRoute(cdp, sessionId, poll, timeout, output, mode, file, f
   }
   return { file, preset, sha256: source.sha256, expected, applied, settled, after, cooked, startup, exit, submitted, backing, image: { ...image, clip },
     scope: 'Fresh page launched with ?assets and ?params; preset applied with nothing refused, world paused at one tick and the cooked valley drawn before a canvas capture; startup records a polled bracket for navigation to the first cooked draw, not first-paint latency; no frame-time claim' };
+}
+
+async function qualifyExitClauses(cdp, sessionId, poll, timeout, output, source, game) {
+  const store = () => game.invoke('return JSON.parse(game.cooked_status());');
+  const identity = () => game.invoke('return [performance.timeOrigin, Number(game.presented())];');
+  const generation = expected => waitFor(async () => {
+    await poll();
+    const report = await store();
+    if (report.errors.length) throw new Error(report.errors.join('\n'));
+    const status = await game.invoke('return JSON.parse(game.exit_status());');
+    return report.drawn === expected && status?.active === 10000 ? { ...report, status } : undefined;
+  }, timeout, `cooked exit generation ${expected} drawn`);
+  await generation(1);
+  const [pageOrigin] = await identity();
+  await game.invoke('document.querySelector(\'[data-control="profiler.enabled"] input\').click();');
+  const scrub = [];
+  for (const hours of [6.32, 12, 17.4, 18.48, 0, 12]) {
+    await game.invoke(`
+      const input = document.querySelector("#solar-time");
+      input.value = args[0];
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    `, [hours]);
+    const applied = await waitFor(async () => {
+      await poll();
+      const actual = await game.invoke('return game.time_of_day() * 24;');
+      return Math.abs(actual - hours) <= 0.0051 ? { hours, observed: actual } : undefined;
+    }, timeout, `exit time control at ${hours} h`);
+    scrub.push(applied);
+  }
+  const profiler = await waitFor(async () => {
+    await poll();
+    const rows = await game.invoke(`
+      return [...document.querySelectorAll('[data-control="profiler.rows"] tr')].map(
+        row => [...row.cells].map(cell => cell.textContent.trim()));
+    `);
+    return rows.length && rows.every(row => row.length === 2 && row[1] && !/profiler off|waiting/i.test(row[1]))
+      ? rows : undefined;
+  }, timeout, 'current profiler readings in the exit page');
+  const take = async name => {
+    const clip = await game.invoke(`const r=document.querySelector('canvas').getBoundingClientRect();
+      return {x:r.x+scrollX,y:r.y+scrollY,width:r.width,height:r.height,scale:1};`);
+    return screenshot(cdp, sessionId, output, 'exit-content', { file: `${name}.png`, clip });
+  };
+  const before = await take('before-edits');
+  const heldTick = await game.invoke('return Number(game.committed_tick());');
+  const edits = [];
+  let previous = before;
+  for (const [index, product] of ['mesh', 'texture'].entries()) {
+    const [, oldPresent] = await identity();
+    execFileSync('python3', ['scripts/edit_valley_content.py', source, product], { cwd: repo });
+    const applied = await generation(index + 2);
+    await waitFor(async () => (await identity())[1] >= oldPresent + 5, timeout, 'presents after the edit');
+    const [originNow, present] = await identity();
+    if (originNow !== pageOrigin || applied.status.tick !== heldTick) {
+      throw new Error(`${product}: expected document ${pageOrigin} at paused tick ${heldTick}, got ${originNow} at ${applied.status.tick}`);
+    }
+    const image = await take(`after-${product}`);
+    if (image.sha256 === previous.sha256) throw new Error(`${product}: the visible exit image did not change`);
+    edits.push({ product, applied, present, image });
+    previous = image;
+  }
+  return { selections: await game.invoke('return JSON.parse(game.exit_selections());'),
+    pageOrigin, scrub, profiler, before, edits };
 }
 
 // Startup proxy for one route page, observed on the page's own clock (performance.now(), milliseconds since its

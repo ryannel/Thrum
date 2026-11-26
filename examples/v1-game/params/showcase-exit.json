@@ -1,0 +1,50 @@
+{
+  "rows": {
+    "mac-apple": {
+      "select": {
+        "recipe": "apple-tile",
+        "reconstruction": "metalfx",
+        "display": "2",
+        "governor": "on",
+        "culling": "frustum"
+      },
+      "expect": {
+        "recipe": "AppleTile",
+        "reconstruction": "MetalFx",
+        "display": "Edr",
+        "governor": true,
+        "culling": "Frustum"
+      }
+    },
+    "mac-portable": {
+      "select": {
+        "recipe": "portable",
+        "reconstruction": "taau",
+        "display": "sdr",
+        "governor": "off",
+        "culling": "frustum"
+      },
+      "expect": {
+        "recipe": "Portable",
+        "reconstruction": "Taau",
+        "display": "Sdr",
+        "governor": false,
+        "culling": "Frustum"
+      }
+    },
+    "chrome": {
+      "select": {
+        "reconstruction": "taau",
+        "governor": "on",
+        "culling": "frustum"
+      },
+      "expect": {
+        "recipe": "Portable",
+        "reconstruction": "Taau",
+        "display": "Sdr",
+        "governor": true,
+        "culling": "Frustum"
+      }
+    }
+  }
+}

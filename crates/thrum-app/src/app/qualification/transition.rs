@@ -356,7 +356,12 @@ impl TransitionProof {
                     "outcome": format!("{:?}", segment.outcome()),
                 })),
                 "gpu_span_ns": sample.gpu_pass_ns.as_ref().and_then(thrum_render::timing::SceneGpuTimings::timed_pass_span_nanoseconds),
+                "tick_cpu_ns": sample.tick_cpu.as_nanos(),
+                "extract_cpu_ns": sample.extract_cpu.as_nanos(),
+                "upload_cpu_ns": sample.upload_cpu.as_nanos(),
+                "encode_cpu_ns": sample.encode_cpu.as_nanos(),
                 "render_cpu_ns": sample.render_cpu.as_nanos(),
+                "culling": format!("{:?}", sample.culling_mode),
                 "debug_load_ns": sample.gpu_pass_ns.as_ref().and_then(|gpu| gpu.passes().iter().find(|pass| pass.name.ends_with("debug load")).map(|pass| pass.nanoseconds)),
                 "quality": sample.governor.as_ref().map(governor_record),
             })).collect::<Vec<_>>();

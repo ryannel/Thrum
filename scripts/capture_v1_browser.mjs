@@ -31,6 +31,8 @@ args['sprite-scale'] = '1.5';
 args['sprite-speed'] = '0.05';
 args.dpr = '1';
 args['wasm-receipt'] = 'off';
+args['exit-record'] = 'off';
+args.culling = 'default';
 for (let i = 2; i < process.argv.length; i += 2) {
   const key = process.argv[i].slice(2);
   if (!Object.hasOwn(args, key) || !process.argv[i + 1]) throw new Error(`Unknown or incomplete option ${process.argv[i]}`);
@@ -41,6 +43,12 @@ if (!['sdr', 'scene-linear'].includes(args.source) || (args.source === 'scene-li
 if (!['day', 'night', 'noon', 'exit', 'sprites-field', 'sprites-scroll', 'sprites-sheets', 'sprites-status'].includes(args.scene)) throw new Error('Unknown route scene');
 if (!['off', 'on'].includes(args['wasm-receipt'])) throw new Error('Invalid Wasm receipt option');
 const governed = args.governor === 'on';
+const exitRecord = args['exit-record'];
+if (!['off', 'flythrough', 'day'].includes(exitRecord) ||
+    (exitRecord !== 'off' && (args.mode !== 'realtime' || args.scene !== 'exit' || args.control !== 'off'))) {
+  throw new Error('Exit frame records require the capture-off real-time exit scene');
+}
+if (!['default', 'direct', 'frustum', 'occlusion'].includes(args.culling)) throw new Error('Invalid camera culling mode');
 if (!['off', 'on'].includes(args.governor) || (governed && (args.mode !== 'realtime' || args.reconstruction !== 'taau'))) {
   throw new Error('Governor capture requires realtime TAAU');
 }
@@ -282,7 +290,9 @@ try {
     if (spriteScroll) manifest.sprite_scroll = { scale: Number(args['sprite-scale']), speed: Number(args['sprite-speed']), dpr: spriteDpr };
   }
   manifest.load_before = loadavg();
-  await cdp.call('Page.navigate', { url: `${manifest.origin}/capture.html?mode=${args.mode}&control=${args.control}&source=${args.source}&scene=${args.scene}&reconstruction=${args.reconstruction}&governor=${args.governor}&witness=${args.witness}&atmosphere=${args.atmosphere}&diagnostic-clouds=${args['diagnostic-clouds']}&overlay=${args.overlay}&effect=${args.effect}&route=${captureRoute ? 'capture-route.json' : 'moving-v1.json'}&assets=${encodeURIComponent(cookedOrigin ?? '')}${manifest.export_slots ? `&export-slots=${manifest.export_slots}` : ''}&clouds=${args.clouds}${args.haze ? `&haze=${encodeURIComponent(args.haze)}` : ''}${args['haze-take'] ? '&haze-take' : ''}${args['renderer-signature'] === 'on' ? '&renderer-signature' : ''}${cloudView ? '&cloud-view' : ''}${cloudOrigin ? '&cloud-store=' + encodeURIComponent(cloudOrigin) : ''}${spriteQuery}` }, sessionId);
+  const exitQuery = exitRecord === 'off' ? '' : `&exit-record=${exitRecord}`;
+  const cullingQuery = args.culling === 'default' ? '' : `&culling=${args.culling}`;
+  await cdp.call('Page.navigate', { url: `${manifest.origin}/capture.html?mode=${args.mode}&control=${args.control}&source=${args.source}&scene=${args.scene}&reconstruction=${args.reconstruction}&governor=${args.governor}&witness=${args.witness}&atmosphere=${args.atmosphere}&diagnostic-clouds=${args['diagnostic-clouds']}&overlay=${args.overlay}&effect=${args.effect}&route=${captureRoute ? 'capture-route.json' : 'moving-v1.json'}&assets=${encodeURIComponent(cookedOrigin ?? '')}${manifest.export_slots ? `&export-slots=${manifest.export_slots}` : ''}&clouds=${args.clouds}${args.haze ? `&haze=${encodeURIComponent(args.haze)}` : ''}${args['haze-take'] ? '&haze-take' : ''}${args['renderer-signature'] === 'on' ? '&renderer-signature' : ''}${cloudView ? '&cloud-view' : ''}${cloudOrigin ? '&cloud-store=' + encodeURIComponent(cloudOrigin) : ''}${spriteQuery}${exitQuery}${cullingQuery}` }, sessionId);
   let destroyed = false;
   const record = await waitFor(async () => {
     if (completionSignal && !captureDone) return undefined;
@@ -303,8 +313,11 @@ try {
     if (receipt.result.value) manifest.instantiated_wasm_sha256 = receipt.result.value;
   }
   await fs.writeFile(path.join(output, 'runtime.json'), JSON.stringify(record, null, 2));
-  if (governed && (!record.governor || record.final_report?.reconstruction !== 'Taau' ||
-      !record.final_report.samples?.some(sample => sample.governor_scale != null))) {
+  if (exitRecord !== 'off' && record.error) throw new Error(record.error);
+  const admittedGovernor = exitRecord === 'off'
+    ? record.final_report?.samples?.some(sample => sample.governor_scale != null)
+    : record.exit_selections?.governor;
+  if (governed && (!record.governor || record.final_report?.reconstruction !== 'Taau' || !admittedGovernor)) {
     throw new Error('Capture did not retain the resolved governor and TAAU');
   }
   if ((spriteScroll || spriteStatus) && (record.device_pixel_ratio !== spriteDpr ||

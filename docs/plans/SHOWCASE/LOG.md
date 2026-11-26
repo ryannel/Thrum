@@ -164,3 +164,11 @@
   the route's cues, and a cue missing from all three rows fails. Took the suggestion: the median is credited
   with broad changes only. Thresholds, controls and the check are unchanged. WP7 was Not Started.
   [What each stop must show](DESIGN.md#what-each-stop-must-show)
+- 2026-11-26 WP7 added the exit launch selections, preset and live-content checks, submitted-frame comparison,
+  and capture-off frame records. The three-row comparison exceeded the retained thresholds. Applying the fixed
+  formula to the measured pair differences would let the night diagnostic through. The existing baseline stays
+  in force. [Comparison receipt](../../../.orchestrate/evidence/SHOWCASE/WP7/compare/run.json)
+- 2026-11-26 WP7 proposal to `CONTENT-LOOP`. Expose the committed cooked publication's manifest hash with
+  the generation already observed by the game. The resident set owns the validated `Head`, but `CookedStats`
+  exposes only its drawn generation. WP7.2 to WP7.4 need this observation to distinguish two stores that both
+  report generation one. A fetched head, requested root or route pin can precede actual draw admission.

@@ -1,0 +1,183 @@
+"""Observe the capture-off showcase on the Mac and in Chrome."""
+
+import json
+import subprocess
+import time
+
+from apple_governor_proof import awake_display
+from apple_presentation import read_rows
+from t2_load import LoadRecord
+
+
+def wait_for_first_present(process, output, launched):
+    frames = output / 'frames.jsonl'
+    deadline = time.monotonic() + 30
+    previous = 0.0
+    while process.poll() is None and time.monotonic() < deadline:
+        elapsed = time.monotonic() - launched
+        if frames.is_file():
+            lines = frames.read_text().split('\n')[:-1]
+            first = next((row for row in map(json.loads, lines) if row['presented']), None)
+            if first:
+                return {'label': 'process launch to observed first exit-scene present call',
+                        'scope': 'polling bracket for the host present call',
+                        'lower_ms': previous * 1000, 'upper_ms': elapsed * 1000,
+                        'submission': first['submission']}
+        previous = elapsed
+        time.sleep(0.025)
+    raise ValueError(f'the Mac exit scene did not present; see {output / "game.log"}')
+
+
+def mac_window(output, binary, env, route, *, day):
+    output.mkdir()
+    display = output / 'display'
+    display.mkdir()
+    authored = json.loads(route.read_text())
+    admitted = output / 'route.json'
+    # The actual window uses its native backing extent. Camera, world clock,
+    # cooked publication and route ticks come from the authored route.
+    admitted.write_text(json.dumps(dict(authored, render_extent=[1920, 1080])) + '\n')
+    parameters = output / 'parameters.json'
+    parameters.write_text('{"world.paused": true}\n')
+    first = authored['origin_tick']
+    last = first + authored['keys'][-1]['tick']
+    launch = dict(env, THRUM_GOVERNOR_ROUTE=str(admitted), THRUM_SHOWCASE_ROUTE_START_PAUSED='1',
+                  THRUM_PARAMS=str(parameters), THRUM_GOVERNOR_RECORD='observed',
+                  THRUM_MAC_TRANSITION=str(output), THRUM_MAC_TRANSITION_ARM='route',
+                  THRUM_MAC_EDR_PROOF=str(display), THRUM_REPORT='1', THRUM_MAC_FRAME_RATE='60',
+                  THRUM_V1_FRAMES=str(last - first + 200))
+    if day:
+        launch['THRUM_MAC_SOLAR_SWEEP'] = json.dumps([[first, last], [0, 24]])
+    with awake_display(), (output / 'game.log').open('w') as log:
+        load = LoadRecord(output)
+        try:
+            launched = time.monotonic()
+            with subprocess.Popen([binary], env=launch, stdout=log, stderr=subprocess.STDOUT) as process:
+                try:
+                    startup = wait_for_first_present(process, output, launched)
+                    resume = parameters.with_suffix('.partial')
+                    resume.write_text('{"world.paused": false}\n')
+                    resume.replace(parameters)
+                    if process.wait(timeout=90):
+                        raise ValueError(f'Mac exit window failed; see {output / "game.log"}')
+                finally:
+                    if process.poll() is None:
+                        process.kill()
+        finally:
+            observed_load = load.finish()
+            (output / 'load.json').write_text(json.dumps(observed_load, indent=2) + '\n')
+    return mac_record(output, first, last, day, startup, observed_load)
+
+
+def mac_record(output, first, last, day, startup, load):
+    frames = read_rows(output / 'frames.jsonl')
+    callbacks = read_rows(output / 'display.jsonl')
+    presents = [row for row in frames if row['presented']]
+    samples = {sample['submission']: sample for row in frames for sample in row['governor']['samples']}
+    if not presents or presents[0]['world_tick'] >= first or presents[-1]['world_tick'] <= last:
+        raise ValueError(f'Mac run did not bracket the measurement window {first} to {last}')
+    measured = [row for row in presents if first <= row['world_tick'] <= last]
+    if not measured or any(row['submission'] not in samples for row in measured):
+        raise ValueError('completed frame samples do not cover the measured presents')
+    if any(not samples[row['submission']]['gpu_pass_ns'] for row in measured):
+        raise ValueError('a completed frame has no named GPU timings')
+    sampled = {row['submission']: samples[row['submission']] for row in measured}
+    by_sequence = {row['sequence']: row for row in frames}
+    requested = [row for row in callbacks
+                 if measured[0]['sequence'] <= row['sequence'] <= measured[-1]['sequence'] + 1]
+    period = 1 / 60
+    latest = measured[0]
+    misses = []
+    timeline = []
+    present_index = 0
+    for previous, current in zip(requested, requested[1:]):
+        start = previous['media']
+        interval = current['media'] - start
+        if interval <= 0:
+            raise ValueError('Mac display callback timestamps are not increasing')
+        opportunities = max(1, round(interval / period))
+        subdivisions = [start + index * interval / opportunities for index in range(opportunities + 1)]
+        for begin, end in zip(subdivisions, subdivisions[1:]):
+            while present_index < len(presents) and presents[present_index]['present_media'] < begin:
+                latest = presents[present_index]
+                present_index += 1
+            delivered = present_index < len(presents) and presents[present_index]['present_media'] < end
+            if not delivered:
+                frame = by_sequence.get(previous['sequence'])
+                tick = min(last, max(first, latest['world_tick']))
+                position = {'world_tick': tick, 'route_tick': tick - first}
+                if day:
+                    position['solar_hours'] = 24 * (tick - first) / (last - first)
+                misses.append({'position': position, 'duration_ms': (end - begin) * 1000,
+                               'callback': previous['sequence'], 'callback_interval_ms': interval * 1000,
+                               'previous_submission': latest['submission'],
+                               'next_submission': presents[present_index]['submission'] if present_index < len(presents) else None,
+                               'callback_report': previous, 'frame_report': frame,
+                               'previous_sample': samples.get(latest['submission']),
+                               'investigation': 'unresolved under load',
+                               'evidence_read': 'display callback media interval, render-owner work and GPU-complete sample'})
+        timeline.append({'sequence': previous['sequence'], 'callback_interval_ms': interval * 1000,
+                         'opportunities': opportunities})
+    prepared = json.loads((output / 'prepared.json').read_text())
+    surfaces = read_rows(output / 'display/frames.jsonl')
+    presented_surfaces = {row['format'] for row in surfaces if row.get('presented')}
+    display = 'Edr' if presented_surfaces == {'Rgba16Float'} else (
+        'Sdr' if presented_surfaces and all(name.startswith(('Bgra8', 'Rgba8'))
+                                           for name in presented_surfaces) else None)
+    recipe = prepared['recipe'].removeprefix('Ok(').removesuffix(')')
+    selections = {'recipe': recipe, 'reconstruction': prepared['reconstruction'], 'display': display,
+                  'governor': measured[0]['governor']['state'] is not None,
+                  'culling': next(iter(sampled.values()))['culling']}
+    if any(sample['culling'] != selections['culling'] for sample in sampled.values()):
+        raise ValueError('the culling mode changed during the measured run')
+    return {'selections': selections, 'target': 'mac-metal', 'adapter': prepared['adapter'],
+            'phase': 'day cycle' if day else 'flythrough', 'capture': 'off', 'startup_proxy': startup,
+            'load': load, 'callbacks': timeline, 'misses': misses,
+            'first_requested_tick': first, 'last_requested_tick': last,
+            'first_measured_tick': measured[0]['world_tick'], 'last_measured_tick': measured[-1]['world_tick'],
+            'completed_frames': len(sampled), 'frame_timing': 'frames.jsonl'}
+
+
+def chrome_record(output, wasm_hash, day):
+    manifest = json.loads((output / 'manifest.json').read_text())
+    runtime = json.loads((output / 'runtime.json').read_text())
+    if (manifest.get('instantiated_wasm_sha256') != wasm_hash or not manifest.get('observer_only')
+            or not runtime['complete'] or not runtime['startup_proxy']):
+        raise ValueError('Chrome did not complete the exit record from this build with capture off')
+    route = runtime['effective_route']
+    first = route['origin_tick']
+    last = first + route['keys'][-1]['tick']
+    callbacks = runtime['opportunities']
+    if not callbacks[0]['tick'] <= first or callbacks[-1]['tick'] <= last:
+        raise ValueError(f'Chrome run did not bracket the measurement window {first} to {last}')
+    samples = [row for row in runtime['exit_frames'] if first <= row['tick'] <= last and row['presented']]
+    if not samples or not all(row['timing_requested'] for row in samples):
+        raise ValueError('Chrome had no completed frames with timestamp queries requested')
+    by_tick = {}
+    for row in samples:
+        by_tick.setdefault(row['tick'], []).append(row)
+    measured = [row for row in callbacks if first <= row['tick'] <= last]
+    misses = []
+    for previous, current in zip(measured, measured[1:]):
+        interval = current['raf_ms'] - previous['raf_ms']
+        if interval <= 0:
+            raise ValueError('Chrome animation timestamps are not increasing')
+        if interval < 25:
+            continue
+        position = {'world_tick': current['tick'], 'route_tick': current['tick'] - first}
+        if day:
+            position['solar_hours'] = 24 * (current['tick'] - first) / (last - first)
+        misses.append({'position': position, 'duration_ms': interval,
+                       'preceding_callback': previous, 'following_callback': current,
+                       'available_frame_samples': by_tick.get(previous['tick'], []) + by_tick.get(current['tick'], []),
+                       'investigation': 'unresolved under load',
+                       'evidence_read': 'animation-frame timestamps, JS driver times and available GPU pass samples'})
+    return {'selections': runtime['exit_selections'], 'target': 'chrome-webgpu',
+            'phase': 'day cycle' if day else 'flythrough', 'capture': 'off',
+            'startup_proxy': runtime['startup_proxy'], 'misses': misses,
+            'first_requested_tick': first, 'last_requested_tick': last,
+            'first_measured_tick': measured[0]['tick'], 'last_measured_tick': measured[-1]['tick'],
+            'completed_frames': len(samples),
+            'frames_with_gpu_pass_timing': sum(bool(row['gpu_pass_ns']) for row in samples),
+            'load': {'before': manifest['load_before'], 'after': manifest['load_after']},
+            'frame_timing': 'runtime.json'}

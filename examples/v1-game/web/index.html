@@ -213,6 +213,15 @@
           })();
         }
         // @proving
+        if (exit && probe.has("governor")) {
+          const mode = probe.get("governor");
+          if (!["on", "off"].includes(mode)) throw new Error("The governor must be on or off");
+          if (mode === "on" && !game.enable_route_governor()) {
+            throw new Error("The prepared exit scene refused the governor");
+          }
+        }
+        // @end
+        // @proving
         const running = sprites ? "Running the sprite scene…" : probe.has("field") ? "Running the 100,513-instance field…" : "Running the 10,000-entity scene…";
         const pauseProbe = probe.has("pause-probe");
         const resizeProbe = probe.has("resize-probe");

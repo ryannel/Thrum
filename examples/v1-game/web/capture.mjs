@@ -9,6 +9,7 @@ const mode = query.get('mode');
 const control = query.get('control');
 const source = query.get('source') ?? 'sdr';
 const governed = query.get('governor') === 'on';
+const exitRecord = query.get('exit-record');
 const scene = query.get('scene') ?? 'day';
 const spriteScroll = scene === 'sprites-scroll';
 const spriteSheets = scene === 'sprites-sheets';
@@ -102,7 +103,10 @@ async function runCapture() {
   record.diagnostic_clouds = query.get('diagnostic-clouds') === 'on';
   if (clouds !== 'off') record.clouds = clouds;
   game = await create_route_game(document.querySelector('canvas'), text, query.get('diagnostic-clouds') === 'on', query.get('culling') ?? undefined, query.get('meshes') === 'on', query.get('reconstruction') === 'taau', query.get('scene') === 'exit', clouds, query.get('haze') ?? undefined, view ? JSON.stringify({preset: view.preset, rate: view.weather_rate, wind: view.wind, placed_origin: query.get("cloud-store") ?? undefined, placement: view.placement}) : undefined);
-  if (useAnimationFrame) game.capture_without_pass_timings();
+  if (exitRecord) {
+    game.enable_exit_frame_timings();
+    record.exit_frames = [];
+  } else if (useAnimationFrame) game.capture_without_pass_timings();
   window.captureGame = game;
   const effect = query.get('effect') ?? 'off';
   if (!['off','slab','depth-only'].includes(effect)) fail('Unknown effect diagnostic');
@@ -121,9 +125,22 @@ async function runCapture() {
   }
   if (!heldSetup) {
     // Fixed-time preparation stops at the ordinary route installation barrier.
+    let lastWithoutDraw = 0;
     while (game.committed_tick() < route.origin_tick - 1) {
       if (!game.route_slot_ready()) { await wait(1); continue; }
       game.frame(game.route_step_ms(0.5));
+      if (exitRecord && !record.startup_proxy) {
+        const draw = JSON.parse(game.cooked_status());
+        const observed = performance.now();
+        if (draw.drawn === route.cooked_generation) {
+          record.startup_proxy = {
+            label: 'navigation start to observed first cooked exit-scene draw',
+            lower_ms: lastWithoutDraw, upper_ms: observed,
+          };
+        } else {
+          lastWithoutDraw = observed;
+        }
+      }
       await wait(1);
     }
   } else {
@@ -144,6 +161,12 @@ async function runCapture() {
   if (governed) {
     game.route_render_scale(108);
     if (!game.enable_route_governor()) fail('the prepared capture route refused the governor');
+  }
+  if (exitRecord) {
+    const last = route.origin_tick + route.keys.at(-1).tick;
+    if (exitRecord === 'day') game.begin_exit_solar_sweep(route.origin_tick, last);
+    record.exit_selections = JSON.parse(game.exit_selections());
+    game.drain_exit_frame_timings();
   }
   const base = game.route_step_ms(0.5) - 1000 / 60;
   game.set_paused(true, base);
@@ -196,7 +219,7 @@ async function runCapture() {
   record.base_world_ms = base;
   record.mode = mode;
   record.governor = governed;
-  record.gpu_pass_timing = !useAnimationFrame;
+  record.gpu_pass_timing = Boolean(exitRecord) || !useAnimationFrame;
   record.witness = witness;
   record.extent = route.render_extent;
   record.ui = { included: 'canvas scene and engine route overlay', excluded: 'DOM, browser and native UI' };
@@ -316,9 +339,10 @@ async function runCapture() {
     if (performance.now() - start > (mode === 'fixed' ? 120000 : Math.max(20000, duration + 6000))) fail('scenario deadline');
     game.frame(timestamp);
     const opportunity = { ordinal, requested_ms: requested, frame_ms: timestamp, returned_ms: performance.now(), tick: game.committed_tick() };
-    if ((governed || clouds !== 'off') && useAnimationFrame) opportunity.raf_ms = rafMs;
+    if ((exitRecord || governed || clouds !== 'off') && useAnimationFrame) opportunity.raf_ms = rafMs;
     if (control === 'off' && scene === 'exit') opportunity.presented = Number(game.presented());
     record.opportunities.push(opportunity);
+    if (exitRecord) record.exit_frames.push(...JSON.parse(game.drain_exit_frame_timings()));
     ordinal++;
     if (mode === 'realtime' && !useAnimationFrame) ordinal = Math.max(ordinal, Math.floor((performance.now() - start) * 60 / 1000));
     if (control !== 'saturation' || performance.now() - start > 2000) drain();

@@ -401,7 +401,7 @@ pub struct GameScene {
     exit_entities: crate::ExitEntities,
     valley_stars: bool,
     pub(super) day_phase_offset: f32,
-    #[cfg(all(target_os = "macos", feature = "proving"))]
+    #[cfg(all(any(target_os = "macos", target_arch = "wasm32"), feature = "proving"))]
     pub(crate) solar_sweep: Option<SolarSweep>,
     #[cfg(feature = "proving")]
     pub(super) capture_solar_tick: Option<u64>,
@@ -423,19 +423,19 @@ pub struct GameScene {
     #[cfg(feature = "draw-probe")]
     omit_mirror: bool,
 }
-#[cfg(all(target_os = "macos", feature = "proving"))]
+#[cfg(all(any(target_os = "macos", target_arch = "wasm32"), feature = "proving"))]
 pub(crate) type SolarSweep = ([u64; 2], [f32; 2]);
 
 impl GameScene {
     fn sample_sun(&self, tick: u64, alpha: f32) -> crate::environment::SunSample {
         let offset = self.day_phase_offset;
-        #[cfg(all(target_os = "macos", feature = "proving"))]
+        #[cfg(all(any(target_os = "macos", target_arch = "wasm32"), feature = "proving"))]
         let offset = self
             .solar_sweep
             .map_or(offset, |([first, last], [from, to])| {
                 #[expect(
                     clippy::cast_precision_loss,
-                    reason = "a proof sweep lasts at most 360 ticks"
+                    reason = "a proof sweep fits within the route's bounded tick range"
                 )]
                 let progress = (tick.saturating_sub(first).min(last - first) as f32
                     + if tick < first { 0.0 } else { alpha })
@@ -678,7 +678,7 @@ impl GameScene {
             exit_entities: setup.exit_entities,
             valley_stars: !setup.content.is_field() && setup.valley_stars,
             day_phase_offset: 0.0,
-            #[cfg(all(target_os = "macos", feature = "proving"))]
+            #[cfg(all(any(target_os = "macos", target_arch = "wasm32"), feature = "proving"))]
             solar_sweep: None,
             #[cfg(feature = "proving")]
             capture_solar_tick: None,
@@ -1342,7 +1342,7 @@ mod tests {
             exit_entities: crate::ExitEntities::Draw,
             valley_stars: true,
             day_phase_offset: 0.1,
-            #[cfg(all(target_os = "macos", feature = "proving"))]
+            #[cfg(all(any(target_os = "macos", target_arch = "wasm32"), feature = "proving"))]
             solar_sweep: None,
             #[cfg(feature = "proving")]
             capture_solar_tick: None,

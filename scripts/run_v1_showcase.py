@@ -14,12 +14,15 @@ in run.json there. The route's values live only in examples/v1-game/params/showc
   ticks [--route flythrough|held] [--window FIRST LAST] [--phase PHASE]
                                    native fixed route and exact submitted images in inclusive route-tick windows
   motion [--check]                 record or check the six real-time exit tripwire arms
+  exit --controls                  apply every exit preset through the Mac and Chrome control paths
+  frames --target TARGET           record capture-off flythrough and day cycle timing
 """
 
 import argparse
 import base64
 import hashlib
 import http.server
+import itertools
 import json
 import math
 import os
@@ -55,6 +58,7 @@ BASELINE = REPO / 'examples/v1-game/tests/fixtures/showcase/valley-baseline.json
 EXIT_BASELINE = REPO / 'examples/v1-game/tests/fixtures/showcase/exit-baseline.json'
 EXIT_FLYTHROUGH = REPO / 'examples/v1-game/routes/exit-flythrough.json'
 EXIT_HELD = EXIT_FLYTHROUGH.with_name('exit-held.json')
+EXIT_CONFIG = PARAMS / 'showcase-exit.json'
 M5_RUNS = REPO / 'tmp/showcase-m5'
 TOOLCHAIN = 'stable'
 
@@ -139,12 +143,15 @@ def write_json(path, value):
     path.write_text(json.dumps(value, indent=2) + '\n')
 
 
-def build(run, web, *, proving=True):
+def build(run, web, *, proving=True, creation_counters=False):
     """Build release thrum-cook and v1-game, plus the selected web bundle if asked."""
     started = time.monotonic()
     with open(run / 'build.log', 'w') as log:
-        steps = [['rustup', 'run', TOOLCHAIN, 'cargo', 'build', '--release', '--locked',
-                  '-p', 'thrum-cook', '-p', 'v1-game', '--bin', 'thrum-cook', '--bin', 'v1-game']]
+        native = ['rustup', 'run', TOOLCHAIN, 'cargo', 'build', '--release', '--locked',
+                  '-p', 'thrum-cook', '-p', 'v1-game', '--bin', 'thrum-cook', '--bin', 'v1-game']
+        if creation_counters:
+            native.extend(('--features', 'v1-game/creation-counters'))
+        steps = [native]
         if web:
             steps.append(['sh', 'examples/v1-game/web/build.sh', *(['--proving'] if proving else [])])
         for step in steps:
@@ -180,6 +187,410 @@ def layout(_args):
     command = [sys.executable, str(SOURCE / 'generate_exit.py')]
     if subprocess.run(command, cwd=REPO).returncode:
         raise Failure('exit layout did not verify against the shipped terrain')
+
+
+def exit_rows(path=EXIT_CONFIG):
+    rows = json.loads(path.read_text())['rows']
+    if set(rows) != {'mac-apple', 'mac-portable', 'chrome'}:
+        raise Failure('exit configuration must declare the two Mac rows and Chrome')
+    expected_keys = {'recipe', 'reconstruction', 'display', 'governor', 'culling'}
+    for name, row in rows.items():
+        selected_keys = expected_keys - {'recipe', 'display'} if name == 'chrome' else expected_keys
+        if set(row) != {'select', 'expect'} or set(row['select']) != selected_keys or set(row['expect']) != expected_keys:
+            raise Failure(f'{name}: exit configuration omits or adds a selection')
+        if not all(isinstance(value, str) and value for value in row['select'].values()):
+            raise Failure(f'{name}: an exit selection is empty or invalid')
+    return rows
+
+
+def native_exit_environment(store, row):
+    variables = {'recipe': 'THRUM_RECIPE', 'reconstruction': 'THRUM_RECONSTRUCTION',
+                 'display': 'THRUM_MAC_EDR', 'governor': 'THRUM_GOVERNOR', 'culling': 'THRUM_CULLING'}
+    env = {key: value for key, value in os.environ.items() if not key.startswith('THRUM_')}
+    env.update(THRUM_ASSET_STORE=str(store), THRUM_SCENE='exit')
+    env.update({variables[key]: value for key, value in row['select'].items()})
+    return env
+
+
+def declarations(controls):
+    return {control['key']: {key: value for key, value in control.items()
+                             if key not in {'text', 'value'}} for control in controls}
+
+
+def complete_lines(path):
+    return [json.loads(line) for line in path.read_text().split('\n')[:-1]] if path.is_file() else []
+
+
+def wait_until(process, label, condition, seconds=30):
+    deadline = time.monotonic() + seconds
+    while time.monotonic() < deadline and process.poll() is None:
+        result = condition()
+        if result:
+            return result
+        time.sleep(0.1)
+    raise Failure(f'the running Mac game did not {label}')
+
+
+def mac_exit_controls(run, store, row, stops, *, edit_source=None):
+    from apple_governor_proof import awake_display
+    from edit_valley_content import edit
+
+    output = run / 'panel'
+    output.mkdir()
+    parameters = run / 'stop.params.json'
+    if edit_source is not None:
+        stops = {name: {**preset, 'profiler.enabled': True} for name, preset in stops.items()}
+    write_json(parameters, stops[ROUTE[0]])
+    env = dict(native_exit_environment(store, row), THRUM_PARAMS=str(parameters),
+               THRUM_PROFILE_OUTPUT=str(output), THRUM_REPORT='1')
+    content_path = run / 'drawn.json'
+    frame_path = run / 'frames.jsonl'
+    if edit_source is not None:
+        env.update(THRUM_SHOWCASE_CONTENT_REPORT=str(content_path), THRUM_GOVERNOR_RECORD='observed',
+                   THRUM_MAC_TRANSITION=str(run), THRUM_MAC_TRANSITION_ARM='route')
+    result = {}
+    last_submission = -1
+    log_path = run / 'game.log'
+    with awake_display(), log_path.open('w') as log:
+        process = subprocess.Popen([str(GAME)], env=env, cwd=REPO, stdout=log, stderr=subprocess.STDOUT)
+        try:
+            def saved_generation(expected):
+                def read():
+                    if not content_path.is_file():
+                        return None
+                    content = json.loads(content_path.read_text())
+                    if content['errors']:
+                        raise Failure(f'cooked exit error: {content["errors"]}')
+                    return content if content['generation'] == expected else None
+                return wait_until(process, f'draw cooked generation {expected}', read)
+
+            if edit_source is not None:
+                first_content = saved_generation(1)
+                ready = wait_until(process, 'present the prepared window',
+                                   lambda: next((record for record in reversed(complete_lines(frame_path))
+                                                 if record['presented']), None))
+            for index, (stop, preset) in enumerate(stops.items()):
+                if index > 0:
+                    pending = parameters.with_suffix('.partial')
+                    write_json(pending, preset)
+                    pending.replace(parameters)
+                profiles = output / 'samples.jsonl'
+
+                def read_preset():
+                    records = complete_lines(profiles)
+                    if not records or log_path.read_text().count('0 refused') <= index:
+                        return None
+                    record = records[-1]
+                    by_key = {control['key']: control for control in record['model']['controls']}
+                    matches = all(
+                        by_key[key]['value'] == expected if isinstance(expected, bool) else
+                        close(by_key[key]['value'], expected, by_key[key]['step'] / 2 + 1e-4)
+                        for key, expected in preset.items())
+                    frames = record['frames']
+                    if matches and frames and frames[0]['submission'] > last_submission:
+                        return record
+                    return None
+
+                record = wait_until(process, f'accept {stop} through the live parameter control', read_preset)
+                result[stop] = record
+                last_submission = record['frames'][0]['submission']
+            if edit_source is not None:
+                edits = []
+                for generation, operation in enumerate(('mesh', 'texture'), start=2):
+                    edit(edit_source, operation)
+                    receipt = saved_generation(generation)
+                    if (receipt['device_generation'] != first_content['device_generation']
+                            or receipt['swaps'] != generation
+                            or receipt['submitted_frames'] <= first_content['submitted_frames']):
+                        raise Failure(f'{operation}: the live cooked publication was not submitted')
+                    edits.append({'product': operation, 'observed_draw': receipt})
+                pending = parameters.with_suffix('.partial')
+                write_json(pending, {'world.paused': False, 'profiler.enabled': True})
+                pending.replace(parameters)
+
+                def active_profiler():
+                    profile = complete_lines(output / 'samples.jsonl')[-1]
+                    model = {control['key']: control['value'] for control in profile['model']['controls']}
+                    if model['world.paused'] or not any(frame['completed_ticks'] for frame in profile['frames']):
+                        return None
+                    rows = dict(model['profiler.rows'])
+                    cpu_keys = ('Callback interval', 'World tick', 'Extract', 'Upload', 'Encode + submit')
+                    numeric = all(any(character.isdigit() for character in rows[key]) for key in cpu_keys)
+                    if numeric and any('ms' in value for key, value in rows.items() if key.startswith('GPU ')):
+                        return model['profiler.rows']
+                    return None
+
+                profiled = wait_until(process, 'report current CPU stages and GPU passes in the profiler',
+                                      active_profiler)
+                before = ready['governor']['pipelines']
+                measured = [frame for frame in complete_lines(frame_path) if frame['sequence'] >= ready['sequence']]
+                if before is None or before[1] != 0 or any(frame['governor']['pipelines'] != before for frame in measured):
+                    raise Failure('native pipeline creation changed after the scene was ready')
+                write_json(run / 'clauses.json', {'readiness': ready['sequence'], 'pipeline_count': before[0],
+                                                 'observed_frame_replies': len(measured), 'profiler': profiled,
+                                                 'initial_content': first_content, 'edits': edits})
+        finally:
+            stop_process(process)
+    return result
+
+
+def chrome_exit_stops(run, source, row):
+    command = ['node', str(CHECKER), '--case', 'exit-stops', '--cook', str(COOK), '--web-root', str(WEB),
+               '--assets-source', str(source), '--output', str(run)]
+    env = dict(os.environ, THRUM_SHOWCASE_EXIT_QUERY=urllib.parse.urlencode(row['select']))
+    log_path = run.with_suffix('.log')
+    with log_path.open('w') as log:
+        if bounded(locked_capture('chrome', command), log, 900, cwd=REPO, env=env):
+            raise Failure(f'Chrome exit stops failed; see {log_path}')
+    wasm_hash = sha256(WASM)
+    results = json.loads((run / 'run.json').read_text())['results']
+    reports = {}
+    for result in results:
+        if result['actualWasmSha256'] != wasm_hash:
+            raise Failure('Chrome ran a different Wasm build')
+        stop = result['case'].removeprefix('exit-stop-')
+        report = result['route']
+        if report['selections'] != row['expect']:
+            raise Failure(f'Chrome {stop} resolved {report["selections"]}, expected {row["expect"]}')
+        reports[stop] = report
+    if set(reports) != set(ROUTE):
+        raise Failure('Chrome did not report each of the six exit stops')
+    return reports
+
+
+def exit_showcase(args):
+    rows = exit_rows()
+    stops = route()
+    if args.clauses:
+        return exit_clauses(args, rows)
+    if args.compare:
+        return exit_compare(rows, stops)
+    run = new_run('exit-controls')
+    print(f'exit controls: {run}', flush=True)
+    build(run, web=True)
+    builds = identities(web=True, built=True)
+    source = copy_source(run, exit_assets=EXIT_SOURCE)
+    root = json.loads(EXIT_FLYTHROUGH.read_text())['cooked_root']
+    store = cook_exit(run, source, root)
+    report = {'builds': builds, 'target': 'mac-metal and chrome-webgpu', 'control_declarations': {}}
+    for name in ('mac-apple', 'mac-portable'):
+        output = run / name
+        output.mkdir()
+        results = mac_exit_controls(output, store, rows[name], stops)
+        write_json(output / 'presets.json', results)
+        report['control_declarations'][name] = {
+            stop: declarations(record['model']['controls']) for stop, record in results.items()}
+    chrome = chrome_exit_stops(run / 'chrome', source, rows['chrome'])
+    report['control_declarations']['chrome'] = {
+        stop: declarations(record['controls']) for stop, record in chrome.items()}
+    reference = report['control_declarations']['mac-portable'][ROUTE[0]]
+    for name, models in report['control_declarations'].items():
+        for stop, model in models.items():
+            if model != reference:
+                raise Failure(f'{name} {stop}: declared controls differ from the Mac panel')
+    write_json(run / 'run.json', report)
+    print(f'PASS: {run / "run.json"}')
+
+
+def exit_compare(rows, stops):
+    from apple_display_proof import half_components, HALF, srgb
+
+    run = new_run('exit-compare')
+    print(f'exit comparison: {run}', flush=True)
+    build(run, web=True)
+    builds = identities(web=True, built=True)
+    source = copy_source(run, exit_assets=EXIT_SOURCE)
+    root = json.loads(EXIT_FLYTHROUGH.read_text())['cooked_root']
+    store = cook_exit(run, source, root)
+    baseline, mismatch = read_baseline(EXIT_BASELINE, baseline_identity(root))
+    if mismatch:
+        raise Failure('the checked-in exit thresholds belong to another route identity')
+    thresholds = baseline['thresholds']
+
+    def capture_native(name, row, *, path=store, keys=ROUTE, empty=False):
+        target = run / name
+        presets = [PARAMS / f'showcase-{stop}.params.json' for stop in keys]
+        env = dict(native_exit_environment(path, row), THRUM_CAPTURE_SCENE=str(target),
+                   THRUM_CAPTURE_ROUTE_ONLY='1', THRUM_CAPTURE_SOURCE='submitted-sdr',
+                   THRUM_CAPTURE_PARAMS=os.pathsep.join(map(str, presets)))
+        if row['expect']['display'] == 'Edr':
+            env['THRUM_CAPTURE_EDR_HEADROOM'] = '1'
+        if empty:
+            env['THRUM_EXIT_NO_ENTITIES'] = '1'
+        with (run / f'{name}.log').open('w') as log:
+            if bounded([str(GAME)], log, 120, cwd=REPO, env=env):
+                raise Failure(f'{name}: native submitted stills failed')
+        manifest = json.loads((target / 'stills.json').read_text())
+        expected_selection = row['expect']
+        if (manifest['recipe'] != f'Ok({expected_selection["recipe"]})'
+                or manifest['reconstruction'] != expected_selection['reconstruction']
+                or manifest['culling'] != expected_selection['culling']):
+            raise Failure(f'{name}: stills resolved a different device, reconstructor or culling mode')
+        values = {}
+        for frame, key in zip(manifest['stills'], keys, strict=True):
+            extent = manifest['extent']
+            filename = target / frame['file']
+            expected = stops[key]
+            if (not frame['surface_presented'] or frame['headroom'] != 1
+                    or not close(frame['time_of_day'] * 24, expected['sky.solar_time'], 0.0051)
+                    or not close(math.degrees(frame['yaw']), expected['camera.yaw'], 1e-3)
+                    or not close(math.degrees(frame['pitch']), expected['camera.pitch'], 1e-3)):
+                raise Failure(f'{name}: submitted frame does not match {key}')
+            if frame['source'] == 'Edr':
+                transfer = bytes(srgb(value) for value in HALF)
+                pixels = bytes(transfer[word] for word in half_components(filename, extent))
+            else:
+                if frame['source'] != 'Sdr':
+                    raise Failure(f'{name}: unexpected comparison source {frame["source"]}')
+                pixels = filename.read_bytes()
+            values[key] = pixel_grid(filename, *extent, 4, pixels)
+        return values, manifest
+
+    captured = {name: capture_native(name, rows[name]) for name in ('mac-apple', 'mac-portable')}
+    empty, _ = capture_native('empty', rows['mac-portable'], empty=True)
+    retinted = run / 'retinted'
+    retinted.mkdir()
+    edited_source = copy_source(retinted, origin=source)
+    (edited_source / 'white.png').write_bytes(solid_texture([214, 150, 96]))
+    edited_store = retinted / 'store'
+    with (retinted / 'cook.log').open('w') as log:
+        if bounded([str(COOK), 'cook', str(edited_source), str(edited_store)], log, 120, cwd=REPO):
+            raise Failure('retinted control could not cook')
+    if store_root(edited_store) == root:
+        raise Failure('retinted control did not change the publication')
+    texture, _ = capture_native('texture-control', rows['mac-portable'], path=edited_store, keys=['noon'])
+    chrome_dir = run / 'chrome'
+    chrome = chrome_exit_stops(chrome_dir, source, rows['chrome'])
+    browser = {}
+    for key, result in chrome.items():
+        frame = result['submitted']
+        path = chrome_dir / frame['file']
+        browser[key] = pixel_grid(path, frame['width'], frame['height'], 4, path.read_bytes())
+    diagnostic = run / 'diagnostic'
+    command = ['node', str(CHECKER), '--case', 'route-diagnostic', '--cook', str(COOK),
+               '--web-root', str(WEB), '--assets-source', str(source), '--output', str(diagnostic)]
+    with (run / 'diagnostic.log').open('w') as log:
+        if bounded(locked_capture('chrome', command), log, 120, cwd=REPO):
+            raise Failure('Chrome diagnostic control failed')
+    phases = json.loads((diagnostic / 'run.json').read_text())['results'][0]['sky']['phases']
+    report = {'builds': builds, 'cooked_root': root, 'encoding': 'submitted 8-bit sRGB',
+              'sources': {'mac-apple': 'EDR at headroom 1, converted from float to sRGB',
+                          'mac-portable': 'SDR at headroom 1', 'chrome': 'SDR'},
+              'thresholds': thresholds, 'pairs': {}, 'controls': {}, 'failures': []}
+    verify_diagnostic_poses({phase['name']: phase for phase in phases}, stops, report)
+    grids = {name: records[0] for name, records in captured.items()}
+    grids['chrome'] = browser
+    for key in ROUTE:
+        parity = report['pairs'][key] = {
+            f'{left} vs {right}': difference(grids[left][key], grids[right][key])
+            for left, right in itertools.combinations(grids, 2)}
+        for pair, values in parity.items():
+            if any(value > limit for value, limit in zip(values, thresholds)):
+                report['failures'].append(f'{key}: {pair} exceeded the fixed thresholds')
+        controls = report['controls'][key] = {'empty': difference(empty[key], grids['mac-portable'][key])}
+        if key in DIAGNOSTIC_STOPS:
+            fallback = grid(diagnostic / f'route-diagnostic-{key}.png')
+            controls['diagnostic'] = difference(fallback, grids['mac-portable'][key])
+        if key == 'noon':
+            controls['retinted'] = difference(texture[key], grids['mac-portable'][key])
+    hypothetical = [max(1, 3 * max(pair[index] for stop in report['pairs'].values() for pair in stop.values()))
+                    for index in range(3)]
+    report['thresholds_if_recalibrated'] = hypothetical
+    for row in report['controls'].values():
+        row['fails_if_recalibrated'] = {
+            name: any(value >= limit * CONTROL_RATIO if name == 'diagnostic' else value > limit
+                      for value, limit in zip(values, hypothetical))
+            for name, values in row.items()}
+    for key, row in report['controls'].items():
+        for name in ('empty', 'retinted', 'diagnostic'):
+            if name not in row:
+                continue
+            separated = any(value >= limit * CONTROL_RATIO if name == 'diagnostic' else value > limit
+                            for value, limit in zip(row[name], thresholds))
+            if not separated:
+                report['failures'].append(f'{key}: {name} control failed to separate')
+    write_json(run / 'run.json', report)
+    if report['failures']:
+        raise Failure(f'{", ".join(report["failures"])}; see {run / "run.json"}')
+    raise Failure(f'no accepted three-row baseline; compare receipt: {run / "run.json"}')
+
+
+def exit_clauses(args, rows):
+    web = args.target == 'chrome-webgpu'
+    run = new_run(f'exit-clauses-{args.target}')
+    print(f'exit clauses: {run}', flush=True)
+    build(run, web=web, creation_counters=not web)
+    builds = identities(web=web, built=True)
+    if not web:
+        report = {'builds': builds, 'target': args.target, 'rows': {}}
+        for name in ('mac-apple', 'mac-portable'):
+            output = run / name
+            output.mkdir()
+            source = copy_source(output, exit_assets=EXIT_SOURCE)
+            watcher, _ = watch(output, source, serve=False)
+            try:
+                presets = mac_exit_controls(output, output / 'store', rows[name], route(), edit_source=source)
+            finally:
+                stop_process(watcher)
+            write_json(output / 'presets.json', presets)
+            report['rows'][name] = json.loads((output / 'clauses.json').read_text())
+        write_json(run / 'run.json', report)
+        print(f'PASS: {run / "run.json"}')
+        return
+    source = copy_source(run, exit_assets=EXIT_SOURCE)
+    row = rows['chrome']
+    output = run / 'chrome'
+    command = ['node', str(CHECKER), '--case', 'exit-clauses', '--cook', str(COOK), '--web-root', str(WEB),
+               '--assets-source', str(source), '--output', str(output)]
+    env = dict(os.environ, THRUM_SHOWCASE_EXIT_QUERY=urllib.parse.urlencode(row['select']))
+    with (run / 'chrome.log').open('w') as log:
+        if bounded(command, log, 180, cwd=REPO, env=env):
+            raise Failure(f'Chrome exit clauses failed; see {run / "chrome.log"}')
+    result, = json.loads((output / 'run.json').read_text())['results']
+    if result['actualWasmSha256'] != builds['wasm_sha256'] or result['exit']['selections'] != row['expect']:
+        raise Failure('Chrome exit clauses ran another build or resolved different selections')
+    write_json(run / 'run.json', {'builds': builds, 'target': args.target, **result['exit']})
+    print(f'PASS: {run / "run.json"}')
+
+
+def exit_frames(args):
+    import showcase_frames
+    from apple_governor_proof import awake_display
+
+    rows = exit_rows()
+    web = args.target == 'chrome-webgpu'
+    run = new_run(f'exit-frames-{args.target}')
+    print(f'exit frame records: {run}', flush=True)
+    build(run, web=web, creation_counters=not web)
+    builds = identities(web=web, built=True)
+    source = copy_source(run, exit_assets=EXIT_SOURCE)
+    root = json.loads(EXIT_FLYTHROUGH.read_text())['cooked_root']
+    store = cook_exit(run, source, root)
+    report = {'builds': builds, 'target': args.target, 'rows': {}}
+    for name in (('chrome',) if web else ('mac-apple', 'mac-portable')):
+        row = rows[name]
+        records = report['rows'][name] = {}
+        for phase, route_path in (('flythrough', EXIT_FLYTHROUGH), ('day', EXIT_HELD)):
+            output = run / f'{name}-{phase}'
+            if web:
+                command = ['node', 'scripts/capture_v1_browser.mjs', '--mode', 'realtime', '--control', 'off',
+                           '--scene', 'exit', '--overlay', 'off', '--exit-record', phase, '--wasm-receipt', 'on',
+                           '--route-file', str(route_path), '--web-root', str(WEB), '--cook', str(COOK),
+                           '--assets-source', str(source), '--output', str(output)]
+                for key, value in row['select'].items():
+                    command.extend((f'--{key}', value))
+                with awake_display(), output.with_suffix('.log').open('w') as log:
+                    if bounded(command, log, 240, cwd=REPO):
+                        raise Failure(f'{name} {phase}: browser record failed; see {output.with_suffix(".log")}')
+                records[phase] = showcase_frames.chrome_record(output, builds['wasm_sha256'], phase == 'day')
+            else:
+                records[phase] = showcase_frames.mac_window(
+                    output, GAME, native_exit_environment(store, row), route_path, day=phase == 'day')
+            if records[phase]['selections'] != row['expect']:
+                raise Failure(f'{name} {phase}: resolved {records[phase]["selections"]}, expected {row["expect"]}')
+            write_json(output / 'record.json', records[phase])
+    write_json(run / 'run.json', report)
+    print(f'PASS: {run / "run.json"}')
 
 
 def store_root(store):
@@ -390,6 +801,12 @@ def coverage(length, cells):
 
 def grid(path, columns=32, rows=18, crop=None):
     width, height, bpp, pixels = read_ppm(path) if str(path).endswith('.ppm') else read_png(path)
+    return pixel_grid(path, width, height, bpp, pixels, columns, rows, crop)
+
+
+def pixel_grid(path, width, height, bpp, pixels, columns=32, rows=18, crop=None):
+    if len(pixels) != width * height * bpp:
+        raise Failure(f'{path}: pixel bytes differ from {width}x{height}x{bpp}')
     x0, y0, x1, y1 = crop or (0, 0, width, height)
     if not (0 <= x0 < x1 <= width and 0 <= y0 < y1 <= height):
         raise Failure(f'{path}: crop {crop} outside {width}x{height}')
@@ -1473,6 +1890,14 @@ def main():
     fixed.add_argument('--no-build', action='store_true', help='use an existing native build for diagnostics')
     motion_command = commands.add_parser('motion', help='record paired real-time exit motion tripwires')
     motion_command.add_argument('--check', action='store_true', help='check the retained record without building')
+    exit_command = commands.add_parser('exit', help='run the exit scene checks')
+    exit_mode = exit_command.add_mutually_exclusive_group(required=True)
+    exit_mode.add_argument('--controls', action='store_true', help='check the exit controls and presets')
+    exit_mode.add_argument('--clauses', action='store_true', help='check the exit time, content and profiler clauses')
+    exit_mode.add_argument('--compare', action='store_true', help='compare the three submitted exit rows')
+    exit_command.add_argument('--target', choices=['mac-metal', 'chrome-webgpu'])
+    frames_command = commands.add_parser('frames', help='record whole exit frames with capture off')
+    frames_command.add_argument('--target', required=True, choices=['mac-metal', 'chrome-webgpu'])
     for name in ('mac', 'chrome', 'check', 'startup', 'moving', 'culling', 'reconstruction'):
         command = commands.add_parser(name)
         command.add_argument('--no-build', action='store_true', help='use the existing release and web builds')
@@ -1502,11 +1927,14 @@ def main():
     commands.choices['startup'].add_argument('--runs', type=int, default=5, help='fresh Chrome launches (default 5)')
     commands.choices['chrome'].add_argument('--no-open', action='store_true', help='print the URL instead of opening Chrome')
     args = parser.parse_args()
+    if args.command == 'exit' and bool(args.target) != args.clauses:
+        parser.error('exit --clauses requires --target')
     # A terminated launcher stops its watcher, servers and game the same way Ctrl-C does.
     signal.signal(signal.SIGTERM, lambda *_: (_ for _ in ()).throw(KeyboardInterrupt))
     try:
         {'mac': mac, 'chrome': chrome, 'check': check, 'startup': startup, 'moving': moving, 'culling': culling,
-         'reconstruction': reconstruction, 'layout': layout, 'ticks': ticks, 'motion': motion}[args.command](args)
+         'reconstruction': reconstruction, 'layout': layout, 'ticks': ticks, 'motion': motion,
+         'exit': exit_showcase, 'frames': exit_frames}[args.command](args)
     except (Failure, OSError, ValueError, KeyError, TypeError, StopIteration) as error:
         print(f'FAIL: {error}', file=sys.stderr)
         raise SystemExit(1)

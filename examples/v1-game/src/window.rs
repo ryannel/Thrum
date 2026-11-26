@@ -265,6 +265,13 @@ pub fn run_window(
     let route_start = if transition
         .as_ref()
         .is_some_and(|proof| proof.arm == thrum_app::TransitionArm::Fullscreen)
+        || (matches!(
+            setup,
+            Ok(crate::GameSetup {
+                content: crate::GameContent::Exit,
+                ..
+            })
+        ) && std::env::var_os("THRUM_SHOWCASE_ROUTE_START_PAUSED").is_some())
     {
         RouteStart::Paused
     } else {
@@ -297,6 +304,8 @@ pub fn run_window(
             cloud_capture: false,
             #[cfg(feature = "proving")]
             scene: None,
+            #[cfg(feature = "proving")]
+            exit_content: None,
             hardware,
         }))
     };
@@ -365,6 +374,8 @@ struct WindowGame {
     cloud_capture: bool,
     #[cfg(feature = "proving")]
     scene: Option<SceneCapture>,
+    #[cfg(feature = "proving")]
+    exit_content: Option<ExitContentReport>,
     hardware: Vec<HardwareRequest>,
 }
 
@@ -392,6 +403,41 @@ struct SceneCapture {
     #[cfg(feature = "draw-probe")]
     omit: Option<usize>,
     content: Option<std::sync::Arc<std::sync::Mutex<thrum_asset_gpu::CookedStats>>>,
+}
+
+#[cfg(feature = "proving")]
+struct ExitContentReport {
+    stats: std::sync::Arc<std::sync::Mutex<thrum_asset_gpu::CookedStats>>,
+    output: std::path::PathBuf,
+    last_generation: std::cell::Cell<Option<u64>>,
+}
+
+#[cfg(feature = "proving")]
+impl ExitContentReport {
+    fn observe(&self) {
+        let Ok(stats) = self.stats.lock() else { return };
+        let Some(generation) = stats.drawn else {
+            return;
+        };
+        if self.last_generation.get() == Some(generation) {
+            return;
+        }
+        let row = serde_json::json!({
+            "generation": generation,
+            "device_generation": stats.drawn_device_generation,
+            "submitted_frames": stats.submitted_frames,
+            "swaps": stats.swaps.len(),
+            "errors": stats.errors,
+        });
+        drop(stats);
+        let temporary = self.output.with_extension("partial");
+        if std::fs::write(&temporary, row.to_string())
+            .and_then(|()| std::fs::rename(&temporary, &self.output))
+            .is_ok()
+        {
+            self.last_generation.set(Some(generation));
+        }
+    }
 }
 
 #[cfg(feature = "proving")]
@@ -441,6 +487,7 @@ fn capture_game_with_route_limit(
         interface_text: None,
         menu: None,
         scene: None,
+        exit_content: None,
         cloud_capture,
         capture_cooked,
         capture_eye: fixed_capture_eye()?,
@@ -489,6 +536,14 @@ impl WindowGame {
 }
 
 impl RuntimeSetup for WindowGame {
+    #[cfg(feature = "proving")]
+    fn frame_edits(&self) -> crate::controls::ControlEdits {
+        if let Some(report) = &self.exit_content {
+            report.observe();
+        }
+        crate::controls::ControlEdits::default()
+    }
+
     #[cfg(feature = "proving")]
     fn status_display(&self) -> bool {
         self.interface_text == Some(crate::InterfaceText::Status)
@@ -644,6 +699,17 @@ impl RuntimeSetup for WindowGame {
         };
         #[cfg(not(feature = "proving"))]
         crate::attach_cooked_scene(&mut host)?;
+        #[cfg(feature = "proving")]
+        if setup.content == crate::GameContent::Exit
+            && let Some(output) = std::env::var_os("THRUM_SHOWCASE_CONTENT_REPORT")
+            && let Some(stats) = content.as_ref()
+        {
+            self.exit_content = Some(ExitContentReport {
+                stats: std::sync::Arc::clone(stats),
+                output: output.into(),
+                last_generation: std::cell::Cell::new(None),
+            });
+        }
         host.finish_preparation();
         #[cfg(feature = "proving")]
         if let Some(eye) = if self.replay_controls {

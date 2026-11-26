@@ -917,6 +917,83 @@ impl BrowserGame {
         self.page.shell.enable_governor()
     }
 
+    /// Selections observed on the running exit scene's device and frame host.
+    #[cfg(feature = "proving")]
+    #[must_use]
+    pub fn exit_selections(&self) -> Option<String> {
+        if self.content != crate::GameContent::Exit {
+            return None;
+        }
+        let shell = &self.page.shell;
+        let host = shell.host();
+        let recipe = host.device_capabilities().recipe().ok()?;
+        let surface = shell.status().format;
+        let display = match surface {
+            wgpu::TextureFormat::Rgba16Float => "Edr",
+            wgpu::TextureFormat::Bgra8Unorm
+            | wgpu::TextureFormat::Bgra8UnormSrgb
+            | wgpu::TextureFormat::Rgba8Unorm
+            | wgpu::TextureFormat::Rgba8UnormSrgb => "Sdr",
+            _ => return None,
+        };
+        Some(
+            serde_json::json!({
+                "recipe": format!("{recipe:?}"),
+                "reconstruction": format!("{:?}", host.reconstruction()),
+                "display": display,
+                "governor": host.governor_frame().is_some(),
+                "culling": format!("{:?}", host.camera_culling()),
+            })
+            .to_string(),
+        )
+    }
+
+    /// Sweep a full solar day on the held exit route.
+    /// # Errors
+    /// Returns an inactive exit scene or a tick range outside the route proof budget.
+    #[cfg(feature = "proving")]
+    pub fn begin_exit_solar_sweep(&mut self, first: u32, last: u32) -> Result<(), JsValue> {
+        if self.content != crate::GameContent::Exit || first >= last || last > 1800 {
+            return Err(js_error("invalid exit scene solar sweep"));
+        }
+        self.page.shell.source_mut().solar_sweep =
+            Some(([u64::from(first), u64::from(last)], [0.0, 24.0]));
+        Ok(())
+    }
+
+    /// Copy completed exit frames before releasing timings shared with the report history.
+    #[cfg(feature = "proving")]
+    pub fn drain_exit_frame_timings(&mut self) -> String {
+        let shell = &mut self.page.shell;
+        let mut rows = Vec::new();
+        let mut last_tick = 0;
+        for sample in shell.samples() {
+            rows.push(serde_json::json!({
+                "submission": sample.submission_order, "tick": sample.tick,
+                "presented": sample.surface_presented, "observation_ns": sample.observation.as_nanos(),
+                "callback_cpu_ns": sample.wall.as_nanos(),
+                "gpu_pass_ns": sample.gpu_pass_ns.as_ref().map(thrum_render::timing::SceneGpuTimings::values),
+                "gpu_present_ns": sample.gpu_present_ns,
+                "timing_requested": sample.timing_requested, "timing_fault": sample.timing_fault,
+            }));
+            last_tick = last_tick.max(sample.tick);
+        }
+        if !rows.is_empty() {
+            shell.discard_report_samples_before(last_tick + 1);
+        }
+        serde_json::json!(rows).to_string()
+    }
+
+    /// Request the browser's available timestamp queries during an exit frame record.
+    #[cfg(feature = "proving")]
+    pub fn enable_exit_frame_timings(&mut self) {
+        use thrum_app::Game as _;
+
+        self.page
+            .shell
+            .update_profiler(self.page.game.controls_mut(), true);
+    }
+
     /// Route identity as JSON: counters, solar hours and retained samples from `from_tick`.
     #[must_use]
     pub fn route_report(&self, from_tick: f64) -> String {

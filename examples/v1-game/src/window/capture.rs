@@ -1735,7 +1735,7 @@ pub(super) fn prepare_route(
         .scene_camera()
         .ok_or("routed capture needs the cooked valley camera")?;
     let tick_hz = thrum_core::ClockConfig::default().tick_hz.get();
-    let route = if cloud_capture {
+    let route = if cloud_capture || crate::selected_setup()?.content == crate::GameContent::Exit {
         crate::CameraRoute::parse_long_capture(text, camera, tick_hz)
             .map_err(|error| error.to_string())
     } else {
