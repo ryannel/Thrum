@@ -78,22 +78,26 @@ export async function qualifyInterfaceStatus({ cdp, origin, fontOrigin, output, 
       if (costs) {
         await game.invoke('document.querySelector("canvas").style.cssText = "width:960px;height:540px";game.set_status_cost_workload();');
         const layout = await game.invoke('return JSON.parse(game.status_layout_costs());');
-        let previous;
         const samples = [];
         const report = () => game.invoke('game.route_slot_ready();return JSON.parse(game.status_cost_report());');
         for (let i = 0; i < 180 && samples.length < 40; i++) {
-          const prior = (await report()).frame?.submission;
-          await game.invoke('window.stepStatusFrame();');
+          // A resize, unavailable canvas texture, or occupied frame slot can
+          // leave a callback without a presentation. Keep driving the page
+          // until it presents, then stop admitting work while its timing retires.
+          const before = await waitFor(() => game.invoke(`
+            if (!game.route_slot_ready()) return null;
+            const before = JSON.parse(game.status_cost_report());
+            const presented = game.presented();
+            window.stepStatusFrame();
+            return game.presented() > presented ? before : null;
+          `), timeout, 'status cost frame presentation');
           const arm = await waitFor(async () => {
             const newest = await report();
-            return newest.frame && newest.frame.submission !== prior && newest;
+            return newest.frame?.submission > (before.frame?.submission ?? -1) && newest;
           }, timeout, 'status cost frame retirement');
-          if (arm.frame.stamp !== dpr || !arm.counts) continue;
-          if (previous) {
-            const [layouts, lists, rows] = arm.counts.map((count, index) => count - previous.counts[index]);
-            samples.push({ ...arm.frame, layouts, lists, rows });
-          }
-          previous = arm;
+          if (arm.frame.stamp !== dpr || !before.counts || !arm.counts) continue;
+          const [layouts, lists, rows] = arm.counts.map((count, index) => count - before.counts[index]);
+          samples.push({ ...arm.frame, layouts, lists, rows });
         }
         assert.equal(samples.length, 40);
         const record = { target: 'chrome-webgpu', commit, build, layout, samples: samples.slice(8),

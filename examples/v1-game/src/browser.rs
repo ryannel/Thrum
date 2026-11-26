@@ -160,7 +160,13 @@ impl BrowserGame {
             .source()
             .status_stats()
             .map(|s| [s.layouts, s.lists, s.rows]);
-        let frame = self.page.shell.samples().last().and_then(|frame| {
+        let latest_presented = self
+            .page
+            .shell
+            .samples()
+            .iter()
+            .rfind(|frame| frame.surface_presented);
+        let frame = latest_presented.and_then(|frame| {
             let interface = frame.interface?;
             let timings = frame.gpu_pass_ns.as_ref()?;
             Some(serde_json::json!({
