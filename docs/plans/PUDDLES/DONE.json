@@ -419,7 +419,7 @@
     {
       "id": "WP4",
       "name": "Rain rings every water it falls on, the puddles, the lake and the sea, more and rougher as it grows and not at all under the roof, and the rings run out when the rain stops",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -520,15 +520,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/PUDDLES/WP4/footprint-delivery.md#steady-rain-disc-accuracy",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/PUDDLES/WP4-review.md"
-        }
-      ],
-      "findings": [
-        {
-          "name": "Rain footprint heights exceed the stated disc-average tolerance",
-          "item": "WP4.13",
-          "repeat": false
         }
       ]
     },
