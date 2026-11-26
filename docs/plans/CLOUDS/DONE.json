@@ -1241,8 +1241,8 @@
           "statement": "Coverage, cloud type, wind speed and direction, time of day, the time-lapse rate and an internal-field overlay are typed controls with the same keys, labels, units and ranges on the Mac panel and the Chrome page. A parameter file applies them, and the four presets apply on both with nothing refused.",
           "check": "cargo test --locked --offline -p v1-game --test clouds_controls",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP9/controls-metal-current.log",
           "verdict": "",
           "review": ""
         },
@@ -1252,8 +1252,8 @@
           "check": "node scripts/check_v1_browser.mjs --case clouds-controls",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP9/chrome-controls-run.json",
           "verdict": "",
           "review": ""
         },
@@ -1262,8 +1262,8 @@
           "statement": "Each control, moved while the scene runs, changes the sky with no pop, rebuild or restart.",
           "inspect": "Capture `realtime` sequences on the Mac, one for each control swept across its range in about 20 seconds. Judge consecutive frames at 1x.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP9/control-sweeps.json",
           "verdict": "",
           "review": ""
         },
@@ -1272,8 +1272,8 @@
           "statement": "The overlay shows the weather map's coverage, type, top and age, the placed slots, the Sun-path optical depth and the layer's refresh age, on the Mac and in Chrome. Turning it off restores the sky exactly.",
           "inspect": "Capture `fixed` stills of each overlay under the fair preset on both targets. Judge that each shows the field it names, where the sky and the ground show its effect.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP9/overlay-restoration.json",
           "verdict": "",
           "review": ""
         },
@@ -1283,7 +1283,7 @@
           "inspect": "Capture `realtime` sequences with temporal sampling selected: a fast pan under the broken preset at a 10\u00b0 Sun, a 40 m walk, a 60x time-lapse, a preset change, a cut and a profile change. Judge consecutive frames at 1x, whole and in native-size crops of far clouds, of a near cloud's edge and of a ridge against cloud.",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP9/metal/motion",
           "verdict": "",
           "review": ""
         },
@@ -1293,7 +1293,7 @@
           "inspect": "Capture the same `realtime` sequences in Chrome. Judge them by WP9.5's list.",
           "target": "chrome-webgpu",
           "builder_result": "open",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP9/chrome/motion",
           "verdict": "",
           "review": ""
         },
@@ -1315,8 +1315,8 @@
           "check": "python3 scripts/cloud_cost.py check --scene range",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP9/range-replay.json",
           "verdict": "",
           "review": ""
         }

@@ -158,6 +158,7 @@ fn variant(products: &EnvironmentProducts, old: &str, replacement: &str) -> Envi
         layout: products.layout.clone(),
         shader_source: products.shader_source.replace(old, replacement),
         groups: products.groups.clone(),
+        exposure: products.exposure.clone(),
     }
 }
 
@@ -679,6 +680,7 @@ fn metal_h4_filtered_decode_rejects_each_wrong_lookup_on_every_known_field_query
                 layout: products.layout.clone(),
                 shader_source: nearest,
                 groups: products.groups.clone(),
+                exposure: products.exposure.clone(),
             },
         ];
         for (kind, substitute) in wrong.iter().enumerate() {

@@ -3128,6 +3128,13 @@
         "device": "The latest 1440p portable Metal series measured 3.78 ms Off, 22.91 ms with Sky and 24.61 ms with World light on the Apple M3 Max. The WP7 overcast reference measured 35.60 ms. The record holds named timings and investigations for all triggered comparisons.",
         "record": "../../.orchestrate/evidence/CLOUDS/WP8-rework/README.md"
       },
+      "weather_controls_evidence": {
+        "implementation": "CLOUDS WP9 adds shared typed weather controls, preset files, a field overlay and discoverable runtime knobs for the sky without Ground. Weather edits enter the authoritative tick. The field overlay reads the prepared GPU products.",
+        "correctness": "Mac and Chrome accepted all four presets and the parameter file. The Metal test exercised all eleven available sky knobs with unchanged weather columns and no GPU creations. The ground band and medium coefficients await WP14 and their cadence knobs are assigned to WP16.7.",
+        "visuals": "The fair-preset fixed overlay series on Metal and Chrome restored the ordinary sky byte for byte. A short streak at the right edge of the low-Sun pan under TAAU leaves motion unqualified.",
+        "device": "The loaded 1440p portable Metal replay measured 5.29 to 5.45 ms with clouds absent and 42.2 to 511.1 ms across the eight library and World light arms. Earlier views and tripwire investigations are retained alongside.",
+        "record": "../../.orchestrate/evidence/CLOUDS/WP9/README.md"
+      },
       "name": "Cloud fields and projections",
       "scope": "selectable",
       "design": "modules/ENVIRONMENT.md",

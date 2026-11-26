@@ -266,6 +266,7 @@ fn furnace(
                 layout: products.layout.clone(),
                 shader_source: products.shader_source.clone(),
                 groups: products.groups.clone(),
+                exposure: products.exposure.clone(),
             };
             write!(
                 consumer.shader_source,

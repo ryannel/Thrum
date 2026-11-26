@@ -610,3 +610,12 @@
   drew with zero WGSL translations. Both native recipes matched all five submitted checkpoints
   byte for byte, and all twelve launch runs and the Chrome shipping check passed.
   [Target evidence](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP10/lifetime-fix/README.md)
+
+### CLOUDS WP9 fast-pan observation
+
+A 95° elapsed pan under the broken preset at a 10° Sun shows short horizontal
+streaks at the newly revealed right edge with portable TAAU on Mac and Chrome.
+A Metal take with TAAU off at closely matched yaw retains more local detail in
+that region. Both cloud histories reset for one frame at a cut and at the layer
+profile change. The captures do not isolate the cloud motion and reactive inputs
+from the reconstructor's response. [Paired Metal crops and target takes](../../../.orchestrate/evidence/CLOUDS/WP9/README.md)

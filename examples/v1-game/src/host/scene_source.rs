@@ -379,6 +379,7 @@ pub struct GameScene {
     #[cfg(feature = "proving")]
     pub(super) sheet_stats: Option<std::sync::Arc<std::sync::Mutex<thrum_asset_gpu::CookedStats>>>,
     pub(super) cloud_input: Option<thrum_clouds::WeatherInput>,
+    #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
     pub(super) weather_edits: Option<super::WeatherEdits>,
     pub(super) cloud_sky: Option<thrum_clouds::SkyProfile>,
     pub(super) cloud_shapes: Option<crate::PlacedSky>,
@@ -592,6 +593,7 @@ impl GameScene {
             #[cfg(feature = "proving")]
             sheet_stats: None,
             cloud_input: None,
+            #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
             weather_edits: None,
             cloud_sky: None,
             cloud_shapes: None,
@@ -1251,6 +1253,7 @@ mod tests {
             #[cfg(feature = "proving")]
             sheet_stats: None,
             cloud_input: None,
+            #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
             weather_edits: None,
             cloud_sky: None,
             cloud_shapes: None,

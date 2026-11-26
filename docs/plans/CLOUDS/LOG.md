@@ -871,3 +871,19 @@ three light levels. In the cooked valley's realtime sunset, Sky and World light
 reach the same exposure and identical endpoint pixels, with adaptation inactive
 throughout both runs.
 [Metal sunset and coverage evidence](../../../.orchestrate/evidence/CLOUDS/WP8/clear-exposure/README.md)
+
+## WP9 Weather controls and sky motion
+
+The native panel, Chrome and parameter files share a typed control declaration.
+Weather targets enter through the authoritative tick. The Internal field overlay
+reads the prepared weather, placement, Sun-path and layer fields. At the same
+held tick the sky returned exactly after switching the overlay off on both
+targets. The 1440p Metal record pairs all four presets at noon and a 10° Sun
+with clouds absent and documents the triggered cost comparisons.
+
+Both ends of eleven available sky knobs passed on Metal with the same
+authoritative state and byte-identical weather columns, and without creating GPU
+resources. WP9.7 also includes two cadences for cloud Ground, whose producers
+belong to WP14. WP16.7 owns their knob proof. The low-Sun TAAU pan also shows a
+short horizontal streak at the revealed edge on both targets. The work stays on
+the builder branch. [Target evidence](../../../.orchestrate/evidence/CLOUDS/WP9/README.md)

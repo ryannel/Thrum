@@ -647,7 +647,9 @@ impl GameSetup {
         }
         let cloud_sky = cloud_sky_profile(setup.clouds, config.render_extent, capabilities);
         let weather = clouded_weather(setup, shapes.as_ref())?;
-        let weather_edits = weather.as_ref().map(|_| WeatherEdits::default());
+        let weather_edits = (cfg!(any(target_os = "macos", target_arch = "wasm32"))
+            && weather.is_some())
+        .then(WeatherEdits::default);
         let world = GameWorld(WorldPort::Inline(Box::new(
             WorldDriver::for_setup(&setup, weather, weather_edits.clone())
                 .map_err(FrameError::World)?,
@@ -659,7 +661,10 @@ impl GameSetup {
         let cloud_input = shade.as_ref().map(thrum_clouds::Shade::input);
         let mut source = GameScene::new(setup);
         source.cloud_input = cloud_input;
-        source.weather_edits = weather_edits;
+        #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+        {
+            source.weather_edits = weather_edits;
+        }
         source.cloud_sky = cloud_sky;
         source.cloud_shapes.clone_from(&shapes);
         source.cooked_rows = rows;
@@ -736,6 +741,7 @@ impl WeatherEdits {
     }
 }
 
+#[cfg(any(target_os = "macos", target_arch = "wasm32"))]
 impl GameSetup {
     pub(crate) fn game_controls(
         self,
@@ -747,6 +753,7 @@ impl GameSetup {
     }
 }
 
+#[cfg(any(target_os = "macos", target_arch = "wasm32"))]
 pub(crate) fn apply_cloud_edits(
     runtime: &Runtime,
     edits: crate::controls::CloudEdits,
@@ -767,6 +774,7 @@ pub(crate) fn apply_cloud_edits(
 }
 
 /// Apply live solar-time edits continuously in cloud-enabled scenes.
+#[cfg(any(target_os = "macos", target_arch = "wasm32"))]
 pub(crate) fn edit_solar_time(runtime: &mut Runtime, fraction: f32) -> Result<(), String> {
     if runtime.source().cloud_input.is_none() {
         return set_time_of_day(runtime, fraction);
