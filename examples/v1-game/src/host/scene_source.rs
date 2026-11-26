@@ -546,9 +546,9 @@ impl GameScene {
     }
 
     #[cfg(all(feature = "proving", target_os = "macos"))]
-    pub(crate) fn hold_status_capture(&mut self, tick: Option<u64>, insets: [f64; 4]) {
+    pub(crate) fn hold_status_capture(&mut self, status: crate::StatusCapture) {
         if let Some(card) = &mut self.font_card {
-            card.hold_status_capture(tick, insets);
+            card.hold_status_capture(status);
         }
     }
 

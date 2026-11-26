@@ -2,6 +2,29 @@ use super::{
     Anchor, Box2, NodeKind, PaintInputs, SizeRule, Tree, TreeError, Viewport, nonnegative,
 };
 
+#[derive(Clone, Copy)]
+enum ShareUnit {
+    Linear { unit: f64, largest_weight: f64 },
+    Logarithmic(f64),
+}
+
+impl ShareUnit {
+    const ZERO: Self = Self::Linear {
+        unit: 0.0,
+        largest_weight: 1.0,
+    };
+
+    fn length(self, weight: f64) -> f64 {
+        match self {
+            Self::Linear {
+                unit,
+                largest_weight,
+            } => unit * (weight / largest_weight),
+            Self::Logarithmic(log_unit) => (log_unit + weight.ln()).exp(),
+        }
+    }
+}
+
 impl Tree {
     pub(super) fn layout(
         &mut self,
@@ -120,10 +143,10 @@ impl Tree {
             } => (flow.index() == axis, gap, Some(align)),
             _ => (false, 0.0, None),
         };
-        let (weight_unit, weight_normalizer, mut deficit) = if stack {
+        let (share_unit, mut deficit) = if stack {
             self.share_unit(parent, axis, length, gap)
         } else {
-            (length, 1.0, 0.0)
+            (ShareUnit::ZERO, 0.0)
         };
         let mut cursor = start;
         let end = start + length;
@@ -145,7 +168,7 @@ impl Tree {
                 SizeRule::Fixed(_) | SizeRule::Fit => child.natural[axis],
                 SizeRule::Fraction(fraction) => size.constrained(length * fraction),
                 SizeRule::Share(weight) => size.constrained(if stack {
-                    weight_unit * (weight / weight_normalizer)
+                    share_unit.length(weight)
                 } else {
                     length
                 }),
@@ -182,7 +205,7 @@ impl Tree {
         }
     }
 
-    fn share_unit(&self, parent: usize, axis: usize, length: f64, gap: f64) -> (f64, f64, f64) {
+    fn share_unit(&self, parent: usize, axis: usize, length: f64, gap: f64) -> (ShareUnit, f64) {
         let children = || {
             self.nodes[parent]
                 .children
@@ -193,6 +216,7 @@ impl Tree {
         let mut fixed = -gap;
         let mut least = 0.0;
         let mut largest_weight: f64 = 0.0;
+        let mut smallest_weight = f64::INFINITY;
         for child in children() {
             let size = child.node.size[axis];
             fixed += gap;
@@ -200,6 +224,7 @@ impl Tree {
                 SizeRule::Share(weight) => {
                     least += size.least;
                     largest_weight = largest_weight.max(weight);
+                    smallest_weight = smallest_weight.min(weight);
                 }
                 SizeRule::Fraction(fraction) => fixed += size.constrained(length * fraction),
                 _ => fixed += child.natural[axis],
@@ -207,40 +232,50 @@ impl Tree {
         }
         let remaining = length - fixed;
         if remaining <= least || largest_weight == 0.0 {
-            return (0.0, 1.0, (least - remaining).max(0.0));
+            return (ShareUnit::ZERO, (least - remaining).max(0.0));
         }
         let shares = || {
             children().filter_map(|child| {
                 let size = child.node.size[axis];
                 match size.rule {
-                    SizeRule::Share(weight) => Some((size, weight / largest_weight)),
+                    SizeRule::Share(weight) => Some((size, weight)),
                     _ => None,
                 }
             })
         };
-        let unit = remaining / shares().map(|(_, weight)| weight).sum::<f64>();
+        let unit = remaining
+            / shares()
+                .map(|(_, weight)| weight / largest_weight)
+                .sum::<f64>();
+        let linear = ShareUnit::Linear {
+            unit,
+            largest_weight,
+        };
         if shares().all(|(size, weight)| {
-            let share = unit * weight;
+            let share = linear.length(weight);
             share >= size.least && share <= size.most
         }) {
-            return (unit, largest_weight, 0.0);
+            return (linear, 0.0);
         }
         // Solve sum(clamp(weight * unit, least, most)) == remaining. A capped
         // share leaves space to the other shares without making order matter.
-        let mut low = 0.0;
-        let mut high = remaining;
-        for _ in 0..48 {
-            let unit = f64::midpoint(low, high);
+        // At the upper bound even the lightest child can claim the remainder.
+        // Search in log space to span the full range of positive finite weights.
+        let mut low = f64::from_bits(1).ln() - largest_weight.ln() - 1.0;
+        let mut high = remaining.ln() - smallest_weight.ln();
+        for _ in 0..56 {
+            let middle = f64::midpoint(low, high);
+            let unit = ShareUnit::Logarithmic(middle);
             let used: f64 = shares()
-                .map(|(size, weight)| size.constrained(unit * weight))
+                .map(|(size, weight)| size.constrained(unit.length(weight)))
                 .sum();
             if used > remaining {
-                high = unit;
+                high = middle;
             } else {
-                low = unit;
+                low = middle;
             }
         }
-        (low, largest_weight, 0.0)
+        (ShareUnit::Logarithmic(low), 0.0)
     }
 }
 

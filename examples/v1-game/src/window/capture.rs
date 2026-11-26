@@ -856,7 +856,7 @@ async fn record(
         driver
             .host_mut()
             .continuous_source_mut()
-            .hold_status_capture(status.tick, status.insets);
+            .hold_status_capture(status);
     }
     let (preset_requested, preset_accepted) =
         prepare_parameters(&mut driver, scenario, &mode, haze_take, parity_checkpoint)?;

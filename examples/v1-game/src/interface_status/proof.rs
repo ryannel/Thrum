@@ -184,16 +184,28 @@ fn encode(linear: f64) -> u8 {
 /// Compose a fresh status layout independently of the render stage.
 /// # Panics
 /// Panics if the proving assets or viewport cannot draw the complete display.
-#[expect(
-    clippy::cast_possible_truncation,
-    clippy::cast_sign_loss,
-    reason = "the status boxes are clipped to the viewport and snapped to whole pixels"
-)]
 pub fn compose(
     viewport: Viewport,
     tick: u64,
     font: &FontProduct,
     art: &SheetProduct,
+) -> (Reference, [[u32; 2]; 2]) {
+    compose_with(viewport, font, art, |tree| status::update(tree, tick))
+}
+
+/// Compose a fresh status layout with explicitly supplied display values.
+/// # Panics
+/// Panics if the proving assets or viewport cannot draw the complete display.
+#[expect(
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    reason = "the status boxes are clipped to the viewport and snapped to whole pixels"
+)]
+pub fn compose_with(
+    viewport: Viewport,
+    font: &FontProduct,
+    art: &SheetProduct,
+    values: impl FnOnce(&mut thrum_ui::Tree),
 ) -> (Reference, [[u32; 2]; 2]) {
     let mut tree = status::tree(Image {
         sheet: 2,
@@ -201,7 +213,7 @@ pub fn compose(
         texels: art.frame_at(0).expect("health badge").size,
     })
     .expect("fresh status layout");
-    status::update(&mut tree, tick);
+    values(&mut tree);
     let paint = tree
         .frame(
             viewport,

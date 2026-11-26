@@ -50,7 +50,7 @@ struct Layout {
     extent: [u32; 2],
     value: u64,
     paint: PaintList,
-    tree: Option<thrum_ui::Tree>,
+    tree: Option<(crate::interface_status::Appearance, thrum_ui::Tree)>,
 }
 
 impl FontCard {
@@ -140,10 +140,12 @@ impl FontCard {
     }
 
     #[cfg(target_os = "macos")]
-    pub(crate) fn hold_status_capture(&mut self, tick: Option<u64>, insets: [f64; 4]) {
-        self.held_tick = tick;
-        self.insets = insets;
-        self.density = f64::from(self.scale.get());
+    pub(crate) fn hold_status_capture(&mut self, status: crate::StatusCapture) {
+        self.held_tick = status.tick;
+        let scale = f64::from(self.scale.get());
+        self.density = status.density.unwrap_or(scale);
+        // Capture insets are already in interface points.
+        self.insets = status.insets.map(|inset| inset * scale / self.density);
     }
 
     pub(crate) const fn measure_updates(&mut self) {
@@ -155,7 +157,7 @@ impl FontCard {
             .as_ref()?
             .tree
             .as_ref()
-            .map(thrum_ui::Tree::stats)
+            .map(|(_, tree)| tree.stats())
     }
 
     pub(crate) fn paint(&mut self, extent: [u32; 2], tick: u64) -> [Option<PaintList>; 2] {
@@ -265,17 +267,28 @@ impl FontCard {
         if badge.trim != [0; 2] || badge.pivot.into_iter().any(|value| value.abs() > 0.0) {
             return Err("status display badge must use its top-left pivot and full cell".into());
         }
+        let viewport = thrum_ui::Viewport {
+            extent,
+            insets: insets.map(|inset| inset * density / f64::from(fonts.stamp.scale)),
+            scale: fonts.stamp.scale,
+        };
+        let appearance = interface_status::Appearance::for_output(viewport, density);
         let mut tree = cached
             .as_mut()
             .filter(|layout| layout.stamp == fonts.stamp)
             .and_then(|layout| layout.tree.take())
+            .filter(|(cached, _)| *cached == appearance)
+            .map(|(_, tree)| tree)
             .map_or_else(
                 || {
-                    interface_status::tree(thrum_ui::Image {
-                        sheet: 2,
-                        frame: u32::try_from(index).expect("validated sheet count fits u32"),
-                        texels: badge.size,
-                    })
+                    interface_status::tree_with_appearance(
+                        thrum_ui::Image {
+                            sheet: 2,
+                            frame: u32::try_from(index).expect("validated sheet count fits u32"),
+                            texels: badge.size,
+                        },
+                        appearance,
+                    )
                     .map_err(|error| error.to_string())
                 },
                 Ok,
@@ -287,11 +300,7 @@ impl FontCard {
         }
         let paint = tree
             .frame(
-                thrum_ui::Viewport {
-                    extent,
-                    insets: insets.map(|inset| inset * density / f64::from(fonts.stamp.scale)),
-                    scale: fonts.stamp.scale,
-                },
+                viewport,
                 thrum_ui::PaintInputs {
                     stamp: Some(fonts.stamp),
                     fonts: &[thrum_ui::Font {
@@ -307,7 +316,7 @@ impl FontCard {
             extent,
             value: tick,
             paint: paint.clone(),
-            tree: Some(tree),
+            tree: Some((appearance, tree)),
         });
         Ok(paint)
     }

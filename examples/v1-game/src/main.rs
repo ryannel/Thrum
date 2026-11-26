@@ -220,7 +220,19 @@ fn status_capture() -> Result<v1_game::StatusCapture, String> {
         .transpose()
         .map_err(|error| error.to_string())?
         .unwrap_or([0.0; 4]);
-    Ok(v1_game::StatusCapture { tick, insets })
+    let density = std::env::var("THRUM_CAPTURE_STATUS_DENSITY")
+        .ok()
+        .map(|value| value.parse::<f64>())
+        .transpose()
+        .map_err(|error| error.to_string())?;
+    if density.is_some_and(|density| !(1.0..=3.0).contains(&density)) {
+        return Err("status capture display density must be in 1..=3".into());
+    }
+    Ok(v1_game::StatusCapture {
+        tick,
+        insets,
+        density,
+    })
 }
 
 #[cfg(all(target_os = "macos", feature = "proving"))]

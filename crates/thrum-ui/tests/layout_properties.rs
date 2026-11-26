@@ -110,18 +110,24 @@ fn nested_boxes_are_deterministic_contained_and_never_overlap_in_stacks() {
         root.children = (0..2)
             .map(|_| generated(&mut rng, 4, &mut id, root.size))
             .collect();
-        let extent = match index {
-            0 => [320, 320],
-            1 => [3456, 2234],
+        let points = match index {
+            0..=2 => [320, 320],
+            3..=5 => [3456, 2234],
             _ => [320 + rng.get(3137), 320 + rng.get(1915)],
         };
-        let mut viewport = view(extent);
-        viewport.insets = if index < 2 {
+        let scale = 1 + index % 3;
+        let mut viewport = view(points.map(|side| side * scale));
+        viewport.insets = if index <= 5 {
             [64.0; 4]
         } else {
             std::array::from_fn(|_| f64::from(rng.get(65)))
         };
-        viewport.scale = 1 + index % 3;
+        viewport.scale = scale;
+        let logical = viewport.full().size;
+        assert_eq!(logical, points.map(f64::from));
+        if index <= 5 {
+            assert_eq!(viewport.safe().size, logical.map(|side| side - 128.0));
+        }
         let mut a = Tree::new(root.clone()).expect("valid declaration");
         let mut b = Tree::new(root.clone()).expect("same declaration");
         let a_paint = a.frame(viewport, inputs(&fonts)).expect("layout");
@@ -148,7 +154,9 @@ fn random_edits_match_fresh_layout_and_rebuild_only_what_is_dirty() {
         text(1, "00", false),
         fill(2, [25.0, 8.0]),
         fill(3, [10.0; 2]),
+        text(4, "A", true),
     ];
+    root.children[3].size = [Size::fixed(80.0), Size::fixed(24.0)];
     root.children[2].kind = NodeKind::Bar {
         fraction: 0.0,
         track: [0.0, 0.0, 0.0, 1.0],
@@ -176,6 +184,7 @@ fn random_edits_match_fresh_layout_and_rebuild_only_what_is_dirty() {
         let mut fresh = Tree::new(root.clone()).expect("fresh tree");
         let expected = fresh.frame(viewport, inputs(&fonts)).expect("fresh layout");
         assert_eq!(paint.rows, expected.rows);
+        assert!(incremental.elisions().eq(fresh.elisions()));
         verify(&incremental, &fresh, &root, viewport.safe());
 
         let NodeKind::Text(label) = &mut root.children[0].kind else {
@@ -194,6 +203,13 @@ fn random_edits_match_fresh_layout_and_rebuild_only_what_is_dirty() {
             write!(label.value, "{:02}", rng.get(100)).expect("format digits");
         }
         incremental.set_text(1, &label.value);
+        let fixed = ["A", "AB", "A1 A2 A3", "A1 A2 A3 A4 A5"]
+            [usize::try_from(rng.get(4)).expect("valid index")];
+        let NodeKind::Text(label) = &mut root.children[3].kind else {
+            unreachable!()
+        };
+        label.value = fixed.into();
+        incremental.set_text(4, fixed);
         let tint = [
             f32::from(u8::try_from(rng.get(255)).expect("channel")) / 255.0,
             0.2,

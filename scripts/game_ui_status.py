@@ -121,13 +121,20 @@ def validate_costs(record, target):
     samples = record["samples"]
     if len(samples) != 32:
         raise ValueError(f"{target}: missing status frame samples")
+    previous_tick = -1
     for frame in samples:
         for field in ("layouts", "rows", "lists", "upload_bytes", "cpu_ns", "gpu_ns"):
             value = frame[field]
             if not isinstance(value, (float, int)) or not 0 <= value < float("inf"):
                 raise ValueError(f"{target}: missing status frame measurement {field}")
-    if not any(frame["rows"] > 0 and frame["upload_bytes"] > 0 for frame in samples):
-        raise ValueError(f"{target}: status updates never reached the measured frame")
+        tick = frame["tick"]
+        if type(tick) is not int or tick <= previous_tick:
+            raise ValueError(f"{target}: measured status ticks did not advance")
+        if target == "chrome-webgpu" and frame["previous_tick"] != tick - 1:
+            raise ValueError(f"{target}: measured status frame did not advance exactly one tick")
+        if not all(frame[key] > 0 for key in ("lists", "rows", "upload_bytes")):
+            raise ValueError(f"{target}: status update at tick {tick} did not reach paint")
+        previous_tick = tick
 
 
 def costs(root, destination, scratch, revision, environment, target, load, digest):

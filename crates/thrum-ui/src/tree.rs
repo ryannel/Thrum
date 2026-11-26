@@ -517,7 +517,7 @@ impl Tree {
         }
     }
 
-    /// Update a text value. Tabular digit substitutions preserve fitting geometry.
+    /// Update a text value. Only intrinsic sizes can depend on its glyphs.
     pub fn set_text(&mut self, id: NodeId, value: &str) {
         let Some(&index) = self.ids.get(&id) else {
             return;
@@ -526,7 +526,15 @@ impl Tree {
         if let NodeKind::Text(text) = &mut entry.node.kind
             && text.value != value
         {
-            self.layout_dirty |= !(entry.tabular && same_digit_pattern(&text.value, value));
+            let intrinsic = index != 0
+                && !entry.node.full_bleed
+                && entry
+                    .node
+                    .size
+                    .iter()
+                    .any(|size| size.rule == SizeRule::Fit && size.least < size.most);
+            self.layout_dirty |=
+                intrinsic && !(entry.tabular && same_digit_pattern(&text.value, value));
             text.value.clear();
             text.value.push_str(value);
             entry.paint_dirty = true;

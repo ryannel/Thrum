@@ -138,5 +138,28 @@ fn status_fits_point_grid_at_all_three_densities() {
             }
         }
     }
+    for (width, appearance) in [
+        (767, status::Appearance::Standard),
+        (768, status::Appearance::Large),
+        (3456, status::Appearance::Large),
+    ] {
+        let viewport = Viewport {
+            extent: [width, 2234],
+            insets: [64.0; 4],
+            scale: 1,
+        };
+        assert_eq!(status::Appearance::for_output(viewport, 2.0), appearance);
+        let mut tree = status::tree_with_appearance(
+            Image {
+                sheet: 2,
+                frame: 0,
+                texels: badge.size,
+            },
+            appearance,
+        )
+        .expect("density-aware status display");
+        check_extent(&mut tree, inputs, viewport);
+        cases += 1;
+    }
     println!("{cases} extent, inset and scale combinations");
 }

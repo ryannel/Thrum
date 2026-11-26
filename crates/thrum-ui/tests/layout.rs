@@ -59,6 +59,42 @@ fn row_distributes_space_by_weight_and_pins_the_least() {
 }
 
 #[test]
+fn capped_shares_release_space_to_lighter_siblings_in_either_order() {
+    for (heavy, light) in [(3.0, 1.0), (f64::MAX, f64::from_bits(1))] {
+        let mut root = Node::new(
+            0,
+            NodeKind::Stack {
+                axis: Axis::Row,
+                gap: 0.0,
+                align: Anchor::Start,
+            },
+        );
+        root.children = vec![fill(1, [0.0, 10.0]), fill(2, [0.0, 10.0])];
+        root.children[0].size[0] = Size {
+            most: 32.0,
+            ..Size::new(SizeRule::Share(heavy))
+        };
+        root.children[1].size[0] = Size {
+            most: 400.0,
+            ..Size::new(SizeRule::Share(light))
+        };
+        for (heavy_x, light_x) in [(0.0, 32.0), (288.0, 0.0)] {
+            let mut tree = Tree::new(root.clone()).expect("weighted row");
+            tree.frame(view([320, 48]), inputs(&[])).expect("layout");
+            assert_box(&tree, 1, [heavy_x, 0.0], [32.0, 10.0]);
+            assert_box(&tree, 2, [light_x, 0.0], [288.0, 10.0]);
+            assert_eq!(tree.overflows().count(), 0);
+            root.children.reverse();
+        }
+        root.children[1].size[0].most = 64.0;
+        let mut tree = Tree::new(root).expect("both shares capped");
+        tree.frame(view([320, 48]), inputs(&[])).expect("layout");
+        assert_box(&tree, 1, [0.0, 0.0], [32.0, 10.0]);
+        assert_box(&tree, 2, [32.0, 0.0], [64.0, 10.0]);
+    }
+}
+
+#[test]
 fn overlay_anchors_nested_column_and_rejects_circular_fraction() {
     let mut root = Node::new(0, NodeKind::Overlay);
     root.size = [Size::fixed(120.0), Size::fixed(80.0)];

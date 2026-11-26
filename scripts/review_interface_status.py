@@ -54,6 +54,7 @@ def records(directory):
                        "time_ns": round(entry["submit_ms"] * 1e6)}, raw
         return
     hold = manifest["environment"].get("THRUM_CAPTURE_STATUS_TICK")
+    display_density = manifest["environment"].get("THRUM_CAPTURE_STATUS_DENSITY")
     images = runtime["images"]
     report = runtime["writer_result"]["Ok"]
     width, height = runtime["extent"]
@@ -63,20 +64,27 @@ def records(directory):
         paint = entry["interface"]
         if paint["extent_mismatch"] or paint["stamp_mismatch"] or paint["dropped_rows"]:
             raise ValueError("Metal frame had an incomplete paint list")
-        yield {"extent": runtime["extent"], "scale": paint["scale"],
+            yield {"extent": runtime["extent"], "scale": paint["scale"],
+                   "display_density": float(display_density) if display_density else paint["scale"],
                "tick": int(hold) if hold is not None else entry["current_endpoint_tick"],
                "submission": entry["submission_id"],
                "surface_presented": True, "time_ns": entry["submit_ns"]}, raw
 
 
-def edges(extent, scale, insets):
+def edges(extent, scale, insets, display_density):
     width, height = extent
     left, top, right, _bottom = insets
-    inner = width / scale - left - right - 16
-    panel = min(304, inner)
-    x = (left + 8 + (inner - panel) * 0.5) * scale
-    y = (top + 8) * scale
-    return int(x + 0.50000001), int(y + 0.50000001), int(x + panel * scale + 0.50000001), min(height, int(y + 116 * scale + 0.50000001))
+    safe_width = width / scale - left - right
+    size = 2 if scale == 1 and display_density >= 1.5 and safe_width >= 640 else 1
+    inner = safe_width - 16 * size
+    panel = min(304 * size, inner)
+    x = (left + 8 * size + (inner - panel) * 0.5) * scale
+    y = (top + 8 * size) * scale
+    return (
+        (int(x + 0.50000001), int(y + 0.50000001), int(x + panel * scale + 0.50000001),
+         min(height, int(y + 116 * size * scale + 0.50000001))),
+        size * scale,
+    )
 
 
 def crop(raw, extent, bounds):
@@ -105,7 +113,8 @@ def inspect(directory, output, insets):
             raise ValueError("review image had an incomplete status display")
         if rows and entry["submission"] != rows[-1]["submission"] + 1:
             raise ValueError("missing submitted images in the review interval")
-        bounds = edges(entry["extent"], entry["scale"], insets)
+        bounds, s = edges(entry["extent"], entry["scale"], insets,
+                          entry.get("display_density", entry["scale"]))
         x, y, right, bottom = bounds
         width, height = entry["extent"]
         if not 0 <= x < right <= width or not 0 <= y < bottom <= height:
@@ -116,7 +125,6 @@ def inspect(directory, output, insets):
         phase = entry["tick"] % 240
         # Compare the actual colors in the health bar, independently of the labels.
         # The color at its first pixel distinguishes the filled and empty states.
-        s = entry["scale"]
         bar_y = y + 35 * s
         bar_x = x + 10 * s
         green = 0

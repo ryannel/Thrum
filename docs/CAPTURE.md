@@ -177,7 +177,9 @@ Set `THRUM_SCENE=interface`, `THRUM_INTERFACE_TEXT=status` and `THRUM_FONT_STORE
 `tests/fixtures/game-ui/font-source` store on the Mac. The `sprites-status` case records a held checkpoint
 with `--mode fixed` or the moving field with `--mode realtime`. A fixed checkpoint can set
 `THRUM_CAPTURE_STATUS_TICK` to 0, 80 or 120 for a full, one-third or empty health bar. Set
-`THRUM_CAPTURE_STATUS_INSETS` to four point insets in left, top, right and bottom order.
+`THRUM_CAPTURE_STATUS_INSETS` to four interface-point insets in left, top, right and bottom order.
+The Mac target uses display density 2 for its built-in Retina panel. Override the intended presentation
+density with `THRUM_CAPTURE_STATUS_DENSITY` when preparing a capture for another density.
 
 Use `node scripts/capture_v1_browser.mjs --scene sprites-status --mode realtime --dpr 2 --output tmp/status-chrome`
 for the matching Chrome take. Run `python3 scripts/review_interface_status.py <capture> <review-folder>` to

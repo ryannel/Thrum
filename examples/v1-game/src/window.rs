@@ -85,6 +85,8 @@ pub struct StatusCapture {
     pub tick: Option<u64>,
     /// Left, top, right and bottom in interface points.
     pub insets: [f64; 4],
+    /// Density the offscreen output will be presented at.
+    pub density: Option<f64>,
 }
 
 /// Run a declared unattended capture scenario through the ordinary game.

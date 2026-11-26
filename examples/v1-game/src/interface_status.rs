@@ -7,7 +7,7 @@ pub mod proof;
 use thrum_render::sprite::{EmbeddedSheet, NamedSheet, SpriteRect};
 use thrum_ui::{
     Alignment, Anchor, Axis, Elision, Image, Node, NodeKind, Size, SizeRule, Text, TextOptions,
-    Tree, TreeError,
+    Tree, TreeError, Viewport,
 };
 
 const WARM: [f32; 4] = [1.0, 0.77, 0.44, 1.0];
@@ -17,7 +17,8 @@ const MUTED: [f32; 4] = [0.47, 0.66, 0.77, 1.0];
 pub const BAR: u32 = 6;
 /// Identity of the timer in the status tree.
 pub const TIMER: u32 = 7;
-pub(crate) const COUNTS: [u32; 3] = [20, 24, 28];
+/// Identities of the score, gems and wave values in their displayed order.
+pub const COUNTS: [u32; 3] = [20, 24, 28];
 /// Slot of the white tile used for status fills.
 pub const WHITE_TILE: Image = Image {
     sheet: 0,
@@ -85,35 +86,68 @@ pub fn panel_sheet() -> NamedSheet {
     sheet
 }
 
-/// Build the status display from the dimensions of the published health mark.
+/// The status display's authored sizes for the current presentation.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum Appearance {
+    /// Standard panel and text in interface points.
+    #[default]
+    Standard,
+    /// Larger glyph strikes and spacing for a dense display drawing at scale one.
+    Large,
+}
+
+impl Appearance {
+    /// Preserve the display-point reading size when a density-two display uses
+    /// scale one. Use the compact panel if the safe area cannot fit the large one.
+    pub fn for_output(viewport: Viewport, density: f64) -> Self {
+        if viewport.scale == 1 && density >= 1.5 && viewport.safe().size[0] >= 640.0 {
+            Self::Large
+        } else {
+            Self::Standard
+        }
+    }
+}
+
+/// Build the standard status display from the published health mark.
 /// # Errors
 /// Returns invalid node geometry or duplicate stable identity.
 pub fn tree(badge: Image) -> Result<Tree, TreeError> {
+    tree_with_appearance(badge, Appearance::Standard)
+}
+
+/// Build the status display with the selected cooked text sizes and spacing.
+/// # Errors
+/// Returns invalid node geometry or duplicate stable identity.
+pub fn tree_with_appearance(badge: Image, appearance: Appearance) -> Result<Tree, TreeError> {
+    let (size, caption, value) = match appearance {
+        Appearance::Standard => (1.0, 12, 16),
+        Appearance::Large => (2.0, 24, 24),
+    };
     let mut root = Node::new(0, NodeKind::Overlay);
     root.size = [FILL; 2];
-    root.padding = [8.0; 4];
+    root.padding = [8.0 * size; 4];
     let mut panel = Node::new(1, NodeKind::Panel(panel_tiles()));
     panel.size = [
         Size {
-            most: 304.0,
+            most: 304.0 * size,
             ..FILL
         },
-        Size::fixed(116.0),
+        Size::fixed(116.0 * size),
     ];
-    panel.padding = [10.0, 8.0, 10.0, 8.0];
+    panel.padding = [10.0, 8.0, 10.0, 8.0].map(|side| side * size);
     panel.anchor[0] = Anchor::Centre;
-    let mut column = stack(2, Axis::Column, 4.0);
+    let mut column = stack(2, Axis::Column, 4.0 * size);
     column.size = [FILL, FILL];
-    let mut labels = stack(3, Axis::Row, 5.0);
-    labels.size = [FILL, Size::fixed(21.0)];
+    let mut labels = stack(3, Axis::Row, 5.0 * size);
+    labels.size = [FILL, Size::fixed(21.0 * size)];
     let mut icon = Node::new(4, NodeKind::Image(badge));
-    icon.size = badge.texels.map(|side| Size::fixed(f64::from(side)));
-    let mut health = label(5, "HEALTH", 12, WARM, false, Alignment::Left);
+    icon.size = badge.texels.map(|side| Size::fixed(f64::from(side) * size));
+    let mut health = label(5, "HEALTH", caption, WARM, false, Alignment::Left);
     health.size[0] = FILL;
     labels.children = vec![
         icon,
         health,
-        label(TIMER, "00:00", 12, WHITE, true, Alignment::Right),
+        label(TIMER, "00:00", caption, WHITE, true, Alignment::Right),
     ];
     let mut bar = Node::new(
         BAR,
@@ -123,22 +157,22 @@ pub fn tree(badge: Image) -> Result<Tree, TreeError> {
             fill: [0.23, 0.88, 0.51, 1.0],
         },
     );
-    bar.size = [FILL, Size::fixed(6.0)];
-    let mut counters = stack(8, Axis::Row, 6.0);
-    counters.size = [FILL, Size::fixed(64.0)];
+    bar.size = [FILL, Size::fixed(6.0 * size)];
+    let mut counters = stack(8, Axis::Row, 6.0 * size);
+    counters.size = [FILL, Size::fixed(64.0 * size)];
     for (counter, name) in COUNTS.into_iter().zip(["SCORE", "GEMS FOUND", "WAVE"]) {
-        let mut group = stack(counter - 2, Axis::Column, 1.0);
-        group.size = [FILL, Size::fixed(64.0)];
+        let mut group = stack(counter - 2, Axis::Column, size);
+        group.size = [FILL, Size::fixed(64.0 * size)];
         let mut line = Node::new(counter - 1, NodeKind::Fill([0.11, 0.19, 0.24, 1.0]));
-        line.size = [FILL, Size::fixed(1.0)];
-        let mut caption = label(counter + 1, name, 12, MUTED, false, Alignment::Centre);
+        line.size = [FILL, Size::fixed(size)];
+        let mut caption = label(counter + 1, name, caption, MUTED, false, Alignment::Centre);
         if let NodeKind::Text(text) = &mut caption.kind {
             text.options.wrap = true;
             caption.size[0] = FILL;
         }
         group.children = vec![
             line,
-            label(counter, "000", 16, WHITE, true, Alignment::Centre),
+            label(counter, "000", value, WHITE, true, Alignment::Centre),
             caption,
         ];
         counters.children.push(group);
@@ -206,7 +240,8 @@ pub(crate) fn update_values(tree: &mut Tree, tick: u64, every_tick: bool) {
         &format!("{:02}:{:02}", seconds / 60 % 100, seconds % 60),
     );
     let counts = if every_tick {
-        [tick, tick * 3, tick * 7]
+        let value = tick % 1000;
+        [value, value * 3, value * 7]
     } else {
         [tick / 6, tick / 19, 1 + tick / 240]
     };
@@ -218,7 +253,7 @@ pub(crate) fn update_values(tree: &mut Tree, tick: u64, every_tick: bool) {
 /// Measure one layout and one paint build for each requested size, in the
 /// caller's monotonic milliseconds. Geometry and rows are the same on both hosts.
 pub(crate) fn measure_layout(now_ms: impl Fn() -> f64) -> Result<Vec<[f64; 3]>, TreeError> {
-    let view = thrum_ui::Viewport {
+    let view = Viewport {
         extent: [1920, 1080],
         insets: [0.0; 4],
         scale: 2,
@@ -241,7 +276,7 @@ pub(crate) fn measure_layout(now_ms: impl Fn() -> f64) -> Result<Vec<[f64; 3]>, 
         root.children.push(lane);
         let mut tree = Tree::new(root)?;
         for arm in 0..32 {
-            let view = thrum_ui::Viewport {
+            let view = Viewport {
                 extent: [view.extent[0], view.extent[1] + arm],
                 ..view
             };

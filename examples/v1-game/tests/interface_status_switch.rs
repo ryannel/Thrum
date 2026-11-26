@@ -48,6 +48,7 @@ impl Rig {
             cooker.store().root().to_owned().into(),
         ))
         .expect("V1 game with status display");
+        runtime.continuous_source_mut().measure_status_updates();
         runtime.enable_submitted_capture(1).expect("capture");
         Self {
             runtime,
@@ -98,9 +99,33 @@ impl Publication {
             scale: self.scale,
             insets: [0.0; 4],
         };
-        let (reference, region) = proof::compose(view, frame.sample.tick, &self.font, &self.art);
+        let tick = frame.sample.tick;
+        let (reference, region) = proof::compose_with(view, &self.font, &self.art, |tree| {
+            let phase = u32::try_from(tick % 240).expect("cycle fits u32");
+            let remaining = 120_u32.abs_diff(phase);
+            tree.set_fraction(status::BAR, f64::from(remaining) / 120.0);
+            for (id, value) in [status::TIMER]
+                .into_iter()
+                .chain(status::COUNTS)
+                .zip(expected_labels(tick))
+            {
+                tree.set_text(id, &value);
+            }
+        });
         reference.first_difference(&frame.rgba, region)
     }
+}
+
+fn expected_labels(tick: u64) -> [String; 4] {
+    let minutes = (tick % 6000) / 60;
+    let seconds = tick % 60;
+    let counter = |step| format!("{:03}", (tick % 1000) * step % 1000);
+    [
+        format!("{minutes:02}:{seconds:02}"),
+        counter(1),
+        counter(3),
+        counter(7),
+    ]
 }
 
 fn stamp(frame: &SubmittedImage) -> Option<PaintStamp> {
@@ -121,6 +146,7 @@ fn check_transition(
     prior: SubmittedImage,
 ) -> SubmittedImage {
     let mut frame = prior;
+    let first_tick = frame.sample.tick;
     let mut switched = false;
     let mut old_frames = 0;
     let mut new_frames = 0;
@@ -142,8 +168,12 @@ fn check_transition(
             if new_frames == 4 {
                 assert!(old_frames > 0);
                 println!(
-                    "{} → {} at scale {} → {}: {old_frames} old and {new_frames} new submissions",
-                    before.head.generation, after.head.generation, before.scale, after.scale
+                    "{} → {} at scale {} → {}: {old_frames} old and {new_frames} new submissions; ticks {first_tick}–{}, timer and all counters compared on each",
+                    before.head.generation,
+                    after.head.generation,
+                    before.scale,
+                    after.scale,
+                    frame.sample.tick
                 );
                 return frame;
             }
@@ -154,10 +184,17 @@ fn check_transition(
             frame.sample.submission_order + 1,
             "every submitted frame compared"
         );
-        assert!(
-            next.sample.tick > frame.sample.tick,
-            "animated values advance throughout"
+        assert_eq!(
+            next.sample.tick,
+            frame.sample.tick + 1,
+            "every measured status tick advances once"
         );
+        for (before, after) in expected_labels(frame.sample.tick)
+            .into_iter()
+            .zip(expected_labels(next.sample.tick))
+        {
+            assert_ne!(before, after, "every displayed value changes");
+        }
         frame = next;
     }
     panic!("publication did not switch");

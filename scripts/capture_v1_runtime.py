@@ -343,6 +343,8 @@ def run(args):
     else:
         environment.pop('THRUM_CAPTURE_OBSERVER_ONLY', None)
     environment['THRUM_CAPTURE_EXTENT'] = ','.join(map(str,extent))
+    if args.case == 'sprites-status':
+        environment.setdefault('THRUM_CAPTURE_STATUS_DENSITY', '2')
     for option, variable in [('reconstruction','THRUM_RECONSTRUCTION'),('overlay','THRUM_ROUTE_OVERLAY'),('recipe','THRUM_RECIPE')]:
         if getattr(args,option,None) is not None:
             environment[variable] = getattr(args,option)

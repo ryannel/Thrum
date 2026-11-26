@@ -98,9 +98,15 @@ export async function qualifyInterfaceStatus({ cdp, origin, fontOrigin, output, 
             return newest.retired !== null && newest.retired > (before.retired ?? -1) && newest;
           }, timeout, 'status cost frame retirement');
           // Startup frames can retire before their status sheets are resident.
-          if (arm.frame?.stamp !== dpr || !before.counts || !arm.counts) continue;
+          // One world tick changes the health bar, timer and all three
+          // counters in the measurement workload. Repeated ticks and gaps
+          // around admission or startup cannot represent that workload.
+          if (arm.frame?.stamp !== dpr || before.frame?.stamp !== dpr ||
+              arm.frame.tick !== before.frame.tick + 1 || !before.counts || !arm.counts) continue;
           const [layouts, lists, rows] = arm.counts.map((count, index) => count - before.counts[index]);
-          samples.push({ ...arm.frame, layouts, lists, rows });
+          assert(lists > 0 && rows > 0 && arm.frame.upload_bytes > 0,
+            `Status tick ${arm.frame.tick} did not rebuild and upload paint`);
+          samples.push({ ...arm.frame, previous_tick: before.frame.tick, layouts, lists, rows });
         }
         assert.equal(samples.length, 40);
         const record = { target: 'chrome-webgpu', commit, build, layout, samples: samples.slice(8),
