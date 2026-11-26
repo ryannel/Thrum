@@ -509,10 +509,19 @@ def exit_compare(rows, stops):
                             for value, limit in zip(row[name], thresholds))
             if not separated:
                 report['failures'].append(f'{key}: {name} control failed to separate')
+    if not report['failures']:
+        retained_rows = baseline.get('exit_rows', {})
+        if set(retained_rows) != set(grids) or any(set(row) != set(ROUTE) for row in retained_rows.values()):
+            report['failures'].append('no accepted three-row baseline')
+        else:
+            comparison = compare_baseline(({'grids': retained_rows}, None), grids, thresholds)
+            report['baseline'] = comparison
+            if comparison['over']:
+                report['failures'].append(f'exit row baselines exceeded the threshold: {comparison["over"]}')
     write_json(run / 'run.json', report)
     if report['failures']:
         raise Failure(f'{", ".join(report["failures"])}; see {run / "run.json"}')
-    raise Failure(f'no accepted three-row baseline; compare receipt: {run / "run.json"}')
+    print(f'PASS: {run / "run.json"}')
 
 
 def exit_clauses(args, rows):
