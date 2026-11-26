@@ -687,7 +687,7 @@
           "ask": "Is the touch a real one made by the UI test, and is the digest read from the app's own record?",
           "target": "ios-sim",
           "evidence": ".orchestrate/evidence/GAME-UI/WP6/inline-overload/ios.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/GAME-UI/WP6-review.md",
           "builder_result": "pass"
         },
@@ -698,10 +698,10 @@
           "lock": "simulator",
           "ask": "Which simulator checks do the done-when files of `PLATFORM-RUNTIME-IOS`, `COOKED-DRAW`, `T2-CAPTURE`, `RENDER-2D` and this module name for the V1 app? Does each pass at the claimed commit, and was any of those scripts or tests edited by this work package?",
           "target": "ios-sim",
-          "evidence": ".orchestrate/evidence/GAME-UI/WP6/inline-overload/v1.md",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GAME-UI/WP6-review.md",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "WP6.3",
@@ -720,7 +720,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/GAME-UI/WP6/inline-overload/mac.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/GAME-UI/WP6-review.md",
           "builder_result": "pass"
         },
@@ -757,25 +757,16 @@
         }
       ],
       "depends_on": [],
-      "failed_reviews": 2,
-      "failed_reviews_with_repeat": 0,
+      "failed_reviews": 3,
+      "failed_reviews_with_repeat": 1,
       "diagnoses": 0,
-      "status": "ready_for_review",
+      "status": "in_progress",
       "quality_bar": "An app runner as indifferent to which game it runs as Bevy's or Godot's: a second game gets a window, a page and an iPhone app by naming itself, with the lifecycle, touch, rotation and recovery it would otherwise copy. On the phone the picture sits clear of the Dynamic Island and the home indicator, as a native game's does.",
       "findings": [
         {
-          "name": "The ordinary Crowd replay stays frozen after an inline clock overload",
-          "item": "WP6.1",
-          "repeat": false
-        },
-        {
-          "name": "The V1 simulator platform check fails its iOS proving build",
+          "name": "The V1 capture route exceeds the six-reply rotation bound",
           "item": "WP6.2",
-          "repeat": false
-        },
-        {
-          "name": "The Crowd window stops presenting after an inline clock overload",
-          "item": "WP6.4",
+          "different": "The previous platform failure occurred during the iOS proving build. That build and its platform route now pass. The inherited T2 capture route fails after launch on the reply count for rotation.",
           "repeat": false
         }
       ]

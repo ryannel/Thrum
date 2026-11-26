@@ -1061,7 +1061,7 @@
         {
           "verdict": "fail",
           "commit": "3fc165873cf6eef48bd768fd3f482a54d8a6140b",
-          "review": ".orchestrate/evidence/GAME-UI/WP6-review.md",
+          "review": ".orchestrate/evidence/GAME-UI/WP6-review-2.md",
           "items": {
             "WP6.1": "fail",
             "WP6.2": "fail",
@@ -1104,6 +1104,44 @@
             "turns": 1
           },
           "at": "2026-11-26T13:01:33Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "db65b3336f3266291be023b31294e38fc630bbd7",
+          "review": ".orchestrate/evidence/GAME-UI/WP6-review.md",
+          "items": {
+            "WP6.1": "pass",
+            "WP6.2": "fail",
+            "WP6.3": "pass",
+            "WP6.4": "pass",
+            "WP6.5": "pass",
+            "WP6.6": "pass",
+            "WP6.7": "pass"
+          },
+          "findings": [
+            {
+              "name": "The V1 capture route exceeds the six-reply rotation bound",
+              "item": "WP6.2",
+              "different": "The previous platform failure occurred during the iOS proving build. That build and its platform route now pass. The inherited T2 capture route fails after launch on the reply count for rotation.",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 167920,
+            "cached": 12195456,
+            "output": 16179,
+            "turns": 1
+          },
+          "at": "2026-11-26T14:43:35Z"
         }
       ],
       "authorised": {
