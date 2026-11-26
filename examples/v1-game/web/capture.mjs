@@ -252,7 +252,9 @@ async function runCapture() {
     record.actions.push({ kind: 'withhold readback collection', start_ms: start, end_ms: withholdUntil });
   }
   const bankMover = atmosphereMotion && record.haze_take?.motion === 'mover';
-  const duration = atmosphereMotion ? (bankMover ? 13000 : atmosphere === 'scrub' ? 10000 : 7000) :
+  const longGroundTake = ['climb', 'approach'].includes(record.haze_take?.motion);
+  const groundDuration = bankMover ? 13000 : longGroundTake ? 12000 : 7000;
+  const duration = atmosphereMotion ? (atmosphere === 'scrub' ? 10000 : groundDuration) :
     (route.keys.at(-1).tick + 121) * 1000 / 60;
   const fixedExitPhaseMs = scene === 'exit' && mode === 'fixed'
     ? (route.phase[0] / route.phase[1]) * 1000 / 60 : 0;
