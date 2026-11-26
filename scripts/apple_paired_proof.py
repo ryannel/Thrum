@@ -88,7 +88,10 @@ def window_arm(output, binary, env, route, name, recipe, reconstruction, headroo
     expected = "Bgra8" if headroom == "sdr" else "Rgba16Float"
     if not configured or any(not row["format"].startswith(expected) for row in configured):
         raise ValueError(f"{name}: surface did not use {expected}")
-    if {row["headroom"] for row in configured} != {1 if headroom == "sdr" else float(headroom)}:
+    retained_float = headroom.startswith("step:")
+    expected_headroom = 1 if headroom == "sdr" or retained_float else float(headroom)
+    measured = configured[-100:] if retained_float else configured
+    if {row["headroom"] for row in measured} != {expected_headroom}:
         raise ValueError(f"{name}: surface used unexpected headroom")
     frames = read_rows(arm / "frames.jsonl")
     ticks = annotate_display_ticks(arm, frames, read_rows(arm / "configure.jsonl"), False)
@@ -146,7 +149,8 @@ def float_cost(sdr, floating):
         rows.append(dict(scale=base["scale"], sdr_p50_ns=baseline, float_p50_ns=float_time,
                          float_minus_sdr_ns=float_time - baseline))
     return dict(scope="Apple Tile and MetalFX in both arms; forced SDR display record at H=1, "
-                      "float arm retains a float drawable using potential headroom",
+                      "float arm retains its startup float drawable after potential falls to 1",
+                drawable_bytes_per_pixel={"SDR": 4, "float": 8},
                 surface_present_pass=rows)
 
 
@@ -187,7 +191,8 @@ def mac_paired(output):
                 arms.append(window_arm(output, binary, env, route_path, f"{repeat}-{name}",
                                        recipe, reconstructor, headroom))
         sdr = window_arm(output, binary, env, route_path, "sdr", "apple-tile", "metalfx", "sdr")
-        floating = window_arm(output, binary, env, route_path, "float-h1", "apple-tile", "metalfx", "1")
+        floating = window_arm(output, binary, env, route_path, "float-h1", "apple-tile",
+                              "metalfx", "step:2:1:12:1")
         governor = window_arm(output, binary, env, route_path, "governor", "apple-tile",
                               "metalfx", "2", replay=False)
     colour = {}
