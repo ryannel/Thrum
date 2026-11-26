@@ -2481,12 +2481,12 @@
       }
     },
     "WP15": {
-      "definitions": "0f3018995128a2c30cdacec3534ab34532af24bd9feffdea2ed2914a2d00f151",
+      "definitions": "e539ef222a210dfc9494b2da9c31fa611897d222ba9a9ecf469b30339507c5dd",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
-        "at": "2026-11-24T22:06:49Z"
+        "task": "Unblock WATERS WP15 (Blocked, Needs Context). Read the 'Planner decisions for the remaining work' section of .orchestrat",
+        "at": "2026-11-26T16:53:00Z"
       }
     },
     "WP14": {
@@ -3371,11 +3371,15 @@
     {
       "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 2 Must Fix findings. Lead: WP25 fixes a broken main branch, so keep it small and first.",
       "at": "2026-11-26T13:37:31Z"
+    },
+    {
+      "task": "Unblock WATERS WP15 (Blocked, Needs Context). Read the 'Planner decisions for the remaining work' section of .orchestrate/evidence/WATERS/WP15-handoff.md in the waters worktree (branch build/waters at eb9042bce, unmerged; leave it alone). Lead rulings, by the project's bar of plausible shipped-game look over exactness: (1) WP15.3/WP15.8 overhead view: accept the present 89.99-degree inspection route (0.096 px off vertical at 1440p is invisible); do not add a camera up-vector API for this. (2) WP15.1/WP15.5/WP15.8 common cut: the 182-row Trade sea wedge exposing the bed is a real visible defect. Specify one combined world-column cut (long plus short displacement, as the drawn surface uses) for the lens and its reference, and rule explicitly whether the body query migrates to it or stays per-band, with the affected consumers named. (3) Carried flow and wakes, whose displayed fields the GPU owns: require a conservative CPU bound that never admits dry when the shown surface is wet (no visible dry hole), not exact dry admission. Keep the remaining fixed and elapsed calm/breeze/Trade matrix and the faint bank and hull-band cues as they are unless the design says otherwise. Also note the handoff's integration risk: seven slow serial tests (match-proof, rain-model, river-model) and a Clippy unused-self error need checking against the merge candidate.\\",
+      "at": "2026-11-26T16:53:00Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-26T13:37:31Z"
+    "at": "2026-11-26T16:53:00Z"
   },
   "design_history": [
     {
