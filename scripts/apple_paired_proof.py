@@ -5,6 +5,7 @@ import hashlib
 import json
 import platform
 import re
+import shutil
 from statistics import median
 import subprocess
 
@@ -156,6 +157,8 @@ def mac_fullscreen_motion(output):
                for screen in gpu.get("spdisplays_ndrvs", [])
                if screen.get("spdisplays_connection_type") == "spdisplays_internal"]
     extent = [int(value) for value in screen["_spdisplays_pixels"].split(" x ")]
+    if shutil.disk_usage(output).free < 44 * 1024**3:
+        raise ValueError("fullscreen capture needs 28 GiB for its raw spool and 16 GiB remaining")
     route_path = output / "fullscreen-route.json"
     route_path.write_text(json.dumps(dict(route, render_extent=extent)) + "\n")
     with awake_display():

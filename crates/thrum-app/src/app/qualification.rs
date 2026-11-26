@@ -470,18 +470,17 @@ impl Observer {
                 CaptureSource::Sdr,
             )
             .map_err(|e| e.to_string())?;
-            let (name, encoding) =
-                if transition.is_some_and(|options| options.arm != TransitionArm::Fullscreen) {
-                    ("frames.rgba", SpoolEncoding::Raw)
-                } else {
-                    ("frames.zst", SpoolEncoding::ZstdDelta)
-                };
+            let (name, encoding) = if transition.is_some() {
+                ("frames.rgba", SpoolEncoding::Raw)
+            } else {
+                ("frames.zst", SpoolEncoding::ZstdDelta)
+            };
             let file = File::create(output.join(name)).map_err(|e| e.to_string())?;
             Some(
                 ImageWriter::start(
                     BufWriter::with_capacity(4 * 1024 * 1024, file),
                     96,
-                    8 * 1024 * 1024 * 1024,
+                    if fullscreen { 28 } else { 8 } * 1024 * 1024 * 1024,
                     encoding,
                 )
                 .map_err(|error| error.to_string())?,
@@ -748,7 +747,14 @@ impl Observer {
                 || self.refused != 0
                 || host.submitted_capture_omissions() != 0
             {
-                return Err("incomplete real-window capture".to_owned());
+                return Err(format!(
+                    "incomplete real-window capture ({} presented, {} copied, {} written, {} writer refusals, {} tap omissions)",
+                    self.frames.len(),
+                    self.images.len(),
+                    report.frames,
+                    self.refused,
+                    host.submitted_capture_omissions()
+                ));
             }
         }
         Ok(())
