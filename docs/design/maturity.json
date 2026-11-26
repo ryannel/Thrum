@@ -27,7 +27,7 @@
     "evidence": ".orchestrate/evidence/GAME-UI/WP5/index.md",
     "shared_ios_shell": {
       "implementation": "thrum-app owns UIKit lifecycle, geometry, touch delivery, surface leases and graphics recovery. V1 and the Crowd status display use it from separate app bundles.",
-      "functional_validation": "On the iPhone 18 Pro simulator, the Crowd app draws its live rows, pans from a UIKit touch, retains its process through rotation and background and foreground, and reaches the retained 2,000-body replay digest. The Mac window and Chrome page share the Crowd runtime and capture its submitted output.",
+      "functional_validation": "On the iPhone 18 Pro simulator, the Crowd app draws its live rows, pans from a UIKit touch, retains its process through rotation and background and foreground, and reaches the retained 2,000-body replay digest. The Mac window and Chrome page share the Crowd runtime and capture its submitted output. The elapsed-time Crowd game drained and resumed after a foreground clock overload on the iPhone simulator and Mac Metal without restarting its world.",
       "experienced_quality": "The builder inspected portrait and landscape simulator screenshots with the status display and corner crops at native size.",
       "platform_performance": {
         "ios-sim": "Metal function on iOS 27.2.",

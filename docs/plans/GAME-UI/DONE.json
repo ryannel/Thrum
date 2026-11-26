@@ -686,10 +686,10 @@
           "lock": "simulator",
           "ask": "Is the touch a real one made by the UI test, and is the digest read from the app's own record?",
           "target": "ios-sim",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP6/inline-overload/ios.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GAME-UI/WP6-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP6.2",
@@ -698,10 +698,10 @@
           "lock": "simulator",
           "ask": "Which simulator checks do the done-when files of `PLATFORM-RUNTIME-IOS`, `COOKED-DRAW`, `T2-CAPTURE`, `RENDER-2D` and this module name for the V1 app? Does each pass at the claimed commit, and was any of those scripts or tests edited by this work package?",
           "target": "ios-sim",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP6/inline-overload/v1.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GAME-UI/WP6-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP6.3",
@@ -719,10 +719,10 @@
           "check": "python3 scripts/game_ui.py second-app --target mac-metal",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP6/inline-overload/mac.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GAME-UI/WP6-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP6.5",
@@ -730,7 +730,7 @@
           "check": "python3 scripts/game_ui.py second-app --target chrome-webgpu",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/GAME-UI/WP6/chrome-webgpu/1795689919574668000/result.json",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP6/chrome-webgpu/1795700120489453000/result.json",
           "verdict": "pass",
           "review": ".orchestrate/evidence/GAME-UI/WP6-review.md",
           "builder_result": "pass"
@@ -740,7 +740,7 @@
           "statement": "On the simulator's screen, in portrait and in landscape, the crowd and its status display are upright and inside the screen, clear of the Dynamic Island, the rounded corners and the home indicator, with crisp text.",
           "inspect": "Take `simctl` screenshots of the crowd view's app in both orientations, before and after a rotation. Judge each whole and in native-size crops of the status display and each corner.",
           "target": "ios-sim",
-          "evidence": ".orchestrate/evidence/GAME-UI/WP6/scene-request-repair/visual-review.md",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP6/inline-overload/ios-visual.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/GAME-UI/WP6-review.md",
           "builder_result": "pass"

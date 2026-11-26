@@ -217,3 +217,9 @@
   Crowd starts its inline clock on its first frame. Its ordinary iOS launch, simulator journey, digest
   and visual inspection passed on the iPhone 18 Pro simulator.
   [Review repair evidence](../../../.orchestrate/evidence/GAME-UI/WP6/scene-request-repair/README.md)
+- 2026-11-26 WP6 review repair uses the existing inline lifecycle policy on both native render owners.
+  The elapsed-time iPhone simulator app recovered from two foreground gaps and reached the retained
+  Crowd digest. The Mac window recovered from a gap, presented key and pointer changes, and met
+  its frame target. The iOS Cloud capture report compiles only for its Mac and Wasm callers.
+  The unchanged V1 platform, cooked-draw, capture, sprite, layout and touch checks passed.
+  [Target proofs](../../../.orchestrate/evidence/GAME-UI/WP6/inline-overload/README.md)
