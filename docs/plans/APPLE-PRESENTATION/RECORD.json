@@ -1510,12 +1510,12 @@
       }
     },
     "WP12": {
-      "definitions": "e7b6a62568b31941a24fcbb6e62c7fe1aef7c6a8c7d513fc196b94b424e8de56",
+      "definitions": "4ae2b38de4268a99f38c358eacc5e844f38f7cd82f64d8f187bb1f6cb789974f",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of APPLE-PRESENTATION at docs/evidence/APPLE-PRESENTATION/design-review.md asked for changes. Resolve ",
-        "at": "2026-11-15T08:54:22Z"
+        "task": "APPLE-PRESENTATION WP12 is blocked on a dependency conflict, described in its handoff at .orchestrate/evidence/APPLE-PRE",
+        "at": "2026-11-26T05:37:59Z"
       }
     },
     "WP11": {
@@ -1863,11 +1863,15 @@
     {
       "task": "Unblock APPLE-PRESENTATION WP8. The builder wrote: D8.3 needs a planner decision on whether the luminance bound should include differences that also occur at constant storage scale. The builder's handoff, .orchestrate/evidence/APPLE-PRESENTATION/WP8-handoff.md, says what is finished, what was tried and what to do first. Its work is on branch build/apple-presentation at 203ba8269068, which isn't merged; read it with `git show`. A plan you keep ends with `KEEP APPLE-PRESENTATION WP8: builder: <where the plan provides it>`.\n\nFrom the lead: the worst miss is 0.000282 in mean decoded SDR luminance, and a fixed-storage run reproduces all 17 misses, so the bound as written is measuring MetalFX-versus-TAAU differences, not what a storage step does to history. The project bar is a shipped game's look and speed; a reference diagnoses, it doesn't gate. Make D8.3 measure the thing it exists for (storage-induced history lag, for example against a matched held-storage run) with a tolerance a viewer could see, and change no other item.",
       "at": "2026-11-25T17:34:30Z"
+    },
+    {
+      "task": "APPLE-PRESENTATION WP12 is blocked on a dependency conflict, described in its handoff at .orchestrate/evidence/APPLE-PRESENTATION/WP12-handoff.md: wgpu-core 30.0.1 implements pipeline_cache::adapter_key only for Vulkan, so the public get_data() panics on Metal in add_cache_header and cache import returns Unsupported, and the design pins only wgpu-hal. The builder proposes a narrow wgpu-core 30.0.1 pin for Metal cache-header identity and its tests, with the archive itself staying in the wgpu-hal patch. Lead decision: take that route. Revise the design and WP12 so the pin covers wgpu-core for Metal cache headers (adapter key, header write and import validation) and nothing else, keep it shaped so it could be offered upstream for gfx-rs/wgpu issue #8526, and keep the public PipelineCache round trip as what D12.1 proves. Do not change other work packages.",
+      "at": "2026-11-26T05:37:59Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-25T17:34:30Z"
+    "at": "2026-11-26T05:37:59Z"
   },
   "design_history": [
     {
