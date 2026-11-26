@@ -426,6 +426,18 @@ pub fn build_rain_yard(wind: Wind, draw_water: bool) -> Result<FoamScene, Box<dy
     build_island(wind, draw_water, false, None, true, Some(rain), |_| {})
 }
 
+/// Measure preparation of the selected yard's bed, canopy and hollows.
+///
+/// # Errors
+/// Propagates invalid authored ground or shelter.
+pub fn measure_rain_yard_preparation() -> Result<(Duration, usize, usize), Box<dyn Error>> {
+    let start = std::time::Instant::now();
+    let yard = rain_yard::Yard::prepare()?;
+    let elapsed = start.elapsed();
+    let (cells, hollows) = yard.size();
+    Ok((elapsed, cells, hollows))
+}
+
 fn build_island(
     wind: Wind,
     draw_water: bool,

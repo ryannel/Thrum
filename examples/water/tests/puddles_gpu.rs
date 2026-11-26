@@ -12,8 +12,109 @@ fn submitted_yard_depth_matches_the_hollows_map() {
     };
     support::island::with_cooked_island("submitted_yard_depth_matches_the_hollows_map", || {
         check_yard_depth(&gpu);
+        check_yard_transitions(&gpu);
     });
 }
+}
+
+#[cfg(target_os = "macos")]
+fn check_yard_transitions(gpu: &thrum_test_support::Gpu) {
+    use std::time::Duration;
+    use thrum_app::Game;
+    use water_scene::island::{Wind, build_rain_yard};
+    const EXTENT: [u32; 2] = [96, 64];
+    const PITS: [[f64; 2]; 2] = [[147.2, 66.2], [149.75, 66.35]];
+    const FLOAT: [f64; 2] = [147.575, 66.225];
+    let (game, report, map, _) = build_rain_yard(Wind::Calm, true).unwrap();
+    let mut scene = support::Fixture::from_game(gpu, EXTENT, game, report);
+    scene.parameters(r#"{"camera.island":3,"rain.rate":0}"#);
+    scene.warm_cooked();
+    let frame_time = |tick: u32| (Duration::from_nanos(16_666_667) * tick).as_secs_f64();
+    scene.frame_without_timings(frame_time(60));
+    scene.frame_without_timings(frame_time(61));
+    let creations = scene.host.pipeline_creation_count();
+    let storage = scene.report.lock().unwrap().resources.clone();
+    let identity = map.lock().unwrap().generation(3);
+    let float_line = |scene: &mut support::Fixture| {
+        scene.game.poll_status();
+        let controls: serde_json::Value =
+            serde_json::from_str(&scene.game.controls_mut().describe_json()).unwrap();
+        controls["controls"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|item| item["key"] == "rain.float_level")
+            .unwrap()["value"]
+            .as_f64()
+            .unwrap()
+    };
+    let initial = float_line(&mut scene);
+    scene.parameters(r#"{"rain.rate":100,"rain.time_scale":600}"#);
+    let mut merged = false;
+    let mut drying = false;
+    let mut parted = false;
+    let mut rising = false;
+    let mut last_line = initial;
+    for tick in 62..=240 {
+        let sample = scene.frame_without_timings(frame_time(tick));
+        assert_eq!(sample.completed_ticks, 1);
+        let line = float_line(&mut scene);
+        assert!(
+            (line - last_line).abs() < 0.015,
+            "the float stepped at {tick}"
+        );
+        last_line = line;
+        let (levels, float) = {
+            let published = map.lock().unwrap();
+            let wet = |point| published.sample(point).filter(|hit| hit.depth > 0.0);
+            (
+                PITS.map(|point| wet(point).map(|hit| hit.row.level)),
+                wet(FLOAT),
+            )
+        };
+        if line > initial + 0.0001
+            && let Some(float) = float
+        {
+            assert!(
+                (line - float.row.level).abs() < 0.000_11,
+                "float waterline at {tick}"
+            );
+            rising = true;
+        }
+        if let [Some(low), Some(high)] = levels {
+            let joined = low.to_bits() == high.to_bits();
+            if joined && !merged {
+                merged = true;
+                assert!(
+                    scene
+                        .witness()
+                        .iter()
+                        .all(|pixel| pixel[2].abs() < 65_000.0),
+                    "the merge invalidated history"
+                );
+            } else if drying && !joined {
+                parted = true;
+                assert!(
+                    scene
+                        .witness()
+                        .iter()
+                        .all(|pixel| pixel[2].abs() < 65_000.0),
+                    "the parting invalidated history"
+                );
+                break;
+            }
+        }
+        if merged && rising && !drying {
+            scene.parameters(r#"{"rain.rate":0,"rain.drying":100}"#);
+            drying = true;
+        }
+    }
+    assert!(merged && rising && parted);
+    assert_eq!(scene.host.pipeline_creation_count(), creations);
+    assert_eq!(scene.report.lock().unwrap().resources, storage);
+    let published = map.lock().unwrap();
+    assert_eq!(published.generation(3), identity);
+    assert_eq!(published.held_level_tables, 0);
 }
 
 #[cfg(target_os = "macos")]

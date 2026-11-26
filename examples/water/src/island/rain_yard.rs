@@ -152,6 +152,10 @@ pub(super) struct Yard {
 }
 
 impl Yard {
+    pub(super) fn size(&self) -> (usize, usize) {
+        (SIZE.iter().product(), self.levels.len())
+    }
+
     pub(super) fn install(
         mut self,
         game: SkyGame,
@@ -296,7 +300,13 @@ impl Yard {
             offset += u32::try_from(patch.tree.hollow_count())?;
         }
         let track_hollows = self.patches[0].tree.hollow_count();
-        let mut optics = vec![None; self.levels.len()];
+        let mut optics = vec![
+            Some(HollowOptics {
+                extinction: 3.0,
+                scatter: [0.15, 0.17, 0.2],
+            });
+            self.levels.len()
+        ];
         optics[..track_hollows].fill(Some(HollowOptics {
             extinction: 90.0,
             scatter: [0.17, 0.092, 0.045],

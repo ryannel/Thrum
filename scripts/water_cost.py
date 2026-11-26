@@ -19,6 +19,7 @@ RECORDS = {'first-frame': ROOT / 'tests/fixtures/waters/first-frame-cost.json',
            'foam': ROOT / '.orchestrate/evidence/WATERS/M7/cost.json',
            'surf': ROOT / '.orchestrate/evidence/WATERS/WP21/surf-cost.json',
            'channel': ROOT / '.orchestrate/evidence/WATERS/WP9/channel-cost.json',
+           'rain-puddles': ROOT / 'tests/fixtures/puddles/yard-water-cost.json',
            'optics': ROOT / 'tests/fixtures/waters/optics-cost-prior.json'}
 WORKING = ROOT / '.orchestrate/evidence/WATERS'
 # The island record taken before the records moved to fixtures names the first-frame record by its old path,
@@ -832,6 +833,78 @@ def optics_investigations(summary, prior):
     return investigations
 
 
+def rain_yard_cost(action):
+    output = ROOT / 'tmp/puddles-wp3/cost-current'
+    store = output / 'store'
+    output.mkdir(parents=True, exist_ok=True)
+    env = dict(os.environ, THRUM_WATER_RAIN='calm', THRUM_WATER_PROOF='rain-puddles-cost',
+               THRUM_WATER_OUTPUT=str(output), THRUM_ASSET_STORE=str(store), THRUM_REQUIRE_GPU='1')
+    run(['cargo', 'run', '--release', '--locked', '--offline', '-p', 'thrum-cook', '--',
+         'cook', 'examples/water/assets', str(store)])
+    run(['cargo', 'test', '--release', '--locked', '--offline', '-p', 'water-scene',
+         '--test', 'proof_gpu'], env=env)
+    data = json.loads((output / 'rain-puddles-cost.json').read_text())
+    data['commit'] = run(['git', 'rev-parse', 'HEAD'], capture_output=True, text=True).stdout.strip()
+    data['load'] = run(['uptime'], capture_output=True, text=True).stdout.strip()
+    data['host'] = platform.platform()
+    baseline = json.loads(RECORDS['island'].read_text())
+    data['island_record'] = {'path': str(RECORDS['island'].relative_to(ROOT)),
+                             'commit': baseline['commit'], 'summary': baseline['summary']}
+    prior = {(row['water'], row['tick_frame']): row for row in baseline['summary']}
+    for fill in data['fills']:
+        bare, water = fill['arms']
+        fill['yard_pixels'] = water['reactive_pixels'] - bare['reactive_pixels']
+        fill['summary'] = []
+        for arm in fill['arms']:
+            for tick in (False, True):
+                frames = [row for row in arm['frames'] if row['tick_frame'] == tick]
+                if not frames or any(row.get('gpu_ms') is None for row in frames):
+                    raise ValueError(f"missing GPU timings in {fill['name']} at tick={tick}")
+                old = prior[arm['water'], tick]
+                passes = {key: statistics.median(row['passes_ms'][key] for row in frames
+                                                  if key in row['passes_ms'])
+                          for key in sorted(set().union(*(row['passes_ms'] for row in frames)))}
+                gpu_ms = statistics.median(row['gpu_ms'] for row in frames)
+                upper = statistics.median(row['completion_upper_ms'] for row in frames)
+                largest = max(passes, key=passes.get)
+                investigation = []
+                if max(gpu_ms, upper) > 1000 / 120:
+                    investigation.append(
+                        f"Pass sum {gpu_ms:.3f} ms, largest pass {largest} "
+                        f"{passes[largest]:.3f} ms. Synchronous completion bracket {upper:.3f} ms "
+                        "includes polling and shared-device wait.")
+                if gpu_ms > old['gpu_ms'] * 1.25:
+                    investigation.append(
+                        f"Island {old['gpu_ms']:.3f} ms vs yard {gpu_ms:.3f} ms. "
+                        f"Yard draws {water['vertices']} vertices and {fill['yard_pixels']} water "
+                        "pixels. Different cameras and shared load limit attribution.")
+                fill['summary'].append({'water': arm['water'], 'tick_frame': tick, 'gpu_ms': gpu_ms,
+                                        'completion_upper_ms': upper, 'passes_ms': passes,
+                                        'investigations': investigation})
+    validate_rain_yard(data)
+    if action == 'record':
+        path = ROOT / '.orchestrate/evidence/PUDDLES/WP3/yard-water-cost.json'
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(data, indent=2) + '\n')
+    else:
+        path = RECORDS['rain-puddles']
+        validate_rain_yard(json.loads(path.read_text()))
+    print(f'PASS paired rain yard record: {path.relative_to(ROOT)}')
+
+
+def validate_rain_yard(data):
+    assert data['target'] == 'mac-metal' and data['extent'] == [2560, 1440] and data['capture'] is False
+    assert data['commit'] and data['load'] and data['island_record']['summary']
+    assert [fill['name'] for fill in data['fills']] == ['first', 'separate', 'brim']
+    for fill in data['fills']:
+        bare, water = fill['arms']
+        assert not bare['water'] and water['water'] and fill['yard_pixels'] > 0
+        assert not bare['vertices'] and not bare['hollows_bytes']
+        assert water['vertices'] > 0 and water['hollows_bytes'] > 0 and water['levels'] == bare['levels']
+        assert len(fill['summary']) == 4
+        assert all(row['gpu_ms'] > 0 and row['passes_ms'] for row in fill['summary'])
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action', choices=['record', 'check', 'running'])
@@ -856,6 +929,9 @@ def main():
         return
     if args.scene == 'surf':
         measure_surf()
+        return
+    if args.scene == 'rain-puddles':
+        rain_yard_cost(args.action)
         return
     record = RECORDS[args.scene]
     data = measure(args.scene)

@@ -10,6 +10,7 @@ The committed record is test data in tests/fixtures/puddles/; promoting a new ta
 No timing figure decides anything (brief decision 3): `check` compares no numbers.
 """
 import json
+import argparse
 import os
 import platform
 import subprocess
@@ -26,6 +27,10 @@ MEASURED = ["cells", "prepare_seconds", "hollows", "nodes", "bytes", "curve_byte
             "curve_bytes_per_node", "fill_step"]
 STEP = ["hollows_holding_water", "seconds_one_thread", "seconds_all_threads", "threads"]
 CONTEXT = ["commit", "dirty", "build", "load_average", "machine", "date"]
+YARD_RECORD = REPO / "tests/fixtures/puddles/yard-preparation.json"
+YARD_TAKE = REPO / ".orchestrate/evidence/PUDDLES/WP3/yard-preparation.json"
+YARD_COMMAND = ["cargo", "run", "--release", "--locked", "--offline", "-q",
+                "-p", "water-scene", "--example", "rain_yard_cost"]
 
 
 def git(*args):
@@ -33,16 +38,16 @@ def git(*args):
                           text=True).stdout.strip()
 
 
-def measure():
+def measure(command=COMMAND, top=MEASURED, step=STEP):
     """Run the release example; return its record or raise with the reason."""
-    result = subprocess.run(COMMAND, cwd=REPO, capture_output=True, text=True, timeout=1200)
+    result = subprocess.run(command, cwd=REPO, capture_output=True, text=True, timeout=1200)
     if result.returncode != 0:
         raise RuntimeError(f"measurement failed:\n{result.stderr[-2000:]}")
     lines = [line for line in result.stdout.splitlines() if line.startswith("{")]
     if not lines:
         raise RuntimeError(f"no record printed:\n{result.stdout[-2000:]}")
     measured = json.loads(lines[-1])
-    missing(measured, MEASURED, STEP)
+    missing(measured, top, step)
     return measured
 
 
@@ -53,9 +58,8 @@ def missing(record, top, step):
         raise RuntimeError(f"record lacks {', '.join(absent)}")
 
 
-def record():
-    measured = measure()
-    measured.update({
+def context():
+    return {
         "commit": git("rev-parse", "HEAD"),
         "dirty": bool(git("status", "--porcelain", "--", "crates", "scripts")),
         "build": "release (cargo run --release)",
@@ -63,7 +67,12 @@ def record():
         "machine": f"{platform.machine()} {platform.mac_ver()[0] or platform.platform()}",
         "date": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "note": "taken while other builders share the machine; a tripwire, not a budget",
-    })
+    }
+
+
+def record():
+    measured = measure()
+    measured.update(context())
     TAKE.parent.mkdir(parents=True, exist_ok=True)
     TAKE.write_text(json.dumps(measured, indent=2) + "\n", encoding="utf-8")
     print(TAKE.relative_to(REPO))
@@ -79,12 +88,30 @@ def check():
           f"committed record from {committed['commit'][:12]}")
 
 
+def yard(action):
+    keys = ["prepare_seconds", "cells", "hollows"]
+    take = measure(YARD_COMMAND, keys, [])
+    if any(take[key] <= 0 for key in keys):
+        raise RuntimeError("yard preparation did not measure a nonempty bed")
+    if action == "record":
+        YARD_TAKE.parent.mkdir(parents=True, exist_ok=True)
+        YARD_TAKE.write_text(json.dumps(take | context(), indent=2) + "\n", encoding="utf-8")
+    else:
+        missing(json.loads(YARD_RECORD.read_text(encoding="utf-8")), keys + CONTEXT, [])
+    print(f"yard preparation: {take['prepare_seconds'] * 1000:.3f} ms, "
+          f"{take['cells']} cells, {take['hollows']} hollows")
+
+
 def main():
-    if len(sys.argv) != 2 or sys.argv[1] not in ("record", "check"):
-        print(__doc__, file=sys.stderr)
-        return 2
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("action", choices=["record", "check"])
+    parser.add_argument("--scene", choices=["fixture", "yard"], default="fixture")
+    args = parser.parse_args()
     try:
-        (record if sys.argv[1] == "record" else check)()
+        if args.scene == "yard":
+            yard(args.action)
+        else:
+            (record if args.action == "record" else check)()
     except (RuntimeError, OSError, ValueError, subprocess.SubprocessError) as error:
         print(f"rain_cost: {error}", file=sys.stderr)
         return 1

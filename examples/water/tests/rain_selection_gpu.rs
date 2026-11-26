@@ -31,8 +31,8 @@ fn selected_yard_steps_without_changing_the_default_island() {
         let BodyKind::Hollows(hollows) = &yard_map.body(3).unwrap().kind else {
             panic!("the selected yard uses one hollows body");
         };
-        assert!(hollows.optical_types().iter().any(Option::is_some));
-        assert!(hollows.optical_types().iter().any(Option::is_none));
+        assert!(hollows.optical_types().iter().flatten().any(|optics| optics.extinction <= 3.0));
+        assert!(hollows.optical_types().iter().flatten().any(|optics| optics.extinction > 10.0));
         for point in [[147.2, 66.2], [147.1, 62.1]] {
             let hit = yard_map.sample(point).unwrap();
             assert_eq!(hit.body, 3);
