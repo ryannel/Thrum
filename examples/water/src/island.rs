@@ -444,9 +444,10 @@ pub fn build_rain_yard_cost(wind: Wind, draw_water: bool) -> Result<RainYardScen
 /// Propagates scene construction errors.
 pub fn build_rain_bands_cost(
     wind: Wind,
+    draw_water: bool,
     draw_rings: bool,
 ) -> Result<RainYardScene, Box<dyn Error>> {
-    build_yard(wind, true, YardRoute::BandsCost { rings: draw_rings })
+    build_yard(wind, draw_water, YardRoute::BandsCost { rings: draw_rings })
 }
 
 #[derive(Clone, Copy)]

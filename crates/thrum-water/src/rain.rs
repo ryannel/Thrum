@@ -185,3 +185,18 @@ impl Rain {
         self.bands.bytes() + self.surface.size() + self.columns.size()
     }
 }
+
+#[cfg(all(test, not(target_arch = "wasm32")))]
+mod tests {
+    use super::RainSurface;
+    use thrum_test_support::{record, records};
+
+    #[test]
+    fn surface_settings_match_the_shader_layout() {
+        records::named(
+            "rain surface",
+            &records::declarations(crate::RAIN_GAIN_WGSL),
+            &[record!(RainSurface, lengths, canopy, grid)],
+        );
+    }
+}

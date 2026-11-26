@@ -413,3 +413,18 @@ impl Bands {
         &self.texture
     }
 }
+
+#[cfg(all(test, not(target_arch = "wasm32")))]
+mod tests {
+    use super::BandFrame;
+    use thrum_test_support::{record, records};
+
+    #[test]
+    fn band_coordinates_match_the_shader_layout() {
+        records::named(
+            "rain bands",
+            include_str!("rain.wgsl"),
+            &[record!(BandFrame, lengths_reach, table, steps)],
+        );
+    }
+}

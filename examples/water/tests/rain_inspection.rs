@@ -45,9 +45,9 @@ fn fill(fixture: &mut Fixture, map: &water_scene::SharedMap, camera: u32, rate: 
 pub(super) fn costs(gpu: &thrum_test_support::Gpu, directory: &Path) {
     let extent = [2560, 1440];
     let mut arms = Vec::new();
-    for rings in [false, true] {
+    for (water, rings) in [(false, false), (true, false), (true, true)] {
         let (game, report, map, _) =
-            build_rain_bands_cost(Wind::Calm, rings).expect("rain cost arm");
+            build_rain_bands_cost(Wind::Calm, water, rings).expect("rain cost arm");
         let mut fixture = Fixture::from_game(gpu, extent, game, report);
         controls(&mut fixture, 3, 0.0, 600);
         fixture.warm_cooked();
