@@ -498,7 +498,7 @@ async function captureCloudView(view, extent) {
           game.frame(time);
         }
         return false;
-      }, 'placed cloud weather did not settle at tick 300', 45000);
+      }, 'placed cloud weather did not settle at tick 300', 75000);
       game.set_paused(true, time);
     }
   }

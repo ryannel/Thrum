@@ -786,7 +786,7 @@ fn settle_placed_capture(
     driver
         .parameters(r#"{"world.paused":true}"#)
         .map_err(|error| error.to_string())?;
-    let deadline = Instant::now() + Duration::from_secs(20);
+    let residency_deadline = Instant::now() + Duration::from_secs(20);
     while !driver
         .host()
         .cloud_resource_bytes()
@@ -795,10 +795,13 @@ fn settle_placed_capture(
     {
         driver.step().map_err(|error| error.to_string())?;
         while driver.completed()?.is_some() {}
-        if Instant::now() >= deadline {
+        if Instant::now() >= residency_deadline {
             return Err("placed stack did not become resident before capture".to_owned());
         }
     }
+    // A full-share weather warm-up updates the moving lattice and its Sun
+    // path on each tick. Give that work its own window after lease staging.
+    let deadline = Instant::now() + Duration::from_secs(60);
     if mode != "realtime" {
         driver
             .parameters(r#"{"world.paused":false}"#)
