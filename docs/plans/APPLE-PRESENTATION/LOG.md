@@ -616,6 +616,13 @@
   rewritten around the public `PipelineCache` round trip, and a new D12.5 holds both pins to their patches. No
   other work package changed. [Handoff](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP12-handoff.md)
 
+- 2026-11-26 Planner, design review Must Fix 1 (check the saved cache bytes before import). The game's file
+  header now carries a digest of the whole `get_data` byte sequence, taken at harvest and checked by every
+  process before wgpu is given the data. D12.3's changed-byte case must be counted as corrupt with nothing
+  imported, and it gains a reviewer question. No other item changed.
+  [Design](DESIGN.md#pipeline-preparation-wp10-and-wp12) ·
+  [review](../../../.orchestrate/evidence/APPLE-PRESENTATION/design-review.md)
+
 ### CLOUDS WP9 fast-pan observation
 
 An 85° elapsed pan under the broken preset at a 10° Sun shows short horizontal

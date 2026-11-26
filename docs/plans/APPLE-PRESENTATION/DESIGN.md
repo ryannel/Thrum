@@ -38,7 +38,9 @@ are as the 11 November review approved them and are not changed. For WP4 to WP12
 approval left for it: the EDR transform and its H = 1 identity, the exposure handoff of the normalising MetalFX
 fallback, the lifecycle of a generation build, and the archive mechanism. Where that section and an older
 paragraph of this page disagree, that section governs. The 26 November revision changes pipeline preparation
-only: the wgpu-core pin, and the archive's round trip through wgpu's public pipeline cache.
+only: the wgpu-core pin, the archive's round trip through wgpu's public pipeline cache, and, after
+[its design review](../../../.orchestrate/evidence/APPLE-PRESENTATION/design-review.md), the game's check of the
+saved cache data before import.
 
 ## Purpose and scope
 
@@ -795,12 +797,24 @@ Three techniques, each behind the registry, each kept only if WP9's and WP12's l
    `create_pipeline_cache` to load. The engine has no Metal persistence call of its own, so there is one
    route to keep right and one to offer upstream. In **harvest**, a separate command, pipelines
    are created with the archive attached and added to it, and the cache's data is written to a file under the
-   game's own header, which carries the device, the OS build and the manifest's digest. In a normal launch the
-   game's header is checked first, and wgpu then checks its cache header: a stale or
-   unreadable archive is set aside and the launch prepares its pipelines the other way, counted by cause. In the
-   **strict witness**, a fresh process attaches the archive read-only and creates every pipeline with Metal's
-   option that makes an archive miss an error, so no fallback can hide a miss. The archive is local to the
-   device that harvested it; nothing is shipped to another device in V1.
+   game's own header, which carries the device, the OS build, the manifest's digest, and a digest of the whole
+   byte sequence `get_data` returned.
+
+   The game checks that file before wgpu sees any of it. wgpu's import is an unsafe call whose contract is that
+   the bytes came from `get_data`, and wgpu-core's cache header cannot stand in for that check: it validates
+   identity, length and a fixed marker, and holds no hash of the payload, so a payload byte changed at the same
+   length passes it and would reach Metal. So every process that loads the file, the strict witness included,
+   first reads the game's header and recomputes the digest over the saved cache data. The data goes to
+   `create_pipeline_cache` only when the device, the OS build, the manifest's digest and the data's digest all
+   match. A file that fails is set aside without being imported, and the launch prepares its pipelines the other
+   way, counted by cause: stale when the device, OS build or manifest differs, corrupt when the header cannot be
+   read or the data's digest differs. wgpu's own header check comes after, and a refusal there is counted the
+   same way under its own cause. The digest catches damage; a file rewritten on purpose with a matching digest
+   is outside V1.
+
+   In the **strict witness**, a fresh process attaches the archive read-only and creates every pipeline with
+   Metal's option that makes an archive miss an error, so no fallback can hide a miss. The archive is local to
+   the device that harvested it; nothing is shipped to another device in V1.
 
 No patch is posted upstream by any agent: U1 is the owner's. It concerns the two cache patches, the archive in
 wgpu-hal and the cache header in wgpu-core, which together are the Metal half of gfx-rs/wgpu#8526. The
@@ -895,7 +909,8 @@ The physical iPhone and external-display rows stay owed in the same way.
 - *Surface replacement:* G3b and frame-runtime recovery, then a transition if the extent changed.
 - *Device loss:* recovery and a build.
 - *Provider rejection:* the prepared TAAU twin.
-- *Archive or metallib rejection:* a build-time compile or WGSL fallback, counted; never in play.
+- *Archive or metallib rejection:* a build-time compile or WGSL fallback, counted; never in play. An archive file
+  the game's own check fails is rejected before wgpu is given its data.
 
 **Cost account.** Output is 1920×1080 (the V1 window), unless stated.
 

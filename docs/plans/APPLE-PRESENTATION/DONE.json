@@ -1099,9 +1099,10 @@
         },
         {
           "id": "D12.3",
-          "statement": "An archive with a stale key, one whose payload is corrupted at the same length, and a valid archive that holds only part of the manifest each end in a game that reaches readiness and plays the route with no pipeline compiled during play. Each is counted by its cause, apart from device errors.",
+          "statement": "Three faulty archive files each end in a game that reaches readiness and plays the route with no pipeline compiled during play, and each is counted under its own cause, apart from device errors: a file whose header carries a stale key, a file whose saved cache data has one byte changed at the same length, and an intact file whose archive holds only part of the manifest. The changed-byte file fails the game's own digest of the saved cache data and is counted as corrupt before import: that launch's record shows no cache data given to `create_pipeline_cache`.",
           "check": "python3 scripts/apple_presentation.py archive-faults --target mac-metal",
           "lock": "gpu",
+          "ask": "Is the digest in the game's header taken at harvest over the complete byte sequence `get_data` returned? Does every call in the product that gives file data to `create_pipeline_cache` come after that digest has been recomputed over the data and matched?",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
