@@ -2482,7 +2482,101 @@
     },
     "WP15": {
       "definitions": "aec8061128981daa34f0544d420e3422b0bed28706de34bcaec05880b25b29b9",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "5d94b5e8c68cebdb65fc7be82868d9319c1b7cec",
+          "review": ".orchestrate/evidence/WATERS/WP15-review.md",
+          "items": {
+            "WP15.1": "fail",
+            "WP15.11": "fail",
+            "WP15.3": "fail",
+            "WP15.4": "pass",
+            "WP15.5": "fail",
+            "WP15.6": "pass",
+            "WP15.7": "pass",
+            "WP15.8": "fail",
+            "WP15.9": "fail"
+          },
+          "findings": [
+            {
+              "name": "Enabling rain flattens the wind-wave cascades",
+              "repeat": false
+            },
+            {
+              "name": "The solved river lens cuts a different surface from the draw",
+              "item": "WP15.1",
+              "repeat": false
+            },
+            {
+              "name": "Dry admission ignores the drawn rain-ring height",
+              "item": "WP15.1",
+              "repeat": false
+            },
+            {
+              "name": "The carried-crest test cannot detect footprint-only gains or weights",
+              "item": "WP15.1",
+              "repeat": false
+            },
+            {
+              "name": "The exposure proof compares identical GPU storage scales",
+              "item": "WP15.11",
+              "repeat": false
+            },
+            {
+              "name": "The bank is unreadable in the straight-up lake window",
+              "item": "WP15.3",
+              "repeat": false
+            },
+            {
+              "name": "The Trade lake inspection disables whitecaps",
+              "item": "WP15.3",
+              "repeat": false
+            },
+            {
+              "name": "The submerged hull breaks into long bands during crossings",
+              "item": "WP15.5",
+              "repeat": false
+            },
+            {
+              "name": "Chrome loses the bank in the straight-up lake window",
+              "item": "WP15.8",
+              "repeat": false
+            },
+            {
+              "name": "Chrome shows bands across the hull in the held lake view",
+              "item": "WP15.8",
+              "repeat": false
+            },
+            {
+              "name": "The Chrome lake route cannot show the required overhead foam",
+              "item": "WP15.8",
+              "repeat": false
+            },
+            {
+              "name": "The cost record skips water-surface tripwires after pass renumbering",
+              "item": "WP15.9",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 409289,
+            "cached": 21580160,
+            "output": 50582,
+            "turns": 1
+          },
+          "at": "2026-11-26T22:24:22Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 3 Must Fix find",

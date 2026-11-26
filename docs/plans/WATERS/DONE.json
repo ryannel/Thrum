@@ -1735,8 +1735,8 @@
     {
       "id": "WP15",
       "name": "The camera goes under water: the waterline crosses the lens, and the surface overhead shows the sky through a bright window",
-      "status": "ready_for_review",
-      "failed_reviews": 0,
+      "status": "in_progress",
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [],
@@ -1749,10 +1749,10 @@
           "ask": "Is the expected side of each pixel worked out from the model's surface at that pixel's own near-plane point, and would a test of the camera's centre alone fail? Does the lip's case put the lens in a column that holds three surfaces? Would adding the short waves at the world column to a cut of the long waves alone fail the trade wind's case? Would a bound that took a layer's highest value, a gain or a short-wave weight over the lens's own footprint, and not over the rest places that can reach the lens, fail the carried crest's case? Is the lens admitted wherever a wake window that is not at rest overlaps those rest places, with no ceiling standing in for the wake's height? For the cascades on a current, does the bound take a ceiling and never a value sampled on the CPU? On a chart with a current, do the lens cut and the draw read each cascade through the same carried place, worked out from the same row, clock and carriage values of the submitted frame, so that the lens cannot cut a ripple where it would lie on still water while the draw shows it carried downstream?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP15/lens-proof.md",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/WATERS/WP15-review.md"
         },
         {
           "id": "WP15.11",
@@ -1761,20 +1761,20 @@
           "ask": "Would composing the water over an under-water pixel twice, and multiplying the exposure scale twice, each fail?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP15/lens-metal-316a8b713.log",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/WATERS/WP15-review.md"
         },
         {
           "id": "WP15.3",
           "statement": "Looking up through calm water, the sky, the bank and the craft's hull at its waterline show inside a bright disc about the vertical, squeezed toward its rim, and outside it the surface mirrors the water below. Waves break the rim into moving shards with no hole, streak or hard seam, and foam overhead is a pale ceiling.",
           "inspect": "`fixed` stills and `realtime` sequences from 1 m and 5 m under the lake and the sea, in a calm, a breeze and a trade wind with whitecaps, looking straight up and 45\u00b0 off it: the disc, its rim and the water round it.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP15/visual-proof.md",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/WATERS/WP15-review.md"
         },
         {
           "id": "WP15.4",
@@ -1783,18 +1783,18 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP15/visual-proof.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/WP15-review.md"
         },
         {
           "id": "WP15.5",
           "statement": "The camera sinks through the surface and rises again. The waterline crosses the lens as one clean line with a thin meniscus, each side of it is right in the same frame, the line follows the waves, and nothing flashes, pops or shows a gap: in a calm, in a trade wind, on the lake and in the swash on the beach.",
           "inspect": "`realtime` sequences of the camera lowered through the surface and raised again in each of those places, and held half under in a trade wind: the line on the lens and both sides of it, frame by frame.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP15/visual-proof.md",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/WATERS/WP15-review.md"
         },
         {
           "id": "WP15.6",
@@ -1804,8 +1804,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP15/lens-metal-316a8b713.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/WP15-review.md"
         },
         {
           "id": "WP15.7",
@@ -1815,18 +1815,18 @@
           "target": "chrome-webgpu",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP15/lens-chrome-316a8b713/run.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/WP15-review.md"
         },
         {
           "id": "WP15.8",
           "statement": "In Chrome the views from under the lake pass WP15.3's and WP15.5's lists at noon.",
           "inspect": "`fixed` stills and `realtime` sequences in Chrome at those items' views on the lake at noon, judged by their lists and against the Mac's portable recipe.",
           "target": "chrome-webgpu",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP15/visual-proof.md",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/WATERS/WP15-review.md"
         },
         {
           "id": "WP15.9",
@@ -1834,10 +1834,71 @@
           "check": "python3 scripts/water_cost.py check --scene under",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP15/dive-cost-316a8b7139c0.json",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/WATERS/WP15-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "name": "Enabling rain flattens the wind-wave cascades",
+          "repeat": false
+        },
+        {
+          "name": "The solved river lens cuts a different surface from the draw",
+          "item": "WP15.1",
+          "repeat": false
+        },
+        {
+          "name": "Dry admission ignores the drawn rain-ring height",
+          "item": "WP15.1",
+          "repeat": false
+        },
+        {
+          "name": "The carried-crest test cannot detect footprint-only gains or weights",
+          "item": "WP15.1",
+          "repeat": false
+        },
+        {
+          "name": "The exposure proof compares identical GPU storage scales",
+          "item": "WP15.11",
+          "repeat": false
+        },
+        {
+          "name": "The bank is unreadable in the straight-up lake window",
+          "item": "WP15.3",
+          "repeat": false
+        },
+        {
+          "name": "The Trade lake inspection disables whitecaps",
+          "item": "WP15.3",
+          "repeat": false
+        },
+        {
+          "name": "The submerged hull breaks into long bands during crossings",
+          "item": "WP15.5",
+          "repeat": false
+        },
+        {
+          "name": "Chrome loses the bank in the straight-up lake window",
+          "item": "WP15.8",
+          "repeat": false
+        },
+        {
+          "name": "Chrome shows bands across the hull in the held lake view",
+          "item": "WP15.8",
+          "repeat": false
+        },
+        {
+          "name": "The Chrome lake route cannot show the required overhead foam",
+          "item": "WP15.8",
+          "repeat": false
+        },
+        {
+          "name": "The cost record skips water-surface tripwires after pass renumbering",
+          "item": "WP15.9",
+          "repeat": false
         }
       ]
     },
