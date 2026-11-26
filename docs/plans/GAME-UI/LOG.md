@@ -211,3 +211,9 @@
   3,600 and showed clear status text in both orientations. V1 passed the existing simulator
   lifecycle, cooked-draw, capture, sprite and interface routes. Physical iPhone validation remains
   pending. [Target proofs](../../../.orchestrate/evidence/GAME-UI/WP6/index.md)
+- 2026-11-26 WP6 review repair consumes a request when its scene installs, retries a deferred current
+  request and preserves a newer one. The default-handler simulator probe checked cold and warm requests,
+  retries and superseding requests. V1 delivered the full ticket on all four existing invite routes.
+  Crowd starts its inline clock on its first frame. Its ordinary iOS launch, simulator journey, digest
+  and visual inspection passed on the iPhone 18 Pro simulator.
+  [Review repair evidence](../../../.orchestrate/evidence/GAME-UI/WP6/scene-request-repair/README.md)

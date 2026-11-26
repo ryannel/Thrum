@@ -686,7 +686,7 @@
           "lock": "simulator",
           "ask": "Is the touch a real one made by the UI test, and is the digest read from the app's own record?",
           "target": "ios-sim",
-          "evidence": ".orchestrate/evidence/GAME-UI/WP6/crowd-simulator-retake/result.json",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP6/scene-request-repair/crowd-final/result.json",
           "verdict": "pass",
           "review": ".orchestrate/evidence/GAME-UI/WP6-review.md",
           "builder_result": "pass"
@@ -708,10 +708,10 @@
           "statement": "The iOS shell both apps use is in `thrum-app`, generic over a game, and names nothing of either program. Neither app keeps a copy of its lifecycle, touch delivery, surface lease, rotation, device-loss recovery or its reports of extent, density and insets.",
           "ask": "Where does the shared shell live? Does it name a type, string or file of the V1 game or of the crowd view? What iOS code is left in each app's package, and is any of it the same policy written twice?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP6/scene-request-repair/README.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GAME-UI/WP6-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP6.4",
@@ -740,7 +740,7 @@
           "statement": "On the simulator's screen, in portrait and in landscape, the crowd and its status display are upright and inside the screen, clear of the Dynamic Island, the rounded corners and the home indicator, with crisp text.",
           "inspect": "Take `simctl` screenshots of the crowd view's app in both orientations, before and after a rotation. Judge each whole and in native-size crops of the status display and each corner.",
           "target": "ios-sim",
-          "evidence": ".orchestrate/evidence/GAME-UI/WP6/visual-review.md",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP6/scene-request-repair/visual-review.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/GAME-UI/WP6-review.md",
           "builder_result": "pass"
