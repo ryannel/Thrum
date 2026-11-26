@@ -572,7 +572,7 @@
         {
           "verdict": "fail",
           "commit": "3103f12f7a7cc30a6e92838c126baf2b18e16dd2",
-          "review": ".orchestrate/evidence/RIVERS/WP4-review.md",
+          "review": ".orchestrate/evidence/RIVERS/WP4-review-4.md",
           "items": {
             "WP4.1": "pass",
             "WP4.2": "pass",
@@ -608,6 +608,46 @@
             "turns": 1
           },
           "at": "2026-11-26T21:08:30Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "81457f0aa879f840f581790d23da481472dba967",
+          "review": ".orchestrate/evidence/RIVERS/WP4-review.md",
+          "items": {
+            "WP4.1": "pass",
+            "WP4.2": "pass",
+            "WP4.3": "fail",
+            "WP4.4": "pass",
+            "WP4.5": "pass",
+            "WP4.6": "pass",
+            "WP4.7": "pass",
+            "WP4.8": "pass",
+            "WP4.9": "pass"
+          },
+          "findings": [
+            {
+              "name": "Oblique bank views write tidal-reach depth outside the 10 mm tolerance",
+              "item": "WP4.3",
+              "different": "The previous receiving-wave phase error is fixed at its station. At the new column and time a near-vertical view agrees with the live query within 0.006 mm, while a two-metre bank view writes depth 19.13 mm below it.",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 163080,
+            "cached": 6534784,
+            "output": 20471,
+            "turns": 1
+          },
+          "at": "2026-11-26T22:04:50Z"
         }
       ],
       "authorised": {
