@@ -1018,3 +1018,11 @@ the return to full share, with the optical-depth change halving as the step halv
 encloses the occupied top at 3,281.20 m with a ceiling of 3,419.24 m. Fresh Metal and Chrome stills, Metal
 growth and fair-sky motion, and the paired Metal cost check cover the original five items on the repair.
 [Review repair and target receipts](../../../.orchestrate/evidence/CLOUDS/WP10/review-repair/README.md)
+
+## WP14 broken-cloud shaft parked
+
+- 2026-11-26 Lead, after WP14 ended `BLOCKED` with `needs_context` on the shaft below broken cloud (WP14.6,
+  WP14.9): park the one cue, as WP10's noon relief was, and move it to a later work package that blocks
+  nothing. Planner: WP14.6 and WP14.9 name the limitation, [risk 15](DESIGN.md#risks) records it, and new
+  WP22, last, after WP12, takes it up. No mechanism or interface changed.
+  [What changed](../../../.orchestrate/evidence/CLOUDS/design-revision-2026-11-26-broken-cloud-shaft.md)

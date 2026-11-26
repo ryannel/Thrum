@@ -32,7 +32,8 @@ Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-bu
 - Assumption: the fair cumulus's close-up form (shelves, folds, repeated caps) waits for WP17, just before the module closes; every sky until then shows those flaws.
 - Assumption: the module closes only after `APPLE-PRESENTATION`'s governor and MetalFX work packages. Fog waits for `ATMOSPHERE` WP8, and the sea for `WATERS` WP8.
 - Assumption: the game WP20 measures is the release V1 game in its 1920×1080 window, on the Apple recipe with TAAU under the fair preset. WP20 comes before WP8 and pauses every other agent for one attended series of eleven recorded runs.
-- Assumption: the module finishes at WP12 with weak noon relief on broad lobes of library shapes as a listed weakness ([risk 14](DESIGN.md#risks)). The relief work is no work package: [the noon-relief follow-up](DESIGN.md#the-noon-relief-follow-up) holds it, and waits for the lead to schedule it.
+- Assumption: the finished sky closes at WP12 with weak noon relief on broad lobes of library shapes as a listed weakness ([risk 14](DESIGN.md#risks)). The relief work is no work package: [the noon-relief follow-up](DESIGN.md#the-noon-relief-follow-up) holds it, and waits for the lead to schedule it.
+- Assumption: WP14 to WP12 pass without a shaft of sunlight followed inside mist below broken cloud ([risk 15](DESIGN.md#risks)); WP22, last, takes it up.
 
 ## WP1 The weather over any place and time is computed on the CPU alone, from a clear sky to overcast, and repeats exactly: done
 [review](../../../.orchestrate/evidence/CLOUDS/WP1-review.md)
@@ -81,27 +82,19 @@ Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-bu
 
 ## WP9 A visitor changes coverage, cloud type, wind and time of day with the controls, and the sky holds up in motion, on the Mac and in Chrome
 
-TAAU is `APPLE-PRESENTATION`'s; a defect of the reconstructor's goes to that module's log. No governor is
-needed here.
-
-WP9.7 names the sky's knobs only. The ground band and the medium coefficients have no producer until WP14,
-so their cadences are WP16.7's, and nothing of Ground is built here.
+[Review](../../../.orchestrate/evidence/CLOUDS/WP9-review.md)
 
 ## WP10 The twelve accepted cloud volumes and the growing congestus each read as themselves in the finished sky
 
-`B3-HANDOFF.md` at Broadsides `79637f789` names each shape's intended read and its accepted weaknesses, which
-are not this work package's to fix.
-
-Try no further noon-relief look: [risk 14](DESIGN.md#risks) parks it. `f2bdb692ab3d` on `build/clouds` holds
-the light to close on, and [its handoff](../../../.orchestrate/evidence/CLOUDS/WP10-handoff.md) the proofs of
-WP10.2 to WP10.5, which stand: record them again and capture nothing new for them.
-
-Only WP10.1 is left, and the gallery already taken can pass it: the flat noon lobes the handoff reports are
-risk 14's weakness. Name in the evidence every shape and lobe that shows the cue.
+[Review](../../../.orchestrate/evidence/CLOUDS/WP10-review.md)
 
 ## WP14 Mist lies in the valley's hollows and fades the land near the camera, in the land's own light
 
 Follow the [ground-condensate integration handoff](DESIGN.md#ground-condensate-integration-handoff).
+
+The shaft below broken cloud is parked ([risk 15](DESIGN.md#risks)): capture nothing more for it and try no
+look. `bf2635c8e` on `build/clouds` holds the work, and the ten passed items stand. Only WP14.6 and WP14.9
+are left, and the frames already taken can pass them. Add the limitation to the `E1.clouds` row's visuals.
 
 ## WP15 Mist and fog banks reach the horizon, low cloud hides the hilltops, and a climbing camera passes into the cloud and out above it
 
@@ -122,3 +115,8 @@ flaw's cause with those controls before any look.
 
 Run WP12.1's check first. If it fails, end `BLOCKED` with `needs_dependency` and build nothing. WP12.6 needs
 the owner's attended sitting; do every other item first.
+
+## WP22 Below broken cloud, shafts of sunlight stand in the valley's mist
+
+Follow [the broken-cloud shaft follow-up](DESIGN.md#the-broken-cloud-shaft-follow-up-wp22). Take the
+starting arms of WP22.6's cost record first.

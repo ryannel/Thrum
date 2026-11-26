@@ -1457,8 +1457,8 @@
         },
         {
           "id": "WP14.6",
-          "statement": "Mist is in the land's light. Toward a 10\u00b0 Sun it is bright and glows around the Sun, and away from the Sun the same mist is grey. A prop's shadow on the ground weakens with the depth of mist over it and is gone under thick fog. Shafts of sunlight stand in the mist below a ridge line and below broken cloud. Shaded ground in mist is never black.",
-          "inspect": "Capture `fixed` stills at a 10\u00b0 and a 40\u00b0 Sun, toward, across and away from the Sun, with a prop in thin mist and one in fog of a 50 m visual range, and one frame under the broken preset. Judge each whole and in native-size crops of the shadows and the shafts.",
+          "statement": "Mist is in the land's light. Toward a 10\u00b0 Sun it is bright and glows around the Sun, and away from the Sun the same mist is grey. A prop's shadow on the ground weakens with the depth of mist over it and is gone under thick fog. Shafts of sunlight stand in the mist below a ridge line. Shaded ground in mist is never black. Below broken cloud one limitation is known and fails nothing here (the design's risk 15): sunlight through an opening lights the mist it reaches as a pool, a band or a level glow, and no shaft is followed inside the mist.",
+          "inspect": "Capture `fixed` stills at a 10\u00b0 and a 40\u00b0 Sun, toward, across and away from the Sun, with a prop in thin mist and one in fog of a 50 m visual range. Judge each whole and in native-size crops of the shadows and the shafts: 1. toward the 10\u00b0 Sun the mist is bright and glows around the Sun; 2. away from the Sun the same mist is grey; 3. a prop's shadow on the ground weakens with the depth of mist over it, and the prop in the fog casts none; 4. below a ridge line shafts of sunlight stand in the mist; 5. no shaded ground in mist is black. No frame under the broken preset is judged here: the stills WP14 kept of it are risk 15's record.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -1488,7 +1488,7 @@
         },
         {
           "id": "WP14.9",
-          "statement": "In Chrome the dawn valley passes WP14.5's, WP14.6's and WP14.7's lists.",
+          "statement": "In Chrome the dawn valley passes WP14.5's, WP14.6's and WP14.7's lists. WP14.6's known limitation below broken cloud is the same in Chrome and fails nothing here.",
           "inspect": "Capture the same `fixed` stills and the `realtime` walk into the fog in Chrome. Judge them by those lists, then compare native-size crops with the Mac's.",
           "target": "chrome-webgpu",
           "builder_result": "open",
@@ -2039,8 +2039,8 @@
         },
         {
           "id": "WP12.9",
-          "statement": "The maturity ledger's `E1.clouds` row and the module's provenance record, tracked under `docs/provenance`, are current: implementation, correctness, visuals and device are kept apart; what is not built, the device runs owed and the one known weakness of the visuals are listed; and every lifted file is named with its source commit, path and licence. The weakness is the broad lobes that read flat at noon (the design's risk 14), listed with each shape that shows it: the congestus core, the mediocris twin turrets, congestus-forked, fair-head-tail and any other WP10's evidence names.",
-          "ask": "Does the ledger claim anything for a device or a recipe that was not run, or claim the visuals without listing the flat noon lobes of risk 14 and each shape that shows them? Does the provenance record match the files in the two crates and the two games?",
+          "statement": "The maturity ledger's `E1.clouds` row and the module's provenance record, tracked under `docs/provenance`, are current: implementation, correctness, visuals and device are kept apart; what is not built, the device runs owed and the two known weaknesses of the visuals are listed; and every lifted file is named with its source commit, path and licence. The first weakness is the broad lobes that read flat at noon (the design's risk 14), listed with each shape that shows it: the congestus core, the mediocris twin turrets, congestus-forked, fair-head-tail and any other WP10's evidence names. The second is the shaft of sunlight below broken cloud that spreads where it meets mist and is not followed inside it (the design's risk 15).",
+          "ask": "Does the ledger claim anything for a device or a recipe that was not run, or claim the visuals without listing the flat noon lobes of risk 14, each shape that shows them, and the broken-cloud shaft of risk 15? Does the provenance record match the files in the two crates and the two games?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -2051,6 +2051,87 @@
           "id": "WP12.10",
           "statement": "The cost tool's `cadence` and `hold` commands, which took WP19's and WP20's wind series, are deleted, and the tool still takes its cost records. Record: the tool's command list after the deletion.",
           "check": "sh -c 'python3 scripts/cloud_cost.py --help | grep -q refuse && ! python3 scripts/cloud_cost.py --help | grep -q -E \"cadence|hold\"'",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
+    },
+    {
+      "id": "WP22",
+      "name": "Below broken cloud, shafts of sunlight stand in the valley's mist",
+      "status": "not_started",
+      "depends_on": [],
+      "quality_bar": "Low sunlight through broken cloud into valley mist as in Red Dead Redemption 2: a beam below an opening in the cloud that keeps its direction and both its edges from the air into the mist, brighter than the shaded mist beside it, in mist that is otherwise as WP14 to WP16 left it.",
+      "items": [
+        {
+          "id": "WP22.1",
+          "statement": "In the valley and under the broken preset as they ship, with valley mist at half amount or more and the Sun between 10\u00b0 and 40\u00b0, a shaft of sunlight below an opening in the cloud stands in the mist, in two views the builder chooses from 2 to 40 m over the ground. Nothing is placed or set for the frames beyond the preset, the mist's amount, the Sun, the clear air's visual range and the weather's time: no cloud, bank or opening. The shaft belongs to its opening and to the mist: under the clear preset the same view has none, and with Ground declared clear its part inside the mist is gone.",
+          "inspect": "Capture `fixed` stills with T2 engine capture at 2560\u00d71440 of the two views, and of each view's two controls: the clear preset, and Ground declared clear. Judge each view whole and in a native-size crop where the shaft meets the mist's top: 1. the shaft is followed from the air above the mist to below the mist's top as one beam, along the Sun's direction; 2. inside the mist both its edges are traced, and the mist inside it is brighter than the mist beside it; 3. it does not end at the mist's top as a level glow, a band or a pool; 4. no blocky edge, step or stripe shows in it; 5. the clear-preset control shows no shaft, and the control with Ground clear shows none inside where the mist was.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP22.2",
+          "statement": "In Chrome the two views pass WP22.1's list, and with the changed light the dawn valley and the far mist pass WP14.5's, WP14.6's, WP14.7's and WP15.4's lists.",
+          "inspect": "Capture in Chrome WP22.1's stills and controls, and the stills and sequences of WP14.5, WP14.6, WP14.7 and WP15.4. Judge them by those lists, then compare native-size crops with the Mac's.",
+          "target": "chrome-webgpu",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP22.3",
+          "statement": "The accepted mist holds under the changed light. On the portable recipe the dawn valley passes WP14.5's, WP14.6's and WP14.7's lists, the far mist WP15.4's, WP15.6's and WP15.13's, the mist through twilight WP16.2's, and the fog bank on the sea WP11.9's.",
+          "inspect": "Capture those eight items' stills and sequences again with the changed light. Judge them by those lists, whole and in the native-size crops they name.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP22.4",
+          "statement": "On the Apple recipe with MetalFX resolved the shaft passes WP22.1's list in its two views and holds in motion: as the broken field drifts at 1\u00d7 and at 60\u00d7, through a 10-second pan and through a 40 m walk, it moves with its opening, and nothing in it flickers, crawls, trails or pops. WP14.8's and WP15.8's lists pass again there.",
+          "inspect": "Capture on the Apple recipe with MetalFX resolved: `fixed` stills of WP22.1's two views; `realtime` sequences of 20 seconds from each view at 1\u00d7 and at 60\u00d7, and a 10-second pan and a 40 m walk with the shaft in frame; and WP14.8's and WP15.8's sequences. Judge the stills by WP22.1's list, and consecutive frames at 1x, whole and in native-size crops of the shaft's edges and of where it meets the mist.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP22.5",
+          "statement": "The remedy keeps one light and what a game reads. The medium-coefficient pass, the trace and the sky overlay still take ground condensate through one density, one Sun-term function and one read of the depths, and the Sun's path is one product, applied once to each receiver. The tests of WP14.1 to WP14.4, WP14.13, WP15.1 and WP15.7 assert what those work packages left and pass in the project's test command.",
+          "ask": "Does any consumer have a second Sun term, density or read of the Sun's path for shafts, or a gain on one integrator? In this work package's changes, did those tests move only in expected values, probe points and a stated tolerance, with every assertion and every wrong version they reject kept?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP22.6",
+          "statement": "The paired cost record is taken at 2560\u00d71440 on both of the Mac's recipes in two views, WP14.10's at dawn and the first of WP22.1's under the broken preset, each at the commit this work package started from and again at its end, with the ground band, the medium coefficients, the view volume and the trace timed by name and the bytes of each resource. Each end arm is held to the wires against its starting arm, and each wire it trips has its investigation beside it. No figure in the record decides this item.",
+          "check": "python3 scripts/cloud_cost.py check --scene mist-shaft",
+          "ask": "Is each end arm compared with the starting arm of the same recipe and view, taken with the same tool on the same machine? Does each tripped wire's investigation say what was measured to find the cause, and what was fixed or logged as a follow-up?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP22.7",
+          "statement": "The maturity ledger's `E1.clouds` row is current: the shaft below broken cloud is no longer listed as a weakness of the visuals (the design's risk 15), and the row claims it only for the targets and recipes it was inspected on.",
+          "ask": "Does the row claim only what this work package proved, on the targets it ran on, with visuals apart from correctness?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",

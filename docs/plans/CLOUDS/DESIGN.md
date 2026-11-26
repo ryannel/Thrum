@@ -57,7 +57,12 @@ recorded under the noon Sun and the 10° Sun, before and after, each Sun answeri
 it. Revised once more that day on the lead's decision after WP10 found the same cue on congestus-forked and
 fair-head-tail: the four shapes share one cause, so [risk 14](#risks) excuses a flat noon lobe by the cue and
 not by the shape's name, on any shape whose 10° view tells that lobe apart, and the follow-up answers for
-every shape that shows it. No mechanism and no interface changed.
+every shape that shows it. No mechanism and no interface changed. Revised 26 November 2026 on the lead's
+decision to park one cue of WP14: under broken cloud a shaft of sunlight spreads where it meets the mist and
+is not followed inside it. [Risk 15](#risks) records it as a known limitation, WP14 closes without it, and
+[WP22](#the-broken-cloud-shaft-follow-up-wp22), the last work package, after WP12, takes it up. The finished
+sky still closes at WP12, and the module's work packages now end with WP22. No mechanism and no interface
+changed.
 
 ## The request
 
@@ -1955,7 +1960,7 @@ is judged for the weather sky in WP20's wind series and recorded for the finishe
    of shipped games a high Sun that flattens a broad lobe is plausible. The lead decided the same day that
    the four shapes are one cause, the Sun's diffuse light into a broad lobe under a high Sun, and not four
    defects. So the weakness is a known limitation, and this module finishes with it: WP10 closes on the light
-   it retained, and WP12 closes the module on that light, with the weakness listed in the maturity ledger
+   it retained, and WP12 closes the finished sky on that light, with the weakness listed in the maturity ledger
    (WP12.9). The relief is taken up afterwards by [the noon-relief follow-up](#the-noon-relief-follow-up),
    which is no work package of this module. Nothing waits for it, the module's close included.
 
@@ -2003,11 +2008,100 @@ is judged for the weather sky in WP20's wind series and recorded for the finishe
      [the head and tail](../../../.orchestrate/evidence/CLOUDS/WP10/qualification-head-tail.md)), and the
      follow-up's control is drawn on each shape.
 
+15. **A shaft of sunlight below broken cloud is lost where it meets the mist.** WP14 found it on Metal and in
+   Chrome alike. Under the broken preset a warm diagonal stands in the air below an opening and is followed
+   down to the mist's upper edge, and there it spreads into a level glow, a band or a pool
+   ([Metal](../../../.orchestrate/evidence/CLOUDS/WP14/shaft-target-pairs/metal-focused-close-20-crop.png),
+   [Chrome](../../../.orchestrate/evidence/CLOUDS/WP14/shaft-target-pairs/chrome-focused-close-20-crop.png)).
+   More than 40 matched experiments on the two targets did not change that
+   ([WP14's handoff](../../../.orchestrate/evidence/CLOUDS/WP14-handoff.md)). The lead parked the cue on
+   26 November 2026, as risk 14's was: it is a known limitation, WP14 closes on the light it has, no scene is
+   authored to show a shaft, and the mist's light is not reopened in WP14.
+   [WP22](#the-broken-cloud-shaft-follow-up-wp22) takes the cue up as the module's last work package, after
+   WP12, so no work package waits for it: WP14 to WP12 are built and closed with the limitation, and WP12.9
+   lists it in the maturity ledger beside risk 14's.
+
+   The limitation is known by its cue: under broken cloud, sunlight through an opening lights the mist it
+   reaches as a pool, a band or a level glow, and the beam seen in the air above is not followed below the
+   mist's top. In WP14, WP15, WP16, WP11, WP17 and WP12 that fails no inspected item, on the Mac or in
+   Chrome, and no builder of those work packages tries a look or a scene for it. Nothing else of K10 is
+   excused: mist glows toward a low Sun and is grey away from it; a prop's shadow weakens with the mist over
+   it; shafts stand in the mist below a ridge line (WP14.6); the shadows of ridges and clouds lie across far
+   mist, and mist in shade is dimmer than sunlit mist beside it (WP15.6); and shafts stand in haze under
+   broken cloud (WP16.3), where the air above the mist already shows them. A tile, a block, a step or a band
+   in the lit pool fails as it would anywhere in mist.
+
+   What WP14 found, in [its handoff](../../../.orchestrate/evidence/CLOUDS/WP14-handoff.md),
+   [its matched frames and controls](../../../.orchestrate/evidence/CLOUDS/WP14/shaft-target-pairs/README.md),
+   [its source isolation](../../../.orchestrate/evidence/CLOUDS/WP14/shaft-follow-up/README.md) and
+   [its Sun-path atlas](../../../.orchestrate/evidence/CLOUDS/WP14/shaft-target-pairs/world-atlas/README.md),
+   on `build/clouds` at `bf2635c8e`. Each trial's scratch patch is beside its frames, and none was promoted:
+
+   - The light belongs to the opening and to the mist. The clear preset removes the diagonal and the striped
+     light from the same view. With Ground declared clear the diagonal stays over the ridge, a lit patch
+     shows on the land, and the bright bands in the mist are gone.
+   - The best frames are the close views at a 16° evening Sun, with mist at half amount and a clear-air
+     visual range of 20 km. Sun elevations of 10°, 24° and 40°, visual ranges of 6 and 12 km, the weather
+     advected at 60×, and mist at full amount gave moving or broad patches and no shaft.
+   - Ruled out as the only cause, each by a control: the mist's depth and water (seven trials, 95 to 134 m
+     for 36 m, at 0.33 to 0.62 of the water, raised the pool); a local bank at the landing (six variants
+     made a brighter pool, and narrow banks showed blocky edges); the opening's width (seventeen takes with
+     two placed clouds staggered along the Sun's direction, at four offsets, from lower cameras and with a
+     bank, darkened the surround and left the beam spreading at the mist); the ground band's spacing (20 m
+     for 80 m across and 4 m for 12 m up moved the shaft and its landing by under one 8-bit level); the
+     diffuse solar term (with the beam alone the landing lost under 3 levels and stayed a broad strip); the
+     upper cloud's own radiance in front (removing it sharpened the edge in the air and changed little below
+     the ridge); and gaps in the Sun's path (the atlas shows several openings whose Sun rays cross
+     consecutive occupied heights of mist).
+   - Where the light is: along the view rays of the two best views the lit mist lies 1.6 to 4 km from the
+     camera, at distances that differ row by row, and the highest row meets no mist. Eight takes moved
+     toward the far peak and gave pools and shallow strips.
+   - The lead's reading, shown by no control: the spread persists with the beam alone, so the likely cause
+     is how light is carried in the mist, and not sampling or placement.
+   - The planner's reading, shown by no control: every lit region measured lies beyond the view volume, in
+     the trace, in a layer 36 m deep seen from outside at a low angle. An opening's beam is hundreds of
+     metres across at the ground, so in a layer that hides the land behind it the eye sees the layer's lit
+     top, which is a strip. The records name no take from inside thin mist with the beam within the view
+     volume's reach, seen across the Sun against shaded ground, which is where a shaft in mist is seen in
+     the world and where the scene's shadows and the view volume's cells draw it.
+   - Not tried, by WP14's record: which integrator draws the lit region in each view; how sharp the
+     opening's edge is in the cloud band's optical depth where the ground band takes it; and how much of
+     the shaded mist's brightness is ambient light, which sets the contrast a beam can have.
+
+## The broken-cloud shaft follow-up (WP22)
+
+WP22 is the work [risk 15](#risks) parks. It is the last work package, after WP12, so it holds up no other.
+The finished sky closes at WP12 with the limitation listed (WP12.9), and the builder who passes WP22 takes
+it out of the ledger (WP22.7). It changes light that WP14 to WP12 closed on, so it answers for what the
+change does to the mist they accepted (WP22.2 to WP22.5).
+
+**The bar.** Low sunlight through broken cloud into valley mist as in Red Dead Redemption 2: a beam below an
+opening that keeps its direction and both its edges from the air into the mist, brighter than the shaded mist
+beside it. It is judged by WP22.1's list in the valley and under the broken preset as they ship. A scene, a
+cloud, a bank or an opening authored for the frame does not pass it. WP14's retained frames say where the
+beam was lost and set no bar.
+
+**The investigation.** It starts from the cause, as WP17's does: a control that shows why the beam stops
+reading at the mist, before any look. Risk 15 lists what WP14's controls ruled out, which is not tried
+again, and three readings no control has shown, which come first: where the beam is drawn (the view volume
+or the trace) and from where it is seen; the opening's edge in the Sun's path; and the ambient light in
+shaded mist. If the cause is the view, the fix is the views WP22.1 lets the builder choose, and the light
+does not change.
+
+**The remedy** keeps [one density, one Sun's path](#condensate-that-meets-the-ground-mist-fog-and-low-cloud)
+and one Sun term for the view volume, the trace and the sky overlay, with no gain on one integrator and no
+term that only shafts read (WP22.5). The valley's fog table and the broken preset are game data and may
+change, and then WP22.3 judges the mist they change. A cause that asks for a mechanism this design lacks,
+such as a Sun path resolved more finely near the camera or light carried sideways in the mist, ends
+`BLOCKED` with `needs_context` and the cause, for a planner. Three failed looks go to the log and end
+`BLOCKED`. Either way nothing else waits. The starting arms of WP22.6's cost record are taken before
+anything changes.
+
 ## The noon-relief follow-up
 
 This is the relief work [risk 14](#risks) parks. It is no work package of this module: it is in neither the
-done-when file nor the plan file, so the module is finished when WP12 is Done, whether or not the follow-up has
-been scheduled, has started or has ended `BLOCKED`. The lead schedules it apart from this module's work
+done-when file nor the plan file, so it holds up no work package and not the module's close, whether or not it
+has been scheduled, has started or has ended `BLOCKED`. The lead schedules it apart from this module's work
 packages (the lead's decision of 26 November 2026). A planner then writes it as a work package in the module
 the lead names, with one item for each line of [what it must show](#what-the-follow-up-must-show), and until
 then no builder builds it. Until it passes, the weakness stays in the maturity ledger (WP12.9), and the
@@ -2138,7 +2232,9 @@ water scene, WP11.5 uses `scripts/check_water_browser.mjs`.
   lobe of a library shape that reads flat at noon, where the shape's 10° view tells it apart
   ([risk 14](#risks)), fails no inspected item of this module's work packages, and is judged by
   [the noon-relief follow-up](#the-noon-relief-follow-up) after them. At a 10° Sun nothing excuses it, on
-  any shape.
+  any shape. A shaft of sunlight below broken cloud that spreads where it meets the mist
+  ([risk 15](#risks)) fails no inspected item of WP14 to WP12, and is judged by
+  [WP22](#the-broken-cloud-shaft-follow-up-wp22).
 
 ## Open questions
 
@@ -2153,7 +2249,8 @@ water scene, WP11.5 uses `scripts/check_water_browser.mjs`.
 | Does a far side at a low Sun stay dark enough under a plane held for the whole cloud? | WP5's stills at a 10° and a 4° Sun |
 | Do turrets that only the cell's envelope raises and lowers read as a cloud growing, or do they need lives of their own? | WP7's time-lapse |
 | What draws the shelves, the fold and the repeated caps on turrets, when the lit plane and the erosion strength do not? | WP17 finds each cause by a control before any look ([risk 2](#risks)) |
-| What brings out the creases of a broad lobe under a high Sun, when a finer Sun march, a broader diffuse column and density probes do not? | [The noon-relief follow-up](#the-noon-relief-follow-up), after the module is finished, finds the cause by a control before any look |
+| What brings out the creases of a broad lobe under a high Sun, when a finer Sun march, a broader diffuse column and density probes do not? | [The noon-relief follow-up](#the-noon-relief-follow-up), after WP12, finds the cause by a control before any look |
+| Why does a beam below broken cloud stop reading as a shaft where it meets the mist, when the mist's depth, a local bank, the opening's width, the ground band's spacing and the diffuse solar term do not explain it? | [WP22](#the-broken-cloud-shaft-follow-up-wp22) finds the cause by a control before any look ([risk 15](#risks)) |
 | Does a far cloud read as cumulus on the map level that samples turrets it cannot resolve, and does its crossing into that level show? | WP3.2's crops |
 | Does the droplet's forward peak hold steady in the part-extent trace? | WP5 |
 | How many entries does the phase table need to hold its integral and its values near the Sun? | WP1 measures first, beside part G's 1,025 |
@@ -2177,6 +2274,10 @@ water scene, WP11.5 uses `scripts/check_water_browser.mjs`.
 coefficients and the ground band it reads and replaces the labelled test medium in `examples/v1-game`. A defect
 in the volume itself goes to `ATMOSPHERE`'s log. WP13 built the model's solar kernel from the four fixed
 orders; WP14.13 removes them, and the kernel the view volume takes is the trace's own shader function.
+
+WP14 closes without a shaft inside the mist below broken cloud: [risk 15](#risks) records it, and WP14.6 and
+WP14.9 judge everything else. The frames and controls WP14 kept of it are the record; capture no more, try no
+look for it, and list the limitation in the `E1.clouds` row's visuals.
 
 ## Weather map and Sun-path regressions (WP18)
 
