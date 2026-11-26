@@ -540,9 +540,13 @@ impl RingProfile {
         let mut moment_age: Vec<f64> = (0..ages)
             .map(|a| {
                 let age = a as f64 * self.age_step;
-                // Unresolved slopes grow with the new wave and fade at the same
-                // boundary as the resolved ring. The integral below stays one.
-                slope_at(reference, age) * smooth(age / 0.025) * fade(age).powi(2)
+                // Spreading small waves gradually occupy more of the pixel.
+                // Fade their diffuse energy ahead of the one-second cutoff, so
+                // the last sliver cannot hold the direct reflection open.
+                // Normalization below preserves the steady slope variance.
+                let growth = smooth(age / (0.20 * self.life)).powi(2);
+                let decay = smooth((self.life - age) / (0.55 * self.life)).powi(4);
+                slope_at(reference, age) * growth * decay
             })
             .collect();
         let norm: f64 = moment_age.iter().sum::<f64>() * self.age_step;
