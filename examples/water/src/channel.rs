@@ -30,6 +30,9 @@ pub const RELEASE: [f64; 2] = [213.5, CENTRE];
 pub fn forcing(wind: Wind) -> Forcing {
     let mut forcing = wind.forcing();
     forcing.wind_direction = std::f64::consts::FRAC_PI_2;
+    // The island shelters the outlet from a long wind sea. The offshore
+    // swell remains in the world field and enters through the tidal join.
+    forcing.fetch = 17_000.0;
     for swell in &mut forcing.swells {
         swell.direction = -std::f64::consts::FRAC_PI_2;
     }
@@ -240,12 +243,11 @@ pub fn build(wind: Wind, draw_water: bool, running: bool) -> Result<Scene, Box<d
             );
         }
     }
-    let (game, lease) = game.with_meshes_and_texture_lease(
+    let (game, _) = game.with_meshes_and_texture_lease(
         meshes,
         Some(("water island", include_str!("../island.wgsl"))),
-        &["textures/foam-rank"],
+        &[],
     )?;
-    water.lend_foam_pattern(lease);
     let (game, float) = crate::floating::install_channel_float(
         game,
         Arc::clone(&map),

@@ -72,7 +72,7 @@ fn hull_births(point: vec2<f32>, current: vec2<f32>, spacing: f32) -> vec4<f32> 
             let behind = along - ext.x * 0.5;
             if behind > 0.0 {
                 let core = exp(-0.85 * behind - pow(across / (ext.y + 0.14 * behind), 2.0));
-                let contact = 1.0 + 1.9 * exp(-3.2 * behind);
+                let contact = 1.0 + 0.85 * exp(-3.2 * behind);
                 let birth = min(3.3, 1.45 * flow * flow) * core * contact;
                 rates += vec4(0.60, 0.72, 0.0, 0.14) * birth;
             }
