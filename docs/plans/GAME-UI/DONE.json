@@ -455,10 +455,10 @@
     {
       "id": "WP4",
       "name": "A modal choice and a join screen are worked by key, pointer and touch, and nothing the interface consumes reaches the game",
-      "failed_reviews": 0,
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
+      "status": "in_progress",
       "quality_bar": "A choice as easy to work as Vampire Survivors' level-up or Hades' boon choice: the focused card is obvious at a glance, keys, pointer and touch all work and never disagree, and a held direction carries on when the choice closes. A join screen as plain as Factorio's or Stardew Valley's: a player sees what they are joining and why a join failed.",
       "items": [
         {
@@ -467,20 +467,20 @@
           "check": "cargo test --locked --offline -p thrum-ui --test routing",
           "ask": "Read the test. Does it generate interleavings at random, in the thousands, with scopes opened and closed while contacts are down, and check each stated property after every event from what the game was actually handed? Are a direction held through a modal choice, and a touch held on a stick while a second finger chooses, written out as cases?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/GAME-UI/WP4/WP4.1.log",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/GAME-UI/WP4-review.md",
+          "builder_result": "open"
         },
         {
           "id": "WP4.2",
           "statement": "A button is activated once, when the contact that pressed it is released inside it, and not when it slides off or the button is removed or disabled. A pointer over a control focuses it; a touch shows no focus style. While a font edit or a change of scale waits to be shown, a press is tested against the layout the shell last saw drawn. A control's hit box is at least 44 points a side, and a point inside two grown boxes goes to the control whose drawn box is nearest.",
           "check": "cargo test --locked --offline -p thrum-ui --test controls",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/GAME-UI/WP4/WP4.2.log",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/GAME-UI/WP4-review.md",
+          "builder_result": "open"
         },
         {
           "id": "WP4.3",
@@ -488,10 +488,10 @@
           "check": "cargo test --locked --offline -p thrum-ui --test focus",
           "ask": "Are reachability and reversal checked over the whole stated family of grids, with several cell shapes and gaps, and is the ragged layout of three cards above two present as a case that names its neighbours?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/GAME-UI/WP4/WP4.3.log",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/GAME-UI/WP4-review.md",
+          "builder_result": "open"
         },
         {
           "id": "WP4.4",
@@ -499,8 +499,8 @@
           "check": "cargo test --locked --offline -p thrum-ui --test drops",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/GAME-UI/WP4/WP4.4.log",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GAME-UI/WP4-review.md",
           "builder_result": "pass"
         },
         {
@@ -510,10 +510,10 @@
           "ask": "Do the scripted events enter at the same function the window's own key and pointer events enter, with positions in the window's own units? Is the player's position read from the game, and the activation count from what the game was handed?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/GAME-UI/WP4/route/route-1-record.json",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/GAME-UI/WP4-review.md",
+          "builder_result": "open"
         },
         {
           "id": "WP4.6",
@@ -523,8 +523,8 @@
           "lock": "gpu",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/GAME-UI/WP4/drops/drops-1-record.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GAME-UI/WP4-review.md",
           "builder_result": "pass"
         },
         {
@@ -534,8 +534,8 @@
           "lock": "chrome",
           "target": "chrome-webgpu",
           "evidence": ".orchestrate/evidence/GAME-UI/WP4/chrome-final/interface-modal.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GAME-UI/WP4-review.md",
           "builder_result": "pass"
         },
         {
@@ -544,8 +544,8 @@
           "inspect": "Capture `fixed` stills of the interface scene's choice with T2 engine capture at 640\u00d7360 and 1280\u00d7720 points at a scale of 2, at 3456\u00d72234 pixels at a scale of 2 and at a phone-sized extent in both orientations: idle, each card focused, one pressed, one disabled, and disarmed. Judge each whole, at the size it is shown and in native-size crops of the focused card.",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/GAME-UI/WP4/index.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GAME-UI/WP4-review.md",
           "builder_result": "pass"
         },
         {
@@ -553,10 +553,10 @@
           "statement": "In real time on the Mac, opening the choice during play, moving focus across the cards, choosing and closing reads as immediate and clean: each response shows as soon as one of the game's own edits would, nothing flickers or is drawn half laid out, the player does not twitch while the choice is open and walks on when it closes.",
           "inspect": "Capture the scripted modal choice at 1920\u00d71080 with T2 engine capture in `realtime` mode, with the event times from the run's record beside the frames. Judge the consecutive frames around each event (opening, each move of focus, the choice, closing) at 1x, whole and in native-size crops of the cards and of the player.",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/GAME-UI/WP4/motion-final/realtime/transitions.json",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/GAME-UI/WP4-review.md",
+          "builder_result": "open"
         },
         {
           "id": "WP4.10",
@@ -564,8 +564,8 @@
           "inspect": "Capture `fixed` stills of each state of the interface scene's join screen with T2 engine capture at 640\u00d7360 and 1280\u00d7720 points at a scale of 2 and at a phone-sized extent in both orientations. Judge each whole and in native-size crops of the ticket, the reason and the roster.",
           "target": "mac-metal",
           "evidence": ".orchestrate/evidence/GAME-UI/WP4/index.md",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GAME-UI/WP4-review.md",
           "builder_result": "pass"
         },
         {
@@ -574,8 +574,8 @@
           "inspect": "Capture `fixed` stills in Chrome with T2 engine capture at each ratio: the choice idle, focused and pressed, and the join screen joining with a ticket, joined and refused. Judge each whole and in native-size crops.",
           "target": "chrome-webgpu",
           "evidence": ".orchestrate/evidence/GAME-UI/WP4/chrome-final/interface-modal.json",
-          "verdict": "",
-          "review": "",
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/GAME-UI/WP4-review.md",
           "builder_result": "pass"
         },
         {
@@ -585,10 +585,46 @@
           "ask": "Were both retained runs release builds of the claimed commit, with the load on the machine recorded? Does the command succeed or fail on the record being complete, and never on a time? Is the Chrome record present beside the Mac's, taken with events sent through the browser?",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/GAME-UI/WP4/event-costs.json",
-          "verdict": "",
-          "review": "",
-          "builder_result": "pass"
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/GAME-UI/WP4-review.md",
+          "builder_result": "open"
+        }
+      ],
+      "findings": [
+        {
+          "name": "A direction pressed during disarming is lost on close",
+          "item": "WP4.1",
+          "repeat": false
+        },
+        {
+          "name": "The player advances after the modal is drawn",
+          "item": "WP4.5",
+          "repeat": false
+        },
+        {
+          "name": "The extra step is visible on the opening frames",
+          "item": "WP4.9",
+          "repeat": false
+        },
+        {
+          "name": "Touch motion and release leave pointer focus visible",
+          "item": "WP4.2",
+          "repeat": false
+        },
+        {
+          "name": "A disarmed nonexclusive scope passes held input through",
+          "item": "WP4.3",
+          "repeat": false
+        },
+        {
+          "name": "Chrome records elapsed time as the routing CPU measurement",
+          "item": "WP4.12",
+          "repeat": false
+        },
+        {
+          "name": "A focus-only edit rebuilds and lays out the entire menu",
+          "repeat": false
         }
       ]
     },

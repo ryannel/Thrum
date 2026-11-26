@@ -723,7 +723,79 @@
     },
     "WP4": {
       "definitions": "5173749d96a57ad29a03a23be0561477e8ae11979837862911396930c641e1b1",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "6513f3e70b7e9550eb96e28e191f6a085a1e4d5e",
+          "review": ".orchestrate/evidence/GAME-UI/WP4-review.md",
+          "items": {
+            "WP4.1": "fail",
+            "WP4.2": "fail",
+            "WP4.3": "fail",
+            "WP4.4": "pass",
+            "WP4.5": "fail",
+            "WP4.6": "pass",
+            "WP4.7": "pass",
+            "WP4.8": "pass",
+            "WP4.9": "fail",
+            "WP4.10": "pass",
+            "WP4.11": "pass",
+            "WP4.12": "fail"
+          },
+          "findings": [
+            {
+              "name": "A direction pressed during disarming is lost on close",
+              "item": "WP4.1",
+              "repeat": false
+            },
+            {
+              "name": "The player advances after the modal is drawn",
+              "item": "WP4.5",
+              "repeat": false
+            },
+            {
+              "name": "The extra step is visible on the opening frames",
+              "item": "WP4.9",
+              "repeat": false
+            },
+            {
+              "name": "Touch motion and release leave pointer focus visible",
+              "item": "WP4.2",
+              "repeat": false
+            },
+            {
+              "name": "A disarmed nonexclusive scope passes held input through",
+              "item": "WP4.3",
+              "repeat": false
+            },
+            {
+              "name": "Chrome records elapsed time as the routing CPU measurement",
+              "item": "WP4.12",
+              "repeat": false
+            },
+            {
+              "name": "A focus-only edit rebuilds and lays out the entire menu",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 163297,
+            "cached": 7493888,
+            "output": 17656,
+            "turns": 1
+          },
+          "at": "2026-11-26T05:58:54Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
