@@ -369,7 +369,7 @@
     {
       "id": "WP10",
       "name": "The check that a river file keeps each sample's own gains runs on a small reach",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "quality_bar": "Keep the proof that a river file stores each sample's own chop gains, on the smallest solved reach that shows it, with ample headroom in the fast tier.",
       "items": [
         {

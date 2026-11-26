@@ -652,6 +652,32 @@
         "by": "plan",
         "task": "The main-branch check workspace-tests fails, and the script couldn't tell which commit broke it. Find what breaks it, an",
         "at": "2026-11-26T13:27:17Z"
+      },
+      "ready_for_review": {
+        "commit": "767f243806659ee3556febb167dde9fa5116d357",
+        "checked": "39e9939d2adb027d79974d7b67f23148cd519825",
+        "at": "2026-11-26T15:47:56Z",
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.171.0-alpha.13.2",
+        "path": "visible",
+        "usage": {
+          "input": 117776,
+          "cached": 9044992,
+          "output": 15370,
+          "turns": 1
+        },
+        "session_usage": {
+          "input": 117776,
+          "cached": 9044992,
+          "output": 15370,
+          "turns": 1
+        }
       }
     }
   },
