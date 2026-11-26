@@ -216,7 +216,7 @@ impl Case {
             case.mapped = true;
             let sea = case.map.body(0).expect("sea").clone();
             let heights = (-24..=24).flat_map(|z| {
-                let depth = (0.08 + 1.45 * f64::from(z).max(0.0)).min(4.0);
+                let depth = (0.08 + 0.6 * f64::from(z).max(0.0)).min(4.0);
                 std::iter::repeat_n(datum - depth, 49)
             });
             let bed = Bed::new(

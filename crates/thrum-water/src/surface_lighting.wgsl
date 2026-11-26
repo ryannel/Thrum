@@ -41,7 +41,8 @@
     let v=normalize(view.camera_xyz_time.xyz-input.world);
     var screen_motion=(input.previous.xy/input.previous.w-input.current.xy/input.current.w)*vec2(0.5,-0.5)*view_aux.viewport_inv_viewport.xy;
     if water.level_dt_reset.z>0.5 {screen_motion=vec2(65504.0);}
-    let under = water_underside(input, n, v, variance, whitewater.y);
+    let foam_below = 1.0 - (1.0 - whitewater.y) * (1.0 - 0.65 * whitewater.x);
+    let under = water_underside(input, n, v, variance, foam_below);
     if under.a == 1.0 {
         return Output(under, screen_motion, 1.0);
     }

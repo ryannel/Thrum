@@ -144,13 +144,20 @@ fn build(
     } else {
         surface_wind.forcing()
     };
-    let map = prepare_island_map_at(
+    let mut map = prepare_island_map_at(
         &forcing,
         surf.then_some(true),
         None,
         f64::from(vertical_offset),
         f64::from(lake_stage),
     )?;
+    if lake && draw_craft && wind == Wind::Trade {
+        // The authored short crest group is local to this basin. Keep the
+        // fetch-derived protection of the other bands, including the swell.
+        let mut gains = map.body(1).ok_or("the dive lake is missing")?.gains;
+        gains[1] = 1.0;
+        map.set_wave_gains(1, gains)?;
+    }
     if site == DiveSite::HighLake {
         let [x, level, z] = eye_at_surface.map(f64::from);
         let sample = map
