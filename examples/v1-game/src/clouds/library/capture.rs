@@ -7,7 +7,7 @@ use thrum_cloud_model::{Error, HashedShapes};
 
 #[derive(Clone, Copy, Debug)]
 pub(super) enum Placement {
-    Shape(u32),
+    Shape { index: u32, side_lit: bool },
     Growth,
     Cost,
     FullShare,
@@ -26,12 +26,15 @@ impl PlacedSky {
             "library-only" => Placement::FullShare,
             "library-procedural" => Placement::NoShare,
             _ => {
+                let side_lit = name.ends_with("-side-lit");
                 let index = name
+                    .strip_suffix("-side-lit")
+                    .unwrap_or(name)
                     .strip_prefix("library-")
                     .and_then(|value| value.parse::<u32>().ok())
                     .filter(|&index| self.library.geometry(ShapeSource::Library(index)).is_some())
                     .ok_or(Error::Invalid)?;
-                Placement::Shape(index)
+                Placement::Shape { index, side_lit }
             }
         });
         if matches!(self.capture, Some(Placement::FullShare)) {
@@ -40,7 +43,8 @@ impl PlacedSky {
             // Bring their spacing in for the fair preset without moving the weather windows.
             profile.seed = 374;
             profile.model.pitch = 2300.0;
-            profile.weather.texels[3] = 1100.0;
+            // Keep the denser lattice inside the Shapes table at every held tick.
+            profile.weather.texels[3] = 900.0;
             self.profile = Some(profile);
         }
         self.capacity = 16;
@@ -78,14 +82,18 @@ impl Placement {
         parameters.coverage = 0.0;
         let mut state = State::new(parameters, 5.0, 16)?;
         state.set_library(Arc::clone(library))?;
+        let offset = match self {
+            Self::Shape { side_lit: true, .. } => 55.0_f64,
+            _ => 0.0,
+        };
         let mut place = |id, source, azimuth: f64, distance, scale| {
             let slab = library.geometry(source).ok_or(Error::Missing)?;
-            let (x, z) = azimuth.to_radians().sin_cos();
+            let (x, z) = (azimuth + offset).to_radians().sin_cos();
             state.add_from_library(
                 Directed {
                     id,
                     centre: [distance * x, 80.0 - distance * z],
-                    yaw: slab.heading,
+                    yaw: slab.heading + offset.to_radians(),
                     scale,
                     footprint: Arc::clone(&slab.footprint),
                     envelope: 0.0,
@@ -97,7 +105,7 @@ impl Placement {
             )
         };
         match self {
-            Self::Shape(index) => {
+            Self::Shape { index, .. } => {
                 place(4, ShapeSource::Library(index), -35.0, 5100.0, 1.0)?;
                 place(
                     5,

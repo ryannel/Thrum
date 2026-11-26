@@ -24,7 +24,9 @@ def views(group):
         for index in indices:
             for sun in ('noon', 'low'):
                 for height in EYES:
-                    yield f'shape-{index:02}-{sun}-{height:02}', f'library-{index}', sun, height, 1, 0, -35, 18
+                    side = '-side-lit' if sun == 'low' else ''
+                    yaw = 20 if side else -35
+                    yield f'shape-{index:02}-{sun}-{height:02}', f'library-{index}{side}', sun, height, 1, 0, yaw, 18
     if group in ('mix', 'chrome'):
         for sun in (SOLAR if group == 'mix' else ('noon',)):
             for height in EYES:
@@ -86,6 +88,7 @@ def main():
     parser.add_argument('group', choices=('gallery-fair', 'gallery-mediocris', 'gallery-congestus',
                                          'mix', 'motion', 'chrome', 'cost-view'))
     parser.add_argument('--only', help='capture one named view from the group')
+    parser.add_argument('--sun', choices=SOLAR, help='capture only this solar elevation')
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--library', type=Path, required=True)
     parser.add_argument('--valley', type=Path, default=ROOT / 'tmp/clouds-wp10/cost/valley')
@@ -94,7 +97,8 @@ def main():
     for name in ('output', 'library', 'valley', 'web_root'):
         setattr(args, name, getattr(args, name).resolve())
     args.output.mkdir(parents=True, exist_ok=True)
-    selected = [view for view in views(args.group) if not args.only or view[0] == args.only]
+    selected = [view for view in views(args.group)
+                if (not args.only or view[0] == args.only) and (not args.sun or view[2] == args.sun)]
     if not selected:
         parser.error('--only did not select a known view')
     for view in selected:
