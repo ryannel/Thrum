@@ -57,60 +57,36 @@ fn submitted_trade_depth_from_the_tidal_bank_matches_the_live_river_query() {
 }
 
 #[cfg(target_os = "macos")]
-fn check_trade_transect(stage: f64, from_bank: bool) {
+fn check_trade_transect(stage: f64) {
     let Some(gpu) =
         thrum_test_support::gpu("full trade river transects", Some(wgpu::Backend::Metal))
     else {
         return;
     };
-    river_proof::surface::check_live_depth(&gpu, stage, from_bank);
+    river_proof::surface::check_live_depth(&gpu, stage);
 }
 
 thrum_test_support::macos_gpu_test! {
 fn submitted_trade_depth_at_the_lowest_gauges() {
-    check_trade_transect(0.0, false);
+    check_trade_transect(0.0);
 }
 }
 
 thrum_test_support::macos_gpu_test! {
 fn submitted_trade_depth_between_gauge_samples() {
-    check_trade_transect(0.37, false);
+    check_trade_transect(0.37);
 }
 }
 
 thrum_test_support::macos_gpu_test! {
 fn submitted_trade_depth_at_the_middle_gauge_samples() {
-    check_trade_transect(0.5, false);
+    check_trade_transect(0.5);
 }
 }
 
 thrum_test_support::macos_gpu_test! {
 fn submitted_trade_depth_at_the_highest_gauges() {
-    check_trade_transect(1.0, false);
-}
-}
-
-thrum_test_support::macos_gpu_test! {
-fn submitted_bank_trade_depth_at_the_lowest_gauges() {
-    check_trade_transect(0.0, true);
-}
-}
-
-thrum_test_support::macos_gpu_test! {
-fn submitted_bank_trade_depth_between_gauge_samples() {
-    check_trade_transect(0.37, true);
-}
-}
-
-thrum_test_support::macos_gpu_test! {
-fn submitted_bank_trade_depth_at_the_middle_gauge_samples() {
-    check_trade_transect(0.5, true);
-}
-}
-
-thrum_test_support::macos_gpu_test! {
-fn submitted_bank_trade_depth_at_the_highest_gauges() {
-    check_trade_transect(1.0, true);
+    check_trade_transect(1.0);
 }
 }
 

@@ -209,23 +209,29 @@ fn trade_depth(gpu: &thrum_test_support::Gpu, stage: f64) -> (TradeDepth, Map) {
     (TradeDepth::new(gpu, map.clone(), spectrum), map)
 }
 
+pub(crate) fn check_live_depth(gpu: &thrum_test_support::Gpu, stage: f64) {
+    let (mut probe, map) = trade_depth(gpu, stage);
+    let sites = transect_points(&map);
+    check_trade_transect(&mut probe, &map, &sites, stage, TradeView::Above);
+    check_trade_transect(&mut probe, &map, &sites, stage, TradeView::Bank);
+}
+
 #[expect(
     clippy::cast_possible_truncation,
     clippy::print_stdout,
     reason = "proof camera uses GPU metres and logs retain the measured residuals"
 )]
-pub(crate) fn check_live_depth(gpu: &thrum_test_support::Gpu, stage: f64, from_bank: bool) {
-    let (mut probe, map) = trade_depth(gpu, stage);
-    let view = if from_bank {
-        TradeView::Bank
-    } else {
-        TradeView::Above
-    };
-    let sites = transect_points(&map);
+fn check_trade_transect(
+    probe: &mut TradeDepth,
+    map: &Map,
+    sites: &[(usize, [f64; 2])],
+    stage: f64,
+    view: TradeView,
+) {
     let mut count = [0; 6];
     let mut maximum_error = 0.0_f64;
     let mut waves = [0.0_f32; 3];
-    for (body, site) in sites {
+    for &(body, site) in sites {
         let [x, z] = site.map(|v| v as f32);
         let level = map.sample(site).expect("wet river station").row.level as f32;
         let axis = usize::from(body != 5);
@@ -256,6 +262,7 @@ pub(crate) fn check_live_depth(gpu: &thrum_test_support::Gpu, stage: f64, from_b
         count[3] >= 46 && count[4] >= 3 && count[5] >= 90,
         "{count:?}"
     );
+    let from_bank = matches!(view, TradeView::Bank);
     println!(
         "Metal full-trade stage {stage}, bank {from_bank}: {} spring, {} plunge reach, {} outlet pairs, maximum residual {maximum_error:.7} m, short-wave peaks {waves:?} m",
         count[3], count[4], count[5]
