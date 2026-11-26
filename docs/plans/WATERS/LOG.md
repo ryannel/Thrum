@@ -1341,3 +1341,9 @@
   components at eight stations on each of the three named charts after four seconds. The sheared case
   fails when its cross-channel derivative is removed.
   [Target evidence](../../../.orchestrate/evidence/WATERS/WP9/revision-4/README.md).
+
+- 2026-11-26 WP9 bank-flow review fix. Both varying reaches now have
+  transverse flow at one bank. The submitted Metal marker moved downstream
+  in both reaches and farther in the faster one in every window. All four
+  carriage fixtures retained more than half the marker's initial height.
+  [Metal readings](../../../.orchestrate/evidence/WATERS/WP9/review-bank/README.md).
