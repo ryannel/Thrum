@@ -1,6 +1,7 @@
 //! Browser qualification of both production timing sources.
 
-use super::{GameControls, HostedGame, game, js_error};
+use super::{HostedGame, game, js_error};
+use crate::controls::GameControls;
 use crate::governor_load::DebugLoad;
 use wasm_bindgen::prelude::*;
 use web_sys::HtmlCanvasElement;

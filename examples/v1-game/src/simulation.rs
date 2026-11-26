@@ -817,6 +817,17 @@ fn validate_commands(
             return Err(SimError::InvalidOwnership);
         }
         match command {
+            Command::SetWeather(target) => {
+                if weather.is_none() || !target.valid() {
+                    return Err(SimError::InvalidConfig);
+                }
+                if commands[..index]
+                    .iter()
+                    .any(|prior| matches!(prior, Command::SetWeather(_)))
+                {
+                    return Err(SimError::ConflictingCommands);
+                }
+            }
             Command::Spawn(entity) => {
                 if !finite(entity.position.0) || !finite(entity.velocity.0) {
                     return Err(SimError::NonFinite);
@@ -881,7 +892,7 @@ fn validate_commands(
 
 fn command_target(command: &Command) -> Option<(Handle, u8)> {
     match command {
-        Command::Spawn(_) => None,
+        Command::Spawn(_) | Command::SetWeather(_) => None,
         Command::Despawn(handle) => Some((*handle, 0)),
         Command::SetPosition(handle, _) => Some((*handle, 1)),
         Command::SetVelocity(handle, _) => Some((*handle, 2)),

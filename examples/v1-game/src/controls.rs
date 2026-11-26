@@ -13,6 +13,10 @@ use thrum_render::synthetic::DisplayOverlay;
 
 use crate::environment::DayCycle;
 
+mod clouds;
+use clouds::CloudControls;
+pub use clouds::CloudEdits;
+
 /// Steepest camera pitch the demo offers, in whole degrees so every view's slider has
 /// integer stops. The host itself admits up to ±0.6 rad.
 const PITCH_LIMIT_DEGREES: f32 = 34.0;
@@ -32,6 +36,8 @@ pub struct ControlEdits {
     pub exposure_zones: Option<bool>,
     /// Whether motion replaces the tone-mapped scene.
     pub motion_view: Option<bool>,
+    /// Changes to authoritative weather and its diagnostic view.
+    pub clouds: CloudEdits,
     /// Point grid and usable area reported by the platform shell.
     #[cfg(all(feature = "proving", any(target_os = "macos", target_arch = "wasm32")))]
     pub interface_output: Option<thrum_app::OutputMetrics>,
@@ -84,6 +90,7 @@ pub struct GameControls {
     exposure_zones: Toggle,
     motion_view: Toggle,
     sun_elevation: Readout,
+    clouds: Option<CloudControls>,
     /// Per input control: the model revision last applied to or observed from the game.
     /// A control whose revision is newer holds a pending edit.
     settled: [u64; 6],
@@ -97,6 +104,16 @@ impl GameControls {
     /// # Errors
     /// Returns a declaration refusal; the keys and ranges here are fixed, so none is expected.
     pub fn new() -> Result<Self, ControlError> {
+        Self::with_clouds(None, false)
+    }
+
+    /// Declare the same controls as the panel and page for the selected cloud capabilities.
+    /// # Errors
+    /// Returns a control declaration refusal, including an invalid starting value.
+    pub fn with_clouds(
+        weather: Option<thrum_cloud_model::Parameters>,
+        sky: bool,
+    ) -> Result<Self, ControlError> {
         let mut model = Controls::new();
         #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
         thrum_app::profile::declare(&mut model)?;
@@ -126,6 +143,9 @@ impl GameControls {
         let motion_view = model.toggle("display.motion", "Motion view", false)?;
         let sun_elevation =
             model.readout("sky.sun_elevation", "Sun elevation", Display::degrees())?;
+        let clouds = weather
+            .map(|weather| CloudControls::declare(&mut model, weather, sky))
+            .transpose()?;
         let mut controls = Self {
             model,
             solar_time,
@@ -135,6 +155,7 @@ impl GameControls {
             exposure_zones,
             motion_view,
             sun_elevation,
+            clouds,
             settled: [0; 6],
             sun_for: f32::NAN,
         };
@@ -198,6 +219,9 @@ impl GameControls {
             edits.exposure_zones = Some(self.model.is_on(self.exposure_zones));
             edits.motion_view = Some(self.model.is_on(self.motion_view));
         }
+        if let Some(clouds) = &mut self.clouds {
+            edits.clouds = clouds.take_edits(&self.model);
+        }
         self.show_sun(self.model.get(self.solar_time));
         edits
     }
@@ -213,6 +237,7 @@ impl GameControls {
             paused: None,
             exposure_zones: Some(self.model.is_on(self.exposure_zones)),
             motion_view: Some(self.model.is_on(self.motion_view)),
+            clouds: CloudEdits::default(),
             #[cfg(all(feature = "proving", any(target_os = "macos", target_arch = "wasm32")))]
             interface_output: None,
             #[cfg(all(feature = "proving", any(target_os = "macos", target_arch = "wasm32")))]

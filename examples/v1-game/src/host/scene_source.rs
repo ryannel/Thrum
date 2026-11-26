@@ -379,6 +379,7 @@ pub struct GameScene {
     #[cfg(feature = "proving")]
     pub(super) sheet_stats: Option<std::sync::Arc<std::sync::Mutex<thrum_asset_gpu::CookedStats>>>,
     pub(super) cloud_input: Option<thrum_clouds::WeatherInput>,
+    pub(super) weather_edits: Option<super::WeatherEdits>,
     pub(super) cloud_sky: Option<thrum_clouds::SkyProfile>,
     pub(super) cloud_shapes: Option<crate::PlacedSky>,
     #[cfg(feature = "proving")]
@@ -591,6 +592,7 @@ impl GameScene {
             #[cfg(feature = "proving")]
             sheet_stats: None,
             cloud_input: None,
+            weather_edits: None,
             cloud_sky: None,
             cloud_shapes: None,
             #[cfg(feature = "proving")]
@@ -1249,6 +1251,7 @@ mod tests {
             #[cfg(feature = "proving")]
             sheet_stats: None,
             cloud_input: None,
+            weather_edits: None,
             cloud_sky: None,
             cloud_shapes: None,
             cooked_rows: None,

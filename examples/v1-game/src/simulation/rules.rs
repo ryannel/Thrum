@@ -253,7 +253,16 @@ impl Rules {
         _edits: &mut EditWriter<'_, Candidate>,
     ) -> Result<(), SimError> {
         if let Some(permits) = &self.weather {
-            permits.step(world, tick, 1.0 / f64::from(self.config.tick_hz.get()))?;
+            let target = self.commands.iter().find_map(|command| match command {
+                Command::SetWeather(target) => Some(*target),
+                _ => None,
+            });
+            permits.step(
+                world,
+                tick,
+                1.0 / f64::from(self.config.tick_hz.get()),
+                target,
+            )?;
         }
         Ok(())
     }
@@ -428,7 +437,10 @@ impl Rules {
             match command {
                 Command::SetVelocity(handle, value) => stage.set_velocity(*handle, *value),
                 Command::SetHealth(handle, value) => stage.set_health(*handle, *value),
-                Command::SetPosition(_, _) | Command::Spawn(_) | Command::Despawn(_) => {}
+                Command::SetPosition(_, _)
+                | Command::Spawn(_)
+                | Command::Despawn(_)
+                | Command::SetWeather(_) => {}
             }
         }
         for index in 0..stage.touched.len() {

@@ -2,12 +2,12 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
-export const cloudCases = ['clouds-first-frame', 'clouds-state', 'clouds-placed'];
+export const cloudCases = ['clouds-first-frame', 'clouds-state', 'clouds-placed', 'clouds-controls'];
 
 export function cloudObserver(mode) {
   const ground = mode === 'clouds-state';
   return `
-    globalThis.thrumCloudCheck = {enabled: ${mode !== 'clouds-placed'}, ground: ${ground}, frames: [], visibility: [], gpuErrors: []};
+    globalThis.thrumCloudCheck = {enabled: ${!['clouds-placed', 'clouds-controls'].includes(mode)}, ground: ${ground}, frames: [], visibility: [], gpuErrors: []};
     const requestDevice = GPUAdapter.prototype.requestDevice;
     GPUAdapter.prototype.requestDevice = async function(...args) {
       const device = await Reflect.apply(requestDevice, this, args);
@@ -37,6 +37,9 @@ export async function preparePlacedClouds(files, output, repo) {
 }
 
 export async function qualifyClouds({ cdp, sessionId, targetId, mode, poll, game, timeout, waitFor, destroy }) {
+  if (mode === 'clouds-controls') {
+    return qualifyControls({ game, poll, timeout, waitFor });
+  }
   const read = async () => {
     await poll();
     const state = await game.invoke(`return {
@@ -143,4 +146,65 @@ export async function qualifyClouds({ cdp, sessionId, targetId, mode, poll, game
     partial_refresh_by: partial.presented, hidden_at: hidden.presented, resumed_at: resumed.presented,
     hitch, after_hitch: afterHitch.presented, lost_at: lost.presented, first_replacement: firstReplacement.presented,
     scope: 'Every observed actual page submission; weather against its CPU row source; every written Sun-path ground slice against an independent march through the verified weather map, retained rows against the last observed write, and every packed ground texel against those slices, with cadence bounds' };
+}
+
+async function qualifyControls({ game, poll, timeout, waitFor }) {
+  const schema = await game.invoke("return JSON.parse(game.controls_json()).controls;");
+  const expected = [
+    ['clouds.coverage', 'Coverage', 0, 100, '%'],
+    ['clouds.type', 'Cloud type', 0, 1, ''],
+    ['clouds.wind_speed', 'Wind speed', 0, 40, 'm/s'],
+    ['clouds.wind_direction', 'Wind direction', 0, 360, '°'],
+    ['clouds.time_lapse', 'Weather time-lapse', 1, 60, '×'],
+    ['clouds.overlay', 'Internal field', 0, 7, ''],
+    ['sky.solar_time', 'Solar time', 0, 24, 'h'],
+  ];
+  for (const [key, label, min, max, unit] of expected) {
+    const control = schema.find(control => control.key === key);
+    if (control?.label !== label || control.kind !== 'slider' ||
+        control.min !== min || control.max !== max || control.display.unit !== unit) {
+      throw new Error(`Wrong cloud control schema: ${JSON.stringify(control)}`);
+    }
+    const shown = await game.invoke(`
+      const row = document.querySelector('[data-control="' + ${JSON.stringify(key)} + '"]');
+      return [row?.querySelector('span')?.textContent, row?.querySelector('input')?.min,
+              row?.querySelector('input')?.max];`);
+    if (shown.join() !== [label, min, max].join()) throw new Error(`Wrong rendered control: ${key}`);
+  }
+  const initialReport = await waitFor(async () => {
+    await poll();
+    const status = await game.invoke("return document.querySelector('#params-status').textContent;");
+    return status || undefined;
+  }, timeout, 'cloud parameter file report');
+  if (!/^clouds-low-sun.params.json: \d+ changed, \d+ unchanged, 0 refused$/.test(initialReport)) {
+    throw new Error(`Cloud parameter file refused: ${initialReport}`);
+  }
+  const presets = [];
+  for (const [name, coverage, type] of [['clear', 0, 1], ['fair', 50, 1],
+      ['broken', 72.6, 0.42], ['overcast', 100, 0]]) {
+    const state = await game.invoke(`return (async () => {
+      const file = await fetch(${JSON.stringify('clouds-' + name + '.params.json')});
+      if (!file.ok) throw new Error('Preset file did not load');
+      const refused = game.apply_params(await file.text());
+      const values = Object.fromEntries(JSON.parse(game.controls_json()).controls
+        .filter(control => control.key.startsWith('clouds.'))
+        .map(control => [control.key, control.value]));
+      return {refused, values};
+    })();`);
+    if (state.refused || state.values['clouds.coverage'] !== coverage || state.values['clouds.type'] !== type ||
+        state.values['clouds.wind_speed'] !== 10 || state.values['clouds.wind_direction'] !== 0 ||
+        state.values['clouds.time_lapse'] !== 1 || state.values['clouds.overlay'] !== 0) {
+      throw new Error(`Preset ${name} did not apply: ${JSON.stringify(state)}`);
+    }
+    presets.push({ name, ...state });
+  }
+  const start = await game.invoke("return Number(game.presented());");
+  await waitFor(async () => {
+    await poll();
+    const health = await game.invoke(`return { presented: Number(game.presented()),
+      fault: game.graphics_fault(), errors: thrumCloudCheck.gpuErrors };`);
+    if (health.fault || health.errors.length) throw new Error(JSON.stringify(health));
+    return health.presented > start;
+  }, timeout, 'submitted frame after preset edits');
+  return { target: 'chrome-webgpu', schema, initialReport, presets };
 }

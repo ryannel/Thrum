@@ -242,6 +242,10 @@ required-features = ["proving"]
 name = "clouds_meter_gpu"
 path = "tests/clouds_meter_gpu.rs"
 
+# The CLOUDS controls contract has a named work-package check.
+[[test]]
+name = "clouds_controls"
+
 [[test]]
 name = "interface_status_sweep"
 required-features = ["proving"]

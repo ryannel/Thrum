@@ -153,6 +153,12 @@ pub(crate) struct Shapes {
 }
 
 impl Shapes {
+    pub(crate) fn set_range(&mut self, range: [f64; 2]) -> bool {
+        let changed = self.config.range.map(f64::to_bits) != range.map(f64::to_bits);
+        self.config.range = range;
+        changed
+    }
+
     #[expect(
         clippy::cast_possible_truncation,
         reason = "physical footprint units fit in f32"

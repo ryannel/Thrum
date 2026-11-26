@@ -60,7 +60,8 @@ impl Layer {
         surface: &SceneSurface<'_>,
         weather: &WeatherMap,
         sun: &crate::SunPath,
-        mapping: &wgpu::Buffer,
+        target: (&wgpu::Texture, &wgpu::Buffer),
+        placed_map: Option<&wgpu::Texture>,
         profile: SkyProfile,
         shapes: Option<&crate::shapes::Shapes>,
         accepted: Option<&Self>,
@@ -169,7 +170,7 @@ impl Layer {
         }));
         entries.push(wgpu::BindGroupEntry {
             binding: 8,
-            resource: mapping.as_entire_binding(),
+            resource: target.1.as_entire_binding(),
         });
         entries.push(wgpu::BindGroupEntry {
             binding: 9,
@@ -211,6 +212,7 @@ impl Layer {
             super::overlay::Overlay::new(surface, target, &environment, &trace_layout, shapes)
         });
         let trace = trace_pipeline(device, &source, &pipeline_layout);
+        let (field_layout, field_group) = field_bindings(device, weather, target.0, placed_map);
         let (compose, compose_group, compose_layout) = compose(
             surface,
             &params,
@@ -218,6 +220,7 @@ impl Layer {
             uniform_entry,
             |binding, storage| texture_entry(binding, storage, false),
             &input,
+            &field_layout,
         );
         let temporal = super::temporal::Temporal::new(
             surface,
@@ -228,7 +231,16 @@ impl Layer {
         );
         Ok((
             Self {
-                profile,
+                quality: accepted.map_or(
+                    super::Quality {
+                        stride: profile.refresh_stride,
+                        light_samples: profile.light_samples,
+                        layer_percent: 100,
+                        step: profile.step,
+                        cap: super::MAX_TRACE_SAMPLES,
+                    },
+                    |layer| layer.quality,
+                ),
                 environment,
                 lighting,
                 temporal,
@@ -244,6 +256,8 @@ impl Layer {
                 compose,
                 trace_group,
                 compose_group,
+                field_group,
+                has_placed_map: placed_map.is_some(),
                 overlay,
             },
             initialization,
@@ -344,6 +358,56 @@ pub(super) fn overlay_source(
     }
 }
 
+fn field_bindings(
+    device: &wgpu::Device,
+    weather: &WeatherMap,
+    sun: &wgpu::Texture,
+    placed_map: Option<&wgpu::Texture>,
+) -> (wgpu::BindGroupLayout, wgpu::BindGroup) {
+    use wgpu::TextureViewDimension::{D2, D2Array};
+    let fields = [
+        (&weather.textures()[0], D2Array),
+        (&weather.textures()[1], D2Array),
+        (placed_map.unwrap_or(&weather.textures()[0]), D2Array),
+        (sun, D2),
+    ];
+    let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+        label: Some("cloud internal fields"),
+        entries: &fields
+            .map(|(_, dimension)| dimension)
+            .into_iter()
+            .zip(0..)
+            .map(|(dimension, binding)| {
+                binding::texture(
+                    binding,
+                    wgpu::ShaderStages::FRAGMENT,
+                    wgpu::TextureSampleType::Float { filterable: false },
+                    dimension,
+                )
+            })
+            .collect::<Vec<_>>(),
+    });
+    let views = fields.map(|(texture, dimension)| {
+        texture.create_view(&wgpu::TextureViewDescriptor {
+            dimension: Some(dimension),
+            ..Default::default()
+        })
+    });
+    let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+        label: Some("cloud internal fields"),
+        layout: &layout,
+        entries: &views
+            .iter()
+            .zip(0..)
+            .map(|(view, binding)| wgpu::BindGroupEntry {
+                binding,
+                resource: wgpu::BindingResource::TextureView(view),
+            })
+            .collect::<Vec<_>>(),
+    });
+    (layout, group)
+}
+
 fn compose(
     surface: &SceneSurface<'_>,
     params: &wgpu::Buffer,
@@ -351,6 +415,7 @@ fn compose(
     uniform_entry: wgpu::BindGroupLayoutEntry,
     texture_entry: impl Fn(u32, bool) -> wgpu::BindGroupLayoutEntry,
     input: &wgpu::BindGroupLayout,
+    field_layout: &wgpu::BindGroupLayout,
 ) -> (wgpu::RenderPipeline, wgpu::BindGroup, wgpu::BindGroupLayout) {
     let device = surface.device;
     let mut sampled = [texture_entry(1, false), texture_entry(2, false)];
@@ -392,6 +457,7 @@ fn compose(
             Some(surface.view_layout),
             Some(input),
             Some(&compose_layout),
+            Some(field_layout),
         ],
         immediate_size: 0,
     });
@@ -399,9 +465,10 @@ fn compose(
         label: Some(COMPOSE),
         source: wgpu::ShaderSource::Wgsl(
             format!(
-                "{}\n{}\n{}",
+                "{}\n{}\n{}\n{}",
                 include_str!("params.wgsl"),
                 include_str!("view.wgsl"),
+                include_str!("field_overlay.wgsl"),
                 include_str!("compose.wgsl")
             )
             .into(),

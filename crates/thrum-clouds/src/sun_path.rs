@@ -96,6 +96,16 @@ pub struct SunPath {
 }
 
 impl SunPath {
+    pub(crate) fn set_maximum_ages(&mut self, ages: [f64; 3]) {
+        for (level, age) in self.profile.levels.iter_mut().zip(ages) {
+            level.maximum_age = age;
+        }
+    }
+
+    pub(crate) fn invalidate(&mut self) {
+        self.clock.invalidate();
+    }
+
     pub(crate) fn uniforms(&self) -> &[wgpu::Buffer] {
         &self.params
     }

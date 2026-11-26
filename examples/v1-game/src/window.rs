@@ -242,7 +242,9 @@ pub fn run_window(
     };
     let game = || -> Result<_, thrum_controls::ControlError> {
         Ok(HostedGame(WindowGame {
-            demo: GameControls::new()?,
+            demo: setup
+                .as_ref()
+                .map_or_else(|_| GameControls::new(), |setup| setup.game_controls())?,
             world: None,
             held_keys: 0,
             replay_controls: true,
@@ -363,7 +365,9 @@ fn capture_game_with_route_limit(
     capture_cooked: Option<CaptureCooked>,
 ) -> Result<HostedGame<WindowGame>, String> {
     Ok(HostedGame(WindowGame {
-        demo: GameControls::new().map_err(|error| error.to_string())?,
+        demo: crate::selected_setup()?
+            .game_controls()
+            .map_err(|error| error.to_string())?,
         world: None,
         held_keys: 0,
         replay_controls: false,

@@ -11,6 +11,7 @@ pub struct Display {
     decimals: u8,
     unit: &'static str,
     clock: bool,
+    stops: &'static [&'static str],
 }
 
 impl Display {
@@ -22,6 +23,7 @@ impl Display {
             decimals,
             unit,
             clock: false,
+            stops: &[],
         }
     }
 
@@ -33,6 +35,7 @@ impl Display {
             decimals,
             unit,
             clock: false,
+            stops: &[],
         }
     }
 
@@ -50,6 +53,16 @@ impl Display {
             decimals: 2,
             unit: "h",
             clock: true,
+            stops: &[],
+        }
+    }
+
+    /// Label each integer stop of a discrete slider, starting at zero.
+    #[must_use]
+    pub const fn labelled_stops(stops: &'static [&'static str]) -> Self {
+        Self {
+            stops,
+            ..Self::plain(0, "")
         }
     }
 
@@ -105,6 +118,16 @@ impl Display {
             )]
             let minutes = (shown.clamp(0.0, 24.0) * 60.0).round() as u32;
             return format!("{:02}:{:02}", (minutes / 60) % 24, minutes % 60);
+        }
+        if !self.stops.is_empty() {
+            #[expect(
+                clippy::cast_possible_truncation,
+                clippy::cast_sign_loss,
+                reason = "the finite integer stop is checked against both bounds"
+            )]
+            if shown >= 0.0 && shown < self.stops.len() as f64 && shown.fract() == 0.0 {
+                return self.stops[shown as usize].to_owned();
+            }
         }
         let places = usize::from(self.decimals);
         if self.unit.is_empty() {

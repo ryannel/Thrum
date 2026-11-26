@@ -647,8 +647,10 @@ impl GameSetup {
         }
         let cloud_sky = cloud_sky_profile(setup.clouds, config.render_extent, capabilities);
         let weather = clouded_weather(setup, shapes.as_ref())?;
+        let weather_edits = weather.as_ref().map(|_| WeatherEdits::default());
         let world = GameWorld(WorldPort::Inline(Box::new(
-            WorldDriver::for_setup(&setup, weather).map_err(FrameError::World)?,
+            WorldDriver::for_setup(&setup, weather, weather_edits.clone())
+                .map_err(FrameError::World)?,
         )));
         let shade = cloud_shade(setup.clouds, shapes.as_ref(), cloud_sky)?;
         if let Some(shade) = &shade {
@@ -657,6 +659,7 @@ impl GameSetup {
         let cloud_input = shade.as_ref().map(thrum_clouds::Shade::input);
         let mut source = GameScene::new(setup);
         source.cloud_input = cloud_input;
+        source.weather_edits = weather_edits;
         source.cloud_sky = cloud_sky;
         source.cloud_shapes.clone_from(&shapes);
         source.cooked_rows = rows;
@@ -709,6 +712,69 @@ fn cloud_sky_profile(
         sky.step = 22.5;
     }
     Some(sky)
+}
+
+#[derive(Clone, Default)]
+struct WeatherEdits(std::sync::Arc<std::sync::Mutex<Option<thrum_cloud_model::Parameters>>>);
+
+impl WeatherEdits {
+    fn pending(&self) -> Option<thrum_cloud_model::Parameters> {
+        *self
+            .0
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+    }
+
+    fn committed(&self, target: thrum_cloud_model::Parameters) {
+        let mut pending = self
+            .0
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        if *pending == Some(target) {
+            *pending = None;
+        }
+    }
+}
+
+impl GameSetup {
+    pub(crate) fn game_controls(
+        self,
+    ) -> Result<crate::controls::GameControls, thrum_controls::ControlError> {
+        crate::controls::GameControls::with_clouds(
+            (self.clouds != crate::CloudSelection::Off).then_some(self.cloud_weather),
+            self.clouds.sky_profile([1; 2]).is_some(),
+        )
+    }
+}
+
+pub(crate) fn apply_cloud_edits(
+    runtime: &Runtime,
+    edits: crate::controls::CloudEdits,
+) -> Result<(), String> {
+    let source = runtime.source();
+    if let (Some(inbox), Some(target)) = (&source.weather_edits, edits.weather) {
+        *inbox
+            .0
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(target);
+    }
+    if let (Some(input), Some(overlay)) = (&source.cloud_input, edits.overlay) {
+        input
+            .set_field_overlay(overlay)
+            .map_err(|error| error.to_string())?;
+    }
+    Ok(())
+}
+
+/// Apply live solar-time edits continuously in cloud-enabled scenes.
+pub(crate) fn edit_solar_time(runtime: &mut Runtime, fraction: f32) -> Result<(), String> {
+    if runtime.source().cloud_input.is_none() {
+        return set_time_of_day(runtime, fraction);
+    }
+    if let Some(offset) = day_phase_edit(runtime.world().tick(), runtime.source(), fraction)? {
+        runtime.continuous_source_mut().day_phase_offset = offset;
+    }
+    Ok(())
 }
 
 fn clouded_weather(

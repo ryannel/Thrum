@@ -1,5 +1,7 @@
 //! GPU weather products. The game supplies the field's type data and committed state.
+mod field_overlay;
 mod layer;
+pub use field_overlay::FieldOverlay;
 mod noise;
 mod shade;
 mod shapes;

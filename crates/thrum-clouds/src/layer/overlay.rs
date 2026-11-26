@@ -8,7 +8,7 @@ use thrum_render::{
 };
 
 pub(crate) const PASS: &str = "cloud sky overlay";
-const SLICES: u32 = 8;
+pub(crate) const DEFAULT_OVERLAY_SLICES: u32 = 8;
 
 #[derive(Clone, Copy, PartialEq)]
 struct OverlayInput {
@@ -35,6 +35,7 @@ pub(super) struct Overlay {
     committed: Option<OverlayInput>,
     pending: Option<OverlayInput>,
     phase: u32,
+    slices: u32,
     remaining: u32,
     pending_remaining: u32,
     ambient_due: bool,
@@ -117,6 +118,7 @@ impl Overlay {
             committed: None,
             pending: None,
             phase: 0,
+            slices: DEFAULT_OVERLAY_SLICES,
             remaining: 0,
             pending_remaining: 0,
             ambient_due: false,
@@ -169,6 +171,14 @@ impl Overlay {
         });
     }
 
+    pub(super) fn set_cadence(&mut self, slices: u32) {
+        if self.slices != slices {
+            self.slices = slices;
+            self.phase = 0;
+            self.remaining = slices;
+        }
+    }
+
     pub(super) fn upload(
         &mut self,
         queue: &wgpu::Queue,
@@ -184,7 +194,7 @@ impl Overlay {
         };
         let changed = self.committed != Some(input);
         let remaining = if changed || reset {
-            SLICES
+            self.slices
         } else {
             self.remaining
         };
@@ -198,9 +208,17 @@ impl Overlay {
             .is_none_or(|old| !old.hemisphere_matches(input));
         let height = self.texture.height();
         let full = reset || (changed && frame.time.capture);
-        let step = height.div_ceil(SLICES);
-        let row = if full { 0 } else { self.phase * step };
-        self.row_count = if full { height } else { step.min(height - row) };
+        let row = if full {
+            0
+        } else {
+            self.phase * height / self.slices
+        };
+        let end = if full {
+            height
+        } else {
+            (self.phase + 1) * height / self.slices
+        };
+        self.row_count = end - row;
         self.pending = Some(input);
         self.pending_remaining = if full { 0 } else { remaining - 1 };
         queue.write_buffer(
@@ -243,7 +261,7 @@ impl Overlay {
         if let Some(input) = self.pending.take() {
             self.committed = Some(input);
             self.remaining = self.pending_remaining;
-            self.phase = (self.phase + 1) % SLICES;
+            self.phase = (self.phase + 1) % self.slices;
         }
     }
 }

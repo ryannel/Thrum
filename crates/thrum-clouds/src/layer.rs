@@ -20,6 +20,17 @@ mod temporal;
 
 pub(crate) const TRACE: &str = "cloud trace";
 pub(crate) const COMPOSE: &str = "cloud compose";
+pub(crate) const MAX_TRACE_SAMPLES: u32 = 768;
+pub(crate) use overlay::DEFAULT_OVERLAY_SLICES;
+
+#[derive(Clone, Copy, PartialEq)]
+pub(crate) struct Quality {
+    pub stride: u32,
+    pub light_samples: u32,
+    pub layer_percent: u32,
+    pub step: f32,
+    pub cap: u32,
+}
 
 /// Resolution and march controls, independent of the authoritative weather.
 #[derive(Clone, Copy, Debug)]
@@ -77,6 +88,9 @@ struct Uniform {
     noise: [f32; 4],
     bank_noise: [f32; 4],
     density_profile: [f32; 4],
+    active_extent: [u32; 2],
+    sample_cap: u32,
+    field_overlay: u32,
     inverse_raster: [[f32; 4]; 4],
     previous_raster: [[f32; 4]; 4],
 }
@@ -90,7 +104,7 @@ struct LayerSample {
 }
 
 pub(crate) struct Layer {
-    profile: SkyProfile,
+    quality: Quality,
     environment: EnvironmentProducts,
     lighting: light::Lighting,
     temporal: temporal::Temporal,
@@ -106,6 +120,8 @@ pub(crate) struct Layer {
     compose: wgpu::RenderPipeline,
     trace_group: wgpu::BindGroup,
     compose_group: wgpu::BindGroup,
+    field_group: wgpu::BindGroup,
+    has_placed_map: bool,
     overlay: Option<overlay::Overlay>,
 }
 
@@ -276,6 +292,11 @@ impl Layer {
             AfterOpaqueKind::Render,
             (first..first + 2)
                 .map(|i| access(i, AccessKind::SampledRead))
+                .chain([access(6, AccessKind::SampledRead)])
+                .chain([0, 1].map(|resource| EffectAccess {
+                    range: 0..4,
+                    ..access(resource, AccessKind::SampledRead)
+                }))
                 .chain(std::iter::once(buffer_access(
                     params,
                     self.params.size(),
@@ -300,6 +321,7 @@ impl Layer {
         state: &State,
         frame: &ContributionFrame,
         shapes: Option<&crate::shapes::Shapes>,
+        field_overlay: crate::FieldOverlay,
     ) -> Result<(), Error> {
         let environment = frame.environment.ok_or(Error::Unsupported(
             "cloud light requires an environment frame",
@@ -332,10 +354,10 @@ impl Layer {
             history_valid: !reset,
             raster: frame.view_proj,
         });
-        let stride = self.profile.refresh_stride;
-        let full_trace = reset
-            || frame.time.capture
-            || self.profile.extent.iter().any(|&x| x.div_ceil(2) < stride);
+        let stride = self.quality.stride;
+        let active_extent = self.active_extent();
+        let full_trace =
+            reset || frame.time.capture || active_extent.iter().any(|&side| side < stride);
         self.trace_stride = if full_trace { 1 } else { stride };
         let mut heights = weather.height_range();
         if let Some(shapes) = shapes {
@@ -370,10 +392,10 @@ impl Layer {
             heights: [
                 heights[0] as f32,
                 heights[1] as f32,
-                self.profile.step,
+                self.quality.step,
                 200_000.0,
             ],
-            light_samples: self.profile.light_samples,
+            light_samples: self.quality.light_samples,
             sun_angular_radius: environment.true_sun.angular_radius_radians,
             render_extent: frame.render_extent,
             temporal: [
@@ -391,7 +413,15 @@ impl Layer {
             // This octave needs its own wrapped phase when the weather
             // anchor moves. The shape-noise phase uses a different period.
             bank_noise: crate::noise::bank_noise(anchor, kind.deck),
-            density_profile: [model.detail_mean as f32, 0.0, 0.0, 0.0],
+            density_profile: [
+                model.detail_mean as f32,
+                if self.has_placed_map { 1.0 } else { 0.0 },
+                0.0,
+                0.0,
+            ],
+            active_extent,
+            sample_cap: self.quality.cap,
+            field_overlay: field_overlay as u32,
             inverse_raster: glam::Mat4::from_cols_array_2d(&frame.view_proj)
                 .inverse()
                 .to_cols_array_2d(),
@@ -445,8 +475,7 @@ impl Layer {
             return;
         }
         if index == 2 {
-            self.temporal
-                .encode(pass, [self.textures[0].width(), self.textures[0].height()]);
+            self.temporal.encode(pass, self.active_extent());
             return;
         }
         pass.set_pipeline(&self.trace);
@@ -455,15 +484,17 @@ impl Layer {
         if let Some(shapes) = shapes {
             pass.set_bind_group(3, &shapes.group, &[]);
         }
+        let [width, height] = self.active_extent();
         pass.dispatch_workgroups(
-            self.textures[0].width().div_ceil(8 * self.trace_stride),
-            self.textures[0].height().div_ceil(8 * self.trace_stride),
+            width.div_ceil(8 * self.trace_stride),
+            height.div_ceil(8 * self.trace_stride),
             1,
         );
     }
 
     pub(crate) fn draw(&self, pass: &mut wgpu::RenderPass<'_>, frame: &ContributionFrame) {
         pass.set_pipeline(&self.compose);
+        pass.set_bind_group(3, &self.field_group, &[]);
         pass.set_bind_group(
             2,
             if frame.time.capture {
@@ -486,7 +517,7 @@ impl Layer {
             phase_tables: self.lighting.phase.clone(),
             hemisphere_light: self.lighting.ambient.clone(),
             history_valid: self.committed.is_some_and(|s| s.history_valid),
-            refresh_stride: self.profile.refresh_stride,
+            refresh_stride: self.quality.stride,
             submitted_frames: self.ordinal,
             raster_view_projection: self.committed.map_or([[0.0; 4]; 4], |s| s.raster),
         }
@@ -524,11 +555,27 @@ impl Layer {
         resources
     }
 
-    pub(crate) fn set_quality(&mut self, stride: u32, light_samples: u32) {
-        self.profile.refresh_stride = stride;
-        self.profile.light_samples = light_samples;
+    fn active_extent(&self) -> [u32; 2] {
+        [self.textures[0].width(), self.textures[0].height()]
+            .map(|side| (side * self.quality.layer_percent).div_ceil(100))
+    }
+
+    pub(crate) fn set_quality(&mut self, quality: Quality) {
+        if self.quality != quality {
+            self.quality = quality;
+            self.invalidate();
+        }
+    }
+
+    pub(crate) fn invalidate(&mut self) {
         self.temporal.clock.invalidate();
         self.committed = None;
+    }
+
+    pub(crate) fn set_overlay_cadence(&mut self, slices: u32) {
+        if let Some(overlay) = &mut self.overlay {
+            overlay.set_cadence(slices);
+        }
     }
 }
 

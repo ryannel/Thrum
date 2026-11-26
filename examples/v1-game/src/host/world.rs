@@ -294,6 +294,7 @@ pub(super) struct GameRules {
     desired_axes: [f32; 3],
     admitted_axes: [f32; 3],
     input_sequence: u64,
+    weather_edits: Option<super::WeatherEdits>,
 }
 
 impl WorldDriver {
@@ -335,6 +336,16 @@ impl WorldDriver {
     pub(super) fn for_setup(
         setup: &super::GameSetup,
         clouds: Option<crate::simulation::Weather>,
+        weather_edits: Option<super::WeatherEdits>,
+    ) -> Result<Self, String> {
+        let mut driver = Self::create_for_setup(setup, clouds)?;
+        driver.world.game_mut().weather_edits = weather_edits;
+        Ok(driver)
+    }
+
+    fn create_for_setup(
+        setup: &super::GameSetup,
+        clouds: Option<crate::simulation::Weather>,
     ) -> Result<Self, String> {
         #[cfg(feature = "proving")]
         if setup.sun_proof_geometry != crate::SunProofGeometry::Off {
@@ -364,6 +375,7 @@ impl WorldDriver {
             desired_axes: [0.0; 3],
             admitted_axes: [0.0; 3],
             input_sequence: 1,
+            weather_edits: None,
         };
         let world = ClockedWorld::new(game, ClockConfig::default(), Duration::ZERO)
             .map_err(|error| error.to_string())?;
@@ -566,24 +578,28 @@ impl WorldGame for GameRules {
             self.admitted_axes = self.desired_axes;
             self.input_sequence = next_sequence;
         }
+        let mut commands = Vec::new();
         #[cfg(feature = "proving")]
-        let commands =
-            if self.route_overlay == scene::RouteOverlay::Reconstruction && self.sim.tick() == 59 {
-                scene::reconstruction_spawn(&self.sim).map_err(GameWorldError::Reconstruction)?
-            } else {
-                Vec::new()
-            };
+        if self.route_overlay == scene::RouteOverlay::Reconstruction && self.sim.tick() == 59 {
+            commands =
+                scene::reconstruction_spawn(&self.sim).map_err(GameWorldError::Reconstruction)?;
+        }
+        let weather = self
+            .weather_edits
+            .as_ref()
+            .and_then(super::WeatherEdits::pending);
+        if let Some(target) = weather {
+            commands.push(crate::simulation::Command::SetWeather(target));
+        }
         self.sim
-            .step(
-                #[cfg(feature = "proving")]
-                &commands,
-                #[cfg(not(feature = "proving"))]
-                &[],
-            )
+            .step(&commands)
             .map_err(|source| GameWorldError::Simulation {
                 operation: "simulation step",
                 source,
             })?;
+        if let (Some(edits), Some(target)) = (&self.weather_edits, weather) {
+            edits.committed(target);
+        }
         Ok(WorldStep {
             projected_changes: 0,
             skipped_publication: !self.sim.has_current_page(),

@@ -40,7 +40,7 @@ use web_sys::HtmlCanvasElement;
 
 use thrum_render::runtime::FrameSample;
 
-use crate::{GameReconstruction, controls::GameControls, host::web as game, hosted::HostedGame};
+use crate::{GameReconstruction, host::web as game, hosted::HostedGame};
 
 #[cfg(feature = "proving")]
 use crate::host::haze_capture::HazeTake;
@@ -530,7 +530,7 @@ async fn create_game_with_content(
     }));
     let cloud_sky = setup.clouds.sky_profile([canvas.width(), canvas.height()]);
     let hosted = HostedGame(game::PageGame {
-        demo: GameControls::new().map_err(js_error)?,
+        demo: setup.game_controls().map_err(js_error)?,
         setup,
         shapes,
         #[cfg(feature = "proving")]

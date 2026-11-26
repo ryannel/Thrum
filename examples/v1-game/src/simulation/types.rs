@@ -71,6 +71,8 @@ pub struct ComponentEntity {
 /// V1 resolve edits; the whole batch validates before applying any member.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Command {
+    /// Set a target for the next weather tick, using the weather state's response time.
+    SetWeather(thrum_cloud_model::Parameters),
     /// Spawn a registered bundle after the current simulation step.
     Spawn(ComponentEntity),
     /// Retire a checked handle after the current simulation step.

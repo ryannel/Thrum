@@ -73,6 +73,9 @@ pub struct WeatherMap {
 }
 
 impl WeatherMap {
+    pub(crate) fn set_maximum_age(&mut self, age: f64) {
+        self.profile.maximum_age = age;
+    }
     pub(crate) fn types(&self) -> &[Type] {
         &self.types
     }

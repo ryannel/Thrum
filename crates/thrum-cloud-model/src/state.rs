@@ -15,7 +15,9 @@ pub struct Parameters {
 }
 
 impl Parameters {
-    pub(crate) fn valid(self) -> bool {
+    /// Whether the model accepts these controls as a target.
+    #[must_use]
+    pub fn valid(self) -> bool {
         unit(self.coverage)
             && unit(self.kind)
             && self.wind.iter().all(|x| x.is_finite())

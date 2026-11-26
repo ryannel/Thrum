@@ -11,7 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 # check and refuse compare with the committed records; record writes to the working folder unless --output
 # names a fixture to promote.
-FIXTURES = {scene: ROOT / f'tests/fixtures/clouds/{scene}-cost.json' for scene in ('shade', 'first-frame', 'low-sun', 'placed', 'decks', 'overcast-lit')}
+FIXTURES = {scene: ROOT / f'tests/fixtures/clouds/{scene}-cost.json' for scene in ('shade', 'first-frame', 'low-sun', 'placed', 'decks', 'overcast-lit', 'range')}
 WORKING = ROOT / '.orchestrate/evidence/CLOUDS'
 SCRATCH = ROOT / 'tmp/clouds-m2/cost'
 SKY_PASSES = (
@@ -36,6 +36,7 @@ FIRST_FRAME_ESTIMATES = (
     'resolve 0.1–0.2 ms, compose 0.2–0.4 ms, total 47 MiB. Trace is measured.'
 )
 DECK_PRESETS = ('fair', 'broken', 'overcast')
+RANGE_PRESETS = ('clear', *DECK_PRESETS)
 WORLD_LIGHT_PASSES = ('cloud sky overlay', 'atmosphere diffuse irradiance',
                       *(f'atmosphere reflection mip {mip}' for mip in range(7)))
 
@@ -49,6 +50,8 @@ def run(command, **kwargs):
 
 
 def measure(scene='shade', alternatives=True):
+    if scene == 'range':
+        return measure_range()
     scratch = {
         'low-sun': ROOT / 'tmp/clouds-m5/cost',
         'placed': ROOT / 'tmp/clouds-m6/cost',
@@ -117,6 +120,171 @@ def measure(scene='shade', alternatives=True):
                        local_light_samples=knobs['cloud local light samples'])
         rows.append(row)
     return rows
+
+
+def measure_range():
+    scratch = ROOT / 'tmp/clouds-wp9/cost'
+    scratch.mkdir(parents=True, exist_ok=True)
+    run(['cargo', 'build', '--release', '--locked', '--offline', '-p', 'v1-game',
+         '--example', 'cloud_cost', '--example', 'cook_cloud_library'], timeout=1200)
+    run(['cargo', 'build', '--release', '--locked', '--offline', '-p', 'thrum-cook'], timeout=1200)
+    valley = scratch / 'valley'
+    if not valley.exists():
+        run(['target/release/thrum-cook', 'cook', 'examples/v1-game/assets/showcase', str(valley)], timeout=180)
+    library = scratch / 'placed'
+    if not library.exists():
+        run(['target/release/examples/cook_cloud_library', str(scratch / 'volumes'), str(library)], timeout=1200)
+    rows = []
+    for view, flag in [('noon', '--noon'), ('low-sun', '--low-sun')]:
+        for preset in (None, *RANGE_PRESETS):
+            selection = 'world-light' if preset is not None else 'off'
+            env = {key: value for key, value in os.environ.items()
+                   if not key.startswith(('THRUM_CLOUD_', 'THRUM_CAMERA_'))}
+            env.update(THRUM_SCENE='valley', THRUM_ASSET_STORE=str(valley), THRUM_CLOUDS=selection,
+                       THRUM_CLOUD_WIND='40', THRUM_RECIPE='portable')
+            env.update(THRUM_CAMERA_HEIGHT='260.4846459239257', THRUM_CAMERA_Z='80')
+            command = ['target/release/examples/cloud_cost', '--device-profile', 'portable', flag]
+            if preset is not None:
+                env['THRUM_CLOUD_PRESET'] = preset
+                command += ['--placed-store', str(library)]
+            row = json.loads(run(command, env=env, timeout=180))
+            row.update(selection=selection, preset=preset, view_id=view)
+            rows.append(row)
+    return rows
+
+
+def range_references():
+    sources = {
+        'noon': ('decks', 'overcast-lit'),
+        'low-sun': ('low-sun', 'placed'),
+    }
+    records = {}
+    for view, scenes in sources.items():
+        records[view] = []
+        for scene in scenes:
+            ref = json.loads(FIXTURES[scene].read_text())
+            rows = [row for row in ref['runs'] if row.get('recipe', 'portable') == 'portable'
+                    and row.get('refresh_stride', 1) == 1 and row.get('local_light_samples', 3) == 3]
+            records[view].append({'file': str(FIXTURES[scene].relative_to(ROOT)),
+                                  'commit': ref['commit'], 'rows': rows})
+    return records
+
+
+def range_tripwires(rows, references):
+    wakes = {}
+    for row in rows:
+        preset = row['preset']
+        if preset is None:
+            continue
+        view = row['view_id']
+        label = f'{view}/{preset}'
+        off = next(arm for arm in rows if arm['view_id'] == view and arm['preset'] is None)
+        measured = named_passes(row)
+        if max(row['whole_frame_gpu_ns'], row['first_submission']['whole_frame_gpu_ns']) > 1e9 / 120:
+            largest = sorted(measured.items(), key=lambda item: -item[1])[:3]
+            wakes[f'{label}/refresh interval'] = {
+                'absent_ns': off['whole_frame_gpu_ns'], 'visible_ns': row['whole_frame_gpu_ns'],
+                'first_ns': row['first_submission']['whole_frame_gpu_ns'], 'largest': dict(largest),
+            }
+        for ref in references[view]:
+            for arm in ref['rows']:
+                if arm['selection'] == 'off' or arm.get('preset') not in (None, preset):
+                    continue
+                baseline = named_passes(arm)
+                suffix = f"{ref['file']}/{arm['selection']}"
+                for name, spent in measured.items():
+                    if positive(baseline.get(name)) and spent >= 1.25 * baseline[name]:
+                        wakes[f'{label}/{suffix}/{name}'] = {
+                            'reference_ns': baseline[name], 'visible_ns': spent,
+                            'absent_ns': named_passes(off).get(name),
+                        }
+                ray = row['ray_statistics']
+                earlier = arm['ray_statistics']
+                work_ratio = (ray['rays_traced'] * ray['mean_samples']
+                              / (earlier['rays_traced'] * earlier['mean_samples']))
+                time_ratio = measured['cloud trace'] / baseline['cloud trace']
+                if time_ratio >= 1.25 * work_ratio:
+                    wakes[f'{label}/{suffix}/trace scales faster than counted samples'] = {
+                        'sample_ratio': work_ratio, 'trace_ratio': time_ratio,
+                    }
+    return wakes
+
+
+def investigate_range(tripwires):
+    notes = {}
+    for name, values in tripwires.items():
+        if name.endswith('/refresh interval'):
+            leaders = ', '.join(f'{key} {spent / 1e6:.3f} ms' for key, spent in values['largest'].items())
+            notes[name] = (f"Same-view absent {values['absent_ns'] / 1e6:.3f} ms, visible "
+                           f"{values['visible_ns'] / 1e6:.3f} ms, first resident "
+                           f"{values['first_ns'] / 1e6:.3f} ms. Largest intervals: {leaders}.")
+        elif 'sample_ratio' in values:
+            notes[name] = (f"Trace time ratio {values['trace_ratio']:.3f}, ray-sample ratio "
+                           f"{values['sample_ratio']:.3f}. The trace counter counts empty and occupied "
+                           "steps alike and excludes nested light and placed-volume reads. Those costs "
+                           "and shared load remain unisolated.")
+        else:
+            absent = values['absent_ns']
+            comparison = f" Current absent arm: {absent / 1e3:.1f} µs." if positive(absent) else ''
+            notes[name] = (f"Matched view pass from {values['reference_ns'] / 1e3:.1f} to "
+                           f"{values['visible_ns'] / 1e3:.1f} µs.{comparison} The earlier arm may "
+                           "omit World light or Shapes. The named comparison measures the increase "
+                           "under load and leaves isolated attribution to the performance phase.")
+    return notes
+
+
+def validate_range(record, refs):
+    if record['references'] != refs:
+        raise ValueError('range record must carry the retained earlier pairs')
+    rows = record['runs']
+    if [(row['view_id'], row['preset']) for row in rows] != [
+        (view, preset) for view in ('noon', 'low-sun') for preset in (None, *RANGE_PRESETS)
+    ]:
+        raise ValueError('need all four presets and an absent arm at both solar elevations')
+    for row in rows:
+        view = row['view_id']
+        prior = refs[view][0]['rows'][0]
+        if (row['extent'] != [2560, 1440] or row['capture'] is not False
+                or 'Apple M3 Max' not in row['adapter'] or 'backend: Metal' not in row['adapter']
+                or row['view'] != prior['view'] or row['view_angles'] != prior['view_angles']
+                or row['frames'] < 30 or not positive(row['whole_frame_gpu_ns'])):
+            raise ValueError(f'{view} does not match the earlier 1440p Metal view')
+        passes = named_passes(row)
+        if row['preset'] is None:
+            if row['selection'] != 'off' or row['resources'] or any(name.startswith('cloud ') for name in passes):
+                raise ValueError('the paired control must omit clouds')
+            continue
+        names = {name for name, size in row['resources'] if positive(size)}
+        required = (set(SKY_PASSES) - {'cloud hemisphere light'}) | set(WORLD_LIGHT_PASSES) | {'cloud placed weather map'}
+        if (row['selection'] != 'world-light' or not required.issubset(passes)
+                or any(not positive(passes[name]) for name in required)
+                or not {'cloud sky overlay', 'cloud-library R8Unorm', 'cloud-growth R8Unorm'}.issubset(names)
+                or not positive(row['ray_statistics']['rays_traced'])
+                or not positive(row['ray_statistics']['mean_samples'])
+                or not positive(row['first_submission']['whole_frame_gpu_ns'])):
+            raise ValueError(f"{view}/{row['preset']} is missing cloud work, lighting or library residency")
+    triggered = range_tripwires(rows, refs)
+    if record['tripwires'] != triggered or record['investigation'] != investigate_range(triggered):
+        raise ValueError('range tripwires must each include their measured investigation')
+
+
+def range_cost(check):
+    refs = range_references()
+    if check:
+        validate_range(json.loads(FIXTURES['range'].read_text()), refs)
+    revision = run(['git', 'rev-parse', 'HEAD'])
+    before = os.getloadavg()
+    rows = measure('range')
+    if revision != run(['git', 'rev-parse', 'HEAD']):
+        raise ValueError('revision changed during the range measurement')
+    triggers = range_tripwires(rows, refs)
+    record = {'commit': revision, 'machine': platform.platform(),
+              'load': {'before': before, 'after': os.getloadavg()},
+              'build': 'release, capture off, portable Metal, World light with library',
+              'references': refs, 'runs': rows, 'tripwires': triggers,
+              'investigation': investigate_range(triggers)}
+    validate_range(record, refs)
+    return record
 
 
 def validate(record,scene='shade'):
@@ -479,8 +647,9 @@ def main():
     if args.command in ('cadence', 'hold') and args.scene == 'wind':
         from cloud_cadence_capture import run_wind
         return run_wind(args.command, args.output, resume=args.resume)
-    if args.scene == 'overcast-lit' and args.command in ('check', 'record'):
-        report = json.dumps(overcast_lit(args.command == 'check'), indent=2)
+    if args.scene in ('overcast-lit', 'range') and args.command in ('check', 'record'):
+        measure_record = range_cost if args.scene == 'range' else overcast_lit
+        report = json.dumps(measure_record(args.command == 'check'), indent=2)
         if args.output:
             args.output.parent.mkdir(parents=True, exist_ok=True)
             args.output.write_text(report + '\n')

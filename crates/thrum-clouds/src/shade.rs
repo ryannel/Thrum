@@ -17,6 +17,7 @@ mod graph;
 #[cfg(target_arch = "wasm32")]
 mod observation;
 mod preparation;
+mod quality;
 #[cfg(target_arch = "wasm32")]
 pub use observation::CloudSubmission;
 #[cfg(test)]
@@ -53,6 +54,7 @@ pub struct WeatherInput(Arc<Mutex<Mailbox>>);
 #[derive(Default)]
 struct Mailbox {
     state: Option<Arc<State>>,
+    field_overlay: crate::FieldOverlay,
     ground: Option<(wgpu::Texture, wgpu::Buffer)>,
     resources: Vec<(String, u64)>,
     shape_resources: Vec<(String, u64)>,
@@ -64,6 +66,22 @@ struct Mailbox {
 }
 
 impl WeatherInput {
+    /// Select an internal field to display, independent of the weather publication.
+    /// # Errors
+    /// Refuses an unavailable mailbox.
+    pub fn set_field_overlay(&self, overlay: crate::FieldOverlay) -> Result<(), Error> {
+        self.0
+            .lock()
+            .map_err(|_| Error::InputUnavailable)?
+            .field_overlay = overlay;
+        Ok(())
+    }
+
+    fn frame_input(&self) -> Option<(Arc<State>, crate::FieldOverlay)> {
+        let input = self.0.lock().ok()?;
+        Some((Arc::clone(input.state.as_ref()?), input.field_overlay))
+    }
+
     /// Optional readback handles for the latest submitted visible layer.
     pub fn sky_products(&self) -> Option<crate::SkyProducts> {
         self.0.lock().ok()?.sky.clone()
@@ -112,7 +130,7 @@ impl WeatherInput {
 /// Weather and cloud shade, optionally extended with [`Self::with_sky`].
 /// The default owns no visible layer; neither capability owns a clock.
 pub struct Shade {
-    quality: Option<QualitySettings>,
+    quality: QualitySettings,
     sky: Option<crate::SkyProfile>,
     shapes: Option<ShapesConfig>,
     config: ShadeConfig,
@@ -144,7 +162,7 @@ impl Shade {
     pub fn new(config: ShadeConfig) -> Result<Self, Error> {
         Field::new(config.seed, config.model, config.types.clone()).map_err(Error::Model)?;
         Ok(Self {
-            quality: None,
+            quality: quality::base()?,
             sky: None,
             shapes: None,
             config,
@@ -166,27 +184,7 @@ impl Shade {
         if ![1, 2, 4].contains(&profile.refresh_stride) || profile.light_samples > 3 {
             return Err(Error::Unsupported("Sky refresh or local-light samples"));
         }
-        self.quality = Some(
-            QualitySettings::new(vec![
-                QualityKnob {
-                    name: "cloud refresh exponent".into(),
-                    effect: "Refresh every cloud texel within 4^value frames",
-                    value: profile.refresh_stride.trailing_zeros(),
-                    range: 0..=2,
-                    invalidation: QualityInvalidation::EffectHistory,
-                    governor_steps: None,
-                },
-                QualityKnob {
-                    name: "cloud local light samples".into(),
-                    effect: "Samples used for each cloud local light",
-                    value: profile.light_samples,
-                    range: 0..=3,
-                    invalidation: QualityInvalidation::EffectHistory,
-                    governor_steps: None,
-                },
-            ])
-            .map_err(|_| Error::Unsupported("Sky quality declaration"))?,
-        );
+        self.extend_quality(quality::sky(profile))?;
         self.sky = Some(profile);
         Ok(self)
     }
@@ -195,6 +193,7 @@ impl Shade {
     /// Rejects an invalid placement range or volume capacity.
     pub fn with_shapes(mut self, config: ShapesConfig) -> Result<Self, Error> {
         config.validate()?;
+        self.extend_quality([quality::placed()])?;
         self.shapes = Some(config);
         Ok(self)
     }
@@ -211,6 +210,13 @@ impl Shade {
     pub fn provider(&self) -> Result<SunOpticalDepth, thrum_render::error::RenderError> {
         SunOpticalDepth::gpu_target([self.config.sun.ground_size; 2], 1)
     }
+    fn has_sky_overlay(&self) -> bool {
+        self.gpu
+            .as_ref()
+            .and_then(|gpu| gpu.sky.as_ref())
+            .is_some_and(crate::layer::Layer::has_overlay)
+    }
+
     /// Frames dropped for unavailable or mismatched publication inputs.
     pub fn dropped_frames(&self) -> u64 {
         self.dropped
@@ -220,30 +226,22 @@ impl Shade {
 impl SceneContribution for Shade {
     fn quality_knobs(&self) -> Vec<QualityKnob> {
         self.quality
-            .as_ref()
-            .map_or_else(Vec::new, |q| q.knobs().to_vec())
+            .knobs()
+            .iter()
+            .filter(|knob| knob.name != quality::OVERLAY || self.has_sky_overlay())
+            .cloned()
+            .collect()
     }
     fn set_quality_knob(&mut self, name: &str, value: u32) -> Result<(), QualityError> {
-        self.quality
-            .as_mut()
-            .ok_or_else(|| QualityError::UnknownKnob { name: name.into() })?
-            .set(name, value)
+        if name == quality::OVERLAY && !self.has_sky_overlay() {
+            return Err(QualityError::UnknownKnob { name: name.into() });
+        }
+        self.quality.set(name, value)
     }
     fn commit_quality_knobs(&mut self) -> QualityInvalidation {
-        let Some(quality) = &mut self.quality else {
-            return QualityInvalidation::None;
-        };
-        let invalidation = quality.commit();
+        let invalidation = self.quality.commit();
         if invalidation != QualityInvalidation::None {
-            let stride = 1 << quality.knobs()[0].value;
-            let light_samples = quality.knobs()[1].value;
-            if let Some(profile) = &mut self.sky {
-                profile.refresh_stride = stride;
-                profile.light_samples = light_samples;
-            }
-            if let Some(layer) = self.gpu.as_mut().and_then(|gpu| gpu.sky.as_mut()) {
-                layer.set_quality(stride, light_samples);
-            }
+            self.apply_quality();
         }
         invalidation
     }
@@ -310,13 +308,7 @@ impl SceneContribution for Shade {
         let Some(gpu) = &mut self.gpu else {
             return;
         };
-        let state = self
-            .input
-            .0
-            .lock()
-            .ok()
-            .and_then(|input| input.state.as_ref().map(Arc::clone));
-        let Some(state) = state else {
+        let Some((state, field_overlay)) = self.input.frame_input() else {
             gpu.sun.disable(&gpu.queue);
             self.dropped += 1;
             return;
@@ -368,7 +360,13 @@ impl SceneContribution for Shade {
             self.valid_recording = true;
             if let Some(sky) = &mut gpu.sky
                 && sky
-                    .upload(&gpu.weather, &state, frame, gpu.shapes.as_deref())
+                    .upload(
+                        &gpu.weather,
+                        &state,
+                        frame,
+                        gpu.shapes.as_deref(),
+                        field_overlay,
+                    )
                     .is_err()
             {
                 self.valid_recording = false;

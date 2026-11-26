@@ -1,7 +1,7 @@
 
 @compute @workgroup_size(8,8)
 fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
-    let size=textureDimensions(transport);
+    let size=cloud.active_extent;
     let stride=cloud.temporal.z;
     let offset=vec2(cloud.temporal.y%stride,cloud.temporal.y/stride);
     // Dispatch just the current phase of a sparse trace. This visits the
@@ -41,7 +41,7 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
     let sun_top=sun_irradiance(vec3(camera.x,cloud.heights.y,camera.z));
     let bank=cloud_bank_weight(cloud.bank_noise.w);
     var distance=begin;var samples=0u;
-    for(var i=0u;i<768u && distance<end && total.transmittance*part.transmittance>transmission_floor;i++) {
+    for(var i=0u;i<cloud.sample_cap && distance<end && total.transmittance*part.transmittance>transmission_floor;i++) {
         samples+=1u;
         let step=min(end-distance,max(cloud.heights.z,distance*0.003));
         let at=distance+step*0.5;let point=air_camera+ray*at;

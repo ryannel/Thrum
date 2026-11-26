@@ -48,7 +48,8 @@ impl Shade {
                 surface,
                 &gpu.weather,
                 &gpu.sun,
-                &sun.mapping,
+                (&sun.ground, &sun.mapping),
+                gpu.placed_map.as_ref(),
                 gpu.shapes.as_deref(),
                 gpu.sky.as_ref(),
                 &mut initialization,
@@ -113,7 +114,8 @@ impl Shade {
             surface,
             &weather,
             &sun,
-            sun.mapping(),
+            (sun.ground(), sun.mapping()),
+            placed_map.as_ref(),
             shapes.as_deref(),
             None,
             initialization,
@@ -138,16 +140,25 @@ impl Shade {
         surface: &SceneSurface<'_>,
         weather: &WeatherMap,
         sun: &SunPath,
-        mapping: &wgpu::Buffer,
+        target: (&wgpu::Texture, &wgpu::Buffer),
+        placed_map: Option<&crate::shapes::map::ShapeMap>,
         shapes: Option<&Shapes>,
         accepted: Option<&Layer>,
         initialization: &mut Vec<wgpu::CommandBuffer>,
     ) -> Result<Option<Layer>, FrameError> {
         self.sky
             .map(|profile| {
-                let (sky, command) =
-                    Layer::new(surface, weather, sun, mapping, profile, shapes, accepted)
-                        .map_err(|error| frame_prepare_error(&error))?;
+                let (sky, command) = Layer::new(
+                    surface,
+                    weather,
+                    sun,
+                    target,
+                    placed_map.map(|map| &map.texture),
+                    profile,
+                    shapes,
+                    accepted,
+                )
+                .map_err(|error| frame_prepare_error(&error))?;
                 initialization.extend(command);
                 Ok(sky)
             })
@@ -186,6 +197,7 @@ impl Staged {
             }
         }
         shade.generation = self.generation;
+        shade.apply_quality();
         let gpu = shade.gpu.as_ref().expect("installed cloud resources");
         let mut mailbox = shade.input.0.lock().unwrap_or_else(PoisonError::into_inner);
         mailbox.resources = self.bytes;
@@ -225,7 +237,23 @@ impl Prepared {
                 graph.passes[6].accesses.extend(reads.iter().cloned());
             }
             if let Some(map) = &self.placed_map {
+                let resource = graph.resources.len();
                 graph::append_placed_map(&mut graph, map, reads, generation);
+                if let Some(compose) = graph
+                    .after_opaque
+                    .iter_mut()
+                    .find(|pass| pass.name == crate::layer::COMPOSE)
+                {
+                    compose
+                        .accesses
+                        .push(thrum_render::contribution::EffectAccess {
+                            resource,
+                            range: 0..4,
+                            kind: thrum_render::graph::AccessKind::SampledRead,
+                            history: None,
+                            view: None,
+                        });
+                }
             }
         }
         graph

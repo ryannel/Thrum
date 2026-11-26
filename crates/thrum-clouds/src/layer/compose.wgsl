@@ -8,8 +8,13 @@
 struct Output {@location(0) colour:vec4<f32>,@location(1) motion:vec4<f32>,@location(2) reactive:f32}
 @fragment fn fragment(@builtin(position) position:vec4<f32>)->Output {
     let uv=position.xy/aux.extent.xy;
-    let at=vec2<i32>(clamp(uv*vec2<f32>(textureDimensions(transport)),vec2(0.0),vec2<f32>(textureDimensions(transport))-1.0));
+    let at=vec2<i32>(clamp(uv*vec2<f32>(cloud.active_extent),vec2(0.0),vec2<f32>(cloud.active_extent)-1.0));
     let layer=textureLoad(transport,at,0);let front_value=textureLoad(front,at,0);
+    let field=cloud.field_overlay;
+    let panel_uv=(uv-vec2(0.025))/vec2(0.30,0.42);
+    if field!=0u && all(panel_uv>=vec2(0.0)) && all(panel_uv<vec2(1.0)) {
+        return Output(field_colour(field,panel_uv),vec4(0.0,0.0,0.0,1.0),1.0);
+    }
     if front_value.y<=0.0 {discard;}
     let far=cloud.inverse_raster*vec4(uv*vec2(2.0,-2.0)+vec2(-1.0,1.0),0.0,1.0);
     let ray=normalize(far.xyz/far.w-view.camera.xyz);

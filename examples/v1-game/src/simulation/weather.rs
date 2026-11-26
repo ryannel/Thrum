@@ -75,12 +75,22 @@ impl Permits {
         world: &mut WorldTxn<'_>,
         tick: u64,
         dt: f64,
+        target: Option<thrum_cloud_model::Parameters>,
     ) -> Result<(), SimError> {
         let handle = self.handle.ok_or(SimError::InvalidConfig)?;
         let mut value = world
             .with(&self.read, handle, Clone::clone)
             .map_err(|_| SimError::InvalidHandle)?;
         let state = Arc::make_mut(&mut value.state);
+        if let Some(target) = target {
+            state
+                .set_target(target)
+                .map_err(|_| SimError::InvalidConfig)?;
+            #[cfg(feature = "proving")]
+            {
+                value.sequence = None;
+            }
+        }
         #[cfg(feature = "proving")]
         if let Some((sequence, initial)) = value.sequence {
             state

@@ -1540,6 +1540,7 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
     if (movingControl === 'generation') await publishSecondGeneration(assetsSource, output, timeout);
     if (lateAttach) await cdp.call('Fetch.enable', { patterns: [{ urlPattern: `${assetsOrigin}/*` }] }, sessionId);
     await cdp.call('Page.navigate', { url: mode === 'clouds-placed' ? `${origin}/?placed-clouds=${encodeURIComponent(origin)}&cloud-check`
+      : mode === 'clouds-controls' ? `${origin}/?clouds=sky&cloud-check&reconstruction=taau&params=clouds-low-sun.params.json`
       : cloudCase ? `${origin}/?clouds=sky&cloud-check&reconstruction=taau&params=field-oracle.params.json` :
       url + cullingQuery + (exitStop ? '&scene=exit' : '') + (oracleCase && mixedOracle ? '&field-meshes' : '') }, sessionId);
     let last = '', pressedAt, releasedAt;
@@ -2545,6 +2546,13 @@ async function main() {
   }
   const directory = await fs.realpath(path.resolve(repo, args['web-root']));
   const files = await assets(directory);
+  if (args.case === 'clouds-controls') {
+    for (const name of ['clear', 'fair', 'broken', 'overcast', 'low-sun']) {
+      const preset = `clouds-${name}.params.json`;
+      const bytes = await fs.readFile(path.join(directory, preset));
+      files.set(`/${preset}`, { bytes, type: 'application/json', sha256: sha(bytes) });
+    }
+  }
   if (args.case === 'shipping-boundary') {
     const bytes = await fs.readFile(path.join(directory, 'route.html'));
     files.set('/route.html', { bytes, type: 'text/html', sha256: sha(bytes) });

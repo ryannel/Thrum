@@ -130,7 +130,7 @@ impl<T: RuntimeSetup> Game for HostedGame<T> {
             host.continuous_source_mut().measure_status_updates();
         }
         if let Some(value) = edits.time_of_day {
-            host::set_time_of_day(host, value).map_err(GameError::Rejected)?;
+            host::edit_solar_time(host, value).map_err(GameError::Rejected)?;
         }
         if let Some(value) = edits.camera_pitch {
             host::set_camera_pitch(host, value).map_err(GameError::Rejected)?;
@@ -141,7 +141,7 @@ impl<T: RuntimeSetup> Game for HostedGame<T> {
         if let Some(overlay) = edits.display_overlay() {
             host::set_display_overlay(host, overlay);
         }
-        Ok(())
+        host::apply_cloud_edits(host, edits.clouds).map_err(GameError::Rejected)
     }
 
     fn readback(host: &Runtime) -> f32 {
@@ -174,6 +174,10 @@ impl Edits for ControlEdits {
             paused: newer.paused.or(self.paused),
             exposure_zones: newer.exposure_zones.or(self.exposure_zones),
             motion_view: newer.motion_view.or(self.motion_view),
+            clouds: crate::controls::CloudEdits {
+                weather: newer.clouds.weather.or(self.clouds.weather),
+                overlay: newer.clouds.overlay.or(self.clouds.overlay),
+            },
             #[cfg(feature = "proving")]
             interface_output: newer.interface_output.or(self.interface_output),
             #[cfg(feature = "proving")]
