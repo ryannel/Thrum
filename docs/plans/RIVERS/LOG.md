@@ -232,3 +232,10 @@
   other WP4 item changed.
   [First review](../../../.orchestrate/evidence/RIVERS/WP4-review-1.md) ·
   [second review](../../../.orchestrate/evidence/RIVERS/WP4-review.md)
+
+- 2026-11-26 WP4 review fixes. The shared map supplies one bulk current through backwater. The river surface
+  intersects the pixel ray with the sampled chart and swell. Wind-wave motion blends into the receiving sheet.
+  Metal sampled both rivers every 1.5 m at four stages, with up to 19.5 µm depth error and 1.9 µm at the joins.
+  The opt-out source matched the pre-WP4 assembly byte for byte. The target record holds the rerun float courses,
+  Chrome, captures and paired cost.
+  [Target evidence](../../../.orchestrate/evidence/RIVERS/WP4/final-fixes/README.md)

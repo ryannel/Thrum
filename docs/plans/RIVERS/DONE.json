@@ -390,7 +390,7 @@
     {
       "id": "WP4",
       "name": "On the island a stream runs from a spring through a pool and a narrows to the lake, and a river runs from the lake to the sea; raise the lake and the river swells, and a float rides from the spring to the sea",
-      "status": "not_started",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -405,8 +405,8 @@
           "check": "cargo test --locked --offline -p water-scene --test river_store",
           "ask": "With the selection off, does any code path of the game or of `thrum-water` differ from before this work package? Is the valley's ground reached only with the selection on?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RIVERS/WP4/final-fixes/native.md",
           "verdict": "",
           "review": ""
         },
@@ -416,8 +416,8 @@
           "check": "cargo test --locked --offline -p water-scene --test channel_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RIVERS/WP4/final-fixes/check-merged-candidate.log",
           "verdict": "",
           "review": ""
         },
@@ -428,8 +428,8 @@
           "ask": "Is a river reached only through declarations any game can make, with no path in `thrum-water` that knows the island? Does the test fail when the GPU reads one sample for every gauge, and when it ignores the wetting gauge, on the hollow and on the dry reach alike?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RIVERS/WP4/final-fixes/whole-river-target.log",
           "verdict": "",
           "review": ""
         },
@@ -438,8 +438,8 @@
           "statement": "The rivers read as water lying in the ground: level in the pool, drawn down over the sill, narrower and quicker between the rocks, with a clean waterline against banks and rocks and no stair of cells. Where the stream enters the lake, where the river leaves it and where it meets the sea there is no seam, step or change of look. The fall's sheet is not drawn until WP6, and its lip and foot are not judged here.",
           "inspect": "`fixed` stills and `realtime` sequences of each river from the bank at 2 m, along and across, at the pool, the sill, the narrows and each join, and one from 40 m above each river's whole length, in a calm and in a trade wind with a swell at the mouth.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RIVERS/WP4/final-fixes/verified/visual.md",
           "verdict": "",
           "review": ""
         },
@@ -448,8 +448,8 @@
           "statement": "As the lake is raised and lowered through its range the river below it runs deeper, wider and faster and thins again, its waterline moving up and down its banks, with no pop, step or flicker, and the stream's flow follows its own control the same way.",
           "inspect": "`realtime` sequences from the bank at 2 m at the lake's outlet and halfway down the river while the lake's level moves through its whole range in 20 s, and at the stream's narrows while the stream's stage moves through its range.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RIVERS/WP4/final-fixes/verified/visual.md",
           "verdict": "",
           "review": ""
         },
@@ -459,8 +459,8 @@
           "check": "cargo test --locked --offline -p water-scene --test river_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RIVERS/WP4/final-fixes/verified/transport.log",
           "verdict": "",
           "review": ""
         },
@@ -470,8 +470,8 @@
           "check": "node scripts/check_water_browser.mjs --case river",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RIVERS/WP4/final-fixes/verified/chrome/run.json",
           "verdict": "",
           "review": ""
         },
@@ -481,8 +481,8 @@
           "check": "python3 scripts/water_cost.py check --scene river",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RIVERS/WP4/final-fixes/verified/river-cost.json",
           "verdict": "",
           "review": ""
         },
@@ -491,8 +491,8 @@
           "statement": "The maturity ledger has a row for `E1.rivers` with implementation, correctness, visuals and device apart, and it claims no more than this work package proved.",
           "ask": "Does the row keep the four apart, and does any entry claim visuals or device results that no item here judged?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/RIVERS/WP4/final-fixes/README.md",
           "verdict": "",
           "review": ""
         }

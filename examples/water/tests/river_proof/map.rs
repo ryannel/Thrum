@@ -13,7 +13,7 @@ pub(super) const REACHES: [(usize, usize); 3] = [(3, 1), (4, 1), (5, 0)];
 /// Each reach's prepared bounds include its shore margin. Search every
 /// longitudinal section for its deepest owned column, including the heads
 /// and tails, so a narrow or laterally moving wet path still gets sampled.
-pub(super) fn transect_points(map: &thrum_water_model::Map) -> Vec<(usize, [f64; 2])> {
+pub(super) fn transect_points(map: &Map) -> Vec<(usize, [f64; 2])> {
     let mut points = Vec::new();
     for (body, axis) in REACHES {
         let side = 1 - axis;
