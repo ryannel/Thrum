@@ -15,7 +15,7 @@ name = "interaction_gpu"
 workspace = true
 
 [dependencies]
-glam = { version = "=0.33.12", default-features = false, features = ["std", "u32"] }
+glam = { version = "=0.33.12", default-features = false, features = ["std", "u32", "f64"] }
 bytemuck = { version = "=1.25.2", features = ["derive"] }
 thrum-asset-gpu = { path = "../thrum-asset-gpu" }
 thrum-render = { path = "../thrum-render" }

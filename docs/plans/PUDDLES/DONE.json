@@ -434,7 +434,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/PUDDLES/WP4/review-repair.md",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP4/schedule-repair.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/PUDDLES/WP4-review.md"
         },
@@ -445,7 +445,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/PUDDLES/WP4/review-fix-check.json",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP4/period-items.json",
           "verdict": "pass",
           "review": ".orchestrate/evidence/PUDDLES/WP4-review.md"
         },
@@ -454,8 +454,8 @@
           "statement": "From 0.5 m and from 1.7 m the rings read as rain on water: each starts small and sharp, spreads leaving calm water inside it, gains crests and fades. Light rain is a few rings, heavy rain a crowded, roughened surface. No grid, repeat or pair of like rings shows across a puddle 6 m long. Under the roof's edge the rings stop along a soft line, and on the thinnest water they are faint.",
           "inspect": "`realtime` sequences of the yard's largest puddle from 0.5 m and 1.7 m at 2, 10 and 50 mm/h, one framed on the roof's edge and one on a puddle's shallow margin; `fixed` stills cropped at native size of single rings at three ages.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP4/schedule-repair.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/PUDDLES/WP4-review.md"
         },
@@ -465,7 +465,7 @@
           "inspect": "`realtime` sequences from 30 m above the lake and from the beach looking out to sea, at no rain, 10 and 50 mm/h, in a calm and in a breeze.",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/PUDDLES/WP4/README.md",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP4/schedule-repair.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/PUDDLES/WP4-review.md"
         },
@@ -474,7 +474,7 @@
           "statement": "Stopping the rain reads as rain stopping: the rings on the water spread out and fade over a second and no new one starts, the water does not snap to still, and when the rain starts again the first rings are small and new.",
           "inspect": "`realtime` sequences of the yard's largest puddle from 0.5 m and 1.7 m at 10 and 50 mm/h through a stop, two seconds of no rain and a restart; consecutive frames across the stop and across the restart at native size.",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/PUDDLES/WP4/README.md",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP4/schedule-repair.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/PUDDLES/WP4-review.md",
           "builder_result": "pass"
@@ -486,7 +486,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/PUDDLES/WP4/review-fix-check.json",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP4/period-items.json",
           "verdict": "pass",
           "review": ".orchestrate/evidence/PUDDLES/WP4-review.md"
         },
@@ -497,7 +497,7 @@
           "lock": "chrome",
           "target": "chrome-webgpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/PUDDLES/WP4/browser-review-layout/run.json",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP4/browser-period-final/run.json",
           "verdict": "pass",
           "review": ".orchestrate/evidence/PUDDLES/WP4-review.md"
         },
@@ -508,7 +508,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/PUDDLES/WP4/review-repair-cost.json",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP4/period-final-cost.json",
           "verdict": "fail",
           "review": ".orchestrate/evidence/PUDDLES/WP4-review.md"
         }

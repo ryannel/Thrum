@@ -224,3 +224,8 @@
   each of the earlier periods could repeat an individual ring even though the combined field had a long
   period. Keep the two 512² patches and the rate history. Bin periodic images in 64² tiles, reject tiles
   outside each drop's reach, and filter its normalized ring table in hardware. [Schedule repair evidence](../../../.orchestrate/evidence/PUDDLES/WP4/schedule-repair.md)
+
+  The fixed world-space footprint thresholds keep longer periods from extending fine sampling. At 50 mm/h
+  the rain base pass measured 0.95–0.98 ns per output texel on M3 Max Metal, down from 1.12–1.16 ns. All
+  five executable items passed. The native captures and independent inspection cover sparse births, three
+  ages of one ring, the heavy shower and shelter, the distant reflection, and both stop and restart views.

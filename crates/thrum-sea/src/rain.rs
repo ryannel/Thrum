@@ -38,6 +38,13 @@ fn entry(binding: u32, resource: wgpu::BindingResource<'_>) -> wgpu::BindGroupEn
     wgpu::BindGroupEntry { binding, resource }
 }
 
+fn shader_source() -> String {
+    format!(
+        "const RAIN_SIZE = {SIZE}u;\nconst RAIN_TILES = {TILES}u;\n{}",
+        include_str!("rain.wgsl")
+    )
+}
+
 struct Dispatch {
     pipeline: wgpu::ComputePipeline,
     group: wgpu::BindGroup,
@@ -220,13 +227,7 @@ impl Bands {
         let tiles = working("rain tile lists", max_indices as u64 * 4);
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some(PASS),
-            source: wgpu::ShaderSource::Wgsl(
-                format!(
-                    "const RAIN_SIZE = {SIZE}u;\nconst RAIN_TILES = {TILES}u;\n{}",
-                    include_str!("rain.wgsl")
-                )
-                .into(),
-            ),
+            source: wgpu::ShaderSource::Wgsl(shader_source().into()),
         });
         let compute = wgpu::ShaderStages::COMPUTE;
         let storage = |n| binding::storage(n, compute, true, 0);
@@ -635,14 +636,14 @@ fn bin_image(
 
 #[cfg(all(test, not(target_arch = "wasm32")))]
 mod tests {
-    use super::BandFrame;
+    use super::{BandFrame, shader_source};
     use thrum_test_support::{record, records};
 
     #[test]
     fn band_coordinates_match_the_shader_layout() {
         records::named(
             "rain bands",
-            include_str!("rain.wgsl"),
+            &shader_source(),
             &[record!(BandFrame, lengths_reach, table, steps, scales)],
         );
     }
