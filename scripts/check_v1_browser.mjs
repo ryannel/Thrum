@@ -1567,12 +1567,12 @@ async function qualify(cdp, mode, origin, output, directory, wasm, timeout, asse
       const record = { case: mode, ...proof, actualWasmSha256,
         source_revision: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repo, encoding: 'utf8' }).trim() };
       await fs.writeFile(path.join(output, `${mode}.json`), JSON.stringify(record, null, 2));
-      if (mode === 'clouds-state') {
-        // Unload the recovered WebGPU document before closing its target and the browser.
+      if (mode === 'clouds-state' || mode === 'clouds-controls') {
+        // Retire the WebGPU document before Chrome closes its target.
         // Target.closeTarget only accepts a close request and can overlap renderer teardown.
         await cdp.call('Runtime.releaseObject', { objectId: game.objectId }, sessionId);
         await unloadGamePage(cdp, sessionId, timeout);
-        log('Recovered WebGPU page unloaded');
+        log('WebGPU cloud page unloaded');
       }
       return record;
     }
