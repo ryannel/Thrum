@@ -1533,3 +1533,10 @@
   indexes the stills and elapsed sequences, including the Trade swash foam and
   the held crossing. The deep inclined lake view retains the compressed bank
   on both targets.
+
+- 2026-11-26 Repaired WP15.1's dry comparison. The mapped trough differed at
+  four pixels with matching clocks and the lens unadmitted. Two ordinary Trade
+  hosts also differed with composition disabled in both. The Metal fixtures
+  now compare the opaque near-plane panel bit for bit and check the omitted
+  passes on those same frames. They run serially to fit the Metal timestamp
+  pool. [Lens proof](../../../.orchestrate/evidence/WATERS/WP15/lens-proof.md)

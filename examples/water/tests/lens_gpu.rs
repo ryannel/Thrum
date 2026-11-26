@@ -5,14 +5,77 @@ mod support;
 #[cfg(target_os = "macos")]
 mod metal {
     use crate::support::optics::{Panel, Rig, attach, camera, sun};
+    use std::sync::{Mutex, MutexGuard, PoisonError};
+    use thrum_render::runtime::FrameSample;
+    use thrum_test_support::Gpu;
     use water_scene::lens_probe::{Case, EXTENT, FOV};
+
+    static DEVICE: Mutex<()> = Mutex::new(());
+
+    pub(super) fn gpu(test: &str) -> Option<(MutexGuard<'static, ()>, Gpu)> {
+        // Each fixture can retain several Metal timestamp query sets at once.
+        let serial = DEVICE.lock().unwrap_or_else(PoisonError::into_inner);
+        thrum_test_support::gpu(test, Some(wgpu::Backend::Metal)).map(|gpu| (serial, gpu))
+    }
+
+    pub(super) fn runs_gather(sample: &FrameSample) -> bool {
+        sample
+            .gpu_pass_ns
+            .as_ref()
+            .expect("Metal timing")
+            .passes()
+            .iter()
+            .any(|pass| pass.name.contains("water gather"))
+    }
+
+    pub(super) fn check_dry_panel(dry: &mut Rig, plain: &mut Rig, context: &str) {
+        let (sample, exposure, colour) = dry.scene_colour_with_sample();
+        let (baseline, baseline_exposure, reference) = plain.scene_colour_with_sample();
+        assert_eq!(sample.observation, baseline.observation);
+        assert_eq!(sample.tick, baseline.tick);
+        assert_eq!(
+            sample.presentation_alpha.to_bits(),
+            baseline.presentation_alpha.to_bits()
+        );
+        let cut = sample
+            .gpu_pass_ns
+            .as_ref()
+            .expect("Metal timing")
+            .passes()
+            .iter()
+            .any(|pass| pass.name.contains("water lens cut"));
+        assert!(
+            !runs_gather(&sample) && !cut,
+            "{context}: dry lens scheduled underwater work"
+        );
+        assert!(
+            !runs_gather(&baseline),
+            "{context}: ordinary optics ran a gather"
+        );
+        assert_eq!(exposure.to_bits(), baseline_exposure.to_bits());
+
+        // An opaque emissive panel immediately behind the near plane isolates
+        // the lens. Distant ordinary-wave lighting varies across Metal captures.
+        let expected_floor = 12_000.0 * exposure;
+        for (pixel, (dry, ordinary)) in colour.iter().zip(&reference).enumerate() {
+            assert!(
+                ordinary[0] > expected_floor,
+                "{context}: panel obscured at pixel {pixel}: {ordinary:?}"
+            );
+            assert_eq!(
+                dry.map(f32::to_bits),
+                ordinary.map(f32::to_bits),
+                "{context}: dry lens altered the panel at pixel {pixel}: {dry:?} vs {ordinary:?}"
+            );
+        }
+    }
 
     #[expect(
         clippy::cast_precision_loss,
         clippy::print_stderr,
         reason = "bounded lens fixture and its proof log"
     )]
-    pub(super) fn check(case: &Case, gpu: &thrum_test_support::Gpu) {
+    pub(super) fn check(case: &Case, gpu: &Gpu) {
         let (extent, panel_gaps): (_, &[f32]) =
             if std::env::var_os("THRUM_WATER_LENS_1440P").is_some() {
                 (
@@ -150,7 +213,7 @@ mod metal {
         );
     }
 
-    pub(super) fn check_meniscus(gpu: &thrum_test_support::Gpu) {
+    pub(super) fn check_meniscus(gpu: &Gpu) {
         let mut case = Case::new("sea", 0.0);
         case.spectrum.long.clear();
         let fov = FOV;
@@ -199,54 +262,54 @@ mod metal {
 
 thrum_test_support::macos_gpu_test! {
 fn metal_meniscus_grades_the_first_submerged_pixel() {
-    let Some(gpu) = thrum_test_support::gpu("subpixel waterline", Some(wgpu::Backend::Metal)) else { return };
+    let Some((_serial, gpu)) = metal::gpu("subpixel waterline") else { return };
     metal::check_meniscus(&gpu);
 }
 }
 thrum_test_support::macos_gpu_test! {
 fn metal_sea_lens_reads_the_near_plane_and_skips_the_dry_gather() {
-    let Some(gpu) = thrum_test_support::gpu("split sea lens", Some(wgpu::Backend::Metal)) else { return };
+    let Some((_serial, gpu)) = metal::gpu("split sea lens") else { return };
     metal::check(&water_scene::lens_probe::Case::new("trade", 0.0), &gpu);
 }
 }
 thrum_test_support::macos_gpu_test! {
 fn metal_lake_lens_reads_the_near_plane() {
-    let Some(gpu) = thrum_test_support::gpu("split lake lens", Some(wgpu::Backend::Metal)) else { return };
+    let Some((_serial, gpu)) = metal::gpu("split lake lens") else { return };
     metal::check(&water_scene::lens_probe::Case::new("lake", 0.0), &gpu);
 }
 }
 thrum_test_support::macos_gpu_test! {
 fn metal_swash_lens_reads_the_near_plane() {
-    let Some(gpu) = thrum_test_support::gpu("split swash lens", Some(wgpu::Backend::Metal)) else { return };
+    let Some((_serial, gpu)) = metal::gpu("split swash lens") else { return };
     metal::check(&water_scene::lens_probe::Case::new("swash", 0.0), &gpu);
 }
 }
 thrum_test_support::macos_gpu_test! {
 fn metal_lip_lens_reads_the_highest_of_three_surfaces() {
-    let Some(gpu) = thrum_test_support::gpu("split lens below the lip", Some(wgpu::Backend::Metal)) else { return };
+    let Some((_serial, gpu)) = metal::gpu("split lens below the lip") else { return };
     metal::check(&water_scene::lens_probe::Case::new("lip", 0.0), &gpu);
 }
 }
 
 thrum_test_support::macos_gpu_test! {
 fn metal_admits_the_short_crest_carried_in_from_outside_the_footprint() {
-    let Some(gpu) = thrum_test_support::gpu("off-footprint carried crest", Some(wgpu::Backend::Metal)) else { return };
+    let Some((_serial, gpu)) = metal::gpu("off-footprint carried crest") else { return };
     metal::check(&water_scene::lens_probe::Case::new("carried-crest", 0.0), &gpu);
 }
 }
 
 thrum_test_support::macos_gpu_test! {
 fn metal_composes_a_lens_two_centimetres_under_the_short_trough() {
-    let Some(gpu) = thrum_test_support::gpu("two centimetres under a short trough", Some(wgpu::Backend::Metal)) else { return };
+    let Some((_serial, gpu)) = metal::gpu("two centimetres under a short trough") else { return };
     metal::check(&water_scene::lens_probe::Case::new("trough-wet", 0.0), &gpu);
 }
 }
 
 thrum_test_support::macos_gpu_test! {
 fn metal_skips_a_dry_short_wave_trough_and_admits_the_crest() {
-    use crate::support::optics::{Rig, attach, camera, sun};
+    use crate::support::optics::{Panel, Rig, attach, camera, sun};
     use water_scene::lens_probe::{Case, EXTENT, FOV};
-    let Some(gpu) = thrum_test_support::gpu("dry short-wave trough", Some(wgpu::Backend::Metal)) else { return };
+    let Some((_serial, gpu)) = metal::gpu("dry short-wave trough") else { return };
     for case in [
         Case::short_trough(false, 0.0),
         Case::short_trough(true, 0.0),
@@ -256,70 +319,59 @@ fn metal_skips_a_dry_short_wave_trough_and_admits_the_crest() {
         let look = |z| camera([x, y, z], [x, y, z + 1.0], FOV, 1.0 / 32768.0);
         let view = look(trough);
         assert!(case.expected(&view, EXTENT).into_iter().all(|wet| !wet));
-        let mut dry = Rig::with_extent(&gpu, &view, sun(0.0, 0.0), &[], None, EXTENT);
+        let panel = Panel {
+            centre: [x, y, (trough + 0.11) + 0.000_001],
+            half_size: [0.2, 0.16, 0.01],
+            radiant: true,
+        };
+        let mut dry = Rig::with_extent(&gpu, &view, sun(0.0, 0.0), &[panel], None, EXTENT);
         attach(&mut dry, case.water(true));
-        let mut plain = Rig::with_extent(&gpu, &view, sun(0.0, 0.0), &[], None, EXTENT);
+        let mut plain = Rig::with_extent(&gpu, &view, sun(0.0, 0.0), &[panel], None, EXTENT);
         attach(&mut plain, case.water(false));
-        let submitted = dry.scene_colour().1;
-        let reference = plain.scene_colour().1;
-        let equal = submitted.iter().zip(&reference)
-            .filter(|(a, b)| a.map(f32::to_bits) == b.map(f32::to_bits))
-            .count();
-        assert_eq!(equal, (EXTENT[0] * EXTENT[1]) as usize, "dry pixels remain visually dry");
         dry.host.set_timing_requested(true);
         plain.host.set_timing_requested(true);
-        let gathers = |rig: &mut Rig| rig.frame().gpu_pass_ns.expect("Metal timing")
-            .passes().iter().any(|pass| pass.name.contains("water gather"));
-        assert!(!gathers(&mut plain), "ordinary optics gathered in the {} fixture", case.name);
-        assert!(!gathers(&mut dry), "the dry {} scheduled the underwater gather", case.name);
+        metal::check_dry_panel(&mut dry, &mut plain, case.name);
         if case.name == "mapped-trough" {
             let low = camera([x, y - 0.02, trough], [x, y - 0.02, trough + 1.0], FOV, 1.0 / 32768.0);
             let expected = case.expected(&low, EXTENT);
             assert!(expected.contains(&true) && expected.contains(&false));
             dry.host.continuous_source_mut().view = low;
-            assert!(gathers(&mut dry), "using the unrestricted trough would skip the wet edge");
+            assert!(metal::runs_gather(&dry.frame()), "using the unrestricted trough would skip the wet edge");
         }
         let crest = look(160.0 / 24.0 - 0.1);
         assert!(case.expected(&crest, EXTENT).into_iter().all(|wet| wet));
         dry.host.continuous_source_mut().view = crest;
-        assert!(gathers(&mut dry), "the same lens at the short-wave crest needs the gather");
+        assert!(metal::runs_gather(&dry.frame()), "the same lens at the short-wave crest needs the gather");
     }
 }
 }
 
 thrum_test_support::macos_gpu_test! {
 fn metal_skips_dry_trade_water_as_the_footprint_moves() {
-    use crate::support::optics::{Rig, attach, camera, sun};
-    use thrum_render::runtime::FrameSample;
+    use crate::support::optics::{Panel, Rig, attach, camera, sun};
     use water_scene::lens_probe::{Case, EXTENT, FOV};
-    let Some(gpu) = thrum_test_support::gpu("dry Trade sea", Some(wgpu::Backend::Metal)) else { return };
+    let Some((_serial, gpu)) = metal::gpu("dry Trade sea") else { return };
     let case = Case::new("trade-admission", 0.0);
     let [x, y, z] = case.eye();
     let look = |dx, y| camera([x + dx, y, z], [x + dx, y, z + 1.0], FOV, 1.0 / 32768.0);
-    let mut lens = Rig::with_extent(&gpu, &look(0.0, y), sun(0.0, 0.0), &[], None, EXTENT);
+    let panel = Panel {
+        centre: [x + 4.5, y, (z + 0.11) + 0.000_001],
+        half_size: [5.0, 0.16, 0.01],
+        radiant: true,
+    };
+    let mut lens = Rig::with_extent(&gpu, &look(0.0, y), sun(0.0, 0.0), &[panel], None, EXTENT);
     attach(&mut lens, case.water(true));
-    let mut plain = Rig::with_extent(&gpu, &look(0.0, y), sun(0.0, 0.0), &[], None, EXTENT);
+    let mut plain = Rig::with_extent(&gpu, &look(0.0, y), sun(0.0, 0.0), &[panel], None, EXTENT);
     attach(&mut plain, case.water(false));
     lens.host.set_timing_requested(true);
     plain.host.set_timing_requested(true);
-    let gathers = |sample: &FrameSample| sample.gpu_pass_ns.as_ref().expect("Metal timing")
-        .passes().iter().any(|pass| pass.name.contains("water gather"));
     for dx in [0.0, 0.08, 0.16, 1.0, 9.02, 0.0] {
         lens.host.continuous_source_mut().view = look(dx, y);
         plain.host.continuous_source_mut().view = look(dx, y);
-        let (sample, _, colour) = lens.scene_colour_with_sample();
-        let (baseline, _, reference) = plain.scene_colour_with_sample();
-        assert_eq!(sample.observation, baseline.observation);
-        assert_eq!(sample.tick, baseline.tick);
-        assert_eq!(sample.presentation_alpha.to_bits(), baseline.presentation_alpha.to_bits());
-        let cut = sample.gpu_pass_ns.as_ref().expect("Metal timing").passes().iter()
-            .any(|pass| pass.name.contains("water lens cut"));
-        assert!(!gathers(&sample) && !cut, "dry Trade lens at {dx} m scheduled underwater work");
-        assert!(colour.iter().zip(&reference).all(|(a, b)| a.map(f32::to_bits) == b.map(f32::to_bits)),
-            "the dry Trade lens changed output at {dx} m");
+        metal::check_dry_panel(&mut lens, &mut plain, &format!("dry Trade lens at {dx} m"));
     }
     lens.host.continuous_source_mut().view = look(0.0, y - 4.0);
-    assert!(gathers(&lens.frame()), "submerged Trade lens omitted its gather");
+    assert!(metal::runs_gather(&lens.frame()), "submerged Trade lens omitted its gather");
 }
 }
 
@@ -333,7 +385,7 @@ fn metal_admits_a_dry_lens_over_a_live_wake_window() {
     use thrum_water_model::Impulse;
     use water_scene::lens_probe::{EXTENT, FOV};
 
-    let Some(gpu) = thrum_test_support::gpu("wake lens admission", Some(wgpu::Backend::Metal)) else { return };
+    let Some((_serial, gpu)) = metal::gpu("wake lens admission") else { return };
     let view = |x| Camera::look_at([x, 5.0, -0.1], [x, 5.0, 0.9], FOV.to_degrees());
     let water = water_configured(None, Profile {
         optics: Some(Optics::default()),
@@ -382,7 +434,7 @@ fn metal_composes_a_lens_below_a_lake_impact_ring() {
     use crate::support::optics::{Panel, Rig, attach, camera, sun};
     use thrum_water::interaction::Witness;
     use water_scene::lens_probe::{Case, EXTENT, FOV, STONE};
-    let Some(gpu) = thrum_test_support::gpu("lake impact lens split", Some(wgpu::Backend::Metal)) else { return };
+    let Some((_serial, gpu)) = metal::gpu("lake impact lens split") else { return };
     let case = Case::new("impact", 0.0);
     let eye = case.eye();
     let view = camera(eye, [eye[0], eye[1], eye[2] + 1.0], FOV, 1.0 / 32768.0);

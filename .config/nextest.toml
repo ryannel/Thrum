@@ -41,6 +41,7 @@ slow-timeout = { period = "30s", terminate-after = 1 }
 cooked-assets = { max-threads = 1 }
 frame-alloc = { max-threads = 1 }
 foam-scene = { max-threads = 1 }
+lens-scene = { max-threads = 1 }
 water-interaction = { max-threads = 1 }
 # Not a device mutex: the game's cooked-row and lent-product cases each draw a game host through
 # edited cooked content and wait on the device every frame, so beyond two at once they only queue
@@ -64,6 +65,11 @@ test-group = 'game-cooked-content'
 [[profile.default.overrides]]
 filter = 'package(water-scene) & binary(=foam_scene_gpu)'
 test-group = 'foam-scene'
+
+[[profile.default.overrides]]
+# Paired lens measurements retain two hosts and their Metal timestamp sets.
+filter = 'package(water-scene) & binary(=lens_gpu)'
+test-group = 'lens-scene'
 
 [[profile.default.overrides]]
 # One live interaction fixture at a time: a Metal device and several full-grid buffers each.
