@@ -746,7 +746,11 @@ fn prepare_parameters(
     if scenario == "sun-set" {
         crate::host::scrub_haze_sun(driver.host_mut(), SUNSET_START_HOURS / 24.0)?;
     }
-    if weather_motion(scenario) || scenario == "clouds-inspect" {
+    let placement = crate::content::launch_value("THRUM_CLOUD_PLACEMENT");
+    let library_view = placement
+        .as_ref()
+        .is_ok_and(|name| name.starts_with("library-"));
+    if weather_motion(scenario) || scenario == "clouds-inspect" || library_view {
         crate::host::hold_capture_sun(driver.host_mut());
     }
     let overlay_before = crate::content::launch_value("THRUM_CAPTURE_CLOUD_OVERLAY_BEFORE").ok();
@@ -766,7 +770,10 @@ fn prepare_parameters(
     }
     let preset_accepted = Instant::now();
     warmup_checkpoint(driver, parity_checkpoint)?;
-    settle_placed_capture(driver, mode, parameters.as_deref())?;
+    let settle_weather = mode != "realtime"
+        || (scenario == "clouds-placed" && placement.as_deref() == Ok("library-mixed"));
+    let restore_parameters = parameters.as_deref().filter(|_| !library_view);
+    settle_placed_capture(driver, settle_weather, restore_parameters)?;
     if overlay_before.is_some() {
         driver
             .parameters(r#"{"clouds.overlay": 0}"#)
@@ -777,7 +784,7 @@ fn prepare_parameters(
 
 fn settle_placed_capture(
     driver: &mut Offscreen<HostedGame<WindowGame>>,
-    mode: &str,
+    settle_weather: bool,
     parameters: Option<&str>,
 ) -> Result<(), String> {
     if driver.host().cloud_placed_input().is_none() {
@@ -802,7 +809,7 @@ fn settle_placed_capture(
     // A full-share weather warm-up updates the moving lattice and its Sun
     // path on each tick. Give that work its own window after lease staging.
     let deadline = Instant::now() + Duration::from_secs(60);
-    if mode != "realtime" {
+    if settle_weather {
         driver
             .parameters(r#"{"world.paused":false}"#)
             .map_err(|error| error.to_string())?;
