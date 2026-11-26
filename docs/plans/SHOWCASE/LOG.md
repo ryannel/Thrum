@@ -193,3 +193,17 @@
   tick 1381. Each verified its resolved render selections and failed on the missing drawn cooked root.
   The portable row reached the final tick on retry after the first attempt missed the window's present count.
   [Row receipts](../../../.orchestrate/evidence/SHOWCASE/WP7/row-launches/)
+- 2026-11-26 WP7 verified the six stops and complete flythrough on both Mac recipes and Chrome against
+  the resolved selections and committed cooked manifest hash. The controls rejected all 13 selection omissions
+  and the Apple launch check rejected a real MetalFX-to-TAAU fallback. The native launcher waits for the route
+  and its timing samples, and applies every preset to the paused window through the watcher.
+  [Target runs and controls](../../../.orchestrate/evidence/SHOWCASE/WP7/verified/README.md)
+- 2026-11-26 WP7 applied the revised per-stop calibration. The 95th percentile / maximum bounds in route order
+  are 2.596 / 6.509, 2.254 / 4.366, 2.879 / 7.692, 2.827 / 10.298, 3.317 / 16.436 and 1.000 / 1.838.
+  The median is 1.0 at every stop. The exit baseline SHA-256 moved from
+  `06d7a29f867865d2680addd79095ef9e66003b3e689809410d1cc48df2722b38` to
+  `be3716f268f45602f09662f026edf76682b77f08bbaa31df228f9f78aad620f5`.
+  [Calibration, values and stop inspection](../../../.orchestrate/evidence/SHOWCASE/WP7/calibration/inspection.md)
+- 2026-11-26 WP7 verified capture-off flythrough and day-cycle records on each row. The latest Mac records
+  keep the missed opportunities and named stages that crossed deadlines. Attribution between engine work
+  and scheduling remains open for WP8.13. [Timing evidence](../../../.orchestrate/evidence/SHOWCASE/WP7/verified/timing-investigation.md)
