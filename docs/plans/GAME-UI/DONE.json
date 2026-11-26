@@ -334,10 +334,10 @@
           "check": "cargo test --locked --offline -p thrum-ui --test layout_properties",
           "ask": "Are layouts and list builds counted inside the tree, across many frames, with a change that does move a box as a control the counts see? Is the comparison with a fresh tree run over random sequences of changes?",
           "target": "mac-metal",
-          "evidence": "",
+      "evidence": ".orchestrate/evidence/GAME-UI/WP3/hidden-edits/index.md",
           "verdict": "fail",
           "review": ".orchestrate/evidence/GAME-UI/WP3-review.md",
-          "builder_result": "open"
+      "builder_result": "pass"
         },
         {
           "id": "WP3.4",

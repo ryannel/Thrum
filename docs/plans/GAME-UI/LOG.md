@@ -161,3 +161,8 @@
   when the safe area is too short for the large panel. Mac layout tests and the 97,435-case sweep passed.
   Fixed Metal captures show all three counts in the short safe area and preserve the larger Retina text.
   [Target proof](../../../.orchestrate/evidence/GAME-UI/WP3/second-review-fixes/index.md)
+- 2026-11-26 WP3.3 review fix. Hidden anchor, visibility, tint and bar edits keep the visible layout and
+  paint list cached. Revealing the subtree applies the retained edits in one layout and matches a fresh
+  tree. The layout properties suite passed on macOS, and the Metal comparison confirmed idle
+  submissions upload zero interface bytes.
+  [Target proof](../../../.orchestrate/evidence/GAME-UI/WP3/hidden-edits/index.md)
