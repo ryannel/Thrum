@@ -1946,7 +1946,7 @@
         {
           "verdict": "fail",
           "commit": "a223b46cc6361f5e96fc816d71e23e00c27f4816",
-          "review": ".orchestrate/evidence/WATERS/WP9-review.md",
+          "review": ".orchestrate/evidence/WATERS/WP9-review-4.md",
           "items": {
             "WP9.1": "pass",
             "WP9.2": "fail",
@@ -1984,6 +1984,45 @@
             "turns": 1
           },
           "at": "2026-11-26T10:07:30Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "071b753f6937ef444ac9d55a99c6821ffd16484a",
+          "review": ".orchestrate/evidence/WATERS/WP9-review.md",
+          "items": {
+            "WP9.1": "pass",
+            "WP9.2": "fail",
+            "WP9.3": "pass",
+            "WP9.4": "pass",
+            "WP9.5": "pass",
+            "WP9.6": "pass",
+            "WP9.7": "pass",
+            "WP9.8": "pass"
+          },
+          "findings": [
+            {
+              "name": "The slow varying reach omits its bank cross-current",
+              "item": "WP9.2",
+              "different": "The earlier finding concerned mean-speed carriage on the exchanging-lanes chart. This finding concerns the checked-in bank-flow fixture for chart (d).",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 140883,
+            "cached": 5630848,
+            "output": 13950,
+            "turns": 1
+          },
+          "at": "2026-11-26T11:12:38Z"
         }
       ],
       "authorised": {

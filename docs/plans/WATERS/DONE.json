@@ -1613,8 +1613,8 @@
     {
       "id": "WP9",
       "name": "Water runs down a channel from the lake to the sea: its surface follows the slope, its ripples and foam travel with the current, and a float is carried down to the sea",
-      "status": "ready_for_review",
-      "failed_reviews": 0,
+      "status": "in_progress",
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 1,
       "depends_on": [],
@@ -1629,8 +1629,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP9/revision-4/metal-channel.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/WP9-review.md"
         },
         {
           "id": "WP9.2",
@@ -1638,10 +1638,10 @@
           "check": "cargo test --locked --offline -p water-scene --test carriage_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP9/revision-4/metal-carriage.md",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/WATERS/WP9-review.md"
         },
         {
           "id": "WP9.3",
@@ -1650,8 +1650,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP9/revision-4/visual.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/WP9-review.md"
         },
         {
           "id": "WP9.4",
@@ -1661,8 +1661,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP9/revision-4/metal-channel.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/WP9-review.md"
         },
         {
           "id": "WP9.5",
@@ -1672,8 +1672,8 @@
           "target": "chrome-webgpu",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP9/revision-4/check-output/run.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/WP9-review.md"
         },
         {
           "id": "WP9.6",
@@ -1682,8 +1682,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP9/revision-4/chart-contract.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/WP9-review.md"
         },
         {
           "id": "WP9.7",
@@ -1693,8 +1693,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP9/revision-4/check-output/channel-cost.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/WP9-review.md"
         },
         {
           "id": "WP9.8",
@@ -1705,8 +1705,16 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP9/revision-4/metal-slopes.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/WATERS/WP9-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "name": "The slow varying reach omits its bank cross-current",
+          "item": "WP9.2",
+          "different": "The earlier finding concerned mean-speed carriage on the exchanging-lanes chart. This finding concerns the checked-in bank-flow fixture for chart (d).",
+          "repeat": false
         }
       ]
     },
