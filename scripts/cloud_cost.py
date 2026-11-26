@@ -347,9 +347,13 @@ def validate_library(record, refs):
             continue
         required = (set(SKY_PASSES) - {'cloud hemisphere light'}) | set(WORLD_LIGHT_PASSES) | {'cloud placed weather map'}
         first_passes = named_passes(row['first_submission'])
+        setup_passes = named_passes({'pass_gpu_ns': row['setup_pass_peaks_ns']})
+        missing = {name for name in required
+                   if not any(positive(times.get(name)) for times in (passes, first_passes, setup_passes))}
+        if missing:
+            raise ValueError(f'{recipe} lacks timed library passes: {sorted(missing)}')
         stats = row['ray_statistics'] or {}
         if (row['preset'] != 'fair' or row['minimum_volume_instances'] != 13
-                or any(not positive(passes.get(name, first_passes.get(name))) for name in required)
                 or any(not positive(stats.get(name)) for name in ('rays_traced', 'mean_samples', 'p95_samples'))):
             raise ValueError(f'{recipe} needs all thirteen volume forms and their timed cloud work')
         fmt = 'R8Unorm' if recipe == 'portable' else 'Bc4RUnorm'

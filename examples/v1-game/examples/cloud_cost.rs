@@ -129,6 +129,7 @@ async fn measure(
     let mut last_tick = 0;
     let mut refill = 0.0_f64;
     let mut first = None;
+    let mut setup_pass_peaks = BTreeMap::<String, f64>::new();
     let settle_ticks = if has_shapes && !library { 300 } else { 30 };
     for tick in 0..360_u32 {
         last_tick = tick;
@@ -138,6 +139,12 @@ async fn measure(
             .map_err(|e| e.to_string())?;
         while let Some(sample) = host.poll_completed()? {
             let timings = sample.gpu_pass_ns.ok_or("GPU counters required")?;
+            if library {
+                for pass in timings.passes() {
+                    let peak = setup_pass_peaks.entry(pass.name.to_string()).or_default();
+                    *peak = peak.max(pass.nanoseconds);
+                }
+            }
             let resident = !has_shapes
                 || host
                     .cloud_placed_input()
@@ -226,6 +233,7 @@ async fn measure(
             "storage":host.storage_report(), "view":host.scene_camera().map(v1_game::SceneCamera::eye),
             "view_angles":view_angles,
             "minimum_volume_instances":library.then_some(minimum_volume_instances),
+            "setup_pass_peaks_ns":setup_pass_peaks,
             "first_submission":first,"ray_statistics":ray_statistics(&device,&queue,host.cloud_sky_products().as_ref())?,
             "quality":host.quality_knobs().iter().map(|q|serde_json::json!({"name":q.name,"value":q.value})).collect::<Vec<_>>(),
         })
