@@ -1,3 +1,4 @@
+use crate::library::{HASHED_SCALE_MIN, HASHED_SCALE_SPAN};
 use crate::{Directed, Error, Parameters, Shape, ShapeSource, State, smooth, unit};
 use std::f64::consts::PI;
 use std::sync::Arc;
@@ -337,7 +338,7 @@ impl Field {
 
     /// Width of one placement block in the air frame, where the hash places the library.
     pub fn placed_block_width(&self, state: &State) -> Option<f64> {
-        Some(f64::from(state.hashed_shapes()?.block_sites) * self.profile.pitch)
+        Some(state.hashed_shapes()?.block_width(self.profile.pitch))
     }
 
     #[expect(
@@ -378,7 +379,8 @@ impl Field {
         }
         let envelope = (PI * age).sin().powi(2) * selected * covered;
         let count = library.shapes().len();
-        let shape_count = count + usize::from(share < 1.0 && !library.growth().is_empty());
+        let shape_count =
+            count + usize::from(placement.includes_growth() && !library.growth().is_empty());
         let index = (random(84) * shape_count as f64) as usize;
         let source = if index == count {
             ShapeSource::Growth
@@ -386,12 +388,14 @@ impl Field {
             ShapeSource::Library(u32::try_from(index).ok()?)
         };
         let slab = library.geometry(source)?;
-        let width = self.placed_block_width(state)?;
+        let width = placement.block_width(self.profile.pitch);
         let centre = [
             (i as f64 + 0.3 + 0.4 * random(85)) * width,
             (j as f64 + 0.3 + 0.4 * random(86)) * width,
         ];
-        let scale = (width * 0.29 / slab.footprint.radius()).min(0.88 + 0.28 * random(89));
+        let scale = placement
+            .scale_limit(self.profile.pitch, slab)
+            .min(HASHED_SCALE_MIN + HASHED_SCALE_SPAN * random(89));
         let wind_heading = p.wind[1].atan2(p.wind[0]);
         let shape = Directed {
             id: random(87).to_bits(),

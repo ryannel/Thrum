@@ -7,6 +7,8 @@ use wgpu::util::DeviceExt;
 
 use crate::{Error, WeatherMap};
 pub(crate) mod map;
+#[cfg(test)]
+mod tests;
 
 const MAX_INSTANCES: usize = 1024;
 const MAX_BLOCKS: usize = 4096;
@@ -48,6 +50,27 @@ impl ShapesConfig {
             return Err(Error::Unsupported("placed volume capacity or range"));
         }
         Ok(())
+    }
+
+    fn heights(&self, state: &State, kind: Type, pitch: f64, mut heights: [f64; 2]) -> [f64; 2] {
+        for shape in state.shapes() {
+            if let Some(slab) = state
+                .shape_source(shape.id)
+                .and_then(|source| self.library.geometry(source))
+            {
+                heights[0] = heights[0].min(kind.base + slab.floor * shape.scale);
+                heights[1] = heights[1].max(kind.base + (slab.floor + slab.extent) * shape.scale);
+            }
+        }
+        if let Some(placement) = state.hashed_shapes() {
+            for slab in self.library.shapes().iter().chain(self.library.growth()) {
+                let scale = placement.scale_limit(pitch, slab);
+                heights[0] = heights[0].min(kind.base + slab.floor.min(0.0) * scale);
+                heights[1] =
+                    heights[1].max(kind.base + (slab.floor + slab.extent).max(0.0) * scale);
+            }
+        }
+        heights
     }
 }
 
@@ -364,29 +387,14 @@ impl Shapes {
         bytes
     }
 
-    pub(crate) fn heights(&self, state: &State, kind: Type, mut heights: [f64; 2]) -> [f64; 2] {
-        for shape in state.shapes() {
-            if let Some(slab) = state
-                .shape_source(shape.id)
-                .and_then(|source| self.config.library.geometry(source))
-            {
-                heights[0] = heights[0].min(kind.base + slab.floor * shape.scale);
-                heights[1] = heights[1].max(kind.base + (slab.floor + slab.extent) * shape.scale);
-            }
-        }
-        if state.hashed_shapes().is_some() {
-            for slab in self
-                .config
-                .library
-                .shapes()
-                .iter()
-                .chain(self.config.library.growth())
-            {
-                heights[0] = heights[0].min(kind.base + slab.floor.min(0.0));
-                heights[1] = heights[1].max(kind.base + (slab.floor + slab.extent).max(0.0));
-            }
-        }
-        heights
+    pub(crate) fn heights(
+        &self,
+        state: &State,
+        kind: Type,
+        pitch: f64,
+        heights: [f64; 2],
+    ) -> [f64; 2] {
+        self.config.heights(state, kind, pitch, heights)
     }
 
     fn offer(&mut self, generation: u64) {

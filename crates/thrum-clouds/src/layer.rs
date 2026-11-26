@@ -405,7 +405,7 @@ impl Layer {
         });
         let mut heights = weather.height_range();
         if let Some(shapes) = shapes {
-            heights = shapes.heights(state, kind, heights);
+            heights = shapes.heights(state, kind, model.pitch, heights);
         }
         let (phase, scattering) = self
             .lighting

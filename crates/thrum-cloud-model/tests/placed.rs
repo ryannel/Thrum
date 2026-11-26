@@ -250,3 +250,97 @@ fn authored_floor_places_voxels_in_world_space() {
     let clear = weather.extinction([450.0, y + 30.0, -300.0], &state, volume);
     close(clear.value, 0.0, 0.0);
 }
+
+#[test]
+fn mature_hashed_cells_keep_their_source_across_a_full_share_ramp() {
+    use std::sync::Arc;
+    use thrum_cloud_model::{HashedShapes, PlacedLibrary, PlacedSlab, Shape, ShapeSource};
+
+    let slab = |density| {
+        let cube = Shape::new([4; 3], 60.0, vec![density; 64]).expect("cube");
+        PlacedSlab {
+            extent: 240.0,
+            floor: 0.0,
+            heading: 0.0,
+            footprint: Arc::new(cube.footprint().clone()),
+        }
+    };
+    let library = Arc::new(
+        PlacedLibrary::new(
+            (1..=12).map(|i| slab(f64::from(i) / 13.0)).collect(),
+            vec![slab(1.0)],
+        )
+        .expect("twelve static slabs and a growth track"),
+    );
+    let mut full = support::state(0.5, 1.0);
+    full.set_hashed_library(
+        library,
+        HashedShapes {
+            block_sites: 3,
+            shares: vec![0.0, 1.0],
+        },
+    )
+    .expect("full-share row");
+    full.step(1, 600.0).expect("mature weather");
+    let model = field(230, 0.0);
+    let read = |state: &_, block| model.hashed_shape(block, state).expect("formed cell");
+    let mut tested = 0;
+    for x in -3..=3 {
+        for z in -3..=3 {
+            let block = [x, z];
+            let Some((initial, source)) = model.hashed_shape(block, &full) else {
+                continue;
+            };
+            if initial.envelope < 0.6 {
+                continue;
+            }
+            assert!(matches!(source, ShapeSource::Library(_)));
+            let [x, z] = initial.centre;
+            let point = [x, 0.0, z];
+            let initial_tau = model.query(point, &full).optical_depth;
+            assert!(initial_tau > 0.0);
+            let mut previous_error = f64::INFINITY;
+            for hz in [60.0, 120.0, 240.0, 480.0] {
+                let dt = 1.0 / hz;
+                let mut ramp = full.clone();
+                ramp.set_target(support::parameters(0.5, 0.0))
+                    .expect("leave full share");
+                ramp.step(2, dt).expect("advance ramp");
+                let (after, after_source) = read(&ramp, block);
+                assert_eq!((after.id, after_source), (initial.id, source));
+                let error = (model.query(point, &ramp).optical_depth - initial_tau).abs();
+                assert!(
+                    error <= previous_error * 0.51,
+                    "{error} vs {previous_error}"
+                );
+                previous_error = error;
+
+                let mut held = full.clone();
+                held.step(2, dt).expect("matched time");
+                assert!(
+                    (model.query(point, &ramp).optical_depth
+                        - model.query(point, &held).optical_depth)
+                        .abs()
+                        < 0.02
+                );
+
+                ramp.set_target(support::parameters(0.5, 1.0))
+                    .expect("return to full share");
+                ramp.step(3, dt).expect("advance return");
+                held.step(3, dt).expect("matched time");
+                let (returned, returned_source) = read(&ramp, block);
+                assert_eq!((returned.id, returned_source), (initial.id, source));
+                close(
+                    model.query(point, &ramp).optical_depth,
+                    model.query(point, &held).optical_depth,
+                    1e-10,
+                );
+            }
+            tested += 1;
+        }
+    }
+    assert!(
+        tested >= 5,
+        "the fixture must exercise several mature cells"
+    );
+}

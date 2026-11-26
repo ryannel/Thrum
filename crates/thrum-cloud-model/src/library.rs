@@ -16,10 +16,27 @@ pub struct HashedShapes {
     /// At most one library instance is selected per square of this many lattice sites.
     pub block_sites: u32,
     /// Proportion of candidate cells that may use a placed shape, by type.
+    /// If any row is full share, hash-selected cells use the static library.
     pub shares: Vec<f64>,
 }
 
 impl HashedShapes {
+    /// The conservative uniform scale allowed by the block margin and size variation.
+    pub fn scale_limit(&self, pitch: f64, slab: &PlacedSlab) -> f64 {
+        (self.block_width(pitch) * 0.29 / slab.footprint.radius())
+            .min(HASHED_SCALE_MIN + HASHED_SCALE_SPAN)
+    }
+
+    pub(crate) fn block_width(&self, pitch: f64) -> f64 {
+        f64::from(self.block_sites) * pitch
+    }
+
+    pub(crate) fn includes_growth(&self) -> bool {
+        // An authored full-share row reserves the palette for library shapes.
+        // The interpolated share controls the envelope throughout the cell's life.
+        !self.shares.contains(&1.0)
+    }
+
     #[expect(
         clippy::cast_possible_truncation,
         clippy::cast_sign_loss,
@@ -32,6 +49,9 @@ impl HashedShapes {
         self.shares[lower] * (1.0 - blend) + self.shares[lower + 1] * blend
     }
 }
+
+pub(crate) const HASHED_SCALE_MIN: f64 = 0.88;
+pub(crate) const HASHED_SCALE_SPAN: f64 = 0.28;
 
 /// Authored geometry and its camera-independent footprint. A game retains only
 /// this data on a headless host.

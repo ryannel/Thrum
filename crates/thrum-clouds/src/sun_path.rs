@@ -371,7 +371,7 @@ impl SunPath {
         let (model, kind) = weather.density_data(state);
         let mut heights = weather.height_range();
         if let Some(shapes) = shapes {
-            heights = shapes.heights(state, kind, heights);
+            heights = shapes.heights(state, kind, model.pitch, heights);
         }
         if !camera.iter().all(|x| x.is_finite())
             || !sun.iter().all(|x| x.is_finite())
