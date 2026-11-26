@@ -13,12 +13,10 @@ SOURCE = "tests/fixtures/game-ui/font-source"
 EXAMPLE = "interface_status"
 
 
-def prepare_store(root, scratch, profile):
-    target = root / "target" / profile
-    args = ["cargo", "build", "--locked", "--offline"]
-    if profile == "release":
-        args.append("--release")
-    subprocess.run([*args, "-p", "thrum-cook", "--bin", "thrum-cook"], cwd=root, check=True)
+def prepare_store(root, scratch):
+    target = root / "target/debug"
+    subprocess.run(["cargo", "build", "--locked", "--offline", "-p", "thrum-cook",
+                    "--bin", "thrum-cook"], cwd=root, check=True)
     store = scratch / "store"
     subprocess.run([target / "thrum-cook", "cook", root / SOURCE, store], cwd=root, check=True)
     return store
@@ -70,7 +68,7 @@ def wake_window_display():
 def windows(root, destination, scratch, revision, environment):
     subprocess.run(["cargo", "build", "--locked", "--offline", "-p", "v1-game",
                     "--bin", "v1-game", "--example", EXAMPLE], cwd=root, check=True)
-    store = prepare_store(root, scratch, "debug")
+    store = prepare_store(root, scratch)
     target = root / "target/debug"
     game = target / "v1-game"
     oracle = target / "examples" / EXAMPLE
@@ -137,7 +135,7 @@ def costs(root, destination, scratch, revision, environment, target, load, diges
     if target == "mac-metal":
         subprocess.run(["cargo", "build", "--release", "--locked", "--offline", "-p", "v1-game",
                         "--example", EXAMPLE], cwd=root, check=True)
-        store = prepare_store(root, scratch, "debug")
+        store = prepare_store(root, scratch)
         executable = root / "target/release/examples" / EXAMPLE
     for index in (1, 2):
         before = load()

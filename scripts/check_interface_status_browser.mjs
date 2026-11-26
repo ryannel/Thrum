@@ -11,7 +11,11 @@ function compare(rgba, metadata, metrics, oracle, store) {
   assert.deepEqual(extent, metrics.extent);
   assert.equal(scale, metrics.density);
   const insets = metrics.insets.map(inset => inset * metrics.density / scale);
-  const proof = execFileSync(oracle, [store], { input: JSON.stringify([extent, scale, insets, tick]) + '\n' });
+  const proof = execFileSync(oracle, [store], {
+    input: JSON.stringify([extent, scale, insets, tick]) + '\n',
+    // The 3× panel and its per-pixel blend mask exceed Node's default 1 MiB.
+    maxBuffer: 2 * 1024 * 1024,
+  });
   const newline = proof.indexOf(10);
   const [region, size, maskSize] = JSON.parse(proof.subarray(0, newline));
   const expected = proof.subarray(newline + 1, newline + 1 + size);
