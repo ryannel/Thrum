@@ -1547,8 +1547,8 @@
           "ask": "Would the nearest and farthest stops blended to the middle depth fail the bank cases? Is the unchanged frame compared with one from the commit this work package started at, or with a retained image?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP15/CORRECTNESS.md",
           "verdict": "",
           "review": ""
         },
@@ -1557,8 +1557,8 @@
           "statement": "From 40 m above the valley at dawn, mist fills the hollows to the horizon and a bank stands across the valley 2 km off. Ridges in front of mist have clean edges, with no halo and no mist drawn over them. No ring, step or change of softness or brightness shows where the view volume hands over to the trace, with the camera still or walking, and a bank the camera walks up to keeps its look as it crosses the handover. A far bank sits in the same haze as the land beside and behind it, neither brighter nor bluer.",
           "inspect": "Capture `fixed` stills at a 10\u00b0 Sun from 2 m and from 40 m, at clear-air visual ranges of 8 and 60 km, and a `realtime` walk toward the bank that takes it from beyond the handover to inside it. Judge each whole, native-size crops of a ridge line against mist and of the band 300 to 600 m from the camera, and the bank's face frame by frame through the walk.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP15/VISUAL.md",
           "verdict": "",
           "review": ""
         },
@@ -1567,8 +1567,8 @@
           "statement": "One bank is as bright whichever integrator draws it. A fog bank of about a 50 m visual range, seen from outside along its flank under a 45\u00b0 Sun, has the same brightness and the same shading across its face with its near face 200 m from the camera, where the view volume draws it, and at 350 m and 450 m, where the view volume and the trace share it. No edge or band lies across its face where the ramp is.",
           "inspect": "Capture `fixed` stills with T2 engine capture at 2560\u00d71440 from 25 m above the ground, at a clear-air visual range of 60 km, of one bank with its near face 200, 350, 450 and 700 m from the camera and the view otherwise the same. Judge native-size crops of the flank from the first three side by side. At 700 m the bank is beyond the ramp, where the design's boundary weight has begun to dim its flank: judge there only that it is no brighter than the others and has no step.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP15/VISUAL.md",
           "verdict": "",
           "review": ""
         },
@@ -1599,8 +1599,8 @@
           "ask": "Does the test move an occluder across far mist and check that every pixel it uncovers composes a stop traced in that frame at its own depth?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP15/CORRECTNESS.md",
           "verdict": "",
           "review": ""
         },
@@ -1609,8 +1609,8 @@
           "statement": "In a pan, a walk and with a mover crossing in front of far mist, nothing crawls on a ridge line, no ghost follows the mover, and after a cut the mist is whole in the first frame.",
           "inspect": "Capture `realtime` sequences at dawn: a 10-second pan across ridges in front of mist, a 40 m walk, a mover crossing, and a cut. Judge consecutive frames at 1x in native-size crops of the edges.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP15/VISUAL.md",
           "verdict": "",
           "review": ""
         },
@@ -1630,8 +1630,8 @@
           "check": "python3 scripts/cloud_cost.py check --scene mist-far",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP15/COST.md",
           "verdict": "",
           "review": ""
         },
@@ -1640,8 +1640,8 @@
           "statement": "The maturity ledger's `E1.clouds` row is current.",
           "ask": "Does the row claim only what this work package proved, on the targets it ran on, with visuals apart from correctness?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP15/VISUAL.md",
           "verdict": "",
           "review": ""
         }
