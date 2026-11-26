@@ -116,7 +116,7 @@ impl Prepared {
                 let view = self.map.as_ref().map(MapGpu::view);
                 let mut entries = field_entries(
                     &self.parameters,
-                    self.ambient.filtered_views(),
+                    self.ambient.surface_views(),
                     &pattern.samplers,
                     self.map.as_ref().zip(view.as_ref()),
                     self.interaction.as_ref(),
@@ -187,7 +187,7 @@ impl Prepared {
             surface.accesses.push(read);
         }
         if let Some(rain) = &self.rain {
-            surface.accesses.push(rain.bands.declare(&mut graph));
+            surface.accesses.extend(rain.bands.declare(&mut graph));
         }
         graph.opaque_reads.clear();
         if self.gather.is_some() {
@@ -250,16 +250,30 @@ pub(super) fn new(
         })
         .transpose()
         .map_err(|error| error.to_string())?;
-    let ambient =
-        thrum_sea::Ambient::new(device, profile.waves).map_err(|error| error.to_string())?;
+    let ambient = if map.rain().is_some() {
+        thrum_sea::Ambient::with_rain(device, profile.waves)
+    } else {
+        thrum_sea::Ambient::new(device, profile.waves)
+    }
+    .map_err(|error| error.to_string())?;
     let ambient_passes = ambient.graph().passes.len();
+    let wind_samplers = field_samplers(surface, 0.0);
     let rain = map
         .rain()
-        .map(|model| Rain::new(device, model))
+        .map(|model| {
+            Rain::new(
+                device,
+                surface.queue,
+                model,
+                ambient.filtered_texture(0).expect("cascade array"),
+                wind_samplers[0].clone(),
+            )
+        })
         .transpose()?;
     let interaction = interaction
         .map(|mailbox| Interaction::new(device, mailbox, previous_interaction.unwrap_or_default()));
     let query = if let Some(mailbox) = mailbox {
+        mailbox.set_rain_tracks(map_gpu.as_ref());
         query::validate(
             profile.query.expect("enabled query limits"),
             &surface.limits,
@@ -328,12 +342,11 @@ pub(super) fn new(
             wgpu::ShaderStages::VERTEX_FRAGMENT,
         ));
     }
-    let samplers = field_samplers(surface);
     let map_view = map_gpu.as_ref().filter(|_| mapped).map(MapGpu::view);
     let mut bindings = field_entries(
         &parameters,
         ambient.filtered_views(),
-        &samplers,
+        &wind_samplers,
         map_gpu.as_ref().zip(map_view.as_ref()),
         interaction.as_ref(),
     );
@@ -349,6 +362,12 @@ pub(super) fn new(
             map_gpu.as_ref(),
         )
     });
+    let shared_samplers = rain.as_ref().map(|_| field_samplers(surface, 1.0));
+    let samplers = shared_samplers.as_ref().unwrap_or(&wind_samplers);
+    if rain.is_some() {
+        bindings[1].resource = wgpu::BindingResource::TextureView(&ambient.surface_views()[0]);
+        bindings[3].resource = wgpu::BindingResource::Sampler(&samplers[0]);
+    }
     let fallback = foam.as_ref().map(|_| fallback_pattern(device));
     if let (Some(foam), Some(fallback)) = (&foam, &fallback) {
         entries.extend(Foam::sample_layout());
@@ -399,7 +418,7 @@ pub(super) fn new(
     let pattern = foam.as_ref().map(|_| Pattern {
         device: device.clone(),
         layout: layout.into_raw(),
-        samplers,
+        samplers: samplers.clone(),
         bound: None,
         submitted: None,
     });
@@ -443,9 +462,9 @@ fn has_shore(map: &thrum_water_model::Map) -> bool {
         })
 }
 
-fn field_samplers(surface: &SceneSurface<'_>) -> [wgpu::Sampler; 2] {
+fn field_samplers(surface: &SceneSurface<'_>, wind_min_mip: f32) -> [wgpu::Sampler; 2] {
     let device = surface.device;
-    let sampler = |mode| {
+    let sampler = |mode, lod_min_clamp| {
         device.create_sampler(&wgpu::SamplerDescriptor {
             label: Some("water anisotropic field"),
             address_mode_u: mode,
@@ -453,6 +472,7 @@ fn field_samplers(surface: &SceneSurface<'_>) -> [wgpu::Sampler; 2] {
             mag_filter: wgpu::FilterMode::Linear,
             min_filter: wgpu::FilterMode::Linear,
             mipmap_filter: wgpu::MipmapFilterMode::Linear,
+            lod_min_clamp,
             anisotropy_clamp: if surface
                 .downlevel
                 .is_some_and(|flags| flags.contains(wgpu::DownlevelFlags::ANISOTROPIC_FILTERING))
@@ -465,8 +485,8 @@ fn field_samplers(surface: &SceneSurface<'_>) -> [wgpu::Sampler; 2] {
         })
     };
     [
-        sampler(wgpu::AddressMode::Repeat),
-        sampler(wgpu::AddressMode::ClampToEdge),
+        sampler(wgpu::AddressMode::Repeat, wind_min_mip),
+        sampler(wgpu::AddressMode::ClampToEdge, 0.0),
     ]
 }
 
@@ -564,6 +584,13 @@ fn surface_pipelines(
         rain,
     ) + &Cache::source(cache, tidal_grid);
     if rain {
+        use std::fmt::Write;
+        writeln!(
+            &mut source,
+            "\nconst RAIN_FIRST_LAYER = {}u;",
+            thrum_sea::rain::FIRST_LAYER
+        )
+        .expect("write shader source");
         source.push_str(super::RAIN_GAIN_WGSL);
         source.push_str(include_str!("rain.wgsl"));
     }
@@ -645,7 +672,14 @@ fn shader_source(
         library,
         super::VIEW_RECORDS,
         include_str!("fresnel.wgsl"),
-        include_str!("sampling.wgsl"),
+        if rain {
+            include_str!("sampling.wgsl").replace(
+                "let extent=vec2<f32>(textureDimensions(t));",
+                &format!("let wind = textureNumLayers(t) == {}u && layer < {};\n    let extent=vec2<f32>(textureDimensions(t, select(0, 1, wind)));", thrum_sea::rain::SHARED_LAYERS, thrum_sea::rain::FIRST_LAYER),
+            )
+        } else {
+            include_str!("sampling.wgsl").to_owned()
+        },
         include_str!("field.wgsl"),
         Interaction::sample_source(3, 7, 8, wake),
         concat!(include_str!("carriage.wgsl"), include_str!("surface.wgsl")).to_owned()

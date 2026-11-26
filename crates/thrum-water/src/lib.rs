@@ -246,12 +246,15 @@ impl Water {
                     let variance = |band: &[thrum_sea_model::Component]| {
                         band.iter().map(|wave| 0.5 * wave.amplitude.powi(2)).sum()
                     };
-                    mailbox.with_rain([
-                        variance(&spectrum.long),
-                        variance(spectrum.cascades[0].components()),
-                        variance(spectrum.cascades[1].components()),
-                        variance(spectrum.cascades[2].components()),
-                    ])
+                    mailbox.with_rain(
+                        [
+                            variance(&spectrum.long),
+                            variance(spectrum.cascades[0].components()),
+                            variance(spectrum.cascades[1].components()),
+                            variance(spectrum.cascades[2].components()),
+                        ],
+                        profile.carriage_period,
+                    )
                 } else {
                     mailbox
                 }
@@ -599,16 +602,14 @@ impl SceneContribution for Water {
             Some(gpu) => gpu.record(&p.queue, &map, frame.time),
             None => &map,
         };
-        if let Some(rain) = &mut p.rain
-            && let Some(model) = map.rain()
-        {
+        if let Some(rain) = &mut p.rain {
             let cadence = self
                 .rain_quality
                 .as_ref()
                 .map_or(1, |settings| settings.knobs()[0].value);
             rain.record(
                 &p.queue,
-                model,
+                map.rain(),
                 now,
                 cadence,
                 self.invalid || frame.time.capture,

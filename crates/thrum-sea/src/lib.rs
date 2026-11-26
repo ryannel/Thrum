@@ -278,7 +278,17 @@ impl Ambient {
         device: &thrum_render::runtime::DeviceSite,
         profile: Profile,
     ) -> Result<Self, AmbientError> {
-        prepare::new(device, profile)
+        prepare::new(device, profile, false)
+    }
+
+    /// Prepare the ambient fields with four reserved rain planes in the cascade array.
+    /// # Errors
+    /// Names the first unsupported profile or resource limit.
+    pub fn with_rain(
+        device: &thrum_render::runtime::DeviceSite,
+        profile: Profile,
+    ) -> Result<Self, AmbientError> {
+        prepare::new(device, profile, true)
     }
 
     /// Every GPU resource and its bytes, including staging and mip uniforms.
@@ -332,6 +342,19 @@ impl Ambient {
     /// displacements filter linearly, including through every mip.
     pub fn filtered_views(&self) -> &[wgpu::TextureView; 2] {
         &self.filtered.views
+    }
+
+    /// The surface's views, including the rain planes when reserved.
+    pub fn surface_views(&self) -> &[wgpu::TextureView; 2] {
+        self.filtered
+            .surface_views
+            .as_ref()
+            .unwrap_or(&self.filtered.views)
+    }
+
+    /// The graph resource for the cascade array.
+    fn cascade_resource() -> usize {
+        spec::resources().len()
     }
     /// Read-only texture lending for forward-field readback and tooling.
     /// Index zero is the three cascades; index one is the eight cache levels.

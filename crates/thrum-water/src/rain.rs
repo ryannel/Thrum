@@ -6,7 +6,6 @@ use thrum_render::{
 };
 use thrum_sea::rain::Bands;
 use thrum_water_model::RainBands;
-use wgpu::util::DeviceExt;
 
 pub(super) const KNOB: &str = "water.rain_cadence";
 pub(super) fn quality() -> QualitySettings {
@@ -31,7 +30,9 @@ struct RainSurface {
 pub(super) struct Rain {
     pub(super) bands: Bands,
     surface: wgpu::Buffer,
-    columns: wgpu::Buffer,
+    canopy: wgpu::TextureView,
+    canopy_bytes: u64,
+    sampler: wgpu::Sampler,
     settings: RainSurface,
     since_run: u32,
     last_time: Option<f64>,
@@ -46,32 +47,65 @@ impl Rain {
         clippy::cast_possible_truncation,
         reason = "validated canopy and depth response in GPU units"
     )]
-    pub(super) fn new(device: &DeviceSite, model: &RainBands) -> Result<Self, String> {
+    pub(super) fn new(
+        device: &DeviceSite,
+        queue: &wgpu::Queue,
+        model: &RainBands,
+        cascades: &wgpu::Texture,
+        sampler: wgpu::Sampler,
+    ) -> Result<Self, String> {
         let grid = model
             .canopy_grid()
             .ok_or("rain bands need prepared canopy columns")?;
-        let mut records: Vec<[f32; 4]> = model
-            .table()
-            .depth_response
-            .iter()
-            .map(|&[depth, gain]| [depth as f32, gain as f32, 0.0, 0.0])
-            .collect();
-        let response =
-            u32::try_from(records.len()).map_err(|_| "rain depth response is too large")?;
-        records.extend(
-            grid.columns
-                .iter()
-                .map(|&[[h0, s0], [h1, s1]]| [h0 as f32, s0 as f32, h1 as f32, s1 as f32]),
-        );
-        if size_of_val(records.as_slice()) as u64 > device.limits().max_storage_buffer_binding_size
-        {
-            return Err("rain canopy exceeds the device storage binding limit".into());
+        let response = &model.table().depth_response;
+        let [columns, height] = grid.size;
+        if columns.checked_mul(height) != Some(grid.columns.len()) {
+            return Err("rain canopy columns do not match its dimensions".into());
         }
-        let columns = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("rain depth response and canopy columns"),
-            contents: bytemuck::cast_slice(&records),
-            usage: wgpu::BufferUsages::STORAGE,
+        let width = columns.max(1);
+        let rows = height
+            .checked_add(response.len().div_ceil(width))
+            .ok_or("rain canopy height overflow")?;
+        let limit = device.limits().max_texture_dimension_2d as usize;
+        if width > limit || rows > limit {
+            return Err("rain canopy exceeds the device texture dimension limit".into());
+        }
+        let mut records: Vec<[f32; 4]> = grid
+            .columns
+            .iter()
+            .map(|&[[h0, s0], [h1, s1]]| [h0 as f32, s0 as f32, h1 as f32, s1 as f32])
+            .chain(
+                response
+                    .iter()
+                    .map(|&[depth, gain]| [depth as f32, gain as f32, 0.0, 0.0]),
+            )
+            .collect();
+        records.resize(width * rows, [0.0; 4]);
+        let extent = wgpu::Extent3d {
+            width: width as u32,
+            height: rows as u32,
+            depth_or_array_layers: 1,
+        };
+        let canopy = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("rain canopy and depth response"),
+            size: extent,
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Rgba32Float,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+            view_formats: &[],
         });
+        queue.write_texture(
+            canopy.as_image_copy(),
+            bytemuck::cast_slice(&records),
+            wgpu::TexelCopyBufferLayout {
+                offset: 0,
+                bytes_per_row: Some(extent.width * 16),
+                rows_per_image: None,
+            },
+            extent,
+        );
         let surface = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("rain surface settings"),
             size: size_of::<RainSurface>() as u64,
@@ -87,12 +121,15 @@ impl Rain {
                 grid.cell as f32,
                 grid.edge_width as f32,
             ],
-            grid: [grid.size[0] as u32, grid.size[1] as u32, response, 0],
+            grid: [columns as u32, height as u32, response.len() as u32, 0],
         };
         Ok(Self {
-            bands: Bands::new(device, model).map_err(|error| error.to_string())?,
+            bands: Bands::in_cascades(device, model, cascades)
+                .map_err(|error| error.to_string())?,
             surface,
-            columns,
+            canopy: canopy.create_view(&wgpu::TextureViewDescriptor::default()),
+            canopy_bytes: size_of_val(records.as_slice()) as u64,
+            sampler,
             settings,
             since_run: 0,
             last_time: None,
@@ -107,13 +144,13 @@ impl Rain {
         let stages = wgpu::ShaderStages::VERTEX_FRAGMENT;
         [
             binding::uniform(19, stages, 0),
-            binding::storage(20, stages, true, 0),
             binding::texture(
-                21,
+                20,
                 stages,
-                wgpu::TextureSampleType::Float { filterable: true },
-                wgpu::TextureViewDimension::D2Array,
+                wgpu::TextureSampleType::Float { filterable: false },
+                wgpu::TextureViewDimension::D2,
             ),
+            binding::sampler(21, stages, wgpu::SamplerBindingType::Filtering),
         ]
     }
 
@@ -125,11 +162,11 @@ impl Rain {
             },
             wgpu::BindGroupEntry {
                 binding: 20,
-                resource: self.columns.as_entire_binding(),
+                resource: wgpu::BindingResource::TextureView(&self.canopy),
             },
             wgpu::BindGroupEntry {
                 binding: 21,
-                resource: wgpu::BindingResource::TextureView(self.bands.view()),
+                resource: wgpu::BindingResource::Sampler(&self.sampler),
             },
         ]
     }
@@ -141,28 +178,31 @@ impl Rain {
     pub(super) fn record(
         &mut self,
         queue: &wgpu::Queue,
-        rain: &RainBands,
+        rain: Option<&RainBands>,
         time: f64,
         cadence: u32,
         full: bool,
     ) {
-        let active = rain.active(time);
+        let live = rain.filter(|model| model.active(time));
+        let active = live.is_some();
         self.pending = active
             && (full
                 || self.last_time.is_none_or(|old| time <= old)
                 || self.since_run + 1 >= cadence);
-        if self.pending || full {
-            self.bands.record(queue, rain, time);
+        if let Some(model) = live.filter(|_| self.pending) {
+            self.bands.record(queue, model, time);
             self.recorded_drops = self.bands.drop_counts();
         }
         if !active {
             self.recorded_drops = [0; 2];
+            self.invalidate();
         }
         self.active = active;
         self.recorded_time = time;
         self.settings.grid[3] = u32::from(active);
-        self.settings.lengths[2] = rain.moments(time) as f32;
-        self.settings.lengths[3] = (4.0 * rain.variance(time).sqrt()) as f32;
+        self.settings.lengths[2] = live.map_or(0.0, |model| model.moments(time) as f32);
+        self.settings.lengths[3] =
+            live.map_or(0.0, |model| (4.0 * model.variance(time).sqrt()) as f32);
         queue.write_buffer(&self.surface, 0, bytemuck::bytes_of(&self.settings));
     }
 
@@ -182,7 +222,7 @@ impl Rain {
     }
 
     pub(super) fn bytes(&self) -> u64 {
-        self.bands.bytes() + self.surface.size() + self.columns.size()
+        self.bands.bytes() + self.surface.size() + self.canopy_bytes
     }
 }
 

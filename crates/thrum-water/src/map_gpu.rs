@@ -1,6 +1,7 @@
 //! Prepared map products and the shared camera-independent WGSL sampler.
 use crate::WaterError;
 use bytemuck::{Pod, Zeroable};
+use std::sync::Arc;
 use thrum_render::binding;
 use thrum_render::contribution::EffectTime;
 use thrum_water_model::{BodyKind, Gauge, Map};
@@ -19,7 +20,8 @@ struct SharedTrack {
     track: BoundedTrack,
 }
 
-struct WaveTracks {
+pub(crate) struct WaveTracks {
+    records: [[f32; 4]; BODY_LIMIT],
     groups: [usize; BODY_LIMIT],
     bounded: [Option<SharedTrack>; BODY_LIMIT],
     parallel: [Option<CurrentTrack>; BODY_LIMIT],
@@ -49,6 +51,7 @@ impl WaveTracks {
             }
         }
         Self {
+            records: [[0.0; 4]; BODY_LIMIT],
             groups,
             bounded: std::array::from_fn(|_| None),
             parallel: std::array::from_fn(|_| None),
@@ -110,6 +113,55 @@ impl WaveTracks {
         });
         [shared.layer as f32, 0.0, shared.track.period_limit, -1.0]
     }
+
+    #[expect(
+        clippy::cast_possible_truncation,
+        clippy::cast_sign_loss,
+        reason = "clamped chart lattice in GPU metres"
+    )]
+    pub(crate) fn at(
+        &self,
+        body: usize,
+        world: [f64; 2],
+        current: [f64; 2],
+        bed: &thrum_water_model::Bed,
+    ) -> [f64; 4] {
+        let mut record = self.records[body].map(f64::from);
+        if let Some(shared) = &self.bounded[self.groups[body]] {
+            let sample = shared.track.sample(world, bed);
+            for axis in 0..2 {
+                let authored = f64::from(sample[2 + axis]);
+                let scale =
+                    (authored * current[axis] / (authored * authored).max(1e-12)).clamp(0.0, 1.0);
+                record[axis] = f64::from(sample[axis]) * scale;
+            }
+            return record;
+        }
+        let Some(track) = &self.parallel[body] else {
+            return record;
+        };
+        let (origin, spacing, size) = bed.lattice();
+        let axis = track.axis;
+        let grid = ((world[axis] - origin[axis]) / spacing).clamp(
+            0.0,
+            f64::from(u32::try_from(size[axis] - 1).expect("GPU lattice")),
+        );
+        let first = (grid.floor() as usize).min(size[axis] - 2);
+        let next = first + 1;
+        let [coordinate, speed] = track.at(first);
+        let [next_coordinate, next_speed] = track.at(next);
+        let alpha = grid - f64::from(u32::try_from(first).expect("GPU lattice"));
+        let delta = next_coordinate - coordinate;
+        let coordinate = delta.mul_add(alpha, coordinate);
+        let speed = (next_speed - speed).mul_add(alpha, speed);
+        let blend = (current[axis].abs() / speed).clamp(0.0, 1.0);
+        [
+            coordinate,
+            track.reference,
+            blend,
+            if axis == 0 { 1.0 } else { 2.0 },
+        ]
+    }
 }
 
 pub(crate) const BODY_LIMIT: usize = 16;
@@ -145,7 +197,7 @@ pub struct MapGpu {
     submitted: Option<StageEndpoints>,
     previous_levels: Option<[f32; BODY_LIMIT]>,
     record: MapRecord,
-    tracks: WaveTracks,
+    tracks: Arc<WaveTracks>,
     support: Vec<[f32; 4]>,
     hollows: Option<HollowsGpu>,
     rivers: [Option<rivers::ChartLayers>; BODY_LIMIT],
@@ -445,6 +497,7 @@ impl MapGpu {
             contents: bytemuck::bytes_of(&record),
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
+        tracks.records = record.bodies.map(|body| body.track);
         let mut gpu = Self {
             texture,
             info,
@@ -455,7 +508,7 @@ impl MapGpu {
             submitted: None,
             previous_levels: None,
             record,
-            tracks,
+            tracks: Arc::new(tracks),
             support,
             hollows,
             rivers,
@@ -504,53 +557,8 @@ impl MapGpu {
         self.hollows.as_ref().map(HollowsGpu::bytes)
     }
 
-    #[expect(
-        clippy::cast_possible_truncation,
-        clippy::cast_sign_loss,
-        reason = "clamped chart lattice in GPU metres"
-    )]
-    fn wave_track(
-        &self,
-        body: usize,
-        world: [f64; 2],
-        current: [f64; 2],
-        bed: &thrum_water_model::Bed,
-    ) -> [f64; 4] {
-        let mut record = self.record.bodies[body].track.map(f64::from);
-        if let Some(shared) = &self.tracks.bounded[self.tracks.groups[body]] {
-            let sample = shared.track.sample(world, bed);
-            for axis in 0..2 {
-                let authored = f64::from(sample[2 + axis]);
-                let scale =
-                    (authored * current[axis] / (authored * authored).max(1e-12)).clamp(0.0, 1.0);
-                record[axis] = f64::from(sample[axis]) * scale;
-            }
-            return record;
-        }
-        let Some(track) = &self.tracks.parallel[body] else {
-            return record;
-        };
-        let (origin, spacing, size) = bed.lattice();
-        let axis = track.axis;
-        let grid = ((world[axis] - origin[axis]) / spacing).clamp(
-            0.0,
-            f64::from(u32::try_from(size[axis] - 1).expect("GPU lattice")),
-        );
-        let first = (grid.floor() as usize).min(size[axis] - 2);
-        let next = first + 1;
-        let [coordinate, speed] = track.at(first);
-        let [next_coordinate, next_speed] = track.at(next);
-        let alpha = grid - f64::from(u32::try_from(first).expect("GPU lattice"));
-        let delta = next_coordinate - coordinate;
-        let coordinate = delta.mul_add(alpha, coordinate);
-        let speed = (next_speed - speed).mul_add(alpha, speed);
-        let blend = (current[axis].abs() / speed).clamp(0.0, 1.0);
-        [
-            coordinate,
-            track.reference,
-            blend,
-            if axis == 0 { 1.0 } else { 2.0 },
-        ]
+    pub(crate) fn wave_tracks(&self) -> Arc<WaveTracks> {
+        Arc::clone(&self.tracks)
     }
 
     /// Track and spatial derivatives for the sparse body queries. Differentiate
@@ -567,7 +575,7 @@ impl MapGpu {
         map: &Map,
     ) -> ([f32; 4], [[f32; 4]; 2]) {
         let bed = map.bed();
-        let track = self.wave_track(body, point, current, bed);
+        let track = self.tracks.at(body, point, current, bed);
         if track[3] == 0.0 {
             return (track.map(|v| v as f32), [[0.0; 4]; 2]);
         }
@@ -583,8 +591,8 @@ impl MapGpu {
             hi[axis] += step;
             let a = map.supported_row(body, lo).current;
             let b = map.supported_row(body, hi).current;
-            let before = self.wave_track(body, lo, a, bed);
-            let after = self.wave_track(body, hi, b, bed);
+            let before = self.tracks.at(body, lo, a, bed);
+            let after = self.tracks.at(body, hi, b, bed);
             let second = if track[3] > 0.0 { 2 } else { 1 };
             for (component, index) in [0, second].into_iter().enumerate() {
                 current_gradient[2 * axis + component] =

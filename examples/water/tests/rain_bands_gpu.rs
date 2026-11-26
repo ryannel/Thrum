@@ -6,7 +6,7 @@ thrum_test_support::macos_gpu_test! {
 fn periodic_fields_match_committed_rate_history() {
     use std::sync::Arc;
     use thrum_render::runtime::DeviceSite;
-    use thrum_sea::rain::{Bands, PASS_COUNT};
+    use thrum_sea::{Ambient, Profile as AmbientProfile, rain::{Bands, FIRST_LAYER, PASS_COUNT, SHARED_LAYERS}};
     use thrum_water_model::{OpenSky, RainBands, RainBandsProfile, RateHistory};
 
     let Some(gpu) = thrum_test_support::gpu("rain bands", Some(wgpu::Backend::Metal)) else { return; };
@@ -32,7 +32,10 @@ fn periodic_fields_match_committed_rate_history() {
     });
     assert!(counts[0] > 0.0 && counts[1] > 4.0 * counts[0] && counts[2] > 1.4 * counts[1], "{counts:?}");
     println!("Weighted drop counts at 2, 10 and 50 mm/h: {counts:?}");
-    let mut bands = Bands::new(&site, &model).expect("rain bands");
+    let ambient = Ambient::with_rain(&site, AmbientProfile::default()).expect("shared cascade array");
+    let texture = ambient.filtered_texture(0).expect("cascades");
+    assert_eq!((texture.width(), texture.depth_or_array_layers(), texture.mip_level_count()), (512, SHARED_LAYERS, 10));
+    let mut bands = Bands::in_cascades(&site, &model, texture).expect("rain planes");
     let texel = |index: u32| [(37 * index + 5) % 512, (149 * index + 31) % 512];
     let read = |bands: &mut Bands, time| {
         bands.record(&queue, &model, time);
@@ -41,7 +44,7 @@ fn periodic_fields_match_committed_rate_history() {
             let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor::default());
             bands.encode(index, &mut pass);
         }
-        let witnesses = [0, 2].map(|layer| thrum_test_support::readback::Readback::texture(
+        let witnesses = [FIRST_LAYER, FIRST_LAYER + 2].map(|layer| thrum_test_support::readback::Readback::texture(
             &device, &mut encoder, bands.texture(), thrum_test_support::readback::Mip::layer(0, layer), ..
         ));
         let submitted = queue.submit([encoder.finish()]);
@@ -109,7 +112,7 @@ fn rain_dispatches_in_the_yard_and_expires_on_the_same_surface() {
         fixture.parameters(r#"{"rain.rate":0,"camera.island":6}"#);
         fixture.warm_cooked();
         let knob = fixture.host.quality_knobs().into_iter()
-            .find(|knob| knob.name.ends_with("/water.rain_cadence")).expect("rain cadence");
+            .find(|knob| knob.name.ends_with("water.rain_cadence")).expect("rain cadence");
         assert_eq!(knob.value, 1);
         assert_eq!(knob.invalidation, QualityInvalidation::EffectHistory);
         let dry = fixture.frame(1.0);
@@ -154,20 +157,34 @@ fn surface_gain_uses_depth_and_the_soft_roof_edge() {
     let table = profile.table();
     // One sheltered one-metre column. Its east edge crosses a 20 cm
     // exposure filter. The same compiled helper is called by the surface.
-    let mut columns: Vec<[f32; 4]> = table.depth_response.iter().map(|&[d, g]| {
+    let mut columns = vec![[1.0, 0.0, f32::NEG_INFINITY, 1.0]];
+    columns.extend(table.depth_response.iter().map(|&[d, g]| {
         #[expect(clippy::cast_possible_truncation, reason = "test declares production f32 records")]
         let pair = [d as f32, g as f32, 0.0, 0.0];
         pair
-    }).collect();
-    let responses = u32::try_from(columns.len()).unwrap();
-    columns.push([1.0, 0.0, f32::NEG_INFINITY, 1.0]);
+    }));
+    let height = u32::try_from(columns.len()).unwrap();
+    let responses = height - 1;
     let mut settings = bytemuck::cast_slice(&[1.28_f32, 2.1, 0.0, 0.001, 0.0, 0.0, 1.0, 0.2]).to_vec();
     settings.extend_from_slice(bytemuck::cast_slice(&[1u32, 1, responses, 1]));
     let buffer = |label, contents, usage| device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
         label: Some(label), contents, usage,
     });
     let uniform = buffer("rain gain settings", &settings, wgpu::BufferUsages::UNIFORM);
-    let columns = buffer("rain gain columns", bytemuck::cast_slice(&columns), wgpu::BufferUsages::STORAGE);
+    let extent = wgpu::Extent3d { width: 1, height, depth_or_array_layers: 1 };
+    let canopy = device.create_texture(&wgpu::TextureDescriptor {
+        label: Some("rain gain columns"), size: extent,
+        mip_level_count: 1, sample_count: 1, dimension: wgpu::TextureDimension::D2,
+        format: wgpu::TextureFormat::Rgba32Float,
+        usage: wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::TEXTURE_BINDING,
+        view_formats: &[],
+    });
+    queue.write_texture(
+        canopy.as_image_copy(), bytemuck::cast_slice(&columns),
+        wgpu::TexelCopyBufferLayout { offset: 0, bytes_per_row: Some(16), rows_per_image: None },
+        extent,
+    );
+    let columns = canopy.create_view(&wgpu::TextureViewDescriptor::default());
     let result = device.create_buffer(&wgpu::BufferDescriptor {
         label: Some("rain gain samples"), size: 24, mapped_at_creation: false,
         usage: wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::STORAGE,
@@ -199,7 +216,7 @@ fn surface_gain_uses_depth_and_the_soft_roof_edge() {
         label: Some("rain gain witness"), layout: &layout,
         entries: &[
             wgpu::BindGroupEntry { binding:19, resource:uniform.as_entire_binding() },
-            wgpu::BindGroupEntry { binding:20, resource:columns.as_entire_binding() },
+            wgpu::BindGroupEntry { binding:20, resource:wgpu::BindingResource::TextureView(&columns) },
             wgpu::BindGroupEntry { binding:22, resource:result.as_entire_binding() },
         ],
     });
@@ -231,7 +248,7 @@ fn query_is_identical_at_both_rain_cadences() {
             fixture.parameters(r#"{"rain.rate":0,"camera.island":4}"#);
             fixture.warm_cooked();
             let knob = fixture.host.quality_knobs().into_iter()
-                .find(|knob| knob.name.ends_with("/water.rain_cadence")).expect("rain cadence");
+                .find(|knob| knob.name.ends_with("water.rain_cadence")).expect("rain cadence");
             fixture.host.set_quality_knob(&knob.name, cadence).expect("cadence setting");
             fixture.parameters(r#"{"rain.rate":50,"rain.time_scale":600}"#);
             fixture.frame_without_timings(1.4);
@@ -248,5 +265,119 @@ fn query_is_identical_at_both_rain_cadences() {
         };
         assert_eq!(sample(1), sample(4));
     });
+}
+}
+
+thrum_test_support::macos_gpu_test! {
+fn the_moving_surface_filters_and_removes_live_rain() {
+    use std::{sync::{Arc, Mutex}, time::Duration};
+    use thrum_app::sky::{Camera, ContentStatus, Controls, SkyGame};
+    use thrum_sea_model::{Cascade, Spectrum};
+    use thrum_water::{Water, query::{BodyQuery, QueryLimits, QueryPoint}};
+    use thrum_water_model::{Bed, Body, BodyKind, Chart, Map, OpenSky, RainBands, RainBandsProfile, RateHistory, Stage};
+    let Some(gpu) = thrum_test_support::gpu("carried rain query and removal", Some(wgpu::Backend::Metal)) else { return; };
+    let step = Duration::from_nanos(16_666_667);
+    let use_tick = 2_u32;
+    let time = f64::from(use_tick) * step.as_secs_f64();
+    let size = [21, 13];
+    let footprint: Vec<_> = (0..size[1]).flat_map(|z|
+        (0..size[0]).map(move |x| x > 0 && x + 1 < size[0] && z > 0 && z + 1 < size[1])
+    ).collect();
+    let heights = footprint.iter().map(|&wet| if wet { 0.0 } else { 1.1 }).collect();
+    let bed = Bed::new([0.0; 2], 0.5, size, heights).expect("channel bed");
+    let chart = Chart {
+        levels: vec![1.0; footprint.len()],
+        currents: vec![[0.5, 0.0]; footprint.len()],
+        footprint,
+        ends: Vec::new(),
+    };
+    let mut map = Map::prepare(
+        bed,
+        vec![Body {
+            name: "Uniform current".into(), kind: BodyKind::Chart(chart),
+            level: 0.0, stage: Stage { min: 0.0, max: 0.0, value: 0.0 }, fetch: 10.0, gains: [0.0; 4],
+        }],
+        thrum_water_model::Profile { margin_height: 0.3, swash_ratio: 0.0 },
+    ).expect("current map");
+    let profile = RainBandsProfile::default();
+    let mut history = RateHistory::dry(step.as_secs_f64(), 200, 220);
+    history.rates.fill(50.0 / 3600.0);
+    let rain = RainBands::new(profile, Arc::new(thrum_rain_model::RingProfile::default().table()), history, Arc::new(OpenSky)).expect("rain model");
+    let position = (60_u16..120).map(|i| [f32::from(i) / 30.0, 2.0]).find(|position| {
+        let world = position.map(f64::from);
+        let departure = [world[0] - 0.5 * time, world[1]];
+        let sample = rain.sample(departure, time);
+        sample.slope[0].abs() > 0.0001
+            && (sample.slope[0] - rain.sample(world, time).slope[0]).abs() > 0.0001
+    }).expect("moving ring crosses a test point");
+    let world = position.map(f64::from);
+    let departure = [world[0] - 0.5 * time, world[1]];
+    let point = rain.sample(departure, time);
+    let hull = rain.sample_footprint(departure, time, 3.0);
+    assert!(point.slope[0].abs() > 0.0001);
+    assert!((rain.sample(world, time).slope[0] - point.slope[0]).abs() > 0.0001);
+    assert_eq!(hull.slope, [0.0; 2]);
+    map.set_rain(Some(rain.clone()));
+    let check = |cadence| {
+        let map = Arc::new(Mutex::new(map.clone()));
+        let spectrum = Spectrum {
+            long: Vec::new(), tail_slope_variance: 0.0,
+            cascades: std::array::from_fn(|index| Cascade::new([160.0, 37.0, 9.0][index], &[]).unwrap()),
+        };
+        let mut profile = water_scene::profile(&spectrum);
+        profile.query = Some(QueryLimits { points: 2, max_age: 3 });
+        let water = Water::mapped(Arc::clone(&map), spectrum, profile).expect("moving surface");
+        let mailbox = water.query_mailbox().expect("query");
+        let report = water.report();
+        let game = SkyGame::new(
+            Controls::new(), Camera::look_at([0.5, 3.0, 2.0], [3.0, 1.0, 2.0], 60.0), |_, _| {},
+        ).with_tick_duration(step).unwrap()
+            .with_contribution(Box::new(water), || ContentStatus::Drawn(1));
+        let mut fixture = support::Fixture::from_game(&gpu, [96, 64], game, Arc::clone(&report));
+        fixture.frame_without_timings(0.0);
+        let knob = fixture.host.quality_knobs().into_iter().find(|knob| knob.name.ends_with("water.rain_cadence")).unwrap();
+        fixture.host.set_quality_knob(&knob.name, cadence).unwrap();
+        let post = |tick, endpoint| mailbox.post(endpoint, vec![BodyQuery {
+            id: 1, generation: 0, points: [0.0, 3.0].map(|radius| QueryPoint {
+                position, radius, use_tick: u64::from(tick),
+            }).into(),
+        }]);
+        let queries = |fixture: &mut support::Fixture, tick| {
+            post(tick, fixture.endpoint(u64::from(tick - 1)));
+            let sample = fixture.frame(f64::from(tick - 1) * step.as_secs_f64());
+            fixture.finish_tick_queries();
+            let reply = mailbox.drain(fixture.endpoint(u64::from(tick)), step).pop().expect("delivered body");
+            (sample, reply)
+        };
+        let ran = |sample: &thrum_render::runtime::FrameSample| sample.gpu_pass_ns.as_ref().unwrap()
+            .passes().iter().any(|pass| pass.name.ends_with("rain bands"));
+        let (wet, reply) = queries(&mut fixture, use_tick);
+        assert!(ran(&wet));
+        assert!(report.lock().unwrap().rain_drops.unwrap().iter().all(|&count| count > 0));
+        let actual = [reply.points[0].surface.sample, reply.points[1].surface.sample];
+        for (actual, expected) in actual.iter().zip([point, hull]) {
+            assert!((actual.height - 1.0 - expected.height).abs() < 1e-6);
+            assert!((actual.height_dt - (expected.height_dt - 0.5 * expected.slope[0])).abs() < 1e-6);
+            assert!((actual.velocity[1] - expected.height_dt).abs() < 1e-6);
+            for (a, b) in actual.slope.iter().zip(expected.slope) {
+                assert!((a - b).abs() < 1e-6, "carried slope {a} expected {b}");
+            }
+        }
+        map.lock().unwrap().set_rain(None);
+        let (dry, removed) = queries(&mut fixture, use_tick + 1);
+        assert!(!ran(&dry));
+        assert_eq!(report.lock().unwrap().rain_drops, Some([0; 2]));
+        for answer in removed.points {
+            assert_eq!(answer.surface.sample.height, 1.0);
+            assert_eq!(answer.surface.sample.slope, [0.0; 2]);
+            assert_eq!(answer.surface.sample.height_dt, 0.0);
+        }
+        map.lock().unwrap().set_rain(Some(rain.clone()));
+        let (restored, _) = queries(&mut fixture, use_tick + 2);
+        assert!(ran(&restored), "restoring the model regenerates the field at any cadence");
+        println!("Cadence {cadence}, departure {departure:?}, point slope {:?}, hull {:?}, point rate {:.7}; removing the model cleared the field and the tick reply.", actual[0].slope, actual[1].slope, actual[0].height_dt);
+        actual
+    };
+    assert_eq!(check(1), check(4));
 }
 }

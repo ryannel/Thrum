@@ -1035,6 +1035,8 @@ def rain_rings_cost(action):
                     controls[key] = row
                 summary.append(row)
             view['summary'] = summary
+    for row, investigations in rain_brim_investigations(data):
+        row['investigations'].extend(investigations)
     validate_rain_rings(data)
     evidence = ROOT / '.orchestrate/evidence/PUDDLES/WP4/rain-rings-cost.json'
     evidence.parent.mkdir(parents=True, exist_ok=True)
@@ -1042,6 +1044,37 @@ def rain_rings_cost(action):
     if action == 'check':
         validate_rain_rings(json.loads(RECORDS['rain-rings'].read_text()))
     print(f'PASS paired Metal rain record: {evidence.relative_to(ROOT)}')
+
+
+def rain_brim_investigations(data):
+    """Compare like-sized yard views at matching frame kinds and water settings."""
+    prior = {(row['water'], row['tick_frame']): row for row in data['wp3']['brim']}
+    yard = {(arm['water'], arm['rings']): arm['views'][0]['summary'] for arm in data['arms']}
+    for (water, rings), rows in yard.items():
+        for row, control in zip(rows, yard[water, False], strict=True):
+            old = prior[water, row['tick_frame']]
+            investigations = []
+            for name, previous in old['passes_ms'].items():
+                current = row['passes_ms'].get(name, 0)
+                if previous <= 0 or current < 1.25 * previous:
+                    continue
+                dry_band_ms = control['passes_ms'][name]
+                if dry_band_ms >= 1.25 * previous:
+                    attribution = ('the increase is present with bands disabled, so the band '
+                                   'dispatch cannot account for it; compare matched captures at '
+                                   'similar shared-device load if the increase persists')
+                elif name == 'water surface':
+                    attribution = ('the increase appears with bands enabled, where surface '
+                                   'sampling adds ring slopes and moments; isolate that sampling '
+                                   'under matched load if the increase persists')
+                else:
+                    attribution = ('the increase appears with bands enabled although this pass '
+                                   'does not sample rain bands; repeat at matched shared-device '
+                                   'load to distinguish GPU scheduling from a pass regression')
+                investigations.append(
+                    f'WP3 yard brim {name} rose from {previous:.4f} to {current:.4f} ms '
+                    f'(current bands-off control {dry_band_ms:.4f} ms); {attribution}.')
+            yield row, investigations
 
 
 def validate_rain_rings(data):
@@ -1065,6 +1098,8 @@ def validate_rain_rings(data):
                 assert ('rain bands' in passes) == arm['rings']
                 if arm['rings'] or max(row['gpu_ms'], row['completion_upper_ms']) > 1000 / 120:
                     assert row['investigations']
+    for row, investigations in rain_brim_investigations(data):
+        assert all(entry in row['investigations'] for entry in investigations)
 
 
 def main():

@@ -9,10 +9,14 @@ use thrum_render::{
 use thrum_water_model::RainBands;
 use wgpu::util::DeviceExt;
 
-const SIZE: u32 = 512;
+pub(super) const SIZE: u32 = 512;
 const TILES: i32 = 16;
 const HEADS: usize = 2 * 16 * 16 + 1;
-const LAYERS: u32 = 4;
+pub(super) const LAYERS: u32 = 4;
+/// First of the four rain planes in the ambient cascade array.
+pub const FIRST_LAYER: u32 = super::filtered::CASCADE_PLANES;
+/// Total layers of the cascade array with rain enabled.
+pub const SHARED_LAYERS: u32 = FIRST_LAYER + LAYERS;
 const MIPS: u32 = SIZE.ilog2() + 1;
 const FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba16Float;
 /// Timing name for evaluating the two ring fields.
@@ -42,6 +46,7 @@ struct Dispatch {
 pub struct Bands {
     texture: wgpu::Texture,
     view: wgpu::TextureView,
+    base_layer: u32,
     drops: wgpu::Buffer,
     tiles: wgpu::Buffer,
     immutable_bytes: u64,
@@ -57,6 +62,32 @@ impl Bands {
     ///
     /// # Errors
     /// Refuses profiles whose working storage exceeds the device's storage binding limit.
+    pub fn new(device: &DeviceSite, rain: &RainBands) -> Result<Self, super::AmbientError> {
+        Self::prepare(device, rain, None)
+    }
+
+    /// Prepare rain in the last four layers of an ambient cascade array.
+    /// # Errors
+    /// Refuses an incompatible array or a profile beyond the device's limits.
+    pub fn in_cascades(
+        device: &DeviceSite,
+        rain: &RainBands,
+        array: &wgpu::Texture,
+    ) -> Result<Self, super::AmbientError> {
+        if array.width() != SIZE
+            || array.height() != SIZE
+            || array.depth_or_array_layers() != SHARED_LAYERS
+            || array.mip_level_count() != MIPS
+            || array.format() != FORMAT
+        {
+            return Err(super::AmbientError::DeviceLimit {
+                resource: "shared wind and rain cascade array".into(),
+                limit: "rain array layout",
+            });
+        }
+        Self::prepare(device, rain, Some(array))
+    }
+
     #[expect(
         clippy::too_many_lines,
         reason = "prepare field, pack and reduction pipeline in binding order"
@@ -65,7 +96,11 @@ impl Bands {
         clippy::cast_possible_truncation,
         reason = "validated ring samples and default patch parameters use f32"
     )]
-    pub fn new(device: &DeviceSite, rain: &RainBands) -> Result<Self, super::AmbientError> {
+    fn prepare(
+        device: &DeviceSite,
+        rain: &RainBands,
+        cascades: Option<&wgpu::Texture>,
+    ) -> Result<Self, super::AmbientError> {
         let profile = rain.profile();
         let ring = rain.table();
         let bytes_limit = device.limits().max_storage_buffer_binding_size;
@@ -106,23 +141,30 @@ impl Bands {
             });
         }
 
-        let texture = device.create_texture(&wgpu::TextureDescriptor {
-            label: Some(PASS),
-            size: wgpu::Extent3d {
-                width: SIZE,
-                height: SIZE,
-                depth_or_array_layers: LAYERS,
-            },
-            mip_level_count: MIPS,
-            sample_count: 1,
-            dimension: wgpu::TextureDimension::D2,
-            format: FORMAT,
-            usage: wgpu::TextureUsages::TEXTURE_BINDING
-                | wgpu::TextureUsages::STORAGE_BINDING
-                | wgpu::TextureUsages::COPY_SRC,
-            view_formats: &[],
+        let texture = cascades.cloned().unwrap_or_else(|| {
+            device.create_texture(&wgpu::TextureDescriptor {
+                label: Some(PASS),
+                size: wgpu::Extent3d {
+                    width: SIZE,
+                    height: SIZE,
+                    depth_or_array_layers: LAYERS,
+                },
+                mip_level_count: MIPS,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: FORMAT,
+                usage: wgpu::TextureUsages::TEXTURE_BINDING
+                    | wgpu::TextureUsages::STORAGE_BINDING
+                    | wgpu::TextureUsages::COPY_SRC,
+                view_formats: &[],
+            })
         });
-        let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let base_layer = texture.depth_or_array_layers() - LAYERS;
+        let view = texture.create_view(&wgpu::TextureViewDescriptor {
+            base_array_layer: base_layer,
+            array_layer_count: Some(LAYERS),
+            ..Default::default()
+        });
         let buffer = |label, data, usage| {
             device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
                 label: Some(label),
@@ -228,6 +270,8 @@ impl Bands {
             texture.create_view(&wgpu::TextureViewDescriptor {
                 base_mip_level: mip,
                 mip_level_count: Some(1),
+                base_array_layer: base_layer,
+                array_layer_count: Some(LAYERS),
                 ..Default::default()
             })
         };
@@ -269,6 +313,7 @@ impl Bands {
         Ok(Self {
             texture,
             view,
+            base_layer,
             drops,
             tiles,
             immutable_bytes: frame.size() + table.size(),
@@ -361,28 +406,37 @@ impl Bands {
         pass.dispatch_workgroups(x, y, z);
     }
 
-    /// Append the rain passes and return the whole field's surface read.
-    pub fn declare(&self, graph: &mut EffectGraph) -> EffectAccess {
-        let resource = graph.resources.len();
-        graph.resources.push((
-            ResourceDescriptor::of_texture(&self.texture),
-            ResourceScope::Persistent {
-                owner: 0x7261_696e,
-                epoch: 0,
-                initialized: true,
-            },
-        ));
-        let access = |mip, count, kind| EffectAccess {
-            resource,
-            range: mip * u64::from(LAYERS)..(mip + count) * u64::from(LAYERS),
-            kind,
-            view: Some(wgpu::TextureViewDimension::D2Array),
-            history: None,
+    /// Append the rain passes and return the field's surface reads.
+    pub fn declare(&self, graph: &mut EffectGraph) -> Vec<EffectAccess> {
+        let resource = if self.base_layer == 0 {
+            let resource = graph.resources.len();
+            graph.resources.push((
+                ResourceDescriptor::of_texture(&self.texture),
+                ResourceScope::Persistent {
+                    owner: 0x7261_696e,
+                    epoch: 0,
+                    initialized: true,
+                },
+            ));
+            resource
+        } else {
+            super::Ambient::cascade_resource()
+        };
+        let access = |mip, kind| {
+            let start =
+                mip * u64::from(self.texture.depth_or_array_layers()) + u64::from(self.base_layer);
+            EffectAccess {
+                resource,
+                range: start..start + u64::from(LAYERS),
+                kind,
+                view: Some(wgpu::TextureViewDimension::D2Array),
+                history: None,
+            }
         };
         for mip in 0..u64::from(MIPS) {
-            let mut accesses = vec![access(mip, 1, AccessKind::StorageWrite)];
+            let mut accesses = vec![access(mip, AccessKind::StorageWrite)];
             if mip != 0 {
-                accesses.push(access(mip - 1, 1, AccessKind::SampledRead));
+                accesses.push(access(mip - 1, AccessKind::SampledRead));
             }
             graph.passes.push(EffectPass {
                 name: if mip == 0 {
@@ -395,17 +449,21 @@ impl Bands {
                 accesses,
             });
         }
-        access(0, u64::from(MIPS), AccessKind::SampledRead)
+        (0..u64::from(MIPS))
+            .map(|mip| access(mip, AccessKind::SampledRead))
+            .collect()
     }
 
     /// Allocated bytes for the rain working field and drop lists.
     pub fn bytes(&self) -> u64 {
-        (0..MIPS)
-            .map(|mip| u64::from((SIZE >> mip).pow(2) * LAYERS * 8))
-            .sum::<u64>()
-            + self.drops.size()
-            + self.tiles.size()
-            + self.immutable_bytes
+        let texture = if self.base_layer == 0 {
+            (0..MIPS)
+                .map(|mip| u64::from((SIZE >> mip).pow(2) * LAYERS * 8))
+                .sum::<u64>()
+        } else {
+            0
+        };
+        texture + self.drops.size() + self.tiles.size() + self.immutable_bytes
     }
 
     /// The prepared field, available for readback by the conformance witness.

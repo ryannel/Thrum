@@ -214,13 +214,18 @@ const islandObserver = `
     if(d.label==='water surface')__island.source=d.code;
   });
   __island.surfTextures=[];
+  __island.rainTextures=[];
   wrap(GPUDevice.prototype,'createTexture',(_,d)=>{
     if(['surf lags','surf exposures','breaker section','surf bed pyramid'].includes(d.label))__island.surfTextures.push(d);
+    if(['sea filtered fields','rain canopy and depth response','rain bands'].includes(d.label))__island.rainTextures.push(d);
   });
   wrap(GPUDevice.prototype,'createComputePipeline',(_,d)=>{
     if(d.label==='surf field cache')__island.surfEntries=__island.pipelines.get(d.layout).flatMap(layout=>__island.layouts.get(layout)??[]);
   });
-  wrap(GPUDevice.prototype,'createBindGroupLayout',(layout,d)=>__island.layouts.set(layout,d.entries));
+  wrap(GPUDevice.prototype,'createBindGroupLayout',(layout,d)=>{
+    __island.layouts.set(layout,d.entries);
+    if(d.label==='water field')__island.fieldLayout=d.entries;
+  });
   wrap(GPUDevice.prototype,'createPipelineLayout',(layout,d)=>__island.pipelines.set(layout,d.bindGroupLayouts));
   wrap(GPUDevice.prototype,'createBindGroup',(group,d)=>{
     if(d.label==='water field')__island.bindings=d.entries;
@@ -596,6 +601,25 @@ try {
     const wet=await frames(12);
     assert(wet.yard.slice(5).every(count=>count>0)&&wet.passes>0,`both rain bands must submit real drops: ${JSON.stringify(wet)}`);
     assert(wet.yard[3]===null,'roof column stayed dry');
+    result.rain_layout=await evaluate(`(()=>{
+      const device=__devices.at(-1), limits=device.limits;
+      const count=stage=>Object.fromEntries(['texture','sampler','buffer'].map(type=>
+        [type,__island.surfaceEntries.filter(entry=>(entry.visibility&stage)&&entry[type]).length]));
+      return {
+        field:__island.fieldLayout, textures:__island.rainTextures,
+        vertex:count(GPUShaderStage.VERTEX), fragment:count(GPUShaderStage.FRAGMENT),
+        limits:{texture:limits.maxSampledTexturesPerShaderStage,sampler:limits.maxSamplersPerShaderStage},
+      };
+    })()`);
+    const {field,textures}=result.rain_layout;
+    assert(field.find(entry=>entry.binding===20)?.texture?.sampleType==='unfilterable-float',
+      'canopy must be a read-only texture');
+    assert(field.find(entry=>entry.binding===21)?.sampler,'rain samples the shared array with its own sampler');
+    assert(textures.some(({label,size})=>label==='sea filtered fields'&&
+      (size.depthOrArrayLayers??size[2])===19),'shared cascade array must include the four rain planes');
+    assert(!textures.some(({label})=>label==='rain bands'),'no separate rain field texture');
+    for(const stage of ['vertex','fragment'])for(const type of ['texture','sampler'])
+      assert(result.rain_layout[stage][type]<=result.rain_layout.limits[type],`${stage} ${type} limit`);
     await capture('rings-yard',0);
     await evaluate("game.edit_control('camera.island',6)");
     await frames(4);
