@@ -131,7 +131,8 @@ fn opaque_depth_store_and_star_pass_follow_the_current_target_view() {
                             frame_stats::tests::pass_durations(
                                 passes,
                                 false,
-                                (&prepared, &target).into()
+                                frame_stats::SceneTimingLayout::from(&prepared)
+                                    .for_target(&target, true)
                             )
                             .is_some(),
                             "all selected culling and star timestamps resolve"

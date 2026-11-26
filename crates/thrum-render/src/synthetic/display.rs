@@ -345,6 +345,7 @@ impl SdrToneStage {
         graph: &mut FrameGraph,
         input: &PreToneInput,
         ray_structure: Option<ResourceId>,
+        retain_output: bool,
     ) -> Result<(ResourceId, usize), RenderError> {
         let [width, height] = input.extent;
         for (id, format, [width, height]) in [
@@ -395,7 +396,7 @@ impl SdrToneStage {
                     ray_structure.map(|resource| Access::new(resource, 0..1, AccessKind::RayQuery)),
                 )
                 .collect(),
-                external_side_effect: true,
+                external_side_effect: retain_output,
             },
         );
         Ok((output, pass))

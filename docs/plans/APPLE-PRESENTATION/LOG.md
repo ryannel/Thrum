@@ -723,3 +723,8 @@ layer profile change. [Metal controls](../../../.orchestrate/evidence/CLOUDS/WP9
 - 2026-11-26 WP11. D11.5 and D11.6 remain open. At 3456×2234, the governor and MetalFX with an EDR layer missed
   the 120 Hz cadence with capture off. The raw tap retained 307 of 800 presented frames. The optional panel
   observation is outstanding. [Mac pacing and capture](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP11/mac-fullscreen-review/README.md)
+- 2026-11-26 WP11. The ordinary float-surface graph skips the unused SDR tone pass and validates timing
+  against the submitted variant. The Mac window requests drawable copy access for the explicit EDR tap.
+  In the fastest capture-off trial at 3456×2234 and 50% render scale, the GPU span was 10.85 ms p50
+  and 14.67 ms p95 against an 8.33 ms display interval. It made 456 present calls across 704 opportunities.
+  D11.5 and D11.6 remain open. [Capture-off measurements and pass breakdown](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP11/mac-budget-retake/README.md)

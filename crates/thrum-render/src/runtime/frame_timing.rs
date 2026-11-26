@@ -1,12 +1,12 @@
 //! Frame-slot ownership and publication of delayed GPU timestamp batches.
 
 use super::{
-    FrameHost, FrameSample, FrameSlot, FrameTarget, FrameTimingBatch, FrameWorld, SceneSource,
-    SlotState, retain_sample,
+    FrameHost, FrameSample, FrameSlot, FrameTarget, FrameTimingBatch, FrameWorld, PreparedRenderer,
+    SceneSource, SlotState, retain_sample,
 };
 use crate::{
     sprite::graph::validate_sprite_timings,
-    synthetic::validate_pass_timings,
+    synthetic::{SceneTimingLayout, validate_pass_timings},
     timing::{FrameCounters, TimingError, TimingFrame, TimingRecords, TimingRefusal, TimingStats},
 };
 
@@ -133,6 +133,24 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
 }
 
 impl FrameSlot {
+    pub(super) fn prepare_submitted_readbacks(
+        &mut self,
+        prepared: &PreparedRenderer,
+        timed: bool,
+        readback: bool,
+    ) {
+        self.timing.readback = readback;
+        if let (PreparedRenderer::ThreeD(scene), FrameTarget::ThreeD(target)) =
+            (prepared, &mut self.target)
+        {
+            target.map_culling_stats(scene.camera_culling(), scene.active_instance_count());
+            if timed {
+                self.timing.layout =
+                    Some(SceneTimingLayout::from(&**scene).for_target(target, readback));
+            }
+        }
+    }
+
     fn pending_timing_batches(&self) -> impl Iterator<Item = (TimingFrame, &FrameTimingBatch)> {
         std::iter::once(&self.timing)
             .chain(

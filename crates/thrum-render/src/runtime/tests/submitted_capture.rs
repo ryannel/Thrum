@@ -323,10 +323,25 @@ fn surface_resize_admits_only_the_configured_drawable_in_sdr_and_edr() {
             wgpu::TextureFormat::Rgba16Float,
         ] {
             let (mut host, old) = Box::pin(host_and_output(&test_gpu, format)).await;
+            for readback in [false, true] {
+                let graph = host
+                    .prepared
+                    .graph(&host.slots[0].target, readback)
+                    .unwrap();
+                assert_eq!(
+                    graph
+                        .pass_bindings()
+                        .any(|(_, pass)| pass.key == Some(crate::pass_key::PassKey::Display)),
+                    readback || format != wgpu::TextureFormat::Rgba16Float,
+                );
+            }
             let original = host.render_extent;
             let resized = [103, 43];
             let new = output_at_extent(&host, format, resized);
-            assert!(submit(&mut host, &old).surface_presented);
+            host.set_timing_requested(true);
+            let sample = submit(&mut host, &old);
+            assert!(sample.surface_presented);
+            assert!(sample.gpu_pass_ns.is_some());
             host.resize_surface(resized).unwrap();
             for (texture, extent, presented) in [
                 (&old, original, false),

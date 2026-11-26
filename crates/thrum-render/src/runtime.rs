@@ -2647,12 +2647,11 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             done.store(true, Ordering::Release);
         });
         self.creations.frame();
-        if let (PreparedRenderer::ThreeD(scene), FrameTarget::ThreeD(target)) =
-            (&self.prepared, &mut slot.target)
-        {
-            target.map_culling_stats(scene.camera_culling(), scene.active_instance_count());
-            slot.timing.layout = Some(SceneTimingLayout::from((&**scene, &**target)));
-        }
+        slot.prepare_submitted_readbacks(
+            &self.prepared,
+            sample.timing_requested,
+            capture_slot.is_some() && !edr_capture,
+        );
         sample.encode_cpu = encode_cpu + finish_start.elapsed();
         sample.wall = wall_start.elapsed();
         sample.render_cpu = if self.world.is_threaded() {
@@ -2689,7 +2688,6 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             );
         }
         self.next_submission_order = self.next_submission_order.wrapping_add(1);
-        slot.timing.readback = capture_slot.is_some() && !edr_capture;
         slot.state = SlotState::Rendering(sample);
         report.submitted = true;
         report.surface_presented = surface_presented;

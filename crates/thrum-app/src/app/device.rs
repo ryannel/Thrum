@@ -18,6 +18,7 @@ pub(super) struct WindowDevice {
     pub(super) hardware: Vec<HardwareRequest>,
     pub(super) metal_preparation: Option<thrum_render::capabilities::metallib::Preparation>,
     pub(super) headroom: Option<Arc<Headroom>>,
+    pub(super) edr_readback: bool,
 }
 
 pub(super) struct PlatformGpu {
@@ -75,7 +76,12 @@ impl WindowDevice {
         let config = sdr_surface_config(&self.surface, &adapter, extent)
             .ok_or("no compatible SDR surface configuration")?;
         let edr = self.headroom.as_ref().and_then(|_| {
-            let usages = wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC;
+            // Metal keeps render-only drawables framebuffer-only. Request copy
+            // access for the session that reads the float drawable.
+            let mut usages = wgpu::TextureUsages::RENDER_ATTACHMENT;
+            if self.edr_readback {
+                usages |= wgpu::TextureUsages::COPY_SRC;
+            }
             let surface = self.surface.get_capabilities(&adapter);
             (surface.formats.contains(&wgpu::TextureFormat::Rgba16Float)
                 && surface.usages.contains(usages))

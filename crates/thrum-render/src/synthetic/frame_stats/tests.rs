@@ -16,6 +16,7 @@ pub(crate) fn pass_durations(
 
 const TRANSFORMS: SceneTimingLayout = SceneTimingLayout {
     transforms: true,
+    sdr_tone: Some(PassKey::Display),
     aerial: AerialPass::Chart,
     star_pass: None,
     shadows: Shadows::Off,

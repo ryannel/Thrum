@@ -660,6 +660,10 @@ impl<G: WindowGame + 'static> App<G> {
                 .display
                 .as_ref()
                 .map(|display| Arc::clone(&display.headroom)),
+            edr_readback: self
+                .display_options
+                .as_ref()
+                .is_some_and(|options| options.capture && options.output.is_some()),
         };
         let gpu = pollster::block_on(recipe.create(
             FIRST_DEVICE_GENERATION,

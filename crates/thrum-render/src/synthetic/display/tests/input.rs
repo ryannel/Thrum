@@ -180,7 +180,7 @@ fn prepared_reconstruction_texture_uses_declared_copy_to_tone_hazard_and_same_sd
             exposure,
             extent: [65, 37],
         };
-        let (output, consumer) = stage.append_graph(&mut graph, &input, None).unwrap();
+        let (output, consumer) = stage.append_graph(&mut graph, &input, None, true).unwrap();
         let plan = graph.compile(1, &BTreeSet::from([stage.key])).unwrap();
         assert!(plan.hazards.iter().any(|h| h.resource == colour));
         assert!(plan.dependencies.contains(&(producer, consumer)));

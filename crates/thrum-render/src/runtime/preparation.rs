@@ -771,7 +771,7 @@ impl TargetPreparation {
                     if let Some((first, _, _)) = targets.first() {
                         target.share_view_history(prepared, first);
                     }
-                    let timing_layout = self.timing.map(|layout| layout.with_stars(&target));
+                    let timing_layout = self.timing.map(|layout| layout.for_target(&target, false));
                     let tick_passes = u32::try_from(prepared.effect_graph.tick_passes.len())
                         .map_err(|_| {
                             FrameError::Render(crate::error::RenderError::EffectPassCount)

@@ -51,6 +51,7 @@ pub(crate) struct SceneTimingLayout {
     cascades: bool,
     clusters: bool,
     transforms: bool,
+    sdr_tone: Option<PassKey>,
     aerial: AerialPass,
     star_pass: Option<&'static str>,
     /// Bit `index` of [`CULLING_PASSES`] is set for each camera culling pass
@@ -98,6 +99,7 @@ impl From<&PreparedSynthetic> for SceneTimingLayout {
             cascades: prepared.shadowed() && prepared.surface_uses_cascades(),
             clusters: prepared.gpu_clustered(),
             transforms: prepared.active_instance_count() != 0,
+            sdr_tone: Some(PassKey::Display),
             aerial: if prepared
                 .atmosphere
                 .as_ref()
@@ -119,15 +121,14 @@ impl From<&PreparedSynthetic> for SceneTimingLayout {
     }
 }
 
-impl From<(&PreparedSynthetic, &OffscreenTarget)> for SceneTimingLayout {
-    fn from((prepared, target): (&PreparedSynthetic, &OffscreenTarget)) -> Self {
-        Self::from(prepared).with_stars(target)
-    }
-}
-
 impl SceneTimingLayout {
-    pub(crate) fn with_stars(mut self, target: &OffscreenTarget) -> Self {
+    pub(crate) fn for_target(mut self, target: &OffscreenTarget, readback: bool) -> Self {
         self.star_pass = target.draw_stars.then_some(super::stars::PASS_NAME);
+        self.sdr_tone = target
+            .graph(readback)
+            .plan()
+            .pass_bindings()
+            .find_map(|(_, pass)| pass.key.filter(|&key| key == PassKey::Display));
         self
     }
 }
@@ -164,6 +165,7 @@ pub(crate) fn validate_pass_timings(
             PassKey::HorizonHeights => layout.shadows != Shadows::Off,
             PassKey::Cluster => layout.clusters,
             PassKey::History => layout.transforms,
+            PassKey::Display => layout.sdr_tone == Some(key),
             _ => true,
         })
         .map(PassKey::constant_name);
