@@ -456,9 +456,6 @@ impl QueryMailbox {
                     last_taken: tick,
                 },
             );
-            if let Some(rain) = &self.rain {
-                rain.add(&mut taken, &map, state.rain_tracks.as_deref(), tick, step);
-            }
             answers.push(taken);
         }
         let State {
@@ -477,13 +474,15 @@ impl QueryMailbox {
             body.last_taken = tick;
             carry_heights(&mut taken, tick, step);
             stats.held_points += taken.points.len() as u64;
-            if let Some(rain) = &self.rain {
-                rain.add(&mut taken, &map, rain_tracks.as_deref(), tick, step);
-            }
             answers.push(taken);
         }
         if answers.len() != new_answers {
             answers.sort_unstable_by_key(|answer| answer.id);
+        }
+        if !answers.is_empty()
+            && let Some(rain) = &self.rain
+        {
+            rain.add(&mut answers, &map, rain_tracks.as_deref(), tick, step);
         }
         answers
     }

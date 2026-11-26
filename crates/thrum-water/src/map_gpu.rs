@@ -28,6 +28,43 @@ pub(crate) struct WaveTracks {
 }
 
 impl WaveTracks {
+    pub(crate) fn query_track(
+        &self,
+        body: usize,
+        point: [f64; 2],
+        current: [f64; 2],
+        map: &Map,
+    ) -> ([f64; 4], [[f64; 4]; 2]) {
+        let bed = map.bed();
+        let track = self.at(body, point, current, bed);
+        if track[3] == 0.0 {
+            return (track, [[0.0; 4]; 2]);
+        }
+        // A symmetric difference also defines the derivative at cell creases.
+        // Keep the interval large enough to resolve f32 track samples.
+        let step = bed.lattice().1 / 128.0;
+        let mut current_gradient = [0.0; 4];
+        let mut track_gradient = [0.0; 4];
+        for axis in 0..2 {
+            let mut lo = point;
+            let mut hi = point;
+            lo[axis] -= step;
+            hi[axis] += step;
+            let a = map.supported_row(body, lo).current;
+            let b = map.supported_row(body, hi).current;
+            let before = self.at(body, lo, a, bed);
+            let after = self.at(body, hi, b, bed);
+            let second = if track[3] > 0.0 { 2 } else { 1 };
+            for (component, index) in [0, second].into_iter().enumerate() {
+                current_gradient[2 * axis + component] =
+                    (b[component] - a[component]) / (2.0 * step);
+                track_gradient[2 * axis + component] =
+                    (after[index] - before[index]) / (2.0 * step);
+            }
+        }
+        (track, [current_gradient, track_gradient])
+    }
+
     fn new(map: &Map) -> Self {
         // A fully joined row can be drawn by either chart. Connected charts
         // share the same carriage even when their authored currents differ.
@@ -574,34 +611,11 @@ impl MapGpu {
         current: [f64; 2],
         map: &Map,
     ) -> ([f32; 4], [[f32; 4]; 2]) {
-        let bed = map.bed();
-        let track = self.tracks.at(body, point, current, bed);
-        if track[3] == 0.0 {
-            return (track.map(|v| v as f32), [[0.0; 4]; 2]);
-        }
-        // A symmetric difference also defines the derivative at cell creases.
-        // Keep the interval large enough to resolve f32 track samples.
-        let step = bed.lattice().1 / 128.0;
-        let mut current_gradient = [0.0; 4];
-        let mut track_gradient = [0.0; 4];
-        for axis in 0..2 {
-            let mut lo = point;
-            let mut hi = point;
-            lo[axis] -= step;
-            hi[axis] += step;
-            let a = map.supported_row(body, lo).current;
-            let b = map.supported_row(body, hi).current;
-            let before = self.tracks.at(body, lo, a, bed);
-            let after = self.tracks.at(body, hi, b, bed);
-            let second = if track[3] > 0.0 { 2 } else { 1 };
-            for (component, index) in [0, second].into_iter().enumerate() {
-                current_gradient[2 * axis + component] =
-                    ((b[component] - a[component]) / (2.0 * step)) as f32;
-                track_gradient[2 * axis + component] =
-                    ((after[index] - before[index]) / (2.0 * step)) as f32;
-            }
-        }
-        (track.map(|v| v as f32), [current_gradient, track_gradient])
+        let (track, gradients) = self.tracks.query_track(body, point, current, map);
+        (
+            track.map(|v| v as f32),
+            gradients.map(|row| row.map(|v| v as f32)),
+        )
     }
 
     /// View over the map's layers, using explicit array dimensionality.

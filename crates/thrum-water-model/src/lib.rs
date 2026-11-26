@@ -28,8 +28,8 @@ pub use hollows::{HollowOptics, Hollows, HollowsProfile, NO_HOLLOW};
 pub use map::{BRINK, Body, BodyKind, Chart, End, Map, MapSample, Profile, Row, Stage};
 pub use pyramid::BedPyramid;
 pub use rain::{
-    CanopyGrid, Drop, Exposure, OpenSky, RainBands, RainBandsProfile, RateHistory, RingClass,
-    RingTable, Support,
+    CanopyGrid, Drop, Exposure, OpenSky, RainBands, RainBandsProfile, RainQuery, RateHistory,
+    RingClass, RingTable, Support,
 };
 pub use river::{
     EndKind, RIVER_FORMAT, RIVER_MAGIC, ReachSample, RiverEnd, RiverFile, RiverReach, UpperSample,

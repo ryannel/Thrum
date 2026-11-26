@@ -290,14 +290,17 @@ fn the_moving_surface_filters_and_removes_live_rain() {
     let bed = Bed::new([0.0; 2], 0.5, size, heights).expect("channel bed");
     let chart = Chart {
         levels: vec![1.0; footprint.len()],
-        currents: vec![[0.5, 0.0]; footprint.len()],
+        currents: (0..footprint.len())
+            .map(|i| match i % size[0] {
+                0..10 => [0.5, 0.0], 10..17 => [1.5, 0.0], 17 => [0.01, 0.0], _ => [0.03, 0.0],
+            }).collect(),
         footprint,
         ends: Vec::new(),
     };
     let mut map = Map::prepare(
         bed,
         vec![Body {
-            name: "Uniform current".into(), kind: BodyKind::Chart(chart),
+            name: "Varying current".into(), kind: BodyKind::Chart(chart),
             level: 0.0, stage: Stage { min: 0.0, max: 0.0, value: 0.0 }, fetch: 10.0, gains: [0.0; 4],
         }],
         thrum_water_model::Profile { margin_height: 0.3, swash_ratio: 0.0 },
@@ -306,17 +309,42 @@ fn the_moving_surface_filters_and_removes_live_rain() {
     let mut history = RateHistory::dry(step.as_secs_f64(), 200, 220);
     history.rates.fill(50.0 / 3600.0);
     let rain = RainBands::new(profile, Arc::new(thrum_rain_model::RingProfile::default().table()), history, Arc::new(OpenSky)).expect("rain model");
+    let reference = (9.0 * 0.5 + 7.0 * 1.5 + 0.01 + 2.0 * 0.03) / 19.0;
+    let stretch = reference / 0.5;
+    let depart = |x| [0.5 + (x - 0.5) * stretch - reference * time, 2.0];
     let position = (60_u16..120).map(|i| [f32::from(i) / 30.0, 2.0]).find(|position| {
         let world = position.map(f64::from);
-        let departure = [world[0] - 0.5 * time, world[1]];
-        let sample = rain.sample(departure, time);
-        sample.slope[0].abs() > 0.0001
+        let sample = rain.sample(depart(world[0]), time);
+        let stop = time + step.as_secs_f64();
+        let at_stop = [depart(world[0])[0] - reference * step.as_secs_f64(), 2.0];
+        let carries_a_birth = (0..2).any(|band| {
+            let period = profile.patches[band];
+            rain.drops(band, stop).iter().any(|drop| {
+                let [dx, dz] = std::array::from_fn(|i| {
+                    let d = at_stop[i] - drop.place[i];
+                    d - (d / period).round() * period
+                });
+                drop.time >= time && drop.weight > 0.0 && dx.hypot(dz) < 0.35
+            })
+        });
+        carries_a_birth && sample.slope[0].abs() > 0.001
             && (sample.slope[0] - rain.sample(world, time).slope[0]).abs() > 0.0001
     }).expect("moving ring crosses a test point");
     let world = position.map(f64::from);
-    let departure = [world[0] - 0.5 * time, world[1]];
+    let departure = depart(world[0]);
     let point = rain.sample(departure, time);
     let hull = rain.sample_footprint(departure, time, 3.0);
+    // The last two nodes lie below the 0.05 m/s carriage speed floor.
+    // Their phase derivative is reference / floor, but the blend still
+    // changes with authored speed (0.01 to 0.03 m/s over half a metre).
+    let blend_position = [8.75, 2.0];
+    let travel_time = 4.0 / 0.5 + 0.5 * 3.0_f64.ln() + 3.0 / 1.5
+        + 0.5 * 30.0_f64.ln() / 1.45 + 0.25 / 0.05;
+    let first = rain.sample([0.5 + reference * (travel_time - time), 2.0], time);
+    let second = rain.sample(blend_position.map(f64::from), time);
+    let blend_term = 0.8 * (first.height - second.height);
+    let slope_without_blend = 0.4 * first.slope[0] * reference / 0.05 + 0.6 * second.slope[0];
+    assert!(blend_term.abs() > 1e-6);
     assert!(point.slope[0].abs() > 0.0001);
     assert!((rain.sample(world, time).slope[0] - point.slope[0]).abs() > 0.0001);
     assert_eq!(hull.slope, [0.0; 2]);
@@ -328,7 +356,7 @@ fn the_moving_surface_filters_and_removes_live_rain() {
             cascades: std::array::from_fn(|index| Cascade::new([160.0, 37.0, 9.0][index], &[]).unwrap()),
         };
         let mut profile = water_scene::profile(&spectrum);
-        profile.query = Some(QueryLimits { points: 2, max_age: 3 });
+        profile.query = Some(QueryLimits { points: 5, max_age: 3 });
         let water = Water::mapped(Arc::clone(&map), spectrum, profile).expect("moving surface");
         let mailbox = water.query_mailbox().expect("query");
         let report = water.report();
@@ -341,9 +369,10 @@ fn the_moving_surface_filters_and_removes_live_rain() {
         let knob = fixture.host.quality_knobs().into_iter().find(|knob| knob.name.ends_with("water.rain_cadence")).unwrap();
         fixture.host.set_quality_knob(&knob.name, cadence).unwrap();
         let post = |tick, endpoint| mailbox.post(endpoint, vec![BodyQuery {
-            id: 1, generation: 0, points: [0.0, 3.0].map(|radius| QueryPoint {
-                position, radius, use_tick: u64::from(tick),
-            }).into(),
+            id: 1, generation: 0, points: [position, position, position, position, blend_position].into_iter()
+                .zip([0.0, 3.0, 0.128, 0.2784, 0.0]).map(|(position, radius)| QueryPoint {
+                    position, radius, use_tick: u64::from(tick),
+                }).collect(),
         }]);
         let queries = |fixture: &mut support::Fixture, tick| {
             post(tick, fixture.endpoint(u64::from(tick - 1)));
@@ -360,14 +389,61 @@ fn the_moving_surface_filters_and_removes_live_rain() {
         let actual = [reply.points[0].surface.sample, reply.points[1].surface.sample];
         for (actual, expected) in actual.iter().zip([point, hull]) {
             assert!((actual.height - 1.0 - expected.height).abs() < 1e-6);
-            assert!((actual.height_dt - (expected.height_dt - 0.5 * expected.slope[0])).abs() < 1e-6);
+            assert!((actual.height_dt - (expected.height_dt - reference * expected.slope[0])).abs() < 1e-6);
             assert!((actual.velocity[1] - expected.height_dt).abs() < 1e-6);
-            for (a, b) in actual.slope.iter().zip(expected.slope) {
+            for (a, b) in actual.slope.iter().zip([expected.slope[0] * stretch, expected.slope[1]]) {
                 assert!((a - b).abs() < 1e-6, "carried slope {a} expected {b}");
             }
         }
+        let blend_reply = reply.points[4].surface.sample;
+        assert!((blend_reply.slope[0] - slope_without_blend - blend_term).abs() < 1e-7,
+            "blend slope {}, direct product rule {}, blend term {blend_term}",
+            blend_reply.slope[0], slope_without_blend + blend_term);
+        println!("world slope at varying blend {}, gradient term {blend_term:.8}", blend_reply.slope[0]);
+        let stop_tick = use_tick + 1;
+        let mut dry_history = RateHistory::dry(step.as_secs_f64(), i64::from(stop_tick) - 2, 220);
+        dry_history.rates.fill(50.0 / 3600.0);
+        let posting = {
+            let mut map = map.lock().expect("moving map");
+            map.set_rate_history(dry_history.clone()).expect("posting history");
+            map.rain().expect("posting rain model").clone()
+        };
+        post(stop_tick, fixture.endpoint(u64::from(stop_tick - 1)));
+        fixture.frame_without_timings(f64::from(stop_tick - 1) * step.as_secs_f64());
+        fixture.finish_tick_queries();
+        dry_history.commit(0.0);
+        let stopped = {
+            let mut map = map.lock().expect("moving map");
+            map.set_rate_history(dry_history).expect("committed stop");
+            map.rain().expect("committed rain model").clone()
+        };
+        let stop_time = f64::from(stop_tick) * step.as_secs_f64();
+        let stop_departure = [departure[0] - reference * (stop_time - time), departure[1]];
+        let stopped_reply = mailbox.drain(fixture.endpoint(u64::from(stop_tick)), step)
+            .pop().expect("ready reply after the rate commit");
+        assert!(!stopped_reply.held);
+        assert_eq!(stopped_reply.posted, u64::from(stop_tick - 1));
+        let use_field = stopped.query(stop_time);
+        let posting_field = posting.query(stop_time);
+        let mut old_history_misses = false;
+        for answer in &stopped_reply.points[2..4] {
+            let radius = f64::from(answer.point.radius);
+            let expected = use_field.sample(stop_departure, radius);
+            let old = posting_field.sample(stop_departure, radius);
+            let actual = answer.surface.sample;
+            assert!((actual.height - 1.0 - expected.height).abs() < 1e-8);
+            assert!((actual.slope[0] - expected.slope[0] * stretch).abs() < 1e-6);
+            assert!((actual.slope[1] - expected.slope[1]).abs() < 1e-6);
+            assert!((actual.height_dt - (expected.height_dt - reference * expected.slope[0])).abs() < 1e-7);
+            old_history_misses |= (old.height - expected.height).abs() > 1e-8
+                || (old.slope[0] - expected.slope[0]).abs() > 1e-6
+                || (old.slope[1] - expected.slope[1]).abs() > 1e-6
+                || (old.height_dt - expected.height_dt).abs() > 1e-7;
+            println!("radius {radius:.4}, use tick {stop_tick}, reply {actual:?}, prior history {old:?}");
+        }
+        assert!(old_history_misses, "the posting history must carry a drop that did not fall");
         map.lock().unwrap().set_rain(None);
-        let (dry, removed) = queries(&mut fixture, use_tick + 1);
+        let (dry, removed) = queries(&mut fixture, use_tick + 2);
         assert!(!ran(&dry));
         assert_eq!(report.lock().unwrap().rain_drops, Some([0; 2]));
         for answer in removed.points {
@@ -376,11 +452,157 @@ fn the_moving_surface_filters_and_removes_live_rain() {
             assert_eq!(answer.surface.sample.height_dt, 0.0);
         }
         map.lock().unwrap().set_rain(Some(rain.clone()));
-        let (restored, _) = queries(&mut fixture, use_tick + 2);
+        let (restored, _) = queries(&mut fixture, use_tick + 3);
         assert!(ran(&restored), "restoring the model regenerates the field at any cadence");
         println!("Cadence {cadence}, departure {departure:?}, point slope {:?}, hull {:?}, point rate {:.7}; removing the model cleared the field and the tick reply.", actual[0].slope, actual[1].slope, actual[0].height_dt);
         actual
     };
     assert_eq!(check(1), check(4));
 }
+}
+
+#[cfg(target_os = "macos")]
+#[test]
+fn the_disc_averages_the_drawn_ring_including_its_edge_fade() {
+    use std::sync::Arc;
+    use thrum_water_model::{OpenSky, RainBands, RainBandsProfile, RateHistory};
+    let profile = RainBandsProfile {
+        count: 256.0,
+        ..RainBandsProfile::default()
+    };
+    let table = Arc::new(
+        thrum_rain_model::RingProfile {
+            count: profile.count,
+            ..Default::default()
+        }
+        .table(),
+    );
+    let mut history = RateHistory::dry(0.001, 1999, 2000);
+    history.rates.fill(50.0 / 3600.0);
+    let mut rain = RainBands::new(profile, Arc::clone(&table), history, Arc::new(OpenSky)).unwrap();
+    let time = 1.53;
+    let point = [6.37, -0.02];
+    let query = rain.query(time);
+    let as_array = |sample: thrum_sea_model::Sample| {
+        [
+            sample.height,
+            sample.slope[0],
+            sample.slope[1],
+            sample.height_dt,
+        ]
+    };
+    let tolerance = [1.0e-7, 8.0e-5, 8.0e-5, 1.5e-4];
+    let compare = |label, actual: [f64; 4], wanted: [f64; 4]| {
+        println!("{label}: disc {actual:?}, direct {wanted:?}");
+        for i in 0..4 {
+            assert!(
+                (actual[i] - wanted[i]).abs() < tolerance[i],
+                "{label} channel {i}: {actual:?} expected {wanted:?}"
+            );
+        }
+    };
+    let differs = |a: [f64; 4], b: [f64; 4]| (0..4).any(|i| (a[i] - b[i]).abs() > tolerance[i]);
+    let patch_mean = as_array(query.sample(point, 0.64));
+    assert_eq!(patch_mean, as_array(query.sample([2.0, 3.0], 1.2)));
+    assert_eq!(patch_mean[1..3], [0.0; 2]);
+    for (radius, label) in [(0.04, "small"), (0.128, "float"), (0.278, "craft")] {
+        let direct = direct_disc(&rain, point, time, radius);
+        compare(label, as_array(query.sample(point, radius)), direct);
+        if label == "small" {
+            assert!(differs(direct, patch_mean));
+            assert!(differs(direct, as_array(rain.sample(point, time))));
+        }
+    }
+
+    // Find a committed interval containing exactly one local drop, then make
+    // every other interval dry. Observe that drop at age 0.8, one reach away.
+    let (point, time) = (0..2)
+        .flat_map(|band| rain.drops(band, 1.3))
+        .filter(|drop| drop.class == table.classes.len() - 1 && drop.weight >= 1.0)
+        .find_map(|drop| {
+            let point = [drop.place[0] + table.reach(), drop.place[1]];
+            let time = drop.time + 0.8;
+            let nearby = (0..2)
+                .flat_map(|band| rain.drops(band, time))
+                .filter(|other| {
+                    let period = profile.patches[other.band];
+                    other.tick == drop.tick
+                        && other.weight > 0.0
+                        && periodic_offset(point, other.place, period)
+                            .iter()
+                            .map(|v| v * v)
+                            .sum::<f64>()
+                            < (table.reach() + 0.128).powi(2)
+                })
+                .count();
+            (nearby == 1).then_some((point, time, drop.tick))
+        })
+        .map(|(point, time, tick)| {
+            let mut history = RateHistory::dry(0.001, tick - 1, 1002);
+            history.commit(50.0 / 3600.0);
+            history.commit(0.0);
+            rain.set_history(history).unwrap();
+            (point, time)
+        })
+        .expect("isolated biggest-class drop");
+    let mean = direct_disc(&rain, point, time, 0.128);
+    compare(
+        "faded edge",
+        as_array(rain.sample_footprint(point, time, 0.128)),
+        mean,
+    );
+    let patch = rain.sample_footprint(point, time, 0.64);
+    assert!((mean[0] - patch.height).abs() > tolerance[0]);
+}
+
+#[cfg(target_os = "macos")]
+fn periodic_offset(point: [f64; 2], place: [f64; 2], period: f64) -> [f64; 2] {
+    std::array::from_fn(|axis| {
+        let delta = point[axis] - place[axis];
+        delta - period * (delta / period).round()
+    })
+}
+
+#[cfg(target_os = "macos")]
+fn direct_disc(
+    rain: &thrum_water_model::RainBands,
+    point: [f64; 2],
+    time: f64,
+    radius: f64,
+) -> [f64; 4] {
+    // Area-weighted polar midpoint rule about the station, reading only the
+    // point table. Reject centres whose entire disc misses a ring.
+    let table = rain.table();
+    let drops: Vec<_> = (0..2)
+        .flat_map(|band| rain.drops(band, time))
+        .filter_map(|drop| {
+            let offset = periodic_offset(point, drop.place, rain.profile().patches[drop.band]);
+            let local = offset[0].hypot(offset[1]) < table.reach() + radius;
+            (local && drop.weight > 0.0).then_some((drop, offset))
+        })
+        .collect();
+    let mut sum = [0.0; 4];
+    let radial = 256;
+    let angles = 512;
+    for j in 0..angles {
+        let angle = std::f64::consts::TAU * (f64::from(j) + 0.5) / f64::from(angles);
+        let (sin, cos) = angle.sin_cos();
+        for i in 0..radial {
+            let fraction = (f64::from(i) + 0.5) / f64::from(radial);
+            let r = radius * fraction;
+            for &(drop, offset) in &drops {
+                let dx = offset[0] + r * cos;
+                let dz = offset[1] + r * sin;
+                let distance = (dx * dx + dz * dz).sqrt();
+                let [height, slope, rate] = table.ring(drop.class, distance, time - drop.time);
+                for (total, value) in
+                    sum.iter_mut()
+                        .zip([height, slope * dx / distance, slope * dz / distance, rate])
+                {
+                    *total += value * (drop.weight * 2.0 * fraction);
+                }
+            }
+        }
+    }
+    sum.map(|total| total / f64::from(angles * radial))
 }

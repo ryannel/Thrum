@@ -6,6 +6,8 @@ use water_scene::island::{Wind, build_rain_bands_cost, build_rain_yard};
 
 use super::support::Fixture;
 
+mod fleet;
+
 fn write(directory: &Path, name: &str, data: &Value) {
     std::fs::write(
         directory.join(name),
@@ -97,7 +99,7 @@ pub(super) fn costs(gpu: &thrum_test_support::Gpu, directory: &Path) {
         directory,
         "rain-rings-cost.json",
         &json!({
-            "target":"mac-metal", "extent":extent, "capture":false, "rate_mm_h":50, "arms":arms,
+            "target":"mac-metal", "extent":extent, "capture":false, "rate_mm_h":50, "arms":arms, "fleet":fleet::drains(gpu),
         }),
     );
 }

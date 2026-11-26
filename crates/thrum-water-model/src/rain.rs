@@ -18,6 +18,10 @@ use crate::{Field, Map, MapSample, WaterError};
 use std::sync::Arc;
 use thrum_sea_model::Sample;
 
+mod footprint;
+use footprint::Footprints;
+pub use footprint::RainQuery;
+
 /// Where a body's waves reach at a point: still water and the shore its swash washes.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Support {
@@ -360,7 +364,7 @@ pub struct Drop {
 pub struct RainBands {
     profile: RainBandsProfile,
     table: Arc<RingTable>,
-    ring_means: Arc<[Vec<[f64; 2]>]>,
+    footprints: Arc<Footprints>,
     history: RateHistory,
     exposure: Arc<dyn Exposure>,
 }
@@ -434,33 +438,7 @@ impl RainBands {
         }
         let out = Self {
             profile,
-            ring_means: table
-                .classes
-                .iter()
-                .map(|class| {
-                    class
-                        .height
-                        .chunks_exact(table.radii)
-                        .zip(class.rate.chunks_exact(table.radii))
-                        .map(|(height, rate)| {
-                            let integrate = |row: &[f64]| {
-                                row.windows(2)
-                                    .enumerate()
-                                    .map(|(i, ends)| {
-                                        // Integral of the linear table segment times radius.
-                                        let i = i as f64;
-                                        (i / 2.0 + 1.0 / 6.0) * ends[0]
-                                            + (i / 2.0 + 1.0 / 3.0) * ends[1]
-                                    })
-                                    .sum::<f64>()
-                                    * std::f64::consts::TAU
-                                    * table.radius_step.powi(2)
-                            };
-                            [integrate(height), integrate(rate)]
-                        })
-                        .collect()
-                })
-                .collect(),
+            footprints: Arc::new(Footprints::new(&table)),
             table,
             history: RateHistory::dry(1.0, 0, 0),
             exposure,
@@ -610,90 +588,26 @@ impl RainBands {
     /// The two bands at unit gain: height, slopes and height's rate at a world point and
     /// time.
     pub fn sample(&self, point: [f64; 2], time: f64) -> Sample {
-        self.sample_footprint(point, time, 0.0)
-    }
-
-    /// Filter height, slope and height rate over a column's footprint in metres.
-    /// At a complete patch's mip the mean slope is exactly zero.
-    pub fn sample_footprint(&self, point: [f64; 2], time: f64, radius: f64) -> Sample {
         let mut out = Sample::default();
-        if !self.active(time) {
-            // No tick of the last second held rain: the bands are exactly nothing.
-            return out;
-        }
-        let mut drops = Vec::new();
-        // Once a footprint spans many ring fronts, sparse midpoint samples
-        // alias their slopes. Blend the remaining resolved detail into the
-        // patch mean over a physical distance, independent of the period.
-        let reach = self.table.reach();
-        let broad = ((radius / reach - 2.0) * 0.5).clamp(0.0, 1.0);
-        for band in 0..2 {
-            if broad > 0.0 {
-                accumulate(&mut out, self.patch_mean(band, time), broad);
-            }
-            if broad >= 1.0 {
-                continue;
-            }
-            let length = self.profile.patches[band];
-            let mip = (radius * 512.0 / length).max(1.0).log2().min(9.0);
-            let lower = mip.floor();
-            for (level, weight) in [(lower, 1.0 - mip.fract()), (lower + 1.0, mip.fract())] {
-                if weight == 0.0 {
-                    continue;
-                }
-                let sample = if level >= 9.0 {
-                    self.patch_mean(band, time)
-                } else if level == 0.0 {
-                    self.sample_band(band, point, time, &mut drops)
-                } else {
-                    // Integrate the square mip footprint by midpoint quadrature.
-                    // Four subdivisions along a side track the resolved crests of
-                    // small footprints. Larger mips resolve successively less detail.
-                    let extent = length * level.exp2() / 512.0;
-                    let mut sample = Sample::default();
-                    for z in 0..4 {
-                        for x in 0..4 {
-                            let offset = |i| extent * (f64::from(i) - 1.5) / 4.0;
-                            let p = [point[0] + offset(x), point[1] + offset(z)];
-                            accumulate(
-                                &mut sample,
-                                self.sample_band(band, p, time, &mut drops),
-                                1.0 / 16.0,
-                            );
-                        }
-                    }
-                    sample
-                };
-                accumulate(&mut out, sample, (1.0 - broad) * weight);
+        if self.active(time) {
+            let mut drops = Vec::new();
+            for band in 0..2 {
+                let sample = self.sample_band(band, point, time, &mut drops);
+                accumulate(&mut out, sample, 1.0);
             }
         }
         out
     }
 
-    fn patch_mean(&self, band: usize, time: f64) -> Sample {
-        let mut sample = Sample::default();
-        let area = self.profile.patches[band].powi(2);
-        for drop in self
-            .drops(band, time)
-            .into_iter()
-            .filter(|drop| drop.weight > 0.0)
-        {
-            let f = (time - drop.time) / self.table.age_step;
-            #[expect(
-                clippy::cast_possible_truncation,
-                clippy::cast_sign_loss,
-                reason = "live drop age indexes the ring table"
-            )]
-            let lower = (f.floor() as usize).min(self.table.ages - 2);
-            let [a, b] = [
-                self.ring_means[drop.class][lower],
-                self.ring_means[drop.class][lower + 1],
-            ];
-            let w = f - lower as f64;
-            sample.height += drop.weight * (a[0] + w * (b[0] - a[0])) / area;
-            sample.height_dt += drop.weight * (a[1] + w * (b[1] - a[1])) / area;
-        }
-        sample
+    /// Height, slope and height rate filtered over a disc in metres.
+    /// Use [Self::query] to share the live drops across stations.
+    pub fn sample_footprint(&self, point: [f64; 2], time: f64, radius: f64) -> Sample {
+        self.query(time).sample(point, radius)
+    }
+
+    /// Prepare the live drop lists and patch mean for one tick's batch of stations.
+    pub fn query(&self, time: f64) -> RainQuery<'_> {
+        RainQuery::new(self, time)
     }
 
     fn sample_band(

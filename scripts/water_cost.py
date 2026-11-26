@@ -1196,6 +1196,20 @@ def rain_rings_cost(action):
             view['summary'] = summary
     for row, investigations in rain_brim_investigations(data):
         row['investigations'].extend(investigations)
+    for arm in data['fleet']['arms']:
+        times = arm['drain_ns']
+        arm['median_ns'] = statistics.median(times)
+        arm['max_ns'] = max(times)
+        arm['investigations'] = []
+        if arm['rate_mm_h'] and arm['max_ns'] > data['fleet']['step_ns'] / 10:
+            tick = times.index(arm['max_ns']) + 2
+            dry = data['fleet']['arms'][0]
+            arm['investigations'].append(
+                f'At tick {tick} the complete ready-answer drain took {arm["max_ns"] / 1e6:.3f} ms; '
+                f'dry at the same tick took {dry["drain_ns"][tick - 2] / 1e6:.3f} ms. '
+                f'The wet median was {arm["median_ns"] / 1e6:.3f} ms and dry median '
+                f'{dry["median_ns"] / 1e6:.3f} ms. The interval excludes drawing and GPU readback; '
+                'in rain it includes schedule listing, binning, and lookup of the 54 footprints.')
     validate_rain_rings(data)
     evidence = ROOT / '.orchestrate/evidence/PUDDLES/WP4/rain-rings-cost.json'
     evidence.parent.mkdir(parents=True, exist_ok=True)
@@ -1257,6 +1271,18 @@ def validate_rain_rings(data):
                 assert ('rain bands' in passes) == arm['rings']
                 if arm['rings'] or max(row['gpu_ms'], row['completion_upper_ms']) > 1000 / 120:
                     assert row['investigations']
+    fleet = data['fleet']
+    assert fleet['stations'] == 54 and fleet['step_ns'] == 16_666_667
+    assert fleet['footprint_prepare_ms'] > 0
+    dry, wet = fleet['arms']
+    assert [dry['rate_mm_h'], wet['rate_mm_h']] == [0, 50]
+    assert len(dry['drain_ns']) == len(wet['drain_ns']) >= 60
+    for arm in (dry, wet):
+        assert min(arm['drain_ns']) > 0
+        assert arm['median_ns'] == statistics.median(arm['drain_ns'])
+        assert arm['max_ns'] == max(arm['drain_ns'])
+    if wet['max_ns'] > fleet['step_ns'] / 10:
+        assert wet['investigations']
     for row, investigations in rain_brim_investigations(data):
         assert all(entry in row['investigations'] for entry in investigations)
 
