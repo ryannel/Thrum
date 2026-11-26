@@ -2145,7 +2145,7 @@ async function qualifyRoute(cdp, sessionId, poll, timeout, output, mode, file, f
 
 async function qualifyExitClauses(cdp, sessionId, poll, timeout, output, source, game) {
   const store = () => game.invoke('return JSON.parse(game.cooked_status());');
-  const identity = () => game.invoke('return [performance.timeOrigin, Number(game.presented())];');
+  const identity = () => game.invoke('return { origin: performance.timeOrigin, presents: Number(game.presented()), tick: Number(game.committed_tick()), paused: game.paused() };');
   const generation = expected => waitFor(async () => {
     await poll();
     const report = await store();
@@ -2154,8 +2154,11 @@ async function qualifyExitClauses(cdp, sessionId, poll, timeout, output, source,
     return report.drawn === expected && status?.active === 10000 ? { ...report, status } : undefined;
   }, timeout, `cooked exit generation ${expected} drawn`);
   await generation(1);
-  const [pageOrigin] = await identity();
-  await game.invoke('document.querySelector(\'[data-control="profiler.enabled"] input\').click();');
+  const { origin: pageOrigin } = await identity();
+  await game.invoke(`
+    const checkbox = document.querySelector('[data-control="profiler.enabled"] input');
+    if (!checkbox.checked) checkbox.click();
+  `);
   const scrub = [];
   for (const hours of [6.32, 12, 17.4, 18.48, 0, 12]) {
     await game.invoke(`
@@ -2176,7 +2179,10 @@ async function qualifyExitClauses(cdp, sessionId, poll, timeout, output, source,
       return [...document.querySelectorAll('[data-control="profiler.rows"] tr')].map(
         row => [...row.cells].map(cell => cell.textContent.trim()));
     `);
-    return rows.length && rows.every(row => row.length === 2 && row[1] && !/profiler off|waiting/i.test(row[1]))
+    const fields = new Map(rows);
+    return /median of latest [1-9]/.test(fields.get('Window') ?? '') &&
+      fields.has('Callback interval') && rows.some(([name]) => name.startsWith('GPU ')) &&
+      rows.every(row => row.length === 2 && row[1] && !/^(off|profiler off|waiting)/i.test(row[1]))
       ? rows : undefined;
   }, timeout, 'current profiler readings in the exit page');
   const take = async name => {
@@ -2184,26 +2190,35 @@ async function qualifyExitClauses(cdp, sessionId, poll, timeout, output, source,
       return {x:r.x+scrollX,y:r.y+scrollY,width:r.width,height:r.height,scale:1};`);
     return screenshot(cdp, sessionId, output, 'exit-content', { file: `${name}.png`, clip });
   };
+  await game.invoke(`
+    const checkbox = document.querySelector('#pause-world');
+    if (!checkbox.checked) checkbox.click();
+  `);
+  const pause = await identity();
+  const held = await waitFor(async () => {
+    await poll();
+    const observed = await identity();
+    return observed.paused && observed.presents >= pause.presents + 5 ? observed : undefined;
+  }, timeout, 'paused exit after accepted steps have drained');
   const before = await take('before-edits');
-  const heldTick = await game.invoke('return Number(game.committed_tick());');
   const edits = [];
   let previous = before;
   for (const [index, product] of ['mesh', 'texture'].entries()) {
-    const [, oldPresent] = await identity();
     execFileSync('python3', ['scripts/edit_valley_content.py', source, product], { cwd: repo });
     const applied = await generation(index + 2);
-    await waitFor(async () => (await identity())[1] >= oldPresent + 5, timeout, 'presents after the edit');
-    const [originNow, present] = await identity();
-    if (originNow !== pageOrigin) {
-      throw new Error(`${product}: the exit page reloaded during the save`);
+    const admitted = await identity();
+    await waitFor(async () => (await identity()).presents >= admitted.presents + 5, timeout, 'presents after the edit');
+    const observed = await identity();
+    if (observed.origin !== pageOrigin || !observed.paused || observed.tick !== held.tick) {
+      throw new Error(`${product}: the exit page or its held world changed during the save`);
     }
     const image = await take(`after-${product}`);
     if (image.sha256 === previous.sha256) throw new Error(`${product}: the visible exit image did not change`);
-    edits.push({ product, applied, present, image });
+    edits.push({ product, applied, observed, image });
     previous = image;
   }
   return { selections: await game.invoke('return JSON.parse(game.exit_selections());'),
-    pageOrigin, tickBeforeEdits: heldTick, scrub, profiler, before, edits };
+    pageOrigin, tickBeforeEdits: held.tick, scrub, profiler, before, edits };
 }
 
 // Startup proxy for one route page, observed on the page's own clock (performance.now(), milliseconds since its
