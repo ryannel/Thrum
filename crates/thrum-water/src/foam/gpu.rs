@@ -249,6 +249,7 @@ impl Foam {
             )
             + &crate::map_gpu::declarations_at(0)
             + &crate::interaction::Interaction::sample_source(0, 7, 8, wake)
+            + include_str!("../carriage.wgsl")
             + &shore
             + include_str!("step.wgsl");
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {

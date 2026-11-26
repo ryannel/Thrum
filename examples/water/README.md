@@ -116,3 +116,49 @@ Use `THRUM_WATER_LOCATION=lake`, `THRUM_WATER_STONE=1`, and `THRUM_WATER_VIEW=sh
 the craft and watch the water carry its remaining trail. Choose `THRUM_WATER_LOCATION=beach`
 for the island's sand, aerial and lake views. The Chrome options use the same names, for
 example `?foam=gale&location=beach`. The browser proof is `node scripts/check_water_browser.mjs --case foam`.
+
+## Lake outlet
+
+Run `THRUM_WATER_CHANNEL=trade ./dev scene examples/water` on the Mac, or open
+`?channel=trade` on the hosted WebGPU scene. The camera selector steps from
+the source through the narrows to the mouth and overlook. Lake stage spans
+0 to +1 m and tide spans −0.5 to +0.5 m. The float starts just inside the
+source join. The chart and cut terrain are hand-authored stand-ins for the
+RIVERS solver. Regenerate the terrain with
+`python3 examples/water/make_island.py --channel`.
+
+### Chart writer contract
+
+A `Chart` uses the water map's bed lattice. `Bed::lattice()` gives world
+`[x, z]` of the first centre in metres, the uniform centre-to-centre spacing
+in metres, and the sample counts `[nx, nz]`. Address every chart array at
+`iz * nx + ix`. A solver product may store a rectangular subset whose first
+centre aligns with the bed lattice. `RiverReach::chart` expands it onto
+the bed using that offset and resolves named ends to body indices.
+
+At each centre, write absolute water level in metres above the same datum
+as the bed, and horizontal current `[u_x, u_z]` in metres per second.
+Positive current points toward increasing world x or z. Set the footprint
+for centres belonging to the chart, including its declared end segments.
+The map interpolates its rows, adds the chart's stage in metres, computes
+depth as water level minus bed, and mixes toward the joined body's row at
+each end. The draw and queries use the same rows for surface level, wave
+support, and currents. Surface detail reads upstream through the current.
+Foam stock moves downstream, and games receive the current in body answers.
+
+A prepared solver product also writes the rate of power lost to surface
+breaking in watts per square metre, in `RiverReach::loss` and
+`FlowSample::loss`. Positive values mean dissipation. Dry cells have zero
+current and loss. The model interpolates loss along with the sampled level
+and current. This is a separate field from the depth-limited ambient wave
+power used by the channel's shore foam. The hand-authored `Chart` supplies
+level, footprint, currents and ends. The complete solver product also
+provides flow-band gains, wetting gauges and fall records where applicable.
+
+A plain chart stage raises its own prepared level by the given offset and
+updates the wet support. Its current, footprint, gains, bed and end segments
+remain as prepared. Its joined rows still follow the separate stages of
+their receiving or source bodies, including the sea's reach at the mouth.
+For a sampled river, the gauge selects and mixes the prepared flow samples
+and their wetting thresholds. The sample layout and gauge rules are in the
+[RIVERS design](../../docs/plans/RIVERS/DESIGN.md).

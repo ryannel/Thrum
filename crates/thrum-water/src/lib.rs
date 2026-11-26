@@ -40,6 +40,8 @@ pub struct Profile {
     pub query: Option<query::QueryLimits>,
     /// Optional two-level interaction waves.
     pub interaction: Option<interaction::Limits>,
+    /// Renewal period of the carried surface detail. None selects four seconds.
+    pub carriage_period: Option<std::time::Duration>,
 }
 
 /// Invalid water configuration or unavailable preparation dependency.
@@ -61,6 +63,8 @@ pub enum WaterError {
     UnsupportedMap(&'static str),
     /// Interaction capacities exceed the supported implementation limits.
     InvalidInteractionLimits,
+    /// Surface detail cannot renew at a zero period.
+    InvalidCarriagePeriod,
 }
 impl std::fmt::Display for WaterError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -74,6 +78,7 @@ impl std::fmt::Display for WaterError {
             }
             Self::InvalidLevel => f.write_str("water level must be finite"),
             Self::UnsupportedMap(reason) => f.write_str(reason),
+            Self::InvalidCarriagePeriod => f.write_str("carriage period must be positive"),
             Self::InvalidInteractionLimits => {
                 f.write_str("interaction requires 1–16 solves and at most 64 sources of each kind")
             }
@@ -161,6 +166,12 @@ impl Water {
         profile: Profile,
         mapped: bool,
     ) -> Result<Self, WaterError> {
+        if profile
+            .carriage_period
+            .is_some_and(|period| period.is_zero())
+        {
+            return Err(WaterError::InvalidCarriagePeriod);
+        }
         if profile.interaction.is_some_and(|limits| {
             limits.bodies > 64 || limits.impulses > 64 || !(1..=16).contains(&limits.solves)
         }) {
@@ -585,6 +596,7 @@ impl SceneContribution for Water {
             self.height_rms,
             self.layer_heights,
             self.profile.deep_scatter,
+            records::carriage(now, self.profile.carriage_period),
         );
         p.queue
             .write_buffer(&p.parameters, 0, bytemuck::bytes_of(&parameters));
@@ -650,6 +662,7 @@ impl SceneContribution for Water {
                 &map,
                 p.map.as_ref(),
                 p.interaction.as_ref(),
+                self.profile.carriage_period,
             )
         } else {
             false

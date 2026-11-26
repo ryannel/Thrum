@@ -14,6 +14,7 @@ pub(super) struct Parameters {
     pub(super) long_covariance: [[f32; 4]; 8],
     pub(super) scatter: [f32; 4],
     pub(super) heights: [f32; 4],
+    pub(super) carriage: [f32; 4],
 }
 #[expect(
     clippy::cast_possible_truncation,
@@ -56,6 +57,7 @@ impl Parameters {
         height_rms: f32,
         heights: [f32; 4],
         deep_scatter: [f32; 3],
+        carriage: [f32; 4],
     ) -> Self {
         Self {
             level_dt_reset: [
@@ -83,6 +85,7 @@ impl Parameters {
                 height_rms,
             ],
             heights,
+            carriage,
         }
     }
 }
@@ -134,4 +137,16 @@ pub(super) fn jacobian_variance(spectrum: &Spectrum, choppiness: f64) -> [f32; 4
             })
             .sum::<f64>() as f32
     })
+}
+
+// The display clock is reduced in f64 before it is sent to the shader.
+pub(super) fn carriage(seconds: f64, period: Option<std::time::Duration>) -> [f32; 4] {
+    let period = period.unwrap_or(std::time::Duration::from_secs(4));
+    let phase = (seconds / period.as_secs_f64()).rem_euclid(1.0);
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "unit interval shader phase"
+    )]
+    let phase = phase as f32;
+    [phase, period.as_secs_f32(), 0.0, 0.0]
 }

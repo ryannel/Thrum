@@ -1,4 +1,5 @@
 //! Game content and controls for the water example. The engine contains no sea preset.
+pub mod channel;
 pub mod floating;
 pub mod island;
 pub mod settings;

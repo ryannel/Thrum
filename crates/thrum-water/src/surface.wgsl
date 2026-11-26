@@ -27,12 +27,26 @@ fn long_at(point:vec2<f32>,spacing:f32)->Field {
     let a=long_level(point,low);let b=long_level(point,min(low+1u,7u));
     return add_field(add_field(Field(vec4(0.0),vec4(0.0),vec4(0.0)),a,1.0-fract(lod)),b,fract(lod));
 }
-fn field_at(point:vec2<f32>,spacing:f32,gains:vec4<f32>)->Field {
+fn carried_field(reading: Carriage, band: u32) -> Field {
+    let a = cascade_at(reading.first, band);
+    let b = cascade_at(reading.second, band);
+    return Field(mix(b.displacement, a.displacement, reading.weight),
+        mix(b.slope, a.slope, reading.weight), mix(b.velocity, a.velocity, reading.weight));
+}
+
+fn field_at(point:vec2<f32>,spacing:f32,gains:vec4<f32>,current:vec2<f32>)->Field {
     let long=long_at(point,spacing);
     var f=add_field(Field(vec4(0.0),vec4(0.0),vec4(0.0)),long,gains.x);
+    let moving = any(current != vec2(0.0));
+    var reading: Carriage;
+    if moving { reading = carried_points(point, current, water.carriage.xy); }
     for(var band=0u;band<3u;band++) {
         let fade=1.0-smoothstep(water.lengths[band]/128.0,water.lengths[band]/32.0,spacing);
-        f=add_field(f,cascade_at(point,band),gains[band+1u]*fade);
+        if moving {
+            f=add_field(f,carried_field(reading,band),gains[band+1u]*fade);
+        } else {
+            f=add_field(f,cascade_at(point,band),gains[band+1u]*fade);
+        }
     }
     return f;
 }
@@ -45,6 +59,7 @@ struct SurfaceRow {
     swash: f32,
     loss: f32,
     loss_without_long: f32,
+    current: vec2<f32>,
 }
 struct VertexOut {
     @builtin(position) clip:vec4<f32>, @location(0) world:vec3<f32>,
@@ -83,7 +98,7 @@ fn sea_surf_normal(index:u32, local:vec2<f32>, spacing:f32)->vec3<f32> {
     let anchor=select(vec2(0.0),floor(view.camera_xyz_time.xz),sea);
     let rest=anchor+vertex.xy;
     let row=surface_vertex(rest,body);
-    var f=field_at(rest,vertex.z,row.gains);
+    var f=field_at(rest,vertex.z,row.gains,row.current);
     var surf_weight = 0.0;
     var surf_motion = vec3(0.0);
     var surf_normal = vec3(0.0);
@@ -98,8 +113,10 @@ fn sea_surf_normal(index:u32, local:vec2<f32>, spacing:f32)->vec3<f32> {
         let q = anchor + ceil(coarse) * spacing;
         let fraction = fract(coarse);
         let blend = select(0.5, max(fraction.x, fraction.y), SURF_CACHE_ENABLED);
-        let a=field_at(p,spacing,surface_vertex(p,body).gains);
-        let b=field_at(q,spacing,surface_vertex(q,body).gains);
+        let ap=surface_vertex(p,body);
+        let a=field_at(p,spacing,ap.gains,ap.current);
+        let bp=surface_vertex(q,body);
+        let b=field_at(q,spacing,bp.gains,bp.current);
         f=add_field(add_field(Field(vec4(0.0),vec4(0.0),vec4(0.0)),a,1.0-blend),b,blend);
         if SURF_CACHE_ENABLED && transformed.w > 0.0 {
             let long_p = long_at(p, spacing);
@@ -204,9 +221,21 @@ fn reflected_sky(slope:vec2<f32>,covariance:vec3<f32>,v:vec3<f32>)->vec4<f32> {
         differential+=row.gains.x*fade*long_differential;
     }
     slope+=wake_slope;
+    let moving = any(row.current != vec2(0.0));
+    var reading: Carriage;
+    if moving { reading = carried_points(input.rest, row.current, water.carriage.xy); }
     for(var band=0u;band<3u;band++) {
         let scale=water.lengths[band];
-        let m=filtered_layer(cascades,periodic,input.rest/scale,dx/scale,dy/scale,i32(band*5u));
+        let layer=i32(band*5u);
+        var m: FilteredLayer;
+        if moving {
+            let a=filtered_layer(cascades,periodic,reading.first/scale,dx/scale,dy/scale,layer);
+            let b=filtered_layer(cascades,periodic,reading.second/scale,dx/scale,dy/scale,layer);
+            m=FilteredLayer(mix(b.slope,a.slope,reading.weight),
+                mix(b.second,a.second,reading.weight),mix(b.differential,a.differential,reading.weight));
+        } else {
+            m=filtered_layer(cascades,periodic,input.rest/scale,dx/scale,dy/scale,layer);
+        }
         let gain=row.gains[band+1u];
         slope+=gain*m.slope;
         covariance+=gain*gain*(m.second-vec3(m.slope.x*m.slope.x,m.slope.x*m.slope.y,m.slope.y*m.slope.y));

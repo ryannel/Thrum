@@ -549,7 +549,7 @@ fn shader_source(
         include_str!("sampling.wgsl"),
         include_str!("field.wgsl"),
         Interaction::sample_source(3, 7, 8, wake),
-        include_str!("surface.wgsl"),
+        concat!(include_str!("carriage.wgsl"), include_str!("surface.wgsl")),
         if gather {
             concat!(
                 include_str!("optics/regions.wgsl"),

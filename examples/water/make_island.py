@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Make the island's ground triangles and their cooked-mesh source."""
+import argparse
 import json
 from math import cos, exp, floor, hypot, sin
 from pathlib import Path
@@ -56,24 +57,55 @@ def height(x, z):
     return terrain + backshore * ridge
 
 
-def append_grid(points, normals, uvs, indices, xs, zs, pond=False):
+def channel_height(x, z):
+    """The hand-cut lake outlet, using the island's existing terrain elsewhere."""
+    ground = height(x, z)
+    side = abs(z - 5)
+    # Tie the raised outlet banks back into the surveyed lake rim.
+    shoulder = smoothstep((x - 200) / 9) * (1 - smoothstep((x - 222) / 15))
+    shoulder *= smoothstep((side - 5.7) / 1.2) * (1 - smoothstep((side - 28) / 14))
+    ground += shoulder * max(0, 14.2 - ground)
+    if not (199 < x < 374 and -12 < z < 22):
+        return ground
+    along = min(max((x - 210) / 140, 0), 1)
+    level = 11.75 - 12.55 * along
+    # The mouth sill remains wet at the lowest tide, with a shallow bed.
+    floor = level - 0.85 + 0.97 * smoothstep((x - 334) / 16)
+    floor -= 0.65 * smoothstep((x - 350) / 10)
+    # Taper the wetted banks at the narrows without moving the chart edges.
+    narrow = exp(-((x - 256) / 16) ** 2)
+    ends = max(1 - smoothstep((x - 210) / 9), smoothstep((x - 342) / 6))
+    half_width = 4.7 - 2.35 * narrow + 1.1 * ends + (1 - ends) * 0.38 * sin((x - 219) / 6)
+    offset = 0.72 * sin((x - 231) / 9) * (1 - ends) * (1 - 0.85 * narrow)
+    channel_side = abs(z - 5 - offset)
+    wall = max(0.85, level + 1.0)
+    wall += 1.35 * (1 - smoothstep((x - 210) / 17))
+    cut = floor + (wall - floor) * smoothstep((channel_side - half_width + 0.85) / (7.4 - half_width + 0.85))
+    cut = min(cut, ground) if x > 352 else cut
+    weight = smoothstep((x - 199) / 9) * (1 - smoothstep((x - 360) / 14))
+    fade = 10.0 + 2.1 * sin(x * 0.12) + 1.2 * sin(x * 0.30 + z)
+    weight *= 1 - smoothstep((side - 7.5) / fade)
+    return ground + weight * (cut - ground)
+
+
+def append_grid(points, normals, uvs, indices, xs, zs, terrain, pond=False):
     base = len(points)
     nx, nz = len(xs), len(zs)
     x0, x1, z0, z1 = POND_PATCH
     for j, z in enumerate(zs):
         for i, x in enumerate(xs):
-            y = height(x, z)
+            y = terrain(x, z)
             # Keep the fine patch on the same straight edges as the coarse
             # triangles. Its interior uses the authored continuous bank.
             if pond and x in (x0, x1):
                 lo = floor(z)
-                y = height(x, lo) + (height(x, lo + 1) - height(x, lo)) * (z - lo)
+                y = terrain(x, lo) + (terrain(x, lo + 1) - terrain(x, lo)) * (z - lo)
             elif pond and z in (z0, z1):
                 lo = floor(x)
-                y = height(lo, z) + (height(lo + 1, z) - height(lo, z)) * (x - lo)
+                y = terrain(lo, z) + (terrain(lo + 1, z) - terrain(lo, z)) * (x - lo)
             points.append((x, y, z))
-            dx = height(x + 0.1, z) - height(x - 0.1, z)
-            dz = height(x, z + 0.1) - height(x, z - 0.1)
+            dx = terrain(x + 0.1, z) - terrain(x - 0.1, z)
+            dz = terrain(x, z + 0.1) - terrain(x, z - 0.1)
             norm = hypot(dx, 0.2, dz)
             normals.append((-dx / norm, 0.2 / norm, -dz / norm))
             uvs.append((x / 120, z / 120))
@@ -85,17 +117,21 @@ def append_grid(points, normals, uvs, indices, xs, zs, pond=False):
 
 
 def main():
+    args = argparse.ArgumentParser(description=__doc__)
+    args.add_argument('--channel', action='store_true', help='author the island variant with the chart outlet')
+    terrain = channel_height if args.parse_args().channel else height
+    name = 'channel-island' if terrain is channel_height else 'island'
     # Keep the denser triangles local to the pond. The wider island uses the
     # original one-metre inland grid and larger seabed triangles.
     xs = sorted(set(range(-320, 401, 4)) | set(range(82, 281)))
     zs = sorted(set(range(-225, 226, 3)) | set(range(-34, 118)))
     points, normals, uvs, indices = [], [], [], []
-    append_grid(points, normals, uvs, indices, xs, zs)
+    append_grid(points, normals, uvs, indices, xs, zs, terrain)
     x0, x1, z0, z1 = POND_PATCH
     n = POND_SUBDIVISIONS
     patch_xs = [x / n for x in range(x0 * n, x1 * n + 1)]
     patch_zs = [z / n for z in range(z0 * n, z1 * n + 1)]
-    append_grid(points, normals, uvs, indices, patch_xs, patch_zs, pond=True)
+    append_grid(points, normals, uvs, indices, patch_xs, patch_zs, terrain, pond=True)
 
     data = bytearray()
     views, accessors = [], []
@@ -114,15 +150,15 @@ def main():
                         max=[max(axis) for axis in zip(*points)])
     model = {
         'asset': {'version': '2.0'},
-        'buffers': [{'byteLength': len(data), 'uri': 'island.bin'}],
+        'buffers': [{'byteLength': len(data), 'uri': f'{name}.bin'}],
         'bufferViews': views, 'accessors': accessors,
         'meshes': [{'primitives': [{'attributes': {'POSITION': 0, 'NORMAL': 2, 'TEXCOORD_0': 3},
                                     'indices': 1}]}],
         'nodes': [{'mesh': 0}], 'scenes': [{'nodes': [0]}], 'scene': 0,
     }
     root = Path(__file__).resolve().parent / 'assets/meshes'
-    (root / 'island.gltf').write_text(json.dumps(model, indent=2) + '\n')
-    (root / 'island.bin').write_bytes(data)
+    (root / f'{name}.gltf').write_text(json.dumps(model, indent=2) + '\n')
+    (root / f'{name}.bin').write_bytes(data)
 
 
 if __name__ == '__main__':

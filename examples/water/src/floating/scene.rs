@@ -840,3 +840,102 @@ fn browser_status(
         &report,
     ));
 }
+
+pub(crate) fn install_channel_float(
+    game: SkyGame,
+    map: crate::SharedMap,
+    water: &Water,
+    fallback: thrum_water_model::Field,
+    foam: thrum_water::foam::Input,
+    wind_speed: f64,
+) -> (SkyGame, Box<dyn Fn() -> Body>) {
+    use crate::channel::{POST, RELEASE};
+    let initial = Body::new(
+        0,
+        Hull::Float,
+        RELEASE,
+        map.lock().expect("channel map").row(3, RELEASE).level,
+        0.0,
+    );
+    let fleet = Arc::new(Mutex::new(Fleet {
+        previous: vec![initial],
+        current: vec![initial],
+        craft_present: false,
+        tick: 0,
+        observe: None,
+        #[cfg(target_arch = "wasm32")]
+        reply_ages: std::collections::VecDeque::new(),
+        #[cfg(target_arch = "wasm32")]
+        wake_sample: None,
+    }));
+    let mailbox = water.query_mailbox().expect("channel float query");
+    let world = Arc::clone(&fleet);
+    #[cfg(target_arch = "wasm32")]
+    let status_map = Arc::clone(&map);
+    let game = game.with_fixed_update_endpoint(move |endpoint, step| {
+        let mut fleet = world.lock().expect("channel float");
+        let fleet = &mut *fleet;
+        fleet.tick = endpoint.tick;
+        fleet.previous.clone_from(&fleet.current);
+        // Wind on the exposed float lets it keep moving through the tidal
+        // backwater, where the map's current fades to zero.
+        fleet.current[0].velocity.x += 0.025 * wind_speed * step.as_secs_f64();
+        drop(advance_fleet(
+            &mut fleet.current,
+            endpoint,
+            step,
+            &mailbox,
+            &map,
+            &fallback,
+            None,
+        ));
+        mailbox.post(
+            endpoint,
+            vec![fleet.current[0].request(endpoint.tick, step)],
+        );
+        foam.post(
+            endpoint.tick,
+            [thrum_water::foam::Hull {
+                place: POST,
+                forward: [1.0, 0.0],
+                extent: [0.32, 0.32],
+                velocity: [0.0; 2],
+                drag_power: 0.0,
+            }],
+        );
+    });
+    #[cfg(target_arch = "wasm32")]
+    let game = {
+        let status = Arc::clone(&fleet);
+        game.with_status_readouts(move |_| {
+            let fleet = status.lock().expect("channel float");
+            let values = js_sys::Array::new();
+            let position = fleet.current[0].position;
+            for value in position.to_array() {
+                values.push(&value.into());
+            }
+            if let Some(row) = status_map
+                .lock()
+                .expect("channel map")
+                .sample([position.x, position.z])
+            {
+                let owner = u32::try_from(row.body).expect("island body index");
+                values.push(&owner.into());
+                values.push(&row.depth.into());
+            }
+            drop(js_sys::Reflect::set(
+                &js_sys::global(),
+                &"waterChannelFloat".into(),
+                &values,
+            ));
+        })
+    };
+    let game = game.with_contribution(
+        Box::new(Draw::new(Arc::clone(&fleet), water.optics_bodies(), 1)),
+        || ContentStatus::Drawn(1),
+    );
+    (
+        game,
+        Box::new(move || fleet.lock().expect("channel float").current[0]),
+    )
+}

@@ -8,7 +8,7 @@ import zlib from 'node:zlib';
 import {installWasmReceipt,readWasmReceipt} from './wasm_receipt.mjs';
 
 const mode = process.argv[process.argv.indexOf('--case') + 1];
-if (!['first-frame','frames','fixed','realtime','island','bodies','wake','foam','surf'].includes(mode)) throw Error('use --case first-frame|frames|fixed|realtime|island|bodies|wake|foam|surf');
+if (!['first-frame','frames','fixed','realtime','island','bodies','wake','foam','surf','channel'].includes(mode)) throw Error('use --case first-frame|frames|fixed|realtime|island|bodies|wake|foam|surf|channel');
 const opticsRoute = mode === 'fixed' ? process.env.THRUM_WATER_BROWSER_OPTICS : undefined;
 const surfInspection = process.env.THRUM_WATER_INSPECT_SURF === '1' && ['fixed','realtime'].includes(mode);
 const handoffCut = surfInspection && mode === 'realtime' && process.env.THRUM_WATER_ROUTE === 'handoff-cut';
@@ -73,9 +73,9 @@ const observer = `
     if(desc.label?.startsWith('sea ')||desc.label?.startsWith('interaction ')||desc.label?.startsWith('foam ')||['surf field cache','surf field settings','water surface vertices'].includes(desc.label))__buffers[desc.label]=b;
     return b;
   };
-  globalThis.__readFoam=async()=>{
+  globalThis.__readFoam=async(points=[])=>{
     const device=__devices.at(-1), commands=device.createCommandEncoder();
-    const stages=['foam settings','foam endpoints'].map(name=>{
+    const stages=['foam settings','foam endpoints',...(points.length?['foam transport']:[])].map(name=>{
       const source=__buffers[name];
       if(!source)throw Error('missing submitted '+name);
       const stage=device.createBuffer({size:source.size,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ});
@@ -83,7 +83,7 @@ const observer = `
       return stage;
     });
     device.queue.submit([commands.finish()]);
-    const [settings,state]=await Promise.all(stages.map(async stage=>{
+    const [settings,state,transport]=await Promise.all(stages.map(async stage=>{
       await stage.mapAsync(GPUMapMode.READ);
       const bytes=stage.getMappedRange().slice(0);
       stage.unmap();stage.destroy();
@@ -100,7 +100,15 @@ const observer = `
       peak=Math.max(peak,film);
       filmCells+=Number(film>0.01);
     }
-    return {mean:cover/count,peak,filmCells};
+    const parcels = points.map(([x,z]) => {
+      const [ox,oz] = new Int32Array(settings,0,2);
+      const ix=Math.floor(x/0.25)-ox, iz=Math.floor(z/0.25)-oz;
+      if(ix<0||ix>=256||iz<0||iz>=256)throw Error('point outside submitted fine foam window');
+      const state=new Float32Array(transport,(iz*256+ix)*32,8);
+      const dt=new Float32Array(settings,80,1)[0];
+      return {point:[x,z],speed:[state[4]*0.25/dt,state[5]*0.25/dt],film:state[1]+state[2]};
+    });
+    return {mean:cover/count,peak,filmCells,parcels};
   };
   const wakeWitnesses=new Map();
   globalThis.__readWake=async(tick,points=[],hull=null)=>{
@@ -403,7 +411,7 @@ try {
   await installWasmReceipt(cdp,sid);
   const surfRoute=mode==='surf'||surfInspection;
   await cdp.call('Page.addScriptToEvaluateOnNewDocument',{source:observer+(['island','surf'].includes(mode)?islandObserver:'')+`\ndocument.addEventListener('DOMContentLoaded',()=>{document.querySelector('canvas').width=${width};document.querySelector('canvas').height=${height};});`},sid);
-  const route=opticsRoute??(surfRoute?(handoffCut?'?surf=gale':'?surf=trade'):mode==='foam'?'?foam=calm&speed=6&view=overhead&wake-bodies=1':mode==='wake'?'?wake=calm&speed=6&view=overhead&wake-bodies=1':mode==='bodies'?'?bodies=trade&speed=5':mode==='island'?'?island=trade':'');
+  const route=opticsRoute??(surfRoute?(handoffCut?'?surf=gale':'?surf=trade'):mode==='foam'?'?foam=calm&speed=6&view=overhead&wake-bodies=1':mode==='wake'?'?wake=calm&speed=6&view=overhead&wake-bodies=1':mode==='bodies'?'?bodies=trade&speed=5':mode==='island'?'?island=trade':mode==='channel'?'?channel=trade':'');
   result.route=route;
   await cdp.call('Page.navigate',{url:url+route},sid);
   await until(async()=>{const state=await evaluate('({ready:!!window.game,status:document.querySelector("#status")?.textContent})');if(state.status?.includes('could not start'))throw Error(state.status);return state.ready;},'scene constructed');
@@ -455,7 +463,36 @@ try {
     const anchor=await capture('surf-clock-anchor',0);
     surfClockOrigin=now-anchor.observation*1000;
   }
-  if(mode==='foam'){
+  if(mode==='channel'){
+    const float=()=>evaluate('(game.report(),globalThis.waterChannelFloat)');
+    await until(async()=>{
+      const status=await evaluate(`game.frame(${now});game.report()`);
+      return /^Cooked generation [0-9]+ drawn/.test(status);
+    },'cooked channel drawn');
+    const start=await float();
+    await capture('channel-narrows',1000);
+    for(let i=0;i<12;i++){
+      await until(()=>evaluate('game.frame_ready()'),'channel frame slot');
+      await drive(1000/30);
+    }
+    const detail=await evaluate('__readFoam([[256,5],[228,5]])');
+    const [fast,slow]=detail.parcels;
+    assert(fast.speed[0]>1.3&&slow.speed[0]>0.4&&fast.speed[0]>slow.speed[0]+0.65,'foam detail did not move with the current: '+JSON.stringify(detail));
+    assert(detail.filmCells>0,'no submitted foam film');
+    const course=[];
+    for(const seconds of [20,40,75,110,145,180,215,250,285,320,355,390]){
+      await until(()=>evaluate('game.frame_ready()'),'float travel frame slot');
+      await drive(seconds*1000-now);
+      const position=await float();
+      course.push({seconds,position});
+      if(position[0]>350.5&&position[3]===0&&position[4]>0)break;
+    }
+    await evaluate("game.edit_control('camera.channel',3)");
+    await capture('channel-mouth',1000/30);
+    const end=await float();
+    assert(start[0]<215&&start[3]===3&&end[0]>350.5&&end[3]===0&&end[4]>0&&end.every(Number.isFinite),'the float did not enter the sea: '+JSON.stringify({start,course,end}));
+    result.channel={start,detail,course,end};
+  } else if(mode==='foam'){
     const runFoam=async steps=>{
       for(let index=0;index<steps;index++){
         await until(()=>evaluate('game.frame_ready()'),'whitewater submission slot');

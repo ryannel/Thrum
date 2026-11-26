@@ -35,6 +35,11 @@ fn island_wind() -> Option<Wind> {
 }
 
 #[cfg(target_os = "macos")]
+fn channel_route() -> bool {
+    matches!(settings(), Settings::Channel(_))
+}
+
+#[cfg(target_os = "macos")]
 fn surf_route() -> bool {
     matches!(settings(), Settings::Surf(_))
 }
@@ -60,7 +65,10 @@ fn whitewater() -> bool {
         Settings::Island { foam, .. } => foam,
         Settings::Surf(_) => true,
         Settings::Floating(floating) => floating.wake.is_some_and(|wake| wake.whitewater),
-        Settings::OpenSea | Settings::OpticsSea(_) | Settings::OpticsShade(_) => false,
+        Settings::OpenSea
+        | Settings::OpticsSea(_)
+        | Settings::OpticsShade(_)
+        | Settings::Channel(_) => false,
     }
 }
 
@@ -75,6 +83,10 @@ fn proof_game(water: bool) -> (thrum_app::sky::SkyGame, water_scene::SharedRepor
             let (game, report, _, _) =
                 water_scene::island::build_foam(wind, water, foam).expect("island");
             (game, report)
+        }
+        Settings::Channel(wind) => {
+            let scene = water_scene::channel::build(wind, water, true).expect("channel scene");
+            (scene.game, scene.report)
         }
         Settings::Surf(wind) => {
             let (game, report, _, _) =
@@ -189,7 +201,8 @@ fn driver(gpu: &thrum_test_support::Gpu) {
     let mut fixture = if let Some(floating) = floating() {
         let scene = floating_game(floating, true, true, whitewater());
         support::Fixture::from_game(gpu, [2560, 1440], scene.game, scene.report)
-    } else if island_wind().is_some()
+    } else if channel_route()
+        || island_wind().is_some()
         || matches!(
             settings(),
             Settings::OpticsSea(_) | Settings::OpticsShade(_)
@@ -223,9 +236,16 @@ fn driver(gpu: &thrum_test_support::Gpu) {
             "position": c.position, "target": c.target, "fov_degrees": c.vertical_fov_degrees
         })).collect::<Vec<_>>());
     }
+    if channel_route() {
+        result["body_vertices"] = json!(report.bodies);
+        result["camera"] = json!({"position":water_scene::channel::VIEWS[2].position,
+            "target": water_scene::channel::VIEWS[2].target});
+    }
     result["recipe"] =
         json!(std::env::var("THRUM_WATER_RECIPE").unwrap_or_else(|_| "native".into()));
-    result["camera"] = json!({"focus_xz":water_scene::CAMERA_FOCUS,"eye_at_2m_along_wind":water_scene::camera_position(2.0,90.0),"vertical_fov_degrees":water_scene::CAMERA_FOV_DEGREES,"look_drop_over_100_m":water_scene::CAMERA_LOOK_DROP,"orbit_radius":"24m at 2m height, 40m at 40m height; bearing orbits the focus"});
+    if !channel_route() {
+        result["camera"] = json!({"focus_xz":water_scene::CAMERA_FOCUS,"eye_at_2m_along_wind":water_scene::camera_position(2.0,90.0),"vertical_fov_degrees":water_scene::CAMERA_FOV_DEGREES,"look_drop_over_100_m":water_scene::CAMERA_LOOK_DROP,"orbit_radius":"24m at 2m height, 40m at 40m height; bearing orbits the focus"});
+    }
     result["commit"] = json!(
         std::env::var("THRUM_WATER_COMMIT").unwrap_or_else(|_| "working tree diagnostic".into())
     );
@@ -258,6 +278,11 @@ fn driver(gpu: &thrum_test_support::Gpu) {
                     if foam && std::env::var_os(thrum_app::sky::STORE_VARIABLE).is_some() {
                         fixture.warm_cooked();
                     }
+                    fixture
+                } else if channel_route() {
+                    let (game, report) = proof_game(present);
+                    let mut fixture = support::Fixture::from_game(gpu, [2560, 1440], game, report);
+                    fixture.warm_cooked();
                     fixture
                 } else if let Some(wind) = island_wind() {
                     let (game, report, _, _) = water_scene::island::build_foam(wind, present, foam)
@@ -307,7 +332,7 @@ fn driver(gpu: &thrum_test_support::Gpu) {
                 } else {
                     0
                 };
-                let mut arm = json!({"water":present,"calibration_float":island_wind().is_none() && floating().is_none(),"frames":frames,"water_pixels_shaded":pixels,"pixel_count_method":"visible coverage from submitted reactive/depth witness; helper and hidden invocations excluded","storage":fixture.host.storage_report()});
+                let mut arm = json!({"water":present,"calibration_float":island_wind().is_none() && floating().is_none() && !channel_route(),"frames":frames,"water_pixels_shaded":pixels,"pixel_count_method":"visible coverage from submitted reactive/depth witness; helper and hidden invocations excluded","storage":fixture.host.storage_report()});
                 if wake || whitewater {
                     arm["wake"] = json!(interaction);
                     let report = fixture.report.lock().expect("water report");

@@ -39,6 +39,8 @@ pub enum Settings {
     },
     /// Island beach with refraction of the long waves and the breaker section.
     Surf(Wind),
+    /// Hand-authored outlet from the island's lake.
+    Channel(Wind),
     /// The craft and buoys, with or without the wake route.
     Floating(Floating),
 }
@@ -109,6 +111,12 @@ impl Settings {
     }
 
     fn parse(get: impl Fn((&str, &str)) -> Option<String>) -> Self {
+        if let Some(wind) = get(("channel", "THRUM_WATER_CHANNEL"))
+            .as_deref()
+            .and_then(Wind::named)
+        {
+            return Self::Channel(wind);
+        }
         if let Some(wind) = get(SURF).as_deref().and_then(Wind::named) {
             return Self::Surf(wind);
         }

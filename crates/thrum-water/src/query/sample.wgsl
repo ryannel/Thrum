@@ -43,7 +43,8 @@ fn column_component(index: u32) -> Component { return components[index]; }
 fn cascade_wave(point: QueryPoint, band: u32) -> Wave {
     let extent = settings.lengths_chop[band];
     let lod = clamp(log2(max(1.0, point.radius * 512.0 / extent)), 0.0, 8.0);
-    return cascade_column(point.position / extent, band, lod);
+    return carried_column(point.position, point.level_current_bed.yz, settings.swash_margin.zw,
+        extent, band, lod);
 }
 
 struct QueryWave { wave: Wave, cut_fine_nodes: u32, cut_coarse_nodes: u32, }

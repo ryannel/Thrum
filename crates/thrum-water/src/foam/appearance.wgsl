@@ -135,7 +135,14 @@ fn foam_surface(point: vec3<f32>, row: SurfaceRow, footprint: f32, jacobian: f32
     let clouds = 0.62 * foam_noise(point.xz * vec2(0.47, 0.58) + 31.0)
         + 0.38 * foam_noise(point.xz * vec2(1.31, 1.12) - 17.0);
     let air = stocks.x * smoothstep(0.06, 0.42, stocks.x * mix(0.30, 1.70, clouds));
-    let lace = ranked_cover(stocks, point.xz, footprint);
+    var lace: f32;
+    if any(row.current != vec2(0.0)) {
+        let reading = carried_points(point.xz, row.current, water.carriage.xy);
+        lace = mix(ranked_cover(stocks, reading.second, footprint),
+            ranked_cover(stocks, reading.first, footprint), reading.weight);
+    } else {
+        lace = ranked_cover(stocks, point.xz, footprint);
+    }
     // The youngest film froths in a continuous front before the holes in
     // the pattern resolve. The same stock then opens out into the wash.
     var front = 0.0;

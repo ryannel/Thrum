@@ -331,7 +331,10 @@ impl Readback {
                     },
                     Interaction::sample_source(0, 5, 6, wake.is_some()),
                     include_str!("../column/records.wgsl"),
-                    include_str!("../column.wgsl"),
+                    concat!(
+                        include_str!("../column.wgsl"),
+                        include_str!("../carriage.wgsl")
+                    ),
                     include_str!("sample.wgsl"),
                     surf_source,
                 )
@@ -524,6 +527,7 @@ impl Readback {
         map: &Map,
         frame_map: Option<&MapGpu>,
         wake: Option<&Interaction>,
+        carriage_period: Option<Duration>,
     ) -> bool {
         self.pending.clear();
         let mut state = self.mailbox.state.lock().expect("water query mailbox");
@@ -653,12 +657,15 @@ impl Readback {
                 lengths_chop,
                 heights,
                 coarse_jobs: [coarse_groups, coarse_nodes, 0, 0],
-                swash_margin: [
-                    profile.swash_ratio as f32,
-                    profile.margin_height as f32,
-                    0.0,
-                    0.0,
-                ],
+                swash_margin: {
+                    let [phase, period, ..] = crate::records::carriage(seconds, carriage_period);
+                    [
+                        profile.swash_ratio as f32,
+                        profile.margin_height as f32,
+                        phase,
+                        period,
+                    ]
+                },
             };
             queue.write_buffer(&buffers.settings, 0, bytemuck::bytes_of(&settings));
             queue.write_buffer(&buffers.points, 0, bytemuck::cast_slice(&points));

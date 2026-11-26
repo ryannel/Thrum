@@ -2,6 +2,7 @@
     dead_code,
     reason = "shared public-seam fixture supports several focused GPU tests"
 )]
+pub(crate) mod depth;
 pub(crate) mod island;
 pub(crate) mod optics;
 pub(crate) mod surf;

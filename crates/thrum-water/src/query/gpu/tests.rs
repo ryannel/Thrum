@@ -215,6 +215,7 @@ fn query_records_match_the_shader_layout() {
         + include_str!("../../gains.wgsl")
         + include_str!("../../column/records.wgsl")
         + include_str!("../../column.wgsl")
+        + include_str!("../../carriage.wgsl")
         + include_str!("../sample.wgsl")
         + super::PLAIN_QUERY;
     records::named(
@@ -280,6 +281,7 @@ fn surf_query_passes_parse_with_all_shared_bindings() {
     let source = Interaction::sample_source(0, 5, 6, true)
         + include_str!("../../column/records.wgsl")
         + include_str!("../../column.wgsl")
+        + include_str!("../../carriage.wgsl")
         + include_str!("../sample.wgsl")
         + &crate::map_gpu::declarations_at(super::SURF_GROUP)
         + &crate::surf::SurfGpu::query_source(super::SURF_GROUP, super::SURF_BINDING);

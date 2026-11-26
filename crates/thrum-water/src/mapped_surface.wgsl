@@ -25,7 +25,7 @@ fn surface_row(cell: Cell, row: MapRow, body: u32, owned: bool) -> SurfaceRow {
         }
     }
     return SurfaceRow(row.water.x, previous, gains, select(-1e30, cell.bed, cell.inside),
-        owned, swash, loss, loss_without_long);
+        owned, swash, loss, loss_without_long, row.water.yz);
 }
 fn tail_gain(row: SurfaceRow) -> f32 { return row.gains.w; }
 

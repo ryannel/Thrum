@@ -62,6 +62,21 @@ fn hull_births(point: vec2<f32>, current: vec2<f32>, spacing: f32) -> vec4<f32> 
         let at = point - hull.location_axis.xy + 0.5 * foam_settings.time_wind.x * hull.velocity.xy;
         let ext = hull.extent_rate.xy;
         if dot(at, at) > pow(5.0 + ext.x, 2.0) { continue; }
+        // A fixed obstruction sheds on the downstream side of the current.
+        // Moving hulls retain their contact and stern sources.
+        let flow = length(current);
+        if all(hull.velocity.xy == vec2(0.0)) && flow > 0.0 {
+            let downstream = current / flow;
+            let along = dot(at, downstream);
+            let across = dot(at, vec2(-downstream.y, downstream.x));
+            let behind = along - ext.x * 0.5;
+            if behind > 0.0 {
+                let core = exp(-1.05 * behind - pow(across / (ext.y + 0.14 * behind), 2.0));
+                let birth = min(1.0, 0.44 * flow * flow) * core;
+                rates += vec4(0.60, 0.72, 0.0, 0.14) * birth;
+            }
+            continue;
+        }
         let direction = hull.location_axis.zw;
         let local = vec2(dot(at, direction), dot(at, vec2(-direction.y, direction.x)));
         let speed = max(0.0, length(hull.velocity.xy - current) - 0.22);
@@ -109,7 +124,7 @@ fn prepare_transport(@builtin(global_invocation_id) id: vec3<u32>) {
         let wake = wake_at(point, dt_column);
         var column: Wave;
         if row.has_bed {
-            column = foam_column(point, gain, dt_column);
+            column = foam_column(point, gain, dt_column, row.row.water.yz);
         }
         if foam_wet(level, local, depth + column.displacement.y + wake.x > 0.0) {
             let wave = foam_wave(point, gain, spacing);

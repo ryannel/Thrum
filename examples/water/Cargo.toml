@@ -84,3 +84,10 @@ name = "cloud_shade_gpu"
 
 [[test]]
 name = "optics_once_gpu"
+
+# The WATERS channel proofs read submitted Metal depth and transport.
+[[test]]
+name = "channel_gpu"
+
+[[test]]
+name = "carriage_gpu"

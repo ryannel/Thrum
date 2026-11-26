@@ -18,6 +18,7 @@ RECORDS = {'first-frame': ROOT / 'tests/fixtures/waters/first-frame-cost.json',
            'wake': ROOT / '.orchestrate/evidence/WATERS/M6/cost.json',
            'foam': ROOT / '.orchestrate/evidence/WATERS/M7/cost.json',
            'surf': ROOT / '.orchestrate/evidence/WATERS/WP21/surf-cost.json',
+           'channel': ROOT / '.orchestrate/evidence/WATERS/WP9/channel-cost.json',
            'optics': ROOT / 'tests/fixtures/waters/optics-cost-prior.json'}
 WORKING = ROOT / '.orchestrate/evidence/WATERS'
 # The island record taken before the records moved to fixtures names the first-frame record by its old path,
@@ -38,9 +39,16 @@ def run(command, **kwargs):
 
 def measure(scene):
     island = scene == 'island'
-    output = ROOT / ('tmp/waters-M4/cost-current' if island else 'tmp/waters-M2/cost-current')
+    channel = scene == 'channel'
+    output = ROOT / ({
+        'channel': 'tmp/waters-wp9/cost-current', 'island': 'tmp/waters-M4/cost-current',
+    }.get(scene, 'tmp/waters-M2/cost-current'))
     output.mkdir(parents=True, exist_ok=True)
     env = dict(os.environ, THRUM_WATER_PROOF='cost', THRUM_WATER_OUTPUT=str(output))
+    if channel:
+        env['THRUM_WATER_CHANNEL'] = 'trade'
+    else:
+        env.pop('THRUM_WATER_CHANNEL', None)
     if island:
         env['THRUM_WATER_ISLAND'] = 'trade'
     else:
@@ -57,6 +65,8 @@ def measure(scene):
     data['refresh_hz'] = 120
     data['view'] = ('40 m island overlook in trade wind at noon; same cooked ground and sky at identical world times'
                     if island else 'camera at 2 m, bearing 90 degrees, noon; camera record gives origin and lens; identical calibration float and sky in both arms at identical world times')
+    if channel:
+        data['view'] = 'Narrows camera under trade wind; same cooked outlet terrain, float, post and sky in both arms'
     data['scene'] = scene
     data['estimates'] = {'surface_vertices': 200000, 'surface_gpu_ms': 'unmeasured in design; largest term', 'long_cache_gpu_ms': '0.2-0.3', 'previous_inverted_cache_gpu_ms': 3.6, 'broadsides_surface_ms': 10.5}
     data['summary'] = []
@@ -96,6 +106,24 @@ def measure(scene):
                         'measurement': f'{key}: {old_time:.3f} -> {new_time:.3f} ms; vertices {first["vertices"]} -> {data["vertices"]}; visible coverage {sea_arm["water_pixels_shaded"]} at the island overlook.',
                         'disposition': 'Paired water-off isolates scene work. View, wave forcing and mapped work differ from first-frame, so this comparison flags the term without attributing the delta to one input.',
                     })
+    if channel:
+        prior = json.loads(RECORDS['island'].read_text())
+        data['island_record'] = {
+            'path': str(RECORDS['island'].relative_to(ROOT)),
+            'commit': prior['commit'], 'view': prior['view'], 'summary': prior['summary'],
+        }
+        for row in (r for r in data['summary'] if r['water']):
+            previous = next(r for r in prior['summary'] if r['water'] and r['tick_frame'] == row['tick_frame'])
+            old = {label.rsplit(': ', 1)[-1]: duration for label, duration in previous['passes_ms'].items()}
+            for label, duration in row['passes_ms'].items():
+                baseline = old.get(label.rsplit(': ', 1)[-1])
+                if label.startswith('effect ') and baseline and duration >= baseline * 1.25:
+                    data['investigations'].append({
+                        'wire': 'pass grew by at least 25% compared to island',
+                        'water': True, 'tick_frame': row['tick_frame'],
+                        'measurement': f'{label}: {baseline:.3f} -> {duration:.3f} ms.',
+                        'disposition': 'The narrows view adds chart, foam and optics work at a different view and coverage. The paired water-off arm measures common work under the same load.',
+                    })
     return data
 
 
@@ -117,6 +145,9 @@ def validate(data, scene):
         assert row['gpu_ms'] > 0 and row['passes_ms'] and row['samples'] > 0
         if max(row['gpu_ms'], row['completion_upper_ms']) > 1000 / data['refresh_hz']:
             assert any(i['water'] == row['water'] and i['tick_frame'] == row['tick_frame'] and i['measurement'] and i['disposition'] for i in data['investigations'])
+    if scene == 'channel':
+        assert data['island_record']['summary']
+        assert dict(data['body_vertices'])['Lake outlet'] > 0
     if scene == 'island':
         named = data['first_frame_record']
         assert named == str(RECORDS['first-frame'].relative_to(ROOT)) or named.endswith(FIRST_FRAME_FORMER)
@@ -780,7 +811,13 @@ def main():
     record = RECORDS[args.scene]
     data = measure(args.scene)
     validate(data, args.scene)
-    if args.action == 'record':
+    if args.scene == 'channel':
+        record = Path(os.environ.get('THRUM_WATER_OUTPUT', record))
+        if record.is_dir():
+            record /= 'channel-cost.json'
+        record.parent.mkdir(parents=True, exist_ok=True)
+        record.write_text(json.dumps(data, indent=2) + '\n')
+    elif args.action == 'record':
         record = WORKING / f'{args.scene}-cost.json'
         record.parent.mkdir(parents=True, exist_ok=True)
         record.write_text(json.dumps(data, indent=2) + '\n')

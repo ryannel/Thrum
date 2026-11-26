@@ -163,7 +163,25 @@ pub fn surf_water_profile(spectrum: &Spectrum) -> thrum_water::Profile {
 }
 
 fn island_map(forcing: &Forcing, surf: Option<bool>) -> Result<Map, Box<dyn Error>> {
-    let mesh = include_bytes!("../assets/meshes/island.bin");
+    let bed = terrain_bed(include_bytes!("../assets/meshes/island.bin"))?;
+    let mut map = Map::prepare(
+        bed,
+        bodies(forcing, if surf.is_some() { 0.5 } else { 0.0 }),
+        map_profile(surf.is_some()),
+    )
+    .map_err(|e| format!("{e:?}"))?;
+    map.set_forcing(forcing).map_err(|e| format!("{e:?}"))?;
+    if surf == Some(true) {
+        map.enable_surf(SurfProfile {
+            section: island_breaker_section()?,
+            ..SurfProfile::default()
+        })
+        .map_err(|e| format!("{e:?}"))?;
+    }
+    Ok(map)
+}
+
+pub(crate) fn terrain_bed(mesh: &[u8]) -> Result<Bed, Box<dyn Error>> {
     let positions: Vec<[f64; 3]> = mesh[..POSITIONS_BYTES]
         .as_chunks::<12>()
         .0
@@ -182,68 +200,61 @@ fn island_map(forcing: &Forcing, surf: Option<bool>) -> Result<Map, Box<dyn Erro
             std::array::from_fn(|i| positions[u32::from_le_bytes(indices[i]) as usize])
         })
         .collect();
-    let bed = Bed::from_triangles([-320.0, -225.0], 2.5, SIZE, -12.0, &triangles)
-        .map_err(|e| format!("{e:?}"))?;
-    let tide = if surf.is_some() { 0.5 } else { 0.0 };
-    let mut map = Map::prepare(
-        bed,
-        vec![
-            Body {
-                name: "Sea".into(),
-                kind: BodyKind::Sea,
-                level: 0.0,
-                stage: Stage {
-                    min: -tide,
-                    max: tide,
-                    value: 0.0,
-                },
-                fetch: forcing.fetch,
-                gains: [1.0; 4],
-            },
-            Body {
-                name: "Lake".into(),
-                kind: BodyKind::Basin { seed: [183.0, 5.0] },
-                level: 12.0,
-                stage: Stage {
-                    min: 0.0,
-                    max: 1.0,
-                    value: 0.0,
-                },
-                fetch: 1_000.0,
-                gains: [0.0; 4],
-            },
-            Body {
-                name: "Pond".into(),
-                kind: BodyKind::Basin {
-                    seed: [104.0, 93.0],
-                },
-                level: 10.6,
-                stage: Stage {
-                    min: 0.0,
-                    max: 0.0,
-                    value: 0.0,
-                },
-                fetch: 65.0,
-                gains: [0.0; 4],
-            },
-        ],
-        Profile {
-            margin_height: 3.5,
-            // The exposed surf beach has a longer swell than the earlier
-            // shore views. Use a thinner swash on both arms of the comparison.
-            swash_ratio: if surf.is_some() { 0.45 } else { 0.7 },
-        },
+    Ok(
+        Bed::from_triangles([-320.0, -225.0], 2.5, SIZE, -12.0, &triangles)
+            .map_err(|e| format!("{e:?}"))?,
     )
-    .map_err(|e| format!("{e:?}"))?;
-    map.set_forcing(forcing).map_err(|e| format!("{e:?}"))?;
-    if surf == Some(true) {
-        map.enable_surf(SurfProfile {
-            section: island_breaker_section()?,
-            ..SurfProfile::default()
-        })
-        .map_err(|e| format!("{e:?}"))?;
+}
+
+pub(crate) fn bodies(forcing: &Forcing, tide: f64) -> Vec<Body> {
+    vec![
+        Body {
+            name: "Sea".into(),
+            kind: BodyKind::Sea,
+            level: 0.0,
+            stage: Stage {
+                min: -tide,
+                max: tide,
+                value: 0.0,
+            },
+            fetch: forcing.fetch,
+            gains: [1.0; 4],
+        },
+        Body {
+            name: "Lake".into(),
+            kind: BodyKind::Basin { seed: [183.0, 5.0] },
+            level: 12.0,
+            stage: Stage {
+                min: 0.0,
+                max: 1.0,
+                value: 0.0,
+            },
+            fetch: 1_000.0,
+            gains: [0.0; 4],
+        },
+        Body {
+            name: "Pond".into(),
+            kind: BodyKind::Basin {
+                seed: [104.0, 93.0],
+            },
+            level: 10.6,
+            stage: Stage {
+                min: 0.0,
+                max: 0.0,
+                value: 0.0,
+            },
+            fetch: 65.0,
+            gains: [0.0; 4],
+        },
+    ]
+}
+
+pub(crate) fn map_profile(surf: bool) -> Profile {
+    Profile {
+        margin_height: 3.5,
+        // The exposed surf beach uses a thinner swash on both comparison arms.
+        swash_ratio: if surf { 0.45 } else { 0.7 },
     }
-    Ok(map)
 }
 
 /// The long island swell steepens on its shoreward face before it throws.

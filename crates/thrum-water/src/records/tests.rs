@@ -37,7 +37,8 @@ fn gpu_parameter_size_and_member_offsets_match_the_actual_shader() {
             cache,
             long_covariance,
             scatter,
-            heights
+            heights,
+            carriage
         )],
     );
 }
