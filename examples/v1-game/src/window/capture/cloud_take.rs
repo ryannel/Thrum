@@ -20,8 +20,9 @@ impl Take {
         if scenario != "clouds-inspect" {
             return Ok(None);
         }
-        let path = std::env::var_os("THRUM_CAPTURE_CLOUD_TAKE")
-            .ok_or("clouds-inspect requires THRUM_CAPTURE_CLOUD_TAKE")?;
+        let path = crate::content::launch_value("THRUM_CAPTURE_CLOUD_TAKE").map_err(|error| {
+            format!("clouds-inspect requires THRUM_CAPTURE_CLOUD_TAKE: {error}")
+        })?;
         let text = std::fs::read_to_string(path).map_err(|error| error.to_string())?;
         serde_json::from_str(&text).map_err(|error| error.to_string())
     }

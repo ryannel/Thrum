@@ -128,8 +128,23 @@ four-minute sequence. `clouds-life` at 8× and `clouds-life-fast` at 60× show a
 full procedural cloud lifetime in a held view. The four-minute takes admit
 16,384 records at 60 opportunities/s. Pixel queues, encoded queues and the
 output-byte bound stay the same. Use a small extent for these longer takes.
+On the Mac panel, set `THRUM_PARAMS` to a file such as
+[`clouds-broken.params.json`](../examples/v1-game/params/clouds-broken.params.json).
+On the Chrome page, use `?clouds=sky&params=clouds-broken.params.json`. Both accept
+the same display units. Coverage is a percentage, wind direction goes from world +X
+toward +Z in degrees, and the weather time-lapse ranges from 1× to 60×.
+The Internal field slider shows the name of each field at its selected stop.
+
+Use `--case clouds-inspect --cloud-take PATH --mode realtime --reconstruction taau`
+for a timed Mac inspection. A take is a JSON object with a `kind` of `pan`, `walk`,
+`lapse`, `preset`, `cut`, `profile` or `sweep`. A pan supplies `from` and `to` yaw in
+degrees. A sweep supplies a typed control `key` and `from` and `to` in its display
+units, applied over 20 seconds. Profile changes use the prepared layer's scale knob.
+
 For Chrome, a cloud view can supply `preset`, `weather_rate` and `wind`, plus
-`duration_seconds` between 1 and 60 for an elapsed-time take.
+`duration_seconds` between 1 and 60 for an elapsed-time take. Its optional `motion`
+object accepts the same motion kinds as the Mac except `sweep`. Use `--cloud-store PATH`
+with a cooked cloud library to include placed clouds in a fixed cloud view.
 
 Select `THRUM_CLOUDS=world-light` for the sky overlay in reflections and diffuse light,
 and for cloud-scaled aerial in-scatter in scenes without the view volume. The
