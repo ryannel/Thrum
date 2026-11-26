@@ -879,6 +879,10 @@ impl Shell {
                         self.deliver_invite()?;
                     }
                     Ok(None) => {} // Retry at a display target after a resize, suspend or loss.
+                    #[expect(
+                        clippy::print_stderr,
+                        reason = "report a nonfatal Join preparation error in the proving app"
+                    )]
                     Err(error) => {
                         self.pending_invite = None;
                         eprintln!("iOS could not open Join: {error}");

@@ -198,3 +198,9 @@
   The iPhone 18 Pro simulator proved the intact ticket and visible Connect button both in the running game
   and after termination. The same run proved all four real card taps and held-stick handoff again.
   [Simulator run](../../../.orchestrate/evidence/GAME-UI/WP5/invite-touch/result.json)
+- 2026-11-26 WP5.2 now retains an invite when the running iOS proving scene has no menu. The render owner
+  prepares Join on the current device and switches scenes once the old GPU packets retire and a live
+  surface is available. The iPhone 18 Pro simulator delivered the full ticket and displayed Connect
+  from the running menu, status display and default grid, and after terminating the app. The run also
+  repeated the four card taps and the held-stick handoff.
+  [Simulator run](../../../.orchestrate/evidence/GAME-UI/WP5/warm-invite-touch/result.json)
