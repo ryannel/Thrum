@@ -431,7 +431,7 @@
       }
     },
     "WP4": {
-      "definitions": "50abf1a4fbcd625aa8204b6d7739dc992531c2b66e2ded08d835457e0f5a9116",
+      "definitions": "189ec8742f31bb5d2369240511a71686bf02659fbe35ef7d5fbc3c9962f81246",
       "reviews": [
         {
           "verdict": "fail",
@@ -533,37 +533,8 @@
       ],
       "authorised": {
         "by": "plan",
-        "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
-        "at": "2026-11-24T22:06:49Z"
-      },
-      "ready_for_review": {
-        "commit": "0e917a70590050f67b26d2593137a6a5614e1321",
-        "checked": "43787f8431fbe2f26fc477ef297586c74cb2864a",
-        "at": "2026-11-26T16:50:54Z",
-        "reused": [
-          "WP4.6"
-        ],
-        "host": "codex",
-        "model": "gpt-6.2-sol",
-        "effort": "medium",
-        "observed": {
-          "model": "gpt-6.2-sol",
-          "effort": "medium"
-        },
-        "cli": "codex-cli 0.171.0-alpha.13.2",
-        "path": "visible",
-        "usage": {
-          "input": 363978,
-          "cached": 32687104,
-          "output": 82267,
-          "turns": 1
-        },
-        "session_usage": {
-          "input": 363978,
-          "cached": 32687104,
-          "output": 82267,
-          "turns": 1
-        }
+        "task": "Lead decision on RIVERS WP4.3 (failed review twice on the same clause; see .orchestrate/evidence/RIVERS/WP4-review.md an",
+        "at": "2026-11-26T17:33:50Z"
       }
     },
     "WP5": {
@@ -880,11 +851,15 @@
     {
       "task": "The main-branch check workspace-tests fails, and the script couldn't tell which commit broke it. Find what breaks it, and plan the fix in the module whose code it is, in its plan or as its next work package. Lead's reading of .git/orchestrate/main-checks/workspace-tests/logs/20261126-135754-ba611f39c2a7-84533-349.stderr: nothing asserts wrong; the run was under heavy host load and 60 tests timed out at 10 s, and two still timed out alone at 30 s: thrum-river-model::it chop::each_sample_of_a_river_file_carries_its_own_gains and thrum-water::surf_gpu many_component_metal_cut_matches_the_model_with_grouped_or_single_stations (the water one passed alone in 8.95 s earlier today with the GPU lock). The owner wants the fastest possible workspace suite: small worlds, CPU first, long work in the long-tests tier, no longer merge checks. Plan the fix that makes those two tests fast or moves them to the right tier, in the owning modules (WATERS, RIVERS); don't raise the timeouts.",
       "at": "2026-11-26T13:27:17Z"
+    },
+    {
+      "task": "Lead decision on RIVERS WP4.3 (failed review twice on the same clause; see .orchestrate/evidence/RIVERS/WP4-review.md and WP4-review-1.md in the rivers worktree). Interior submitted river depth differs from the model by up to 1.5-5 mm against a 0.040 mm bound. By the project's bar (plausible shipped-game look; proof proportional to risk) that bound is not meaningful for interior pixels: millimetre errors are invisible, and the bound is near what a reconstructed depth-buffer float can resolve at these distances. Change WP4.3 so interior submitted depth is judged at a visible scale (for example within 1 cm, or a screen-space bound you justify), while the seam and join step checks at the three ends keep their tight bound, since a step there is visible as a crack. Record the reasoning in the design. Leave everything else in WP4 as it is, and leave the builder's branch untouched.",
+      "at": "2026-11-26T17:33:50Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-26T13:27:17Z"
+    "at": "2026-11-26T17:33:50Z"
   },
   "design_history": [
     {
