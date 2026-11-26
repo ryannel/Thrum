@@ -215,15 +215,11 @@ fn run() {
                     *previous, ground,
                     "ground field depends on Sky or World light"
                 );
-                let cloud_creations: Vec<_> = creations
-                    .iter()
-                    .filter(|(name, _)| name.contains("cloud ") || name.contains("overlay"))
-                    .collect();
                 if world_light && !shapes {
                     check_held_overlay(&gpu, &mut host, &output, extent, now);
                 }
                 println!(
-                    "Metal: Sky {sky}, World light {world_light}, Shapes {shapes}\n  passes {names:?}\n  creations {cloud_creations:?}\n  resources {resources:?}"
+                    "Metal: Sky {sky}, World light {world_light}, Shapes {shapes}\n  passes {names:?}\n  creations {creations:?}\n  resources {resources:?}"
                 );
             }
         }
