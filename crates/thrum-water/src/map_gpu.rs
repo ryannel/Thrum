@@ -35,6 +35,19 @@ impl WaveTracks {
         current: [f64; 2],
         map: &Map,
     ) -> ([f64; 4], [[f64; 4]; 2]) {
+        self.query_track_with_current(body, point, current, map, |point| {
+            map.supported_row(body, point).current
+        })
+    }
+
+    fn query_track_with_current(
+        &self,
+        body: usize,
+        point: [f64; 2],
+        current: [f64; 2],
+        map: &Map,
+        current_at: impl Fn([f64; 2]) -> [f64; 2],
+    ) -> ([f64; 4], [[f64; 4]; 2]) {
         let bed = map.bed();
         let track = self.at(body, point, current, bed);
         if track[3] == 0.0 {
@@ -50,8 +63,8 @@ impl WaveTracks {
             let mut hi = point;
             lo[axis] -= step;
             hi[axis] += step;
-            let a = map.supported_row(body, lo).current;
-            let b = map.supported_row(body, hi).current;
+            let a = current_at(lo);
+            let b = current_at(hi);
             let before = self.at(body, lo, a, bed);
             let after = self.at(body, hi, b, bed);
             let second = if track[3] > 0.0 { 2 } else { 1 };
@@ -574,6 +587,49 @@ impl MapGpu {
         self.rivers.iter().any(Option::is_some)
     }
 
+    /// The receiving body and the river fraction of its wave-phase transition.
+    /// The prepared end order and reach match `river_surface_motion`.
+    pub(crate) fn query_receiver(
+        &self,
+        body: usize,
+        point: [f32; 2],
+    ) -> Option<(usize, f32, [f32; 2])> {
+        self.rivers[body].as_ref()?;
+        let record = &self.record.bodies[body];
+        let spacing = self.record.origin_spacing_margin[2];
+        for (&[x, z, end_x, end_z], &[receiver, length, kind, _]) in record
+            .ends
+            .iter()
+            .zip(&record.joins)
+            .take(record.layers[3] as usize)
+        {
+            if kind <= 1.0 {
+                continue;
+            }
+            let delta = glam::vec2(end_x - x, end_z - z);
+            let offset = glam::Vec2::from_array(point) - glam::vec2(x, z);
+            let radial =
+                offset - delta * (offset.dot(delta) / delta.length_squared()).clamp(0.0, 1.0);
+            let distance = radial.length();
+            let inner = 2.0 * spacing;
+            let outer = (6.0 * spacing).max(length);
+            if distance >= outer {
+                continue;
+            }
+            let t = ((distance - inner) / (outer - inner)).max(0.0);
+            let weight = t * t * (3.0 - 2.0 * t);
+            let slope = 6.0 * t * (1.0 - t) / (outer - inner);
+            #[expect(
+                clippy::cast_possible_truncation,
+                clippy::cast_sign_loss,
+                reason = "validated body index packed into the GPU join record"
+            )]
+            let id = receiver as usize;
+            return Some((id, weight, (radial.normalize_or_zero() * slope).to_array()));
+        }
+        None
+    }
+
     pub(crate) fn hollows_bindings(
         &self,
         visibility: wgpu::ShaderStages,
@@ -610,8 +666,11 @@ impl MapGpu {
         point: [f64; 2],
         current: [f64; 2],
         map: &Map,
+        current_at: impl Fn([f64; 2]) -> [f64; 2],
     ) -> ([f32; 4], [[f32; 4]; 2]) {
-        let (track, gradients) = self.tracks.query_track(body, point, current, map);
+        let (track, gradients) = self
+            .tracks
+            .query_track_with_current(body, point, current, map, current_at);
         (
             track.map(|v| v as f32),
             gradients.map(|row| row.map(|v| v as f32)),

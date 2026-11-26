@@ -53,6 +53,29 @@ fn sample_query(@builtin(global_invocation_id) invocation: vec3<u32>) {
     write_answer(index, point, gains, result);
 }";
 
+fn sampling_source(rivers: bool) -> std::borrow::Cow<'static, str> {
+    let source = include_str!("sample.wgsl");
+    if !rivers {
+        return source.into();
+    }
+    const LAST_POINT_FIELD: &str = "    track_gradient: vec4<f32>,";
+    const CARRIAGE_GRADIENT: &str = "    let gradient = carriage_gradient(point);";
+    // Keep the smaller input record and the ordinary shader on maps without
+    // sampled river charts. Both query pipelines use the same specialization.
+    let mut source = source
+        .replace(LAST_POINT_FIELD,
+            "    track_gradient: vec4<f32>,\n    receiver: RiverReceiver,")
+        .replace(CARRIAGE_GRADIENT,
+            "    let gradient = carriage_gradient(point);\n    let phase = river_query_motion(point, motion, gradient);")
+        .replace("cascade_wave(point, motion, band, gradient)",
+            "cascade_wave(point, phase.motion, band, phase.gradient)");
+    source.push_str(concat!(
+        include_str!("../map_gpu/river_carriage.wgsl"),
+        include_str!("river.wgsl"),
+    ));
+    source.into()
+}
+
 #[repr(C)]
 #[derive(Clone, Copy, Pod, Zeroable)]
 struct Point {
@@ -72,6 +95,31 @@ struct Point {
     track: [f32; 4],
     current_gradient: [f32; 4],
     track_gradient: [f32; 4],
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Pod, Zeroable)]
+struct RiverReceiver {
+    current_weight_gradient: [f32; 4],
+    track: [f32; 4],
+    current_gradient: [f32; 4],
+    track_gradient: [f32; 4],
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Pod, Zeroable)]
+struct RiverPoint {
+    point: Point,
+    receiver: RiverReceiver,
+}
+
+fn point_stride(rivers: bool) -> u64 {
+    let bytes = if rivers {
+        size_of::<RiverPoint>()
+    } else {
+        size_of::<Point>()
+    };
+    bytes as u64
 }
 
 #[repr(C)]
@@ -120,6 +168,7 @@ impl Slot {
         layout: &wgpu::BindGroupLayout,
         cascades: &wgpu::TextureView,
         count: u64,
+        rivers: bool,
         wake: Option<&Interaction>,
         coarse: Option<&CoarseGpu>,
     ) -> Self {
@@ -139,7 +188,7 @@ impl Slot {
         let points = buffer(
             device,
             "query points",
-            count * size_of::<Point>() as u64,
+            count * point_stride(rivers),
             Usage::STORAGE | Usage::COPY_DST,
         );
         let answers = buffer(
@@ -282,6 +331,7 @@ struct Batch {
 pub(crate) struct Readback {
     mailbox: QueryMailbox,
     plain: Option<wgpu::ComputePipeline>,
+    rivers: bool,
     surf: Option<wgpu::BindGroup>,
     coarse: Option<CoarseGpu>,
     slots: [Slot; SLOT_COUNT],
@@ -316,6 +366,7 @@ impl Readback {
         surf: Option<(MapGpu, &SurfGpu)>,
         components: usize,
         only_one_body: bool,
+        rivers: bool,
     ) -> Self {
         let count = u64::from(mailbox.limits.points);
         let surf_source = if let Some((map, _)) = &surf {
@@ -339,7 +390,7 @@ impl Readback {
                         include_str!("../column.wgsl"),
                         include_str!("../carriage.wgsl")
                     ),
-                    include_str!("sample.wgsl"),
+                    sampling_source(rivers),
                     surf_source,
                 )
                 .into(),
@@ -454,6 +505,7 @@ impl Readback {
                 &layout,
                 &ambient.filtered_views()[0],
                 count,
+                rivers,
                 wake,
                 coarse.as_ref(),
             )
@@ -462,6 +514,7 @@ impl Readback {
         Self {
             mailbox,
             plain,
+            rivers,
             surf: surf_group,
             coarse,
             slots,
@@ -576,7 +629,11 @@ impl Readback {
         let profile = map.profile();
         let mut reach = map.surf_throw_reach(&spectrum.long, chop);
         let mut resources_grew = false;
+        let river_map = self
+            .rivers
+            .then(|| frame_map.expect("prepared river phase map"));
         for (slot, endpoint, bodies) in work {
+            let mut receivers = river_map.map(|_| Vec::new());
             let origin = bodies[0].points[0].position;
             let components: Vec<_> = spectrum
                 .long
@@ -604,6 +661,9 @@ impl Readback {
                         input.dent =
                             wake.expect("wake settings")
                                 .dent(wake_tick, id, point.position);
+                    }
+                    if let Some((receivers, gpu)) = receivers.as_mut().zip(river_map) {
+                        receivers.push(RiverReceiver::new(&mut input, domain, gpu));
                     }
                     (input, domain.query_revision())
                 })
@@ -675,7 +735,17 @@ impl Readback {
                 },
             };
             queue.write_buffer(&buffers.settings, 0, bytemuck::bytes_of(&settings));
-            queue.write_buffer(&buffers.points, 0, bytemuck::cast_slice(&points));
+            if let Some(receivers) = receivers {
+                let river_points: Vec<_> = points
+                    .iter()
+                    .copied()
+                    .zip(receivers)
+                    .map(|(point, receiver)| RiverPoint { point, receiver })
+                    .collect();
+                queue.write_buffer(&buffers.points, 0, bytemuck::cast_slice(&river_points));
+            } else {
+                queue.write_buffer(&buffers.points, 0, bytemuck::cast_slice(&points));
+            }
             if !components.is_empty() {
                 queue.write_buffer(&buffers.components, 0, bytemuck::cast_slice(&components));
             }
@@ -903,7 +973,9 @@ impl Point {
             input.gains = row.gains.map(|gain| gain as f32);
             if let Some(gpu) = gpu_map {
                 let (track, [current_gradient, track_gradient]) =
-                    gpu.query_track(sample.body, world, row.current, map);
+                    gpu.query_track(sample.body, world, row.current, map, |point| {
+                        map.supported_row(sample.body, point).current
+                    });
                 input.track = track;
                 input.current_gradient = current_gradient;
                 input.track_gradient = track_gradient;
@@ -911,6 +983,36 @@ impl Point {
             input.surf_stage[0] = map.body(sample.body).expect("sampled body").stage.value as f32;
         }
         input
+    }
+}
+
+impl RiverReceiver {
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "receiver currents use GPU metres"
+    )]
+    fn new(point: &mut Point, map: &Map, gpu: &MapGpu) -> Self {
+        if point.body == u32::MAX {
+            return Self::zeroed();
+        }
+        let Some((body, weight, [dx, dz])) =
+            gpu.query_receiver(point.body as usize, point.position)
+        else {
+            return Self::zeroed();
+        };
+        let world = point.position.map(f64::from);
+        let current = map.row(body, world).current;
+        let (track, [current_gradient, track_gradient]) =
+            gpu.query_track(body, world, current, map, |point| {
+                map.row(body, point).current
+            });
+        point.carry[2..].copy_from_slice(&[1.0, weight]);
+        Self {
+            current_weight_gradient: [current[0] as f32, current[1] as f32, dx, dz],
+            track,
+            current_gradient,
+            track_gradient,
+        }
     }
 }
 
@@ -1054,13 +1156,14 @@ pub(crate) fn validate(
     device: &wgpu::Limits,
     surf: bool,
     wake: bool,
+    rivers: bool,
 ) -> Result<(), String> {
     let groups = if surf {
         limits.points
     } else {
         limits.points.div_ceil(GROUP_WIDTH)
     };
-    if u64::from(limits.points) * size_of::<Answer>() as u64
+    if u64::from(limits.points) * point_stride(rivers).max(size_of::<Answer>() as u64)
         > device.max_storage_buffer_binding_size
         || groups > device.max_compute_workgroups_per_dimension
         || 3 + 2 * u32::from(surf) + u32::from(wake) > device.max_storage_buffers_per_shader_stage

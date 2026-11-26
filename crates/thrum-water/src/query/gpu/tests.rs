@@ -1,4 +1,6 @@
-use super::{Answer, CascadeSample, Component, Interaction, Point, Settings};
+use super::{
+    Answer, CascadeSample, Component, Interaction, Point, RiverPoint, RiverReceiver, Settings,
+};
 use thrum_test_support::{record, records};
 
 mod held_answer {
@@ -209,6 +211,62 @@ impl records::Kind for CascadeSample {
     const KIND: Option<records::RecordScalar> = None;
 }
 
+impl records::Kind for RiverReceiver {
+    const KIND: Option<records::RecordScalar> = None;
+}
+
+fn query_point_layout() -> records::RecordLayout {
+    record!(
+        Point as "QueryPoint",
+        position,
+        radius,
+        dt,
+        level_current_bed,
+        slope,
+        body,
+        flags,
+        gains,
+        dent,
+        surf_stage,
+        fine_bounds,
+        coarse_grid,
+        carry,
+        track,
+        current_gradient,
+        track_gradient,
+    )
+}
+
+#[test]
+fn river_query_records_extend_the_plain_layout() {
+    let source = Interaction::sample_source(0, 5, 6, true)
+        + include_str!("../../gains.wgsl")
+        + include_str!("../../column/records.wgsl")
+        + include_str!("../../column.wgsl")
+        + include_str!("../../carriage.wgsl")
+        + &super::sampling_source(true)
+        + super::PLAIN_QUERY;
+    // The GPU array appends the receiver to the same fields used by the ordinary query.
+    let extended = record!(RiverPoint, receiver);
+    let mut point = query_point_layout();
+    point.size = extended.size;
+    point.members.extend(extended.members);
+    records::named(
+        "river query shader",
+        &source,
+        &[
+            point,
+            record!(
+                RiverReceiver,
+                current_weight_gradient,
+                track,
+                current_gradient,
+                track_gradient
+            ),
+        ],
+    );
+}
+
 #[test]
 fn query_records_match_the_shader_layout() {
     let source = Interaction::sample_source(0, 5, 6, true)
@@ -222,25 +280,7 @@ fn query_records_match_the_shader_layout() {
         "water query shader",
         &source,
         &[
-            record!(
-                Point as "QueryPoint",
-                position,
-                radius,
-                dt,
-                level_current_bed,
-                slope,
-                body,
-                flags,
-                gains,
-                dent,
-                surf_stage,
-                fine_bounds,
-                coarse_grid,
-                carry,
-                track,
-                current_gradient,
-                track_gradient,
-            ),
+            query_point_layout(),
             record!(
                 Component,
                 vector,
@@ -286,7 +326,7 @@ fn surf_query_passes_parse_with_all_shared_bindings() {
         + include_str!("../../column/records.wgsl")
         + include_str!("../../column.wgsl")
         + include_str!("../../carriage.wgsl")
-        + include_str!("../sample.wgsl")
+        + &super::sampling_source(true)
         + &crate::map_gpu::declarations_at(super::SURF_GROUP)
         + &crate::surf::SurfGpu::query_source(super::SURF_GROUP, super::SURF_BINDING);
     records::named("surf body query passes", &source, &[]);

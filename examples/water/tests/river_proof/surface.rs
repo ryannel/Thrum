@@ -20,117 +20,192 @@ fn ray_hit(inverse: glam::DMat4, column: u32, row: u32, depth: f32) -> glam::DVe
     inverse.project_point3(glam::dvec3(2.0 * u - 1.0, 1.0 - 2.0 * v, f64::from(depth)))
 }
 
-#[expect(
-    clippy::cast_possible_truncation,
-    clippy::print_stdout,
-    reason = "the station uses GPU metres and the proof records the paired residual"
-)]
-pub(crate) fn check_live_depth(gpu: &thrum_test_support::Gpu) {
-    const POINT: [f32; 2] = [319.725_34, 8.121_635];
-    const TICKS: u32 = 180;
-    let mut forcing = channel::forcing(Wind::Trade);
-    forcing.wind_direction = 0.42;
-    let (mut map, files) =
-        river::map(&forcing, Some(&support::river_store())).expect("island rivers");
-    map.set_stage(1, 0.0).expect("low lake stage");
-    map.set_gauge(0, files[0].gauges()[0])
-        .expect("low spring gauge");
-    let level = map
-        .sample(POINT.map(f64::from))
-        .expect("outlet row")
-        .row
-        .level as f32;
-    let spectrum = thrum_sea_model::Spectrum::build(&forcing).expect("trade spectrum");
-    let mut profile = water_scene::profile(&spectrum);
-    profile.optics = Some(thrum_water::Optics::default());
-    profile.query = Some(QueryLimits {
-        points: 1,
-        max_age: 8,
-    });
-    let water = thrum_water::Water::mapped(Arc::new(Mutex::new(map)), spectrum, profile)
-        .expect("mapped rivers");
-    let report = water.report();
-    let query = water.query_mailbox().expect("body query");
-    let [x, z] = POINT;
-    let camera = Camera::look_at([x + 0.001, level + 2.0, z], [x, level, z], 12.0);
-    let inverse = support::depth::matrix(camera, EXTENT).as_dmat4().inverse();
-    let tap = support::depth::DepthTap::default();
-    let game = SkyGame::new(Controls::new(), camera, |_, _| {})
-        .with_presentation_camera(move |_| camera)
-        .with_tick_duration(STEP)
-        .expect("elapsed surface clock")
-        .with_ground(None)
-        .with_contribution(Box::new(water), || ContentStatus::Drawn(1))
-        .with_contribution(Box::new(tap.contribution(EXTENT)), || {
-            ContentStatus::Drawn(1)
+struct TradeDepth {
+    scene: Fixture,
+    camera: Arc<Mutex<Camera>>,
+    query: thrum_water::query::QueryMailbox,
+    tap: support::depth::DepthTap,
+    tick: u32,
+}
+
+impl TradeDepth {
+    fn new(gpu: &thrum_test_support::Gpu, map: Map, spectrum: thrum_sea_model::Spectrum) -> Self {
+        let mut profile = water_scene::profile(&spectrum);
+        profile.optics = Some(thrum_water::Optics::default());
+        profile.query = Some(QueryLimits {
+            points: 1,
+            max_age: 8,
         });
-    let mut scene = Fixture::from_game(gpu, EXTENT, game, report);
-    scene.frame_without_timings(0.0);
-    let [column, row] = EXTENT.map(|axis| axis / 2);
-    let mut paired = 0;
-    let mut max_error: f64 = 0.0;
-    let mut short_wave = 0.0_f32;
-    for tick in 1..=TICKS {
-        let use_tick = u64::from(tick);
-        let submitted = scene.frame_without_timings((STEP * (tick + 1)).as_secs_f64());
+        let water = thrum_water::Water::mapped(Arc::new(Mutex::new(map)), spectrum, profile)
+            .expect("mapped rivers");
+        let report = water.report();
+        let query = water.query_mailbox().expect("body query");
+        let initial = river::VIEWS[0].1;
+        let camera = Arc::new(Mutex::new(initial));
+        let display = Arc::clone(&camera);
+        let tap = support::depth::DepthTap::default();
+        let game = SkyGame::new(Controls::new(), initial, |_, _| {})
+            .with_presentation_camera(move |_| *display.lock().expect("trade depth camera"))
+            .with_tick_duration(STEP)
+            .expect("elapsed surface clock")
+            .with_ground(None)
+            .with_contribution(Box::new(water), || ContentStatus::Drawn(1))
+            .with_contribution(Box::new(tap.contribution(EXTENT)), || {
+                ContentStatus::Drawn(1)
+            });
+        let mut scene = Fixture::from_game(gpu, EXTENT, game, report);
+        scene.frame_without_timings(0.0);
+        Self {
+            scene,
+            camera,
+            query,
+            tap,
+            tick: 0,
+        }
+    }
+
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "query coordinates use GPU metres"
+    )]
+    fn pair(
+        &mut self,
+        point: [f32; 2],
+        body: usize,
+        inverse: glam::DMat4,
+    ) -> Option<(f64, [f32; 3])> {
+        self.tick += 1;
+        let use_tick = u64::from(self.tick);
+        let submitted = self
+            .scene
+            .frame_without_timings((STEP * (self.tick + 1)).as_secs_f64());
         assert_eq!(submitted.tick, use_tick + 1);
         assert!(submitted.presentation_alpha.abs() < 1e-5);
-        // Dispatch from the field of the frame we just submitted. A
-        // predicted query from the previous wave field has its own error.
-        query.post(
-            scene.endpoint(use_tick - 1),
+        let [column, row] = EXTENT.map(|axis| axis / 2);
+        let depth = self.tap.read(&self.scene)[(row * EXTENT[0] + column) as usize];
+        let hit = (depth > 0.0).then(|| ray_hit(inverse, column, row, depth));
+        let position = hit.map_or(point, |p| [p.x as f32, p.z as f32]);
+        // Dispatch from the field of the submitted frame. A predicted query
+        // from an earlier wave field has its own time extrapolation error.
+        self.query.post(
+            self.scene.endpoint(use_tick - 1),
             vec![BodyQuery {
                 id: 91,
                 generation: 1,
                 points: vec![QueryPoint {
-                    position: POINT,
+                    position,
                     radius: 0.001,
                     use_tick,
                 }],
             }],
         );
-        scene.finish_tick_queries();
-        let depth = tap.read(&scene)[(row * EXTENT[0] + column) as usize];
-        if let Some(answer) = query
-            .drain(scene.endpoint(use_tick), STEP)
+        self.scene.finish_tick_queries();
+        let answer = self
+            .query
+            .drain(self.scene.endpoint(use_tick), STEP)
             .into_iter()
             .flat_map(|body| body.points)
             .find(|answer| answer.point.use_tick == use_tick)
-            && answer.surface.wet
-        {
-            assert_eq!(answer.surface.body, Some(5), "outlet river");
-            assert!(depth > 0.0, "missing trade depth at tick {tick}");
-            let hit = ray_hit(inverse, column, row, depth);
-            assert!((hit.x - f64::from(x)).hypot(hit.z - f64::from(z)) < 0.0001);
-            let error = (hit.y - answer.surface.sample.height).abs();
-            assert!(
-                error <= EPS_INTERIOR,
-                "trade depth at tick {tick}: {error:.7} m, field sources {:?}",
-                answer.sources
-            );
-            let display_time = (STEP * tick).as_secs_f64();
-            assert!(
-                answer.sources[..4]
-                    .iter()
-                    .flatten()
-                    .all(|time| (time - display_time).abs() < 1e-6),
-                "trade depth at tick {tick}: stale field sources {:?}",
-                answer.sources
-            );
-            for height in &answer.wave_heights[1..] {
-                short_wave = short_wave.max(height.abs());
-            }
-            max_error = max_error.max(error);
-            paired += 1;
+            .expect("query at the submitted use tick");
+        if !answer.surface.wet || answer.surface.body != Some(body) {
+            return None;
         }
+        let hit =
+            hit.unwrap_or_else(|| panic!("missing trade depth at {point:?}, tick {use_tick}"));
+        assert!(
+            (hit.x - f64::from(point[0])).hypot(hit.z - f64::from(point[1])) < 0.002,
+            "trade depth ray missed its station at {point:?}, tick {use_tick}: {hit:?}"
+        );
+        let display_time = (STEP * self.tick).as_secs_f64();
+        assert!(
+            answer.sources[..4]
+                .iter()
+                .flatten()
+                .all(|time| (time - display_time).abs() < 1e-6),
+            "trade depth at {position:?}, tick {use_tick}: stale field sources {:?}",
+            answer.sources
+        );
+        let error = (hit.y - answer.surface.sample.height).abs();
+        assert!(
+            error <= EPS_INTERIOR,
+            "trade depth at {position:?}, tick {use_tick}: {error:.7} m, field sources {:?}",
+            answer.sources
+        );
+        Some((
+            error,
+            answer.wave_heights[1..]
+                .try_into()
+                .expect("three wind-wave cascades"),
+        ))
     }
-    assert!(paired >= TICKS * 3 / 4, "only {paired} wet query pairs");
+}
+
+#[expect(
+    clippy::cast_possible_truncation,
+    clippy::print_stdout,
+    reason = "proof camera uses GPU metres and logs retain the measured residuals"
+)]
+pub(crate) fn check_live_depth(gpu: &thrum_test_support::Gpu, stage: f64, tidal_station: bool) {
+    let mut forcing = channel::forcing(Wind::Trade);
+    forcing.wind_direction = 0.42;
+    let (mut map, files) =
+        river::map(&forcing, Some(&support::river_store())).expect("island rivers");
+    map.set_stage(1, stage).expect("lake stage");
+    let [low, middle, high] = files[0].gauges().try_into().expect("three spring samples");
+    let spring = if stage.to_bits() == 0.5_f64.to_bits() {
+        middle
+    } else {
+        (high - low).mul_add(stage, low)
+    };
+    map.set_gauge(0, spring).expect("spring gauge");
+    let spectrum = thrum_sea_model::Spectrum::build(&forcing).expect("trade spectrum");
+    let mut probe = TradeDepth::new(gpu, map.clone(), spectrum);
+    let sites = if tidal_station {
+        vec![(5, [337.83, 5.23])]
+    } else {
+        transect_points(&map)
+    };
+    let mut count = [0; 6];
+    let mut maximum_error = 0.0_f64;
+    let mut waves = [0.0_f32; 3];
+    for (body, site) in sites {
+        let [x, z] = site.map(|v| v as f32);
+        let level = map.sample(site).expect("wet river station").row.level as f32;
+        let view = Camera::look_at([x + 0.001, level + 2.0, z], [x, level, z], 12.0);
+        *probe.camera.lock().expect("trade depth camera") = view;
+        let inverse = support::depth::matrix(view, EXTENT).as_dmat4().inverse();
+        let mut observed = 0;
+        for _ in 0..if tidal_station { 180 } else { 240 } {
+            if let Some((error, short_waves)) = probe.pair([x, z], body, inverse) {
+                maximum_error = maximum_error.max(error);
+                for (peak, height) in waves.iter_mut().zip(short_waves) {
+                    *peak = peak.max(height.abs());
+                }
+                observed += 1;
+                if !tidal_station {
+                    break;
+                }
+            }
+        }
+        assert!(
+            observed >= if tidal_station { 135 } else { 1 },
+            "only {observed} wet pairs at {site:?}, stage {stage}"
+        );
+        count[body] += observed;
+    }
     assert!(
-        short_wave > 0.001,
-        "the trade cascades must move the surface"
+        waves.iter().all(|&height| height > 0.001),
+        "inactive trade cascades: {waves:?}"
     );
+    if !tidal_station {
+        assert!(
+            count[3] >= 46 && count[4] >= 3 && count[5] >= 90,
+            "{count:?}"
+        );
+    }
     println!(
-        "Metal trade wave field: {paired} live query pairs, maximum residual {max_error:.7} m"
+        "Metal full-trade stage {stage}: {} spring, {} plunge reach, {} outlet pairs, maximum residual {maximum_error:.7} m, short-wave peaks {waves:?} m",
+        count[3], count[4], count[5]
     );
 }
 

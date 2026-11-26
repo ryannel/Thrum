@@ -331,11 +331,13 @@ pub(super) fn new(
         .map(|mailbox| Interaction::new(device, mailbox, previous_interaction.unwrap_or_default()));
     let query = if let Some(mailbox) = mailbox {
         mailbox.set_rain_tracks(map_gpu.as_ref());
+        let rivers = map_gpu.as_ref().is_some_and(MapGpu::has_rivers);
         query::validate(
             profile.query.expect("enabled query limits"),
             &surface.limits,
             surf.is_some(),
             interaction.is_some(),
+            rivers,
         )?;
         let query_map = surf
             .as_ref()
@@ -350,6 +352,7 @@ pub(super) fn new(
             query_map,
             long_components,
             map.body(1).is_none(),
+            rivers,
         ))
     } else {
         None
@@ -679,6 +682,7 @@ fn surface_pipelines(
     let has_rivers = map.is_some_and(MapGpu::has_rivers);
     if has_rivers {
         source.push_str(concat!(
+            include_str!("map_gpu/river_carriage.wgsl"),
             include_str!("map_gpu/river_surface_waves.wgsl"),
             include_str!("map_gpu/river_surface_depth.wgsl"),
         ));

@@ -27,14 +27,7 @@ fn river_surface_motion(point: vec2<f32>, row: SurfaceRow) -> CascadeMotion {
             current = rows[id].water.yz;
         }
         let receiving = cascade_motion(point, current, map_wave_track(point, id, current), time, period);
-        return CascadeMotion(
-            mix(receiving.departure, carried.departure, blend),
-            mix(receiving.second, carried.second, blend),
-            mix(receiving.drift, carried.drift, blend),
-            mix(receiving.blend, carried.blend, blend),
-            mix(receiving.blend_rate, carried.blend_rate, blend),
-            mix(receiving.second_drift, carried.second_drift, blend),
-        );
+        return mix_cascade_motion(receiving, carried, blend);
     }
     return carried;
 }

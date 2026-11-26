@@ -262,3 +262,10 @@
   The Metal transects retain the example's choppiness and cover stored and interpolated gauges.
   A second Metal guard compares a submitted lower-outlet column to a body query from the same
   field time with the full trade spectrum. [Target evidence](../../../.orchestrate/evidence/RIVERS/WP4/choppy-depth/README.md)
+
+- 2026-11-26 WP4.3 review fix. At stage-controlled mouths, body queries use the same receiving wind-wave
+  phase as submitted depth. The prepared join selects the receiving phase. Bulk current continues to come from
+  the map. Metal compares full-trade submitted depth and live query at 143 stations per gauge setting, over
+  four settings, and across 180 successive frames at the reported tidal column. The largest difference
+  was 0.231 mm against 10 mm. The f64 choppy-swell, map, wetting and join tests also pass.
+  [Target evidence](../../../.orchestrate/evidence/RIVERS/WP4/receiving-phase/README.md)
