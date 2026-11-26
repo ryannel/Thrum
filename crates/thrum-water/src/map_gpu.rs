@@ -145,12 +145,12 @@ impl MapGpu {
         record.swash[0] = map.profile().swash_ratio as f32;
         let mut layers = 1;
         let mut tracks = std::array::from_fn(|_| None);
-        for id in 0..=BODY_LIMIT {
+        if map.body(BODY_LIMIT).is_some() {
+            return Err(UnsupportedMap("water map body limit exceeded"));
+        }
+        for (id, (destination, track_slot)) in record.bodies.iter_mut().zip(&mut tracks).enumerate()
+        {
             let Some(body) = map.body(id) else { break };
-            let destination = record
-                .bodies
-                .get_mut(id)
-                .ok_or(UnsupportedMap("water map body limit exceeded"))?;
             record.size_count_sea[2] += 1;
             destination.layers[1] = layers;
             layers += 1;
@@ -172,7 +172,7 @@ impl MapGpu {
                     if still_joins && let Some(track) = CurrentTrack::prepare(chart, map.bed()) {
                         destination.track[0] = track.reference as f32;
                         destination.track[1] = if track.axis == 0 { 1.0 } else { 2.0 };
-                        tracks[id] = Some(track);
+                        *track_slot = Some(track);
                         layers += 1;
                     }
                     for (n, end) in chart.ends.iter().filter(|end| !end.is_brink()).enumerate() {

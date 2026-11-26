@@ -58,7 +58,7 @@ impl CurrentTrack {
                 // Exact travel time across a cell with linearly varying speed.
                 // The constant-speed limit also avoids dividing small differences.
                 let time_per_metre = if difference.abs() < previous_speed * 1e-6 {
-                    (0.5 * (speed + previous_speed)).recip()
+                    speed.midpoint(previous_speed).recip()
                 } else {
                     (difference / previous_speed).ln_1p() / difference
                 };
