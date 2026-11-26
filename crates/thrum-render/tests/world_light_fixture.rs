@@ -4,6 +4,8 @@ use thrum_render::{
     atmosphere::{AtmosphereFrame, EnvironmentProducts},
     capabilities::DeviceCapabilities,
     contribution::{ContributionFrame, ContributionPasses, SceneContribution, SceneSurface},
+    present::SurfaceProfile,
+    runtime::FrameConfig,
     synthetic::{FrameLighting, SyntheticScene, SyntheticView},
 };
 use wgpu::util::DeviceExt;
@@ -61,7 +63,7 @@ pub(super) async fn prepare(
     frame: AtmosphereFrame,
     overlay: Option<Overlay>,
 ) -> (EnvironmentProducts, Vec<u8>) {
-    let (mut host, products) = prepare_host(opened, frame, overlay).await;
+    let (mut host, products) = prepare_host(opened, frame, overlay, None).await;
     let pixels = host.capture_pixels().expect("submit world light");
     let environment = products
         .lock()
@@ -75,7 +77,11 @@ pub(super) async fn prepare_host(
     opened: &thrum_test_support::Opened,
     frame: AtmosphereFrame,
     overlay: Option<Overlay>,
-) -> (crate::support::Host, Arc<Mutex<Option<EnvironmentProducts>>>) {
+    surface: Option<SurfaceProfile>,
+) -> (
+    crate::support::Host,
+    Arc<Mutex<Option<EnvironmentProducts>>>,
+) {
     let caps = DeviceCapabilities::capture(&opened.gpu.adapter, &opened.device, 1);
     let mut scene = SyntheticScene::grid(1).expect("scene");
     scene.sky_overlay = overlay.is_some();
@@ -89,12 +95,15 @@ pub(super) async fn prepare_host(
         200_000.0,
     )
     .expect("observer");
-    let mut host = crate::support::host_with_extent(
+    let mut host = crate::support::host_with_config(
         &caps,
         &opened.queue,
         scene,
         FrameLighting::Atmosphere(frame),
-        [8, 8],
+        FrameConfig {
+            render_extent: [8, 8],
+            surface,
+        },
     )
     .await;
     let products = Arc::new(Mutex::new(None));

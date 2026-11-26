@@ -3,7 +3,12 @@ mod support;
 mod world_light_fixture;
 
 use std::time::Duration;
-use thrum_render::{atmosphere::AtmosphereFrame, synthetic::FrameLighting};
+use thrum_render::{
+    atmosphere::AtmosphereFrame,
+    present::SurfaceProfile,
+    runtime::SurfaceOutput,
+    synthetic::FrameLighting,
+};
 use world_light_fixture::{BINDINGS, prepare, prepare_host, probe};
 
 fn clear(_: u32, _: u32, _: u32, _: u32) -> [f32; 4] {
@@ -18,8 +23,12 @@ async fn clear_exposure_follows_falling_sun(gpu: &thrum_test_support::Opened) {
         AtmosphereFrame::new([0.0, 1.0, 0.0], solar_irradiance, [1.0; 3], 40.0, 1)
             .expect("clear day")
     };
-    let (base, _) = prepare_host(gpu, frame(4_000.0), None).await;
-    let (identity, _) = prepare_host(gpu, frame(4_000.0), Some(clear)).await;
+    let extent = [8, 8];
+    let format = wgpu::TextureFormat::Rgba8Unorm;
+    let surface = Some(SurfaceProfile { format, extent });
+    let output = support::drawable(&gpu.device, format, extent);
+    let (base, _) = prepare_host(gpu, frame(4_000.0), None, surface).await;
+    let (identity, _) = prepare_host(gpu, frame(4_000.0), Some(clear), surface).await;
     let mut hosts = [base, identity];
     for host in &mut hosts {
         let source = host.source_mut();
@@ -31,20 +40,24 @@ async fn clear_exposure_follows_falling_sun(gpu: &thrum_test_support::Opened) {
     }
     let mut previous_ev = None;
     for (step, irradiance) in [(0, 4_000.0), (1, 2_000.0), (2, 1_000.0)] {
-        let mut captures = hosts.iter_mut().map(|host| {
+        let [base, identity] = hosts.each_mut().map(|host| {
             host.source_mut().lighting = FrameLighting::Atmosphere(frame(irradiance));
             assert!(
-                host.drive(Duration::from_millis(step * 16), None)
-                    .expect("drive frame")
-                    .submitted
+                host.drive(
+                    Duration::from_millis(step * 16),
+                    Some(&SurfaceOutput {
+                        view: &output,
+                        extent
+                    }),
+                )
+                .expect("submit frame")
+                .submitted
             );
             thrum_test_support::wait::until("clear-sky submission", Duration::from_secs(5), || {
                 gpu.device.poll(wgpu::PollType::Poll).expect("poll Metal");
                 host.try_submitted_image().expect("read submitted pixels")
             })
         });
-        let base = captures.next().unwrap();
-        let identity = captures.next().unwrap();
         let base_exposure = base.exposure_gpu_words.expect("ordinary exposure");
         let overlay_exposure = identity.exposure_gpu_words.expect("overlay exposure");
         assert_eq!(base_exposure, overlay_exposure, "step {step}");
