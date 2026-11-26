@@ -99,12 +99,10 @@ pub(super) fn prepare_diffuse(
         ..Default::default()
     });
     entries.push(view(7, &faces));
-    if haze {
-        if let Some(cloud) = cloud {
-            entries.extend([view(13, &cloud.view), buffer(14, &cloud.uniform)]);
-            if let Some(band) = &cloud.band {
-                entries.extend(band.entries());
-            }
+    if haze && let Some(cloud) = cloud {
+        entries.extend([view(13, &cloud.view), buffer(14, &cloud.uniform)]);
+        if let Some(band) = &cloud.band {
+            entries.extend(band.entries());
         }
     }
     let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
