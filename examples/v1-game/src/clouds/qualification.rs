@@ -4,6 +4,7 @@ use crate::effect::qualification::read_texture_bytes;
 use thrum_cloud_model::Field;
 use thrum_clouds::{RowStamp, ShadeConfig};
 
+#[cfg(any(target_os = "macos", target_arch = "wasm32"))]
 pub(crate) fn placed_capture_report(
     input: &thrum_clouds::WeatherInput,
 ) -> Option<serde_json::Value> {
