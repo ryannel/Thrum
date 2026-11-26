@@ -36,7 +36,7 @@ fn hollows_surface(rectangle: HollowsRectangle, at: vec2<i32>) -> vec2<f32> {
     return levels;
 }
 
-fn map_sample(point: vec2<f32>) -> MapAnswer {
+fn hollows_map_sample(point: vec2<f32>) -> MapAnswer {
     for (var id = 0u; id < map.size_count_sea.z; id++) {
         if map.bodies[id].layers.x != 3u { continue; }
         let rectangle = hollows.rectangles[id];
@@ -52,5 +52,5 @@ fn map_sample(point: vec2<f32>) -> MapAnswer {
         }
         return MapAnswer(id, MapRow(vec3(level, 0.0, 0.0), vec4(0.0)), bed, true);
     }
-    return ordinary_map_sample(point);
+    return map_sample(point);
 }

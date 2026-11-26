@@ -556,13 +556,10 @@ fn shader_source(
         "fn water_sun(point: vec3<f32>) -> vec3<f32> { return sun_irradiance(point); }"
     };
     let has_hollows = map.is_some_and(|map| map.hollows_entry().is_some());
-    let surface_shader = if has_hollows {
-        include_str!("surface.wgsl").replace(
-            "    let row=surface_vertex(rest,body);",
-            "    if vertex.z < 0.0 { return hollows_vertex(vertex, body); }\n    let row=surface_vertex(rest,body);",
-        )
+    let vertex_route = if has_hollows {
+        "    if vertex.z < 0.0 { return hollows_vertex(vertex, body); }\n"
     } else {
-        include_str!("surface.wgsl").to_owned()
+        ""
     };
     format!(
         "{}\n{sun}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}",
@@ -572,7 +569,9 @@ fn shader_source(
         include_str!("sampling.wgsl"),
         include_str!("field.wgsl"),
         Interaction::sample_source(3, 7, 8, wake),
-        include_str!("carriage.wgsl").to_owned() + &surface_shader,
+        concat!(include_str!("carriage.wgsl"), include_str!("surface.wgsl")).to_owned()
+            + vertex_route
+            + include_str!("surface_shading.wgsl"),
         if gather {
             concat!(
                 include_str!("optics/regions.wgsl"),
@@ -589,7 +588,7 @@ fn shader_source(
                     + if has_hollows {
                         include_str!("map_gpu/hollows_surface.wgsl")
                     } else {
-                        ""
+                        include_str!("mapped_surface_pixel.wgsl")
                     }
             },
         ),

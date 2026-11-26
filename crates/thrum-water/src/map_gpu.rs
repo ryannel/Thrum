@@ -393,8 +393,7 @@ impl MapGpu {
     pub fn source(&self, group: u32) -> String {
         let base = declarations_at(group);
         if self.hollows.is_some() {
-            base.replace("fn map_sample(", "fn ordinary_map_sample(")
-                + include_str!("map_gpu/hollows.wgsl")
+            base + include_str!("map_gpu/hollows.wgsl")
         } else {
             base
         }

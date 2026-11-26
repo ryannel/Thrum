@@ -87,7 +87,7 @@ fn probe(
         @group(0) @binding(1) var<storage, read_write> answers: array<vec4<f32>>;
         @compute @workgroup_size(64) fn probe(@builtin(global_invocation_id) at: vec3<u32>) {
             if at.x >= arrayLength(&points) { return; }
-            let sample = map_sample(points[at.x]);
+            let sample = hollows_map_sample(points[at.x]);
             answers[at.x] = vec4(select(f32(sample.body), -1.0, sample.body == NO_BODY),
                 sample.row.water.x, sample.bed, sample.row.water.x - sample.bed);
         }
