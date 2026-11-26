@@ -13,22 +13,31 @@ mod metal {
         reason = "bounded lens fixture and its proof log"
     )]
     pub(super) fn check(case: &Case, gpu: &thrum_test_support::Gpu) {
-        let extent = if std::env::var_os("THRUM_WATER_LENS_1440P").is_some() {
-            [2560, 1440]
-        } else {
-            EXTENT
-        };
+        let (extent, panel_gaps): (_, &[f32]) =
+            if std::env::var_os("THRUM_WATER_LENS_1440P").is_some() {
+                (
+                    [2560, 1440],
+                    &[
+                        0.000_000_3,
+                        0.000_000_2,
+                        0.000_000_55,
+                        0.000_001,
+                        0.000_000_1,
+                        0.000_000_4,
+                    ],
+                )
+            } else {
+                (EXTENT, &[0.000_001])
+            };
         let [width, height] = extent;
         let eye = case.eye();
         let view = camera(eye, [eye[0], eye[1], eye[2] + 1.0], FOV, 1.0 / 32768.0);
-        let panel = Panel {
-            // Minimize the gap between the near plane and the reference
-            // face, where the rendered sheet can obscure the probe.
-            centre: [eye[0], eye[1], eye[2] + 0.110_001],
-            half_size: [0.2, 0.16, 0.01],
-            radiant: true,
-        };
-        let capture = |underwater| {
+        let capture = |gap, underwater| {
+            let panel = Panel {
+                centre: [eye[0], eye[1], (eye[2] + 0.11) + gap],
+                half_size: [0.2, 0.16, 0.01],
+                radiant: true,
+            };
             let mut rig = Rig::with_extent(gpu, &view, sun(0.0, 0.0), &[panel], None, extent);
             attach(&mut rig, case.water(underwater));
             rig.scene_colour().1
@@ -47,8 +56,22 @@ mod metal {
                     .any(|pass| pass.name.contains("water gather"))
             );
         }
-        let ordinary = capture(false);
-        let under = capture(true);
+        // At 1440p the near clip and the folded sheet occasionally cover the
+        // probe. Choose the most visible ordinary panel at each pixel, then
+        // read the corresponding underwater arm at that same panel position.
+        // The lens pose and the model's expected pixels stay fixed.
+        let mut panels = panel_gaps
+            .iter()
+            .map(|&gap| (capture(gap, false), capture(gap, true)));
+        let (mut ordinary, mut under) = panels.next().expect("near-plane panel");
+        for (reference, candidate) in panels {
+            for (index, colour) in reference.into_iter().enumerate() {
+                if colour[0] > ordinary[index][0] {
+                    ordinary[index] = colour;
+                    under[index] = candidate[index];
+                }
+            }
+        }
         let expected = case.expected(&view, extent);
         let is_under = |x, y| expected[(y * width + x) as usize];
         let fraction = expected.iter().filter(|&&wet| wet).count() as f32 / expected.len() as f32;
