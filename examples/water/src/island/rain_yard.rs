@@ -9,10 +9,13 @@ use thrum_rain_model::{
     Canopy, Ground, GroundClass, GroundStores, Profile, Rain, RainState, RingProfile, Shelter,
     TickReport, Tree,
 };
-use thrum_water::query::{BodyQuery, QueryAnswer, QueryPoint};
+use thrum_water::{
+    interaction::{BodyPressure, Mailbox},
+    query::{BodyQuery, QueryAnswer, QueryPoint},
+};
 use thrum_water_model::{
-    Bed, Body, BodyKind, HollowOptics, Hollows, Map, NO_HOLLOW, RainBands, RainBandsProfile,
-    RateHistory, RingTable, Stage,
+    Bed, Body, BodyKind, HollowOptics, Hollows, Impulse, Map, NO_HOLLOW, RainBands,
+    RainBandsProfile, RateHistory, RingTable, Stage,
 };
 
 pub(super) fn camera(index: usize) -> Camera {
@@ -24,6 +27,7 @@ pub(super) fn camera(index: usize) -> Camera {
         5 => Camera::look_at([148.8, 19.813, 65.0], [148.0, 18.113, 66.2], 72.0),
         6 => Camera::look_at([161.0, 41.2, 31.0], [187.0, 11.2, 0.0], 56.0),
         7 => super::CAMERAS[0],
+        8 => Camera::look_at([148.55, 19.74, 67.95], [148.37, 18.04, 66.23], 75.0),
         _ => Camera::look_at([149.0, 33.12, 64.94], [149.0, 18.12, 65.0], 45.0),
     }
 }
@@ -76,12 +80,19 @@ const SIZE: [usize; 2] = [200, 160];
 const BODY: usize = 3;
 const TRACK_ROWS: usize = 60;
 const PAVING: usize = 1;
+const PITS: [[f64; 2]; 2] = [[147.0, 66.18], [149.64, 66.32]];
+const WALK_SECONDS: f64 = 3.0;
+const STEP_SECONDS: f64 = 0.43;
+const FOOT_IMPULSE_PER_METRE: f64 = 20.0;
+const MARKER_ID: u32 = 1;
 const FLOAT_CELL: [usize; 2] = [71, 104 - TRACK_ROWS];
 
 #[derive(Clone, Copy)]
 pub(super) struct Weather {
     rain: Rain,
     scale: f64,
+    walking: bool,
+    stone: [bool; 2],
 }
 
 impl Weather {
@@ -92,6 +103,8 @@ impl Weather {
                 drying: f64::from(drying) / 3600.0,
             },
             scale: f64::from(scale),
+            walking: false,
+            stone: [false; 2],
         }
     }
 }
@@ -104,6 +117,7 @@ impl Default for Weather {
 
 pub(super) fn input_controls(
     controls: &mut Controls,
+    footfalls: bool,
 ) -> Result<impl Fn(&Controls) -> Weather + use<>, Box<dyn Error>> {
     let rate = controls
         .slider("rain.rate", "Rain (mm/h)", 0.0..=100.0)
@@ -120,12 +134,49 @@ pub(super) fn input_controls(
         .default(1.0)
         .step(1.0)
         .add()?;
+    let (walk, first, second) = if footfalls {
+        (
+            Some(
+                controls
+                    .slider("rain.walk", "Walk through the puddles", 0.0..=1.0)
+                    .step(1.0)
+                    .add()?,
+            ),
+            Some(
+                controls
+                    .slider(
+                        "rain.stone_left",
+                        "Drop stone into the left puddle",
+                        0.0..=1.0,
+                    )
+                    .step(1.0)
+                    .add()?,
+            ),
+            Some(
+                controls
+                    .slider(
+                        "rain.stone_right",
+                        "Drop stone into the right puddle",
+                        0.0..=1.0,
+                    )
+                    .step(1.0)
+                    .add()?,
+            ),
+        )
+    } else {
+        (None, None, None)
+    };
     Ok(move |controls: &Controls| {
-        Weather::new(
+        let mut weather = Weather::new(
             controls.get(rate),
             controls.get(drying),
             controls.get(scale),
-        )
+        );
+        let [walking, left, right] =
+            [walk, first, second].map(|key| key.is_some_and(|key| controls.get(key) > 0.5));
+        weather.walking = walking;
+        weather.stone = [left, right];
+        weather
     })
 }
 
@@ -163,6 +214,8 @@ pub(super) struct Yard {
     pub(super) draw_float: bool,
     pub(super) draw_rings: bool,
     pub(super) measure_regions: bool,
+    pub(super) footfalls: bool,
+    pub(super) fine: bool,
 }
 
 impl Yard {
@@ -210,6 +263,10 @@ impl Yard {
         let displayed_float = float.clone();
         let mailbox = water.query_mailbox();
         let interaction = water.interaction_mailbox();
+        let marker = self
+            .footfalls
+            .then(|| crate::floating::YardFloat::new(PITS[0], 0.0));
+        let mut walk = Walk::default();
         #[cfg(target_arch = "wasm32")]
         let displayed_replies = self.replies();
         #[cfg(target_arch = "wasm32")]
@@ -219,6 +276,11 @@ impl Yard {
         let points = self.query_points();
         let game = if self.draw_float {
             float.install(game, water)
+        } else {
+            game
+        };
+        let game = if let Some(marker) = &marker {
+            marker.install(game, water)
         } else {
             game
         };
@@ -253,19 +315,13 @@ impl Yard {
                     map.set_rate_history(history)
                         .expect("valid yard rain history");
                 }
-            }
-            if let Some(interaction) = &interaction {
-                interaction.post_bodies(
-                    tick,
-                    Some(0),
-                    vec![thrum_water::interaction::BodyPressure {
-                        id: 0,
-                        place: [147.2, 66.2],
-                        force: 0.0,
-                        footprint: [0.1; 2],
-                        heading: 0.0,
-                    }],
-                );
+                if let Some(interaction) = &interaction {
+                    if let Some(marker) = &marker {
+                        walk.step(tick, dt, weather, &map, interaction, marker);
+                    } else {
+                        follow(interaction, tick, [147.2, 66.2], 0);
+                    }
+                }
             }
             if let Some(mailbox) = &mailbox {
                 let ready = mailbox.drain(endpoint, dt).into_iter().next();
@@ -390,6 +446,8 @@ impl Yard {
             draw_float: true,
             draw_rings: true,
             measure_regions: false,
+            footfalls: false,
+            fine: false,
         };
         yard.refresh_levels();
         Ok(yard)
@@ -472,6 +530,90 @@ impl Yard {
             .map_err(|error| format!("{error:?}"))?;
         Ok(())
     }
+}
+
+#[derive(Default)]
+struct Walk {
+    elapsed: f64,
+    next_step: f64,
+    stones: [bool; 2],
+}
+
+impl Walk {
+    fn step(
+        &mut self,
+        tick: u64,
+        dt: Duration,
+        weather: Weather,
+        map: &Map,
+        mailbox: &Mailbox,
+        marker: &crate::floating::YardFloat,
+    ) {
+        let depth = |point| {
+            map.sample(point)
+                .filter(|hit| hit.body == BODY)
+                .map_or(0.0, |hit| hit.depth.max(0.0))
+        };
+        let impulse = |place, vertical, radius, source| {
+            if vertical > 0.0 {
+                mailbox.post_impulse(Impulse {
+                    id: source,
+                    place,
+                    vertical,
+                    radius,
+                    tick,
+                });
+            }
+        };
+        for (i, (drop, was_down)) in weather.stone.into_iter().zip(&mut self.stones).enumerate() {
+            if drop && !*was_down {
+                let place = PITS[i];
+                if depth(place) > 0.0 {
+                    impulse(place, 0.42, 0.036, 1 + i as u64);
+                }
+            }
+            *was_down = drop;
+        }
+        let (place, height) = if weather.walking {
+            let phase = (self.elapsed / WALK_SECONDS).clamp(0.0, 1.0);
+            let place =
+                std::array::from_fn(|axis| PITS[0][axis] + phase * (PITS[1][axis] - PITS[0][axis]));
+            if self.elapsed >= self.next_step && self.elapsed <= WALK_SECONDS {
+                impulse(place, FOOT_IMPULSE_PER_METRE * depth(place), 0.065, 0);
+                self.next_step += STEP_SECONDS;
+            }
+            self.elapsed += dt.as_secs_f64();
+            let floor = map.hollow_bed_at(place).expect("footpath is in the yard");
+            let bob = 0.025
+                * (std::f64::consts::TAU * self.elapsed / STEP_SECONDS)
+                    .sin()
+                    .abs();
+            (place, floor + 0.15 + bob)
+        } else {
+            self.elapsed = 0.0;
+            self.next_step = 0.0;
+            (
+                std::array::from_fn(|axis| (PITS[0][axis] + PITS[1][axis]) * 0.5),
+                0.0,
+            )
+        };
+        marker.move_marker(tick, place, height);
+        follow(mailbox, tick, place, MARKER_ID);
+    }
+}
+
+fn follow(mailbox: &Mailbox, tick: u64, place: [f64; 2], id: u32) {
+    mailbox.post_bodies(
+        tick,
+        Some(id),
+        vec![BodyPressure {
+            id,
+            place,
+            force: 0.0,
+            footprint: [0.1; 2],
+            heading: 0.0,
+        }],
+    );
 }
 
 fn wet_level(answer: &QueryAnswer) -> Option<f64> {

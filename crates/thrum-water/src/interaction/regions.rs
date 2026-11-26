@@ -4,9 +4,10 @@ use thrum_water_model::Map;
 
 pub(super) const DRY: u32 = u32::MAX;
 pub(super) const REST: u32 = u32::MAX;
-pub(super) const DEPTHS: [&[f32]; 2] = [
+pub(super) const DEPTHS: [&[f32]; 3] = [
     &[0.25, 0.5, 1.0, 2.0, 4.0, 8.0],
     &[1.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0, 128.0],
+    &[0.005, 0.01, 0.02, 0.04, 0.08, 0.16, 0.32],
 ];
 
 #[repr(C)]
@@ -34,6 +35,60 @@ pub(super) struct Window {
     pub cells: Vec<Cell>,
     pub depths: Vec<u32>,
     pub current: [f32; 2],
+}
+
+/// Track source recency by wet support, independent of temporary region numbers.
+#[derive(Default)]
+pub(super) struct FineActivity {
+    key: Option<([i32; 2], [u64; 2])>,
+    labels: Vec<u32>,
+    pub latest: Vec<Option<u64>>,
+}
+
+impl FineActivity {
+    pub(super) fn reset(&mut self) {
+        self.key = None;
+        self.latest.clear();
+    }
+
+    #[expect(
+        clippy::cast_possible_truncation,
+        clippy::cast_possible_wrap,
+        clippy::cast_sign_loss,
+        reason = "coordinates clipped to the fixed grid before indexing"
+    )]
+    pub(super) fn inherit(&mut self, old: &Self, window: &Window) {
+        let key = window.key.expect("labelled fine window");
+        self.latest.clear();
+        self.latest.resize(window.depths.len(), None);
+        if old.key == Some(key) {
+            self.latest.copy_from_slice(&old.latest);
+        } else if let Some((old_origin, _)) = old.key
+            && old.latest.iter().any(Option::is_some)
+        {
+            let [dx, dz] = std::array::from_fn(|axis| key.0[axis] - old_origin[axis]);
+            let overlap = |shift: i32| (-shift).max(0)..(SIDE as i32 - shift).min(SIDE as i32);
+            for z in overlap(dz) {
+                for x in overlap(dx) {
+                    let region = window.cells[z as usize * SIDE + x as usize].region;
+                    if region == DRY {
+                        continue;
+                    }
+                    let old_region = old.labels[(z + dz) as usize * SIDE + (x + dx) as usize];
+                    if old_region != DRY {
+                        let latest = &mut self.latest[region as usize];
+                        *latest = (*latest).max(old.latest[old_region as usize]);
+                    }
+                }
+            }
+        }
+        if self.key != Some(key) {
+            self.labels.clear();
+            self.labels
+                .extend(window.cells.iter().map(|cell| cell.region));
+            self.key = Some(key);
+        }
+    }
 }
 
 impl Window {

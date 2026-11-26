@@ -4,12 +4,9 @@
 //! changes; a river chart's row holds a gain for each, and every other body's is zero. The map adds
 //! them at those gains through the one sum, the depth limit and the moments a cascade has.
 use crate::waves::Limited;
-use crate::{Field, Map, MapSample, Profile, WaterError, limit};
+use crate::{CAPILLARY_COEFFICIENT, Field, Map, MapSample, Profile, WaterError, limit};
 use std::f64::consts::TAU;
 use thrum_sea_model::{GRAVITY, GRID_SIZE, LOOP_SECONDS, Sample};
-
-/// Surface tension over density, m³/s², in the bands' own dispersion.
-const TENSION: f64 = 7.28e-5;
 
 /// The flow bands' physical profile. Never a quality setting.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -62,7 +59,7 @@ fn mix(mut z: u64) -> u64 {
 /// The bands' own dispersion, deep water with surface tension, on the cascades' loop: the
 /// nearest whole number of turns in `LOOP_SECONDS`.
 pub fn flow_frequency(k: f64) -> f64 {
-    let omega = (GRAVITY * k + TENSION * k * k * k).sqrt();
+    let omega = (GRAVITY * k + CAPILLARY_COEFFICIENT * k * k * k).sqrt();
     (omega * LOOP_SECONDS / TAU).round() * TAU / LOOP_SECONDS
 }
 

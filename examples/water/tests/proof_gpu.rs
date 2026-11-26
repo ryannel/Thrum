@@ -208,6 +208,10 @@ fn driver(gpu: &thrum_test_support::Gpu) {
         rain_inspection::sequences(gpu, &directory);
         return;
     }
+    if mode == "rain-footfall-cost" {
+        rain_inspection::footfall_costs(gpu, &directory);
+        return;
+    }
     if mode == "rain-rings-cost" {
         rain_inspection::costs(gpu, &directory);
         return;

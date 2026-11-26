@@ -2,7 +2,7 @@
 use serde_json::{Value, json};
 use std::{path::Path, time::Instant};
 use thrum_water_model::Map;
-use water_scene::island::{Wind, build_rain_bands_cost, build_rain_yard};
+use water_scene::island::{Wind, build_rain_bands_cost, build_rain_footfall_cost, build_rain_yard};
 
 use super::support::Fixture;
 
@@ -100,6 +100,63 @@ pub(super) fn costs(gpu: &thrum_test_support::Gpu, directory: &Path) {
         "rain-rings-cost.json",
         &json!({
             "target":"mac-metal", "extent":extent, "capture":false, "rate_mm_h":50, "arms":arms, "fleet":fleet::drains(gpu),
+        }),
+    );
+}
+
+pub(super) fn footfall_costs(gpu: &thrum_test_support::Gpu, directory: &Path) {
+    let extent = [2560, 1440];
+    let mut arms = Vec::new();
+    for fine in [false, true] {
+        let (game, report, map, _) =
+            build_rain_footfall_cost(Wind::Calm, fine).expect("footfall cost arm");
+        let mut fixture = Fixture::from_game(gpu, extent, game, report);
+        controls(&mut fixture, 8, 0.0, 600);
+        fixture.warm_cooked();
+        let start = fill(&mut fixture, &map, 8, 100.0);
+        controls(&mut fixture, 8, 10.0, 1);
+        for tick in 1..=64 {
+            fixture.frame_without_timings(start + f64::from(tick) / 60.0);
+        }
+        let start = start + 64.0 / 60.0;
+        fixture.parameters(r#"{"rain.walk":1}"#);
+        let mut frames = Vec::new();
+        for sample in 1..=360 {
+            let time = start + f64::from(sample) / 120.0;
+            // Traverse the whole 3 s path. Sample the same 24 consecutive
+            // opportunities around each of the two puddles in both arms.
+            let measure = (9..33).contains(&sample) || (295..319).contains(&sample);
+            if !measure {
+                fixture.frame_without_timings(time);
+                continue;
+            }
+            let frame = fixture.frame(time);
+            let mut record = super::sample_json(&frame);
+            let report = fixture.report.lock().expect("water report");
+            let waves = report.interaction.expect("yard interaction");
+            let fine = waves.fine.map(|fine| {
+                json!({
+                    "regions": fine.regions, "solves": fine.solves, "steps": fine.steps,
+                    "dropped_ticks": fine.dropped_ticks, "refused_regions": fine.refused_regions,
+                })
+            });
+            record["elapsed_s"] = json!(f64::from(sample) / 120.0);
+            record["completion_upper_ms"] = json!(fixture.last_elapsed.as_secs_f64() * 1000.0);
+            record["upload_cpu_ms"] = json!(frame.upload_cpu.as_secs_f64() * 1000.0);
+            record["labelling_cpu_ms"] = json!(waves.labelling_ms);
+            record["fine"] = json!(fine);
+            assert!(report.rain_drops.is_some());
+            frames.push(record);
+        }
+        let report = fixture.report.lock().expect("water report");
+        arms.push(json!({"fine": fine, "resources": report.resources, "frames": frames}));
+    }
+    write(
+        directory,
+        "rain-footfall-cost.json",
+        &json!({
+            "target":"mac-metal", "extent":extent, "capture":false, "rate_mm_h":10,
+            "arms":arms,
         }),
     );
 }

@@ -23,6 +23,7 @@ RECORDS = {'first-frame': ROOT / 'tests/fixtures/waters/first-frame-cost.json',
            'river': ROOT / '.orchestrate/evidence/RIVERS/WP4/river-cost.json',
            'rain-puddles': ROOT / 'tests/fixtures/puddles/yard-water-cost.json',
            'rain-rings': ROOT / 'tests/fixtures/puddles/rain-rings-cost.json',
+           'rain-footfall': ROOT / '.orchestrate/evidence/PUDDLES/WP8/rain-footfall-cost.json',
            'under': ROOT / 'tests/fixtures/waters/dive-cost-prior.json',
            'optics': ROOT / 'tests/fixtures/waters/optics-cost-prior.json'}
 WORKING = ROOT / '.orchestrate/evidence/WATERS'
@@ -1297,6 +1298,80 @@ def validate_rain_rings(data):
         assert all(entry in row['investigations'] for entry in investigations)
 
 
+def rain_footfall_cost():
+    output = ROOT / 'tmp/puddles-wp8/cost'
+    output.mkdir(parents=True, exist_ok=True)
+    store = output / 'store'
+    env = dict(os.environ, THRUM_WATER_PROOF='rain-footfall-cost',
+               THRUM_WATER_OUTPUT=str(output), THRUM_ASSET_STORE=str(store), THRUM_REQUIRE_GPU='1')
+    run(['cargo', 'run', '--release', '--locked', '--offline', '-p', 'thrum-cook', '--',
+         'cook', 'examples/water/assets', str(store)])
+    run(['cargo', 'test', '--release', '--locked', '--offline', '-p', 'water-scene',
+         '--test', 'proof_gpu'], env=env)
+    data = json.loads((output / 'rain-footfall-cost.json').read_text())
+    data['commit'] = run(['git', 'rev-parse', 'HEAD'], capture_output=True, text=True).stdout.strip()
+    data['load'] = run(['uptime'], capture_output=True, text=True).stdout.strip()
+    data['host'] = platform.platform()
+    wp4_file = RECORDS['rain-rings']
+    wp4 = json.loads(wp4_file.read_text())
+    data['wp4'] = {'path': str(wp4_file.relative_to(ROOT)), 'commit': wp4['commit'],
+                   'rate_mm_h': wp4['rate_mm_h'], 'yard': wp4['arms'][-1]['views'][0]['summary'],
+                   'comparison': 'WP4 used 50 mm/h and a stationary overhead camera. The matched '
+                                 'WP8 arms use 10 mm/h and the moving marker at eye height.'}
+    assert data['target'] == 'mac-metal' and data['extent'] == [2560, 1440]
+    assert data['capture'] is False and data['rate_mm_h'] == 10
+    controls = {}
+    for arm in data['arms']:
+        arm['summary'] = []
+        for tick_frame in (False, True):
+            frames = [frame for frame in arm['frames'] if frame['tick_frame'] == tick_frame]
+            assert frames and all(frame['gpu_ms'] > 0 for frame in frames)
+            assert all((frame['fine'] is not None) == arm['fine'] for frame in frames)
+            assert all(any(name.endswith('rain bands') for name in frame['passes_ms'])
+                       for frame in frames)
+            names = set().union(*(frame['passes_ms'] for frame in frames))
+            passes = {name.split(': ')[-1]: statistics.median(
+                frame['passes_ms'][name] for frame in frames if name in frame['passes_ms'])
+                for name in sorted(names)}
+            row = {key: statistics.median(frame[key] for frame in frames) for key in
+                   ('gpu_ms', 'completion_upper_ms', 'upload_cpu_ms', 'labelling_cpu_ms')}
+            row.update(tick_frame=tick_frame, passes_ms=passes, investigations=[])
+            if arm['fine'] and tick_frame:
+                assert any(frame['fine']['regions'] > 0 and frame['fine']['solves'] > 0 for frame in frames)
+                assert all(frame['fine']['steps'] <= 2 for frame in frames)
+                row['fine_regions'] = sorted({frame['fine']['regions'] for frame in frames})
+                row['fine_solves'] = sorted({frame['fine']['solves'] for frame in frames})
+                row['fine_steps'] = sorted({frame['fine']['steps'] for frame in frames})
+            investigations = row['investigations']
+            if max(row['gpu_ms'], row['completion_upper_ms']) > 1000 / 120:
+                largest = max(passes, key=passes.get)
+                investigations.append(
+                    f'Largest pass {largest} was {passes[largest]:.3f} ms. The GPU pass sum was '
+                    f'{row["gpu_ms"]:.3f} ms and synchronous completion was '
+                    f'{row["completion_upper_ms"]:.3f} ms, including polling and shared-device wait.')
+            if arm['fine']:
+                control = controls[tick_frame]
+                values = ((name, old, passes.get(name, 0)) for name, old in control['passes_ms'].items())
+                for name, old, new in values:
+                    if old > 0 and new >= old * 1.25:
+                        context = {
+                            'interaction waves': 'the same pass adds the fine region/depth solves listed above',
+                            'water surface': 'the water surface samples two extra endpoint planes inside the fine window',
+                        }.get(name, 'this pass does not use the fine state, and runs under shared load')
+                        investigations.append(f'{name} rose from {old:.4f} to {new:.4f} ms; {context}.')
+                if tick_frame and row['labelling_cpu_ms'] > max(0.05, control['labelling_cpu_ms'] * 1.25):
+                    investigations.append(f'Labelling {row["labelling_cpu_ms"]:.3f} ms vs '
+                                          f'{control["labelling_cpu_ms"]:.3f} ms adds a 256² window.')
+            else:
+                controls[tick_frame] = row
+            arm['summary'].append(row)
+    assert [arm['fine'] for arm in data['arms']] == [False, True]
+    evidence = RECORDS['rain-footfall']
+    evidence.parent.mkdir(parents=True, exist_ok=True)
+    evidence.write_text(json.dumps(data, indent=2) + '\n')
+    print(f'PASS paired Metal footfall record: {evidence.relative_to(ROOT)}')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action', choices=['record', 'check', 'running'])
@@ -1324,6 +1399,9 @@ def main():
         return
     if args.scene == 'surf':
         measure_surf()
+        return
+    if args.scene == 'rain-footfall':
+        rain_footfall_cost()
         return
     if args.scene == 'rain-rings':
         rain_rings_cost(args.action)

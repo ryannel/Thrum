@@ -1,7 +1,7 @@
 use super::{
-    BodyPressure, CELL_METRES, CELLS, DENSITY, GRAVITY, GRID_CELLS, GRID_WIDTH, MAX_TICKS, Mailbox,
-    Report, SIDE, Witness,
-    regions::{Cell, DEPTHS, DRY, REST, Window},
+    BodyPressure, CELL_METRES, CELLS, DENSITY, FAR, FINE, FINE_TICKS, FineEndpoint, FineReport,
+    GRAVITY, GRID_CELLS, GRID_WIDTH, MAX_TICKS, Mailbox, NEAR, Report, SIDE, Witness,
+    regions::{Cell, DEPTHS, DRY, FineActivity, REST, Window},
     static_dent,
 };
 use bytemuck::{Pod, Zeroable};
@@ -13,13 +13,20 @@ use thrum_render::{
     graph::{AccessKind, ResourceDescriptor, ResourceScope},
     runtime::DeviceSite,
 };
-use thrum_water_model::Map;
+use thrum_water_model::{CAPILLARY_COEFFICIENT, Map};
 use web_time::Instant;
 
 const PLANE_BYTES: u64 = (CELLS * size_of::<[f32; 2]>()) as u64;
 const GROUPS: u32 = GRID_CELLS / 64;
 const PASS: &str = "interaction waves";
-const LEVELS: u32 = 2;
+const BASE_LEVELS: u32 = 2;
+const BASE_PLANES: u32 = BASE_LEVELS * 2;
+const FINE_SCRATCH: u32 = BASE_PLANES + 2;
+const FINE_SPLIT: u32 = 1 << 2;
+
+fn fine_base(bank: u32) -> u32 {
+    (BASE_PLANES + bank) * GRID_CELLS
+}
 
 #[repr(C)]
 #[derive(Clone, Copy, Pod, Zeroable)]
@@ -56,14 +63,17 @@ pub(crate) struct SampleSettings {
     origins: [[f32; 4]; 4],
     clocks: [f32; 4],
     bases: [u32; 4],
+    fine_origins: [[f32; 4]; 2],
+    fine_clock: [f32; 4],
+    fine_bases: [u32; 4],
 }
 
 #[derive(Clone, Copy)]
 struct Endpoint {
-    origins: [[i32; 2]; 2],
+    origins: [[i32; 2]; 3],
     tick: u64,
     bank: u32,
-    live: [bool; 2],
+    live: [bool; 3],
 }
 
 impl Endpoint {
@@ -96,6 +106,7 @@ impl Endpoint {
 #[derive(Clone, Copy)]
 struct Frame {
     endpoint: [Endpoint; 2],
+    fine_previous: FineEndpoint,
     time: EffectTime,
     generation: u64,
     follow: [f64; 2],
@@ -134,7 +145,9 @@ pub(crate) struct Interaction {
     initial_report: Report,
     committed: Option<Frame>,
     recorded: Option<Frame>,
-    windows: [Window; 2],
+    windows: [Window; 3],
+    committed_activity: FineActivity,
+    recorded_activity: FineActivity,
     dispatches: Vec<Dispatch>,
     step_bytes: Vec<u8>,
     patch_rows: Vec<Patch>,
@@ -155,8 +168,9 @@ fn buffer(device: &DeviceSite, label: &str, size: u64, usage: wgpu::BufferUsages
 
 pub(crate) fn shader_constants() -> String {
     format!(
-        "const WAKE_SIDE: u32 = {SIDE}u;\nconst REST_DEPTH: u32 = {REST}u;\nconst WATER_GRAVITY: f32 = {GRAVITY:?};\nconst WATER_DENSITY: f32 = {DENSITY:?};\nconst WAKE_DIVIDER_METRES: f32 = {:?};\n",
-        static_dent::DIVIDER_METRES
+        "const WAKE_SIDE: u32 = {SIDE}u;\nconst REST_DEPTH: u32 = {REST}u;\nconst WATER_GRAVITY: f32 = {GRAVITY:?};\nconst WATER_DENSITY: f32 = {DENSITY:?};\nconst WAKE_DIVIDER_METRES: f32 = {:?};\nconst FINE_DIVIDER_METRES: f32 = {:?};\nconst CAPILLARY_COEFFICIENT: f32 = {CAPILLARY_COEFFICIENT:?};\nconst FINE_SPLIT: u32 = {FINE_SPLIT}u;\n",
+        static_dent::DIVIDER_METRES,
+        static_dent::FINE_DIVIDER_METRES
     )
 }
 
@@ -208,9 +222,9 @@ impl Interaction {
     }
 
     pub(crate) fn query_settings(&self) -> Option<(u64, SampleSettings)> {
-        let frame = self.committed?;
+        let frame = self.committed.as_ref()?;
         let tick = frame.endpoint[1].tick;
-        let settings = Self::sample_settings(frame.endpoint, frame.time, 1.0);
+        let settings = self.sample_settings(frame, frame.time, true);
         Some((tick, settings))
     }
 
@@ -261,10 +275,17 @@ impl Interaction {
         use wgpu::BufferUsages as Usage;
         let stride =
             (device.limits().min_uniform_buffer_offset_alignment as usize).max(size_of::<Step>());
+        let plane_count = if mailbox.fine {
+            FINE_SCRATCH + 1
+        } else {
+            BASE_PLANES
+        };
+        let levels = BASE_LEVELS + u32::from(mailbox.fine);
+        let level_steps = u64::from(BASE_LEVELS) + if mailbox.fine { FINE_TICKS } else { 0 };
         let endpoints = buffer(
             device,
             "interaction wave endpoints",
-            4 * PLANE_BYTES,
+            u64::from(plane_count) * PLANE_BYTES,
             Usage::STORAGE | Usage::COPY_DST | Usage::COPY_SRC,
         );
         let work = buffer(
@@ -282,20 +303,22 @@ impl Interaction {
         let cells = buffer(
             device,
             "interaction window cells",
-            (2 * CELLS * size_of::<Cell>()) as u64,
+            u64::from(levels) * (CELLS * size_of::<Cell>()) as u64,
             Usage::STORAGE | Usage::COPY_DST,
         );
         let patches = buffer(
             device,
             "interaction pressure patches",
-            (u64::from(mailbox.limits.bodies + mailbox.limits.impulses) * MAX_TICKS * 2).max(1)
+            (u64::from(mailbox.limits.bodies + mailbox.limits.impulses)
+                * (MAX_TICKS * u64::from(BASE_LEVELS) + if mailbox.fine { FINE_TICKS } else { 0 }))
+            .max(1)
                 * size_of::<Patch>() as u64,
             Usage::STORAGE | Usage::COPY_DST,
         );
         let steps = buffer(
             device,
             "interaction step settings",
-            stride as u64 * u64::from(LEVELS * mailbox.limits.solves.max(1)),
+            stride as u64 * level_steps * u64::from(mailbox.limits.solves),
             Usage::UNIFORM | Usage::COPY_DST,
         );
         let layout_entries = [
@@ -394,6 +417,8 @@ impl Interaction {
             committed: None,
             recorded: None,
             windows: Default::default(),
+            committed_activity: FineActivity::default(),
+            recorded_activity: FineActivity::default(),
             dispatches: Vec::new(),
             step_bytes: Vec::new(),
             patch_rows: Vec::new(),
@@ -425,7 +450,7 @@ impl Interaction {
         let time = frame.time;
         if time.capture {
             if let Some(committed) = self.committed {
-                self.write_sample(queue, committed.endpoint, time);
+                self.write_sample(queue, &committed, time);
             }
             return;
         }
@@ -437,7 +462,7 @@ impl Interaction {
                 || frame.generation != old.generation
         });
         if !reset && let Some(old) = self.committed.filter(|old| old.time.tick == time.tick) {
-            self.write_sample(queue, old.endpoint, time);
+            self.write_sample(queue, &old, time);
             return;
         }
         let mailbox = self.mailbox.clone();
@@ -491,9 +516,16 @@ impl Interaction {
             origins,
             tick: time.tick,
             bank: previous.map_or(0, |old| 1 - old.bank),
-            live: [false; 2],
+            live: [false; 3],
         };
+        let mut fine_report = self.mailbox.fine.then(|| FineReport {
+            dropped_ticks: report.fine.unwrap_or_default().dropped_ticks,
+            refused_regions: report.fine.unwrap_or_default().refused_regions,
+            ..FineReport::default()
+        });
+        let mut fine_previous = Self::fine_endpoint(next);
         let endpoint = if reset {
+            self.recorded_activity.reset();
             encoder.clear_buffer(&self.endpoints, 0, None);
             report.resets += 1;
             report.regions = [0; 2];
@@ -525,9 +557,24 @@ impl Interaction {
             report.labelling_ms = 0.0;
             encoder.clear_buffer(
                 &self.endpoints,
-                u64::from(next.bank) * PLANE_BYTES * 2,
-                Some(PLANE_BYTES * 2),
+                u64::from(next.bank * BASE_LEVELS) * PLANE_BYTES,
+                Some(PLANE_BYTES * u64::from(BASE_LEVELS)),
             );
+            if self.mailbox.fine {
+                encoder.clear_buffer(
+                    &self.endpoints,
+                    u64::from(BASE_PLANES + next.bank) * PLANE_BYTES,
+                    Some(PLANE_BYTES),
+                );
+                if elapsed >= FINE_TICKS {
+                    encoder.clear_buffer(
+                        &self.endpoints,
+                        u64::from(FINE_SCRATCH) * PLANE_BYTES,
+                        Some(PLANE_BYTES),
+                    );
+                }
+                fine_previous = Self::fine_endpoint(previous);
+            }
             self.step_bytes.clear();
             self.patch_rows.clear();
             for (&tick, page) in pages.bodies.range(first..=time.tick) {
@@ -538,10 +585,34 @@ impl Interaction {
                         levels: 0,
                     }));
             }
-            for level in 0..2 {
+            let fine_ticks = if let Some(fine) = &mut fine_report {
+                let steps = elapsed.min(FINE_TICKS);
+                fine.steps = steps as u32;
+                fine.dropped_ticks += elapsed - steps;
+                steps
+            } else {
+                0
+            };
+            // Both fine substeps use this frame's published wet support and window.
+            // At a hitch, the most recent two source ticks survive, as on the other levels.
+            for (level, first, last) in [(NEAR, first, time.tick), (FAR, first, time.tick)]
+                .into_iter()
+                .chain((0..fine_ticks).map(|step| {
+                    let tick = time.tick - (fine_ticks - 1 - step);
+                    (FINE, tick, tick)
+                }))
+            {
+                let fine = level == FINE;
+                let second = fine && fine_ticks == 2 && last == time.tick;
+                let to_scratch = fine && fine_ticks == 2 && !second;
                 let start = Instant::now();
                 let window = &mut self.windows[level];
-                if window.label(map, origins[level], CELL_METRES[level], level) {
+                let relabelled = window.label(map, origins[level], CELL_METRES[level], level);
+                if fine && !second {
+                    self.recorded_activity
+                        .inherit(&self.committed_activity, window);
+                }
+                if relabelled {
                     report.labelling_ms += start.elapsed().as_secs_f64() * 1000.0;
                     queue.write_buffer(
                         &self.cells,
@@ -557,12 +628,21 @@ impl Interaction {
                 };
                 let dt = time.tick_duration.as_secs_f32();
                 self.candidates.clear();
-                let mut pressures = self.recorded_pressures.iter().enumerate().peekable();
-                for tick in first..=time.tick {
+                let pressure_start = self.recorded_pressures.partition_point(|p| p.tick < first);
+                let mut pressures = self
+                    .recorded_pressures
+                    .iter()
+                    .enumerate()
+                    .skip(pressure_start)
+                    .peekable();
+                for tick in first..=last {
                     while let Some((index, pressure)) =
                         pressures.next_if(|(_, pressure)| pressure.tick == tick)
                     {
                         let body = pressure.body;
+                        if fine && body.force == 0.0 {
+                            continue;
+                        }
                         let place = local(body.place);
                         let (sin, cos) = body.heading.sin_cos();
                         self.candidates.push(Source {
@@ -601,14 +681,19 @@ impl Interaction {
                 }
                 let priority = window.region(local(origin));
                 self.regions.clear();
-                self.regions.extend(
-                    window
-                        .depths
-                        .iter()
-                        .enumerate()
-                        .map(|(region, _)| (region as u32, 0, 0)),
-                );
+                self.regions
+                    .extend(window.depths.iter().enumerate().map(|(region, _)| {
+                        let latest = if fine {
+                            self.recorded_activity.latest[region].unwrap_or(0)
+                        } else {
+                            0
+                        };
+                        (region as u32, latest, 0)
+                    }));
                 for source in &self.candidates {
+                    if fine && source.patch.impulse == 0.0 {
+                        continue;
+                    }
                     if let Some((_, newest, count)) = self.regions.get_mut(source.region as usize) {
                         *newest = (*newest).max(source.tick);
                         *count += 1;
@@ -618,13 +703,24 @@ impl Interaction {
                     (region != priority, std::cmp::Reverse(tick), region)
                 });
                 let mut remaining = self.mailbox.limits.solves;
-                for &(region, _, count) in &self.regions {
+                for &(region, latest, count) in &self.regions {
+                    if fine && latest == 0 {
+                        continue;
+                    }
                     let depths = window.depths[region as usize];
                     if depths.count_ones() > remaining {
-                        report.refused_regions[level] += count as u64;
+                        if let Some(fine) = fine_report.as_mut().filter(|_| fine) {
+                            fine.refused_regions += count as u64;
+                            self.recorded_activity.latest[region as usize] = None;
+                        } else {
+                            report.refused_regions[level] += count as u64;
+                        }
                         continue;
                     }
                     remaining -= depths.count_ones();
+                    if fine {
+                        self.recorded_activity.latest[region as usize] = Some(latest);
+                    }
                     let source_first = self.patch_rows.len() as u32;
                     for source in self
                         .candidates
@@ -645,26 +741,38 @@ impl Interaction {
                         let offset = self.step_bytes.len();
                         self.step_bytes.resize(offset + self.stride, 0);
                         let step = Step {
-                            shift: std::array::from_fn(|axis| {
-                                origins[level][axis] - previous.origins[level][axis]
-                            }),
+                            shift: if second {
+                                [0; 2]
+                            } else {
+                                std::array::from_fn(|axis| {
+                                    origins[level][axis] - previous.origins[level][axis]
+                                })
+                            },
                             current: window.current,
-                            old_base: (previous.bank * LEVELS + level as u32) * GRID_CELLS,
-                            new_base: (next.bank * LEVELS + level as u32) * GRID_CELLS,
+                            old_base: if second {
+                                FINE_SCRATCH * GRID_CELLS
+                            } else {
+                                Self::level_base(previous.bank, level)
+                            },
+                            new_base: if to_scratch {
+                                FINE_SCRATCH * GRID_CELLS
+                            } else {
+                                Self::level_base(next.bank, level)
+                            },
                             cell_base: (level * CELLS) as u32,
                             region,
                             source_first,
                             source_count: self.patch_rows.len() as u32 - source_first,
                             depth_index: index as u32,
-                            level: level as u32,
+                            level: level as u32 | if mailbox.fine { FINE_SPLIT } else { 0 },
                             metres,
                             depth: if index + 1 == DEPTHS[level].len() {
                                 0.0
                             } else {
                                 depth
                             },
-                            seconds: dt * ticks as f32,
-                            ticks: ticks as f32,
+                            seconds: if fine { dt } else { dt * ticks as f32 },
+                            ticks: if fine { 1.0 } else { ticks as f32 },
                         };
                         self.step_bytes[offset..offset + size_of::<Step>()]
                             .copy_from_slice(bytemuck::bytes_of(&step));
@@ -675,8 +783,23 @@ impl Interaction {
                         load = false;
                     }
                 }
-                report.regions[level] = window.depths.len() as u32;
-                report.solves[level] = self.mailbox.limits.solves - remaining;
+                let regions = window.depths.len() as u32;
+                let solves = self.mailbox.limits.solves - remaining;
+                if let Some(fine) = fine_report.as_mut().filter(|_| fine) {
+                    fine.regions = regions;
+                    fine.solves += solves;
+                    next.live[FINE] = solves != 0;
+                } else {
+                    report.regions[level] = regions;
+                    report.solves[level] = solves;
+                }
+                if to_scratch {
+                    fine_previous = FineEndpoint {
+                        tick: last,
+                        offset: (FINE_SCRATCH * GRID_CELLS) as usize,
+                        ..Self::fine_endpoint(next)
+                    };
+                }
                 debug_assert!(!self.regions.iter().any(|&(region, _, _)| region == DRY));
             }
             if !self.step_bytes.is_empty() {
@@ -688,15 +811,18 @@ impl Interaction {
             [previous, next]
         };
         report.endpoints = Some(endpoint.map(|bank| bank.tick));
-        self.recorded = Some(Frame {
+        report.fine = fine_report;
+        let recorded = Frame {
             endpoint,
+            fine_previous,
             time,
             generation: frame.generation,
             follow: origin,
             direction,
             report,
-        });
-        self.write_sample(queue, endpoint, time);
+        };
+        self.recorded = Some(recorded);
+        self.write_sample(queue, &recorded, time);
     }
 
     pub(crate) fn pending(&self) -> bool {
@@ -741,6 +867,7 @@ impl Interaction {
             pressure.levels,
             point.map(f64::from),
             endpoint.origins,
+            self.mailbox.fine,
         )
     }
 
@@ -785,52 +912,95 @@ impl Interaction {
                 &mut self.recorded_pressures,
                 &mut self.committed_pressures[new.endpoint[1].bank as usize],
             );
+            std::mem::swap(&mut self.committed_activity, &mut self.recorded_activity);
             self.committed = Some(new);
         }
         self.committed.map(|frame| frame.report)
     }
 
+    fn level_base(bank: u32, level: usize) -> u32 {
+        if level == FINE {
+            fine_base(bank)
+        } else {
+            (bank * BASE_LEVELS + u32::try_from(level).expect("base level")) * GRID_CELLS
+        }
+    }
+
+    fn fine_endpoint(endpoint: Endpoint) -> FineEndpoint {
+        FineEndpoint {
+            tick: endpoint.tick,
+            origin: endpoint.origins[FINE].map(|cell| cell as f32 * CELL_METRES[FINE]),
+            offset: fine_base(endpoint.bank) as usize,
+        }
+    }
+
     pub(crate) fn witness(&self) -> Option<Witness> {
         self.committed.map(|frame| Witness {
             buffer: self.endpoints.clone(),
-            endpoints: frame.endpoint.map(|endpoint| super::Endpoint {
-                tick: endpoint.tick,
-                origins: std::array::from_fn(|level| {
-                    endpoint.origins[level].map(|cell| cell as f32 * CELL_METRES[level])
-                }),
-                offsets: std::array::from_fn(|level| (endpoint.bank as usize * 2 + level) * CELLS),
+            endpoints: std::array::from_fn(|i| {
+                let endpoint = frame.endpoint[i];
+                super::Endpoint {
+                    tick: endpoint.tick,
+                    origins: std::array::from_fn(|level| {
+                        endpoint.origins[level].map(|cell| cell as f32 * CELL_METRES[level])
+                    }),
+                    offsets: std::array::from_fn(|level| {
+                        Self::level_base(endpoint.bank, level) as usize
+                    }),
+                    fine: self.mailbox.fine.then(|| {
+                        if i == 0 {
+                            frame.fine_previous
+                        } else {
+                            Self::fine_endpoint(endpoint)
+                        }
+                    }),
+                }
             }),
         })
     }
 
-    fn write_sample(&self, queue: &wgpu::Queue, endpoint: [Endpoint; 2], time: EffectTime) {
-        let [previous, current] = endpoint;
-        let interval = (current.tick - previous.tick) as f32;
-        let from_previous = if time.tick >= previous.tick {
-            (time.tick - previous.tick) as f32
-        } else {
-            -((previous.tick - time.tick) as f32)
-        };
-        let blend = if interval == 0.0 {
-            1.0
-        } else {
-            ((from_previous - 1.0 + time.alpha) / interval).clamp(0.0, 1.0)
-        };
-        let settings = Self::sample_settings(endpoint, time, blend);
+    fn write_sample(&self, queue: &wgpu::Queue, frame: &Frame, time: EffectTime) {
+        let settings = self.sample_settings(frame, time, false);
         queue.write_buffer(&self.sample, 0, bytemuck::bytes_of(&settings));
     }
 
-    fn sample_settings(endpoint: [Endpoint; 2], time: EffectTime, blend: f32) -> SampleSettings {
-        let interval = (endpoint[1].tick - endpoint[0].tick) as f32;
+    fn sample_settings(&self, frame: &Frame, time: EffectTime, query: bool) -> SampleSettings {
+        let endpoint = frame.endpoint;
+        let clock = |previous: u64, current: u64| {
+            let interval = (current - previous) as f32;
+            let from_previous = if time.tick >= previous {
+                (time.tick - previous) as f32
+            } else {
+                -((previous - time.tick) as f32)
+            };
+            let blend = if query || interval == 0.0 {
+                1.0
+            } else {
+                ((from_previous - 1.0 + time.alpha) / interval).clamp(0.0, 1.0)
+            };
+            [blend, interval * time.tick_duration.as_secs_f32(), 1.0, 0.0]
+        };
+        let fine = [frame.fine_previous, Self::fine_endpoint(endpoint[1])];
         SampleSettings {
             origins: std::array::from_fn(|i| {
                 let metres = CELL_METRES[i % 2];
                 let [x, z] = endpoint[i / 2].origins[i % 2];
                 [x as f32 * metres, z as f32 * metres, metres, 0.0]
             }),
-            clocks: [blend, interval * time.tick_duration.as_secs_f32(), 1.0, 0.0],
-            bases: [0_u32, 1, 2, 3]
-                .map(|i| (endpoint[(i / 2) as usize].bank * LEVELS + i % LEVELS) * GRID_CELLS),
+            clocks: clock(endpoint[0].tick, endpoint[1].tick),
+            bases: std::array::from_fn(|i| Self::level_base(endpoint[i / 2].bank, i % 2)),
+            fine_origins: fine.map(|end| [end.origin[0], end.origin[1], CELL_METRES[FINE], 0.0]),
+            fine_clock: if self.mailbox.fine {
+                clock(fine[0].tick, fine[1].tick)
+            } else {
+                [0.0; 4]
+            },
+            fine_bases: [
+                u32::try_from(fine[0].offset).expect("fine plane offset"),
+                u32::try_from(fine[1].offset).expect("fine plane offset"),
+                0,
+                0,
+            ],
         }
     }
 }

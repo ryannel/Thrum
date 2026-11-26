@@ -212,6 +212,7 @@ impl SceneSource<SourceTick> for Source {
 }
 
 pub(super) struct Fixture {
+    map: Arc<Mutex<Map>>,
     gpu: thrum_test_support::Gpu,
     device: wgpu::Device,
     queue: wgpu::Queue,
@@ -229,7 +230,24 @@ impl Fixture {
     pub(super) const STEP: Duration = Duration::from_nanos(16_666_667);
 
     pub(super) fn new(map: Map, limits: Limits) -> Option<Self> {
-        Self::with_fields(map, Some(limits), None)
+        // Run the same WATERS assertions with either interaction profile.
+        let fine =
+            std::env::var_os("THRUM_TEST_FINE_INTERACTION").is_some_and(|value| value == "1");
+        Self::with_fields(map, Some(limits), None, fine)
+    }
+
+    pub(super) fn new_fine(map: Map) -> Option<Self> {
+        Self::with_fields(map, Some(Limits::default()), None, true)
+    }
+
+    pub(super) fn set_levels(&self, levels: &[f64]) {
+        assert!(
+            self.map
+                .lock()
+                .expect("test map")
+                .set_levels(0, levels)
+                .expect("test levels")
+        );
     }
 
     pub(super) fn new_foam(
@@ -242,13 +260,14 @@ impl Fixture {
             impulses: 0,
             solves: 1,
         });
-        Self::with_fields(map, limits, Some((wave, wind)))
+        Self::with_fields(map, limits, Some((wave, wind)), false)
     }
 
     fn with_fields(
         map: Map,
         limits: Option<Limits>,
         foam: Option<(Option<thrum_sea_model::Component>, [f32; 2])>,
+        fine_interaction: bool,
     ) -> Option<Self> {
         let device_slot = INTERACTION_DEVICE
             .lock()
@@ -302,6 +321,7 @@ impl Fixture {
         };
         let profile = thrum_water::Profile {
             interaction: limits,
+            fine_interaction,
             query: limits.map(|_| QueryLimits {
                 points: 16,
                 max_age: 32,
@@ -313,9 +333,9 @@ impl Fixture {
             .is_some_and(|body| matches!(body.kind, BodyKind::Sea));
         let map = Arc::new(Mutex::new(map));
         let mut water = if sea && foam.is_none() {
-            Water::new(map, 0, spectrum, profile)
+            Water::new(Arc::clone(&map), 0, spectrum, profile)
         } else {
-            Water::mapped(map, spectrum, profile)
+            Water::mapped(Arc::clone(&map), spectrum, profile)
         }
         .expect("interaction contribution");
         let foam = foam.map(|(_, wind)| {
@@ -329,6 +349,7 @@ impl Fixture {
         host.set_scene_contribution(Box::new(water))
             .expect("prepare interaction water");
         Some(Self {
+            map,
             gpu,
             device,
             queue,
@@ -560,6 +581,11 @@ pub(super) struct Field {
 }
 
 impl Field {
+    pub(super) fn fine(&self) -> &[[f32; 2]] {
+        let start = self.endpoint.endpoints[1].fine.expect("fine level").offset;
+        &self.cells[start..start + Witness::SIDE.pow(2)]
+    }
+
     pub(super) fn level(&self, level: usize) -> &[[f32; 2]] {
         let start = self.endpoint.endpoints[1].offsets[level];
         &self.cells[start..start + Witness::SIDE.pow(2)]
@@ -572,27 +598,34 @@ impl Field {
     )]
     pub(super) fn height(&self, point: [f32; 2]) -> f32 {
         let endpoint = self.endpoint.endpoints[1];
-        (0..2)
+        let sample = |origin: [f32; 2], spacing, values: &[[f32; 2]]| {
+            let [x, z] = std::array::from_fn(|i| (point[i] - origin[i]) / spacing);
+            if !(0.0..(Witness::SIDE - 1) as f32).contains(&x)
+                || !(0.0..(Witness::SIDE - 1) as f32).contains(&z)
+            {
+                return 0.0;
+            }
+            let offset = z.floor() as usize * Witness::SIDE + x.floor() as usize;
+            let lerp = |a: f32, b: f32, blend| a + (b - a) * blend;
+            let a = lerp(values[offset][0], values[offset + 1][0], x.fract());
+            let b = lerp(
+                values[offset + Witness::SIDE][0],
+                values[offset + Witness::SIDE + 1][0],
+                x.fract(),
+            );
+            lerp(a, b, z.fract())
+        };
+        let base: f32 = (0..2)
             .map(|level| {
-                let [x, z] = std::array::from_fn(|i| {
-                    (point[i] - endpoint.origins[level][i]) / Witness::CELL_METRES[level]
-                });
-                if !(0.0..(Witness::SIDE - 1) as f32).contains(&x)
-                    || !(0.0..(Witness::SIDE - 1) as f32).contains(&z)
-                {
-                    return 0.0;
-                }
-                let offset = z.floor() as usize * Witness::SIDE + x.floor() as usize;
-                let values = self.level(level);
-                let lerp = |a: f32, b: f32, blend| a + (b - a) * blend;
-                let a = lerp(values[offset][0], values[offset + 1][0], x.fract());
-                let b = lerp(
-                    values[offset + Witness::SIDE][0],
-                    values[offset + Witness::SIDE + 1][0],
-                    x.fract(),
-                );
-                lerp(a, b, z.fract())
+                sample(
+                    endpoint.origins[level],
+                    Witness::CELL_METRES[level],
+                    self.level(level),
+                )
             })
-            .sum()
+            .sum();
+        base + endpoint.fine.map_or(0.0, |fine| {
+            sample(fine.origin, Witness::FINE_CELL_METRES, self.fine())
+        })
     }
 }

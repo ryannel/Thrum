@@ -110,12 +110,21 @@ fn advance(@builtin(global_invocation_id) invocation: vec3<u32>) {
     let magnitude = length(k);
     let divider = TAU / WAKE_DIVIDER_METRES;
     let short = smoothstep(0.8 * divider, 1.2 * divider, magnitude);
-    let band = select(short, 1.0 - short, step.level == 1u);
+    let level = step.level & ~FINE_SPLIT;
+    let fine = level == 2u;
+    let band = select(short, 1.0 - short, level == 1u);
+    let divider_fine = TAU / FINE_DIVIDER_METRES;
+    let short_fine = smoothstep(0.8 * divider_fine, 1.2 * divider_fine, magnitude);
+    let share = select(
+        band,
+        select(band - short_fine, short_fine, fine),
+        (step.level & FINE_SPLIT) != 0u && level != 1u
+    );
     // Taper the Nyquist bins; fractional translations of unpaired bins
     // otherwise make a real pressure or a real state complex.
     let nyquist = 1.0 - smoothstep(2.7, 3.14159265, max(abs(grid_k.x), abs(grid_k.y)));
     var impulse = vec2(0.0);
-    if band > 0.0 && magnitude > 0.0 {
+    if share > 0.0 && magnitude > 0.0 {
         for (var i = 0u; i < step.source_count; i++) {
             let source = patches[step.source_first + i];
             let across = vec2(-source.axis.y, source.axis.x);
@@ -124,7 +133,7 @@ fn advance(@builtin(global_invocation_id) invocation: vec3<u32>) {
             let strength = -source.impulse * exp(-0.5 * dot(q, q));
             impulse += strength * vec2(cos(phase), sin(phase));
         }
-        impulse *= 0.5 * band * nyquist / (WATER_DENSITY * step.metres * step.metres);
+        impulse *= 0.5 * share * nyquist / (WATER_DENSITY * step.metres * step.metres);
     }
     let start = work[AREA + index];
     let h = start.xy;
@@ -132,7 +141,8 @@ fn advance(@builtin(global_invocation_id) invocation: vec3<u32>) {
     // tanh has rounded to 1 above this argument. Keep it away from
     // implementations that evaluate the hyperbolic ratio using exp(2x).
     let dispersion = magnitude * select(tanh(min(magnitude * step.depth, 9.0)), 1.0, step.depth == 0.0);
-    let omega = sqrt(WATER_GRAVITY * dispersion);
+    let restoring = WATER_GRAVITY + select(0.0, CAPILLARY_COEFFICIENT * magnitude * magnitude, fine);
+    let omega = sqrt(restoring * dispersion);
     let angle = step.seconds * omega;
     let cosine = cos(angle);
     var sinc = step.seconds;
@@ -140,7 +150,7 @@ fn advance(@builtin(global_invocation_id) invocation: vec3<u32>) {
         sinc = sin(angle) / omega;
     }
     let travel = -dot(k, step.current) * step.seconds;
-    let state = vec4(cosine * h + dispersion * sinc * p, cosine * p - WATER_GRAVITY * sinc * h);
+    let state = vec4(cosine * h + dispersion * sinc * p, cosine * p - restoring * sinc * h);
     work[index] = rotate(state, vec2(cos(travel), sin(travel))) + vec4(0.0, 0.0, impulse);
 }
 

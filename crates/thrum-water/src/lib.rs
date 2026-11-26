@@ -45,8 +45,10 @@ pub struct Profile {
     pub underwater: bool,
     /// Optional body query capacity and age limits.
     pub query: Option<query::QueryLimits>,
-    /// Optional two-level interaction waves.
+    /// Optional interaction waves and their capacity.
     pub interaction: Option<interaction::Limits>,
+    /// Give sub-metre source waves their own 2 cm interaction level. Requires interaction waves.
+    pub fine_interaction: bool,
     /// Maximum renewal period of carried detail in a current. None selects four seconds.
     pub carriage_period: Option<std::time::Duration>,
 }
@@ -87,7 +89,7 @@ impl std::fmt::Display for WaterError {
             Self::UnsupportedMap(reason) => f.write_str(reason),
             Self::InvalidCarriagePeriod => f.write_str("carriage period must be positive"),
             Self::InvalidInteractionLimits => {
-                f.write_str("interaction requires 1–16 solves and at most 64 sources of each kind")
+                f.write_str("interaction requires 1–16 solves and at most 64 sources of each kind; the fine level requires interaction")
             }
         }
     }
@@ -188,9 +190,11 @@ impl Water {
         {
             return Err(WaterError::InvalidCarriagePeriod);
         }
-        if profile.interaction.is_some_and(|limits| {
-            limits.bodies > 64 || limits.impulses > 64 || !(1..=16).contains(&limits.solves)
-        }) {
+        if (profile.fine_interaction && profile.interaction.is_none())
+            || profile.interaction.is_some_and(|limits| {
+                limits.bodies > 64 || limits.impulses > 64 || !(1..=16).contains(&limits.solves)
+            })
+        {
             return Err(WaterError::InvalidInteractionLimits);
         }
         if (profile.underwater && profile.optics.is_none())
@@ -300,7 +304,9 @@ impl Water {
             spectrum,
             profile,
             query,
-            interaction: profile.interaction.map(interaction::Mailbox::new),
+            interaction: profile
+                .interaction
+                .map(|limits| interaction::Mailbox::new(limits, profile.fine_interaction)),
             interaction_tap: None,
             foam: None,
             foam_tap: None,

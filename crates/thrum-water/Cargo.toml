@@ -11,6 +11,10 @@ autotests = false
 [[test]]
 name = "interaction_gpu"
 
+# PUDDLES WP8 reads submitted fine-level state on Metal.
+[[test]]
+name = "fine_level_gpu"
+
 [lints]
 workspace = true
 

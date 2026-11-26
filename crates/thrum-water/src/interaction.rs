@@ -15,7 +15,11 @@ const GRID_WIDTH: u32 = 256;
 const SIDE: usize = GRID_WIDTH as usize;
 const CELLS: usize = SIDE * SIDE;
 const GRID_CELLS: u32 = GRID_WIDTH * GRID_WIDTH;
-const CELL_METRES: [f32; 2] = [0.25, 2.0];
+const NEAR: usize = 0;
+const FAR: usize = 1;
+const FINE: usize = 2;
+const CELL_METRES: [f32; 3] = [0.25, 2.0, 0.02];
+const FINE_TICKS: u64 = 2;
 const GRAVITY: f32 = 9.81;
 const DENSITY: f32 = 1025.0;
 const MAX_TICKS: u64 = 8;
@@ -99,13 +103,15 @@ impl Pages {
 #[derive(Clone)]
 pub struct Mailbox {
     limits: Limits,
+    fine: bool,
     pages: Arc<Mutex<Pages>>,
 }
 
 impl Mailbox {
-    pub(super) fn new(limits: Limits) -> Self {
+    pub(super) fn new(limits: Limits, fine: bool) -> Self {
         Self {
             limits,
+            fine,
             pages: Arc::default(),
         }
     }
@@ -185,6 +191,23 @@ pub struct Report {
     pub solves: [u32; 2],
     /// Latest CPU time spent sampling and labelling the windows, milliseconds.
     pub labelling_ms: f64,
+    /// Latest fine-level work and cumulative omissions, when the profile enables it.
+    pub fine: Option<FineReport>,
+}
+
+/// Fine interaction work and capacity counters.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct FineReport {
+    /// Wet regions in the fine window.
+    pub regions: u32,
+    /// Region and depth solves across both substeps of the latest advanced frame.
+    pub solves: u32,
+    /// Number of ticks advanced on the latest submitted tick frame.
+    pub steps: u32,
+    /// Cumulative ticks omitted by the fine level's two-step bound.
+    pub dropped_ticks: u64,
+    /// Cumulative fine sources whose region exceeded the solve budget.
+    pub refused_regions: u64,
 }
 
 /// Submitted world-space placement and packing for one interaction endpoint.
@@ -196,6 +219,19 @@ pub struct Endpoint {
     pub origins: [[f32; 2]; 2],
     /// Offset in pairs of height and potential, for the near and far levels.
     pub offsets: [usize; 2],
+    /// Fine-level endpoint shown at this end of the interpolation interval.
+    pub fine: Option<FineEndpoint>,
+}
+
+/// Submitted world-space placement and packing for one fine endpoint.
+#[derive(Clone, Copy, Debug)]
+pub struct FineEndpoint {
+    /// Source tick stamped on this plane.
+    pub tick: u64,
+    /// World x/z of its cell zero, in metres.
+    pub origin: [f32; 2],
+    /// Offset in pairs of height and potential.
+    pub offset: usize,
 }
 
 /// Opt-in diagnostic access to the two committed endpoints.
@@ -211,7 +247,9 @@ impl Witness {
     /// Width and height of each level in cells.
     pub const SIDE: usize = SIDE;
     /// Metres per cell in each level.
-    pub const CELL_METRES: [f32; 2] = CELL_METRES;
+    pub const CELL_METRES: [f32; 2] = [CELL_METRES[NEAR], CELL_METRES[FAR]];
+    /// Metres per cell on the fine level.
+    pub const FINE_CELL_METRES: f32 = CELL_METRES[FINE];
 }
 
 /// Optional witness receiver, updated only when the interaction state commits.

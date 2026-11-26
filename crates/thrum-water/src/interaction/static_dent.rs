@@ -1,19 +1,20 @@
 //! The static part of a body's own pressure, used only by its query.
 
-use super::{BodyPressure, CELL_METRES, DENSITY, GRAVITY, GRID_WIDTH};
+use super::{BodyPressure, CELL_METRES, DENSITY, FAR, FINE, GRAVITY, GRID_WIDTH, NEAR};
 use std::f64::consts::TAU;
 
 pub(super) const DIVIDER_METRES: f64 = 12.0;
-const BAND_START: f64 = 0.8 / DIVIDER_METRES;
-const BAND_END: f64 = 1.2 / DIVIDER_METRES;
+pub(super) const FINE_DIVIDER_METRES: f64 = 1.0;
 #[expect(
     clippy::cast_possible_truncation,
     clippy::cast_sign_loss,
     reason = "the maximum Fourier bin is the integer part of the positive coarse-band edge"
 )]
-const MAX_BIN: usize = (GRID_WIDTH as f64 * CELL_METRES[1] as f64 * BAND_END) as usize;
-const FINE: u32 = 1;
-const COARSE: u32 = 2;
+const MAX_BIN: usize =
+    (GRID_WIDTH as f64 * CELL_METRES[NEAR] as f64 * 1.2 / FINE_DIVIDER_METRES) as usize;
+const NEAR_BIT: u32 = 1 << NEAR;
+const FAR_BIT: u32 = 1 << FAR;
+const FINE_BIT: u32 = 1 << FINE;
 
 #[expect(
     clippy::cast_possible_truncation,
@@ -23,25 +24,86 @@ pub(super) fn at(
     source: BodyPressure,
     admitted: u32,
     point: [f64; 2],
-    origins: [[i32; 2]; 2],
+    origins: [[i32; 2]; 3],
+    fine: bool,
 ) -> [f32; 4] {
     if admitted == 0 || source.force == 0.0 {
         return [0.0; 4];
     }
-    let dent = match admitted {
-        FINE => {
-            let Some(long) = long_band(source, point, origins[0], 0) else {
-                return [0.0; 4];
+    let dent = if fine {
+        split_dent(source, admitted, point, origins)
+    } else {
+        legacy_dent(source, admitted, point, origins)
+    };
+    [dent[0] as f32, dent[1] as f32, dent[2] as f32, 0.0]
+}
+
+fn legacy_dent(
+    source: BodyPressure,
+    admitted: u32,
+    point: [f64; 2],
+    origins: [[i32; 2]; 3],
+) -> [f64; 3] {
+    match admitted {
+        NEAR_BIT => {
+            let Some(long) = long_band(source, point, origins[NEAR], NEAR, DIVIDER_METRES, true)
+            else {
+                return [0.0; 3];
             };
             // The short band is the Gaussian less its long-band complement
             // on the fine grid, including the DC component the step omits.
             let full = gaussian(source, point);
             std::array::from_fn(|i| full[i] - long[i])
         }
-        COARSE => long_band(source, point, origins[1], 1).unwrap_or([0.0; 3]),
+        FAR_BIT => {
+            long_band(source, point, origins[FAR], FAR, DIVIDER_METRES, false).unwrap_or([0.0; 3])
+        }
         _ => gaussian(source, point),
+    }
+}
+
+fn split_dent(
+    source: BodyPressure,
+    admitted: u32,
+    point: [f64; 2],
+    origins: [[i32; 2]; 3],
+) -> [f64; 3] {
+    // When all bands cover this point, their shares have the same sum as the original source.
+    let covers = |level: usize| {
+        let metres = f64::from(CELL_METRES[level]);
+        (0..2).all(|i| {
+            let cell = point[i] / metres - f64::from(origins[level][i]);
+            (0.0..f64::from(GRID_WIDTH - 1)).contains(&cell)
+        })
     };
-    [dent[0] as f32, dent[1] as f32, dent[2] as f32, 0.0]
+    if admitted == (NEAR_BIT | FAR_BIT | FINE_BIT) && (0..3).all(covers) {
+        return gaussian(source, point);
+    }
+    let low = |level: usize, divider, dc| {
+        long_band(source, point, origins[level], level, divider, dc).unwrap_or([0.0; 3])
+    };
+    let mut dent = [0.0; 3];
+    let mut add = |positive: [f64; 3], negative: [f64; 3]| {
+        for i in 0..3 {
+            dent[i] += positive[i] - negative[i];
+        }
+    };
+    if admitted & FAR_BIT != 0 && covers(FAR) {
+        add(low(FAR, DIVIDER_METRES, false), [0.0; 3]);
+    }
+    if admitted & NEAR_BIT != 0 && covers(NEAR) {
+        add(
+            low(NEAR, FINE_DIVIDER_METRES, false),
+            low(NEAR, DIVIDER_METRES, false),
+        );
+    }
+    if admitted & FINE_BIT != 0 && covers(FINE) {
+        add(
+            gaussian(source, point),
+            low(FINE, FINE_DIVIDER_METRES, true),
+        );
+    }
+    dent
 }
 
 fn gaussian(source: BodyPressure, point: [f64; 2]) -> [f64; 3] {
@@ -72,6 +134,8 @@ fn long_band(
     point: [f64; 2],
     origin: [i32; 2],
     level: usize,
+    divider: f64,
+    dc: bool,
 ) -> Option<[f64; 3]> {
     let metres = f64::from(CELL_METRES[level]);
     let side = f64::from(GRID_WIDTH);
@@ -80,7 +144,9 @@ fn long_band(
     if grid.iter().any(|&p| !(0.0..side - 1.0).contains(&p)) {
         return None;
     }
-    let edge = span * BAND_END;
+    let band_start = 0.8 / divider;
+    let band_end = 1.2 / divider;
+    let edge = span * band_end;
     let edge_squared = edge * edge;
     let limit = edge as u32;
     let mut phase = [[[0.0; 3]; MAX_BIN + 1]; 2];
@@ -102,7 +168,7 @@ fn long_band(
     let (sin, cos) = source.heading.sin_cos();
     let [along, across] = source.footprint;
     let limit = i32::try_from(limit).expect("band lies within the grid");
-    let mut sum = [if level == 0 { 1.0 } else { 0.0 }, 0.0, 0.0];
+    let mut sum = [if dc { 1.0 } else { 0.0 }, 0.0, 0.0];
     for x in 0..=limit {
         let [cx, sx, dx] = phase[0][x as usize];
         for z in if x == 0 { 1 } else { -limit }..=limit {
@@ -111,7 +177,7 @@ fn long_band(
                 continue;
             }
             let cycles_per_metre = radius_squared.sqrt() / span;
-            let t = ((cycles_per_metre - BAND_START) / (BAND_END - BAND_START)).clamp(0.0, 1.0);
+            let t = ((cycles_per_metre - band_start) / (band_end - band_start)).clamp(0.0, 1.0);
             let band = 1.0 - t * t * (3.0 - 2.0 * t);
             let kx = TAU * f64::from(x) / span;
             let kz = TAU * f64::from(z) / span;

@@ -40,6 +40,9 @@ pub use shore::{Lag, ShoreConfig, ShoreTransform, Source, dispersion, shoaling};
 pub use surf::{SurfProfile, SurfSheet, ThrowReach, shore_sector};
 pub use waves::{Field, Limited, Surface, limit, shelter};
 
+/// Surface tension over water density, in m³/s², for capillary-gravity waves.
+pub const CAPILLARY_COEFFICIENT: f64 = 7.28e-5;
+
 /// Invalid authored water, with the declaration's name and actionable cause.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WaterError {

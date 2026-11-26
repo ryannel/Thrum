@@ -1031,6 +1031,13 @@ impl YardFloat {
         });
     }
 
+    pub(crate) fn move_marker(&self, tick: u64, [x, z]: [f64; 2], height: f64) {
+        let mut fleet = self.fleet.lock().expect("yard marker");
+        fleet.previous[0] = fleet.current[0];
+        fleet.tick = tick;
+        fleet.current[0].position = DVec3::new(x, height, z);
+    }
+
     pub(crate) fn waterline(&self) -> f64 {
         let float = self.fleet.lock().expect("yard float").current[0];
         float.position.y + f64::from(Self::SCALE) * float.draft()

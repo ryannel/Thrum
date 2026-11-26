@@ -50,7 +50,10 @@ fn interaction_records_match_the_shader_layout() {
             SampleSettings as "WakeSettings",
             origins,
             clocks,
-            bases
+            bases,
+            fine_origins,
+            fine_clock,
+            fine_bases
         )],
     );
 }

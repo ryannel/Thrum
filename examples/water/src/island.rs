@@ -511,10 +511,18 @@ pub fn build_rain_bands_cost(
 
 #[derive(Clone, Copy)]
 enum YardRoute {
+    FootfallCost { fine: bool },
     Game,
     Levels,
     Cost,
     BandsCost { rings: bool },
+}
+
+/// Build a matched cost arm for a moving marker and rain in the yard.
+/// # Errors
+/// Propagates scene construction errors.
+pub fn build_rain_footfall_cost(wind: Wind, fine: bool) -> Result<RainYardScene, Box<dyn Error>> {
+    build_yard(wind, true, YardRoute::FootfallCost { fine })
 }
 
 fn build_yard(
@@ -523,16 +531,24 @@ fn build_yard(
     route: YardRoute,
 ) -> Result<RainYardScene, Box<dyn Error>> {
     let mut profile = thrum_rain_model::Profile::default();
-    if matches!(route, YardRoute::Game | YardRoute::BandsCost { .. }) {
+    if matches!(
+        route,
+        YardRoute::Game | YardRoute::BandsCost { .. } | YardRoute::FootfallCost { .. }
+    ) {
         profile.edge_width = 0.45;
     }
     let mut rain = rain_yard::Yard::prepare(profile)?;
     rain.draw_float = matches!(route, YardRoute::Game | YardRoute::Levels);
     rain.draw_rings = matches!(
         route,
-        YardRoute::Game | YardRoute::BandsCost { rings: true }
+        YardRoute::Game | YardRoute::BandsCost { rings: true } | YardRoute::FootfallCost { .. }
     );
     rain.measure_regions = matches!(route, YardRoute::BandsCost { .. });
+    rain.footfalls = matches!(route, YardRoute::Game | YardRoute::FootfallCost { .. });
+    rain.fine = matches!(
+        route,
+        YardRoute::Game | YardRoute::FootfallCost { fine: true }
+    );
     let replies = rain.replies();
     let (game, report, map, _) =
         build_island(wind, draw_water, false, None, true, Some(rain), |_| {})?;
@@ -613,6 +629,16 @@ fn build_island(
             solves: 1,
         });
     }
+    if let Some(yard) = &rain
+        && yard.footfalls
+    {
+        profile.interaction = Some(thrum_water::interaction::Limits {
+            bodies: 1,
+            impulses: 3,
+            solves: 16,
+        });
+        profile.fine_interaction = yard.fine;
+    }
     let mut water = Water::mapped(Arc::clone(&map), spectrum, profile)?;
     configure(&mut water);
     let probes = if foam {
@@ -628,8 +654,9 @@ fn build_island(
     let basin_gains = map.lock().expect("island map").body(1).expect("lake").gains;
     let display_map = Arc::clone(&map);
     let mut controls = Controls::new();
-    let rain_controls = yard
-        .then(|| rain_yard::input_controls(&mut controls))
+    let rain_controls = rain
+        .as_ref()
+        .map(|yard| rain_yard::input_controls(&mut controls, yard.footfalls))
         .transpose()?;
     let float_readout = yard
         .then(|| rain_yard::float_readout(&mut controls))
@@ -651,7 +678,7 @@ fn build_island(
                 "Island view"
             },
             0.0..=if yard {
-                7.0
+                8.0
             } else if surf_route {
                 9.0
             } else if foam {
@@ -737,6 +764,7 @@ fn build_island(
         sky.sun_azimuth_degrees = match (yard, index, surf_route && wind == Wind::Trade) {
             (true, 6, _) => 40.0,
             (true, 7, _) => 11.0,
+            (true, 8, _) => 12.0,
             (_, _, true) => 224.0,
             _ => 228.0,
         };

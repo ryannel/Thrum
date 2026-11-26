@@ -8,14 +8,14 @@ import zlib from 'node:zlib';
 import {installWasmReceipt,readWasmReceipt} from './wasm_receipt.mjs';
 
 const mode = process.argv[process.argv.indexOf('--case') + 1];
-if (!['first-frame','frames','fixed','realtime','island','bodies','wake','foam','surf','channel','river','rain-puddles','rain-rings','under'].includes(mode)) throw Error('use --case first-frame|frames|fixed|realtime|island|bodies|wake|foam|surf|channel|river|rain-puddles|rain-rings|under');
+if (!['first-frame','frames','fixed','realtime','island','bodies','wake','foam','surf','channel','river','rain-puddles','rain-rings','rain-footfall','under'].includes(mode)) throw Error('use --case first-frame|frames|fixed|realtime|island|bodies|wake|foam|surf|channel|river|rain-puddles|rain-rings|rain-footfall|under');
 const opticsRoute = mode === 'fixed' ? process.env.THRUM_WATER_BROWSER_OPTICS : undefined;
 const diveRoute = ['fixed','realtime'].includes(mode) ? process.env.THRUM_WATER_BROWSER_DIVE : undefined;
 const surfInspection = process.env.THRUM_WATER_INSPECT_SURF === '1' && ['fixed','realtime'].includes(mode);
 const handoffCut = surfInspection && mode === 'realtime' && process.env.THRUM_WATER_ROUTE === 'handoff-cut';
 const [width,height] = mode === 'under' ? [48,27]
   : mode === 'realtime' && diveRoute ? [1280,720]
-  : mode==='rain-rings' ? [960,540]
+  : ['rain-rings','rain-footfall'].includes(mode) ? [960,540]
   : [2560,1440];
 const output = path.resolve(process.env.THRUM_WATER_OUTPUT ?? `tmp/waters-M3/${mode}-${Date.now()}`);
 await fs.mkdir(output,{recursive:true});
@@ -142,7 +142,7 @@ const observer = `
     return {mean:cover/count,peak,filmCells,parcels};
   };
   const wakeWitnesses=new Map();
-  globalThis.__readWake=async(tick,points=[],hull=null)=>{
+  globalThis.__readWake=async(tick,points=[],hull=null,footfall=null)=>{
     const device=__devices.at(-1), commands=device.createCommandEncoder();
     const stages=['interaction sample settings','interaction wave endpoints'].map(name=>{
       const source=__buffers[name];
@@ -188,7 +188,30 @@ const observer = `
       }
       return value;
     });
-    return {tick,peak,heights:points.map(interpolate),outsideHull,radius:nearEnergy>0?Math.sqrt(radialMoment/nearEnergy):0};
+    let fine=null;
+    if(footfall){
+      const [x,z,sill]=footfall;
+      const [ox,oz,spacing]=new Float32Array(settings,112,4);
+      const base=new Uint32Array(settings,144,4)[1];
+      const at=([x,z])=>[Math.round((x-ox)/spacing),Math.round((z-oz)/spacing)];
+      const [right]=at([149.35,66.35]);
+      if(!(right>0&&right<255))throw Error('receiving puddle is outside the fine witness window');
+      if(new Float32Array(settings,128,4)[2]!==1)throw Error('no submitted fine level');
+      let source=0,front=0,beyond=0,beyondPotential=0;
+      for(let index=0;index<256*256;index++){
+        const px=ox+(index%256)*spacing,pz=oz+Math.floor(index/256)*spacing;
+        const height=Math.abs(cells[2*(base+index)]),potential=Math.abs(cells[2*(base+index)+1]);
+        const radius=Math.hypot(px-x,pz-z);
+        if(radius<0.12)source=Math.max(source,height);
+        if(radius>0.22&&radius<0.43)front=Math.max(front,height);
+        if(px>sill){
+          beyond=Math.max(beyond,height);
+          beyondPotential=Math.max(beyondPotential,potential);
+        }
+      }
+      fine={source,front,beyond,beyondPotential,origin:[ox,oz],spacing,right};
+    }
+    return {tick,peak,heights:points.map(interpolate),outsideHull,radius:nearEnergy>0?Math.sqrt(radialMoment/nearEnergy):0,fine};
   };
   globalThis.__checkWakeSample=([tick,used,requested,x,z,height])=>{
     const sample=wakeWitnesses.get(tick);
@@ -563,8 +586,8 @@ try {
   await cdp.call('Page.enable',{},sid);await cdp.call('Runtime.enable',{},sid);
   await installWasmReceipt(cdp,sid);
   const surfRoute=mode==='surf'||surfInspection;
-  await cdp.call('Page.addScriptToEvaluateOnNewDocument',{source:observer+(mode==='under'?lensObserver:'')+(['island','surf','channel','river','rain-puddles','rain-rings'].includes(mode)?islandObserver:'')+`\ndocument.addEventListener('DOMContentLoaded',()=>{document.querySelector('canvas').width=${width};document.querySelector('canvas').height=${height};});`},sid);
-  const route=diveRoute??opticsRoute??(surfRoute?(handoffCut?'?surf=gale':'?surf=trade'):mode==='foam'?'?foam=calm&speed=6&view=overhead&wake-bodies=1':mode==='wake'?'?wake=calm&speed=6&view=overhead&wake-bodies=1':mode==='bodies'?'?bodies=trade&speed=5':mode==='island'?'?island=trade':mode==='channel'?'?channel=trade':mode==='river'?'?river=trade':['rain-puddles','rain-rings'].includes(mode)?'?rain=calm':mode==='under'?lensRoute('sea','baseline'):'');
+  await cdp.call('Page.addScriptToEvaluateOnNewDocument',{source:observer+(mode==='under'?lensObserver:'')+(['island','surf','channel','river','rain-puddles','rain-rings','rain-footfall'].includes(mode)?islandObserver:'')+`\ndocument.addEventListener('DOMContentLoaded',()=>{document.querySelector('canvas').width=${width};document.querySelector('canvas').height=${height};});`},sid);
+  const route=diveRoute??opticsRoute??(surfRoute?(handoffCut?'?surf=gale':'?surf=trade'):mode==='foam'?'?foam=calm&speed=6&view=overhead&wake-bodies=1':mode==='wake'?'?wake=calm&speed=6&view=overhead&wake-bodies=1':mode==='bodies'?'?bodies=trade&speed=5':mode==='island'?'?island=trade':mode==='channel'?'?channel=trade':mode==='river'?'?river=trade':['rain-puddles','rain-rings','rain-footfall'].includes(mode)?'?rain=calm':mode==='under'?lensRoute('sea','baseline'):'');
   result.route=route;
   const navigate=async search=>{
     await cdp.call('Page.navigate',{url:url+search},sid);
@@ -577,7 +600,7 @@ try {
     return readWasmReceipt(cdp,sid,url+'scene_bg.wasm',result.wasm,wasm.length);
   };
   result.instantiated_wasm=await navigate(route);
-  if(['rain-puddles','rain-rings'].includes(mode))await evaluate("game.edit_control('rain.rate',0)");
+  if(['rain-puddles','rain-rings','rain-footfall'].includes(mode))await evaluate("game.edit_control('rain.rate',0)");
   const fixedSurf=surfRoute&&mode!=='realtime';
   const lensClockOrigin=async()=>{
     const {origin}=await until(async()=>{
@@ -719,6 +742,39 @@ try {
     assert(ordinary.frame.tick===impact.frame.tick&&ordinary.frame.alpha===impact.frame.alpha,'impact arms sampled different endpoints');
     assert(impactPixels>16&&impact.frame.lens_passes.cut===1&&impact.frame.lens_passes.composition===1,'the lake impact did not wet the lens');
     assert(lensFailures.length===0,lensFailures.join('; '));
+  }else if(mode==='rain-footfall'){
+    await until(async()=>{
+      const status=await evaluate(`game.frame(${now});game.report()`);
+      return /^Cooked generation [0-9]+ drawn/.test(status);
+    },'cooked footfall yard drawn');
+    const step=async()=>{
+      await until(()=>evaluate('game.frame_ready()'),'footfall frame slot');
+      await drive(1000/60);
+      return evaluate('(game.report(),globalThis.waterRainYard)');
+    };
+    await evaluate("game.edit_control('camera.island',8);game.edit_control('rain.rate',100);game.edit_control('rain.time_scale',600);game.edit_control('sun.elevation',29)");
+    const separate=await until(async()=>{
+      const state=await step();
+      return state[0]>state[1] && state[1]>18.016 ? state : null;
+    },'both puddles wet with a dry sill');
+    await evaluate("game.edit_control('rain.rate',0);game.edit_control('rain.time_scale',1)");
+    for(let i=0;i<65;i++)await step();
+    await capture('still-puddles',0);
+    await evaluate("game.edit_control('rain.walk',1)");
+    const samples=[];
+    for(let i=0;i<23;i++){
+      await step();
+      const {tick}=frameInfo(await evaluate('game.frame_info()'));
+      const {fine}=await evaluate(`__readWake(${tick},[],null,[147.0,66.18,148.44])`);
+      samples.push({tick,...fine});
+    }
+    const first=samples.find(row=>row.source>0.0004);
+    const crossing=samples.find(row=>first&&row.tick>first.tick+3&&row.front>0.00025);
+    assert(first&&crossing,`no footfall propagated in the source puddle: ${JSON.stringify(samples)}`);
+    assert(samples.every(row=>row.beyond===0&&row.beyondPotential===0),'wave leaked across the dry sill');
+    await capture('footfall-in-motion',0);
+    assert(result.frames[0].sha256_rgba!==result.frames[1].sha256_rgba,'the submitted footfall frame did not change');
+    result.footfall={separate,first,crossing,samples};
   }else if(mode==='rain-rings'){
     await until(async()=>{
       const status=await evaluate(`game.frame(${now});game.report()`);

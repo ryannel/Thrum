@@ -38,6 +38,53 @@ fn dive_view(route: &str) -> Option<(f64, f64)> {
     }
 }
 
+fn fill_footfall_yard(
+    runtime: &mut Offscreen<SkyGame>,
+    device: &wgpu::Device,
+    map: &water_scene::SharedMap,
+    joined: bool,
+) -> f64 {
+    let submit = |runtime: &mut Offscreen<SkyGame>, time| {
+        runtime
+            .step_at(Duration::from_secs_f64(time))
+            .expect("advance yard preroll");
+        device
+            .poll(wgpu::PollType::wait_indefinitely())
+            .expect("yard preroll completion");
+        while runtime
+            .completed()
+            .expect("yard preroll completion")
+            .is_some()
+        {}
+    };
+    runtime
+        .parameters(r#"{"rain.rate":100,"rain.time_scale":600}"#)
+        .expect("fill the yard");
+    let mut final_levels = [None; 2];
+    for step in 1..=360 {
+        submit(runtime, f64::from(step) / 60.0);
+        final_levels = super::rain_cost::levels(&map.lock().expect("yard map"));
+        let filled = match final_levels {
+            [Some(left), Some(right)] if joined => {
+                left.to_bits() == right.to_bits() && right > 18.08
+            }
+            [Some(left), Some(right)] => left > right && right > 18.016,
+            _ => false,
+        };
+        if filled {
+            runtime
+                .parameters(r#"{"rain.rate":0,"rain.time_scale":1}"#)
+                .expect("hold the yard at this fill");
+            // Roll the full rate history out before collecting submitted images.
+            for dry in step + 1..=step + 65 {
+                submit(runtime, f64::from(dry) / 60.0);
+            }
+            return f64::from(step + 65) / 60.0;
+        }
+    }
+    panic!("could not reach the requested footfall yard fill; last levels {final_levels:?}");
+}
+
 #[expect(
     clippy::too_many_lines,
     reason = "one timeline coordinates submitted frames, stage edits and the capture spool"
@@ -58,6 +105,16 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
     let whitewater = super::whitewater();
     let surf = super::surf_route();
     let route = std::env::var("THRUM_WATER_ROUTE").unwrap_or_default();
+    let footfall = yard
+        && matches!(
+            route.as_str(),
+            "yard-walk" | "yard-stone-left" | "yard-stone-right" | "yard-joined"
+        );
+    let footfall_edit = match route.as_str() {
+        "yard-walk" => r#"{"rain.walk":1}"#,
+        "yard-stone-right" => r#"{"rain.stone_right":1}"#,
+        _ => r#"{"rain.stone_left":1}"#,
+    };
     let held_dive = dive_view(&route);
     let optics_height = std::env::var("THRUM_WATER_OPTICS_HEIGHT").unwrap_or_else(|_| "2".into());
     let river_stage = river && matches!(route.as_str(), "stage" | "lake-stage" | "spring-stage");
@@ -81,7 +138,14 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
     } else {
         super::proof_game(true)
     };
-    let (extent, interval, opportunities, max_submissions) = if yard {
+    let (extent, interval, opportunities, max_submissions) = if footfall {
+        (
+            [1280, 720],
+            if route == "yard-walk" { 4.5 } else { 3.25 },
+            36.0,
+            CHANNEL_SUBMISSIONS,
+        )
+    } else if yard {
         ([1280, 720], 20.0, 9.0, CHANNEL_SUBMISSIONS)
     } else if dive {
         ([1280, 720], 5.0, 20.0, MAX_SUBMISSIONS)
@@ -128,7 +192,8 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
     if yard {
         runtime
             .parameters(&format!(
-                r#"{{"camera.island":{island_view},"sun.elevation":8,"rain.rate":0}}"#
+                r#"{{"camera.island":{island_view},"sun.elevation":{},"rain.rate":0}}"#,
+                if footfall { 29 } else { 8 }
             ))
             .expect("initial dry yard");
     }
@@ -166,6 +231,8 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
             runtime
                 .step_at(Duration::from_secs_f64(shot.start))
                 .expect("river inspection preroll");
+        } else if footfall {
+            runtime.step_at(Duration::ZERO).expect("footfall preroll");
         } else {
             runtime.step().expect("warm submit");
         }
@@ -177,6 +244,14 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
             .expect("warm poll");
         while runtime.completed().expect("warm completion").is_some() {}
     }
+    let footfall_start = footfall.then(|| {
+        fill_footfall_yard(
+            &mut runtime,
+            &device,
+            yard_map.as_ref().expect("yard"),
+            route == "yard-joined",
+        )
+    });
     runtime
         .enable_capture_with_limits(
             3,
@@ -204,9 +279,34 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
     let mut cut = None;
     let mut weather_edits = Vec::new();
     let mut yard_levels = Vec::new();
+    let mut footfall_steps = Vec::new();
+    let yard_tick = Duration::from_secs_f64(1.0 / 60.0);
     while begin.elapsed() < Duration::from_secs_f64(interval) && submitted < max_submissions {
         let elapsed = begin.elapsed().as_secs_f64();
-        if yard {
+        if let Some(start) = footfall_start {
+            let target_tick =
+                Duration::from_secs_f64(start + elapsed).as_nanos() / yard_tick.as_nanos();
+            let previous_tick = report
+                .lock()
+                .expect("water report")
+                .interaction
+                .and_then(|wave| wave.endpoints)
+                .map_or(0, |ends| u128::from(ends[1]));
+            // Trigger on a frame that can actually step the source's tick.
+            // Preserve real elapsed time even if a loaded device skips a frame.
+            let gap = target_tick.saturating_sub(previous_tick);
+            if elapsed >= 0.30
+                && applied.is_empty()
+                && (1..=2).contains(&gap)
+                && runtime.pending_frames() < 2
+            {
+                runtime
+                    .parameters(footfall_edit)
+                    .expect("yard interaction control");
+                weather_edits.push(json!({"elapsed":elapsed,"parameters":serde_json::from_str::<Value>(footfall_edit).expect("footfall edit")}));
+                applied = footfall_edit;
+            }
+        } else if yard {
             let change = match elapsed {
                 t if t >= 7.8 => r#"{"rain.rate":0,"rain.drying":100,"rain.time_scale":600}"#,
                 t if t >= 4.45 => r#"{"rain.rate":100,"rain.drying":0,"rain.time_scale":600}"#,
@@ -307,12 +407,27 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
         }
         let submitted_frame = if let Some(shot) = &river_inspection {
             runtime.step_at(Duration::from_secs_f64(shot.start + elapsed))
+        } else if let Some(start) = footfall_start {
+            runtime.step_at(Duration::from_secs_f64(start + elapsed))
         } else if late_channel {
             runtime.step_at(Duration::from_secs_f64(60.0 + elapsed))
         } else {
             runtime.step()
         };
         if submitted_frame.expect("ordinary submit").submitted {
+            if footfall {
+                let interaction = report
+                    .lock()
+                    .expect("water report")
+                    .interaction
+                    .expect("yard interaction");
+                let fine = interaction.fine.expect("yard fine level");
+                footfall_steps.push(json!({
+                    "tick": interaction.endpoints.expect("submitted endpoints")[1],
+                    "regions": fine.regions, "solves": fine.solves, "steps": fine.steps,
+                    "dropped_ticks": fine.dropped_ticks,
+                }));
+            }
             if let Some(map) = &yard_map {
                 let map = map.lock().expect("yard map");
                 yard_levels.push(super::rain_cost::levels(&map));
@@ -363,7 +478,21 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
         .expect("lossless writer");
     assert_eq!(written.frames, frames.len() as u64);
     assert_eq!(runtime.omissions(), 0, "complete submitted interval");
-    if yard {
+    if footfall {
+        assert!(
+            !applied.is_empty(),
+            "the capture never reached a frame that could step the impulse"
+        );
+        assert!(
+            footfall_steps
+                .iter()
+                .any(|row| row["solves"].as_u64().is_some_and(|n| n > 0)),
+            "the submitted sequence must contain fine solves from its source"
+        );
+        let joined = route == "yard-joined";
+        assert!(!yard_levels.is_empty());
+        assert!(yard_levels.iter().all(|pair| matches!(pair, [Some(left), Some(right)] if (left.to_bits() == right.to_bits()) == joined)), "the held fill changed during the dry interaction take: {yard_levels:?}");
+    } else if yard {
         assert_eq!(
             yard_levels.len(),
             frames.len(),
@@ -398,7 +527,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
         !handoff_cut || cut.is_some(),
         "capture reached the camera change"
     );
-    json!({"schema":1,"target":"mac-metal","mode":"realtime","commit":std::env::var("THRUM_WATER_COMMIT").unwrap_or_else(|_|"working tree diagnostic".into()),"extent":extent,"vertices":prepared.vertices,"resources":prepared.resources,"wind":island.or(floating.map(|f| f.wind)).or(dive_site.map(|(wind,_)| wind)).map(|w| format!("{w:?}")),"dive_site":dive_site.map(|(_,site)|site.name()),"dive_camera":dive_site.map(|(_,site)| held_dive.map_or_else(|| json!({"sweep_depth":site.crossing_depth(),"pitch":0}), |(depth,pitch)| json!({"depth":depth,"pitch":pitch}))),"island_view":(yard || island.is_some()).then_some(&island_view),"weather_edits":weather_edits,"yard_levels":yard_levels,"camera_cut":cut,"channel_view":channel.then_some(channel_view),"channel_route":channel.then_some(&route),"river_view":river.then_some(river_view),"river_inspection":river_inspection.map(|shot| json!({"name":shot.name,"start":shot.start,"position":shot.camera.position,"target":shot.camera.target})),"river_route":river.then_some(&route),"floating_view":floating.map(|f| f.wake.map_or_else(|| if f.chase {"chase".into()} else {String::new()}, |wake| format!("{:?}", wake.view).to_lowercase())),"craft_speed":floating.map(|f| f.speed),"clock":if late_channel {"ordinary submits at 60 seconds plus actual elapsed time"} else {"ordinary Offscreen::step on actual monotonic world time; asynchronous in-flight frames"},"opportunities_hz":opportunities,"frames":frames,"hashes":written.frame_hashes,"encoding":format!("{encoding:?}"),"omissions":runtime.omissions(),"capture_limits":{"interval_seconds":interval,"max_submissions":max_submissions,"gpu_staging_slots":6,"cpu_image_leases":CPU_LEASES,"pixel_byte_allowance":PIXEL_ALLOWANCE,"writer_queue":WRITER_QUEUE,"raw_spool_allowance":6_u64*1024*1024*1024},"writer_seconds":written.write_time.as_secs_f64(),"body_tick_poses":poses,"query":fleet.map(|(_,mailbox)|format!("{:?}",mailbox.stats())), "wake_route": (wake || whitewater).then_some(route), "interaction":prepared.interaction.map(|wake| format!("{wake:?}")), "foam":prepared.foam.map(|foam| format!("{foam:?}")), "foam_pattern":prepared.foam_pattern})
+    json!({"schema":1,"target":"mac-metal","mode":"realtime","commit":std::env::var("THRUM_WATER_COMMIT").unwrap_or_else(|_|"working tree diagnostic".into()),"extent":extent,"vertices":prepared.vertices,"resources":prepared.resources,"wind":island.or(floating.map(|f| f.wind)).or(dive_site.map(|(wind,_)| wind)).map(|w| format!("{w:?}")),"dive_site":dive_site.map(|(_,site)|site.name()),"dive_camera":dive_site.map(|(_,site)| held_dive.map_or_else(|| json!({"sweep_depth":site.crossing_depth(),"pitch":0}), |(depth,pitch)| json!({"depth":depth,"pitch":pitch}))),"island_view":(yard || island.is_some()).then_some(&island_view),"weather_edits":weather_edits,"footfall_route":footfall.then_some(&route),"footfall_steps":footfall_steps,"yard_levels":yard_levels,"camera_cut":cut,"channel_view":channel.then_some(channel_view),"channel_route":channel.then_some(&route),"river_view":river.then_some(river_view),"river_inspection":river_inspection.map(|shot| json!({"name":shot.name,"start":shot.start,"position":shot.camera.position,"target":shot.camera.target})),"river_route":river.then_some(&route),"floating_view":floating.map(|f| f.wake.map_or_else(|| if f.chase {"chase".into()} else {String::new()}, |wake| format!("{:?}", wake.view).to_lowercase())),"craft_speed":floating.map(|f| f.speed),"clock":if late_channel {"ordinary submits at 60 seconds plus actual elapsed time"} else {"ordinary Offscreen::step on actual monotonic world time; asynchronous in-flight frames"},"opportunities_hz":opportunities,"frames":frames,"hashes":written.frame_hashes,"encoding":format!("{encoding:?}"),"omissions":runtime.omissions(),"capture_limits":{"interval_seconds":interval,"max_submissions":max_submissions,"gpu_staging_slots":6,"cpu_image_leases":CPU_LEASES,"pixel_byte_allowance":PIXEL_ALLOWANCE,"writer_queue":WRITER_QUEUE,"raw_spool_allowance":6_u64*1024*1024*1024},"writer_seconds":written.write_time.as_secs_f64(),"body_tick_poses":poses,"query":fleet.map(|(_,mailbox)|format!("{:?}",mailbox.stats())), "wake_route": (wake || whitewater).then_some(route), "interaction":prepared.interaction.map(|wake| format!("{wake:?}")), "foam":prepared.foam.map(|foam| format!("{foam:?}")), "foam_pattern":prepared.foam_pattern})
 }
 fn drain(
     runtime: &mut Offscreen<SkyGame>,
