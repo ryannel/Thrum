@@ -1454,8 +1454,8 @@
     {
       "id": "WP8",
       "name": "Water reflects the sky, the Sun, its shores and the craft, shows the ground and hulls beneath it, glitters and dims under a cloud's shade, from dawn to night",
-      "status": "ready_for_review",
-      "failed_reviews": 2,
+      "status": "in_progress",
+      "failed_reviews": 3,
       "failed_reviews_with_repeat": 1,
       "diagnoses": 1,
       "depends_on": [],
@@ -1508,7 +1508,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP8/crown-coverage/README.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/WATERS/WP8-review.md"
         },
         {
@@ -1530,9 +1530,9 @@
           "ask": "Does the test hold the receiving rectangles to rays reflected and refracted on the CPU, from cameras 1 m to 40 m up, on flat water and with waves, including a body whose reflection lies wholly outside its own source rectangle? Does it hold the see-through rectangles to the map's depths and the water type's sight depth?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP8/composed-reflections/README.md",
-          "verdict": "pass",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
           "review": ".orchestrate/evidence/WATERS/WP8-review.md"
         },
         {
@@ -1554,7 +1554,7 @@
           "target": "chrome-webgpu",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP8/crown-coverage/README.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/WATERS/WP8-review.md"
         },
         {
@@ -1571,15 +1571,12 @@
       ],
       "findings": [
         {
-          "name": "Diagonal gaps cut through the reflected pine crowns at 10 m",
-          "item": "WP8.5",
-          "different": "The former grey sky patches around the trunks have cleared. Narrow bands of ground now cut into the inverted foliage where the foreground-hit confidence crosses a hard threshold.",
+          "name": "Rough water with a visible shallow tile requests a whole-screen gather",
+          "item": "WP8.7",
           "repeat": false
         },
         {
-          "name": "Chrome shows diagonal gaps through the reflected pine crowns at noon",
-          "item": "WP8.9",
-          "different": "The former blue-grey caps around the trunks have cleared. The 10 m noon view shows narrow diagonal gaps within the foliage, reproduced at the foreground confidence switch.",
+          "name": "A partially trusted scene reflection darkens the environment through a second weight",
           "repeat": false
         }
       ]

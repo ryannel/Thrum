@@ -1541,7 +1541,7 @@
         {
           "verdict": "fail",
           "commit": "254ad9cc72757b98159412c7d1b1f5b8edd049a0",
-          "review": ".orchestrate/evidence/WATERS/WP8-review.md",
+          "review": ".orchestrate/evidence/WATERS/WP8-review-6.md",
           "items": {
             "WP8.1": "pass",
             "WP8.2": "pass",
@@ -1584,6 +1584,50 @@
             "turns": 1
           },
           "at": "2026-11-26T00:35:11Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "762b3ad051eb995eeb16c5e13c08ba79fe8639da",
+          "review": ".orchestrate/evidence/WATERS/WP8-review.md",
+          "items": {
+            "WP8.1": "pass",
+            "WP8.2": "pass",
+            "WP8.3": "pass",
+            "WP8.4": "pass",
+            "WP8.5": "pass",
+            "WP8.6": "pass",
+            "WP8.7": "fail",
+            "WP8.12": "pass",
+            "WP8.9": "pass",
+            "WP8.10": "pass"
+          },
+          "findings": [
+            {
+              "name": "Rough water with a visible shallow tile requests a whole-screen gather",
+              "item": "WP8.7",
+              "repeat": false
+            },
+            {
+              "name": "A partially trusted scene reflection darkens the environment through a second weight",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 132707,
+            "cached": 4172544,
+            "output": 14596,
+            "turns": 1
+          },
+          "at": "2026-11-26T01:35:18Z"
         }
       ],
       "authorised": {
