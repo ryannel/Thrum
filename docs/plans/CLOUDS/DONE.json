@@ -1347,8 +1347,8 @@
           "statement": "At 1x from about 10 km the growing congestus keeps its foot while its crown rises and a shoulder forms, with no step between keys. At 30x the growth reads as one continuous rise.",
           "inspect": "Capture `realtime` sequences of the whole track at 1x and at 30x, with two fair clouds in frame for scale. Judge consecutive frames, and stills at the track's start, middle and end.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP10/qualification-growth.md",
           "verdict": "",
           "review": ""
         },
@@ -1379,7 +1379,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP10/retained-cost-record.log",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP10/qualification-cost.md",
           "verdict": "",
           "review": ""
         }
