@@ -1457,8 +1457,8 @@
         },
         {
           "id": "WP14.6",
-          "statement": "Mist is in the land's light. Toward a 10\u00b0 Sun it is bright and glows around the Sun, and away from the Sun the same mist is grey. A prop's shadow on the ground weakens with the depth of mist over it and is gone under thick fog. Shafts of sunlight stand in the mist below a ridge line. Shaded ground in mist is never black. Below broken cloud one limitation is known and fails nothing here (the design's risk 15): sunlight through an opening lights the mist it reaches as a pool, a band or a level glow, and no shaft is followed inside the mist.",
-          "inspect": "Capture `fixed` stills at a 10\u00b0 and a 40\u00b0 Sun, toward, across and away from the Sun, with a prop in thin mist and one in fog of a 50 m visual range. Judge each whole and in native-size crops of the shadows and the shafts: 1. toward the 10\u00b0 Sun the mist is bright and glows around the Sun; 2. away from the Sun the same mist is grey; 3. a prop's shadow on the ground weakens with the depth of mist over it, and the prop in the fog casts none; 4. below a ridge line shafts of sunlight stand in the mist; 5. no shaded ground in mist is black. No frame under the broken preset is judged here: the stills WP14 kept of it are risk 15's record.",
+          "statement": "Mist is in the land's light. Toward a 10\u00b0 Sun it is bright and glows around the Sun, and away from the Sun the same mist is grey. A prop's shadow on the ground weakens with the depth of mist over it and is gone under thick fog. Shafts of sunlight stand in the mist below a ridge line. Shaded ground in mist is never black. The six views WP14 kept under the broken preset are held to the same light: shaded ground in mist is not black, a ridge's shaft in frame stands in the mist, and the mist that sunlight reaches through an opening in the cloud has no blocky edge, tile, step or banding. One limitation in those views is known and fails nothing here (the design's risk 15): sunlight through an opening lights the mist it reaches as a pool, a broad strip or a level glow, and no shaft is followed inside the mist.",
+          "inspect": "Capture `fixed` stills at a 10\u00b0 and a 40\u00b0 Sun, toward, across and away from the Sun, with a prop in thin mist and one in fog of a 50 m visual range. Judge each whole and in native-size crops of the shadows and the shafts: 1. toward the 10\u00b0 Sun the mist is bright and glows around the Sun; 2. away from the Sun the same mist is grey; 3. a prop's shadow on the ground weakens with the depth of mist over it, and the prop in the fog casts none; 4. below a ridge line shafts of sunlight stand in the mist; 5. no shaded ground in mist is black. Then judge the six Metal views WP14 kept under the broken preset, whole and in their native-size crops, in `.orchestrate/evidence/CLOUDS/WP14/shaft-target-pairs/`: `metal-closed7-6`, `metal-closed7-12`, `metal-search-24-pm-320-1-20`, `metal-search-40-am-320-1-12`, `metal-focused-close-20` and `metal-focused-near-top-20`. They are the valley and the preset as they ship; that folder's other frames are trials and are not judged. Three lines apply to them: line 5; line 4 where a ridge's shaft is in frame; and 6. the mist that sunlight reaches through an opening has no blocky edge, tile, step or banding. A beam that spreads where it meets the mist into a pool, a broad strip or a level glow, and is not followed inside it, is the limitation and fails none of the three. Take no new frame of these views unless one of the three lines fails and its fix has to be shown.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -1488,8 +1488,8 @@
         },
         {
           "id": "WP14.9",
-          "statement": "In Chrome the dawn valley passes WP14.5's, WP14.6's and WP14.7's lists. WP14.6's known limitation below broken cloud is the same in Chrome and fails nothing here.",
-          "inspect": "Capture the same `fixed` stills and the `realtime` walk into the fog in Chrome. Judge them by those lists, then compare native-size crops with the Mac's.",
+          "statement": "In Chrome the dawn valley passes WP14.5's, WP14.6's and WP14.7's lists, and the six Chrome views WP14 kept under the broken preset pass the three lines WP14.6 holds the Metal ones to. The limitation below broken cloud (the design's risk 15) is the same in Chrome, and only it fails nothing here.",
+          "inspect": "Capture the same `fixed` stills and the `realtime` walk into the fog in Chrome. Judge them by those lists, then compare native-size crops with the Mac's. Then judge the six kept Chrome views, which are the `chrome-` files of the names WP14.6 gives in `.orchestrate/evidence/CLOUDS/WP14/shaft-target-pairs/`, whole and in their native-size crops, by WP14.6's lines 4, 5 and 6 as it applies them, and take no new frame of them unless one of those lines fails and its fix has to be shown.",
           "target": "chrome-webgpu",
           "builder_result": "open",
           "evidence": "",
@@ -2058,8 +2058,8 @@
       "items": [
         {
           "id": "WP22.1",
-          "statement": "In the valley and under the broken preset as they ship, with valley mist at half amount or more and the Sun between 10\u00b0 and 40\u00b0, a shaft of sunlight below an opening in the cloud stands in the mist, in two views the builder chooses from 2 to 40 m over the ground. Nothing is placed or set for the frames beyond the preset, the mist's amount, the Sun, the clear air's visual range and the weather's time: no cloud, bank or opening. The shaft belongs to its opening and to the mist: under the clear preset the same view has none, and with Ground declared clear its part inside the mist is gone.",
-          "inspect": "Capture `fixed` stills with T2 engine capture at 2560\u00d71440 of the two views, and of each view's two controls: the clear preset, and Ground declared clear. Judge each view whole and in a native-size crop where the shaft meets the mist's top: 1. the shaft is followed from the air above the mist to below the mist's top as one beam, along the Sun's direction; 2. inside the mist both its edges are traced, and the mist inside it is brighter than the mist beside it; 3. it does not end at the mist's top as a level glow, a band or a pool; 4. no blocky edge, step or stripe shows in it; 5. the clear-preset control shows no shaft, and the control with Ground clear shows none inside where the mist was.",
+          "statement": "In the valley and under the broken preset as they ship, with valley mist at half amount or more and the Sun between 10\u00b0 and 40\u00b0, a shaft of sunlight below an opening in the cloud stands in the mist, in two views the builder chooses from 2 to 40 m over the ground. Nothing is placed or set for the frames beyond the preset, the mist's amount, the Sun, the clear air's visual range and the weather's time: no cloud, bank or opening. Two controls of each view, each taking one thing away, show whose the shaft is. The opening accounts for the beam: under the clear preset the beam below it is gone. The mist gives the beam its part inside the layer: with Ground declared clear that part is fainter or gone, and what remains there is what needs no mist.",
+          "inspect": "Capture `fixed` stills with T2 engine capture at 2560\u00d71440 of the two views, and of each view's two controls: the same view under the clear preset, and the same view with Ground declared clear. Judge each view whole and in a native-size crop where the shaft meets the mist's top, beside the same crop of each control: 1. the shaft is followed from the air above the mist to below the mist's top as one beam, along the Sun's direction; 2. inside the mist both its edges are traced, and the mist inside it is brighter than the mist beside it; 3. it does not end at the mist's top as a level glow, a broad strip or a pool; 4. no blocky edge, step or stripe shows in it, and no shaded ground in the mist beside it is black; 5. in the clear-preset control the beam below the opening is gone, from the air and from the mist. Light that needs no cloud may remain and fails nothing: a shaft below a ridge line, and the mist's glow toward the Sun; 6. beside the control with Ground clear, the part of the beam below the level of the mist's top is the mist's: the view with mist shows it, and at the same place the control shows it fainter or not at all. What needs no mist may remain in that control and fails nothing: the beam in the air's haze, down to the ground, and the lit ground below the opening.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -2068,8 +2068,8 @@
         },
         {
           "id": "WP22.2",
-          "statement": "In Chrome the two views pass WP22.1's list, and with the changed light the dawn valley and the far mist pass WP14.5's, WP14.6's, WP14.7's and WP15.4's lists.",
-          "inspect": "Capture in Chrome WP22.1's stills and controls, and the stills and sequences of WP14.5, WP14.6, WP14.7 and WP15.4. Judge them by those lists, then compare native-size crops with the Mac's.",
+          "statement": "In Chrome the two views pass WP22.1's list, and under TAAU the shaft holds in motion: as the broken field drifts at 1\u00d7 and at 60\u00d7, a shaft stays below its opening along the Sun's direction, does not trail behind the opening as it moves, and leaves no ghost where it stood, and nothing in it flickers, crawls or pops. With the changed light the dawn valley and the far mist pass WP14.5's, WP14.7's and WP15.4's lists and lines 1 to 5 of WP14.6's.",
+          "inspect": "Capture in Chrome: WP22.1's stills and controls; `realtime` sequences of 20 seconds at 1\u00d7 and at 60\u00d7 under WP22.1's conditions, from one view that holds a shaft and the opening it comes from together; and the stills and sequences of WP14.5, WP14.6, WP14.7 and WP15.4, without the six views WP14 kept under the broken preset, which are not taken again. Judge the stills by those lists, then compare native-size crops with the Mac's. In each of the two sequences follow one opening and its shaft through consecutive frames at 1x, whole and in native-size crops of the shaft's edges and of where it meets the mist: 1. the shaft stays below its opening along the Sun's direction, and moves as the opening moves, in the air and inside the mist; 2. the shaft does not lag the opening, and no trail or ghost of it is left where it stood; 3. nothing in it flickers, crawls or pops, and a shaft that ends does so because its opening closes.",
           "target": "chrome-webgpu",
           "builder_result": "open",
           "evidence": "",
@@ -2078,8 +2078,8 @@
         },
         {
           "id": "WP22.3",
-          "statement": "The accepted mist holds under the changed light. On the portable recipe the dawn valley passes WP14.5's, WP14.6's and WP14.7's lists, the far mist WP15.4's, WP15.6's and WP15.13's, the mist through twilight WP16.2's, and the fog bank on the sea WP11.9's.",
-          "inspect": "Capture those eight items' stills and sequences again with the changed light. Judge them by those lists, whole and in the native-size crops they name.",
+          "statement": "The accepted mist holds under the changed light. On the portable recipe the dawn valley passes WP14.5's and WP14.7's lists and lines 1 to 5 of WP14.6's, the far mist WP15.4's, WP15.6's and WP15.13's, the mist through twilight WP16.2's, and the fog bank on the sea WP11.9's.",
+          "inspect": "Capture those eight items' stills and sequences again with the changed light, without the six views WP14 kept under the broken preset: they are not taken again, and WP22.1 judges the mist under that preset. Judge them by those lists, whole and in the native-size crops they name.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -2088,8 +2088,8 @@
         },
         {
           "id": "WP22.4",
-          "statement": "On the Apple recipe with MetalFX resolved the shaft passes WP22.1's list in its two views and holds in motion: as the broken field drifts at 1\u00d7 and at 60\u00d7, through a 10-second pan and through a 40 m walk, it moves with its opening, and nothing in it flickers, crawls, trails or pops. WP14.8's and WP15.8's lists pass again there.",
-          "inspect": "Capture on the Apple recipe with MetalFX resolved: `fixed` stills of WP22.1's two views; `realtime` sequences of 20 seconds from each view at 1\u00d7 and at 60\u00d7, and a 10-second pan and a 40 m walk with the shaft in frame; and WP14.8's and WP15.8's sequences. Judge the stills by WP22.1's list, and consecutive frames at 1x, whole and in native-size crops of the shaft's edges and of where it meets the mist.",
+          "statement": "On the Apple recipe with MetalFX resolved the shaft passes lines 1 to 4 of WP22.1's list in its two views and holds in motion: as the broken field drifts at 1\u00d7 and at 60\u00d7, through a 10-second pan and through a 40 m walk, it moves with its opening, and nothing in it flickers, crawls, trails or pops. WP14.8's and WP15.8's lists pass again there.",
+          "inspect": "Capture on the Apple recipe with MetalFX resolved: `fixed` stills of WP22.1's two views; `realtime` sequences of 20 seconds from each view at 1\u00d7 and at 60\u00d7, and a 10-second pan and a 40 m walk with the shaft in frame; and WP14.8's and WP15.8's sequences. Judge the stills by lines 1 to 4 of WP22.1's list; its controls are not taken on this recipe, and lines 5 and 6 are not judged here. Judge consecutive frames at 1x, whole and in native-size crops of the shaft's edges and of where it meets the mist.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -2122,6 +2122,17 @@
           "id": "WP22.7",
           "statement": "The maturity ledger's `E1.clouds` row is current: the shaft below broken cloud is no longer listed as a weakness of the visuals (the design's risk 15), and the row claims it only for the targets and recipes it was inspected on.",
           "ask": "Does the row claim only what this work package proved, on the targets it ran on, with visuals apart from correctness?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP22.8",
+          "statement": "The broken sky is still broken weather. If this work package changed a value of the broken preset or of a type-table row it names, then under the changed preset, from 2 m and from 40 m, at noon and at a 15\u00b0 Sun, the sky reads as broken to the horizon by WP7.1's words for it: connected lumpy banks with irregular gaps and bright gap edges. It is neither a nearly solid deck with one opening, nor an overcast ceiling, nor scattered cumulus. If it changed no such value, the broken sky WP12 closed on stands.",
+          "ask": "Does this work package's diff from the commit it started from change any value of the broken preset or of a type-table row it names? If it changes none, this item passes on that answer and the inspection is not run.",
+          "inspect": "If a value changed, capture `fixed` stills of the broken preset as changed, from 2 m and from 40 m, at noon and at a 15\u00b0 Sun. Judge a contact sheet of the four, then native-size crops overhead, in the middle distance and at the horizon: 1. the cloud stands in connected banks with lumpy tops and bases; 2. the gaps are irregular in size and shape and lie across the whole sky, overhead and toward the horizon, and are not one opening in a deck; 3. the gap edges are bright; 4. at a glance the sky is broken, and is taken for neither overcast nor fair.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",

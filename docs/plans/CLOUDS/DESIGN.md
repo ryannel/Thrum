@@ -62,7 +62,10 @@ decision to park one cue of WP14: under broken cloud a shaft of sunlight spreads
 is not followed inside it. [Risk 15](#risks) records it as a known limitation, WP14 closes without it, and
 [WP22](#the-broken-cloud-shaft-follow-up-wp22), the last work package, after WP12, takes it up. The finished
 sky still closes at WP12, and the module's work packages now end with WP22. No mechanism and no interface
-changed.
+changed. Revised that day after [the review of that parking](../../../.orchestrate/evidence/CLOUDS/design-review.md)
+(four findings): the views WP14 kept under the broken preset are judged by every line but the shaft's; WP22's
+two controls are judged by what each takes away; the shaft is followed in motion under TAAU in Chrome; and a
+changed broken preset is judged again as a broken sky (WP22.8).
 
 ## The request
 
@@ -2010,7 +2013,7 @@ is judged for the weather sky in WP20's wind series and recorded for the finishe
 
 15. **A shaft of sunlight below broken cloud is lost where it meets the mist.** WP14 found it on Metal and in
    Chrome alike. Under the broken preset a warm diagonal stands in the air below an opening and is followed
-   down to the mist's upper edge, and there it spreads into a level glow, a band or a pool
+   down to the mist's upper edge, and there it spreads into a level glow, a broad strip or a pool
    ([Metal](../../../.orchestrate/evidence/CLOUDS/WP14/shaft-target-pairs/metal-focused-close-20-crop.png),
    [Chrome](../../../.orchestrate/evidence/CLOUDS/WP14/shaft-target-pairs/chrome-focused-close-20-crop.png)).
    More than 40 matched experiments on the two targets did not change that
@@ -2022,14 +2025,22 @@ is judged for the weather sky in WP20's wind series and recorded for the finishe
    lists it in the maturity ledger beside risk 14's.
 
    The limitation is known by its cue: under broken cloud, sunlight through an opening lights the mist it
-   reaches as a pool, a band or a level glow, and the beam seen in the air above is not followed below the
+   reaches as a pool, a broad strip or a level glow, and the beam seen in the air above is not followed below the
    mist's top. In WP14, WP15, WP16, WP11, WP17 and WP12 that fails no inspected item, on the Mac or in
    Chrome, and no builder of those work packages tries a look or a scene for it. Nothing else of K10 is
    excused: mist glows toward a low Sun and is grey away from it; a prop's shadow weakens with the mist over
    it; shafts stand in the mist below a ridge line (WP14.6); the shadows of ridges and clouds lie across far
    mist, and mist in shade is dimmer than sunlit mist beside it (WP15.6); and shafts stand in haze under
-   broken cloud (WP16.3), where the air above the mist already shows them. A tile, a block, a step or a band
-   in the lit pool fails as it would anywhere in mist.
+   broken cloud (WP16.3), where the air above the mist already shows them.
+
+   The limitation excuses the missing shaft and no frame. Under the broken preset a blocky edge, a tile, a
+   step or banding in the mist that sunlight reaches fails as it would anywhere in mist, and so does shaded
+   ground in mist that is black. WP14.6 and WP14.9 judge that in the six views WP14 kept under the broken
+   preset as it ships, on Metal and in Chrome: the four matched takes of
+   [its record](../../../.orchestrate/evidence/CLOUDS/WP14/shaft-target-pairs/README.md) and the close and
+   near-top views at a 16° Sun. The record's other frames are trials with a placed cloud, a placed bank or a
+   changed shader, and are not judged. The kept views are enough, and nothing more is captured for them unless
+   one of those lines fails, which is then a defect of WP14 to fix and show.
 
    What WP14 found, in [its handoff](../../../.orchestrate/evidence/CLOUDS/WP14-handoff.md),
    [its matched frames and controls](../../../.orchestrate/evidence/CLOUDS/WP14/shaft-target-pairs/README.md),
@@ -2073,13 +2084,31 @@ is judged for the weather sky in WP20's wind series and recorded for the finishe
 WP22 is the work [risk 15](#risks) parks. It is the last work package, after WP12, so it holds up no other.
 The finished sky closes at WP12 with the limitation listed (WP12.9), and the builder who passes WP22 takes
 it out of the ledger (WP22.7). It changes light that WP14 to WP12 closed on, so it answers for what the
-change does to the mist they accepted (WP22.2 to WP22.5).
+change does to the mist they accepted (WP22.2 to WP22.5), and to the broken sky if it changes the preset
+(WP22.8).
 
 **The bar.** Low sunlight through broken cloud into valley mist as in Red Dead Redemption 2: a beam below an
 opening that keeps its direction and both its edges from the air into the mist, brighter than the shaded mist
 beside it. It is judged by WP22.1's list in the valley and under the broken preset as they ship. A scene, a
 cloud, a bank or an opening authored for the frame does not pass it. WP14's retained frames say where the
 beam was lost and set no bar.
+
+**The two controls.** Each takes one thing away from the view and keeps the rest, and WP22.1 judges the view
+beside each by what that one thing accounts for. The clear preset takes the cloud: the beam below the
+opening goes, in the air and in the mist, and light that needs no cloud stays, such as a shaft below a ridge
+line and the mist's glow toward the Sun. Ground declared clear takes the condensate and nothing else: the
+part of the beam that the mist drew goes or is fainter, and the beam in the air's haze stays along the same
+line of sight, lit through the same opening, with the lit ground below it. WP16.3 asks for that shaft in
+haze, and [WP14's control](../../../.orchestrate/evidence/CLOUDS/WP14/shaft-target-pairs/chrome-focused-near-top-mist-clear-20-crop.png)
+shows it. So neither control has to be empty of light. The controls are judged on the portable recipe, on
+the Mac and in Chrome (WP22.1, WP22.2). The Apple recipe resolves the same light with MetalFX, so WP22.4
+takes no control there and judges the shaft itself and its motion.
+
+**Motion.** K6 holds over the shaft under both reconstructions. A shaft follows its opening: it stays below
+it along the Sun's direction as the field drifts, and leaves nothing where it stood. WP22.4 follows it under
+MetalFX, and WP22.2 under TAAU in Chrome, in one view that holds a shaft and its opening together, at 1× and
+at 60×. The walks and pans borrowed from WP14 and WP15 show dawn fog and a far bank and do not stand in for
+that.
 
 **The investigation.** It starts from the cause, as WP17's does: a control that shows why the beam stops
 reading at the mist, before any look. Risk 15 lists what WP14's controls ruled out, which is not tried
@@ -2091,7 +2120,10 @@ does not change.
 **The remedy** keeps [one density, one Sun's path](#condensate-that-meets-the-ground-mist-fog-and-low-cloud)
 and one Sun term for the view volume, the trace and the sky overlay, with no gain on one integrator and no
 term that only shafts read (WP22.5). The valley's fog table and the broken preset are game data and may
-change, and then WP22.3 judges the mist they change. A cause that asks for a mechanism this design lacks,
+change, and then WP22.3 judges the mist they change. A changed broken preset is also still the broken sky
+WP7.1 passed and WP12 closed on: connected lumpy banks with irregular gaps and bright gap edges, to the
+horizon, from 2 m and from 40 m, at noon and at a 15° Sun (WP22.8). A nearly solid deck with one opening
+gives a beam and is overcast, so it does not pass. A cause that asks for a mechanism this design lacks,
 such as a Sun path resolved more finely near the camera or light carried sideways in the mist, ends
 `BLOCKED` with `needs_context` and the cause, for a planner. Three failed looks go to the log and end
 `BLOCKED`. Either way nothing else waits. The starting arms of WP22.6's cost record are taken before
@@ -2234,7 +2266,8 @@ water scene, WP11.5 uses `scripts/check_water_browser.mjs`.
   [the noon-relief follow-up](#the-noon-relief-follow-up) after them. At a 10° Sun nothing excuses it, on
   any shape. A shaft of sunlight below broken cloud that spreads where it meets the mist
   ([risk 15](#risks)) fails no inspected item of WP14 to WP12, and is judged by
-  [WP22](#the-broken-cloud-shaft-follow-up-wp22).
+  [WP22](#the-broken-cloud-shaft-follow-up-wp22). That excuses the missing shaft only: every other line of
+  an item holds in a frame under the broken preset.
 
 ## Open questions
 
@@ -2276,8 +2309,9 @@ in the volume itself goes to `ATMOSPHERE`'s log. WP13 built the model's solar ke
 orders; WP14.13 removes them, and the kernel the view volume takes is the trace's own shader function.
 
 WP14 closes without a shaft inside the mist below broken cloud: [risk 15](#risks) records it, and WP14.6 and
-WP14.9 judge everything else. The frames and controls WP14 kept of it are the record; capture no more, try no
-look for it, and list the limitation in the `E1.clouds` row's visuals.
+WP14.9 judge everything else, in the six views kept under the broken preset too: no black shaded ground and
+no blocky edge, tile, step or banding in the lit mist. The frames and controls WP14 kept are the record;
+capture no more for the shaft, try no look for it, and list the limitation in the `E1.clouds` row's visuals.
 
 ## Weather map and Sun-path regressions (WP18)
 

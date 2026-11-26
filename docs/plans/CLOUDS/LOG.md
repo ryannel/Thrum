@@ -1026,3 +1026,8 @@ growth and fair-sky motion, and the paired Metal cost check cover the original f
   nothing. Planner: WP14.6 and WP14.9 name the limitation, [risk 15](DESIGN.md#risks) records it, and new
   WP22, last, after WP12, takes it up. No mechanism or interface changed.
   [What changed](../../../.orchestrate/evidence/CLOUDS/design-revision-2026-11-26-broken-cloud-shaft.md)
+- 2026-11-26 Design review of the parking: four Must Fix, all settled. New WP22.8 holds a changed broken
+  preset to WP7.1's broken sky; WP14.6 and WP14.9 judge the kept broken-preset views by every line but the
+  shaft's; WP22.1's controls are judged by what each takes away, and WP22.4 claims lines 1 to 4; WP22.2
+  follows the shaft in motion under TAAU in Chrome. No mechanism or interface changed.
+  [What changed for each finding](../../../.orchestrate/evidence/CLOUDS/design-revision-2026-11-26-broken-cloud-shaft-2.md)

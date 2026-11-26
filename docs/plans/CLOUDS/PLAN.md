@@ -93,8 +93,8 @@ Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-bu
 Follow the [ground-condensate integration handoff](DESIGN.md#ground-condensate-integration-handoff).
 
 The shaft below broken cloud is parked ([risk 15](DESIGN.md#risks)): capture nothing more for it and try no
-look. `bf2635c8e` on `build/clouds` holds the work, and the ten passed items stand. Only WP14.6 and WP14.9
-are left, and the frames already taken can pass them. Add the limitation to the `E1.clouds` row's visuals.
+look. `bf2635c8e` on `build/clouds` holds the work. Only WP14.6 and WP14.9 are left, and the frames already
+taken can pass them. Add the limitation to the `E1.clouds` row's visuals.
 
 ## WP15 Mist and fog banks reach the horizon, low cloud hides the hilltops, and a climbing camera passes into the cloud and out above it
 
@@ -119,4 +119,4 @@ the owner's attended sitting; do every other item first.
 ## WP22 Below broken cloud, shafts of sunlight stand in the valley's mist
 
 Follow [the broken-cloud shaft follow-up](DESIGN.md#the-broken-cloud-shaft-follow-up-wp22). Take the
-starting arms of WP22.6's cost record first.
+starting arms of WP22.6's cost record first, and note that commit for WP22.8.
