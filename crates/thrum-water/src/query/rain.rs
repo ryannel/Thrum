@@ -33,7 +33,7 @@ impl QueryRain {
             else {
                 continue;
             };
-            let gain = map.rain_gain_with_variances(self.variances, world, time, column);
+            let gain = query.gain(map, self.variances, world, column);
             if gain <= 0.0 {
                 continue;
             }

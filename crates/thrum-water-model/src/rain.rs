@@ -659,6 +659,35 @@ impl RainBands {
         out
     }
 
+    fn gain(
+        &self,
+        map: &Map,
+        variances: [f64; 4],
+        point: [f64; 2],
+        column: MapSample,
+        height: impl FnOnce() -> f64,
+    ) -> f64 {
+        let response = if column.depth.is_infinite() {
+            1.0
+        } else {
+            self.table.response(column.depth)
+        };
+        if response <= 0.0 {
+            return 0.0;
+        }
+        let gain = self.exposure([point[0], column.row.level, point[1]]) * response;
+        if gain <= 0.0 {
+            return 0.0;
+        }
+        let swash = map
+            .limited_with_variances(variances, point, column)
+            .0
+            .swash_depth;
+        let cap = 0.6 * (column.depth + swash).max(0.0);
+        let hs = height();
+        if hs > 0.0 { gain.min(cap / hs) } else { gain }
+    }
+
     /// Sum over the ticks of the last second of a value of each tick's flux, weighted by
     /// a function of the tick's age.
     fn over_history(
@@ -771,25 +800,9 @@ impl Map {
         let Some(rain) = &self.rain else {
             return 0.0;
         };
-        let response = if map.depth.is_infinite() {
-            1.0
-        } else {
-            rain.table.response(map.depth)
-        };
-        if response <= 0.0 {
-            return 0.0;
-        }
-        let gain = rain.exposure([point[0], map.row.level, point[1]]) * response;
-        if gain <= 0.0 {
-            return 0.0;
-        }
-        let swash = self
-            .limited_with_variances(variances, point, map)
-            .0
-            .swash_depth;
-        let cap = 0.6 * (map.depth + swash).max(0.0);
-        let hs = 4.0 * rain.variance(time).sqrt();
-        if hs > 0.0 { gain.min(cap / hs) } else { gain }
+        rain.gain(self, variances, point, map, || {
+            4.0 * rain.variance(time).sqrt()
+        })
     }
 
     /// The squared slope the rain's drops below the cut add to the moments at a point.

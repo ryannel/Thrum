@@ -1,6 +1,7 @@
 //! Convolve the table's piecewise-linear radial rings with a station's disc.
 //! Age interpolation commutes with the convolution, so it stays a lookup.
 use super::{RainBands, RingTable, accumulate};
+use crate::{Map, MapSample};
 use std::f64::consts::{PI, TAU};
 use thrum_sea_model::Sample;
 
@@ -254,16 +255,28 @@ impl Band {
 pub struct RainQuery<'a> {
     rain: &'a RainBands,
     bands: Option<[Band; 2]>,
+    height: f64,
 }
 
 impl<'a> RainQuery<'a> {
     pub(super) fn new(rain: &'a RainBands, time: f64) -> Self {
+        let bands = rain
+            .active(time)
+            .then(|| std::array::from_fn(|band| Band::new(rain, band, time)));
+        let height = bands
+            .as_ref()
+            .map_or(0.0, |_| 4.0 * rain.variance(time).sqrt());
         Self {
             rain,
-            bands: rain
-                .active(time)
-                .then(|| std::array::from_fn(|band| Band::new(rain, band, time))),
+            bands,
+            height,
         }
+    }
+
+    /// Shelter and depth gain at the station, with the tick's precomputed rain height.
+    pub fn gain(&self, map: &Map, variances: [f64; 4], point: [f64; 2], column: MapSample) -> f64 {
+        self.rain
+            .gain(map, variances, point, column, || self.height)
     }
 
     /// Height, world-axis slopes and height rate at unit gain, before current carriage.
