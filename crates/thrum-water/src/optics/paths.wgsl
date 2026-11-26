@@ -406,11 +406,8 @@ fn water_optical_paths(
     }
     var background = sky;
     if scene.sky_visibility < 1.0 && scene.layer.weight < 1.0 {
-        let low_sun = 1.0 - smoothstep(0.02, 0.25, environment_sun_direction().y);
-        if low_sun > 0.0 {
-            let upper = fresnel * 0.65 * environment_sky_radiance(vec3(0.0, 1.0, 0.0));
-            background = mix(sky, upper, low_sun * (1.0 - scene.sky_visibility));
-        }
+        let upper = fresnel * 0.65 * environment_sky_radiance(vec3(0.0, 1.0, 0.0));
+        background = mix(sky, min(sky, upper), 1.0 - scene.sky_visibility);
     }
     var outgoing: vec3<f32>;
     if body.along < scene.layer.along {
