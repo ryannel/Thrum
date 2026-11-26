@@ -103,9 +103,13 @@ pub(super) struct SceneReady<G: MobileGame> {
 
 impl<G: MobileGame> SceneReady<G> {
     fn split(
-        prepared: MobilePrepared<G>,
+        mut prepared: MobilePrepared<G>,
         origin: Instant,
     ) -> (MobileHost<G>, G::Presentation, Self) {
+        // The iOS shell consumes completion samples but has no GPU timestamp
+        // consumer. Resolving those queries would keep old-grid slots pending
+        // after their rendering completes and delay surface reconfiguration.
+        prepared.host.set_timing_requested(false);
         (
             prepared.host,
             prepared.scene,
@@ -788,6 +792,13 @@ impl<G: MobileGame> Owner<G> {
             false
         } else {
             match lease.section(request.surface_generation, |leased| {
+                if leased.configured != Some((request.surface_generation, request.extent))
+                    && gpu.host.pending_frames() != 0
+                {
+                    // A completion since the last reply can make this resize
+                    // ready now. Carry its sample out with the normal reply.
+                    reply.samples[0] = gpu.host.poll_completed()?;
+                }
                 gpu.configure(leased, request, &lease)
             }) {
                 None => {
@@ -851,7 +862,7 @@ impl<G: MobileGame> Owner<G> {
                 reply.platform.readback = None;
             }
         }
-        for slot in &mut reply.samples {
+        for slot in reply.samples.iter_mut().filter(|slot| slot.is_none()) {
             *slot = gpu.host.poll_completed()?;
             if slot.is_none() {
                 break;
