@@ -64,8 +64,8 @@ def records(directory):
         paint = entry["interface"]
         if paint["extent_mismatch"] or paint["stamp_mismatch"] or paint["dropped_rows"]:
             raise ValueError("Metal frame had an incomplete paint list")
-            yield {"extent": runtime["extent"], "scale": paint["scale"],
-                   "display_density": float(display_density) if display_density else paint["scale"],
+        yield {"extent": runtime["extent"], "scale": paint["scale"],
+               "display_density": float(display_density) if display_density else paint["scale"],
                "tick": int(hold) if hold is not None else entry["current_endpoint_tick"],
                "submission": entry["submission_id"],
                "surface_presented": True, "time_ns": entry["submit_ns"]}, raw
