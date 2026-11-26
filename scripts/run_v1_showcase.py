@@ -254,7 +254,6 @@ def mac_exit_controls(run, store, row, stops, *, edit_source=None):
         env.update(THRUM_SHOWCASE_CONTENT_REPORT=str(content_path), THRUM_GOVERNOR_RECORD='observed',
                    THRUM_MAC_TRANSITION=str(run), THRUM_MAC_TRANSITION_ARM='route')
     result = {}
-    last_submission = -1
     log_path = run / 'game.log'
     with awake_display(), log_path.open('w') as log:
         process = subprocess.Popen([str(GAME)], env=env, cwd=REPO, stdout=log, stderr=subprocess.STDOUT)
@@ -294,7 +293,7 @@ def mac_exit_controls(run, store, row, stops, *, edit_source=None):
                 def read_preset():
                     records = complete_lines(profiles)
                     saves = [line for line in log_path.read_text().splitlines() if ' (saved): ' in line]
-                    if len(saves) <= index:
+                    if not records or len(saves) <= index:
                         return None
                     if not saves[index].endswith(', 0 refused'):
                         raise Failure(f'{stop}: {saves[index]}')

@@ -9,6 +9,8 @@ from apple_governor_proof import awake_display
 from apple_presentation import read_rows
 from t2_load import LoadRecord
 
+MAC_ROUTE_TIMEOUT = 90
+
 
 def wait_for_first_present(process, output, launched):
     frames = output / 'frames.jsonl'
@@ -31,7 +33,7 @@ def wait_for_first_present(process, output, launched):
 
 def wait_for_route_record(process, output, first, last):
     """Observe the end of the route and completion of every in-route present's timing sample."""
-    deadline = time.monotonic() + 90
+    deadline = time.monotonic() + MAC_ROUTE_TIMEOUT
     pending = set()
     past_end = False
     with (output / 'frames.jsonl').open('rb') as stream:
@@ -70,7 +72,10 @@ def mac_window(output, binary, env, route, *, day):
                   THRUM_PARAMS=str(parameters), THRUM_GOVERNOR_RECORD='observed',
                   THRUM_MAC_TRANSITION=str(output), THRUM_MAC_TRANSITION_ARM='route',
                   THRUM_SHOWCASE_CONTENT_REPORT=str(output / 'drawn.json'),
-                  THRUM_MAC_EDR_PROOF=str(display), THRUM_REPORT='1', THRUM_MAC_FRAME_RATE='60')
+                  THRUM_MAC_EDR_PROOF=str(display), THRUM_REPORT='1', THRUM_MAC_FRAME_RATE='60',
+                  # The display proof expects a host quota. Keep its watchdog beyond the
+                  # launcher's deadline and let the observed route end determine when to stop.
+                  THRUM_V1_FRAMES=str(120 * (MAC_ROUTE_TIMEOUT + 30)))
     if day:
         launch['THRUM_MAC_SOLAR_SWEEP'] = json.dumps([[first, last], [0, 24]])
     with awake_display(), (output / 'game.log').open('w') as log:
