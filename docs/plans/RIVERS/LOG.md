@@ -218,12 +218,9 @@
   The timer reported 6.64 s of CPU before and rounded both CPU components to 0.00 s after.
   [Timing and check evidence](../../../.orchestrate/evidence/RIVERS/WP10/WP10.1.md)
 
-- 2026-11-26 WP4 review fixes. The sampled mouths now retain solved current where backwater already matches
-  a stage-controlled receiver's level and taper to its current over the last bed cell. The wind waves
-  blend into the receiving sheet with the level and gains. The river surface refines the submitted depth
-  against the sampled chart along the camera ray. Metal checked 72 interior ray hits
-  within the 40 µm bound, plus all three joins in swell and both wetting mutations. With the default
-  stages and continuous Metal submissions, the outlet float was afloat in the sea by the 36 s checkpoint
-  in calm and trade. The spring float reached the lake by 100 s in calm and 60 s in trade. The river
-  floats limit the point slope used to project and damp their hydrostatic stations after the full trade
-  run exposed an unstable impulse from a steep carried ripple. [Target evidence](../../../.orchestrate/evidence/RIVERS/WP4/repair/README.md)
+- 2026-11-26 WP4 review fixes. Sampled mouths retain transport current through backwater and blend wind waves
+  into the receiving sheet. The river surface refines the submitted depth along the camera ray. Metal checked
+  72 interior ray hits within 40 µm, all three joins in swell and both wetting mutations. At the default stages
+  with continuous Metal submissions, the outlet float was afloat in the sea by 36 s in both winds. The spring
+  float reached the lake by 100 s in calm and 60 s in trade.
+  [Target evidence](../../../.orchestrate/evidence/RIVERS/WP4/repair/README.md)
