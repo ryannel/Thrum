@@ -1388,7 +1388,7 @@
     {
       "id": "WP14",
       "name": "Mist lies in the valley's hollows and fades the land near the camera, in the land's own light",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -1430,7 +1430,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP14/REVIEW-SUN-PATH.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP14-review.md"
         },
         {
@@ -1504,7 +1504,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP14/COST.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP14-review.md"
         },
         {
@@ -1527,18 +1527,6 @@
           "evidence": ".orchestrate/evidence/CLOUDS/WP14/CORRECTNESS.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP14-review.md"
-        }
-      ],
-      "findings": [
-        {
-          "name": "Ground attenuation disappears at 96 m inside a deeper bank",
-          "item": "WP14.3",
-          "repeat": false
-        },
-        {
-          "name": "Mist cost record omits Ground-enabled GPU allocations",
-          "item": "WP14.10",
-          "repeat": false
         }
       ]
     },
