@@ -17,7 +17,10 @@ fresh design review of that revision passed on 11 November. Revised 14 November 
 after a failed configure and for a stated iOS transition. Revised 26 November for
 [the wgpu-core pin](#pipeline-preparation-wp10-and-wp12) that WP12's archive needs, after
 [the WP12 builder's handoff](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP12-handoff.md), and again that day for
-[offering the cache upstream](#offering-the-cache-upstream-u1-to-u3), once WP12 was Done. It answers the three independent reviews of revision 1
+[offering the cache upstream](#offering-the-cache-upstream-u1-to-u3), once WP12 was Done. Revised a third time
+that day for [the requested frame rate at full screen](#the-requested-frame-rate-at-full-screen-wp11), after
+[the WP11 builder's handoff](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP11-handoff.md) measured that
+the full-screen route misses the display's 120 Hz at the governor's floor. It answers the three independent reviews of revision 1
 (`86ec3b6b`) and the re-reviews of revision 2 (`c507ad3d`) recorded in [the log](LOG.md). Interface and path names below are
 proposals.
 
@@ -43,7 +46,10 @@ only: the wgpu-core pin, the archive's round trip through wgpu's public pipeline
 [its design review](../../../.orchestrate/evidence/APPLE-PRESENTATION/design-review.md), the game's check of the
 saved cache data before import. The second revision of that day adds
 [offering the cache upstream](#offering-the-cache-upstream-u1-to-u3) and the work packages U1 to U3. It changes
-no mechanism of the engine and nothing WP1 to WP12 or WP11 build or prove.
+no mechanism of the engine and nothing WP1 to WP12 or WP11 build or prove. The third revision of that day
+adds [the requested frame rate at full screen](#the-requested-frame-rate-at-full-screen-wp11), rewrites what
+WP11 proves about the whole path in motion, and names WP17. It changes nothing WP1 to WP10 or WP12 built: a
+window that is not full screen asks for the display's full refresh, as before.
 
 ## Purpose and scope
 
@@ -375,7 +381,9 @@ current display shader is a pre-AA diagnostic. So TAAU at scale 1.0 becomes the 
 - EDR is device-only on iOS, because Simulator EDR is unverified.
 
 **Governor.** The policy follows Unreal's dynamic resolution.
-- *Budget.* The display interval times a target headroom of 0.85.
+- *Budget.* The display interval times a target headroom of 0.85. The display interval is the interval of the
+  slots the display link delivers at [the requested frame rate](#the-requested-frame-rate-at-full-screen-wp11),
+  which is not always the panel's refresh.
 - *Inputs:*
   - resolved GPU time, from pass timestamps plus segment times;
   - display ticks without a present: the frame host counts each display-link tick on which no `present()` call was
@@ -921,6 +929,117 @@ planner drops U3. Either way the pinned copies stay as V1 needs them until a rel
 U1 and U2 change nothing under `vendor/`: the pinned copies and their patch files are V1's, and WP12 proved
 them as they are.
 
+### The requested frame rate at full screen (WP11)
+
+Added 26 November 2026. WP11's builder measured the full-screen route on the built-in 3456×2234 display with
+capture off: Apple tile, MetalFX, EDR and the governor at its 50% floor (1728×1117). Its fastest take spent
+10.85 ms of GPU time at the median and 14.67 ms at the 95th percentile against the 8.33 ms interval of 120 Hz,
+with a present call in 437 of 704 slots. The game was asking for a rate it could not hold, so frames landed
+unevenly. [The retake](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP11/mac-budget-retake/README.md) holds
+the six takes, the passes and the host load, which was heavy.
+
+**The lead's decision, 26 November 2026.** The bar is a shipped high-end game. On a Mac at the display's full
+resolution those hold a steady 60 frames a second with an upscaler, not 120. So G4 closes on steady, evenly
+paced 60 Hz presentation at full screen on the built-in display, with the 120 Hz shortfall and its passes on
+record. Reaching 120 Hz there is [WP17](#reaching-the-full-refresh-at-full-screen-wp17), after G4. WP11
+commissions no further work on the frame graph.
+
+**The mechanism.** The game asks the display link for a frame rate, and the link's callbacks are the slots in
+which it presents. That request is the **requested frame rate**.
+
+- A full-screen window on a display that refreshes faster than 60 Hz asks for 60 Hz: minimum, maximum and
+  preferred all 60. On the 120 Hz panel the system then delivers a slot every 16.67 ms and shows each frame for
+  two refreshes, which is even pacing. A frame drawn as fast as it can go, at whatever rate that turns out to
+  be, lands on uneven refreshes.
+- A window that is not full screen asks for the display's full refresh, as it does now. Nothing WP4 to WP10
+  measured in a window changes.
+- A launch setting forces either rate. The frame record names the requested rate and says when it was forced.
+  The shortfall takes at 120 Hz use it, labelled as forced.
+- The platform sets the request on the main thread, where it reads the display record. Changing it creates no
+  GPU object and resets no history. The display record's refresh stays the panel's.
+- The governor budgets against the delivered slot interval: 16.67 ms × 0.85 = 14.17 ms at 60 Hz. It may settle
+  above the 50% floor there, and that is its own decision.
+- The iPhone shell and Chrome are unchanged.
+
+The rule for full screen is provisional. It stands on the measurement above and goes when WP17 shows the full
+refresh held.
+
+**What steady means, from the capture-off record.** The engine sees its own callbacks and present calls. It
+does not see when a frame reached the panel, because wgpu hides the drawable's presented time. The claims are
+therefore about slots:
+
+- A **slot** is one display-link callback at the requested rate, with the target time the link gives it.
+- A slot is **missed** when its callback made no present call. This is the count the governor already takes as
+  display ticks without a present. A slot whose callback the system dispatched after the slot's own target time
+  was never offered to the game: it is listed apart and is not counted as missed.
+- The **interval between presented frames** is the difference between the target times of the slots that
+  carried consecutive present calls. The time of the present call inside its callback moves with host load and
+  is not when the frame is shown, so it is recorded and not judged.
+
+D11.6 holds when, over the route's ticks in each of two capture-off takes on the merge candidate, no slot is
+missed and the 95th-percentile interval between presented frames is one 60 Hz interval, 16.67 ms. A slot the
+system never delivered shows as a longer interval, and the 95th percentile allows a few of those. Takes are made
+under the load other builders put on the host, as [the settings](../../../ORCHESTRATE.md#targets) say of every
+timing, so a take may be repeated, and two that hold show it was not one lucky take. Every take made on the
+merge candidate is kept and listed with its host load and its missed slots. The record also gives, without a
+bound, the GPU span and each pass against the interval, and how many present calls came after their slot's
+target time. When a frame
+reached the panel is `SHOWCASE` WP8.6's to witness, in its attended sitting
+([who judges frame cadence](../ARCHITECTURE.md#who-judges-frame-cadence)).
+
+**The shortfall on record.** The evidence page and the maturity ledger say that full screen does not hold the
+display's full refresh. They give the fastest forced 120 Hz take's GPU span at the floor against 8.33 ms, each
+pass's time, the load it was taken under, and WP17 as the follow-up. The builder's retake is that record; a
+take on the merge candidate replaces it only if the builder makes one.
+
+**Two changes the builder made stay.** Both are in the measured takes:
+
+- On the EDR surface the frame runs the SDR tone encode only when something reads the SDR stage, which is the
+  capture tap's SDR source or a readback. The ordinary EDR frame leaves the pass out, and the timestamp
+  validator follows the graph variant the frame ran.
+- The Mac window asks for copy access to the float drawable only while an EDR tap is on.
+
+**Motion evidence at full screen.** D11.6's image claims are read from consecutive captured frames
+([evidence conventions](#evidence-conventions)), and the builder's full-screen capture kept 307 of 800
+submitted frames, with 493 omitted by the tap and none refused by the writer. A frame at this size is 30.9 MB,
+and the capture's caller gave the tap six staging slots and 27 CPU buffers under a 1 GiB allowance, which is
+about a quarter of a second of frames at 120 Hz. The capture is fixed inside
+[T2's contract](../T2-CAPTURE/DESIGN.md#cost-and-failure-account), which calls for a smaller declared
+workload or more throughput and forbids a smaller image or fewer sampled frames:
+
+- The declared workload is a **cue window** for each of the four cues D11.6 names, which are the camera moving
+  past the terrain silhouette and thin props, the stars, a moving prop and the time-of-day scrub: a run of
+  consecutive submitted frames
+  from before the cue to after it settles, at the display's pixel size and the requested frame rate. The tap
+  is off between windows. A window is complete when every presented submission in it has its image, with no
+  omission by the tap or the writer.
+- The capture's caller chooses the staging slots, CPU buffers and byte allowance for that extent before the
+  take. T2 calls these operational limits, and they are the caller's to set.
+- The windowed tap keeps `omit` admission. It never holds the renderer back, and no frame is retimed.
+- The builder first measures which limit binds, staging slots waiting on readback or CPU buffers still held by
+  the writer, at the moments the tap reserves and collects. The earlier record cannot tell them apart.
+- If that shows a slot or a buffer the tap never gives back, the fault is in `T2-CAPTURE`'s tap. The builder
+  ends `BLOCKED needs_dependency` with the record, and does not change the tap's admission.
+
+Capture adds the SDR tone encode and the copies, so a captured take may miss slots that the capture-off take
+holds. That cost is shown apart and decides nothing about pacing.
+
+### Reaching the full refresh at full screen (WP17)
+
+Added 26 November 2026, as the follow-up to the shortfall above. It comes after G4, and neither G4 nor
+`SHOWCASE` waits for it. Its mechanisms and items are not planned yet: a planner settles them, with a design
+review, before a builder starts.
+
+- **Where it starts.** At the 50% floor the fastest take's GPU span was 10.85 ms against a 7.08 ms budget. The
+  largest passes at the median were forward opaque at 3.08 ms, the float surface present at 1.90 ms and the
+  MetalFX segment at 1.71 ms, and the temporal exposure texture reached 3.83 ms at the 95th percentile. Pass
+  times overlap and were taken under heavy host load.
+- **What it is for.** Those three passes at the display's pixel size, until the route holds 120 Hz at full
+  screen by the definitions above, or until a record says what remains and why.
+- **What decides.** A full-screen window asks for the full refresh only once a capture-off record shows it
+  held, under [the hardware-native decision](../../design/decisions/HARDWARE-NATIVE-ENGINE.md): promotion by
+  measured win. Until then the 60 Hz rule stays.
+
 ### What closes G4, and what the owner observes (WP11)
 
 G4 closes on evidence agents and the device produce. The brief's sentence is proved clause by clause:
@@ -933,7 +1052,7 @@ G4 closes on evidence agents and the device produce. The brief's sentence is pro
 | The governor reacts to GPU, thermal and present evidence | D7.1–D7.9 | Policy tests and forced-load runs on the device |
 | Apple tile compared with portable, with image tolerance and counters | D11.1, D11.4 | Paired rows on this Mac |
 | No pipeline compilation during play | D9.2–D9.4, D11.2 | Creation counters by thread and phase |
-| The whole path in motion | D11.6, D11.7 | Agents' review of realtime engine capture |
+| The whole path in motion | D11.6, D11.7 | Agents' review of realtime engine capture, and on the Mac the capture-off pacing record at [the requested frame rate](#the-requested-frame-rate-at-full-screen-wp11) |
 
 Engine capture proves the values the surface was given, never the light the panel emits, and no agent can see
 the panel. So the look of EDR on the built-in display is the owner's **observation**: experienced quality under
@@ -998,6 +1117,7 @@ The physical iPhone and external-display rows stay owed in the same way.
   counted in the proof.
 - *Resize or backing-scale change:* a generation transition.
 - *Refresh change:* governor budget only.
+- *Requested frame rate change:* governor budget only, with an empty sample window, as after a hold.
 - *Headroom change or a move to an SDR display:* H only.
 - *Surface replacement:* G3b and frame-runtime recovery, then a transition if the extent changed.
 - *Device loss:* recovery and a build.
@@ -1117,6 +1237,7 @@ In the V1 game on this M3 Max:
 - stars, the Sun and reveals are stable;
 - EDR highlights appear on the built-in XDR display within its headroom;
 - the governor holds the display rate under forced load without oscillation;
+- at full screen on the built-in display the game presents a steady 60 Hz, and its full 120 Hz there is WP17's;
 - the simulation is unchanged;
 - scale, headroom and cut changes create nothing during play;
 - resizes and backing-scale changes keep presenting while the new generation builds off the render thread.

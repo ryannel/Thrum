@@ -28,6 +28,14 @@ Build in the order below.
   U1's notes are written while V1's last modules build, and nothing waits for the owner's answer in U2.
 - Assumption: agents draft no text for the owner to post upstream, not even a comment to rewrite. The upstream
   notes give facts, options and a recommendation, and the owner writes the comment. The owner can ask for drafts.
+- Assumption: G4 closes on a steady 60 Hz at full screen on the built-in display, not on its full 120 Hz. The
+  fastest full-screen route needed 10.85 ms of GPU time at the governor's floor against the 8.33 ms that 120 Hz
+  allows. The lead decided this on 26 November, reading shipped high-end Mac games as holding 60 with an
+  upscaler at full resolution. The settings' bar, "smooth at the display's full refresh", is still what a
+  window gets and what WP17 aims for at full screen. The owner can overturn it.
+- Assumption: a full-screen window asks for 60 Hz by itself, and a smaller window keeps the display's full
+  refresh. A launch setting forces either. The rule goes when WP17 shows 120 Hz held at full screen.
+- Assumption: WP17 comes after G4 and `SHOWCASE` does not wait for it. Whether the V1 exit should is the owner's.
 
 ## WP1 Every pixel of the valley carries correct motion under jitter, including the sky and stars: done
 [review](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP1-review.md)
@@ -79,6 +87,18 @@ Build in the order below.
 reconstruction readers and scale steps. The evidence page is `.orchestrate/evidence/render/G4-PAIRED-<date>.md`, and the
 ledger is `docs/design/maturity.json`. Ask for the owner's look at the panel in the evidence page and in your
 report, and never wait for it: G4 closes on the agent and device evidence, with the look recorded as outstanding.
+
+Read [the requested frame rate at full screen](DESIGN.md#the-requested-frame-rate-at-full-screen-wp11) first:
+it answers the 26 November handoff. The target at full screen is a steady 60 Hz, and no more work on the frame
+graph belongs here; the three costly passes are WP17's. `build/apple-presentation` at `1eacafa62` holds the two
+changes that section keeps, and
+[the retake](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP11/mac-budget-retake/README.md) is the 120 Hz
+shortfall record. What is left: the requested frame rate, the two pacing takes, the cue windows with the capture
+sized for them, the paired proof again on the merge candidate because the EDR pass changed, and the closing
+record. Pacing takes run under whatever load the host has, so repeat one that a busy host spoils and keep every
+take; don't end `BLOCKED` asking for a quiet machine.
+
+## WP17 The valley holds the display's full 120 Hz at full screen on the built-in display
 
 ## U1 The owner can read, in one reviewed document, what Thrum's Metal pipeline cache would offer wgpu and what to settle there first
 

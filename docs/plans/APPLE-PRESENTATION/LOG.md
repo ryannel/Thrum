@@ -676,3 +676,9 @@ layer profile change. [Metal controls](../../../.orchestrate/evidence/CLOUDS/WP9
 - 2026-11-26 Planner, design review Must Fix 3 (U2.1 can miss a new Metal cache pull request). U2.1's reading
   now covers each pull request proposing a Metal pipeline cache opened since part 1 was read, given in part 1's
   dated line as part 1 gives the others, and its reviewer searches for one the line leaves out.
+
+- 2026-11-26 Planner, WP11 unblocked: the full-screen route misses 120 Hz at the governor's floor, and the lead
+  revised the target to a steady 60 Hz there. The design gains the requested frame rate, D11.5 and D11.6 are
+  written again, and reaching 120 Hz at full screen is WP17, after G4.
+  [Design](DESIGN.md#the-requested-frame-rate-at-full-screen-wp11) ·
+  [reasons and numbers](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP11-plan/README.md)
