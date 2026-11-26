@@ -913,7 +913,7 @@
         {
           "verdict": "fail",
           "commit": "6694d15c2decaa3b1baf96eff87bd1812835b007",
-          "review": ".orchestrate/evidence/GAME-UI/WP5-review.md",
+          "review": ".orchestrate/evidence/GAME-UI/WP5-review-2.md",
           "items": {
             "WP5.1": "pass",
             "WP5.2": "fail",
@@ -947,6 +947,36 @@
             "turns": 1
           },
           "at": "2026-11-26T09:06:44Z"
+        },
+        {
+          "verdict": "pass",
+          "commit": "29a71ce22cfc63d0d620a2cb165512ace9748726",
+          "review": ".orchestrate/evidence/GAME-UI/WP5-review.md",
+          "items": {
+            "WP5.1": "pass",
+            "WP5.2": "pass",
+            "WP5.3": "pass",
+            "WP5.4": "pass",
+            "WP5.5": "pass",
+            "WP5.6": "pass",
+            "WP5.7": "pass"
+          },
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 100343,
+            "cached": 2280320,
+            "output": 6223,
+            "turns": 1
+          },
+          "at": "2026-11-26T09:57:27Z"
         }
       ],
       "authorised": {
@@ -979,6 +1009,13 @@
           "output": 151632,
           "turns": 3
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "29a71ce22cfc63d0d620a2cb165512ace9748726",
+        "review": ".orchestrate/evidence/GAME-UI/WP5-review.md",
+        "checked": "c663a88ea9d5b253d97bbce0d436f3d7f6718662",
+        "at": "2026-11-26T09:57:27Z"
       }
     },
     "WP6": {
