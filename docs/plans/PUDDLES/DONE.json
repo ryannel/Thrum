@@ -445,7 +445,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/PUDDLES/WP4/footprint-gain-metal.log",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP4/footprint-install-metal.log",
           "verdict": "",
           "review": ""
         },
@@ -486,7 +486,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/PUDDLES/WP4/footprint-gain-metal.log",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP4/footprint-install-metal.log",
           "verdict": "",
           "review": ""
         },
@@ -497,7 +497,7 @@
           "lock": "chrome",
           "target": "chrome-webgpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/PUDDLES/WP4/footprint-gain-chrome/run.json",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP4/footprint-install-chrome/run.json",
           "verdict": "",
           "review": ""
         },
@@ -508,7 +508,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/PUDDLES/WP4/footprint-gain-fleet-cost.json",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP4/footprint-install-fleet-cost.json",
           "verdict": "",
           "review": ""
         },

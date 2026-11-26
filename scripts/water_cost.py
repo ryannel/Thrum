@@ -1196,20 +1196,7 @@ def rain_rings_cost(action):
             view['summary'] = summary
     for row, investigations in rain_brim_investigations(data):
         row['investigations'].extend(investigations)
-    for arm in data['fleet']['arms']:
-        times = arm['drain_ns']
-        arm['median_ns'] = statistics.median(times)
-        arm['max_ns'] = max(times)
-        arm['investigations'] = []
-        if arm['rate_mm_h'] and arm['max_ns'] > data['fleet']['step_ns'] / 10:
-            tick = times.index(arm['max_ns']) + 2
-            dry = data['fleet']['arms'][0]
-            arm['investigations'].append(
-                f'At tick {tick} the complete ready-answer drain took {arm["max_ns"] / 1e6:.3f} ms; '
-                f'dry at the same tick took {dry["drain_ns"][tick - 2] / 1e6:.3f} ms. '
-                f'The wet median was {arm["median_ns"] / 1e6:.3f} ms and dry median '
-                f'{dry["median_ns"] / 1e6:.3f} ms. The interval excludes drawing and GPU readback; '
-                'in rain it includes schedule listing, binning, and lookup of the 54 footprints.')
+    summarize_fleet(data['fleet'])
     validate_rain_rings(data)
     evidence = ROOT / '.orchestrate/evidence/PUDDLES/WP4/rain-rings-cost.json'
     evidence.parent.mkdir(parents=True, exist_ok=True)
@@ -1250,6 +1237,24 @@ def rain_brim_investigations(data):
             yield row, investigations
 
 
+def summarize_fleet(fleet):
+    dry, wet = fleet['arms']
+    for arm in (dry, wet):
+        times = arm['drain_ns']
+        arm['median_ns'] = statistics.median(times)
+        arm['max_ns'] = max(times)
+        arm['investigations'] = []
+    for tick, elapsed in enumerate(wet['drain_ns']):
+        if elapsed <= fleet['step_ns'] / 10:
+            continue
+        wet['investigations'].append(
+            f'At tick {tick + 2} the complete ready-answer drain took {elapsed / 1e6:.3f} ms; '
+            f'dry at the same tick took {dry["drain_ns"][tick] / 1e6:.3f} ms. '
+            f'The wet median was {wet["median_ns"] / 1e6:.3f} ms and dry median '
+            f'{dry["median_ns"] / 1e6:.3f} ms. The interval excludes drawing and GPU readback; '
+            'in rain it includes schedule listing, binning, and lookup of the 54 footprints.')
+
+
 def validate_rain_rings(data):
     assert data['target'] == 'mac-metal' and data['extent'] == [2560, 1440]
     assert data['capture'] is False and data['rate_mm_h'] == 50
@@ -1281,8 +1286,8 @@ def validate_rain_rings(data):
         assert min(arm['drain_ns']) > 0
         assert arm['median_ns'] == statistics.median(arm['drain_ns'])
         assert arm['max_ns'] == max(arm['drain_ns'])
-    if wet['max_ns'] > fleet['step_ns'] / 10:
-        assert wet['investigations']
+    crossings = sum(elapsed > fleet['step_ns'] / 10 for elapsed in wet['drain_ns'])
+    assert len(wet['investigations']) == crossings
     for row, investigations in rain_brim_investigations(data):
         assert all(entry in row['investigations'] for entry in investigations)
 
