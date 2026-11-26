@@ -274,3 +274,11 @@
   the station's prepared disc read more margin against the direct f64 average. Metal verifies all
   three reported stations, the 0.2784 m craft request radius, the faded edge and the use-tick history.
   The authored coefficients use 96.3 MB, up from 34.4 MB. [WP4.13 evidence](../../../.orchestrate/evidence/PUDDLES/WP4/footprint-delivery.md#steady-rain-disc-accuracy)
+
+- 2026-11-27 WP8. The optional 2 cm interaction level takes the short source band and shares the water
+  surface and tick query. Metal verifies the wavelength split, the 10 mm and 30 mm footfall comparison,
+  two one-tick substeps, exact dry-sill isolation and state surviving inundation. Both WATERS profiles pass
+  the existing interaction tests. Realtime eye-height captures show the walk, the two stone drops and
+  the joined take. Direct Chrome WebGPU readback and a paired 1440p at 10 mm/h are in the
+  [WP8 evidence](../../../.orchestrate/evidence/PUDDLES/WP8/README.md). Depth-dependent speed is clearer in
+  the gauges than in the images. Bright arcs sometimes remain visible up to the waterline.

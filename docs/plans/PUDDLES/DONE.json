@@ -528,7 +528,7 @@
     {
       "id": "WP8",
       "name": "A footfall or a dropped stone in a puddle sends rings across it at the speed its depth gives, and they die at its edge and stop at a dry sill",
-      "status": "not_started",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -544,8 +544,8 @@
           "ask": "Does the fine level take one tick at a time and never more than two in a frame?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP8/README.md#fine-level-state-on-metal",
           "verdict": "",
           "review": ""
         },
@@ -556,8 +556,8 @@
           "ask": "Does the test read the near level's own state with the fine level in the profile, and does it fail when the near level is still given the source's waves under 1 m?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP8/README.md#wavelength-ownership",
           "verdict": "",
           "review": ""
         },
@@ -566,8 +566,8 @@
           "statement": "A footfall and a dropped stone ring a puddle: round rings cross it, slower in the shallower puddle, and die at its edge. The walking marker leaves a train of them. Nothing shows on the puddle beyond a dry sill, and no edge of the window shows.",
           "inspect": "`realtime` sequences from 1.7 m of the marker walking through two puddles of different depths a sill apart, with no rain, and of a stone dropped in each; one more after the two have joined.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP8/README.md#realtime-inspection-on-metal",
           "verdict": "",
           "review": ""
         },
@@ -577,10 +577,10 @@
           "check": "node scripts/check_water_browser.mjs --case rain-footfall",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP8/chrome/run.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "WP8.7",
@@ -588,10 +588,10 @@
           "check": "python3 scripts/water_cost.py check --scene rain-footfall",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP8/rain-footfall-cost.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         }
       ]
     },
