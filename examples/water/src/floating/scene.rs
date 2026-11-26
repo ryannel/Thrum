@@ -879,7 +879,7 @@ pub(crate) fn install_channel_float(
         fleet.previous.clone_from(&fleet.current);
         // Wind on the exposed float lets it keep moving through the tidal
         // backwater, where the map's current fades to zero.
-        fleet.current[0].velocity.x += 0.025 * wind_speed * step.as_secs_f64();
+        fleet.current[0].velocity.x += 0.065 * wind_speed * step.as_secs_f64();
         drop(advance_fleet(
             &mut fleet.current,
             endpoint,

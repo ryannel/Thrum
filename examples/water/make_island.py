@@ -70,7 +70,7 @@ def channel_height(x, z):
     along = min(max((x - 210) / 140, 0), 1)
     level = 11.75 - 12.55 * along
     # The mouth sill remains wet at the lowest tide, with a shallow bed.
-    floor = level - 0.85 + 0.70 * smoothstep((x - 334) / 16)
+    floor = level - 0.85 + 0.70 * smoothstep((x - 341) / 9)
     floor -= 0.65 * smoothstep((x - 350) / 10)
     # Taper the wetted banks at the narrows without moving the chart edges.
     narrow = exp(-((x - 256) / 16) ** 2)
