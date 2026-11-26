@@ -68,3 +68,28 @@
   example D's choice names the wave it answers, which `take_choices` checks.
 - 2026-11-25 Review 2's suggestions, both taken: the plan's `scene.component` assumption gives the multiplayer
   exception, and the panic table names `Game::test()` by target.
+- 2026-11-26 Owner, after an industry review of the design
+  ([the review](../../../.orchestrate/evidence/GAME-SDK/owner-review-2026-11-26.md)): "Yes I agree" to all ten
+  recommendations and all four owner decisions. They are the design's decisions D1 to D4 and R1 to R10.
+- 2026-11-26 Three agents each wrote a whole game against the design as the review amended it (an online 3D
+  arena shooter, a 2D platformer, a 3D exploration game; reports in the main checkout under
+  `tmp/sdk-dogfood/`). All three said "not yet" and praised the same core: written rule order, the typed wall
+  between rules and the screen, phases and windowless tests.
+- 2026-11-26 Owner, asking for this rewrite: "We're looking for something that's readable, expressive,
+  intuitive and powerful. Don't optimise at all for reducing the amount of re-work needed. Let's just find the
+  best possible design."
+- 2026-11-26 Design rewritten whole. Planner's choices beyond the owner's decisions, each for the owner to
+  overturn: a scene is a type whose fields are its arguments; one written order for a scene, with phases and
+  control lines in it; action maps read as plain fields with default bindings on the map; a control function
+  may read anything, and a match runs ahead a named list; one package with a `rules` module checked by being
+  built alone; `Screen<T>` for `Local<T>` and `Outbox` for `Send`; no tick is stepped while paused.
+- 2026-11-26 The earlier design's rule that spawns land when a tick ends is gone (R2). Ruling 2 of the module
+  list now asks core for a barrier after each registered system, and WP1.1 proves it first.
+- 2026-11-26 Scope left to the owner as ten one-line questions in the design: 3D collision and character move,
+  gamepads, audio, predicted projectiles, rewound hits, 3D multiplayer, a host with no window, skeletal
+  animation, text fields, levels from an editor's file. The first-release scope of 25 November stands meanwhile.
+- 2026-11-26 Work packages: WP1 and WP2 rewritten, WP11 (prefabs and the tree) added between them, WP12 (level
+  collision and content) and WP13 (saves and recordings) named. WP3, WP5, WP6 and WP7 keep the outcomes
+  `SWARM` waits on; WP6 gains commands and offers, so the swarm game's upgrade choice still arrives with it.
+- 2026-11-26 `SWARM`'s design is still to be re-planned onto the SDK once the owner approves this design, as
+  before. Nothing of `SWARM`'s was changed here.

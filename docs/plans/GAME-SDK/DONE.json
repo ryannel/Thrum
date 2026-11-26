@@ -3,13 +3,13 @@
   "work_packages": [
     {
       "id": "WP1",
-      "name": "An agent writes a game's entities and rules in plain Rust against one crate, and proves them in an ordinary test with no window",
+      "name": "An agent writes a game's scenes, phases and rules in plain Rust against one crate, in the order they run, and proves them in an ordinary test with no window",
       "status": "not_started",
-      "quality_bar": "Game code that reads as plainly as Bevy's `breakout` example with less ceremony: a scene's rule list reads as a description of play, and no line names engine plumbing. Compiler and startup messages as useful as Rust's own, each naming the object, the cause and the next step. Correctness held as `SIM-2D` holds it: one trace, one digest. The reference for how game code reads is the design's worked examples, which the owner approved.",
+      "quality_bar": "Game code that reads as plainly as Bevy's `breakout` example with less ceremony: a scene function reads top to bottom as one tick, and no line names engine plumbing. Compiler and startup messages as useful as Rust's own, each naming the object, the cause and the next step. Correctness held as `SIM-2D` holds it: one trace, one digest. The reference for how game code reads is the design's worked examples, which the owner approves.",
       "items": [
         {
           "id": "WP1.1",
-          "statement": "In a game with no window and no camera, built from `thrum` alone and stepped through `Game::test()`: (1) a scene's rules run once a tick in the order the scene lists them, and a rule reads what earlier rules of the same tick wrote to components and resources; (2) an entity spawned in a tick is first visited in the next tick; an entity despawned in a tick is still visited by later rules of that tick and by none after it, and a second `despawn` of it in that tick returns false; a component put on or taken off a living entity with `Attach` is seen from the next tick; (3) a query visits entities in the same order on every run, and its `With` and `Without` filters select as written; (4) a component is known to the world, with no list written by the game, when the signature of a rule, a condition or an enter function names it, and a component that is only ever spawned is known once its scene says `scene.component::<T>()`; a template function spawns what it returns; (5) an event sent by a rule is read by later rules of that tick and by none in the next; (6) a rule or group under `when` runs only in ticks where its condition holds; (7) `par_each` leaves the world as the serial loop does; (8) the first scene given to `Game` is where a game starts, and `go_to` changes scene when the tick ends, after which the entities of the scene left are gone and its resources remain. Guard: CPU tests on worlds of a few entities, in `./dev check`.",
+          "statement": "Written order, and what a rule sees, in a game with no window built from `thrum` alone and stepped through `game.test()`. Build this item first: it rests on the engine applying a rule's structural edits when the rule ends, inside the tick's one transaction. (1) The entries of a scene function run once a tick in the order written, across `scene.rules` blocks and `scene.phase` blocks, and a phase block's rules run only while that is the scene's phase. (2) A rule reads what earlier rules of the same tick wrote to components and resources. (3) An entity a rule spawns is visited by no query of that rule and by the queries of every later rule of the same tick. An entity a rule despawns is still visited for the rest of that rule and by no later rule. A component inserted or removed is seen from the next rule on. (4) `despawn` returns true for the call that despawns an entity, and false for a second call in the same rule and for any later call. (5) A query visits entities in the order they were spawned, on every run, and its `With` and `Without` filters select as written. `Single` gives the one match, and refuses the tick with none and with two. (6) An event a rule sends is read by later rules of that tick and by none in the next. (7) `rule.every(d)` runs first at the end of the first interval after its phase or scene was entered and once each interval after, and a rule or group under `when` runs only in ticks where its condition holds. (8) `par_each` leaves the world as the serial loop does. (9) A component is known to the world, with no list written by the game, when the signature of a listed function names it, and a component that only a spawned tuple holds is known once the game says `Game::component::<T>()`. Guard: CPU tests on worlds of a few entities, in `./dev check`.",
           "check": "cargo test --locked --offline -p thrum --test it rules::",
           "reads": [
             "crates/",
@@ -24,8 +24,8 @@
         },
         {
           "id": "WP1.2",
-          "statement": "A scripted run of a test game that spawns, despawns, writes components and resources and draws from `Random`: (1) gives one world digest at every tick when run twice, when rewound to a tick inside the run and replayed, and when the same game is built again from its scene functions; (2) has a digest that covers the whole world: changing one field of one component, changing one field of one resource, spawning one entity and despawning one entity each give another digest; (3) `Random` gives the same draws for the same seed, tick and request, and other draws for another seed; (4) a rule that returns an error refuses its tick, in a tick where earlier rules had already written a component, written a resource, spawned an entity and despawned one: afterwards every component value, resource value and entity count read back through the harness is what it was before the tick, the error names the rule and the tick, and the next `step()` runs as if the refused tick had not been tried; (5) on the Mac, a rule that panics is reported the same way, with the same values read back. Guard: CPU tests on small worlds, in `./dev check`.",
-          "check": "cargo test --locked --offline -p thrum --test it replay::",
+          "statement": "Scenes, phases and time, stepped through `game.test()`. (1) The game starts in the first scene listed, with its default value, and `test_in` starts in a given one. (2) `scenes.go_to(next)` lands when the tick ends, in this order: the phase's exit functions, the scene's exit functions, the scene's entities despawned, scene resources set to the values they were registered with, the new scene's enter functions in the order written, the first phase's enter functions. Game resources keep their values. The next tick's first rule sees all of it, and reads the scene's value as `Res<S>` with the fields it was entered with. (3) The first `go_to` of a tick stands and a later one returns false. `restart()` enters the running scene again with the same value. (4) `PhaseMut::go_to` lands when the tick ends, the old phase's exit functions before the new one's enter functions. The first request of a tick stands and a later one returns false. The tick's remaining rules run in the old phase. Going to the phase the scene is in leaves and enters it. `lasts(d).then(p)` changes phase at the tick `d` after entry unless a rule asked first in that tick. `phase.time()` is the time since entry. (5) A scene given to `Game::scene` as a tuple of functions, or built with `scene.add`, is one scene whose entries run in the order those functions wrote them. (6) `Timer`: `running` is true from `start` until the tick its wait ends and `finished` from then on; both are false for `Timer::IDLE` and after `clear`. `Cooldown::take` is true at once from `Cooldown::READY`, then once in each `every`, and a changed `every` applies from the next take. (7) All of the above give the same world after a rewind to a tick inside the run and a replay. Guard: CPU tests on small worlds, in `./dev check`.",
+          "check": "cargo test --locked --offline -p thrum --test it scenes::",
           "reads": [
             "crates/",
             "Cargo.toml",
@@ -39,8 +39,8 @@
         },
         {
           "id": "WP1.3",
-          "statement": "Each of these mistakes is refused with a message that names the object, the cause and the next step, and leaves the world unchanged where a world exists. At compile time: a component or a resource with a `Vec`, a `String`, a reference or a raw float field. At startup, from `test()`, before any tick: two parameters of one rule that write the same component; a rule that reads a resource no scene provides. While running: a spawn of a component that no signature names and no scene declares, whose message names the rule, the component and `scene.component`; `go_to` a scene the game was not given; a spawn past the world's size; a rule that returns an error. A game whose scenes have no camera, no binding and no frame function starts and steps with no complaint. The tests hold each message's object, cause and next step by its text. Guard: in `./dev check`.",
-          "check": "cargo test --locked --offline -p thrum --test it mistakes::",
+          "statement": "A scripted run of a test game that spawns, despawns, writes components and resources, changes phase and scene and draws from `Random`: (1) gives one world digest at every tick when run twice, when rewound to a tick inside the run and replayed, and when the same game is built again from its scene functions; (2) has a digest that covers the whole world: changing one field of one component, changing one field of one resource, spawning one entity, despawning one entity, and being in another phase or another scene each give another digest; (3) `Random` gives the same draws for the same seed, tick and rule, and other draws for another seed or another rule; (4) a rule that returns an error refuses its tick, in a tick where earlier rules had already written a component, written a resource, spawned an entity that a later rule then visited, and despawned one: afterwards every component value, resource value and entity count read back through the harness is what it was before the tick, the error names the rule and the tick, and the next `step()` runs as if the refused tick had not been tried; (5) on the Mac, a rule that panics is reported the same way, with the same values read back. Guard: CPU tests on small worlds, in `./dev check`.",
+          "check": "cargo test --locked --offline -p thrum --test it replay::",
           "reads": [
             "crates/",
             "Cargo.toml",
@@ -54,6 +54,21 @@
         },
         {
           "id": "WP1.4",
+          "statement": "Each of these mistakes is refused with a message that carries its stable code and names the object, the cause and the next step, and leaves the world unchanged where a world exists. At compile time: a component, a resource, an event or a scene's field that is a `Vec`, a `String`, a reference, a raw float or `usize`; a first scene whose type has no default. At startup, from `test()`, before any tick: a rule that reads a resource nothing provides. While running, each refusing its tick: a spawn of a component that no signature names and the game has not declared, whose message names the rule, the component and `Game::component`; an entity that two writing parameters of one rule both match, whose message names the rule, both parameters and the entity; `Single` with none and with two; `go_to` a scene the game was not given; a spawn past the world's size; a rule that returns an error. Two parameters of one rule that write the same component, where no entity matches both, start and step with no complaint and no `Without`. A game whose scenes have no camera, no binding and no frame function starts and steps with no complaint. The tests hold each message's code, object, cause and next step by its text. Guard: in `./dev check`.",
+          "check": "cargo test --locked --offline -p thrum --test it mistakes::",
+          "reads": [
+            "crates/",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP1.5",
           "statement": "No public item of `thrum` names a type of `wgpu`, `winit` or another engine crate by that crate's path. Every public item of `thrum` has a doc comment with an example, and every example runs as a doc test. A package that names `thrum` with default features off builds alone and has no renderer, window, GPU, network or platform crate in its dependency closure. `thrum` and any crate it is built from are registered in `.config/architecture.toml`. Guard: the surface check and the doc tests run in `./dev check` from this landing, so every later work package's additions are held to them.",
           "check": "python3 scripts/sdk_surface.py check && cargo test --locked --offline -p thrum --doc",
           "reads": [
@@ -70,9 +85,9 @@
           "review": ""
         },
         {
-          "id": "WP1.5",
+          "id": "WP1.6",
           "statement": "The SDK is a layer over the engine's simulation and adds no second one.",
-          "ask": "Read `thrum`'s rules half and the tests' games. 1. Is world state held anywhere but `thrum-core`'s registered simulation: is there a second store, clock or undo? 2. Is the loop over entities inside a rule monomorphised for that rule's parameters, with no dynamic call and no allocation for each entity, and no allocation for each tick once warm? One call for each rule each tick through the engine's registered callback is as designed. 3. Does a component's schema identity come from its name and fields, and never from a Rust type ID? 4. Are the changes made in `thrum-core` additions only, with its existing tests unedited and passing? 5. Does any test's game name a crate other than `thrum`, or a schema number, permit, executor, page or device?",
+          "ask": "Read `thrum` and the tests' games. 1. Is world state held anywhere but `thrum-core`'s registered simulation: is there a second store, clock or undo? Which scene and phase run are world state there too? 2. Are a rule's structural edits applied when the rule ends inside the tick's one transaction, so that a refused tick undoes them with everything else, and does a rule that staged none pay nothing for the barrier? 3. Is the loop over entities inside a rule monomorphised for that rule's parameters, with no dynamic call and no allocation for each entity, and no allocation for each tick once warm? One call for each rule each tick through the engine's registered callback is as designed. 4. Does a component's schema identity come from its name and fields, and never from a Rust type ID? 5. Are the changes made in `thrum-core` additions only, with its existing tests unedited and passing? 6. Does any test's game name a crate other than `thrum`, or a schema number, permit, executor, page or device?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -80,9 +95,9 @@
           "review": ""
         },
         {
-          "id": "WP1.6",
-          "statement": "Game code for the headless subset is written as the design's worked examples write it. Every difference between the built API and the parts of the examples that the design's section \"What WP1 compiles\" lists is a line in the module's log, and none is a change of shape as the design defines one: a concept added that a game maker must learn, one of the twelve words removed, a change to what a rule sees or to when spawns land, plumbing moved into game code, or a game made to name an engine crate.",
-          "ask": "Set the tests' games beside the parts of the worked examples that the design's section \"What WP1 compiles\" lists: from example A, `Score`, `drop_rocks`, `fall` and two scenes joined by `go_to`; from example D, `Run`, `Phase`, `enemies_die`, `start_wave`, `end_wave`, the two conditions and the grouped rule list under `when`. Set the rule parameters beside these rows of mechanism 3's table: `Query`, `Res` and `ResMut`, `Entities`, `Attach`, `Events` and `Emit`, `Tick`, `Random` and `Scenes`. Leave out what that section gives to later work packages: looks, cameras, input, commands, players, `per_player`, `Space2d`, number literals and `run()`. List each difference in how a game maker writes the same thing. Is each one in the log as a spelling? Is any a change of shape? A change of shape that is not the owner's own fails this item.",
+          "id": "WP1.7",
+          "statement": "Game code for the headless subset is written as the design's worked examples write it. Every difference between the built API and the parts of the examples that the design's section \"What WP1 compiles\" lists is a line in the module's log, and none is a change of shape as the design's section \"What a builder may change\" defines one.",
+          "ask": "Set the tests' games beside the parts of the worked examples that the design's section \"What WP1 compiles\" lists: from example A, `Score`, `drop_rocks` with its cadence, `fall`, and `Play` and `GameOver` joined by `go_to` with the score as the scene's field; from example E, `Run`, `Stage`, its three phase blocks with their lengths, `next_wave`, `enemies_die`, `heroes_fall` and `clear_enemies`. Set the rule parameters beside these rows of mechanism 3's table: `Query`, `Single`, `Res` and `ResMut`, `Entities`, `Events` and `Emit`, `Tick`, `Random`, `Scenes`, `Phase` and `PhaseMut`. Leave out what that section gives to later work packages. List each difference in how a game maker writes the same thing. Is each one in the log as a spelling? Is any a change of shape? A change of shape that is not the owner's own fails this item.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -94,6 +109,69 @@
       "failed_reviews_with_repeat": 0
     },
     {
+      "id": "WP11",
+      "name": "A game names a reusable thing, spawns it and variants of it, attaches one thing to another and takes a thing out of play",
+      "status": "not_started",
+      "quality_bar": "Reuse as plain as Unity's prefab variants and Godot's scenes, in Rust with no editor: a variant is a base and a difference, and a child is one line. The reference for how game code reads is the design's worked examples E and G, which the owner approves.",
+      "items": [
+        {
+          "id": "WP11.1",
+          "statement": "Prefabs, in a game with no window stepped through `game.test()`. (1) A prefab defined with `Game::prefab` is spawned at a place with `.at` and `.at_point`, with the components of its definition. (2) `.with(c)` on a definition and on a spawn replaces the component of that type or adds it, and `.tweak` changes one field and leaves the others. (3) A variant is its base with its changes: every component the variant did not change has the base's value, and that still holds when the base is defined after the variant. (4) A `Prefab<N>` is spawned with the `N` its spawn brings. (5) A child and a named part given in a definition are spawned with the entity, at their local places, and despawned with it. (6) A prefab's components are known to the world with no other line. (7) A test spawns a prefab with `game.spawn` and gets its entity. Guard: CPU tests on small worlds, in `./dev check`.",
+          "check": "cargo test --locked --offline -p thrum --test it prefabs::",
+          "reads": [
+            "crates/",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP11.2",
+          "statement": "Children, parts and disabling, stepped through `game.test()`. (1) `attach(child).to(parent)` with `keep_world` leaves the child's place in the world as it was, and with `keep_local(pose)` puts it at that local place. `detach` with `keep_world` leaves it where it stood. (2) `world2d` and `world3d` give a child's place through two levels of parents, each moved and turned. (3) `parent` and `children` answer, the children in the order they were attached, and `part` reaches a named part. (4) Despawning a parent despawns its children and theirs. (5) Attaching, detaching and disabling land when the rule ends, as a spawn does. (6) A disabled entity and its children are visited by no query until enabled, keep their components, and are visited again from the rule after `enable`. (7) All of it gives the same world after a rewind and a replay, and the digest changes when a parent changes. Guard: CPU tests on small worlds, in `./dev check`.",
+          "check": "cargo test --locked --offline -p thrum --test it family::",
+          "reads": [
+            "crates/",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP11.3",
+          "statement": "Each of these mistakes is refused with a message that carries its stable code and names the object, the cause and the next step. At compile time: a spawn of a `Prefab<N>` that does not bring its `N`. At startup, from `test()`: a prefab name that is spawned or used as a base, a child or a part and has no definition; a prefab that two writing parameters of one rule both match, whose message names the rule, the parameters and the prefab. While running, each refusing its tick with the world unchanged: `part` on an entity whose prefab has no such part; an attachment that would make a cycle. The tests hold each message's code, object, cause and next step by its text. Guard: in `./dev check`.",
+          "check": "cargo test --locked --offline -p thrum --test it mistakes_prefabs::",
+          "reads": [
+            "crates/",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP11.4",
+          "statement": "Prefabs and the tree cost nothing where they are not used, and read as the design's examples do.",
+          "ask": "1. Is a prefab, with its variants, resolved once when the game starts, so that a spawn copies a prepared set of components with no lookup by name and no allocation? 2. Does an entity with no parent and no child hold or pay for anything of the tree, in a query and in the digest's work? 3. Set the tests' games beside example E's `prefabs` function, its spawns of `BAT`, `ELITE_BAT`, `GEM` and `SHOT`, and example G's `take_or_set_down`. Is each difference in the log as a spelling, and is none a change of shape as the design's section \"What a builder may change\" defines one?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
+    },
+    {
       "id": "WP2",
       "name": "A crowd of 10,000 written on the SDK, steered by four players, steps identically on the Mac, in Chrome and on the iPhone simulator, and costs what the hand-written crowd does",
       "status": "not_started",
@@ -101,11 +179,11 @@
         "SIM-2D:WP3",
         "GAME-SPLIT:WP1"
       ],
-      "quality_bar": "Determinism as Factorio holds it: the same inputs give the same world on every machine, checked by digest. Speed as the engine's own reference crowd: the layer is not what a tick is spent on. Rules that read as example D of the design does.",
+      "quality_bar": "Determinism as Factorio holds it: the same inputs give the same world on every machine, checked by digest. Speed as the engine's own reference crowd: the layer is not what a tick is spent on. A first character that is steered as directly as Godot's first-game player. Rules that read as example E of the design does.",
       "items": [
         {
           "id": "WP2.1",
-          "statement": "Input reaches rules in three forms and no other, in a game stepped through `Game::test()`. Actions: an action a scene declares with `scene.action` or `scene.bind` is read through `inputs.of(player)` as `held`, `pressed`, `axis` and `stick` at the tick a scripted player's input is admitted, with `pressed` true for one tick. Commands: a command the harness sends for a player is read by `Commands<T>` at one tick, once, after that player's earlier commands, with who sent it; sending when the queue of commands on their way is full reports that the command was not taken, and a command not taken is never read. Players: `PlayerJoined`, `PlayerLeft`, `PlayerAway` and `PlayerBack` are read as events at the tick of each, and a game stepped with no roster script has one player who joins at the first tick. A scene is given `PlayerJoined` at its first tick for every player already in the game, in slot order: with two players joined in a first scene that spawns nothing, `go_to` a second scene whose rule spawns a character for each `PlayerJoined` leaves two characters, a third player who joins later makes three, and no player ever has two. Per-player rules: a `per_player` function is run once a tick for each player's character with that character's named components, that player's input and the `Tick` the scene's other rules are handed in that tick. With two players steering different ways each character moves by its own player's input. The function runs in every tick of its scene whatever conditions hold for the rules around it. A `per_player` function that moves its character only in ticks where `tick.every(..)` holds moves it in exactly the ticks an ordinary rule with the same test would, in a run from the first tick and again after a rewind to a tick between two of them and a replay. Guard: CPU tests on small worlds, in `./dev check`.",
+          "statement": "Players, action maps and a controlled character, in a game stepped through `game.test()`. Action maps: a rule reads a player's map with `Inputs<A>::of` as plain fields. A `Button` is `held` while down, `pressed` for exactly one tick after it goes down and `released` for one after it goes up; an `Axis` and a `Stick` multiply and compare as a `Num` and a `Vec2`. Players: `PlayerJoined` is read once for a player, at the tick they enter the game, and not again in a later scene; `PlayerLeft`, `PlayerAway` and `PlayerBack` are read at the tick of each; `Players` gives who is here in seat order, the host and each player's status; a game stepped with no roster script has one player from the first tick. A `scene.players().spawn(..).control(..)` line: gives a character to each player already here when the scene is entered and to each who arrives later, so that with two players joined in a first scene, a second scene with such a line has two characters, a third player who joins later makes three, and no player ever has two; a spawn function is given `Joined` and read-only rule parameters; a character is despawned when its player leaves, stays under idle input while they are away, and follows `when_away` when that says otherwise; `players.respawn` brings back one a rule despawned. The control function runs where its line is written among the scene's entries, once a tick for each player's character in seat order, with that character's components and that player's map, so two players steering different ways each move their own; `.during(phase)` runs it only in that phase; alone it may also take `Res<T>`, `Phase<P>` and `Emit<E>`, and an event it sends is read by later rules of the tick. Bots: `add_bot` takes a free seat, is announced as a player is and returns none when every seat is taken; input a rule sets with `BotInputs` before the control line is read by the control function in the same tick; a bot's character is spawned, moved and despawned as a person's is. All of it gives the same world after a rewind to a tick inside the run and a replay. Guard: CPU tests on small worlds, in `./dev check`.",
           "check": "cargo test --locked --offline -p thrum --test it input::",
           "reads": [
             "crates/",
@@ -120,7 +198,7 @@
         },
         {
           "id": "WP2.2",
-          "statement": "`Space2d` over entities with a `Collider2d`: `touching`, `within`, `nearest` and `sweep` return what `thrum-sim2d`'s queries return for the same circles, boxes and capsules on the layer asked, less any entity named by `except`, in that index's fixed order. `.on(LAYER)` answers from that layer's colliders alone: `nearest` on one layer returns that layer's nearest collider when colliders of another layer stand nearer, with a radius and without one, and a tie in distance goes to the lower slot. A query with no `.on` returns every layer's answer merged in the same order. Queries answer from where colliders stood when the tick began, and a scene's cell size is part of its rule set. Guard: CPU tests on small worlds, in `./dev check`.",
+          "statement": "`Space2d` over entities with a `Collider2d`. (1) `touching`, `within`, `in_rect`, `nearest` and `sweep_circle` return what `thrum-sim2d`'s queries return for the same circles, and the exact overlap for rectangles and capsules, with offsets, on the layer asked, less any entity named by `except`, nearest first with ties by spawn order. (2) `.on(LAYER)` answers from that layer's colliders alone: `nearest` on one layer returns that layer's nearest collider when colliders of another layer stand nearer, with a radius and without one. A query with no `.on` returns every layer's answer merged in the same order. (3) A query answers from where colliders are when its rule starts: it finds an entity the previous rule spawned or moved where it now is, and does not find one the previous rule despawned. `at_tick_start()` answers from where colliders stood when the tick began. (4) `motion_of(entity).sweep()` reports the earliest contact along the path the entity took this tick against the paths the others took: a body moved through another between two ticks is reported hit, one spawned this tick is swept from where it was spawned, and a tie goes to the earlier spawned. (5) A layer's index is built at most once after each rule that changed that layer and not at all in a tick that changed none, which a count the test reads shows. (6) A scene's cell size is part of its rule set. Guard: CPU tests on small worlds, in `./dev check`.",
           "check": "cargo test --locked --offline -p thrum --test it space::",
           "reads": [
             "crates/",
@@ -135,7 +213,7 @@
         },
         {
           "id": "WP2.3",
-          "statement": "The profile's additions for the SDK are exactly rounded, refuse what a rule may not reach, and change nothing that was retained. Constructing a number from a literal, `Angle` and its direction, turning a `Vec2` and a `Vec3`, and `Quat` products have conformance vectors beside the profile's own. The profile check passes with `thrum`'s rules half as a dependency a rule crate may have, and refuses a rule crate that names `thrum` with its play half. The profile's controls refuse, each with a message that names the reason, a rule crate that reads a file through `std::fs`, opens a socket through `std::net`, starts a process through `std::process` or reads standard input, beside every refusal the profile already made. The reference crowd's retained digests are unchanged. Guard: the vectors, the profile check and its controls run in `./dev check`.",
+          "statement": "The numbers page holds, the profile's additions are exactly rounded and refuse what a rule may not reach, and nothing retained changed. Every row of the table in the design's mechanism 9 marked allowed compiles and gives the value written, and each row marked not allowed fails to compile or is refused by the check, as that row says. `num`, `Vec2::lit` and `Seconds::lit` are usable in a `const`. `Angle` and its `sin`, `cos` and directions, turning a `Vec2` and a `Vec3`, and `Rot3` products have conformance vectors beside the profile's own. The profile's controls refuse, each with a message that names the reason, checked rules that read a file through `std::fs`, open a socket through `std::net`, start a process through `std::process` or read standard input, beside every refusal the profile already made. The reference crowd's retained digests are unchanged. Guard: the vectors, the profile check and its controls run in `./dev check`.",
           "check": "cargo test --locked --offline -p thrum --test it numbers:: && python3 scripts/sim2d_profile.py check && python3 scripts/sim2d_profile.py controls && cargo test --locked --offline -p crowd-2d --test retained_slice",
           "reads": [
             "crates/",
@@ -154,7 +232,7 @@
         },
         {
           "id": "WP2.4",
-          "statement": "Each of these mistakes is refused with a message that names the object, the cause and the next step. At compile time: reading a `Button` as a stick or an axis, and the like for each kind of action; `per_player` given a function that takes a query, a resource, `Space2d`, `Entities` or `Random`. At startup, from `test()`: a game whose declared actions do not fit an input frame, with the counts and the limit; a command type whose encoding is larger than one action of an input frame may be, with the size and the limit; a `per_player` rule under `when`. While running, each refusing its tick with the world unchanged: a rule that reads an action no scene declares, whose message names the rule, the action and `scene.action` or `scene.bind`; two entities that match one `per_player` rule for one player. The tests hold each message's object, cause and next step by its text. Guard: in `./dev check`.",
+          "statement": "Each of these mistakes is refused with a message that carries its stable code and names the object, the cause and the next step. At compile time: a field of an action map with neither `#[bind]` nor `#[sent]`; a `LocalActions` map asked for by a rule; a field of world state that is a raw float, whose message names `Num`. At startup, from `test()`: action maps that do not fit an input frame, with the counts and the limit. While running, refusing its tick with the world unchanged: two characters for one player on one `players()` line. The tests hold each message's code, object, cause and next step by its text. Guard: in `./dev check`.",
           "check": "cargo test --locked --offline -p thrum --test it mistakes_input::",
           "reads": [
             "crates/",
@@ -169,7 +247,7 @@
         },
         {
           "id": "WP2.5",
-          "statement": "On the Mac, `crowd-sdk` gives the digests its retained trace holds, and its trace row carries these witnesses, each more than nothing: for each of the four players, how far their hero moved along the direction that player's script steers, the four scripts steering up, down, left and right; hits; deaths; respawns; the angle the turning body turned through; and ticks a rule refused by returning an error at a scripted tick, after each of which the components and resources read back were what they were before it. `crowd-sdk` is a rule crate that names only `thrum`: four players' heroes moved by their input through a `per_player` rule, enemies that chase the nearest hero and keep apart with `par_each`, shots at the nearest enemy that sweep, hits, deaths and respawns, and a body that turns by an `Angle` each tick, at 10,000 bodies. Record: the Mac arm of the three-target conformance run. A slice of the trace, with its witnesses, stays as a CPU test in `./dev check`.",
+          "statement": "On the Mac, `crowd-sdk` gives the digests its retained trace holds, and its trace row carries these witnesses, each more than nothing: for each of the four players, how far their hero moved along the direction that player's script steers, the four scripts steering up, down, left and right; hits; deaths; respawns; the angle the turning body turned through; and ticks a rule refused by returning an error at a scripted tick, after each of which the components and resources read back were what they were before it. `crowd-sdk` is a game under `examples/crowd-sdk` that names only `thrum`, with its rules in its `rules` module: four players' heroes moved by a control function on a `scene.players()` line, enemies that chase the nearest hero and keep apart with `par_each`, shots at the nearest enemy that hit by `motion_of(..).sweep()`, deaths that drop a pick-up collected in the same tick, respawns, and a body that turns by an `Angle` each tick, at 10,000 bodies. Record: the Mac arm of the three-target conformance run. A slice of the trace, with its witnesses, stays as a CPU test in `./dev check`.",
           "check": "python3 scripts/sim2d_conformance.py run --package crowd-sdk --target mac-metal && cargo test --locked --offline -p crowd-sdk --test it retained::",
           "reads": [
             "crates/",
@@ -223,7 +301,7 @@
         },
         {
           "id": "WP2.8",
-          "statement": "On the Mac, two release takes each of `crowd-sdk` and of the reference crowd at 10,000 bodies report the cost of a tick, of a rewind and of a replay, and the allocations of a warmed tick, side by side, with the build and the load on the machine. The takes of `crowd-sdk` are of the load WP2.5 describes: the record carries, counted over the measured ticks, each of the four players' hero movement, hits, deaths and respawns, each more than nothing, beside the reference's own witnesses for its takes. The record flags for investigation a `crowd-sdk` tick more than about 25% above the reference's, and any allocation in a warmed `crowd-sdk` tick. The check fails only on a missing measurement or a missing witness. The record also names the default number of entities a world holds and why. Record: SDK rule cost beside the hand-written reference, taken under load.",
+          "statement": "On the Mac, two release takes each of `crowd-sdk` and of the reference crowd at 10,000 bodies report the cost of a tick, of a rewind and of a replay, and the allocations of a warmed tick, side by side, with the build and the load on the machine. The takes of `crowd-sdk` are of the load WP2.5 describes: the record carries, counted over the measured ticks, each of the four players' hero movement, hits, deaths and respawns, each more than nothing, and how many times each layer's index was built in a tick, beside the reference's own witnesses for its takes. The record flags for investigation a `crowd-sdk` tick more than about 25% above the reference's, and any allocation in a warmed `crowd-sdk` tick. The check fails only on a missing measurement or a missing witness. The record also names the default number of entities a world holds and why. Record: SDK rule cost beside the hand-written reference, taken under load.",
           "check": "python3 scripts/sim2d_conformance.py costs --package crowd-sdk --target mac-metal",
           "reads": [
             "crates/",
@@ -242,8 +320,8 @@
         },
         {
           "id": "WP2.9",
-          "statement": "`crowd-sdk` reads as example D of the design does, and what the SDK added to the engine for it belongs to the engine's owners.",
-          "ask": "1. Read `crowd-sdk`'s rules beside example D. Does each rule read as one thing the game does? Does the package hold a helper file that hides plumbing a game maker would have to write: registration, encoding, scheduling, index building? Count every file of the package as game lines. 2. Is each difference from the design's examples in the log as a spelling, and is none a change of shape? 3. Are the profile's additions in `thrum-core`'s profile, with no platform maths call, and do the reference crowd's rules and retained traces stand unedited? 4. Does `Space2d` build one `thrum-sim2d` index for each layer once a tick, keep its storage between ticks, and answer a query on a layer from that layer's index alone, so that an enemy's nearest-hero query looks at the heroes and not at the crowd? 5. Is the heroes' `per_player` function their whole movement step, writing the pose itself, with nothing in it but its character's components, its player's input and the tick?",
+          "statement": "`crowd-sdk` reads as example E of the design does, and what the SDK added to the engine for it belongs to the engine's owners.",
+          "ask": "1. Read `crowd-sdk`'s rules beside example E. Does its scene function read top to bottom as one tick, and does each rule read as one thing the game does? Does the package hold a helper file that hides plumbing a game maker would have to write: registration, encoding, scheduling, index building? Count every file of the package as game lines. 2. Is each difference from the design's examples in the log as a spelling, and is none a change of shape? 3. Are the profile's additions in `thrum-core`'s profile and `thrum-sim2d`, with no platform maths call, and do the reference crowd's rules and retained traces stand unedited? 4. Does `Space2d` keep one `thrum-sim2d` index for each layer with its storage between ticks, and answer a query on a layer from that layer's index alone, so that an enemy's nearest-hero query looks at the heroes and not at the crowd? 5. Is the heroes' control function their whole movement step, writing the pose itself?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -252,7 +330,7 @@
         },
         {
           "id": "WP2.10",
-          "statement": "A game outside the engine checkout that keeps its rules in a rule crate of its own, laid out as the design's `multiplayer` template is (a game package with a path to its own rule crate, each reaching the engine by path), passes the engine's external game check and the profile check of its own rule crate. The same game with raw-float arithmetic in its rules, and again with a file read in its rules, fails its own profile check with a message that names the violation, while the engine's check of its registered rule packages still passes. The external game check still refuses a game package that names an engine example and a path that leaves the game's folder for anything but the engine's crates. Guard: a test over a scratch game outside the checkout, in `./dev check`.",
+          "statement": "A game outside the engine checkout, one package laid out as the design's templates are with its rules in `src/rules.rs` and reaching the engine by path, passes the engine's external game check and the check of its own rules. The same game fails its own check, with a message that names the line and the violation, with each of these in its `rules` module: raw-float arithmetic; a file read; a call to a function defined elsewhere in the game. It still passes with float arithmetic in a frame function outside that module. A game that keeps its rules in a package of its own, marked in that package's manifest, passes the same way and fails the same way. The engine's check of its registered rule packages still passes throughout, and the external game check still refuses a game package that names an engine example and a path that leaves the game's folder for anything but the engine's crates. Guard: a test over scratch games outside the checkout, in `./dev check`.",
           "check": "python3 scripts/test_game_rules.py",
           "reads": [
             "crates/",

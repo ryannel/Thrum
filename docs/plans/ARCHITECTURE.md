@@ -2743,11 +2743,12 @@ No work package on the road to the exit waits on this module: none of `APPLE-PRE
 
 | `GAME-SDK` work package | Waits for | Because |
 |---|---|---|
-| WP1, WP2 | The owner's approval of the design; `SIM-2D:WP3`, Done | New crates, with additions in `thrum-core` and the rules profile. No V1 builder works there |
+| WP1, WP11, WP2, WP12 | The owner's approval of the design; `SIM-2D:WP3`, Done | New crates, with additions in `thrum-core`, `thrum-sim2d` and the rules profile. No V1 builder works there |
 | WP3 | Nothing still open | It uses `RENDER-2D`, `CONTENT-LOOP`, `CREATOR` and `HOST` as built |
 | WP4 | For its change to the 3D scene's instance passes (ruling 8), the V1 work packages that hold those passes, their motion vectors or their compiled shaders: today `APPLE-PRESENTATION` WP8 to WP12, `RAY-TRACING` WP6 and `MESH-SHADING` WP3 | It uses `CONTENT-LOOP`, `ATMOSPHERE`, `CREATOR` and `HOST` as built, and a model that turns between ticks needs the passes changed |
 | WP5 | `SESSION:WP7` | A game in a match is stepped by a driven world |
 | WP6 | `GAME-UI:WP4` | Menus and a modal choice |
+| WP13 | Its own WP6 | A save is resumed from a title screen |
 | WP7 | `GAME-UI:WP6` | The one iPhone shell for every game |
 | WP8 | Its own WP1 to WP7 | The guides teach only what is built |
 | WP9 | `GAME-SPLIT:WP4`, which waits for `SHOWCASE:WP8` | V1 lands on today's API, and the game moves before it is rewritten |
@@ -2774,35 +2775,45 @@ baseline stays exact. Once built, each belongs to its owner.
 1. **The rules profile** (`SIM-2D`; `thrum-core`'s profile, `.config/sim2d-profile`, the profile and
    conformance scripts). Built in WP2. Additions only: a number made from a literal; angles, their directions
    and turning in 2D and 3D, from the profile's exactly rounded operations with no platform maths call, each
-   with conformance vectors on the three targets; `thrum`'s rules half, with its derive crate, as
-   dependencies a rule crate may have; four more refusals, of a file read or written through `std::fs`, a
+   with conformance vectors on the three targets; `thrum` with its default features off, with its derive crate, as
+   dependencies checked rules may have; four more refusals, of a file read or written through `std::fs`, a
    socket through `std::net`, a process through `std::process` and standard input, each with a control beside
-   the profile's own; and a check of a rule crate that a game's own manifest names, so that a game outside the
-   engine checkout is checked for its own rules and not for the registry's. The profile's refusals of
-   raw-float arithmetic and methods, of hash order, clocks, threads and outside crates stand, and the check of
-   the registered rule packages is unchanged. `crowd-2d`'s retained digests do not change.
-2. **The registered simulation** (core, G2S). Built in WP1 and WP2. Additions only, such as a query over
-   several components with filters. Nothing of the existing API changes and G2S's tests pass unedited. When
-   structural edits resolve does not change: the SDK's rule that spawns land when a tick ends is this module's
-   rule, stated to game makers.
+   the profile's own; and a check of a game's own rules, which builds the game's `rules` module on its own, or
+   a rule package the game's manifest marks, so that a game outside the engine checkout is checked for its
+   own rules and not for the registry's. Built in WP2 and WP12, as additions to `thrum-sim2d`: exact overlap
+   and sweep tests for rectangles and capsules beside the index's circles; a level's fixed collision, built
+   from tiles and fixed shapes; and a box and a circle move against it that slides and reports its contacts.
+   The profile's refusals of raw-float arithmetic and methods, of hash order, clocks, threads and outside
+   crates stand, and the check of the registered rule packages is unchanged. `crowd-2d`'s retained digests
+   do not change.
+2. **The registered simulation** (core, G2S). Built in WP1, WP11 and WP2. Additions only: a query over
+   several components with filters; what a parent link and a disabled entity need; and **a barrier after each
+   registered system**, for a schedule that asks for it, at which the tick's staged structural edits are
+   applied inside the tick's one transaction, so the next system sees them and a refused tick undoes them
+   with everything else. A schedule that does not ask resolves structural edits when the tick ends, as
+   today. Nothing of the existing API changes and G2S's tests pass unedited. The owner decided on 26
+   November 2026 that what a rule did is what the next rule sees; `GAME-SDK` WP1.1 proves the barrier before
+   anything is built on it.
 3. **The shells and the tool** (`thrum-app`, which is `CREATOR`'s, `HOST`'s and the platform modules';
    `tools/xtask` and `./dev`). Built in WP3, WP4 and WP7. Whatever the window, the page and the phone shell
    still assume of the V1 game or the sky kit is made general, so that a game with neither runs. The SDK
    learns whether each picture it encoded was submitted or dropped from the game contract's readback of the
    frame host, which holds the last submission, with the contract as built; where that falls short on a
-   target, the builder writes a proposal in `HOST`'s log and a planner settles it here. The game commands are
-   added to `./dev`. The sky kit, `./dev starter` and `./dev scene` keep working until WP10.
+   target, the builder writes a proposal in `HOST`'s log and a planner settles it here. The shells hand the
+   SDK what a frame function reads of this machine alone (local actions, the pointer and its capture), give
+   it storage for saves on each target, and can stop stepping ticks while a game is paused. The game commands
+   are added to `./dev`. The sky kit, `./dev starter` and `./dev scene` keep working until WP10.
    This replaces `SWARM`'s rulings 1 and 2: the swarm game changes no engine file.
 4. **The interface and the match** (`GAME-UI`'s `thrum-ui`, `SESSION`'s `thrum-network`). The SDK uses their
    public interfaces as built, in WP5 and WP6. Where one falls short, the builder writes a proposal in that
    module's log and a planner settles it here.
 5. **The guard** (`scripts/repo_check.py`, `.config/architecture.toml`, `REPO-RULES`' shape rules,
    `GAME-SPLIT`'s `boundary`). WP1 registers `thrum`. WP2 lets `boundary` admit a path between two packages of
-   one game, so a game may keep its rules in a rule crate of its own; a path that leaves the game still has to
+   one game, so a game may keep its rules in a package of its own; a path that leaves the game still has to
    reach a registered package under the engine's `crates/`. WP8 adds a shape rule through `REPO-RULES`' engine
    and `boundary`: **every package of a game, a kit game or a template names no engine crate but `thrum`.**
    - *Covered:* every package in a games repository, every package under the engine's `templates/` and every
-     package under the engine's `examples/`, a game's rule crate and helper packages included. Coverage comes
+     package under the engine's `examples/`, a game's rules package and helper packages included. Coverage comes
      from where a package is and never from what it names, so a package cannot leave the rule by dropping
      `thrum`.
    - *The rule:* none of a covered package's dependencies (ordinary, development, build or for one target,
@@ -2834,7 +2845,7 @@ baseline stays exact. Once built, each belongs to its owner.
    showcase's 10,000 entities are, and its `Transform3d` is the row's placement. The SDK makes no cooked
    placement for an entity. The cooked placement (`thrum-asset-gpu`'s `MeshPlacement` record, with one matrix
    and no tick, and `COOKED-DRAW`'s and `MESH-SHADING`'s draw paths, shadows, culls and ray instances that
-   read it) is used as built for the SDK's scenery, which a scene places once and nothing moves, and is not
+   read it) is used as built for the SDK's placements, which a scene stands once and nothing moves, and is not
    changed. So the starter's cooked rock, written on the SDK, turns through the rows this ruling changes, and
    WP4 is judged on that rock and not on a built-in cube. Today a row carries a position for each of the two
    ticks and the passes interpolate only that, so a model that turns in place does not move between ticks.
@@ -2845,29 +2856,34 @@ baseline stays exact. Once built, each belongs to its owner.
    vectors; and the ray-traced instances where ray tracing is on, all from one interpolated placement, with
    position and scale linear and the turn by the shorter way. A row whose turn and scale are the same at both
    ticks is placed exactly as today, so every registered exact baseline stays exact, and the instance row
-   keeps its size. Under the shared-files rule above, this lands when no V1 work package that holds those
+   keeps its size. **A texture on a row's material.** The owner decided on 26 November 2026 that a thing has
+   the same model and material whether it is placed or moves, so an entity row's material takes a texture, as
+   a cooked placement's does. A row with no texture is shaded exactly as today. Under the shared-files rule above, this lands when no V1 work package that holds those
    passes is open.
 
 ### Interfaces (track 7)
 
 | Interface | Provider → consumers | Defined in |
 |---|---|---|
-| **The `thrum` crate**: what a game is written against, in two halves. The rules half builds with no renderer, window, GPU, network or platform crate | `GAME-SDK` → `SWARM`, the showcase after WP9, every game, the kit games and templates | [GAME-SDK](GAME-SDK/DESIGN.md#mechanisms) |
-| **The game commands**: `cargo play` for the Mac, Chrome and the iPhone simulator, a picture with no screen, the rule crate's check; `./dev new` | `GAME-SDK` → every game | [GAME-SDK](GAME-SDK/DESIGN.md#16-running-a-game) |
-| **The SDK guides and the one-file reference** | `GAME-SDK` → game makers and their agents | [GAME-SDK](GAME-SDK/DESIGN.md#15-documentation-guides-and-templates) |
+| **The `thrum` crate**: what a game is written against. With its default features off, everything a game writes builds with no renderer, window, GPU, network or platform crate | `GAME-SDK` → `SWARM`, the showcase after WP9, every game, the kit games and templates | [GAME-SDK](GAME-SDK/DESIGN.md#mechanisms) |
+| **The game commands**: `cargo play` for the Mac, Chrome and the iPhone simulator, a picture with no screen, a recorded run, the rules check; `./dev new` | `GAME-SDK` → every game | [GAME-SDK](GAME-SDK/DESIGN.md#19-running-a-game) |
+| **The SDK guides and the one-file reference** | `GAME-SDK` → game makers and their agents | [GAME-SDK](GAME-SDK/DESIGN.md#18-documentation-guides-and-templates) |
 | The game contract, the typed controls, the interface tree, the session, sprite rows, cooked rows, the rules profile | Their owners → `GAME-SDK`, which is now the consumer a game was | Unchanged, as their rows above define them |
 
 ### Module planning input (track 7)
 
-Planned on 25 November 2026: [design](GAME-SDK/DESIGN.md), [plan](GAME-SDK/PLAN.md). Ten work packages, the
-first two with items. Its planner settled the shape of game code (plain-data components and rule functions
-that run in the order written, with frame functions kept apart from rules by type), that looks are components,
-that every game's rules use the profile's numbers, and that the interface is described each frame. The owner
-decided on 25 November 2026 that 2D queries and sprite animation are in the first release and rigid bodies,
-skeletal animation and audio are not ("Planner's default"). Three findings bind later planners:
-spawns and despawns land when a tick ends, because that is when the engine resolves structural edits; a game
-that can be played online keeps its rules in a rule crate; and a work package's surface arrives with its
-reference documentation, because WP1's guard holds every later one to an example on each public item.
+Planned on 25 November 2026 and rewritten on 26 November 2026: [design](GAME-SDK/DESIGN.md),
+[plan](GAME-SDK/PLAN.md). Thirteen work packages, the first three with items. The owner agreed on 26 November
+to an industry review's ten recommendations and four decisions, three agents then wrote whole games against the
+amended design, and the owner asked for "the best possible design" with no weight on rework. The design's
+decisions D1 to D4 and R1 to R10 are the owner's. Its planner settled the rest: plain-data components and rule
+functions, kept apart from frame functions by type; one written order for a scene; a scene as a type; prefabs,
+phases and action maps; portable numbers in rules and floats on the screen; and one package whose `rules`
+module is checked. The owner's first-release scope of 25 November stands ("Planner's default"), and the design
+puts ten scope questions to the owner without deciding them. Three findings bind later planners: what a rule
+did is what the next rule sees, which rests on ruling 2's barrier; a game's rules live in its `rules` module,
+which is built on its own to be checked; and a work package's surface arrives with its reference
+documentation, because WP1's guard holds every later one to an example on each public item.
 
 ## Owner decisions
 
@@ -2980,14 +2996,19 @@ For [track 7](#track-7-the-game-sdk), each recorded as an assumption in
     an engine module of its own ([the table](GAME-SDK/DESIGN.md#physics-animation-and-audio)).
 39. **When SDK builders start.** The plan reads "V1 first" as: beside the road to V1, behind every V1
     work package for a builder. The owner can hold them until the exit closes.
-40. **Numbers that agree on every device, in every game.** A game played alone pays for it in the number types
-    its rules use, so that multiplayer is never a rewrite.
+40. **Numbers that agree on every device, in every game: decided.** The owner, 26 November 2026, agreed that
+    shared rules replay from input on every device, a game played alone included, and that each player's
+    presentation uses ordinary floats ([decision D1](GAME-SDK/DESIGN.md#decisions)).
 41. **The names.** The crate `thrum`, the command `cargo play`, and the words proposed in
     [the glossary](GLOSSARY.md).
 42. **One way to make a game.** The sky kit and the route milestone G6 delivered are replaced by the SDK at its
     WP10, and `SWARM` is re-planned onto the SDK.
 43. **The vision and scope document** says game makers come "later" and does not carry the SDK request.
     Adding it is the owner's page.
+44. **The SDK's first-release scope.** [Ten questions](GAME-SDK/DESIGN.md#scope-questions-for-the-owner), each
+    with the planner's recommendation: 3D collision queries with a character move, gamepads, audio, predicted
+    projectiles, hits rewound for the shooter, 3D multiplayer, a host with no window, skeletal animation, text
+    fields, and levels from an editor's file. Decision 38's scope stands until the owner answers.
 
 For [track 3](#track-3-the-swarm-survival-game-after-v1):
 
@@ -3537,6 +3558,14 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   starts: its mechanism 1 says the stage draws into both outputs of such a frame, and WP1 gains the comparison
   of a recording with a visible overlay against the 8-bit mode's frame. No interface row, no other module's
   item or dependency, and no exact baseline changed.
+- 2026-11-26 Track 7 revised for `GAME-SDK`'s rewritten design, in track 7's section only. The owner agreed to
+  an industry review's recommendations and asked for "the best possible design". Ruling 1 gains rectangles,
+  capsules, a level's fixed collision and a character move in `thrum-sim2d`, and checks a game's `rules`
+  module built on its own; ruling 2 asks core for a barrier after each registered system, replacing "spawns
+  land when a tick ends"; ruling 3 gains local input, storage for saves and a pause; ruling 8 gains a texture
+  on an entity row's material. `GAME-SDK` gains WP11, WP12 and WP13; the work packages `SWARM` waits on keep
+  their numbers and outcomes. Owner decision 40 is recorded as decided and 44 added. No other module's
+  section, item, dependency or interface row changed.
 - 2026-11-25 Track 7's rulings revised after `GAME-SDK`'s design review 2, in track 7's section only: ruling 3
   says where the SDK reads whether an encoded picture was submitted, with the game contract as built; ruling 5 covers every package of a game, a
   kit game or a template by where it is, with the registry's list of packages on the engine's own API, so a

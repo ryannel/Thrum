@@ -49,8 +49,9 @@ Proposed: the planner chose the name and the crate's name, `thrum`.
 ### Scene
 
 In a game written on the game SDK, one part of the game with its own setup, rules and look, such as a level, a
-menu or a match. One scene runs at a time. Inside the engine, "scene" also names what the renderer draws (the 2D
-and 3D scene kinds); say "render scene" for that when the two could be confused.
+menu or a match. One scene runs at a time. A scene is a Rust type whose fields are what it is entered with, and a
+function that describes it. Inside the engine, "scene" also names what the renderer draws (the 2D and 3D scene
+kinds); say "render scene" for that when the two could be confused.
 
 - **Source** — the field's term (Godot, Unity).
 
@@ -58,9 +59,10 @@ Proposed: the planner chose this meaning for game code.
 
 ### Rule
 
-A function that moves a game's world on by one tick. Rules are the only code that changes the world, and a
-scene's rules run in the order the scene lists them. Other engines call it a system. A rule crate is a crate
-that holds only rules and passes the deterministic rules profile.
+A function that moves a game's world on by one tick. Rules are the only code that changes the world. A scene's
+rules run in the order the scene function writes them, and what one rule did is what the next one sees. Other
+engines call it a system. A game's rules module (`src/rules.rs`) holds its rules and is checked against the
+deterministic rules profile.
 
 - **Source** — Thrum's own use since `SIM-2D` (rule package, rule set).
 
@@ -68,8 +70,8 @@ Proposed: the planner chose "rule" over "system" and "behaviour" for game code.
 
 ### Frame function
 
-A function that runs once for each picture drawn. It reads the world as shown and sets what only this player
-sees: the camera, the interface, effects. It cannot change the world.
+A function that runs once for each picture drawn. It reads the world as shown and sets what only this screen
+shows: the camera, the interface, effects, how a look is dressed. It cannot change the world.
 
 - **Source** — coined for the game SDK; other engines split the same way (Godot's `_process`, Unity's `Update`).
 
@@ -77,8 +79,9 @@ Proposed: the planner chose the name.
 
 ### Action
 
-A named thing a player can do, such as move or dash, bound to keys, the pointer and touch. Rules read actions
-for each player and never read a key.
+A named thing a player can do, such as move or dash: a field of an action map, bound to keys, the pointer and
+touch. Rules read actions for each player and never read a key. A local action is one only the player's own
+screen reads, such as pause.
 
 - **Source** — the field's term (Godot's input map, Unreal's input actions).
 
@@ -86,10 +89,10 @@ Proposed: the planner chose it for the game SDK.
 
 ### Command
 
-A message a player sends once, such as a menu choice. A command that is taken and admitted reaches the rules
-once, after the same player's earlier commands, and none reaches them twice. Sending says when a command was
-not taken, and one on its way when a link drops may be lost. In a match it is the session's ordered command.
-It is not a deferred spawn, which other engines call a command.
+A message a player sends once, such as a menu choice. A command that is admitted reaches the rules once, after
+the same player's earlier commands, and none reaches them twice. One on its way when a link drops may be lost.
+In a match it is the session's ordered command. It is not a deferred spawn, which other engines call a
+command.
 
 - **Source** — `SESSION`'s term.
 
@@ -103,15 +106,15 @@ A component the engine draws: a sprite, a shape, a model, a light.
 
 Proposed: the planner chose the name.
 
-### Scenery
+### Placement
 
-In a 3D game written on the game SDK, a textured cooked mesh that a scene places once and nothing moves, such
-as a valley or a building. It is part of the scene's description and not an entity. A model that an entity
-carries can move and has no texture in the first release.
+In a 3D game written on the game SDK, a model a scene stands somewhere once, with no entity, such as a valley or
+a building. It has no gameplay identity and nothing moves it. It has the same model and material an entity's
+look has, so giving the model to an entity is how it comes to move.
 
 - **Source** — the field's term (static mesh in Unreal, static body in Godot), in plain words.
 
-Proposed: the planner chose the name.
+Proposed: the planner chose the name, in place of "scenery".
 
 ### Setting
 
@@ -123,12 +126,50 @@ by rules and changed by a command; a local setting belongs to one player's scree
 
 Proposed: the planner chose "setting" for game code, and keeps "action" for what a player does.
 
-### Per-player rule
+### Control function
 
-A rule that is one player's character's whole movement step: it reads that character, that player's input and
-the tick, and nothing else. In a match the engine runs it ahead for the local player, so their character
-answers before the host confirms the input. `SESSION` calls what it is handed to a predicted controller.
+A function that is one player's character's whole movement step. A scene names it on the line that gives each
+player a character, and it runs there in the scene's written order, once for each player's character, with that
+player's input. In a match the engine runs it ahead for the local player when everything it reads can be
+predicted, so their character answers before the host confirms the input. `SESSION` calls what it is handed to
+a predicted controller.
 
 - **Source** — coined for the game SDK; the field's term for the technique is client-side prediction.
+
+Proposed: the planner chose the name, in place of "per-player rule".
+
+### Phase
+
+In a game written on the game SDK, one stage of a scene, with its own rules and its own enter and exit
+functions, such as a countdown, a wave or an intermission. A scene is in one phase at a time.
+
+- **Source** — the field's term (a state, in Bevy and in state machines), in plain words.
+
+Proposed: the planner chose "phase" over "state", which here means everything the world holds.
+
+### Prefab
+
+A named, reusable thing a game spawns: its components with their defaults, its children and its variants.
+Written in Rust, with no editor.
+
+- **Source** — the field's term (Unity).
+
+Proposed: the planner chose it for the game SDK.
+
+### Content
+
+Typed records a game's rules read and cannot change, such as waves, levels and enemies' numbers. Each is loaded
+from a file and named by a stable ID. Assets are what is drawn; content is what the rules read.
+
+- **Source** — the field's term (data tables in Unreal, resources in Godot).
+
+Proposed: the planner chose the name and the split from assets.
+
+### Offer
+
+A question a game's rules put to one player or to all of them, answered once, such as a choice of upgrade or a
+vote. It is world state, so it survives a lost connection.
+
+- **Source** — coined for the game SDK.
 
 Proposed: the planner chose the name.
