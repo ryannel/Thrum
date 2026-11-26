@@ -432,7 +432,57 @@
     },
     "WP4": {
       "definitions": "50abf1a4fbcd625aa8204b6d7739dc992531c2b66e2ded08d835457e0f5a9116",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "8e750b74e802195493eb787a92a6de600b52579b",
+          "review": ".orchestrate/evidence/RIVERS/WP4-review.md",
+          "items": {
+            "WP4.1": "pass",
+            "WP4.2": "pass",
+            "WP4.3": "fail",
+            "WP4.4": "pass",
+            "WP4.5": "pass",
+            "WP4.6": "fail",
+            "WP4.7": "pass",
+            "WP4.8": "pass",
+            "WP4.9": "fail"
+          },
+          "findings": [
+            {
+              "name": "Calm-water floats stall before the receiving bodies",
+              "item": "WP4.6",
+              "repeat": false
+            },
+            {
+              "name": "Submitted river interior depth exceeds the model tolerance",
+              "item": "WP4.3",
+              "repeat": false
+            },
+            {
+              "name": "Maturity row leaves the float result unqualified",
+              "item": "WP4.9",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 198341,
+            "cached": 10118912,
+            "output": 22204,
+            "turns": 1
+          },
+          "at": "2026-11-26T16:12:00Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
