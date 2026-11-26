@@ -255,3 +255,10 @@
   fall reach at seven gauges. Forcing either feature to draw from the upper sample below its
   wetting fails the depth test while the map test passes.
   [Target evidence](../../../.orchestrate/evidence/RIVERS/WP4/wetting-draw/README.md)
+
+- 2026-11-26 WP4.3 review fix. River depth and plain receiving-sheet ownership now read the
+  world column at the ray intersection. The column holds its map gain while it inverts the
+  cached horizontal swell displacement and reads the active short waves at the same column.
+  The Metal transects retain the example's choppiness and cover stored and interpolated gauges.
+  A second Metal guard compares a submitted lower-outlet column to a body query from the same
+  field time with the full trade spectrum. [Target evidence](../../../.orchestrate/evidence/RIVERS/WP4/choppy-depth/README.md)

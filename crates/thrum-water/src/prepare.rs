@@ -601,6 +601,15 @@ fn surface_pipelines(
             include_str!("map_gpu/river_surface_waves.wgsl"),
             include_str!("map_gpu/river_surface_depth.wgsl"),
         ));
+        source.push_str(if rain {
+            "\nfn river_rain_height(point: vec2<f32>, spacing: f32, row: SurfaceRow, motion: CascadeMotion) -> f32 {
+                return rain_geometry(point, spacing, row, motion).x;
+            }"
+        } else {
+            "\nfn river_rain_height(_point: vec2<f32>, _spacing: f32, _row: SurfaceRow, _motion: CascadeMotion) -> f32 {
+                return 0.0;
+            }"
+        });
     }
     let shader = surface
         .device
@@ -672,18 +681,16 @@ fn shader_source(
         ""
     };
     let has_rivers = map.is_some_and(MapGpu::has_rivers);
-    let (varying, vertex_geometry, vertex_output, fragment_entry, fragment_row) = if has_rivers {
+    let (varying, vertex_output, fragment_entry, fragment_row) = if has_rivers {
         (
-            "    @location(1) rest:vec2<f32>, @location(2) river:vec3<f32>,\n",
-            include_str!("map_gpu/river_vertex_geometry.wgsl"),
-            "vec3(row.level,swell,vertex.z)",
+            "    @location(1) rest:vec2<f32>, @location(2) river:vec2<f32>,\n",
+            "vec2(row.level,vertex.z)",
             include_str!("map_gpu/river_fragment_entry.wgsl"),
             "    var row=source;\n",
         )
     } else {
         (
             "    @location(1) rest:vec2<f32>, @location(2) velocity:vec3<f32>,\n",
-            "",
             "f.velocity.xyz",
             "@fragment fn water_fragment(input:VertexOut)->Output {\n",
             "    var row=surface_pixel(input.rest,input.body);\n",
@@ -722,7 +729,6 @@ fn shader_source(
             + include_str!("surface_vertex_entry.wgsl")
             + vertex_route
             + include_str!("surface_vertex_geometry.wgsl")
-            + vertex_geometry
             + "    return VertexOut(clip,world,rest,"
             + vertex_output
             + include_str!("surface_vertex_return.wgsl")

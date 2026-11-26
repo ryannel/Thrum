@@ -3,6 +3,7 @@ use std::{
     time::Duration,
 };
 use thrum_app::sky::{Camera, ContentStatus, Controls, SkyGame};
+use thrum_water::query::{BodyQuery, QueryLimits, QueryPoint};
 use thrum_water_model::{Field, Map, RiverFile};
 use water_scene::{channel, island::Wind, river};
 
@@ -17,6 +18,120 @@ fn ray_hit(inverse: glam::DMat4, column: u32, row: u32, depth: f32) -> glam::DVe
     let u = (f64::from(column) + 0.5) / f64::from(EXTENT[0]);
     let v = (f64::from(row) + 0.5) / f64::from(EXTENT[1]);
     inverse.project_point3(glam::dvec3(2.0 * u - 1.0, 1.0 - 2.0 * v, f64::from(depth)))
+}
+
+#[expect(
+    clippy::cast_possible_truncation,
+    clippy::print_stdout,
+    reason = "the station uses GPU metres and the proof records the paired residual"
+)]
+pub(crate) fn check_live_depth(gpu: &thrum_test_support::Gpu) {
+    const POINT: [f32; 2] = [319.725_34, 8.121_635];
+    const TICKS: u32 = 180;
+    let mut forcing = channel::forcing(Wind::Trade);
+    forcing.wind_direction = 0.42;
+    let (mut map, files) =
+        river::map(&forcing, Some(&support::river_store())).expect("island rivers");
+    map.set_stage(1, 0.0).expect("low lake stage");
+    map.set_gauge(0, files[0].gauges()[0])
+        .expect("low spring gauge");
+    let level = map
+        .sample(POINT.map(f64::from))
+        .expect("outlet row")
+        .row
+        .level as f32;
+    let spectrum = thrum_sea_model::Spectrum::build(&forcing).expect("trade spectrum");
+    let mut profile = water_scene::profile(&spectrum);
+    profile.optics = Some(thrum_water::Optics::default());
+    profile.query = Some(QueryLimits {
+        points: 1,
+        max_age: 8,
+    });
+    let water = thrum_water::Water::mapped(Arc::new(Mutex::new(map)), spectrum, profile)
+        .expect("mapped rivers");
+    let report = water.report();
+    let query = water.query_mailbox().expect("body query");
+    let [x, z] = POINT;
+    let camera = Camera::look_at([x + 0.001, level + 2.0, z], [x, level, z], 12.0);
+    let inverse = support::depth::matrix(camera, EXTENT).as_dmat4().inverse();
+    let tap = support::depth::DepthTap::default();
+    let game = SkyGame::new(Controls::new(), camera, |_, _| {})
+        .with_presentation_camera(move |_| camera)
+        .with_tick_duration(STEP)
+        .expect("elapsed surface clock")
+        .with_ground(None)
+        .with_contribution(Box::new(water), || ContentStatus::Drawn(1))
+        .with_contribution(Box::new(tap.contribution(EXTENT)), || {
+            ContentStatus::Drawn(1)
+        });
+    let mut scene = Fixture::from_game(gpu, EXTENT, game, report);
+    scene.frame_without_timings(0.0);
+    let [column, row] = EXTENT.map(|axis| axis / 2);
+    let mut paired = 0;
+    let mut max_error: f64 = 0.0;
+    let mut short_wave = 0.0_f32;
+    for tick in 1..=TICKS {
+        let use_tick = u64::from(tick);
+        let submitted = scene.frame_without_timings((STEP * (tick + 1)).as_secs_f64());
+        assert_eq!(submitted.tick, use_tick + 1);
+        assert!(submitted.presentation_alpha.abs() < 1e-5);
+        // Dispatch from the field of the frame we just submitted. A
+        // predicted query from the previous wave field has its own error.
+        query.post(
+            scene.endpoint(use_tick - 1),
+            vec![BodyQuery {
+                id: 91,
+                generation: 1,
+                points: vec![QueryPoint {
+                    position: POINT,
+                    radius: 0.001,
+                    use_tick,
+                }],
+            }],
+        );
+        scene.finish_tick_queries();
+        let depth = tap.read(&scene)[(row * EXTENT[0] + column) as usize];
+        if let Some(answer) = query
+            .drain(scene.endpoint(use_tick), STEP)
+            .into_iter()
+            .flat_map(|body| body.points)
+            .find(|answer| answer.point.use_tick == use_tick)
+            && answer.surface.wet
+        {
+            assert_eq!(answer.surface.body, Some(5), "outlet river");
+            assert!(depth > 0.0, "missing trade depth at tick {tick}");
+            let hit = ray_hit(inverse, column, row, depth);
+            assert!((hit.x - f64::from(x)).hypot(hit.z - f64::from(z)) < 0.0001);
+            let error = (hit.y - answer.surface.sample.height).abs();
+            assert!(
+                error <= EPS_INTERIOR,
+                "trade depth at tick {tick}: {error:.7} m, field sources {:?}",
+                answer.sources
+            );
+            let display_time = (STEP * tick).as_secs_f64();
+            assert!(
+                answer.sources[..4]
+                    .iter()
+                    .flatten()
+                    .all(|time| (time - display_time).abs() < 1e-6),
+                "trade depth at tick {tick}: stale field sources {:?}",
+                answer.sources
+            );
+            for height in &answer.wave_heights[1..] {
+                short_wave = short_wave.max(height.abs());
+            }
+            max_error = max_error.max(error);
+            paired += 1;
+        }
+    }
+    assert!(paired >= TICKS * 3 / 4, "only {paired} wet query pairs");
+    assert!(
+        short_wave > 0.001,
+        "the trade cascades must move the surface"
+    );
+    println!(
+        "Metal trade wave field: {paired} live query pairs, maximum residual {max_error:.7} m"
+    );
 }
 
 #[expect(
@@ -140,9 +255,9 @@ pub(crate) fn check(gpu: &thrum_test_support::Gpu, upper: bool) {
     spectrum.cascades = [160.0, 37.0, 9.0].map(|length| {
         thrum_sea_model::Cascade::new(length, &[]).expect("empty calibration cascade")
     });
-    let mut profile = water_scene::profile(&spectrum);
-    profile.waves.choppiness = 0.0;
-    let field = water_scene::floating::fallback(&spectrum, 0.0).expect("column field");
+    let profile = water_scene::profile(&spectrum);
+    let field =
+        water_scene::floating::fallback(&spectrum, profile.waves.choppiness).expect("column field");
     let map = Arc::new(Mutex::new(map));
     let water =
         thrum_water::Water::mapped(Arc::clone(&map), spectrum, profile).expect("mapped rivers");

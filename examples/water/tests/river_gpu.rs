@@ -39,3 +39,11 @@ fn submitted_depth_follows_the_whole_wet_length_at_lower_gauges() {
     river_proof::surface::check(&gpu, false);
 }
 }
+
+thrum_test_support::macos_gpu_test! {
+fn submitted_trade_depth_matches_the_live_river_query() {
+    let Some(gpu) = thrum_test_support::gpu("trade depth and query", Some(wgpu::Backend::Metal))
+    else { return };
+    river_proof::surface::check_live_depth(&gpu);
+}
+}

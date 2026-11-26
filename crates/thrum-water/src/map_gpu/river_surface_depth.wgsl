@@ -67,14 +67,52 @@ fn river_swell_level(point: vec2<f32>, level: u32) -> f32 {
 
 fn river_swell(point: vec2<f32>, spacing: f32, row: SurfaceRow) -> f32 {
     if row.gains.x * water.heights.x == 0.0 { return 0.0; }
+    // The column's map row fixes its gain for the whole inverse, as in the
+    // body query. The displaced mesh's rest coordinate can carry a different
+    // level or gain, especially where swell crosses a shallow tidal reach.
     let lod = long_lod(point, spacing);
     let low = u32(lod);
-    var height = river_swell_level(point, low);
-    if fract(lod) > 0.0 && low < 7u {
-        height = mix(height, river_swell_level(point, low + 1u), fract(lod));
+    let blend = fract(lod);
+    let gain = row.gains.x;
+    var offset = vec2(0.0);
+    for (var i = 0u; i < 12u; i++) {
+        let rest = point + offset;
+        var wave = long_level(rest, low);
+        if blend > 0.0 {
+            wave = add_field(add_field(Field(vec4(0.0), vec4(0.0), vec4(0.0)),
+                wave, 1.0 - blend), long_level(rest, low + 1u), blend);
+        }
+        let residual = -gain * wave.displacement.xz - offset;
+        let error = length(residual);
+        if error < 0.00001 { break; }
+        // Use the cached horizontal derivative to solve the two-dimensional
+        // inverse. Limit the update near a compressed crest.
+        let j = vec3(1.0, 0.0, 1.0) + gain * vec3(wave.slope.zw, wave.velocity.w);
+        let det = max(0.01, j.x * j.z - j.y * j.y);
+        let step = solve_horizontal(j.xy, j.yz, residual, det);
+        offset += step * min(1.0, 4.0 * error / max(length(step), 0.00001));
     }
-    let fade = 1.0 - smoothstep(4000.0, 8000.0, length(point - view.camera_xyz_time.xz));
+    let rest = point + offset;
+    var height = river_swell_level(rest, low);
+    if blend > 0.0 {
+        height = mix(height, river_swell_level(rest, low + 1u), blend);
+    }
+    let fade = 1.0 - smoothstep(4000.0, 8000.0, length(rest - view.camera_xyz_time.xz));
     return height * row.gains.x * fade;
+}
+
+fn river_column_level(point: vec2<f32>, spacing: f32, row: SurfaceRow) -> f32 {
+    let motion = river_surface_motion(point, row);
+    var height = river_swell(point, spacing, row) + wake_at(point, 0.0).x;
+    // The short-wave cascades are sampled at the fixed column, as in the
+    // body query. The mouth still shares the receiver's wave phase.
+    for (var band = 0u; band < 3u; band++) {
+        let gain = row.gains[band + 1u];
+        if gain * water.heights[band + 1u] > 0.0 {
+            height += gain * transported_field(motion, band).displacement.y;
+        }
+    }
+    return row.level + height + river_rain_height(point, spacing, row, motion);
 }
 
 fn river_refinement(point: vec2<f32>, id: u32, spacing: f32) -> f32 {
@@ -104,16 +142,19 @@ fn river_refinement(point: vec2<f32>, id: u32, spacing: f32) -> f32 {
     let y = dpdy(input.world);
     let rest_x = dpdx(input.rest);
     let rest_y = dpdy(input.rest);
-    let rebuild_swell = input.surf_weight == 0.0;
-    let mesh_level = input.river.x + select(0.0, input.river.y, rebuild_swell);
+    let plain_column = input.surf_weight == 0.0;
+    let mesh_level = input.river.x;
     let retained = input.world.y - mesh_level;
     let retained_gradient = vec2(dpdx(retained), dpdy(retained));
     let mesh_gradient = vec2(x.y, y.y);
     let mesh_det = cross2(x.xz, y.xz);
     var surface = input;
-    var row = surface_pixel(input.rest, input.body);
     var depth = input.clip.z;
-    let weight = river_refinement(input.rest, surface_body(input.body), input.river.z);
+    let spacing = input.river.y;
+    let weight = river_refinement(input.world.xz, surface_body(input.body), spacing);
+    // A displaced receiving sheet can overlap a river even outside the
+    // narrow join correction. Plain sheets take ownership at the world hit.
+    var row = surface_pixel(select(input.rest, input.world.xz, plain_column), input.body);
     let ndc = fma(input.clip.xy * view_aux.viewport_inv_viewport.zw, vec2(2.0, -2.0), vec2(-1.0, 1.0));
     let m = view.view_proj;
     let a = fma(-ndc, vec2(m[0].w), m[0].xy);
@@ -130,26 +171,34 @@ fn river_refinement(point: vec2<f32>, id: u32, spacing: f32) -> f32 {
         var height = 0.0;
         var previous_height = 0.0;
         var previous_residual = 0.0;
+        var best_error = 1e30;
         for (var i = 0u; i < 8u; i++) {
             let shift = fma(direction, vec2(height), origin);
-            if length(vec3(shift, height)) > 0.25 { break; }
+            if abs(height) > max(0.25, water.heights.x) { break; }
             let screen = solve_horizontal(x.xz, y.xz, shift, mesh_det);
             let rest = input.rest + screen.x * rest_x + screen.y * rest_y;
-            let sample = surface_pixel(rest, input.body);
+            let column = input.world.xz + shift;
+            let sample = surface_pixel(select(rest, column, plain_column), input.body);
             if !sample.owned { break; }
-            var physical_level = sample.level;
-            if rebuild_swell { physical_level += river_swell(rest, input.river.z, sample); }
             let raster_height = dot(mesh_gradient, screen);
-            let physical_height = (physical_level - mesh_level) + dot(retained_gradient, screen);
+            var physical_height = (sample.level - mesh_level) + dot(retained_gradient, screen);
+            if plain_column {
+                physical_height = river_column_level(column, spacing, sample) - input.world.y;
+            }
             let residual = mix(raster_height, physical_height, weight) - height;
-            // Commit only intersections that stay within this body's coverage.
-            surface.rest = rest;
-            surface.world = input.world + vec3(shift.x, height, shift.y);
-            row = sample;
-            let corrected = fma(m[2].zw, vec2(shift.y),
-                fma(m[1].zw, vec2(height), fma(m[0].zw, vec2(shift.x), clip.zw)));
-            depth = clamp(corrected.x / corrected.y, 0.0, 1.0);
-            if abs(residual) <= 0.000002 { break; }
+            let error = abs(residual);
+            // Keep the best owned intersection if the iteration crosses a
+            // crease or runs out of steps on a grazing ray.
+            if error < best_error {
+                best_error = error;
+                surface.rest = rest;
+                surface.world = input.world + vec3(shift.x, height, shift.y);
+                row = sample;
+                let corrected = fma(m[2].zw, vec2(shift.y),
+                    fma(m[1].zw, vec2(height), fma(m[0].zw, vec2(shift.x), clip.zw)));
+                depth = clamp(corrected.x / corrected.y, 0.0, 1.0);
+            }
+            if error <= 0.000002 { break; }
             // Use the prior reading to estimate the residual's slope along
             // an oblique ray while limiting the step at cell creases.
             var step = residual;
