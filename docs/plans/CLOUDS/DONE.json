@@ -1450,8 +1450,8 @@
           "statement": "At dawn with valley mist at half and at full amount: mist lies in the hollows under a soft, nearly level top; slopes and ridges above it are clear; props stand out of it and fade into it with depth; from inside, the land fades with distance. There is no flat cut-off plane, no tile or slice pattern and no banding.",
           "inspect": "Capture `fixed` stills with T2 engine capture at 2560\u00d71440 at a 10\u00b0 Sun, from 2 m inside the mist, from the valley's rim across its top and from 40 m above. Judge each whole, and native-size crops of the mist's top against a slope, of a prop standing in it and of the nearest 50 m.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP14/VISUAL.md",
           "verdict": "",
           "review": ""
         },
@@ -1471,8 +1471,8 @@
           "inspect": "Capture `fixed` stills with the polished sphere in frame outside the fog, at its edge and inside it, and a `realtime` sequence of the walk in. Judge the sphere in native-size crops and the sequence at 1x.",
           "ask": "Does the sky overlay trace ground condensate through the same density function as the trace, and not a copy?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP14/VISUAL.md",
           "verdict": "",
           "review": ""
         },
@@ -1481,8 +1481,8 @@
           "statement": "As the mist's amount sweeps from 0 to 1 and back, and as the camera walks 100 m through the mist's edge and pans inside it, nothing pops, crawls or trails, and a mover passing through the mist leaves no halo.",
           "inspect": "Capture `realtime` sequences: the sweep, a minute each way, from the rim; the walk; a 10-second pan inside the mist; a mover crossing. Judge consecutive frames at 1x, whole and in native-size crops.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP14/VISUAL.md",
           "verdict": "",
           "review": ""
         },

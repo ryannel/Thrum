@@ -1038,3 +1038,20 @@ growth and fair-sky motion, and the paired Metal cost check cover the original f
   judges MetalFX motion by the same four lines. Took the suggestion: risk 15 calls WP14's six views the
   selected stock views. WP14's items are unchanged. No mechanism or interface changed.
   [What changed for each finding](../../../.orchestrate/evidence/CLOUDS/design-revision-2026-11-26-broken-cloud-shaft-3.md)
+## WP14 Valley mist, fog and low cloud
+
+The V1 valley supplies the measured terrain surface to Ground. The ground band extends the Sun's path
+through condensate and keeps surface visibility separate. The near coefficient pass lends the view volume
+extinction and light at its jittered sample. The far trace and sky overlay use the same density and solar
+kernel. The cloud transport model now uses the beam and two streams.
+[Metal correctness probes](../../../.orchestrate/evidence/CLOUDS/WP14/CORRECTNESS.md) ·
+[Metal 1440p timings](../../../.orchestrate/evidence/CLOUDS/WP14/COST.md)
+
+The Metal and Chrome captures show mist pooling below the ridge and the polished sphere losing its blue
+reflection through the fog edge. The broken-cloud takes show a bright pool and broad glow, with the shaft
+reaching into the mist still unproved on either target. The accepted target evidence and open findings
+are recorded in the [visual inspection](../../../.orchestrate/evidence/CLOUDS/WP14/VISUAL.md).
+
+A full two-minute mist sweep passed on Metal, along with the 100 m walk, ten-second fog pan and mover
+crossing. The elapsed-time previews retain their engine submission times.
+[Motion receipts](../../../.orchestrate/evidence/CLOUDS/WP14/motion/selected.json)
