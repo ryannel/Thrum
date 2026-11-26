@@ -1,8 +1,8 @@
 use bytemuck::{Pod, Zeroable};
 use glam::{Mat4, Vec3, Vec3Swizzles, Vec4};
 use thrum_render::contribution::ContributionFrame;
-use thrum_sea_model::{LongWaves, Spectrum};
-use thrum_water_model::{Field, Map, WholeCut};
+use thrum_sea_model::{Cascade, LongWaves, Spectrum};
+use thrum_water_model::{Field, Map, MapSample, SurfSheet, Surface, WaterError, WholeCut};
 
 mod short;
 use short::ShortBand;
@@ -17,24 +17,34 @@ pub(super) const DRAW: &str = "water through lens";
 #[derive(Clone, Copy, Pod, Zeroable)]
 pub(super) struct Lens {
     pub(super) state: [u32; 4], // gather required, columns wide and high, adaptive strip
+    // Roof and bed in metres, strip coordinate, and short-wave weight plus one.
+    // The fourth component is zero when there is no owning water body.
     columns: [[[f32; 4]; LENS_SIDE]; LENS_SIDE],
 }
 
 pub(super) struct Underwater {
     field: Field,
     long_amplitude: f64,
+    variances: [f64; 4],
     short: [ShortBand; 3],
 }
 
 impl Underwater {
     pub(super) fn new(long: LongWaves, spectrum: &Spectrum) -> Self {
         let long_amplitude = spectrum.long.iter().map(|c| c.amplitude).sum();
+        let long_variance = spectrum
+            .long
+            .iter()
+            .map(|c| 0.5 * c.amplitude.powi(2))
+            .sum();
+        let [a, b, c] = spectrum.cascades.each_ref().map(Cascade::variance);
         let empty = || LongWaves::new(Vec::new(), 0.0).expect("empty wave band");
         Self {
             field: Field {
                 layers: [long, empty(), empty(), empty()],
             },
             long_amplitude,
+            variances: [long_variance, a, b, c],
             short: spectrum.cascades.each_ref().map(ShortBand::new),
         }
     }
@@ -59,13 +69,9 @@ impl Underwater {
         if lens.state[0] != 0
             && let Some(domain) = short_domain
             && self.short.iter().any(|band| band.amplitude > 0.0)
+            && self.proves_dry(&lens, &plane, map, domain, seconds)
         {
-            let (centre, radius) = plane.horizontal_box();
-            if let Some(gains) = domain.gains(map, centre, radius)
-                && self.proves_dry(&lens, plane.lowest, centre, radius, gains, seconds)
-            {
-                lens.state[0] = 0;
-            }
+            lens.state[0] = 0;
         }
         lens
     }
@@ -73,24 +79,32 @@ impl Underwater {
     fn proves_dry(
         &mut self,
         lens: &Lens,
-        lowest: f64,
-        centre: [f64; 2],
-        radius: [f64; 2],
-        gains: [f64; 4],
+        plane: &Plane,
+        map: &Map,
+        domain: ShortWaveDomain,
         seconds: f64,
     ) -> bool {
-        let bound = self.short_bound(&gains);
-        if bound == 0.0 {
-            return false;
-        }
-        let roof = lens
+        let lowest = plane.lowest;
+        let (roof, weight) = lens
             .columns
             .iter()
             .flatten()
             .filter(|column| column[3] > 0.0)
-            .map(|column| f64::from(column[0]))
-            .fold(f64::NEG_INFINITY, f64::max);
-        if roof - bound >= lowest {
+            .fold((f64::NEG_INFINITY, 0.0_f32), |(roof, weight), column| {
+                (roof.max(f64::from(column[0])), weight.max(column[3]))
+            });
+        let rounding = f64::from(f32::EPSILON) * 8.0 * roof.abs().max(lowest.abs()).max(1.0);
+        // Interpolation leaves the short-wave weight at zero when all
+        // occupied lens columns have lost their short waves in the swash.
+        if weight <= 1.0 {
+            return roof.is_finite() && roof + rounding < lowest;
+        }
+        let (centre, radius) = plane.horizontal_box();
+        let Some(gains) = domain.gains(map, centre, radius) else {
+            return false;
+        };
+        let bound = self.short_bound(&gains);
+        if bound == 0.0 || roof - bound >= lowest {
             return false;
         }
         let short = self
@@ -100,8 +114,34 @@ impl Underwater {
             .filter(|(_, gain)| **gain > 0.0)
             .map(|(band, gain)| gain * band.height_bound(centre, radius, seconds))
             .sum::<f64>();
-        let rounding = f64::from(f32::EPSILON) * 8.0 * roof.abs().max(lowest.abs()).max(1.0);
         roof + short + rounding < lowest
+    }
+
+    fn surf_sheet<'a>(
+        &'a self,
+        map: &'a Map,
+        body: usize,
+        seconds: f64,
+    ) -> Result<SurfSheet<'a>, WaterError> {
+        let [_, a, b, c] = self.variances;
+        Ok(map
+            .surf_sheet(&self.field, body, seconds)?
+            .with_short_wave_variances([a, b, c]))
+    }
+
+    fn surface_on_row(
+        &self,
+        map: &Map,
+        point: [f64; 2],
+        seconds: f64,
+        row: MapSample,
+    ) -> Result<Surface, WaterError> {
+        if map.surf_profile().is_some() && row.bed.is_some() {
+            return self
+                .surf_sheet(map, row.body, seconds)?
+                .surface_on_row(point, row);
+        }
+        map.surface_on_row(&self.field, point, seconds, row)
     }
 
     #[expect(
@@ -135,7 +175,7 @@ impl Underwater {
             .collect();
         let world: Vec<_> = anchors.iter().copied().map(xz).collect();
         let body = map.sample(xz(last / 2))?.body;
-        let sheet = map.surf_sheet(&self.field, body, seconds).ok()?;
+        let sheet = self.surf_sheet(map, body, seconds).ok()?;
         let a = world[0];
         let b = world[world.len() - 1];
         let prepared = WholeCut::new(&sheet, &world, profile.cut)
@@ -159,15 +199,16 @@ impl Underwater {
                 let result = if row.body == body && row.bed.is_some() {
                     sheet
                         .surface_with_cut(position, row, &prepared)
-                        .or_else(|_| map.surface_on_row(&self.field, position, seconds, row))
+                        .or_else(|_| sheet.surface_on_row(position, row))
                 } else {
-                    map.surface_on_row(&self.field, position, seconds, row)
+                    self.surface_on_row(map, position, seconds, row)
                 }
                 .ok()?;
                 let roof = result.sample.height;
                 let bed = row.bed.unwrap_or(-1e30);
                 under |= roof + self.short_bound(&row.row.gains) > plane.lowest.max(bed);
-                [roof as f32, bed as f32, uv, 1.0]
+                let weight = map.surf_short_wave_weight(position, row, self.variances, roof);
+                [roof as f32, bed as f32, uv, 1.0 + weight as f32]
             } else {
                 [-1e30, -1e30, uv, 0.0]
             };
@@ -175,12 +216,13 @@ impl Underwater {
             Some(value)
         };
         let tolerance = ((plane.highest - plane.lowest) / f64::from(height) * 0.25) as f32;
+        let short_amplitude = self.short.iter().map(|band| band.amplitude).sum::<f64>() as f32;
         let mut samples = Vec::with_capacity(LENS_SIDE * 2);
         samples.push(query(0)?);
         for span in anchors.windows(2) {
             let a = (span[0], query(span[0])?);
             let b = (span[1], query(span[1])?);
-            refine_strip(a, b, tolerance, &mut query, &mut samples)?;
+            refine_strip(a, b, tolerance, short_amplitude, &mut query, &mut samples)?;
         }
         lens.state = [u32::from(under), samples.len() as u32, 1, 1];
         for (column, sample) in lens.columns.iter_mut().flatten().zip(samples) {
@@ -236,12 +278,13 @@ impl Underwater {
                 let roof = if plain && sample.row.level - bound > plane.highest.max(bed) {
                     sample.row.level
                 } else {
-                    let Ok(surface) = map.surface_on_row(&self.field, xz, seconds, sample) else {
+                    let Ok(surface) = self.surface_on_row(map, xz, seconds, sample) else {
                         continue;
                     };
                     surface.sample.height
                 };
-                *column = [roof as f32, bed as f32, 0.0, 1.0];
+                let weight = map.surf_short_wave_weight(xz, sample, self.variances, roof);
+                *column = [roof as f32, bed as f32, 0.0, 1.0 + weight as f32];
                 let lowest = if height == 1 || width == 1 {
                     plane.lowest
                 } else {
@@ -270,6 +313,7 @@ fn refine_strip(
     (first, a): (u32, [f32; 4]),
     (last, b): (u32, [f32; 4]),
     tolerance: f32,
+    short_amplitude: f32,
     query: &mut impl FnMut(u32) -> Option<[f32; 4]>,
     output: &mut Vec<[f32; 4]>,
 ) -> Option<()> {
@@ -280,17 +324,24 @@ fn refine_strip(
             let x = first + (span * part / 4).max(1);
             let p = query(x)?;
             let t = (x - first) as f32 / span as f32;
+            let error = |axis: usize| (p[axis] - (b[axis] - a[axis]).mul_add(t, a[axis])).abs();
             refine |= (p[3] > 0.0) != (a[3] > 0.0)
                 || (p[3] > 0.0) != (b[3] > 0.0)
-                || (0..2).any(|axis| {
-                    (p[axis] - (b[axis] - a[axis]).mul_add(t, a[axis])).abs() > tolerance
-                });
+                || error(0) + short_amplitude * error(3) > tolerance
+                || error(1) > tolerance;
         }
         if refine {
             let middle = first + span / 2;
             let centre = (middle, query(middle)?);
-            refine_strip((first, a), centre, tolerance, query, output)?;
-            return refine_strip(centre, (last, b), tolerance, query, output);
+            refine_strip(
+                (first, a),
+                centre,
+                tolerance,
+                short_amplitude,
+                query,
+                output,
+            )?;
+            return refine_strip(centre, (last, b), tolerance, short_amplitude, query, output);
         }
     }
     output.push(b);

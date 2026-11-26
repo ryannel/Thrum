@@ -69,6 +69,23 @@ impl Map {
         self.surf.as_ref().map(|surf| &surf.pyramid)
     }
 
+    /// Weight of short-wave geometry above a long-wave surface at the sampled point.
+    /// A renderer can supply the variances of short waves stored in GPU textures.
+    pub fn surf_short_wave_weight(
+        &self,
+        point: [f64; 2],
+        row: MapSample,
+        variances: [f64; 4],
+        long_height: f64,
+    ) -> f64 {
+        let Some(surf) = &self.surf else { return 1.0 };
+        if row.bed.is_none() || row.row.gains[0] == 0.0 || variances[0] == 0.0 {
+            return 1.0;
+        }
+        let swash = limit(row.row, row.depth, variances, self.profile).swash_depth;
+        surf.short_wave_weight(self, point, row, swash, long_height - row.row.level)
+    }
+
     /// Forward long-wave sheet for content tools and conformance references.
     /// # Errors
     /// Refuses a disabled capability, unknown body or nonfinite time.
@@ -88,6 +105,7 @@ impl Map {
                 .ok_or_else(|| WaterError::new("surf sheet", "surf is disabled"))?,
             map: self,
             field,
+            variances: field.variances(),
             body,
             time,
         })
@@ -239,6 +257,7 @@ impl Surf {
             surf: self,
             map,
             field,
+            variances: field.variances(),
             time,
             body: row.body,
         };
@@ -306,17 +325,7 @@ impl Surf {
         let (limited, flow) = map.limited(field, point, row);
         let mut gains = limited.gains;
         if row.row.gains[0] > 0.0 && field.variances()[0] > 0.0 {
-            let weight = self
-                .contour(map, row.body, point, row.depth, limited.swash_depth)
-                .map_or(1.0, |(_, coverage)| {
-                    1.0 - smooth(coverage)
-                        * (1.0
-                            - short_geometry_weight(
-                                row.depth,
-                                limited.swash_depth,
-                                row.depth + height,
-                            ))
-                });
+            let weight = self.short_wave_weight(map, point, row, limited.swash_depth, height);
             for gain in &mut gains[1..] {
                 *gain *= weight;
             }
@@ -345,6 +354,21 @@ impl Surf {
         })
     }
 
+    fn short_wave_weight(
+        &self,
+        map: &Map,
+        point: [f64; 2],
+        row: MapSample,
+        swash: f64,
+        height: f64,
+    ) -> f64 {
+        self.contour(map, row.body, point, row.depth, swash)
+            .map_or(1.0, |(_, coverage)| {
+                1.0 - smooth(coverage)
+                    * (1.0 - short_geometry_weight(row.depth, swash, row.depth + height))
+            })
+    }
+
     fn contour(
         &self,
         map: &Map,
@@ -353,7 +377,8 @@ impl Surf {
         depth: f64,
         swash: f64,
     ) -> Option<([f64; 2], f64)> {
-        self.transforms[body]
+        self.transforms
+            .get(body)?
             .as_ref()
             .filter(|_| swash > 0.0 && depth < 4.0 * map.profile.margin_height)
             .and_then(|transform| transform.contour(map.bodies[body].stage.value, point))
@@ -429,11 +454,20 @@ pub struct SurfSheet<'a> {
     surf: &'a Surf,
     map: &'a Map,
     field: &'a Field,
+    variances: [f64; 4],
     time: f64,
     body: usize,
 }
 
 impl SurfSheet<'_> {
+    /// Supply the variance of short bands evaluated separately from this sheet.
+    /// Their power still contributes to the depth limits of the long waves.
+    #[must_use]
+    pub fn with_short_wave_variances(mut self, variances: [f64; 3]) -> Self {
+        self.variances[1..].copy_from_slice(&variances);
+        self
+    }
+
     fn evaluate(&self, rest: [f64; 2], time: f64) -> SheetPoint {
         // Horizontal displacement may carry a rest place across a chart seam.
         // Both sides must evaluate that place from the map's one owning row,
@@ -450,7 +484,7 @@ impl SurfSheet<'_> {
             .bed
             .height(rest)
             .map_or(f64::INFINITY, |h| row.level - h);
-        let limited = limit(row, depth, self.field.variances(), self.map.profile);
+        let limited = limit(row, depth, self.variances, self.map.profile);
         let swash = limited.swash_depth;
         let cap = 0.6 * (depth + swash).max(0.0);
         if cap == 0.0 || row.gains[0] == 0.0 {
@@ -674,6 +708,13 @@ impl SurfSheet<'_> {
 }
 
 impl SurfSheet<'_> {
+    /// Sample a column, including its highest point where the long waves overhang.
+    /// # Errors
+    /// Refuses a mismatched row, an invalid point or a surface solve failure.
+    pub fn surface_on_row(&self, point: [f64; 2], row: MapSample) -> Result<Surface, WaterError> {
+        self.surface_at(point, row, None)
+    }
+
     /// Sample a column of this sheet using its prepared cut for overhanging crests.
     /// # Errors
     /// Refuses a mismatched row, an invalid point or a surface solve failure.
@@ -686,7 +727,16 @@ impl SurfSheet<'_> {
         if !prepared.is_for(self) {
             return Err(WaterError::new("surf", "cut belongs to another sheet"));
         }
-        let mut surface = self.surf.surface_from(self, point, row, Some(prepared))?;
+        self.surface_at(point, row, Some(prepared))
+    }
+
+    fn surface_at(
+        &self,
+        point: [f64; 2],
+        row: MapSample,
+        prepared: Option<&WholeCut<'_, Self>>,
+    ) -> Result<Surface, WaterError> {
+        let mut surface = self.surf.surface_from(self, point, row, prepared)?;
         self.map
             .add_rain(self.field, point, self.time, row, &mut surface.sample);
         Ok(surface)

@@ -61,10 +61,11 @@ fn read_lens(uv: vec2<f32>) -> LensPoint {
     }
     let row = lens_row(point.xz);
     let motion = cascade_motion(point.xz, row.current, row.track, water.carriage.w, water.carriage.y);
+    let short_weight = column.w - 1.0;
     var height = column.x + wake_at(point.xz, 0.0).x;
     for (var band = 0u; band < 3u; band++) {
-        if row.gains[band + 1u] * water.heights[band + 1u] > 0.0 {
-            height += row.gains[band + 1u] * transported_field(motion, band).displacement.y;
+        if short_weight * row.gains[band + 1u] * water.heights[band + 1u] > 0.0 {
+            height += short_weight * row.gains[band + 1u] * transported_field(motion, band).displacement.y;
         }
     }
     let depth = height - point.y;
