@@ -45,6 +45,11 @@ final class ThrumV1Touch: XCTestCase {
         app.coordinate(withNormalizedOffset: CGVector(dx: point[0], dy: point[1])).tap()
     }
 
+    /// Return the existing app to the foreground after another UIKit scene took focus.
+    func testInterfaceForeground() {
+        XCUIApplication(bundleIdentifier: "org.thrum.v1").activate()
+    }
+
     /// Rotate the device to landscape (home indicator on the right).
     func testLandscape() {
         XCUIDevice.shared.orientation = .landscapeLeft

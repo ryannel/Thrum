@@ -278,7 +278,7 @@ class Case:
         self.simctl("launch", self.device, "com.apple.Preferences")
         suspended = self.expect(lambda s: s.get("state") == "Suspended" and s.get("world_paused") == "true",
                                 "background lifecycle")
-        self.simctl("launch", self.device, BUNDLE)
+        self.finish_test(self.test("testInterfaceForeground"))
         resumed = self.expect(lambda s: s.get("state") == "Active" and
                               menu(s).get("drawn") == "Choice" and
                               int(s.get("presented", 0)) > int(suspended["presented"]) and
