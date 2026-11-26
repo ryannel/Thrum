@@ -8,7 +8,7 @@ thrum_test_support::macos_gpu_test! {
 
 #[cfg(target_os = "macos")]
 mod metal {
-    use std::{fs, path::Path};
+    use std::{fmt, fs, io::Write as _, path::Path};
 
     use thrum_render::{
         capabilities::{
@@ -143,6 +143,10 @@ mod metal {
         draw(site, queue, &pipeline);
     }
 
+    fn report(args: fmt::Arguments<'_>) {
+        writeln!(std::io::stderr().lock(), "{args}").expect("write Metal lifetime evidence");
+    }
+
     fn live_inputs(instance: &wgpu::Instance) -> [usize; 3] {
         let hub = instance
             .generate_report()
@@ -168,9 +172,9 @@ mod metal {
             assert_eq!(live_inputs(instance), baseline.map(|n| n + 10));
             drop(discarded);
             let live = live_inputs(instance);
-            eprintln!(
+            report(format_args!(
                 "round {round}: live shader modules, bind group layouts, pipeline layouts = {live:?}"
-            );
+            ));
             assert_eq!(live, baseline);
         }
     }
@@ -199,9 +203,9 @@ mod metal {
         }
         drop((group, shared_shader));
         assert_eq!(live_inputs(instance), baseline);
-        eprintln!(
+        report(format_args!(
             "all inputs released; both pipelines built from reused handles drew with zero translations"
-        );
+        ));
     }
 
     #[expect(
@@ -296,11 +300,13 @@ mod metal {
         }
 
         capabilities.set_metal_preparation(None);
-        eprintln!("Metal preparation disabled");
+        report(format_args!("Metal preparation disabled"));
         let baseline = live_inputs(&gpu.instance);
         discard_inputs(&gpu.instance, capabilities.site(), baseline);
         use_store(&mut capabilities, matching.path());
-        eprintln!("Metal preparation enabled with a matching store");
+        report(format_args!(
+            "Metal preparation enabled with a matching store"
+        ));
         check_reuse(&gpu.instance, capabilities.site(), &queue);
         translated_draw(&capabilities, &queue, SOURCE, true, 0);
         translated_draw(
