@@ -1476,7 +1476,46 @@
     },
     "WP10": {
       "definitions": "36409e13d6e5394f6b64c903b68f99500c0890d010f82fdc085d8e8e6c6bf365",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "e8e70bba6b712a0b0c629e584be9a8dcfbe4146d",
+          "review": ".orchestrate/evidence/CLOUDS/WP10-review.md",
+          "items": {
+            "WP10.1": "pass",
+            "WP10.2": "pass",
+            "WP10.3": "pass",
+            "WP10.4": "pass",
+            "WP10.5": "pass"
+          },
+          "findings": [
+            {
+              "name": "Changing cloud type at full placed share replaces mature clouds in one tick",
+              "repeat": false
+            },
+            {
+              "name": "The trace and Sun path clip hash-selected clouds scaled above one",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 175792,
+            "cached": 11362048,
+            "output": 21205,
+            "turns": 1
+          },
+          "at": "2026-11-26T12:07:16Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Unblock CLOUDS WP10 (handoff .orchestrate/evidence/CLOUDS/WP10-handoff.md, branch build/clouds at f2bdb692ab3d). Two mor",
