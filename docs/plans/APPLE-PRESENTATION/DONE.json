@@ -1235,8 +1235,18 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "not_started",
-      "quality_bar": "The whole presentation path at the level of a shipped high-end Mac game: sharp and stable at the display's full resolution, highlights above SDR white in the frame the XDR display's surface is given, the display's rate held, and no hitch or compile during play, with the Apple path's win over the portable one measured and not assumed."
+      "status": "blocked",
+      "quality_bar": "The whole presentation path at the level of a shipped high-end Mac game: sharp and stable at the display's full resolution, highlights above SDR white in the frame the XDR display's surface is given, the display's rate held, and no hitch or compile during play, with the Apple path's win over the portable one measured and not assumed.",
+      "blocked": {
+        "reason": "needs_context",
+        "what": "D11.6 needs fullscreen rendering and capture fixes, then a verified realtime run on the built-in Mac display.",
+        "work": {
+          "commit": "9b4f3305e4f926c9381145139a992503fd434441",
+          "branch": "build/apple-presentation",
+          "pushed": false
+        },
+        "handoff": ".orchestrate/evidence/APPLE-PRESENTATION/WP11-handoff.md"
+      }
     },
     {
       "id": "U1",
