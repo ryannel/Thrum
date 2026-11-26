@@ -93,3 +93,78 @@
   `SWARM` waits on; WP6 gains commands and offers, so the swarm game's upgrade choice still arrives with it.
 - 2026-11-26 `SWARM`'s design is still to be re-planned onto the SDK once the owner approves this design, as
   before. Nothing of `SWARM`'s was changed here.
+- 2026-11-26 Design review of the rewrite asked for changes, with 18 Must Fix findings
+  ([the review](../../../.orchestrate/evidence/GAME-SDK/design-review.md)). Each is settled below, in the
+  design and the items. `SESSION` is used as built throughout, and no other module's file changed.
+- 2026-11-26 Finding 1 (the roster in a frame function): `Players` only looks and `PlayersMut` changes, as
+  `Phase` and `PhaseMut` do. Frame functions, spawn functions, conditions and captures take read-only
+  parameters by type (mechanisms 3, 6, 10, 16). WP2.4 holds the compile error for a spawn function, and WP3
+  carries the one for a frame function.
+- 2026-11-26 Finding 2 (the factory outside the check): mechanism 1 lists every route by which a game
+  registers code that makes or changes the world, the spawn function among them, and all must be in the
+  `rules` module. Starting values are part of the rule-set identity. WP2.10 refuses each route in an outside
+  game.
+- 2026-11-26 Finding 3 (a reader beside a writer): two parameters conflict over a component when both name
+  it, either writes it and one entity matches both, a control function's character included. It is tested on
+  each new set of components when the rule that made it ends (mechanism 3). WP1.4, WP11.3 and WP2.4 cover
+  writer with writer, writer with reader, and a change of membership.
+- 2026-11-26 Finding 4 (a phase against a scene): a tick makes one transition, the first request stands
+  whatever its kind, and a request made by an enter or exit function is the next tick's first (mechanism 4,
+  the tick walk). Example D's dead hero records no clear, and example E's `next_wave` says when it lands.
+  WP1.2 (4) and (5).
+- 2026-11-26 Finding 5 (a gate closed during play): the world holds the level's recipe, the tile map by
+  identity and each shape a rule added, so it is in the digest, a baseline and a rewind, and the collision of
+  each recent recipe is kept by identity (mechanism 8). Carried into WP12 and WP5.
+- 2026-11-26 Finding 6 (what is reconciled): the predicted controller's whole state, with the resources, the
+  phase, the level, the pause and the input state the step reads, is compared with the host's, so a changed
+  setting corrects a hero that stands still. Every rule parameter has a row in the control table, `Events<E>`
+  among those not run ahead. A predicted event is shown once, by tick (mechanisms 6, 10, 15). WP5's carried
+  proof now asks for a correction and equality afterwards.
+- 2026-11-26 Finding 7 (bots and joins): seats are the SDK's, in world state. A person takes a free seat,
+  and where bots hold them all takes a bot's: the bot leaves, the person joins fresh. A rule answers an offer
+  for a bot with `Offers::pending` and `answer_for` (mechanisms 6, 7, 15, example F). WP2.1, and carried into
+  WP6 and WP5.
+- 2026-11-26 Finding 8 (the lobby and a paused match): the lobby is an ordinary scene on the match's clock,
+  started when hosting starts, so a ready mark, a host's panel choice and *Start* are input at a tick, and
+  `starts_with` carries the choice into the scene. A paused match keeps committing ticks in which no rule
+  runs and the game's tick stands, so any allowed player can end the pause and nothing is caught up
+  (mechanisms 4, 15). The proposal to `SESSION` to stop committing is withdrawn.
+- 2026-11-26 Finding 9 (button edges): a button travels as its held state and a running count, with a bit
+  that says the frame was sampled. A repeated frame presses nothing, a neutral frame keeps the last count,
+  and `Button::presses` gives two taps between frames (mechanism 6). WP2.1.
+- 2026-11-26 Finding 10 (what a save brings in): a restore is admitted input, the save's bytes in pieces
+  that fit an action, gathered in world state under a 64 KiB default limit, and lands whole or not at all. A
+  saved resource's starting value is part of how a run starts, held by a recording. Every save request names
+  its type (mechanism 12). Carried into WP13 and WP5.
+- 2026-11-26 Finding 11 (a prefab a rule picks later): names are declared in a `prefabs!` block and each
+  knows its block, so the SDK knows every name of a block the description touches and refuses an undefined
+  one at startup. Only a block the description never names is first checked at use (mechanism 5, the
+  examples). WP11.3 holds both.
+- 2026-11-26 Finding 12 (`keep_world`): it holds where the place can be written as a local transform, and
+  is refused with a typed error and nothing changed under a zero-scale parent or shear (mechanism 5).
+  WP11.2 proves it exactly under quarter turns, WP2.3 under another angle, WP11.3 the refusal.
+- 2026-11-26 Finding 13 (starting a test): `test()` returns a result. Fixtures are given on `test_setup()`
+  and installed before the checks and the first scene's entry. The lookups' return types are in a table, and
+  `character` tells a waiting join from a missing character (mechanism 17). Every example's test now takes
+  the result.
+- 2026-11-26 Finding 14 (the starters): Rockfall's `crash` asks every player's ship and the ships stand side
+  by side. Example B gives each player a ball to roll round the rock, which stays WP4's reference.
+- 2026-11-26 Finding 15 (input contexts): `InputContext`, `#[context(..)]` on a map, `Screen<InputContext>`
+  to choose one, and a rule for a key held across a change, which a modal follows too (mechanisms 6, 14).
+  Carried into WP3. Proposed in the glossary.
+- 2026-11-26 Finding 16 (proofs before their interface): each carried proof now sits with the first work
+  package that has what it uses. WP12 gains shared settings as a game resource. WP3 keeps what needs no
+  command and no `Ui`. Commands in a dropped picture and the pause menu move to WP6, and reconnects to WP5.
+  Example D has a second coyote test, for a press after the window, and its window is six ticks so the
+  first test's press is inside it.
+- 2026-11-26 Finding 17 (a hit on the level): `Level2d::ray` returns `SweptLevel`, whose hit names a layer.
+  A `Space2d` hit keeps its entity (mechanism 8, the reserved 3D shape alike).
+- 2026-11-26 Finding 18 (content): a record's field types are listed, a raw float is a compile error, and
+  the validator is the function `#[content(validate = ..)]` names, with an invalid record shown failing
+  before play (mechanism 12). Carried into WP12.
+- 2026-11-26 The review's suggestions, all three taken: bounds are written on `SceneType`, `PhaseType` and
+  `ContentType`, which the derives implement; the numbers table says an integer past 16,777,216 is rounded
+  once, and WP2.3 holds it; WP2.2 says the set of hits is `thrum-sim2d`'s and the order is the SDK's.
+- 2026-11-26 Planner's choices in this revision, each for the owner to overturn, are in the plan's
+  assumptions. Left open for builders: how a game of fewer than four players keeps `SESSION`'s other slots
+  closed, and the width of a button's count.

@@ -173,3 +173,14 @@ vote. It is world state, so it survives a lost connection.
 - **Source** — coined for the game SDK.
 
 Proposed: the planner chose the name.
+
+### Input context
+
+In a game written on the game SDK, a name for which action maps a player's keys, pointer and touches drive at
+the moment, such as play or a shop. One key can then do one thing in play and another in a menu while the
+world keeps ticking. A screen has one input context at a time, and it is that screen's own state: no rule
+reads it.
+
+- **Source** — the field's term (Unreal's input mapping context, Unity's action map switching).
+
+Proposed: the planner chose it for the game SDK.

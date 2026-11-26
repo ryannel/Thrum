@@ -4,10 +4,9 @@ A developer or an agent builds a 2D, a 3D or an online game in plain Rust agains
 [Design](DESIGN.md) · [done-when file](DONE.json), which owns the criteria · [log](LOG.md) ·
 [module list](../ARCHITECTURE.md#track-7-the-game-sdk)
 
-**No builder starts until the owner has approved [the design](DESIGN.md).** The owner, 25 November 2026: "V1
-first, Rust only, I'll approve the design." A design review that returns Design Approved is not that approval;
-the lead starts WP1 when the owner has said yes. The design was rewritten on 26 November 2026 from the owner's
-review and three dogfood games, and [its decisions](DESIGN.md#decisions) are the owner's.
+**No builder starts until the owner has approved [the design](DESIGN.md).** A design review that returns
+Design Approved is not that approval; the lead starts WP1 when the owner has said yes.
+[Its decisions](DESIGN.md#decisions) are the owner's.
 
 Read [the game at a glance](DESIGN.md#the-game-at-a-glance), [the worked examples](DESIGN.md#worked-examples),
 [Mechanisms](DESIGN.md#mechanisms), [what a builder may change](DESIGN.md#what-a-builder-may-change) and
@@ -16,20 +15,27 @@ Read [the game at a glance](DESIGN.md#the-game-at-a-glance), [the worked example
 
 ## Open for the user
 
-- Assumption: the first-release scope you set on 25 November stands, so 3D collision and a 3D character move, gamepads, audio, predicted projectiles, hits rewound for the shooter, 3D multiplayer, skeletal animation, text fields and levels from an editor's file are designed and not built. [The design's ten scope questions](DESIGN.md#scope-questions-for-the-owner) ask you about each, and recommend adding 3D queries with a character move, gamepads, a small audio and a host with no window.
-- Assumption: SDK work packages start as soon as you approve the design and are built beside the road to V1, taking a builder only when no V1 work package is waiting for one. The other reading of "V1 first" starts no SDK builder until the exit closes.
-- Assumption: the crate a game depends on is named `thrum`, a game is run with `cargo play`, and the fifteen words in the design are the SDK's vocabulary. They are proposed in the glossary for you to agree or change.
-- Assumption: a scene is a type whose fields are what it is entered with, such as `GameOver { dodged }`, and not a bare function, so a rule can name a scene and the compiler checks what it is given.
+- Assumption: the first-release scope you set on 25 November stands. [The design's ten scope questions](DESIGN.md#scope-questions-for-the-owner) ask you about what it leaves designed and not built, and recommend adding 3D queries with a character move, gamepads, a small audio and a host with no window.
+- Assumption: SDK work packages start once you approve the design and take a builder only when no V1 work package is waiting for one. The other reading of "V1 first" starts none until the exit closes.
+- Assumption: the crate is named `thrum`, a game is run with `cargo play`, and the design's fifteen words are the SDK's vocabulary, proposed in the glossary.
+- Assumption: a scene is a type whose fields are what it is entered with, such as `GameOver { dodged }`, and not a bare function.
 - Assumption: a player's default keys are written on the action map, beside each action, and a player can change their own.
-- Assumption: a control function may read anything a rule may. In a game with multiplayer on, one that reads what a match cannot run ahead must say `.unpredicted()`, and its character is then shown as the host confirms it.
-- Assumption: in a 3D scene the first release's 2D colliders lie on the ground plane, so pick-ups and triggers work in a 3D game before 3D collision exists.
-- Assumption: within "2D queries", the first release adds rectangles, a level's fixed collision, tile maps and a character move that slides and reports what it met. Nothing pushes anything, so these are not rigid bodies.
+- Assumption: a control function may read anything a rule may. With multiplayer on, one that reads what a match cannot run ahead must say `.unpredicted()`.
+- Assumption: in a 3D scene the first release's 2D colliders lie on the ground plane, so pick-ups and triggers work before 3D collision exists.
+- Assumption: "2D queries" includes rectangles, a level's fixed collision, tile maps and a character move that slides. Nothing pushes anything, so these are not rigid bodies.
 - Assumption: in a match, a saved resource and a saved run are the host's.
 - Assumption: a one-file game runs with its rules unchecked and is told so. A game needs a `rules` module before it can turn multiplayer on.
-- Assumption: a rule that panics cannot be recovered in Chrome, where the game stops with the rule, the tick and the message shown. On the Mac, the iPhone simulator and in a test it is reported with the world intact.
-- Assumption: the starter, stones and the lighthouse are rewritten on the SDK and the sky kit they use is then removed, so there is one way to make a game.
-- Assumption: three fresh agents prove the documentation, one each for a 2D, a 3D and an online game, and each is then asked for a change the guides did not show.
-- Assumption: models that turn, change size or carry a texture as they move need a change to the engine's 3D drawing. It waits for the V1 work packages that hold that code, so the SDK's 3D part can land after its 2D part.
+- Assumption: a rule that panics stops the game in Chrome, with the rule, the tick and the message shown. Elsewhere it is reported with the world intact.
+- Assumption: the starter, stones and the lighthouse are rewritten on the SDK and the sky kit is then removed, so there is one way to make a game.
+- Assumption: three fresh agents prove the documentation, one each for a 2D, a 3D and an online game.
+- Assumption: models that turn, scale or carry a texture as they move need a change to the engine's 3D drawing, which waits for the V1 work packages that hold that code.
+- Assumption: a tick makes one change of scene or of phase, and the one asked for first stands, so a hero who touches spikes in the tick they reach the end dies. A change asked for while one is landing waits a tick.
+- Assumption: a person who joins a game that bots have filled takes a bot's seat and starts with a new character, not the bot's.
+- Assumption: a paused match keeps its clock running underneath, so whoever the game allows can end the pause from their own machine. Alone, the clock stops.
+- Assumption: a game declares its prefab names together, in a `prefabs!` block, so a name with no definition is found when the game starts.
+- Assumption: one key can mean one thing in play and another in a menu through named input contexts, one active at a time on each screen.
+- Assumption: a content record holds no plain float, and a save brought into a running match is at most 64 KiB unless the game says otherwise.
+- Assumption: the 3D starter's first page ends with a ball the player rolls. It passes through the rock, because the first release has no 3D collision.
 
 ## WP1 An agent writes a game's scenes, phases and rules in plain Rust against one crate, in the order they run, and proves them in an ordinary test with no window
 
@@ -40,10 +46,9 @@ addition under [ruling 2](../ARCHITECTURE.md#seam-rulings-for-game-sdk), for a s
 nothing of core's existing API or tests changes. If it cannot be built so, end `BLOCKED` with what you found,
 as [what a builder may change](DESIGN.md#what-a-builder-may-change) says.
 
-[The headless subset](DESIGN.md#what-wp1-compiles) is all WP1 compiles: no look, camera, input, player, prefab,
-`Space2d`, number literal or `run()`. What a game writes today is `examples/crowd-2d/src/rules.rs`:
-registration, permits, an encoding for each component, a candidate and edits. The SDK generates all of it over
-`thrum-core`'s `RegisteredSystem::direct` and `GameRuntime`.
+[The headless subset](DESIGN.md#what-wp1-compiles) is all WP1 compiles. What a game writes today is
+`examples/crowd-2d/src/rules.rs`; the SDK generates all of it over `thrum-core`'s `RegisteredSystem::direct`
+and `GameRuntime`.
 
 The derive crate is a new package: register it and `thrum` in `.config/architecture.toml`. New tests go in
 `thrum`'s one test target, `it`. `scripts/sdk_surface.py` is yours to write, and it joins `./dev check` in this
@@ -52,13 +57,14 @@ landing.
 ## WP11 A game names a reusable thing, spawns it and variants of it, attaches one thing to another and takes a thing out of play
 
 `Transform2d` and `Transform3d` arrive here as plain data, made from integers, because a child needs a local
-place. Looks arrive with WP3 and WP4.
+place. Turns here are quarter turns, which compose exactly and need none of WP2's angle maths; WP2.3 proves
+`keep_world` under any other angle. A prefab name is made only in a `prefabs!` block. Looks arrive with WP3 and
+WP4.
 
 ## WP2 A crowd of 10,000 written on the SDK, steered by four players, steps identically on the Mac, in Chrome and on the iPhone simulator, and costs what the hand-written crowd does
 
 `crowd-sdk` is a new game at `examples/crowd-sdk`, registered with its conformance entry as `crowd-2d` is. It
-is the reference crowd's behaviours written as example E writes them, and is not a port of `crowd-2d`'s code:
-its digests are its own, retained on purpose with the conformance tool. `SIM-2D` left
+is the reference crowd's behaviours written as example E writes them, not a port: its digests are its own. `SIM-2D` left
 `scripts/sim2d_profile.py`, `scripts/sim2d_conformance.py`, the profile's lints in `.config/sim2d-profile` and
 the vectors in `crates/thrum-core/src/profile`. Extend them under
 [ruling 1](../ARCHITECTURE.md#seam-rulings-for-game-sdk): additions only, with `crowd-2d`'s retained traces and
@@ -66,14 +72,15 @@ the profile's refusals unchanged.
 
 Take WP2.8's record first on a rough version, because it chooses the default size of a world, and again at the
 claimed commit. The input frame's limits are in [the session guide](../../SESSION.md). The heroes' control
-function is written here so that WP5 can hand it to `SESSION`'s predicted controller unchanged. Presses travel
-as a count on the frame's axes, not as timed actions.
+function is written here so that WP5 can hand it to `SESSION`'s predicted controller unchanged. The frame has
+three 16-bit axes for everything an action set carries, so the width of
+[a button's count](DESIGN.md#6-players-actions-and-control) is yours to choose and document.
 
 Every package under `examples/crowd-sdk` names `thrum` and no other engine crate, because
 [WP8's guard](DESIGN.md#1-one-crate-one-package) will cover it. The conformance runner takes Chrome's lock and
 the simulator's turns itself, so run WP2.6 and WP2.7 under no lock. For WP2.10, `scripts/test_game_rules.py` is
-yours to write, on scratch games outside the checkout as `scripts/test_game_gate.py` makes one.
-`cargo play --check`, which wraps the check, arrives with WP3.
+yours to write, on scratch games outside the checkout as `scripts/test_game_gate.py` makes one. It also runs
+each scratch game's own test, for the startup refusals.
 
 ## WP12 A platformer's hero runs, jumps and lands on a level loaded from a file, proved with no window
 
