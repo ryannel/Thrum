@@ -458,7 +458,7 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "in_progress",
+      "status": "ready_for_review",
       "quality_bar": "A choice as easy to work as Vampire Survivors' level-up or Hades' boon choice: the focused card is obvious at a glance, keys, pointer and touch all work and never disagree, and a held direction carries on when the choice closes. A join screen as plain as Factorio's or Stardew Valley's: a player sees what they are joining and why a join failed.",
       "items": [
         {
