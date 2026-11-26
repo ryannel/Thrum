@@ -247,7 +247,8 @@ def mac_exit_controls(run, store, row, stops, *, edit_source=None):
     frame_path = run / 'frames.jsonl'
     if edit_source is not None:
         env.update(THRUM_SHOWCASE_CONTENT_REPORT=str(content_path), THRUM_GOVERNOR_RECORD='observed',
-                   THRUM_MAC_TRANSITION=str(run), THRUM_MAC_TRANSITION_ARM='route')
+                   THRUM_MAC_TRANSITION=str(run), THRUM_MAC_TRANSITION_ARM='route',
+                   THRUM_MAC_FRAME_RATE='60')
     result = {}
     last_submission = -1
     log_path = run / 'game.log'
