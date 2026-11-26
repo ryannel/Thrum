@@ -1378,8 +1378,8 @@
           "check": "python3 scripts/cloud_cost.py check --scene library",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP10/retained-cost-record.log",
           "verdict": "",
           "review": ""
         }
