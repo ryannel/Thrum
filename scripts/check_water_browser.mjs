@@ -10,6 +10,7 @@ import {installWasmReceipt,readWasmReceipt} from './wasm_receipt.mjs';
 const mode = process.argv[process.argv.indexOf('--case') + 1];
 if (!['first-frame','frames','fixed','realtime','island','bodies','wake','foam','surf','channel','river','rain-puddles','rain-rings'].includes(mode)) throw Error('use --case first-frame|frames|fixed|realtime|island|bodies|wake|foam|surf|channel|river|rain-puddles|rain-rings');
 const opticsRoute = mode === 'fixed' ? process.env.THRUM_WATER_BROWSER_OPTICS : undefined;
+const diveRoute = ['fixed','realtime'].includes(mode) ? process.env.THRUM_WATER_BROWSER_DIVE : undefined;
 const surfInspection = process.env.THRUM_WATER_INSPECT_SURF === '1' && ['fixed','realtime'].includes(mode);
 const handoffCut = surfInspection && mode === 'realtime' && process.env.THRUM_WATER_ROUTE === 'handoff-cut';
 const [width,height] = mode==='rain-rings' ? [960,540] : [2560,1440];
@@ -526,7 +527,7 @@ try {
   await installWasmReceipt(cdp,sid);
   const surfRoute=mode==='surf'||surfInspection;
   await cdp.call('Page.addScriptToEvaluateOnNewDocument',{source:observer+(['island','surf','channel','river','rain-puddles','rain-rings'].includes(mode)?islandObserver:'')+`\ndocument.addEventListener('DOMContentLoaded',()=>{document.querySelector('canvas').width=${width};document.querySelector('canvas').height=${height};});`},sid);
-  const route=opticsRoute??(surfRoute?(handoffCut?'?surf=gale':'?surf=trade'):mode==='foam'?'?foam=calm&speed=6&view=overhead&wake-bodies=1':mode==='wake'?'?wake=calm&speed=6&view=overhead&wake-bodies=1':mode==='bodies'?'?bodies=trade&speed=5':mode==='island'?'?island=trade':mode==='channel'?'?channel=trade':mode==='river'?'?river=trade':['rain-puddles','rain-rings'].includes(mode)?'?rain=calm':'');
+  const route=diveRoute??opticsRoute??(surfRoute?(handoffCut?'?surf=gale':'?surf=trade'):mode==='foam'?'?foam=calm&speed=6&view=overhead&wake-bodies=1':mode==='wake'?'?wake=calm&speed=6&view=overhead&wake-bodies=1':mode==='bodies'?'?bodies=trade&speed=5':mode==='island'?'?island=trade':mode==='channel'?'?channel=trade':mode==='river'?'?river=trade':['rain-puddles','rain-rings'].includes(mode)?'?rain=calm':'');
   result.route=route;
   await cdp.call('Page.navigate',{url:url+route},sid);
   await until(async()=>{const state=await evaluate('({ready:!!window.game,status:document.querySelector("#status")?.textContent})');if(state.status?.includes('could not start'))throw Error(state.status);return state.ready;},'scene constructed');
@@ -1018,8 +1019,16 @@ try {
     // Page's own RAF timestamps drive the ordinary scene loop; each image is the frame it submitted.
     const view=Number(process.env.THRUM_WATER_ISLAND_CAMERA??'0');
     const offshore=surfInspection&&view===2;
-    const duration=offshore?22000:surfInspection?12000:1000;
-    const spacing=offshore?200:surfInspection?100:0;
+    const dive=new URLSearchParams(route).has('dive');
+    const duration=offshore?22000:surfInspection?12000:dive?5000:1000;
+    const spacing=offshore?200:surfInspection?100:dive?50:0;
+    if(dive){
+      await evaluate("game.edit_control('camera.pitch',0);game.edit_control('camera.depth',-0.6)");
+      await until(async()=>{
+        const status=await evaluate('game.frame(performance.now());game.report()');
+        return /^Cooked generation [0-9]+ drawn/.test(status);
+      },'cooked lake drawn');
+    }
     if(surfInspection){
       assert(Number.isInteger(view)&&view>=0&&view<=8,'invalid surf camera');
       if(handoffCut)assert(view===7,'start at the foam handoff camera');
@@ -1053,13 +1062,14 @@ try {
       const loop=timestamp=>{
         __start??=timestamp;const elapsed=timestamp-__start;
         __intervals.push(timestamp);collect();
-        if(!${surfInspection})game.edit_control('camera.bearing',90+elapsed*0.012);
+        if(${dive})game.edit_control('camera.depth',-0.6*Math.cos(2*Math.PI*elapsed/${duration}));
+        else if(!${surfInspection})game.edit_control('camera.bearing',90+elapsed*0.012);
         if(${handoffCut}&&elapsed>=5000&&__cameraCut===null){
           game.edit_control('camera.island',8);
           __cameraCut={from:7,to:8,driver_elapsed:elapsed/1000,next_capture_index:presented()-__firstPresented};
         }
         if(elapsed-lastOpportunity>=${spacing}){
-          game.frame(${surfInspection?'timestamp':`${now}+elapsed`});__opportunities++;lastOpportunity=elapsed;
+          game.frame(${surfInspection||dive?'timestamp':`${now}+elapsed`});__opportunities++;lastOpportunity=elapsed;
         }
         if(game.capture_omissions())throw Error('submitted motion observer omitted an image');
         if(elapsed<${duration})__requestCaptureFrame(loop);else {__expected=presented()-__firstPresented;drain();}

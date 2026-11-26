@@ -34,6 +34,7 @@ const _: () = assert!(MAX_SUBMISSIONS as u64 * 2560 * 1440 * 4 < PIXEL_ALLOWANCE
 pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value {
     let (device, queue, caps) = super::support::device(gpu);
     let island = super::island_wind();
+    let dive = matches!(super::settings(), super::Settings::LakeDive(_));
     let yard = matches!(super::settings(), super::Settings::RainYard(_));
     let channel = super::channel_route();
     let channel_view = std::env::var("THRUM_WATER_CHANNEL_CAMERA").unwrap_or_else(|_| "2".into());
@@ -68,6 +69,8 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
     };
     let (extent, interval, opportunities, max_submissions) = if yard {
         ([1280, 720], 20.0, 9.0, CHANNEL_SUBMISSIONS)
+    } else if dive {
+        ([1280, 720], 5.0, 20.0, MAX_SUBMISSIONS)
     } else if surf && island_view == "2" {
         // A complete set of unequal breaks takes longer than a nearshore take.
         ([2560, 1440], 22.0, 5.0, MAX_SUBMISSIONS)
@@ -100,6 +103,11 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
     };
     let mut runtime =
         Offscreen::new(game, &device, &caps, &queue, extent).expect("ordinary game runtime");
+    if dive {
+        runtime
+            .parameters(r#"{"camera.depth":-0.6,"camera.pitch":0}"#)
+            .expect("above the lake");
+    }
     if yard {
         runtime
             .parameters(&format!(
@@ -156,7 +164,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
             },
         )
         .expect("tap");
-    let (file, encoding) = if floating.is_some() || whitewater || channel || river || yard {
+    let (file, encoding) = if floating.is_some() || whitewater || channel || river || yard || dive {
         ("motion.spool.zst", SpoolEncoding::ZstdDelta)
     } else {
         ("motion.spool.raw", SpoolEncoding::Raw)
@@ -190,7 +198,13 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
                 applied = change;
             }
         }
-        if !yard && !channel && !river && island.is_none() && floating.is_none() {
+        if dive {
+            let depth = -0.6 * (elapsed * std::f64::consts::TAU / interval).cos();
+            runtime
+                .parameters(&format!(r#"{{"camera.depth":{depth:.4}}}"#))
+                .expect("lower and raise the lens");
+        }
+        if !dive && !yard && !channel && !river && island.is_none() && floating.is_none() {
             runtime
                 .parameters(&format!(
                     r#"{{"camera.bearing":{}}}"#,
