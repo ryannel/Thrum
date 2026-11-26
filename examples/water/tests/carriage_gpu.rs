@@ -43,9 +43,9 @@ fn varying_current_keeps_the_submitted_marker_moving() {
         "varying_current_keeps_the_submitted_marker_moving", Some(wgpu::Backend::Metal),
     ) else { return };
     let speeds = [0.5, 1.5];
-    let map = chart_map(speeds.map(|speed| move |x, z| {
-        // The outer bank's transverse flow selects the general chart path.
-        [(speed + 0.04 * f64::from(x)).max(0.1), if z % 6 == 2 { 0.05 } else { 0.0 }]
+    let map = chart_map(speeds.map(|speed| move |x, z: i32| {
+        // Both outer bank rows (z = -4 and z = 2) select the general chart path.
+        [(speed + 0.04 * f64::from(x)).max(0.1), if z.rem_euclid(6) == 2 { 0.05 } else { 0.0 }]
     }), false);
     check_carriage(&gpu, "varying", map, [-6.0, 0.0], speeds,
         &[0, 240, 242, 244, 246, 248, 250, 252, 254, 256, 599, 602]);
