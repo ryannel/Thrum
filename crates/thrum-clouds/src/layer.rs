@@ -141,6 +141,7 @@ pub(crate) struct Layer {
     field_group: [wgpu::BindGroup; 2],
     has_placed_map: bool,
     per_pixel_stops: bool,
+    profile_extent: [u32; 2],
     render_extent: [u32; 2],
     overlay: Option<overlay::Overlay>,
 }
@@ -656,12 +657,17 @@ impl Layer {
         resources
     }
 
+    pub(crate) fn has_render_capacity(&self, extent: [u32; 2]) -> bool {
+        let texture = &self.textures[0];
+        extent[0].div_ceil(2) <= texture.width() && extent[1].div_ceil(2) <= texture.height()
+    }
+
     fn active_extent(&self) -> [u32; 2] {
         if self.per_pixel_stops {
             return self.render_extent.map(|side| side.div_ceil(2));
         }
-        [self.textures[0].width(), self.textures[0].height()]
-            .map(|side| (side * self.quality.layer_percent).div_ceil(100))
+        self.profile_extent
+            .map(|side| (side.div_ceil(2) * self.quality.layer_percent).div_ceil(100))
     }
 
     pub(crate) fn set_quality(&mut self, quality: Quality) {

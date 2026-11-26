@@ -45,7 +45,25 @@ pub(super) fn base() -> Result<QualitySettings, Error> {
     settings(std::iter::once(age(WEATHER)).chain(SUN.map(age)).collect())
 }
 
-pub(super) fn sky(profile: crate::SkyProfile) -> [QualityKnob; 6] {
+pub(super) fn scale(ground: bool) -> QualityKnob {
+    let (effect, range) = if ground {
+        (
+            "Ground traces a stop for each scene render pixel",
+            100..=100,
+        )
+    } else {
+        ("Percent of prepared layer width and height", 50..=100)
+    };
+    knob(
+        SCALE,
+        effect,
+        100,
+        range,
+        QualityInvalidation::EffectHistory,
+    )
+}
+
+pub(super) fn sky(profile: crate::SkyProfile, ground: bool) -> [QualityKnob; 6] {
     let reset = QualityInvalidation::EffectHistory;
     [
         knob(
@@ -62,13 +80,7 @@ pub(super) fn sky(profile: crate::SkyProfile) -> [QualityKnob; 6] {
             0..=3,
             reset,
         ),
-        knob(
-            SCALE,
-            "Percent of prepared layer width and height",
-            100,
-            50..=100,
-            reset,
-        ),
+        scale(ground),
         knob(
             STEP,
             "Minimum march step as percent of the profile",

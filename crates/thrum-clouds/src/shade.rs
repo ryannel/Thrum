@@ -200,7 +200,7 @@ impl Shade {
         if ![1, 2, 4].contains(&profile.refresh_stride) || profile.light_samples > 3 {
             return Err(Error::Unsupported("Sky refresh or local-light samples"));
         }
-        self.configure_quality(quality::sky(profile))?;
+        self.configure_quality(quality::sky(profile, self.ground.is_some()))?;
         self.sky = Some(profile);
         Ok(self)
     }
@@ -217,6 +217,10 @@ impl Shade {
     /// Select ground condensate. The scene must declare a view-volume medium.
     #[must_use]
     pub fn with_ground(mut self, config: GroundConfig) -> Self {
+        if self.sky.is_some() {
+            self.configure_quality([quality::scale(true)])
+                .expect("fixed Ground scale replaces the existing validated scale knob");
+        }
         self.ground = Some(config);
         self
     }
@@ -252,6 +256,15 @@ impl Shade {
 }
 
 impl SceneContribution for Shade {
+    fn needs_render_capacity(&self, extent: [u32; 2]) -> bool {
+        self.ground.is_some()
+            && self
+                .gpu
+                .as_ref()
+                .and_then(|gpu| gpu.sky.as_ref())
+                .is_some_and(|layer| !layer.has_render_capacity(extent))
+    }
+
     fn quality_knobs(&self) -> Vec<QualityKnob> {
         self.quality
             .knobs()
@@ -308,6 +321,9 @@ impl SceneContribution for Shade {
             && self.generation == surface.generation
             && gpu.sun.ground() == &target.0
             && gpu.sun.mapping() == &target.1
+            && surface
+                .render_capacity
+                .is_none_or(|extent| !self.needs_render_capacity(extent))
             && gpu.ground.as_ref().is_none_or(|ground| {
                 surface.view_volume_medium_target().is_some_and(|target| {
                     ground.targets.medium.target.coefficients == target.coefficients

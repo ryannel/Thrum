@@ -247,6 +247,12 @@ impl SceneContribution for SceneContributions {
         }
     }
 
+    fn needs_render_capacity(&self, extent: [u32; 2]) -> bool {
+        self.entries
+            .iter()
+            .any(|entry| entry.needs_render_capacity(extent))
+    }
+
     fn secondary_views_enabled(&self) -> bool {
         self.entries
             .iter()

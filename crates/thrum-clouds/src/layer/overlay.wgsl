@@ -72,17 +72,25 @@ fn trace_overlay(@builtin(global_invocation_id) id: vec3<u32>) {
                     source = (deck.ambient
                         + sun_irradiance(world) * deck.surface_visibility * deck.solar_kernel) / sigma;
                 }
-            } else if in_cloud {
+            }
+            if in_cloud && (!cloud_deck_active() || cloud.density_profile.y > 0.0) {
                 let footprint = max(step * 0.5, at / f32(size.y));
-                let column = cloud_column(point);
+                var column = vec4(0.0);
+                if !cloud_deck_active() { column = cloud_column(point); }
                 let placed = cloud_placed(point, footprint);
-                sigma = cloud_eroded_density(column.x, point, footprint, cloud.physical.x, column.w, cloud.density_profile.x) + placed.x;
-                if sigma > 0.0 {
+                let upper_sigma = cloud_eroded_density(column.x, point, footprint, cloud.physical.x, column.w, cloud.density_profile.x) + placed.x;
+                if upper_sigma > 0.0 {
                     let vertical = column.yz + placed.yz;
                     let depths = cloud_sun_depths(world, point.y);
                     let solar = mix(base_sun, top_sun, clamp((point.y - cloud.heights.x) /
                         (cloud.heights.y - cloud.heights.x), 0.0, 1.0));
-                    source = cloud_source(solar, phases, depths.xy, vertical, angles, at, transmission);
+                    let upper = cloud_source(solar, phases, depths.xy, vertical, angles, at, transmission);
+                    if sigma > 0.0 {
+                        source = (sigma * source + upper_sigma * upper) / (sigma + upper_sigma);
+                    } else {
+                        source = upper;
+                    }
+                    sigma += upper_sigma;
                 }
             }
             if in_fog {

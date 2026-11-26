@@ -24,7 +24,9 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
         let a=(cloud.heights.x-camera.y)/ray.y;let b=(cloud.heights.y-camera.y)/ray.y;
         begin=max(0.0,min(a,b));end=min(end,max(a,b));
     }else if camera.y<cloud.heights.x || camera.y>cloud.heights.y {end=0.0;}
-    if per_pixel { begin = max(begin, GROUND_RAMP_START_M); }
+    if cloud_deck_active() && cloud.density_profile.y == 0.0 {
+        begin = max(begin, GROUND_RAMP_START_M);
+    }
     let cloud_interval=vec2(begin,end);
     let fog = ground_interval(camera,ray,cloud.heights.w);
     let fog_interval = vec2(max(fog.x, GROUND_RAMP_START_M), fog.y);
@@ -98,14 +100,17 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
             let deck = cloud_deck_light(world, ray, atmosphere.sun_lux.xyz, at, transmission);
             sigma = deck.extinction * far;
             radiance = (deck.ambient + sun_irradiance(world) * deck.surface_visibility * deck.solar_kernel) * far;
-        } else if in_cloud {
+        }
+        if in_cloud && (!cloud_deck_active() || cloud.density_profile.y > 0.0) {
             let placed=cloud_placed(point,footprint);
-            var column=cloud_column(point);
+            var column=vec4(0.0);
+            if !cloud_deck_active() { column=cloud_column(point); }
             if column.x+placed.x>0.0 {
-                sigma=cloud_detail(column.x,point,footprint,cloud.physical.x,column.w)+placed.x;
+                let upper_sigma=cloud_detail(column.x,point,footprint,cloud.physical.x,column.w)+placed.x;
+                sigma+=upper_sigma;
                 column.y += placed.y;
                 column.z += placed.z;
-                if sigma>0.0 {
+                if upper_sigma>0.0 {
                     let solar=mix(sun_base,sun_top,clamp((point.y-cloud.heights.x)/(cloud.heights.y-cloud.heights.x),0.0,1.0));
                     let sunlit=any(solar>vec3(0.0));
                     var sun_depths=vec2(0.0);
@@ -122,7 +127,7 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
                     if bank>0.0 && placed.x==0.0 && sunlit {
                         source=cloud_bank_light(source,solar,point,sigma,at,footprint,sun_depths.x,sun_alignment,bank);
                     }
-                    radiance=sigma*source;
+                    radiance+=upper_sigma*source;
                 }
             }
         }

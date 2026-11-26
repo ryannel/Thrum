@@ -57,8 +57,11 @@ pub(super) fn rebuild_3d_contribution(
                 }
                 _ => FrameError::SecondaryView(error),
             })?;
-        let surface =
-            prepared.scene_surface_with_views(queue, contribution.secondary_views_enabled());
+        let surface = prepared.scene_surface_with_views(
+            queue,
+            contribution.secondary_views_enabled(),
+            extent,
+        );
         if attaching {
             contribution.rebuild_for_attachment(&surface)?;
         } else {
@@ -331,9 +334,11 @@ impl PreparedScene {
                 }
                 _ => FrameError::SecondaryView(error),
             })?;
-        let surface = self
-            .prepared
-            .scene_surface_with_views(queue, contribution.secondary_views_enabled());
+        let surface = self.prepared.scene_surface_with_views(
+            queue,
+            contribution.secondary_views_enabled(),
+            extent,
+        );
         let mut candidate = contribution.prepare_candidate(&surface)?;
         candidate
             .graph

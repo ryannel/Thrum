@@ -18,6 +18,31 @@ use thrum_test_support::{
 use v1_game::{CloudSelection, GameHost, GameSetup, GroundWeather, SceneCamera};
 
 const EXTENT: [u32; 2] = [32, 18];
+const GROWN: [u32; 2] = [65, 37];
+
+fn output_texture(device: &wgpu::Device, [width, height]: [u32; 2]) -> wgpu::Texture {
+    device.create_texture(&wgpu::TextureDescriptor {
+        label: Some("cloud occluder output"),
+        size: wgpu::Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 1,
+        },
+        mip_level_count: 1,
+        sample_count: 1,
+        dimension: wgpu::TextureDimension::D2,
+        format: wgpu::TextureFormat::Bgra8Unorm,
+        usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+        view_formats: &[],
+    })
+}
+
+fn stop_channel(bytes: &[u8], [width, height]: [u32; 2], x: u32, y: u32, channel: u32) -> f32 {
+    let slot = x % 2 + 2 * (y % 2);
+    let index = (((slot * height.div_ceil(2) + y / 2) * width.div_ceil(2) + x / 2) * 8
+        + channel * 2) as usize;
+    half::f16::from_le_bytes([bytes[index], bytes[index + 1]]).to_f32()
+}
 
 #[test]
 #[expect(
@@ -39,20 +64,7 @@ fn metal_uncovered_pixels_use_their_current_surface_stops_and_a_cut_refills_them
     else {
         return;
     };
-    let target = device.create_texture(&wgpu::TextureDescriptor {
-        label: Some("cloud occluder output"),
-        size: wgpu::Extent3d {
-            width: EXTENT[0],
-            height: EXTENT[1],
-            depth_or_array_layers: 1,
-        },
-        mip_level_count: 1,
-        sample_count: 1,
-        dimension: wgpu::TextureDimension::D2,
-        format: wgpu::TextureFormat::Bgra8Unorm,
-        usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-        view_formats: &[],
-    });
+    let target = output_texture(&device, EXTENT);
     let view = target.create_view(&wgpu::TextureViewDescriptor::default());
     let mut host = pollster::block_on(
         GameSetup {
@@ -94,14 +106,13 @@ fn metal_uncovered_pixels_use_their_current_surface_stops_and_a_cut_refills_them
         .expect("requested sparse profile");
     let submit =
         |host: &mut thrum_render::runtime::FrameHost<v1_game::GameWorld, v1_game::GameScene>,
-         frame| {
+         frame,
+         view: &wgpu::TextureView,
+         extent| {
             assert!(
                 host.drive(
                     Duration::from_millis(frame),
-                    Some(&SurfaceOutput {
-                        view: &view,
-                        extent: EXTENT
-                    })
+                    Some(&SurfaceOutput { view, extent })
                 )
                 .expect("drive V1")
                 .submitted
@@ -112,24 +123,19 @@ fn metal_uncovered_pixels_use_their_current_surface_stops_and_a_cut_refills_them
             while host.poll_completed().expect("retire V1 frame").is_some() {}
             host.cloud_sky_products().expect("submitted cloud layer")
         };
-    let occluded = submit(&mut host, 0);
+    let occluded = submit(&mut host, 0, &view, EXTENT);
     assert!(!occluded.history_valid);
     let read = |texture| readback::texture(&device, &queue, texture, Mip::level(0), ..);
     let previous = read(&occluded.front);
     position.store(1, Ordering::Relaxed);
-    let uncovered = submit(&mut host, 25);
+    let uncovered = submit(&mut host, 25, &view, EXTENT);
     assert!(uncovered.history_valid);
     assert_eq!(uncovered.refresh_stride, 2);
     assert_eq!(uncovered.trace_stride, 1);
     let resolved = read(&uncovered.front);
     let fresh = read(&uncovered.fresh_front);
-    let half = |bytes: &[u8], pixel: u32, channel: u32| {
-        let x = pixel % EXTENT[0];
-        let y = pixel / EXTENT[0];
-        let slot = x % 2 + 2 * (y % 2);
-        let index = (((slot * (EXTENT[1] / 2) + y / 2) * (EXTENT[0] / 2) + x / 2) * 8 + channel * 2)
-            as usize;
-        half::f16::from_le_bytes([bytes[index], bytes[index + 1]]).to_f32()
+    let half = |bytes: &[u8], pixel, channel| {
+        stop_channel(bytes, EXTENT, pixel % EXTENT[0], pixel / EXTENT[0], channel)
     };
     let inverse = glam::Mat4::from_cols_array_2d(&uncovered.raster_view_projection).inverse();
     let depth = (1.0 / 920.0 - 1.0 / 4000.0) / (1.0 / 0.1 - 1.0 / 4000.0);
@@ -161,13 +167,68 @@ fn metal_uncovered_pixels_use_their_current_surface_stops_and_a_cut_refills_them
     }
     assert!(mist_covered > 0, "the uncovered surface must show far mist");
     host.set_scene_camera(camera).expect("request cut");
-    let cut = submit(&mut host, 50);
+    let cut = submit(&mut host, 50, &view, EXTENT);
     assert!(!cut.history_valid);
     assert_eq!(
         read(&cut.transport),
         read(&cut.fresh_transport),
         "cut composes the fresh stops"
     );
+
+    let scale = host
+        .quality_knobs()
+        .into_iter()
+        .find(|knob| knob.name.ends_with("cloud layer scale"))
+        .expect("Ground scale");
+    assert_eq!(scale.range, 100..=100);
+    assert!(host.set_game_quality_knob(&scale.name, 50).is_err());
+
+    let deadline = std::time::Instant::now() + Duration::from_secs(5);
+    while host.pending_frames() > 0 {
+        assert!(std::time::Instant::now() < deadline, "retire before resize");
+        device
+            .poll(wgpu::PollType::wait_indefinitely())
+            .expect("Metal idle");
+        host.poll_completed().expect("retire timing");
+    }
+    assert!(host.resize_scene_surface(GROWN).expect("resize scene"));
+    assert_eq!(host.contribution_error(), None);
+    let grown_view = output_texture(&device, GROWN).create_view(&Default::default());
+    let grown = submit(&mut host, 75, &grown_view, GROWN);
+    assert_eq!(grown.active_extent, GROWN.map(|side| side.div_ceil(2)));
+    assert!(!grown.history_valid);
+    for texture in [
+        &grown.fresh_front,
+        &grown.front,
+        &grown.fresh_transport,
+        &grown.transport,
+    ] {
+        assert_eq!([texture.width(), texture.height()], grown.active_extent);
+        assert_eq!(texture.depth_or_array_layers(), 4);
+    }
+    let metadata = read(&grown.front);
+    let fresh = read(&grown.fresh_front);
+    let inverse = glam::Mat4::from_cols_array_2d(&grown.raster_view_projection).inverse();
+    for y in 0..GROWN[1] {
+        for x in 0..GROWN[0] {
+            let plane = if (16..24).contains(&x) { 340.0 } else { 920.0 };
+            let depth = (1.0 / plane - 1.0 / 4000.0) / (1.0 / 0.1 - 1.0 / 4000.0);
+            let uv = (glam::Vec2::new(x as f32, y as f32) + 0.5)
+                / glam::Vec2::from_array(GROWN.map(|side| side as f32));
+            let hit = inverse
+                * glam::Vec4::new(uv.x.mul_add(2.0, -1.0), uv.y.mul_add(-2.0, 1.0), depth, 1.0);
+            let expected = (hit.truncate() / hit.w - glam::Vec3::from_array(eye)).length() * 0.001;
+            let distance = stop_channel(&metadata, GROWN, x, y, 3);
+            assert_eq!(
+                distance.to_bits(),
+                stop_channel(&fresh, GROWN, x, y, 3).to_bits()
+            );
+            assert!(
+                (distance - expected).abs() < 0.002,
+                "grown stop {x},{y}: {distance} vs {expected}"
+            );
+        }
+    }
 }
 
 struct Occluder {

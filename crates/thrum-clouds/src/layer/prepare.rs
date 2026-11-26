@@ -89,8 +89,19 @@ impl Layer {
             |(_, _, _, params)| params.clone(),
         );
         let lighting = super::light::Lighting::new(surface, weather, &environment)?;
-        let textures = accepted.map_or_else(
-            || transport_textures(device, profile.extent, ground.is_some()),
+        let ground_stops = ground.is_some();
+        let render_capacity = surface.render_capacity.unwrap_or(profile.extent);
+        let capacity = if ground_stops {
+            std::array::from_fn(|i| profile.extent[i].max(render_capacity[i]))
+        } else {
+            profile.extent
+        };
+        let retained = accepted.filter(|layer| {
+            let texture = &layer.textures[0];
+            [texture.width(), texture.height()] == capacity.map(|side| side.div_ceil(2))
+        });
+        let textures = retained.map_or_else(
+            || transport_textures(device, capacity, ground_stops),
             |layer| layer.textures.clone(),
         );
         let uniform_entry = binding::uniform(
@@ -258,7 +269,7 @@ impl Layer {
             &params,
             &textures,
             &compose_layout,
-            accepted.map(|layer| &layer.temporal),
+            retained.map(|layer| &layer.temporal),
         );
         Ok((
             Self {
@@ -275,7 +286,7 @@ impl Layer {
                 environment,
                 lighting,
                 temporal,
-                committed: accepted.and_then(|layer| layer.committed),
+                committed: retained.and_then(|layer| layer.committed),
                 pending: None,
                 ordinal: accepted.map_or(0, |layer| layer.ordinal),
                 trace_stride: accepted.map_or(1, |layer| layer.trace_stride),
@@ -293,7 +304,8 @@ impl Layer {
                 field_group,
                 has_placed_map: placed_map.is_some(),
                 per_pixel_stops: false,
-                render_extent: profile.extent,
+                profile_extent: profile.extent,
+                render_extent: render_capacity,
                 overlay,
             },
             initialization,

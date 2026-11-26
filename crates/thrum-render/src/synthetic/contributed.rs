@@ -153,6 +153,7 @@ impl PreparedSynthetic {
     /// The forward pass a [`SceneContribution`] draws into.
     pub(crate) fn scene_surface<'a>(&'a self, queue: &'a wgpu::Queue) -> SceneSurface<'a> {
         SceneSurface {
+            render_capacity: None,
             ray_demand: self.mesh_arena.ray_demand(),
             #[cfg(all(feature = "creation-counters", target_os = "macos"))]
             ray_build_probe: self.ray_build_probe(),
@@ -205,8 +206,10 @@ impl PreparedSynthetic {
         &'a self,
         queue: &'a wgpu::Queue,
         enabled: bool,
+        extent: [u32; 2],
     ) -> SceneSurface<'a> {
         let mut surface = self.scene_surface(queue);
+        surface.render_capacity = Some(extent);
         if enabled {
             surface.secondary_surfaces = self
                 .secondary

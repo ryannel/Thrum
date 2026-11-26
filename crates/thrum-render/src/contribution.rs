@@ -230,6 +230,8 @@ pub fn material_hook_point(source: &str) -> Result<std::ops::Range<usize>, HookP
 /// Read-only description of a prepared scene's forward pass.
 #[derive(Clone)]
 pub struct SceneSurface<'a> {
+    /// Pixel capacity of the prepared scene attachments, when preparing a frame host.
+    pub render_capacity: Option<[u32; 2]>,
     /// Whether the prepared scene uses ray queries.
     pub ray_demand: bool,
     /// Optional mesh-build observation for a contended diagnostic capture.
@@ -564,6 +566,12 @@ pub trait SceneContribution: wgpu::WasmNotSend + std::any::Any {
     /// The mesh must belong to this device generation and have a build recorded
     /// by this point. The default offers no instances.
     fn ray_instances(&self, _instances: &mut RayInstances<'_>) {}
+
+    /// Whether this contribution needs replacement resources before rendering at this capacity.
+    /// The default reuses size-independent resources across scene resizes.
+    fn needs_render_capacity(&self, _extent: [u32; 2]) -> bool {
+        false
+    }
 
     /// Opt opaque geometry into secondary views. The default receives no
     /// pipeline surfaces and records no extra upload, caster or opaque draw.

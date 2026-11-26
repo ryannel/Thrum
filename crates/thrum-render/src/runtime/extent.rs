@@ -287,6 +287,13 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         if reset_history {
             self.reset_replacement_history();
         }
+        if self
+            .contribution
+            .as_ref()
+            .is_some_and(|effect| effect.needs_render_capacity(self.render_extent))
+        {
+            self.rebuild_contribution();
+        }
         true
     }
 
@@ -410,13 +417,13 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             .prepared
             .three_d()
             .is_some_and(|scene| scene.secondary_view_count() != 0)
+            || self
+                .contribution
+                .as_ref()
+                .is_some_and(|effect| effect.needs_render_capacity(extent))
         {
-            // A declared scale resolves against the new scene extent. Owners
-            // must receive the replacement attachments before the next ask.
             self.rebuild_contribution();
         }
-        // With no declared slot, SceneSurface has size-independent inputs;
-        // ordinary contributions keep their pipelines through a rotation.
         Ok(true)
     }
 }
