@@ -935,3 +935,7 @@ contribution using the replacement profiles.
   games, and a high Sun flattening broad lobes is plausible." Planner: WP10.1 and WP10.4 excuse the weakness by
   name, so WP10 closes on the light retained at `63f4e85794fe`. [Risk 14](DESIGN.md#risks) records it and what
   WP10 ruled out. New WP21, after WP17 and before WP12, takes the relief up. No mechanism or interface changed.
+- 2026-11-26 Design review of the parking: four Must Fix, all confirmed by the lead. WP21 moved last, after
+  WP12, with new WP21.5 for the finished views; the waiver names two shapes at noon; WP21.4 records cost at the
+  noon Sun, before and after; WP21.1 and WP21.3 judge by the cues alone. [Risk 14](DESIGN.md#risks) carries
+  all four. [What changed for each finding](../../../.orchestrate/evidence/CLOUDS/design-revision-2026-11-26-noon-relief.md)

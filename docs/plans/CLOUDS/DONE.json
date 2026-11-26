@@ -1334,8 +1334,8 @@
       "items": [
         {
           "id": "WP10.1",
-          "statement": "Each of the twelve shapes, at 3 to 8 km, from 2 m and from 40 m, at noon and at a 10\u00b0 Sun, shows its accepted anatomy in this sky: lit and shaded as its neighbours are, its base on the shared level, with no box, seam, voxel step or filtering band. One weakness is known and fails nothing here: at noon a broad lobe may read flat under the high Sun, as the lower right face of the congestus core and the left lobe and bridge of the mediocris twin turrets do (the design's risk 14, which WP21 judges). The anatomy itself is the owner's accepted content and is not judged again.",
-          "inspect": "Capture `fixed` stills of each shape at both Suns and heights. Judge contact sheets by family, then native-size crops of each shape's lit side, base and edge: 1. the shape is recognisable as itself at both Suns and both heights; 2. its light and shade agree with the clouds around it; 3. its base is on the shared level; 4. no box, seam, voxel step or filtering band shows. Where a broad lobe reads flat at noon, say so and judge these four.",
+          "statement": "Each of the twelve shapes, at 3 to 8 km, from 2 m and from 40 m, at noon and at a 10\u00b0 Sun, shows its accepted anatomy in this sky: lit and shaded as its neighbours are, its lobes told apart by their shading, its base on the shared level, with no box, seam, voxel step or filtering band. One weakness is known and fails nothing here: at noon the broad lobes of the congestus core and of the mediocris twin turrets may read flat, as the core's lower right face and the twin turrets' left lobe and bridge do (the design's risk 14, which WP21 judges). It excuses no other shape and no other Sun: a broad lobe that reads flat on any of the other ten shapes at noon, or on any of the twelve at a 10\u00b0 Sun, fails. The anatomy itself is the owner's accepted content and is not judged again.",
+          "inspect": "Capture `fixed` stills of each shape at both Suns and heights. Judge contact sheets by family, then native-size crops of each shape's lit side, base and edge: 1. the shape is recognisable as itself at both Suns and both heights; 2. its light and shade agree with the clouds around it; 3. its base is on the shared level; 4. no box, seam, voxel step or filtering band shows; 5. shaded faces and creases tell its lobes apart, and no broad lobe reads as one even tone. Line 5 is not judged on the congestus core or the mediocris twin turrets at noon: where a broad lobe of either reads flat there, say so and judge lines 1 to 4.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -1364,7 +1364,7 @@
         },
         {
           "id": "WP10.4",
-          "statement": "In Chrome the library is resident, and the fair sky with it passes WP10.1's list for one shape of each family and WP10.3's list at noon. The weakness WP10.1 names is known here too: a broad lobe that reads flat at noon in Chrome, as it does on the Mac, fails nothing.",
+          "statement": "In Chrome the library is resident, and the fair sky with it passes WP10.1's list for one shape of each family and WP10.3's list at noon. WP10.1's known weakness is excused here as it is on the Mac, and no further: the broad lobes of the congestus core and of the mediocris twin turrets, at noon.",
           "inspect": "Capture the corresponding `fixed` stills in Chrome. Judge them by those lists, then compare native-size crops with the Mac's for a difference in outline, base or light.",
           "target": "chrome-webgpu",
           "builder_result": "open",
@@ -1928,58 +1928,6 @@
       ]
     },
     {
-      "id": "WP21",
-      "name": "At noon the broad lobes of the congestus core and the twin turrets stand out in relief, and every accepted look holds",
-      "status": "not_started",
-      "depends_on": [],
-      "quality_bar": "Hero clouds under a high Sun as in Horizon Forbidden West: a broad cloud whose lobes are told apart by soft shaded creases and darker sheltered faces under bright crowns, still bright and soft as a whole, and in one light with the clouds around it.",
-      "items": [
-        {
-          "id": "WP21.1",
-          "statement": "At noon, from 2 m and from 40 m, the congestus core and the mediocris twin turrets, each alone in WP10's gallery view of it, show their broad lobes in relief. On the lower right face of the core and on the left lobe and bridge of the twin turrets, which read as one even grey when WP10 closed, neighbouring lobes are told apart by a shaded crease, and a sheltered face is darker than the crown above it. Beside a still of the same view taken at the commit this work package started from, the relief is plainly stronger. Neither cloud shows an arc, a band, a chain of pale marks or a drawn outline, and each is still bright, with soft edges.",
-          "inspect": "Capture `fixed` stills of the two shapes at noon in WP10's gallery views, from 2 m and from 40 m, at the commit the work package started from and at its end. Judge each pair side by side, whole and in native-size crops of the core's lower right face and of the twin turrets' left lobe and bridge: 1. neighbouring lobes are told apart by a shaded crease; 2. a sheltered face is darker than the crown above it; 3. the relief is plainly stronger than in the starting still; 4. no arc, band, chain of pale marks or drawn outline shows; 5. the cloud is still bright, with soft edges.",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
-        },
-        {
-          "id": "WP21.2",
-          "statement": "The changed light costs the accepted looks nothing that shows. From 2 m and from 40 m, the other ten shapes at noon and all twelve at a 10\u00b0 Sun pass WP10.1's list, and a placed cloud among procedural ones passes WP6.4's list at noon and at a 10\u00b0 Sun. Under the fair preset the sky passes WP5.2's list at noon and WP5.3's at a 10\u00b0 and a 4\u00b0 Sun, and at sunset a library cloud and the procedural clouds beside it are in one light. At noon with the placed share at 0, no procedural cloud shows a flaw WP17.1 names.",
-          "inspect": "Capture `fixed` stills: the gallery of the twelve shapes at both Suns and heights; WP6.4's views; the fair sky at noon with one cloud from its Sun side and from its far side; the fair sky toward, across and away from a 10\u00b0 and a 4\u00b0 Sun; the fair sky at sunset with a library cloud beside a procedural one; and the fair sky at noon with the placed share at 0, toward, across and away from the Sun. Judge each by the list its clause names, and in native-size crops where a library cloud meets a procedural one.",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
-        },
-        {
-          "id": "WP21.3",
-          "statement": "In Chrome at noon the congestus core and the mediocris twin turrets pass WP21.1's list from 2 m and from 40 m, and one shape of each family passes WP10.1's list at noon and at a 10\u00b0 Sun.",
-          "inspect": "Capture the corresponding `fixed` stills in Chrome, those of the two shapes at the commit the work package started from and at its end. Judge them by those lists, then compare native-size crops with the Mac's for a difference in outline, base or light.",
-          "target": "chrome-webgpu",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
-        },
-        {
-          "id": "WP21.4",
-          "statement": "With all twelve shapes and the track resident and in view, the paired cost record is taken again at 2560\u00d71440, beside WP10.5's record for the same view, with the bytes of each stacked product for R8 and for BC4. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
-          "check": "python3 scripts/cloud_cost.py check --scene library",
-          "lock": "gpu",
-          "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
-          "verdict": "",
-          "review": ""
-        }
-      ],
-      "failed_reviews": 0,
-      "failed_reviews_with_repeat": 0
-    },
-    {
       "id": "WP12",
       "name": "On the Mac's Apple recipe the sky runs with MetalFX and the governor, its cadence on the built-in display is on record, and the module is closed",
       "status": "not_started",
@@ -2081,8 +2029,8 @@
         },
         {
           "id": "WP12.9",
-          "statement": "The maturity ledger's `E1.clouds` row and the module's provenance record, tracked under `docs/provenance`, are current: implementation, correctness, visuals and device kept apart, what is not built and the device runs owed are listed, and every lifted file is named with its source commit, path and licence.",
-          "ask": "Does the ledger claim anything for a device or a recipe that was not run? Does the provenance record match the files in the two crates and the two games?",
+          "statement": "The maturity ledger's `E1.clouds` row and the module's provenance record, tracked under `docs/provenance`, are current: implementation, correctness, visuals and device are kept apart; what is not built, the device runs owed and the one known weakness of the visuals, the flat noon lobes of the congestus core and the mediocris twin turrets (the design's risk 14), are listed; and every lifted file is named with its source commit, path and licence.",
+          "ask": "Does the ledger claim anything for a device or a recipe that was not run, or claim the visuals without listing the flat noon lobes of risk 14? Does the provenance record match the files in the two crates and the two games?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -2100,6 +2048,69 @@
           "review": ""
         }
       ]
+    },
+    {
+      "id": "WP21",
+      "name": "At noon the broad lobes of the congestus core and the twin turrets stand out in relief, and every accepted look holds",
+      "status": "not_started",
+      "depends_on": [],
+      "quality_bar": "Hero clouds under a high Sun as in Horizon Forbidden West: a broad cloud whose lobes are told apart by soft shaded creases and darker sheltered faces under bright crowns, still bright and soft as a whole, and in one light with the clouds around it.",
+      "items": [
+        {
+          "id": "WP21.1",
+          "statement": "At noon, from 2 m and from 40 m, the congestus core and the mediocris twin turrets, each alone in WP10's gallery view of it, show their broad lobes in relief, as a hero cloud of a shipped game does under a high Sun. In each of the four views, on the core's lower right face and on the twin turrets' left lobe and bridge as on the rest of the cloud, neighbouring lobes are told apart by a soft shaded crease, and a sheltered face is darker than the crown above it. Neither cloud shows an arc, a band, a chain of pale marks or a drawn outline, and each is still bright, with soft edges.",
+          "inspect": "Capture `fixed` stills of the two shapes at noon in WP10's gallery views, from 2 m and from 40 m. Find the core's lower right face and the twin turrets' left lobe and bridge in WP10's retained noon stills, which the design's risk 14 links and which show them as one even grey; those stills say where to look and set no bar. Judge each view whole and in native-size crops of those faces: 1. neighbouring lobes are told apart by a soft shaded crease; 2. a sheltered face is darker than the crown above it; 3. no arc, band, chain of pale marks or drawn outline shows; 4. the cloud is still bright, with soft edges.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP21.2",
+          "statement": "The changed light costs the accepted looks nothing that shows. From 2 m and from 40 m, the other ten shapes at noon and all twelve at a 10\u00b0 Sun pass all five lines of WP10.1's list, with no lobe excused. A placed cloud among procedural ones passes WP6.4's list at noon and at a 10\u00b0 Sun. Under the fair preset the sky passes WP5.2's list at noon and WP5.3's at a 10\u00b0 and a 4\u00b0 Sun, and at sunset a library cloud and the procedural clouds beside it are in one light. At noon with the placed share at 0, no procedural cloud shows a flaw WP17.1 names.",
+          "inspect": "Capture `fixed` stills: the gallery of the twelve shapes at both Suns and heights; WP6.4's views; the fair sky at noon with one cloud from its Sun side and from its far side; the fair sky toward, across and away from a 10\u00b0 and a 4\u00b0 Sun; the fair sky at sunset with a library cloud beside a procedural one; and the fair sky at noon with the placed share at 0, toward, across and away from the Sun. Judge each by the list its clause names, and in native-size crops where a library cloud meets a procedural one. For line 5 of WP10.1's list, find each shape's shaded faces in WP10's retained gallery and judge those faces as they look now.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP21.3",
+          "statement": "In Chrome at noon the congestus core and the mediocris twin turrets pass WP21.1's list from 2 m and from 40 m, and one shape of each family passes all five lines of WP10.1's list at noon and at a 10\u00b0 Sun, with no lobe excused.",
+          "inspect": "Capture the corresponding `fixed` stills in Chrome. Judge them by those lists, then compare native-size crops with the Mac's for a difference in outline, base or light.",
+          "target": "chrome-webgpu",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP21.4",
+          "statement": "What the changed light costs is on record where it runs. In WP10.5's view at 2560\u00d71440, with all twelve shapes and the track resident and in view, on both of the Mac's recipes, the paired cost record is taken at the noon Sun of WP21.1's stills and at the 10\u00b0 Sun. Each arm is taken with the same tool on the same machine at the commit this work package started from and again at its end, and the record states each arm's Sun elevation and the bytes of each resource. Each end arm is held to the tripwires of the design's cost account, with the starting arm of the same recipe and Sun as its last comparable record, and each wire it trips has its investigation beside it. No figure in the record decides this item.",
+          "check": "python3 scripts/cloud_cost.py check --scene relief",
+          "ask": "Do the noon arms run at the Sun elevation of WP21.1's stills, and does every branch the changed light added or altered run at that elevation? Is each end arm compared with the starting arm of the same recipe, Sun and view, and is that view WP10.5's?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP21.5",
+          "statement": "On the Apple recipe under MetalFX the changed light leaves the finished sky as WP12 closed it. The four presets pass WP7.1's list at noon and at a 15\u00b0 Sun; the dawn valley, the far mist and the climb through the deck pass WP14.5's, WP15.4's and WP15.5's lists; and the whole scene, from a 15\u00b0 Sun through sunset to dusk, still passes WP12.7.",
+          "inspect": "Capture WP7.1's stills, the stills and sequences of WP14.5, WP15.4 and WP15.5, and WP12.7's two sequences on the Apple recipe with MetalFX resolved. Judge them by those lists and by WP12.7's statement, whole and in the native-size crops those items name.",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0
     }
   ]
 }

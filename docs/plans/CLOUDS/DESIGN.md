@@ -46,7 +46,11 @@ that day after [the second review](../../../.orchestrate/evidence/CLOUDS/design-
 cloud run holds by how many refreshes it loses and by how long it stalls at once, so equal totals cannot pass
 a freeze at the wind turn or give it to the window. Revised 26 November 2026 on the lead's decision to park
 the weak noon relief on the broad lobes of placed clouds: WP10 closes on the light it retained, and WP21 takes
-the relief up after WP17, from the diagnosis in [risk 14](#risks). No mechanism and no interface changed.
+the relief up from the diagnosis in [risk 14](#risks). Revised again that day after
+[the review of that parking](../../../.orchestrate/evidence/CLOUDS/design-review.md) (four findings): WP21
+comes last, after WP12, and nothing waits for it; only the congestus core and the mediocris twin turrets are
+excused, at noon; WP21's cost is recorded under the noon Sun, before and after; and its relief is judged by
+the cues of the bar, with no starting still to beat. No mechanism and no interface changed.
 
 ## The request
 
@@ -1850,7 +1854,7 @@ is judged for the weather sky in WP20's wind series and recorded for the finishe
    The flaws are excused only until WP17 starts. In a work package built before it (WP3 to WP16, and WP11) the four
    are known: they fail no inspected item, and a reviewer who sees them says so and judges the item's own
    list. From WP17 on nothing excuses them. One that shows on a procedural fair-weather cloud fails the
-   inspected item whose view shows it, in WP17 and in WP12.
+   inspected item whose view shows it, in WP17, in WP12 and in WP21.
 
    What WP3 found, in [the erosion notes](../../../.orchestrate/evidence/CLOUDS/WP3-erosion/README.md) and
    [the type-plane notes](../../../.orchestrate/evidence/CLOUDS/WP3-type-plane/README.md). At `5f84d354a3bf`
@@ -1939,14 +1943,26 @@ is judged for the weather sky in WP20's wind series and recorded for the finishe
    twin turrets, from 2 m, read as one even grey. The other shapes at noon, and all twelve at a 10° Sun, show
    their depth. The lead parked the cue on 26 November 2026, after three looks: at the bar of shipped games a
    high Sun that flattens a broad lobe is plausible. So the weakness is a known limitation, WP10 closes on the
-   light it retained, and **WP21** takes the relief up after WP17, before the module closes in WP12.
+   light it retained, and **WP21** takes the relief up last, after WP12. Nothing waits for it. WP12 closes the
+   module on the retained light, with the weakness listed in the maturity ledger (WP12.9), and a WP21 that
+   ends `BLOCKED` holds up no work package. When WP21 passes, its builder takes the weakness out of the ledger.
 
-   The limitation is judged in one place. In WP10 and in every work package built before WP21 (WP14 to WP16,
-   WP11 and WP17), a broad lobe of a placed cloud that reads flat at noon fails no inspected item: a reviewer
-   who sees it says so and judges the item's own list. WP21.1 on the Mac and WP21.3 in Chrome judge it on the
-   two shapes that showed it, each alone in WP10's gallery view of it, from 2 m and from 40 m, so no other
-   cloud's relief can pass for theirs, and beside a still taken at the commit WP21 started from, so the
-   retained light cannot pass as a remedy. Outside those two items nothing fails for it, in WP21 or in WP12.
+   The limitation is those two shapes' at noon, and no other cloud's. In every work package built before WP21
+   (WP10, WP14 to WP16, WP11, WP17 and WP12), a broad lobe of the congestus core or of the mediocris twin
+   turrets that reads flat at noon fails no inspected item: a reviewer who sees it says so and judges the
+   item's own list. Nothing else is excused. The other ten shapes at noon, and all twelve at a 10° Sun, are
+   held to their shading by the fifth line of WP10.1's list: in WP10, and again in WP21.2 and WP21.3 once the
+   light has changed, so a remedy cannot flatten a face that
+   [WP10's gallery](../../../.orchestrate/evidence/CLOUDS/WP10/qualification-metal/) shows shaded.
+
+   WP21.1 on the Mac and WP21.3 in Chrome judge the two shapes, each alone in WP10's gallery view of it, from
+   2 m and from 40 m, so no other cloud's relief can pass for theirs. They judge by the cues of the bar and
+   nothing else: neighbouring lobes told apart by a soft shaded crease, a sheltered face darker than the crown
+   above it, no mark of the remedy, and a cloud still bright and soft.
+   [WP10's retained noon stills](../../../.orchestrate/evidence/CLOUDS/WP10/lighting-controls/qualified-noon.png)
+   say where to look and set no bar. The faces they show as one even grey fail the first two cues as they
+   stand, so the retained light cannot pass as a remedy, and a view that already meets the cues passes without
+   gaining contrast.
 
    What WP10 found, in [its handoff](../../../.orchestrate/evidence/CLOUDS/WP10-handoff.md) and
    [its lighting controls](../../../.orchestrate/evidence/CLOUDS/WP10/lighting-controls/README.md), with the
@@ -1978,8 +1994,18 @@ is judged for the weather sky in WP20's wind series and recorded for the finishe
    depth inside the cloud and by height ([Research and selection](#research-and-selection)). A field of that
    depth, cooked beside a shape's density or derived from it, is a product this design lacks: a cause that
    asks for it, or for any other mechanism this design lacks, ends `BLOCKED` with `needs_context` and the
-   cause, for a planner. What the changed light does to the four presets and to mist is WP12.2's to judge.
-   Three failed looks on one cue go to the log and end `BLOCKED`.
+   cause, for a planner. Three failed looks on one cue go to the log and end `BLOCKED`.
+
+   WP21 comes after the finished sky, so it answers for what its light does there: WP21.5 judges the four
+   presets, the mist views and WP12.7's scene again on the Apple recipe under MetalFX.
+
+   Its cost is recorded where it runs. WP10.5's record is taken at a 10° Sun, whose vertical component, 0.17,
+   is below the 0.20 where the retained light's broader column begins, so it times none of the high-Sun work.
+   WP21.4 records the `relief` scene: WP10.5's view, with all twelve shapes and the track in view, on both
+   recipes, at the noon Sun of WP21.1's stills and at the 10° Sun, with each arm taken at the commit WP21
+   started from and again at its end, with the same tool on the same machine. The starting arm is its end
+   arm's last comparable record for [the wires](#cost-account). `cloud_cost.py check` measures the end arms
+   again and holds the record to that list.
 
 ## Proof and builder handoff
 
@@ -2012,7 +2038,9 @@ water scene, WP11.5 uses `scripts/check_water_browser.mjs`.
   reference is there to find a cause, never to pass or fail. Three failed looks on one cue go to the log and
   end `BLOCKED`. The form flaws [risk 2](#risks) names fail no inspected item of a work package built before WP17.
   From WP17 on they fail any inspected item whose view shows one on a procedural fair-weather cloud. A broad
-  lobe of a placed cloud that reads flat at noon ([risk 14](#risks)) fails WP21.1 and WP21.3 and no other item.
+  lobe of the congestus core or of the mediocris twin turrets that reads flat at noon ([risk 14](#risks))
+  fails no inspected item of a work package built before WP21, and fails WP21.1 and WP21.3. On any other
+  shape, or at any other Sun, nothing excuses it.
 
 ## Open questions
 
