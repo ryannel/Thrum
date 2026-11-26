@@ -89,25 +89,32 @@ fn hashed_cells_use_the_same_camera_independent_footprints() {
     };
     let block_width = model.placed_block_width(&authored).expect("blocks");
     let mut count = 0;
+    let mut suppressed = false;
     for z in -3..=3 {
         for x in -3..=3 {
-            let Some((shape, _)) = model.hashed_shape([x, z], &authored) else {
+            let gap = [f64::from(x) * block_width, 0.0, f64::from(z) * block_width];
+            suppressed |= model.query(gap, &procedural).optical_depth > 0.0;
+            close(model.query(gap, &authored).optical_depth, 0.0, 0.0);
+            let Some((shape, _)) = model.hashed_shape([i64::from(x), i64::from(z)], &authored)
+            else {
                 continue;
             };
             let radius = shape.footprint.radius() * shape.scale;
             for (axis, block) in [x, z].into_iter().enumerate() {
-                let first = f64::from(i32::try_from(block).expect("test block")) * block_width;
+                let first = f64::from(block) * block_width;
                 assert!(shape.centre[axis] - radius > first);
                 assert!(shape.centre[axis] + radius < first + block_width);
             }
             let point = [shape.centre[0], 0.0, shape.centre[1]];
-            let added = model.query(point, &authored).optical_depth
-                - model.query(point, &procedural).optical_depth;
-            close(added, 180.0 * shape.envelope * shape.scale * 0.05, 1e-10);
+            close(
+                model.query(point, &authored).optical_depth,
+                180.0 * shape.envelope * shape.scale * 0.05,
+                1e-10,
+            );
             let point = [point[0], 700.0 + 120.0 * shape.scale, point[2]];
             let estimated = weather.extinction(point, &authored, |_| None);
             assert_eq!(estimated.fidelity, Fidelity::Footprint);
-            assert!(estimated.value > weather.extinction(point, &procedural, |_| None).value);
+            assert!(estimated.value > 0.0);
             assert_eq!(
                 weather
                     .extinction(point, &authored, |_| Some(&cube))
@@ -128,6 +135,10 @@ fn hashed_cells_use_the_same_camera_independent_footprints() {
             count += 1;
         }
     }
+    assert!(
+        suppressed,
+        "full placed share must remove procedural heaped cells"
+    );
     assert!(count >= 5);
 }
 

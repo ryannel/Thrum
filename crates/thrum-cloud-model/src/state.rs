@@ -295,6 +295,13 @@ impl State {
         self.hashed.as_ref()
     }
 
+    /// Fraction of the heaped-cloud envelope kept for procedural cells.
+    /// Decks and directed shapes do not participate in hashed placement.
+    pub fn procedural_share(&self) -> f64 {
+        self.hashed_shapes()
+            .map_or(1.0, |placement| 1.0 - placement.share(self.parameters.kind))
+    }
+
     /// Library owned by the game's weather state.
     pub fn library(&self) -> Option<&PlacedLibrary> {
         self.library.as_deref()

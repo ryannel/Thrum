@@ -16,7 +16,8 @@ fn row_cadence_bounds_weather_time_through_variable_rates_and_hitches() {
             RowStamp {
                 tick: 0,
                 time,
-                parameters
+                parameters,
+                procedural_share: 1.0,
             };
             256
         ];
@@ -45,6 +46,7 @@ fn row_cadence_bounds_weather_time_through_variable_rates_and_hitches() {
                     tick,
                     time,
                     parameters,
+                    procedural_share: 1.0,
                 },
                 dt,
                 age,
@@ -73,6 +75,7 @@ fn coherent_global_ramp_does_not_leave_half_second_old_rows() {
     let mut previous = RowStamp {
         tick: 0,
         time: 0.0,
+        procedural_share: 1.0,
         parameters: Parameters {
             coverage: 0.72,
             kind: 0.0,

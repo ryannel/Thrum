@@ -341,7 +341,7 @@ fn shaped_trace_shader(environment: &thrum_render::atmosphere::EnvironmentProduc
             concat!(
                 include_str!("placed_column.wgsl"),
                 include_str!("placed.wgsl"),
-                "fn cloud_placed_edge_footprint() -> f32 { return 140.0 * cloud.physical.y; }\n"
+                "fn cloud_placed_edge_footprint() -> f32 { return 60.0 * cloud.physical.y; }\n"
             )
         ),
     )

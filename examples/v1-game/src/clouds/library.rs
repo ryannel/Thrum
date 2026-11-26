@@ -5,6 +5,9 @@ use thrum_cloud_model::{
 };
 use thrum_clouds::{Shade, ShadeConfig, ShapesConfig};
 
+#[cfg(feature = "proving")]
+mod capture;
+
 pub(crate) const NAMES: [&str; 2] = ["cloud-library", "cloud-growth"];
 const SHAPES: usize = 12;
 const KEYS: usize = 11;
@@ -19,6 +22,8 @@ const DISTANT: u64 = 3;
 pub(crate) enum PlacementDemo {
     Tower,
     Mixed,
+    #[cfg(feature = "proving")]
+    Growth,
 }
 
 impl PlacementDemo {
@@ -35,9 +40,15 @@ impl PlacementDemo {
             Ok(())
         };
         let growth = ((time - 12.0) / 120.0).clamp(0.0, 1.0);
+        #[cfg(feature = "proving")]
+        if self == Self::Growth {
+            return state.direct(TOWER, 1.0, growth);
+        }
         let tower = match self {
             Self::Tower => smooth(time / 18.0),
             Self::Mixed => smooth(time / 36.0).powi(2),
+            #[cfg(feature = "proving")]
+            Self::Growth => unreachable!("the growth take keeps the initial envelope"),
         };
         update(
             state,
@@ -78,6 +89,8 @@ pub struct PlacedSky {
     initial: Option<State>,
     capacity: usize,
     profile: Option<ShadeConfig>,
+    #[cfg(feature = "proving")]
+    capture: Option<capture::Placement>,
     stats: Arc<Mutex<Option<Arc<Mutex<CookedStats>>>>>,
 }
 
@@ -96,6 +109,8 @@ impl PlacedSky {
             initial: None,
             capacity: 8,
             profile: None,
+            #[cfg(feature = "proving")]
+            capture: None,
             stats: Arc::default(),
         })
     }
@@ -121,6 +136,8 @@ impl PlacedSky {
             initial: Some(state),
             capacity,
             profile: None,
+            #[cfg(feature = "proving")]
+            capture: None,
             stats: Arc::default(),
         })
     }
@@ -148,6 +165,10 @@ impl PlacedSky {
     }
 
     pub(crate) fn demo(&self) -> Option<PlacementDemo> {
+        #[cfg(feature = "proving")]
+        if let Some(placement) = self.capture {
+            return placement.demo();
+        }
         if self.initial.is_some() || self.weather_share.is_some() {
             return None;
         }
@@ -164,6 +185,10 @@ impl PlacedSky {
     ) -> Result<State, thrum_cloud_model::Error> {
         if let Some(state) = &self.initial {
             return Ok(state.clone());
+        }
+        #[cfg(feature = "proving")]
+        if let Some(placement) = self.capture {
+            return placement.state(&self.library, parameters);
         }
         if self.directed {
             parameters.coverage = 0.0;

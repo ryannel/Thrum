@@ -19,6 +19,20 @@ pub struct HashedShapes {
     pub shares: Vec<f64>,
 }
 
+impl HashedShapes {
+    #[expect(
+        clippy::cast_possible_truncation,
+        clippy::cast_sign_loss,
+        reason = "validated type coordinate in a nonempty table"
+    )]
+    pub(crate) fn share(&self, kind: f64) -> f64 {
+        let position = kind * (self.shares.len() - 1) as f64;
+        let lower = (position as usize).min(self.shares.len() - 2);
+        let blend = position - lower as f64;
+        self.shares[lower] * (1.0 - blend) + self.shares[lower + 1] * blend
+    }
+}
+
 /// Authored geometry and its camera-independent footprint. A game retains only
 /// this data on a headless host.
 #[derive(Clone, Debug, PartialEq)]

@@ -162,7 +162,12 @@ impl Field {
     /// Query world X/Y/Z at a committed state. Height does not alter a column.
     pub fn query(&self, point: [f64; 3], state: &State) -> Column {
         let air = state.to_air([point[0], point[2]]);
-        let mut column = self.column(air, state.time(), state.parameters());
+        let mut column = self.procedural_column(
+            air,
+            state.time(),
+            state.parameters(),
+            state.procedural_share(),
+        );
         let hashed = self.hashed_at(air, state);
         for (shape, selection) in state
             .shapes()
@@ -186,11 +191,22 @@ impl Field {
     }
 
     /// Evaluate procedural columns at an air-frame point and weather time.
+    pub fn column(&self, air: [f64; 2], time: f64, parameters: Parameters) -> Column {
+        self.procedural_column(air, time, parameters, 1.0)
+    }
+
+    /// Evaluate the procedural column for a weather-map row with its committed heaped-cloud share.
     #[expect(
         clippy::cast_possible_truncation,
         reason = "lattice integers are floor coordinates"
     )]
-    pub fn column(&self, air: [f64; 2], time: f64, parameters: Parameters) -> Column {
+    pub fn procedural_column(
+        &self,
+        air: [f64; 2],
+        time: f64,
+        parameters: Parameters,
+        share: f64,
+    ) -> Column {
         let t = self.kind(parameters.kind);
         let clear = Column {
             kind: parameters.kind,
@@ -226,7 +242,8 @@ impl Field {
                     let envelope = envelope
                         * smooth(
                             (0.95 * smooth(parameters.coverage / 0.6) - cell.threshold) / 0.15,
-                        );
+                        )
+                        * share;
                     let radius = cell.radius * (0.5 + 0.5 * envelope);
                     let r2 = ((air[0] - cell.centre[0]).powi(2)
                         + (air[1] - cell.centre[1]).powi(2))
@@ -343,24 +360,25 @@ impl Field {
         let library = state.library()?;
         let p = state.parameters();
         let period = self.profile.period;
-        let generation = (state.time() / period).floor() as i64;
         let [i, j] = block;
+        // Stagger the lives of neighbouring blocks. A newly opened sky already
+        // has mature cells, and a generation boundary cannot clear the horizon.
+        let phase_offset = self.random(i, j, 0, 88);
+        let cycle = state.time() / period - phase_offset;
+        let generation = cycle.floor() as i64;
         let random = |stream| self.random(i, j, generation, stream);
-        let where_in_types = p.kind * (placement.shares.len() - 1) as f64;
-        let lower = (where_in_types as usize).min(placement.shares.len() - 2);
-        let t = where_in_types - lower as f64;
-        let share = placement.shares[lower] * (1.0 - t) + placement.shares[lower + 1] * t;
+        let share = placement.share(p.kind);
         let selected = smooth((share - random(80)) / 0.1);
         let covered = smooth((0.95 * smooth(p.coverage / 0.6) - random(81)) / 0.15);
-        let birth = (generation as f64 + 0.18 * random(82)) * period;
+        let birth = 0.12 * random(82) * period;
         let life = (0.55 + 0.25 * random(83)) * period;
-        let age = (state.time() - birth) / life;
+        let age = ((cycle - generation as f64) * period - birth) / life;
         if selected == 0.0 || covered == 0.0 || !(0.0..1.0).contains(&age) {
             return None;
         }
         let envelope = (PI * age).sin().powi(2) * selected * covered;
         let count = library.shapes().len();
-        let shape_count = count + usize::from(!library.growth().is_empty());
+        let shape_count = count + usize::from(share < 1.0 && !library.growth().is_empty());
         let index = (random(84) * shape_count as f64) as usize;
         let source = if index == count {
             ShapeSource::Growth
@@ -373,7 +391,7 @@ impl Field {
             (i as f64 + 0.3 + 0.4 * random(85)) * width,
             (j as f64 + 0.3 + 0.4 * random(86)) * width,
         ];
-        let scale = (width * 0.29 / slab.footprint.radius()).min(1.0);
+        let scale = (width * 0.29 / slab.footprint.radius()).min(0.88 + 0.28 * random(89));
         let wind_heading = p.wind[1].atan2(p.wind[0]);
         let shape = Directed {
             id: random(87).to_bits(),
@@ -439,7 +457,7 @@ impl Field {
                 self.erode(sigma, extinction, noise.0, noise.1, placed)
             }
         };
-        let column = self.column(air, state.time(), p);
+        let column = self.procedural_column(air, state.time(), p, state.procedural_share());
         let mut sigma = erode(column_density(column, point[1]), extinction, false);
         if sigma > 0.0 && self.profile.erosion > 0.0 && !matches!(fidelity, Density::Uneroded) {
             let height = (point[1] - column.base) / (column.top - column.base);

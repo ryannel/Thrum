@@ -39,6 +39,17 @@ pub(crate) fn placed_sky() -> Result<Option<crate::PlacedSky>, String> {
         ));
     }
     let placement = launch_value("THRUM_CLOUD_PLACEMENT");
+    #[cfg(feature = "proving")]
+    if let Some(name) = placement
+        .as_deref()
+        .ok()
+        .filter(|name| name.starts_with("library-"))
+    {
+        return crate::PlacedSky::new(store.into(), false)
+            .and_then(|sky| sky.with_capture_placement(name))
+            .map(Some)
+            .map_err(|error| error.to_string());
+    }
     let (directed, weather_share) = match placement.as_deref() {
         Ok("directed") => (true, None),
         Ok("weather") => (false, Some(0.36)),

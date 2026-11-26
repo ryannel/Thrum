@@ -27,6 +27,8 @@ pub struct RowStamp {
     pub time: f64,
     /// Controls at that tick.
     pub parameters: Parameters,
+    /// Procedural share of the heaped-cloud envelope at that tick.
+    pub procedural_share: f64,
 }
 
 #[repr(C)]
@@ -299,6 +301,7 @@ impl WeatherMap {
             tick: time.tick,
             time: state.time(),
             parameters: state.parameters(),
+            procedural_share: state.procedural_share(),
         };
         let previous = self.last_stamp.unwrap_or(stamp);
         let elapsed = (stamp.time - previous.time).max(0.0);
@@ -548,7 +551,7 @@ fn pack(
         turret: [
             model.turret_least as f32,
             model.turret_fade as f32,
-            0.0,
+            state.procedural_share() as f32,
             0.0,
         ],
     })

@@ -736,8 +736,18 @@ pub async fn create_route_game(
     let cloud_weather = weather.parameters()?;
     #[cfg(feature = "proving")]
     let shapes = if let Some(origin) = &weather.placed_origin {
-        Some(load_placed_clouds(origin, false).await?)
+        let sky = load_placed_clouds(origin, false).await?;
+        Some(if let Some(placement) = &weather.placement {
+            sky.with_capture_placement(placement).map_err(js_error)?
+        } else {
+            sky
+        })
     } else {
+        if weather.placement.is_some() {
+            return Err(js_error(
+                "a capture placement requires a cooked cloud store",
+            ));
+        }
         None
     };
     #[cfg(not(feature = "proving"))]
@@ -785,6 +795,7 @@ struct CaptureWeather {
     rate: Option<f64>,
     wind: Option<f64>,
     placed_origin: Option<String>,
+    placement: Option<String>,
 }
 
 #[cfg(feature = "proving")]

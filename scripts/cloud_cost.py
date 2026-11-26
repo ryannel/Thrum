@@ -11,7 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 # check and refuse compare with the committed records; record writes to the working folder unless --output
 # names a fixture to promote.
-FIXTURES = {scene: ROOT / f'tests/fixtures/clouds/{scene}-cost.json' for scene in ('shade', 'first-frame', 'low-sun', 'placed', 'decks', 'overcast-lit', 'range')}
+FIXTURES = {scene: ROOT / f'tests/fixtures/clouds/{scene}-cost.json' for scene in ('shade', 'first-frame', 'low-sun', 'placed', 'decks', 'overcast-lit', 'range', 'library')}
 WORKING = ROOT / '.orchestrate/evidence/CLOUDS'
 SCRATCH = ROOT / 'tmp/clouds-m2/cost'
 SKY_PASSES = (
@@ -122,8 +122,7 @@ def measure(scene='shade', alternatives=True):
     return rows
 
 
-def measure_range():
-    scratch = ROOT / 'tmp/clouds-wp9/cost'
+def cost_stores(scratch):
     scratch.mkdir(parents=True, exist_ok=True)
     run(['cargo', 'build', '--release', '--locked', '--offline', '-p', 'v1-game',
          '--example', 'cloud_cost', '--example', 'cook_cloud_library'], timeout=1200)
@@ -134,6 +133,11 @@ def measure_range():
     library = scratch / 'placed'
     if not library.exists():
         run(['target/release/examples/cook_cloud_library', str(scratch / 'volumes'), str(library)], timeout=1200)
+    return valley, library
+
+
+def measure_range():
+    valley, library = cost_stores(ROOT / 'tmp/clouds-wp9/cost')
     rows = []
     for view, flag in [('noon', '--noon'), ('low-sun', '--low-sun')]:
         for preset in (None, *RANGE_PRESETS):
@@ -284,6 +288,99 @@ def range_cost(check):
               'references': refs, 'runs': rows, 'tripwires': triggers,
               'investigation': investigate_range(triggers)}
     validate_range(record, refs)
+    return record
+
+
+def library_references():
+    refs = {}
+    for recipe, scene in [('portable', 'range'), ('native', 'placed')]:
+        source = json.loads(FIXTURES[scene].read_text())
+        reference = next(row for row in source['runs'] if (
+            row.get('view_id') == 'low-sun' and row.get('preset') == 'fair'
+            if recipe == 'portable' else row.get('recipe') == recipe and row['selection'] == 'sky'
+        ))
+        refs[recipe] = [{'file': str(FIXTURES[scene].relative_to(ROOT)),
+                         'commit': source['commit'], 'rows': [reference]}]
+    return refs
+
+
+def measure_library():
+    valley, library = cost_stores(ROOT / 'tmp/clouds-wp10/cost')
+    env = {key: value for key, value in os.environ.items()
+           if not key.startswith(('THRUM_CLOUD_', 'THRUM_CAMERA_'))}
+    env.update(THRUM_SCENE='valley', THRUM_ASSET_STORE=str(valley),
+               THRUM_CAMERA_HEIGHT='260.4846459239257', THRUM_CAMERA_Z='80',
+               THRUM_CLOUD_PRESET='fair', THRUM_CLOUD_WIND='0')
+    rows = []
+    for recipe in ('portable', 'native'):
+        for selection in ('off', 'world-light'):
+            command = ['target/release/examples/cloud_cost', '--low-sun', '--device-profile', recipe]
+            if selection != 'off':
+                command += ['--placed-store', str(library), '--library']
+            row = json.loads(run(command, env=dict(env, THRUM_CLOUDS=selection), timeout=180))
+            row.update(view_id=recipe, preset='fair' if selection != 'off' else None, selection=selection)
+            rows.append(row)
+    return rows
+
+
+def validate_library(record, refs):
+    if record['references'] != refs:
+        raise ValueError('library record must retain the last comparators at the same view')
+    rows = record['runs']
+    if [(row['view_id'], row['selection']) for row in rows] != [
+        (recipe, selection) for recipe in ('portable', 'native') for selection in ('off', 'world-light')
+    ]:
+        raise ValueError('library cost needs one absent/visible pair per recipe')
+    inventory = {}
+    for row in rows:
+        recipe = row['view_id']
+        prior = refs[recipe][0]['rows'][0]
+        if (row['extent'] != [2560, 1440] or row['capture'] is not False or row['frames'] < 30
+                or 'Apple M3 Max' not in row['adapter'] or 'backend: Metal' not in row['adapter']
+                or row['view'] != prior['view'] or row['view_angles'] != prior['view_angles']
+                or not positive(row['whole_frame_gpu_ns']) or not row['first_submission']):
+            raise ValueError(f'{recipe} needs the matched 1440p 10° Metal view')
+        passes = named_passes(row)
+        if row['selection'] == 'off':
+            if row['preset'] is not None or row['resources'] or row['ray_statistics'] is not None:
+                raise ValueError('the absent arm must omit clouds')
+            continue
+        required = (set(SKY_PASSES) - {'cloud hemisphere light'}) | set(WORLD_LIGHT_PASSES) | {'cloud placed weather map'}
+        first_passes = named_passes(row['first_submission'])
+        stats = row['ray_statistics'] or {}
+        if (row['preset'] != 'fair' or row['minimum_volume_instances'] != 13
+                or any(not positive(passes.get(name, first_passes.get(name))) for name in required)
+                or any(not positive(stats.get(name)) for name in ('rays_traced', 'mean_samples', 'p95_samples'))):
+            raise ValueError(f'{recipe} needs all thirteen volume forms and their timed cloud work')
+        fmt = 'R8Unorm' if recipe == 'portable' else 'Bc4RUnorm'
+        resources = dict(row['resources'])
+        inventory[fmt] = {name: resources.get(f'{name} {fmt}') for name in ('cloud-library', 'cloud-growth')}
+        if not all(positive(size) for size in inventory[fmt].values()):
+            raise ValueError(f'{recipe} lacks measured bytes for both {fmt} stacks')
+    if record['stack_bytes'] != inventory:
+        raise ValueError('stack byte summary disagrees with the two device inventories')
+    triggers = range_tripwires(rows, refs)
+    if record['tripwires'] != triggers or record['investigation'] != investigate_range(triggers):
+        raise ValueError('each library tripwire needs its measured investigation')
+
+
+def library_cost(check):
+    refs = library_references()
+    if check:
+        validate_library(json.loads(FIXTURES['library'].read_text()), refs)
+    commit = run(['git', 'rev-parse', 'HEAD'])
+    before = os.getloadavg()
+    rows = measure_library()
+    triggers = range_tripwires(rows, refs)
+    stack_bytes = {
+        fmt: {name: dict(row['resources']).get(f'{name} {fmt}') for name in ('cloud-library', 'cloud-growth')}
+        for fmt, row in [('R8Unorm', rows[1]), ('Bc4RUnorm', rows[3])]
+    }
+    record = dict(commit=commit, machine=platform.platform(), load={'before': before, 'after': os.getloadavg()},
+                  build='release, capture off, Metal, World light with twelve shapes and the growth track',
+                  references=refs, runs=rows, stack_bytes=stack_bytes, tripwires=triggers,
+                  investigation=investigate_range(triggers))
+    validate_library(record, refs)
     return record
 
 
@@ -647,8 +744,8 @@ def main():
     if args.command in ('cadence', 'hold') and args.scene == 'wind':
         from cloud_cadence_capture import run_wind
         return run_wind(args.command, args.output, resume=args.resume)
-    if args.scene in ('overcast-lit', 'range') and args.command in ('check', 'record'):
-        measure_record = range_cost if args.scene == 'range' else overcast_lit
+    if args.scene in ('overcast-lit', 'range', 'library') and args.command in ('check', 'record'):
+        measure_record = {'overcast-lit': overcast_lit, 'range': range_cost, 'library': library_cost}[args.scene]
         report = json.dumps(measure_record(args.command == 'check'), indent=2)
         if args.output:
             args.output.parent.mkdir(parents=True, exist_ok=True)

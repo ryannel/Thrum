@@ -100,7 +100,7 @@ async function runCapture() {
   }
   record.diagnostic_clouds = query.get('diagnostic-clouds') === 'on';
   if (clouds !== 'off') record.clouds = clouds;
-  game = await create_route_game(document.querySelector('canvas'), text, query.get('diagnostic-clouds') === 'on', query.get('culling') ?? undefined, query.get('meshes') === 'on', query.get('reconstruction') === 'taau', query.get('scene') === 'exit', clouds, query.get('haze') ?? undefined, view ? JSON.stringify({preset: view.preset, rate: view.weather_rate, wind: view.wind, placed_origin: query.get("cloud-store") ?? undefined}) : undefined);
+  game = await create_route_game(document.querySelector('canvas'), text, query.get('diagnostic-clouds') === 'on', query.get('culling') ?? undefined, query.get('meshes') === 'on', query.get('reconstruction') === 'taau', query.get('scene') === 'exit', clouds, query.get('haze') ?? undefined, view ? JSON.stringify({preset: view.preset, rate: view.weather_rate, wind: view.wind, placed_origin: query.get("cloud-store") ?? undefined, placement: view.placement}) : undefined);
   if (useAnimationFrame) game.capture_without_pass_timings();
   window.captureGame = game;
   const effect = query.get('effect') ?? 'off';
@@ -167,7 +167,8 @@ async function runCapture() {
       await wait(1);
     }
     if (game.committed_tick() !== 0) fail('reconstruction witness advanced during warmup');
-    record.held_warmup_submissions = 128;
+    if (query.has('cloud-store')) record.placed_clouds = JSON.parse(game.placed_cloud_report());
+  record.held_warmup_submissions = 128;
   }
   record.initial_report = JSON.parse(game.route_report(0));
   if (query.has('renderer-signature')) record.renderer_signature = JSON.parse(game.renderer_signature());
@@ -524,6 +525,7 @@ async function captureCloudView(view, extent) {
     if (game.route_slot_ready()) game.frame(heldTime);
     await wait(2);
   }
+  if (query.has('cloud-store')) record.placed_clouds = JSON.parse(game.placed_cloud_report());
   record.held_warmup_submissions = Number(game.presented() - warmupStart);
   if (!record.held_warmup_submissions || game.committed_tick() !== heldTick) fail('cloud view warmup missed the held tick');
   if (view.overlay_before !== undefined) {

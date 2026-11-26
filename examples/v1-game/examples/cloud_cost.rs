@@ -13,6 +13,7 @@ fn main() -> Result<(), String> {
     let mut noon = false;
     let mut profile = DeviceProfile::Native;
     let mut store = None;
+    let mut library = false;
     let mut args = std::env::args().skip(1);
     while let Some(arg) = args.next() {
         match arg.as_str() {
@@ -28,13 +29,17 @@ fn main() -> Result<(), String> {
             "--placed-store" => {
                 store = Some(args.next().ok_or("--placed-store needs a path")?.into());
             }
+            "--library" => library = true,
             _ => return Err(format!("unrecognised cloud cost option {arg}")),
         }
     }
     if low_sun && noon {
         return Err("choose either the low Sun or noon view".into());
     }
-    pollster::block_on(measure(low_sun, noon, profile, store))
+    if library && (!low_sun || store.is_none()) {
+        return Err("--library needs --low-sun and --placed-store".into());
+    }
+    pollster::block_on(measure(low_sun, noon, profile, store, library))
 }
 
 #[expect(
@@ -46,6 +51,7 @@ async fn measure(
     noon: bool,
     profile: DeviceProfile,
     store: Option<std::path::PathBuf>,
+    library: bool,
 ) -> Result<(), String> {
     let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
         backends: wgpu::Backends::METAL,
@@ -70,8 +76,16 @@ async fn measure(
         surface: None,
     };
     let placed = store
-        .map(|path| v1_game::PlacedSky::new(path.into(), false).map_err(|error| error.to_string()))
-        .transpose()?;
+        .map(|path| {
+            let sky = v1_game::PlacedSky::new(path.into(), false)?;
+            if library {
+                sky.with_capture_placement("library-cost")
+            } else {
+                Ok(sky)
+            }
+        })
+        .transpose()
+        .map_err(|error| error.to_string())?;
     let has_shapes = placed.is_some();
     let mut host = if let Some(placed) = placed {
         setup
@@ -156,10 +170,21 @@ async fn measure(
     v1_game::apply_cloud_quality(&mut host).map_err(|e| e.to_string())?;
     let mut passes: BTreeMap<String, Vec<f64>> = BTreeMap::new();
     let mut whole = Vec::new();
+    let mut minimum_volume_instances = usize::MAX;
     for tick in last_tick + 1..=last_tick + 120 {
         let report = host.drive(Duration::from_secs_f64(f64::from(tick) / 60.0), None)?;
         if !report.submitted {
             continue;
+        }
+        if library {
+            let shapes = host
+                .cloud_placed_input()
+                .and_then(thrum_clouds::WeatherInput::shapes_report)
+                .ok_or("the library measurement lacks a Shapes report")?;
+            if shapes.volume_instances != 13 || shapes.volume_refusals != 0 {
+                return Err(format!("expected all thirteen volume forms: {shapes:?}"));
+            }
+            minimum_volume_instances = minimum_volume_instances.min(shapes.volume_instances);
         }
         device
             .poll(wgpu::PollType::wait_indefinitely())
@@ -198,6 +223,7 @@ async fn measure(
             "maximum_sun_refill_ns":refill, "resources":host.cloud_resource_bytes(),
             "storage":host.storage_report(), "view":host.scene_camera().map(v1_game::SceneCamera::eye),
             "view_angles":view_angles,
+            "minimum_volume_instances":library.then_some(minimum_volume_instances),
             "first_submission":first,"ray_statistics":ray_statistics(&device,&queue,host.cloud_sky_products().as_ref())?,
             "quality":host.quality_knobs().iter().map(|q|serde_json::json!({"name":q.name,"value":q.value})).collect::<Vec<_>>(),
         })

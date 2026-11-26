@@ -130,7 +130,12 @@ fn weather_error(
                     origin[0] + (f64::from(x) + 0.5) * texel,
                     origin[1] + (f64::from(y) + 0.5) * texel,
                 ];
-                let expected = field.column(air, stamp.time, stamp.parameters);
+                let expected = field.procedural_column(
+                    air,
+                    stamp.time,
+                    stamp.parameters,
+                    stamp.procedural_share,
+                );
                 let reference = [
                     expected.base,
                     expected.top,

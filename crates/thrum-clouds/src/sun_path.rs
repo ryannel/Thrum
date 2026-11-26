@@ -427,6 +427,7 @@ impl SunPath {
                 tick: time.tick,
                 time: state.time(),
                 parameters: state.parameters(),
+                procedural_share: state.procedural_share(),
             };
             let previous = self.last_stamp.unwrap_or(stamp);
             let elapsed = (stamp.time - previous.time).max(0.0);

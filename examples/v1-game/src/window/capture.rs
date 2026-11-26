@@ -87,6 +87,7 @@ pub(super) fn run(
             | "clouds-life"
             | "clouds-life-fast"
             | "clouds-placed"
+            | "clouds-growth"
             | "clouds-dusk"
             | "clouds-still"
             | "checkpoint"
@@ -509,7 +510,7 @@ fn start_writer(
         encoding,
         if matches!(
             scenario,
-            "clouds-cycle" | "clouds-life" | "clouds-light-cycle"
+            "clouds-cycle" | "clouds-life" | "clouds-light-cycle" | "clouds-growth"
         ) {
             16_384
         } else if matches!(
@@ -658,6 +659,7 @@ fn world_moves(scenario: &str) -> bool {
                 | "content-edits"
                 | "clouds-drift"
                 | "clouds-placed"
+                | "clouds-growth"
                 | "exit-drift"
                 | "sun-motion"
                 | "sprites-field"
@@ -675,6 +677,7 @@ fn applies_yaw(scenario: &str, active_world: bool) -> bool {
                 | "reconstruction-scrub"
                 | "clouds-dusk"
                 | "clouds-placed"
+                | "clouds-growth"
                 | "exit-stop"
                 | "sprites-field"
                 | "sprites-field-cost"
@@ -700,7 +703,7 @@ fn requested_yaw(scenario: &str, time: f64, recovery: super::NativeRecovery) -> 
 
 fn capture_hz(scenario: &str, motion_capture: bool) -> u32 {
     if (motion_capture && scenario != "clouds-wind")
-        || matches!(scenario, "clouds-dusk" | "clouds-placed")
+        || matches!(scenario, "clouds-dusk" | "clouds-placed" | "clouds-growth")
     {
         60
     } else {
@@ -1292,6 +1295,7 @@ fn weather_motion(scenario: &str) -> bool {
             | "clouds-light-cycle"
             | "clouds-life"
             | "clouds-life-fast"
+            | "clouds-growth"
     )
 }
 
@@ -1625,6 +1629,7 @@ fn scenario_bounds(scenario: &str, recovery: super::NativeRecovery) -> (f64, f64
         "clouds-cycle" | "clouds-life" => (244.0, 243.0, 243.0),
         "clouds-light-cycle" => (126.0, 125.0, 125.0),
         "clouds-life-fast" => (48.0, 47.0, 47.0),
+        "clouds-growth" => (140.5, 140.0, 140.0),
         "clouds-placed" => (31.1, 31.0, 31.0),
         "clouds-dusk" => (14.5, 14.0, f64::INFINITY),
         "clouds-route" => (34.5, 0.0, f64::INFINITY),
@@ -1676,6 +1681,7 @@ fn capture_mode(scenario: &str) -> Result<String, String> {
                     | "route"
                     | "clouds-route"
                     | "clouds-placed"
+                    | "clouds-growth"
                     | "clouds-drift"
                     | "clouds-dusk"
                     | "exit-route"

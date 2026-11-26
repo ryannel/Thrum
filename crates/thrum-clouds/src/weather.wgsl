@@ -67,7 +67,7 @@ fn main(@builtin(global_invocation_id) id:vec3<u32>) {
             let phase=(p.origin.z-f32(goff+old)-birth)/life;
             var envelope=0.0;
             if phase>=0.0 && phase<1.0 {let s=sin(3.141592653589793*phase);envelope=s*s;}
-            envelope*=smooth_unit((0.95*smooth_unit(p.weather.x/0.6)-random(i,j,g,4u))/0.15);
+            envelope*=smooth_unit((0.95*smooth_unit(p.weather.x/0.6)-random(i,j,g,4u))/0.15)*p.turret.z;
             let r=random(i,j,g,7u);
             let radius=(0.3+0.5*r*r)*(0.5+0.5*envelope);
             let centre=vec2<f32>(f32(di),f32(dj))+vec2<f32>(random(i,j,g,5u),random(i,j,g,6u));

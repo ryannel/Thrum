@@ -23,7 +23,7 @@ from capture_spool import decoded_frames
 from capture_result import CaptureUnjudged
 
 ROOT = Path(__file__).resolve().parents[1]
-LONG_WEATHER_CASES = ('clouds-cycle', 'clouds-life', 'clouds-light-cycle')
+LONG_WEATHER_CASES = ('clouds-cycle', 'clouds-life', 'clouds-light-cycle', 'clouds-growth')
 
 
 def console_observation():
