@@ -3,8 +3,8 @@
   "design": {
     "verdict": "ok",
     "review": ".orchestrate/evidence/CONTENT-LOOP/design-review.md",
-    "commit": "40f97820e505ec0e0067e6a3adb56705abf170e4",
-    "hash": "fa3bd47c283f74dd68da6ef31600bc72d327630b480c54e98bb90be97bb49eb2",
+    "commit": "b49493b4f341cbbba5c11ca3c8c0b3ec50ac0a20",
+    "hash": "606ac50f1a435b45880ec645ab6172ac9a35b695e0157a626957eb5b3bedd925",
     "by": "review",
     "host": "codex",
     "model": "gpt-6.2-astra",
@@ -13,18 +13,15 @@
       "model": "gpt-6.2-astra",
       "effort": "high"
     },
-    "cli": "codex-cli 0.171.0-alpha.13",
+    "cli": "codex-cli 0.171.0-alpha.13.2",
     "path": "headless",
     "usage": {
-      "input": 69360,
-      "cached": 695552,
-      "output": 3983,
+      "input": 78220,
+      "cached": 929280,
+      "output": 4209,
       "turns": 1
     },
-    "at": "2026-11-23T22:14:46Z",
-    "items_owed": [
-      "WP6"
-    ]
+    "at": "2026-11-26T20:27:40Z"
   },
   "work_packages": {
     "WP1": {
@@ -756,6 +753,32 @@
       "at": "2026-11-18T00:49:50Z",
       "items_owed": [
         "WP5"
+      ]
+    },
+    {
+      "verdict": "ok",
+      "review": ".orchestrate/evidence/CONTENT-LOOP/design-review.md",
+      "commit": "40f97820e505ec0e0067e6a3adb56705abf170e4",
+      "hash": "fa3bd47c283f74dd68da6ef31600bc72d327630b480c54e98bb90be97bb49eb2",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6.2-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6.2-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.171.0-alpha.13",
+      "path": "headless",
+      "usage": {
+        "input": 69360,
+        "cached": 695552,
+        "output": 3983,
+        "turns": 1
+      },
+      "at": "2026-11-23T22:14:46Z",
+      "items_owed": [
+        "WP6"
       ]
     }
   ]
