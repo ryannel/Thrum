@@ -125,7 +125,8 @@ fn metal_uncovered_pixels_use_their_current_surface_stops_and_a_cut_refills_them
         };
     let occluded = submit(&mut host, 0, &view, EXTENT);
     assert!(!occluded.history_valid);
-    let read = |texture| readback::texture(&device, &queue, texture, Mip::level(0), ..);
+    let read =
+        |texture: &wgpu::Texture| readback::texture(&device, &queue, texture, Mip::level(0), ..);
     let previous = read(&occluded.front);
     position.store(1, Ordering::Relaxed);
     let uncovered = submit(&mut host, 25, &view, EXTENT);
@@ -183,14 +184,13 @@ fn metal_uncovered_pixels_use_their_current_surface_stops_and_a_cut_refills_them
     assert_eq!(scale.range, 100..=100);
     assert!(host.set_game_quality_knob(&scale.name, 50).is_err());
 
-    let deadline = std::time::Instant::now() + Duration::from_secs(5);
-    while host.pending_frames() > 0 {
-        assert!(std::time::Instant::now() < deadline, "retire before resize");
+    thrum_test_support::wait::until("retire before resize", Duration::from_secs(5), || {
         device
             .poll(wgpu::PollType::wait_indefinitely())
             .expect("Metal idle");
         host.poll_completed().expect("retire timing");
-    }
+        (host.pending_frames() == 0).then_some(())
+    });
     assert!(host.resize_scene_surface(GROWN).expect("resize scene"));
     assert_eq!(host.contribution_error(), None);
     let grown_view = output_texture(&device, GROWN).create_view(&Default::default());
