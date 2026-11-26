@@ -2031,9 +2031,9 @@
         "at": "2026-11-26T10:24:11Z"
       },
       "ready_for_review": {
-        "commit": "9c0593cee8eae23369248018be4be6fad5056dbb",
-        "checked": "9c0593cee8eae23369248018be4be6fad5056dbb",
-        "at": "2026-11-26T11:03:06Z",
+        "commit": "d35fd557c08ffbf927a79bb0411403da69170808",
+        "checked": "d35fd557c08ffbf927a79bb0411403da69170808",
+        "at": "2026-11-26T11:27:27Z",
         "reused": [
           "WP9.1",
           "WP9.2",
@@ -2052,16 +2052,16 @@
         "cli": "codex-cli 0.171.0-alpha.13.2",
         "path": "visible",
         "usage": {
-          "input": 131885,
-          "cached": 28465920,
-          "output": 32235,
+          "input": 117796,
+          "cached": 7259904,
+          "output": 11772,
           "turns": 1
         },
         "session_usage": {
-          "input": 401869,
-          "cached": 59559040,
-          "output": 95032,
-          "turns": 2
+          "input": 519665,
+          "cached": 66818944,
+          "output": 106804,
+          "turns": 3
         }
       }
     },
