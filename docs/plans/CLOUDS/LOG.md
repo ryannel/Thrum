@@ -1121,15 +1121,22 @@ distance weights between the trace and view volume.
 
 Metal verifies the bank depth matrix, the mover and cut, and byte equality for the retained
 no-Ground scene. Metal and Chrome show clean dawn-mist edges and complete the 240 m handover.
-The low deck enters and leaves cloud smoothly, with a level soft base and sunlit cloud relief
-still needed. The 5° mesa controls show ridge shade in mist and cloud shade on the land.
+The 5° mesa controls show ridge shade entering the far mist.
 [Correctness](../../../.orchestrate/evidence/CLOUDS/WP15/CORRECTNESS.md) ·
 [Visual inspection](../../../.orchestrate/evidence/CLOUDS/WP15/VISUAL.md) ·
-[Metal costs](../../../.orchestrate/evidence/CLOUDS/WP15/COST.md) ·
-[Handoff](../../../.orchestrate/evidence/CLOUDS/WP15-handoff.md)
+[Metal costs](../../../.orchestrate/evidence/CLOUDS/WP15/COST.md)
 
 
 The surveyed 40 m view at 5° on Metal shows cloud shade darkening the mist. Matching
 fair, clear and dry controls trace the cloud shadow across the valley floor. The mesa
 clear control preserves the separate ridge shadow in the mist.
 [Shadow inspection](../../../.orchestrate/evidence/CLOUDS/WP15/continuation/SHADOW.md)
+
+
+The low deck reads Sun depth on the cloud height grid and adds only the ground band's fog
+depth. This removes the repeated summit bands. The new V1 profile retains the level base
+and gives the lit deck visible relief. Metal and Chrome show the mesa's soft cloud margin
+and a continuous climb through the base and top. Inside, surveyed surface texture fades
+over roughly 20 to 53 m. The cost pair was rerun at the same 1440p Metal dawn camera.
+[Metal deck](../../../.orchestrate/evidence/CLOUDS/WP15/continuation/DECK.md) ·
+[Chrome mist and deck](../../../.orchestrate/evidence/CLOUDS/WP15/continuation/CHROME.md)

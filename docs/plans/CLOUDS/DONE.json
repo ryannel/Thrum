@@ -1577,8 +1577,8 @@
           "statement": "Under a deck whose base is below the hilltops, the hilltops are hidden along a level, soft base. A camera climbing the hill sees the base come down to it, stands in grey cloud with a visual range of tens of metres, and comes out above a sea of cloud with the Sun on it and other summits standing out of it. Nothing pops as the camera crosses the base or the top.",
           "inspect": "Capture `fixed` stills from the valley floor, from just below the base, from inside the cloud and from the summit above it, and a `realtime` sequence of the climb. Judge the stills whole and in native-size crops of the base against a hillside, and the sequence at 1x.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP15/continuation/DECK.md",
           "verdict": "",
           "review": ""
         },
@@ -1619,8 +1619,8 @@
           "statement": "In Chrome the far mist, the walk toward the bank and the climb through the deck pass WP15.4's and WP15.5's lists.",
           "inspect": "Capture the same stills, the `realtime` 40 m walk toward the bank and the climb in Chrome. Judge them by those lists, then compare native-size crops with the Mac's.",
           "target": "chrome-webgpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP15/continuation/CHROME.md",
           "verdict": "",
           "review": ""
         },

@@ -3210,10 +3210,10 @@
         "record": "../../.orchestrate/evidence/CLOUDS/WP14/CORRECTNESS.md"
       },
       "far_ground_evidence": {
-        "implementation": "Ground uses the depth of every render pixel in its trace texel. The view volume and far trace share the low deck's weather columns, shape erosion and Sun term. Ground traces all required texels on the submitted frame.",
+        "implementation": "Ground uses the depth of every render pixel in its trace texel. The view volume and far trace share the low deck's weather columns, shape erosion and Sun term. The deck reads Sun depth on the cloud height grid and adds fog from the ground band. Ground traces all required texels on the submitted frame.",
         "correctness": "On Metal, the middle of three surface depths distinguishes two bank positions and the no-Ground upper-cloud frame matches all 230,400 retained bytes. The moving V1 occluder refreshes the 144 newly uncovered stops at their current depths and the cut composes its fresh layer.",
-        "visuals": "Metal and Chrome show clean mist edges and a gradual handover over the 240 m approach. The Metal bank comparison has continuous shading at 200, 350, 450 and 700 m. At 5 degrees, the terrain shadow is visible in mist and the cloud-shadow footprint is legible on the land. The low-deck climb enters and leaves grey cloud on both targets. The specified level soft base, convincing sunlit sea of cloud and cloud-shadow edge through mist remain open.",
-        "device": "The capture-off 1440p Apple M3 Max Metal comparison uses the WP14 dawn camera. It records 921,600 rays, 156.56 mean and 476 p95 steps for the far mist, and 129.95 mean and 474 p95 for the low deck with far bank. Shared-load frame means were 90.53 and 69.38 ms. Chrome evidence covers WebGPU submitted frames.",
+        "visuals": "Metal and Chrome show clean mist edges and a gradual handover over the 240 m approach. The Metal bank comparison has continuous shading at 200, 350, 450 and 700 m. Metal shows the ridge and cloud shadows darkening far mist at a 5-degree Sun. Metal and Chrome show a soft base against the mesa, interior ground detail fading over tens of metres and a sunlit deck below exposed summits. The climbs cross the base and top continuously on both targets.",
+        "device": "The capture-off 1440p Apple M3 Max Metal comparison uses the WP14 dawn camera. It records 921,600 rays, 156.56 mean and 476 p95 steps for the far mist, and 128.94 mean and 471 p95 for the low deck with far bank. Shared-load frame means were 58.50 and 54.30 ms. Chrome evidence covers WebGPU submitted frames.",
         "record": "../../.orchestrate/evidence/CLOUDS/WP15/VISUAL.md"
       },
       "name": "Cloud fields and projections",
