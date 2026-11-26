@@ -44,7 +44,9 @@ loss is attributed by the whole frame against the clouds-absent runs beside it; 
 nothing; the account's memory is bounded; and a frame's step is judged by its display time. Revised again
 that day after [the second review](../../../.orchestrate/evidence/CLOUDS/design-review.md) (one finding): a
 cloud run holds by how many refreshes it loses and by how long it stalls at once, so equal totals cannot pass
-a freeze at the wind turn or give it to the window.
+a freeze at the wind turn or give it to the window. Revised 26 November 2026 on the lead's decision to park
+the weak noon relief on the broad lobes of placed clouds: WP10 closes on the light it retained, and WP21 takes
+the relief up after WP17, from the diagnosis in [risk 14](#risks). No mechanism and no interface changed.
 
 ## The request
 
@@ -1932,6 +1934,52 @@ is judged for the weather sky in WP20's wind series and recorded for the finishe
 13. **The V1 game changes under the selection.** `SHOWCASE` edits the same game. WP2.1's test that the game
    is unchanged with the selection off stays in `./dev check`, and the scheduled main-branch check
    `exact-images` verifies every registered image after each merge.
+14. **A high Sun flattens the broad lobes of a placed cloud.** WP10 found it on Metal and in Chrome alike: at
+   noon the lower right face of the congestus core, from 40 m, and the left lobe and bridge of the mediocris
+   twin turrets, from 2 m, read as one even grey. The other shapes at noon, and all twelve at a 10° Sun, show
+   their depth. The lead parked the cue on 26 November 2026, after three looks: at the bar of shipped games a
+   high Sun that flattens a broad lobe is plausible. So the weakness is a known limitation, WP10 closes on the
+   light it retained, and **WP21** takes the relief up after WP17, before the module closes in WP12.
+
+   The limitation is judged in one place. In WP10 and in every work package built before WP21 (WP14 to WP16,
+   WP11 and WP17), a broad lobe of a placed cloud that reads flat at noon fails no inspected item: a reviewer
+   who sees it says so and judges the item's own list. WP21.1 on the Mac and WP21.3 in Chrome judge it on the
+   two shapes that showed it, each alone in WP10's gallery view of it, from 2 m and from 40 m, so no other
+   cloud's relief can pass for theirs, and beside a still taken at the commit WP21 started from, so the
+   retained light cannot pass as a remedy. Outside those two items nothing fails for it, in WP21 or in WP12.
+
+   What WP10 found, in [its handoff](../../../.orchestrate/evidence/CLOUDS/WP10-handoff.md) and
+   [its lighting controls](../../../.orchestrate/evidence/CLOUDS/WP10/lighting-controls/README.md), with the
+   light it retained at `63f4e85794fe`:
+
+   - The fault is in the Sun's diffuse light. WP10 began with curved arcs on a ridge at noon. Captures of each
+     light term alone put them in the solar diffuse term, and the forward lobes and the sky's ambient light
+     have no matching mark. A finer Sun march (a least step of 42 m for 66 m) and a blue-noise offset turned
+     on each submission both kept the arcs, and the control with no local samples removed them.
+   - The retained light gives the diffuse light the broader Sun-path column under a high Sun, which reduces
+     the arcs and by itself leaves the lower lobes flat. A filtered, symmetric density probe restores part of
+     the relief, and the flank away from a low Sun.
+   - Ruled out: a one-sided density probe, which drew brighter relief and a chain of pale marks across the
+     core; and a stronger response to local depth
+     ([its patch](../../../.orchestrate/evidence/CLOUDS/WP10/lighting-controls/daylight.patch)), which
+     brightened the folds of the crowns and left the lower lobes flat in three views.
+   - Not tried against this cue, by WP10's record: the constants [risk 12](#risks) gives for a cloud that
+     reads flat, which are the plane's turn, the boundary depth and the type's water.
+   - Not shown by any control, and the planner's reading only: the Sun term reads three depths and no facing
+     ([the lit plane](#cloud-light)). Under a high Sun every Sun column through a broad lobe is deep, so the
+     diffuse light is nearly even across the lobe's faces, and the ambient light reads only the column above
+     and below a sample. None of these says how open a point is to the lit cloud and the sky around it, which
+     is what tells a crease from a crown.
+
+   WP21 starts from the cause, as WP17 does: a control on the light terms drawn alone that brings out the
+   creases of the two shapes at noon, before any look. Risk 12's constants come first. The remedy keeps one
+   Sun term for every consumer and one density, keeps a placed cloud and the procedural clouds beside it in
+   one light (WP21.2), and leaves the accepted voxels as they are. Shipped hero clouds add terms tuned by
+   depth inside the cloud and by height ([Research and selection](#research-and-selection)). A field of that
+   depth, cooked beside a shape's density or derived from it, is a product this design lacks: a cause that
+   asks for it, or for any other mechanism this design lacks, ends `BLOCKED` with `needs_context` and the
+   cause, for a planner. What the changed light does to the four presets and to mist is WP12.2's to judge.
+   Three failed looks on one cue go to the log and end `BLOCKED`.
 
 ## Proof and builder handoff
 
@@ -1963,7 +2011,8 @@ water scene, WP11.5 uses `scripts/check_water_browser.mjs`.
   A builder tunes the look against the inspection list, with a fresh opinion, and records what it changed. A
   reference is there to find a cause, never to pass or fail. Three failed looks on one cue go to the log and
   end `BLOCKED`. The form flaws [risk 2](#risks) names fail no inspected item of a work package built before WP17.
-  From WP17 on they fail any inspected item whose view shows one on a procedural fair-weather cloud.
+  From WP17 on they fail any inspected item whose view shows one on a procedural fair-weather cloud. A broad
+  lobe of a placed cloud that reads flat at noon ([risk 14](#risks)) fails WP21.1 and WP21.3 and no other item.
 
 ## Open questions
 
@@ -1978,6 +2027,7 @@ water scene, WP11.5 uses `scripts/check_water_browser.mjs`.
 | Does a far side at a low Sun stay dark enough under a plane held for the whole cloud? | WP5's stills at a 10° and a 4° Sun |
 | Do turrets that only the cell's envelope raises and lowers read as a cloud growing, or do they need lives of their own? | WP7's time-lapse |
 | What draws the shelves, the fold and the repeated caps on turrets, when the lit plane and the erosion strength do not? | WP17 finds each cause by a control before any look ([risk 2](#risks)) |
+| What brings out the creases of a broad lobe under a high Sun, when a finer Sun march, a broader diffuse column and density probes do not? | WP21 finds the cause by a control before any look ([risk 14](#risks)) |
 | Does a far cloud read as cumulus on the map level that samples turrets it cannot resolve, and does its crossing into that level show? | WP3.2's crops |
 | Does the droplet's forward peak hold steady in the part-extent trace? | WP5 |
 | How many entries does the phase table need to hold its integral and its values near the Sun? | WP1 measures first, beside part G's 1,025 |

@@ -927,3 +927,11 @@ consecutive submissions. Valid Sky and Shapes profiles can also be
 replaced during setup. Their public descriptors match those of a fresh
 contribution using the replacement profiles.
 [Solar sweeps and setup proof](../../../.orchestrate/evidence/CLOUDS/WP9/dusk/README.md)
+
+## WP10 noon relief parked
+
+- 2026-11-26 Lead, after WP10 stopped at the three-look limit on weak noon relief (the congestus core and the
+  mediocris twin turrets, on Metal and in Chrome): park, don't push. "The bar is the look of shipped high-end
+  games, and a high Sun flattening broad lobes is plausible." Planner: WP10.1 and WP10.4 excuse the weakness by
+  name, so WP10 closes on the light retained at `63f4e85794fe`. [Risk 14](DESIGN.md#risks) records it and what
+  WP10 ruled out. New WP21, after WP17 and before WP12, takes the relief up. No mechanism or interface changed.

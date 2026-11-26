@@ -32,6 +32,7 @@ Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-bu
 - Assumption: the fair cumulus's close-up form (shelves, folds, repeated caps) waits for WP17, just before the module closes; every sky until then shows those flaws.
 - Assumption: the module closes only after `APPLE-PRESENTATION`'s governor and MetalFX work packages. Fog waits for `ATMOSPHERE` WP8, and the sea for `WATERS` WP8.
 - Assumption: the game WP20 measures is the release V1 game in its 1920×1080 window, on the Apple recipe with TAAU under the fair preset. WP20 comes before WP8 and pauses every other agent for one attended series of eleven recorded runs.
+- Assumption: weak noon relief on a placed cloud's broad lobes is accepted until WP21, which follows WP17 and holds up only the close, WP12 (the lead parked it on 26 November).
 
 ## WP1 The weather over any place and time is computed on the CPU alone, from a clear sky to overcast, and repeats exactly: done
 [review](../../../.orchestrate/evidence/CLOUDS/WP1-review.md)
@@ -91,6 +92,10 @@ so their cadences are WP16.7's, and nothing of Ground is built here.
 `B3-HANDOFF.md` at Broadsides `79637f789` names each shape's intended read and its accepted weaknesses, which
 are not this work package's to fix.
 
+Try no further noon-relief look: [risk 14](DESIGN.md#risks) parks it for WP21. `63f4e85794fe` on `build/clouds`
+holds the light to close on, and [its handoff](../../../.orchestrate/evidence/CLOUDS/WP10-handoff.md) the proofs
+of WP10.2, WP10.3 and WP10.5.
+
 ## WP14 Mist lies in the valley's hollows and fades the land near the camera, in the land's own light
 
 Follow the [ground-condensate integration handoff](DESIGN.md#ground-condensate-integration-handoff).
@@ -109,6 +114,10 @@ If the handover shows in WP15.4 or WP15.13, the eighth risk gives the fixes in o
 
 [Risk 2](DESIGN.md#risks) holds what WP3 found, what its looks ruled out and where its records are. Find each
 flaw's cause with those controls before any look.
+
+## WP21 At noon the broad lobes of the congestus core and the twin turrets stand out in relief, and every accepted look holds
+
+[Risk 14](DESIGN.md#risks) holds what WP10 found and ruled out. Find the cause with a control before any look.
 
 ## WP12 On the Mac's Apple recipe the sky runs with MetalFX and the governor, its cadence on the built-in display is on record, and the module is closed
 
