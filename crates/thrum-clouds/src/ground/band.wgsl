@@ -1,5 +1,8 @@
 @group(0) @binding(3) var band_out: texture_storage_3d<rgba16float, write>;
 @group(0) @binding(4) var<uniform> band_window: GroundBandWindow;
+@group(0) @binding(9) var cloud_optical_depth: texture_2d<f32>;
+@group(0) @binding(10) var<uniform> cloud_field: GpuSunMapping;
+@group(0) @binding(12) var aerial_sampler: sampler;
 
 @compute @workgroup_size(8, 8, 1)
 fn fill_ground_band(@builtin(global_invocation_id) id: vec3<u32>) {
@@ -8,6 +11,13 @@ fn fill_ground_band(@builtin(global_invocation_id) id: vec3<u32>) {
     let xz = mix(band_window.region.xy, band_window.region.zw, vec2<f32>(id.xy) / vec2<f32>(size.xy - 1u));
     let terrain = ground_surface(xz).x;
     let point = vec3(xz.x, terrain + band_window.top_border.x * f32(id.z) / f32(size.z - 1u), xz.y);
+    if id.z == size.z - 1u {
+        // The configured top is above all fog and terrain, so this is the
+        // same Sun-path product a receiver uses just outside the band.
+        let tau = -log(max(1e-30, cloud_plane_factor(point)));
+        textureStore(band_out, vec3<i32>(id), vec4(tau, terrain, 1.0, 0.0));
+        return;
+    }
     let direction = mapping.path_border.xyz;
 
     // Condensate above the ground band already has cumulative Sun depth.

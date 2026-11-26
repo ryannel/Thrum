@@ -21,7 +21,12 @@ fn ground_band_sample(point: vec3<f32>) -> vec3<f32> {
     if height >= top { return vec3(1.0, 1.0, 0.0); }
     let level = (clamp(height / top, 0.0, 1.0) * (size.z - 1.0) + 0.5) / size.z;
     let band = textureSampleLevel(ground_band, aerial_sampler, vec3(uv, level), 0.0);
-    return vec3(exp(-max(0.0, band.r)), band.b, smoothstep(0.0, ground_band_mapping.border_m, border));
+    // The producer samples the 2D field at the top nodes. Where their
+    // horizontal interpolation differs from the field at the receiver, fade
+    // that residual in the last metre to meet the actual field continuously.
+    let top_weight = smoothstep(0.0, 1.0, top - height);
+    let border_weight = smoothstep(0.0, ground_band_mapping.border_m, border);
+    return vec3(exp(-max(0.0, band.r)), band.b, border_weight * top_weight);
 }
 
 fn cloud_factor(point: vec3<f32>) -> f32 {

@@ -53,6 +53,10 @@ pub const CLOUD_SHADER_SOURCE: &str = concat!(
     wgsl!("atmosphere/cloud_factor.wgsl")
 );
 
+/// GPU Sun-path plane sampling. Shader assemblies supply the `cloud_field`
+/// mapping, `cloud_optical_depth` texture and `aerial_sampler` bindings.
+pub const GPU_CLOUD_PLANE_SHADER_SOURCE: &str = wgsl!("atmosphere/cloud_gpu.wgsl");
+
 /// The Earth profile's aerosol at ground level.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Aerosol {

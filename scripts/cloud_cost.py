@@ -734,9 +734,47 @@ def overcast_lit(check):
 MIST_NEAR_FIXTURE = ROOT / 'tests/fixtures/clouds/mist-near-cost.json'
 GROUND_RESOURCES = {
     'cloud surface field', 'cloud ground frame', 'cloud fog table', 'cloud fog phase tables',
-    'cloud ground band', 'cloud ground band mapping', 'cloud medium coefficient texture',
-    'cloud medium hemisphere light',
+    'cloud ground band', 'cloud ground band mapping', 'cloud medium hemisphere light',
+    'cloud medium droplet phase tables',
 }
+VOLUME_COEFFICIENTS = 'view volume medium coefficients'
+VOLUME_AUXILIARY = {'view volume history camera', 'atmosphere aerosol'}
+
+
+def mist_near_resources(row):
+    resources = dict(row['resources'])
+    if len(resources) != len(row['resources']) or any(size <= 0 for size in resources.values()):
+        raise ValueError('mist-near allocation names must be unique with positive sizes')
+    if 'cloud medium coefficient texture' in resources:
+        raise ValueError('mist-near coefficients must be counted once under the view volume')
+    if row['selection'] == 'off':
+        if resources or row.get('view_volume_grid') is not None:
+            raise ValueError('mist-near off arm declares cloud or view-volume allocations')
+        return resources
+    grid = row.get('view_volume_grid')
+    if not isinstance(grid, list) or len(grid) != 3 or any(
+            not isinstance(dimension, int) or dimension <= 0 for dimension in grid
+    ) or grid[2] % 2:
+        raise ValueError('mist-near has no valid view-volume grid')
+    width, height, intervals = grid
+    plane_bytes = width * height * 8
+    near = intervals // 2
+    expected = {
+        'view volume in-scatter and terminal pair': (intervals + 2) * plane_bytes,
+        'view volume transmittance and night in-scatter': (intervals + 2) * plane_bytes,
+        VOLUME_COEFFICIENTS: near * plane_bytes,
+        **{f'view volume low bands history {side}': (intervals + near) * plane_bytes for side in 'AB'},
+        **{f'view volume high bands history {side}': intervals * plane_bytes for side in 'AB'},
+    }
+    missing = (SKY_RESOURCES | GROUND_RESOURCES | VOLUME_AUXILIARY | expected.keys()) - resources.keys()
+    if missing:
+        raise ValueError(f'missing Ground allocation bytes in {row["selection"]}: {sorted(missing)}')
+    for name, size in expected.items():
+        if resources[name] != size:
+            raise ValueError(f'incorrect bytes for {name}: {resources[name]} != {size}')
+    if resources['cloud medium droplet phase tables'] != resources.get('cloud phase tables'):
+        raise ValueError('mist-near must count both separate upper-droplet phase buffers')
+    return resources
 
 
 def mist_near_cost():
@@ -803,9 +841,9 @@ def validate_mist_near(record):
         if not any(fragment in name and math.isfinite(ns) and ns > 0
                    for name, ns in mist['pass_gpu_ns'].items()):
             raise ValueError(f'missing mist-near timing: {fragment}')
-    resources = {name for name, size in mist['resources'] if size > 0}
-    if not GROUND_RESOURCES <= resources:
-        raise ValueError(f'missing Ground allocation bytes: {GROUND_RESOURCES - resources}')
+    inventories = [mist_near_resources(row) for row in (off, clear, mist)]
+    if inventories[1] != inventories[2]:
+        raise ValueError('declared-clear and occupied mist-near allocations must match')
     if not mist['ray_statistics']:
         raise ValueError('mist-near has no trace work record')
     tripped = {name for name, ns in mist['pass_gpu_ns'].items()

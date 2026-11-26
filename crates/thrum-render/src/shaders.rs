@@ -374,7 +374,10 @@ impl CloudVariant {
 
     pub(crate) fn sampling_source_for(self, group: u32, atmosphere: &str) -> String {
         let (plane, mapping) = if self.gpu() {
-            (wgsl!("atmosphere/cloud_gpu.wgsl"), "GpuSunMapping")
+            (
+                crate::atmosphere::GPU_CLOUD_PLANE_SHADER_SOURCE,
+                "GpuSunMapping",
+            )
         } else {
             (wgsl!("atmosphere/cloud.wgsl"), "CloudField")
         };

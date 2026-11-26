@@ -232,8 +232,8 @@ impl Shade {
     /// Rejects an empty target extent.
     pub fn provider(&self) -> Result<SunOpticalDepth, thrum_render::error::RenderError> {
         let sun = SunOpticalDepth::gpu_target([self.config.sun.ground_size; 2], 1)?;
-        if self.ground.is_some() {
-            Ok(sun.with_ground_band(crate::ground::band::provider()?))
+        if let Some(ground) = &self.ground {
+            Ok(sun.with_ground_band(crate::ground::band::provider(ground)?))
         } else {
             Ok(sun)
         }

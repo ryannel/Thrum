@@ -17,6 +17,30 @@ pub struct GroundConfig {
     pub fog: Arc<Ground>,
 }
 
+impl GroundConfig {
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "bound the uploaded f32 inputs"
+    )]
+    fn heights(&self) -> [f32; 4] {
+        let mut terrain_min = f32::INFINITY;
+        let mut terrain_max = f32::NEG_INFINITY;
+        let mut datum_max = f32::NEG_INFINITY;
+        for [height, datum, _] in self.surface.nodes() {
+            terrain_min = terrain_min.min(height as f32);
+            terrain_max = terrain_max.max(height as f32);
+            datum_max = datum_max.max(datum as f32);
+        }
+        let fog_top = self.fog.rows().iter().fold(terrain_max, |top, row| {
+            let pooling = row.pooling as f32;
+            let even = terrain_max + row.depth as f32;
+            let pooled = datum_max + row.depth as f32 - row.depression as f32;
+            top.max((1.0 - pooling) * even + pooling * pooled)
+        });
+        [terrain_min, fog_top, terrain_max, 0.0]
+    }
+}
+
 #[repr(C)]
 #[derive(Clone, Copy, Pod, Zeroable)]
 struct GroundFrame {
@@ -115,13 +139,14 @@ impl GroundField {
         if row_bytes as u64 > limits.max_storage_buffer_binding_size {
             return Err(Error::DeviceLimit("cloud fog table storage"));
         }
-        let mut parameters = GroundFrame {
+        let parameters = GroundFrame {
             origin: origin.map(|value| value as f32),
             spacing: spacing as f32,
             shore_margin: config.fog.shore_margin() as f32,
             travel: [0.0; 2],
             time: 0.0,
             seed,
+            ground_heights: config.heights(),
             ..GroundFrame::zeroed()
         };
         if parameters.origin.iter().any(|value| !value.is_finite())
@@ -146,19 +171,6 @@ impl GroundField {
         if data.iter().flatten().any(|value| !value.is_finite()) {
             return Err(Error::Unsupported("cloud surface field height"));
         }
-        let mut terrain_min = f32::INFINITY;
-        let mut terrain_max = f32::NEG_INFINITY;
-        for node in &data {
-            terrain_min = terrain_min.min(node[0]);
-            terrain_max = terrain_max.max(node[0]);
-        }
-        let max_depth = config
-            .fog
-            .rows()
-            .iter()
-            .map(|row| row.depth as f32)
-            .fold(0.0, f32::max);
-        parameters.ground_heights = [terrain_min, terrain_max + max_depth, terrain_max, 0.0];
         let surface = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("cloud surface field"),
             size: extent,
@@ -233,6 +245,10 @@ impl GroundField {
     )]
     pub(crate) fn set_upper_heights(&mut self, heights: [f64; 2]) {
         self.parameters.upper_heights = heights.map(|value| value as f32);
+    }
+
+    pub(super) fn heights(&self) -> [f32; 4] {
+        self.parameters.ground_heights
     }
 
     /// Density shader, including the three bindings beginning at `first`.

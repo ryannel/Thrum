@@ -284,7 +284,10 @@ pub(super) fn append_ground(
             .iter()
             .chain(&ground_inputs)
             .cloned()
-            .chain([access(band, 0..1, A::StorageWrite)])
+            .chain([
+                access(6, 0..1, A::SampledRead),
+                access(band, 0..1, A::StorageWrite),
+            ])
             .collect(),
     });
     let trace_inputs: Vec<_> = ground_inputs
@@ -351,6 +354,10 @@ pub(super) fn ground_bytes(
         (
             "cloud medium hemisphere light",
             targets.medium.lighting.ambient.size(),
+        ),
+        (
+            "cloud medium droplet phase tables",
+            targets.medium.lighting.phase.size(),
         ),
     ]
     .into_iter()
