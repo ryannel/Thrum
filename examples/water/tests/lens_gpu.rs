@@ -130,6 +130,12 @@ mod metal {
             reason = "test fixture world and small extent are in f32"
         )]
         pub(super) fn check(&self, gpu: &thrum_test_support::Gpu) {
+            let extent = if std::env::var_os("THRUM_WATER_LENS_1440P").is_some() {
+                [2560, 1440]
+            } else {
+                EXTENT
+            };
+            let [width, height] = extent;
             let highest = self
                 .map
                 .surface(&self.field, self.column, 0.0)
@@ -159,7 +165,7 @@ mod metal {
                 radiant: true,
             };
             let capture = |underwater| {
-                let mut rig = Rig::with_extent(gpu, &view, sun(0.0, 0.0), &[panel], None, EXTENT);
+                let mut rig = Rig::with_extent(gpu, &view, sun(0.0, 0.0), &[panel], None, extent);
                 attach(&mut rig, self.water(underwater));
                 rig.scene_colour().1
             };
@@ -183,8 +189,8 @@ mod metal {
             let point = |x: u32, y: u32| {
                 let h = inverse
                     * Vec4::new(
-                        (x as f32 + 0.5).mul_add(2.0 / EXTENT[0] as f32, -1.0),
-                        (y as f32 + 0.5).mul_add(-2.0 / EXTENT[1] as f32, 1.0),
+                        (x as f32 + 0.5).mul_add(2.0 / width as f32, -1.0),
+                        (y as f32 + 0.5).mul_add(-2.0 / height as f32, 1.0),
                         1.0,
                         1.0,
                     );
@@ -193,7 +199,7 @@ mod metal {
             // This level camera repeats the same world columns from top to
             // bottom. Cache only those exact model queries and test each
             // pixel against its own height on the near plane.
-            let columns: Vec<_> = (0..EXTENT[0])
+            let columns: Vec<_> = (0..width)
                 .map(|x| {
                     let p = point(x, 0);
                     let xz = [p.x, p.z];
@@ -205,15 +211,15 @@ mod metal {
                 })
                 .collect();
             let mut expected = Vec::new();
-            for y in 0..EXTENT[1] {
-                for x in 0..EXTENT[0] {
+            for y in 0..height {
+                for x in 0..width {
                     let p = point(x, y);
                     let (xz, answer) = columns[x as usize];
                     assert_eq!(xz, [p.x, p.z]);
                     expected.push(answer.wet && answer.sample.height > f64::from(p.y));
                 }
             }
-            let is_under = |x, y| expected[(y * EXTENT[0] + x) as usize];
+            let is_under = |x, y| expected[(y * width + x) as usize];
             let fraction =
                 expected.iter().filter(|&&wet| wet).count() as f32 / expected.len() as f32;
             assert!(
@@ -222,8 +228,10 @@ mod metal {
                 self.name
             );
             let mut wrong = Vec::new();
-            for y in 1..EXTENT[1] - 1 {
-                for x in 1..EXTENT[0] - 1 {
+            let mut missing = 0;
+            let mut first_missing = None;
+            for y in 1..height - 1 {
+                for x in 1..width - 1 {
                     let wet = is_under(x, y);
                     if [
                         is_under(x - 1, y),
@@ -235,12 +243,12 @@ mod metal {
                     {
                         continue;
                     }
-                    let i = (y * EXTENT[0] + x) as usize;
-                    assert!(
-                        ordinary[i][0] > 0.2,
-                        "panel covers {x},{y}: {:?}",
-                        ordinary[i]
-                    );
+                    let i = (y * width + x) as usize;
+                    if ordinary[i][0] <= 0.2 {
+                        missing += 1;
+                        first_missing.get_or_insert((x, y, ordinary[i]));
+                        continue;
+                    }
                     let measured = under[i][0] < ordinary[i][0] * 0.7;
                     if measured != wet {
                         wrong.push((x, y, ordinary[i][0], under[i][0]));
@@ -248,13 +256,13 @@ mod metal {
                 }
             }
             eprintln!(
-                "Metal {}: {fraction:.3} of the lens is under, {} disagreements beyond one pixel",
+                "Metal {} at {width}×{height}: {fraction:.3} of the lens is under, {} disagreements beyond one pixel, {missing} without a readable panel",
                 self.name,
                 wrong.len()
             );
             assert!(
-                wrong.is_empty(),
-                "{}: {:?}",
+                wrong.is_empty() && missing == 0,
+                "{}: disagreements {:?}, first obscured panel pixel {first_missing:?}",
                 self.name,
                 &wrong[..wrong.len().min(8)]
             );

@@ -207,8 +207,13 @@ impl Rig {
     }
 
     pub(crate) fn scene_colour(&mut self) -> (f32, Vec<[f32; 3]>) {
+        let limits = CaptureLimits {
+            staging_slots: 1,
+            cpu_buffers: 1,
+            ..CaptureLimits::default()
+        };
         self.host
-            .enable_submitted_capture_from(1, CaptureLimits::default(), CaptureSource::SceneLinear)
+            .enable_submitted_capture_from(1, limits, CaptureSource::SceneLinear)
             .expect("scene-linear tap");
         self.frame();
         let image =
