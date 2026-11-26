@@ -114,12 +114,7 @@ fn lens_grazing_light(ray: vec3<f32>) -> vec3<f32> {
     return vec4(p, 0.0, 1.0);
 }
 
-@fragment fn underwater_fragment(@builtin(position) clip: vec4<f32>) -> Output {
-    let pixel = vec2<u32>(clip.xy);
-    let uv = optics_uv(pixel);
-    let eye = read_lens(uv);
-    let coverage = lens_coverage(eye.signed_depth, fwidth(eye.signed_depth));
-    if coverage == 0.0 { discard; }
+fn water_to_gather(eye: LensPoint, uv: vec2<f32>) -> vec3<f32> {
     let hit = gather_at(uv);
     let camera = view.camera_xyz_time.xyz;
     let reach = min(optics.extinction_sight.w * 4.0, 4000.0);
@@ -133,7 +128,17 @@ fn lens_grazing_light(ray: vec3<f32>) -> vec3<f32> {
         body = hit_light(hit) * exp(-optics.downwelling_mirror.xyz * end_depth);
     }
     let light = under_incident(vec3(eye.point.x, eye.surface, eye.point.z));
-    let medium = water_path(body, light, length_m, start_depth, end_depth);
+    return water_path(body, light, length_m, start_depth, end_depth);
+}
+
+@fragment fn underwater_fragment(@builtin(position) clip: vec4<f32>) -> Output {
+    let pixel = vec2<u32>(clip.xy);
+    let uv = optics_uv(pixel);
+    let eye = read_lens(uv);
+    let coverage = lens_coverage(eye.signed_depth, fwidth(eye.signed_depth));
+    if coverage == 0.0 { discard; }
+    let medium = water_to_gather(eye, uv);
+    let ray = normalize(eye.point - view.camera_xyz_time.xyz);
     let meniscus = 4.0 * coverage * (1.0 - coverage);
     let colour = mix(medium, lens_grazing_light(ray), meniscus * 0.65);
     return Output(vec4(colour * environment_storage_scale(), coverage), vec2(0.0), meniscus);
@@ -198,9 +203,19 @@ fn water_underside(input: VertexOut, n: vec3<f32>, v: vec3<f32>, variance: f32, 
     if lens.state.x == 0u { return vec4(0.0); }
     let uv = optics_uv(vec2<u32>(input.clip.xy));
     let eye = read_lens(uv);
-    let coverage = lens_coverage(eye.signed_depth, fwidth(eye.signed_depth));
+    let pixel_depth = max(fwidth(eye.signed_depth), 0.00001);
+    let clip_width = max(16.0 * fwidth(input.clip.z), 0.00001);
+    let coverage = lens_coverage(eye.signed_depth, pixel_depth);
     if coverage == 0.0 { return vec4(0.0); }
-    let light = underside_light(input.world, n, v, variance, foam, eye);
+    var light = underside_light(input.world, n, v, variance, foam, eye);
+    // At the near clip, the sheet gives way to the water path to the
+    // opaque scene. Grade that handoff over the projected lens edge.
+    let clip_weight = 1.0 - smoothstep(0.0, clip_width, 1.0 - input.clip.z);
+    let line_weight = 1.0 - smoothstep(9.0, 16.0, eye.signed_depth / pixel_depth);
+    let join = clip_weight * line_weight;
+    if join > 0.0 {
+        light = mix(light, water_to_gather(eye, uv), join);
+    }
     let colour = mix(lens_grazing_light(-v), light, coverage);
     return vec4(colour * environment_storage_scale(), coverage);
 }
