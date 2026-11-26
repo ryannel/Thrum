@@ -12,3 +12,4 @@ mod gains_gpu;
 mod map_gpu;
 mod query_gpu;
 mod surf_foam_gpu;
+mod surf_gpu;

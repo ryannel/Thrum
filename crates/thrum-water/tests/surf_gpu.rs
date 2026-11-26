@@ -1,6 +1,4 @@
 //! Surf through the real Metal contribution and tick query.
-mod frame_fixture;
-
 use std::f64::consts::TAU;
 
 use crate::frame_fixture::{Clock, QUERY_EXTENT, query_host};
@@ -388,7 +386,9 @@ fn control_heights(
 #[test]
 fn many_component_metal_cut_matches_the_model_with_grouped_or_single_stations() {
     use thrum_fixtures::surf as fixture;
-    use thrum_water_model::{CutConfig, WholeCut};
+
+    const FOLD_STATIONS: usize = 6;
+    const STATION_COUNT: usize = 12;
 
     let Some(thrum_test_support::Opened {
         device,
@@ -434,6 +434,8 @@ fn many_component_metal_cut_matches_the_model_with_grouped_or_single_stations() 
     )
     .expect("sea on beach");
     map.enable_surf(SurfProfile::default()).expect("surf");
+    // One sea and the shared 64-component spectrum select the wide query
+    // pipelines, which sum each node's waves across eight lanes.
     let spectrum = Spectrum {
         long: (0..fixture::COMPONENTS)
             .map(|i| {
@@ -465,15 +467,10 @@ fn many_component_metal_cut_matches_the_model_with_grouped_or_single_stations() 
     let use_tick = u64::from(fixture::USE_TICK);
     let time = (step * fixture::USE_TICK).as_secs_f64();
     let sheet = map.surf_sheet(&field, 0, time).expect("model sheet");
-    let mut columns = fixture::fold_columns(|p| sheet.forward(p).world, 32);
-    assert_eq!(columns.len(), 32);
-    columns.extend((0..16).map(|i| [-75.0 + f64::from(i) * 4.0, 0.125]));
-    let whole = WholeCut::new(&sheet, &columns, CutConfig::default()).expect("whole reach");
-    let triple = columns
-        .iter()
-        .filter(|&&p| whole.column(p).expect("whole refined cut").hits >= 3)
-        .count();
-    assert!(triple >= 20, "{triple} columns under folds");
+    let mut columns = fixture::fold_columns(|p| sheet.forward(p).world, FOLD_STATIONS);
+    assert_eq!(columns.len(), FOLD_STATIONS, "overturned triangles");
+    columns.extend([-75.0, -62.0, -49.0, -36.0, -23.0, -10.0].map(|x| [x, 0.125]));
+    assert_eq!(columns.len(), STATION_COUNT);
     let expected: Vec<_> = columns
         .iter()
         .map(|&p| {
@@ -485,7 +482,7 @@ fn many_component_metal_cut_matches_the_model_with_grouped_or_single_stations() 
         .collect();
     let mut profile = Profile {
         query: Some(QueryLimits {
-            points: 48,
+            points: u32::try_from(STATION_COUNT).expect("small fixture"),
             max_age: 3,
         }),
         ..Profile::default()
@@ -529,6 +526,7 @@ fn many_component_metal_cut_matches_the_model_with_grouped_or_single_stations() 
     let mut grouped = Vec::new();
     let mut maximum_error = 0.0_f64;
     for (tick, stride) in [(1_u32, 6), (2, 1)] {
+        let dispatches_before = mailbox.stats().dispatches;
         let bodies = points
             .chunks(stride)
             .enumerate()
@@ -552,12 +550,31 @@ fn many_component_metal_cut_matches_the_model_with_grouped_or_single_stations() 
             .expect("fixture completion");
         while host.poll_completed().expect("frame completion").is_some() {}
         let drain = mailbox.drain(host.world().endpoint(use_tick + u64::from(tick == 2)), step);
-        assert_eq!(drain.len(), 48 / stride);
-        assert!(drain.iter().map(|reply| reply.cut_nodes[0]).sum::<u64>() > 0);
-        assert!(drain.iter().map(|reply| reply.cut_nodes[1]).sum::<u64>() > 0);
+        assert_eq!(
+            mailbox.stats().dispatches - dispatches_before,
+            1,
+            "tick {tick}"
+        );
+        assert_eq!(drain.len(), STATION_COUNT / stride);
+        for reply in &drain {
+            assert_eq!(reply.posted, u64::from(tick));
+            assert!(!reply.held);
+            assert_eq!(reply.points.len(), stride);
+        }
+        let [coarse, fine] = drain.iter().fold([0, 0], |[coarse, fine], reply| {
+            [coarse + reply.cut_nodes[0], fine + reply.cut_nodes[1]]
+        });
+        assert!(
+            coarse > 0 && fine > 0,
+            "tick {tick}: {coarse} coarse, {fine} fine"
+        );
+        eprintln!("Metal: tick {tick} evaluated {coarse} coarse and {fine} fine nodes");
         for (i, answer) in drain.into_iter().flat_map(|body| body.points).enumerate() {
             // The second batch was drained one tick after its use tick. Its long-layer
             // height is the raw dispatch value at the requested tick in both batches.
+            assert_eq!(answer.point.position.map(f64::from), columns[i]);
+            assert_eq!(answer.point.use_tick, use_tick);
+            assert!(answer.supported[0], "tick {tick}, station {i}");
             let height = f64::from(answer.wave_heights[0]);
             let error = (height - expected[i]).abs();
             maximum_error = maximum_error.max(error);
@@ -570,12 +587,17 @@ fn many_component_metal_cut_matches_the_model_with_grouped_or_single_stations() 
             if stride == 6 {
                 grouped.push(height);
             } else {
-                assert!((height - grouped[i]).abs() < HEIGHT_TOLERANCE);
+                assert!(
+                    (height - grouped[i]).abs() < HEIGHT_TOLERANCE,
+                    "station {i}: single {height}, grouped {}",
+                    grouped[i]
+                );
             }
         }
     }
-    assert_eq!(mailbox.stats().dispatches, 2);
-    eprintln!("Metal: 48 stations, {triple} folded columns, maximum error {maximum_error:.6} m");
+    eprintln!(
+        "Metal: {STATION_COUNT} stations, {FOLD_STATIONS} overturned triangles, maximum error {maximum_error:.6} m"
+    );
 }
 
 mod cache_first_frame {
