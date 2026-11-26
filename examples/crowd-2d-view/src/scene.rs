@@ -97,19 +97,35 @@ pub struct CrowdScene {
     close: bool,
     camera: Cell<[[f64; 2]; 2]>,
     extraction: Cell<Extraction>,
+    pan: [f64; 2],
     projectiles: RefCell<BTreeMap<u32, (u64, Body)>>,
     flashes: RefCell<Vec<([f64; 2], u64)>>,
 }
 
 impl CrowdScene {
-    pub(crate) fn new(close: bool) -> Self {
+    /// Set up the whole-field or follow view.
+    #[must_use]
+    pub fn new(close: bool) -> Self {
         Self {
             close,
             camera: Cell::default(),
             extraction: Cell::default(),
+            pan: [0.0; 2],
             projectiles: RefCell::default(),
             flashes: RefCell::new(Vec::with_capacity(16)),
         }
+    }
+
+    /// Pan the view without changing an input or publication of the replay.
+    pub fn set_pan(&mut self, pan: [f64; 2]) {
+        self.pan = pan;
+    }
+
+    /// Tick and live body count from the current extracted publication.
+    #[must_use]
+    pub fn population(&self) -> (u64, usize) {
+        let row = self.extraction.get();
+        (row.tick, row.live)
     }
 
     pub(crate) fn extraction(&self) -> Extraction {
@@ -227,7 +243,7 @@ impl SceneSource<Arc<PublicationPage>> for CrowdScene {
         };
         Ok(SpriteFrame {
             view: SpriteView {
-                centre,
+                centre: [centre[0] + self.pan[0], centre[1] + self.pan[1]],
                 pixels_per_unit: extent[0].min(extent[1]) as f32
                     / if self.close { 44.0 } else { 178.0 },
             },

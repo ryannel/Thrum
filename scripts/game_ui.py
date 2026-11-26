@@ -11,6 +11,7 @@ import shutil
 import statistics
 import subprocess
 import tempfile
+import time
 
 import game_ui_status
 import game_ui_menu
@@ -261,7 +262,7 @@ def font_costs(destination, revision, target, scratch):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("mode", choices=["costs", "window", "route", "drops"])
+    parser.add_argument("mode", choices=["costs", "window", "route", "drops", "second-app"])
     parser.add_argument("--target", required=True, choices=["mac-metal", "chrome-webgpu"])
     parser.add_argument("--output", type=Path)
     parser.add_argument("--fonts", action="store_true")
@@ -269,6 +270,11 @@ def main():
     parser.add_argument("--events", action="store_true")
     args = parser.parse_args()
     revision = output(["git", "rev-parse", "HEAD"])
+    if args.mode == "second-app":
+        import game_ui_crowd
+        destination = args.output or ROOT / ".orchestrate/evidence/GAME-UI/WP6" / args.target / str(time.time_ns())
+        game_ui_crowd.run(ROOT, args.target, destination.resolve(), revision)
+        return
     if args.fonts and args.target != "mac-metal":
         parser.error("--fonts requires --target mac-metal")
     if args.mode == "window" and args.target != "mac-metal":

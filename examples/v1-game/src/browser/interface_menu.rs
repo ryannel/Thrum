@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use thrum_app::{Game, KeyCode};
-use thrum_ui::{Contact, Event, TextSource};
+use thrum_ui::{Event, TextSource};
 use wasm_bindgen::prelude::*;
 
 use super::{BrowserGame, js_error};
@@ -36,26 +36,11 @@ impl BrowserGame {
         point: Vec<f64>,
         now: f64,
     ) -> Result<(), JsValue> {
-        let contact = match source {
-            "mouse" => Contact::Pointer(u16::try_from(id).map_err(js_error)?),
-            "touch" | "pen" => Contact::Touch(u64::from(id)),
-            _ => return Err(js_error("unknown interface pointer source")),
-        };
-        let xy: [f64; 2] = point
+        let point = point
             .try_into()
             .map_err(|_| js_error("pointer needs x and y"))?;
-        let event = match phase {
-            "down" => Event::Press {
-                contact,
-                position: Some(xy),
-                intent: None,
-            },
-            "up" => Event::Release(contact, Some(xy)),
-            "move" => Event::Move(contact, xy),
-            "hover" => Event::Hover(xy),
-            "cancel" => Event::Cancel(contact),
-            _ => return Err(js_error("unknown interface pointer phase")),
-        };
+        let event =
+            thrum_app::web::interface_pointer(source, phase, id, point).map_err(js_error)?;
         self.menu_event(event, now)
     }
 

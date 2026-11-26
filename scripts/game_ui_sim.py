@@ -397,11 +397,16 @@ class Case:
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("case", choices=["layout", "touch"])
+    parser.add_argument("case", choices=["layout", "touch", "second-app"])
     parser.add_argument("--output", type=Path)
     parser.add_argument("--worker", action="store_true", help=argparse.SUPPRESS)
     args = parser.parse_args()
     os.chdir(ROOT)
+    if args.case == "second-app":
+        from game_ui_crowd_sim import prepare
+        out = args.output or ROOT / ".orchestrate/evidence/GAME-UI/WP6/ios-sim" / str(time.time_ns())
+        prepare(out.resolve())
+        return
     out = (args.output or ROOT / "tmp" / "game-ui-wp5" / f"{args.case}-{time.time_ns()}").resolve()
     if not args.worker:
         out.mkdir(parents=True)

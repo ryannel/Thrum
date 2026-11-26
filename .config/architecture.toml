@@ -43,6 +43,15 @@ manifest = "examples/crowd-2d-view/Cargo.toml"
 allowed_workspace_dependencies = ["crowd-2d", "thrum-app", "thrum-controls", "thrum-core", "thrum-render"]
 implicit_dependencies = { wasm-bindgen-futures = "async wasm_bindgen exports use wasm_bindgen_futures" }
 
+[packages.crowd-2d-status]
+manifest = "examples/crowd-2d-status/Cargo.toml"
+allowed_workspace_dependencies = ["crowd-2d-view", "thrum-app", "thrum-asset", "thrum-asset-gpu", "thrum-controls", "thrum-core", "thrum-render", "thrum-ui"]
+implicit_dependencies = { wasm-bindgen-futures = "the Crowd page's async wasm_bindgen export" }
+
+[packages.crowd-2d-status-ios]
+manifest = "examples/crowd-2d-status-ios/Cargo.toml"
+allowed_workspace_dependencies = ["crowd-2d-status", "thrum-app"]
+
 [packages.crowd-2d-run]
 manifest = "examples/crowd-2d-run/Cargo.toml"
 allowed_workspace_dependencies = ["crowd-2d", "thrum-core", "thrum-network"]

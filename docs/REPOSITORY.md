@@ -3,7 +3,7 @@
 | Path | Responsibility |
 | --- | --- |
 | `crates/` | Engine libraries with explicit ownership; currently provisional simulation, content runtime, render and network modules |
-| `examples/` | `v1-game`, the V1 test game, and its iOS shell `v1-game-ios` |
+| `examples/` | Games and their app packages, including the V1 and Crowd examples. The shared UIKit shell lives in `crates/thrum-app`. |
 | `examples/v1-game/tests/fixtures/` | Retained inputs to the V1 game's automated checks |
 | `tests/fixtures/<module>/` | Test data a repository-level check or script reads, such as the showcase motion inputs and the `RENDER-2D` cost receipts, outside the recorded build inputs; data a Rust test reads sits beside that crate's tests |
 | `tools/xtask/` | Host-only contributor command runner, never an engine runtime dependency |

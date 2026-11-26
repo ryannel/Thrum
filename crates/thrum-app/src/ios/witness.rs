@@ -6,10 +6,8 @@ use std::{fmt::Write as _, fs, time::Duration};
 use thrum_core::sim::WorldLifecycle;
 use thrum_render::frame::TargetLeadStatus;
 
+use super::gesture::GestureCounters;
 use super::render::{FrameReply, Recovered, SurfaceStatus};
-use crate::gesture::GestureCounters;
-
-const NAME: &str = "thrum-v1-ios-state.txt";
 
 #[derive(Default)]
 pub(super) struct Witness {
@@ -141,10 +139,8 @@ pub(super) struct Witness {
     pub(super) detached_windows: u64,
     pub(super) old_window_touches: u64,
     pub(super) last_axes: [f32; 3],
-    #[cfg(feature = "proving")]
+    #[cfg(feature = "interface")]
     pub(super) interface_viewport: Option<serde_json::Value>,
-    #[cfg(feature = "proving")]
-    pub(super) interface_menu: Option<serde_json::Value>,
     pub(super) actor_samples: u64,
     pub(super) actor_position: Option<[f64; 3]>,
     pub(super) gesture: GestureCounters,
@@ -195,7 +191,7 @@ impl Witness {
         self.recovered_extent = recovered.extent;
     }
 
-    pub(super) fn frame(&mut self, frame: &FrameReply) {
+    pub(super) fn frame<R>(&mut self, frame: &FrameReply<R>) {
         self.render_headroom = frame.platform.headroom;
         self.surface_format = frame.platform.format;
         self.cooked.clone_from(&frame.platform.cooked);
@@ -345,7 +341,7 @@ impl Witness {
         }
     }
 
-    pub(super) fn write(&self) {
+    pub(super) fn write(&self, name: &str, game: &str) {
         let mut out = String::with_capacity(2048);
         let g = self.gesture;
         let rows = [
@@ -431,13 +427,11 @@ impl Witness {
         let actor = self
             .actor_position
             .map_or_else(|| "none".to_owned(), |[x, y, z]| format!("{x},{y},{z}"));
-        #[cfg(feature = "proving")]
-        if let Some(menu) = &self.interface_menu {
-            let _ = writeln!(out, "interface_menu={menu}");
-            if let Some(viewport) = &self.interface_viewport {
-                let _ = writeln!(out, "interface_viewport={viewport}");
-            }
+        #[cfg(feature = "interface")]
+        if let Some(viewport) = &self.interface_viewport {
+            let _ = writeln!(out, "interface_viewport={viewport}");
         }
+        out.push_str(game);
         let tail = [
             ("screen_headroom", self.screen_headroom.to_string()),
             ("render_headroom", self.render_headroom.to_string()),
@@ -541,19 +535,19 @@ impl Witness {
         }
         self.write_background_history(&mut out);
         let _ = writeln!(out, "{}", self.cooked);
-        replace(&out);
+        replace(name, &out);
     }
 }
 
-pub(super) fn write_fault(error: &str) {
-    replace(&format!("fault={}\n", error.replace('\n', " ")));
+pub(super) fn write_fault(name: &str, error: &str) {
+    replace(name, &format!("fault={}\n", error.replace('\n', " ")));
 }
 
 /// Write beside, then rename, so the checker never reads a partial file.
-fn replace(text: &str) {
+fn replace(name: &str, text: &str) {
     let dir = std::env::temp_dir();
-    let partial = dir.join(format!("{NAME}.partial"));
+    let partial = dir.join(format!("{name}.partial"));
     if fs::write(&partial, text).is_ok() {
-        drop(fs::rename(&partial, dir.join(NAME)));
+        drop(fs::rename(&partial, dir.join(name)));
     }
 }

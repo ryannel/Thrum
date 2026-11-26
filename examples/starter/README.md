@@ -273,3 +273,77 @@ no timestamp queries. Off, waiting, stale and faulted rows show reasons instead 
 Turning the profiler on after an edit lets you compare the affected pass; turning it off clears
 the window and stops timestamp work once in-flight frames drain. `THRUM_REPORT=1` keeps timing
 enabled even with the table off, so that a requested frames report remains complete.
+
+## Host your game on the Mac, in Chrome and on the iPhone simulator
+
+The [Crowd status display](../crowd-2d-status/src/lib.rs) shows the same 2D scene in all three
+shells. Its Rust package owns the world, scene, cooked font and interface. Its
+[iPhone app package](../crowd-2d-status-ios) owns the bundle and process entry point.
+
+- In a Mac binary, pass your game builder and a title to `thrum_app::run_until_closed`.
+  Implement `Game` with your frame host, controls and edits. Implement the interface hooks if
+  your game uses the output extent, density, safe area or first-chance input. Add your package
+  to the workspace and to `.config/architecture.toml`. With one window binary and an `assets/`
+  folder, `./dev scene examples/my-game` builds the game, cooks its assets and opens the window.
+- For Chrome, export an async `create_scene(canvas, store)` from the same binary on Wasm. Use
+  `thrum_app::web::PageGame` and `export_page_methods!` with the same `Game` and an
+  `InlineWorld`. Your facade provides `title()` and `report()`. For an interface, use the
+  canvas interface methods in the [Crowd page](../crowd-2d-status/src/browser.rs).
+  Run `./dev scene examples/my-game --web` and open its `SCENE_URL`.
+
+### Give your game an iPhone app
+
+1. Add an app package to the workspace and the architecture registry. Declare
+   `[lib]` with `crate-type = ["staticlib", "rlib"]`. Depend on your game and on
+   `thrum-app` for `cfg(target_os = "ios")`. Enable `thrum-app/interface` if the game uses it.
+2. Implement `thrum_app::ios::MobileGame` in your game package. In `prepare`, reuse the
+   frame-host builder used by the window and page. Return the host and your game-owned input
+   and presentation state in `MobilePrepared`. An inline world can use `()` for its
+   `Controls` and implement `resume_inline` to restart its clock. A resident world hands back
+   `MobileControls` exposing its `WorldLink` and uses the supplied wake callback after commits.
+   Set `output_metrics` to receive safe-area geometry before encoding. Route touches in
+   `event`, and in `submitted` retain the layout that actually reached the screen.
+   The [Crowd mobile adapter](../crowd-2d-status/src/mobile.rs) shows these hooks together.
+3. Export `thrum_mobile_start` from your app's Rust library and call the shared shell:
+
+   ```rust
+   #[cfg(target_os = "ios")]
+   #[unsafe(no_mangle)]
+   pub extern "C" fn thrum_mobile_start() {
+       if let Err(error) = thrum_app::ios::run::<my_game::MobileGame>(
+           thrum_app::ios::MobileOptions {
+               title: "My Game",
+               render_thread: "my-game-render",
+               witness: None,
+           },
+       ) {
+           eprintln!("{error}");
+       }
+   }
+   ```
+
+4. Add `ios/Info.plist` with your own bundle ID and executable name. Set
+   `UISceneDelegateClassName` to `ThrumSceneDelegate` under the Window Application scene role,
+   and declare your supported orientations. Use the
+   [Crowd Info.plist](../crowd-2d-status-ios/ios/Info.plist) as a template. Add
+   `ios/application.swift` containing `struct MobileApplication: ThrumMobileApplication {}`.
+   Implement the protocol's optional URL handlers there if your game opens URLs.
+5. With Xcode and a booted iPhone simulator, build and install the app. Replace the package,
+   paths, executable and bundle ID with your own values.
+
+   ```sh
+   rustup target add --toolchain stable aarch64-apple-ios-sim
+   crates/thrum-app/ios/build-simulator.sh my-game-ios examples/my-game-ios/ios target/my-game-ios-sim
+   xcrun simctl install booted target/my-game-ios-sim/MyGame.app
+   xcrun simctl launch booted org.example.my-game
+   ```
+
+   If your game reads a cooked store, make it available before launching. For the Crowd app,
+   cook `examples/crowd-2d-status/assets` with `target/release/thrum-cook cook`, get the
+   installed data directory with `xcrun simctl get_app_container booted org.thrum.crowd data`,
+   and copy the store into its `Documents/crowd-store`. Use your game's chosen store location
+   for your own app.
+
+UIKit lifecycle, drawable leases, orientation and graphics device replacement are handled in
+`thrum-app`. The iPhone simulator proves app function. Physical iPhone behaviour and
+performance still need device verification.

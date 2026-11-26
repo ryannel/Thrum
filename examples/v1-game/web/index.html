@@ -319,7 +319,12 @@
         if (textCard === "menu") {
           const { mountInterfaceInput } = await import("./interface-input.js");
           if (probe.has("menu-record")) game.record_menu_events();
-          menuInput = mountInterfaceInput(game, canvas);
+          menuInput = mountInterfaceInput(canvas, {
+            key: (...args) => game.menu_key(...args),
+            pointer: (...args) => game.menu_pointer(...args),
+            interrupt: (...args) => game.menu_interrupt(...args),
+            text: (...args) => game.menu_text(...args),
+          });
         }
         // @end
         const movementKeys = new Set(["KeyW", "KeyA", "KeyS", "KeyD", "ArrowUp", "ArrowLeft", "ArrowDown", "ArrowRight"]);

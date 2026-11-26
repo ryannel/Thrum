@@ -149,7 +149,7 @@ impl Gesture {
 
     /// Take the contact the router returned, with its current touch position.
     #[cfg_attr(
-        not(any(test, feature = "proving")),
+        not(any(test, feature = "interface")),
         expect(
             dead_code,
             reason = "the optional interface is the only stick interruption that can resume"

@@ -19,17 +19,20 @@ def main(folder):
     web = scene_output / 'web'
     web.mkdir(parents=True, exist_ok=True)
     cargo = ['rustup', 'run', 'stable', 'cargo']
+    rustc = subprocess.check_output(['rustup', 'which', '--toolchain', 'stable', 'rustc'], text=True).strip()
+    wasm_env = dict(os.environ, RUSTC=rustc,
+                    PATH=str(Path(rustc).parent) + os.pathsep + os.environ['PATH'])
     # Keep the input to wasm-bindgen separate from concurrent ordinary scene builds.
     capture = os.environ.get('THRUM_SCENE_WEB_CAPTURE') == '1'
     wasm_target = target / 'scene-web-capture' if capture else target
     features = ['--features', 'thrum-app/browser-capture'] if capture else []
     subprocess.run(cargo + ['build', '--locked', '--offline', '--release', '-p', package,
                            '--bin', binary, '--target', 'wasm32-unknown-unknown',
-                           '--target-dir', str(wasm_target), *features], check=True)
+                           '--target-dir', str(wasm_target), *features], env=wasm_env, check=True)
     bindgen = shutil.which('wasm-bindgen') or str(Path.home() / '.cargo/bin/wasm-bindgen')
     subprocess.run([bindgen, '--target', 'web', '--out-name', 'scene', '--out-dir', str(web),
                     str(wasm_target / 'wasm32-unknown-unknown/release' / (binary + '.wasm'))], check=True)
-    for name in ['index.html', 'scene.js', 'host-page.js']:
+    for name in ['index.html', 'scene.js', 'host-page.js', 'interface-input.js']:
         shutil.copy(root / 'crates/thrum-app/web' / name, web / name.replace('scene.js', 'page.js'))
     shutil.copy(root / 'crates/thrum-controls/web/thrum-controls.js', web)
     for params in (root / folder).glob('*.params.json'):

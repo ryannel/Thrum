@@ -591,6 +591,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "crowd-2d-status"
+version = "0.1.0"
+dependencies = [
+ "crowd-2d-view",
+ "js-sys",
+ "serde_json",
+ "thrum-app",
+ "thrum-asset",
+ "thrum-asset-gpu",
+ "thrum-controls",
+ "thrum-core",
+ "thrum-render",
+ "thrum-ui",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+]
+
+[[package]]
+name = "crowd-2d-status-ios"
+version = "0.1.0"
+dependencies = [
+ "crowd-2d-status",
+ "thrum-app",
+]
+
+[[package]]
 name = "crowd-2d-view"
 version = "0.1.0"
 dependencies = [
@@ -3765,7 +3792,6 @@ dependencies = [
  "thrum-ui",
  "v1-game",
  "wgpu",
- "winit",
 ]
 
 [[package]]

@@ -1,0 +1,17 @@
+[package]
+name = "crowd-2d-status-ios"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+description = "UIKit entry point for the Crowd status display"
+
+[lib]
+crate-type = ["staticlib", "rlib"]
+
+[lints]
+workspace = true
+
+[target.'cfg(target_os = "ios")'.dependencies]
+crowd-2d-status = { path = "../crowd-2d-status" }
+thrum-app = { path = "../../crates/thrum-app", features = ["interface"] }

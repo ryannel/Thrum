@@ -4,13 +4,15 @@
 use std::{
     fmt::Write as _,
     sync::{
-        Arc, Mutex,
+        Arc,
         atomic::{AtomicBool, AtomicU64, Ordering},
     },
     thread,
     time::{Duration, Instant},
 };
 
+use super::{MobileGame, MobileHost, MobileOptions, MobilePrepared, SceneRequest};
+use crate::Gpu as PrepareGpu;
 use thrum_render::{
     capabilities::{
         DeviceRecipe, DeviceWatch, FIRST_DEVICE_GENERATION, OpenedDevice, PREFERRED_SDR_FORMAT,
@@ -18,28 +20,25 @@ use thrum_render::{
     },
     frame::{FrameWorker, TargetLeadStatus, display_target_lead},
     present::SurfaceProfile,
-    runtime::{DriveReport, EncodedFrame, FrameConfig, FrameError, SurfaceOutput},
+    runtime::{DriveReport, EncodedFrame, FrameError, FrameWorld, SceneSource, SurfaceOutput},
 };
-use v1_game::{GameHost, GameScene, GameWorld, WorldControls};
 
 /// Longest qualification hold of a recovery before it proceeds anyway.
 const RECOVER_HOLD_MAX: Duration = Duration::from_secs(300);
 /// Sleep slice inside qualification holds, so a loss can land inside them.
 const HOLD_SLICE: Duration = Duration::from_millis(20);
-use thrum_app::{
+use crate::{
     frame::SAMPLE_SLOTS,
     surface::{SurfaceAction, surface_action},
 };
 use wgpu::TextureViewDescriptor;
 
-use crate::lease::{Leased, SurfaceLease, TickPermission};
+use super::lease::{Leased, SurfaceLease, TickPermission};
 
-#[cfg(feature = "proving")]
-mod join;
+mod replace;
 
-pub(super) const THREAD: &str = "thrum-v1-ios-render";
 pub(super) type Lease = SurfaceLease<wgpu::Surface<'static>>;
-pub(super) type RenderWorker = FrameWorker<Job, Reported>;
+pub(super) type RenderWorker<G> = FrameWorker<Job, Reported<G>>;
 
 pub(super) enum Job {
     Prepare {
@@ -47,11 +46,9 @@ pub(super) enum Job {
         epoch: u64,
         extent: [u32; 2],
         origin: Instant,
-        #[cfg(feature = "proving")]
-        join_store: Option<std::path::PathBuf>,
+        scene: Option<SceneRequest>,
     },
-    #[cfg(feature = "proving")]
-    OpenJoin(std::path::PathBuf),
+    ReplaceScene(SceneRequest),
     Frame(FrameRequest),
     /// Rebuild on a fresh device after generation `from` was lost.
     Recover {
@@ -78,25 +75,48 @@ const _: fn() = || {
     assert_send::<Job>();
 };
 
-pub(super) type FrameRequest = thrum_app::frame::FrameRequest<FrameAdmission>;
+pub(super) type FrameRequest = crate::frame::FrameRequest<FrameAdmission>;
 
 pub(super) struct FrameAdmission {
     /// The shell permits drawable acquisition (its view is shown).
     pub(super) present: bool,
     /// Qualification only: hold an acquired drawable inside the lease section.
     pub(super) stall: Option<(StallPoint, Duration)>,
-    #[cfg(feature = "proving")]
-    pub(super) interface: Option<super::interface::Output>,
+    #[cfg(feature = "interface")]
+    pub(super) interface: Option<crate::OutputMetrics>,
 }
 
-pub(super) struct Prepared {
-    pub(super) controls: WorldControls,
-    #[cfg(feature = "proving")]
-    pub(super) interface_output: bool,
-    #[cfg(feature = "proving")]
-    pub(super) interface_menu: Option<v1_game::mobile_interface::MobileInterface>,
+pub(super) struct Prepared<G: MobileGame> {
+    pub(super) scene: SceneReady<G>,
     pub(super) adapter: String,
     pub(super) format: wgpu::TextureFormat,
+}
+
+pub(super) struct SceneReady<G: MobileGame> {
+    pub(super) origin: Instant,
+    pub(super) controls: G::Controls,
+    pub(super) input: G::Input,
+    #[cfg(feature = "interface")]
+    pub(super) output_metrics: bool,
+}
+
+impl<G: MobileGame> SceneReady<G> {
+    fn split(
+        prepared: MobilePrepared<G>,
+        origin: Instant,
+    ) -> (MobileHost<G>, G::Presentation, Self) {
+        (
+            prepared.host,
+            prepared.scene,
+            Self {
+                origin,
+                controls: prepared.controls,
+                input: prepared.input,
+                #[cfg(feature = "interface")]
+                output_metrics: prepared.output_metrics,
+            },
+        )
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -121,13 +141,13 @@ pub(super) enum SurfaceStatus {
     StaleGeneration,
 }
 
-pub(super) type FrameReply = thrum_app::frame::FrameReply<Option<DriveReport>, FrameObservation>;
+pub(super) type FrameReply<R> = crate::frame::FrameReply<Option<DriveReport>, FrameObservation<R>>;
 
 #[expect(
     clippy::struct_excessive_bools,
     reason = "independent per-frame witnesses, not a state machine"
 )]
-pub(super) struct FrameObservation {
+pub(super) struct FrameObservation<R> {
     /// Lease epoch admitted by the request.
     pub(super) epoch: u64,
     pub(super) frame_extent: Option<thrum_render::runtime::FrameExtent>,
@@ -158,8 +178,7 @@ pub(super) struct FrameObservation {
     pub(super) abandoned: bool,
     /// Submission order and predecessor of an encoded frame cancelled in the background.
     pub(super) background_discard: Option<(u64, u64)>,
-    #[cfg(feature = "proving")]
-    pub(super) interface: Option<v1_game::mobile_interface::InterfaceFrame>,
+    pub(super) readback: Option<R>,
 }
 
 /// A published replacement device.
@@ -189,17 +208,16 @@ pub(super) enum RecoverFault {
     clippy::large_enum_variant,
     reason = "the bounded single reply slot retains frame diagnostics inline without per-frame heap allocation"
 )]
-pub(super) enum Reply {
-    Prepared(Result<Prepared, String>),
-    #[cfg(feature = "proving")]
-    JoinOpened(Result<Option<join::Opened>, String>),
-    Frame(Result<FrameReply, String>),
+pub(super) enum Reply<G: MobileGame> {
+    Prepared(Result<Prepared<G>, String>),
+    SceneReplaced(Result<Option<SceneReady<G>>, String>),
+    Frame(Result<FrameReply<G::Readback>, String>),
     Recovered(Result<Recovered, RecoverFault>),
     Actor(Option<[f64; 3]>),
 }
 
-pub(super) struct Reported {
-    pub(super) reply: Reply,
+pub(super) struct Reported<G: MobileGame> {
+    pub(super) reply: Reply<G>,
     /// Thread that produced the reply.
     pub(super) thread: Option<String>,
 }
@@ -210,8 +228,10 @@ pub(super) struct Signals {
     pub(super) headroom: AtomicU64,
     pub(super) capture: AtomicU64,
     pub(super) capture_callbacks: super::capture::Callbacks,
-    /// Explicit held-view qualification only: begin the cooked camera pan.
-    pub(super) cooked_pan: AtomicBool,
+    /// Optional game qualification command for its render owner.
+    pub(super) game_command: AtomicU64,
+    /// Foreground transitions observed by the inline world's clock.
+    pub(super) resumes: AtomicU64,
     /// Route only: destroy the device at the owner's next opportunity.
     pub(super) lose_now: AtomicBool,
     /// Route only: hold the next recovery after preparation, before the
@@ -226,27 +246,27 @@ pub(super) struct Signals {
 
 type LostWake = Arc<dyn Fn(u64) + Send + Sync>;
 
-struct Gpu {
+struct Gpu<G: MobileGame> {
     adapter: wgpu::Adapter,
     device: wgpu::Device,
     queue: wgpu::Queue,
     watch: DeviceWatch,
     destroyed: bool,
-    host: super::Host,
+    host: MobileHost<G>,
     request_epoch: Arc<AtomicU64>,
-    cooked: Option<Arc<Mutex<thrum_asset_gpu::CookedStats>>>,
-    cooked_view: Option<super::cooked_view::View>,
+    presentation: G::Presentation,
     format: wgpu::TextureFormat,
     host_extent: [u32; 2],
 }
 
-struct Owner {
+struct Owner<G: MobileGame> {
     capture: super::capture::Recorder,
     lease: Arc<Lease>,
     /// The instance the first device came from; recoveries use it again.
     instance: Option<wgpu::Instance>,
     signals: Arc<Signals>,
-    gpu: Option<Gpu>,
+    gpu: Option<Gpu<G>>,
+    resumes: u64,
     diagnostics: bool,
     origin: Instant,
     /// The next candidate generation; strictly increasing across attempts.
@@ -266,24 +286,26 @@ pub(super) struct Wakes {
     pub(super) recover_held: Box<dyn Fn() + Send>,
 }
 
-pub(super) fn start(
+pub(super) fn start<G: MobileGame>(
     lease: Arc<Lease>,
     signals: Arc<Signals>,
+    options: &MobileOptions,
     wakes: Wakes,
-) -> Result<RenderWorker, String> {
+) -> Result<RenderWorker<G>, String> {
     let Wakes {
         reply: wake,
         stalling,
         lost,
         recover_held,
     } = wakes;
-    let mut owner = Owner {
+    let mut owner = Owner::<G> {
         capture: super::capture::Recorder::default(),
         lease,
         instance: None,
         signals,
         gpu: None,
-        diagnostics: super::route_enabled(),
+        diagnostics: options.witness.is_some(),
+        resumes: 0,
         origin: Instant::now(),
         next_generation: FIRST_DEVICE_GENERATION + 1,
         lost_wake: lost,
@@ -294,7 +316,7 @@ pub(super) fn start(
     // frames add no allocation for the witness.
     let mut frame_named = false;
     FrameWorker::start(
-        THREAD,
+        options.render_thread,
         move |job| {
             let frame = matches!(job, Job::Frame(_));
             let name = !frame || !std::mem::replace(&mut frame_named, true);
@@ -310,8 +332,11 @@ pub(super) fn start(
     .map_err(|error| format!("iOS render owner: {error}"))
 }
 
-impl FrameObservation {
-    fn native_witness(&mut self, host: &super::Host) {
+impl<R> FrameObservation<R> {
+    fn native_witness<W: FrameWorld, V: SceneSource<W::Page>>(
+        &mut self,
+        host: &thrum_render::runtime::FrameHost<W, V>,
+    ) {
         if let Some(native) = host.native_witness_report() {
             let _ = write!(
                 self.cooked,
@@ -326,7 +351,11 @@ impl FrameObservation {
         }
     }
 }
-fn frame_reply(request: &FrameRequest, generation: u64, target: TargetLeadStatus) -> FrameReply {
+fn frame_reply<R>(
+    request: &FrameRequest,
+    generation: u64,
+    target: TargetLeadStatus,
+) -> FrameReply<R> {
     FrameReply {
         sequence: request.sequence,
         device_generation: generation,
@@ -355,40 +384,31 @@ fn frame_reply(request: &FrameRequest, generation: u64, target: TargetLeadStatus
             empty_submit: false,
             abandoned: false,
             background_discard: None,
-            #[cfg(feature = "proving")]
-            interface: None,
+            readback: None,
         },
     }
 }
 
-impl Owner {
-    fn work(&mut self, job: Job) -> Reply {
+impl<G: MobileGame> Owner<G> {
+    fn work(&mut self, job: Job) -> Reply<G> {
         match job {
             Job::Prepare {
                 instance,
                 epoch,
                 extent,
                 origin,
-                #[cfg(feature = "proving")]
-                join_store,
+                scene,
             } => {
                 self.origin = origin;
-                Reply::Prepared(self.prepare(
-                    &instance,
-                    epoch,
-                    extent,
-                    #[cfg(feature = "proving")]
-                    join_store,
-                ))
+                Reply::Prepared(self.prepare(&instance, epoch, extent, scene))
             }
-            #[cfg(feature = "proving")]
-            Job::OpenJoin(store) => Reply::JoinOpened(self.open_join(store)),
+            Job::ReplaceScene(scene) => Reply::SceneReplaced(self.replace_scene(scene)),
             Job::Frame(request) => Reply::Frame(self.frame(&request)),
             Job::Recover { from } => Reply::Recovered(self.recover(from)),
             Job::SampleActor => Reply::Actor(
                 self.gpu
                     .as_ref()
-                    .and_then(|gpu| gpu.host.world().controlled_position()),
+                    .and_then(|gpu| G::sample_position(&gpu.host)),
             ),
         }
     }
@@ -398,8 +418,8 @@ impl Owner {
         instance: &wgpu::Instance,
         epoch: u64,
         extent: [u32; 2],
-        #[cfg(feature = "proving")] join_store: Option<std::path::PathBuf>,
-    ) -> Result<Prepared, String> {
+        scene: Option<SceneRequest>,
+    ) -> Result<Prepared<G>, String> {
         if self.gpu.is_some() {
             return Err("iOS render owner is already prepared".into());
         }
@@ -429,35 +449,20 @@ impl Owner {
             .unwrap_or(Some(PREFERRED_SDR_FORMAT))
             .ok_or("no supported iOS SDR surface format")?;
         let extent = [extent[0].max(1), extent[1].max(1)];
-        let config = FrameConfig {
-            render_extent: extent,
-            surface: Some(SurfaceProfile { format, extent }),
-        };
-        let (setup, mut host) = pollster::block_on(prepare_host(
-            &device,
-            &queue,
-            &capabilities,
-            config,
-            #[cfg(feature = "proving")]
-            join_store,
-        ))?;
-        if self.diagnostics && std::env::var("THRUM_CULLING_ORACLE").as_deref() == Ok("1") {
-            super::culling::record(&mut host, &device, &queue, &capabilities, config, setup)?;
-        }
-        #[cfg(feature = "proving")]
-        if self.diagnostics && setup.sprite_scale.is_some() && setup.sprite_rows.is_some() {
-            std::fs::write(
-                std::env::temp_dir().join("thrum-sprite-card.rgba"),
-                v1_game::sprite_card_texels(),
-            )
-            .map_err(|error| error.to_string())?;
-        }
-        #[cfg(feature = "proving")]
-        let interface_menu = (setup.interface_text == Some(v1_game::InterfaceText::Menu))
-            .then(|| join::attach_menu(&mut host, self.diagnostics));
-        let cooked = v1_game::attach_cooked_scene(&mut host)?;
-        let cooked_view = super::cooked_view::View::prepare(&mut host)?;
-        let (mut host, controls) = host.into_threaded(self.origin, super::notify_world)?;
+        let prepared = pollster::block_on(G::prepare(
+            PrepareGpu {
+                device: &device,
+                queue: &queue,
+                capabilities: &capabilities,
+                surface: SurfaceProfile { format, extent },
+            },
+            self.origin,
+            super::notify_world,
+            scene,
+            self.diagnostics,
+        ))
+        .map_err(|error| error.to_string())?;
+        let (mut host, presentation, scene) = SceneReady::split(prepared, self.origin);
         let request_epoch = Arc::new(AtomicU64::new(epoch));
         host.set_tick_submission_permission(Box::new(TickPermission {
             lease: Arc::clone(&self.lease),
@@ -481,21 +486,13 @@ impl Owner {
             watch,
             destroyed: false,
             host,
-            cooked,
-            cooked_view,
+            presentation,
             format,
             host_extent: extent,
             request_epoch,
         });
         Ok(Prepared {
-            controls,
-            #[cfg(feature = "proving")]
-            interface_output: matches!(
-                setup.interface_text,
-                Some(v1_game::InterfaceText::Status | v1_game::InterfaceText::Menu)
-            ),
-            #[cfg(feature = "proving")]
-            interface_menu,
+            scene,
             adapter: name,
             format,
         })
@@ -504,7 +501,7 @@ impl Owner {
     /// One frame job. From the moment the owner knows its device is lost (it
     /// destroyed it, or wgpu's callback fired) it makes no call on it except
     /// the non-blocking poll that delivers wgpu's lost callback.
-    fn frame(&mut self, request: &FrameRequest) -> Result<FrameReply, String> {
+    fn frame(&mut self, request: &FrameRequest) -> Result<FrameReply<G::Readback>, String> {
         let unrun = |generation, status| {
             let lead = display_target_lead(request.target_media_seconds, media_time_now());
             let mut reply = frame_reply(request, generation, lead.status);
@@ -713,7 +710,10 @@ impl Owner {
         })
     }
 
-    fn frame_on_device(&mut self, request: &FrameRequest) -> Result<FrameReply, FrameError> {
+    fn frame_on_device(
+        &mut self,
+        request: &FrameRequest,
+    ) -> Result<FrameReply<G::Readback>, FrameError> {
         let lease = Arc::clone(&self.lease);
         let now = self.origin.elapsed();
         let gpu = self
@@ -735,21 +735,23 @@ impl Owner {
             self.capture.failed(&mut gpu.host, &self.signals, &error);
         }
         let lead = display_target_lead(request.target_media_seconds, media_time_now());
-        if let Some(view) = &mut gpu.cooked_view {
-            view.update(
-                &mut gpu.host,
-                self.signals.cooked_pan.swap(false, Ordering::AcqRel),
-            )
-            .map_err(FrameError::Scene)?;
+        let resumes = self.signals.resumes.load(Ordering::Acquire);
+        if resumes != self.resumes {
+            G::resume_inline(gpu.host.world_mut(), now)
+                .map_err(|error| FrameError::World(error.to_string()))?;
+            self.resumes = resumes;
         }
-        #[cfg(feature = "proving")]
+        #[cfg(feature = "interface")]
         if let Some(output) = request.platform.interface {
-            v1_game::mobile_interface::set_output(
-                gpu.host.continuous_source_mut(),
-                output.density,
-                output.insets,
-            );
+            G::output(&mut gpu.host, output);
         }
+        G::frame(
+            &mut gpu.host,
+            &mut gpu.presentation,
+            self.signals.game_command.swap(0, Ordering::AcqRel),
+            now,
+        )
+        .map_err(|error| FrameError::Scene(error.to_string()))?;
         gpu.host.set_presentation_lead(lead.duration);
         let mut reply = frame_reply(request, gpu.watch.generation, lead.status);
         let bits = u32::try_from(self.signals.headroom.load(Ordering::Acquire)).unwrap_or_default();
@@ -800,13 +802,18 @@ impl Owner {
             // Lost inside the section: no completion poll on the lost device.
             return Ok(reply);
         }
-        #[cfg(feature = "proving")]
-        if reply.platform.status == SurfaceStatus::Presented
-            && let Some(frame) =
-                v1_game::mobile_interface::InterfaceFrame::read(gpu.host.continuous_source_mut())
-            && frame.viewport().extent == request.extent
-        {
-            reply.platform.interface = Some(frame);
+        if reply.platform.status == SurfaceStatus::Presented {
+            reply.platform.readback = G::readback(&mut gpu.host);
+            #[cfg(feature = "interface")]
+            if reply
+                .platform
+                .readback
+                .as_ref()
+                .and_then(G::viewport)
+                .is_some_and(|viewport| viewport.extent != request.extent)
+            {
+                reply.platform.readback = None;
+            }
         }
         for slot in &mut reply.samples {
             *slot = gpu.host.poll_completed()?;
@@ -814,17 +821,7 @@ impl Owner {
                 break;
             }
         }
-        reply.platform.cooked = gpu
-            .cooked
-            .as_ref()
-            .and_then(|stats| stats.lock().ok())
-            .map_or_else(String::new, |stats| {
-                format!(
-                    "cooked_path={:?}\ncooked_drawn={:?}\ncooked_device_generation={:?}\ncooked_submitted={}\ncooked_errors={:?}\ncooked_texture_profile={:?}",
-                    stats.draw_path, stats.drawn, stats.drawn_device_generation, stats.submitted_frames, stats.errors,
-                    stats.swaps.last().and_then(|swap| swap.texture_profile)
-                )
-            });
+        reply.platform.cooked = G::frame_witness(&gpu.host, &gpu.presentation);
         reply.platform.pending_frames = gpu.host.pending_frames();
         reply.platform.native_witness(&gpu.host);
         if self.diagnostics {
@@ -840,13 +837,14 @@ impl Owner {
             "\nculling_requested={:?}\nculling_resolved={:?}\nculling_reason={:?}\n",
             culling.requested, culling.resolved, culling.reason
         );
-        if let Some(view) = &gpu.cooked_view {
-            reply.platform.cooked.push_str(&view.witness());
-        }
         if self.diagnostics
-            && let Err(error) = self
-                .capture
-                .after(&mut gpu.host, &reply, &lease, &self.signals)
+            && let Err(error) = self.capture.after(
+                &mut gpu.host,
+                &reply,
+                &lease,
+                &self.signals,
+                G::still_bounds,
+            )
         {
             self.capture.failed(&mut gpu.host, &self.signals, &error);
         }
@@ -854,7 +852,7 @@ impl Owner {
     }
 }
 
-impl Gpu {
+impl<G: MobileGame> Gpu<G> {
     /// Configure the leased surface for this epoch if needed. `None` means it
     /// must wait for submitted frames to retire; `Some(true)` means configured now.
     fn configure(
@@ -906,7 +904,7 @@ impl Gpu {
         now: Duration,
         lease: &Lease,
         request: &FrameRequest,
-        reply: &mut FrameReply,
+        reply: &mut FrameReply<G::Readback>,
         stalling: &dyn Fn(),
         lose_now: &AtomicBool,
         background: &AtomicBool,
@@ -973,7 +971,7 @@ impl Gpu {
                 }
             };
             reply.platform.acquired = true;
-            let hold = |point: StallPoint, reply: &mut FrameReply| {
+            let hold = |point: StallPoint, reply: &mut FrameReply<G::Readback>| {
                 if let Some((at, stall)) = request.platform.stall
                     && at == point
                 {
@@ -1052,27 +1050,11 @@ impl Gpu {
     }
 }
 
-async fn prepare_host(
-    device: &wgpu::Device,
-    queue: &wgpu::Queue,
-    capabilities: &thrum_render::capabilities::DeviceCapabilities,
-    config: FrameConfig,
-    #[cfg(feature = "proving")] join_store: Option<std::path::PathBuf>,
-) -> Result<(v1_game::GameSetup, super::Host), String> {
-    #[cfg(feature = "proving")]
-    if let Some(store) = join_store {
-        return join::prepare(device, queue, capabilities, config, store).await;
-    }
-    let setup = v1_game::selected_setup()?;
-    let host = setup.prepare(device, queue, capabilities, config).await?;
-    Ok((setup, host))
-}
-
 /// Abandon a recorded frame on a lost device. A healthy skip would flush
 /// staging with an empty submit to the lost queue; this makes no queue call.
-fn abandon(
-    encoded: EncodedFrame<'_, GameWorld, GameScene>,
-    reply: &mut FrameReply,
+fn abandon<W: FrameWorld, V: SceneSource<W::Page>, R>(
+    encoded: EncodedFrame<'_, W, V>,
+    reply: &mut FrameReply<R>,
 ) -> Option<DriveReport> {
     reply.platform.status = SurfaceStatus::DeviceLost;
     reply.platform.abandoned = true;
@@ -1082,9 +1064,9 @@ fn abandon(
 
 /// Background revocation forbids queue work and resets correspondence. A
 /// foreground resize/replacement keeps the existing healthy staging-flush contract.
-fn cancel_revoked(
-    encoded: EncodedFrame<'_, GameWorld, GameScene>,
-    reply: &mut FrameReply,
+fn cancel_revoked<W: FrameWorld, V: SceneSource<W::Page>, R>(
+    encoded: EncodedFrame<'_, W, V>,
+    reply: &mut FrameReply<R>,
     background: &AtomicBool,
 ) -> DriveReport {
     if background.load(Ordering::Acquire) {
@@ -1094,9 +1076,9 @@ fn cancel_revoked(
     }
 }
 
-fn cancel_background(
-    encoded: EncodedFrame<'_, GameWorld, GameScene>,
-    reply: &mut FrameReply,
+fn cancel_background<W: FrameWorld, V: SceneSource<W::Page>, R>(
+    encoded: EncodedFrame<'_, W, V>,
+    reply: &mut FrameReply<R>,
 ) -> DriveReport {
     reply.platform.background_discard = reply
         .platform
@@ -1108,7 +1090,10 @@ fn cancel_background(
 
 /// Skip a recorded frame on a healthy device. The engine flushes its staged
 /// writes with an empty queue submit, which the witness counts.
-fn skip(encoded: EncodedFrame<'_, GameWorld, GameScene>, reply: &mut FrameReply) -> DriveReport {
+fn skip<W: FrameWorld, V: SceneSource<W::Page>, R>(
+    encoded: EncodedFrame<'_, W, V>,
+    reply: &mut FrameReply<R>,
+) -> DriveReport {
     reply.platform.empty_submit = true;
     encoded.skip()
 }

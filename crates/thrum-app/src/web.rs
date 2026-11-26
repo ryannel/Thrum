@@ -821,3 +821,44 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
             .map_err(WebHostError::Lifecycle)
     }
 }
+
+/// Translate a canvas contact to a first-chance interface event.
+///
+/// # Errors
+/// Refuses an unknown pointer source or phase, or an out-of-range mouse button.
+#[cfg(feature = "interface")]
+pub fn interface_pointer(
+    source: &str,
+    phase: &str,
+    id: u32,
+    point: [f64; 2],
+) -> Result<thrum_ui::Event<crate::KeyCode>, GameError> {
+    use thrum_ui::{Contact, Event};
+    let contact = match source {
+        "mouse" => Contact::Pointer(
+            u16::try_from(id).map_err(|error| GameError::Rejected(error.to_string()))?,
+        ),
+        "touch" | "pen" => Contact::Touch(u64::from(id)),
+        _ => {
+            return Err(GameError::Rejected(
+                "unknown interface pointer source".into(),
+            ));
+        }
+    };
+    Ok(match phase {
+        "down" => Event::Press {
+            contact,
+            position: Some(point),
+            intent: None,
+        },
+        "up" => Event::Release(contact, Some(point)),
+        "move" => Event::Move(contact, point),
+        "hover" => Event::Hover(point),
+        "cancel" => Event::Cancel(contact),
+        _ => {
+            return Err(GameError::Rejected(
+                "unknown interface pointer phase".into(),
+            ));
+        }
+    })
+}

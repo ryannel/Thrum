@@ -1,5 +1,6 @@
 //! Opt-in observer of the ordinary foreground renderer. No GPU work is submitted here.
 use super::render::{FrameReply, FrameRequest, Lease, Signals};
+use crate::capture_writer::{ImageWriter, SpoolEncoding, WriterError};
 use serde_json::{Value, json};
 use std::{
     fs::{self, File},
@@ -12,10 +13,7 @@ use std::{
     thread,
     time::{Duration, Instant},
 };
-use thrum_app::capture_writer::{ImageWriter, SpoolEncoding, WriterError};
-use thrum_render::runtime::CaptureLimits;
-
-use super::Host;
+use thrum_render::runtime::{CaptureLimits, FrameHost, FrameWorld, SceneSource};
 
 const MAX_IMAGES: usize = 1024;
 const MAX_CALLBACKS: usize = 4096;
@@ -117,7 +115,12 @@ impl Write for Sink {
 pub(super) const STILL: u64 = 5;
 
 impl Recorder {
-    pub(super) fn failed(&mut self, host: &mut Host, signals: &Signals, error: &str) {
+    pub(super) fn failed<W: FrameWorld, V: SceneSource<W::Page>>(
+        &mut self,
+        host: &mut FrameHost<W, V>,
+        signals: &Signals,
+        error: &str,
+    ) {
         drop(self.cancel(host, signals, error));
         host.disable_submitted_capture();
         drop(fs::write(
@@ -126,9 +129,9 @@ impl Recorder {
         ));
     }
 
-    pub(super) fn before(
+    pub(super) fn before<W: FrameWorld, V: SceneSource<W::Page>>(
         &mut self,
-        host: &mut Host,
+        host: &mut FrameHost<W, V>,
         signals: &Signals,
         lease: &Lease,
         request: &FrameRequest,
@@ -177,12 +180,12 @@ impl Recorder {
             .map_err(|error| error.to_string())?;
             let started = Instant::now();
             host.enable_submitted_capture_with_limits(self.next, LIMITS)?;
-            #[cfg(feature = "proving")]
+            #[cfg(feature = "interface")]
             let interface_output = request
                 .platform
                 .interface
                 .map(|output| json!({"density":output.density,"insets":output.insets}));
-            #[cfg(not(feature = "proving"))]
+            #[cfg(not(feature = "interface"))]
             let interface_output = serde_json::Value::Null;
             fs::write(path.join("identity.json"), json!({"session":self.next,"adapter":format!("{:?}",adapter.get_info()),
                 "downlevel":format!("{:?}",adapter.get_downlevel_capabilities()),"backend":"Metal",
@@ -222,12 +225,13 @@ impl Recorder {
         Ok(())
     }
 
-    pub(super) fn after(
+    pub(super) fn after<W: FrameWorld, V: SceneSource<W::Page>, R>(
         &mut self,
-        host: &mut Host,
-        reply: &FrameReply,
+        host: &mut FrameHost<W, V>,
+        reply: &FrameReply<R>,
         lease: &Lease,
         signals: &Signals,
+        still_bounds: impl FnOnce(&mut FrameHost<W, V>) -> Option<Value>,
     ) -> Result<(), String> {
         let Some(s) = &mut self.active else {
             return Ok(());
@@ -243,10 +247,8 @@ impl Recorder {
             row["cooked"] = json!(reply.platform.cooked);
         }
         if !s.ending && reply.outcome.is_some_and(|r| r.submitted) {
-            #[cfg(feature = "proving")]
             if s.mode == STILL
-                && let Some(bounds) =
-                    v1_game::mobile_interface::status_bounds(host.continuous_source_mut())
+                && let Some(bounds) = still_bounds(host)
             {
                 fs::write(s.path.join("status-bounds.json"), bounds.to_string())
                     .map_err(|error| error.to_string())?;
@@ -305,17 +307,17 @@ impl Recorder {
         Ok(())
     }
 
-    pub(super) fn cancel(
+    pub(super) fn cancel<W: FrameWorld, V: SceneSource<W::Page>>(
         &mut self,
-        host: &mut Host,
+        host: &mut FrameHost<W, V>,
         signals: &Signals,
         reason: &str,
     ) -> Result<(), String> {
         self.finish(host, signals, Some(reason.to_owned()))
     }
-    fn finish(
+    fn finish<W: FrameWorld, V: SceneSource<W::Page>>(
         &mut self,
-        host: &mut Host,
+        host: &mut FrameHost<W, V>,
         signals: &Signals,
         reason: Option<String>,
     ) -> Result<(), String> {

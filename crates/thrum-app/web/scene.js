@@ -1,6 +1,7 @@
 import init, { create_scene } from './scene.js';
 import { bindControls } from './thrum-controls.js';
 import { mountPage } from './host-page.js';
+import { mountInterfaceInput } from './interface-input.js';
 const canvas = document.querySelector('canvas');
 const status = document.querySelector('#status');
 const problems = document.querySelector('#problems');
@@ -15,6 +16,14 @@ try {
   window.game = game;
   const recover = document.querySelector('#recover');
   document.title = game.title();
+  canvas.setAttribute('aria-label', game.title());
+  const input = typeof game.interface_pointer === 'function' ?
+    mountInterfaceInput(canvas, {
+      key: (...args) => game.interface_key(...args),
+      pointer: (...args) => game.interface_pointer(...args),
+      interrupt: (...args) => game.interface_interrupt(...args),
+    }) : undefined;
+  if (input) window.addEventListener('blur', input.interrupt);
   const view = bindControls(document.querySelector('#controls'), game, { onError: report });
   if (query.has('params')) {
     const url = query.get('params');
@@ -32,6 +41,17 @@ try {
   mountPage(game, {
     controlView: view,
     recoveryButton: recover,
+    physicalKeys: !input,
+    onHidden: input?.interrupt,
+    beforeFrame() {
+      if (!input) return;
+      const { width, height } = canvas.getBoundingClientRect();
+      const density = window.devicePixelRatio;
+      const pixels = [width, height].map(side => Math.max(1, Math.round(side * density)));
+      if (canvas.width !== pixels[0]) canvas.width = pixels[0];
+      if (canvas.height !== pixels[1]) canvas.height = pixels[1];
+      game.set_interface_output(density);
+    },
     afterFrame() {
       const nextStatus = game.report();
       if (status.textContent !== nextStatus) status.textContent = nextStatus;

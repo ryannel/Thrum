@@ -1,5 +1,5 @@
 // Canvas contacts are sent in backing pixels, against the layout that last drew.
-export function mountInterfaceInput(game, canvas) {
+export function mountInterfaceInput(canvas, input) {
   const mouse = new Set();
   const touches = new Set();
   canvas.style.touchAction = 'none';
@@ -10,7 +10,7 @@ export function mountInterfaceInput(game, canvas) {
     if (!acceptsKeys(event)) return;
     const pasteShortcut = (event.metaKey || event.ctrlKey) && event.code === 'KeyV';
     if (!pasteShortcut && !event.metaKey && !event.ctrlKey && !event.altKey) event.preventDefault();
-    game.menu_key(event.code, event.type === 'keydown', event.repeat, event.shiftKey, performance.now());
+    input.key(event.code, event.type === 'keydown', event.repeat, event.shiftKey, performance.now());
   };
   window.addEventListener('keydown', key);
   window.addEventListener('keyup', key);
@@ -25,18 +25,18 @@ export function mountInterfaceInput(game, canvas) {
 
   canvas.addEventListener('mousedown', event => {
     mouse.add(event.button);
-    game.menu_pointer('mouse', 'down', event.button, point(event), performance.now());
+    input.pointer('mouse', 'down', event.button, point(event), performance.now());
   });
   window.addEventListener('mouseup', event => {
     if (mouse.delete(event.button)) {
-      game.menu_pointer('mouse', 'up', event.button, point(event), performance.now());
+      input.pointer('mouse', 'up', event.button, point(event), performance.now());
     }
   });
   window.addEventListener('mousemove', event => {
     if (mouse.size > 0) {
-      for (const button of mouse) game.menu_pointer('mouse', 'move', button, point(event), performance.now());
+      for (const button of mouse) input.pointer('mouse', 'move', button, point(event), performance.now());
     } else if (event.target === canvas) {
-      game.menu_pointer('mouse', 'hover', 0, point(event), performance.now());
+      input.pointer('mouse', 'hover', 0, point(event), performance.now());
     }
   });
   canvas.addEventListener('contextmenu', event => event.preventDefault());
@@ -55,23 +55,23 @@ export function mountInterfaceInput(game, canvas) {
         return;
       }
       if (phase === 'up' || phase === 'cancel') touches.delete(event.pointerId);
-      game.menu_pointer(event.pointerType, phase, event.pointerId, point(event), performance.now());
+      input.pointer(event.pointerType, phase, event.pointerId, point(event), performance.now());
     });
   }
 
   window.addEventListener('paste', event => {
     if (!acceptsKeys(event)) return;
     const text = event.clipboardData?.getData('text/plain');
-    if (text) {
+    if (text && input.text) {
       event.preventDefault();
-      game.menu_text(text, true, performance.now());
+      input.text?.(text, true, performance.now());
     }
   });
   const fragment = () => {
     const value = location.hash.slice(1);
     if (value) {
       try {
-        game.menu_text(decodeURIComponent(value), false, performance.now());
+        input.text?.(decodeURIComponent(value), false, performance.now());
       } catch (error) {
         if (!(error instanceof URIError)) throw error;
       }
@@ -84,7 +84,7 @@ export function mountInterfaceInput(game, canvas) {
     interrupt() {
       mouse.clear();
       touches.clear();
-      game.menu_interrupt(performance.now());
+      input.interrupt(performance.now());
     },
   };
 }

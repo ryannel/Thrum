@@ -47,7 +47,7 @@ for page in index route; do
 done
 if [ -n "$mode" ]; then
   cp examples/v1-game/web/temporal.html "$web_output/temporal.html"
-  cp examples/v1-game/web/interface-input.js "$web_output/interface-input.js"
+  cp crates/thrum-app/web/interface-input.js "$web_output/interface-input.js"
   cp examples/v1-game/web/capture.html examples/v1-game/web/capture.mjs \
     examples/v1-game/web/capture_upload.mjs "$web_output/"
   cp examples/v1-game/routes/*.json "$web_output/"

@@ -4,7 +4,7 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 publish.workspace = true
-description = "Thin UIKit scene shell for the shared V1 game diagnostic"
+description = "UIKit app entry and game adapter for the V1 game diagnostic"
 autotests = false
 
 [lib]
@@ -14,7 +14,7 @@ crate-type = ["staticlib", "rlib"]
 workspace = true
 
 [features]
-proving = ["v1-game/proving", "dep:thrum-ui"]
+proving = ["v1-game/proving", "dep:thrum-ui", "thrum-app/interface"]
 
 [dependencies]
 thrum-core = { path = "../../crates/thrum-core" }
@@ -28,7 +28,6 @@ thrum-app = { path = "../../crates/thrum-app" }
 serde_json = "=1.0.154"
 thrum-ui = { path = "../../crates/thrum-ui", optional = true }
 thrum-asset-gpu = { path = "../../crates/thrum-asset-gpu" }
-winit = { version = "=0.30.13", default-features = false, features = ["rwh_06"] }
 
 [dev-dependencies]
 thrum-asset-gpu = { path = "../../crates/thrum-asset-gpu" }

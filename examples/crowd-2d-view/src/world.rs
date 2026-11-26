@@ -19,15 +19,22 @@ use web_time::Instant;
 pub struct CrowdWorld {
     simulation: Simulation,
     exact_steps: bool,
+    end_tick: Option<u64>,
     clock: TickClock,
     overload: Option<u64>,
 }
 
 impl CrowdWorld {
-    pub(crate) fn new(count: u32, exact_steps: bool) -> Self {
+    /// Construct the retained replay at a count validated by the caller.
+    ///
+    /// # Panics
+    /// Panics if the built-in rule or clock configuration cannot be initialized.
+    #[must_use]
+    pub fn new(count: u32, exact_steps: bool) -> Self {
         Self {
             simulation: Simulation::for_presentation(count, 1),
             exact_steps,
+            end_tick: None,
             clock: TickClock::new(
                 ClockConfig {
                     // Realtime capture and a contended renderer can briefly fall behind.
@@ -39,6 +46,20 @@ impl CrowdWorld {
             )
             .expect("valid Crowd clock"),
             overload: None,
+        }
+    }
+
+    /// Hold the last publication from this tick onwards.
+    #[must_use]
+    pub fn through(mut self, tick: u64) -> Self {
+        self.end_tick = Some(tick);
+        self
+    }
+
+    /// Extend a held replay to a later tick. An unbounded replay stays unbounded.
+    pub fn extend_through(&mut self, tick: u64) {
+        if let Some(end) = &mut self.end_tick {
+            *end = (*end).max(tick);
         }
     }
 
@@ -99,6 +120,22 @@ impl FrameWorld for CrowdWorld {
     }
 
     fn advance(&mut self, now: Duration) -> Result<WorldAdvance, FrameError> {
+        if self.end_tick.is_some_and(|end| self.tick() >= end) {
+            return Ok(WorldAdvance {
+                tick: self.tick(),
+                overload: None,
+                completed_ticks: 0,
+                queued_ticks: 0,
+                projected_changes: 0,
+                projection_lost_ticks: 0,
+                skipped_publications: 0,
+                recovered_publication: false,
+                tick_cpu: Duration::ZERO,
+            });
+        }
+        let steps = self.end_tick.map_or(u32::MAX, |end| {
+            u32::try_from(end.saturating_sub(self.tick())).unwrap_or(u32::MAX)
+        });
         let mut tick_cpu = Duration::ZERO;
         let mut tick = || {
             let start = Instant::now();
@@ -113,7 +150,7 @@ impl FrameWorld for CrowdWorld {
             } else {
                 let report = self
                     .clock
-                    .advance(now, u32::MAX, tick)
+                    .advance(now, steps, tick)
                     .map_err(|error| FrameError::World(error.to_string()))?;
                 if let Some(error) = report.step_error {
                     return Err(error);

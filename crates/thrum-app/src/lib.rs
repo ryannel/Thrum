@@ -10,7 +10,7 @@
 //! [`web`] (wasm32 only) is the browser shell: the WebGPU canvas surface and device, device-loss
 //! gating and detached replacement, the page clock policy, the frame step and typed counters. The
 //! shared page driver owns browser callbacks, visibility and recovery, and a game keeps its report
-//! text, controls and authored scene. Mobile shells own their own loops.
+//! text, controls and authored scene. The iOS shell owns the UIKit scene, display link and render owner.
 
 // platform-only tests: they drive the winit and AppKit shell, which exists only on macOS.
 #[cfg(target_os = "macos")]
@@ -29,10 +29,21 @@ pub mod capture_writer;
     expect(dead_code, reason = "only the macOS shell starts the watcher")
 )]
 mod file_watch;
+// These portable tests exercise the same touch and lease code as UIKit.
+#[cfg(all(test, not(target_os = "ios"), not(target_arch = "wasm32")))]
+#[path = "ios/gesture.rs"]
+mod ios_gesture;
+#[cfg(all(test, not(target_os = "ios"), not(target_arch = "wasm32")))]
+#[path = "ios/lease.rs"]
+mod ios_lease;
+
 pub mod frame;
 mod game;
 #[cfg(feature = "interface")]
 mod interface;
+/// Shared UIKit application shell.
+#[cfg(target_os = "ios")]
+pub mod ios;
 mod key;
 #[cfg(target_os = "macos")]
 pub mod offscreen;

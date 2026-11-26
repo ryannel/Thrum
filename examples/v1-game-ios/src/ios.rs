@@ -1,1298 +1,307 @@
-//! UIKit shell for the shared V1 game. The main thread forwards display
-//! targets, touches and lifecycle; the world lane owns time and rules; the
-//! render owner prepares, encodes, acquires late and presents.
+//! V1 scene setup, controls and proof observations for the shared mobile shell.
 
 use std::{
-    sync::{Arc, OnceLock, atomic::Ordering},
-    thread,
+    sync::{Arc, Mutex},
     time::{Duration, Instant},
 };
 
-use thrum_core::sim::{WorldLaneFault, WorldLifecycle, WorldLifecyclePolicy};
-use thrum_render::capabilities::FIRST_DEVICE_GENERATION;
-use winit::{
-    application::ApplicationHandler,
-    event::{TouchPhase, WindowEvent},
-    event_loop::{ActiveEventLoop, ControlFlow, EventLoop, EventLoopProxy},
-    raw_window_handle::{HasWindowHandle, RawWindowHandle},
-    window::{Window, WindowId},
+use thrum_app::{
+    GameError, Gpu, WorldLink,
+    ios::{MobileControls, MobileGame, MobileHost, MobilePrepared, SceneRequest},
+};
+use thrum_core::sim::{WorldLaneFault, WorldLifecycle, WorldLifecycleReply};
+use thrum_render::runtime::FrameConfig;
+use v1_game::{GameHost, GameScene, GameSetup, GameWorld, WorldControls};
+
+#[cfg(feature = "proving")]
+use thrum_app::{KeyCode, OutputMetrics};
+#[cfg(feature = "proving")]
+use thrum_ui::{Event, Routed, Viewport};
+#[cfg(feature = "proving")]
+use v1_game::{
+    InterfaceText,
+    mobile_interface::{self, InterfaceFrame, MobileInterface},
 };
 
-use crate::{
-    gesture::{Gesture, Phase},
-    lease::Take,
-};
-
-/// The engine's frame host, holding the shared V1 game world and scene.
-type Host = thrum_render::runtime::FrameHost<v1_game::GameWorld, v1_game::GameScene>;
-
-mod capture;
 mod cooked_view;
 mod culling;
 #[cfg(feature = "proving")]
-mod interface;
-mod render;
-mod witness;
+mod invite;
 
-use render::{
-    FrameRequest, Job, Lease, RecoverFault, Recovered, RenderWorker, Reply, Reported, Signals,
-    StallPoint, Wakes,
-};
-use witness::Witness;
+pub(super) struct V1;
 
-static SHELL: OnceLock<EventLoopProxy<ShellEvent>> = OnceLock::new();
-static WORLD_THREAD: OnceLock<String> = OnceLock::new();
-/// Qualification hold inside the render owner's lease section.
-const STALL: Duration = Duration::from_secs(8);
-/// Frame replies between routine witness writes.
-const WITNESS_EVERY: u64 = 120;
-/// Recently detached windows whose late touches are still recognised.
-const RETIRED_WINDOWS: usize = 4;
-/// Failed recovery attempts (not deferrals) before the shell gives up.
-const RECOVER_ATTEMPTS: u32 = 3;
+type Host = MobileHost<V1>;
 
-#[derive(Debug)]
-enum ShellEvent {
-    Target(f64, f32),
-    RenderDone,
-    WorldAdvanced,
-    /// Qualification only: the render owner is holding a stalled section.
-    Stalling,
-    /// wgpu reported this device generation lost.
-    DeviceLost(u64),
-    /// Qualification only: the render owner is holding a recovery.
-    RecoverHeld,
-    #[cfg(feature = "proving")]
-    Command(Command),
-    #[cfg(feature = "proving")]
-    SceneConnected(Option<interface::Invite>),
-    #[cfg(feature = "proving")]
-    Invite(interface::Invite),
-}
+pub(super) struct Controls(WorldControls);
 
-/// Qualification commands from Darwin notifications, honoured only when the
-/// app was launched with `THRUM_V1_ROUTE=1`.
-#[cfg(feature = "proving")]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum Command {
-    ReplaceSurface,
-    HideView,
-    ShowView,
-    StallRender,
-    StallPresent,
-    SampleActor,
-    LoseDevice,
-    HoldRecover,
-    ReleaseRecover,
-    StaleWake,
-    CookedPan,
-    CaptureBegin,
-    CaptureEnd,
-    CaptureSaturate,
-    CaptureSlow,
-    CaptureStill,
-    CaptureMove,
-    CaptureRest,
-    ForceHeadroom,
-    HoldWorld,
-    RunWorld,
-    OpenChoice,
-    CloseChoice,
-}
+impl WorldLink for Controls {
+    fn request_lifecycle(&self, request: WorldLifecycle) -> Result<(), WorldLaneFault> {
+        self.0.request_lifecycle(request)
+    }
 
-#[expect(
-    unsafe_code,
-    reason = "Swift owns the UIKit display link and calls this C ABI forward"
-)]
-#[unsafe(no_mangle)]
-#[expect(
-    clippy::cast_possible_truncation,
-    reason = "the display record uses bounded f32 headroom"
-)]
-extern "C" fn thrum_v1_display_target(target_media_seconds: f64, headroom: f64) {
-    if let Some(shell) = SHELL.get() {
-        drop(shell.send_event(ShellEvent::Target(
-            target_media_seconds,
-            headroom.clamp(1.0, 65_504.0) as f32,
-        )));
+    fn poll_lifecycle_reply(&self) -> Result<Option<WorldLifecycleReply>, WorldLaneFault> {
+        self.0.poll_lifecycle_reply()
+    }
+
+    fn check_health(&self) -> Result<u64, WorldLaneFault> {
+        self.0.check_health()
     }
 }
 
-#[cfg(feature = "proving")]
-#[expect(
-    unsafe_code,
-    reason = "Swift forwards qualification notifications through this C ABI"
-)]
-#[unsafe(no_mangle)]
-extern "C" fn thrum_v1_shell_command(code: i32) {
-    let command = match code {
-        1 => Command::ReplaceSurface,
-        2 => Command::HideView,
-        3 => Command::ShowView,
-        4 => Command::StallRender,
-        5 => Command::StallPresent,
-        6 => Command::SampleActor,
-        7 => Command::LoseDevice,
-        8 => Command::HoldRecover,
-        9 => Command::ReleaseRecover,
-        10 => Command::StaleWake,
-        11 => Command::CookedPan,
-        12 => Command::CaptureBegin,
-        13 => Command::CaptureEnd,
-        14 => Command::CaptureSaturate,
-        15 => Command::CaptureSlow,
-        16 => Command::CaptureMove,
-        17 => Command::CaptureRest,
-        18 => Command::ForceHeadroom,
-        19 => Command::HoldWorld,
-        20 => Command::RunWorld,
-        21 => Command::CaptureStill,
-        22 => Command::OpenChoice,
-        23 => Command::CloseChoice,
-        _ => return,
-    };
-    if let Some(shell) = SHELL.get() {
-        drop(shell.send_event(ShellEvent::Command(command)));
+impl MobileControls for Controls {
+    fn world(&self) -> Option<&dyn WorldLink> {
+        Some(self)
+    }
+
+    fn axes(&self, axes: [f32; 3]) -> Result<(), GameError> {
+        self.0.set_controls(axes).map_err(GameError::Rejected)
     }
 }
 
-#[expect(
-    unsafe_code,
-    reason = "Swift attaches Winit's borrowed UIView to the UIKit scene"
-)]
-unsafe extern "C" {
-    fn thrum_v1_attach_view(view: *mut std::ffi::c_void);
-    fn thrum_v1_detach_view(view: *mut std::ffi::c_void);
-    fn thrum_v1_fit_layer(view: *mut std::ffi::c_void) -> i32;
-    fn thrum_v1_live_detached_windows() -> i32;
-    fn thrum_v1_start_display_link() -> i32;
-    fn thrum_v1_stop_display_link();
+pub(super) struct Presentation {
+    cooked: Option<Arc<Mutex<thrum_asset_gpu::CookedStats>>>,
+    view: Option<cooked_view::View>,
 }
 
-#[expect(
-    unsafe_code,
-    reason = "UIKit owns this synchronous start bridge on its main thread"
-)]
-fn start_display_link() -> Result<(), String> {
-    // SAFETY: UIKit owns the link on its main thread, which runs this event loop.
-    (unsafe { thrum_v1_start_display_link() } != 0)
-        .then_some(())
-        .ok_or_else(|| "iOS display link has no connected scene".to_owned())
-}
-
-#[expect(
-    unsafe_code,
-    reason = "UIKit owns this synchronous stop bridge on its main thread"
-)]
-fn stop_display_link() {
-    // SAFETY: Lifecycle callbacks run on UIKit's main thread.
-    unsafe { thrum_v1_stop_display_link() };
-}
-
-#[expect(
-    unsafe_code,
-    reason = "the live main-thread Winit window owns this UIView for the call"
-)]
-fn attach_to_scene(window: &Window) -> Result<(), String> {
-    let handle = window
-        .window_handle()
-        .map_err(|error| format!("iOS window handle: {error}"))?;
-    let RawWindowHandle::UiKit(view) = handle.as_raw() else {
-        return Err("iOS window has no UIKit view".into());
-    };
-    // SAFETY: Winit owns `window` and its UIView across this synchronous call
-    // on UIKit's main thread; Swift does not retain the pointer.
-    unsafe { thrum_v1_attach_view(view.ui_view.as_ptr()) };
-    Ok(())
-}
-
-/// Keep the drawable's aspect while UIKit animates the layer's bounds through a
-/// rotation; at rest the drawable matches the bounds and this changes nothing.
-/// Returns how many Metal layers were set.
-#[expect(
-    unsafe_code,
-    reason = "the live main-thread Winit window owns this UIView for the call"
-)]
-fn fit_layer(window: &Window) -> Result<i32, String> {
-    let handle = window
-        .window_handle()
-        .map_err(|error| format!("iOS window handle: {error}"))?;
-    let RawWindowHandle::UiKit(view) = handle.as_raw() else {
-        return Err("iOS window has no UIKit view".into());
-    };
-    // SAFETY: Winit owns `window` and its UIView across this synchronous call
-    // on UIKit's main thread; Swift does not retain the pointer.
-    Ok(unsafe { thrum_v1_fit_layer(view.ui_view.as_ptr()) })
-}
-
-/// Close a window whose surface is gone: hide it, take it out of the scene
-/// and remove the `CAMetalLayer` sublayer raw-window-metal added. Winit's iOS
-/// window does not close its `UIWindow` on drop.
-#[expect(
-    unsafe_code,
-    reason = "the live main-thread Winit window owns this UIView for the call"
-)]
-fn detach_window(window: Arc<Window>) {
-    if let Ok(handle) = window.window_handle()
-        && let RawWindowHandle::UiKit(view) = handle.as_raw()
-    {
-        // SAFETY: Winit owns `window` and its UIView across this synchronous
-        // call on UIKit's main thread; Swift keeps only a weak reference.
-        unsafe { thrum_v1_detach_view(view.ui_view.as_ptr()) };
-    }
-    drop(window);
-}
-
-#[expect(
-    unsafe_code,
-    reason = "Swift counts its weak references on UIKit's main thread"
-)]
-fn live_detached_windows() -> i32 {
-    // SAFETY: Called from the event loop on UIKit's main thread.
-    unsafe { thrum_v1_live_detached_windows() }
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum State {
-    Starting,
-    Active,
-    Suspended,
-}
-
-#[expect(
-    clippy::struct_excessive_bools,
-    reason = "independent shell flags; lifecycle state is the State enum"
-)]
-struct Shell {
-    route: bool,
-    instance: wgpu::Instance,
-    lease: Arc<Lease>,
-    signals: Arc<Signals>,
-    force_headroom: bool,
-    origin: Instant,
-    state: State,
-    /// The device generation frames are requested under.
-    device_generation: u64,
-    /// The generation wgpu reported lost; frames wait for its recovery.
-    lost_generation: Option<u64>,
-    /// A `Recover` job is outstanding. At most one exists.
-    recovering: bool,
-    stale_request: bool,
-    recover_failures: u32,
-    /// A new window and surface whose install met the owner inside a section;
-    /// retried on the next reply, attached to the scene only once installed.
-    pending_install: Option<(Arc<Window>, wgpu::Surface<'static>)>,
-    window: Option<Arc<Window>>,
-    /// The surface's window is retained until its deferred release completes.
-    releasing: Option<Arc<Window>>,
-    /// A new window and surface wait for the deferred release.
-    restore: bool,
-    /// Detached windows whose late touches are routed to the gesture as stale.
-    retired: Vec<WindowId>,
-    render: Option<RenderWorker>,
-    in_flight: bool,
-    stall_in_flight: bool,
-    pending_target: Option<f64>,
-    observed_extent: [u32; 2],
-    hidden: bool,
-    stall_next: Option<StallPoint>,
-    /// The route asked for one committed actor position.
-    sample_actor: bool,
-    /// The render owner reported that it holds a stalled section.
-    stalling: bool,
-    controls: Option<v1_game::WorldControls>,
-    policy: WorldLifecyclePolicy,
-    gesture: Gesture,
+impl MobileGame for V1 {
+    type World = GameWorld;
+    type Scene = GameScene;
+    type Presentation = Presentation;
+    type Controls = Controls;
     #[cfg(feature = "proving")]
-    interface_output: bool,
+    type Input = Option<MobileInterface>;
     #[cfg(feature = "proving")]
-    interface_menu: Option<v1_game::mobile_interface::MobileInterface>,
-    #[cfg(feature = "proving")]
-    interface_scale: f64,
-    #[cfg(feature = "proving")]
-    pending_invite: Option<interface::Invite>,
-    #[cfg(feature = "proving")]
-    opening_join: bool,
-    witness: Witness,
-    error: Option<String>,
-}
+    type Readback = InterfaceFrame;
+    #[cfg(not(feature = "proving"))]
+    type Input = ();
+    #[cfg(not(feature = "proving"))]
+    type Readback = ();
 
-impl Shell {
-    fn new() -> Self {
-        let mut descriptor = wgpu::InstanceDescriptor::new_without_display_handle();
-        descriptor.backends = wgpu::Backends::METAL;
-        Self {
-            route: route_enabled(),
-            instance: wgpu::Instance::new(descriptor),
-            lease: Arc::new(Lease::new()),
-            signals: Arc::new(Signals::default()),
-            force_headroom: false,
-            origin: Instant::now(),
-            state: State::Starting,
-            device_generation: FIRST_DEVICE_GENERATION,
-            lost_generation: None,
-            recovering: false,
-            stale_request: false,
-            recover_failures: 0,
-            pending_install: None,
-            window: None,
-            releasing: None,
-            restore: false,
-            retired: Vec::new(),
-            render: None,
-            in_flight: false,
-            stall_in_flight: false,
-            pending_target: None,
-            observed_extent: [0; 2],
-            hidden: false,
-            stall_next: None,
-            sample_actor: false,
-            stalling: false,
-            controls: None,
-            policy: WorldLifecyclePolicy::default(),
-            gesture: Gesture::new(),
-            #[cfg(feature = "proving")]
-            interface_output: false,
-            #[cfg(feature = "proving")]
-            interface_menu: None,
-            #[cfg(feature = "proving")]
-            interface_scale: 1.0,
-            #[cfg(feature = "proving")]
-            pending_invite: None,
-            #[cfg(feature = "proving")]
-            opening_join: false,
-            witness: Witness::new(),
-            error: None,
-        }
-    }
-
-    /// Create a fresh window and surface and install it under a new epoch.
-    /// `None` means the owner held the slot for a moment (a section admitted
-    /// under the old epoch): the pair waits and is retried on the next reply.
-    /// The window joins the scene only once its surface is installed.
-    fn attach_surface(&mut self, event_loop: &ActiveEventLoop) -> Result<Option<u64>, String> {
-        let (window, surface) = if let Some(pending) = self.pending_install.take() {
-            pending
-        } else {
-            let window = Arc::new(
-                event_loop
-                    .create_window(Window::default_attributes().with_title("Thrum V1 scene"))
-                    .map_err(|error| format!("iOS window: {error}"))?,
-            );
-            let surface = self
-                .instance
-                .create_surface(Arc::clone(&window))
-                .map_err(|error| format!("iOS surface: {error}"))?;
-            if fit_layer(&window)? != 1 {
-                return Err("iOS surface did not add one Metal layer".into());
-            }
-            (window, surface)
+    async fn prepare(
+        gpu: Gpu<'_>,
+        origin: Instant,
+        wake: fn(),
+        request: Option<SceneRequest>,
+        qualification: bool,
+    ) -> Result<MobilePrepared<Self>, GameError> {
+        let config = FrameConfig {
+            render_extent: gpu.surface.extent,
+            surface: Some(gpu.surface),
         };
-        let epoch = match self.lease.try_install(surface) {
-            Ok(epoch) => epoch,
-            Err(surface) => {
-                self.pending_install = Some((window, surface));
-                self.witness.install_retries += 1;
-                return Ok(None);
-            }
-        };
-        attach_to_scene(&window)?;
-        if self.hidden {
-            window.set_visible(false);
-        }
-        let size = layer_extent(&window);
-        self.observed_extent = [size.width, size.height];
-        self.lease.observe_extent(self.observed_extent);
-        self.window = Some(window);
-        self.restore = false;
-        self.witness.installs += 1;
-        Ok(Some(epoch))
-    }
-
-    /// Revoke the lease and release the surface without waiting. A section in
-    /// progress defers the release, and the detach, to its reply. It drops its
-    /// drawable at a later epoch check, or, if the revocation landed after its
-    /// final check, presents that one drawable onto the still-attached old
-    /// layer (`raced_presents`). No later section is admitted on this surface.
-    fn release_surface(&mut self) {
-        self.lease.invalidate();
-        let window = self.window.take();
-        match self.lease.try_take() {
-            Take::Taken(surface) => {
-                drop(surface);
-                self.detach(window);
-                self.witness.release_immediate += 1;
-            }
-            Take::Empty => self.detach(window),
-            Take::Busy => {
-                // The owner's section still borrows the surface; hide the view
-                // now and detach it when the section's reply arrives.
-                if let Some(window) = &window {
-                    window.set_visible(false);
-                }
-                self.releasing = window.or(self.releasing.take());
-                self.witness.release_deferred += 1;
-            }
-        }
-    }
-
-    fn detach(&mut self, window: Option<Arc<Window>>) {
-        if let Some(window) = window {
-            if self.retired.len() == RETIRED_WINDOWS {
-                self.retired.remove(0);
-            }
-            self.retired.push(window.id());
-            detach_window(window);
-            self.witness.detached_windows += 1;
-        }
-    }
-
-    fn finish_release(&mut self, event_loop: &ActiveEventLoop) -> Result<(), String> {
-        if self.releasing.is_some() {
-            match self.lease.try_take() {
-                Take::Taken(surface) => {
-                    drop(surface);
-                    let window = self.releasing.take();
-                    self.detach(window);
-                    self.witness.release_completed += 1;
-                }
-                Take::Empty => {
-                    let window = self.releasing.take();
-                    self.detach(window);
-                }
-                Take::Busy => return Ok(()),
-            }
-        }
-        if self.restore && self.releasing.is_none() {
-            self.attach_surface(event_loop)?;
-        }
-        Ok(())
-    }
-
-    fn start(&mut self, event_loop: &ActiveEventLoop) -> Result<(), String> {
-        // No render owner exists yet, so nothing can hold the slot.
-        let epoch = self
-            .attach_surface(event_loop)?
-            .ok_or("iOS surface slot is held before the render owner started")?;
-        let wake = SHELL.get().ok_or("iOS shell proxy missing")?.clone();
-        let stalling = wake.clone();
-        let lost = wake.clone();
-        let held = wake.clone();
-        let render = render::start(
-            Arc::clone(&self.lease),
-            Arc::clone(&self.signals),
-            Wakes {
-                reply: Box::new(move || {
-                    drop(wake.send_event(ShellEvent::RenderDone));
-                }),
-                stalling: Box::new(move || {
-                    drop(stalling.send_event(ShellEvent::Stalling));
-                }),
-                lost: Arc::new(move |generation| {
-                    drop(lost.send_event(ShellEvent::DeviceLost(generation)));
-                }),
-                recover_held: Box::new(move || {
-                    drop(held.send_event(ShellEvent::RecoverHeld));
-                }),
-            },
-        )?;
-        self.origin = Instant::now();
-        let job = Job::Prepare {
-            instance: self.instance.clone(),
-            epoch,
-            extent: self.observed_extent,
-            origin: self.origin,
-            #[cfg(feature = "proving")]
-            join_store: self
-                .pending_invite
-                .as_ref()
-                .map(|invite| invite.font_store.clone()),
-        };
-        if render.try_send(job).is_err() {
-            return Err("iOS render owner refused preparation".into());
-        }
-        self.render = Some(render);
-        self.in_flight = true;
-        self.witness.prepare_requested_on = thread_name();
-        Ok(())
-    }
-
-    fn suspend(&mut self) -> Result<(), String> {
-        if self.state == State::Suspended {
-            return Ok(());
-        }
-        stop_display_link();
-        self.signals.background.store(true, Ordering::Release);
-        self.pending_target = None;
-        self.release_surface();
-        self.clear_input()?;
-        self.policy.request(true);
-        self.state = State::Suspended;
-        self.witness.suspends += 1;
-        self.witness.lifecycle_thread = thread_name();
-        self.reconcile_world()?;
-        self.write();
-        Ok(())
-    }
-
-    fn resume(&mut self, event_loop: &ActiveEventLoop) -> Result<(), String> {
-        if self.state != State::Suspended {
-            return Ok(());
-        }
-        self.signals.background.store(false, Ordering::Release);
-        self.restore = true;
-        self.finish_release(event_loop)?;
-        self.policy.request(false);
-        self.state = State::Active;
-        self.witness.resumes += 1;
-        self.reconcile_world()?;
-        if self.controls.is_some() {
-            start_display_link()?;
-        }
-        self.write();
-        Ok(())
-    }
-
-    #[cfg(feature = "proving")]
-    fn replace_surface(&mut self, event_loop: &ActiveEventLoop) -> Result<(), String> {
-        if self.state != State::Active {
-            return Ok(());
-        }
-        self.release_surface();
-        self.clear_input()?;
-        self.restore = true;
-        self.finish_release(event_loop)?;
-        self.witness.replacements += 1;
-        self.write();
-        Ok(())
-    }
-
-    fn clear_input(&mut self) -> Result<(), String> {
-        #[cfg(feature = "proving")]
-        self.interface_event(thrum_ui::Event::Interrupted)?;
-        if let Some(axes) = self.gesture.clear() {
-            self.send_axes(axes)?;
-        }
-        Ok(())
-    }
-
-    fn send_axes(&mut self, axes: [f32; 3]) -> Result<(), String> {
-        #[cfg(feature = "proving")]
-        if self.opening_join {
-            return Ok(());
-        }
-        if let Some(controls) = &self.controls {
-            controls.set_controls(axes)?;
-            self.witness.axes_sent += 1;
-            self.witness.last_axes = axes;
-            if axes.iter().any(|axis| axis.abs() > 0.0) {
-                self.witness.axes_moving += 1;
-            }
-        }
-        Ok(())
-    }
-
-    fn touch(
-        &mut self,
-        id: u64,
-        phase: TouchPhase,
-        location: [f64; 2],
-        current_window: bool,
-    ) -> Result<(), String> {
-        #[cfg(feature = "proving")]
-        if self.opening_join {
-            return Ok(());
-        }
-        if self.route && self.witness.touch_thread.is_empty() {
-            // Thread roles are recorded once, and only for the route.
-            self.witness.touch_thread = thread_name();
-        }
-        let phase = match phase {
-            TouchPhase::Started => Phase::Started,
-            TouchPhase::Moved => Phase::Moved,
-            TouchPhase::Ended => Phase::Ended,
-            TouchPhase::Cancelled => Phase::Cancelled,
-        };
-        #[cfg(feature = "proving")]
-        if current_window && self.interface_menu.is_some() {
-            self.interface_touch(id, phase, location)?;
-            return Ok(());
-        }
-        let _ = current_window;
-        let scale = self
-            .window
-            .as_ref()
-            .map_or(1.0, |window| window.scale_factor());
-        let sent = self.gesture.touch(id, phase, location, scale);
-        if let Some(axes) = sent {
-            self.send_axes(axes)?;
-        }
-        // Touch transitions are rare; the route reads them promptly.
-        if sent.is_some() || phase != Phase::Moved {
-            self.write();
-        }
-        Ok(())
-    }
-
-    #[cfg(feature = "proving")]
-    fn command(&mut self, event_loop: &ActiveEventLoop, command: Command) -> Result<(), String> {
-        self.witness.commands += 1;
-        if !self.route {
-            self.witness.commands_refused += 1;
-            return Ok(());
-        }
-        match command {
-            Command::ReplaceSurface => self.replace_surface(event_loop)?,
-            Command::HideView => {
-                self.hidden = true;
-                if let Some(window) = &self.window {
-                    window.set_visible(false);
-                }
-            }
-            Command::ShowView => {
-                self.hidden = false;
-                if let Some(window) = &self.window {
-                    window.set_visible(true);
-                }
-            }
-            Command::StallRender => self.stall_next = Some(StallPoint::AfterAcquire),
-            Command::StallPresent => self.stall_next = Some(StallPoint::BeforePresent),
-            Command::SampleActor => self.sample_actor = true,
-            Command::LoseDevice => self.signals.lose_now.store(true, Ordering::Release),
-            Command::HoldRecover => self.signals.hold_recover.store(true, Ordering::Release),
-            Command::ReleaseRecover => self.signals.hold_recover.store(false, Ordering::Release),
-            Command::StaleWake => {
-                // An old-generation wake from the owner, and one request that
-                // still carries the old generation: both must be refused.
-                self.signals.stale_wake.store(true, Ordering::Release);
-                self.stale_request = true;
-            }
-            Command::CookedPan => self.signals.cooked_pan.store(true, Ordering::Release),
-            Command::CaptureBegin
-            | Command::CaptureSaturate
-            | Command::CaptureSlow
-            | Command::CaptureStill => {
-                let mode = match command {
-                    Command::CaptureSaturate => 2,
-                    Command::CaptureSlow => 3,
-                    Command::CaptureStill => capture::STILL,
-                    _ => 1,
-                };
-                self.signals.capture.store(mode, Ordering::Release);
-            }
-            Command::CaptureEnd => self.signals.capture.store(4, Ordering::Release),
-            Command::CaptureMove => self.send_axes([1.0, 0.0, 0.0])?,
-            Command::CaptureRest => self.send_axes([0.0; 3])?,
-            Command::ForceHeadroom => self.force_headroom = true,
-            Command::OpenChoice | Command::CloseChoice => {
-                if let Some(menu) = &mut self.interface_menu {
-                    menu.set_choice(command == Command::OpenChoice, self.origin.elapsed());
-                    self.interface_input()?;
-                }
-            }
-            Command::HoldWorld | Command::RunWorld => {
-                if self.state == State::Active {
-                    self.policy.request(command == Command::HoldWorld);
-                    self.reconcile_world()?;
-                }
-            }
-        }
-        self.witness.last_command = format!("{command:?}");
-        self.write();
-        Ok(())
-    }
-
-    fn target(&mut self, target: f64) {
-        if self.route {
-            self.signals.capture_callbacks.observe(target);
-        }
-        self.witness.display_link_callbacks += 1;
-        if self.route && self.witness.display_thread.is_empty() {
-            // Thread roles are recorded once, and only for the route.
-            self.witness.display_thread = thread_name();
-        }
-        if self.stall_in_flight {
-            self.witness.stall_targets += 1;
-        }
-        if self.state != State::Active {
-            self.witness.targets_ignored += 1;
-            return;
-        }
-        if self.pending_target.replace(target).is_some() {
-            self.witness.targets_coalesced += 1;
-        }
-    }
-
-    /// An extent change revokes the current epoch at once: an in-flight section
-    /// drops its old-extent drawable at its next check, and the next request
-    /// configures the same surface at the new extent.
-    fn resized(&mut self, extent: [u32; 2]) -> bool {
-        if extent == self.observed_extent {
-            return false;
-        }
-        self.lease.observe_extent(extent);
-        self.lease.invalidate();
-        self.observed_extent = extent;
-        self.witness.resized(self.lease.epoch());
-        true
-    }
-
-    fn dispatch(&mut self) -> Result<(), String> {
-        if self.in_flight || self.controls.is_none() || self.state != State::Active {
-            return Ok(());
-        }
-        if std::mem::take(&mut self.sample_actor) {
-            // An explicit route witness; display callbacks never read the page.
-            let render = self.render.as_ref().ok_or("iOS render owner missing")?;
-            if render.try_send(Job::SampleActor).is_err() {
-                return Err("bounded iOS render owner refused an actor sample".into());
-            }
-            self.in_flight = true;
-            return Ok(());
-        }
-        if let Some(from) = self.lost_generation {
-            // Frames wait while the device is lost; one recovery at a time.
-            self.pending_target = None;
-            if !self.recovering {
-                let render = self.render.as_ref().ok_or("iOS render owner missing")?;
-                if render.try_send(Job::Recover { from }).is_err() {
-                    return Err("bounded iOS render owner refused a recovery".into());
-                }
-                self.in_flight = true;
-                self.recovering = true;
-                self.witness.recover_requests += 1;
-                self.write();
-            }
-            return Ok(());
-        }
-        let Some(target) = self.pending_target.take() else {
-            return Ok(());
-        };
-        // Backstop for a resize whose event has not been delivered yet.
-        if let Some(window) = &self.window {
-            let size = layer_extent(window);
-            self.resized([size.width, size.height]);
+        let invite_scene = request.is_some();
+        let (setup, mut host) = prepare_scene(&gpu, config, request)
+            .await
+            .map_err(GameError::Rejected)?;
+        if qualification && std::env::var("THRUM_CULLING_ORACLE").as_deref() == Ok("1") {
+            culling::record(
+                &mut host,
+                gpu.device,
+                gpu.queue,
+                gpu.capabilities,
+                config,
+                setup,
+            )
+            .map_err(GameError::Rejected)?;
         }
         #[cfg(feature = "proving")]
-        if let Some(invite) = &self.pending_invite
-            && self.window.is_some()
-            && !self.observed_extent.contains(&0)
-        {
-            let store = invite.font_store.clone();
-            self.clear_input()?;
-            let render = self.render.as_ref().ok_or("iOS render owner missing")?;
-            if render.try_send(Job::OpenJoin(store)).is_err() {
-                return Err("bounded iOS render owner refused a join scene".into());
-            }
-            self.in_flight = true;
-            self.opening_join = true;
-            return Ok(());
+        if qualification && setup.sprite_scale.is_some() && setup.sprite_rows.is_some() {
+            std::fs::write(
+                std::env::temp_dir().join("thrum-sprite-card.rgba"),
+                v1_game::sprite_card_texels(),
+            )
+            .map_err(|error| GameError::Rejected(error.to_string()))?;
         }
         #[cfg(feature = "proving")]
-        if let Some(menu) = &mut self.interface_menu {
-            menu.tick(self.origin.elapsed());
-            self.interface_input()?;
-        }
-        // A stall request stays until a frame reaches the section and holds it.
-        let stall = self.stall_next.map(|point| (point, STALL));
-        let request = FrameRequest {
-            sequence: self.witness.requests,
-            surface_generation: self.lease.epoch(),
-            device_generation: if std::mem::take(&mut self.stale_request) {
-                self.device_generation.saturating_sub(1)
-            } else {
-                self.device_generation
-            },
-            target_media_seconds: target,
-            extent: self.observed_extent,
-            platform: render::FrameAdmission {
-                present: !self.hidden && self.window.is_some(),
-                stall,
-                #[cfg(feature = "proving")]
-                interface: self
-                    .interface_output
-                    .then(|| self.window.as_deref().and_then(interface::output))
-                    .flatten(),
-            },
-        };
-        let render = self.render.as_ref().ok_or("iOS render owner missing")?;
-        match render.try_send(Job::Frame(request)) {
-            Ok(()) => {}
-            Err(thrum_render::frame::SendFault::Busy(_)) => {
-                return Err("bounded iOS render owner refused an idle request".into());
-            }
-            Err(thrum_render::frame::SendFault::Closed(_)) => {
-                return Err("iOS render owner stopped".into());
-            }
-        }
-        self.in_flight = true;
-        self.witness.requests += 1;
-        self.stall_in_flight = stall.is_some();
-        Ok(())
-    }
-
-    fn render_done(&mut self, event_loop: &ActiveEventLoop) -> Result<(), String> {
-        let render = self.render.as_ref().ok_or("iOS render owner missing")?;
-        let Some(Reported { reply, thread }) = render.try_recv() else {
-            if render.is_closed() {
-                return Err("iOS render owner stopped before replying".into());
-            }
-            return Ok(());
-        };
-        self.in_flight = false;
-        match reply {
-            Reply::Prepared(prepared) => {
-                let prepared = prepared?;
-                self.witness.prepare_thread = thread.unwrap_or_default();
-                self.witness.adapter = prepared.adapter;
-                self.witness.format = format!("{:?}", prepared.format);
-                self.controls = Some(prepared.controls);
-                #[cfg(feature = "proving")]
-                {
-                    self.interface_output = prepared.interface_output;
-                    self.interface_menu = prepared.interface_menu;
-                    self.deliver_invite()?;
-                }
-                self.witness.device_generation = self.device_generation;
-                if self.state == State::Starting {
-                    self.state = State::Active;
-                }
-                // A resume during preparation found no controls and left the
-                // link stopped; the link starts here for any active state.
-                if self.state == State::Active {
-                    start_display_link()?;
-                }
-                self.reconcile_world()?;
-            }
-            #[cfg(feature = "proving")]
-            Reply::JoinOpened(result) => {
-                self.opening_join = false;
-                match result {
-                    Ok(Some(opened)) => {
-                        let paused = self.policy.desired();
-                        self.policy = WorldLifecyclePolicy::default();
-                        self.policy.request(paused);
-                        self.origin = opened.origin;
-                        self.controls = Some(opened.controls);
-                        self.interface_output = true;
-                        self.interface_menu = Some(opened.menu);
-                        self.deliver_invite()?;
-                    }
-                    Ok(None) => {} // Retry at a display target after a resize, suspend or loss.
-                    #[expect(
-                        clippy::print_stderr,
-                        reason = "report a nonfatal Join preparation error in the proving app"
-                    )]
-                    Err(error) => {
-                        self.pending_invite = None;
-                        eprintln!("iOS could not open Join: {error}");
-                    }
-                }
-                self.reconcile_world()?;
-            }
-            Reply::Recovered(result) => {
-                self.recovering = false;
-                self.recovered(result)?;
-            }
-            Reply::Actor(position) => {
-                self.witness.actor_samples += 1;
-                self.witness.actor_position = position;
-                self.write();
-            }
-            Reply::Frame(frame) => {
-                let frame = frame?;
-                if let Some(thread) = thread {
-                    self.witness.frame_thread = thread;
-                }
-                self.stall_in_flight = false;
-                let stall_ended = frame.platform.stalled;
-                if stall_ended {
-                    self.stall_next = None;
-                    self.stalling = false;
-                    self.witness.stalls += 1;
-                    self.witness.stall_status = format!("{:?}", frame.platform.status);
-                }
-                self.witness.frame(&frame);
-                #[cfg(feature = "proving")]
-                if self.state == State::Active
-                    && self.lease.is_current(frame.platform.epoch)
-                    && let Some(shown) = &frame.platform.interface
-                {
-                    let viewport = shown.viewport();
-                    self.witness.interface_viewport = Some(serde_json::json!({
-                        "extent": viewport.extent, "scale": viewport.scale, "insets": viewport.insets,
-                    }));
-                    if self.interface_submitted(shown)? {
-                        self.write();
-                    }
-                }
-                if frame.platform.status == render::SurfaceStatus::DeviceLost
-                    && frame.platform.acquired
-                    && self.state == State::Active
-                {
-                    // wgpu cannot discard a drawable of a destroyed device, so
-                    // the surface stays "acquired" for any device: replace it
-                    // (revoke, detach, and a fresh window and surface below).
-                    self.release_surface();
-                    self.restore = true;
-                    self.witness.loss_replacements += 1;
-                }
-                self.reconcile_world()?;
-                if stall_ended {
-                    // World wakes kept updating the tick on UIKit during the stall.
-                    self.witness.stall_tick_end = self.witness.world_tick;
-                }
-                if stall_ended || self.witness.replies.is_multiple_of(WITNESS_EVERY) {
-                    self.write();
-                }
-            }
-        }
-        self.finish_release(event_loop)?;
-        self.dispatch()
-    }
-
-    /// wgpu reported a device generation lost. Revoke the lease (bump the
-    /// epoch) so no section admitted before the loss presents, keep the world
-    /// lane running, and let `dispatch` send the one recovery.
-    fn device_lost(&mut self, generation: u64) -> Result<(), String> {
-        if generation != self.device_generation || self.lost_generation.is_some() {
-            self.witness.stale_loss_wakes += 1;
-            self.write();
-            return Ok(());
-        }
-        self.lease.invalidate();
-        self.lost_generation = Some(generation);
-        self.witness.losses += 1;
-        self.witness.lost_generation = generation;
-        self.write();
-        self.dispatch()
-    }
-
-    fn recovered(&mut self, result: Result<Recovered, RecoverFault>) -> Result<(), String> {
-        match result {
-            Ok(recovered) if self.lost_generation == Some(recovered.from) => {
-                self.device_generation = recovered.generation;
-                self.lost_generation = None;
-                self.recover_failures = 0;
-                // The surface is configured afresh for the new device.
-                self.lease.invalidate();
-                self.witness.recovered(&recovered);
-            }
-            Ok(_) | Err(RecoverFault::Stale) => self.witness.recover_stale += 1,
-            Err(RecoverFault::Deferred) => self.witness.recover_deferred += 1,
-            Err(RecoverFault::CandidateLost) => {
-                self.witness.recover_candidate_lost += 1;
-                self.recover_failures += 1;
-            }
-            Err(RecoverFault::Failed(error)) => {
-                self.witness.recover_failed += 1;
-                self.witness.recover_error = error.replace([' ', '\n'], "_");
-                self.recover_failures += 1;
-            }
-        }
-        self.write();
-        if self.recover_failures >= RECOVER_ATTEMPTS {
-            return Err(format!(
-                "iOS device recovery failed {} times; the world lane is still running",
-                self.recover_failures
-            ));
-        }
-        Ok(())
-    }
-
-    /// Consume one lifecycle reply, observe health, and send the next request.
-    fn reconcile_world(&mut self) -> Result<(), String> {
-        // The old world lane belongs to the owner until the scene-change reply.
+        let input = (setup.interface_text == Some(InterfaceText::Menu)).then(|| {
+            let menu = MobileInterface::new(qualification);
+            menu.view().attach(host.continuous_source_mut());
+            menu
+        });
         #[cfg(feature = "proving")]
-        if self.opening_join {
-            return Ok(());
-        }
-        let Some(controls) = self.controls.clone() else {
-            return Ok(());
-        };
-        if self.policy.needs_reply()
-            && let Some(reply) = controls
-                .poll_lifecycle_reply()
-                .map_err(|error| error.to_string())?
-        {
-            self.policy
-                .acknowledge(reply.request)
-                .map_err(|error| error.to_string())?;
-            self.witness
-                .world_reply(reply.request, reply.id.epoch.0, reply.id.tick);
-            self.write();
-        }
-        match controls.check_health() {
-            Ok(tick) => self.witness.world_tick = tick,
-            Err(WorldLaneFault::Overload(refused)) => self.policy.overloaded(refused),
-            Err(error) => return Err(error.to_string()),
-        }
-        if let Some(request) = self.policy.next_request() {
-            match controls.request_lifecycle(request) {
-                Ok(()) => {
-                    self.policy.accepted(request);
-                    if request == WorldLifecycle::Pause {
-                        self.witness.pause_requests += 1;
-                    }
-                }
-                Err(WorldLaneFault::Busy) => {}
-                Err(error) => return Err(error.to_string()),
-            }
-        }
-        Ok(())
-    }
-
-    /// Rewrite the witness file. Route runs only: an ordinary launch does no
-    /// witness I/O on UIKit.
-    fn write(&mut self) {
-        if !self.route {
-            return;
-        }
-        self.witness.state = format!("{:?}", self.state);
-        self.witness.epoch = self.lease.epoch();
-        self.witness.world_paused = self.policy.confirmed_paused();
-        self.witness.overloads = self.policy.overload_count();
-        self.witness.refused_ticks = self.policy.refused_ticks();
-        self.witness.gesture = self.gesture.counters();
-        self.witness.input_epoch = self.gesture.epoch();
-        self.witness.stall_active = self.stalling;
-        self.witness.world_thread = WORLD_THREAD.get().cloned().unwrap_or_default();
-        self.witness.live_detached_windows = live_detached_windows();
-        #[cfg(feature = "proving")]
-        {
-            self.witness.interface_menu = self
-                .interface_menu
-                .as_ref()
-                .map(v1_game::mobile_interface::MobileInterface::report);
-        }
-        self.witness.write();
-    }
-
-    fn fail(&mut self, event_loop: &ActiveEventLoop, error: String) {
-        witness::write_fault(&error);
-        self.error = Some(error);
-        event_loop.exit();
-    }
-
-    /// Time one UIKit callback; a long one would show UIKit waiting.
-    /// Callbacks that create or detach windows (lifecycle, commands, or a
-    /// frame reply completing a deferred replacement) are timed apart from
-    /// per-frame and input callbacks.
-    fn timed(
-        &mut self,
-        event_loop: &ActiveEventLoop,
-        kind: &'static str,
-        run: impl FnOnce(&mut Self, &ActiveEventLoop) -> Result<(), String>,
-    ) {
-        let start = Instant::now();
-        // A held section or an outstanding recovery: a UIKit callback that
-        // waited on the owner would show here.
-        let stalled = self.stall_in_flight || self.recovering;
-        let windows = (self.witness.installs, self.witness.detached_windows);
-        let result = run(self, event_loop);
-        let lifecycle = matches!(kind, "resumed" | "suspended" | "command")
-            || windows != (self.witness.installs, self.witness.detached_windows);
-        self.witness.main_callback(
-            start.elapsed(),
-            stalled || self.stall_in_flight || self.recovering,
-            lifecycle,
-            kind,
+        let output_metrics = matches!(
+            setup.interface_text,
+            Some(InterfaceText::Status | InterfaceText::Menu)
         );
-        if let Err(error) = result {
-            self.fail(event_loop, error);
-        }
-    }
-}
-
-impl ApplicationHandler<ShellEvent> for Shell {
-    fn resumed(&mut self, event_loop: &ActiveEventLoop) {
-        self.timed(event_loop, "resumed", |shell, event_loop| {
-            // In the proving app the scene connection provides the startup
-            // selection. Winit's launch-time resume may precede that callback.
-            #[cfg(not(feature = "proving"))]
-            if shell.render.is_none() {
-                return shell.start(event_loop);
-            }
-            shell.resume(event_loop)
-        });
-    }
-
-    fn suspended(&mut self, event_loop: &ActiveEventLoop) {
-        self.timed(event_loop, "suspended", |shell, _| shell.suspend());
-    }
-
-    fn user_event(&mut self, event_loop: &ActiveEventLoop, event: ShellEvent) {
-        let kind = match event {
-            ShellEvent::Target(..) => "target",
-            ShellEvent::RenderDone => "render",
-            ShellEvent::WorldAdvanced => "world",
-            ShellEvent::Stalling => "stalling",
-            ShellEvent::DeviceLost(_) => "device-lost",
-            ShellEvent::RecoverHeld => "recover-held",
-            #[cfg(feature = "proving")]
-            ShellEvent::Command(_) => "command",
-            #[cfg(feature = "proving")]
-            ShellEvent::SceneConnected(_) => "scene connected",
-            #[cfg(feature = "proving")]
-            ShellEvent::Invite(_) => "invite",
+        #[cfg(not(feature = "proving"))]
+        let (input, output_metrics) = ((), false);
+        let (cooked, view) = if invite_scene {
+            (None, None)
+        } else {
+            (
+                v1_game::attach_cooked_scene(&mut host).map_err(GameError::Rejected)?,
+                cooked_view::View::prepare(&mut host).map_err(GameError::Rejected)?,
+            )
         };
-        self.timed(event_loop, kind, |shell, event_loop| match event {
-            ShellEvent::Target(target, headroom) => {
-                shell.witness.screen_headroom = headroom;
-                let effective = if shell.force_headroom {
-                    2.0_f32
-                } else {
-                    headroom
-                };
-                shell
-                    .signals
-                    .headroom
-                    .store(u64::from(effective.to_bits()), Ordering::Release);
-                shell.target(target);
-                shell.dispatch()
-            }
-            ShellEvent::RenderDone => shell.render_done(event_loop),
-            ShellEvent::WorldAdvanced => shell.reconcile_world(),
-            ShellEvent::Stalling => {
-                shell.stalling = true;
-                shell.witness.stall_tick_start = shell.witness.world_tick;
-                // The route waits for this before revoking the stalled surface.
-                shell.write();
-                Ok(())
-            }
-            ShellEvent::DeviceLost(generation) => shell.device_lost(generation),
-            ShellEvent::RecoverHeld => {
-                shell.witness.recover_held += 1;
-                shell.write();
-                Ok(())
-            }
-            #[cfg(feature = "proving")]
-            ShellEvent::Command(command) => shell.command(event_loop, command),
-            #[cfg(feature = "proving")]
-            ShellEvent::SceneConnected(invite) => {
-                if invite.is_some() {
-                    shell.pending_invite = invite;
-                }
-                if shell.render.is_none() {
-                    shell.start(event_loop)
-                } else {
-                    shell.deliver_invite()
-                }
-            }
-            #[cfg(feature = "proving")]
-            ShellEvent::Invite(invite) => {
-                shell.pending_invite = Some(invite);
-                shell.deliver_invite()
-            }
-        });
+        let (host, controls) = host
+            .into_threaded(origin, wake)
+            .map_err(GameError::Rejected)?;
+        Ok(MobilePrepared {
+            host,
+            scene: Presentation { cooked, view },
+            controls: Controls(controls),
+            input,
+            output_metrics,
+        })
     }
 
-    fn window_event(&mut self, event_loop: &ActiveEventLoop, id: WindowId, event: WindowEvent) {
-        if self.window.as_ref().is_none_or(|window| window.id() != id) {
-            // A touch held across replacement ends on its detached window. Its
-            // revoked id makes the gesture count it stale.
-            if let WindowEvent::Touch(touch) = event
-                && touch.phase != TouchPhase::Started
-                && self.retired.contains(&id)
-            {
-                self.witness.old_window_touches += 1;
-                self.timed(event_loop, "touch", |shell, _| {
-                    shell.touch(
-                        touch.id,
-                        touch.phase,
-                        [touch.location.x, touch.location.y],
-                        false,
-                    )
-                });
-            }
-            return;
+    fn sample_position(host: &Host) -> Option<[f64; 3]> {
+        host.world().controlled_position()
+    }
+
+    fn frame(
+        host: &mut Host,
+        scene: &mut Presentation,
+        command: u64,
+        _: Duration,
+    ) -> Result<(), GameError> {
+        if let Some(view) = &mut scene.view {
+            view.update(host, command == 11)
+                .map_err(GameError::Rejected)?;
         }
-        self.timed(event_loop, "window", |shell, event_loop| match event {
-            WindowEvent::CloseRequested => {
-                event_loop.exit();
-                Ok(())
-            }
-            WindowEvent::Touch(touch) => shell.touch(
-                touch.id,
-                touch.phase,
-                [touch.location.x, touch.location.y],
-                true,
-            ),
-            WindowEvent::Resized(_) => {
-                // winit also queues `Resized` at window creation and layout
-                // with sizes that can lag the layer; read the one source.
-                let Some(size) = shell.window.as_ref().map(|window| layer_extent(window)) else {
-                    return Ok(());
-                };
-                if shell.resized([size.width, size.height]) {
-                    shell.witness.resize_events += 1;
-                    shell.write();
-                }
-                Ok(())
-            }
-            _ => Ok(()),
-        });
+        Ok(())
     }
 
-    fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
-        event_loop.set_control_flow(ControlFlow::Wait);
+    fn command_name(command: u64) -> &'static str {
+        match command {
+            11 => "CookedPan",
+            22 => "OpenChoice",
+            23 => "CloseChoice",
+            _ => "Game",
+        }
     }
-}
 
-/// The surface's extent: the view's full bounds in pixels, which the Metal
-/// layer tracks and `Resized` reports. winit's iOS `inner_size` is the safe
-/// area, which would configure a smaller drawable stretched over the layer.
-fn layer_extent(window: &Window) -> winit::dpi::PhysicalSize<u32> {
-    window.outer_size()
-}
+    fn frame_witness(_: &Host, scene: &Presentation) -> String {
+        let mut witness = scene.cooked.as_ref().and_then(|stats| stats.lock().ok())
+            .map_or_else(String::new, |stats| {
+                format!(
+                    "cooked_path={:?}\ncooked_drawn={:?}\ncooked_device_generation={:?}\ncooked_submitted={}\ncooked_errors={:?}\ncooked_texture_profile={:?}",
+                    stats.draw_path, stats.drawn, stats.drawn_device_generation, stats.submitted_frames, stats.errors,
+                    stats.swaps.last().and_then(|swap| swap.texture_profile)
+                )
+            });
+        if let Some(view) = &scene.view {
+            witness.push_str(&view.witness());
+        }
+        witness
+    }
 
-/// The calling thread's role: `main` when the OS reports UIKit's main thread
-/// (Rust leaves the iOS main thread unnamed), else the Rust thread name.
-#[expect(
-    unsafe_code,
-    reason = "pthread_main_np reports whether the caller is the process main thread"
-)]
-fn thread_name() -> String {
-    unsafe extern "C" {
-        fn pthread_main_np() -> i32;
-    }
-    // SAFETY: pthread_main_np takes no arguments and only reads thread state.
-    if unsafe { pthread_main_np() } != 0 {
-        return "main".to_owned();
-    }
-    thread::current().name().unwrap_or("unnamed").to_owned()
-}
-
-fn notify_world() {
-    WORLD_THREAD.get_or_init(thread_name);
-    if let Some(shell) = SHELL.get() {
-        drop(shell.send_event(ShellEvent::WorldAdvanced));
-    }
-}
-
-pub(super) fn run() {
-    let event_loop = EventLoop::<ShellEvent>::with_user_event()
-        .build()
-        .expect("iOS event loop");
-    SHELL
-        .set(event_loop.create_proxy())
-        .unwrap_or_else(|_| panic!("one iOS shell event loop"));
-    let mut shell = Shell::new();
-    if let Err(error) = event_loop.run_app(&mut shell) {
-        shell.error = Some(format!("iOS event loop: {error}"));
-    }
-    if let Some(error) = shell.error {
-        witness::write_fault(&error);
-    }
-}
-
-fn route_enabled() -> bool {
     #[cfg(feature = "proving")]
-    {
-        std::env::var("THRUM_V1_ROUTE").as_deref() == Ok("1")
+    fn output(host: &mut Host, output: OutputMetrics) {
+        mobile_interface::set_output(host.continuous_source_mut(), output.density, output.insets);
+    }
+
+    #[cfg(feature = "proving")]
+    fn readback(host: &mut Host) -> Option<InterfaceFrame> {
+        InterfaceFrame::read(host.continuous_source_mut())
+    }
+
+    #[cfg(feature = "proving")]
+    fn viewport(shown: &InterfaceFrame) -> Option<Viewport> {
+        Some(shown.viewport())
+    }
+
+    #[cfg(feature = "proving")]
+    fn submitted(
+        input: &mut Self::Input,
+        frame: &InterfaceFrame,
+        index: u64,
+        now: Duration,
+    ) -> bool {
+        input
+            .as_mut()
+            .is_some_and(|menu| menu.submitted(frame, index, now))
+    }
+
+    #[cfg(feature = "proving")]
+    fn wants_input(input: &Self::Input) -> bool {
+        input.is_some()
+    }
+
+    #[cfg(feature = "proving")]
+    fn event(input: &mut Self::Input, event: Event<KeyCode>, now: Duration) {
+        if let Some(menu) = input {
+            menu.event(event, now);
+        }
+    }
+
+    #[cfg(feature = "proving")]
+    fn tick(input: &mut Self::Input, now: Duration) {
+        if let Some(menu) = input {
+            menu.tick(now);
+        }
+    }
+
+    #[cfg(feature = "proving")]
+    fn command(input: &mut Self::Input, command: u64, now: Duration) {
+        if let Some(menu) = input
+            && matches!(command, 22 | 23)
+        {
+            menu.set_choice(command == 22, now);
+        }
+    }
+
+    #[cfg(feature = "proving")]
+    fn take_input(input: &mut Self::Input) -> impl Iterator<Item = Routed<KeyCode>> {
+        input.iter_mut().flat_map(MobileInterface::input)
+    }
+
+    #[cfg(feature = "proving")]
+    fn scene_request(input: &mut Self::Input, request: &SceneRequest, now: Duration) -> bool {
+        if let Some(menu) = input {
+            menu.open_invite(request.payload.clone(), now);
+            true
+        } else {
+            false
+        }
+    }
+
+    #[cfg(feature = "proving")]
+    fn witness(input: &Self::Input) -> String {
+        input.as_ref().map_or_else(String::new, |menu| {
+            format!("interface_menu={}\n", menu.report())
+        })
+    }
+
+    #[cfg(feature = "proving")]
+    fn still_bounds(host: &mut Host) -> Option<serde_json::Value> {
+        mobile_interface::status_bounds(host.continuous_source_mut())
+    }
+}
+
+async fn prepare_scene(
+    gpu: &Gpu<'_>,
+    config: FrameConfig,
+    request: Option<SceneRequest>,
+) -> Result<(GameSetup, Host), String> {
+    #[cfg(feature = "proving")]
+    if let Some(request) = request {
+        let setup = GameSetup {
+            interface_text: Some(InterfaceText::Menu),
+            sprite_scale: Some(2),
+            sprite_rows: Some(10_000),
+            ..GameSetup::default()
+        };
+        let host = setup
+            .prepare_with_sheet_source(
+                gpu.device,
+                gpu.queue,
+                gpu.capabilities,
+                config,
+                request.content.into(),
+            )
+            .await
+            .map_err(|error| error.to_string())?;
+        return Ok((setup, host));
     }
     #[cfg(not(feature = "proving"))]
-    {
-        false
-    }
+    drop(request);
+    let setup = v1_game::selected_setup()?;
+    let host = setup
+        .prepare(gpu.device, gpu.queue, gpu.capabilities, config)
+        .await?;
+    Ok((setup, host))
+}
+
+pub(super) fn route_enabled() -> bool {
+    cfg!(feature = "proving") && std::env::var("THRUM_V1_ROUTE").as_deref() == Ok("1")
 }

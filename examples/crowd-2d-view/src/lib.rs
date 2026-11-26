@@ -26,20 +26,44 @@ pub async fn prepare_crowd<W: FrameWorld<Page = Arc<PublicationPage>>>(
     close: bool,
     band: f64,
 ) -> Result<FrameHost<W, CrowdScene>, GameError> {
+    prepare_crowd_scene(gpu, world, CrowdScene::new(close), count, band, None).await
+}
+
+/// Prepare the ordinary Crowd sprite configuration with a decorated scene source.
+///
+/// # Errors
+/// Returns a renderer preparation failure.
+pub async fn prepare_crowd_scene<W, S>(
+    gpu: Gpu<'_>,
+    world: W,
+    source: S,
+    count: u32,
+    band: f64,
+    contribution: Option<Box<dyn thrum_render::contribution::SceneContribution>>,
+) -> Result<FrameHost<W, S>, GameError>
+where
+    W: FrameWorld<Page = Arc<PublicationPage>>,
+    S: thrum_render::runtime::SceneSource<W::Page>,
+{
     let config = FrameConfig {
         render_extent: gpu.surface.extent,
         surface: Some(gpu.surface),
     };
-    Ok(FrameHost::new_2d(
+    let mut host = FrameHost::new_2d_preparing(
         gpu.capabilities,
         gpu.queue,
         config,
         world,
-        CrowdScene::new(close),
+        source,
         scene::configuration(count, band),
         SpriteSceneRequests::default(),
     )
-    .await?)
+    .await?;
+    if let Some(contribution) = contribution {
+        host.set_scene_contribution(contribution)?;
+    }
+    host.finish_preparation();
+    Ok(host)
 }
 
 /// Replay renderer using the same rule package on every target.
