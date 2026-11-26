@@ -1173,10 +1173,10 @@
           "check": "python3 scripts/apple_presentation.py g4 --target ios-sim",
           "lock": "simulator",
           "target": "ios-sim",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP11/ios-second/g4.json",
           "verdict": "",
           "review": "",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D11.4",
