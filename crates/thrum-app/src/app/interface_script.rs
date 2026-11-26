@@ -82,6 +82,14 @@ impl<G: WindowGame + 'static> App<G> {
             "step": script.steps.pop_front(), "time_ms": event_at, "presented": self.presented,
             "device": self.recovery.active, "before": witness, "position_px": point,
         }));
+        if action == "checkpoint" {
+            let checkpoint = json!({"steps": script.log});
+            std::fs::write(
+                script.output.with_extension("checkpoint.json"),
+                checkpoint.to_string(),
+            )
+            .map_err(|error| error.to_string())?;
+        }
         if script.steps.is_empty() {
             let complete = json!({"steps": script.log, "final": self.game.interface_witness()});
             std::fs::write(&script.output, complete.to_string())
@@ -141,7 +149,7 @@ impl<G: WindowGame + 'static> App<G> {
                     .map_err(|_| "render worker refused the scripted device loss")?;
                 self.render_in_flight = Some(0);
             }
-            "observe" => {}
+            "observe" | "checkpoint" => {}
             _ => return Err(format!("unknown interface step {action}")),
         }
         Ok(None)
