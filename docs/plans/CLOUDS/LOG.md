@@ -1011,3 +1011,10 @@ The noon views pass the outline, shared light, base and edge checks. The retaine
 same rule on its three representative shapes. Growth, fair-sky and cost evidence carry forward from
 their target runs. [Metal gallery proof](../../../.orchestrate/evidence/CLOUDS/WP10/qualification-gallery.md) ·
 [Chrome proof](../../../.orchestrate/evidence/CLOUDS/WP10/qualification-chrome-parked.md)
+
+The review repair keeps a hash-selected cell's palette fixed by its authored profile and uses the model's
+per-slab scale limit for both march bounds. In the reported full-share ramp the same cell and source survive
+the return to full share, with the optical-depth change halving as the step halves. The shallow-profile retest
+encloses the occupied top at 3,281.20 m with a ceiling of 3,419.24 m. Fresh Metal and Chrome stills, Metal
+growth and fair-sky motion, and the paired Metal cost check cover the original five items on the repair.
+[Review repair and target receipts](../../../.orchestrate/evidence/CLOUDS/WP10/review-repair/README.md)
