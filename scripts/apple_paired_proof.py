@@ -64,7 +64,7 @@ def window_arm(output, binary, env, route, name, recipe, reconstruction, headroo
     launch = dict(env, THRUM_RECIPE=recipe, THRUM_RECONSTRUCTION=reconstruction,
                   THRUM_GOVERNOR_ROUTE=str(route), THRUM_GOVERNOR="off" if replay else "on",
                   THRUM_GOVERNOR_RECORD="replay" if replay else "observed",
-                  THRUM_G4_SCALE_ORIGIN=str(start),
+                  THRUM_ROUTE_SCALE_ORIGIN=str(start),
                   THRUM_MAC_TRANSITION=str(arm),
                   THRUM_MAC_TRANSITION_ARM="fullscreen" if fullscreen else "route",
                   THRUM_MAC_EDR=headroom, THRUM_MAC_EDR_PROOF=str(display),

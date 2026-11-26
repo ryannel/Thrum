@@ -295,7 +295,7 @@ fn window_transition_proof() -> Result<Option<thrum_app::WindowTransitionProof>,
     };
     let record = std::env::var("THRUM_GOVERNOR_RECORD");
     let scale_replay = if record.as_deref() == Ok("replay") {
-        let origin = std::env::var("THRUM_G4_SCALE_ORIGIN")
+        let origin = std::env::var("THRUM_ROUTE_SCALE_ORIGIN")
             .map_err(|error| format!("scale replay origin: {error}"))?
             .parse::<u64>()
             .map_err(|error| format!("scale replay origin: {error}"))?;
