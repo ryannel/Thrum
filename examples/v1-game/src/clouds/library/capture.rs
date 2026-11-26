@@ -10,6 +10,7 @@ pub(super) enum Placement {
     Shape { index: u32, side_lit: bool },
     Growth,
     Cost,
+    Mixed,
     FullShare,
     NoShare,
 }
@@ -23,6 +24,7 @@ impl PlacedSky {
         self.capture = Some(match name {
             "library-growth" => Placement::Growth,
             "library-cost" => Placement::Cost,
+            "library-mixed" => Placement::Mixed,
             "library-only" => Placement::FullShare,
             "library-procedural" => Placement::NoShare,
             _ => {
@@ -79,7 +81,9 @@ impl Placement {
             return Ok(state);
         }
 
-        parameters.coverage = 0.0;
+        if !matches!(self, Self::Mixed) {
+            parameters.coverage = 0.0;
+        }
         let mut state = State::new(parameters, 5.0, 16)?;
         state.set_library(Arc::clone(library))?;
         let offset = match self {
@@ -120,6 +124,12 @@ impl Placement {
                 place(TOWER, ShapeSource::Growth, -35.0, 9900.0, 1.0)?;
                 place(5, ShapeSource::Library(0), -50.0, 8300.0, 1.0)?;
                 place(6, ShapeSource::Library(4), -19.0, 9100.0, 1.0)?;
+            }
+            Self::Mixed => {
+                // The lower, nearer fair cell crosses the procedural bank in
+                // projection. A second facing shows relief from the low Sun.
+                place(4, ShapeSource::Library(4), -34.5, 8150.0, 1.0)?;
+                place(5, ShapeSource::Library(6), -13.0, 7100.0, 1.0)?;
             }
             Self::Cost => {
                 // Stagger distances so the 13 footprints fit the existing low-Sun

@@ -30,18 +30,18 @@ def views(group):
     if group in ('mix', 'chrome'):
         for sun in (SOLAR if group == 'mix' else ('noon',)):
             for height in EYES:
-                yield f'mixed-{sun}-{height:02}', 'mixed', sun, height, 4, 10, -39, 13
+                yield f'mixed-{sun}-{height:02}', 'library-mixed', sun, height, 4, 10, -39, 13
         for sun in (('noon', 'low') if group == 'mix' else ('noon',)):
             for height in EYES:
                 yield f'full-{sun}-{height:02}', 'library-only', sun, height, 60, 0, -39, 10
-        yield 'shade-mixed', 'mixed', 'noon', SHADE_EYE, 4, 10, -75, -27
+        yield 'shade-mixed', 'library-mixed', 'noon', SHADE_EYE, 4, 10, -75, -27
         yield 'shade-procedural', 'library-procedural', 'noon', SHADE_EYE, 4, 10, -75, -27
     if group == 'cost-view':
         yield 'library-cost', 'library-cost', 'low', COST_EYE, 1, 0, -79.844116, 10
     if group == 'motion':
         yield 'growth-1x', 'library-growth', 'noon', 2, 1, 0, -35, 13
         yield 'growth-30x', 'library-growth', 'noon', 2, 30, 0, -35, 13
-        yield 'mixed-8x', 'mixed', 'low', 40, 8, 10, -39, 13
+        yield 'mixed-8x', 'library-mixed', 'low', 40, 8, 10, -39, 13
 
 
 def capture(args, view):
@@ -57,7 +57,7 @@ def capture(args, view):
     if args.group == 'chrome':
         config = destination.with_suffix('.view.json')
         config.write_text(json.dumps(dict(extent=extent, preset='fair', weather_rate=speed,
-                                         wind=wind, placement=None if placement == 'mixed' else placement,
+                                         wind=wind, placement=placement,
                                          eye=eye, params=params)) + '\n')
         command = ['node', 'scripts/capture_v1_browser.mjs', '--mode', 'fixed', '--scene', 'noon',
                    '--overlay', 'off', '--reconstruction', 'taau', '--clouds', 'world-light',
