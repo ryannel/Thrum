@@ -249,17 +249,22 @@ class Case:
     def open_url(self):
         url = "thrum-v1://join/" + quote(TICKET, safe="")
         process = self.state()["pid"]
-        self.simctl("terminate", self.device, BUNDLE)
-        self.reset_capture()
-        self.finish_test(self.test("testInterfaceInvite", arguments={
-            "THRUM_INTERFACE_TEST_URL": url,
-            "THRUM_INTERFACE_TEST_STORE": str(self.store),
-        }))
-        state = self.expect(lambda s: menu(s).get("drawn") == "Joining" and
-                            menu(s).get("ticket") == TICKET and
-                            any(effect["effect"] == {"text": TICKET, "source": "Link"}
-                                for effect in menu(s).get("effects", [])), "UIKit URL delivered a complete ticket")
-        require(state["pid"] != process, "the invite did not launch a fresh app process")
+
+        def delivered(state):
+            report = menu(state)
+            return (report.get("drawn") == "Joining" and report.get("ticket") == TICKET
+                    and any(box[0] == 220 for box in report["boxes"])
+                    and any(effect["effect"] == {"text": TICKET, "source": "Link"}
+                            for effect in report["effects"]))
+
+        self.simctl("openurl", self.device, url)
+        observed = self.expect(lambda s: delivered(s) or s.get("state") == "Suspended",
+                               "UIKit link delivery or confirmation")
+        if not delivered(observed):
+            self.simctl("io", self.device, "screenshot", str(self.out / "invite-confirmation.png"))
+            self.finish_test(self.test("testConfirmInterfaceInvite"))
+        state = self.expect(delivered, "UIKit URL delivered a complete ticket")
+        require(state["pid"] == process, "opening the URL replaced the app")
         self.report["invite"] = dict(url=url, expected=TICKET, state=state)
         return self.screen("Joining")
 
