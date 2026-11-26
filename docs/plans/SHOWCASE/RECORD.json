@@ -271,12 +271,12 @@
       }
     },
     "WP7": {
-      "definitions": "54bc590335a9b4d7fcb04d4eff8a9d87ca757295c85c19e5e4b9b0649a0e7a88",
+      "definitions": "b7247b5bb2c79fdc87a86f3901dc4c2180f56ee2a3eb92067774334f7d22294a",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Unblock SHOWCASE WP7 (Blocked, Needs Dependency; handoff .orchestrate/evidence/SHOWCASE/WP7-handoff.md in the showcase w",
-        "at": "2026-11-26T20:24:53Z"
+        "task": "The design review of SHOWCASE at .orchestrate/evidence/SHOWCASE/design-review.md asked for changes, with its 1 Must Fix ",
+        "at": "2026-11-26T20:38:54Z"
       }
     },
     "WP8": {
@@ -476,11 +476,15 @@
     {
       "task": "Unblock SHOWCASE WP7 (Blocked, Needs Dependency; handoff .orchestrate/evidence/SHOWCASE/WP7-handoff.md in the showcase worktree, branch build/showcase at 3714c8495, leave it untouched). Two parts. (1) Add a small CONTENT-LOOP work package that exposes the committed cooked set's manifest hash beside the drawn generation in CookedStats, at the same submission boundary, as the SHOWCASE design and module log ask; make SHOWCASE WP7.2-WP7.4 depend on it. (2) WP7.5's fixed [1,1,1] thresholds on the 32x18 grid cannot hold across different recipes: switching only TAAU to MetalFX gives 5.77 at twilight, and recipe and EDR-to-sRGB differences are otherwise near zero. Lead ruling, by the project's bar (plausible shipped-game look; references diagnose, never gate): WP7.5 should show the three runs are the same scene and look alike, with thresholds set from the measured legitimate differences between upscalers and hosts plus margin, or a per-recipe baseline, not identical pixels. Keep it able to catch a real divergence (wrong scene, missing pass, wrong exposure). Record the reasoning in the SHOWCASE design.",
       "at": "2026-11-26T20:24:53Z"
+    },
+    {
+      "task": "The design review of SHOWCASE at .orchestrate/evidence/SHOWCASE/design-review.md asked for changes, with its 1 Must Fix findings.",
+      "at": "2026-11-26T20:38:54Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-26T20:24:53Z"
+    "at": "2026-11-26T20:38:54Z"
   },
   "design_history": [
     {
