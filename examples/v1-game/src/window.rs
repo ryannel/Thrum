@@ -236,7 +236,8 @@ pub fn run_window(
         window_always_on_top: capture.as_ref().is_some_and(|proof| proof.status)
             || transition
                 .as_ref()
-                .is_some_and(|proof| proof.arm == thrum_app::TransitionArm::Status),
+                .is_some_and(|proof| proof.arm == thrum_app::TransitionArm::Status)
+            || (interface_text == Some(crate::InterfaceText::Menu) && menu.script.is_some()),
         #[cfg(not(feature = "proving"))]
         window_always_on_top: false,
         frame_budget: None,
