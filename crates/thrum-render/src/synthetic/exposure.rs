@@ -52,7 +52,7 @@ fn incident_sun_source(body: &str, variant: crate::shaders::CloudVariant) -> Str
 
 pub(crate) fn world_light_source(variant: crate::shaders::CloudVariant) -> String {
     let body = exposure_source!(wgsl!(@exposure_body
-        "                let adapted = adapt_world_light_ev(raw_ev, parameters.zw);\n                ev = adapted.x;\n                inverse = CAMERA_EXPOSURE_NORMALIZATION * exp2(ev);\n                flags = select(0u, WORLD_LIGHT_ADAPTING, adapted.y > 0.0);\n"));
+        "                let adapted = adapt_world_light_ev(raw_ev, measured, parameters.zw);\n                ev = adapted.x;\n                inverse = CAMERA_EXPOSURE_NORMALIZATION * exp2(ev);\n                flags = select(0u, WORLD_LIGHT_ADAPTING, adapted.y > 0.0);\n"));
     let source = if variant.present() {
         incident_sun_source(body, variant)
     } else {

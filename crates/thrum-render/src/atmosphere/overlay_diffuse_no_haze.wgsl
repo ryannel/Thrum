@@ -1,5 +1,1 @@
-fn overlay_meter_sample(direction: vec3<f32>, encoded: vec4<f32>) -> vec4<f32> {
-    return vec4(overlay_radiance(direction, encoded, aerial_sampler), 0.0);
-}
-
-fn write_haze_scale(irradiance: vec4<f32>) {}
+fn write_overlay_light(light: vec3<f32>, coverage: vec2<f32>, active_overlay: bool) {}

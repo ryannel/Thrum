@@ -11,7 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 # check and refuse compare with the committed records; record writes to the working folder unless --output
 # names a fixture to promote.
-FIXTURES = {scene: ROOT / f'tests/fixtures/clouds/{scene}-cost.json' for scene in ('shade', 'first-frame', 'low-sun', 'placed', 'decks')}
+FIXTURES = {scene: ROOT / f'tests/fixtures/clouds/{scene}-cost.json' for scene in ('shade', 'first-frame', 'low-sun', 'placed', 'decks', 'overcast-lit')}
 WORKING = ROOT / '.orchestrate/evidence/CLOUDS'
 SCRATCH = ROOT / 'tmp/clouds-m2/cost'
 SKY_PASSES = (
@@ -75,7 +75,7 @@ def measure(scene='shade', alternatives=True):
     if scene == 'decks':
         arms = [('off', 1, None, None)] + [('sky', 1, None, None) for _ in DECK_PRESETS]
     if scene == 'overcast-lit':
-        arms = [('sky', 1, None, None), ('world-light', 1, None, None)]
+        arms = [('off', 1, None, None), ('sky', 1, None, None), ('world-light', 1, None, None)]
     recipes = ('portable', 'native') if scene == 'placed' else ('portable',)
     for recipe, (index, (selection, scale, stride, samples)) in (
         (recipe, arm) for recipe in recipes for arm in enumerate(arms)
@@ -332,68 +332,134 @@ def investigate_decks(rows, tripwires):
     return '\n'.join(notes) or 'No deck tripwires triggered in this measurement.'
 
 
-def overcast_lit():
+def named_passes(row):
+    return {name.rsplit(': ', 1)[-1]: value for name, value in row['pass_gpu_ns'].items()}
+
+
+def overcast_tripwires(record):
+    off, sky, lit = record['runs']
+    previous = record['wp7_overcast']['arm']
+    triggers = {}
+    if max(lit['whole_frame_gpu_ns'], lit['first_submission']['whole_frame_gpu_ns']) > 1e9 / 120:
+        triggers['refresh_interval'] = [off['whole_frame_gpu_ns'], sky['whole_frame_gpu_ns'],
+                                        lit['whole_frame_gpu_ns'], lit['first_submission']['whole_frame_gpu_ns']]
+    measured = named_passes(lit)
+    if measured['cloud sky overlay'] > 50_000:
+        triggers['overlay_budget'] = [50_000, measured['cloud sky overlay']]
+    for label, reference in [('WP7', previous), ('Sky', sky)]:
+        baseline = named_passes(reference)
+        if lit['whole_frame_gpu_ns'] >= 1.25 * reference['whole_frame_gpu_ns']:
+            triggers[f'{label}/whole frame'] = [reference['whole_frame_gpu_ns'], lit['whole_frame_gpu_ns']]
+        for name, actual in measured.items():
+            if positive(baseline.get(name)) and actual >= 1.25 * baseline[name]:
+                triggers[f'{label}/{name}'] = [baseline[name], actual]
+        def samples(row):
+            work = row['ray_statistics']
+            return work['mean_samples'] * work['rays_traced']
+        if (samples(reference) > 0 and positive(baseline.get('cloud trace'))
+                and measured['cloud trace'] / baseline['cloud trace'] >= 1.25 * samples(lit) / samples(reference)):
+            triggers[f'{label}/trace outgrows samples'] = [
+                samples(lit) / samples(reference), measured['cloud trace'] / baseline['cloud trace']]
+    return triggers
+
+
+def investigate_overcast(record):
+    off, sky, lit = record['runs']
+    sky_passes = named_passes(sky)
+    notes = {}
+    for key, values in overcast_tripwires(record).items():
+        if key == 'refresh_interval':
+            off_ns, sky_ns, lit_ns, first_ns = values
+            largest = sorted(named_passes(lit).items(), key=lambda row: -row[1])[:3]
+            leaders = ', '.join(f'{name} {time / 1e6:.3f} ms' for name, time in largest)
+            notes[key] = (f'Off {off_ns / 1e6:.3f} ms, Sky {sky_ns / 1e6:.3f} ms, '
+                          f'World light {lit_ns / 1e6:.3f} ms steady and {first_ns / 1e6:.3f} ms first. '
+                          f'Largest intervals: {leaders}. Frame-wide tuning remains follow-up.')
+        elif key == 'overlay_budget':
+            notes[key] = (f'The overlay averages {values[1] / 1e3:.1f} µs. This pass includes the shared '
+                          'clear-sky hemisphere integration and due coarse cube rows. Filtering is timed '
+                          'separately. Further tuning is deferred.')
+        elif key.endswith('/trace outgrows samples'):
+            notes[key] = (f'Trace work ratio {values[0]:.3f} and time ratio {values[1]:.3f}. '
+                          'Counted samples omit nested sunlight work. Separate that work from '
+                          'GPU scheduling variability in the performance phase.')
+        else:
+            _, name = key.split('/', 1)
+            paired = sky['whole_frame_gpu_ns'] if name == 'whole frame' else sky_passes.get(name)
+            item = (f'{values[0] / 1e3:.1f} to {values[1] / 1e3:.1f} µs. '
+                    f'Fresh Sky control: {paired / 1e3:.1f} µs. ' if paired is not None else
+                    f'{values[0] / 1e3:.1f} to {values[1] / 1e3:.1f} µs. ')
+            if name.startswith('atmosphere reflection') or name == 'atmosphere diffuse irradiance':
+                item += ('The registered path reads the cloud cube and composes physical radiance; '
+                         'the clear control reads the existing Sky chart. Investigate filtering cost in tuning.')
+            else:
+                item += ('The matched arms share the pass. The timing alone does not isolate '
+                         'scheduling or contention from pass work. Retain this comparison for tuning.')
+            notes[key] = item
+    return notes
+
+
+def validate_overcast(record, prior):
+    off, sky, lit = record['runs']
+    if [row['selection'] for row in (off, sky, lit)] != ['off', 'sky', 'world-light']:
+        raise ValueError('cost record needs matched Off, Sky and World light arms')
+    for row in (off, sky, lit):
+        if (row['extent'] != [2560, 1440] or row['capture'] or row['preset'] != 'overcast'
+                or row['view'] != prior['view'] or row['view_angles'] != prior['view_angles']
+                or row['frames'] < 30 or not positive(row['whole_frame_gpu_ns'])):
+            raise ValueError('overcast measurement must match the WP7 view and output extent')
+    for row in (sky, lit):
+        names = named_passes(row)
+        expected = set(SKY_PASSES)
+        if row is lit:
+            expected.remove('cloud hemisphere light')
+            expected.update(WORLD_LIGHT_PASSES)
+        if any(not positive(names.get(name)) for name in expected):
+            raise ValueError(f'{row["selection"]} lacks named cloud or atmosphere pass measurements')
+        if (not positive(row['ray_statistics']['rays_traced']) or
+                not positive(row['ray_statistics']['mean_samples']) or
+                not row['resources'] or any(not positive(size) for _, size in row['resources'])):
+            raise ValueError('visible cloud arm lacks ray work or resource bytes')
+    if (any(name.startswith('cloud ') for name in named_passes(off))
+            or 'cloud sky overlay' in named_passes(sky)):
+        raise ValueError('a control ran a cloud capability it omits')
+    triggered = overcast_tripwires(record)
+    if record['tripwires'] != triggered or set(record['investigation']) != set(triggered):
+        raise ValueError('each measured overcast tripwire needs its investigation')
+    if any(not isinstance(note, str) or not note.strip() for note in record['investigation'].values()):
+        raise ValueError('overcast tripwire investigations cannot be empty')
+
+
+def overcast_lit(check):
     revision = run(['git', 'rev-parse', 'HEAD'])
     status = run(['git', 'status', '--porcelain'])
     changes = run(['git', 'diff', '--binary', 'HEAD'])
     load = os.getloadavg()
-    control, lit = measure('overcast-lit', False)
+    prior = json.loads(FIXTURES['decks'].read_text())
+    prior_arm = next(row for row in prior['runs'] if row['preset'] == 'overcast')
+    if check:
+        validate_overcast(json.loads(FIXTURES['overcast-lit'].read_text()), prior_arm)
+    rows = measure('overcast-lit', False)
     if (revision, status, changes) != (run(['git', 'rev-parse', 'HEAD']),
                                       run(['git', 'status', '--porcelain']),
                                       run(['git', 'diff', '--binary', 'HEAD'])):
         raise ValueError('checkout changed during World light measurement')
-    prior = json.loads(FIXTURES['decks'].read_text())
-    prior_arm = next(row for row in prior['runs'] if row['preset'] == 'overcast')
-    for row in (control, lit):
-        if (row['extent'] != [2560, 1440] or row['capture'] or row['preset'] != 'overcast'
-                or row['view'] != prior_arm['view'] or row['view_angles'] != prior_arm['view_angles']
-                or row['frames'] < 30 or not positive(row['whole_frame_gpu_ns'])):
-            raise ValueError('overcast measurement must match the WP7 view and output extent')
-    def pass_times(row):
-        return {name: value for name, value in row['pass_gpu_ns'].items()
-                if any(name.endswith(suffix) for suffix in WORLD_LIGHT_PASSES)}
-    named = pass_times(lit)
-    for suffix in WORLD_LIGHT_PASSES:
-        if not any(name.endswith(suffix) and positive(value) for name, value in named.items()):
-            raise ValueError(f'World light lacks a measured pass for {suffix}')
-    if any(name.endswith('cloud sky overlay') for name in control['pass_gpu_ns']):
-        raise ValueError('the matched Sky-only control ran the overlay')
-    old_ns = prior_arm['whole_frame_gpu_ns']
-    control_ns = control['whole_frame_gpu_ns']
-    lit_ns = lit['whole_frame_gpu_ns']
-    investigation = {}
-    if lit_ns > 1e9 / 120:
-        investigation['refresh_interval'] = (
-            f'{lit_ns / 1e6:.2f} ms with World light and {control_ns / 1e6:.2f} ms '
-            'with Sky alone. The existing cloud trace and Sun-path costs are '
-            'visible in both arms. The added overlay and per-mip reflection are timed separately.')
-    if lit_ns >= 1.25 * control_ns:
-        investigation['paired_regression'] = (
-            'The camera and weather were held equal. World light updates the diffuse '
-            'and seven reflection mips when the time-sliced overlay changes. The difference '
-            'can be checked against their named timings and the preserve-only Sky control.')
-    if lit_ns >= 1.25 * old_ns:
-        investigation['wp7_regression'] = (
-            f'WP7 recorded {old_ns / 1e6:.2f} ms. The fresh Sky control '
-            f'recorded {control_ns / 1e6:.2f} ms, separating build and load changes '
-            'from the paired World light delta.')
-    orbit = next(value for name, value in named.items() if name.endswith('cloud sky overlay'))
-    if orbit > 50_000:
-        investigation['overlay_budget'] = (
-            f'The overlay averages {orbit / 1e6:.3f} ms against the 0.05 ms tripwire. '
-            'The tracer writes six strips through the coarse cloud field and reads cached Sun paths. '
-            'The name covers that trace alone, without diffuse integration or GGX filtering.')
-    return {'commit': revision, 'dirty': bool(status), 'machine': platform.platform(),
-            'build': 'release, capture off, portable Metal', 'load': {'before': load, 'after': os.getloadavg()},
-            'wp7_overcast': {'commit': prior['commit'], 'record': str(FIXTURES['decks'].relative_to(ROOT)),
-                             'arm': prior_arm}, 'runs': [control, lit],
-            'world_light_pass_gpu_ns': named, 'investigation': investigation}
+    record = {'commit': revision, 'dirty': bool(status), 'machine': platform.platform(),
+              'build': 'release, capture off, portable Metal', 'load': {'before': load, 'after': os.getloadavg()},
+              'wp7_overcast': {'commit': prior['commit'], 'record': str(FIXTURES['decks'].relative_to(ROOT)),
+                               'arm': prior_arm}, 'runs': rows,
+              'world_light_pass_gpu_ns': {name: value for name, value in rows[-1]['pass_gpu_ns'].items()
+                                          if name.rsplit(': ', 1)[-1] in WORLD_LIGHT_PASSES}}
+    record['tripwires'] = overcast_tripwires(record)
+    record['investigation'] = investigate_overcast(record)
+    validate_overcast(record, prior_arm)
+    return record
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('command', choices=['record', 'check', 'refuse', 'cadence', 'hold'])
-    parser.add_argument('--scene', choices=[*FIXTURES, 'overcast-lit', 'wind', 'scripted'], required=True)
+    parser.add_argument('--scene', choices=[*FIXTURES, 'wind', 'scripted'], required=True)
     parser.add_argument('--previous', type=Path, help='previous renderer cost record at the same low-Sun view')
     parser.add_argument('--output', type=Path, help='write a cost record to an alternate destination')
     parser.add_argument('--resume', action='store_true',
@@ -408,7 +474,7 @@ def main():
         from cloud_cadence_capture import run_wind
         return run_wind(args.command, args.output, resume=args.resume)
     if args.scene == 'overcast-lit' and args.command in ('check', 'record'):
-        report = json.dumps(overcast_lit(), indent=2)
+        report = json.dumps(overcast_lit(args.command == 'check'), indent=2)
         if args.output:
             args.output.parent.mkdir(parents=True, exist_ok=True)
             args.output.write_text(report + '\n')

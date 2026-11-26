@@ -242,7 +242,14 @@ impl AtmospherePrepared {
             Some(read.clone()),
             sun_reads,
         );
-        self.append_reflection(graph, keys, uniform, &charts, forward, Some(&read))?;
+        self.append_reflection(
+            graph,
+            keys,
+            uniform,
+            &charts,
+            forward,
+            Some((&read, environment_light)),
+        )?;
         Ok(())
     }
 
@@ -369,7 +376,7 @@ impl AtmospherePrepared {
         uniform: &ResourceId,
         charts: &Charts<ResourceId>,
         forward: &mut Vec<Access>,
-        overlay: Option<&Access>,
+        overlay: Option<(&Access, &ResourceId)>,
     ) -> Result<(), GraphError> {
         let resources = [
             (&self.reflection.dfg, DFG_SIZE, 1, 1, self.generation),
@@ -424,7 +431,16 @@ impl AtmospherePrepared {
             ]
             .into_iter()
             .chain(chart_reads(stage, charts))
-            .chain(overlay.cloned())
+            .chain(overlay.into_iter().flat_map(|(cube, flags)| {
+                [
+                    cube.clone(),
+                    Access::new(
+                        flags.clone(),
+                        0..crate::light::ENVIRONMENT_BYTES,
+                        AccessKind::UniformRead,
+                    ),
+                ]
+            }))
             .chain([Access::new(
                 resources[1].clone(),
                 u64::from(mip * 6)..u64::from((mip + 1) * 6),

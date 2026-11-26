@@ -385,7 +385,9 @@ impl SceneContribution for Shade {
                     .as_ref()
                     .is_some_and(crate::layer::Layer::has_overlay) =>
                 {
-                    true
+                    gpu.sky
+                        .as_ref()
+                        .is_some_and(crate::layer::Layer::overlay_runs)
                 }
                 6 | 7 => gpu
                     .placed_map
@@ -426,7 +428,12 @@ impl SceneContribution for Shade {
         }
     }
     fn after_opaque_runs(&self, index: usize, frame: &ContributionFrame) -> bool {
-        index != 2 || !frame.time.capture
+        let world_light = self
+            .gpu
+            .as_ref()
+            .and_then(|gpu| gpu.sky.as_ref())
+            .is_some_and(crate::layer::Layer::has_overlay);
+        index + usize::from(world_light) != 2 || !frame.time.capture
     }
     fn encode_after_opaque(
         &mut self,
@@ -438,7 +445,12 @@ impl SceneContribution for Shade {
             && let Some(gpu) = self.gpu.as_mut()
             && let Some(sky) = &mut gpu.sky
         {
-            sky.encode(index, pass, frame, gpu.shapes.as_deref());
+            sky.encode(
+                index + usize::from(sky.has_overlay()),
+                pass,
+                frame,
+                gpu.shapes.as_deref(),
+            );
         }
     }
     fn draw_after_opaque(

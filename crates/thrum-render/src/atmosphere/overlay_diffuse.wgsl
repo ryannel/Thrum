@@ -1,6 +1,9 @@
 @group(0) @binding(1) var sky: texture_2d<f32>;
 @group(0) @binding(2) var aerial_sampler: sampler;
 @group(0) @binding(3) var<storage,read_write> environment_light: EnvironmentLight;
+@group(0) @binding(7) var overlay_faces: texture_2d_array<f32>;
+var<workgroup> coverage_summary: array<vec2<f32>,64>;
+var<workgroup> has_cloud: u32;
 var<workgroup> irradiance: array<vec4<f32>,64>;
 var<workgroup> moments: array<array<vec4<f32>,9>,64>;
 
@@ -8,7 +11,30 @@ var<workgroup> moments: array<array<vec4<f32>,9>,64>;
 fn diffuse_main(@builtin(local_invocation_index) index: u32) {
     // Preserve the existing horizontal incident meter, including sample order
     // and reduction. It is not reconstructed from the truncated SH expansion.
+    let extent = textureDimensions(overlay_faces);
+    let face_size = extent.x * extent.y;
+    var cloudy = 0.0;
+    for (var i = index; i < face_size * 6u; i += 64u) {
+        let pixel = i % face_size;
+        let texel = textureLoad(overlay_faces, vec2<i32>(i32(pixel % extent.x), i32(pixel / extent.x)),
+            i32(i / face_size), 0);
+        if any(texel != vec4(0.0, 0.0, 0.0, 1.0)) {
+            cloudy = 1.0;
+            break;
+        }
+    }
+    coverage_summary[index] = vec2(cloudy, 0.0);
+    workgroupBarrier();
+    if index == 0u {
+        has_cloud = 0u;
+        for (var i = 0u; i < 64u; i++) {
+            has_cloud |= u32(coverage_summary[i].x);
+        }
+    }
+    let active_overlay = workgroupUniformLoad(&has_cloud) != 0u;
+    let solar=atmosphere.sun_lux.w*atmosphere.colour_pre_exposure.rgb;
     var sum=vec4(0.0);
+    var coverage = vec2(0.0);
     for(var sample=0u;sample<4u;sample++) {
         let number=index+sample*64u;
         let mu=(f32(number/16u)+0.5)/16.0;
@@ -17,9 +43,17 @@ fn diffuse_main(@builtin(local_invocation_index) index: u32) {
         let direction=vec3(radius*cos(phi),mu,radius*sin(phi));
         let uv=sky_uv(direction,atmosphere.sun_lux.xyz);
         let clear=textureSampleLevel(sky,aerial_sampler,uv,0.0);
-        sum+=overlay_meter_sample(direction,clear)*(mu*2.0*PI/256.0);
+        if active_overlay {
+            let layer = textureSampleLevel(sky_overlay, aerial_sampler, direction, 0.0);
+            let clear_rgb = overlay_clear(clear);
+            sum += vec4(clear_rgb * layer.a + layer.rgb, 0.0) * (mu*2.0*PI/256.0);
+            coverage += vec2(dot(clear_rgb, REC709_LUMA), 1.0 - layer.a) * (mu*2.0*PI/256.0);
+        } else {
+            sum += clear*(mu*2.0*PI/256.0);
+        }
     }
     irradiance[index]=sum;
+    coverage_summary[index] = coverage;
     var local: array<vec4<f32>,9>;
     for(var sample=0u;sample<16u;sample++) {
         let number=index+sample*64u;
@@ -33,7 +67,10 @@ fn diffuse_main(@builtin(local_invocation_index) index: u32) {
         let radius=sqrt(max(0.0,1.0-mu*mu));
         let direction=vec3(radius*cos(phi),mu,radius*sin(phi));
         let clear=textureSampleLevel(sky,aerial_sampler,sky_uv(direction,atmosphere.sun_lux.xyz),0.0);
-        let radiance=vec4(overlay_radiance(direction,clear,aerial_sampler),0.0);
+        var radiance=clear;
+        if active_overlay {
+            radiance=vec4(overlay_radiance(direction,clear,aerial_sampler),0.0);
+        }
         let weighted=radiance*(2.0*span*node.x*node.y*2.0*PI/32.0);
         // M0/4, M1/2, 15Qdiag/32, 15Qcross/16. No coefficient clamp.
         let basis=array<f32,9>(0.25,0.5*direction.x,0.5*direction.y,0.5*direction.z,
@@ -49,12 +86,17 @@ fn diffuse_main(@builtin(local_invocation_index) index: u32) {
     for(var stride=32u;stride>0u;stride/=2u) {
         if index<stride {
             irradiance[index]+=irradiance[index+stride];
+            coverage_summary[index] += coverage_summary[index+stride];
             for(var i=0u;i<9u;i++) { moments[index][i]+=moments[index+stride][i]; }
         }
         workgroupBarrier();
     }
     var coefficients: array<vec4<f32>,9>;
-    for(var i=0u;i<9u;i++) { coefficients[i]=vec4(moments[0][i].rgb,0.0); }
+    for(var i=0u;i<9u;i++) {
+        var rgb = moments[0][i].rgb;
+        if !active_overlay { rgb = decode_sky_light(moments[0][i], solar); }
+        coefficients[i] = vec4(rgb, 0.0);
+    }
     // Diagnostic only: count negative raw RGB on 64 fixed sphere normals, not
     // affected pixels. This cannot prove positivity at unsampled normals.
     let mu=1.0-2.0*(f32(index)+0.5)/64.0;
@@ -64,9 +106,12 @@ fn diffuse_main(@builtin(local_invocation_index) index: u32) {
     // Every lane has consumed the shared meter before this scratch reuse.
     workgroupBarrier();
     if index==0u {
-        environment_light.horizontal_irradiance=vec4(irradiance[0].rgb,1.0);
+        var horizontal = irradiance[0].rgb;
+        if !active_overlay { horizontal = decode_sky_light(irradiance[0], solar); }
+        environment_light.horizontal_irradiance=vec4(horizontal,1.0);
         environment_light.sky_diffuse=coefficients;
-        write_haze_scale(irradiance[0]);
+        environment_light.sky_diffuse[2].w = select(0.0, 1.0, active_overlay);
+        write_overlay_light(horizontal, coverage_summary[0], active_overlay);
     }
     workgroupBarrier();
     irradiance[index]=vec4(select(0.0,1.0,any(probe<vec3(0.0))),min(probe.x,min(probe.y,probe.z)),0.0,0.0);

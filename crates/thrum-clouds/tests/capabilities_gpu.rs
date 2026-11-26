@@ -137,13 +137,16 @@ fn run() {
                             .map(|(_, suffix)| format!("cloud {suffix}"))
                     })
                     .collect();
-                let mut expected: Vec<_> = SHADE
-                    .into_iter()
-                    .chain(SKY.into_iter().filter(|_| sky))
-                    .chain(world_light.then_some("cloud sky overlay"))
-                    .chain(shapes.then_some("cloud placed weather map"))
-                    .map(str::to_owned)
-                    .collect();
+                let mut expected: Vec<_> =
+                    SHADE
+                        .into_iter()
+                        .chain(SKY.into_iter().filter(|name| {
+                            sky && (!world_light || *name != "cloud hemisphere light")
+                        }))
+                        .chain(world_light.then_some("cloud sky overlay"))
+                        .chain(shapes.then_some("cloud placed weather map"))
+                        .map(str::to_owned)
+                        .collect();
                 expected.sort();
                 let mut actual = names.clone();
                 actual.sort();
@@ -216,6 +219,9 @@ fn run() {
                     .iter()
                     .filter(|(name, _)| name.contains("cloud ") || name.contains("overlay"))
                     .collect();
+                if world_light && !shapes {
+                    check_held_overlay(&gpu, &mut host, &output, extent, now);
+                }
                 println!(
                     "Metal: Sky {sky}, World light {world_light}, Shapes {shapes}\n  passes {names:?}\n  creations {cloud_creations:?}\n  resources {resources:?}"
                 );
@@ -227,4 +233,79 @@ fn run() {
         );
         assert!(samples[1].iter().any(|&byte| byte != 0));
     });
+}
+
+#[cfg(target_os = "macos")]
+fn check_held_overlay(
+    gpu: &thrum_test_support::Opened,
+    host: &mut thrum_render::runtime::FrameHost<scene_fixture::World, scene_fixture::Source>,
+    output: &wgpu::TextureView,
+    extent: [u32; 2],
+    now: std::time::Duration,
+) {
+    use std::time::Duration;
+    use thrum_render::runtime::SurfaceOutput;
+
+    let mut sample = |elapsed| {
+        host.drive(
+            elapsed,
+            Some(&SurfaceOutput {
+                view: output,
+                extent,
+            }),
+        )
+        .expect("submit overlay cadence frame");
+        gpu.device
+            .poll(wgpu::PollType::wait_indefinitely())
+            .expect("cadence frame complete");
+        host.poll_completed()
+            .expect("cadence completion")
+            .expect("submitted frame")
+    };
+    for i in 1..=9 {
+        sample(now + Duration::from_millis(i * 17));
+    }
+    let quiet = sample(now + Duration::from_millis(170));
+    let passes = |frame: thrum_render::runtime::FrameSample| {
+        frame
+            .gpu_pass_ns
+            .expect("Metal timestamps")
+            .passes()
+            .iter()
+            .map(|pass| pass.name.to_string())
+            .collect::<Vec<_>>()
+    };
+    let quiet = passes(quiet);
+    host.continuous_source_mut().view = placed_fixture::column_view(8.0);
+    host.drive(
+        now + Duration::from_millis(187),
+        Some(&SurfaceOutput {
+            view: output,
+            extent,
+        }),
+    )
+    .expect("submit moved overlay");
+    gpu.device
+        .poll(wgpu::PollType::wait_indefinitely())
+        .expect("moved frame complete");
+    let moved = passes(
+        host.poll_completed()
+            .expect("moved completion")
+            .expect("submitted frame"),
+    );
+    for name in [
+        "cloud sky overlay",
+        "atmosphere diffuse irradiance",
+        "atmosphere reflection mip 0",
+        "atmosphere reflection mip 6",
+    ] {
+        assert!(
+            !quiet.iter().any(|pass| pass.ends_with(name)),
+            "settled frame ran {name}"
+        );
+        assert!(
+            moved.iter().any(|pass| pass.ends_with(name)),
+            "moved frame omitted {name}"
+        );
+    }
 }

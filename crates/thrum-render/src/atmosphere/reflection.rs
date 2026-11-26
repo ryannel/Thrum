@@ -61,7 +61,7 @@ impl ReflectionPrepared {
         uniform: &wgpu::Buffer,
         charts: &[wgpu::BindGroupEntry<'_>],
         sky_sampler: &wgpu::Sampler,
-        overlay: Option<&wgpu::TextureView>,
+        overlay: Option<(&wgpu::TextureView, &wgpu::Buffer)>,
     ) -> Self {
         let cube = texture(device, "atmosphere specular cube", CUBE_SIZE, 6, MIP_COUNT);
         let dfg = texture(device, "atmosphere DFG", DFG_SIZE, 1, 1);
@@ -125,9 +125,17 @@ impl ReflectionPrepared {
                 ]
                 .into_iter()
                 .chain(charts.iter().cloned())
-                .chain(overlay.map(|view| wgpu::BindGroupEntry {
-                    binding: 5,
-                    resource: wgpu::BindingResource::TextureView(view),
+                .chain(overlay.into_iter().flat_map(|(view, flags)| {
+                    [
+                        wgpu::BindGroupEntry {
+                            binding: 5,
+                            resource: wgpu::BindingResource::TextureView(view),
+                        },
+                        wgpu::BindGroupEntry {
+                            binding: 6,
+                            resource: flags.as_entire_binding(),
+                        },
+                    ]
                 }))
                 .collect::<Vec<_>>(),
             })

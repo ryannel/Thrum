@@ -63,6 +63,11 @@ fn cloud_detail(sigma:f32,point:vec3<f32>,footprint:f32,extinction:f32,height:f3
     if sigma<=0.0 || extinction<=0.0 || cloud.physical.y==0.0 {return sigma;}
     let detail_uv = point / 800.0 + vec3(cloud.noise.z, 0.0, cloud.noise.w);
     let detail = textureSampleLevel(detail_noise, noise_sampler, detail_uv, erosion_mip(footprint, 12.5)).r;
+    return cloud_eroded_density(sigma,point,footprint,extinction,height,detail);
+}
+
+fn cloud_eroded_density(sigma:f32,point:vec3<f32>,footprint:f32,extinction:f32,height:f32,detail:f32)->f32 {
+    if sigma<=0.0 || extinction<=0.0 || cloud.physical.y==0.0 {return sigma;}
     let uv=cloud_shape_uv(point);
     let shape=cloud_billow(uv,footprint);
     let eroded=cloud_erode(sigma,extinction,cloud.physical.y,shape,detail);

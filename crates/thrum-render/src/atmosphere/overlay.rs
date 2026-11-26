@@ -93,6 +93,11 @@ pub(super) fn prepare_diffuse(
         buffer(3, environment),
         view(5, &target.view),
     ];
+    let faces = target.texture.create_view(&wgpu::TextureViewDescriptor {
+        dimension: Some(wgpu::TextureViewDimension::D2Array),
+        ..Default::default()
+    });
+    entries.push(view(7, &faces));
     if haze {
         entries.push(buffer(6, directional));
         if let Some(cloud) = cloud {
@@ -121,11 +126,12 @@ pub(super) fn prepare_reflection(device: &crate::runtime::DeviceSite) -> wgpu::C
 
 pub(crate) fn reflection_source() -> String {
     let integrate = wgsl!(@reflection_integrate
-        "            radiance+=vec4(prepared.w*overlay_radiance(direction,textureSampleLevel(reflection_sky,reflection_sampler,uv,0.0),reflection_sampler)/OVERLAY_REFLECTION_GAIN,0.0);\n");
+        "            let encoded = textureSampleLevel(reflection_sky,reflection_sampler,uv,0.0);\n            if overlay_flags.sky_diffuse[2].w == 0.0 {\n                radiance += prepared.w * encoded;\n            } else {\n                radiance += vec4(prepared.w * overlay_radiance(direction,encoded,reflection_sampler) / OVERLAY_REFLECTION_GAIN,0.0);\n            }\n");
     with_reflection_gain(&format!(
-        "{}\n{}",
+        "{}\n{}\n{}\n@group(0) @binding(6) var<uniform> overlay_flags: EnvironmentLight;\n",
         super::reflection::cube_source_with(integrate),
-        include_str!("overlay.wgsl")
+        include_str!("overlay.wgsl"),
+        wgsl!("environment_light.wgsl")
     ))
 }
 
@@ -137,7 +143,8 @@ pub(crate) fn diffuse_source(haze: bool, cloud: CloudVariant) -> String {
     ));
     if !haze {
         return format!(
-            "{diffuse}\n{}",
+            "{diffuse}\n{}\n{}",
+            wgsl!(@lighting_constants),
             include_str!("overlay_diffuse_no_haze.wgsl")
         );
     }
@@ -165,7 +172,7 @@ pub(crate) fn reflection_product(lighting: Lighting) -> &'static str {
         wgsl!(@reflection_product
             "    let radiance=decode_sky_light(encoded,atmosphere.sun_lux.w*atmosphere.colour_pre_exposure.rgb);\n")
     } else {
-        wgsl!(@reflection_product "    let radiance=encoded.rgb * OVERLAY_REFLECTION_GAIN;\n")
+        wgsl!(@reflection_product "    let radiance=select(decode_sky_light(encoded,atmosphere.sun_lux.w*atmosphere.colour_pre_exposure.rgb),encoded.rgb*OVERLAY_REFLECTION_GAIN,environment_light.sky_diffuse[2].w!=0.0);\n")
     }
 }
 
@@ -174,10 +181,10 @@ pub(crate) fn forward_environment(lighting: Lighting, ambient: bool) -> &'static
         (true, false) => wgsl!("synthetic_environment.wgsl"),
         (true, true) => wgsl!(@ambient_environment),
         (false, false) => {
-            wgsl!(@environment_surface "    let environment=encoded.rgb * OVERLAY_REFLECTION_GAIN;\n")
+            wgsl!(@environment_surface "    let environment=select(decode_sky_light(encoded,aerial_frame.sun_lux.w*aerial_frame.colour_pre_exposure.rgb),encoded.rgb*OVERLAY_REFLECTION_GAIN,environment_light.sky_diffuse[2].w!=0.0);\n")
         }
         (false, true) => {
-            wgsl!(@ambient_environment_terms "    let environment=encoded.rgb * OVERLAY_REFLECTION_GAIN;\n")
+            wgsl!(@ambient_environment_terms "    let environment=select(decode_sky_light(encoded,aerial_frame.sun_lux.w*aerial_frame.colour_pre_exposure.rgb),encoded.rgb*OVERLAY_REFLECTION_GAIN,environment_light.sky_diffuse[2].w!=0.0);\n")
         }
     }
 }

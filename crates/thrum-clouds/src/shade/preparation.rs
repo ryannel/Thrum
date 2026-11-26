@@ -214,7 +214,11 @@ impl Prepared {
             for pass in &mut graph.passes[1..4] {
                 pass.accesses.extend(reads.iter().cloned());
             }
-            if let Some(trace) = graph.after_opaque.get_mut(1) {
+            if let Some(trace) = graph
+                .after_opaque
+                .iter_mut()
+                .find(|pass| pass.name == crate::layer::TRACE)
+            {
                 trace.accesses.extend(reads.iter().cloned());
             }
             if sky.is_some_and(Layer::has_overlay) {

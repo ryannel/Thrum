@@ -1,5 +1,5 @@
 use thrum_render::{
-    atmosphere::EnvironmentProducts,
+    atmosphere::{EnvironmentEpoch, EnvironmentFrame, EnvironmentProducts, TrueSun},
     binding,
     contribution::{
         ContributionFrame, EffectAccess, EffectCadence, EffectGraph, EffectPass, SceneSurface,
@@ -10,14 +10,34 @@ use thrum_render::{
 pub(crate) const PASS: &str = "cloud sky overlay";
 const SLICES: u32 = 8;
 
+#[derive(Clone, Copy, PartialEq)]
+struct OverlayInput {
+    tick: u64,
+    camera: [f32; 3],
+    epoch: EnvironmentEpoch,
+    sun: TrueSun,
+}
+
+impl OverlayInput {
+    fn hemisphere_matches(self, other: Self) -> bool {
+        self.epoch == other.epoch
+            && self.sun == other.sun
+            && self.camera[1].to_bits() == other.camera[1].to_bits()
+    }
+}
+
 pub(super) struct Overlay {
     pub(super) texture: wgpu::Texture,
     rows: wgpu::Buffer,
     pipeline: wgpu::ComputePipeline,
     output: wgpu::BindGroup,
     row_count: u32,
-    initialized: bool,
+    committed: Option<OverlayInput>,
+    pending: Option<OverlayInput>,
     phase: u32,
+    remaining: u32,
+    pending_remaining: u32,
+    ambient_due: bool,
 }
 
 impl Overlay {
@@ -94,8 +114,12 @@ impl Overlay {
             pipeline,
             output,
             row_count: 0,
-            initialized: false,
+            committed: None,
+            pending: None,
             phase: 0,
+            remaining: 0,
+            pending_remaining: 0,
+            ambient_due: false,
         }
     }
 
@@ -145,17 +169,53 @@ impl Overlay {
         });
     }
 
-    pub(super) fn upload(&mut self, queue: &wgpu::Queue, frame: &ContributionFrame) {
+    pub(super) fn upload(
+        &mut self,
+        queue: &wgpu::Queue,
+        frame: &ContributionFrame,
+        environment: EnvironmentFrame,
+        reset: bool,
+    ) {
+        let input = OverlayInput {
+            tick: frame.time.tick,
+            camera: frame.camera,
+            epoch: environment.epoch,
+            sun: environment.true_sun,
+        };
+        let changed = self.committed != Some(input);
+        let remaining = if changed || reset {
+            SLICES
+        } else {
+            self.remaining
+        };
+        self.pending = None;
+        self.row_count = 0;
+        if remaining == 0 {
+            return;
+        }
+        self.ambient_due = self
+            .committed
+            .is_none_or(|old| !old.hemisphere_matches(input));
         let height = self.texture.height();
-        let full = !self.initialized || frame.history_reset || frame.time.capture;
+        let full = reset || (changed && frame.time.capture);
         let step = height.div_ceil(SLICES);
         let row = if full { 0 } else { self.phase * step };
         self.row_count = if full { height } else { step.min(height - row) };
+        self.pending = Some(input);
+        self.pending_remaining = if full { 0 } else { remaining - 1 };
         queue.write_buffer(
             &self.rows,
             0,
             bytemuck::cast_slice(&[row, self.row_count, 0, 0]),
         );
+    }
+
+    pub(super) fn runs(&self) -> bool {
+        self.pending.is_some()
+    }
+
+    pub(super) fn ambient_due(&self) -> bool {
+        self.ambient_due
     }
 
     pub(super) fn encode(
@@ -180,7 +240,10 @@ impl Overlay {
     }
 
     pub(super) fn submitted(&mut self) {
-        self.initialized = true;
-        self.phase = (self.phase + 1) % SLICES;
+        if let Some(input) = self.pending.take() {
+            self.committed = Some(input);
+            self.remaining = self.pending_remaining;
+            self.phase = (self.phase + 1) % SLICES;
+        }
     }
 }

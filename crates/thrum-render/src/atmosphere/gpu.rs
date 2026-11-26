@@ -324,7 +324,7 @@ impl AtmospherePrepared {
                 &uniform,
                 &reflection_charts,
                 &sampler,
-                Some(&overlay.view),
+                Some((&overlay.view, environment_light)),
             )
         } else {
             ReflectionPrepared::new(device, &uniform, &reflection_charts, &sampler)
@@ -471,9 +471,6 @@ impl AtmospherePrepared {
             self.validity &= !DIFFUSE_VALID;
             self.diffuse_dependencies = diffuse_dependencies;
         }
-        if self.overlay.is_some() {
-            self.validity &= !(DIFFUSE_VALID | REFLECTION_VALID);
-        }
         let (previous, sun) = self.submitted_sky.unwrap_or((*view, frame.toward_sun));
         let prior = glam::Mat4::from_cols_array_2d(&previous.view_proj_columns());
         let current = glam::Mat4::from_cols_array_2d(&view.view_proj_columns());
@@ -605,10 +602,17 @@ impl AtmospherePrepared {
         encoder: &mut wgpu::CommandEncoder,
         pass: &CompiledPass,
         timings: Option<&mut GpuTimings>,
+        overlay_written: bool,
     ) -> Result<(), RenderError> {
         // Cached dependencies retain their graph identity without adding empty
         // GPU passes or timestamp work to an ordinary frame.
-        if self.validity & stage.validity() != 0 {
+        let overlay_due = overlay_written
+            && self.overlay.is_some()
+            && matches!(
+                stage,
+                AtmosphereStage::Diffuse | AtmosphereStage::Reflection(_)
+            );
+        if !overlay_due && self.validity & stage.validity() != 0 {
             return Ok(());
         }
         let mut compute = pass

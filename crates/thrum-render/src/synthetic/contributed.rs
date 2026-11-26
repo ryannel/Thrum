@@ -251,6 +251,11 @@ impl super::SceneContext<'_> {
                 .begin_compute(self.encoder, self.generation, self.timings.as_deref_mut())?
                 .ok_or(RenderError::GraphPassMismatch)?;
             contribution.encode_effect(index, &mut pass, &self.contribution_frame);
+            let graph = self.prepared.effect_graph();
+            self.overlay_written |= graph.passes[index].accesses.iter().any(|access| {
+                access.kind == AccessKind::StorageWrite
+                    && graph.sky_overlays.contains(&access.resource)
+            });
             drop(pass);
             contribution.encode_effect_readback(index, self.encoder);
         }

@@ -20,6 +20,7 @@ fn shader_record_matches_rust_offsets() {
             temporal,
             noise,
             bank_noise,
+            density_profile,
             inverse_raster,
             previous_raster
         )],

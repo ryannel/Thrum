@@ -664,6 +664,7 @@ struct SceneContext<'a> {
     contribution_frame: ContributionFrame,
     cooked_shadow_fit: Option<bool>,
     exposure_side: usize,
+    overlay_written: bool,
 }
 
 impl SceneContext<'_> {
@@ -687,7 +688,13 @@ impl SceneContext<'_> {
             volume.dispatch(&mut compute, scene);
             return Ok(());
         }
-        atmosphere.encode(stage, self.encoder, pass, self.timings.as_deref_mut())
+        atmosphere.encode(
+            stage,
+            self.encoder,
+            pass,
+            self.timings.as_deref_mut(),
+            self.overlay_written || self.prepared.effect_graph().sky_overlays.is_empty(),
+        )
     }
 
     /// Write this recording's Sun fit once, before the first pass that reads
@@ -1802,6 +1809,7 @@ impl PreparedSynthetic {
                 contribution: None,
                 contribution_frame: self.contribution_frame(target.drawn),
                 cooked_shadow_fit: None,
+                overlay_written: false,
                 exposure_side: self.history.write_side(),
             })
     }
@@ -1853,6 +1861,7 @@ impl PreparedSynthetic {
             contribution,
             contribution_frame: self.contribution_frame(target.drawn),
             cooked_shadow_fit: None,
+            overlay_written: false,
             exposure_side: self.history.write_side(),
         })
     }

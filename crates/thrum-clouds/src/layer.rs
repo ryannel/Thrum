@@ -76,6 +76,7 @@ struct Uniform {
     temporal: [u32; 4],
     noise: [f32; 4],
     bank_noise: [f32; 4],
+    density_profile: [f32; 4],
     inverse_raster: [[f32; 4]; 4],
     previous_raster: [[f32; 4]; 4],
 }
@@ -178,7 +179,7 @@ impl Layer {
             ResourceScope::Persistent {
                 owner: 102,
                 epoch,
-                initialized: false,
+                initialized: self.overlay.is_some(),
             },
         ));
         let params = graph.resources.len();
@@ -206,7 +207,9 @@ impl Layer {
             )],
         );
         hemisphere.depth = false;
-        graph.after_opaque.push(hemisphere);
+        if self.overlay.is_none() {
+            graph.after_opaque.push(hemisphere);
+        }
         reads.push(buffer_access(
             phase,
             self.lighting.phase.size(),
@@ -225,12 +228,14 @@ impl Layer {
         if let Some(overlay) = &self.overlay {
             let overlay_reads = reads
                 .iter()
-                .filter(|read| {
-                    !matches!(read.kind, AccessKind::StorageWrite)
-                        && read.resource != ambient
-                        && read.resource != detail
-                })
+                .filter(|read| read.kind != AccessKind::StorageWrite && read.resource != detail)
                 .cloned()
+                .map(|mut read| {
+                    if read.resource == ambient {
+                        read.kind = AccessKind::StorageReadWrite;
+                    }
+                    read
+                })
                 .collect();
             overlay.append_graph(graph, epoch, overlay_reads);
         }
@@ -386,6 +391,7 @@ impl Layer {
             // This octave needs its own wrapped phase when the weather
             // anchor moves. The shape-noise phase uses a different period.
             bank_noise: crate::noise::bank_noise(anchor, kind.deck),
+            density_profile: [model.detail_mean as f32, 0.0, 0.0, 0.0],
             inverse_raster: glam::Mat4::from_cols_array_2d(&frame.view_proj)
                 .inverse()
                 .to_cols_array_2d(),
@@ -394,7 +400,7 @@ impl Layer {
         self.queue
             .write_buffer(&self.params, 0, bytemuck::bytes_of(&uniform));
         if let Some(overlay) = &mut self.overlay {
-            overlay.upload(&self.queue, frame);
+            overlay.upload(&self.queue, frame, environment, reset);
         }
         Ok(())
     }
@@ -405,6 +411,9 @@ impl Layer {
         shapes: Option<&crate::shapes::Shapes>,
     ) {
         if let Some(overlay) = &self.overlay {
+            if overlay.ambient_due() {
+                self.lighting.encode(pass, &self.environment, 0);
+            }
             overlay.encode(pass, &self.environment, &self.trace_group, shapes);
         }
     }
@@ -413,6 +422,10 @@ impl Layer {
         if let Some(overlay) = &mut self.overlay {
             overlay.submitted();
         }
+    }
+
+    pub(crate) fn overlay_runs(&self) -> bool {
+        self.overlay.as_ref().is_some_and(overlay::Overlay::runs)
     }
 
     pub(crate) fn has_overlay(&self) -> bool {

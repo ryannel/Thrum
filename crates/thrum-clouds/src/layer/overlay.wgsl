@@ -13,17 +13,6 @@ fn overlay_direction(face: u32, uv: vec2<f32>) -> vec3<f32> {
     }
 }
 
-fn overlay_density(column: vec4<f32>, point: vec3<f32>, footprint: f32) -> f32 {
-    if column.x <= 0.0 || cloud.physical.x <= 0.0 || cloud.physical.y == 0.0 {
-        return column.x;
-    }
-    let uv = cloud_shape_uv(point);
-    let eroded = cloud_erode(column.x, cloud.physical.x, cloud.physical.y,
-        cloud_billow(uv, footprint), 0.5);
-    return eroded * cloud_bank_shape(shape_noise, noise_sampler, point, uv, cloud.bank_noise,
-        footprint, column.w, cloud_bank_weight(cloud.bank_noise.w));
-}
-
 @compute @workgroup_size(8, 4)
 fn trace_overlay(@builtin(global_invocation_id) id: vec3<u32>) {
     let size = textureDimensions(overlay_output);
@@ -45,8 +34,6 @@ fn trace_overlay(@builtin(global_invocation_id) id: vec3<u32>) {
     var scattering = vec3(0.0);
     var transmission = 1.0;
     if end > begin {
-        let zenith = environment_sky_radiance(vec3(0.0, 1.0, 0.0)) * 0.25;
-        let nadir = environment_sky_radiance(vec3(0.0, -1.0, 0.0)) * 0.25;
         let base_sun = sun_irradiance(vec3(camera.x, cloud.heights.x, camera.z));
         let top_sun = sun_irradiance(vec3(camera.x, cloud.heights.y, camera.z));
         let phases = cloud_phases(ray, atmosphere.sun_lux.xyz);
@@ -59,18 +46,15 @@ fn trace_overlay(@builtin(global_invocation_id) id: vec3<u32>) {
             let footprint = max(step * 0.5, at / f32(size.y));
             let column = cloud_column(point);
             let placed = cloud_placed(point, footprint);
-            let sigma = overlay_density(column, point, footprint) + placed.x;
+            let sigma = cloud_eroded_density(column.x, point, footprint, cloud.physical.x, column.w, cloud.density_profile.x) + placed.x;
             if sigma > 0.0 {
                 let vertical = column.yz + placed.yz;
                 let depths = cloud_sun_depths(camera + ray * at, point.y);
                 let solar = mix(base_sun, top_sun, clamp((point.y - cloud.heights.x) /
                     (cloud.heights.y - cloud.heights.x), 0.0, 1.0));
-                let direct = cloud_solar_source(phases, depths.xy, angles, -log(transmission),
-                    smoothstep(500.0, 1000.0, at), cloud.scattering.xyz, cloud.erosion.z);
-                let ambient_depth = 0.75 * (1.0 - cloud.erosion.z) * vertical;
-                let ambient = zenith / (1.0 + ambient_depth.x) + nadir / (1.0 + ambient_depth.y);
+                let source = cloud_source(solar, phases, depths.xy, vertical, angles, at, transmission);
                 let depth = sigma * step;
-                scattering += transmission * cloud_removed(depth) * (solar * direct + ambient);
+                scattering += transmission * cloud_removed(depth) * source;
                 transmission *= exp(-depth);
             }
             distance += step;

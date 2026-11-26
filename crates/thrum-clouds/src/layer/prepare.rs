@@ -314,7 +314,8 @@ fn shaped_trace_shader(environment: &thrum_render::atmosphere::EnvironmentProduc
             crate::shapes::shader(3),
             concat!(
                 include_str!("placed_column.wgsl"),
-                include_str!("placed.wgsl")
+                include_str!("placed.wgsl"),
+                "fn cloud_placed_edge_footprint() -> f32 { return 140.0 * cloud.physical.y; }\n"
             )
         ),
     )
@@ -333,7 +334,8 @@ pub(super) fn overlay_source(
                 crate::shapes::shader(3),
                 concat!(
                     include_str!("placed_column.wgsl"),
-                    "    return vec4(density, sample.y * above, sample.y * (1.0 - above), top);\n}\n"
+                    include_str!("placed_coarse.wgsl"),
+                    "fn cloud_placed_edge_footprint() -> f32 { return 0.0; }\n"
                 ),
             ),
         )
