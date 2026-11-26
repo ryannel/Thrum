@@ -1,11 +1,11 @@
 """Compare the Metal presentation paths on the same routed world and scale trace."""
 
-from collections import defaultdict
+from collections import Counter, defaultdict
+import csv
 import hashlib
 import json
 import platform
 import re
-import shutil
 from statistics import median
 import subprocess
 
@@ -54,7 +54,7 @@ def measured_scale(scale, samples, graph_traffic):
 
 
 def window_arm(output, binary, env, route, name, recipe, reconstruction, headroom, *,
-               replay=True, fullscreen=False, capture=False):
+               replay=True, fullscreen=False, capture=False, frame_rate=None, cue=None):
     arm = output / name
     arm.mkdir()
     display = arm / "edr"
@@ -62,25 +62,33 @@ def window_arm(output, binary, env, route, name, recipe, reconstruction, headroo
     route_document = json.loads(route.read_text())
     start = route_document["origin_tick"]
     launch = dict(env, THRUM_RECIPE=recipe, THRUM_RECONSTRUCTION=reconstruction,
-                  THRUM_GOVERNOR_ROUTE=str(route), THRUM_GOVERNOR="off" if replay else "on",
+                  THRUM_GOVERNOR_ROUTE=str(route), THRUM_GOVERNOR="off" if replay or reconstruction == "off" else "on",
                   THRUM_GOVERNOR_RECORD="replay" if replay else "observed",
                   THRUM_ROUTE_SCALE_ORIGIN=str(start),
                   THRUM_MAC_TRANSITION=str(arm),
                   THRUM_MAC_TRANSITION_ARM="fullscreen" if fullscreen else "route",
                   THRUM_MAC_EDR=headroom, THRUM_MAC_EDR_PROOF=str(display),
                   THRUM_REPORT="1", THRUM_V1_FRAMES="800")
+    if fullscreen:
+        launch["THRUM_V1_FRAMES"] = str(
+            850 if frame_rate == 120 else route_document["keys"][-1]["tick"] + 150)
     if capture:
         launch["THRUM_MAC_TRANSITION_TAP"] = "1"
+    if cue is not None:
+        launch["THRUM_MAC_CAPTURE_CUE"] = json.dumps(cue)
+    if frame_rate is not None:
+        launch["THRUM_MAC_FRAME_RATE"] = str(frame_rate)
     load = LoadRecord(arm)
     try:
-        with (arm / "game.log").open("w") as log:
+        with (arm / "game.log").open("w") as log, awake_display():
+            require_unlocked_display()
             subprocess.run([binary], cwd=ROOT, env=launch, stdout=log, stderr=subprocess.STDOUT,
                            check=True, timeout=130)
     finally:
         observed_load = load.finish()
         (arm / "host-load.json").write_text(json.dumps(observed_load, indent=2) + "\n")
     prepared = json.loads((arm / "prepared.json").read_text())
-    reconstructor = {"metalfx": "MetalFx", "taau": "Taau"}[reconstruction]
+    reconstructor = {"metalfx": "MetalFx", "taau": "Taau", "off": "Off"}[reconstruction]
     if (prepared["adapter"], prepared["recipe"], prepared["reconstruction"]) != (
             "Apple M3 Max", RECIPE[recipe], reconstructor):
         raise ValueError(f"{name}: unexpected prepared target or fallback")
@@ -123,7 +131,7 @@ def window_arm(output, binary, env, route, name, recipe, reconstruction, headroo
                 raise ValueError(f"{name}: missing GPU timings at {row['scale']}%")
     else:
         scales = []
-        if not any(sample["quality"] is not None for sample in samples):
+        if reconstruction != "off" and not any(sample["quality"] is not None for sample in samples):
             raise ValueError(f"{name}: the governor was inactive")
     in_route = [tick for tick in ticks if route_frames[0]["sequence"] <= tick["sequence"]
                 <= route_frames[-1]["sequence"]]
@@ -138,7 +146,47 @@ def window_arm(output, binary, env, route, name, recipe, reconstruction, headroo
                   display_intervals_ms=distribution([(b - a) * 1000 for a, b in zip(presents, presents[1:])]),
                   ticks_without_present=sum(tick["outcome"] != "presented" for tick in in_route),
                   route_display_ticks=len(in_route))
+    if fullscreen:
+        report.update(fullscreen_account(arm, ticks, route_frames, samples, start, end))
     return report
+
+
+def fullscreen_account(arm, ticks, route_frames, samples, start, end):
+    rate = json.loads((arm / "requested-frame-rate.json").read_text())
+    first = ticks[route_frames[0]["sequence"] - 1]["target"]
+    last = ticks[route_frames[-1]["sequence"] - 1]["target"]
+    with (arm / "refresh-account.tsv").open() as stream:
+        intervals = [row for row in csv.DictReader(stream, delimiter="\t")
+                     if first - 1e-8 <= float(row["target_media_seconds"]) <= last + 1e-8]
+    targets = [float(row["target_media_seconds"]) for row in intervals]
+    period = 1 / rate["preferred_hz"]
+    boundary_ticks = [route_frames[0]["world_tick"], route_frames[-1]["world_tick"]]
+    phase_changes = [dict(target=b, interval_ms=(b - a) * 1000)
+                     for a, b in zip(targets, targets[1:]) if abs(b - a - period) > 0.0005]
+    bounds_match = (bool(targets) and abs(targets[0] - first) <= 1e-8
+                    and abs(targets[-1] - last) <= 1e-8 and boundary_ticks == [start, end])
+    outcomes = Counter(row["place"] for row in intervals)
+    quality = [sample for sample in samples if sample["quality"] is not None]
+    by_scale = {}
+    for scale in sorted({sample["quality"]["scale"] for sample in quality}, reverse=True):
+        group = [sample for sample in quality if sample["quality"]["scale"] == scale]
+        gpu = defaultdict(list)
+        for sample in group:
+            for name, value in (sample["gpu_pass_ns"] or {}).items():
+                if value is not None:
+                    gpu[name].append(value / 1e6)
+            if sample["gpu_span_ns"] is not None:
+                gpu["timed pass span"].append(sample["gpu_span_ns"] / 1e6)
+            segment = sample["native_segment"]
+            match = segment and TIMED.fullmatch(segment["outcome"])
+            if match:
+                gpu[segment["pass"]].append((float(match[2]) - float(match[1])) * 1000)
+        by_scale[scale] = {name: distribution(values) for name, values in sorted(gpu.items())}
+    return dict(requested_rate=rate, interval_outcomes=dict(outcomes),
+                route_targets=[first, last], route_intervals=len(intervals),
+                boundary_ticks=boundary_ticks, bounds_match=bounds_match, phase_changes=phase_changes,
+                governor_intervals_ns=sorted({row["quality"]["display_interval_ns"] for row in quality}),
+                gpu_ms_by_scale=by_scale)
 
 
 def float_cost(sdr, floating):
@@ -154,47 +202,23 @@ def float_cost(sdr, floating):
                 surface_present_pass=rows)
 
 
-def mac_fullscreen_motion(output):
-    binary, env, route = scale_environment(output, counters=True)
-    displays = json.loads(subprocess.check_output(["system_profiler", "SPDisplaysDataType", "-json"]))
-    screen, = [screen for gpu in displays["SPDisplaysDataType"]
-               for screen in gpu.get("spdisplays_ndrvs", [])
-               if screen.get("spdisplays_connection_type") == "spdisplays_internal"]
-    extent = [int(value) for value in screen["_spdisplays_pixels"].split(" x ")]
-    if shutil.disk_usage(output).free < 44 * 1024**3:
-        raise ValueError("fullscreen capture needs 28 GiB for its raw spool and 16 GiB remaining")
-    route_path = output / "fullscreen-route.json"
-    route_path.write_text(json.dumps(dict(route, render_extent=extent)) + "\n")
-    with awake_display():
-        require_unlocked_display()
-        control = window_arm(output, binary, env, route_path, "capture-off", "apple-tile",
-                             "metalfx", "2", replay=False, fullscreen=True)
-        capture = window_arm(output, binary, env, route_path, "capture-on", "apple-tile",
-                             "metalfx", "2", replay=False, fullscreen=True, capture=True)
-    return dict(target="mac-metal", timebase="realtime", extent=extent,
-                binary_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),
-                observer_only=control, capture=capture)
-
-
 def mac_paired(output):
     binary, env, route = scale_environment(output, counters=True)
     route_path = output / "moving-1080p.json"
     route_path.write_text(json.dumps(dict(route, render_extent=EXTENT)) + "\n")
     arms = []
-    with awake_display():
-        require_unlocked_display()
-        for repeat in (1, 2):
-            for name, recipe, reconstructor, headroom in (
-                ("apple", "apple-tile", "metalfx", "2"),
-                ("portable", "portable", "taau", "sdr"),
-            ):
-                arms.append(window_arm(output, binary, env, route_path, f"{repeat}-{name}",
-                                       recipe, reconstructor, headroom))
-        sdr = window_arm(output, binary, env, route_path, "sdr", "apple-tile", "metalfx", "sdr")
-        floating = window_arm(output, binary, env, route_path, "float-h1", "apple-tile",
-                              "metalfx", "step:2:1:12:1")
-        governor = window_arm(output, binary, env, route_path, "governor", "apple-tile",
-                              "metalfx", "2", replay=False)
+    for repeat in (1, 2):
+        for name, recipe, reconstructor, headroom in (
+            ("apple", "apple-tile", "metalfx", "2"),
+            ("portable", "portable", "taau", "sdr"),
+        ):
+            arms.append(window_arm(output, binary, env, route_path, f"{repeat}-{name}",
+                                   recipe, reconstructor, headroom))
+    sdr = window_arm(output, binary, env, route_path, "sdr", "apple-tile", "metalfx", "sdr")
+    floating = window_arm(output, binary, env, route_path, "float-h1", "apple-tile",
+                          "metalfx", "step:2:1:12:1")
+    governor = window_arm(output, binary, env, route_path, "governor", "apple-tile",
+                          "metalfx", "2", replay=False)
     colour = {}
     for recipe in RECIPE:
         reference = output / f"reference-{recipe}"

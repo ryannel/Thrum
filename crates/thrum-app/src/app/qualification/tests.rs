@@ -45,8 +45,9 @@ fn observer(host: &mut FrameHost<StillWorld, NativeScene>) -> Observer {
         output: PathBuf::new(),
         extent_markers: None,
         status_markers: None,
+        cue: None,
         writer: Some(
-            ImageWriter::start(std::io::sink(), 4, 1024 * 1024, SpoolEncoding::ZstdDelta).unwrap(),
+            ImageWriter::start(io::sink(), 4, 1024 * 1024, SpoolEncoding::ZstdDelta).unwrap(),
         ),
         images: Vec::with_capacity(RECORDS),
         frames: Vec::with_capacity(RECORDS),

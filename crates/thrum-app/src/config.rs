@@ -28,6 +28,9 @@ pub struct Config {
     /// Build-authored Metal libraries and preparation mode for initial setup and recovery.
     #[cfg(target_os = "macos")]
     pub metal_preparation: Option<thrum_render::capabilities::metallib::Preparation>,
+    /// Override the Mac display-link request for this launch.
+    #[cfg(target_os = "macos")]
+    pub mac_frame_rate: Option<MacFrameRate>,
 }
 
 impl Config {
@@ -49,6 +52,17 @@ impl Config {
             frame_budget: None,
             #[cfg(target_os = "macos")]
             metal_preparation: None,
+            #[cfg(target_os = "macos")]
+            mac_frame_rate: None,
         }
     }
+}
+/// A diagnostic override for the Mac display-link request.
+#[cfg(target_os = "macos")]
+#[derive(Clone, Copy, Debug)]
+pub enum MacFrameRate {
+    /// Request a fixed 60 Hz.
+    Sixty,
+    /// Request a fixed 120 Hz.
+    Full,
 }

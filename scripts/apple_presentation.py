@@ -754,7 +754,8 @@ def main():
     from apple_creation_proof import mac_launch, mac_no_compile
     from apple_metallib_proof import launch_paths, parity
     from apple_archive_proof import archive_faults, archive_harvest, archive_witness, launch_final
-    from apple_paired_proof import mac_fullscreen_motion, mac_paired
+    from apple_paired_proof import mac_paired
+    from apple_fullscreen_proof import mac_fullscreen_motion
 
     if (args.steady or args.realtime_capture) and args.check != "governor":
         parser.error("governor options require the governor check")

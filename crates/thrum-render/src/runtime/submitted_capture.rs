@@ -178,6 +178,9 @@ pub(super) fn copy_drawable(
     let (Some(tap), Some(surface)) = (tap, surface) else {
         return Ok(None);
     };
+    if !tap.accepting {
+        return Ok(None);
+    }
     let texture = surface.view.texture();
     if !texture.usage().contains(wgpu::TextureUsages::COPY_SRC) {
         tap.omitted += 1;
@@ -744,8 +747,12 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
 
     /// Stop admitting copies while pending mappings drain. Does not submit or wait.
     pub fn stop_submitted_capture(&mut self) {
+        self.set_submitted_capture_accepting(false);
+    }
+
+    pub(super) fn set_submitted_capture_accepting(&mut self, accepting: bool) {
         if let Some(tap) = &mut self.submitted_capture {
-            tap.accepting = false;
+            tap.accepting = accepting;
         }
     }
 

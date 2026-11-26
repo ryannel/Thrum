@@ -146,9 +146,14 @@ pub fn run_scene_capture(
 pub struct WindowGovernor {
     /// Enable the governor for a prepared TAAU scene.
     pub enabled: bool,
+    /// Typed override for the display-link request.
+    pub frame_rate: Option<thrum_app::MacFrameRate>,
     /// A validated route is prepared from this authored route text before the window starts.
     #[cfg(feature = "proving")]
     pub route: Option<String>,
+    /// A continuous solar-time sweep for a fullscreen proof cue.
+    #[cfg(feature = "proving")]
+    pub solar_sweep: Option<WindowSolarSweep>,
 }
 
 /// Options passed from the process edge to the interface scene.
@@ -241,6 +246,7 @@ pub fn run_window(
         #[cfg(not(feature = "proving"))]
         window_always_on_top: false,
         frame_budget: None,
+        mac_frame_rate: governor.frame_rate,
         metal_preparation,
         #[cfg(feature = "proving")]
         window_size: if transition.is_none()
@@ -255,6 +261,15 @@ pub fn run_window(
         #[cfg(not(feature = "proving"))]
         window_size: [1920, 1080],
     };
+    #[cfg(feature = "proving")]
+    let route_start = if transition
+        .as_ref()
+        .is_some_and(|proof| proof.arm == thrum_app::TransitionArm::Fullscreen)
+    {
+        RouteStart::Paused
+    } else {
+        RouteStart::Immediate
+    };
     let game = || -> Result<_, thrum_controls::ControlError> {
         Ok(HostedGame(WindowGame {
             demo: setup
@@ -268,7 +283,11 @@ pub fn run_window(
             #[cfg(feature = "proving")]
             menu: (interface_text == Some(crate::InterfaceText::Menu)).then(|| window_menu(menu)),
             #[cfg(feature = "proving")]
-            capture_route: governor.route,
+            capture_route: governor.route.map(|text| RouteInput {
+                text,
+                start: route_start,
+                solar_sweep: governor.solar_sweep,
+            }),
             governor_enabled: governor.enabled,
             #[cfg(feature = "proving")]
             capture_eye: None,
@@ -336,7 +355,7 @@ struct WindowGame {
     #[cfg(feature = "proving")]
     menu: Option<crate::interface_menu::Menu>,
     #[cfg(feature = "proving")]
-    capture_route: Option<String>,
+    capture_route: Option<RouteInput>,
     governor_enabled: bool,
     #[cfg(feature = "proving")]
     capture_eye: Option<[f32; 3]>,
@@ -349,8 +368,23 @@ struct WindowGame {
     hardware: Vec<HardwareRequest>,
 }
 
-/// A scene capture's own preparation: its render extent, which may differ from the engine
-/// texture standing in for the surface, and an inline world it steps itself.
+#[cfg(feature = "proving")]
+enum RouteStart {
+    Immediate,
+    Paused,
+}
+
+/// Inclusive tick endpoints and starting/ending hours for the fullscreen solar cue.
+#[cfg(feature = "proving")]
+pub type WindowSolarSweep = ([u64; 2], [f32; 2]);
+
+#[cfg(feature = "proving")]
+struct RouteInput {
+    text: String,
+    start: RouteStart,
+    solar_sweep: Option<WindowSolarSweep>,
+}
+
 #[cfg(feature = "proving")]
 struct SceneCapture {
     setup: crate::GameSetup,
@@ -415,7 +449,12 @@ fn capture_game_with_route_limit(
         capture_route: std::env::var_os("THRUM_CAPTURE_RUNTIME_ROUTE")
             .map(std::fs::read_to_string)
             .transpose()
-            .map_err(|error| error.to_string())?,
+            .map_err(|error| error.to_string())?
+            .map(|text| RouteInput {
+                text,
+                start: RouteStart::Immediate,
+                solar_sweep: None,
+            }),
     }))
 }
 
@@ -626,7 +665,7 @@ impl RuntimeSetup for WindowGame {
             capture::prepare_route(
                 &mut host,
                 content,
-                route,
+                &route.text,
                 render_extent,
                 &gpu,
                 self.cloud_capture,
@@ -649,8 +688,17 @@ impl RuntimeSetup for WindowGame {
             return Err("governor requires a prepared TAAU scene".to_owned());
         }
         #[cfg(feature = "proving")]
-        if self.capture_route.is_some() && self.replay_controls {
+        if self
+            .capture_route
+            .as_ref()
+            .is_some_and(|route| matches!(route.start, RouteStart::Immediate))
+            && self.replay_controls
+        {
             host.world_mut().resume(offset)?;
+        }
+        #[cfg(feature = "proving")]
+        if let Some(route) = &self.capture_route {
+            host.continuous_source_mut().solar_sweep = route.solar_sweep;
         }
         #[cfg(not(feature = "proving"))]
         let origin = Instant::now();

@@ -106,6 +106,9 @@ fn main() {
         window_display_options().unwrap_or_else(|error| report_capture_failure(&error.to_string()));
     let governor = v1_game::WindowGovernor {
         enabled: governor_enabled().unwrap_or_else(|error| report_capture_failure(&error)),
+        frame_rate: window_frame_rate().unwrap_or_else(|error| report_capture_failure(&error)),
+        #[cfg(feature = "proving")]
+        solar_sweep: window_solar_sweep().unwrap_or_else(|error| report_capture_failure(&error)),
         #[cfg(feature = "proving")]
         route: std::env::var_os("THRUM_GOVERNOR_ROUTE")
             .map(std::fs::read_to_string)
@@ -127,6 +130,38 @@ fn main() {
         governor,
         metal_preparation,
     );
+}
+
+#[cfg(target_os = "macos")]
+const MAC_FRAME_RATE_VARIABLE: &str = "THRUM_MAC_FRAME_RATE";
+
+#[cfg(target_os = "macos")]
+fn window_frame_rate() -> Result<Option<thrum_app::MacFrameRate>, String> {
+    match std::env::var(MAC_FRAME_RATE_VARIABLE) {
+        Err(std::env::VarError::NotPresent) => Ok(None),
+        Ok(value) if value == "60" => Ok(Some(thrum_app::MacFrameRate::Sixty)),
+        Ok(value) if value == "120" => Ok(Some(thrum_app::MacFrameRate::Full)),
+        _ => Err(format!("{MAC_FRAME_RATE_VARIABLE} must be 60 or 120")),
+    }
+}
+
+#[cfg(all(target_os = "macos", feature = "proving"))]
+const SOLAR_SWEEP_VARIABLE: &str = "THRUM_MAC_SOLAR_SWEEP";
+
+#[cfg(all(target_os = "macos", feature = "proving"))]
+fn window_solar_sweep() -> Result<Option<v1_game::WindowSolarSweep>, String> {
+    let Ok(value) = std::env::var(SOLAR_SWEEP_VARIABLE) else {
+        return Ok(None);
+    };
+    let (ticks, hours): v1_game::WindowSolarSweep =
+        serde_json::from_str(&value).map_err(|error| error.to_string())?;
+    if ticks[0] >= ticks[1]
+        || ticks[1] - ticks[0] > 360
+        || hours.iter().any(|hour| !(0.0..24.0).contains(hour))
+    {
+        return Err("invalid fullscreen solar sweep".to_owned());
+    }
+    Ok(Some((ticks, hours)))
 }
 
 #[cfg(all(target_os = "macos", feature = "proving"))]
@@ -310,6 +345,7 @@ fn window_transition_proof() -> Result<Option<thrum_app::WindowTransitionProof>,
         output: output.into(),
         arm,
         tap: std::env::var_os("THRUM_MAC_TRANSITION_TAP").is_some(),
+        capture_cue: fullscreen_capture_cue(arm)?,
         scale_replay,
         governor: match record.as_deref() {
             Ok("thermal") => Some(thrum_app::GovernorProof::Thermal {
@@ -321,6 +357,35 @@ fn window_transition_proof() -> Result<Option<thrum_app::WindowTransitionProof>,
             _ => return Err("THRUM_GOVERNOR_RECORD must be observed, replay or thermal".to_owned()),
         },
     }))
+}
+
+#[cfg(all(target_os = "macos", feature = "proving"))]
+fn fullscreen_capture_cue(
+    arm: thrum_app::TransitionArm,
+) -> Result<Option<([u64; 2], thrum_render::runtime::CaptureLimits)>, String> {
+    let Ok(value) = std::env::var("THRUM_MAC_CAPTURE_CUE") else {
+        return Ok(None);
+    };
+    let (ticks, staging_slots, cpu_buffers, mib): ([u64; 2], usize, usize, u64) =
+        serde_json::from_str(&value).map_err(|error| error.to_string())?;
+    if arm != thrum_app::TransitionArm::Fullscreen
+        || std::env::var_os("THRUM_MAC_TRANSITION_TAP").is_none()
+        || ticks[0] > ticks[1]
+        || ticks[1] - ticks[0] > 360
+        || !(1..=32).contains(&staging_slots)
+        || !(1..=96).contains(&cpu_buffers)
+        || !(1..=4096).contains(&mib)
+    {
+        return Err("invalid fullscreen capture cue or working-set limits".to_owned());
+    }
+    Ok(Some((
+        ticks,
+        thrum_render::runtime::CaptureLimits {
+            staging_slots,
+            cpu_buffers,
+            byte_allowance: mib * 1024 * 1024,
+        },
+    )))
 }
 
 #[cfg(all(target_os = "macos", feature = "proving"))]

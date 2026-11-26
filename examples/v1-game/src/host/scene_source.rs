@@ -394,6 +394,8 @@ pub struct GameScene {
     exit_entities: crate::ExitEntities,
     valley_stars: bool,
     pub(super) day_phase_offset: f32,
+    #[cfg(all(target_os = "macos", feature = "proving"))]
+    pub(crate) solar_sweep: Option<SolarSweep>,
     #[cfg(feature = "proving")]
     pub(super) capture_solar_tick: Option<u64>,
     pub(super) camera_pitch: f32,
@@ -414,7 +416,29 @@ pub struct GameScene {
     #[cfg(feature = "draw-probe")]
     omit_mirror: bool,
 }
+#[cfg(all(target_os = "macos", feature = "proving"))]
+pub(crate) type SolarSweep = ([u64; 2], [f32; 2]);
+
 impl GameScene {
+    fn sample_sun(&self, tick: u64, alpha: f32) -> crate::environment::SunSample {
+        let offset = self.day_phase_offset;
+        #[cfg(all(target_os = "macos", feature = "proving"))]
+        let offset = self
+            .solar_sweep
+            .map_or(offset, |([first, last], [from, to])| {
+                #[expect(
+                    clippy::cast_precision_loss,
+                    reason = "a proof sweep lasts at most 360 ticks"
+                )]
+                let progress = (tick.saturating_sub(first).min(last - first) as f32
+                    + if tick < first { 0.0 } else { alpha })
+                    / (last - first) as f32;
+                let solar = from + (to - from) * progress.clamp(0.0, 1.0);
+                DayCycle::offset_for_time(tick, solar / 24.0).unwrap_or(offset)
+            });
+        DayCycle::sample(tick, alpha, offset)
+    }
+
     #[cfg(all(target_arch = "wasm32", feature = "proving"))]
     pub(super) fn set_sprite_sweep_step(&mut self, step: u32) -> Result<(), String> {
         self.sprite_probe
@@ -632,6 +656,8 @@ impl GameScene {
             exit_entities: setup.exit_entities,
             valley_stars: !setup.content.is_field() && setup.valley_stars,
             day_phase_offset: 0.0,
+            #[cfg(all(target_os = "macos", feature = "proving"))]
+            solar_sweep: None,
             #[cfg(feature = "proving")]
             capture_solar_tick: None,
             camera_pitch: 0.0,
@@ -978,7 +1004,7 @@ impl SceneSource<PublishedPage> for GameScene {
             } else {
                 2.0
             };
-        let sun = DayCycle::sample(source.tick, alpha, self.day_phase_offset);
+        let sun = self.sample_sun(source.tick, alpha);
         let sun = if let Some(tick) = self.held_solar_tick() {
             crate::environment::SunSample {
                 simulation_time_seconds: sun.simulation_time_seconds,
@@ -1294,6 +1320,8 @@ mod tests {
             exit_entities: crate::ExitEntities::Draw,
             valley_stars: true,
             day_phase_offset: 0.1,
+            #[cfg(all(target_os = "macos", feature = "proving"))]
+            solar_sweep: None,
             #[cfg(feature = "proving")]
             capture_solar_tick: None,
             camera_pitch,

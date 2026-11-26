@@ -68,6 +68,8 @@ pub struct WindowTransitionProof {
     pub arm: TransitionArm,
     /// Retain the ordinary submitted T2 images with their extents.
     pub tap: bool,
+    /// Optional inclusive world-tick cue and its preallocated capture limits.
+    pub capture_cue: Option<([u64; 2], thrum_render::runtime::CaptureLimits)>,
     /// Record governor samples and optionally inject a platform thermal excursion.
     pub governor: Option<GovernorProof>,
     /// Authored scale replay for a comparison, indexed by the published world tick.

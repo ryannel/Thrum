@@ -533,7 +533,7 @@ impl<G: Game> Actor<G> {
         if let Some(proof) = &mut self.transition_proof {
             proof.stage("advancing the world and polling GPU completions");
         }
-        let advanced = self.host.advance(observation)?;
+        let mut advanced = self.host.advance(observation)?;
         if !advanced.can_acquire_serial() {
             let report = advanced.submit(None)?;
             reply.platform.surface_status = if report.overload.is_some() {
@@ -547,6 +547,9 @@ impl<G: Game> Actor<G> {
         }
         if let Some(proof) = &mut self.transition_proof {
             proof.stage("encoding the scene");
+        }
+        if let Some(observer) = &mut self.observer {
+            observer.gate(&mut advanced);
         }
         let encoded = check_encoded_device(&self.gpu.watch, advanced.encode_scene()?)?;
         if !encoded.can_acquire_surface() {

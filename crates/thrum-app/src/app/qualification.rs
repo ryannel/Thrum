@@ -12,14 +12,14 @@ use objc2_quartz_core::CACurrentMediaTime;
 use std::{
     collections::VecDeque,
     fs::File,
-    io::{BufWriter, Write},
+    io::{self, BufWriter, Write},
     path::PathBuf,
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 use thrum_controls::{Controls, Value, macos::MacPanel};
 use thrum_render::runtime::{
-    CaptureLimits, FrameError, FrameExtent, FrameHost, FrameSample, FrameWorld, SceneSource,
-    SubmittedImage,
+    AdvancedFrame, CaptureLimits, FrameError, FrameExtent, FrameHost, FrameSample, FrameWorld,
+    SceneSource, SubmittedImage,
 };
 use thrum_render::synthetic::CaptureSource;
 
@@ -384,11 +384,34 @@ impl Pan {
 
 type ImageMarker = (u64, u128, f64, u64, u64, u64, u64, f32);
 
+struct Cue {
+    ticks: [u64; 2],
+    active: bool,
+    // Collection attempts have no source tick until a map returns.
+    pressure: Vec<(Option<u64>, usize, usize, u128)>,
+}
+
+impl Cue {
+    fn write(&self, output: &std::path::Path) -> io::Result<()> {
+        let mut sink = BufWriter::new(File::create(output.join("capture-pressure.tsv"))?);
+        writeln!(sink, "boundary\ttick\tstaging\tcpu\torigin_ns")?;
+        for &(tick, staging, cpu, time) in &self.pressure {
+            if let Some(tick) = tick {
+                writeln!(sink, "reserve\t{tick}\t{staging}\t{cpu}\t{time}")?;
+            } else {
+                writeln!(sink, "collect\t\t{staging}\t{cpu}\t{time}")?;
+            }
+        }
+        sink.flush()
+    }
+}
+
 pub(super) struct Observer {
     output: PathBuf,
     extent_markers: Option<BufWriter<File>>,
     status_markers: Option<BufWriter<File>>,
     writer: Option<ImageWriter>,
+    cue: Option<Cue>,
     images: Vec<ImageMarker>,
     frames: Vec<(u64, u128, f64, u64, u64, bool, bool)>,
     refused: u64,
@@ -449,24 +472,23 @@ impl Observer {
                 .saturating_sub(7);
             // The qualification spool and its readers exchange RGBA8.
             // Request that engine stage without changing the window's display mode.
+            let limits = CaptureLimits {
+                staging_slots: 6,
+                // The status sweep retains leases from both sides of a resize.
+                cpu_buffers: if fullscreen {
+                    fullscreen_buffers
+                } else if status_markers.is_some() {
+                    64
+                } else {
+                    96
+                },
+                byte_allowance: if status_markers.is_some() { 2 } else { 1 } * 1024 * 1024 * 1024,
+            };
             host.enable_submitted_capture_from(
                 1,
-                CaptureLimits {
-                    staging_slots: 6,
-                    // The 2560×1440 status sweep needs enough leases for the
-                    // old grid's last copies and the new grid's first copies.
-                    cpu_buffers: if fullscreen {
-                        fullscreen_buffers
-                    } else if status_markers.is_some() {
-                        64
-                    } else {
-                        96
-                    },
-                    byte_allowance: if status_markers.is_some() { 2 } else { 1 }
-                        * 1024
-                        * 1024
-                        * 1024,
-                },
+                transition
+                    .and_then(|proof| proof.capture_cue)
+                    .map_or(limits, |(_, cue_limits)| cue_limits),
                 CaptureSource::Sdr,
             )
             .map_err(|e| e.to_string())?;
@@ -493,6 +515,13 @@ impl Observer {
             extent_markers,
             status_markers,
             writer,
+            cue: transition
+                .and_then(|proof| proof.capture_cue)
+                .map(|(ticks, _)| Cue {
+                    ticks,
+                    active: false,
+                    pressure: Vec::with_capacity(RECORDS),
+                }),
             images: Vec::with_capacity(RECORDS),
             frames: Vec::with_capacity(RECORDS),
             refused: 0,
@@ -505,6 +534,22 @@ impl Observer {
             stale_image: None,
             stale_recycle: None,
         }))
+    }
+    pub(super) fn gate<W: FrameWorld, V: SceneSource<W::Page>>(
+        &mut self,
+        frame: &mut AdvancedFrame<'_, W, V>,
+    ) {
+        if let Some(cue) = &mut self.cue {
+            let ticks = cue.ticks[0]..=cue.ticks[1];
+            cue.active = false;
+            if let Some((tick, staging, cpu)) = frame.gate_submitted_capture(ticks.clone()) {
+                cue.active = ticks.contains(&tick);
+                if cue.active {
+                    cue.pressure
+                        .push((Some(tick), staging, cpu, self.origin.elapsed().as_nanos()));
+                }
+            }
+        }
     }
     pub(super) fn frame<W: FrameWorld, V: SceneSource<W::Page>>(
         &mut self,
@@ -523,7 +568,10 @@ impl Observer {
             host.last_submission().ok_or("missing submission")?,
             surface_generation,
             presented,
-            host.submitted_capture_usage().is_some(),
+            self.cue.as_ref().map_or_else(
+                || host.submitted_capture_usage().is_some(),
+                |cue| cue.active,
+            ),
         ));
         Ok(())
     }
@@ -604,7 +652,17 @@ impl Observer {
         while let Some(image) = writer.recycled() {
             host.recycle_submitted_image(image);
         }
-        while let Some(image) = host.try_submitted_image()? {
+        loop {
+            if let (Some(cue), Some((staging, cpu))) =
+                (&mut self.cue, host.submitted_capture_usage())
+                && staging != 0
+            {
+                cue.pressure
+                    .push((None, staging, cpu, self.origin.elapsed().as_nanos()));
+            }
+            let Some(image) = host.try_submitted_image()? else {
+                break;
+            };
             if self.images.len() == RECORDS {
                 return Err(FrameError::InvalidState("image marker capacity exhausted"));
             }
@@ -670,11 +728,13 @@ impl Observer {
         &mut self,
         host: &mut FrameHost<G::World, G::Scene>,
     ) -> Result<(), String> {
+        let expected = if self.cue.is_some() {
+            self.frames.iter().filter(|row| row.5 && row.6).count()
+        } else {
+            self.frames.len() - self.retired
+        };
         let deadline = Instant::now() + Duration::from_secs(10);
-        while self.writer.is_some()
-            && self.images.len() + self.retired < self.frames.len()
-            && Instant::now() < deadline
-        {
+        while self.writer.is_some() && self.images.len() < expected && Instant::now() < deadline {
             host.poll_completed().map_err(|e| e.to_string())?;
             self.collect(host).map_err(|e| e.to_string())?;
             std::thread::sleep(Duration::from_millis(1));
@@ -694,6 +754,9 @@ impl Observer {
             .map_err(|e| e.to_string())?;
         }
         file.flush().map_err(|e| e.to_string())?;
+        if let Some(cue) = &self.cue {
+            cue.write(&self.output).map_err(|error| error.to_string())?;
+        }
         let mut file = BufWriter::new(
             File::create(self.output.join("images.tsv")).map_err(|e| e.to_string())?,
         );
@@ -743,13 +806,13 @@ impl Observer {
                 report.frame_hashes.join("\n"),
             )
             .map_err(|e| e.to_string())?;
-            if usize::try_from(report.frames).ok() != Some(self.frames.len() - self.retired)
+            if usize::try_from(report.frames).ok() != Some(expected)
                 || self.refused != 0
                 || host.submitted_capture_omissions() != 0
             {
                 return Err(format!(
                     "incomplete real-window capture ({} presented, {} copied, {} written, {} writer refusals, {} tap omissions)",
-                    self.frames.len(),
+                    expected,
                     self.images.len(),
                     report.frames,
                     self.refused,
@@ -763,7 +826,7 @@ impl Observer {
 pub(super) fn write_cadence_samples(
     output: &std::path::Path,
     samples: &[FrameSample],
-) -> std::io::Result<()> {
+) -> io::Result<()> {
     let mut frames = BufWriter::new(File::create(output.join("cadence-frames.tsv"))?);
     let mut passes = BufWriter::new(File::create(output.join("cadence-passes.tsv"))?);
     writeln!(

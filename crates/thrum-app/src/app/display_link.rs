@@ -24,6 +24,33 @@ use super::UserEvent;
 
 pub(super) const PREFERRED_REFRESH_HZ: f32 = 120.0;
 
+#[derive(Clone, Copy)]
+pub(super) struct FrameRateRequest {
+    pub(super) preferred: f32,
+    pub(super) fixed: bool,
+    pub(super) forced: bool,
+}
+
+impl FrameRateRequest {
+    pub(super) fn resolve(
+        panel_hz: f32,
+        fullscreen: bool,
+        override_rate: Option<crate::MacFrameRate>,
+    ) -> Self {
+        let preferred = match override_rate {
+            Some(crate::MacFrameRate::Sixty) => 60.0,
+            Some(crate::MacFrameRate::Full) => PREFERRED_REFRESH_HZ,
+            None if fullscreen && panel_hz > 60.0 => 60.0,
+            None => panel_hz,
+        };
+        Self {
+            preferred,
+            fixed: override_rate.is_some() || fullscreen,
+            forced: override_rate.is_some(),
+        }
+    }
+}
+
 struct LinkIvars {
     wake: EventLoopProxy<UserEvent>,
     callbacks: Cell<u64>,
@@ -148,6 +175,7 @@ impl ViewDisplayLink {
         window: &Window,
         wake: EventLoopProxy<UserEvent>,
         observes_display: bool,
+        rate: FrameRateRequest,
     ) -> Result<Self, String> {
         let mtm = MainThreadMarker::new().ok_or("display link must start on AppKit main thread")?;
         let handle = window
@@ -167,11 +195,6 @@ impl ViewDisplayLink {
         let link: Retained<CADisplayLink> = unsafe {
             msg_send![view, displayLinkWithTarget: &*target, selector: sel!(displayFrame:)]
         };
-        link.setPreferredFrameRateRange(CAFrameRateRange {
-            minimum: 60.0,
-            maximum: PREFERRED_REFRESH_HZ,
-            preferred: PREFERRED_REFRESH_HZ,
-        });
         // SAFETY: creation and removal both occur on AppKit's main thread.
         unsafe { link.addToRunLoop_forMode(&NSRunLoop::mainRunLoop(), NSRunLoopCommonModes) };
         if observes_display {
@@ -186,12 +209,33 @@ impl ViewDisplayLink {
                 );
             }
         }
-        Ok(Self {
+        let owner = Self {
             link,
             target,
             observes_display,
             thermal,
-        })
+        };
+        owner.set_rate(rate);
+        Ok(owner)
+    }
+
+    pub(super) fn set_rate(&self, rate: FrameRateRequest) {
+        let range = CAFrameRateRange {
+            minimum: if rate.fixed {
+                rate.preferred
+            } else {
+                rate.preferred.min(60.0)
+            },
+            maximum: rate.preferred,
+            preferred: rate.preferred,
+        };
+        let previous = self.link.preferredFrameRateRange();
+        if previous.minimum.to_bits() != range.minimum.to_bits()
+            || previous.maximum.to_bits() != range.maximum.to_bits()
+            || previous.preferred.to_bits() != range.preferred.to_bits()
+        {
+            self.link.setPreferredFrameRateRange(range);
+        }
     }
 }
 

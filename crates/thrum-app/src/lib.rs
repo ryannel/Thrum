@@ -78,3 +78,5 @@ pub use key::KeyCode;
 
 mod config;
 pub use config::Config;
+#[cfg(target_os = "macos")]
+pub use config::MacFrameRate;

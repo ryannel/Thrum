@@ -34,7 +34,7 @@ use std::{
 };
 
 use device::WindowDevice;
-use display_link::ViewDisplayLink;
+use display_link::{FrameRateRequest, ViewDisplayLink};
 use edit_flow::EditFlow;
 use recovery::Recovery;
 use render_actor::{
@@ -119,6 +119,7 @@ struct App<G: Game> {
     display: Option<display::MacDisplay>,
     display_options: Option<WindowDisplayOptions>,
     display_link: Option<ViewDisplayLink>,
+    frame_rate: Option<FrameRateRequest>,
     refresh_period: Option<f64>,
     window: Option<Arc<Window>>,
     display_target: Option<f64>,
@@ -199,7 +200,45 @@ struct App<G: Game> {
 }
 
 impl<G: WindowGame + 'static> App<G> {
+    fn start_display_link(&mut self, wake: &EventLoopProxy<UserEvent>) -> Result<(), String> {
+        self.display_link = Some(ViewDisplayLink::start(
+            self.window.as_ref().ok_or("window missing")?,
+            wake.clone(),
+            self.display.is_some(),
+            self.frame_rate.ok_or("frame rate missing")?,
+        )?);
+        if self
+            .transition_proof
+            .as_ref()
+            .is_some_and(|proof| proof.arm == TransitionArm::Fullscreen)
+        {
+            // The authored route is prepared at its preceding paused tick.
+            // Give the ordinary display link and live governor time to settle.
+            self.pause.request(true);
+            self.reconcile_pause()?;
+            self.refresh_account
+                .lock()
+                .expect("refresh account lock")
+                .measure(objc2_quartz_core::CACurrentMediaTime(), 180.0);
+        }
+        Ok(())
+    }
+
+    fn begin_fullscreen_route(&mut self) -> Result<(), String> {
+        if self.presented == 90
+            && self
+                .transition_proof
+                .as_ref()
+                .is_some_and(|proof| proof.arm == TransitionArm::Fullscreen)
+            && self.pause.request(false)
+        {
+            self.reconcile_pause()?;
+        }
+        Ok(())
+    }
+
     fn refresh_monitor_period(&mut self) {
+        use winit::platform::macos::WindowExtMacOS as _;
         self.refresh_period = self
             .window
             .as_ref()
@@ -207,6 +246,27 @@ impl<G: WindowGame + 'static> App<G> {
             .and_then(|monitor| monitor.refresh_rate_millihertz())
             .filter(|&rate| rate > 0)
             .map(|rate| 1000.0 / f64::from(rate));
+        if let Some(window) = &self.window {
+            let panel_hz =
+                self.refresh_period
+                    .map_or(display_link::PREFERRED_REFRESH_HZ, |period| {
+                        #[expect(
+                            clippy::cast_possible_truncation,
+                            reason = "AppKit's requested rate is f32"
+                        )]
+                        let rate = (1.0 / period) as f32;
+                        rate
+                    });
+            let rate = FrameRateRequest::resolve(
+                panel_hz,
+                window.fullscreen().is_some() || window.simple_fullscreen(),
+                self.config.mac_frame_rate,
+            );
+            if let Some(link) = &self.display_link {
+                link.set_rate(rate);
+            }
+            self.frame_rate = Some(rate);
+        }
     }
 
     fn refresh_display_record(&mut self) {
@@ -250,6 +310,7 @@ impl<G: WindowGame + 'static> App<G> {
             display: None,
             display_options: None,
             display_link: None,
+            frame_rate: None,
             refresh_period: None,
             window: None,
             display_target: None,
@@ -730,11 +791,7 @@ impl<G: WindowGame + 'static> App<G> {
         }
         self.panel = Some(panel);
         self.thermal_states[thermal_state() as usize] = true;
-        self.display_link = Some(ViewDisplayLink::start(
-            self.window.as_ref().ok_or("window missing")?,
-            wake.clone(),
-            self.display.is_some(),
-        )?);
+        self.start_display_link(wake)?;
         self.adapter_name.clone_from(&gpu.adapter_name);
         self.surface_format = Some(gpu.config.format);
         self.surface_extent = [gpu.config.width, gpu.config.height];
@@ -899,6 +956,7 @@ impl<G: WindowGame + 'static> App<G> {
         match reply.platform.surface_status {
             SurfaceStatus::Presented => {
                 self.presented += 1;
+                self.begin_fullscreen_route()?;
                 #[cfg(feature = "interface")]
                 self.step_interface_script()?;
                 if self.surface_configuration_error.take().is_some() {
@@ -1499,14 +1557,23 @@ impl<G: WindowGame + 'static> ApplicationHandler<UserEvent> for App<G> {
                 callback,
                 number,
             } => {
-                let period = target - callback;
+                let observed_period = target - callback;
+                let fixed_period = self
+                    .frame_rate
+                    .filter(|rate| rate.fixed)
+                    .map(|rate| 1.0 / f64::from(rate.preferred));
+                let period = fixed_period
+                    .or(self.refresh_period)
+                    .unwrap_or(observed_period);
                 {
                     let mut account = self.refresh_account.lock().expect("refresh account lock");
-                    account.callback(target, self.refresh_period.unwrap_or(period));
+                    account.set_fixed_rate(fixed_period.is_some());
+                    account.callback(target, period);
                 }
                 self.display_tick = number;
                 self.governor_display.interval =
-                    Duration::try_from_secs_f64(target - callback).unwrap_or_default();
+                    Duration::try_from_secs_f64(fixed_period.unwrap_or(observed_period))
+                        .unwrap_or_default();
                 self.profile.set_available(self.recovery.ready());
                 if let Ok(timestamp) = Duration::try_from_secs_f64(callback) {
                     self.profile.callback(timestamp);
@@ -1681,6 +1748,7 @@ impl<G: WindowGame + 'static> ApplicationHandler<UserEvent> for App<G> {
             }
             WindowEvent::Resized(size) => {
                 self.observed_extent = [size.width, size.height];
+                self.refresh_monitor_period();
                 Ok(())
             }
             WindowEvent::Occluded(occluded) => {
@@ -2043,10 +2111,29 @@ fn run_with<G: WindowGame + 'static, E: std::error::Error>(
         if prints_report(mode, requested_report.as_deref()) {
             println!("{}", account.counts());
         }
-        if let Some(observer) = &app.qualification {
-            let output = &observer.options.output;
+        let account_output = app
+            .qualification
+            .as_ref()
+            .map(|observer| &observer.options.output)
+            .or_else(|| {
+                app.transition_proof
+                    .as_ref()
+                    .filter(|proof| proof.arm == TransitionArm::Fullscreen)
+                    .map(|proof| &proof.output)
+            });
+        if let Some(output) = account_output {
             if let Err(error) = account.write(output) {
                 result = Err(format!("refresh account: {error}"));
+            }
+            if let Some(rate) = app.frame_rate {
+                let record = serde_json::json!({
+                    "preferred_hz": rate.preferred, "fixed": rate.fixed, "forced": rate.forced,
+                });
+                if let Err(error) =
+                    std::fs::write(output.join("requested-frame-rate.json"), record.to_string())
+                {
+                    result = Err(format!("frame rate receipt: {error}"));
+                }
             }
         }
     }

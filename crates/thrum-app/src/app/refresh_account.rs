@@ -101,6 +101,7 @@ struct Request {
 /// present beyond the newest known target before another callback is processed.
 #[derive(Default)]
 pub(super) struct Account {
+    fixed_rate: bool,
     current: Option<Opportunity>,
     previous_end: Option<f64>,
     latest_closed: Option<Closed>,
@@ -114,6 +115,10 @@ pub(super) struct Account {
 }
 
 impl Account {
+    pub(super) fn set_fixed_rate(&mut self, fixed: bool) {
+        self.fixed_rate = fixed;
+    }
+
     pub(super) fn measure(&mut self, start: f64, length: f64) {
         if self.measurement.is_none() {
             self.measurement = Some(Measurement {
@@ -142,7 +147,10 @@ impl Account {
                 clippy::cast_sign_loss,
                 reason = "a nonnegative elapsed period count, rounded before conversion"
             )]
-            let periods = ((target - previous.target) / period + 0.25).floor() as u64;
+            let periods = {
+                let phase_tolerance = if self.fixed_rate { 0.5 } else { 0.25 };
+                ((target - previous.target) / period + phase_tolerance).floor() as u64
+            };
             for gap in (1..periods).rev() {
                 self.close(Opportunity::new(
                     target - gap as f64 * period,
@@ -400,6 +408,22 @@ mod tests {
             account.measurement.unwrap().rows[1].unserved(),
             Some(Place::DisplayLink)
         );
+    }
+
+    #[test]
+    fn fixed_rate_counts_a_skipped_callback_across_a_phase_shift() {
+        let mut account = Account::default();
+        account.set_fixed_rate(true);
+        account.measure(0.0, 1.0);
+        account.callback(PERIOD, PERIOD);
+        call(&mut account, PERIOD, 0.01, 0.10);
+        let target = PERIOD * 2.74;
+        account.callback(target, PERIOD);
+        call(&mut account, target, 0.27, 0.32);
+        account.finish();
+        let rows = account.measurement.unwrap().rows;
+        assert_eq!(rows.len(), 3);
+        assert_eq!(rows[1].unserved(), Some(Place::DisplayLink));
     }
 
     #[test]

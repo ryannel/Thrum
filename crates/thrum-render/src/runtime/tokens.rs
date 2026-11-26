@@ -17,6 +17,19 @@ pub struct AdvancedFrame<'a, W: FrameWorld, V: SceneSource<W::Page>> {
 }
 
 impl<'a, W: FrameWorld, V: SceneSource<W::Page>> AdvancedFrame<'a, W, V> {
+    /// Gate capture for this published tick while preserving the prepared tap
+    /// and any images still draining. Returns staging and CPU occupancy before encode.
+    pub fn gate_submitted_capture(
+        &mut self,
+        ticks: std::ops::RangeInclusive<u64>,
+    ) -> Option<(u64, usize, usize)> {
+        let host = self.host.as_deref_mut()?;
+        let tick = host.world.source().tick;
+        host.set_submitted_capture_accepting(ticks.contains(&tick));
+        let (staging, cpu) = host.submitted_capture_usage()?;
+        Some((tick, staging, cpu))
+    }
+
     /// Whether a serial frame can use a drawable after world admission.
     /// Native extraction may finish later and remains separately scheduled.
     pub fn can_acquire_serial(&self) -> bool {
