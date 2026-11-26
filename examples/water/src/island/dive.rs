@@ -156,7 +156,8 @@ fn build(
         // fetch-derived protection of the other bands, including the swell.
         let mut gains = map.body(1).ok_or("the dive lake is missing")?.gains;
         gains[1] = 1.0;
-        map.set_wave_gains(1, gains)?;
+        map.set_wave_gains(1, gains)
+            .map_err(|error| format!("{error:?}"))?;
     }
     if site == DiveSite::HighLake {
         let [x, level, z] = eye_at_surface.map(f64::from);
