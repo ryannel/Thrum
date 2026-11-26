@@ -533,7 +533,7 @@
         {
           "verdict": "fail",
           "commit": "ab0b2afa716797885c0e33433e35d09f1a802578",
-          "review": ".orchestrate/evidence/RIVERS/WP4-review.md",
+          "review": ".orchestrate/evidence/RIVERS/WP4-review-3.md",
           "items": {
             "WP4.1": "pass",
             "WP4.2": "pass",
@@ -568,6 +568,46 @@
             "turns": 1
           },
           "at": "2026-11-26T20:16:35Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "3103f12f7a7cc30a6e92838c126baf2b18e16dd2",
+          "review": ".orchestrate/evidence/RIVERS/WP4-review.md",
+          "items": {
+            "WP4.1": "pass",
+            "WP4.2": "pass",
+            "WP4.3": "fail",
+            "WP4.4": "pass",
+            "WP4.5": "pass",
+            "WP4.6": "pass",
+            "WP4.7": "pass",
+            "WP4.8": "pass",
+            "WP4.9": "pass"
+          },
+          "findings": [
+            {
+              "name": "Draw and body query use different wind-wave phases near the tidal mouth",
+              "item": "WP4.3",
+              "different": "The previous choppy-swell error is fixed at the reported outlet station. This error requires the short wind-wave cascades farther downstream, where the draw blends their motion toward the sea and the body query uses the local motion.",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 182253,
+            "cached": 9022464,
+            "output": 24872,
+            "turns": 1
+          },
+          "at": "2026-11-26T21:08:30Z"
         }
       ],
       "authorised": {
