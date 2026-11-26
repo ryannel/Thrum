@@ -2155,6 +2155,10 @@ async function qualifyExitClauses(cdp, sessionId, poll, timeout, output, source,
   }, timeout, `cooked exit generation ${expected} drawn`);
   await generation(1);
   const { origin: pageOrigin } = await identity();
+  const preset = await game.invoke('return document.querySelector("#params-status").textContent;');
+  if (!/^showcase-noon\.params\.json: \d+ changed, \d+ unchanged, 0 refused$/.test(preset)) {
+    throw new Error(`exit noon preset was not applied: ${preset}`);
+  }
   await game.invoke(`
     const checkbox = document.querySelector('[data-control="profiler.enabled"] input');
     if (!checkbox.checked) checkbox.click();
@@ -2218,7 +2222,7 @@ async function qualifyExitClauses(cdp, sessionId, poll, timeout, output, source,
     previous = image;
   }
   return { selections: await game.invoke('return JSON.parse(game.exit_selections());'),
-    pageOrigin, tickBeforeEdits: held.tick, scrub, profiler, before, edits };
+    pageOrigin, preset, tickBeforeEdits: held.tick, scrub, profiler, before, edits };
 }
 
 // Startup proxy for one route page, observed on the page's own clock (performance.now(), milliseconds since its
@@ -2683,7 +2687,9 @@ async function main() {
     }
   }
   mixedOracle = args.mixedOracle === true;
-  if (args.case.startsWith('environment-') || args.case === 'exit-sweep') await routeStops(files, directory);
+  if (args.case.startsWith('environment-') || ['exit-sweep', 'exit-clauses'].includes(args.case)) {
+    await routeStops(files, directory);
+  }
   // The params case's file: two valid entries and one typo; the case rewrites it to test reload.
   const caseParams = Buffer.from('{"world.paused": true, "sky.solar_time": 17.9, "camera.yw": 10}');
   files.set('/case.params.json', { bytes: caseParams, type: 'application/json', sha256: sha(caseParams) });

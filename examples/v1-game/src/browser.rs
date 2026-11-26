@@ -137,6 +137,19 @@ impl BrowserGame {
 
 thrum_app::export_page_methods!(BrowserGame);
 
+#[wasm_bindgen]
+impl BrowserGame {
+    /// Publish the exit page's profiler rows through the web shell before its frame.
+    pub fn update_exit_profiler(&mut self) {
+        use thrum_app::Game as _;
+        if self.content == crate::GameContent::Exit {
+            self.page
+                .shell
+                .update_profiler(self.page.game.controls_mut(), false);
+        }
+    }
+}
+
 #[cfg(feature = "proving")]
 #[wasm_bindgen]
 impl BrowserGame {

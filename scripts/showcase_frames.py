@@ -91,31 +91,44 @@ def mac_record(output, first, last, day, startup, load):
     timeline = []
     present_index = 0
     for previous, current in zip(requested, requested[1:]):
-        start = previous['media']
-        interval = current['media'] - start
-        if interval <= 0:
-            raise ValueError('Mac display callback timestamps are not increasing')
-        opportunities = max(1, round(interval / period))
-        subdivisions = [start + index * interval / opportunities for index in range(opportunities + 1)]
+        start, target = previous['target'], current['target']
+        interval = current['media'] - previous['media']
+        if interval <= 0 or target <= start:
+            raise ValueError('Mac display callbacks and their targets must increase')
+        # The window accounts for presents against the display-link target.
+        # Anchor absent opportunities to the new target just as the host does.
+        opportunities = max(1, int((target - start) / period + 0.5))
+        subdivisions = [start, *(target - index * period for index in range(opportunities - 1, 0, -1)),
+                        target]
         for begin, end in zip(subdivisions, subdivisions[1:]):
             while present_index < len(presents) and presents[present_index]['present_media'] < begin:
                 latest = presents[present_index]
                 present_index += 1
             delivered = present_index < len(presents) and presents[present_index]['present_media'] < end
             if not delivered:
-                frame = by_sequence.get(previous['sequence'])
+                nearby_frames = [by_sequence[row['sequence']] for row in (previous, current)
+                                 if row['sequence'] in by_sequence]
+                crossing_work = [{'stage': stage, 'submission': frame['submission'],
+                                  'wall_ms': (finish - begin_work) * 1000}
+                                 for frame in nearby_frames
+                                 for stage, begin_work, finish in frame['work']
+                                 if begin_work < end <= finish]
                 tick = min(last, max(first, latest['world_tick']))
                 position = {'world_tick': tick, 'route_tick': tick - first}
                 if day:
                     position['solar_hours'] = 24 * (tick - first) / (last - first)
                 misses.append({'position': position, 'duration_ms': (end - begin) * 1000,
-                               'callback': previous['sequence'], 'callback_interval_ms': interval * 1000,
+                               'target_media': end, 'callback_interval_ms': interval * 1000,
                                'previous_submission': latest['submission'],
                                'next_submission': presents[present_index]['submission'] if present_index < len(presents) else None,
-                               'callback_report': previous, 'frame_report': frame,
+                               'preceding_callback': previous, 'following_callback': current,
+                               'nearby_frame_reports': nearby_frames, 'work_crossing_deadline': crossing_work,
                                'previous_sample': samples.get(latest['submission']),
-                               'investigation': 'unresolved under load',
-                               'evidence_read': 'display callback media interval, render-owner work and GPU-complete sample'})
+                               'next_sample': samples.get(presents[present_index]['submission'])
+                               if present_index < len(presents) else None,
+                               'investigation': ('render-owner wall-time work crossed the deadline'
+                                                 if crossing_work else 'unresolved under load'),
+                               'evidence_read': 'display-link targets and callback intervals, neighbouring render-owner stages and GPU-complete samples'})
         timeline.append({'sequence': previous['sequence'], 'callback_interval_ms': interval * 1000,
                          'opportunities': opportunities})
     prepared = json.loads((output / 'prepared.json').read_text())

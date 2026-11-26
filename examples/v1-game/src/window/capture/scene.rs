@@ -65,7 +65,7 @@ pub struct SceneCaptureRequest {
     /// `THRUM_CAPTURE_SOURCE`: the route's submitted-image stage.
     pub source: Option<String>,
     /// The exit comparison's submitted stills keep the selected governor enabled.
-    pub still_governor: bool,
+    pub still_governor: Option<thrum_render::governor::DisplayRecord>,
     /// `THRUM_CAPTURE_PHASE`: a diagnostic in-tick phase in place of the route's.
     pub phase: Option<String>,
     /// `THRUM_CAPTURE_SURFACE_FORMAT`: the format of the texture standing in for the surface.
@@ -205,13 +205,8 @@ pub(in crate::window) async fn run(
         .map(|arm| creation::Ready::mark(arm, driver.host_mut(), &capabilities))
         .transpose()?;
     driver.host_mut().finish_preparation();
-    if request.still_governor
-        && !driver
-            .host_mut()
-            .enable_governor(thrum_render::governor::DisplayRecord {
-                interval: Duration::ZERO,
-                thermal: thrum_render::governor::ThermalState::Nominal,
-            })
+    if let Some(display) = request.still_governor
+        && !driver.host_mut().enable_governor(display)
     {
         return Err("the prepared exit scene refused the still governor".to_owned());
     }

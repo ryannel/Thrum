@@ -449,9 +449,13 @@ fn scene_capture_request(
     let path = |name: &str| std::env::var_os(name).map(std::path::PathBuf::from);
     let scene = text("THRUM_SCENE")?;
     let source = text("THRUM_CAPTURE_SOURCE")?;
-    let still_governor = scene.as_deref() == Some("exit")
+    let still_governor = (scene.as_deref() == Some("exit")
         && source.as_deref() == Some("submitted-sdr")
-        && governor_enabled()?;
+        && governor_enabled()?)
+    .then_some(thrum_render::governor::DisplayRecord {
+        interval: std::time::Duration::ZERO,
+        thermal: thrum_render::governor::ThermalState::Nominal,
+    });
     Ok(v1_game::SceneCaptureRequest {
         scene,
         motion_frames: text("THRUM_CAPTURE_MOTION_FRAMES")?,
