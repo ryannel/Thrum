@@ -9,7 +9,7 @@ import re
 from statistics import median
 import subprocess
 
-from apple_governor_proof import awake_display, require_unlocked_display
+from apple_governor_proof import awake_display
 from apple_presentation import RECIPE, ROOT, SCALE_STEPS, annotate_display_ticks, read_rows, scale_environment, scale_reference
 from run_v1_showcase import MOVING_ROUTE
 from t2_load import LoadRecord
@@ -78,15 +78,15 @@ def window_arm(output, binary, env, route, name, recipe, reconstruction, headroo
         launch["THRUM_MAC_CAPTURE_CUE"] = json.dumps(cue)
     if frame_rate is not None:
         launch["THRUM_MAC_FRAME_RATE"] = str(frame_rate)
-    load = LoadRecord(arm)
-    try:
-        with (arm / "game.log").open("w") as log, awake_display():
-            require_unlocked_display()
-            subprocess.run([binary], cwd=ROOT, env=launch, stdout=log, stderr=subprocess.STDOUT,
-                           check=True, timeout=130)
-    finally:
-        observed_load = load.finish()
-        (arm / "host-load.json").write_text(json.dumps(observed_load, indent=2) + "\n")
+    with awake_display():
+        load = LoadRecord(arm)
+        try:
+            with (arm / "game.log").open("w") as log:
+                subprocess.run([binary], cwd=ROOT, env=launch, stdout=log, stderr=subprocess.STDOUT,
+                               check=True, timeout=130)
+        finally:
+            observed_load = load.finish()
+            (arm / "host-load.json").write_text(json.dumps(observed_load, indent=2) + "\n")
     prepared = json.loads((arm / "prepared.json").read_text())
     reconstructor = {"metalfx": "MetalFx", "taau": "Taau", "off": "Off"}[reconstruction]
     if (prepared["adapter"], prepared["recipe"], prepared["reconstruction"]) != (

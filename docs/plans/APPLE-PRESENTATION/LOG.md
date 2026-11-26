@@ -737,3 +737,6 @@ layer profile change. [Metal controls](../../../.orchestrate/evidence/CLOUDS/WP9
   route at the unforced 60 Hz request. Their 50% governor-floor GPU spans were 11.06/12.66 ms and
   11.15/12.55 ms p50/p95. WP17 owns full-refresh fullscreen cadence and the milestone.
   [Pacing takes and host load](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP11/mac-60hz-closing/pacing-index.md)
+- 2026-11-26 WP11. The merged D11.1 run read the idle screen flag before its asynchronous wake took effect.
+  The proof now checks the wake before the timed hold, with a single display cycle for a persistent idle flag.
+  The paired replay still measures the same window route.

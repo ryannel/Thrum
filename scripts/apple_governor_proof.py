@@ -8,6 +8,7 @@ from pathlib import Path
 import re
 import subprocess
 from statistics import median
+from time import sleep
 
 from apple_presentation import ROOT, mac_binary, read_rows, run
 from run_v1_showcase import MOVING_ROUTE, SOURCE, store_root
@@ -49,8 +50,16 @@ def sample_changes(samples):
 
 @contextmanager
 def awake_display():
-    # Wake a sleeping display once and hold it across the arms and retries.
-    # Bind the assertion to this process so an interrupted proof also releases it.
+    # The user-activity assertion can take effect after the first console read.
+    # Finish waking before starting the timed display hold.
+    if display_locked():
+        wake = ["/usr/bin/caffeinate", "-u", "-t", "3"]
+        subprocess.run(wake, check=True, timeout=6)
+        if display_locked():
+            subprocess.run(["/usr/bin/pmset", "displaysleepnow"], check=True, timeout=6)
+            sleep(3)
+            subprocess.run(wake, check=True, timeout=6)
+            require_unlocked_display()
     keep_awake = subprocess.Popen(
         ["/usr/bin/caffeinate", "-d", "-i", "-u", "-w", str(os.getpid())])
     try:
@@ -59,10 +68,14 @@ def awake_display():
         keep_awake.terminate()
         keep_awake.wait()
 
-def require_unlocked_display():
+def display_locked():
     console = subprocess.check_output(
         ["/usr/sbin/ioreg", "-n", "Root", "-d1"], text=True, timeout=15)
-    if re.search(r'"(?:CGSSessionScreenIsLocked|IOConsoleLocked)"\s*=\s*Yes', console):
+    return re.search(r'"(?:CGSSessionScreenIsLocked|IOConsoleLocked)"\s*=\s*Yes', console) is not None
+
+
+def require_unlocked_display():
+    if display_locked():
         raise InvalidDisplayEnvironment(
             "Mac console session is locked; the visible route needs an unlocked display")
 

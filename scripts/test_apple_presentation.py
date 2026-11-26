@@ -3,10 +3,10 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import call, patch
 
 from apple_governor_proof import (
-    InvalidDisplayEnvironment, compare_live_load, measure_window, require_unlocked_display,
+    InvalidDisplayEnvironment, awake_display, compare_live_load, measure_window, require_unlocked_display,
 )
 from apple_presentation import annotate_display_ticks
 
@@ -97,6 +97,27 @@ class DisplayTickTests(unittest.TestCase):
 
 
 class GovernorProofTests(unittest.TestCase):
+    def test_idle_display_is_woken_and_cycled_before_the_timed_hold(self):
+        locked = '"IOConsoleLocked" = No\n"CGSSessionScreenIsLocked" = Yes'
+        unlocked = '"IOConsoleLocked" = No\n"CGSSessionScreenIsLocked" = No'
+        wake = call(["/usr/bin/caffeinate", "-u", "-t", "3"], check=True, timeout=6)
+        with (
+            patch("apple_governor_proof.subprocess.check_output", side_effect=[locked, locked, unlocked]),
+            patch("apple_governor_proof.subprocess.run") as run,
+            patch("apple_governor_proof.subprocess.Popen") as hold,
+            patch("apple_governor_proof.sleep") as sleep,
+        ):
+            with awake_display():
+                self.assertEqual(run.call_args_list, [
+                    wake,
+                    call(["/usr/bin/pmset", "displaysleepnow"], check=True, timeout=6),
+                    wake,
+                ])
+                sleep.assert_called_once_with(3)
+                hold.assert_called_once()
+                hold.return_value.terminate.assert_not_called()
+            hold.return_value.terminate.assert_called_once()
+
     def test_locked_console_session_takes_precedence_over_unlocked_display_flag(self):
         console = '"IOConsoleLocked" = No\n"IOConsoleUsers" = ({"CGSSessionScreenIsLocked"=Yes})'
         with patch("apple_governor_proof.subprocess.check_output", return_value=console):
