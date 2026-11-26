@@ -1299,9 +1299,9 @@
         },
         {
           "id": "WP9.7",
-          "statement": "Each cadence, extent and count in the design's list of knobs is a named runtime value with a range and a declared invalidation. Setting each to both ends of its range while the scene runs applies that invalidation, changes no query answer and no column the weather map holds, and creates no pipeline or resource.",
+          "statement": "The sky's knobs are each a named runtime value with a range and a declared invalidation: the trace's refresh fraction, the layer's scale, step length and sample cap, the local light samples, the Sun path's cadence at each level, the weather map's cadence, the overlay's cadence and the placed range. Setting each to both ends of its range while the scene runs applies that invalidation, changes no query answer and no column the weather map holds, and creates no pipeline or resource.",
           "check": "cargo test --locked --offline -p v1-game --features thrum-render/creation-counters --test clouds_knobs_gpu",
-          "ask": "Can a caller that knows nothing of clouds list the knobs and set one, as the governor will? Is any cadence in `thrum-clouds` a constant that is not in the list?",
+          "ask": "Can a caller that knows nothing of clouds list the knobs and set one, as the governor will? Does any pass the sky runs in `thrum-clouds` refresh on a constant cadence that is not one of these knobs?",
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",

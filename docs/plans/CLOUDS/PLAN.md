@@ -64,31 +64,27 @@ Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-bu
 
 ## WP7 The sky runs from clear through fair and broken to overcast and back, and its clouds drift, form, grow and thin
 
-Only WP7.4 is open; the other seven items passed as built. Change nothing in `thrum-app`'s window here.
+[Review](../../../.orchestrate/evidence/CLOUDS/WP7-review.md)
 
 ## WP19 While clouds drift, the game can say where each lost refresh went, and the losses the clouds cause are fixed
 
-Read [Holding the display's refresh](DESIGN.md#holding-the-displays-refresh-while-clouds-drift-wp19-and-wp20)
-first. Take the first wind series before any repair. Build the cost tool's `hold` command here too, which WP20
-runs: the same series with the rule deciding. End `BLOCKED` after three repairs that leave a loss of the
-clouds' standing.
+[Review](../../../.orchestrate/evidence/CLOUDS/WP19-review.md)
 
 ## WP20 With clouds drifting, the player sees a new frame as steadily as in the same game without them, in its ordinary window on the Mac
 
-One attended sitting with every other agent waiting: run the check once and end the session. After three
-series that are not a measurement, end `BLOCKED` with what failed in the setup. If a cloud run does not hold,
-end `BLOCKED` with the series.
+[Review](../../../.orchestrate/evidence/CLOUDS/WP20-review.md)
 
 ## WP8 Under a clouded sky the land is lit by the clouds: an overcast valley is grey and soft, haze dims with it, and polished surfaces reflect the clouds
 
-Rulings 3 and 4 are built in `ATMOSPHERE`'s reflection and diffuse producers and its aerial decoder. If the
-producers cannot compose the overlay within their existing bounds, write the proposal in `ATMOSPHERE`'s log
-and end `BLOCKED`.
+[Review](../../../.orchestrate/evidence/CLOUDS/WP8-review.md)
 
 ## WP9 A visitor changes coverage, cloud type, wind and time of day with the controls, and the sky holds up in motion, on the Mac and in Chrome
 
 TAAU is `APPLE-PRESENTATION`'s; a defect of the reconstructor's goes to that module's log. No governor is
 needed here.
+
+WP9.7 names the sky's knobs only. The ground band and the medium coefficients have no producer until WP14,
+so their cadences are WP16.7's, and nothing of Ground is built here.
 
 ## WP10 The twelve accepted cloud volumes and the growing congestus each read as themselves in the finished sky
 
