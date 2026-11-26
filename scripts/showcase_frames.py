@@ -126,6 +126,7 @@ def note_deadline_crossings(frames, misses):
     for miss in misses:
         if miss['work_crossing_deadline']:
             miss['investigation'] = 'render-owner wall-time work crossed the deadline'
+            miss['attribution'] = 'unresolved under load'
 
 
 def mac_opportunities(frames, callbacks, presents, samples, first, last, day):

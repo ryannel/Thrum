@@ -23,6 +23,7 @@ class ShowcaseFrameTests(unittest.TestCase):
             self.assertAlmostEqual(miss['opportunity_ms'], 1000 / 60)
             self.assertEqual((miss['previous_submission'], miss['next_submission']), (2, 3))
             self.assertEqual(miss['work_crossing_deadline'][0]['sequence'], 3)
+            self.assertEqual(miss['attribution'], 'unresolved under load')
 
     def test_chrome_pairs_before_clipping_and_distinguishes_work_from_waiting(self):
         callbacks = [
