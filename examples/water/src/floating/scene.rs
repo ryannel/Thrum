@@ -847,7 +847,7 @@ pub(crate) fn install_channel_float(
     water: &Water,
     fallback: thrum_water_model::Field,
     foam: thrum_water::foam::Input,
-    wind_speed: f64,
+    wind: glam::DVec2,
 ) -> (SkyGame, Box<dyn Fn() -> Body>) {
     use crate::channel::{POST, RELEASE, WIDE_POST};
     let initial = Body::new(
@@ -877,9 +877,13 @@ pub(crate) fn install_channel_float(
         let fleet = &mut *fleet;
         fleet.tick = endpoint.tick;
         fleet.previous.clone_from(&fleet.current);
-        // Wind on the exposed float lets it keep moving through the tidal
-        // backwater, where the map's current fades to zero.
-        fleet.current[0].velocity.x += 0.065 * wind_speed * step.as_secs_f64();
+        // Air drag acts on the exposed float in the scene's wind. Water
+        // drag at the six stations supplies the much faster river drift.
+        let float = &mut fleet.current[0];
+        let slip = wind - glam::DVec2::new(float.velocity.x, float.velocity.z);
+        let air_drag = slip * (0.0045 * slip.length() * step.as_secs_f64());
+        float.velocity.x += air_drag.x;
+        float.velocity.z += air_drag.y;
         drop(advance_fleet(
             &mut fleet.current,
             endpoint,

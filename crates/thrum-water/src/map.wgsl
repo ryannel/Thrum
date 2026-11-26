@@ -4,6 +4,7 @@ struct BodyRecord {
     layers: vec4<u32>,
     ends: array<vec4<f32>, 2>,
     joins: array<vec4<f32>, 2>,
+    track: vec4<f32>, // signed reference speed, axis code (0 none, 1 x, 2 z)
 }
 struct MapRecord {
     origin_spacing_margin: vec4<f32>,
@@ -187,4 +188,29 @@ fn map_sample(point: vec2<f32>) -> MapAnswer {
         }
     }
     return best;
+}
+
+// The extra chart layer holds a section coordinate and its unjoined speed.
+// Read only the two adjacent sections. The prepared track is flat across
+// each section, including where the chart lends its row over a bank.
+fn map_wave_track(point: vec2<f32>, body: u32, current: vec2<f32>) -> vec4<f32> {
+    if body == NO_BODY || all(current == vec2(0.0)) { return vec4(0.0); }
+    let record = map.bodies[body];
+    let axis_code = record.track.y;
+    if axis_code == 0.0 { return vec4(0.0); }
+    let axis = u32(axis_code) - 1u;
+    let last = map.size_count_sea[axis] - 1u;
+    let position = clamp((point[axis] - map.origin_spacing_margin[axis])
+        / map.origin_spacing_margin.z, 0.0, f32(last));
+    let cell = min(u32(position), last - 1u);
+    var lower = vec2<i32>(0);
+    lower[axis] = i32(cell);
+    var upper = lower;
+    upper[axis] += 1;
+    let layer = i32(record.layers.z) + 2;
+    let a = textureLoad(bed_map, lower, layer, 0).xy;
+    let b = textureLoad(bed_map, upper, layer, 0).xy;
+    let route = mix(a, b, position - f32(cell));
+    let blend = clamp(abs(current[axis]) / route.y, 0.0, 1.0);
+    return vec4(route.x, record.track.x, blend, axis_code);
 }

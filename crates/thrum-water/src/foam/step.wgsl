@@ -125,7 +125,7 @@ fn prepare_transport(@builtin(global_invocation_id) id: vec3<u32>) {
         let wake = wake_at(point, dt_column);
         var column: Wave;
         if row.has_bed {
-            column = foam_column(point, gain, dt_column, row.row.water.yz);
+            column = foam_column(point, gain, dt_column, row);
         }
         if foam_wet(level, local, depth + column.displacement.y + wake.x > 0.0) {
             let wave = foam_wave(point, gain, spacing);

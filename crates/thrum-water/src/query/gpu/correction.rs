@@ -16,17 +16,19 @@ pub(super) struct CascadeSample {
 }
 
 impl CascadeSample {
-    fn with_gain(self, gain: f64, dt: f64) -> Sample {
+    fn with_gain(self, gain: f64, dt: f64, advection_rate: f32) -> Sample {
         let [sx, sz] = self.slope.map(|value| f64::from(value) * gain);
         let [xx, xz, zz] = self.differential.map(|value| f64::from(value) * gain);
         let (xx, zz) = (1.0 + xx, 1.0 + zz);
         let det = xx.mul_add(zz, -xz * xz).max(0.01);
         let velocity = self.velocity.map(|value| f64::from(value) * gain);
+        let slope = [(zz * sx - xz * sz) / det, (xx * sz - xz * sx) / det];
+        let height_dt = f64::from(advection_rate).mul_add(gain, velocity[1]);
         Sample {
-            height: velocity[1].mul_add(dt, f64::from(self.height) * gain),
-            slope: [(zz * sx - xz * sz) / det, (xx * sz - xz * sx) / det],
+            height: height_dt.mul_add(dt, f64::from(self.height) * gain),
+            slope,
             velocity,
-            height_dt: velocity[1],
+            height_dt,
         }
     }
 }
@@ -43,14 +45,21 @@ pub(in crate::query) struct ReadyBody {
 pub(super) struct MapPrediction {
     revision: u64,
     cascades: [CascadeSample; 3],
+    advection_rate: [f32; 3],
     wake: [f32; 4],
 }
 
 impl MapPrediction {
-    pub(super) fn new(revision: u64, cascades: [CascadeSample; 3], wake: [f32; 4]) -> Self {
+    pub(super) fn new(
+        revision: u64,
+        cascades: [CascadeSample; 3],
+        advection_rate: [f32; 3],
+        wake: [f32; 4],
+    ) -> Self {
         Self {
             revision,
             cascades,
+            advection_rate,
             wake,
         }
     }
@@ -89,8 +98,7 @@ impl Correction {
                 let carry_bound = ready.step.as_secs_f64() * super::CARRY_TICKS;
                 *answer = self.recompose(
                     *answer,
-                    prediction.cascades,
-                    prediction.wake,
+                    prediction,
                     map,
                     time,
                     dt,
@@ -109,8 +117,7 @@ impl Correction {
     fn recompose(
         &self,
         answer: QueryAnswer,
-        cascades: [CascadeSample; 3],
-        wake: [f32; 4],
+        prediction: &MapPrediction,
         map: &Map,
         time: f64,
         dt: f64,
@@ -153,7 +160,11 @@ impl Correction {
                     .ok()?
             } else {
                 corrected.sources[layer] = Some(frame_seconds);
-                cascades[layer - 1].with_gain(gain, dt.clamp(-carry_bound, carry_bound))
+                prediction.cascades[layer - 1].with_gain(
+                    gain,
+                    dt.clamp(-carry_bound, carry_bound),
+                    prediction.advection_rate[layer - 1],
+                )
             };
             corrected.supported[layer] = layer == 0 || dt.abs() <= carry_bound;
             corrected.wave_heights[layer] = wave.height as f32;
@@ -167,6 +178,7 @@ impl Correction {
             }
         }
         if row.depth > 0.0 {
+            let wake = prediction.wake;
             corrected.sources[4] = answer.sources[4];
             corrected.supported[4] = answer.supported[4];
             corrected.wake_height = wake[0];

@@ -144,7 +144,11 @@ The map interpolates its rows, adds the chart's stage in metres, computes
 depth as water level minus bed, and mixes toward the joined body's row at
 each end. The draw and queries use the same rows for surface level, wave
 support, and currents. Surface detail reads upstream through the current.
-Foam stock moves downstream, and games receive the current in body answers.
+A steady parallel reach with speed uniform across each section gets a
+prepared travel coordinate. It carries waves at the local speed without
+stretching their pattern farther as time passes. The joined current
+blends that pattern into the receiving waves. Foam stock moves downstream,
+and games receive the current in body answers.
 
 In the solver's energy account, a decrease in hydraulic head downstream is a
 positive head loss, measured in metres. Dividing by the along-flow distance

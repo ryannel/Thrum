@@ -148,13 +148,14 @@ fn check_post_and_float(gpu: &thrum_test_support::Gpu) {
         assert!(upstream < 0.002);
         if !running {
             assert!(downstream < 0.002);
-            continue;
+        } else {
+            assert!(downstream > 0.03);
         }
-        assert!(downstream > 0.03);
 
         // Drive the same game world at fixed ticks, without encoding unobserved frames.
         // The game falls back to the same map between the sampled GPU frames.
         let mut before = 3;
+        let mut drowned = false;
         for second in [12, 50, 90, 135, 175, 220, 270, 310, 350, 390] {
             scene
                 .host
@@ -165,10 +166,21 @@ fn check_post_and_float(gpu: &thrum_test_support::Gpu) {
             let map = route.map.lock().expect("outlet");
             let answer = map.sample(place).expect("wet course");
             println!(
-                "Metal float t={second}s position={:?} body={} current={:?}",
-                body.position, answer.body, answer.row.current
+                "Metal float current={running} t={second}s position={:?} velocity={:?} body={} water current={:?}",
+                body.position, body.velocity, answer.body, answer.row.current
             );
             assert!(body.position.y.is_finite() && answer.depth > 0.0);
+            if second == 90 {
+                if running {
+                    assert!(body.position.x > 285.0);
+                } else {
+                    assert!(body.position.x < 245.0);
+                }
+            }
+            drowned |= answer.body == 3
+                && body.position.x > 320.0
+                && answer.row.current[0].abs() < 0.1
+                && body.velocity.x > 0.04;
             if before == 3 && answer.body == 0 {
                 let ends = [
                     [channel::MOUTH - 0.001, channel::CENTRE],
@@ -184,8 +196,14 @@ fn check_post_and_float(gpu: &thrum_test_support::Gpu) {
                 break;
             }
         }
-        assert_eq!(before, 0, "float did not transfer to sea ownership");
-        assert!((route.float)().position.x > channel::MOUTH + 0.5);
+        if running {
+            assert!(drowned, "float did not cross the chart's slow backwater");
+            assert_eq!(before, 0, "float did not transfer to sea ownership");
+            assert!((route.float)().position.x > channel::MOUTH + 0.5);
+        } else {
+            assert_eq!(before, 3, "the wind alone carried the float to sea");
+            assert!((route.float)().position.x < 320.0);
+        }
     }
 }
 

@@ -227,7 +227,7 @@ fn shore_is_wet(point: vec2<f32>, gains: vec4<f32>, depth: f32) -> bool {
     let footprint = length(ground - view.camera_xyz_time.xyz) * view_aux.viewport_inv_viewport.w;
     let answer = map_sample(ground.xz);
     if answer.body == NO_BODY || !answer.has_bed { discard; }
-    let row = surface_row(map_cell(ground.xz), answer.row, answer.body, true);
+    let row = surface_row(ground.xz, map_cell(ground.xz), answer.row, answer.body, true);
     let reach = 0.175 * row.swash;
     let above = row.bed - row.level;
     let seaward_fade = -0.46 * row.swash;

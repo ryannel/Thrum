@@ -94,7 +94,7 @@ struct Answer {
     cascades: [CascadeSample; 3],
     cut_fine_nodes: u32,
     cut_coarse_nodes: u32,
-    padding: [u32; 3],
+    advection_rate: [f32; 3],
     wake: [f32; 4],
 }
 
@@ -527,7 +527,6 @@ impl Readback {
         map: &Map,
         frame_map: Option<&MapGpu>,
         wake: Option<&Interaction>,
-        carriage_period: Option<Duration>,
     ) -> bool {
         self.pending.clear();
         let mut state = self.mailbox.state.lock().expect("water query mailbox");
@@ -589,7 +588,7 @@ impl Readback {
                     // known past tick uses its saved stage and connectivity.
                     let index = maps.partition_point(|(tick, _)| *tick <= point.use_tick);
                     let domain = if index > 0 { &maps[index - 1].1 } else { map };
-                    let mut input = Point::new(point, dt, domain);
+                    let mut input = Point::new(point, dt, domain, frame_map);
                     input.carry[0] = dt.clamp(-bound, bound) as f32;
                     if let Some((wake_tick, _)) = wake_settings {
                         let wake_dt =
@@ -658,12 +657,12 @@ impl Readback {
                 heights,
                 coarse_jobs: [coarse_groups, coarse_nodes, 0, 0],
                 swash_margin: {
-                    let [phase, period, ..] = crate::records::carriage(seconds, carriage_period);
+                    let [.., seconds] = crate::records::carriage(seconds, None);
                     [
                         profile.swash_ratio as f32,
                         profile.margin_height as f32,
-                        phase,
-                        period,
+                        seconds,
+                        0.0,
                     ]
                 },
             };
@@ -865,7 +864,7 @@ impl Point {
         clippy::cast_possible_truncation,
         reason = "query inputs use GPU metres and bounded body indices"
     )]
-    fn new(point: &super::QueryPoint, dt: f64, map: &Map) -> Self {
+    fn new(point: &super::QueryPoint, dt: f64, map: &Map, gpu_map: Option<&MapGpu>) -> Self {
         let world = point.position.map(f64::from);
         let mut input = Self {
             position: point.position,
@@ -891,6 +890,12 @@ impl Point {
                 .level_slope(sample.body, world)
                 .map(|slope| slope as f32);
             input.gains = row.gains.map(|gain| gain as f32);
+            if let Some(gpu) = gpu_map {
+                let [coordinate, reference, weight, axis] =
+                    gpu.wave_track(sample.body, world, row.current, map.bed());
+                input.surf_stage[1..].copy_from_slice(&[coordinate, reference, weight]);
+                input.carry[2] = axis;
+            }
             input.surf_stage[0] = map.body(sample.body).expect("sampled body").stage.value as f32;
         }
         input
@@ -964,7 +969,7 @@ impl Batch {
                         .is_some_and(|tick| point.use_tick.abs_diff(tick) as f64 <= CARRY_TICKS);
                     (
                         raw.decode(index, point, sources, supported),
-                        MapPrediction::new(revision, raw.cascades, raw.wake),
+                        MapPrediction::new(revision, raw.cascades, raw.advection_rate, raw.wake),
                     )
                 })
                 .unzip();

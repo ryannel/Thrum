@@ -1298,3 +1298,9 @@
   reached wet sea ownership on Metal and hardware Chrome. The paired 1440p Metal record
   keeps the concurrent-load tripwire investigations.
   [WP9 target evidence](../../../.orchestrate/evidence/WATERS/WP9/README.md).
+
+- 2026-11-26 WP9 review follow-up. The two displaced readings of the same cascade cancelled
+  and reversed its phase during the blend. Keep renewal for the procedural foam pattern
+  and carry the cascades continuously through their periodic domain. Steady parallel reaches
+  use a prepared travel coordinate, keeping the spatial deformation independent of elapsed
+  time. Source and mouth blend the running and receiving waves by the joined current.

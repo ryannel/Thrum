@@ -7,7 +7,7 @@ fn surface_body(slot: u32) -> u32 {
     return select(slot - 1u, map.size_count_sea.w, slot == 0u);
 }
 
-fn surface_row(cell: Cell, row: MapRow, body: u32, owned: bool) -> SurfaceRow {
+fn surface_row(point: vec2<f32>, cell: Cell, row: MapRow, body: u32, owned: bool) -> SurfaceRow {
     let depth = select(1e30, row.water.x - cell.bed, cell.inside);
     let gains = limit_gains(row.gains, depth, water.heights, map.swash.x, map.origin_spacing_margin.w);
     let record = map.bodies[body];
@@ -25,7 +25,7 @@ fn surface_row(cell: Cell, row: MapRow, body: u32, owned: bool) -> SurfaceRow {
         }
     }
     return SurfaceRow(row.water.x, previous, gains, select(-1e30, cell.bed, cell.inside),
-        owned, swash, loss, loss_without_long, row.water.yz);
+        owned, swash, loss, loss_without_long, row.water.yz, map_wave_track(point, body, row.water.yz));
 }
 fn tail_gain(row: SurfaceRow) -> f32 { return row.gains.w; }
 
@@ -98,7 +98,7 @@ fn surface_vertex(point: vec2<f32>, slot: u32) -> SurfaceRow {
             row = continued_chart(cell, body, row);
         }
     }
-    return surface_row(cell, row, id, true);
+    return surface_row(point, cell, row, id, true);
 }
 
 fn surface_pixel(point: vec2<f32>, slot: u32) -> SurfaceRow {
@@ -107,5 +107,5 @@ fn surface_pixel(point: vec2<f32>, slot: u32) -> SurfaceRow {
     var cell: Cell;
     cell.inside = answer.has_bed;
     cell.bed = answer.bed;
-    return surface_row(cell, answer.row, id, answer.body == id);
+    return surface_row(point, cell, answer.row, id, answer.body == id);
 }

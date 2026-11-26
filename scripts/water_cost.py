@@ -112,19 +112,62 @@ def measure(scene):
             'path': str(RECORDS['island'].relative_to(ROOT)),
             'commit': prior['commit'], 'view': prior['view'], 'summary': prior['summary'],
         }
-        for row in (r for r in data['summary'] if r['water']):
-            previous = next(r for r in prior['summary'] if r['water'] and r['tick_frame'] == row['tick_frame'])
-            old = {label.rsplit(': ', 1)[-1]: duration for label, duration in previous['passes_ms'].items()}
-            for label, duration in row['passes_ms'].items():
-                baseline = old.get(label.rsplit(': ', 1)[-1])
-                if label.startswith('effect ') and baseline and duration >= baseline * 1.25:
-                    data['investigations'].append({
-                        'wire': 'pass grew by at least 25% compared to island',
-                        'water': True, 'tick_frame': row['tick_frame'],
-                        'measurement': f'{label}: {baseline:.3f} -> {duration:.3f} ms.',
-                        'disposition': 'The narrows view adds chart, foam and optics work at a different view and coverage. The paired water-off arm measures common work under the same load.',
-                    })
+        data['investigations'].extend(channel_investigations(data['summary'], prior['summary']))
     return data
+
+
+def comparable_pass(label):
+    # Contribution indices depend on what the scene declares. Fixed scene
+    # passes retain their complete name.
+    return label.rsplit(': ', 1)[-1] if label.startswith('effect ') else label
+
+
+def channel_growth(summary, island):
+    prior = {(row['water'], row['tick_frame']): row['passes_ms'] for row in island}
+    for row in summary:
+        old = {comparable_pass(label): duration
+               for label, duration in prior[row['water'], row['tick_frame']].items()}
+        for label, duration in row['passes_ms'].items():
+            baseline = old.get(comparable_pass(label))
+            if baseline and duration >= baseline * 1.25:
+                yield row, label, baseline, duration
+
+
+def channel_investigations(summary, island):
+    arms = {(row['water'], row['tick_frame']): row for row in summary}
+    fixed_output = {'synthetic tone encode', 'V1 surface present'}
+    for row, label, baseline, duration in channel_growth(summary, island):
+        paired = arms[not row['water'], row['tick_frame']]
+        other = paired['passes_ms'].get(label)
+        control = f' Paired arm {other:.3f} ms.' if other is not None else ' Absent in the paired arm.'
+        if label in fixed_output:
+            disposition = ('Both scenes run this pass at the same 2560×1440 output extent. '
+                           'Use the paired arm to see whether the common output timing also grew '
+                           'with water absent. The attributed timing and completion bracket '
+                           'under shared load do not isolate scheduling or attribution from '
+                           'input-dependent work.')
+            if other is not None and other < baseline * 1.25:
+                disposition += (' There is no corresponding increase over the island comparison '
+                                'baseline in the channel opposite arm. The increase does not '
+                                'track the number of pixels encoded or presented.')
+        elif label.startswith('effect '):
+            disposition = ('Compared the same named contribution with the island. The camera, '
+                           'wet coverage and participating chart differ. The paired arm '
+                           'shows whether the pass is absent when water is removed.')
+        else:
+            disposition = ('Compared the same named scene pass and tick kind, and reported '
+                           'the paired arm under the same load. Island and channel have '
+                           'different cameras and visible content. Timing attribution and '
+                           'content-dependent work are unresolved by this comparison.')
+        yield {
+            'wire': 'pass grew by at least 25% compared to island',
+            'water': row['water'], 'tick_frame': row['tick_frame'], 'pass': label,
+            'island_ms': baseline, 'channel_ms': duration, 'paired_ms': other,
+            'measurement': (f'{label}: {baseline:.3f} -> {duration:.3f} ms.' + control
+                            + f" Channel frame pass sum {row['gpu_ms']:.3f} ms, "
+                            + f"completion upper bracket {row['completion_upper_ms']:.3f} ms."),
+            'disposition': disposition,
+        }
 
 
 def validate(data, scene):
@@ -147,6 +190,12 @@ def validate(data, scene):
             assert any(i['water'] == row['water'] and i['tick_frame'] == row['tick_frame'] and i['measurement'] and i['disposition'] for i in data['investigations'])
     if scene == 'channel':
         assert data['island_record']['summary']
+        investigated = {(item['water'], item['tick_frame'], item['pass'])
+                        for item in data['investigations']
+                        if item['wire'] == 'pass grew by at least 25% compared to island'
+                        and item.get('measurement') and item.get('disposition')}
+        for row, label, _, _ in channel_growth(data['summary'], data['island_record']['summary']):
+            assert (row['water'], row['tick_frame'], label) in investigated, label
         assert dict(data['body_vertices'])['Lake outlet'] > 0
     if scene == 'island':
         named = data['first_frame_record']

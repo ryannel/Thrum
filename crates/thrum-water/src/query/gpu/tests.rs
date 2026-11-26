@@ -269,7 +269,7 @@ fn query_records_match_the_shader_layout() {
                 cascades,
                 cut_fine_nodes,
                 cut_coarse_nodes,
-                padding,
+                advection_rate,
                 wake,
             ),
         ],

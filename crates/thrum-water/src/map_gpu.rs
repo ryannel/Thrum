@@ -6,6 +6,9 @@ use thrum_render::contribution::EffectTime;
 use thrum_water_model::{BodyKind, Map};
 use wgpu::util::DeviceExt;
 
+mod current_track;
+use current_track::CurrentTrack;
+
 pub(crate) const BODY_LIMIT: usize = 16;
 
 #[repr(C)]
@@ -16,6 +19,7 @@ struct BodyRecord {
     layers: [u32; 4],
     ends: [[f32; 4]; 2],
     joins: [[f32; 4]; 2],
+    track: [f32; 4],
 }
 
 #[repr(C)]
@@ -38,6 +42,7 @@ pub struct MapGpu {
     submitted: Option<StageEndpoints>,
     previous_levels: Option<[f32; BODY_LIMIT]>,
     record: MapRecord,
+    tracks: [Option<CurrentTrack>; BODY_LIMIT],
     support: Vec<[f32; 4]>,
 }
 
@@ -139,6 +144,7 @@ impl MapGpu {
         record.size_count_sea = [width, height, 0, u32::MAX];
         record.swash[0] = map.profile().swash_ratio as f32;
         let mut layers = 1;
+        let mut tracks = std::array::from_fn(|_| None);
         for id in 0..=BODY_LIMIT {
             let Some(body) = map.body(id) else { break };
             let destination = record
@@ -155,6 +161,20 @@ impl MapGpu {
                     destination.layers[0] = 2;
                     destination.layers[2] = layers;
                     layers += 2;
+                    // A chart that joins another moving chart needs the
+                    // neighbour's own phase coordinate through that join.
+                    let still_joins = chart.ends.iter().filter(|end| !end.is_brink()).all(|end| {
+                        !matches!(
+                            map.body(end.body).map(|body| &body.kind),
+                            Some(BodyKind::Chart(_))
+                        )
+                    });
+                    if still_joins && let Some(track) = CurrentTrack::prepare(chart, map.bed()) {
+                        destination.track[0] = track.reference as f32;
+                        destination.track[1] = if track.axis == 0 { 1.0 } else { 2.0 };
+                        tracks[id] = Some(track);
+                        layers += 1;
+                    }
                     for (n, end) in chart.ends.iter().filter(|end| !end.is_brink()).enumerate() {
                         let segment = destination
                             .ends
@@ -229,6 +249,18 @@ impl MapGpu {
                     ];
                 }
                 write_layer(queue, &texture, body.layers[2], &support);
+                if let Some(track) = &tracks[id] {
+                    for (i, pixel) in support.iter_mut().enumerate() {
+                        let section = if track.axis == 0 {
+                            i % size[0]
+                        } else {
+                            i / size[0]
+                        };
+                        let [coordinate, speed] = track.at(section);
+                        *pixel = [coordinate as f32, speed as f32, 0.0, 0.0];
+                    }
+                    write_layer(queue, &texture, body.layers[2] + 2, &support);
+                }
             }
         }
         let info = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -246,11 +278,49 @@ impl MapGpu {
             submitted: None,
             previous_levels: None,
             record,
+            tracks,
             support,
         };
         let authored = stages(map);
         gpu.upload(queue, map, authored, authored);
         Ok(gpu)
+    }
+
+    #[expect(
+        clippy::cast_possible_truncation,
+        clippy::cast_sign_loss,
+        reason = "clamped chart lattice in GPU metres"
+    )]
+    pub(crate) fn wave_track(
+        &self,
+        body: usize,
+        world: [f64; 2],
+        current: [f64; 2],
+        bed: &thrum_water_model::Bed,
+    ) -> [f32; 4] {
+        let Some(track) = self.tracks.get(body).and_then(Option::as_ref) else {
+            return [0.0; 4];
+        };
+        let (origin, spacing, size) = bed.lattice();
+        let axis = track.axis;
+        let grid = ((world[axis] - origin[axis]) / spacing).clamp(
+            0.0,
+            f64::from(u32::try_from(size[axis] - 1).expect("GPU lattice")),
+        );
+        let first = grid.floor() as usize;
+        let next = (first + 1).min(size[axis] - 1);
+        let [coordinate, speed] = track.at(first);
+        let [next_coordinate, next_speed] = track.at(next);
+        let alpha = grid.fract();
+        let coordinate = (next_coordinate - coordinate).mul_add(alpha, coordinate);
+        let speed = (next_speed - speed).mul_add(alpha, speed);
+        let blend = (current[axis].abs() / speed).clamp(0.0, 1.0);
+        [
+            coordinate as f32,
+            track.reference as f32,
+            blend as f32,
+            if axis == 0 { 1.0 } else { 2.0 },
+        ]
     }
 
     /// View over the map's layers, using explicit array dimensionality.

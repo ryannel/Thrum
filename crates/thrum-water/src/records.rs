@@ -154,5 +154,10 @@ pub(super) fn carriage(seconds: f64, period: Option<std::time::Duration>) -> [f3
         reason = "unit interval shader phase"
     )]
     let phase = phase as f32;
-    [phase, period.as_secs_f32(), cycle, 0.0]
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "the continuous cascade phase uses shader time in seconds"
+    )]
+    let seconds = seconds as f32;
+    [phase, period.as_secs_f32(), cycle, seconds]
 }

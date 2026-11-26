@@ -27,26 +27,30 @@ fn long_at(point:vec2<f32>,spacing:f32)->Field {
     let a=long_level(point,low);let b=long_level(point,min(low+1u,7u));
     return add_field(add_field(Field(vec4(0.0),vec4(0.0),vec4(0.0)),a,1.0-fract(lod)),b,fract(lod));
 }
-fn carried_field(reading: Carriage, band: u32) -> Field {
-    let a = cascade_at(reading.first, band);
-    let b = cascade_at(reading.second, band);
-    return Field(mix(b.displacement, a.displacement, reading.weight),
-        mix(b.slope, a.slope, reading.weight), mix(b.velocity, a.velocity, reading.weight));
+fn transported_field(point: vec2<f32>, motion: CascadeMotion, band: u32) -> Field {
+    var sample = cascade_at(motion.departure, band);
+    // Motion vectors track the displaced sheet at its fixed mesh point.
+    let bend = sample.slope.zw;
+    sample.velocity -= vec4(
+        dot(vec2(bend.x, bend.y), motion.drift),
+        dot(sample.slope.xy, motion.drift),
+        dot(vec2(bend.y, sample.velocity.w), motion.drift),
+        0.0);
+    if motion.blend < 1.0 {
+        let ambient = cascade_at(point, band);
+        sample = add_field(add_field(Field(vec4(0.0),vec4(0.0),vec4(0.0)),
+            ambient,1.0-motion.blend),sample,motion.blend);
+    }
+    return sample;
 }
 
-fn field_at(point:vec2<f32>,spacing:f32,gains:vec4<f32>,current:vec2<f32>)->Field {
+fn field_at(point:vec2<f32>,spacing:f32,row:SurfaceRow)->Field {
     let long=long_at(point,spacing);
-    var f=add_field(Field(vec4(0.0),vec4(0.0),vec4(0.0)),long,gains.x);
-    let moving = any(current != vec2(0.0));
-    var reading: Carriage;
-    if moving { reading = carried_points(point, current, water.carriage.xy); }
+    var f=add_field(Field(vec4(0.0),vec4(0.0),vec4(0.0)),long,row.gains.x);
+    let motion = cascade_motion(point, row.current, row.track, water.carriage.w);
     for(var band=0u;band<3u;band++) {
         let fade=1.0-smoothstep(water.lengths[band]/128.0,water.lengths[band]/32.0,spacing);
-        if moving {
-            f=add_field(f,carried_field(reading,band),gains[band+1u]*fade);
-        } else {
-            f=add_field(f,cascade_at(point,band),gains[band+1u]*fade);
-        }
+        f=add_field(f,transported_field(point,motion,band),row.gains[band+1u]*fade);
     }
     return f;
 }
@@ -60,6 +64,7 @@ struct SurfaceRow {
     loss: f32,
     loss_without_long: f32,
     current: vec2<f32>,
+    track: vec4<f32>,
 }
 struct VertexOut {
     @builtin(position) clip:vec4<f32>, @location(0) world:vec3<f32>,
@@ -98,7 +103,7 @@ fn sea_surf_normal(index:u32, local:vec2<f32>, spacing:f32)->vec3<f32> {
     let anchor=select(vec2(0.0),floor(view.camera_xyz_time.xz),sea);
     let rest=anchor+vertex.xy;
     let row=surface_vertex(rest,body);
-    var f=field_at(rest,vertex.z,row.gains,row.current);
+    var f=field_at(rest,vertex.z,row);
     var surf_weight = 0.0;
     var surf_motion = vec3(0.0);
     var surf_normal = vec3(0.0);
@@ -114,9 +119,9 @@ fn sea_surf_normal(index:u32, local:vec2<f32>, spacing:f32)->vec3<f32> {
         let fraction = fract(coarse);
         let blend = select(0.5, max(fraction.x, fraction.y), SURF_CACHE_ENABLED);
         let ap=surface_vertex(p,body);
-        let a=field_at(p,spacing,ap.gains,ap.current);
+        let a=field_at(p,spacing,ap);
         let bp=surface_vertex(q,body);
-        let b=field_at(q,spacing,bp.gains,bp.current);
+        let b=field_at(q,spacing,bp);
         f=add_field(add_field(Field(vec4(0.0),vec4(0.0),vec4(0.0)),a,1.0-blend),b,blend);
         if SURF_CACHE_ENABLED && transformed.w > 0.0 {
             let long_p = long_at(p, spacing);
@@ -189,6 +194,9 @@ fn reflected_sky(slope:vec2<f32>,covariance:vec3<f32>,v:vec3<f32>)->vec4<f32> {
     let wake_slope=wake_at(input.rest,0.0).yz;
     let wake_dx=dpdx(wake_slope);let wake_dy=dpdy(wake_slope);
     var row=surface_pixel(input.rest,input.body);
+    let motion = cascade_motion(input.rest, row.current, row.track, water.carriage.w);
+    let departure_dx = dpdx(motion.departure);
+    let departure_dy = dpdy(motion.departure);
     if !row.owned { discard; }
     let surf_normal = input.surf_normal_variance.xyz;
     let use_sheet_normal = SURF_CACHE_ENABLED && input.surf_weight >= 0.999
@@ -221,20 +229,14 @@ fn reflected_sky(slope:vec2<f32>,covariance:vec3<f32>,v:vec3<f32>)->vec4<f32> {
         differential+=row.gains.x*fade*long_differential;
     }
     slope+=wake_slope;
-    let moving = any(row.current != vec2(0.0));
-    var reading: Carriage;
-    if moving { reading = carried_points(input.rest, row.current, water.carriage.xy); }
     for(var band=0u;band<3u;band++) {
         let scale=water.lengths[band];
         let layer=i32(band*5u);
-        var m: FilteredLayer;
-        if moving {
-            let a=filtered_layer(cascades,periodic,reading.first/scale,dx/scale,dy/scale,layer);
-            let b=filtered_layer(cascades,periodic,reading.second/scale,dx/scale,dy/scale,layer);
-            m=FilteredLayer(mix(b.slope,a.slope,reading.weight),
-                mix(b.second,a.second,reading.weight),mix(b.differential,a.differential,reading.weight));
-        } else {
-            m=filtered_layer(cascades,periodic,input.rest/scale,dx/scale,dy/scale,layer);
+        var m=filtered_layer(cascades,periodic,motion.departure/scale,departure_dx/scale,departure_dy/scale,layer);
+        if motion.blend < 1.0 {
+            let ambient = filtered_layer(cascades,periodic,input.rest/scale,dx/scale,dy/scale,layer);
+            m = FilteredLayer(mix(ambient.slope,m.slope,motion.blend),
+                mix(ambient.second,m.second,motion.blend),mix(ambient.differential,m.differential,motion.blend));
         }
         let gain=row.gains[band+1u];
         slope+=gain*m.slope;
@@ -335,10 +337,10 @@ fn reflected_sky(slope:vec2<f32>,covariance:vec3<f32>,v:vec3<f32>)->vec4<f32> {
     let uv=input.clip.xy*view_aux.viewport_inv_viewport.zw;
     let air=environment_aerial(input.world,uv);
     let colour=(light*air.transmission+air.scatter)*environment_storage_scale();
-    var motion=(input.previous.xy/input.previous.w-input.current.xy/input.current.w)*vec2(0.5,-0.5)*view_aux.viewport_inv_viewport.xy;
-    if water.level_dt_reset.z>0.5 {motion=vec2(65504.0);}
+    var screen_motion=(input.previous.xy/input.previous.w-input.current.xy/input.current.w)*vec2(0.5,-0.5)*view_aux.viewport_inv_viewport.xy;
+    if water.level_dt_reset.z>0.5 {screen_motion=vec2(65504.0);}
     var opacity=surface_opacity(row,input.world,v.y);
     if OPTICS_ENABLED { opacity=smoothstep(0.0,0.095,paths.edge_depth); }
     if FOAM_ENABLED { opacity=max(opacity,whitewater.y); }
-    return Output(vec4(colour,opacity),motion,clamp(fresnel+0.1+whitewater.y,0.0,1.0));
+    return Output(vec4(colour,opacity),screen_motion,clamp(fresnel+0.1+whitewater.y,0.0,1.0));
 }

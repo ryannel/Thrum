@@ -42,18 +42,29 @@ fn submitted_detail_moves_with_chart_current() {
         .with_contribution(Box::new(water), || thrum_app::sky::ContentStatus::Drawn(1))
         .with_contribution(Box::new(tap.contribution(extent)), || thrum_app::sky::ContentStatus::Drawn(1));
     let mut scene = support::Fixture::from_game(&gpu, extent, game, report);
-    scene.frame_without_timings(0.000_000_01);
-    let before = phase(&tap.read(&scene), extent, matrix, centres, k);
-    scene.frame_without_timings(duration + 0.000_000_01);
-    let after = phase(&tap.read(&scene), extent, matrix, centres, k);
-    let control = after[0] - before[0];
-    assert!((control + intrinsic_frequency * duration).abs() < 0.02,
-        "the still-water control must have only the marker wave's intrinsic phase change");
-    for (i, speed) in speeds.into_iter().enumerate() {
-        let measured = -(after[i] - before[i] - control) / (k * duration);
-        let residual = (measured - speed).abs();
-        println!("Metal chart {speed:.2} m/s: {measured:.3} m/s after subtracting still-water wave phase");
-        assert!(residual < 0.22, "carriage: {measured:.4} vs {speed}");
+    let wrapped = |angle: f64| {
+        (angle + std::f64::consts::PI).rem_euclid(std::f64::consts::TAU) - std::f64::consts::PI
+    };
+    let mut frame_phases = Vec::new();
+    // Observe both old blends, both wraps and successive periods with the
+    // same fixture and time step, including the windows that used to reverse.
+    for time in [0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.2,
+        2.4, 2.6, 2.8, 3.0, 3.2, 3.4, 3.6, 3.8, 4.0, 4.2, 4.4, 5.0, 5.2, 7.9, 8.1] {
+        scene.frame_without_timings(time + 0.000_000_01);
+        frame_phases.push((time, phase(&tap.read(&scene), extent, matrix, centres, k)));
+    }
+    for pair in frame_phases.windows(2) {
+        let (start, before) = pair[0];
+        let (end, after) = pair[1];
+        if end - start > duration + 1e-6 { continue; }
+        let control = wrapped(after[0] - before[0]);
+        assert!((control + intrinsic_frequency * duration).abs() < 0.02,
+            "the still-water control must have only the marker wave's intrinsic phase change");
+        for (i, speed) in speeds.into_iter().enumerate() {
+            let measured = -wrapped(after[i] - before[i] - control) / (k * duration);
+            println!("Metal t={start:.1}–{end:.1}s, chart {speed:.2} m/s: {measured:.3} m/s after subtracting intrinsic phase");
+            assert!((measured - speed).abs() < 0.22, "carriage: {measured:.4} vs {speed}");
+        }
     }
 }
 }

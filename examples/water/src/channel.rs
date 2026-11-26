@@ -30,7 +30,6 @@ pub const RELEASE: [f64; 2] = [213.5, CENTRE];
 /// The outlet's winds follow the reach. The sea swell comes in from offshore.
 pub fn forcing(wind: Wind) -> Forcing {
     let mut forcing = wind.forcing();
-    forcing.wind_direction = std::f64::consts::FRAC_PI_2;
     // The island shelters the outlet from a long wind sea. The offshore
     // swell remains in the world field and enters through the tidal join.
     forcing.fetch = 17_000.0;
@@ -166,12 +165,9 @@ pub fn build(wind: Wind, draw_water: bool, running: bool) -> Result<Scene, Box<d
     });
     let fallback = crate::floating::fallback(&spectrum, profile.waves.choppiness)?;
     let mut water = Water::mapped(Arc::clone(&map), spectrum, profile)?;
-    #[expect(
-        clippy::cast_possible_truncation,
-        reason = "bounded authored wind speeds"
-    )]
-    let wind_speed = forcing.wind_speed as f32;
-    let hulls = water.enable_foam([wind_speed, 0.0])?;
+    let (north, east) = forcing.wind_direction.sin_cos();
+    let wind = glam::DVec2::new(east, north) * forcing.wind_speed;
+    let hulls = water.enable_foam(wind.as_vec2().to_array())?;
     let report = water.report();
     let foam = water.tap_foam();
     let query = water.query_mailbox().expect("channel query");
@@ -281,7 +277,7 @@ pub fn build(wind: Wind, draw_water: bool, running: bool) -> Result<Scene, Box<d
         &water,
         fallback,
         hulls,
-        f64::from(wind_speed),
+        wind,
     );
     let game = if draw_water {
         game.with_contribution(Box::new(water), || ContentStatus::Drawn(1))

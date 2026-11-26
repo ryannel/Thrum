@@ -77,17 +77,19 @@ fn cascade_column(uv: vec2<f32>, band: u32, lod: f32) -> Wave {
     return Wave(displacement, slope.xy, vec3(slope.zw, velocity.w), velocity.xyz);
 }
 
-// The rendered surface, query and wet support read the same two upstream phases.
-fn carried_column(point: vec2<f32>, current: vec2<f32>, phase: vec2<f32>,
-    extent: f32, band: u32, lod: f32) -> Wave {
-    if all(current == vec2(0.0)) {
-        return cascade_column(point / extent, band, lod);
-    }
-    let reading = carried_points(point, current, phase);
-    let a = cascade_column(reading.first / extent, band, lod);
-    let b = cascade_column(reading.second / extent, band, lod);
-    return Wave(mix(b.displacement, a.displacement, reading.weight),
-        mix(b.slope, a.slope, reading.weight),
-        mix(b.differential, a.differential, reading.weight),
-        mix(b.velocity, a.velocity, reading.weight));
+struct CarriedColumn {
+    wave: Wave,
+    advection_rate: f32,
+}
+
+// The rendered surface, query and wet support read the same departure point.
+fn carried_column(point: vec2<f32>, motion: CascadeMotion, extent: f32, band: u32, lod: f32) -> CarriedColumn {
+    let carried = cascade_column(motion.departure / extent, band, lod);
+    let advection_rate = -dot(carried.slope, motion.drift) * motion.blend;
+    if motion.blend >= 1.0 { return CarriedColumn(carried, advection_rate); }
+    let ambient = cascade_column(point / extent, band, lod);
+    return CarriedColumn(Wave(mix(ambient.displacement, carried.displacement, motion.blend),
+        mix(ambient.slope, carried.slope, motion.blend),
+        mix(ambient.differential, carried.differential, motion.blend),
+        mix(ambient.velocity, carried.velocity, motion.blend)), advection_rate);
 }

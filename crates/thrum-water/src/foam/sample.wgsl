@@ -22,21 +22,25 @@ struct FoamEndpoints {
 
 fn column_component(index: u32) -> Component { return foam_settings.components[index]; }
 
-fn foam_column(point: vec2<f32>, gains: vec4<f32>, dt: f32, current: vec2<f32>) -> Wave {
+fn foam_column(point: vec2<f32>, gains: vec4<f32>, dt: f32, row: MapAnswer) -> Wave {
     var field = long_wave(point - foam_settings.camera.xy, dt, gains.x,
         foam_settings.camera.w, foam_settings.banks.w);
     let slope = world_slope(field);
     field.velocity.y -= dot(slope, field.velocity.xz);
     field.slope = slope;
+    let current = row.row.water.yz;
+    let track = map_wave_track(point, row.body, current);
+    let motion = cascade_motion(point, current, track, water.carriage.w);
     for (var band = 0u; band < 3u; band++) {
         let gain = gains[band + 1u];
         if gain * water.heights[band + 1u] <= 0.0 { continue; }
-        let phase = water.carriage.xy;
-        let sample = carried_column(point, current, phase, water.lengths[band], band, 0.0);
-        let velocity = gain * sample.velocity.y;
-        field.displacement.y += gain * sample.displacement.y + dt * velocity;
-        field.slope += world_slope(Wave(sample.displacement, gain * sample.slope,
+        let carried = carried_column(point, motion, water.lengths[band], band, 0.0);
+        let sample = carried.wave;
+        let band_slope = world_slope(Wave(sample.displacement, gain * sample.slope,
             gain * sample.differential, sample.velocity));
+        let velocity = gain * (sample.velocity.y + carried.advection_rate);
+        field.displacement.y += gain * sample.displacement.y + dt * velocity;
+        field.slope += band_slope;
         field.velocity.y += velocity;
     }
     return field;

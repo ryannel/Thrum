@@ -4,10 +4,10 @@ struct QueryPoint {
     slope: vec2<f32>, body: u32, flags: u32,
     gains: vec4<f32>,
     dent: vec4<f32>,
-    surf_stage: vec4<f32>,
+    surf_stage: vec4<f32>, // stage, wave track coordinate, speed and blend
     fine_bounds: vec4<i32>,
     coarse_grid: vec4<i32>,
-    carry: vec4<f32>,
+    carry: vec4<f32>, // cascade and wake time offsets, wave track axis
 }
 struct Settings {
     origin: vec2<f32>, count: u32, components: u32,
@@ -29,7 +29,7 @@ struct Answer {
     cascades: array<CascadeSample, 3>,
     cut_fine_nodes: u32,
     cut_coarse_nodes: u32,
-    padding: array<u32, 3>,
+    advection_rate: array<f32, 3>,
     wake: vec4<f32>,
 }
 @group(0) @binding(0) var<uniform> settings: Settings;
@@ -40,11 +40,10 @@ struct Answer {
 
 fn column_component(index: u32) -> Component { return components[index]; }
 
-fn cascade_wave(point: QueryPoint, band: u32) -> Wave {
+fn cascade_wave(point: QueryPoint, motion: CascadeMotion, band: u32) -> CarriedColumn {
     let extent = settings.lengths_chop[band];
     let lod = clamp(log2(max(1.0, point.radius * 512.0 / extent)), 0.0, 8.0);
-    return carried_column(point.position, point.level_current_bed.yz, settings.swash_margin.zw,
-        extent, band, lod);
+    return carried_column(point.position, motion, extent, band, lod);
 }
 
 struct QueryWave { wave: Wave, cut_fine_nodes: u32, cut_coarse_nodes: u32, }
@@ -69,11 +68,15 @@ fn write_answer(index: u32, point: QueryPoint, gains: vec4<f32>, result: QueryWa
     out.current_bed = vec4(row.yzw, 0.0);
     // A stage change can make a dry or sheltered point gain wave support
     // before its use tick. Keep the actual frame samples for that case.
+    let track = vec4(point.surf_stage.yzw, point.carry.z);
+    let motion = cascade_motion(point.position, row.yz, track, settings.swash_margin.z);
     var bands: array<Wave, 3>;
     for (var band = 0u; band < 3u; band++) {
         if settings.heights[band + 1u] > 0.0 {
-            let wave = cascade_wave(point, band);
+            let carried = cascade_wave(point, motion, band);
+            let wave = carried.wave;
             bands[band] = wave;
+            out.advection_rate[band] = carried.advection_rate;
             out.cascades[band] = CascadeSample(
                 wave.displacement.y,
                 array(wave.slope.x, wave.slope.y),
@@ -98,7 +101,7 @@ fn write_answer(index: u32, point: QueryPoint, gains: vec4<f32>, result: QueryWa
                 let wave = bands[band];
                 let band_slope = world_slope(Wave(wave.displacement, gain * wave.slope, gain * wave.differential, wave.velocity));
                 // The cascades are sampled at a fixed column in their periodic lattice.
-                let band_rate = gain * wave.velocity.y;
+                let band_rate = gain * (wave.velocity.y + out.advection_rate[band]);
                 out.layers[band + 1u] = gain * wave.displacement.y + point.carry.x * band_rate;
                 slope += band_slope;
                 velocity += gain * wave.velocity;

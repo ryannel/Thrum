@@ -237,6 +237,105 @@ const islandObserver = `
   });
 `;
 
+async function inspectChannelRipples(evaluate) {
+  // Isolate a marker wave with the actual departure functions and map used
+  // by the WebGPU surface. The Metal probe fits it to submitted depth.
+  const windows=[0,0.4,0.8,1,1.8,1.95,2.8,3.8,3.95,5,7.95,59.95,279.95];
+  const samples=await evaluate(`(async()=>{
+    const d=__devices.at(-1), source=__island.source;
+    const start=source.indexOf('fn cascade_departure');
+    const end=source.indexOf('// Two readings',start);
+    const departure=source.slice(start,end);
+    if (start<0 || end<0 || !source.includes('cascade_motion(input.rest, row.current') ||
+        !source.includes('cascade_motion(point, row.current, row.track, water.carriage.w)')) {
+      throw Error('submitted vertex and fragment carriage functions unavailable');
+    }
+    const map=('const BODY_LIMIT'+source.split('const BODY_LIMIT')[1].split('fn surface_body')[0])
+      .replace('WATER_MAP_GROUP = 3u','WATER_MAP_GROUP = 0u');
+    const starts=${JSON.stringify(windows)};
+    const count=starts.length*5;
+    const size=count*16;
+    const code=departure+map+\`
+      @group(0) @binding(0) var<storage, read_write> drift: array<vec4<f32>>;
+
+      fn chart_motion(place: vec2<f32>, seconds: f32) -> CascadeMotion {
+        let row = map_sample(place);
+        let current = row.row.water.yz;
+        return cascade_motion(place, current, map_wave_track(place, row.body, current), seconds);
+      }
+
+      @compute @workgroup_size(1)
+      fn probe(@builtin(global_invocation_id) id: vec3<u32>) {
+        let index = id.x;
+        let windows = array<f32, \${starts.length}>(\${starts.map(t=>t.toFixed(2)).join(',')});
+        let reach = index % 5u;
+        let start = windows[index / 5u];
+        let end = start + 0.2;
+        let k = 0.7853981634;
+        let omega = sqrt(9.81 * k);
+        var before: f32;
+        var after: f32;
+        var gradient = 1.0;
+        var track: f32;
+        var speed: f32;
+        if reach < 3u {
+            speed = array<f32, 3>(0.0, 0.5, 1.5)[reach];
+            let point = vec2(11.0, -3.0);
+            let current = vec2(speed, 0.0);
+            before = cascade_motion(point, current, vec4(0.0), start).departure.x;
+            after = cascade_motion(point, current, vec4(0.0), end).departure.x;
+        } else {
+            let point = vec2(select(228.0, 256.0, reach == 4u), 5.0);
+            let row = map_sample(point);
+            speed = row.row.water.y;
+            track = map_wave_track(point, row.body, row.row.water.yz).w;
+            before = chart_motion(point, start).departure.x;
+            after = chart_motion(point, end).departure.x;
+            let left = chart_motion(point - vec2(0.1, 0.0), 0.0).departure.x;
+            let right = chart_motion(point + vec2(0.1, 0.0), 0.0).departure.x;
+            gradient = (right - left) / 0.2;
+        }
+        let delta = k * (after - before) - omega * (end - start);
+        drift[index] = vec4(atan2(sin(delta), cos(delta)), gradient, speed, track);
+      }
+    \`;
+    const module=d.createShaderModule({code});
+    const layout=d.createBindGroupLayout({entries:[
+      {binding:0,visibility:GPUShaderStage.COMPUTE,buffer:{type:'storage'}},
+      {binding:5,visibility:GPUShaderStage.COMPUTE,texture:{sampleType:'unfilterable-float',viewDimension:'2d-array'}},
+      {binding:6,visibility:GPUShaderStage.COMPUTE,buffer:{type:'uniform'}}
+    ]});
+    const pipe=await d.createComputePipelineAsync({layout:d.createPipelineLayout({bindGroupLayouts:[layout]}),
+      compute:{module,entryPoint:'probe'}});
+    const storage=d.createBuffer({size,usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_SRC});
+    const staging=d.createBuffer({size,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ});
+    const group=d.createBindGroup({layout,entries:[{binding:0,resource:{buffer:storage}},
+      ...__island.bindings.filter(e=>e.binding===5||e.binding===6)]});
+    const enc=d.createCommandEncoder(), pass=enc.beginComputePass();
+    pass.setPipeline(pipe);pass.setBindGroup(0,group);pass.dispatchWorkgroups(count);pass.end();
+    enc.copyBufferToBuffer(storage,0,staging,0,size);d.queue.submit([enc.finish()]);
+    await staging.mapAsync(GPUMapMode.READ);
+    const phases=Array.from(new Float32Array(staging.getMappedRange()));
+    staging.unmap();staging.destroy();storage.destroy();
+    return {phases,departure,map};
+  })()`);
+  const k=2*Math.PI/8, duration=0.2;
+  const rows=windows.map((start,i)=>{
+    const still=samples.phases[i*20];
+    assert(Math.abs(still+Math.sqrt(9.81*k)*duration)<0.001,'incorrect still marker phase');
+    const reaches=Array.from({length:5},(_,j)=>{
+      const [phase,gradient,expected,track]=samples.phases.slice(i*20+j*4,i*20+j*4+4);
+      const speed=(still-phase)/(k*duration*gradient);
+      if(j>=3)assert(track===1&&gradient>0&&expected>0,'live chart phase track unavailable');
+      assert(Math.abs(speed-expected)<(j>=3?0.065:0.02),'browser ripple reversed or drifted: '+JSON.stringify({start,j,speed,expected}));
+      return {speed,expected,phase,gradient,track};
+    });
+    assert(reaches[4].speed>reaches[3].speed+0.6,'live chart narrows did not carry the marker faster');
+    return {start,duration,reaches};
+  });
+  return {source_sha256:hash(samples.departure+samples.map),rows};
+}
+
 async function inspectIsland(evaluate, result) {
   const rustc=execFileSync('rustup',['which','--toolchain','stable','rustc'],{encoding:'utf8'}).trim();
   const oracle=JSON.parse(execFileSync('rustup',['run','stable','cargo','run','--quiet','--release',
@@ -410,7 +509,7 @@ try {
   await cdp.call('Page.enable',{},sid);await cdp.call('Runtime.enable',{},sid);
   await installWasmReceipt(cdp,sid);
   const surfRoute=mode==='surf'||surfInspection;
-  await cdp.call('Page.addScriptToEvaluateOnNewDocument',{source:observer+(['island','surf'].includes(mode)?islandObserver:'')+`\ndocument.addEventListener('DOMContentLoaded',()=>{document.querySelector('canvas').width=${width};document.querySelector('canvas').height=${height};});`},sid);
+  await cdp.call('Page.addScriptToEvaluateOnNewDocument',{source:observer+(['island','surf','channel'].includes(mode)?islandObserver:'')+`\ndocument.addEventListener('DOMContentLoaded',()=>{document.querySelector('canvas').width=${width};document.querySelector('canvas').height=${height};});`},sid);
   const route=opticsRoute??(surfRoute?(handoffCut?'?surf=gale':'?surf=trade'):mode==='foam'?'?foam=calm&speed=6&view=overhead&wake-bodies=1':mode==='wake'?'?wake=calm&speed=6&view=overhead&wake-bodies=1':mode==='bodies'?'?bodies=trade&speed=5':mode==='island'?'?island=trade':mode==='channel'?'?channel=trade':'');
   result.route=route;
   await cdp.call('Page.navigate',{url:url+route},sid);
@@ -471,6 +570,7 @@ try {
     },'cooked channel drawn');
     const start=await float();
     await capture('channel-narrows',1000);
+    const ripples=await inspectChannelRipples(evaluate);
     for(let i=0;i<12;i++){
       await until(()=>evaluate('game.frame_ready()'),'channel frame slot');
       await drive(1000/30);
@@ -498,7 +598,7 @@ try {
     await capture('channel-mouth',1000/30);
     const end=await float();
     assert(start[0]<215&&start[3]===3&&end[0]>350.5&&end[3]===0&&end[4]>0&&end.every(Number.isFinite),'the float did not enter the sea: '+JSON.stringify({start,course,end}));
-    result.channel={start,detail,course,end};
+    result.channel={start,ripples,detail,course,end};
   } else if(mode==='foam'){
     const runFoam=async steps=>{
       for(let index=0;index<steps;index++){
