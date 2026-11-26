@@ -1290,3 +1290,11 @@
   The long-join reproduction on Metal skips the gather in the deep-only view and runs it
   with the shelf in view. The split-bed mask matches the basin and the calm panel still reflects.
   [WP24 partial-join evidence](../../../.orchestrate/evidence/WATERS/WP24/partial-joins/README.md).
+- 2026-11-26 WP9. The example's hand-authored chart and cut terrain run from lake to sea.
+  The draw shares a near lattice across the tidal join. A shallower lower grade spreads the
+  backwater transition. Current carries the ripple and foam
+  detail, and each foam reading renews at zero weight. Metal submitted depth and queries
+  check the joins, and elapsed takes cover the stage changes and held low tide. The float
+  reached wet sea ownership on Metal and hardware Chrome. The paired 1440p Metal record
+  keeps the concurrent-load tripwire investigations.
+  [WP9 target evidence](../../../.orchestrate/evidence/WATERS/WP9/README.md).
