@@ -16,13 +16,10 @@ extern "C" fn thrum_v1_open_invite(bytes: *const u8, len: usize, font_store: *co
     if bytes.is_null() || len == 0 || font_store.is_null() {
         return;
     }
-    // SAFETY: The app's Swift handler keeps both buffers live during this synchronous call.
-    let (payload, content) = unsafe {
-        (
-            std::str::from_utf8(std::slice::from_raw_parts(bytes, len)),
-            CStr::from_ptr(font_store).to_str(),
-        )
-    };
+    // SAFETY: The app's Swift handler keeps the payload live during this call.
+    let payload = std::str::from_utf8(unsafe { std::slice::from_raw_parts(bytes, len) });
+    // SAFETY: Swift lends a NUL-terminated path for this synchronous call.
+    let content = unsafe { CStr::from_ptr(font_store) }.to_str();
     if let (Ok(payload), Ok(content)) = (payload, content) {
         request_scene(SceneRequest {
             payload: payload.to_owned(),

@@ -1,4 +1,4 @@
-import init, { create_scene } from './scene.js';
+import init, * as scene from './scene.js';
 import { bindControls } from './thrum-controls.js';
 import { mountPage } from './host-page.js';
 import { mountInterfaceInput } from './interface-input.js';
@@ -12,7 +12,8 @@ try {
   await init();
   const config = await fetch('config.json').then(r => r.json());
   const query = new URLSearchParams(location.search);
-  const game = await create_scene(canvas, query.get('store') ?? config.store);
+  const create = scene.create_game_scene ?? scene.create_scene;
+  const game = await create(canvas, query.get('store') ?? config.store);
   window.game = game;
   const recover = document.querySelector('#recover');
   document.title = game.title();

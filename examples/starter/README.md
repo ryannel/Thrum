@@ -285,7 +285,7 @@ shells. Its Rust package owns the world, scene, cooked font and interface. Its
   your game uses the output extent, density, safe area or first-chance input. Add your package
   to the workspace and to `.config/architecture.toml`. With one window binary and an `assets/`
   folder, `./dev scene examples/my-game` builds the game, cooks its assets and opens the window.
-- For Chrome, export an async `create_scene(canvas, store)` from the same binary on Wasm. Use
+- For Chrome, export an async `create_game_scene(canvas, store)` from the same binary on Wasm. Use
   `thrum_app::web::PageGame` and `export_page_methods!` with the same `Game` and an
   `InlineWorld`. Your facade provides `title()` and `report()`. For an interface, use the
   canvas interface methods in the [Crowd page](../crowd-2d-status/src/browser.rs).

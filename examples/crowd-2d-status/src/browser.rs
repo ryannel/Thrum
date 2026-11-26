@@ -26,7 +26,10 @@ pub struct CrowdPage {
 ///
 /// # Errors
 /// Returns a content or browser device preparation refusal.
-pub async fn create_scene(canvas: HtmlCanvasElement, store: String) -> Result<CrowdPage, JsValue> {
+pub async fn create_game_scene(
+    canvas: HtmlCanvasElement,
+    store: String,
+) -> Result<CrowdPage, JsValue> {
     let mut client = DevClient::new(BrowserFetch, &store).map_err(js)?;
     let generation = client
         .poll()
