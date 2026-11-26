@@ -1091,3 +1091,10 @@ adjacent source peaks occurred at different distances, 4.05 km at image row 710 
 far peak directly and still showed a shallow band of light. The stock render and authored selections
 are in use.
 [Scene-linear probe and peak views](../../../.orchestrate/evidence/CLOUDS/WP14/shaft-target-pairs/README.md)
+
+A scene-linear Metal probe mapped mist extinction and Sun-path optical depth at nine altitudes
+for seven Sun positions. Some stock openings crossed occupied mist over several successive
+heights. Fourteen ordinary Metal captures aimed at the ranked openings still showed pools or
+horizontal bands. The probe shader stayed in scratch.
+[Atlas, pose selection and target captures](../../../.orchestrate/evidence/CLOUDS/WP14/shaft-target-pairs/world-atlas/README.md)
+Three fixed Chrome WebGPU captures reproduced the Metal pool and band shapes at matching poses.
