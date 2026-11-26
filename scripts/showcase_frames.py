@@ -35,7 +35,7 @@ def wait_for_route_record(process, output, first, last):
     """Observe the end of the route and completion of every in-route present's timing sample."""
     deadline = time.monotonic() + MAC_ROUTE_TIMEOUT
     pending = set()
-    past_end = False
+    end_present_media = None
     with (output / 'frames.jsonl').open('rb') as stream:
         while process.poll() is None and time.monotonic() < deadline:
             position = stream.tell()
@@ -48,10 +48,13 @@ def wait_for_route_record(process, output, first, last):
             if row['presented']:
                 if first <= row['world_tick'] <= last:
                     pending.add(row['submission'])
-                past_end |= row['world_tick'] > last
+                if end_present_media is None and row['world_tick'] > last:
+                    end_present_media = row['present_media']
             pending.difference_update(sample['submission'] for sample in row['governor']['samples'])
-            if past_end and not pending:
-                return
+            if end_present_media is not None and not pending:
+                callbacks = read_flushed_rows(output / 'display.jsonl')
+                if callbacks and callbacks[-1]['target'] >= end_present_media:
+                    return
     raise ValueError(f'Mac exit window did not finish the route and its timing record; see {output / "game.log"}')
 
 
@@ -108,6 +111,85 @@ def mac_window(output, binary, env, route, *, day):
     return mac_record(output, first, last, day, startup, observed_load)
 
 
+def note_deadline_crossings(frames, misses):
+    """Join host-clock stages to every crossed deadline, independent of callback sequence."""
+    deadlines = [miss['target_media'] for miss in misses]
+    for frame in frames:
+        for stage, start, finish in frame['work']:
+            first = bisect_right(deadlines, start)
+            last = bisect_right(deadlines, finish)
+            for index in range(first, last):
+                misses[index]['work_crossing_deadline'].append({
+                    'stage': stage, 'sequence': frame['sequence'], 'submission': frame['submission'],
+                    'start_media': start, 'end_media': finish, 'wall_ms': (finish - start) * 1000,
+                })
+    for miss in misses:
+        if miss['work_crossing_deadline']:
+            miss['investigation'] = 'render-owner wall-time work crossed the deadline'
+
+
+def mac_opportunities(frames, callbacks, presents, samples, first, last, day):
+    times = [row['present_media'] for row in presents]
+    if any(right <= left for left, right in zip(times, times[1:])):
+        raise ValueError('Mac present-call times must increase')
+    # Include the gaps that straddle the route, including ticks with no presents.
+    start_present = next(row for row in reversed(presents) if row['world_tick'] < first)
+    end_present = next(row for row in presents if row['world_tick'] > last)
+    start_media, end_media = start_present['present_media'], end_present['present_media']
+    by_sequence = {row['sequence']: row for row in frames}
+    period = 1 / 60
+    misses = []
+    timeline = []
+    for previous, current in zip(callbacks, callbacks[1:]):
+        start, target = previous['target'], current['target']
+        if target <= start:
+            raise ValueError('Mac display-link targets must increase')
+        if target <= start_media or start >= end_media:
+            continue
+        interval = current['media'] - previous['media']
+        if interval <= 0:
+            raise ValueError('Mac display callbacks must increase')
+        # Anchor absent opportunities to the new display-link target.
+        opportunities = max(1, int((target - start) / period + 0.5))
+        subdivisions = [start, *(target - index * period for index in range(opportunities - 1, 0, -1)),
+                        target]
+        counted = excess_presents = 0
+        for begin, end in zip(subdivisions, subdivisions[1:]):
+            if not start_media < end <= end_media:
+                continue
+            counted += 1
+            present_index = bisect_left(times, begin)
+            following_index = bisect_left(times, end)
+            if present_index != following_index:
+                excess_presents += following_index - present_index - 1
+                continue
+            preceding = presents[following_index - 1]
+            following = presents[following_index]
+            tick = min(last, max(first, preceding['world_tick']))
+            position = {'world_tick': tick, 'route_tick': tick - first}
+            if day:
+                position['solar_hours'] = 24 * (tick - first) / (last - first)
+            misses.append({
+                'position': position, 'duration_ms': (following['present_media'] - preceding['present_media']) * 1000,
+                'opportunity_ms': (end - begin) * 1000, 'target_media': end, 'callback_interval_ms': interval * 1000,
+                'previous_submission': preceding['submission'], 'next_submission': following['submission'],
+                'previous_present_media': preceding['present_media'], 'next_present_media': following['present_media'],
+                'preceding_callback': previous, 'following_callback': current,
+                'nearby_frame_reports': [by_sequence[row['sequence']] for row in (previous, current)
+                                         if row['sequence'] in by_sequence],
+                'work_crossing_deadline': [], 'previous_sample': samples.get(preceding['submission']),
+                'next_sample': samples.get(following['submission']), 'investigation': 'unresolved under load',
+                'evidence_read': 'display-link targets, host present calls, render-owner work spans and GPU-complete samples',
+            })
+        if counted:
+            timeline.append({'sequence': previous['sequence'], 'callback_interval_ms': interval * 1000,
+                             'opportunities': counted, 'excess_presents': excess_presents})
+    if not timeline or callbacks[-1]['target'] < end_media:
+        raise ValueError('Mac display-link targets do not cover the end of the measured presents')
+    note_deadline_crossings(frames, misses)
+    return timeline, misses
+
+
 def mac_record(output, first, last, day, startup, load):
     frames = read_flushed_rows(output / 'frames.jsonl')
     callbacks = read_flushed_rows(output / 'display.jsonl')
@@ -121,61 +203,7 @@ def mac_record(output, first, last, day, startup, load):
     if any(not samples[row['submission']]['gpu_pass_ns'] for row in measured):
         raise ValueError('a completed frame has no named GPU timings')
     sampled = {row['submission']: samples[row['submission']] for row in measured}
-    by_sequence = {row['sequence']: row for row in frames}
-    requested = [row for row in callbacks
-                 if measured[0]['sequence'] <= row['sequence'] <= measured[-1]['sequence'] + 1]
-    period = 1 / 60
-    latest = measured[0]
-    misses = []
-    timeline = []
-    present_index = 0
-    for previous, current in zip(requested, requested[1:]):
-        start, target = previous['target'], current['target']
-        interval = current['media'] - previous['media']
-        if interval <= 0 or target <= start:
-            raise ValueError('Mac display callbacks and their targets must increase')
-        # The window accounts for presents against the display-link target.
-        # Anchor absent opportunities to the new target just as the host does.
-        opportunities = max(1, int((target - start) / period + 0.5))
-        subdivisions = [start, *(target - index * period for index in range(opportunities - 1, 0, -1)),
-                        target]
-        for begin, end in zip(subdivisions, subdivisions[1:]):
-            while present_index < len(presents) and presents[present_index]['present_media'] < begin:
-                latest = presents[present_index]
-                present_index += 1
-            following_present = present_index
-            while (following_present < len(presents)
-                   and presents[following_present]['present_media'] < end):
-                following_present += 1
-            interval_presents = presents[present_index:following_present]
-            if len(interval_presents) != 1:
-                nearby_frames = [by_sequence[row['sequence']] for row in (previous, current)
-                                 if row['sequence'] in by_sequence]
-                crossing_work = [{'stage': stage, 'submission': frame['submission'],
-                                  'wall_ms': (finish - begin_work) * 1000}
-                                 for frame in nearby_frames
-                                 for stage, begin_work, finish in frame['work']
-                                 if begin_work < end <= finish]
-                tick = min(last, max(first, latest['world_tick']))
-                position = {'world_tick': tick, 'route_tick': tick - first}
-                if day:
-                    position['solar_hours'] = 24 * (tick - first) / (last - first)
-                misses.append({'position': position, 'duration_ms': (end - begin) * 1000,
-                               'target_media': end, 'callback_interval_ms': interval * 1000,
-                               'previous_submission': latest['submission'],
-                               'interval_submissions': [frame['submission'] for frame in interval_presents],
-                               'next_submission': presents[following_present]['submission']
-                               if following_present < len(presents) else None,
-                               'preceding_callback': previous, 'following_callback': current,
-                               'nearby_frame_reports': nearby_frames, 'work_crossing_deadline': crossing_work,
-                               'previous_sample': samples.get(latest['submission']),
-                               'next_sample': samples.get(presents[following_present]['submission'])
-                               if following_present < len(presents) else None,
-                               'investigation': ('render-owner wall-time work crossed the deadline'
-                                                 if crossing_work else 'unresolved under load'),
-                               'evidence_read': 'display-link targets and callback intervals, neighbouring render-owner stages and GPU-complete samples'})
-        timeline.append({'sequence': previous['sequence'], 'callback_interval_ms': interval * 1000,
-                         'opportunities': opportunities})
+    timeline, misses = mac_opportunities(frames, callbacks, presents, samples, first, last, day)
     prepared = json.loads((output / 'prepared.json').read_text())
     surfaces = read_flushed_rows(output / 'display/frames.jsonl')
     presented_surfaces = {row['format'] for row in surfaces if row.get('presented')}
@@ -201,6 +229,47 @@ def mac_record(output, first, last, day, startup, load):
             'completed_frames': len(sampled), 'frame_timing': 'frames.jsonl'}
 
 
+def chrome_callback_misses(callbacks, samples, first, last, day):
+    misses = []
+    for previous, current in zip(callbacks, callbacks[1:]):
+        if current['tick'] < first or previous['tick'] > last:
+            continue
+        interval = current['raf_ms'] - previous['raf_ms']
+        if interval <= 0:
+            raise ValueError('Chrome animation timestamps are not increasing')
+        if interval < 25:
+            continue
+        tick = min(last, current['tick'])
+        position = {'world_tick': tick, 'route_tick': tick - first}
+        if day:
+            position['solar_hours'] = 24 * (tick - first) / (last - first)
+        earlier = bisect_left(samples, previous['tick'], key=lambda row: row['tick'])
+        later = bisect_right(samples, current['tick'], key=lambda row: row['tick'])
+        start = previous['requested_ms']
+        expected = start + 1000 / 60
+        wake = current['requested_ms']
+        driver_end = previous['drain_finished_ms']
+        blocking_work = []
+        for stage, begin, finish in (
+            ('page frame driver', start, previous['returned_ms']),
+            ('page work after frame return', previous['returned_ms'], driver_end),
+        ):
+            blocked = min(finish, wake) - max(begin, expected)
+            if blocked > 0:
+                blocking_work.append({'stage': stage, 'start_ms': begin, 'end_ms': finish,
+                                      'past_callback_budget_ms': blocked})
+        misses.append({'position': position, 'duration_ms': interval,
+                       'preceding_callback': previous, 'following_callback': current,
+                       'preceding_driver_ms': driver_end - start,
+                       'page_work_past_callback_budget': blocking_work,
+                       'remaining_wait_ms': max(0, wake - max(expected, driver_end)),
+                       'available_frame_samples': samples[max(0, earlier - 1):later + 1],
+                       'investigation': ('observed page work overran the callback budget'
+                                         if blocking_work else 'unresolved under load'),
+                       'evidence_read': 'animation-frame timestamps, page driver and post-frame work, available GPU pass samples'})
+    return misses
+
+
 def chrome_record(output, wasm_hash, day):
     manifest = json.loads((output / 'manifest.json').read_text())
     runtime = json.loads((output / 'runtime.json').read_text())
@@ -218,24 +287,7 @@ def chrome_record(output, wasm_hash, day):
         raise ValueError('Chrome had no completed frames with timestamp queries requested')
     samples.sort(key=lambda row: (row['tick'], row['submission']))
     measured = [row for row in callbacks if first <= row['tick'] <= last]
-    misses = []
-    for previous, current in zip(measured, measured[1:]):
-        interval = current['raf_ms'] - previous['raf_ms']
-        if interval <= 0:
-            raise ValueError('Chrome animation timestamps are not increasing')
-        if interval < 25:
-            continue
-        position = {'world_tick': current['tick'], 'route_tick': current['tick'] - first}
-        if day:
-            position['solar_hours'] = 24 * (current['tick'] - first) / (last - first)
-        earlier = bisect_left(samples, previous['tick'], key=lambda row: row['tick'])
-        later = bisect_right(samples, current['tick'], key=lambda row: row['tick'])
-        misses.append({'position': position, 'duration_ms': interval,
-                       'preceding_callback': previous, 'following_callback': current,
-                       'preceding_driver_ms': previous['drain_finished_ms'] - previous['requested_ms'],
-                       'available_frame_samples': samples[max(0, earlier - 1):later + 1],
-                       'investigation': 'unresolved under load',
-                       'evidence_read': 'animation-frame timestamps, JS driver times and available GPU pass samples'})
+    misses = chrome_callback_misses(callbacks, samples, first, last, day)
     content = runtime.get('exit_cooked', {})
     return {'selections': runtime['exit_selections'], 'cooked_root': content.get('cooked_root'),
             'cooked_generation': content.get('drawn'), 'target': 'chrome-webgpu',
