@@ -1080,7 +1080,7 @@
           "lock": "gpu",
           "ask": "Does the test save and load through wgpu's public `PipelineCache::get_data` and `create_pipeline_cache`, with no Metal persistence call of the engine's own anywhere in the product? Does any shipping path write the archive during play?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP12/qualification/D12.1.log",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP12/review-repair/D12.1.log",
           "verdict": "pass",
           "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP12-review.md",
           "builder_result": "pass"
@@ -1092,7 +1092,7 @@
           "lock": "gpu",
           "ask": "Is a miss made an error by Metal's own option on the pipeline, not by a counter read afterwards? Are the two failing cases run by the same command as the passing one?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP12/qualification/archive-witness/archive-witness.json",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP12/review-repair/archive-witness/archive-witness.json",
           "verdict": "pass",
           "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP12-review.md",
           "builder_result": "pass"
@@ -1104,7 +1104,7 @@
           "lock": "gpu",
           "ask": "Is the digest in the game's header taken at harvest over the complete byte sequence `get_data` returned? Does every call in the product that gives file data to `create_pipeline_cache` come after that digest has been recomputed over the data and matched?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP12/qualification/archive-faults/archive-faults.json",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP12/review-repair/archive-faults/archive-faults.json",
           "verdict": "pass",
           "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP12-review.md",
           "builder_result": "pass"
@@ -1116,10 +1116,10 @@
           "lock": "gpu",
           "ask": "Does the default follow the record, and can each path still be forced for a comparison?",
           "target": "mac-metal",
-          "evidence": "",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP12/review-repair/registry-first-run/launch.json",
           "verdict": "fail",
           "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP12-review.md",
-          "builder_result": "open"
+          "builder_result": "pass"
         },
         {
           "id": "D12.5",
@@ -1127,7 +1127,7 @@
           "check": "python3 scripts/apple_presentation.py wgpu-pin --crate wgpu-hal --crate wgpu-core && cargo test --locked --offline -p wgpu-core --lib pipeline_cache",
           "ask": "Does the pin check rebuild each of the two copies from its released crate and patch files without the network, and fail on one changed byte in either? Read the wgpu-core patch: does it change anything besides the Metal adapter key and its unit tests, and does it name anything of Thrum's that wgpu could not take as it stands?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP12/qualification/D12.5.log",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP12/review-repair/D12.5.log",
           "verdict": "pass",
           "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP12-review.md",
           "builder_result": "pass"

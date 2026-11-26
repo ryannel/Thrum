@@ -645,3 +645,10 @@ layer profile change. [Metal controls](../../../.orchestrate/evidence/CLOUDS/WP9
   All three fault routes completed without late creations. The combined cold and warm launch comparison
   selected the archive for the registry default when local artifacts are supplied.
   [Target evidence](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP12/qualification/README.md)
+
+- 2026-11-26 WP12 review fixes. A libraries-only launch now requests Metal shader passthrough through the
+  registry and prepares all 44 stages in parallel. With all products supplied, archive preparation ranked first
+  in the paired launch record and remained the default. On Mac Metal, the stale, corrupt and partial archive
+  routes each repaired the configured file before readiness and completed 361 ticks without late creations.
+  The next fresh process strictly hit all 32 manifest pipelines in each repaired file.
+  [Target evidence](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP12/review-repair/README.md)
