@@ -303,7 +303,7 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "in_progress",
+      "status": "ready_for_review",
       "quality_bar": "A status display as legible over a crowd as those of Vampire Survivors, Brotato and Halls of Torment: health, time and counts read at a glance with thousands of sprites behind them. Laid out as steadily as a native app's: no element covers another, touches an edge, leaves the safe area or jumps when the window is resized.",
       "items": [
         {

@@ -479,6 +479,35 @@
         "by": "plan",
         "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
         "at": "2026-11-24T22:06:49Z"
+      },
+      "ready_for_review": {
+        "commit": "01c57fddc75ca18502f64584fd63cd8306757bb9",
+        "checked": "01c57fddc75ca18502f64584fd63cd8306757bb9",
+        "at": "2026-11-26T03:27:12Z",
+        "reused": [
+          "WP3.3"
+        ],
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.171.0-alpha.13.2",
+        "path": "visible",
+        "usage": {
+          "input": 727964,
+          "cached": 90286976,
+          "output": 183042,
+          "turns": 2
+        },
+        "session_usage": {
+          "input": 727964,
+          "cached": 90286976,
+          "output": 183042,
+          "turns": 2
+        }
       }
     },
     "WP4": {
