@@ -911,38 +911,30 @@ pub struct GraphTextures {
 }
 
 impl GraphTextures {
-    /// Transfer allocation lookup to a recompiled graph only when every retained
-    /// transient resource keeps its descriptor and slot. Imported surface changes
-    /// allocate no texture here.
+    /// Transfer allocation lookup when every live transient keeps its descriptor
+    /// and backing slot. A culled pass can leave a prepared texture idle for a
+    /// later surface variant.
     pub(crate) fn rebind(
         &mut self,
         old: &CompiledGraph,
         new: &CompiledGraph,
     ) -> Result<(), GraphError> {
-        for life in &old.lifetimes {
+        for life in &new.lifetimes {
             if let Some(slot) = life.transient_slot {
                 let index = life.resource.index;
-                if new
+                if old
                     .resources
                     .get(index)
-                    .is_none_or(|r| r.descriptor != old.resources[index].descriptor)
-                    || old.memoryless_eligible(&life.resource)
-                        != new.memoryless_eligible(&ResourceId {
-                            index,
-                            owner: Arc::clone(&new.owner),
-                        })
-                    || new
-                        .lifetimes
-                        .iter()
-                        .find(|l| l.resource.index == index)
-                        .is_none_or(|l| l.transient_slot != Some(slot))
+                    .is_none_or(|r| r.descriptor != new.resources[index].descriptor)
+                    || old.memoryless_eligible(&ResourceId {
+                        index,
+                        owner: Arc::clone(&old.owner),
+                    }) != new.memoryless_eligible(&life.resource)
+                    || self.resource_slots.get(index) != Some(&Some(slot))
                 {
                     return Err(GraphError::SurfacePhase);
                 }
             }
-        }
-        if old.transient_slots != new.transient_slots {
-            return Err(GraphError::SurfacePhase);
         }
         self.owner = Arc::clone(&new.owner);
         self.resource_slots.resize(new.resources.len(), None);
@@ -978,6 +970,7 @@ impl GraphTextures {
             let Some(slot) = lifetime.transient_slot else {
                 continue;
             };
+            resource_slots[lifetime.resource.index] = Some(slot);
             let ResourceDescriptor::Texture {
                 dimension,
                 width,
@@ -991,7 +984,6 @@ impl GraphTextures {
             else {
                 continue;
             };
-            resource_slots[lifetime.resource.index] = Some(slot);
             if slots[slot].is_none() {
                 // Every resource sharing this allocation must admit transient storage.
                 let memoryless = recipe == crate::capabilities::Recipe::AppleTile
