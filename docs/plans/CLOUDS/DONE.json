@@ -1226,7 +1226,7 @@
     {
       "id": "WP9",
       "name": "A visitor changes coverage, cloud type, wind and time of day with the controls, and the sky holds up in motion, on the Mac and in Chrome",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 3,
       "failed_reviews_with_repeat": 2,
       "diagnoses": 0,
@@ -1264,7 +1264,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP9/dusk/README.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP9-review.md"
         },
         {
@@ -1319,18 +1319,6 @@
           "evidence": ".orchestrate/evidence/CLOUDS/WP9/review-fixes/range-replay.json",
           "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP9-review.md"
-        }
-      ],
-      "findings": [
-        {
-          "name": "Solar-time sweep flashes at dusk",
-          "item": "WP9.3",
-          "different": "The earlier sweep lost the sky and terrain for the daylight interval including noon. Noon now remains legible. The new discontinuity is a pale foreground dropping to dark grey and rebounding between successive twilight submissions.",
-          "repeat": false
-        },
-        {
-          "name": "Replacing a valid sky profile is refused",
-          "repeat": false
         }
       ]
     },
