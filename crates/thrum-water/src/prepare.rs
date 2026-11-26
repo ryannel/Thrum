@@ -994,7 +994,7 @@ fn surface_mesh(map: Option<&thrum_water_model::Map>, tidal_grid: bool) -> Geome
             }
         }
     }
-    for body in 0..map_gpu::BODY_LIMIT {
+    for (body, receiver) in river_receivers.into_iter().enumerate() {
         let Some(declaration) = map.body(body) else {
             break;
         };
@@ -1036,7 +1036,7 @@ fn surface_mesh(map: Option<&thrum_water_model::Map>, tidal_grid: bool) -> Geome
                 let radius = half_width as f32 * spacing;
                 geometry.draws.push(WaterDraw {
                     indices: first_index..geometry.indices.len() as u32,
-                    river: river_receivers[body] && level <= 3,
+                    river: receiver && level <= 3,
                     offshore: (radius < 524_288.0).then_some(OffshoreRing {
                         radius,
                         levels,
@@ -1061,7 +1061,7 @@ fn surface_mesh(map: Option<&thrum_water_model::Map>, tidal_grid: bool) -> Geome
             geometry.grid(start, end, spacing, (body + 1) as f32, 0, surf);
             geometry.draws.push(WaterDraw {
                 indices: first_index..geometry.indices.len() as u32,
-                river: sampled_river(map, body) || river_receivers[body],
+                river: sampled_river(map, body) || receiver,
                 offshore: None,
             });
         }
