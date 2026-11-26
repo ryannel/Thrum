@@ -1613,7 +1613,7 @@
     {
       "id": "WP9",
       "name": "Water runs down a channel from the lake to the sea: its surface follows the slope, its ripples and foam travel with the current, and a float is carried down to the sea",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
