@@ -100,14 +100,14 @@ const observer = `
       peak=Math.max(peak,film);
       filmCells+=Number(film>0.01);
     }
-    const parcels = points.map(([x,z]) => {
+    const dt=new Float32Array(settings,80,1)[0];
+    const parcels = dt>0 ? points.map(([x,z]) => {
       const [ox,oz] = new Int32Array(settings,0,2);
       const ix=Math.floor(x/0.25)-ox, iz=Math.floor(z/0.25)-oz;
       if(ix<0||ix>=256||iz<0||iz>=256)throw Error('point outside submitted fine foam window');
       const state=new Float32Array(transport,(iz*256+ix)*32,8);
-      const dt=new Float32Array(settings,80,1)[0];
       return {point:[x,z],speed:[state[4]*0.25/dt,state[5]*0.25/dt],film:state[1]+state[2]};
-    });
+    }) : [];
     return {mean:cover/count,peak,filmCells,parcels};
   };
   const wakeWitnesses=new Map();
@@ -475,7 +475,14 @@ try {
       await until(()=>evaluate('game.frame_ready()'),'channel frame slot');
       await drive(1000/30);
     }
-    const detail=await evaluate('__readFoam([[256,5],[228,5]])');
+    // A repeat submission rewrites the settings with a zero step duration.
+    // Read the transport made by a submitted tick using that tick's settings.
+    const detail=await until(async()=>{
+      await until(()=>evaluate('game.frame_ready()'),'channel transport frame slot');
+      await drive(1000/30);
+      const sample=await evaluate('__readFoam([[256,5],[228,5]])');
+      return sample.parcels.length ? sample : null;
+    },'submitted channel foam step',30000);
     const [fast,slow]=detail.parcels;
     assert(fast.speed[0]>1.3&&slow.speed[0]>0.4&&fast.speed[0]>slow.speed[0]+0.65,'foam detail did not move with the current: '+JSON.stringify(detail));
     assert(detail.filmCells>0,'no submitted foam film');
