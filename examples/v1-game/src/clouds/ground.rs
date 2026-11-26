@@ -37,7 +37,7 @@ impl GroundWeather {
             Self::Fog | Self::FogEdge | Self::FogOutside | Self::HandoverBank(_) => vec![0.0, 1.0],
             Self::MistAndBank => vec![1.0, 0.25],
             Self::FarMist => vec![1.0, 0.35],
-            Self::LowDeck => vec![0.75, 0.35],
+            Self::LowDeck => vec![0.0, 0.35],
         }
     }
 }

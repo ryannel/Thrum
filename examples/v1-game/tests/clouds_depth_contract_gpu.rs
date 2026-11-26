@@ -1,5 +1,4 @@
 //! The real V1 after-opaque trace sees a foreground occluder uncover a farther surface.
-#![cfg(target_os = "macos")]
 
 use std::{
     sync::{

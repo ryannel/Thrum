@@ -188,6 +188,8 @@ impl CloudSelection {
     pub(crate) fn profile(self, shapes: Option<&PlacedSky>) -> ShadeConfig {
         let mut config = shapes.map_or_else(shade_config, PlacedSky::profile);
         if self == Self::Ground(GroundWeather::LowDeck) {
+            config.model.pitch = 450.0;
+            config.model.turret_pitch = 130.0;
             let deck = Type {
                 base: 140.0,
                 depth: [74.0, 95.0],
