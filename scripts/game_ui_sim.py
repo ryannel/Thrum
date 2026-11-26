@@ -246,9 +246,10 @@ class Case:
             "THRUM_INTERFACE_TEST_POINT": f"{point[0]:.9f},{point[1]:.9f}",
         }))
 
-    def open_url(self):
+    def open_url(self, *, cold=False):
         url = "thrum-v1://join/" + quote(TICKET, safe="")
         process = self.state()["pid"]
+        label = "cold" if cold else "warm"
 
         def delivered(state):
             report = menu(state)
@@ -257,17 +258,31 @@ class Case:
                     and any(effect["effect"] == {"text": TICKET, "source": "Link"}
                             for effect in report["effects"]))
 
-        # Follow the invitation from outside the game, as a player would.
-        self.simctl("launch", self.device, "com.apple.Preferences")
-        self.expect(lambda s: s.get("state") == "Suspended", "the game is behind Settings")
-        self.simctl("openurl", self.device, url)
-        if not delivered(self.state()):
-            self.simctl("io", self.device, "screenshot", str(self.out / "invite-confirmation.png"))
-            self.finish_test(self.test("testConfirmInterfaceInvite"))
-        state = self.expect(delivered, "UIKit URL delivered a complete ticket")
-        require(state["pid"] == process, "opening the URL replaced the app")
-        self.report["invite"] = dict(url=url, expected=TICKET, state=state)
-        return self.screen("Joining")
+        if cold:
+            self.simctl("terminate", self.device, BUNDLE)
+            self.reset_capture()
+            # Enable the witness for the process opened by SpringBoard. The
+            # app must find its installed font store and select Join unaided.
+            self.simctl("spawn", self.device, "launchctl", "setenv", "THRUM_V1_ROUTE", "1")
+        try:
+            self.simctl("launch", self.device, "com.apple.Preferences")
+            if not cold:
+                self.expect(lambda s: s.get("state") == "Suspended", "the game is behind Settings")
+            self.simctl("openurl", self.device, url)
+            if not delivered(self.state()):
+                self.simctl("io", self.device, "screenshot", str(self.out / f"invite-{label}-confirmation.png"))
+                self.finish_test(self.test("testConfirmInterfaceInvite"))
+            self.expect(delivered, f"UIKit {label} URL delivered a complete ticket")
+            state = self.screen("Joining")
+            require((state["pid"] != process) == cold, f"unexpected process for the {label} invite")
+            screenshot = f"invite-{label}.png"
+            self.simctl("io", self.device, "screenshot", str(self.out / screenshot))
+            self.report.setdefault("invites", {})[label] = dict(
+                url=url, expected=TICKET, previous_pid=process, state=state, screenshot=screenshot)
+            return state
+        finally:
+            if cold:
+                self.simctl("spawn", self.device, "launchctl", "unsetenv", "THRUM_V1_ROUTE")
 
     def layout(self):
         self.launch("status")
@@ -362,6 +377,7 @@ class Case:
         self.expect(lambda s: int(s.get("touch_releases", 0)) > int(moving["touch_releases"]) and
                     s.get("last_axes") == "0,0,0", "held contact released")
         self.open_url()
+        self.open_url(cold=True)
 
 
 def main():

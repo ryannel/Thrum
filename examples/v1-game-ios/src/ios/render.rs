@@ -44,6 +44,8 @@ pub(super) enum Job {
         epoch: u64,
         extent: [u32; 2],
         origin: Instant,
+        #[cfg(feature = "proving")]
+        open_join: bool,
         world_advanced: Box<dyn Fn() + Send>,
     },
     Frame(FrameRequest),
@@ -361,10 +363,19 @@ impl Owner {
                 epoch,
                 extent,
                 origin,
+                #[cfg(feature = "proving")]
+                open_join,
                 world_advanced,
             } => {
                 self.origin = origin;
-                Reply::Prepared(self.prepare(&instance, epoch, extent, world_advanced))
+                Reply::Prepared(self.prepare(
+                    &instance,
+                    epoch,
+                    extent,
+                    #[cfg(feature = "proving")]
+                    open_join,
+                    world_advanced,
+                ))
             }
             Job::Frame(request) => Reply::Frame(self.frame(&request)),
             Job::Recover { from } => Reply::Recovered(self.recover(from)),
@@ -381,6 +392,7 @@ impl Owner {
         instance: &wgpu::Instance,
         epoch: u64,
         extent: [u32; 2],
+        #[cfg(feature = "proving")] open_join: bool,
         world_advanced: Box<dyn Fn() + Send>,
     ) -> Result<Prepared, String> {
         if self.gpu.is_some() {
@@ -412,12 +424,18 @@ impl Owner {
             .unwrap_or(Some(PREFERRED_SDR_FORMAT))
             .ok_or("no supported iOS SDR surface format")?;
         let extent = [extent[0].max(1), extent[1].max(1)];
-        let setup = v1_game::selected_setup()?;
         let config = FrameConfig {
             render_extent: extent,
             surface: Some(SurfaceProfile { format, extent }),
         };
-        let mut host = pollster::block_on(setup.prepare(&device, &queue, &capabilities, config))?;
+        let (setup, mut host) = pollster::block_on(prepare_host(
+            &device,
+            &queue,
+            &capabilities,
+            config,
+            #[cfg(feature = "proving")]
+            open_join,
+        ))?;
         if self.diagnostics && std::env::var("THRUM_CULLING_ORACLE").as_deref() == Ok("1") {
             super::culling::record(&mut host, &device, &queue, &capabilities, config, setup)?;
         }
@@ -1035,6 +1053,39 @@ impl Gpu {
 
 /// Abandon a recorded frame on a lost device. A healthy skip would flush
 /// staging with an empty submit to the lost queue; this makes no queue call.
+async fn prepare_host(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    capabilities: &thrum_render::capabilities::DeviceCapabilities,
+    config: FrameConfig,
+    #[cfg(feature = "proving")] open_join: bool,
+) -> Result<(v1_game::GameSetup, super::Host), String> {
+    #[cfg(feature = "proving")]
+    if open_join {
+        let setup = v1_game::GameSetup {
+            interface_text: Some(v1_game::InterfaceText::Menu),
+            sprite_scale: Some(2),
+            sprite_rows: Some(10_000),
+            ..v1_game::GameSetup::default()
+        };
+        let source = if let Some(path) = std::env::var_os("THRUM_FONT_STORE") {
+            std::path::PathBuf::from(path)
+        } else {
+            std::env::home_dir()
+                .ok_or("iOS app container home is unavailable")?
+                .join("Documents/interface-store")
+        };
+        let host = setup
+            .prepare_with_sheet_source(device, queue, capabilities, config, source.into())
+            .await
+            .map_err(|error| error.to_string())?;
+        return Ok((setup, host));
+    }
+    let setup = v1_game::selected_setup()?;
+    let host = setup.prepare(device, queue, capabilities, config).await?;
+    Ok((setup, host))
+}
+
 fn abandon(
     encoded: EncodedFrame<'_, GameWorld, GameScene>,
     reply: &mut FrameReply,

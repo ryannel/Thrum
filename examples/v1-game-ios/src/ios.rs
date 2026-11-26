@@ -65,6 +65,8 @@ enum ShellEvent {
     #[cfg(feature = "proving")]
     Command(Command),
     #[cfg(feature = "proving")]
+    SceneConnected(Option<String>),
+    #[cfg(feature = "proving")]
     Invite(String),
 }
 
@@ -497,6 +499,8 @@ impl Shell {
             epoch,
             extent: self.observed_extent,
             origin: self.origin,
+            #[cfg(feature = "proving")]
+            open_join: self.pending_invite.is_some(),
             world_advanced: Box::new(move || {
                 WORLD_THREAD.get_or_init(thread_name);
                 drop(world.send_event(ShellEvent::WorldAdvanced));
@@ -1049,11 +1053,13 @@ impl Shell {
 impl ApplicationHandler<ShellEvent> for Shell {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         self.timed(event_loop, "resumed", |shell, event_loop| {
+            // In the proving app the scene connection provides the startup
+            // selection. Winit's launch-time resume may precede that callback.
+            #[cfg(not(feature = "proving"))]
             if shell.render.is_none() {
-                shell.start(event_loop)
-            } else {
-                shell.resume(event_loop)
+                return shell.start(event_loop);
             }
+            shell.resume(event_loop)
         });
     }
 
@@ -1071,6 +1077,8 @@ impl ApplicationHandler<ShellEvent> for Shell {
             ShellEvent::RecoverHeld => "recover-held",
             #[cfg(feature = "proving")]
             ShellEvent::Command(_) => "command",
+            #[cfg(feature = "proving")]
+            ShellEvent::SceneConnected(_) => "scene connected",
             #[cfg(feature = "proving")]
             ShellEvent::Invite(_) => "invite",
         };
@@ -1106,6 +1114,17 @@ impl ApplicationHandler<ShellEvent> for Shell {
             }
             #[cfg(feature = "proving")]
             ShellEvent::Command(command) => shell.command(event_loop, command),
+            #[cfg(feature = "proving")]
+            ShellEvent::SceneConnected(ticket) => {
+                if shell.render.is_none() {
+                    shell.pending_invite = ticket;
+                    shell.start(event_loop)
+                } else if let Some(ticket) = ticket {
+                    shell.invite(ticket)
+                } else {
+                    Ok(())
+                }
+            }
             #[cfg(feature = "proving")]
             ShellEvent::Invite(ticket) => shell.invite(ticket),
         });

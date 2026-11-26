@@ -44,23 +44,28 @@ pub(super) fn output(window: &Window) -> Option<Output> {
     reason = "Swift forwards a borrowed UTF-8 buffer through this C ABI"
 )]
 #[unsafe(no_mangle)]
-extern "C" fn thrum_v1_open_invite(bytes: *const u8, len: usize) {
-    if bytes.is_null() || len == 0 {
-        return;
-    }
-    // SAFETY: Swift owns the contiguous byte buffer for this synchronous call.
-    let bytes = unsafe { std::slice::from_raw_parts(bytes, len) };
-    if let Ok(ticket) = std::str::from_utf8(bytes)
-        && let Some(shell) = SHELL.get()
-    {
-        drop(shell.send_event(ShellEvent::Invite(ticket.to_owned())));
+extern "C" fn thrum_v1_open_invite(bytes: *const u8, len: usize, connecting: i32) {
+    let ticket = if bytes.is_null() || len == 0 {
+        None
+    } else {
+        // SAFETY: Swift owns the buffer for the duration of this call.
+        let bytes = unsafe { std::slice::from_raw_parts(bytes, len) };
+        std::str::from_utf8(bytes).ok().map(str::to_owned)
+    };
+    let event = if connecting != 0 {
+        Some(ShellEvent::SceneConnected(ticket))
+    } else {
+        ticket.map(ShellEvent::Invite)
+    };
+    if let (Some(shell), Some(event)) = (SHELL.get(), event) {
+        drop(shell.send_event(event));
     }
 }
 
 impl Shell {
     pub(super) fn invite(&mut self, ticket: String) -> Result<(), String> {
         let Some(menu) = &mut self.interface_menu else {
-            // An invite can arrive in the scene's connection options before preparation.
+            // An invite can arrive while the interface is preparing.
             if self.controls.is_none() {
                 self.pending_invite = Some(ticket);
             }
