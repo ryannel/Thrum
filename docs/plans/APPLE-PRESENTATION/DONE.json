@@ -1235,18 +1235,8 @@
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "blocked",
-      "quality_bar": "The whole presentation path at the level of a shipped high-end Mac game: sharp and stable at the display's full resolution, highlights above SDR white in the frame the XDR display's surface is given, a steady, evenly paced 60 Hz held at full screen with an upscaler, as the lead reads those games to hold on a Mac, and no hitch or compile during play, with the Apple path's win over the portable one measured and not assumed. The display's full 120 Hz at full screen is not part of this bar: it is WP17's.",
-      "blocked": {
-        "reason": "needs_context",
-        "what": "The lead needs to authorize further fullscreen graph work or revise the cadence target.",
-        "work": {
-          "commit": "1eacafa623d9c65d9492225e391a2cb064072711",
-          "branch": "build/apple-presentation",
-          "pushed": false
-        },
-        "handoff": ".orchestrate/evidence/APPLE-PRESENTATION/WP11-handoff.md"
-      }
+      "status": "not_started",
+      "quality_bar": "The whole presentation path at the level of a shipped high-end Mac game: sharp and stable at the display's full resolution, highlights above SDR white in the frame the XDR display's surface is given, a steady, evenly paced 60 Hz held at full screen with an upscaler, as the lead reads those games to hold on a Mac, and no hitch or compile during play, with the Apple path's win over the portable one measured and not assumed. The display's full 120 Hz at full screen is not part of this bar: it is WP17's."
     },
     {
       "id": "U1",

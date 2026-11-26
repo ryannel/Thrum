@@ -1620,21 +1620,13 @@
       }
     },
     "WP11": {
-      "definitions": "f6220ab78ded97f14a4598d0eef35b1a5a0be376e4730bb62eba56eee74aee99",
+      "definitions": "2ff9c2679e3d7baaa1cc4fa4053ec8a0b9ca4fd70bca960a38542dcf8b96a05c",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of APPLE-PRESENTATION at docs/evidence/APPLE-PRESENTATION/design-review.md asked for changes. Resolve ",
-        "at": "2026-11-15T08:54:22Z"
-      },
-      "run_changes": [
-        {
-          "by": "plan",
-          "task": "Move Thrum onto the proof regime the owner approved, using orchestrate 2.3.1, in one pass, tonight.",
-          "at": "2026-11-15T22:19:37Z"
-        }
-      ],
-      "ends_stretch": true
+        "task": "Unblock APPLE-PRESENTATION WP11 (handoff .orchestrate/evidence/APPLE-PRESENTATION/WP11-handoff.md, branch build/apple-pr",
+        "at": "2026-11-26T13:49:00Z"
+      }
     },
     "WP13": {
       "definitions": "5de658f5c235547cdcb196ca431293788e7ef842ec180861a21f7a54df79594b",
@@ -1999,11 +1991,15 @@
     {
       "task": "The design review of APPLE-PRESENTATION at .orchestrate/evidence/APPLE-PRESENTATION/design-review.md asked for changes, with its Must Fix findings. An earlier revise turn was paused because it tried to resume a session already open; start fresh.",
       "at": "2026-11-26T13:01:01Z"
+    },
+    {
+      "task": "Unblock APPLE-PRESENTATION WP11 (handoff .orchestrate/evidence/APPLE-PRESENTATION/WP11-handoff.md, branch build/apple-presentation at 1eacafa623d9). On the built-in 3456x2234 120 Hz display the fastest capture-off route (Apple Tile, MetalFX, EDR, governor at its 50% floor) has a 10.85 ms GPU p50 and 14.67 ms p95 against an 8.33 ms interval. Lead's decision (revise the target, don't commission more graph work in WP11): the bar is shipped high-end games, which on a Mac at native fullscreen resolution hold a steady 60 fps with an upscaler rather than 120. Revise D11.6 (and D11.5 where it depends on it) so G4 closes on steady, well-paced 60 Hz presentation on the built-in display (ProMotion pacing, no missed 60 Hz slots, p95 interval within one 60 Hz frame) with the measured 120 Hz shortfall and its pass breakdown recorded. Keep the builder's two local wins (skipping the unused SDR tone pass, float copy access only for the tap). Put reaching 120 Hz fullscreen (forward opaque, float present and MetalFX cost) in a later work package after G4, not ahead of it. The capture tap's omissions still need fixing for the motion evidence. A plan you keep ends with KEEP APPLE-PRESENTATION WP11: builder: <where the plan provides it>.",
+      "at": "2026-11-26T13:49:00Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-26T13:01:01Z"
+    "at": "2026-11-26T13:49:00Z"
   },
   "design_history": [
     {
