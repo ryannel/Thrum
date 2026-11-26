@@ -105,6 +105,10 @@ fn post_foams_downstream_and_a_float_reaches_the_sea() {
 }
 
 #[cfg(target_os = "macos")]
+#[expect(
+    clippy::print_stdout,
+    reason = "retain the actual Metal target readings"
+)]
 fn check_post_and_float(gpu: &thrum_test_support::Gpu) {
     let extent = [112, 64];
     for running in [false, true] {
@@ -189,6 +193,10 @@ fn check_post_and_float(gpu: &thrum_test_support::Gpu) {
 }
 
 #[cfg(target_os = "macos")]
+#[expect(
+    clippy::print_stdout,
+    reason = "retain the actual Metal target readings"
+)]
 fn check_query_join(scene: &mut support::Fixture, mailbox: &thrum_water::query::QueryMailbox) {
     use std::time::Duration;
     use thrum_water::query::{BodyQuery, QueryPoint};
