@@ -1,55 +1,42 @@
 {
   "module": "GAME-SDK",
   "design": {
-    "verdict": "changes",
-    "review": ".orchestrate/evidence/GAME-SDK/design-review.md",
-    "commit": "4e854daebdc3cc66b0d3b0906e260733eafc7fbc",
-    "hash": "fedba35e4d8e275499575cffb33755d8dbd1642eb04407ab5c8033ed4d4e0628",
-    "by": "review",
-    "host": "codex",
-    "model": "gpt-6.2-astra",
-    "effort": "high",
-    "observed": {
-      "model": "gpt-6.2-astra",
-      "effort": "high"
-    },
-    "cli": "codex-cli 0.171.0-alpha.13.2",
-    "path": "headless",
-    "usage": {
-      "input": 129428,
-      "cached": 2140544,
-      "output": 12965,
-      "turns": 1
-    },
-    "at": "2026-11-26T09:07:53Z"
+    "verdict": "ok",
+    "by": "review_limit",
+    "hash": "ed9ff05f7a583a57c31fa29f23315628f7ff7bf641e79a6efa9aa0d22134ee97",
+    "after": [
+      ".orchestrate/evidence/GAME-SDK/design-review-3.md",
+      ".orchestrate/evidence/GAME-SDK/design-review.md"
+    ],
+    "at": "2026-11-26T09:24:33Z"
   },
   "work_packages": {
     "WP1": {
-      "definitions": "cc95f770396e2f20d66028a3b27fc7cb7c89575481af1220dc90cf5745402e9d",
+      "definitions": "b6c810d4ac2115ea4c66204ba3237e32ca961cf3cea48262ec55f5bd342e252f",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of GAME-SDK at .orchestrate/evidence/GAME-SDK/design-review.md asked for changes, with its 18 Must Fix",
-        "at": "2026-11-26T08:56:05Z"
+        "task": "The design review of GAME-SDK at .orchestrate/evidence/GAME-SDK/design-review.md asked for changes, with its 10 Must Fix",
+        "at": "2026-11-26T09:24:33Z"
       }
     },
     "WP2": {
-      "definitions": "76f059d78a7f68aa6a72bf8356be8e357b14dba4429d3b6d9e35a7affaf34e1c",
+      "definitions": "b0cfea3d6265d6f9d6176f6ec539a460e2b1a6ae76d89103a02c92651602c76c",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of GAME-SDK at .orchestrate/evidence/GAME-SDK/design-review.md asked for changes, with its 18 Must Fix",
-        "at": "2026-11-26T08:56:05Z"
+        "task": "The design review of GAME-SDK at .orchestrate/evidence/GAME-SDK/design-review.md asked for changes, with its 10 Must Fix",
+        "at": "2026-11-26T09:24:33Z"
       },
       "ends_stretch": true
     },
     "WP11": {
-      "definitions": "0dcc05bc41ba0f6ccbeeb387b4e236688e85190066e5afe35b014edd8b627e46",
+      "definitions": "43e4384be2b27f009ef78f82725445dafc4e43cfed43fa3186bb49ea2a35a110",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of GAME-SDK at .orchestrate/evidence/GAME-SDK/design-review.md asked for changes, with its 18 Must Fix",
-        "at": "2026-11-26T08:56:05Z"
+        "task": "The design review of GAME-SDK at .orchestrate/evidence/GAME-SDK/design-review.md asked for changes, with its 10 Must Fix",
+        "at": "2026-11-26T09:24:33Z"
       }
     }
   },
@@ -73,11 +60,15 @@
     {
       "task": "The design review of GAME-SDK at .orchestrate/evidence/GAME-SDK/design-review.md asked for changes, with its 18 Must Fix findings.",
       "at": "2026-11-26T08:56:05Z"
+    },
+    {
+      "task": "The design review of GAME-SDK at .orchestrate/evidence/GAME-SDK/design-review.md asked for changes, with its 10 Must Fix findings. That makes 2 design reviews in a row that asked for changes, so the script approves the design you leave without another review, and building starts from it.",
+      "at": "2026-11-26T09:24:33Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-26T08:56:05Z"
+    "at": "2026-11-26T09:24:33Z"
   },
   "design_history": [
     {
@@ -161,6 +152,29 @@
         "turns": 1
       },
       "at": "2026-11-26T08:27:32Z"
+    },
+    {
+      "verdict": "changes",
+      "review": ".orchestrate/evidence/GAME-SDK/design-review.md",
+      "commit": "4e854daebdc3cc66b0d3b0906e260733eafc7fbc",
+      "hash": "fedba35e4d8e275499575cffb33755d8dbd1642eb04407ab5c8033ed4d4e0628",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6.2-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6.2-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.171.0-alpha.13.2",
+      "path": "headless",
+      "usage": {
+        "input": 129428,
+        "cached": 2140544,
+        "output": 12965,
+        "turns": 1
+      },
+      "at": "2026-11-26T09:07:53Z"
     }
   ]
 }
