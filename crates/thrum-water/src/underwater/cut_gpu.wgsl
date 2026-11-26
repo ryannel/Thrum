@@ -3,7 +3,8 @@ struct LensFace {
     b: vec4<f32>,
     c: vec4<f32>,
     rest_z: vec3<f32>,
-    body: u32,
+    ownership: u32,
+    river: vec4<f32>,
 }
 struct LensWork {
     count: vec4<u32>,
@@ -28,8 +29,11 @@ struct LensRead {
 @group(3) @binding(24) var<storage, read> lens_work: LensWork;
 
 fn lens_face(a: VertexOut, b: VertexOut, c: VertexOut) -> LensFace {
+    let transformed = select(vec3(0u), vec3(1u), vec3(a.surf_weight, b.surf_weight, c.surf_weight) > vec3(0.0));
+    let ownership = a.body | transformed.x << 8u | transformed.y << 9u | transformed.z << 10u;
     return LensFace(vec4(a.world, a.rest.x), vec4(b.world, b.rest.x),
-        vec4(c.world, c.rest.x), vec3(a.rest.y, b.rest.y, c.rest.y), a.body);
+        vec4(c.world, c.rest.x), vec3(a.rest.y, b.rest.y, c.rest.y), ownership,
+        lens_river_data(a, b, c));
 }
 
 fn lens_vertices(cell: u32) -> array<VertexOut, 4> {
@@ -74,14 +78,12 @@ fn lens_face_height(face: LensFace, point: vec2<f32>, current: f32) -> f32 {
     let c = lens_cross(ab, at) / determinant;
     if min(min(b, c), 1.0-b-c) < -0.000001 { return current; }
     let height = face.a.y + b * (face.b.y-face.a.y) + c * (face.c.y-face.a.y);
-    if height <= current { return current; }
-    // The draw masks ownership at the interpolated material rest place.
     // In a fold, faces landing in one column can come from different rows.
     let rest_a = vec2(face.a.w, face.rest_z.x);
     let rest_b = vec2(face.b.w, face.rest_z.y);
     let rest_c = vec2(face.c.w, face.rest_z.z);
     let rest = rest_a + b * (rest_b-rest_a) + c * (rest_c-rest_a);
-    return select(current, height, surface_pixel(rest, face.body).owned);
+    return lens_sheet_height(face, vec3(1.0 - b - c, b, c), point, rest, height, current);
 }
 
 fn highest_lens_face(point: vec2<f32>) -> f32 {

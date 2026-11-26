@@ -152,6 +152,8 @@ fn lens_probe() -> Option<(&'static str, bool, bool)> {
             "mapped-trough",
             "trade-admission",
             "carried-crest",
+            "carried-gain",
+            "carried-weight",
             "trough-wet",
             "impact",
         ])

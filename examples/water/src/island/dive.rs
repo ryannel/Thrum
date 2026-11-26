@@ -8,14 +8,14 @@ use std::{
     time::Duration,
 };
 use thrum_app::sky::{Camera, ContentStatus, Controls, CookedMaterial, MeshPlacement, SkyGame};
-use thrum_sea_model::Spectrum;
+use thrum_sea_model::{Cascade, Spectrum};
 use thrum_water::{Optics, Water};
 
 // Keep the inspection camera in the sky shell's altitude range while retaining
 // the island's relative sea, seabed and camera elevations.
 const SEA_LEVEL: f32 = 16.0;
 const LAKE_LEVEL: f32 = 12.0;
-const HIGH_LAKE_STAGE: f32 = 2.0;
+const HIGH_LAKE_STAGE: f32 = 2.75;
 
 /// An island waterline the inspection camera can cross.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -58,6 +58,41 @@ fn camera([x, level, z]: [f32; 3], depth: f32, pitch: f32) -> Camera {
     Camera::look_at([x, y, z], [x + 10.0 * forward, y + 10.0 * rise, z], 105.0)
 }
 
+// Strengthen a short group of travelling wind modes in the exposed lake
+// inspection. Its compression drives the ordinary whitewater births.
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "indices recovered from the 256-square cascade lattice"
+)]
+fn lake_crest_group(spectrum: &mut Spectrum, eye: [f32; 3]) -> Result<(), Box<dyn Error>> {
+    let band = &spectrum.cascades[0];
+    let length = band.length();
+    let step = std::f64::consts::TAU / length;
+    let train = [(65, -1, 0.017), (68, 3, 0.012), (72, 5, 0.009)];
+    let mut modes: Vec<_> = band
+        .components()
+        .iter()
+        .filter_map(|wave| {
+            let [x, z] = wave.wave_vector.map(|k| (k / step).round() as i32);
+            (!train.iter().any(|&(a, b, _)| (x, z) == (a, b))).then_some((
+                x,
+                z,
+                wave.amplitude.powi(2) * 0.5,
+                wave.phase,
+            ))
+        })
+        .collect();
+    modes.extend(train.map(|(x, z, power)| {
+        let kx = f64::from(x) * step;
+        let kz = f64::from(z) * step;
+        let omega = (9.81 * kx.hypot(kz)).sqrt();
+        let phase = omega * 10.0 - kx * f64::from(eye[0]) - kz * f64::from(eye[2]);
+        (x, z, power, phase)
+    }));
+    spectrum.cascades[0] = Cascade::new(length, &modes)?;
+    Ok(())
+}
+
 /// An inspection camera that can cross the selected waterline.
 /// # Errors
 /// Returns invalid map, spectrum, control or cooked asset declarations.
@@ -87,7 +122,7 @@ fn build(
 ) -> Result<(SkyGame, SharedReport), Box<dyn Error>> {
     let (eye_at_surface, vertical_offset, initial_depth, max_depth) = match site {
         DiveSite::Lake => ([183.0, LAKE_LEVEL, 5.0], 0.0, 1.0, 3.4),
-        DiveSite::HighLake => ([183.0, LAKE_LEVEL + HIGH_LAKE_STAGE, 5.0], 0.0, 1.0, 5.3),
+        DiveSite::HighLake => ([190.0, LAKE_LEVEL + HIGH_LAKE_STAGE, 0.0], 0.0, 1.0, 5.3),
         DiveSite::Sea => ([-293.0, SEA_LEVEL, 20.0], SEA_LEVEL, 1.0, 10.0),
         DiveSite::Swash => ([-112.0, SEA_LEVEL, 0.0], SEA_LEVEL, 0.1, 0.4),
     };
@@ -98,10 +133,16 @@ fn build(
     } else {
         0.0
     };
+    let surface_wind = if lake && draw_craft && wind == Wind::Trade {
+        // Strong Trade provides breaking crests after the lake's fetch attenuation.
+        Wind::Strong
+    } else {
+        wind
+    };
     let forcing = if surf {
         wind.surf_forcing()
     } else {
-        wind.forcing()
+        surface_wind.forcing()
     };
     let map = prepare_island_map_at(
         &forcing,
@@ -128,7 +169,10 @@ fn build(
         let profile = surf_water_profile(&spectrum);
         (spectrum, profile)
     } else {
-        let spectrum = Spectrum::build(&forcing)?;
+        let mut spectrum = Spectrum::build(&forcing)?;
+        if lake && draw_craft && wind == Wind::Trade {
+            lake_crest_group(&mut spectrum, eye_at_surface)?;
+        }
         let profile = crate::profile(&spectrum);
         (spectrum, profile)
     };
@@ -145,8 +189,8 @@ fn build(
     profile.optics = Some(optics);
     profile.underwater = true;
     let mut water = Water::mapped(Arc::clone(&map), spectrum, profile)?;
-    if !lake && wind != Wind::Calm {
-        water.enable_foam(wind.velocity())?;
+    if wind != Wind::Calm && (!lake || draw_craft) {
+        water.enable_foam(surface_wind.velocity())?;
     }
     let report = water.report();
     let mut controls = Controls::new();

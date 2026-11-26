@@ -932,6 +932,9 @@ def dive_summary(record, location):
 def dive_investigations(summary, prior):
     investigations = []
     above = summary['above']
+    prior_passes = {comparable_pass(label): (label, duration)
+                    for label, duration in prior['passes_ms'].items()}
+    above_passes = {comparable_pass(label): duration for label, duration in above['passes_ms'].items()}
     for view, current in summary.items():
         water = {comparable_pass(key): duration for key, duration in current['passes_ms'].items()
                  if key.endswith((': water gather', ': water surface'))}
@@ -945,8 +948,10 @@ def dive_investigations(summary, prior):
                 disposition='The pass sum isolates named GPU work. The CPU bracket includes the '
                             'diagnostic observer waits. This capture-off record measures shared device load.'))
         for label, value in current['passes_ms'].items():
-            previous = prior['passes_ms'].get(label)
-            if previous is not None and previous > 0 and value >= previous * 1.25:
+            name = comparable_pass(label)
+            historical = prior_passes.get(name)
+            if historical is not None and historical[1] > 0 and value >= historical[1] * 1.25:
+                prior_label, previous = historical
                 if label.endswith(': water gather'):
                     disposition = ('Mapped optics can gather above water. A submerged lens widens it to the '
                                    'full viewport. The matching current above arm measures the ordinary gather.')
@@ -959,8 +964,8 @@ def dive_investigations(summary, prior):
                                    'separate this run from the earlier record. Lower camera positions also '
                                    'change the opaque and atmospheric work presented to the renderer.')
                 investigations.append(dict(facts, wire='pass grows at least 25% from the prior above view',
-                    pass_name=label, prior_ms=previous, current_ms=value,
-                    paired_above_ms=above['passes_ms'].get(label), disposition=disposition))
+                    pass_name=label, prior_pass_name=prior_label, prior_ms=previous, current_ms=value,
+                    paired_above_ms=above_passes.get(name), disposition=disposition))
     return investigations
 
 

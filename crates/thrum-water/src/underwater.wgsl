@@ -62,8 +62,7 @@ fn lens_grazing_light(ray: vec3<f32>) -> vec3<f32> {
     return vec4(p, 0.0, 1.0);
 }
 
-fn water_to_gather(eye: LensPoint, uv: vec2<f32>) -> vec3<f32> {
-    let hit = gather_at(uv);
+fn water_to_hit(eye: LensPoint, hit: GatherHit) -> vec3<f32> {
     let camera = view.camera_xyz_time.xyz;
     let reach = min(optics.extinction_sight.w * 4.0, 4000.0);
     let ray = normalize(eye.point - camera);
@@ -77,6 +76,10 @@ fn water_to_gather(eye: LensPoint, uv: vec2<f32>) -> vec3<f32> {
     }
     let light = under_incident(vec3(eye.point.x, eye.surface, eye.point.z));
     return water_path(body, light, length_m, start_depth, end_depth);
+}
+
+fn water_to_gather(eye: LensPoint, uv: vec2<f32>) -> vec3<f32> {
+    return water_to_hit(eye, gather_at(uv));
 }
 
 @fragment fn underwater_fragment(@builtin(position) clip: vec4<f32>) -> Output {
@@ -98,6 +101,28 @@ fn interface_fresnel(cosine: f32, transmitted: f32) -> f32 {
     return 0.5 * (perpendicular * perpendicular + parallel * parallel);
 }
 
+// The refracted ray can leave the camera image before reaching the mapped
+// bank. Evaluate the terrain at its world intersection in that case.
+fn transmitted_bank(point: vec3<f32>) -> vec3<f32> {
+    let taps = vec2(0.5, 0.0);
+    let dx = reflection_bed(point.xz + taps) - reflection_bed(point.xz - taps);
+    let dz = reflection_bed(point.xz + taps.yx) - reflection_bed(point.xz - taps.yx);
+    let normal = normalize(vec3(-dx, 1.0, -dz));
+    let stony = smoothstep(0.07, 0.40, 1.0 - normal.y);
+    let albedo = mix(vec3(0.19, 0.23, 0.105), vec3(0.37, 0.30, 0.19), stony);
+    let sun = water_sun(point) * max(0.0, dot(environment_sun_direction(), normal));
+    return albedo * (environment_diffuse(normal) + sun) / 3.14159265;
+}
+
+fn air_path_to(light: vec3<f32>, start: vec3<f32>, end: vec3<f32>, uv: vec2<f32>) -> vec3<f32> {
+    let camera = view.camera_xyz_time.xyz;
+    let end_air = environment_aerial(end, uv);
+    let start_air = environment_aerial(camera + normalize(end - camera) * length(start - camera), uv);
+    let inverse = 1.0 / max(start_air.transmission, vec3(0.001));
+    return light * min(vec3(1.0), end_air.transmission * inverse)
+        + max(vec3(0.0), end_air.scatter - start_air.scatter) * inverse;
+}
+
 fn underside_light(world: vec3<f32>, n: vec3<f32>, v: vec3<f32>, variance: f32, foam: f32, eye: LensPoint) -> vec3<f32> {
     let normal = select(n, -n, dot(n, v) < 0.0);
     let cosine = clamp(dot(normal, v), 0.0001, 1.0);
@@ -114,18 +139,24 @@ fn underside_light(world: vec3<f32>, n: vec3<f32>, v: vec3<f32>, variance: f32, 
         let c = max(cosine, critical + 0.0001);
         let out_cos = sqrt(max(0.0, 1.0 - WATER_INDEX * WATER_INDEX * (1.0 - c * c)));
         let ray = normalize(-v * WATER_INDEX + (WATER_INDEX * cosine - out_cos) * normal);
-        let hit = trace(world, ray, vec2(0.03, reach), scenery, false, vec2(0.0), 1.0);
+        // The submerged reflection is limited by the water's sight distance.
+        // An outgoing ray can still pick out terrain farther away in air.
+        let air_reach = max(reach, 128.0);
+        var bank = air_reach;
+        if ray.y < 0.65 {
+            bank = bank_crossing(world, ray, air_reach);
+        }
+        let hit = trace(world, ray, vec2(0.03, min(reach, bank + 0.1)), scenery, false, vec2(0.0), 1.0);
         let sky = environment_sky_radiance(normalize(vec3(ray.x, max(0.001, ray.y), ray.z)));
         transmitted = sky;
+        if bank < air_reach {
+            let point = world + ray * bank;
+            transmitted = mix(sky, air_path_to(transmitted_bank(point), world, point, optics_project(world).xy),
+                reach_weight(bank, air_reach));
+        }
         if hit.distance > 0.0 {
-            let source_uv = optics_uv(hit.pixel);
-            let end_air = environment_aerial(hit.point, source_uv);
-            let start_air = environment_aerial(view.camera_xyz_time.xyz
-                + normalize(hit.point - view.camera_xyz_time.xyz) * length(world - view.camera_xyz_time.xyz), source_uv);
-            let inverse = 1.0 / max(start_air.transmission, vec3(0.001));
-            let air = EnvironmentAerial(min(vec3(1.0), end_air.transmission * inverse),
-                max(vec3(0.0), end_air.scatter - start_air.scatter) * inverse);
-            transmitted = mix(sky, hit_light(hit) * air.transmission + air.scatter, hit.edge);
+            transmitted = mix(transmitted,
+                air_path_to(hit_light(hit), world, hit.point, optics_uv(hit.pixel)), hit.edge);
         }
         transmission = window * (1.0 - interface_fresnel(c, out_cos));
     }
@@ -154,14 +185,25 @@ fn water_underside(input: VertexOut, n: vec3<f32>, v: vec3<f32>, variance: f32, 
     let clip_width = max(16.0 * fwidth(input.clip.z), 0.00001);
     let coverage = lens_coverage(eye.signed_depth, pixel_depth);
     if coverage == 0.0 { return vec4(0.0); }
-    var light = underside_light(input.world, n, v, variance, foam, eye);
+    let hit = gather_at(uv);
+    // A grazing sheet may briefly cross the line to a submerged opaque hit.
+    // Keep the direct water path to that hit instead of replacing its
+    // silhouette with the independently traced reflection or sky window.
+    let depth_below_sheet = input.world.y - hit.point.y;
+    let direct = select(0.0, smoothstep(0.0, 0.035, depth_below_sheet), hit.distance > 0.0);
+    // Registered hulls span the air and water. At a grazing crossing the
+    // opaque silhouette is a more stable endpoint than a reflected copy
+    // of that same hull, which can jump between neighbouring wave facets.
+    let hull = select(0.0, 1.0 - smoothstep(0.25, 0.5, -v.y),
+        hit.distance > 0.0 && registered_source(hit));
     // At the near clip, the sheet gives way to the water path to the
     // opaque scene. Grade that handoff over the projected lens edge.
     let clip_weight = 1.0 - smoothstep(0.0, clip_width, 1.0 - input.clip.z);
     let line_weight = 1.0 - smoothstep(9.0, 16.0, eye.signed_depth / pixel_depth);
-    let join = clip_weight * line_weight;
-    if join > 0.0 {
-        light = mix(light, water_to_gather(eye, uv), join);
+    let join = max(max(direct, hull), clip_weight * line_weight);
+    var light = water_to_hit(eye, hit);
+    if join < 1.0 {
+        light = mix(underside_light(input.world, n, v, variance, foam, eye), light, join);
     }
     let colour = mix(lens_grazing_light(-v), light, coverage);
     return vec4(colour * environment_storage_scale(), coverage);

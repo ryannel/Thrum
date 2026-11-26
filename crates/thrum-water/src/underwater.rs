@@ -24,6 +24,7 @@ pub(super) struct Admission<'a> {
     pub(super) horizontal: f64,
     pub(super) transformed_ceiling: Option<f64>,
     pub(super) wake: Option<&'a super::interaction::Interaction>,
+    pub(super) rain: bool,
     pub(super) domain: ShortWaveDomain,
     pub(super) level: f64,
 }
@@ -59,9 +60,11 @@ impl Underwater {
         let plane = Plane::new(frame);
         let rest = plane.rest_box(admission.mesh, frame.camera, admission.horizontal);
         rest.is_some_and(|rest| {
-            admission
-                .wake
-                .is_some_and(|wake| wake.live_wake_intersects(rest))
+            // The displayed rain field can retain ring height between evaluations.
+            admission.rain
+                || admission
+                    .wake
+                    .is_some_and(|wake| wake.live_wake_intersects(rest))
                 || !self.proves_dry(&plane, map, frame.camera, rest, seconds, admission)
         })
     }

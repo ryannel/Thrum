@@ -18,6 +18,8 @@ pub(super) const LAYERS: u32 = 4;
 pub const FIRST_LAYER: u32 = super::filtered::CASCADE_PLANES;
 /// Total layers of the cascade array with rain enabled.
 pub const SHARED_LAYERS: u32 = FIRST_LAYER + LAYERS;
+/// Base mip of the wind cascades when they share the larger rain array.
+pub const WIND_BASE_MIP: u8 = 1;
 const MIPS: u32 = SIZE.ilog2() + 1;
 const FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba16Float;
 /// Timing name for evaluating the two ring fields.

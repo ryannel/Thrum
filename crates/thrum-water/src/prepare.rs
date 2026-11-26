@@ -422,7 +422,9 @@ pub(super) fn new(
             map_gpu.as_ref(),
         )
     });
-    let shared_samplers = rain.as_ref().map(|_| field_samplers(surface, 1.0));
+    let shared_samplers = rain
+        .as_ref()
+        .map(|_| field_samplers(surface, f32::from(thrum_sea::rain::WIND_BASE_MIP)));
     let samplers = shared_samplers.as_ref().unwrap_or(&wind_samplers);
     if rain.is_some() {
         bindings[1].resource = wgpu::BindingResource::TextureView(&ambient.surface_views()[0]);
@@ -667,8 +669,14 @@ fn surface_pipelines(
         gather,
         rain,
     ) + &Cache::source(cache, tidal_grid);
+    use std::fmt::Write;
+    let wind_base_mip = if rain {
+        thrum_sea::rain::WIND_BASE_MIP
+    } else {
+        0
+    };
+    writeln!(&mut source, "\nconst WIND_BASE_MIP = {wind_base_mip};").expect("write shader source");
     if rain {
-        use std::fmt::Write;
         writeln!(
             &mut source,
             "\nconst RAIN_FIRST_LAYER = {}u;\nconst RAIN_SHARED_LAYERS = {}u;",
@@ -721,7 +729,17 @@ fn surface_pipelines(
     let film = (foam.is_some() && shore)
         .then(|| create_pipeline(surface, layout, environment, &ordinary, SurfaceDraw::Film));
     let shader = under.then(|| {
-        module(source + include_str!("underwater/cut_gpu.wgsl") + include_str!("underwater.wgsl"))
+        let sheet = if has_rivers {
+            include_str!("underwater/river_sheet.wgsl")
+        } else {
+            include_str!("underwater/rest_sheet.wgsl")
+        };
+        module(
+            source
+                + include_str!("underwater/cut_gpu.wgsl")
+                + sheet
+                + include_str!("underwater.wgsl"),
+        )
     });
     let underwater = shader.as_ref().map(|shader| UnderwaterPipelines {
         surface: create_pipeline(surface, layout, environment, shader, sheet),

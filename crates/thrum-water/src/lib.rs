@@ -706,6 +706,7 @@ impl SceneContribution for Water {
                                 .surf_cache_bounds
                                 .map(|limits| f64::from(limits[1])),
                             wake: p.interaction.as_ref(),
+                            rain: p.rain.as_ref().is_some_and(rain::Rain::active),
                             domain: if self.mapped {
                                 underwater::ShortWaveDomain::Mapped
                             } else {

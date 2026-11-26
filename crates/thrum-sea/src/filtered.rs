@@ -37,7 +37,11 @@ impl Filtered {
         long: &wgpu::Buffer,
         rain: bool,
     ) -> Self {
-        let cascade_mip = u32::from(rain);
+        let cascade_mip = if rain {
+            u32::from(super::rain::WIND_BASE_MIP)
+        } else {
+            0
+        };
         let textures = std::array::from_fn(|i| {
             let (width, layers) = match i {
                 0 => (

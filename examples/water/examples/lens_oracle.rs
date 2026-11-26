@@ -9,7 +9,12 @@ use water_scene::lens_probe::{BROWSER_DATUM, Case, EXTENT, NAMES, STEP};
 fn main() {
     let cases: serde_json::Map<_, _> = NAMES
         .into_iter()
-        .chain(["carried-crest", "trough-wet"])
+        .chain([
+            "carried-crest",
+            "carried-gain",
+            "carried-weight",
+            "trough-wet",
+        ])
         .map(|name| {
             (
                 name.to_owned(),

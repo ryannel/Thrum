@@ -669,7 +669,7 @@ try {
       assert(Math.abs(frame.tick+frame.alpha-targetTick)<1e-5,`the fixture requires endpoint ${targetTick}: ${frame.frame}`);
       return {frame,rgba:await pixels('__capturePixels')};
     };
-    for(const fixture of ['trade','lake','swash','lip','carried-crest','trough-wet']){
+    for(const fixture of ['trade','lake','swash','lip','carried-crest','carried-gain','carried-weight','trough-wet']){
       const expected=oracle.cases[fixture];
       assert(expected?.length===width*height,`missing model pixels for ${fixture}`);
       const baseline=await take(fixture,'baseline'),split=await take(fixture,'split');

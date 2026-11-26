@@ -1,4 +1,4 @@
-"""Validate the three cache timing sources without opening a device."""
+"""Validate water timing comparisons without opening a device."""
 import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -6,6 +6,24 @@ import unittest
 from unittest.mock import patch
 
 import water_cost
+
+
+class DiveComparison(unittest.TestCase):
+    def test_pass_numbers_do_not_hide_surface_tripwires(self):
+        old = 'effect after 1: effect 1: water surface'
+        new = 'effect after 2: effect 1: water surface'
+        gather = 'effect after 0: effect 1: water gather'
+        prior = {'gpu_ms': 25.0, 'passes_ms': {old: 20.0}}
+        summary = {
+            name: {'gpu_ms': 50.0, 'cpu_wall_ms': 2.0,
+                   'passes_ms': {new: surface, gather: 1.0}}
+            for name, surface in [('above', 40.0), ('half', 24.0), ('under', 30.0)]
+        }
+        surface = [row for row in water_cost.dive_investigations(summary, prior)
+                   if row.get('pass_name') == new]
+        self.assertEqual([(row['view'], row['prior_pass_name'], row['prior_ms'],
+                           row['current_ms'], row['paired_above_ms']) for row in surface],
+                         [('above', old, 20.0, 40.0, 40.0), ('under', old, 20.0, 30.0, 40.0)])
 
 
 class SurfCacheComparison(unittest.TestCase):

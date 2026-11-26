@@ -3,6 +3,10 @@
 mod support;
 
 #[cfg(target_os = "macos")]
+#[path = "lens_gpu/review.rs"]
+mod review;
+
+#[cfg(target_os = "macos")]
 mod metal {
     use crate::support::optics::{Panel, Rig, attach, camera, sun};
     use std::sync::{Mutex, MutexGuard, PoisonError};
@@ -295,6 +299,22 @@ thrum_test_support::macos_gpu_test! {
 fn metal_admits_the_short_crest_carried_in_from_outside_the_footprint() {
     let Some((_serial, gpu)) = metal::gpu("off-footprint carried crest") else { return };
     metal::check(&water_scene::lens_probe::Case::new("carried-crest", 0.0), &gpu);
+}
+}
+
+thrum_test_support::macos_gpu_test! {
+#[expect(clippy::print_stderr, reason = "counterfactual lens line measurements")]
+fn metal_uses_the_short_wave_gain_and_weight_at_the_reachable_rest_place() {
+    use water_scene::lens_probe::{Case, EXTENT, FOV};
+    let Some((_serial, gpu)) = metal::gpu("carried short-wave gain and weight") else { return };
+    let pixel_height = 0.2 * f64::from((FOV * 0.5).tan()) / f64::from(EXTENT[1]);
+    for name in ["carried-gain", "carried-weight"] {
+        let case = Case::new(name, 0.0);
+        let error = case.footprint_short_error();
+        eprintln!("{name}: evaluating that term on the footprint shifts the line {:.2} rows", error / pixel_height);
+        assert!(error.abs() > 2.0 * pixel_height, "{name}: {error:.6} m");
+        metal::check(&case, &gpu);
+    }
 }
 }
 

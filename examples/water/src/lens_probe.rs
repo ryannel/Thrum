@@ -141,6 +141,13 @@ pub struct Case {
     mapped: bool,
 }
 
+#[derive(Clone, Copy)]
+enum ShortAt {
+    Rest,
+    FootprintGain,
+    FootprintWeight,
+}
+
 impl Case {
     /// Prepare the named fixture at the given vertical datum.
     /// # Panics
@@ -201,6 +208,44 @@ impl Case {
             case.map
                 .set_wave_gains(0, [1.0, 1.0, 0.0, 0.0])
                 .expect("two geometric bands");
+            return case;
+        }
+        if name == "carried-gain" {
+            let mut case = Self::new("carried-crest", datum);
+            case.name = name;
+            case.mapped = true;
+            let sea = case.map.body(0).expect("sea").clone();
+            let heights = (-24..=24).flat_map(|z| {
+                let depth = (0.08 + 1.45 * f64::from(z).max(0.0)).min(4.0);
+                std::iter::repeat_n(datum - depth, 49)
+            });
+            let bed = Bed::new(
+                [case.column[0] - 12.0, -12.0],
+                0.5,
+                [49, 49],
+                heights.collect(),
+            )
+            .expect("sloping short-wave bed");
+            case.map = Map::prepare(
+                bed,
+                vec![sea],
+                thrum_water_model::Profile {
+                    margin_height: 0.1,
+                    swash_ratio: 0.1,
+                },
+            )
+            .expect("mapped crest");
+            return case;
+        }
+        if name == "carried-weight" {
+            let mut case = Self::new("lip", datum);
+            case.name = name;
+            let phase = -case.column[0] * 12.0 * TAU / 160.0;
+            case.spectrum.cascades[0] = Cascade::new(160.0, &[(12, 0, 0.15, phase)])
+                .expect("short crest on the transformed shore");
+            case.map
+                .set_wave_gains(0, [1.0, 1.0, 0.0, 0.0])
+                .expect("transformed short wave");
             return case;
         }
         let column = match name {
@@ -393,7 +438,10 @@ impl Case {
         // A level near plane repeats its world columns down the image. Solve
         // each column once, then compare to each pixel's own vertical point.
         let triangles = (NAMES.contains(&self.name)
-            || matches!(self.name, "sea" | "carried-crest" | "trough-wet"))
+            || matches!(
+                self.name,
+                "sea" | "carried-crest" | "carried-gain" | "carried-weight" | "trough-wet"
+            ))
         .then(|| self.triangles());
         let columns: Vec<_> = (0..width)
             .map(|x| {
@@ -442,6 +490,26 @@ impl Case {
     }
 
     fn triangles(&self) -> Vec<[SheetPoint; 3]> {
+        self.triangles_at(ShortAt::Rest)
+    }
+
+    /// Difference in centre-column heights if only the chosen short-wave term
+    /// is evaluated on the lens footprint. Other terms retain their rest values.
+    /// # Panics
+    /// Panics when the case does not isolate a gain or weight.
+    #[must_use]
+    pub fn footprint_short_error(&self) -> f64 {
+        let alternative = match self.name {
+            "carried-gain" => ShortAt::FootprintGain,
+            "carried-weight" => ShortAt::FootprintWeight,
+            _ => panic!("expected a carried short-wave gain or weight fixture"),
+        };
+        let cut =
+            |at| highest_triangle(self.column, self.triangles_at(at)).expect("covered lens column");
+        cut(ShortAt::Rest) - cut(alternative)
+    }
+
+    fn triangles_at(&self, short_at: ShortAt) -> Vec<[SheetPoint; 3]> {
         let mut variances = self.field.variances();
         let short = self.spectrum.cascades.each_ref().map(Cascade::variance);
         let grids = self.spectrum.cascades.each_ref().map(|cascade| {
@@ -453,6 +521,22 @@ impl Case {
             .surf_sheet(&self.field, 0, 0.0)
             .ok()
             .map(|sheet| sheet.with_short_wave_variances(short));
+        let footprint = self.map.sample(self.column).expect("lens footprint row");
+        let footprint_gains = limit(
+            footprint.row,
+            footprint.depth,
+            variances,
+            self.map.profile(),
+        )
+        .gains;
+        let footprint_weight = surf.as_ref().map_or(1.0, |sheet| {
+            self.map.surf_short_wave_weight(
+                self.column,
+                footprint,
+                variances,
+                footprint.row.level + sheet.forward(self.column).height,
+            )
+        });
         // These witnesses are in the near grid, away from every ring seam.
         let spacing = if self.name == "lake" { 0.5 } else { 0.25 };
         let origin = self.column.map(f64::floor);
@@ -479,16 +563,24 @@ impl Case {
                 height: row.row.level + long.height,
                 ..long
             };
-            let weight = self
-                .map
-                .surf_short_wave_weight(rest, row, variances, point.height);
+            let weight = if matches!(short_at, ShortAt::FootprintWeight) {
+                footprint_weight
+            } else {
+                self.map
+                    .surf_short_wave_weight(rest, row, variances, point.height)
+            };
             for (band, cascade) in self.spectrum.cascades.iter().enumerate() {
-                if gains[band + 1] == 0.0 || short[band] == 0.0 {
+                let local_gain = if matches!(short_at, ShortAt::FootprintGain) {
+                    footprint_gains[band + 1]
+                } else {
+                    gains[band + 1]
+                };
+                if local_gain == 0.0 || short[band] == 0.0 {
                     continue;
                 }
                 let length = cascade.length();
                 let blend = ((spacing - length / 128.0) / (3.0 * length / 128.0)).clamp(0.0, 1.0);
-                let gain = weight * gains[band + 1] * (1.0 - blend * blend * (3.0 - 2.0 * blend));
+                let gain = weight * local_gain * (1.0 - blend * blend * (3.0 - 2.0 * blend));
                 let step = length / 256.0;
                 let grid = grids[band].as_ref().expect("active cascade");
                 let [x, y, z] = texels(rest, step, |p| {

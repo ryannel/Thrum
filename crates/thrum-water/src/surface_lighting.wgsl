@@ -91,6 +91,9 @@
     } else {
         light+=sunlight*d*gv*gl*fh/(4.0*nv+0.00001);
     }
+    let uv=input.clip.xy*view_aux.viewport_inv_viewport.zw;
+    let grazing = grazing_body_path(input.world, v, uv, incident);
+    light = mix(light, grazing.rgb, grazing.a);
     if FOAM_ENABLED {
         light+=incident*vec3(0.035,0.19,0.19)*whitewater.x*(1.0-fresnel);
         light=mix(light,incident*vec3(0.86,0.90,0.89)/3.14159265,whitewater.y);

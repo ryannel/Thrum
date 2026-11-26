@@ -136,13 +136,29 @@ fn river_refinement(point: vec2<f32>, id: u32, spacing: f32) -> f32 {
     return weight;
 }
 
+fn river_ownership_point(world: vec2<f32>, rest: vec2<f32>, transformed: bool) -> vec2<f32> {
+    return select(world, rest, transformed);
+}
+
+fn river_sheet_height(
+    point: vec2<f32>, spacing: f32, row: SurfaceRow, raster: f32, datum: f32,
+    transformed: bool, weight: f32,
+) -> f32 {
+    if weight == 0.0 { return raster; }
+    var physical = raster + (row.level - datum);
+    if !transformed {
+        physical = river_column_level(point, spacing, row);
+    }
+    return mix(raster, physical, weight);
+}
+
 @fragment fn river_fragment(input: VertexOut) -> RiverOutput {
     // Derivatives describe the rasterized triangle's map back to rest space.
     let x = dpdx(input.world);
     let y = dpdy(input.world);
     let rest_x = dpdx(input.rest);
     let rest_y = dpdy(input.rest);
-    let plain_column = input.surf_weight == 0.0;
+    let transformed = input.surf_weight > 0.0;
     let mesh_level = input.river.x;
     let retained = input.world.y - mesh_level;
     let retained_gradient = vec2(dpdx(retained), dpdy(retained));
@@ -154,7 +170,7 @@ fn river_refinement(point: vec2<f32>, id: u32, spacing: f32) -> f32 {
     let weight = river_refinement(input.world.xz, surface_body(input.body), spacing);
     // A displaced receiving sheet can overlap a river even outside the
     // narrow join correction. Plain sheets take ownership at the world hit.
-    var row = surface_pixel(select(input.rest, input.world.xz, plain_column), input.body);
+    var row = surface_pixel(river_ownership_point(input.world.xz, input.rest, transformed), input.body);
     let ndc = fma(input.clip.xy * view_aux.viewport_inv_viewport.zw, vec2(2.0, -2.0), vec2(-1.0, 1.0));
     let m = view.view_proj;
     let a = fma(-ndc, vec2(m[0].w), m[0].xy);
@@ -181,14 +197,13 @@ fn river_refinement(point: vec2<f32>, id: u32, spacing: f32) -> f32 {
             let screen = solve_horizontal(x.xz, y.xz, shift, mesh_det);
             let rest = input.rest + screen.x * rest_x + screen.y * rest_y;
             let column = input.world.xz + shift;
-            let sample = surface_pixel(select(rest, column, plain_column), input.body);
+            let sample = surface_pixel(river_ownership_point(column, rest, transformed), input.body);
             if !sample.owned { break; }
-            let raster_height = dot(mesh_gradient, screen);
-            var physical_height = (sample.level - mesh_level) + dot(retained_gradient, screen);
-            if plain_column {
-                physical_height = river_column_level(column, spacing, sample) - input.world.y;
-            }
-            let residual = mix(raster_height, physical_height, weight) - height;
+            let raster = input.world.y + dot(mesh_gradient, screen);
+            let datum = mesh_level + dot(mesh_gradient - retained_gradient, screen);
+            let sheet = river_sheet_height(column, spacing, sample, raster, datum, transformed,
+                river_refinement(column, surface_body(input.body), spacing));
+            let residual = (sheet - input.world.y) - height;
             let error = abs(residual);
             // Keep the best owned intersection if the iteration crosses a
             // crease or runs out of steps on a grazing ray.

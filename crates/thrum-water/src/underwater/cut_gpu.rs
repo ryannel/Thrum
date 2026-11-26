@@ -10,7 +10,7 @@ use thrum_render::{
 const COVER: u32 = 64;
 const FACES: u64 = 32_768;
 const CELL_BYTES: u64 = 16;
-const FACE_BYTES: u64 = 64;
+const FACE_BYTES: u64 = 80;
 pub(crate) const OUTPUT: u32 = 22;
 const MESH: u32 = 23;
 const INPUT: u32 = 24;

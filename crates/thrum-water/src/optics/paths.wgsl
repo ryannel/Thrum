@@ -46,6 +46,23 @@ fn hit_light(hit: GatherHit) -> vec3<f32> {
     return textureLoad(gathered_radiance, hit.pixel, 0).rgb / environment_storage_scale();
 }
 
+// A short grazing path through the first crest keeps a nearby hull's
+// opaque silhouette. Distant and steep paths still follow the optical rays.
+fn grazing_body_path(world: vec3<f32>, v: vec3<f32>, uv: vec2<f32>, incident: vec3<f32>) -> vec4<f32> {
+    let distance = length(world - view.camera_xyz_time.xyz);
+    let grazing = (1.0 - smoothstep(0.2, 0.4, abs(v.y))) * (1.0 - smoothstep(2.0, 3.0, distance));
+    if grazing == 0.0 { return vec4(0.0); }
+    let hit = gather_at(uv);
+    let depth = world.y - hit.point.y;
+    if hit.distance <= distance || depth <= 0.0 || !registered_source(hit) {
+        return vec4(0.0);
+    }
+    let transmission = exp(-optics.extinction_sight.xyz * length(hit.point - world));
+    let light = hit_light(hit) * exp(-optics.downwelling_mirror.xyz * depth);
+    let scatter = incident * water.scatter.rgb / 3.14159265;
+    return vec4(mix(scatter, light, transmission), grazing * smoothstep(0.0, 0.025, depth));
+}
+
 // Slab interval in metres along the surface ray. Handle parallel axes without 0/0.
 fn box_interval(origin: vec3<f32>, ray: vec3<f32>, body: OpticsBody, reach: f32) -> vec2<f32> {
     var result = vec2(0.015, reach);

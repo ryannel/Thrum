@@ -44,6 +44,10 @@ pub(super) struct Rain {
 }
 
 impl Rain {
+    pub(super) fn active(&self) -> bool {
+        self.active
+    }
+
     #[expect(
         clippy::cast_possible_truncation,
         reason = "validated canopy and depth response in GPU units"
