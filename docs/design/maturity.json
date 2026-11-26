@@ -3350,7 +3350,7 @@
       "id": "E1.rain",
       "name": "Rain and puddles",
       "design": "../plans/PUDDLES/DESIGN.md",
-      "current_design_sha256": "cf151380b510521e60cc5d433099d51a7476a2b25561aaf9c55dcd466ca0187e",
+      "current_design_sha256": "150ec894f959474e11bc2a9054d6504eb37b211f1d70789ab09435f58cf19d69",
       "parent": "E1",
       "contracts": ["C08", "C09"],
       "implementation": "partial",

@@ -22,6 +22,7 @@ Before any work package, read [Proof and builder handoff](DESIGN.md#proof-and-bu
 - Assumption: this module builds inside `WATERS`' crates and the forward shader under eight rulings, and four of them replace what `WATERS`' design expected: a puddle is not a lake with a seed point, a raindrop is not an impulse record, the shore's film is also drawn on wet paving, and a yard of puddles is mirrored at several heights.
 - Assumption: the module closes only after `WATERS` has its mirror view, its look in motion and its light under water (WP14, WP10 and WP16), because a puddle that mirrors only what is on screen is below the bar.
 - Assumption: the owner's bar of 17 November applies as in `WATERS`: puddles, rain bands and wetness stay tested against the model, and the wet look and rings are judged by eye.
+- Assumption: what rain adds to the water query is designed and timed for the island's craft and eight floats, 54 points a tick. How many more points a game may ask for in rain before its tick suffers is not claimed.
 - Assumption: cost is recorded on the Mac only, at 2560×1440 on the island and the showcase's extent in the valley, and no timing figure decides an item (brief decision 3).
 
 ## WP1 On the CPU alone, rain fills the hollows of a stretch of ground: puddles stand level where it dips, spill into each other, join into one and part again as they dry, and ground under a roof stays dry: done
@@ -36,7 +37,7 @@ The island's ground, bodies, `scripts/water_cost.py` and `scripts/check_water_br
 
 ## WP4 Rain rings every water it falls on, the puddles, the lake and the sea, more and rougher as it grows and not at all under the roof, and the rings run out when the rain stops
 
-The rain bands' passes join the cascades' in `thrum-sea`, which is `WATERS`' to extend by now. WP4.1's test states its own tolerance. The schedule's count and the moments of the drops below the cut are the two values to tune against WP4.4 and WP4.5; record both.
+The rain bands' passes join the cascades' in `thrum-sea`, which is `WATERS`' to extend by now. WP4.1's test states its own tolerance. The schedule's count and the moments of the drops below the cut are the two values to tune against WP4.4 and WP4.5; record both. Both findings of the WP4 review are open. The stalled tick is settled by [what a query reads](DESIGN.md#rain-rings): the rain's share of an answer is `thrum-water-model`'s to compute, from one list of the live drops a tick and the prepared footprint, and `thrum-water`'s drain calls it. The review's mailbox probe, `WP4-review/dab0796/fleet.rs` in the evidence folder, posts the batch WP4.10 times. The slope on a current that changes along the flow stands as the review states it, under ruling 3.
 
 ## WP8 A footfall or a dropped stone in a puddle sends rings across it at the speed its depth gives, and they die at its edge and stop at a dry sill
 

@@ -503,7 +503,7 @@
         },
         {
           "id": "WP4.10",
-          "statement": "With rain at 50 mm/h on the yard and the lake, the paired cost record is taken again at 2560x1440, beside WP3's, with the CPU time of labelling regions as the puddles fill. Each tripwire it trips has its investigation beside it. No figure in the record decides this item.",
+          "statement": "The paired cost record for rain at 50 mm/h on the yard and the lake is taken again at 2560x1440, beside WP3's. It also holds two CPU times. One is labelling regions as the puddles fill. The other is the game's tick draining ready answers from the query mailbox for the example's craft and eight floats, 54 stations at their own radii: the median and the longest drain of at least 60 ticks in that rain, and of the same batch with no rain. A drain in the rain longer than a tenth of the tick trips a wire. Each wire the record trips has its investigation beside it. No figure in the record decides this item.",
           "check": "python3 scripts/water_cost.py check --scene rain-rings",
           "lock": "gpu",
           "target": "mac-metal",
@@ -511,6 +511,15 @@
           "evidence": ".orchestrate/evidence/PUDDLES/WP4/period-final-cost.json",
           "verdict": "pass",
           "review": ".orchestrate/evidence/PUDDLES/WP4-review.md"
+        },
+        {
+          "id": "WP4.13",
+          "statement": "The rain's share of a query answer is the bands' own function over the station's disc, at the tick the answer is used at. In f64, at footprint radii of 0.04 m, 0.128 m and 0.278 m, the model's footprint read agrees with a direct average of the bands over the disc in height, both slopes and rate, at a tolerance the test states, which a read at a point and the patch's mean both miss at 0.04 m. From a radius of 0.64 m the read is the patch's mean, with no slope. The mailbox's answers at 0.128 m and 0.278 m, the radii of the example's floats and craft, are the model's read for the use tick.",
+          "check": "cargo test --locked --offline -p water-scene --features thrum-render/creation-counters --test rain_bands_gpu",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": ""
         }
       ],
       "findings": [
@@ -552,7 +561,7 @@
         },
         {
           "id": "WP8.9",
-          "statement": "With the fine level in the profile, no wave is on two interaction levels. A stone's impulse inside the fine window raises a wave both grids can hold, such as one 0.64 m long, on the fine level, and the near level's state stays at rest in it. A wave a few metres long from the same impulse is on the near level and not on the fine one. The same impulse with no fine level in the profile puts the 0.64 m wave on the near level, as `WATERS` built it.",
+          "statement": "With the fine level in the profile, a source's waves are split between the interaction levels and each is counted once: outside the 1 m crossing a wave is on one level alone. A stone's impulse inside the fine window raises a wave both grids can hold, such as one 0.64 m long, on the fine level, and the near level's state stays at rest in it. A wave a few metres long from the same impulse is on the near level and not on the fine one. The same impulse with no fine level in the profile puts the 0.64 m wave on the near level, as `WATERS` built it.",
           "check": "cargo test --locked --offline -p thrum-water --test fine_level_gpu",
           "ask": "Does the test read the near level's own state with the fine level in the profile, and does it fail when the near level is still given the source's waves under 1 m?",
           "lock": "gpu",

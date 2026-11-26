@@ -229,3 +229,20 @@
   the rain base pass measured 0.95–0.98 ns per output texel on M3 Max Metal, down from 1.12–1.16 ns. All
   five executable items passed. The native captures and independent inspection cover sparse births, three
   ages of one ring, the heavy shower and shelter, the distant reflection, and both stop and restart views.
+
+- 2026-11-26 Design review of the longer rain periods asked for changes:
+  [one Must Fix](../../../.orchestrate/evidence/PUDDLES/design-review.md). The game's rain queries drew the
+  drop schedule again for every sample of every station's footprint, 30 to 57 ms for the example's 54
+  stations at the new periods where a tick is 16.7 ms, and no cost record covered it.
+- 2026-11-26 Must Fix 1, decided: the design's [rain rings](DESIGN.md#rain-rings) now says what a query
+  reads. The rain's share is added in the drain for the use tick, from one list of the live drops a tick
+  shared by the batch and a prepared footprint, a ring's mean over the station's disc. Not chosen: a share
+  read from the bands' textures, and one list a tick with the footprint still integrated on the tick.
+  [What changed, the candidates and their times](../../../.orchestrate/evidence/PUDDLES/design-revision-2026-11-26.md)
+- 2026-11-26 Items: WP4.10 written again, so its record also holds the drain of the example's 54 stations
+  in rain and dry, with a wire at a tenth of the tick. WP4.13 added: the model's footprint read against a
+  direct average over the disc at three radii, and the mailbox against the read, because WP4's test compared
+  them only at a point and at a 3 m hull, which a read with no footprint in between would pass. Suggestions
+  taken, both: the handoff names the tracked provenance record, and WP8.9 opens with each wave counted once
+  in place of "no wave is on two interaction levels", which the crossing at 1 m contradicts. Not run: WP4's
+  checks, whose commands are unchanged.
