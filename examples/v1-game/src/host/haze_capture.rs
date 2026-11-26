@@ -16,6 +16,7 @@ enum Motion {
     Mover,
     Climb,
     Approach,
+    ThroughHandover,
 }
 
 #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
@@ -63,6 +64,7 @@ impl HazeTake {
     pub(crate) fn duration(self) -> Option<f64> {
         match self.motion {
             Some(Motion::MistPan | Motion::Climb | Motion::Approach) => Some(12.0),
+            Some(Motion::ThroughHandover) => Some(32.0),
             _ => None,
         }
     }
@@ -90,6 +92,10 @@ impl HazeTake {
             Some(Motion::Approach) => {
                 let walk = ((elapsed_seconds - 1.0) / 10.0).clamp(0.0, 1.0);
                 pose.eye[2] -= 40.0 * walk;
+            }
+            Some(Motion::ThroughHandover) => {
+                let walk = ((elapsed_seconds - 1.0) / 30.0).clamp(0.0, 1.0);
+                pose.eye[2] -= 240.0 * walk;
             }
             Some(Motion::MistWalk) => pose.eye[0] += 100.0 * progress,
             Some(Motion::MistPan) => {
