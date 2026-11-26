@@ -1804,7 +1804,7 @@
       }
     },
     "WP9": {
-      "definitions": "a306952d7445f5c5bd416a4fb14b70a886ef3365e699190be362109a33c80c74",
+      "definitions": "fa3d00806086fed94e5d68cc5397e95467febc4baa4d496bab77dcabdb87cc9a",
       "reviews": [
         {
           "verdict": "fail",
@@ -1988,37 +1988,8 @@
       ],
       "authorised": {
         "by": "plan",
-        "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
-        "at": "2026-11-24T22:06:49Z"
-      },
-      "ready_for_review": {
-        "commit": "df2150c107518e90c7066e79f4feff278df88282",
-        "checked": "df2150c107518e90c7066e79f4feff278df88282",
-        "at": "2026-11-26T09:57:57Z",
-        "reused": [
-          "WP9.1",
-          "WP9.2",
-          "WP9.4",
-          "WP9.5"
-        ],
-        "host": "codex",
-        "model": "gpt-6.2-sol",
-        "effort": "medium",
-        "observed": {},
-        "cli": "codex-cli 0.171.0-alpha.13.2",
-        "path": "headless",
-        "usage": {
-          "input": 269984,
-          "cached": 31093120,
-          "output": 62797,
-          "turns": 1
-        },
-        "session_usage": {
-          "input": 269984,
-          "cached": 31093120,
-          "output": 62797,
-          "turns": 1
-        }
+        "task": "Diagnose WATERS WP9. It has failed review 4 times, 3 of them on an item or a finding an earlier review had failed, so th",
+        "at": "2026-11-26T10:24:11Z"
       }
     },
     "WP10": {
@@ -3210,11 +3181,15 @@
     {
       "task": "The owner decided WATERS WP8, blocked after five failed reviews with 9 of 10 items passing: asked \"split off the chart cases (WP8 passes on what it proved, the two chart-water cases of WP8.7 become a small follow-up work package) or reopen for one more try?\", the owner answered \"Yes\" to splitting them off. Narrow WP8.7 so WP8 closes on what its reviews already passed, and plan the two failing chart cases from the last review at .orchestrate/evidence/WATERS/WP8-review.md (deep calm chart water loses its scene reflection; rough chart water with a visible shallow tile requests a whole-screen gather, regions.rs:290) as a new small work package after WP23. Keep WP23 next so the cross-target check on main is fixed first.",
       "at": "2026-11-26T03:34:14Z"
+    },
+    {
+      "task": "Diagnose WATERS WP9. It has failed review 4 times, 3 of them on an item or a finding an earlier review had failed, so the same items keep failing: the fixes aren't holding, or each fix meets a new defect in an item that may ask for more than the vision and scope document does. Its reviews, oldest first: .orchestrate/evidence/WATERS/WP9-review-1.md, .orchestrate/evidence/WATERS/WP9-review-2.md, .orchestrate/evidence/WATERS/WP9-review-3.md, .orchestrate/evidence/WATERS/WP9-review.md. What failed in each review: review 1 (2026-11-26): Ripple carriage reverses during renewal (WP9.2), new; Bank ripples pulse in phase across the reach (WP9.3), new; A downstream force carries the float through still water (WP9.4), new; Chrome ripple carriage reverses while the transport check passes (WP9.5), new; The paired record skips comparable full-screen pass tripwires (WP9.7), new | review 2 (2026-11-26): Varying chart currents flatten ripple detail (WP9.2), new; Chart queries return slope in the wave coordinate instead of world space (outside the items), new | review 3 (2026-11-26): Still water inherits ripple drift from moving water on the same chart (WP9.2), new | review 4 (2026-11-26): Moving ripples follow the mean speed along a lane (WP9.2), new; Chart queries return slope in the wave coordinate instead of world space (outside the items), repeated. A plan you keep ends with `KEEP WATERS WP9: ...`.\n\nLead's view: the WP9.2 findings are each new and each finer than the last (now a speed exchange over four metres between two moving lanes, measured by marker fitting). The bar is the look of shipped high-end games and proof proportional to risk, not exactness: narrow WP9.2 to what a player sees (ripples and foam visibly carried with the local current, still water still, no reversal or pulsing), checked at a visible scale, and record finer per-lane speed fidelity as a known limitation or a later item. The world-space slope defect on the bounded track is a real interface bug (a float tilts wrongly), so keep it as an item.",
+      "at": "2026-11-26T10:24:11Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-26T03:34:14Z"
+    "at": "2026-11-26T10:24:11Z"
   },
   "design_history": [
     {

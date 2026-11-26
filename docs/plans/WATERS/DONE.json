@@ -1613,10 +1613,10 @@
     {
       "id": "WP9",
       "name": "Water runs down a channel from the lake to the sea: its surface follows the slope, its ripples and foam travel with the current, and a float is carried down to the sea",
-      "status": "in_progress",
-      "failed_reviews": 4,
-      "failed_reviews_with_repeat": 3,
-      "diagnoses": 0,
+      "status": "not_started",
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0,
+      "diagnoses": 1,
       "depends_on": [],
       "quality_bar": "A running stream as in Red Dead Redemption 2: water that visibly moves downstream at its own speed, faster in the narrows, carrying foam and anything afloat, with no sliding sheet, pulse or seam where it joins still water.",
       "items": [
@@ -1627,10 +1627,10 @@
           "ask": "Is the channel reached only through the chart a game can declare, with no code path in `thrum-water` that knows it is the example's or a stand-in? Does the test fail when the chart is taken over its neighbours with one stage of its own? At low tide, does the depth limit hold the swell at the mouth in the test's own readings?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP9/revision-2/metal-channel.log",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/WP9-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP9.2",
@@ -1640,18 +1640,18 @@
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
-          "verdict": "fail",
-          "review": ".orchestrate/evidence/WATERS/WP9-review.md"
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP9.3",
           "statement": "The channel reads as running water: ripples and foam move downstream, faster where the channel narrows, with no texture sliding as one sheet and no pulse at the carriage's period. Where it leaves the lake and where it meets the sea there is no seam, step or change of look, in a swell and while the lake's level and the tide are moved.",
           "inspect": "`realtime` sequences from the bank at 2 m, looking across and along the channel, at its narrows and at each end, one of each end while the lake's level and the tide are moved through their ranges in a trade wind with a swell running, the mouth held at low tide among them, and one from 40 m above its whole length.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP9/revision-1/visual.md",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/WP9-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP9.4",
@@ -1659,10 +1659,10 @@
           "check": "cargo test --locked --offline -p water-scene --test channel_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP9/revision-2/metal-channel.log",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/WP9-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP9.5",
@@ -1670,20 +1670,20 @@
           "check": "node scripts/check_water_browser.mjs --case channel",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP9/revision-2/check-output/run.json",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/WP9-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP9.6",
           "statement": "A chart is documented as the seam a river solver writes: its grid and cell size, and the level, current and loss of height with their units, signs and what each reader does with them.",
           "ask": "Could `RIVERS`' planner have a solver write a chart from this documentation and the design alone? Does it say what a chart's stage changes and what it leaves as prepared?",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP9/chart-contract.md",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/WP9-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP9.7",
@@ -1691,10 +1691,10 @@
           "check": "python3 scripts/water_cost.py check --scene channel",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP9/revision-2/check-output/channel-cost.json",
-          "verdict": "pass",
-          "review": ".orchestrate/evidence/WATERS/WP9-review.md"
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP9.8",
@@ -1707,18 +1707,6 @@
           "evidence": "",
           "verdict": "",
           "review": ""
-        }
-      ],
-      "findings": [
-        {
-          "name": "Moving ripples follow the mean speed along a lane",
-          "item": "WP9.2",
-          "different": "The still margin now stays still, and lanes of constant speed pass. Where running water changes speed downstream, the same-sign run average makes two moving sections exchange their apparent speed ordering.",
-          "repeat": false
-        },
-        {
-          "name": "Chart queries return slope in the wave coordinate instead of world space",
-          "repeat": true
         }
       ]
     },
