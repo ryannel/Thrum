@@ -495,7 +495,7 @@
     {
       "id": "WP6",
       "name": "A running game can say exactly which cooked content it is drawing, so two stores at the same generation cannot be mistaken for each other",
-      "status": "not_started",
+      "status": "in_progress",
       "quality_bar": "As exact as a shipped game's benchmark report, which names the build and content that actually ran: the identity of what was drawn, never of what was requested, fetched or pinned.",
       "items": [
         {
@@ -505,8 +505,8 @@
           "ask": "Is the hash carried with the prepared set and written and cleared only where the drawn generation is, on the store source and the remote feed, and never read from the store, the feed or the configuration when it is reported?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CONTENT-LOOP/WP6/README.md",
           "verdict": "",
           "review": ""
         }

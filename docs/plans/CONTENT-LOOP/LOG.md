@@ -205,3 +205,11 @@
   the switch's commit. New WP6 with one item; `SHOWCASE` WP7 depends on it. The game's reports that carry the
   hash stay `SHOWCASE`'s. WP1 to WP5 are Done and unchanged.
   [The design section](DESIGN.md#the-drawn-publications-identity-wp6)
+
+## WP6 drawn publication identity
+
+- 2026-11-26 Residency publishes the generation and manifest hash from the prepared `Head` under one stats
+  lock at the switch submission. The existing rebuild clears both together.
+- WP6.1 passed on Metal. Two stores reported distinct hashes at generation 1. An edit and discarded switch
+  preserved the old pair until submission, and a fetched publication reported the pair from its verified head.
+  [Metal test output and source audit](../../../.orchestrate/evidence/CONTENT-LOOP/WP6/README.md)

@@ -58,7 +58,7 @@ use std::time::Instant;
 #[cfg(target_arch = "wasm32")]
 use web_time::Instant;
 
-use thrum_asset::{Ktx2Format, Profile, RemoteGeneration};
+use thrum_asset::{ContentHash, Ktx2Format, Profile, RemoteGeneration};
 use thrum_render::contribution::{
     ContributionFrame, ContributionPasses, SceneContribution, SceneSurface, SecondaryShadowCascade,
     ShadowBounds,
@@ -442,6 +442,8 @@ pub struct CookedStats {
     pub staging_peak_bytes: u64,
     /// Generation currently drawn.
     pub drawn: Option<u64>,
+    /// Manifest hash from the same publication as [`Self::drawn`], committed on submission.
+    pub drawn_manifest_hash: Option<ContentHash>,
     /// Bytes of the committed font sheet textures, including their mips.
     pub resident_font_bytes: u64,
     /// Device generation on which the drawn content was submitted.
@@ -1122,7 +1124,7 @@ impl CookedAssets {
                     rows.updates.invalidate_device();
                 }
                 if let Ok(mut stats) = self.stats.lock() {
-                    stats.drawn = None;
+                    (stats.drawn, stats.drawn_manifest_hash) = (None, None);
                     stats.resident_font_bytes = 0;
                     stats.drawn_device_generation = None;
                     stats.last_frame_history = None;
@@ -1342,7 +1344,7 @@ impl SceneContribution for CookedAssets {
         self.lease.clear();
         self.live = None;
         if let Ok(mut stats) = self.stats.lock() {
-            stats.drawn = None;
+            (stats.drawn, stats.drawn_manifest_hash) = (None, None);
             stats.resident_font_bytes = 0;
             stats.drawn_device_generation = None;
             stats.draw_path = None;
@@ -1760,7 +1762,8 @@ impl SceneContribution for CookedAssets {
                         live.readback.as_ref().map(|readback| &readback.buffer),
                     );
                 }
-                stats.drawn = Some(set.generation);
+                (stats.drawn, stats.drawn_manifest_hash) =
+                    (Some(set.head.generation), Some(set.head.manifest));
                 stats.resident_font_bytes = set
                     .leased
                     .iter()

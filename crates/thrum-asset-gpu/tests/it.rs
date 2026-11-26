@@ -4,6 +4,7 @@
 
 mod await_drawn;
 mod cooked_view_gpu;
+mod drawn_publication;
 mod mapped_indices;
 mod static_scene;
 mod wgsl_records;
