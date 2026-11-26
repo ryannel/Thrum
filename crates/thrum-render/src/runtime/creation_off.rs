@@ -41,7 +41,7 @@ impl DeviceSite {
     }
 
     #[cfg(target_os = "macos")]
-    pub(super) fn metal_preparation(
+    pub(crate) fn metal_preparation(
         &self,
     ) -> Option<&crate::capabilities::metallib::PipelinePreparation> {
         self.1.as_deref()
@@ -53,7 +53,7 @@ impl DeviceSite {
         let create = || self.0.create_render_pipeline(desc);
         #[cfg(target_os = "macos")]
         if let Some(metal) = &self.1 {
-            return metal.render(&self.0, desc);
+            return metal.render(&self.0, desc, |desc| self.0.create_render_pipeline(desc));
         }
         create()
     }
@@ -64,7 +64,7 @@ impl DeviceSite {
         let create = || self.0.create_compute_pipeline(desc);
         #[cfg(target_os = "macos")]
         if let Some(metal) = &self.1 {
-            return metal.compute(&self.0, desc);
+            return metal.compute(&self.0, desc, |desc| self.0.create_compute_pipeline(desc));
         }
         create()
     }
@@ -74,7 +74,7 @@ impl DeviceSite {
         let create = || self.0.create_mesh_pipeline(desc);
         #[cfg(target_os = "macos")]
         if let Some(metal) = &self.1 {
-            return metal.mesh(&self.0, desc);
+            return metal.mesh(&self.0, desc, |desc| self.0.create_mesh_pipeline(desc));
         }
         create()
     }

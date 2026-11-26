@@ -419,7 +419,7 @@ impl DeviceSite {
     }
 
     #[cfg(target_os = "macos")]
-    pub(super) fn metal_preparation(
+    pub(crate) fn metal_preparation(
         &self,
     ) -> Option<&crate::capabilities::metallib::PipelinePreparation> {
         self.0.metal.as_deref()
@@ -429,11 +429,11 @@ impl DeviceSite {
     pub fn render(&self, desc: &wgpu::RenderPipelineDescriptor<'_>) -> wgpu::RenderPipeline {
         let create = || self.0.device.create_render_pipeline(desc);
         #[cfg(target_os = "macos")]
-        let pipeline = self
-            .0
-            .metal
-            .as_ref()
-            .map_or_else(create, |metal| metal.render(&self.0.device, desc));
+        let pipeline = self.0.metal.as_ref().map_or_else(create, |metal| {
+            metal.render(&self.0.device, desc, |desc| {
+                self.0.device.create_render_pipeline(desc)
+            })
+        });
         #[cfg(not(target_os = "macos"))]
         let pipeline = create();
         if let Some(ledger) = &self.0.ledger {
@@ -446,11 +446,11 @@ impl DeviceSite {
     pub fn compute(&self, desc: &wgpu::ComputePipelineDescriptor<'_>) -> wgpu::ComputePipeline {
         let create = || self.0.device.create_compute_pipeline(desc);
         #[cfg(target_os = "macos")]
-        let pipeline = self
-            .0
-            .metal
-            .as_ref()
-            .map_or_else(create, |metal| metal.compute(&self.0.device, desc));
+        let pipeline = self.0.metal.as_ref().map_or_else(create, |metal| {
+            metal.compute(&self.0.device, desc, |desc| {
+                self.0.device.create_compute_pipeline(desc)
+            })
+        });
         #[cfg(not(target_os = "macos"))]
         let pipeline = create();
         if let Some(ledger) = &self.0.ledger {
@@ -463,11 +463,11 @@ impl DeviceSite {
     pub fn mesh(&self, desc: &wgpu::MeshPipelineDescriptor<'_>) -> wgpu::RenderPipeline {
         let create = || self.0.device.create_mesh_pipeline(desc);
         #[cfg(target_os = "macos")]
-        let pipeline = self
-            .0
-            .metal
-            .as_ref()
-            .map_or_else(create, |metal| metal.mesh(&self.0.device, desc));
+        let pipeline = self.0.metal.as_ref().map_or_else(create, |metal| {
+            metal.mesh(&self.0.device, desc, |desc| {
+                self.0.device.create_mesh_pipeline(desc)
+            })
+        });
         #[cfg(not(target_os = "macos"))]
         let pipeline = create();
         if let Some(ledger) = &self.0.ledger {

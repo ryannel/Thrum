@@ -217,6 +217,7 @@ impl PipelinePreparation {
         &self,
         device: &wgpu::Device,
         desc: &wgpu::RenderPipelineDescriptor<'_>,
+        create: impl Fn(&wgpu::RenderPipelineDescriptor<'_>) -> wgpu::RenderPipeline,
     ) -> wgpu::RenderPipeline {
         let vertex = Stage {
             kind: ShaderStage::Vertex,
@@ -250,7 +251,7 @@ impl PipelinePreparation {
                     state.module = &stage.module;
                     state.entry_point = Some(&stage.function);
                 }
-                device.create_render_pipeline(&desc)
+                create(&desc)
             },
         )
     }
@@ -259,6 +260,7 @@ impl PipelinePreparation {
         &self,
         device: &wgpu::Device,
         desc: &wgpu::ComputePipelineDescriptor<'_>,
+        create: impl Fn(&wgpu::ComputePipelineDescriptor<'_>) -> wgpu::ComputePipeline,
     ) -> wgpu::ComputePipeline {
         let stage = Stage {
             kind: ShaderStage::Compute,
@@ -280,7 +282,7 @@ impl PipelinePreparation {
                     desc.module = &stage.module;
                     desc.entry_point = Some(&stage.function);
                 }
-                device.create_compute_pipeline(&desc)
+                create(&desc)
             },
         )
     }
@@ -289,6 +291,7 @@ impl PipelinePreparation {
         &self,
         device: &wgpu::Device,
         desc: &wgpu::MeshPipelineDescriptor<'_>,
+        create: impl Fn(&wgpu::MeshPipelineDescriptor<'_>) -> wgpu::RenderPipeline,
     ) -> wgpu::RenderPipeline {
         let mesh = Stage {
             kind: ShaderStage::Mesh,
@@ -332,7 +335,7 @@ impl PipelinePreparation {
                     state.module = &stage.module;
                     state.entry_point = Some(&stage.function);
                 }
-                device.create_mesh_pipeline(&desc)
+                create(&desc)
             },
         )
     }
@@ -485,15 +488,18 @@ fn load(
         // SAFETY: Registry admission enables passthrough. The trusted local cook binds
         // the native bytecode to this shader, pipeline layout and translation settings.
         unsafe {
-            device.create_shader_module_passthrough(wgpu::ShaderModuleDescriptorPassthrough {
-                label,
-                entry_points: Cow::Owned(vec![wgpu::PassthroughShaderEntryPoint {
-                    name: Cow::Borrowed(&record.function),
-                    workgroup_size: (x, y, z),
-                }]),
-                metallib: Some(Cow::Borrowed(payload)),
-                ..Default::default()
-            })
+            crate::shaders::compile_metal_library(
+                device,
+                wgpu::ShaderModuleDescriptorPassthrough {
+                    label,
+                    entry_points: Cow::Owned(vec![wgpu::PassthroughShaderEntryPoint {
+                        name: Cow::Borrowed(&record.function),
+                        workgroup_size: (x, y, z),
+                    }]),
+                    metallib: Some(Cow::Borrowed(payload)),
+                    ..Default::default()
+                },
+            )
         }
     });
     valid.then(|| {

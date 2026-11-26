@@ -635,6 +635,44 @@ fn compile(device: &impl ShaderDevice, label: &str, source: Cow<'_, str>) -> wgp
     })
 }
 
+#[cfg(target_os = "macos")]
+impl crate::runtime::DeviceSite {
+    /// Create a shader module and remember its WGSL identity during Metal preparation.
+    pub fn create_shader_module(
+        &self,
+        desc: wgpu::ShaderModuleDescriptor<'_>,
+    ) -> wgpu::ShaderModule {
+        let preparation = self.metal_preparation();
+        let source = preparation.and_then(|_| match &desc.source {
+            wgpu::ShaderSource::Wgsl(source) => Some(blake3::hash(source.as_bytes())),
+            _ => None,
+        });
+        let shader = wgpu::Device::create_shader_module(self, desc);
+        if let (Some(preparation), Some(source)) = (preparation, source) {
+            preparation.shader(shader.clone(), source);
+        }
+        shader
+    }
+}
+
+/// Create a native module from the stage record and Metal library from the local cook.
+///
+/// # Safety
+/// The recipe must admit passthrough, and the caller must verify the library belongs to the
+/// same shader and pipeline layout as the checked WGSL catalog entry.
+#[cfg(target_os = "macos")]
+#[expect(
+    unsafe_code,
+    reason = "wgpu requires the caller to establish native shader provenance"
+)]
+pub(crate) unsafe fn compile_metal_library(
+    device: &wgpu::Device,
+    desc: wgpu::ShaderModuleDescriptorPassthrough<'_>,
+) -> wgpu::ShaderModule {
+    // SAFETY: The caller provides the registry admission and exact build-time stage identity.
+    unsafe { device.create_shader_module_passthrough(desc) }
+}
+
 fn visibility_source() -> &'static str {
     concat!(wgsl!("visibility.wgsl"), wgsl!("visibility/occlusion.wgsl"))
 }
