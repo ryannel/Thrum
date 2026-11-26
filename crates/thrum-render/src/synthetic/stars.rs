@@ -173,7 +173,7 @@ impl StarPrepared {
         Ok(Self {
             catalogue,
             sampler,
-            layout,
+            layout: layout.into_raw(),
             pipeline,
             count,
             daylight: daylight::DaylightBound::new(records, light),

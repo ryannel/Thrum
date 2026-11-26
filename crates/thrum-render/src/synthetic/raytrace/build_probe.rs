@@ -102,8 +102,9 @@ impl RayBuildProbe {
                 cache: None,
             })
         };
-        let marker_groups = [Some(&sink_layout)];
-        let consumer_groups = [Some(&sink_layout), Some(&structure_layout)];
+        let marker_groups: [Option<&wgpu::BindGroupLayout>; 1] = [Some(&sink_layout)];
+        let consumer_groups: [Option<&wgpu::BindGroupLayout>; 2] =
+            [Some(&sink_layout), Some(&structure_layout)];
         let marker = pipeline("mark", &marker_groups);
         let consumer = pipeline("consume", &consumer_groups);
         let sink = device.create_buffer(&wgpu::BufferDescriptor {

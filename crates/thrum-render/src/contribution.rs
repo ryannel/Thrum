@@ -268,7 +268,7 @@ pub struct SceneSurface<'a> {
     /// It holds [`material_hook_point`] exactly once.
     pub shader_source: &'a str,
     /// The forward pipeline layout: view, light, material and instance groups.
-    pub pipeline_layout: &'a wgpu::PipelineLayout,
+    pub pipeline_layout: &'a crate::runtime::PipelineInput<wgpu::PipelineLayout>,
     /// Group 0 (view) layout.
     pub view_layout: &'a wgpu::BindGroupLayout,
     /// The main view's existing packed uniform at offset zero. Mesh-stage
@@ -800,8 +800,8 @@ impl RayInstances<'_> {
 /// Pieces of a prepared scene that a [`SceneSurface`] lends out.
 pub(crate) struct SurfaceParts {
     pub(crate) shader_source: String,
-    pub(crate) pipeline_layout: wgpu::PipelineLayout,
-    pub(crate) light_layout: wgpu::BindGroupLayout,
-    pub(crate) material_layout: wgpu::BindGroupLayout,
+    pub(crate) pipeline_layout: crate::runtime::PipelineInput<wgpu::PipelineLayout>,
+    pub(crate) light_layout: crate::runtime::PipelineInput<wgpu::BindGroupLayout>,
+    pub(crate) material_layout: crate::runtime::PipelineInput<wgpu::BindGroupLayout>,
     pub(crate) fragment_entry: &'static str,
 }

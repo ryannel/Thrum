@@ -285,7 +285,7 @@ impl SdrToneStage {
         Self {
             key,
             pipeline,
-            layout,
+            layout: layout.into_raw(),
             edr,
         }
     }

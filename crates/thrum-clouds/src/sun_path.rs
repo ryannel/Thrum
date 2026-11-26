@@ -179,7 +179,7 @@ impl SunPath {
         let pipelines = std::array::from_fn(|i| {
             device.compute(&wgpu::ComputePipelineDescriptor {
                 label: Some(["cloud Sun path", GROUND_PASS, FAR_PASS][i]),
-                layout: if i == 0 { layout.as_ref() } else { None },
+                layout: if i == 0 { layout.as_deref() } else { None },
                 module: &module,
                 entry_point: Some(["path", "ground", "far"][i]),
                 compilation_options: wgpu::PipelineCompilationOptions::default(),
@@ -661,7 +661,10 @@ fn shaped_shader() -> String {
     )
 }
 
-fn shaped_path_layout(device: &DeviceSite, shapes: &wgpu::BindGroupLayout) -> wgpu::PipelineLayout {
+fn shaped_path_layout(
+    device: &DeviceSite,
+    shapes: &wgpu::BindGroupLayout,
+) -> thrum_render::runtime::PipelineInput<wgpu::PipelineLayout> {
     use thrum_render::binding;
     use wgpu::{
         SamplerBindingType, ShaderStages, StorageTextureAccess, TextureSampleType,

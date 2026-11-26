@@ -92,7 +92,7 @@ impl PreparedSynthetic {
                 .map(|(culling, _)| culling.clone()),
             display: self.display.clone(),
             interface_inputs: self.interface_inputs.clone(),
-            view_layout: self.view_layout.clone(),
+            view_layout: (*self.view_layout).clone(),
             view_buffer: self.view_buffer.clone(),
             view_sample: self.view_sample,
             pending_view: self.pending_view,

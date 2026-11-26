@@ -462,5 +462,5 @@ fn compose(
         multiview_mask: None,
         cache: None,
     });
-    (compose, compose_group, compose_layout)
+    (compose, compose_group, compose_layout.into_raw())
 }

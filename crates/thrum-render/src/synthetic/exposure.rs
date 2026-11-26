@@ -320,7 +320,10 @@ impl ExposureResolve {
             crate::shaders::Shader::Exposure
         }
         .compile(device, "incident camera exposure");
-        let layouts = [Some(&layout), sun_path.as_ref().map(|(layout, ..)| layout)];
+        let layouts = [
+            Some(&*layout),
+            sun_path.as_ref().map(|(layout, ..)| &**layout),
+        ];
         let layouts = &layouts[..=usize::from(sun_path.is_some())];
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("camera exposure resolve"),

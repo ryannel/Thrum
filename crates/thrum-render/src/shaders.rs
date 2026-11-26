@@ -1,7 +1,9 @@
 //! Production WGSL recipes. The catalog also enumerates the sources reflected by the ABI checks.
 use std::borrow::Cow;
 
-use crate::{capabilities::SunShadowMethod, synthetic::scene_source::SunShadows};
+use crate::{
+    capabilities::SunShadowMethod, runtime::PipelineInput, synthetic::scene_source::SunShadows,
+};
 
 pub(crate) const CLUSTER_PROBE_WORKGROUP: u32 = 64;
 
@@ -588,7 +590,11 @@ shader_catalog! {
 }
 
 impl Shader {
-    pub(crate) fn compile(self, device: &impl ShaderDevice, label: &str) -> wgpu::ShaderModule {
+    pub(crate) fn compile(
+        self,
+        device: &impl ShaderDevice,
+        label: &str,
+    ) -> PipelineInput<wgpu::ShaderModule> {
         compile(device, label, self.source())
     }
 
@@ -597,7 +603,7 @@ impl Shader {
         device: &impl ShaderDevice,
         label: &str,
         inject_failure: bool,
-    ) -> (String, wgpu::ShaderModule) {
+    ) -> (String, PipelineInput<wgpu::ShaderModule>) {
         let source = self.source().into_owned();
         let module = compile(
             device,
@@ -613,45 +619,60 @@ impl Shader {
 }
 
 pub(crate) trait ShaderDevice {
-    fn create_wgsl_module(&self, desc: wgpu::ShaderModuleDescriptor<'_>) -> wgpu::ShaderModule;
+    fn create_wgsl_module(
+        &self,
+        desc: wgpu::ShaderModuleDescriptor<'_>,
+    ) -> PipelineInput<wgpu::ShaderModule>;
 }
 
 impl ShaderDevice for wgpu::Device {
-    fn create_wgsl_module(&self, desc: wgpu::ShaderModuleDescriptor<'_>) -> wgpu::ShaderModule {
-        self.create_shader_module(desc)
+    fn create_wgsl_module(
+        &self,
+        desc: wgpu::ShaderModuleDescriptor<'_>,
+    ) -> PipelineInput<wgpu::ShaderModule> {
+        PipelineInput::raw(self.create_shader_module(desc))
     }
 }
 
 impl ShaderDevice for crate::runtime::DeviceSite {
-    fn create_wgsl_module(&self, desc: wgpu::ShaderModuleDescriptor<'_>) -> wgpu::ShaderModule {
+    fn create_wgsl_module(
+        &self,
+        desc: wgpu::ShaderModuleDescriptor<'_>,
+    ) -> PipelineInput<wgpu::ShaderModule> {
         self.create_shader_module(desc)
     }
 }
 
-fn compile(device: &impl ShaderDevice, label: &str, source: Cow<'_, str>) -> wgpu::ShaderModule {
+fn compile(
+    device: &impl ShaderDevice,
+    label: &str,
+    source: Cow<'_, str>,
+) -> PipelineInput<wgpu::ShaderModule> {
     device.create_wgsl_module(wgpu::ShaderModuleDescriptor {
         label: Some(label),
         source: wgpu::ShaderSource::Wgsl(source),
     })
 }
 
-#[cfg(target_os = "macos")]
 impl crate::runtime::DeviceSite {
     /// Create a shader module and remember its WGSL identity during Metal preparation.
     pub fn create_shader_module(
         &self,
         desc: wgpu::ShaderModuleDescriptor<'_>,
-    ) -> wgpu::ShaderModule {
+    ) -> PipelineInput<wgpu::ShaderModule> {
+        #[cfg(target_os = "macos")]
         let preparation = self.metal_preparation();
+        #[cfg(target_os = "macos")]
         let source = preparation.and_then(|_| match &desc.source {
             wgpu::ShaderSource::Wgsl(source) => Some(blake3::hash(source.as_bytes())),
             _ => None,
         });
         let shader = wgpu::Device::create_shader_module(self, desc);
+        #[cfg(target_os = "macos")]
         if let (Some(preparation), Some(source)) = (preparation, source) {
-            preparation.shader(shader.clone(), source);
+            return preparation.shader(shader, source);
         }
-        shader
+        PipelineInput::raw(shader)
     }
 }
 

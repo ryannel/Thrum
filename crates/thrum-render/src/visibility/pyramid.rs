@@ -76,8 +76,8 @@ impl PyramidPrepared {
         Self {
             first: pipeline(&first_layout, "pyramid_mip0"),
             down: pipeline(&down_layout, "pyramid_down"),
-            first_layout,
-            down_layout,
+            first_layout: first_layout.into_raw(),
+            down_layout: down_layout.into_raw(),
         }
     }
 

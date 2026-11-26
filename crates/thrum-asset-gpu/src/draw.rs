@@ -428,9 +428,9 @@ impl Pipelines {
                 .as_ref()
                 .map(|shadow| shadow_pipeline(device, shadow)),
             volume,
-            volume_layout,
+            volume_layout: volume_layout.into_raw(),
             material_layout: surface.material_layout.clone(),
-            cull,
+            cull: cull.map(|(pipeline, layout)| (pipeline, layout.into_raw())),
             defaults,
             sampler,
             volume_sampler,

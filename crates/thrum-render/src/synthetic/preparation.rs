@@ -676,7 +676,7 @@ impl PreparedSynthetic {
                 },
             ],
         });
-        let bind_group_layouts = [
+        let bind_group_layouts: [Option<&wgpu::BindGroupLayout>; 4] = [
             Some(&view_layout),
             Some(&light_layout),
             Some(&material_layout),

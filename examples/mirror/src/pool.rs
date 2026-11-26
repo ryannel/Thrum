@@ -360,7 +360,7 @@ impl Prepared {
         let pipeline = pipeline(surface, &environment, &layout);
         let bindings = PoolBindings {
             device: (**device).clone(),
-            layout,
+            layout: layout.into_raw(),
             params,
             sampler,
         };

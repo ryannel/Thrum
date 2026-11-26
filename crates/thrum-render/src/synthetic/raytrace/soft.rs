@@ -175,7 +175,8 @@ impl SoftPipelines {
         });
         let shader = crate::shaders::Shader::SoftSun.compile(device, "traced Sun visibility");
         let pipelines = Stage::ALL.map(|stage| {
-            let groups = [Some(&inputs[stage as usize]), Some(&structure)];
+            let groups: [Option<&wgpu::BindGroupLayout>; 2] =
+                [Some(&inputs[stage as usize]), Some(&structure)];
             let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some(stage.name()),
                 bind_group_layouts: &groups[..if matches!(stage, Stage::Trace) { 2 } else { 1 }],
@@ -212,8 +213,8 @@ impl SoftPipelines {
         });
         Self {
             pipelines,
-            inputs,
-            structure,
+            inputs: inputs.map(crate::runtime::PipelineInput::into_raw),
+            structure: structure.into_raw(),
             combined,
         }
     }

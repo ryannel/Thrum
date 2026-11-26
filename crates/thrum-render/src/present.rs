@@ -271,7 +271,7 @@ impl SurfacePresenter {
         Ok(Self {
             device: wgpu::Device::clone(device),
             pipeline,
-            layout,
+            layout: layout.into_raw(),
             generation,
             extent_limit,
             source_extent,

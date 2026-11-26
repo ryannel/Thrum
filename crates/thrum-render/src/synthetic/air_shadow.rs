@@ -204,7 +204,10 @@ impl AirShadowPrepared {
             multiview_mask: None,
             cache: None,
         });
-        Self { pipeline, layout }
+        Self {
+            pipeline,
+            layout: layout.into_raw(),
+        }
     }
 
     pub(super) fn target(

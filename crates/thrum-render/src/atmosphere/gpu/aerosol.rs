@@ -47,7 +47,7 @@ pub(super) fn compile(
     shader: Shader,
     label: &str,
     aerosol: Option<&wgpu::Buffer>,
-) -> wgpu::ShaderModule {
+) -> crate::runtime::PipelineInput<wgpu::ShaderModule> {
     if aerosol.is_none() {
         return shader.compile(device, label);
     }

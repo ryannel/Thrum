@@ -15,7 +15,7 @@ mod metal {
             DeviceCapabilities, HardwareFeature, HardwareRequest,
             metallib::{Preparation, stage_key},
         },
-        runtime::DeviceSite,
+        runtime::{DeviceSite, PipelineInput},
     };
     use thrum_test_support::{Scratch, target};
     use wgpu::hal::metal::{capture_stage_translations, encode_stage_records, split_stage_records};
@@ -29,25 +29,53 @@ mod metal {
             return vec4(0.0, 1.0, 0.0, 1.0);
         }";
 
-    fn pipeline(site: &DeviceSite, source: &str, zero: bool) -> wgpu::RenderPipeline {
-        let layout = site.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+    fn group(site: &DeviceSite) -> PipelineInput<wgpu::BindGroupLayout> {
+        site.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: None,
-            bind_group_layouts: &[],
+            entries: &[],
+        })
+    }
+
+    fn layout(
+        site: &DeviceSite,
+        group: &wgpu::BindGroupLayout,
+    ) -> PipelineInput<wgpu::PipelineLayout> {
+        site.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: None,
+            bind_group_layouts: &[Some(group)],
             immediate_size: 0,
-        });
-        let shader = site.create_shader_module(wgpu::ShaderModuleDescriptor {
+        })
+    }
+
+    fn shader(site: &DeviceSite, source: &str) -> PipelineInput<wgpu::ShaderModule> {
+        site.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: None,
             source: wgpu::ShaderSource::Wgsl(source.into()),
-        });
+        })
+    }
+
+    fn pipeline(site: &DeviceSite, source: &str, zero: bool) -> wgpu::RenderPipeline {
+        let group = group(site);
+        let layout = layout(site, &group);
+        let shader = shader(site, source);
+        build_pipeline(site, &layout, &shader, zero)
+    }
+
+    fn build_pipeline(
+        site: &DeviceSite,
+        layout: &wgpu::PipelineLayout,
+        shader: &wgpu::ShaderModule,
+        zero: bool,
+    ) -> wgpu::RenderPipeline {
         let compilation = wgpu::PipelineCompilationOptions {
             zero_initialize_workgroup_memory: zero,
             ..Default::default()
         };
         site.render(&wgpu::RenderPipelineDescriptor {
             label: Some("keyed stage draw"),
-            layout: Some(&layout),
+            layout: Some(layout),
             vertex: wgpu::VertexState {
-                module: &shader,
+                module: shader,
                 entry_point: Some("vertex_main"),
                 compilation_options: compilation.clone(),
                 buffers: &[],
@@ -56,7 +84,7 @@ mod metal {
             depth_stencil: None,
             multisample: wgpu::MultisampleState::default(),
             fragment: Some(wgpu::FragmentState {
-                module: &shader,
+                module: shader,
                 entry_point: Some("fragment_main"),
                 compilation_options: compilation,
                 targets: &[Some(target::FORMAT.into())],
@@ -113,6 +141,67 @@ mod metal {
         let (pipeline, translated) = capture_stage_translations(|| pipeline(site, source, zero));
         assert_eq!(translated.len(), stages);
         draw(site, queue, &pipeline);
+    }
+
+    fn live_inputs(instance: &wgpu::Instance) -> [usize; 3] {
+        let hub = instance
+            .generate_report()
+            .expect("wgpu resource report")
+            .hub;
+        [
+            hub.shader_modules.num_kept_from_user,
+            hub.bind_group_layouts.num_kept_from_user,
+            hub.pipeline_layouts.num_kept_from_user,
+        ]
+    }
+
+    fn discard_inputs(instance: &wgpu::Instance, site: &DeviceSite, baseline: [usize; 3]) {
+        for round in 1..=3 {
+            let discarded: Vec<_> = (0..10)
+                .map(|_| {
+                    let group = group(site);
+                    let layout = layout(site, &group);
+                    let shader = shader(site, SOURCE);
+                    (group, layout, shader)
+                })
+                .collect();
+            assert_eq!(live_inputs(instance), baseline.map(|n| n + 10));
+            drop(discarded);
+            let live = live_inputs(instance);
+            eprintln!(
+                "round {round}: live shader modules, bind group layouts, pipeline layouts = {live:?}"
+            );
+            assert_eq!(live, baseline);
+        }
+    }
+
+    fn check_reuse(instance: &wgpu::Instance, site: &DeviceSite, queue: &wgpu::Queue) {
+        let baseline = live_inputs(instance);
+        let group = group(site);
+        let layout_handle = layout(site, &group);
+        let shader = shader(site, SOURCE);
+        // The clone must still borrow the same registered handle after the original drops.
+        let shared_shader = shader.clone();
+        let shared_layout = layout_handle.clone();
+        drop((shader, layout_handle));
+        let retained = baseline.map(|n| n + 1);
+        assert_eq!(live_inputs(instance), retained);
+        discard_inputs(instance, site, retained);
+
+        for layout in [shared_layout, layout(site, &group)] {
+            let (pipeline, translated) =
+                capture_stage_translations(|| build_pipeline(site, &layout, &shared_shader, true));
+            assert!(
+                translated.is_empty(),
+                "live inputs must still load both cooked stages"
+            );
+            draw(site, queue, &pipeline);
+        }
+        drop((group, shared_shader));
+        assert_eq!(live_inputs(instance), baseline);
+        eprintln!(
+            "all inputs released; both pipelines built from reused handles drew with zero translations"
+        );
     }
 
     #[expect(
@@ -206,7 +295,13 @@ mod metal {
             );
         }
 
+        capabilities.set_metal_preparation(None);
+        eprintln!("Metal preparation disabled");
+        let baseline = live_inputs(&gpu.instance);
+        discard_inputs(&gpu.instance, capabilities.site(), baseline);
         use_store(&mut capabilities, matching.path());
+        eprintln!("Metal preparation enabled with a matching store");
+        check_reuse(&gpu.instance, capabilities.site(), &queue);
         translated_draw(&capabilities, &queue, SOURCE, true, 0);
         translated_draw(
             &capabilities,

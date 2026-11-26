@@ -42,10 +42,10 @@ mod extent_transition;
 mod frame_timing;
 mod governor;
 mod interface;
-#[cfg(target_os = "macos")]
 mod preparation_inputs;
 pub use governor::GovernorFrame;
 use interface::prepare_interface;
+pub use preparation_inputs::PipelineInput;
 mod native_provider;
 mod preparation;
 mod presentation;

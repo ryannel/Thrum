@@ -337,7 +337,7 @@ impl VisibilityPrepared {
             offsets: pipeline(&format!("offsets{suffix}")),
             scatter: pipeline(&format!("scatter{suffix}")),
             members: shape.map(|shape| MemberCompaction { shape, groups: 0 }),
-            layout,
+            layout: layout.into_raw(),
             meshes,
             params,
             history,

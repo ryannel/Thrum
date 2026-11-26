@@ -143,7 +143,7 @@ pub(crate) struct Shapes {
     footprints: wgpu::Buffer,
     sampler: wgpu::Sampler,
     empty: wgpu::TextureView,
-    pub(crate) layout: wgpu::BindGroupLayout,
+    pub(crate) layout: thrum_render::runtime::PipelineInput<wgpu::BindGroupLayout>,
     pub(crate) group: wgpu::BindGroup,
     bound: [Option<(u64, u64)>; 2],
     committed: [Option<(u64, u64)>; 2],

@@ -753,7 +753,7 @@ impl Observer {
             cache: None,
         });
         let (outputs, groups) = Self::bindings(device, &layout, surface.secondary_views);
-        self.pipeline = Some(((**device).clone(), layout, pipeline));
+        self.pipeline = Some(((**device).clone(), layout.into_raw(), pipeline));
         self.install_bindings(surface.secondary_views.to_vec(), outputs, groups);
     }
 }

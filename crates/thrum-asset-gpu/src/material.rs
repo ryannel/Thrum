@@ -251,7 +251,7 @@ pub(crate) struct Target {
 
 #[derive(Clone)]
 pub(crate) struct MeshSurface {
-    pub(crate) layout: wgpu::PipelineLayout,
+    pub(crate) layout: thrum_render::runtime::PipelineInput<wgpu::PipelineLayout>,
     pub(crate) fragment_entry: &'static str,
     pub(crate) color_formats: Vec<Option<wgpu::ColorTargetState>>,
     pub(crate) depth_format: wgpu::TextureFormat,
@@ -274,7 +274,7 @@ impl MeshSurface {
     }
 
     fn new(
-        layout: wgpu::PipelineLayout,
+        layout: thrum_render::runtime::PipelineInput<wgpu::PipelineLayout>,
         fragment_entry: &'static str,
         colors: &[wgpu::TextureFormat],
         depth_format: wgpu::TextureFormat,

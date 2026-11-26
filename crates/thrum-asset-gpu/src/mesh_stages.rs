@@ -134,7 +134,7 @@ pub(crate) fn exclusion(
 #[derive(Clone)]
 pub(crate) struct Layout {
     group: wgpu::BindGroupLayout,
-    pipeline: wgpu::PipelineLayout,
+    pipeline: thrum_render::runtime::PipelineInput<wgpu::PipelineLayout>,
     view: wgpu::Buffer,
     view_size: Option<wgpu::BufferSize>,
     #[cfg(feature = "draw-probe")]
@@ -195,7 +195,7 @@ impl Layout {
                 immediate_size: 0,
             });
         Self {
-            group,
+            group: group.into_raw(),
             pipeline,
             view: surface.mesh_view_uniform.buffer.clone(),
             view_size: surface.mesh_view_uniform.size,

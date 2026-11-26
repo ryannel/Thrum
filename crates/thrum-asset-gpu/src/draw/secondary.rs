@@ -74,7 +74,7 @@ impl SecondaryCull {
             .collect();
         Some(Self {
             pipeline,
-            layout,
+            layout: layout.into_raw(),
             records,
             limits: limits.clone(),
         })

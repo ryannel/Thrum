@@ -6,7 +6,7 @@ use std::{
     fmt, fs,
     io::{self, Write as _},
     path::{Path, PathBuf},
-    sync::{Mutex, MutexGuard, PoisonError},
+    sync::{Arc, Mutex, MutexGuard, PoisonError, Weak},
 };
 
 use wgpu::{
@@ -15,6 +15,8 @@ use wgpu::{
     },
     naga::ShaderStage,
 };
+
+use crate::runtime::PipelineInput;
 
 const TRANSLATOR: &str = "wgpu 30.0.1; Naga 30.0.1";
 const KEY_FORMAT: &str = "thrum Metal stage 2";
@@ -96,7 +98,7 @@ impl Preparation {
                 .as_bytes(),
                 format!("{:?}", device.limits()).as_bytes(),
             ]),
-            inputs: Mutex::default(),
+            inputs: InputKeys::default(),
         })
     }
 }
@@ -110,11 +112,46 @@ fn language_version(device: &wgpu::Device) -> Option<usize> {
     Some(unsafe { device.as_hal::<wgpu::hal::api::Metal>() }?.shader_language_version())
 }
 
+type Keys = Mutex<HashMap<usize, blake3::Hash>>;
+
 #[derive(Debug, Default)]
-struct Inputs {
-    shaders: HashMap<wgpu::ShaderModule, blake3::Hash>,
-    bindings: HashMap<wgpu::BindGroupLayout, blake3::Hash>,
-    layouts: HashMap<wgpu::PipelineLayout, blake3::Hash>,
+pub(crate) struct InputKeys(Arc<Keys>);
+
+#[derive(Debug)]
+pub(crate) struct KeyedInput<T> {
+    pub(crate) handle: T,
+    keys: Weak<Keys>,
+}
+
+impl InputKeys {
+    fn lock(&self) -> MutexGuard<'_, HashMap<usize, blake3::Hash>> {
+        self.0.lock().unwrap_or_else(PoisonError::into_inner)
+    }
+
+    pub(crate) fn track<T>(&self, handle: T, key: blake3::Hash) -> Arc<KeyedInput<T>> {
+        let input = Arc::new(KeyedInput {
+            handle,
+            keys: Arc::downgrade(&self.0),
+        });
+        self.lock().insert(address(&input.handle), key);
+        input
+    }
+}
+
+impl<T> Drop for KeyedInput<T> {
+    fn drop(&mut self) {
+        if let Some(keys) = self.keys.upgrade() {
+            keys.lock()
+                .unwrap_or_else(PoisonError::into_inner)
+                .remove(&address(&self.handle));
+        }
+    }
+}
+
+// Descriptors borrow the handle inside its stable Arc allocation. Its address
+// identifies that exact borrow, including across devices and wgpu instances.
+fn address<T>(handle: &T) -> usize {
+    std::ptr::from_ref(handle).addr()
 }
 
 #[derive(Debug)]
@@ -124,7 +161,7 @@ pub(crate) struct PipelinePreparation {
     language: usize,
     preserve_invariance: bool,
     device_key: blake3::Hash,
-    inputs: Mutex<Inputs>,
+    inputs: InputKeys,
 }
 
 impl PipelinePreparation {
@@ -132,38 +169,37 @@ impl PipelinePreparation {
         self.config.parallel
     }
 
-    fn inputs(&self) -> MutexGuard<'_, Inputs> {
-        self.inputs.lock().unwrap_or_else(PoisonError::into_inner)
-    }
-
-    pub(crate) fn shader(&self, shader: wgpu::ShaderModule, source: blake3::Hash) {
-        self.inputs().shaders.insert(shader, source);
+    pub(crate) fn shader(
+        &self,
+        shader: wgpu::ShaderModule,
+        source: blake3::Hash,
+    ) -> PipelineInput<wgpu::ShaderModule> {
+        PipelineInput::keyed(shader, &self.inputs, source)
     }
 
     pub(crate) fn bindings(
         &self,
         layout: wgpu::BindGroupLayout,
         entries: &[wgpu::BindGroupLayoutEntry],
-    ) {
+    ) -> PipelineInput<wgpu::BindGroupLayout> {
         let mut entries = entries.to_vec();
         entries.sort_unstable_by_key(|entry| entry.binding);
-        self.inputs()
-            .bindings
-            .insert(layout, blake3::hash(format!("{entries:?}").as_bytes()));
+        let key = blake3::hash(format!("{entries:?}").as_bytes());
+        PipelineInput::keyed(layout, &self.inputs, key)
     }
 
     pub(crate) fn layout(
         &self,
         layout: wgpu::PipelineLayout,
         desc: &wgpu::PipelineLayoutDescriptor<'_>,
-    ) {
-        let mut inputs = self.inputs();
+    ) -> PipelineInput<wgpu::PipelineLayout> {
+        let inputs = self.inputs.lock();
         let mut key = blake3::Hasher::new();
         key.update(&desc.immediate_size.to_le_bytes());
         for group in desc.bind_group_layouts {
             if let Some(group) = group {
-                let Some(bindings) = inputs.bindings.get(group) else {
-                    return;
+                let Some(bindings) = inputs.get(&address(*group)) else {
+                    return PipelineInput::raw(layout);
                 };
                 key.update(&[1]);
                 key.update(bindings.as_bytes());
@@ -171,7 +207,8 @@ impl PipelinePreparation {
                 key.update(&[0]);
             }
         }
-        inputs.layouts.insert(layout, key.finalize());
+        drop(inputs);
+        PipelineInput::keyed(layout, &self.inputs, key.finalize())
     }
 
     fn keys<const N: usize>(
@@ -179,11 +216,11 @@ impl PipelinePreparation {
         layout: Option<&wgpu::PipelineLayout>,
         stages: &[Option<Stage<'_>>; N],
     ) -> [Option<Key>; N] {
-        let inputs = self.inputs();
-        let layout_key = layout.and_then(|layout| inputs.layouts.get(layout));
+        let inputs = self.inputs.lock();
+        let layout_key = layout.and_then(|layout| inputs.get(&address(layout)));
         stages.each_ref().map(|stage| {
             let stage = stage.as_ref()?;
-            let shader = inputs.shaders.get(stage.module)?;
+            let shader = inputs.get(&address(stage.module))?;
             let constants: Vec<_> = stage
                 .compilation
                 .constants

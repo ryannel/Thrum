@@ -119,7 +119,7 @@ pub(super) struct SecondaryPrepared {
     queue: wgpu::Queue,
     view: wgpu::Buffer,
     aux: wgpu::Buffer,
-    layout: wgpu::BindGroupLayout,
+    layout: crate::runtime::PipelineInput<wgpu::BindGroupLayout>,
     pipelines: [wgpu::RenderPipeline; 3],
     source: Arc<str>,
     key: PipelineKey,

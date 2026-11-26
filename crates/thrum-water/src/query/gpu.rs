@@ -375,9 +375,9 @@ impl Readback {
                 ],
             })
         });
-        let mut groups = vec![Some(&layout)];
-        groups.extend(surf_layout.as_ref().map(Some));
-        groups.extend(coarse_layout.as_ref().map(Some));
+        let mut groups: Vec<Option<&wgpu::BindGroupLayout>> = vec![Some(&layout)];
+        groups.extend(surf_layout.as_deref().map(Some));
+        groups.extend(coarse_layout.as_deref().map(Some));
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("water query pipeline layout"),
             bind_group_layouts: &groups,
@@ -432,7 +432,7 @@ impl Readback {
         let use_wave_lanes = components >= 2 * QUERY_WAVE_LANES as usize;
         let coarse = coarse_layout.map(|layout| CoarseGpu {
             device: (**device).clone(),
-            layout,
+            layout: layout.into_raw(),
             select: make_pipeline("water query select fine cells", "select_fine", &[]),
             general: (!use_wave_lanes || !only_one_body)
                 .then(|| make_surf("sample_coarse", "sample_fine", false)),

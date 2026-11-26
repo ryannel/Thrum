@@ -158,7 +158,8 @@ pub(super) fn new(device: &DeviceSite, profile: Profile) -> Result<Ambient, Ambi
             );
             layouts.push(layout);
         }
-        let layout_refs: Vec<_> = layouts.iter().map(Some).collect();
+        let layout_refs: Vec<Option<&wgpu::BindGroupLayout>> =
+            layouts.iter().map(|layout| Some(&**layout)).collect();
         let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some(&pass.name),
             bind_group_layouts: &layout_refs,

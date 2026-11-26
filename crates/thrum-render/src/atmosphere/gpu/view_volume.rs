@@ -426,7 +426,7 @@ impl ViewVolume {
         });
         Self {
             pipeline,
-            scene_layout,
+            scene_layout: scene_layout.into_raw(),
             histories,
             compare,
             groups,

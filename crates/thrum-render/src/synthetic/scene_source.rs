@@ -32,7 +32,11 @@ pub(super) fn prepare(
     (soft_sun, ambient): (bool, bool),
     fail_pipeline: bool,
     lighting: Option<&crate::atmosphere::AtmospherePrepared>,
-) -> (String, wgpu::ShaderModule, &'static str) {
+) -> (
+    String,
+    crate::runtime::PipelineInput<wgpu::ShaderModule>,
+    &'static str,
+) {
     let shader = crate::shaders::Shader::Scene(crate::shaders::SceneVariant {
         lighting: lighting.map_or(
             Lighting::Clear,

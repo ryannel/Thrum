@@ -64,7 +64,7 @@ impl Stage {
 #[derive(Clone)]
 pub(in crate::synthetic) struct Pipelines {
     stages: [wgpu::ComputePipeline; 2],
-    inputs: [wgpu::BindGroupLayout; 2],
+    inputs: [crate::runtime::PipelineInput<wgpu::BindGroupLayout>; 2],
     structure: wgpu::BindGroupLayout,
     depth: wgpu::BindGroupLayout,
 }
@@ -152,12 +152,13 @@ impl Pipelines {
         });
         let shader = crate::shaders::Shader::AmbientVisibility.compile(device, Stage::Trace.name());
         let stages = Stage::ALL.map(|stage| {
-            let trace = [
+            let trace: [Option<&wgpu::BindGroupLayout>; 3] = [
                 Some(&depth),
                 Some(&structure),
                 Some(&inputs[Stage::Trace as usize]),
             ];
-            let filter = [Some(&inputs[Stage::Filter as usize])];
+            let filter: [Option<&wgpu::BindGroupLayout>; 1] =
+                [Some(&inputs[Stage::Filter as usize])];
             let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some(stage.name()),
                 bind_group_layouts: match stage {
@@ -178,8 +179,8 @@ impl Pipelines {
         Self {
             stages,
             inputs,
-            structure,
-            depth,
+            structure: structure.into_raw(),
+            depth: depth.into_raw(),
         }
     }
 

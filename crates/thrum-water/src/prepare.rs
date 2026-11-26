@@ -354,7 +354,7 @@ pub(super) fn new(
     );
     let pattern = foam.as_ref().map(|_| Pattern {
         device: device.clone(),
-        layout,
+        layout: layout.into_raw(),
         samplers,
         bound: None,
         submitted: None,

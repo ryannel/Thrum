@@ -7,7 +7,6 @@ use std::{
     sync::{Arc, Mutex},
     time::Duration,
 };
-use thrum_render::binding;
 use thrum_render::contribution::{
     AfterOpaqueKind as K, AfterOpaquePass, ContributionFrame, ContributionPasses, EffectAccess,
     EffectCadence as C, EffectGraph, EffectState, EffectStep, HistoryBinding as H,
@@ -16,6 +15,7 @@ use thrum_render::contribution::{
 use thrum_render::graph::{
     AccessKind as A, ResourceDescriptor as D, ResourceScope as S, TextureKind,
 };
+use thrum_render::{binding, runtime::PipelineInput};
 
 struct Witness {
     state: EffectState,
@@ -257,7 +257,7 @@ fn layout(
     entries: &[(u32, bool)],
     uniform: Option<u32>,
     visibility: wgpu::ShaderStages,
-) -> wgpu::BindGroupLayout {
+) -> PipelineInput<wgpu::BindGroupLayout> {
     let mut entries = entries
         .iter()
         .map(|&(binding, storage)| {
@@ -293,7 +293,7 @@ fn pipeline_layout(
     surface: &SceneSurface<'_>,
     pass: &AfterOpaquePass,
     own: &wgpu::BindGroupLayout,
-) -> wgpu::PipelineLayout {
+) -> PipelineInput<wgpu::PipelineLayout> {
     surface
         .device
         .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {

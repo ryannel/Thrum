@@ -134,8 +134,8 @@ impl SceneContribution for TestBank {
             }),
         ];
         let pipelines =
-            [("coefficients", None), ("ground", Some(&band_layout))].map(|(entry, band)| {
-                let groups = [Some(&medium_layout), band];
+            [("coefficients", None), ("ground", Some(&*band_layout))].map(|(entry, band)| {
+                let groups: [Option<&wgpu::BindGroupLayout>; 2] = [Some(&medium_layout), band];
                 let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                     label: Some(PASS),
                     bind_group_layouts: &groups[..if band.is_some() { 2 } else { 1 }],

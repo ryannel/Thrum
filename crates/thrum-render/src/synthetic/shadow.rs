@@ -177,7 +177,7 @@ pub(super) struct ShadowPrepared {
     members: Option<(wgpu::BindGroupLayout, [wgpu::RenderPipeline; 2])>,
     cascades: [Cascade; MAPS],
     queue: wgpu::Queue,
-    view_layout: wgpu::BindGroupLayout,
+    view_layout: crate::runtime::PipelineInput<wgpu::BindGroupLayout>,
     inputs: FitInputs,
     fitted: FittedShadow,
     pub(super) sample_buffer: wgpu::Buffer,
@@ -293,7 +293,7 @@ impl ShadowPrepared {
             });
             let pipelines =
                 [Some(wgpu::Face::Back), None].map(|cull| create(cull, &layout, "member_vertex"));
-            (member_layout, pipelines)
+            (member_layout.into_raw(), pipelines)
         });
         let sample_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("synthetic Sun cascade samples"),

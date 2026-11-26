@@ -50,7 +50,10 @@ impl TracedView {
             multiview_mask: None,
             cache: None,
         });
-        Self { layout, pipeline }
+        Self {
+            layout: layout.into_raw(),
+            pipeline,
+        }
     }
 
     pub(in crate::synthetic) fn encode(
