@@ -4,7 +4,7 @@ struct BodyRecord {
     layers: vec4<u32>,
     ends: array<vec4<f32>, 2>,
     joins: array<vec4<f32>, 2>,
-    track: vec4<f32>, // signed reference speed, axis code (0 none, 1 x, 2 z)
+    track: vec4<f32>, // parallel reference and axis, or general reference xy and period limit
 }
 struct MapRecord {
     origin_spacing_margin: vec4<f32>,
@@ -194,10 +194,11 @@ fn map_sample(point: vec2<f32>) -> MapAnswer {
 // Read only the two adjacent sections. The prepared track is flat across
 // each section, including where the chart lends its row over a bank.
 fn map_wave_track(point: vec2<f32>, body: u32, current: vec2<f32>) -> vec4<f32> {
-    if body == NO_BODY || all(current == vec2(0.0)) { return vec4(0.0); }
+    if body == NO_BODY { return vec4(0.0); }
     let record = map.bodies[body];
+    if record.track.w < 0.0 { return record.track; }
     let axis_code = record.track.y;
-    if axis_code == 0.0 { return vec4(0.0); }
+    if axis_code == 0.0 || all(current == vec2(0.0)) { return vec4(0.0); }
     let axis = u32(axis_code) - 1u;
     let last = map.size_count_sea[axis] - 1u;
     let position = clamp((point[axis] - map.origin_spacing_margin[axis])

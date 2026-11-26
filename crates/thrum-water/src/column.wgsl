@@ -80,16 +80,35 @@ fn cascade_column(uv: vec2<f32>, band: u32, lod: f32) -> Wave {
 struct CarriedColumn {
     wave: Wave,
     advection_rate: f32,
+    differential: vec4<f32>, // xx, xz, zx, zz in metres
+}
+
+fn cascade_world_slope(slope: vec2<f32>, differential: vec4<f32>, gain: f32) -> vec2<f32> {
+    let j = gain * differential + vec4(1.0, 0.0, 0.0, 1.0);
+    let det = max(0.01, j.x * j.w - j.y * j.z);
+    return gain * vec2(j.w * slope.x - j.z * slope.y, j.x * slope.y - j.y * slope.x) / det;
+}
+
+fn cascade_differential(wave: Wave, scale: vec2<f32>) -> vec4<f32> {
+    return wave.differential.xyyz * scale.xyxy;
 }
 
 // The rendered surface, query and wet support read the same departure point.
-fn carried_column(point: vec2<f32>, motion: CascadeMotion, extent: f32, band: u32, lod: f32) -> CarriedColumn {
-    let carried = cascade_column(motion.departure / extent, band, lod);
-    let advection_rate = -dot(carried.slope, motion.drift) * motion.blend;
-    if motion.blend >= 1.0 { return CarriedColumn(carried, advection_rate); }
-    let ambient = cascade_column(point / extent, band, lod);
-    return CarriedColumn(Wave(mix(ambient.displacement, carried.displacement, motion.blend),
-        mix(ambient.slope, carried.slope, motion.blend),
-        mix(ambient.differential, carried.differential, motion.blend),
-        mix(ambient.velocity, carried.velocity, motion.blend)), advection_rate);
+fn carried_column(motion: CascadeMotion, extent: f32, band: u32, lod: f32, scale: vec2<f32>) -> CarriedColumn {
+    var carried = cascade_column(motion.departure / extent, band, lod);
+    var rate = -dot(carried.slope, motion.drift);
+    var differential = cascade_differential(carried, scale);
+    carried.slope *= scale;
+    if motion.blend < 1.0 {
+        let second = cascade_column(motion.second / extent, band, lod);
+        let second_rate = -dot(second.slope, motion.second_drift);
+        rate = mix(second_rate, rate, motion.blend)
+            + motion.blend_rate * (carried.displacement.y - second.displacement.y);
+        differential = mix(cascade_differential(second, vec2(1.0)), differential, motion.blend);
+        carried = Wave(mix(second.displacement, carried.displacement, motion.blend),
+            mix(second.slope, carried.slope, motion.blend),
+            mix(second.differential, carried.differential, motion.blend),
+            mix(second.velocity, carried.velocity, motion.blend));
+    }
+    return CarriedColumn(carried, rate, differential);
 }

@@ -69,6 +69,7 @@ struct Point {
     fine_bounds: [i32; 4],
     coarse_grid: [i32; 4],
     carry: [f32; 4],
+    track: [f32; 4],
 }
 
 #[repr(C)]
@@ -95,6 +96,7 @@ struct Answer {
     cut_fine_nodes: u32,
     cut_coarse_nodes: u32,
     advection_rate: [f32; 3],
+    alignment: f32,
     wake: [f32; 4],
 }
 
@@ -522,12 +524,13 @@ impl Readback {
         &mut self,
         queue: &wgpu::Queue,
         spectrum: &Spectrum,
-        chop: f64,
+        water_profile: &crate::Profile,
         heights: [f32; 4],
         map: &Map,
         frame_map: Option<&MapGpu>,
         wake: Option<&Interaction>,
     ) -> bool {
+        let chop = water_profile.waves.choppiness;
         self.pending.clear();
         let mut state = self.mailbox.state.lock().expect("water query mailbox");
         let slots = self
@@ -657,12 +660,13 @@ impl Readback {
                 heights,
                 coarse_jobs: [coarse_groups, coarse_nodes, 0, 0],
                 swash_margin: {
-                    let [.., seconds] = crate::records::carriage(seconds, None);
+                    let [_, period, _, seconds] =
+                        crate::records::carriage(seconds, water_profile.carriage_period);
                     [
                         profile.swash_ratio as f32,
                         profile.margin_height as f32,
                         seconds,
-                        0.0,
+                        period,
                     ]
                 },
             };
@@ -891,10 +895,10 @@ impl Point {
                 .map(|slope| slope as f32);
             input.gains = row.gains.map(|gain| gain as f32);
             if let Some(gpu) = gpu_map {
-                let [coordinate, reference, weight, axis] =
+                let (track, derivative) =
                     gpu.wave_track(sample.body, world, row.current, map.bed());
-                input.surf_stage[1..].copy_from_slice(&[coordinate, reference, weight]);
-                input.carry[2] = axis;
+                input.track = track;
+                input.carry[2] = derivative;
             }
             input.surf_stage[0] = map.body(sample.body).expect("sampled body").stage.value as f32;
         }

@@ -27,19 +27,26 @@ fn long_at(point:vec2<f32>,spacing:f32)->Field {
     let a=long_level(point,low);let b=long_level(point,min(low+1u,7u));
     return add_field(add_field(Field(vec4(0.0),vec4(0.0),vec4(0.0)),a,1.0-fract(lod)),b,fract(lod));
 }
-fn transported_field(point: vec2<f32>, motion: CascadeMotion, band: u32) -> Field {
-    var sample = cascade_at(motion.departure, band);
+fn drifting_field(point: vec2<f32>, drift: vec2<f32>, band: u32) -> Field {
+    var sample = cascade_at(point, band);
     // Motion vectors track the displaced sheet at its fixed mesh point.
     let bend = sample.slope.zw;
     sample.velocity -= vec4(
-        dot(vec2(bend.x, bend.y), motion.drift),
-        dot(sample.slope.xy, motion.drift),
-        dot(vec2(bend.y, sample.velocity.w), motion.drift),
+        dot(vec2(bend.x, bend.y), drift),
+        dot(sample.slope.xy, drift),
+        dot(vec2(bend.y, sample.velocity.w), drift),
         0.0);
+    return sample;
+}
+
+fn transported_field(motion: CascadeMotion, band: u32) -> Field {
+    var sample = drifting_field(motion.departure, motion.drift, band);
     if motion.blend < 1.0 {
-        let ambient = cascade_at(point, band);
-        sample = add_field(add_field(Field(vec4(0.0),vec4(0.0),vec4(0.0)),
-            ambient,1.0-motion.blend),sample,motion.blend);
+        let second = drifting_field(motion.second, motion.second_drift, band);
+        let renewal = motion.blend_rate * (sample.displacement - second.displacement);
+        sample = add_field(add_field(Field(vec4(0.0), vec4(0.0), vec4(0.0)),
+            second, 1.0 - motion.blend), sample, motion.blend);
+        sample.velocity += renewal;
     }
     return sample;
 }
@@ -47,10 +54,10 @@ fn transported_field(point: vec2<f32>, motion: CascadeMotion, band: u32) -> Fiel
 fn field_at(point:vec2<f32>,spacing:f32,row:SurfaceRow)->Field {
     let long=long_at(point,spacing);
     var f=add_field(Field(vec4(0.0),vec4(0.0),vec4(0.0)),long,row.gains.x);
-    let motion = cascade_motion(point, row.current, row.track, water.carriage.w);
+    let motion = cascade_motion(point, row.current, row.track, water.carriage.w, water.carriage.y);
     for(var band=0u;band<3u;band++) {
         let fade=1.0-smoothstep(water.lengths[band]/128.0,water.lengths[band]/32.0,spacing);
-        f=add_field(f,transported_field(point,motion,band),row.gains[band+1u]*fade);
+        f=add_field(f,transported_field(motion,band),row.gains[band+1u]*fade);
     }
     return f;
 }
@@ -194,9 +201,11 @@ fn reflected_sky(slope:vec2<f32>,covariance:vec3<f32>,v:vec3<f32>)->vec4<f32> {
     let wake_slope=wake_at(input.rest,0.0).yz;
     let wake_dx=dpdx(wake_slope);let wake_dy=dpdy(wake_slope);
     var row=surface_pixel(input.rest,input.body);
-    let motion = cascade_motion(input.rest, row.current, row.track, water.carriage.w);
+    let motion = cascade_motion(input.rest, row.current, row.track, water.carriage.w, water.carriage.y);
     let departure_dx = dpdx(motion.departure);
     let departure_dy = dpdy(motion.departure);
+    let second_dx = dpdx(motion.second);
+    let second_dy = dpdy(motion.second);
     if !row.owned { discard; }
     let surf_normal = input.surf_normal_variance.xyz;
     let use_sheet_normal = SURF_CACHE_ENABLED && input.surf_weight >= 0.999
@@ -234,7 +243,7 @@ fn reflected_sky(slope:vec2<f32>,covariance:vec3<f32>,v:vec3<f32>)->vec4<f32> {
         let layer=i32(band*5u);
         var m=filtered_layer(cascades,periodic,motion.departure/scale,departure_dx/scale,departure_dy/scale,layer);
         if motion.blend < 1.0 {
-            let ambient = filtered_layer(cascades,periodic,input.rest/scale,dx/scale,dy/scale,layer);
+            let ambient = filtered_layer(cascades,periodic,motion.second/scale,second_dx/scale,second_dy/scale,layer);
             m = FilteredLayer(mix(ambient.slope,m.slope,motion.blend),
                 mix(ambient.second,m.second,motion.blend),mix(ambient.differential,m.differential,motion.blend));
         }

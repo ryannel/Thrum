@@ -11,18 +11,18 @@ use thrum_water_model::{Map, Surface};
 pub(super) struct CascadeSample {
     pub(super) height: f32,
     pub(super) slope: [f32; 2],
-    pub(super) differential: [f32; 3],
+    pub(super) differential: [f32; 4],
     pub(super) velocity: [f32; 3],
 }
 
 impl CascadeSample {
     fn with_gain(self, gain: f64, dt: f64, advection_rate: f32) -> Sample {
         let [sx, sz] = self.slope.map(|value| f64::from(value) * gain);
-        let [xx, xz, zz] = self.differential.map(|value| f64::from(value) * gain);
+        let [xx, xz, zx, zz] = self.differential.map(|value| f64::from(value) * gain);
         let (xx, zz) = (1.0 + xx, 1.0 + zz);
         let det = xx.mul_add(zz, -xz * xz).max(0.01);
         let velocity = self.velocity.map(|value| f64::from(value) * gain);
-        let slope = [(zz * sx - xz * sz) / det, (xx * sz - xz * sx) / det];
+        let slope = [(zz * sx - zx * sz) / det, (xx * sz - xz * sx) / det];
         let height_dt = f64::from(advection_rate).mul_add(gain, velocity[1]);
         Sample {
             height: height_dt.mul_add(dt, f64::from(self.height) * gain),

@@ -40,7 +40,7 @@ pub struct Profile {
     pub query: Option<query::QueryLimits>,
     /// Optional two-level interaction waves.
     pub interaction: Option<interaction::Limits>,
-    /// Renewal period of the procedural foam pattern in a current. None selects four seconds.
+    /// Maximum renewal period of carried detail in a current. None selects four seconds.
     pub carriage_period: Option<std::time::Duration>,
 }
 
@@ -657,7 +657,7 @@ impl SceneContribution for Water {
             query.record(
                 &p.queue,
                 &self.spectrum,
-                self.profile.waves.choppiness,
+                &self.profile,
                 self.layer_heights,
                 &map,
                 p.map.as_ref(),

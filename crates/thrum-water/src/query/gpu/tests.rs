@@ -237,6 +237,7 @@ fn query_records_match_the_shader_layout() {
                 fine_bounds,
                 coarse_grid,
                 carry,
+                track,
             ),
             record!(
                 Component,
@@ -270,6 +271,7 @@ fn query_records_match_the_shader_layout() {
                 cut_fine_nodes,
                 cut_coarse_nodes,
                 advection_rate,
+                alignment,
                 wake,
             ),
         ],

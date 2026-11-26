@@ -247,7 +247,7 @@ async function inspectChannelRipples(evaluate) {
     const end=source.indexOf('// Two readings',start);
     const departure=source.slice(start,end);
     if (start<0 || end<0 || !source.includes('cascade_motion(input.rest, row.current') ||
-        !source.includes('cascade_motion(point, row.current, row.track, water.carriage.w)')) {
+        !source.includes('cascade_motion(point, row.current, row.track, water.carriage.w, water.carriage.y)')) {
       throw Error('submitted vertex and fragment carriage functions unavailable');
     }
     const map=('const BODY_LIMIT'+source.split('const BODY_LIMIT')[1].split('fn surface_body')[0])
@@ -261,7 +261,7 @@ async function inspectChannelRipples(evaluate) {
       fn chart_motion(place: vec2<f32>, seconds: f32) -> CascadeMotion {
         let row = map_sample(place);
         let current = row.row.water.yz;
-        return cascade_motion(place, current, map_wave_track(place, row.body, current), seconds);
+        return cascade_motion(place, current, map_wave_track(place, row.body, current), seconds, 4.0);
       }
 
       @compute @workgroup_size(1)
@@ -282,8 +282,8 @@ async function inspectChannelRipples(evaluate) {
             speed = array<f32, 3>(0.0, 0.5, 1.5)[reach];
             let point = vec2(11.0, -3.0);
             let current = vec2(speed, 0.0);
-            before = cascade_motion(point, current, vec4(0.0), start).departure.x;
-            after = cascade_motion(point, current, vec4(0.0), end).departure.x;
+            before = cascade_motion(point, current, vec4(0.0), start, 4.0).departure.x;
+            after = cascade_motion(point, current, vec4(0.0), end, 4.0).departure.x;
         } else {
             let point = vec2(select(228.0, 256.0, reach == 4u), 5.0);
             let row = map_sample(point);
