@@ -18,7 +18,10 @@ module's files is said file by file. Revised for that review's second round: the
 that names an old root when WP9 starts, WP6's `exit-fast-yaw.json` among them. Revised on 20 November 2026 after
 [WP9's review](../../../.orchestrate/evidence/SHOWCASE/WP9-review.md): WP9's landing also moved the retained references
 into test fixtures, and [what moves with the terrain](#the-lookouts-rim-and-the-sunrise-stop) says which
-paths follow them.
+paths follow them. Revised on 26 November 2026 to unblock WP7: the cooked root a row reports is the drawn
+publication's, from `CONTENT-LOOP` WP6, and
+[what the three rows are held to](#what-the-three-rows-are-held-to-wp75) replaces one fixed threshold for
+every stop and every pair of rows.
 
 ## The request
 
@@ -84,7 +87,7 @@ the exit.
 |---|---|---|---|
 | **S1 A populated place** | The six stops and the exit flythrough, Mac and Chrome | Dawn to night; near ground to the far slopes | 10,000 entities that exist and are not seen, as today. Rejected by in-view counts at each stop and inspected frames |
 | **S2 Things move** | A held view and the flythrough, tick by tick, and in real time at the close | 1,500 movers; a run of hours; pause and resume | Movers that drift out of the valley after ten minutes, or sit too far off to read. Rejected by an hour stepped in a test, a capture of every tick, and WP8's real-time review |
-| **S3 One scene, three rows** | Each stop on each row | Apple and portable recipes; Chrome | A row that quietly ran a fallback, or a comparison that cannot see a missing prop. Rejected by the game's own report and a no-entities control |
+| **S3 One scene, three rows** | Each stop on each row | Apple and portable recipes; Chrome | A row that quietly ran a fallback or drew another store, a comparison that cannot see a missing prop, or one so loose that a row with a wrong exposure passes. Rejected by the game's own report of what it drew, a no-entities control and a median held at one code |
 | **S4 Culling is never seen** | The flythrough with movers moving | Frustum and Occlusion; both recipes; Chrome | Equality on a scene with nothing hidden. Rejected by a non-empty prepass and hidden slots in the rows |
 | **S5 Smooth** | The built-in 120 Hz panel, at full screen on the Apple recipe; Chrome's window on it | The flythrough, a full day cycle, startup | A smooth offline movie, or 120 Hz held in a small window or on the bare valley. Rejected by capture-off frame records, and by OS-reported presented intervals of the populated flythrough with the drawable extent and cooked root the game resolved |
 | **S6 One picture** | Stops and motion on each row | Low Sun, noon, night; fast yaw | Props lit or hazed differently from the terrain. Rejected by a clean-context review of crops |
@@ -182,12 +185,20 @@ default so that exact baselines hold. No one place says which of them the showca
   the request proves nothing. Where an engine module does not yet tell the game a resolved value, the
   builder writes the proposal in the log and does not infer the value from the request
   ([resolved selections](../ARCHITECTURE.md#interfaces)).
+- **The cooked root is the drawn publication's.** The root in the report is the manifest hash of the
+  publication the game is drawing, read with its generation from residency's
+  [drawn publication identity](../CONTENT-LOOP/DESIGN.md#the-drawn-publications-identity-wp6), at every stop
+  and over the flythrough. It is not the store path the game was given, a `HEAD` the game or the page fetched,
+  a root the launcher cooked, or the route file's pin: each of those can name a publication no frame showed,
+  and every fresh store reports generation 1. The row checks compare it with the exit flythrough's pinned root.
+  `CONTENT-LOOP` WP6 supplies the observation, which WP7's builder proposed on 26 November 2026 and stopped
+  for; carrying it into the game's native reports and the page's cooked status is WP7's work.
 - "The same scene" means the same cooked publication, layout, route and controls. Texture variant, reconstructor
   and display range differ by row, and the record says how.
 
 The file's entries for MetalFX, EDR and the governor are written from `APPLE-PRESENTATION`'s closing record, so
-WP7 depends on that module's paired proof, WP11, and WP7.1 checks the five work packages WP7 builds on in the
-record files. WP7 does not wait for `APPLE-PRESENTATION` WP17.
+WP7 depends on that module's paired proof, WP11, and WP7.1 checks the six work packages WP7 builds on in the
+record files, `CONTENT-LOOP` WP6 among them. WP7 does not wait for `APPLE-PRESENTATION` WP17.
 
 ### The lookout's rim and the sunrise stop
 
@@ -334,6 +345,96 @@ is the SDR curve term for term, and its submitted float frame is encoded to 8 bi
 one code of the SDR path's. What that row shows above headroom 1 is compared by nothing here: the exit record
 cites `APPLE-PRESENTATION`'s own EDR evidence for it. The comparison's record names each row's source and
 headroom. If a row cannot give this encoding, that is a proposal in the log, not a second metric.
+
+### What the three rows are held to (WP7.5)
+
+Added 26 November 2026, on the lead's ruling of that day, after WP7's builder stopped on the comparison
+([handoff](../../../.orchestrate/evidence/SHOWCASE/WP7-handoff.md),
+[comparison](../../../.orchestrate/evidence/SHOWCASE/WP7/compare/run.json),
+[selection isolation](../../../.orchestrate/evidence/SHOWCASE/WP7/compare-isolation/run.json)).
+
+**What was measured.** The exit baseline's thresholds are 1.0 for the median, the 95th percentile and the
+maximum cell. They were calibrated between the Mac and Chrome on the game's bare defaults, where the route
+decision's rule gave its 1.0 floor. WP7's rows run the exit configuration, and no pair of them fits:
+
+| Largest cell, in 8-bit codes | Sunrise | Noon | Sunset, clear Sun | Sunset, Sun | Twilight | Night |
+|---|---|---|---|---|---|---|
+| Apple row against portable row | 2.17 | 1.41 | 2.53 | 3.43 | 5.48 | 0.61 |
+| Apple row against Chrome | 2.36 | 1.51 | 1.62 | 2.00 | 4.51 | 0.44 |
+| Portable row against Chrome | 0.72 | 0.41 | 2.53 | 1.44 | 1.03 | 0.32 |
+
+The median cell is at most 0.054 in every pair at every stop, and the 95th percentile at most 1.11. On the Mac,
+with everything else held, changing the recipe or the governor changed no cell, EDR at headroom 1 against SDR
+changed the largest by 0.08, and changing only TAAU to MetalFX changed it by 5.77 at twilight. So the rows
+agree over the picture as a whole and differ in a few cells, and the difference is the reconstructor's and,
+between the two TAAU rows, the host's frame history at a still.
+
+**The ruling.** The lead, 26 November 2026, on the owner's bar of 17 November (the look of a shipped game;
+a reference diagnoses and never gates): WP7.5 shows that the three rows are the same scene and look alike. It
+does not ask for the same pixels. Two reconstructors resolve an edge, a thin balloon line or a glint on the
+sphere differently, as two upscaler settings do in any shipped game, and neither is the other's reference. So
+the builder's other course, to trace and correct the reconstructor and frame-history differences until the
+rows fit 1.0, is not taken: it would hold MetalFX to TAAU's pixels. The comparison must still catch a real
+divergence: a wrong scene, a lost prop, a wrong texture, a missing pass, a wrong exposure.
+
+**Why the fixed rule could not just be applied again.** The route decision's rule takes one threshold for
+each statistic from the worst value across all the stops, times three. On these rows that gives 1.0, 3.32
+and 16.44, all set by twilight. Night, where the rows differ by 0.61 at most, would be judged as loosely as
+twilight, and its diagnostic control, 114 in the largest cell and 6.6 in the median, would no longer reach
+ten times a threshold. One bound for every stop is as loose everywhere as its hardest stop needs.
+
+**The mechanism: two comparisons, each with one job.**
+
+1. **Across rows, stop by stop: the same scene, alike.** At each stop the three pairs of rows are compared
+   under that stop's own thresholds.
+   - **The median stays at 1.0, at every stop.** It is the statistic of the picture as a whole. Exposure, a
+     tint, haze, the sky and any pass that covers the frame move it, and the reconstructors agree in it to a
+     twentieth of a code. It is never calibrated, so a difference of that kind can never be absorbed.
+   - **The 95th percentile and the maximum are, for each stop, the larger of 1.0 and three times the worst
+     value among that stop's three pairs.** They are the statistics of edges and fine detail, where the
+     reconstructors differ. This is the route decision's formula, applied to one stop at a time.
+   - On the measured run that gives, for the 95th percentile and the maximum: sunrise 2.90 and 7.07, noon 2.25
+     and 4.53, sunset with clear Sun 2.88 and 7.59, sunset with the Sun 2.83 and 10.30, twilight 3.32 and
+     16.44, night 1.00 and 1.84. The builder's calibration run sets the numbers; these show the rule holds.
+2. **Each row against its own baseline: nothing changed in this row.** Each row's six stop grids are kept as
+   its baseline, and a later run of the row is compared with them. The row's thresholds come from the route
+   decision's rule as it stands, from two runs of that row from one build, and are expected to be the 1.0
+   floor. This is the tight comparison. One reconstructor is compared with itself, so a pass that goes
+   missing, a moved exposure or a lost prop in any row fails it at 1.0, whatever the rows may differ by among
+   themselves. If a row's two runs differ at a stop by more than that stop's cross-row thresholds allow, the
+   row does not repeat. That is diagnosed before anything is kept, and is not calibrated.
+
+**The controls, judged against each stop's cross-row thresholds.** They are the three the exit check has,
+and the route decision's rule for each is unchanged.
+
+| Control | It stands for | It must | On the measured run |
+|---|---|---|---|
+| The diagnostic scene, at the five stops that have one, at the stop's hour and pose | A wrong scene: a row that drew a fallback | Reach ten times a threshold on at least one statistic | 25 to 62 times on its best statistic, at each of the five |
+| The exit store drawn with no entities, at every stop | A lost prop or balloon | Exceed a threshold at every stop with entities in view | 3.0 to 7.2 times at the 95th percentile, 5.0 to 17 times at the maximum |
+| The retinted ground texture, at noon | A wrong texture | Exceed a threshold | 7.6 times at the maximum |
+
+A missing pass and a wrong exposure have no control of their own, and need none. Across rows the uncalibrated
+median catches them, as above. Within a row its own baseline does, at 1.0. And the review of WP7.5 looks at
+the three rows side by side, because a calibration can only repeat what its first run saw.
+
+**Calibrated once.** The cross-row thresholds, each row's thresholds and the row baselines are set by one
+calibration run, which is refused unless every control separates under the thresholds it would write, and are
+kept with the exit baseline. They belong to the comparator's version, the exit root, the presets and the three
+rows' entries in the exit configuration: a run where any of those differs is refused and not compared. After
+that run the numbers are fixed, and `exit --compare` judges later runs against them and never against
+themselves. The record of every run gives each pair's three statistics at each stop, the thresholds, each
+control's values and its ratio to them, and each row's difference from its baseline. A change that keeps
+that identity and moves a row's stop, once reviewed, takes
+[the refresh](#the-route-check-sees-a-missing-prop), which keeps the thresholds. A new exit root or a changed
+row entry takes a new calibration by the same rule, with its cause in the log.
+
+**When it does not hold.** A median over 1.0 between two rows is a divergence, and is traced to its cause. A
+control that does not separate at a stop sends the metric back to this design, as before. Neither is answered
+by a number.
+
+**What stays as it was.** The bare valley's check and the exit check between the Mac and Chrome on the bare
+defaults keep their baselines, their 1.0 thresholds and the route decision's rule. Pixel parity is still a
+tripwire and not the visual review: WP8 judges how each row looks.
 
 ### Culling on the assembled scene
 
@@ -552,7 +653,7 @@ extent, and not WP17 alone
 |---|---|
 | The exit content, its layout and generator, prop sources, the mover rule, the exit configuration, the flythrough, the exit baseline, the launcher and the exit record | This module (`examples/v1-game`, `scripts/run_v1_showcase.py`, `.orchestrate/evidence/SHOWCASE/`) |
 | The bucket route, the mesh arena, culling modes and their rule | `CULLING` |
-| Cooked products, mesh rows, the publication | `CONTENT-LOOP` |
+| Cooked products, mesh rows, the publication and the identity of the one being drawn | `CONTENT-LOOP` |
 | Recipes, the graph, the native segment | `APPLE-TILE` |
 | Reconstruction, EDR, the governor, pipeline preparation | `APPLE-PRESENTATION` |
 | Sky, Sun, aerial perspective | `ATMOSPHERE` |
@@ -576,7 +677,8 @@ before it trusts any frame.
   ([why](../ARCHITECTURE.md#proofs-run-once-on-main)). WP5 and WP6 are Done and each carried one, which passed
   from that check. No builder runs the verifier before a merge.
 - This module owns two thresholded baselines: the bare valley's, unchanged, and the exit's, created in WP5 and
-  extended to one per row in WP7. `ATMOSPHERE` WP10 takes a balloon's false strip off the far ground, so the
+  extended to one per row in WP7, with the thresholds
+  [the three rows are held to](#what-the-three-rows-are-held-to-wp75). `ATMOSPHERE` WP10 takes a balloon's false strip off the far ground, so the
   exit's may be replaced once in WP5 for that cause, by
   [the refresh](#the-route-check-sees-a-missing-prop), which keeps its identity and thresholds. WP9 calibrates
   both again for the new roots, and from then the bare valley's canonical check fails without its baseline.
@@ -600,6 +702,8 @@ before it trusts any frame.
   comparison. A landing that changes the exit root runs the two equality commands on the new root and keeps
   earlier receipts as they are.
 - **No parity threshold is tuned.** If a control does not fail as it must, the metric comes back to this design.
+  The three rows' thresholds come from [their rule](#what-the-three-rows-are-held-to-wp75) in one calibration
+  run, and the median is never calibrated.
 - **A tripwire that trips is investigated.** A record is of the commit being claimed, with its load.
 - **No target stands in for another.** If Chrome or Instruments will not start, leave the item open and say so.
 

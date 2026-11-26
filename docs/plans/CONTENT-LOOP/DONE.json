@@ -491,6 +491,26 @@
       ],
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0
+    },
+    {
+      "id": "WP6",
+      "name": "A running game can say exactly which cooked content it is drawing, so two stores at the same generation cannot be mistaken for each other",
+      "status": "not_started",
+      "quality_bar": "As exact as a shipped game's benchmark report, which names the build and content that actually ran: the identity of what was drawn, never of what was requested, fetched or pinned.",
+      "items": [
+        {
+          "id": "WP6.1",
+          "statement": "`CookedStats` gives the manifest hash of the publication being drawn together with its generation, both from the head the drawn set was resolved from, in five cases. 1. Before any set is drawn it gives neither. 2. Once the frame that shows a store's first publication is submitted, it gives generation 1 and the manifest hash in that store's `HEAD`. 3. Two stores of different content, each at generation 1, give different hashes, each its own store's. 4. After the store's `HEAD` moves to a second publication, and until the frame that shows that publication is submitted, it still gives the first publication's generation and hash; from that submit it gives the second's, both changed together. 5. A set drawn from a remote feed gives the hash of the head its generation was fetched with. Guard: fast GPU tests of the drawn identity in `thrum-asset-gpu`; they need a device because the hash must change at the submit and not when the head is read.",
+          "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-asset-gpu --test it -E 'test(/^drawn_publication::/)' --no-tests=fail",
+          "ask": "Is the hash carried with the prepared set and written and cleared only where the drawn generation is, on the store source and the remote feed, and never read from the store, the feed or the configuration when it is reported?",
+          "lock": "gpu",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
     }
   ]
 }

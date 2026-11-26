@@ -150,3 +150,11 @@
   rounds to two or more refresh periods, needs its place, its evidence and no recurrence in the other take.
   Raw intervals stay in the record for diagnosis. WP8.14's item is unchanged. WP8 was Not Started.
   [The rule](DESIGN.md#the-full-refresh-at-full-screen-on-the-populated-exit)
+
+- 2026-11-26 Planner, unblocking WP7 ([handoff](../../../.orchestrate/evidence/SHOWCASE/WP7-handoff.md)).
+  The cooked root: `CONTENT-LOOP` WP6, new, reports the drawn publication's manifest hash; WP7 depends on it
+  and WP7.1 lists it. The comparison: on the lead's ruling, WP7.5 is written again to hold the rows to the same
+  scene and a like look, with per-stop thresholds, an uncalibrated median, a baseline per row and an
+  inspection. The builder's proposal to correct MetalFX against TAAU, on `build/showcase`, is not taken up.
+  [The cooked root](DESIGN.md#the-exit-configuration-one-file-three-rows-reported-and-not-echoed) ·
+  [the rule](DESIGN.md#what-the-three-rows-are-held-to-wp75)

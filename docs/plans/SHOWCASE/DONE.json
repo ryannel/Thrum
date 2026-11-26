@@ -337,13 +337,14 @@
         "APPLE-TILE:WP12",
         "APPLE-PRESENTATION:WP11",
         "ATMOSPHERE:WP6",
-        "CONTENT-LOOP:WP3"
+        "CONTENT-LOOP:WP3",
+        "CONTENT-LOOP:WP6"
       ],
       "items": [
         {
           "id": "WP7.1",
-          "statement": "The work packages this one builds on are Done in the record files: `APPLE-TILE` WP12, `APPLE-PRESENTATION` WP11, its paired proof with MetalFX, EDR and the governor, `ATMOSPHERE` WP6, `CULLING` WP3 and `CONTENT-LOOP` WP3.",
-          "check": "python3 -c 'import json,sys; L=lambda m,f: json.load(open(\"docs/plans/\"+m+\"/\"+f)); need=[(\"APPLE-TILE\",\"WP12\"),(\"APPLE-PRESENTATION\",\"WP11\"),(\"ATMOSPHERE\",\"WP6\"),(\"CULLING\",\"WP3\"),(\"CONTENT-LOOP\",\"WP3\")]; ok=lambda m,i: any(x[\"id\"]==i and x.get(\"status\")==\"done\" for x in L(m,\"DONE.json\")[\"work_packages\"]) and bool((L(m,\"RECORD.json\")[\"work_packages\"].get(i) or {}).get(\"done\")); bad=[m+\":\"+i for m,i in need if not ok(m,i)]; print(\"not Done:\",bad); sys.exit(1 if bad else 0)'",
+          "statement": "The work packages this one builds on are Done in the record files: `APPLE-TILE` WP12, `APPLE-PRESENTATION` WP11, its paired proof with MetalFX, EDR and the governor, `ATMOSPHERE` WP6, `CULLING` WP3, `CONTENT-LOOP` WP3, and `CONTENT-LOOP` WP6, which reports the cooked root a row drew.",
+          "check": "python3 -c 'import json,sys; L=lambda m,f: json.load(open(\"docs/plans/\"+m+\"/\"+f)); need=[(\"APPLE-TILE\",\"WP12\"),(\"APPLE-PRESENTATION\",\"WP11\"),(\"ATMOSPHERE\",\"WP6\"),(\"CULLING\",\"WP3\"),(\"CONTENT-LOOP\",\"WP3\"),(\"CONTENT-LOOP\",\"WP6\")]; ok=lambda m,i: any(x[\"id\"]==i and x.get(\"status\")==\"done\" for x in L(m,\"DONE.json\")[\"work_packages\"]) and bool((L(m,\"RECORD.json\")[\"work_packages\"].get(i) or {}).get(\"done\")); bad=[m+\":\"+i for m,i in need if not ok(m,i)]; print(\"not Done:\",bad); sys.exit(1 if bad else 0)'",
           "target": "mac-metal",
           "evidence": "",
           "builder_result": "open",
@@ -386,10 +387,11 @@
         },
         {
           "id": "WP7.5",
-          "statement": "At each stop the three rows show the same scene: every pair of rows agrees under the route check's metric with thresholds set by the fixed rule, the three controls fail as they must, and each row's stop frames are kept as its baseline.",
+          "statement": "At each of the six stops the three rows show the same scene and look alike, and each row is unchanged from its own baseline. Every pair of rows agrees under the route check's metric within that stop's cross-row thresholds: 1.0 for the median, and for the 95th percentile and the maximum the values the design's rule set once from the differences measured between the rows at that stop. Under those thresholds the diagnostic scene reaches ten times a threshold at each of its five stops, the exit store drawn with no entities exceeds one at all six, and the retinted texture exceeds one at noon. Each row's stop frames are kept as its baseline, and the row agrees with them within the row's own thresholds. Record: the comparison's run, with every pair's values, the thresholds, each control's ratio and each row's difference from its baseline; the baselines and thresholds it keeps are the launcher's test data.",
           "check": "python3 scripts/run_v1_showcase.py exit --compare",
           "lock": "gpu",
-          "ask": "Are the rows compared in an encoding all three produce, and does the record say which? Were the thresholds set once by the fixed rule and left alone?",
+          "inspect": "Run the comparison yourself and look at its submitted stills of the three rows at each of the six stops, side by side at native size, and at a native-size crop of the grid cell where each pair of rows differs most at each stop. 1. At every stop the three rows show the same view: the same terrain, horizon and sky, the Sun or Moon in the same place, the sphere and the rock, and the same props and balloons in the same places. 2. At every stop sky, ground and props are as bright and of the same colour on each row: no row is visibly lighter, darker or tinted. 3. Whatever one row draws, the others draw: shadows, haze, the sky's glow and the sphere's reflection are present on all three or on none. 4. Where two rows differ, it is in how an edge, a thin line or a glint is resolved, as when a shipped game's upscaler option is changed, and not in what is drawn or how it is lit.",
+          "ask": "Are the rows compared in an encoding all three produce, and does the record say which? Is the median threshold 1.0 at every stop, and were the other thresholds computed by the design's rule in one calibration run and left alone since?",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -459,7 +461,7 @@
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "status": "blocked",
-      "quality_bar": "As truthful as a shipped game's benchmark mode, such as Forza Horizon 5's or Shadow of the Tomb Raider's: one command per target, the same scene and controls on each, a report of the settings that actually ran, and a frame record that shows every hitch.",
+      "quality_bar": "As truthful as a shipped game's benchmark mode, such as Forza Horizon 5's or Shadow of the Tomb Raider's: one command per target, the same scene and controls on each, a report of the settings that actually ran, and a frame record that shows every hitch. Across the three rows, the picture that benchmark gives when only its anti-aliasing or upscaler option is changed: one scene, one lighting and one exposure, differing in how edges and fine detail are resolved.",
       "blocked": {
         "reason": "needs_dependency",
         "what": "Expose the drawn publication\u2019s manifest hash for WP7.2\u2013WP7.4 and bring the three rows within WP7.5\u2019s fixed image thresholds.",

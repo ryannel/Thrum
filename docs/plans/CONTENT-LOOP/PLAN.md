@@ -47,3 +47,9 @@ Use the [fixture design](DESIGN.md#cooked-publication-regressions-wp5) for the c
 Record each case’s disposition, any replacement coverage and its before-and-after time in the workspace
 check’s default Nextest build on the Mac, excluding compilation. Measure the fast cases alone and in a
 focused batch under normal builder load. The batch passes the existing ten-second limit on its first run.
+
+## WP6 A running game can say exactly which cooked content it is drawing, so two stores at the same generation cannot be mistaken for each other
+
+Read [the drawn publication's identity](DESIGN.md#the-drawn-publications-identity-wp6). The change is to
+`thrum-asset-gpu` alone. `SHOWCASE` WP7 waits for it and connects the game's reports to it on its own branch,
+`build/showcase`, so leave the game's reports and the launcher as they are.

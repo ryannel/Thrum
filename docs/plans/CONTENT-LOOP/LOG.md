@@ -198,3 +198,10 @@
   indexed draw paths. The first Metal batch passed in 3.947 s for rows and 0.934 s for volume. Individual
   runs took 5.490 s and 1.911 s under builder load.
   [Timing and coverage](../../../.orchestrate/evidence/CONTENT-LOOP/M5/README.md)
+
+- 2026-11-26 Planner, unblocking `SHOWCASE` WP7 (Blocked, needs a dependency;
+  [its handoff](../../../.orchestrate/evidence/SHOWCASE/WP7-handoff.md)). Took `SHOWCASE`'s proposal of the same
+  day: residency reports the manifest hash of the publication it is drawing beside the generation, written at
+  the switch's commit. New WP6 with one item; `SHOWCASE` WP7 depends on it. The game's reports that carry the
+  hash stay `SHOWCASE`'s. WP1 to WP5 are Done and unchanged.
+  [The design section](DESIGN.md#the-drawn-publications-identity-wp6)

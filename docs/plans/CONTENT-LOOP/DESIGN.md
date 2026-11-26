@@ -75,6 +75,9 @@ describes; where it and this design disagree, this design wins, and WP3 brings i
    replaces a row's geometry while the game runs.
 3. **The close of G5** (WP3): the edits proved in the running valley on the Mac and in Chrome under
    reconstruction, the gate's clauses checked one at a time, current maturity rows, and the closing review.
+4. **The drawn publication's identity** (WP6, added 26 November 2026 for `SHOWCASE` WP7): residency reports
+   the manifest hash of the publication it is drawing beside the generation, so a game can say which content
+   its frames showed.
 
 **Not built.** CAS garbage collection and reader leases; layered EAC volumes; any iPhone volume encoding (owed,
 see [open questions](#open-questions)); parameter files as a product kind; sprite-sheet and font products (track
@@ -430,6 +433,7 @@ same run. Panel cadence stays with `PLATFORM-RUNTIME-MAC`.
 | Store, `HEAD`, manifest, product formats, the cooker, watcher and dev server | This module (`thrum-asset`, `thrum-cook`) |
 | Resident textures, volumes and placement meshes; the loader, staging ring and upload budget; leases; conversion of mesh products to row geometry | This module (`thrum-asset-gpu`) |
 | The publication: which generation each frame shows, through every reader, and whether the next is preparing, ready or refused | This module (`thrum-asset-gpu`) |
+| The drawn publication's identity: the generation and manifest hash of the publication whose switch frame was last submitted | This module (`thrum-asset-gpu`), as an observation in `CookedStats`. The game copies it into its own reports and decides nothing from it |
 | The mesh arena, rows, buckets and their culling; the bounded row write, its report of done, and the row's switch in the frame the publication names | `CULLING` (`thrum-render`), extended under the seam ruling |
 | The contribution list and the tentative-frame protocol | `EFFECT-GRAPH` |
 | The view record, motion, reactive target and history acceptance | `APPLE-PRESENTATION` |
@@ -452,7 +456,7 @@ new set to leases and switches the rows, and the switch commits for all of them 
 | `CLOUDS` | A lease of density volumes with mips, identity and the change signal; CPU reads of the portable product | A cook-time atlas if its cost account wants one texture; an iPhone encoding |
 | `SEA` | A lease of a linear 2D texture for the foam pattern (a `.linear` source) | A single-channel 2D format, if four channels are wasteful |
 | `RENDER-2D`, `GAME-UI` | Leases of 2D pages | Sprite-sheet and font product kinds (frames, pivots, glyphs) read through `thrum-asset`, array textures, and a profile preference that keeps pixel art uncompressed |
-| `SHOWCASE` | Placements, and cooked mesh rows for its entities | Nothing more |
+| `SHOWCASE` | Placements, and cooked mesh rows for its entities | The manifest hash of the publication drawn, beside its generation. Asked on 26 November 2026 and planned as [WP6](#the-drawn-publications-identity-wp6) |
 | `CREATOR` | Unchanged placements | The sky kit passes a lease through, when a sea or cloud demo scene needs one |
 
 Each ask becomes a work package here, planned with the module that needs it.
@@ -581,3 +585,46 @@ together so the superseded upload still spans polls. The row test must still cro
 switch and retired-space reuse. Exercise state and ordering on the CPU where possible. Keep the minimal
 GPU submission or upload needed to expose ownership of a resident row or a real in-flight staging
 operation.
+
+## The drawn publication's identity (WP6)
+
+Added 26 November 2026. `SHOWCASE` WP7 stopped on it
+([its log](../SHOWCASE/LOG.md), 26 November, and
+[its handoff](../../../.orchestrate/evidence/SHOWCASE/WP7-handoff.md)): each exit row must report the cooked
+root it drew, and nothing the game can read today says that.
+
+**What is missing.** `CookedStats::drawn` gives the generation of the publication being drawn. A generation
+is a count within one store: every freshly cooked store publishes generation 1, so two stores with different
+content report the same number. What tells them apart is the manifest hash in `HEAD`, which the route decision
+and the route files call the cooked root. The loader validates that `Head` and resolves the resident set from
+it, on the store source and on the remote feed alike, but residency exposes only the generation. A game that
+wants the root has to take it from somewhere else, and every other place can name a publication no frame
+showed: the store path it was given, the `HEAD` file it reads itself, a head the browser client fetched, or
+the route file's pin. A newer publication can be fetched, preparing, ready but not yet submitted, superseded
+or [refused](#one-publication-one-switch-wp1-wp2) while the last good one is still on screen.
+
+**The mechanism.** Residency reports the identity of the publication it is drawing as one observation: its
+generation and its manifest hash, both from the one `Head` the drawn set was resolved from.
+
+- **Carried with the set.** The hash travels with the prepared set from the loader, as its generation does. It
+  is never read again from the store, the feed or the configuration at the moment of reporting.
+- **Written at the switch's commit, with the generation.** Both change in the one place the drawn generation
+  changes today: when the frame that shows the set is submitted, a capture frame included. A discarded switch
+  frame changes neither. Wherever the drawn generation is cleared, as on a replaced device before content is
+  staged again, the hash is cleared with it.
+- **Read together.** Both sit in `CookedStats` under its one lock, so a reader that locks once gets a
+  generation and a hash of the same publication.
+- **Both sources.** The store a loader thread follows, and the remote feed the browser client fills.
+- **An observation, not an authority.** Residency still owns which publication is shown. Nothing in the engine
+  reads the hash to decide anything, no reader of a product changes, and no module gains a dependency. The cost
+  is one 32-byte copy at a switch.
+
+**Not built here.** The game's reports and the page's cooked status that carry the hash to the launcher are
+`SHOWCASE` WP7's. The store's epoch is not part of the observation: the hash already names the content, which
+is what a run has to prove.
+
+**Proof.** One guard in `thrum-asset-gpu`'s test binary, on the smallest stores that show it: two stores of
+different content, each at generation 1, and a second publication in one of them. It needs a device because
+the claim is about the submit: a test of the loader alone would observe the head that was fetched, which is
+the observation this work package exists to replace. It draws to the test kit's small target for as few frames as
+the switch takes, and stays within the merge tier's ten seconds.
