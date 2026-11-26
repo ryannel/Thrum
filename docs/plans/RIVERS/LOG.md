@@ -291,3 +291,9 @@
   the bank. The maximum step residual across the three ends was 1.9 µm. The complete seven-second
   runs belong to the main tier. Short observations and the transects stay in the merge tier.
   [Target evidence](../../../.orchestrate/evidence/RIVERS/WP4/revised-depth/README.md)
+
+- 2026-11-27 WP4.3 review fix. The sampled-river map now interpolates opposing directions in its
+  bounded wave track separately. The body query uses the same calculation. On Metal, moving
+  highlights cross the former spring-pool seam in the bank view. At the two seven-second tidal
+  stations, the maximum depth differences were 0.0701 mm from above and 0.5057 mm from the bank.
+  [Target evidence](../../../.orchestrate/evidence/RIVERS/WP4/pool-seam/README.md)
