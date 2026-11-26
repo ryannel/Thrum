@@ -1613,7 +1613,7 @@
     {
       "id": "WP9",
       "name": "Water runs down a channel from the lake to the sea: its surface follows the slope, its ripples and foam travel with the current, and a float is carried down to the sea",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 1,
@@ -1640,7 +1640,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/WATERS/WP9/review-bank/README.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/WATERS/WP9-review.md"
         },
         {
@@ -1707,14 +1707,6 @@
           "evidence": ".orchestrate/evidence/WATERS/WP9/revision-4/metal-slopes.md",
           "verdict": "pass",
           "review": ".orchestrate/evidence/WATERS/WP9-review.md"
-        }
-      ],
-      "findings": [
-        {
-          "name": "The slow varying reach omits its bank cross-current",
-          "item": "WP9.2",
-          "different": "The earlier finding concerned mean-speed carriage on the exchanging-lanes chart. This finding concerns the checked-in bank-flow fixture for chart (d).",
-          "repeat": false
         }
       ]
     },
