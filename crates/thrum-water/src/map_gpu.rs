@@ -234,28 +234,31 @@ pub fn declarations() -> String {
 
 /// Map shader declarations with the specified resource group.
 pub fn declarations_at(group: u32) -> String {
-    map_source(group, false, false)
+    map_source(group, false, false, false)
 }
 
-fn map_source(group: u32, hollows: bool, rivers: bool) -> String {
+fn map_source(group: u32, hollows: bool, rivers: bool, transport_current: bool) -> String {
     let sample_hollows = if hollows {
         "    let local = hollows_sample(point);\n    if local.has_bed { return local; }\n"
     } else {
         ""
     };
     // The steady specialization keeps its original source and texture layout.
-    let (chart_cell, chart_join, river_source) = if rivers {
+    let (chart_cell, river_source) = if rivers {
         (
             "river_chart_cell(cell, k, body)",
-            "river_chart_row(point, body, row, rows)",
             include_str!("map_gpu/rivers.wgsl"),
         )
     } else {
         (
             "textureLoad(bed_map, cell.corners[k], i32(body.layers.z), 0)",
-            "chart_row(point, body, row, rows)",
             "",
         )
+    };
+    let chart_join = if rivers && transport_current {
+        "river_chart_row(point, body, row, rows)"
+    } else {
+        "chart_row(point, body, row, rows)"
     };
     let chart_tail = include_str!("map_gpu/chart_tail.wgsl");
     let (before, after) = chart_tail
@@ -352,17 +355,17 @@ impl MapGpu {
                             end.segment[1][0] as f32,
                             end.segment[1][1] as f32,
                         ];
+                        // A stage-controlled receiver can drown the prepared
+                        // head gradient upstream of its physical edge.
+                        let variable_mouth = end.mouth
+                            && rivers[id].is_some()
+                            && map
+                                .body(end.body)
+                                .is_some_and(|body| body.stage.min < body.stage.max);
                         destination.joins[n] = [
                             end.body as f32,
                             end.length as f32,
-                            // A stage-controlled receiver can drown the prepared
-                            // head gradient upstream of its physical edge.
-                            if end.mouth && rivers[id].is_some() {
-                                let stage = map.body(end.body).expect("joined body").stage;
-                                1.0 + f32::from(stage.min < stage.max)
-                            } else {
-                                f32::from(end.mouth)
-                            },
+                            f32::from(end.mouth) + f32::from(variable_mouth),
                             0.0,
                         ];
                         destination.layers[3] += 1;
@@ -468,7 +471,13 @@ impl MapGpu {
 
     /// Map shader declarations specialized to the products that were prepared.
     pub fn source(&self, group: u32) -> String {
-        map_source(group, self.hollows.is_some(), self.has_rivers())
+        map_source(group, self.hollows.is_some(), self.has_rivers(), true)
+    }
+
+    pub(crate) fn surface_source(&self, group: u32) -> String {
+        // The wind-wave field blends into the receiving sheet with its level
+        // and gains. A submerged jet may still carry floating bodies there.
+        map_source(group, self.hollows.is_some(), self.has_rivers(), false)
     }
 
     pub(crate) fn has_rivers(&self) -> bool {

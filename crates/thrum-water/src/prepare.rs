@@ -684,7 +684,7 @@ fn shader_source(
         map.map_or_else(
             || include_str!("open_surface.wgsl").to_owned(),
             |map| {
-                let mut source = map.source(3) + include_str!("mapped_surface.wgsl");
+                let mut source = map.surface_source(3) + include_str!("mapped_surface.wgsl");
                 if has_hollows {
                     let motion = if rain {
                         include_str!("map_gpu/hollows_rain_motion.wgsl")
