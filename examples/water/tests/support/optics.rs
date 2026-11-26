@@ -15,7 +15,8 @@ use thrum_render::{
     extract::{ExtractReport, RenderExtractor, SourceTick},
     present::SurfaceProfile,
     runtime::{
-        CaptureLimits, FrameConfig, FrameError, FrameHost, SceneFrame, SceneSource, SurfaceOutput,
+        CaptureLimits, FrameConfig, FrameError, FrameHost, FrameSample, SceneFrame, SceneSource,
+        SurfaceOutput,
     },
     synthetic::{CaptureSource, FrameLighting, OUTPUT_FORMAT, SyntheticScene, SyntheticView},
 };
@@ -188,7 +189,7 @@ impl Rig {
         }
     }
 
-    pub(crate) fn frame(&mut self) -> thrum_render::runtime::FrameSample {
+    pub(crate) fn frame(&mut self) -> FrameSample {
         self.submitted += 1;
         self.host
             .drive(
@@ -207,6 +208,11 @@ impl Rig {
     }
 
     pub(crate) fn scene_colour(&mut self) -> (f32, Vec<[f32; 3]>) {
+        let (_, scale, rgb) = self.scene_colour_with_sample();
+        (scale, rgb)
+    }
+
+    pub(crate) fn scene_colour_with_sample(&mut self) -> (FrameSample, f32, Vec<[f32; 3]>) {
         let limits = CaptureLimits {
             staging_slots: 1,
             cpu_buffers: 1,
@@ -215,12 +221,13 @@ impl Rig {
         self.host
             .enable_submitted_capture_from(1, limits, CaptureSource::SceneLinear)
             .expect("scene-linear tap");
-        self.frame();
+        let sample = self.frame();
         let image =
             thrum_test_support::wait::until("optics readback", Duration::from_secs(30), || {
                 self.device.poll(wgpu::PollType::Poll).expect("device");
                 self.host.try_submitted_image().expect("image")
             });
+        assert_eq!(sample.submission_order, image.sample.submission_order);
         let scale = f32::from_bits(image.exposure_gpu_words.expect("exposure provenance")[0]);
         let rgb = image
             .rgba
@@ -235,7 +242,7 @@ impl Rig {
             .collect();
         self.host.recycle_submitted_image(image);
         self.host.disable_submitted_capture();
-        (scale, rgb)
+        (sample, scale, rgb)
     }
 }
 

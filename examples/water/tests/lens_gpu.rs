@@ -247,6 +247,7 @@ fn metal_skips_a_dry_short_wave_trough_and_admits_the_crest() {
 thrum_test_support::macos_gpu_test! {
 fn metal_skips_dry_trade_water_as_the_footprint_moves() {
     use crate::support::optics::{Rig, attach, camera, sun};
+    use thrum_render::runtime::FrameSample;
     use water_scene::lens_probe::{Case, EXTENT, FOV};
     let Some(gpu) = thrum_test_support::gpu("dry Trade sea", Some(wgpu::Backend::Metal)) else { return };
     let case = Case::new("trade-admission", 0.0);
@@ -257,18 +258,21 @@ fn metal_skips_dry_trade_water_as_the_footprint_moves() {
     let mut plain = Rig::with_extent(&gpu, &look(0.0, y), sun(0.0, 0.0), &[], None, EXTENT);
     attach(&mut plain, case.water(false));
     lens.host.set_timing_requested(true);
-    let gathers = |rig: &mut Rig| rig.frame().gpu_pass_ns.expect("Metal timing")
+    let gathers = |sample: &FrameSample| sample.gpu_pass_ns.as_ref().expect("Metal timing")
         .passes().iter().any(|pass| pass.name.contains("water gather"));
     for dx in [0.0, 0.08, 0.16, 1.0, 9.02, 0.0] {
         lens.host.continuous_source_mut().view = look(dx, y);
         plain.host.continuous_source_mut().view = look(dx, y);
-        assert!(!gathers(&mut lens), "dry Trade lens at {dx} m scheduled the underwater gather");
-        let colour = lens.scene_colour().1;
-        let reference = plain.scene_colour().1;
+        let (sample, _, colour) = lens.scene_colour_with_sample();
+        let (baseline, _, reference) = plain.scene_colour_with_sample();
+        assert_eq!(sample.observation, baseline.observation);
+        assert_eq!(sample.tick, baseline.tick);
+        assert_eq!(sample.presentation_alpha.to_bits(), baseline.presentation_alpha.to_bits());
+        assert!(!gathers(&sample), "dry Trade lens at {dx} m scheduled the underwater gather");
         assert!(colour.iter().zip(&reference).all(|(a, b)| a.map(f32::to_bits) == b.map(f32::to_bits)),
             "the dry Trade lens changed output at {dx} m");
     }
     lens.host.continuous_source_mut().view = look(0.0, y - 4.0);
-    assert!(gathers(&mut lens), "submerged Trade lens omitted its gather");
+    assert!(gathers(&lens.frame()), "submerged Trade lens omitted its gather");
 }
 }
