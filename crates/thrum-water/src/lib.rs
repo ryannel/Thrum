@@ -638,7 +638,14 @@ impl SceneContribution for Water {
                 self.mirror_roughness.with_foam(p.foam.is_some()),
                 self.underwater
                     .as_ref()
-                    .map(|water| water.lens(frame, displayed_map, now))
+                    .map(|water| {
+                        let short_domain = self.interaction.is_none().then_some(if self.mapped {
+                            underwater::ShortWaveDomain::Mapped
+                        } else {
+                            underwater::ShortWaveDomain::Open(row.gains)
+                        });
+                        water.lens(frame, displayed_map, now, short_domain)
+                    })
                     .as_ref(),
             );
         }

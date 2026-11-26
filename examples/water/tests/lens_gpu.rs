@@ -198,3 +198,36 @@ fn metal_lip_lens_reads_the_highest_of_three_surfaces() {
     metal::check(&water_scene::lens_probe::Case::new("lip", 0.0), &gpu);
 }
 }
+
+thrum_test_support::macos_gpu_test! {
+fn metal_skips_a_dry_short_wave_trough_and_admits_the_crest() {
+    use crate::support::optics::{Rig, attach, camera, sun};
+    use water_scene::lens_probe::{Case, EXTENT, FOV};
+    let Some(gpu) = thrum_test_support::gpu("dry short-wave trough", Some(wgpu::Backend::Metal)) else { return };
+    for mapped in [false, true] {
+        let case = Case::short_trough(mapped, 0.0);
+        let [x, y, trough] = case.eye();
+        let look = |z| camera([x, y, z], [x, y, z + 1.0], FOV, 1.0 / 32768.0);
+        let view = look(trough);
+        let mut dry = Rig::with_extent(&gpu, &view, sun(0.0, 0.0), &[], None, EXTENT);
+        attach(&mut dry, case.water(true));
+        let mut plain = Rig::with_extent(&gpu, &view, sun(0.0, 0.0), &[], None, EXTENT);
+        attach(&mut plain, case.water(false));
+        assert!(-0.03_f64 - 0.1 * (f64::from(FOV) * 0.5).tan() > -0.08);
+        let centre = case.spectrum.cascades[0].direct([81.0, 0.0], 0.0).displacement[1];
+        assert!(centre < -0.099);
+        let submitted = dry.scene_colour().1;
+        let reference = plain.scene_colour().1;
+        let equal = submitted.iter().zip(&reference)
+            .filter(|(a, b)| a.map(f32::to_bits) == b.map(f32::to_bits))
+            .count();
+        assert_eq!(equal, (EXTENT[0] * EXTENT[1]) as usize, "dry pixels remain visually dry");
+        dry.host.set_timing_requested(true);
+        let gathers = |rig: &mut Rig| rig.frame().gpu_pass_ns.expect("Metal timing")
+            .passes().iter().any(|pass| pass.name.contains("water gather"));
+        assert!(!gathers(&mut dry), "the dry lens scheduled the underwater gather");
+        dry.host.continuous_source_mut().view = look(160.0 / 24.0 - 0.1);
+        assert!(gathers(&mut dry), "the same lens at the short-wave crest needs the gather");
+    }
+}
+}

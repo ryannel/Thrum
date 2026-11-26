@@ -136,6 +136,9 @@ impl Case {
     /// Panics if the fixed model inputs are invalid or the name is unknown.
     #[must_use]
     pub fn new(name: &'static str, datum: f64) -> Self {
+        if name == "short-trough" {
+            return Self::short_trough(true, datum);
+        }
         let column = match name {
             "sea" => [81.0, 0.0],
             "lake" => [0.0, 0.0],
@@ -179,6 +182,23 @@ impl Case {
         }
     }
 
+    /// One short mode with a 0.1 m trough on the lens's centre column.
+    /// # Panics
+    /// Panics if the fixed mode or sea declaration is invalid.
+    #[must_use]
+    pub fn short_trough(mapped: bool, datum: f64) -> Self {
+        let mut case = Self::new("sea", datum);
+        case.name = "short-trough";
+        case.mapped = mapped;
+        case.spectrum.long.clear();
+        case.spectrum.cascades[0] =
+            Cascade::new(160.0, &[(0, 12, 0.005, std::f64::consts::PI)]).expect("short wave");
+        case.map
+            .set_wave_gains(0, [0.0, 1.0, 0.0, 0.0])
+            .expect("offshore short wave gain");
+        case
+    }
+
     /// Build the same render contribution with or without lens composition.
     /// # Panics
     /// Panics if the fixed optical profile is invalid.
@@ -212,6 +232,13 @@ impl Case {
         reason = "the camera uses GPU metres"
     )]
     pub fn eye(&self) -> [f32; 3] {
+        if self.name == "short-trough" {
+            return [
+                81.0,
+                (self.map.row(0, self.column).level - 0.03) as f32,
+                -0.1,
+            ];
+        }
         let highest = self
             .map
             .surface(&self.field, self.column, 0.0)
@@ -309,7 +336,11 @@ fn target([x, y, z]: [f32; 3]) -> [f32; 3] {
 /// Returns an error for invalid controls, cooked assets or clock setup.
 pub fn browser_game(case: &Case, underwater: bool, dry: bool) -> Result<SkyGame, Box<dyn Error>> {
     let mut eye = case.eye();
-    if dry {
+    if case.name == "short-trough" {
+        if !dry {
+            eye[2] += 160.0 / 24.0;
+        }
+    } else if dry {
         eye[1] += 3.0;
     }
     let camera = Camera::look_at(eye, target(eye), FOV.to_degrees());

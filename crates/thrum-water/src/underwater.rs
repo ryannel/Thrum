@@ -4,6 +4,10 @@ use thrum_render::contribution::ContributionFrame;
 use thrum_sea_model::{LongWaves, Spectrum};
 use thrum_water_model::{Field, Map, WholeCut};
 
+mod short;
+use short::ShortBand;
+pub(super) use short::ShortWaveDomain;
+
 const LENS_SIDE: usize = 33;
 const SMOOTH_SIDE: usize = 9;
 const MAX_STRIP_SAMPLES: usize = 384;
@@ -19,27 +23,29 @@ pub(super) struct Lens {
 pub(super) struct Underwater {
     field: Field,
     long_amplitude: f64,
-    short_amplitudes: [f64; 3],
+    short: [ShortBand; 3],
 }
 
 impl Underwater {
     pub(super) fn new(long: LongWaves, spectrum: &Spectrum) -> Self {
         let long_amplitude = spectrum.long.iter().map(|c| c.amplitude).sum();
-        let short_amplitudes = spectrum
-            .cascades
-            .each_ref()
-            .map(|cascade| cascade.components().iter().map(|c| c.amplitude).sum());
         let empty = || LongWaves::new(Vec::new(), 0.0).expect("empty wave band");
         Self {
             field: Field {
                 layers: [long, empty(), empty(), empty()],
             },
             long_amplitude,
-            short_amplitudes,
+            short: spectrum.cascades.each_ref().map(ShortBand::new),
         }
     }
 
-    pub(super) fn lens(&self, frame: &ContributionFrame, map: &Map, seconds: f64) -> Lens {
+    pub(super) fn lens(
+        &self,
+        frame: &ContributionFrame,
+        map: &Map,
+        seconds: f64,
+        short_domain: Option<ShortWaveDomain>,
+    ) -> Lens {
         let plane = Plane::new(frame);
         let mut lens = Lens::zeroed();
         let may_fold = self.sample(&mut lens, &plane, map, seconds, SMOOTH_SIDE);
@@ -50,7 +56,52 @@ impl Underwater {
         {
             self.sample(&mut lens, &plane, map, seconds, LENS_SIDE);
         }
+        if lens.state[0] != 0
+            && let Some(domain) = short_domain
+            && self.short.iter().any(|band| band.amplitude > 0.0)
+        {
+            let (centre, radius) = plane.horizontal_box();
+            if let Some(gains) = domain.gains(map, centre, radius)
+                && self.proves_dry(&lens, plane.lowest, centre, radius, gains, seconds)
+            {
+                lens.state[0] = 0;
+            }
+        }
         lens
+    }
+
+    fn proves_dry(
+        &self,
+        lens: &Lens,
+        lowest: f64,
+        centre: [f64; 2],
+        radius: [f64; 2],
+        gains: [f64; 4],
+        seconds: f64,
+    ) -> bool {
+        let bound = self.short_bound(&gains);
+        if bound == 0.0 {
+            return false;
+        }
+        let roof = lens
+            .columns
+            .iter()
+            .flatten()
+            .filter(|column| column[3] > 0.0)
+            .map(|column| f64::from(column[0]))
+            .fold(f64::NEG_INFINITY, f64::max);
+        if roof - bound >= lowest {
+            return false;
+        }
+        let short = self
+            .short
+            .iter()
+            .zip(&gains[1..])
+            .filter(|(_, gain)| **gain > 0.0)
+            .map(|(band, gain)| gain * band.height_bound(centre, radius, seconds))
+            .sum::<f64>();
+        let rounding = f64::from(f32::EPSILON) * 8.0 * roof.abs().max(lowest.abs()).max(1.0);
+        roof + short + rounding < lowest
     }
 
     #[expect(
@@ -139,10 +190,10 @@ impl Underwater {
     }
 
     fn short_bound(&self, gains: &[f64; 4]) -> f64 {
-        self.short_amplitudes
+        self.short
             .iter()
             .zip(&gains[1..])
-            .map(|(amplitude, gain)| amplitude * gain)
+            .map(|(band, gain)| band.amplitude * gain)
             .sum()
     }
 
@@ -288,5 +339,22 @@ impl Plane {
     fn point(&self, x: f32, y: f32) -> Vec3 {
         let h = self.inverse * Vec4::new(x, y, 1.0, 1.0);
         h.truncate() / h.w
+    }
+
+    fn horizontal_box(&self) -> ([f64; 2], [f64; 2]) {
+        let low = self
+            .corners
+            .into_iter()
+            .fold(Vec3::splat(f32::INFINITY), Vec3::min);
+        let high = self
+            .corners
+            .into_iter()
+            .fold(Vec3::splat(f32::NEG_INFINITY), Vec3::max);
+        let low = low.xz().to_array().map(f64::from);
+        let high = high.xz().to_array().map(f64::from);
+        (
+            std::array::from_fn(|i| low[i].midpoint(high[i])),
+            std::array::from_fn(|i| (high[i] - low[i]) * 0.5),
+        )
     }
 }

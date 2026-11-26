@@ -532,6 +532,8 @@ if(mode==='under'){
   for(const file of ['crates/thrum-water/src/underwater.rs','crates/thrum-water/src/underwater.wgsl','examples/water/src/lens_probe.rs','examples/water/examples/lens_oracle.rs','examples/water/assets/meshes/lens-panel.gltf']){
     result.source_sha256[file]=hash(await fs.readFile(file));
   }
+  const shortAdmission='crates/thrum-water/src/underwater/short.rs';
+  result.source_sha256[shortAdmission]=hash(await fs.readFile(shortAdmission));
 }
 try {
   const url=await until(async()=>{
@@ -686,6 +688,9 @@ try {
     }
     const dry=await take('sea','dry');
     assert(dry.frame.lens_passes.gather===0&&dry.frame.lens_passes.composition===0,'dry lens encoded underwater work');
+    const trough=await take('short-trough','dry'),crest=await take('short-trough','split');
+    assert(trough.frame.lens_passes.gather===0&&trough.frame.lens_passes.composition===0,'dry short-wave trough encoded underwater work');
+    assert(crest.frame.lens_passes.gather===1&&crest.frame.lens_passes.composition===1,'short-wave crest omitted underwater work');
     assert(lensFailures.length===0,lensFailures.join('; '));
   }else if(mode==='rain-rings'){
     await until(async()=>{
