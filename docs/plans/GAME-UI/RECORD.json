@@ -478,7 +478,7 @@
         {
           "verdict": "fail",
           "commit": "1726032e0b5d8c0f33c59862c85c24ccbaf87aa3",
-          "review": ".orchestrate/evidence/GAME-UI/WP3-review.md",
+          "review": ".orchestrate/evidence/GAME-UI/WP3-review-1.md",
           "items": {
             "WP3.1": "fail",
             "WP3.2": "fail",
@@ -542,6 +542,61 @@
             "turns": 1
           },
           "at": "2026-11-26T03:36:02Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "4bcd09baf0b26528fa779d08e34f0ac86fecfb0c",
+          "review": ".orchestrate/evidence/GAME-UI/WP3-review.md",
+          "items": {
+            "WP3.1": "fail",
+            "WP3.2": "pass",
+            "WP3.3": "fail",
+            "WP3.4": "pass",
+            "WP3.5": "fail",
+            "WP3.6": "pass",
+            "WP3.7": "pass",
+            "WP3.8": "pass",
+            "WP3.9": "pass",
+            "WP3.10": "pass",
+            "WP3.11": "pass",
+            "WP3.12": "pass",
+            "WP3.14": "pass"
+          },
+          "findings": [
+            {
+              "name": "The large status panel drops all three counter values in a short safe area",
+              "item": "WP3.5",
+              "repeat": false
+            },
+            {
+              "name": "A fitting stack counts a child anchor that it ignores when placing the child",
+              "item": "WP3.1",
+              "different": "The capped weighted shares now distribute correctly. The new defect affects the intrinsic cross-axis size of a stack containing a child with a point anchor.",
+              "repeat": false
+            },
+            {
+              "name": "Editing text in a hidden subtree reruns layout",
+              "item": "WP3.3",
+              "different": "Visible fixed-size text edits now repaint without layout. An intrinsic-size text leaf whose ancestor is hidden still triggers layout although it occupies no space.",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 145203,
+            "cached": 3983744,
+            "output": 11903,
+            "turns": 1
+          },
+          "at": "2026-11-26T04:06:47Z"
         }
       ],
       "authorised": {
