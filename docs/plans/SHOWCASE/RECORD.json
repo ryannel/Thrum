@@ -276,7 +276,7 @@
         {
           "verdict": "fail",
           "commit": "d36a6de6460874a9f52814737b1b3709f54f95b0",
-          "review": ".orchestrate/evidence/SHOWCASE/WP7-review.md",
+          "review": ".orchestrate/evidence/SHOWCASE/WP7-review-1.md",
           "items": {
             "WP7.1": "pass",
             "WP7.2": "pass",
@@ -340,6 +340,45 @@
             "turns": 1
           },
           "at": "2026-11-26T22:34:34Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "8127940afe4b415c105136698e7ad23a7a8a9879",
+          "review": ".orchestrate/evidence/SHOWCASE/WP7-review.md",
+          "items": {
+            "WP7.1": "pass",
+            "WP7.2": "pass",
+            "WP7.3": "pass",
+            "WP7.4": "pass",
+            "WP7.5": "pass",
+            "WP7.6": "pass",
+            "WP7.7": "pass",
+            "WP7.8": "pass",
+            "WP7.9": "pass",
+            "WP7.10": "pass"
+          },
+          "findings": [
+            {
+              "name": "Chrome hitch report omits gaps between game presents on timely callbacks",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 160305,
+            "cached": 5803904,
+            "output": 17767,
+            "turns": 1
+          },
+          "at": "2026-11-26T23:50:43Z"
         }
       ],
       "authorised": {

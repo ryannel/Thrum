@@ -346,8 +346,8 @@
           "statement": "The work packages this one builds on are Done in the record files: `APPLE-TILE` WP12, `APPLE-PRESENTATION` WP11, its paired proof with MetalFX, EDR and the governor, `ATMOSPHERE` WP6, `CULLING` WP3, `CONTENT-LOOP` WP3, and `CONTENT-LOOP` WP6, which reports the cooked root a row drew.",
           "check": "python3 -c 'import json,sys; L=lambda m,f: json.load(open(\"docs/plans/\"+m+\"/\"+f)); need=[(\"APPLE-TILE\",\"WP12\"),(\"APPLE-PRESENTATION\",\"WP11\"),(\"ATMOSPHERE\",\"WP6\"),(\"CULLING\",\"WP3\"),(\"CONTENT-LOOP\",\"WP3\"),(\"CONTENT-LOOP\",\"WP6\")]; ok=lambda m,i: any(x[\"id\"]==i and x.get(\"status\")==\"done\" for x in L(m,\"DONE.json\")[\"work_packages\"]) and bool((L(m,\"RECORD.json\")[\"work_packages\"].get(i) or {}).get(\"done\")); bad=[m+\":\"+i for m,i in need if not ok(m,i)]; print(\"not Done:\",bad); sys.exit(1 if bad else 0)'",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SHOWCASE/WP7/verified/WP7.1.log",
-          "builder_result": "pass",
+          "evidence": "",
+          "builder_result": "open",
           "verdict": "pass",
           "review": ".orchestrate/evidence/SHOWCASE/WP7-review.md"
         },
@@ -358,10 +358,10 @@
           "lock": "gpu",
           "ask": "Is every reported value read from the game's resolved state, and none echoed from the request? Does the command fail when one selection is removed from the exit configuration, and when a feature falls back?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SHOWCASE/WP7/verified/rows/mac-apple/run.json",
+          "evidence": "",
           "verdict": "pass",
           "review": ".orchestrate/evidence/SHOWCASE/WP7-review.md",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "WP7.3",
@@ -369,8 +369,8 @@
           "check": "python3 scripts/run_v1_showcase.py exit --row mac-portable",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SHOWCASE/WP7/verified/rows/mac-portable/run.json",
-          "builder_result": "pass",
+          "evidence": "",
+          "builder_result": "open",
           "verdict": "pass",
           "review": ".orchestrate/evidence/SHOWCASE/WP7-review.md"
         },
@@ -380,8 +380,8 @@
           "check": "python3 scripts/run_v1_showcase.py exit --row chrome",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/SHOWCASE/WP7/verified/rows/chrome/run.json",
-          "builder_result": "pass",
+          "evidence": "",
+          "builder_result": "open",
           "verdict": "pass",
           "review": ".orchestrate/evidence/SHOWCASE/WP7-review.md"
         },
@@ -393,10 +393,10 @@
           "inspect": "Run the comparison yourself and look at its submitted stills of the three rows at each of the six stops, side by side at native size, and at a native-size crop of the grid cell where each pair of rows differs most at each stop. Entries 2 to 7 name what each stop must show: a cue missing from all three rows fails, as one missing from a single row does. 1. At every stop the three rows show the same view: the same terrain, horizon and sky, and the same props and balloons in the same places. 2. Sunrise: the sphere and the rock are in the same places on all three rows, and each casts a long shadow across the lookout, of the same direction and length on all three. 3. Noon: the sphere and the rock are in the same places on all three rows, and each has a short shadow on the ground toward the camera on all three. 4. Sunset with the clear Sun, 17.4 h: the Sun's disk is clear above the west ridge on all three rows, in the same place and of the same size. The view is turned 90\u00b0 from the sphere and the rock, so neither is in the frame. 5. Sunset with the Sun hidden, 17.9 h: on all three rows the west ridge hides the Sun's disk and the sky glows behind the ridge. No row shows the disk. The sphere and the rock are again out of the frame. 6. Twilight: the sphere and the rock are in the same places on all three rows, lit by the sky alone, with the last glow low in the sky. On no row does either cast a shadow from the Sun. 7. Night: on all three rows the ridge line stands against the night sky. No row shows the Sun or a Moon; the scene has no Moon. 8. At every stop sky, ground and props are as bright and of the same colour on each row: no row is visibly lighter, darker or tinted. 9. Anything else one row draws, the others draw in the same place: haze on the far slopes, the sphere's reflection where the sphere is in view, stars at night. 10. Where two rows differ, it is in how an edge, a thin line or a glint is resolved, as when a shipped game's upscaler option is changed, and not in what is drawn or how it is lit.",
           "ask": "Are the rows compared in an encoding all three produce, and does the record say which? Is the median threshold 1.0 at every stop, and were the other thresholds computed by the design's rule in one calibration run and left alone since?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SHOWCASE/WP7/review-fixes/comparison/inspection.md",
-          "verdict": "fail",
+          "evidence": "",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/SHOWCASE/WP7-review.md",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "WP7.6",
@@ -404,8 +404,8 @@
           "check": "python3 scripts/run_v1_showcase.py exit --controls",
           "lock": "gpu",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SHOWCASE/WP7/verified/controls/run.json",
-          "builder_result": "pass",
+          "evidence": "",
+          "builder_result": "open",
           "verdict": "pass",
           "review": ".orchestrate/evidence/SHOWCASE/WP7-review.md"
         },
@@ -416,10 +416,10 @@
           "lock": "gpu",
           "ask": "Does each clause run in the exit scene itself, through the control, watcher and profiler paths a person uses, and does the pipeline count come from the engine's creation counters?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SHOWCASE/WP7/verified/mac-clauses/run.json",
+          "evidence": "",
           "verdict": "pass",
           "review": ".orchestrate/evidence/SHOWCASE/WP7-review.md",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "WP7.8",
@@ -427,8 +427,8 @@
           "check": "python3 scripts/run_v1_showcase.py exit --clauses --target chrome-webgpu",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/SHOWCASE/WP7/verified/chrome-clauses/run.json",
-          "builder_result": "pass",
+          "evidence": "",
+          "builder_result": "open",
           "verdict": "pass",
           "review": ".orchestrate/evidence/SHOWCASE/WP7-review.md"
         },
@@ -439,10 +439,10 @@
           "lock": "gpu",
           "ask": "Does each late frame have either a cause that is fixed, proposed to its owning module in the log or shown by the record to lie outside the game, or the mark unresolved under load, with the evidence read, kept for WP8.13? Is load alone given as a cause anywhere? Is any row about a quarter slower than WP5's baseline at the same stop, and if so is it explained?",
           "target": "mac-metal",
-          "evidence": ".orchestrate/evidence/SHOWCASE/WP7/review-fixes/mac-frames/run.json",
-          "verdict": "fail",
+          "evidence": "",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/SHOWCASE/WP7-review.md",
-          "builder_result": "pass"
+          "builder_result": "open"
         },
         {
           "id": "WP7.10",
@@ -451,49 +451,20 @@
           "lock": "chrome",
           "ask": "Does each long interval have either a cause that is fixed, proposed to its owning module in the log or shown by the record to lie outside the page, or the mark unresolved under load, with the evidence read, kept for WP8.13? Is load alone given as a cause anywhere?",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/SHOWCASE/WP7/review-fixes/chrome-frames/run.json",
-          "verdict": "fail",
+          "evidence": "",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/SHOWCASE/WP7-review.md",
-          "builder_result": "pass"
+          "builder_result": "open"
         }
       ],
-      "failed_reviews": 1,
+      "failed_reviews": 2,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
-      "status": "ready_for_review",
+      "status": "in_progress",
       "quality_bar": "As truthful as a shipped game's benchmark mode, such as Forza Horizon 5's or Shadow of the Tomb Raider's: one command per target, the same scene and controls on each, a report of the settings that actually ran, and a frame record that shows every hitch. Across the three rows, the picture that benchmark gives when only its anti-aliasing or upscaler option is changed: one scene, one lighting and one exposure, differing in how edges and fine detail are resolved.",
       "findings": [
         {
-          "name": "Exit profiler disables the Chrome sizing sweep",
-          "repeat": false
-        },
-        {
-          "name": "Chrome drops a long interval across the route boundary",
-          "item": "WP7.10",
-          "repeat": false
-        },
-        {
-          "name": "Chrome assigns known page stalls to unresolved load",
-          "item": "WP7.10",
-          "repeat": false
-        },
-        {
-          "name": "Mac miss duration measures the opportunity instead of the frame gap",
-          "item": "WP7.9",
-          "repeat": false
-        },
-        {
-          "name": "Mac misses render work spanning later callbacks",
-          "item": "WP7.9",
-          "repeat": false
-        },
-        {
-          "name": "Noon texture control edits the prop texture instead of the ground",
-          "item": "WP7.5",
-          "repeat": false
-        },
-        {
-          "name": "Reviewed refresh cannot update the three row baselines",
+          "name": "Chrome hitch report omits gaps between game presents on timely callbacks",
           "repeat": false
         }
       ]
