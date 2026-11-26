@@ -22,7 +22,7 @@ fn surf_records_match_the_cache_and_query() {
             record!(SurfRecord, controls, bounds, coarse, bodies, shoaling),
         ],
     );
-    let cache = super::cache::Cache::compute_source(false);
+    let cache = super::cache::Cache::compute_source(false, map_gpu::declarations_at(0));
     records::named(
         "surf field cache",
         &cache,
@@ -40,7 +40,10 @@ fn surf_records_match_the_cache_and_query() {
         )],
     );
     validate(&cache);
-    validate(&super::cache::Cache::compute_source(true));
+    validate(&super::cache::Cache::compute_source(
+        true,
+        map_gpu::declarations_at(0),
+    ));
     let query = map_gpu::declarations_at(1)
         + COMPONENT
         + &SurfGpu::query_source(1, 7)

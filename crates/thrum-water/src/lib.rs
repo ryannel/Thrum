@@ -90,10 +90,12 @@ impl std::error::Error for WaterError {}
 /// Preparation facts read by diagnostics without retaining GPU resources.
 #[derive(Clone, Debug, Default)]
 pub struct WaterReport {
-    /// Submitted vertices, including the horizon skirt.
+    /// Prepared vertices, including the horizon skirt.
     pub vertices: u32,
-    /// Submitted vertices by water body, in declaration order.
+    /// Prepared vertices by water body, in declaration order.
     pub bodies: Vec<(String, u32)>,
+    /// Hollow vertices referenced by the surface submission, including shore margins.
+    pub hollow_surface_vertices: u32,
     /// Actual allocation sizes, keyed by resource name.
     pub resources: Vec<(String, u64)>,
     /// Last submitted interaction counters, when enabled.
@@ -345,6 +347,9 @@ impl Water {
             if let Some(indices) = &p.indices {
                 resources.push(("water surface triangle indices".into(), indices.size()));
             }
+            if let Some(tiles) = &p.hollow_tiles {
+                resources.push(("water hollows tile indices".into(), tiles.buffer.size()));
+            }
             if let Some(gather) = &p.gather {
                 resources.push(("water gather regions".into(), gather.bytes()));
             }
@@ -500,6 +505,7 @@ impl SceneContribution for Water {
         );
         *self.report.lock().expect("water report") = WaterReport {
             vertices: self.vertices(),
+            hollow_surface_vertices: 0,
             bodies: self.prepared.as_ref().expect("prepared").bodies.clone(),
             resources: self.resource_bytes(),
             interaction,
@@ -547,6 +553,16 @@ impl SceneContribution for Water {
                 self.offshore_displacement,
                 self.mirror_roughness.with_foam(p.foam.is_some()),
             );
+        }
+        if let Some(tiles) = &mut p.hollow_tiles {
+            tiles.record(
+                &p.queue,
+                p.map.as_ref().expect("hollows map").hollow_levels(),
+            );
+            self.report
+                .lock()
+                .expect("water report")
+                .hollow_surface_vertices = tiles.index_count() / 6 * 4;
         }
         if let Some(cache) = &mut p.surf_cache {
             cache.record(
@@ -723,8 +739,14 @@ impl SceneContribution for Water {
                         pass.draw_indexed(draw.indices.clone(), 0, 0..1);
                     }
                 }
-            } else {
+            } else if p.map.is_none() {
                 pass.draw(0..p.vertices, 0..1);
+            }
+            if let Some(tiles) = &p.hollow_tiles
+                && tiles.index_count() > 0
+            {
+                pass.set_index_buffer(tiles.buffer.slice(..), wgpu::IndexFormat::Uint32);
+                pass.draw_indexed(0..tiles.index_count(), 0, 0..1);
             }
         }
     }

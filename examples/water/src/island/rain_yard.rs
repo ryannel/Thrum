@@ -8,6 +8,7 @@ use thrum_app::sky::{Camera, Controls, CookedMaterial, Display, MeshPlacement, S
 use thrum_rain_model::{
     Canopy, Ground, GroundClass, GroundStores, Profile, Rain, RainState, Shelter, TickReport, Tree,
 };
+use thrum_water::query::{BodyQuery, QueryAnswer, QueryPoint};
 use thrum_water_model::{Bed, Body, BodyKind, HollowOptics, Hollows, Map, NO_HOLLOW, Stage};
 
 pub(super) fn camera(index: usize) -> Camera {
@@ -149,11 +150,17 @@ pub(super) struct Yard {
     patches: [GroundPatch; 2],
     stores: GroundStores,
     levels: Vec<f64>,
+    replies: super::RainYardReplies,
+    pub(super) draw_float: bool,
 }
 
 impl Yard {
     pub(super) fn size(&self) -> (usize, usize) {
         (SIZE.iter().product(), self.levels.len())
+    }
+
+    pub(super) fn replies(&self) -> super::RainYardReplies {
+        Arc::clone(&self.replies)
     }
 
     pub(super) fn install(
@@ -166,34 +173,76 @@ impl Yard {
     ) -> SkyGame {
         let float = self.float();
         let displayed_float = float.clone();
+        let mailbox = water.query_mailbox();
+        #[cfg(target_arch = "wasm32")]
+        let displayed_replies = self.replies();
         #[cfg(target_arch = "wasm32")]
         let status_map = Arc::clone(&map);
-        #[cfg(target_arch = "wasm32")]
+        let points = self.query_points();
+        let game = if self.draw_float {
+            float.install(game, water)
+        } else {
+            game
+        };
+        game.with_status_readouts(move |controls| {
+            let level = displayed_float.waterline();
+            readout(controls, level);
+            #[cfg(target_arch = "wasm32")]
+            browser_status(
+                &status_map.lock().expect("yard water map"),
+                displayed_replies.lock().expect("yard query reply").as_ref(),
+                level,
+            );
+        })
+        .with_fixed_update_endpoint(move |endpoint, dt| {
+            let tick = endpoint.tick;
+            if tick == 0 {
+                return;
+            }
+            let weather = *input.lock().expect("yard weather");
+            self.step(weather, dt, &mut map.lock().expect("yard water map"))
+                .expect("prepared yard rain tick");
+            if let Some(mailbox) = &mailbox {
+                let ready = mailbox.drain(endpoint, dt).into_iter().next();
+                if let Some(answer) = ready {
+                    float.advance(tick, wet_level(&answer.points[0]));
+                    *self.replies.lock().expect("yard query reply") = Some(answer);
+                }
+                mailbox.post(
+                    endpoint,
+                    vec![BodyQuery {
+                        id: 0,
+                        generation: 0,
+                        points: points
+                            .map(|position| QueryPoint {
+                                position,
+                                radius: 0.0,
+                                use_tick: tick,
+                            })
+                            .into(),
+                    }],
+                );
+            }
+        })
+    }
+
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "body query positions use world f32 metres"
+    )]
+    fn query_points(&self) -> [[f32; 2]; 5] {
         let float_point = self.patches[PAVING]
             .tree
             .ground()
-            .centre(FLOAT_CELL[1] * SIZE[0] + FLOAT_CELL[0]);
-        float
-            .install(game, water)
-            .with_status_readouts(move |controls| {
-                let level = displayed_float.waterline();
-                readout(controls, level);
-                #[cfg(target_arch = "wasm32")]
-                browser_status(
-                    &status_map.lock().expect("yard water map"),
-                    float_point,
-                    level,
-                );
-            })
-            .with_fixed_update(move |tick, dt| {
-                if tick > 0 {
-                    let weather = *input.lock().expect("yard weather");
-                    let mut map = map.lock().expect("yard water map");
-                    self.step(weather, dt, &mut map)
-                        .expect("prepared yard rain tick");
-                    float.advance(tick, &map);
-                }
-            })
+            .centre(FLOAT_CELL[1] * SIZE[0] + FLOAT_CELL[0])
+            .map(|x| x as f32);
+        [
+            float_point,
+            [152.4, 65.0],
+            [151.75, 67.8],
+            [147.2, 66.2],
+            [149.75, 66.35],
+        ]
     }
 
     pub(super) fn float(&self) -> crate::floating::YardFloat {
@@ -272,6 +321,8 @@ impl Yard {
             patches,
             stores,
             levels: Vec::with_capacity(count),
+            replies: Arc::default(),
+            draw_float: true,
         };
         yard.refresh_levels();
         Ok(yard)
@@ -303,13 +354,15 @@ impl Yard {
         let mut optics = vec![
             Some(HollowOptics {
                 extinction: 3.0,
-                scatter: [0.15, 0.17, 0.2],
+                scatter: [0.08, 0.14, 0.23],
+                bed_tint: [0.49, 0.68, 0.83],
             });
             self.levels.len()
         ];
         optics[..track_hollows].fill(Some(HollowOptics {
             extinction: 90.0,
             scatter: [0.17, 0.092, 0.045],
+            bed_tint: [1.0; 3],
         }));
         let hollows = Hollows::new(ORIGIN, CELL, SIZE, bed, labels, self.levels.clone())
             .and_then(|hollows| hollows.with_optical_types(optics))
@@ -354,17 +407,30 @@ impl Yard {
     }
 }
 
+fn wet_level(answer: &QueryAnswer) -> Option<f64> {
+    (answer.surface.wet && answer.surface.body == Some(BODY))
+        .then_some(answer.surface.sample.height)
+}
+
 #[cfg(target_arch = "wasm32")]
-fn browser_status(map: &Map, float_point: [f64; 2], float_waterline: f64) {
+fn browser_status(
+    map: &Map,
+    reply: Option<&thrum_water::query::BodyAnswers>,
+    float_waterline: f64,
+) {
     let status = js_sys::Array::new();
-    for point in [[147.2, 66.2], [149.75, 66.35], float_point, [151.75, 67.8]] {
-        let level = map
-            .sample(point)
+    let column = |point| {
+        map.sample(point)
             .filter(|hit| hit.body == BODY && hit.depth > 0.0)
-            .map_or(js_sys::wasm_bindgen::JsValue::NULL, |hit| {
-                hit.row.level.into()
-            });
-        status.push(&level);
+            .map(|hit| hit.row.level)
+    };
+    for height in [
+        column([147.2, 66.2]),
+        column([149.75, 66.35]),
+        reply.and_then(|answer| wet_level(&answer.points[0])),
+        reply.and_then(|answer| wet_level(&answer.points[2])),
+    ] {
+        status.push(&height.map_or(js_sys::wasm_bindgen::JsValue::NULL, Into::into));
     }
     status.push(&float_waterline.into());
     drop(js_sys::Reflect::set(
@@ -381,12 +447,6 @@ mod tests {
     #[test]
     fn yard_fills_and_parts_with_stable_map_identity() {
         let mut yard = Yard::prepare().expect("prepare authored yard triangles");
-        let float = yard.float();
-        let initial_float_line = float.waterline();
-        let float_point = yard.patches[PAVING]
-            .tree
-            .ground()
-            .centre(FLOAT_CELL[1] * SIZE[0] + FLOAT_CELL[0]);
         let mut map = super::super::prepare_island_map(
             &super::super::Wind::Calm.forcing(),
             None,
@@ -413,7 +473,6 @@ mod tests {
         for tick in 1..=1200 {
             yard.step(Weather::new(100.0, 0.0, 150.0), step, &mut map)
                 .expect("rain tick");
-            float.advance(tick, &map);
             if let (Some(left), Some(right)) = (wet(&map, pits[0]), wet(&map, pits[1])) {
                 if left.row.level.to_bits() == right.row.level.to_bits() {
                     merged = true;
@@ -434,16 +493,6 @@ mod tests {
             first_spill,
             Some(0),
             "the lower pit spills into the higher pit first"
-        );
-        assert!(float.waterline() > initial_float_line);
-        assert!(
-            (float.waterline()
-                - wet(&map, float_point)
-                    .expect("water beneath the float")
-                    .row
-                    .level)
-                .abs()
-                < 0.000_001
         );
         assert!(wet(&map, shelter).is_none());
         assert!(

@@ -232,8 +232,13 @@ const islandObserver = `
   wrap(GPURenderPassEncoder.prototype,'draw',function(_,count,instances,first){
     if(this.__water)__island.draws.push([first,count]);
   });
+  __island.yardDraws=[];
+  wrap(GPURenderPassEncoder.prototype,'setIndexBuffer',function(_,buffer){
+    this.__yardIndices=buffer.label==='water hollows tile indices';
+  });
   wrap(GPURenderPassEncoder.prototype,'drawIndexed',function(_,count,instances,first){
     if(this.__water)__island.draws.push([first,count]);
+    if(this.__water&&this.__yardIndices)__island.yardDraws.push(count);
   });
 `;
 
@@ -515,6 +520,7 @@ try {
   await cdp.call('Page.navigate',{url:url+route},sid);
   await until(async()=>{const state=await evaluate('({ready:!!window.game,status:document.querySelector("#status")?.textContent})');if(state.status?.includes('could not start'))throw Error(state.status);return state.ready;},'scene constructed');
   result.instantiated_wasm=await readWasmReceipt(cdp,sid,url+'scene_bg.wasm',result.wasm,wasm.length);
+  if(mode==='rain-puddles')await evaluate("game.edit_control('rain.rate',0)");
   const fixedSurf=surfRoute&&mode!=='realtime';
   let now=fixedSurf ? await evaluate('performance.now()') : 0;
   const drive=async delta=>{now+=delta;await evaluate(`game.frame(${now})`);};
@@ -568,6 +574,7 @@ try {
       return /^Cooked generation [0-9]+ drawn/.test(status);
     },'cooked rain yard drawn');
     const status=()=>evaluate('(game.report(),globalThis.waterRainYard)');
+    assert((await evaluate('__island.yardDraws')).length===0,'the dry yard submitted puddle tiles');
     const step=async()=>{
       await until(()=>evaluate('game.frame_ready()'),'yard frame slot');
       await drive(1000/60);
@@ -585,19 +592,27 @@ try {
         Math.abs(state[2]-state[4])<0.0001 ? state : null;
     },'joined paving puddles and afloat float');
     await capture('rain-joined',200);
-    const high=await status();
-    await evaluate("game.edit_control('rain.rate',0);game.edit_control('rain.drying',100)");
+    await evaluate("game.edit_control('rain.rate',0)");
+    const agrees=state=>state[2]!==null && Math.abs(state[2]-state[4])<0.0001;
+    const high=await until(async()=>{
+      const state=await step();
+      return agrees(state)&&Math.abs(state[2]-state[0])<0.0001 ? state : null;
+    },'float settles at the joined waterline');
+    await evaluate("game.edit_control('rain.drying',100)");
     const parted=await until(async()=>{
       const state=await step();
-      return state[0]!==null && state[1]!==null && state[0]!==state[1] ? state : null;
+      return state[0]!==null && state[1]!==null && state[0]!==state[1] &&
+        agrees(state) && state[4]<high[4] ? state : null;
     },'puddles part while drying');
     await capture('rain-parted',0);
-    const draws=await evaluate('__island.draws.filter(row=>row[1]===192000).length');
-    assert(draws>=3,'the selected WebGPU surface never drew the yard tiles');
+    const submitted=await evaluate('__island.yardDraws');
+    const draws=submitted.length;
+    assert(draws>=3&&new Set(submitted).size>1&&submitted.every(count=>count>0),
+      'the selected WebGPU surface must submit changing partial yard draws');
     assert(first[4]<joined[4]&&high[4]>parted[4]&&[first,joined,high,parted].every(s=>s[3]===null),
       'the float must rise and fall, with dry ground under the roof');
     assert(new Set(result.frames.map(frame=>frame.sha256_rgba)).size===3,'the submitted yard states must differ');
-    result.rain={first,joined,high,parted,draws};
+    result.rain={first,joined,high,parted,draws,submitted};
   } else if(mode==='channel'){
     const float=()=>evaluate('(game.report(),globalThis.waterChannelFloat)');
     await until(async()=>{

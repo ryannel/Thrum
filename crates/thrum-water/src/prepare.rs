@@ -1,3 +1,5 @@
+mod hollow_tiles;
+
 use super::{
     Profile, SURFACE_PASS,
     foam::{self, Foam},
@@ -51,6 +53,7 @@ pub(super) struct Prepared {
     pub(super) bodies: Vec<(String, u32)>,
     pub(super) indices: Option<wgpu::Buffer>,
     pub(super) draws: Vec<WaterDraw>,
+    pub(super) hollow_tiles: Option<hollow_tiles::HollowTiles>,
 }
 struct Pattern {
     device: DeviceSite,
@@ -320,6 +323,7 @@ pub(super) fn new(
             &bindings,
             interaction.is_some(),
             surf.as_ref(),
+            map_gpu.as_ref(),
         )
     });
     let fallback = foam.as_ref().map(|_| fallback_pattern(device));
@@ -392,6 +396,7 @@ pub(super) fn new(
         surf_cache,
         bodies: geometry.bodies,
         draws: geometry.draws,
+        hollow_tiles: hollow_tiles::HollowTiles::new(device, geometry.hollow_tiles)?,
         indices,
     })
 }
@@ -786,6 +791,7 @@ struct Geometry {
     indices: Vec<u32>,
     bodies: Vec<(String, u32)>,
     draws: Vec<WaterDraw>,
+    hollow_tiles: Vec<hollow_tiles::Rectangle>,
 }
 
 fn has_tidal_join(map: &thrum_water_model::Map) -> bool {
@@ -863,12 +869,10 @@ fn surface_mesh(map: Option<&thrum_water_model::Map>, tidal_grid: bool) -> Geome
                 previous_half_width = half_width;
             }
         } else if let thrum_water_model::BodyKind::Hollows(hollows) = &declaration.kind {
-            let first_index = geometry.indices.len() as u32;
+            geometry
+                .hollow_tiles
+                .push(hollow_tiles::Rectangle::new(first, hollows));
             geometry.hollows(hollows, (body + 1) as f32);
-            geometry.draws.push(WaterDraw {
-                indices: first_index..geometry.indices.len() as u32,
-                offshore: None,
-            });
         } else if let Some([min, max]) = map.surface_bounds(body) {
             // Tile fine enough for geometry in the near view; shading filters
             // the unresolved part of each layer separately.
@@ -900,9 +904,6 @@ impl Geometry {
         let ([x, z], cell, [width, height]) = hollows.lattice();
         for row in 0..height {
             for column in 0..width {
-                // Dry cells within one cell of water carry the horizontal sheet
-                // to the opaque bed's continuous intersection.
-                let base = self.vertices.len() as u32;
                 for (corner, [dx, dz]) in [[0, 0], [1, 0], [0, 1], [1, 1]].into_iter().enumerate() {
                     self.vertices.push([
                         ((column + dx) as f64).mul_add(cell, x) as f32,
@@ -911,8 +912,6 @@ impl Geometry {
                         slot,
                     ]);
                 }
-                self.indices
-                    .extend([base, base + 2, base + 1, base + 1, base + 2, base + 3]);
             }
         }
     }

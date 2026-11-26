@@ -3,7 +3,7 @@ use serde_json::{Value, json};
 use std::time::Duration;
 use thrum_test_support::Gpu;
 use thrum_water_model::Map;
-use water_scene::island::{Wind, build_rain_yard};
+use water_scene::island::{Wind, build_rain_yard_cost};
 
 const EXTENT: [u32; 2] = [2560, 1440];
 
@@ -29,12 +29,18 @@ pub(super) fn measure(gpu: &Gpu) -> Value {
         .map(|name| json!({"name": name, "arms": []}))
         .into_iter()
         .collect();
-    for present in [false, true] {
-        let (game, report, map, _) = build_rain_yard(Wind::Calm, present).expect("yard");
+    let mut dry_vertices = [0; 2];
+    for (arm, present) in [false, true].into_iter().enumerate() {
+        let (game, report, map, _) = build_rain_yard_cost(Wind::Calm, present).expect("yard");
         let mut fixture = super::support::Fixture::from_game(gpu, EXTENT, game, report);
         fixture.parameters(r#"{"camera.island":3,"rain.rate":0}"#);
         fixture.warm_cooked();
         fixture.frame(1.0);
+        dry_vertices[arm] = fixture
+            .report
+            .lock()
+            .expect("dry yard report")
+            .hollow_surface_vertices;
         fixture.parameters(r#"{"rain.rate":100,"rain.time_scale":600}"#);
         for (index, fill) in (0_u32..).zip(&mut fills) {
             let time = [1.2, 1.48, 6.8][index as usize];
@@ -63,11 +69,7 @@ pub(super) fn measure(gpu: &Gpu) -> Value {
                     .find_map(|(label, size)| (label == name).then_some(*size))
                     .unwrap_or(0)
             };
-            let vertices = report
-                .bodies
-                .iter()
-                .find_map(|(name, vertices)| (name == "Rain yard").then_some(*vertices))
-                .unwrap_or(0);
+            let vertices = report.hollow_surface_vertices;
             let map = map.lock().expect("yard map");
             let levels = levels(&map);
             if fill["name"] == "brim" {
@@ -86,7 +88,7 @@ pub(super) fn measure(gpu: &Gpu) -> Value {
         }
     }
     json!({
-        "target": "mac-metal", "extent": EXTENT, "capture": false, "fills": fills,
+        "target": "mac-metal", "extent": EXTENT, "capture": false, "fills": fills, "dry_vertices": dry_vertices,
         "frame_stride_ns": Duration::from_secs_f64(1.0 / 120.0).as_nanos(),
     })
 }

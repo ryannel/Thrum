@@ -417,13 +417,38 @@ pub fn build_optics_arm(wind: Wind, optics: bool) -> Result<FoamScene, Box<dyn E
     build_island(wind, true, false, None, optics, None, |_| {})
 }
 
+/// The yard scene and its latest float/body-query reply.
+pub type RainYardScene = (SkyGame, SharedReport, SharedMap, RainYardReplies);
+
+/// The most recent batch consumed by the yard, including the dry test columns.
+pub type RainYardReplies = Arc<Mutex<Option<thrum_water::query::BodyAnswers>>>;
+
 /// Build the island with the rain yard's ground and inspection cameras.
 ///
 /// # Errors
 /// Propagates scene construction errors.
-pub fn build_rain_yard(wind: Wind, draw_water: bool) -> Result<FoamScene, Box<dyn Error>> {
-    let rain = rain_yard::Yard::prepare()?;
-    build_island(wind, draw_water, false, None, true, Some(rain), |_| {})
+pub fn build_rain_yard(wind: Wind, draw_water: bool) -> Result<RainYardScene, Box<dyn Error>> {
+    build_yard(wind, draw_water, true)
+}
+
+/// Build matched cost arms with the same opaque ground and no float.
+/// # Errors
+/// Propagates scene construction errors.
+pub fn build_rain_yard_cost(wind: Wind, draw_water: bool) -> Result<RainYardScene, Box<dyn Error>> {
+    build_yard(wind, draw_water, false)
+}
+
+fn build_yard(
+    wind: Wind,
+    draw_water: bool,
+    draw_float: bool,
+) -> Result<RainYardScene, Box<dyn Error>> {
+    let mut rain = rain_yard::Yard::prepare()?;
+    rain.draw_float = draw_float;
+    let replies = rain.replies();
+    let (game, report, map, _) =
+        build_island(wind, draw_water, false, None, true, Some(rain), |_| {})?;
+    Ok((game, report, map, replies))
 }
 
 /// Measure preparation of the selected yard's bed, canopy and hollows.
@@ -436,6 +461,14 @@ pub fn measure_rain_yard_preparation() -> Result<(Duration, usize, usize), Box<d
     let elapsed = start.elapsed();
     let (cells, hollows) = yard.size();
     Ok((elapsed, cells, hollows))
+}
+
+fn query_points(foam: bool, draw_water: bool, yard: Option<&rain_yard::Yard>) -> Option<u32> {
+    if foam {
+        Some(512)
+    } else {
+        (draw_water && yard.is_some_and(|yard| yard.draw_float)).then_some(5)
+    }
 }
 
 fn build_island(
@@ -473,11 +506,8 @@ fn build_island(
             ..thrum_water::Optics::default()
         });
     }
-    if foam {
-        profile.query = Some(thrum_water::query::QueryLimits {
-            points: 512,
-            max_age: 8,
-        });
+    if let Some(points) = query_points(foam, draw_water, rain.as_ref()) {
+        profile.query = Some(thrum_water::query::QueryLimits { points, max_age: 8 });
     }
     let mut water = Water::mapped(Arc::clone(&map), spectrum, profile)?;
     configure(&mut water);

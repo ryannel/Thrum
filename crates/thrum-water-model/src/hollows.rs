@@ -3,6 +3,7 @@
 //! where that stands above the cell's bed. The game moves the levels with the tick; the
 //! rectangle, the bed and the labels are content and never change while it runs.
 use crate::{BodyKind, Map, MapSample, Row, WaterError};
+use std::sync::Arc;
 
 /// Label of a cell that belongs to no hollow: its water leaves over the rectangle's edge.
 pub const NO_HOLLOW: u32 = u32::MAX;
@@ -14,6 +15,8 @@ pub struct HollowOptics {
     pub extinction: f32,
     /// RGB backscatter divided by sediment extinction, in the unit interval.
     pub scatter: [f32; 3],
+    /// Linear colour multiplier for the submerged bed, in the unit interval.
+    pub bed_tint: [f32; 3],
 }
 
 /// Limits a profile sets on hollows bodies, counted at preparation.
@@ -41,8 +44,8 @@ pub struct Hollows {
     pub(crate) origin: [f64; 2],
     pub(crate) spacing: f64,
     pub(crate) size: [usize; 2],
-    pub(crate) bed: Vec<f64>,
-    pub(crate) labels: Vec<u32>,
+    pub(crate) bed: Arc<[f64]>,
+    pub(crate) labels: Arc<[u32]>,
     pub(crate) levels: Vec<f64>,
     optical_types: Vec<Option<HollowOptics>>,
 }
@@ -77,8 +80,8 @@ impl Hollows {
             origin,
             spacing,
             size,
-            bed,
-            labels,
+            bed: bed.into(),
+            labels: labels.into(),
             levels,
             optical_types: Vec::new(),
         })
@@ -96,7 +99,11 @@ impl Hollows {
             || table.iter().flatten().any(|optics| {
                 !optics.extinction.is_finite()
                     || optics.extinction < 0.0
-                    || optics.scatter.iter().any(|x| !(0.0..=1.0).contains(x))
+                    || optics
+                        .scatter
+                        .iter()
+                        .chain(&optics.bed_tint)
+                        .any(|x| !(0.0..=1.0).contains(x))
             })
         {
             return Err(WaterError::new("hollows", "invalid optical types"));
@@ -220,6 +227,21 @@ impl Hollows {
 }
 
 impl Map {
+    /// Connectivity and hollow-level revisions for a body-query snapshot.
+    pub fn query_revision(&self) -> [u64; 2] {
+        [self.spatial_revision(), self.hollow_revision]
+    }
+
+    /// Local bed inside a hollows rectangle, including cells with no water.
+    pub fn hollow_bed_at(&self, point: [f64; 2]) -> Option<f64> {
+        self.bodies.iter().find_map(|body| {
+            let BodyKind::Hollows(hollows) = &body.kind else {
+                return None;
+            };
+            hollows.cell(point).map(|cell| hollows.bed[cell])
+        })
+    }
+
     /// Set every level of a hollows body for this tick. The body's identity and generation
     /// do not change, whatever its puddles do. A table that stands two different levels in
     /// wet cells that share an edge is held at the last table and counted in
@@ -241,11 +263,15 @@ impl Map {
         if levels.len() != h.levels.len() || levels.iter().any(|v| !v.is_finite()) {
             return Err(WaterError::new(&b.name, "invalid level table"));
         }
+        if h.levels == levels {
+            return Ok(true);
+        }
         if h.splits_level(levels) {
             self.held_level_tables += 1;
             return Ok(false);
         }
         h.levels.copy_from_slice(levels);
+        self.hollow_revision = self.hollow_revision.wrapping_add(1);
         Ok(true)
     }
 

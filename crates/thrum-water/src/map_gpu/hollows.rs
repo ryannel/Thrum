@@ -69,7 +69,7 @@ impl HollowsGpu {
                     + level_count
                     + hollows.hollow_count()
                     + optical_types.len()
-                    + 2 * hollows.optical_types().len())
+                    + 4 * hollows.optical_types().len())
                     * size_of::<Cell>();
             if byte_count as u64 > limit.max_storage_buffer_binding_size
                 || byte_count as u64 > limit.max_buffer_size
@@ -96,10 +96,22 @@ impl HollowsGpu {
                 ],
             };
             optical_types.extend(hollows.optical_types().iter().flat_map(|optics| {
-                optics.map_or([[0; 2]; 2], |optics| {
-                    let [r, g, b] = optics.scatter.map(f32::to_bits);
-                    [[r, g], [b, optics.extinction.to_bits()]]
-                })
+                let Some(optics) = optics else {
+                    return [
+                        [0, 0],
+                        [0, 0],
+                        [1.0_f32.to_bits(); 2],
+                        [1.0_f32.to_bits(), 0],
+                    ];
+                };
+                let [r, g, b] = optics.scatter.map(f32::to_bits);
+                let [tint_r, tint_g, tint_b] = optics.bed_tint.map(f32::to_bits);
+                [
+                    [r, g],
+                    [b, optics.extinction.to_bits()],
+                    [tint_r, tint_g],
+                    [tint_b, 0],
+                ]
             }));
             cells.extend(
                 hollows
@@ -206,6 +218,10 @@ impl HollowsGpu {
         }
         self.recorded = time;
         self.upload(queue);
+    }
+
+    pub(super) fn display(&self) -> &[[u32; 2]] {
+        &self.display
     }
 
     pub(super) fn commit(&mut self) {

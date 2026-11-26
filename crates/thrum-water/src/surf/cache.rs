@@ -158,6 +158,7 @@ impl Cache {
             binding::storage(3, compute, false, samples.size()),
         ];
         layout_entries.extend(map_gpu::bindings(compute));
+        layout_entries.extend(map.hollows_bindings(compute));
         layout_entries.extend(SurfGpu::layout(COMPUTE_SURF_BINDING, compute));
         if let Some(work) = &work {
             layout_entries.push(binding::storage(WORK_BINDING, compute, false, work.size()));
@@ -176,6 +177,7 @@ impl Cache {
             })
             .collect();
         entries.extend(map.entries(&view));
+        entries.extend(map.hollows_entry());
         entries.extend(surf.entries(COMPUTE_SURF_BINDING));
         if let Some(work) = &work {
             entries.push(wgpu::BindGroupEntry {
@@ -193,7 +195,7 @@ impl Cache {
             bind_group_layouts: &[Some(&layout)],
             immediate_size: 0,
         });
-        let source = Self::compute_source(measure_work);
+        let source = Self::compute_source(measure_work, map.source(0));
         let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some(PASS),
             source: wgpu::ShaderSource::Wgsl(source.into()),
@@ -323,7 +325,7 @@ impl Cache {
         pass.dispatch_workgroups(self.dispatch_count.div_ceil(GROUP_WIDTH), 1, 1);
     }
 
-    pub(super) fn compute_source(measure_work: bool) -> String {
+    pub(super) fn compute_source(measure_work: bool, map_source: String) -> String {
         let observer = if measure_work {
             format!(
                 "@group(0) @binding({WORK_BINDING}) var<storage, read_write> work: array<atomic<u32>>;
@@ -332,7 +334,7 @@ impl Cache {
         } else {
             "fn cache_observe(_index: u32, _count: u32) {}\n".to_owned()
         };
-        map_gpu::declarations_at(0)
+        map_source
             + include_str!("../column/records.wgsl")
             + &SurfGpu::source(0, COMPUTE_SURF_BINDING)
             + &Self::ring_source(true, false)

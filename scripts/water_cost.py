@@ -896,6 +896,9 @@ def validate_rain_yard(data):
     assert data['target'] == 'mac-metal' and data['extent'] == [2560, 1440] and data['capture'] is False
     assert data['commit'] and data['load'] and data['island_record']['summary']
     assert [fill['name'] for fill in data['fills']] == ['first', 'separate', 'brim']
+    assert data['dry_vertices'] == [0, 0]
+    counts = [fill['arms'][1]['vertices'] for fill in data['fills']]
+    assert 0 < counts[0] < counts[1] < counts[2] < 128_000
     for fill in data['fills']:
         bare, water = fill['arms']
         assert not bare['water'] and water['water'] and fill['yard_pixels'] > 0

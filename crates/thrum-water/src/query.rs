@@ -247,7 +247,7 @@ impl State {
             .filter(|(previous, _)| *previous == tick);
         let previous = same_tick.or_else(|| index.checked_sub(1).and_then(|i| self.maps.get(i)));
         let snapshot = previous
-            .filter(|(_, old)| old.spatial_revision() == map.spatial_revision())
+            .filter(|(_, old)| map.query_revision() == old.query_revision())
             .map_or_else(|| Arc::new(map.clone()), |(_, old)| Arc::clone(old));
         if same_tick.is_some() {
             self.maps[index].1 = snapshot;
@@ -304,7 +304,7 @@ impl QueryMailbox {
         if state.last_post.is_some_and(|previous| previous >= tick) {
             return;
         }
-        // Static maps share one snapshot. A changed revision keeps its own connectivity and rows.
+        // Unchanged domains share one snapshot. Hollow levels can change without moving the bed.
         state.remember_map(tick, &map, self.limits.max_age);
         state.last_post = Some(tick);
         drop(map);

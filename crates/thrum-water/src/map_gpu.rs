@@ -203,11 +203,26 @@ pub fn declarations() -> String {
 
 /// Map shader declarations with the specified resource group.
 pub fn declarations_at(group: u32) -> String {
-    format!(
-        "const BODY_LIMIT = {BODY_LIMIT}u;\nconst WATER_MAP_GROUP = {group}u;\n{}\n{}",
+    map_source(group, false)
+}
+
+fn map_source(group: u32, hollows: bool) -> String {
+    let sample_hollows = if hollows {
+        "    let local = hollows_sample(point);\n    if local.has_bed { return local; }\n"
+    } else {
+        ""
+    };
+    let source = format!(
+        "const BODY_LIMIT = {BODY_LIMIT}u;\nconst WATER_MAP_GROUP = {group}u;\n{}{sample_hollows}{}\n{}",
         include_str!("map.wgsl"),
+        include_str!("map_sample.wgsl"),
         include_str!("gains.wgsl"),
-    )
+    );
+    if hollows {
+        source + include_str!("map_gpu/hollows.wgsl")
+    } else {
+        source
+    }
 }
 
 /// Map entries within the water resource group.
@@ -391,12 +406,7 @@ impl MapGpu {
 
     /// Map shader declarations specialized to the products that were prepared.
     pub fn source(&self, group: u32) -> String {
-        let base = declarations_at(group);
-        if self.hollows.is_some() {
-            base + include_str!("map_gpu/hollows.wgsl")
-        } else {
-            base
-        }
+        map_source(group, self.hollows.is_some())
     }
 
     pub(crate) fn hollows_bindings(
@@ -409,6 +419,10 @@ impl MapGpu {
     /// The additional map entry when a scene declares a hollows body.
     pub fn hollows_entry(&self) -> Option<wgpu::BindGroupEntry<'_>> {
         self.hollows.as_ref().map(HollowsGpu::entry)
+    }
+
+    pub(crate) fn hollow_levels(&self) -> &[[u32; 2]] {
+        self.hollows.as_ref().map_or(&[], HollowsGpu::display)
     }
 
     pub(crate) fn hollows_bytes(&self) -> Option<u64> {

@@ -145,6 +145,7 @@ impl Foam {
         field: &[wgpu::BindGroupEntry<'_>],
         wake: bool,
         surf: Option<&SurfGpu>,
+        map: Option<&crate::map_gpu::MapGpu>,
     ) -> Self {
         use wgpu::BufferUsages as Usage;
         use wgpu::ShaderStages as Stages;
@@ -247,7 +248,7 @@ impl Foam {
                 "var<storage, read> foam_stocks",
                 "var<storage, read_write> foam_stocks",
             )
-            + &crate::map_gpu::declarations_at(0)
+            + &map.map_or_else(|| crate::map_gpu::declarations_at(0), |map| map.source(0))
             + &crate::interaction::Interaction::sample_source(0, 7, 8, wake)
             + include_str!("../carriage.wgsl")
             + &shore

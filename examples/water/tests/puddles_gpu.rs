@@ -18,22 +18,38 @@ fn submitted_yard_depth_matches_the_hollows_map() {
 }
 
 #[cfg(target_os = "macos")]
+#[expect(
+    clippy::print_stderr,
+    reason = "retain query and tile work on the named device"
+)]
 fn check_yard_transitions(gpu: &thrum_test_support::Gpu) {
-    use std::time::Duration;
+    use std::{collections::BTreeMap, time::Duration};
     use thrum_app::Game;
     use water_scene::island::{Wind, build_rain_yard};
     const EXTENT: [u32; 2] = [96, 64];
-    const PITS: [[f64; 2]; 2] = [[147.2, 66.2], [149.75, 66.35]];
-    const FLOAT: [f64; 2] = [147.575, 66.225];
-    let (game, report, map, _) = build_rain_yard(Wind::Calm, true).expect("rain yard");
+    const POINTS: [[f32; 2]; 5] = [
+        [147.575, 66.225],
+        [152.4, 65.0],
+        [151.75, 67.8],
+        [147.2, 66.2],
+        [149.75, 66.35],
+    ];
+    let (game, report, map, replies) = build_rain_yard(Wind::Calm, true).expect("rain yard");
     let mut scene = support::Fixture::from_game(gpu, EXTENT, game, report);
     scene.parameters(r#"{"camera.island":3,"rain.rate":0}"#);
     scene.warm_cooked();
     let frame_time = |tick: u32| (Duration::from_nanos(16_666_667) * tick).as_secs_f64();
     scene.frame_without_timings(frame_time(60));
     scene.frame_without_timings(frame_time(61));
+    scene.finish_tick_queries();
     let creations = scene.host.pipeline_creation_count();
-    let storage = scene.report.lock().expect("water report").resources.clone();
+    let report = scene.report.lock().expect("water report");
+    let storage = report.resources.clone();
+    assert_eq!(
+        report.hollow_surface_vertices, 0,
+        "dry yard submits no tile"
+    );
+    drop(report);
     let identity = map.lock().expect("yard map").generation(3);
     let float_line = |scene: &mut support::Fixture| {
         scene.game.poll_status();
@@ -49,68 +65,132 @@ fn check_yard_transitions(gpu: &thrum_test_support::Gpu) {
             .as_f64()
             .expect("float level in metres")
     };
-    let initial = float_line(&mut scene);
+    let mut previous = float_line(&mut scene);
+    let floor = previous;
+    let mut history = BTreeMap::new();
+    let mut first_tiles = None;
+    let mut greatest_tiles = 0;
+    let mut last_reply = 0;
+    let mut matched_replies = 0;
+    let mut state = 0;
     scene.parameters(r#"{"rain.rate":100,"rain.time_scale":600}"#);
-    let mut merged = false;
-    let mut drying = false;
-    let mut parted = false;
-    let mut rising = false;
-    let mut last_line = initial;
-    for tick in 62..=240 {
+    for tick in 62..=270 {
         let sample = scene.frame_without_timings(frame_time(tick));
         assert_eq!(sample.completed_ticks, 1);
+        let published = map.lock().expect("yard map");
+        history.insert(
+            sample.tick,
+            POINTS.map(|position| {
+                published
+                    .sample(position.map(f64::from))
+                    .filter(|hit| hit.depth > 0.0)
+                    .map(|hit| hit.row.level)
+            }),
+        );
+        drop(published);
+        let vertices = scene
+            .report
+            .lock()
+            .expect("water report")
+            .hollow_surface_vertices;
+        if vertices > 0 {
+            first_tiles.get_or_insert(vertices);
+            greatest_tiles = greatest_tiles.max(vertices);
+        }
+        scene.finish_tick_queries();
         let line = float_line(&mut scene);
         assert!(
-            (line - last_line).abs() < 0.015,
+            (line - previous).abs() < 0.015,
             "the float stepped at {tick}"
         );
-        last_line = line;
-        let (levels, float) = {
-            let published = map.lock().expect("yard map");
-            let wet = |point| published.sample(point).filter(|hit| hit.depth > 0.0);
-            (
-                PITS.map(|point| wet(point).map(|hit| hit.row.level)),
-                wet(FLOAT),
-            )
+        previous = line;
+        let reply = replies.lock().expect("yard query reply").clone();
+        let Some(reply) = reply.filter(|reply| reply.posted > last_reply && !reply.held) else {
+            continue;
         };
-        if line > initial + 0.0001
-            && let Some(float) = float
+        last_reply = reply.posted;
+        let Some(authoritative) = history.get(&reply.posted) else {
+            continue;
+        };
+        assert_eq!(reply.points.len(), POINTS.len());
+        let mut levels = [None; 5];
+        for (answer, (position, &expected)) in reply
+            .points
+            .iter()
+            .zip(POINTS.into_iter().zip(authoritative))
         {
-            assert!(
-                (line - float.row.level).abs() < 0.000_11,
-                "float waterline at {tick}"
+            assert_eq!(
+                answer.point.position.map(f32::to_bits),
+                position.map(f32::to_bits)
             );
-            rising = true;
-        }
-        if let [Some(low), Some(high)] = levels {
-            let joined = low.to_bits() == high.to_bits();
-            if joined && !merged {
-                merged = true;
+            assert_eq!(answer.point.use_tick, reply.posted);
+            assert!(
+                answer.bed.is_some(),
+                "the query retains local bed on dry ground"
+            );
+            assert_eq!(
+                answer.surface.wet,
+                expected.is_some(),
+                "point {} in reply {}",
+                answer.index,
+                reply.posted
+            );
+            if let Some(height) = expected {
+                assert_eq!(answer.surface.body, Some(3));
+                let actual = answer.surface.sample.height;
                 assert!(
-                    scene
-                        .witness()
-                        .iter()
-                        .all(|pixel| pixel[2].abs() < 65_000.0),
-                    "the merge invalidated history"
+                    (actual - height).abs() < 0.000_04,
+                    "stale query at {}: {actual} vs {height}",
+                    reply.posted
                 );
-            } else if drying && !joined {
-                parted = true;
+                levels[answer.index] = Some(actual);
+            }
+        }
+        matched_replies += 1;
+        assert!(
+            levels[1].is_none() && levels[2].is_none(),
+            "beside the float and under the roof answer dry"
+        );
+        if let Some(height) = levels[0] {
+            assert!(
+                (line - height.max(floor)).abs() < 0.000_11,
+                "float consumes the query height"
+            );
+        }
+        if let [Some(low), Some(high)] = [levels[3], levels[4]] {
+            let joined = low.to_bits() == high.to_bits();
+            if !joined && state == 0 {
+                state = 1;
+            } else if joined && state == 1 && line > floor + 0.0001 {
+                state = 2;
                 assert!(
                     scene
                         .witness()
                         .iter()
                         .all(|pixel| pixel[2].abs() < 65_000.0),
-                    "the parting invalidated history"
+                    "merge reset history"
+                );
+                scene.parameters(r#"{"rain.rate":0,"rain.drying":100}"#);
+            } else if !joined && state == 2 {
+                state = 3;
+                assert!(
+                    scene
+                        .witness()
+                        .iter()
+                        .all(|pixel| pixel[2].abs() < 65_000.0),
+                    "parting reset history"
                 );
                 break;
             }
         }
-        if merged && rising && !drying {
-            scene.parameters(r#"{"rain.rate":0,"rain.drying":100}"#);
-            drying = true;
-        }
     }
-    assert!(merged && rising && parted);
+    assert_eq!(state, 3, "GPU replies followed the merge and parting");
+    assert!(matched_replies > 30);
+    let first_tiles = first_tiles.expect("sparse fill submits tiles");
+    assert!(first_tiles < greatest_tiles && greatest_tiles < 128_000);
+    eprintln!(
+        "Metal matched {matched_replies} body-query replies, dry/sparse/wet vertices 0/{first_tiles}/{greatest_tiles}"
+    );
     assert_eq!(scene.host.pipeline_creation_count(), creations);
     assert_eq!(
         scene.report.lock().expect("water report").resources,

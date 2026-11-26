@@ -272,7 +272,7 @@ struct Batch {
     wake_tick: Option<u64>,
     count: u32,
     bodies: Vec<BodyQuery>,
-    map_revisions: Vec<u64>,
+    map_revisions: Vec<[u64; 2]>,
     coarse_groups: u32,
     fine_groups: u32,
     single_sheet: bool,
@@ -318,8 +318,8 @@ impl Readback {
         only_one_body: bool,
     ) -> Self {
         let count = u64::from(mailbox.limits.points);
-        let surf_source = if surf.is_some() {
-            map_gpu::declarations_at(SURF_GROUP) + &SurfGpu::query_source(SURF_GROUP, SURF_BINDING)
+        let surf_source = if let Some((map, _)) = &surf {
+            map.source(SURF_GROUP) + &SurfGpu::query_source(SURF_GROUP, SURF_BINDING)
         } else {
             PLAIN_QUERY.to_owned()
         };
@@ -365,8 +365,9 @@ impl Readback {
             label: Some("water query bindings"),
             entries: &layout,
         });
-        let surf_layout = surf.as_ref().map(|_| {
+        let surf_layout = surf.as_ref().map(|(map, _)| {
             let mut entries = map_gpu::bindings(visibility).to_vec();
+            entries.extend(map.hollows_bindings(visibility));
             entries.extend(SurfGpu::layout(SURF_BINDING, visibility));
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
                 label: Some("water query surf"),
@@ -396,6 +397,7 @@ impl Readback {
             .map(|((map, surf), layout)| {
                 let view = map.view();
                 let mut entries = map.entries(&view).to_vec();
+                entries.extend(map.hollows_entry());
                 entries.extend(surf.entries(SURF_BINDING));
                 device.create_bind_group(&wgpu::BindGroupDescriptor {
                     label: Some("water query surf"),
@@ -496,7 +498,7 @@ impl Readback {
             let snapshot = self
                 .committed_map
                 .as_ref()
-                .filter(|old| old.spatial_revision() == map.spatial_revision());
+                .filter(|old| map.query_revision() == old.query_revision());
             self.recorded_map = Some(snapshot.map_or_else(|| Arc::new(map.clone()), Arc::clone));
         }
     }
@@ -603,7 +605,7 @@ impl Readback {
                             wake.expect("wake settings")
                                 .dent(wake_tick, id, point.position);
                     }
-                    (input, domain.spatial_revision())
+                    (input, domain.query_revision())
                 })
                 .unzip();
             let count = u32::try_from(points.len()).expect("points admitted by query capacity");
@@ -880,7 +882,10 @@ impl Point {
             ..Self::zeroed()
         };
         let sample = map.sample(world);
-        if let Some(bed) = sample.map_or_else(|| map.bed().height(world), |row| row.bed) {
+        if let Some(bed) = sample.map_or_else(
+            || map.hollow_bed_at(world).or_else(|| map.bed().height(world)),
+            |row| row.bed,
+        ) {
             input.flags = 1;
             input.level_current_bed[3] = bed as f32;
         }

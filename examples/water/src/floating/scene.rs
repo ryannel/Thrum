@@ -981,19 +981,16 @@ impl YardFloat {
         )
     }
 
-    pub(crate) fn advance(&self, tick: u64, map: &Map) {
+    pub(crate) fn advance(&self, tick: u64, level: Option<f64>) {
         let mut fleet = self.fleet.lock().expect("yard float");
         let fleet = &mut *fleet;
         fleet.previous[0] = fleet.current[0];
         fleet.tick = tick;
         let float = &mut fleet.current[0];
         let floor = self.ground + f64::from(Self::SCALE) * float.hull.keel_depth();
-        float.position.y = map
-            .sample([float.position.x, float.position.z])
-            .filter(|hit| hit.depth > 0.0)
-            .map_or(floor, |hit| {
-                (hit.row.level - f64::from(Self::SCALE) * float.draft()).max(floor)
-            });
+        float.position.y = level.map_or(floor, |height| {
+            (height - f64::from(Self::SCALE) * float.draft()).max(floor)
+        });
     }
 
     pub(crate) fn waterline(&self) -> f64 {

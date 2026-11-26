@@ -161,6 +161,7 @@ pub struct Map {
     // Each body's river and chart index, for a river's chart.
     pub(crate) sampled: Vec<Option<(usize, usize)>>,
     spatial_revision: u64,
+    pub(crate) hollow_revision: u64,
     surface_bounds: Vec<Option<[[f64; 2]; 2]>>,
 }
 
@@ -233,6 +234,7 @@ impl Map {
             rivers: Vec::new(),
             sampled: Vec::new(),
             spatial_revision: 0,
+            hollow_revision: 0,
             surface_bounds: Vec::new(),
         };
         map.generations = vec![0; map.bodies.len()];

@@ -43,7 +43,7 @@ pub(in crate::query) struct ReadyBody {
 }
 
 pub(super) struct MapPrediction {
-    revision: u64,
+    revision: [u64; 2],
     cascades: [CascadeSample; 3],
     advection_rate: [f32; 3],
     wake: [f32; 4],
@@ -51,7 +51,7 @@ pub(super) struct MapPrediction {
 
 impl MapPrediction {
     pub(super) fn new(
-        revision: u64,
+        revision: [u64; 2],
         cascades: [CascadeSample; 3],
         advection_rate: [f32; 3],
         wake: [f32; 4],
@@ -86,8 +86,14 @@ impl Correction {
         for (answer, prediction) in ready.answers.points.iter_mut().zip(&ready.predictions) {
             let use_tick = answer.point.use_tick;
             let map = map_at(use_tick);
-            if map.spatial_revision() != prediction.revision {
-                if map.surf_profile().is_some() {
+            let [spatial, hollows] = map.query_revision();
+            let spatial_changed = spatial != prediction.revision[0];
+            let hollow_changed = hollows != prediction.revision[1]
+                && map
+                    .hollow_bed_at(answer.point.position.map(f64::from))
+                    .is_some();
+            if spatial_changed || hollow_changed {
+                if spatial_changed && map.surf_profile().is_some() {
                     // A stage edit can change the selected fold. Let the
                     // caller use the current map's conformance fallback.
                     return None;
@@ -126,7 +132,10 @@ impl Correction {
     ) -> Option<QueryAnswer> {
         let point = answer.point.position.map(f64::from);
         let row = map.sample(point);
-        let bed = row.map_or_else(|| map.bed().height(point), |row| row.bed);
+        let bed = row.map_or_else(
+            || map.hollow_bed_at(point).or_else(|| map.bed().height(point)),
+            |row| row.bed,
+        );
         let mut corrected = QueryAnswer {
             sources: [None; 5],
             supported: [false; 5],
