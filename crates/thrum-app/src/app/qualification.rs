@@ -32,6 +32,7 @@ pub(super) struct ExtentCapture {
     status: bool,
     resize: Option<[u32; 2]>,
     resized_extent: Option<[u32; 2]>,
+    first_resized: Option<u64>,
 }
 
 /// Requested AppKit bounds for a one-submission extent proof.
@@ -134,12 +135,16 @@ impl ExtentCapture {
             status: capture.status,
             resize: capture.resize,
             resized_extent,
+            first_resized: None,
         })
     }
 
     pub(super) fn frame(&mut self, frame: FrameExtent, drawable: [u32; 2]) {
         if self.frames.len() == 64 {
             self.frames.pop_front();
+        }
+        if self.resize.is_none() && self.resized_extent == Some(drawable) {
+            self.first_resized.get_or_insert(frame.submission);
         }
         self.frames.push_back((frame, drawable));
     }
@@ -172,8 +177,13 @@ impl ExtentCapture {
                 && matches_extent
                 && (!self.status || paint.is_some())
             {
+                if resized && self.first_resized != Some(order) {
+                    return Err(FrameError::InvalidState(
+                        "the first resized submission was omitted",
+                    ));
+                }
                 let record = serde_json::json!({
-                    "mode": "still", "recipe": recipe, "submission": frame.submission,
+                    "mode": "still", "first_resized_submission": self.first_resized, "recipe": recipe, "submission": frame.submission,
                     "tick": image.sample.tick, "paint_scale": paint.map(|stamp| stamp.scale),
                     "capture_extent": image.extent, "render_extent": image.sample.render_extent,
                     "attachment_extents": frame.attachments, "source": frame.source,

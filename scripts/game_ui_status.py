@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import time
 
 from capture_v1_runtime import console_observation
 from t2_writer_probe import package
@@ -52,6 +53,20 @@ def compare_window(sample, window, directory, stem, oracle, store):
             "rgba_sha256": package(actual, image, width, height), "png": str(image.name)}
 
 
+def wake_window_display():
+    def observe():
+        summary, raw = console_observation()
+        return {**summary, "display_idle": '"CGSSessionScreenIsLocked"=Yes' in raw}
+
+    before = observe()
+    subprocess.run(["/usr/bin/caffeinate", "-u", "-t", "3"], check=True)
+    if observe()["display_idle"]:
+        subprocess.run(["/usr/bin/pmset", "displaysleepnow"], check=True)
+        time.sleep(3)
+        subprocess.run(["/usr/bin/caffeinate", "-u", "-t", "3"], check=True)
+    return before, observe()
+
+
 def windows(root, destination, scratch, revision, environment):
     subprocess.run(["cargo", "build", "--locked", "--offline", "-p", "v1-game",
                     "--bin", "v1-game", "--example", EXAMPLE], cwd=root, check=True)
@@ -59,6 +74,10 @@ def windows(root, destination, scratch, revision, environment):
     target = root / "target/debug"
     game = target / "v1-game"
     oracle = target / "examples" / EXAMPLE
+    console_before, console_at_launch = wake_window_display()
+    (destination / "console.json").write_text(json.dumps({
+        "before": console_before, "at_launch": console_at_launch,
+    }, indent=2) + "\n")
     arms = []
     for points, resized in [([640, 360], [896, 504]), ([1280, 720], None), ([1707, 933], None)]:
         label = "x".join(map(str, points))
@@ -88,7 +107,8 @@ def windows(root, destination, scratch, revision, environment):
             samples.append(compare_window(sample, window, directory, stem, oracle, store))
             (directory / f"{stem}.rgba").unlink()
         arms.append({"window": window, "directory": label, "samples": samples})
-    return {"target": "mac-metal", "commit": revision, "console": console_observation()[0],
+    return {"target": "mac-metal", "commit": revision, "console_before": console_before,
+            "console_at_launch": console_at_launch, "console_after": console_observation()[0],
             "mode": "submitted engine still", "arms": arms}
 
 
@@ -117,7 +137,7 @@ def costs(root, destination, scratch, revision, environment, target, load, diges
     if target == "mac-metal":
         subprocess.run(["cargo", "build", "--release", "--locked", "--offline", "-p", "v1-game",
                         "--example", EXAMPLE], cwd=root, check=True)
-        store = prepare_store(root, scratch, "release")
+        store = prepare_store(root, scratch, "debug")
         executable = root / "target/release/examples" / EXAMPLE
     for index in (1, 2):
         before = load()

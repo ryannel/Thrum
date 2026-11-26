@@ -99,7 +99,17 @@ export async function qualifyInterfaceStatus({ cdp, origin, fontOrigin, output, 
       }
       await game.invoke('document.querySelector("canvas").style.cssText = "width:420px;height:320px";game.begin_fixed_submission(args[0]);', [dpr]);
       const frame = async () => {
-        await game.invoke('window.stepStatusFrame();');
+        let submitted = false;
+        for (let attempt = 0; attempt < 15 && !submitted; attempt++) {
+          submitted = await game.invoke(`
+            game.route_slot_ready();
+            const before = game.presented();
+            window.stepStatusFrame();
+            return game.presented() > before;
+          `);
+          if (!submitted) await new Promise(resolve => setTimeout(resolve, 4));
+        }
+        assert(submitted, 'a manual step presented on the ordinary canvas');
         const take = await waitFor(() => game.invoke(`
           const frame = game.next_submitted_image();
           if (!frame) return null;
@@ -139,6 +149,7 @@ export async function qualifyInterfaceStatus({ cdp, origin, fontOrigin, output, 
         if (take.metrics.extent[0] === 512 * dpr && take.metadata.extent?.[0] === 512 * dpr) resized = await keep(take, 'resized');
       }
       assert(resized, 'resized resident status display');
+      assert(resized.metadata.presenter_generation > initial.metadata.presenter_generation);
       assert.equal(await game.invoke('return game.submitted_capture_omissions();'), 0);
       await game.invoke('game.end_submitted_capture();delete window.statusImage;');
       rows.push({ dpr, build, initial, resized, devices_retired: await retire() });

@@ -203,7 +203,7 @@ pub(crate) fn update_values(tree: &mut Tree, tick: u64, every_tick: bool) {
     let counts = if every_tick {
         [tick, tick * 3, tick * 7]
     } else {
-        [tick / 6, tick / 19, 1 + tick / 600]
+        [tick / 6, tick / 19, 1 + tick / 240]
     };
     for (id, count) in COUNTS.into_iter().zip(counts) {
         tree.set_text(id, &format!("{:03}", count % 1000));
