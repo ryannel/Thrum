@@ -1892,7 +1892,7 @@
         {
           "verdict": "fail",
           "commit": "b59dd6f9cdfee0f42a8a9c1d57edbcf60bd31e5b",
-          "review": ".orchestrate/evidence/CLOUDS/WP15-review.md",
+          "review": ".orchestrate/evidence/CLOUDS/WP15-review-1.md",
           "items": {
             "WP15.1": "fail",
             "WP15.4": "pass",
@@ -1955,6 +1955,51 @@
             "turns": 1
           },
           "at": "2026-11-26T21:54:32Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "59b64a9f93dabacb61a7c40140c8cef7d7b58a16",
+          "review": ".orchestrate/evidence/CLOUDS/WP15-review.md",
+          "items": {
+            "WP15.1": "fail",
+            "WP15.4": "pass",
+            "WP15.13": "pass",
+            "WP15.5": "pass",
+            "WP15.6": "pass",
+            "WP15.7": "pass",
+            "WP15.8": "pass",
+            "WP15.9": "pass",
+            "WP15.10": "pass",
+            "WP15.11": "pass"
+          },
+          "findings": [
+            {
+              "name": "Clear ground rows drop depth stops for directed clouds",
+              "item": "WP15.1",
+              "different": "The previous failure required an extent grow and undersized storage. At a fixed extent with sufficient storage, a directed-only Ground profile chooses one neighbouring depth for the whole block.",
+              "repeat": false
+            },
+            {
+              "name": "Growing Ground rebuilds pipelines on the Mac render thread",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 271152,
+            "cached": 16602880,
+            "output": 32528,
+            "turns": 1
+          },
+          "at": "2026-11-26T23:06:36Z"
         }
       ],
       "authorised": {
