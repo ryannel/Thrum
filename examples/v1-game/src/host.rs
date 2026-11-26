@@ -663,7 +663,7 @@ impl GameSetup {
         source.cloud_sky = cloud_sky;
         source.cloud_shapes.clone_from(&shapes);
         source.cooked_rows = rows;
-        let mut inner = Runtime::new_preparing(
+        let mut inner = Box::pin(Runtime::new_preparing(
             capabilities,
             queue,
             config,
@@ -671,7 +671,7 @@ impl GameSetup {
             source,
             scene,
             1.0 / 16_000.0,
-        )
+        ))
         .await?;
         #[cfg(feature = "proving")]
         if setup.test_bank {
