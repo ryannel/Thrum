@@ -2696,7 +2696,39 @@
     },
     "WP24": {
       "definitions": "19e56fabb21b79c7732b2e118d6a736d4026475fac88cfc655d912f53baeecaa",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "72e0f1fe033edd3d2a5607530f5d203fee82116b",
+          "review": ".orchestrate/evidence/WATERS/WP24-review.md",
+          "items": {
+            "WP24.1": "fail"
+          },
+          "findings": [
+            {
+              "name": "An offscreen join makes rough chart water request a full-screen mirror",
+              "item": "WP24.1",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "medium",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "medium"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 67903,
+            "cached": 1408768,
+            "output": 7925,
+            "turns": 1
+          },
+          "at": "2026-11-26T04:26:49Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The owner decided WATERS WP8, blocked after five failed reviews with 9 of 10 items passing: asked \"split off the chart c",
