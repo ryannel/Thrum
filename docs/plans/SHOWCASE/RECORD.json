@@ -1,27 +1,14 @@
 {
   "module": "SHOWCASE",
   "design": {
-    "verdict": "changes",
-    "review": ".orchestrate/evidence/SHOWCASE/design-review.md",
-    "commit": "ad86686f5be549ba6e9a8d4dd46113f7c155344d",
-    "hash": "723e68e39006f4238331c2cd83eeeba6fb637701d8f260f43cdc763c90fef98f",
-    "by": "review",
-    "host": "codex",
-    "model": "gpt-6.2-astra",
-    "effort": "high",
-    "observed": {
-      "model": "gpt-6.2-astra",
-      "effort": "high"
-    },
-    "cli": "codex-cli 0.171.0-alpha.13.2",
-    "path": "headless",
-    "usage": {
-      "input": 58966,
-      "cached": 675456,
-      "output": 4533,
-      "turns": 1
-    },
-    "at": "2026-11-26T14:40:34Z"
+    "verdict": "ok",
+    "by": "review_limit",
+    "hash": "280930d5bb3801971c351fdaff4a0dd46664e3383c05e99a775e635aa0a30f46",
+    "after": [
+      ".orchestrate/evidence/SHOWCASE/design-review-8.md",
+      ".orchestrate/evidence/SHOWCASE/design-review.md"
+    ],
+    "at": "2026-11-26T14:43:31Z"
   },
   "work_packages": {
     "WP5": {
@@ -280,12 +267,12 @@
       }
     },
     "WP8": {
-      "definitions": "5a7bc5d24a82d573cd03f2a66fb057e17f12c0cbbec68ff8e8aec1cb34837a21",
+      "definitions": "1d216faf4198375e4e87842e4849b78af333e82c44bb73716a0c23bed825ee6c",
       "reviews": [],
       "authorised": {
         "by": "plan",
         "task": "The design review of SHOWCASE at .orchestrate/evidence/SHOWCASE/design-review.md asked for changes, with its 1 Must Fix ",
-        "at": "2026-11-26T14:36:14Z"
+        "at": "2026-11-26T14:43:31Z"
       },
       "ends_stretch": true
     },
@@ -468,11 +455,15 @@
     {
       "task": "The design review of SHOWCASE at .orchestrate/evidence/SHOWCASE/design-review.md asked for changes, with its 1 Must Fix findings.",
       "at": "2026-11-26T14:36:14Z"
+    },
+    {
+      "task": "The design review of SHOWCASE at .orchestrate/evidence/SHOWCASE/design-review.md asked for changes, with its 1 Must Fix findings. That makes 2 design reviews in a row that asked for changes, so the script approves the design you leave without another review, and building starts from it.",
+      "at": "2026-11-26T14:43:31Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-26T14:36:14Z"
+    "at": "2026-11-26T14:43:31Z"
   },
   "design_history": [
     {
@@ -668,6 +659,29 @@
         "turns": 1
       },
       "at": "2026-11-26T14:25:37Z"
+    },
+    {
+      "verdict": "changes",
+      "review": ".orchestrate/evidence/SHOWCASE/design-review.md",
+      "commit": "ad86686f5be549ba6e9a8d4dd46113f7c155344d",
+      "hash": "723e68e39006f4238331c2cd83eeeba6fb637701d8f260f43cdc763c90fef98f",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6.2-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6.2-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.171.0-alpha.13.2",
+      "path": "headless",
+      "usage": {
+        "input": 58966,
+        "cached": 675456,
+        "output": 4533,
+        "turns": 1
+      },
+      "at": "2026-11-26T14:40:34Z"
     }
   ]
 }
