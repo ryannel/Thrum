@@ -120,6 +120,11 @@ pub(super) fn settings(knobs: Vec<QualityKnob>) -> Result<QualitySettings, Error
 }
 
 impl Shade {
+    pub(super) fn fix_ground_scale(&mut self) {
+        self.configure_quality([scale(true)])
+            .expect("fixed Ground scale replaces the existing validated scale knob");
+    }
+
     pub(super) fn configure_quality(
         &mut self,
         replacements: impl IntoIterator<Item = QualityKnob>,

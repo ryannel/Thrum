@@ -193,7 +193,8 @@ fn metal_uncovered_pixels_use_their_current_surface_stops_and_a_cut_refills_them
     });
     assert!(host.resize_scene_surface(GROWN).expect("resize scene"));
     assert_eq!(host.contribution_error(), None);
-    let grown_view = output_texture(&device, GROWN).create_view(&Default::default());
+    let grown_view =
+        output_texture(&device, GROWN).create_view(&wgpu::TextureViewDescriptor::default());
     let grown = submit(&mut host, 75, &grown_view, GROWN);
     assert_grown_stops(&grown, eye, read);
 }

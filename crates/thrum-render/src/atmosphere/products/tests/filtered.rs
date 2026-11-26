@@ -188,8 +188,11 @@ pub(super) fn with_exposure(
         surface.directional,
         surface.environment_light,
         &[exposure.clone(), exposure],
-        false,
-        None,
+        super::super::ProductSelection {
+            far_aerial: false,
+            cloud: None,
+            reflection: true,
+        },
     )
 }
 

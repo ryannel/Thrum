@@ -58,6 +58,7 @@ impl EnvironmentProducts {
     }
 }
 
+#[derive(Clone, Copy)]
 pub(crate) struct ProductSelection<'a> {
     pub(crate) far_aerial: bool,
     pub(crate) cloud: Option<&'a super::CloudPrepared>,

@@ -213,7 +213,7 @@ fn low_deck_placed() {
             &mut self,
             surface: &SceneSurface<'_>,
         ) -> Result<(), thrum_render::runtime::FrameError> {
-            *self.0.lock().unwrap() = surface.sky_overlay_target();
+            *self.0.lock().expect("overlay probe mutex") = surface.sky_overlay_target();
             Ok(())
         }
 
@@ -234,7 +234,11 @@ fn low_deck_placed() {
     let overlay = std::sync::Arc::default();
     host.set_game_contribution(Box::new(OverlayProbe(std::sync::Arc::clone(&overlay))))
         .expect("lend the live overlay");
-    let overlay = overlay.lock().unwrap().take().expect("world-light overlay");
+    let overlay = overlay
+        .lock()
+        .expect("overlay probe mutex")
+        .take()
+        .expect("world-light overlay");
     let cadence = host
         .quality_knobs()
         .into_iter()
@@ -258,7 +262,7 @@ fn low_deck_placed() {
     });
     let (_, _, state) = host
         .cloud_placed_input()
-        .unwrap()
+        .expect("placed weather input")
         .placed_map()
         .expect("placed map");
     let mut profile = v1_game::clouds::shade_config();
@@ -333,12 +337,12 @@ fn overlay_transmittance(gpu: &thrum_test_support::Opened, source: &wgpu::Textur
         layout: None,
         module: &read,
         entry_point: Some("main"),
-        compilation_options: Default::default(),
+        compilation_options: wgpu::PipelineCompilationOptions::default(),
         cache: None,
     });
     let view = source.create_view(&wgpu::TextureViewDescriptor {
         dimension: Some(wgpu::TextureViewDimension::D2Array),
-        ..Default::default()
+        ..wgpu::TextureViewDescriptor::default()
     });
     let count = device.create_buffer(&wgpu::BufferDescriptor {
         label: Some("overlay minimum transmittance"),
@@ -360,16 +364,14 @@ fn overlay_transmittance(gpu: &thrum_test_support::Opened, source: &wgpu::Textur
             },
         ],
     });
-    let mut encoder = device.create_command_encoder(&Default::default());
+    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
     {
-        let mut pass = encoder.begin_compute_pass(&Default::default());
+        let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor::default());
         pass.set_pipeline(&pipeline);
         pass.set_bind_group(0, &group, &[]);
         pass.dispatch_workgroups(1, 1, 1);
     }
     gpu.queue.submit([encoder.finish()]);
     let result = thrum_test_support::readback::buffer(device, &gpu.queue, &count, ..);
-    let minimum = f32::from_le_bytes(result.try_into().unwrap());
-    println!("upper -Z overlay minimum transmittance {minimum}");
-    minimum
+    f32::from_le_bytes(result.try_into().expect("single f32 overlay sample"))
 }

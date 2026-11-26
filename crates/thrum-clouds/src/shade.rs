@@ -218,8 +218,7 @@ impl Shade {
     #[must_use]
     pub fn with_ground(mut self, config: GroundConfig) -> Self {
         if self.sky.is_some() {
-            self.configure_quality([quality::scale(true)])
-                .expect("fixed Ground scale replaces the existing validated scale knob");
+            self.fix_ground_scale();
         }
         self.ground = Some(config);
         self
