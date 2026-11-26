@@ -159,7 +159,7 @@ What each source was read for, and how far.
 | P9 | The rain's share of a query read from the bands' textures, as a cascade's is | Fails: the textures hold the display's time at the bands' cadence, and a batch is dispatched before the rate of the tick it answers for is committed |
 | P9 | The schedule drawn again from its hash for every sample of every station's footprint, as first built | Right answers, and 30 to 57 ms for the example's 54 stations where a tick is 16.7 ms (part 12) |
 | P9 | One list of the live drops a tick, with each footprint still integrated on the tick, two mips of sixteen points | The same answers to 1e-15, and 2.2 to 4.6 ms a tick for that batch, twice that where two departures blend. Not selected: an eighth to a quarter of a tick, and more on a current, for rings a hull cannot feel |
-| P9 | **One list of the live drops a tick, shared by the batch, and a prepared footprint: a ring's mean over a disc, tabled as the ring is** | **Selected**: 0.4 to 0.8 ms |
+| P9 | **One list of the live drops a tick, shared by the batch, and a prepared footprint: the mean over a disc of the ring the bands draw, tabled from the ring table** | **Selected**: 0.4 to 0.8 ms |
 | P4 | `WATERS`' near level as built | Fails: one cell is a quarter of the puddle |
 | P4 | **A fine interaction level with a ladder from 5 mm** | **Selected** |
 | P6, P7 | A wetness texture stepped on the GPU in a window | Not selected: it resets with the device, ends at its window and differs between machines |
@@ -502,12 +502,20 @@ the bands, and a capture shows its own tick's rings from that tick's history.
 a batch is dispatched a tick or two before the tick it answers for, when that tick's rate is not yet
 committed, and a texture would tie the answer to the display's time and the bands' cadence. So the rain's
 share is added on the CPU when the game drains the mailbox, for the tick each answer is used at, a held
-answer's included. It is the bands' own function in f64, from the schedule, the history committed at the
-drain and prepared tables, at the departures [carriage](../WATERS/DESIGN.md#bodies-and-the-query) gives the
+answer's included. It is the bands' own function in f64, from the schedule, the use tick's committed
+history and prepared tables, at the departures [carriage](../WATERS/DESIGN.md#bodies-and-the-query) gives the
 station and at the station's gain. Its slopes are slopes in the world, so on a current that changes from
 place to place they take the gradients of the departures and of their blend, as a cascade's do. It reads no
 texture, so neither the display's time nor the bands' cadence reaches it. A station with no gain, under a
 roof or on dry ground, reads nothing.
+
+**The use tick's history.** An answer used at endpoint N holds the drops that fell up to N, and whether
+one fell in the interval from N−1 to N is that interval's rate. So on the tick the game steps the rain
+state and commits that interval's rate first, and drains the mailbox after, as the yard's tick does. The
+history a request was posted with is a tick or two older and is never the answer's. A drain before the
+commit reads a history that carries its last rate forward: where the rain starts between a request's
+posting and its use the answer misses the first drops, and where it stops the answer holds drops that
+never fell.
 
 This work is on the game's tick, for every station of every body, so nothing in it is repeated for a
 station ([part 12](../../../.orchestrate/evidence/PUDDLES/design-proof/README.md)):
@@ -517,12 +525,22 @@ station ([part 12](../../../.orchestrate/evidence/PUDDLES/design-proof/README.md
   station draws the schedule from its hash. The list is a function of the tick and the committed history, so
   whether it is made again each tick or carried from the last is the builder's, and the answers are the
   same either way.
-- **A prepared footprint.** A station's footprint is the disc of its radius. The mean of a ring over a disc
-  is the ring's own integral with one more factor on each wavenumber, `2 J₁(kR)/(kR)`, so it is tabled as
-  the ring is: for a ladder of footprint radii from none, a ring's height, radial slope and rate averaged
-  over the disc, by the distance from the drop to the disc's centre and by the ring's age, prepared with the
-  ring table. A station reads the two rungs either side of its radius for each drop whose ring reaches its
-  disc. Nothing is integrated on the tick.
+- **A prepared footprint.** A station's footprint is the disc of its radius, and its share of a ring is
+  the mean over that disc of the ring the bands draw. That ring is the ring table's: read between its
+  radii and ages, faded over its outer 0.04 m, nothing from its reach of 0.32 m, and faded at the end of
+  its second. The mean is tabled from that table: for a ladder of footprint radii from none, the ring's
+  height, radial slope and rate averaged over the disc, by the distance from the drop to the disc's centre
+  and by the ring's age, prepared with the ring table. A station reads the two rungs either side of its
+  radius for each drop whose ring reaches its disc. Nothing is integrated on the tick. How the mean is
+  prepared is the builder's. What it may not be is the mean of a ring the bands do not draw. The unfaded
+  wave's spectrum with the disc's factor on each wavenumber, `2 J₁(kR)/(kR)`, is the mean of the wave
+  before its fade and cut-off, and the fade falls inside an ordinary disc: for the island float's 0.128 m,
+  a ring of the largest drop class 0.8 s old and one reach from the disc's centre, the review measured
+  −0.235 µm for the drawn ring and +0.803 µm from that factor
+  ([review](../../../.orchestrate/evidence/PUDDLES/design-review.md), an illustration and no budget). The
+  patch's mean of that ring is −0.005 µm
+  ([part 13](../../../.orchestrate/evidence/PUDDLES/design-proof/README.md)), so WP4.13 takes that case:
+  a tolerance that tells the drawn ring's mean from the patch's there tells it from the factor's too.
 - **A bound on the footprint.** Averaged over a disc 0.13 m in radius a 3 mm drop's ring is 2% of its peak,
   and over 0.28 m it is 0.1%. So the ladder ends at twice a ring's reach, 0.64 m. From one reach up the
   rings' share gives way to the band's mean over its whole patch, and by the ladder's end the mean is all of
@@ -642,9 +660,11 @@ What that delivers, from part 7, from 0.3 m, 1.7 m and 15 m up:
   sum of scheduled rings reads as rain and not as a pattern, at 128 a square metre a second, is unrun; WP4 is
   the first look ([risk 2](#risks)). Part 3's mean square slope at 50 mm/h, 0.065, is a superposition and
   likely too high; WP4 judges it. Part 12 is the rain's share of a query: the disc's factor against a direct
-  average of one ring, and the example's batch timed four ways. The one list gives the answers the first
-  build gave, to 1e-15. The filtered tables themselves are unrun: two reads of the ring table stand in for
-  the two rungs, so part 12 times the prepared footprint and does not check its answers. WP4 is the first.
+  average of one ring, both on the wave before its fade, and the example's batch timed four ways. The one
+  list gives the answers the first build gave, to 1e-15. So part 12 supports the times and not the
+  footprint's answers: its factor is not the mean of the ring the bands draw, and two reads of the ring
+  table stand in for the two rungs. The footprint prepared from the ring table is unrun, and WP4.13 is the
+  first check of its answers.
 - **P4.** Part 6 is the operator on uniform depth, wave by wave. Fields, regions and a puddle's edge are
   `WATERS`' as measured in its part H and J at larger scale, and unrun at this one; WP8 is the first.
 - **P5.** Part 7 is a yard in section with puddles at two heights, a post, a kerb, a roof's edge and a wall:
@@ -674,7 +694,8 @@ What that delivers, from part 7, from 0.3 m, 1.7 m and 15 m up:
 `thrum-water` takes the rain as data in `upload` and does not link `thrum-rain-model`; the game does.
 
 **A frame, in order**, for what rain adds to [`WATERS`' frame](../WATERS/DESIGN.md#the-system-as-it-runs). On
-the tick, in the game: the drain adds the rain's share to the answers it takes, and the rain state steps.
+the tick, in the game, in this order: the rain state steps and commits the rate of the interval that ends
+at this endpoint, and then the drain adds the rain's share to the answers it takes, from that history.
 `upload` takes the rain record and its rate history, each hollow's level, mark, margin and the fill of the
 pores under its mark, and the stores, with the page's stages. `simulate`, every frame while the history
 holds rain: the rain bands at `t`, with the cascades.
@@ -789,7 +810,8 @@ where it starts, before it is a stall. It is investigated as any wire is and dec
 15. **Rain stalls the game's tick**, because the query's share of it grows with the stations, the count or
     the periods. Early sign: WP4.10's drain in rain beside its dry one. The designed remedies are the one
     list a tick, the prepared footprint and its bound. The wrong fixes are a share read from the bands'
-    textures, which follows the display; a footprint that is dropped; and rain left out of the answer.
+    textures, which follows the display; a footprint that is dropped or prepared from a ring the bands do
+    not draw; a drain ahead of the tick's commit, to save the step; and rain left out of the answer.
 
 ## Proof and builder handoff
 
@@ -807,10 +829,16 @@ dependencies. In addition:
   time (WP4.1) and the wetness function (WP5.2). Each of those tests also runs a named wrong evaluator and shows
   it miss: for WP4.1, bands evaluated half a tick late and bands that ignore the rate history; for WP5.2, wetness
   that ignores slope and wetness that reads the open store everywhere. The rain's share of a query is
-  `thrum-water-model`'s footprint read, and WP4.13 holds it twice: the read against a direct average of the
-  bands over the disc, with a read at a point and the patch's mean as its wrong evaluators, and the
-  mailbox's answers against the read. WP4 as first built compared the mailbox with the model only at a
-  point and at a 3 m hull, where the footprint is none or all. The wet look, a ring's shape and the
+  `thrum-water-model`'s footprint read, and WP4.13 holds it twice. First, the read against a direct average
+  over the disc of the bands' point function, which reads the ring table and uses nothing the footprint was
+  prepared with: in steady rain with a read at a point and the patch's mean as its wrong evaluators, and
+  at a float's radius for one ring whose faded edge lies inside the disc, with the patch's mean as its
+  wrong evaluator, where the mean of the unfaded wave is four times further off than the patch's mean is
+  (part 13). Second, the mailbox's answers against the read from the use tick's committed history, in rain
+  that stops between a request's posting and its use, with the read from the history at the posting as its
+  wrong evaluator: it holds drops of the dry interval, so it misses wherever one fell in a station's disc.
+  WP4 as first built compared the mailbox with the model only at a point and at a 3 m hull, where the
+  footprint is none or all. The wet look, a ring's shape and the
   fine level's waves are judged by eye, with no f64 reference required and no bound measured first. Which
   level holds a wave is not a look: it is state with one owner, two copies of a ring pass every view, and
   WP8.9 tests it on the levels' own state, with the near level still given the short waves as its wrong

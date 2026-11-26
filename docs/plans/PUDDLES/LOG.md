@@ -246,3 +246,20 @@
   taken, both: the handoff names the tracked provenance record, and WP8.9 opens with each wave counted once
   in place of "no wave is on two interaction levels", which the crossing at 1 m contradicts. Not run: WP4's
   checks, whose commands are unchanged.
+
+- 2026-11-26 Second design review of what a query reads asked for changes:
+  [two Must Fix](../../../.orchestrate/evidence/PUDDLES/design-review.md). The last round: building starts
+  from this revision with no further design review.
+- 2026-11-26 Must Fix 1, the footprint is prepared from the ring the bands draw. The design's
+  [prepared footprint](DESIGN.md#rain-rings) is the mean over the disc of the ring table's ring, edge fade
+  and cut-off included, and how it is prepared is the builder's. The disc's factor on the unfaded spectrum
+  is named as a ring the bands do not draw. WP4.13's direct average uses nothing the footprint was prepared
+  with and gains the review's case at 0.128 m, where the patch's mean must miss.
+  [What changed and part 13](../../../.orchestrate/evidence/PUDDLES/design-revision-2026-11-26-round-2.md)
+- 2026-11-26 Must Fix 2, the tick's rain is committed before its answers are drained. The frame's order
+  and "the use tick's history" in [rain rings](DESIGN.md#rain-rings) say so: the rain state steps and
+  commits the interval ending at the endpoint, then the drain reads that history. WP4.13's mailbox
+  comparison is in rain that stops between a request's posting and its use, with the read from the history
+  at the posting as its wrong evaluator. WP4.10 keeps steady rain.
+- 2026-11-26 Items: WP4.13 written again; no other item changed. The review made no suggestions. Not run:
+  WP4.13's check, whose command is unchanged and whose test the builder writes.
