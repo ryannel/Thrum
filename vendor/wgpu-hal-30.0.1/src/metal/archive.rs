@@ -52,12 +52,11 @@ pub struct PipelineCache {
 }
 
 #[derive(Debug)]
-enum Archive {
-    Harvest {
-        raw: Retained<NativeArchive>,
-        populated: bool,
-    },
-    ReadOnly(Option<Retained<NativeArchive>>),
+struct Archive {
+    raw: Option<Retained<NativeArchive>>,
+    harvest: bool,
+    changed: bool,
+    repair_failed: bool,
 }
 
 // The archive belongs to the Metal device, which can be used across threads.
@@ -93,32 +92,32 @@ impl PipelineCache {
                 log::warn!("opening Metal binary archive: {error}");
                 // wgpu-core treats all HAL cache creation errors as device loss.
                 // Report an unavailable cache separately when the caller handles it.
-                if data.is_some() && observe(ArchiveOutcome::Unavailable).is_some() {
+                let policy = ARCHIVE_POLICY.with(Cell::get);
+                if policy.is_some_and(|(mode, _)| data.is_some() || mode == Policy::Repair) {
+                    observe(ArchiveOutcome::Unavailable);
                     None
                 } else {
                     return Err(crate::DeviceError::Unexpected.into());
                 }
             }
         };
-        let archive = if data.is_some() {
-            Archive::ReadOnly(raw)
-        } else {
-            Archive::Harvest {
-                raw: raw.ok_or(crate::DeviceError::Unexpected)?,
-                populated: false,
-            }
-        };
         Ok(Self {
-            archive: Mutex::new(archive),
+            archive: Mutex::new(Archive {
+                raw,
+                harvest: data.is_none(),
+                changed: false,
+                repair_failed: false,
+            }),
         })
     }
 
     pub(super) fn data(&self) -> Option<Vec<u8>> {
         let archive = self.archive.lock();
-        let Archive::Harvest { raw, populated } = &*archive else {
+        let raw = archive.raw.as_ref()?;
+        if archive.repair_failed || (!archive.harvest && !archive.changed) {
             return None;
-        };
-        if !*populated {
+        }
+        if !archive.changed {
             // Metal cannot serialize an empty archive. An empty payload opens a
             // fresh, read-only native archive on load.
             return Some(Vec::new());
@@ -150,16 +149,25 @@ pub enum ArchiveOutcome {
     Error,
 }
 
-thread_local! {
-    static ARCHIVE_POLICY: Cell<Option<(bool, ArchiveOutcome)>> = const { Cell::new(None) };
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Policy {
+    Fallback,
+    Strict,
+    Repair,
 }
 
-fn observe(outcome: ArchiveOutcome) -> Option<bool> {
+type Observation = Option<(Policy, ArchiveOutcome)>;
+
+thread_local! {
+    static ARCHIVE_POLICY: Cell<Observation> = const { Cell::new(None) };
+}
+
+fn observe(outcome: ArchiveOutcome) {
     ARCHIVE_POLICY.with(|policy| {
-        let (strict, _) = policy.get()?;
-        policy.set(Some((strict, outcome)));
-        Some(strict)
-    })
+        if let Some((mode, _)) = policy.get() {
+            policy.set(Some((mode, outcome)));
+        }
+    });
 }
 
 /// Ask Metal to report hits and misses during a synchronous pipeline creation
@@ -167,20 +175,30 @@ fn observe(outcome: ArchiveOutcome) -> Option<bool> {
 /// In strict mode a miss propagates as a pipeline error. In normal mode it
 /// retries the pipeline without the archive.
 pub fn with_archive_policy<T>(strict: bool, create: impl FnOnce() -> T) -> (T, ArchiveOutcome) {
-    struct Restore<'a>(
-        &'a Cell<Option<(bool, ArchiveOutcome)>>,
-        Option<(bool, ArchiveOutcome)>,
-    );
+    let mode = if strict {
+        Policy::Strict
+    } else {
+        Policy::Fallback
+    };
+    with_policy(mode, create)
+}
+
+/// Add missing pipelines to an existing archive during startup, or populate a
+/// fresh cache. Failed repair leaves normal pipeline creation available and
+/// disables serialization of the incomplete cache.
+pub fn with_archive_repair<T>(create: impl FnOnce() -> T) -> (T, ArchiveOutcome) {
+    with_policy(Policy::Repair, create)
+}
+
+fn with_policy<T>(mode: Policy, create: impl FnOnce() -> T) -> (T, ArchiveOutcome) {
+    struct Restore<'a>(&'a Cell<Observation>, Observation);
     impl Drop for Restore<'_> {
         fn drop(&mut self) {
             self.0.set(self.1);
         }
     }
     ARCHIVE_POLICY.with(|policy| {
-        let _restore = Restore(
-            policy,
-            policy.replace(Some((strict, ArchiveOutcome::Unused))),
-        );
+        let _restore = Restore(policy, policy.replace(Some((mode, ArchiveOutcome::Unused))));
         let result = create();
         let outcome = policy
             .get()
@@ -199,57 +217,69 @@ pub(super) fn create_pipeline<T>(
         return create(MTLPipelineOption::empty());
     };
     let mut archive = cache.archive.lock();
-    match &mut *archive {
-        Archive::Harvest { raw, populated } => {
-            add(raw)?;
-            *populated = true;
-            let archives = NSArray::from_slice(&[&**raw]);
-            attach(Some(&archives));
-            let result = create(MTLPipelineOption::empty());
-            attach(None);
-            result
-        }
-        Archive::ReadOnly(None) => {
-            observe(ArchiveOutcome::Unavailable);
-            create(MTLPipelineOption::empty())
-        }
-        Archive::ReadOnly(Some(raw)) => {
-            let archives = NSArray::from_slice(&[&**raw]);
-            attach(Some(&archives));
-            let policy = ARCHIVE_POLICY.with(Cell::get);
-            let options = if policy.is_some() {
-                MTLPipelineOption::FailOnBinaryArchiveMiss
-            } else {
-                MTLPipelineOption::empty()
-            };
-            let result = create(options);
-            attach(None);
-            drop(archives);
-            drop(archive);
-            let Some((strict, _)) = policy else {
-                return result;
-            };
-            let outcome = match &result {
-                Ok(_) => ArchiveOutcome::Hit,
-                Err(error) => {
-                    // Metal drivers do not expose a public archive-miss error code.
-                    let message = error.localizedDescription().to_string();
-                    if message.contains("Unable to find function")
-                        && message.contains("in binary archive")
-                    {
-                        ArchiveOutcome::Miss
-                    } else {
-                        ArchiveOutcome::Error
-                    }
-                }
-            };
-            observe(outcome);
-            if outcome == ArchiveOutcome::Miss && !strict {
-                return create(MTLPipelineOption::empty());
+    let Some(raw) = archive.raw.as_ref() else {
+        observe(ArchiveOutcome::Unavailable);
+        return create(MTLPipelineOption::empty());
+    };
+    let mode = ARCHIVE_POLICY.with(Cell::get).map(|(mode, _)| mode);
+    if archive.harvest {
+        if let Err(error) = add(raw) {
+            if mode != Some(Policy::Repair) {
+                return Err(error);
             }
-            result
+            log::warn!("populating Metal binary archive: {error}");
+            archive.repair_failed = true;
+            return create(MTLPipelineOption::empty());
+        }
+        let archives = NSArray::from_slice(&[&**raw]);
+        archive.changed = true;
+        attach(Some(&archives));
+        let result = create(MTLPipelineOption::empty());
+        attach(None);
+        return result;
+    }
+
+    let archives = NSArray::from_slice(&[&**raw]);
+    attach(Some(&archives));
+    let options = if mode.is_some() {
+        MTLPipelineOption::FailOnBinaryArchiveMiss
+    } else {
+        MTLPipelineOption::empty()
+    };
+    let result = create(options);
+    attach(None);
+    drop(archives);
+    let Some(mode) = mode else {
+        return result;
+    };
+    let outcome = match &result {
+        Ok(_) => ArchiveOutcome::Hit,
+        Err(error) => {
+            // Metal drivers do not expose a public archive-miss error code.
+            let message = error.localizedDescription().to_string();
+            if message.contains("Unable to find function") && message.contains("in binary archive")
+            {
+                ArchiveOutcome::Miss
+            } else {
+                ArchiveOutcome::Error
+            }
+        }
+    };
+    observe(outcome);
+    if outcome != ArchiveOutcome::Miss || mode == Policy::Strict {
+        return result;
+    }
+    if mode == Policy::Repair && !archive.repair_failed {
+        match add(raw) {
+            Ok(()) => archive.changed = true,
+            Err(error) => {
+                log::warn!("repairing Metal binary archive: {error}");
+                archive.repair_failed = true;
+            }
         }
     }
+    drop(archive);
+    create(MTLPipelineOption::empty())
 }
 
 // The native API exchanges file URLs while wgpu exchanges bytes. Use a private

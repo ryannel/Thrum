@@ -201,8 +201,14 @@ impl DeviceCapabilities {
                 selection.request.feature == HardwareFeature::MetalPipelineArchive
                     && selection.declined.is_none()
             }) && self.features.contains(wgpu::Features::PIPELINE_CACHE);
-            let preparation = preparation
-                .and_then(|config| config.attach(&self.site, admitted, archive_admitted));
+            let preparation = preparation.and_then(|config| {
+                config.attach(
+                    &self.site,
+                    admitted,
+                    archive_admitted,
+                    self.generation == FIRST_DEVICE_GENERATION,
+                )
+            });
             self.site.set_metal_preparation(preparation);
         }
     }

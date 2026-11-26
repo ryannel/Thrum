@@ -117,12 +117,12 @@ impl Preparation {
         device: &wgpu::Device,
         admitted: bool,
         archive_admitted: bool,
+        startup: bool,
     ) -> Option<PipelinePreparation> {
         let language = language_version(device)?;
-        let archive = self
-            .archive
-            .clone()
-            .and_then(|request| Archive::open(device, request, archive_admitted));
+        let archive = self.archive.clone().and_then(|request| {
+            Archive::open(device, request, archive_admitted, admitted && startup)
+        });
         // A store without admission still records each stage's fallback.
         Some(PipelinePreparation {
             config: self,
@@ -210,6 +210,12 @@ pub(crate) struct PipelinePreparation {
 impl PipelinePreparation {
     pub(super) fn save_archive(&self) -> io::Result<()> {
         self.archive.as_ref().map_or(Ok(()), Archive::save)
+    }
+
+    pub(crate) fn finish_archive_recovery(&self) {
+        if let Some(archive) = &self.archive {
+            archive.finish_recovery();
+        }
     }
 
     pub(crate) fn parallel(&self) -> bool {
@@ -451,7 +457,13 @@ impl PipelinePreparation {
         let launch = |cooked: &[Option<CookedStage>; N]| {
             self.archive.as_ref().map_or_else(
                 || create(cooked, None),
-                |archive| archive.create(device, label, |cache| create(cooked, cache)),
+                |archive| {
+                    let complete = stages
+                        .iter()
+                        .zip(cooked)
+                        .all(|(stage, cooked)| stage.is_none() || cooked.is_some());
+                    archive.create(device, label, complete, |cache| create(cooked, cache))
+                },
             )
         };
         let strict = self.archive.as_ref().is_some_and(Archive::strict);

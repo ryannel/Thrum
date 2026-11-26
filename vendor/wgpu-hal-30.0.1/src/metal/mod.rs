@@ -22,7 +22,7 @@ end of the VS buffer table.
 )]
 mod adapter;
 mod archive;
-pub use archive::{ArchiveOutcome, PipelineCache, with_archive_policy};
+pub use archive::{ArchiveOutcome, PipelineCache, with_archive_policy, with_archive_repair};
 mod command;
 mod conv;
 mod device;

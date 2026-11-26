@@ -1440,6 +1440,10 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
     /// Replacement device generations publish readiness through [Self::publish_device].
     pub fn finish_preparation(&mut self) {
         if self.initial_preparation == InitialPreparation::Pending {
+            #[cfg(target_os = "macos")]
+            if let Some(preparation) = self.device_capabilities().site().metal_preparation() {
+                preparation.finish_archive_recovery();
+            }
             self.creations.ready();
             self.initial_preparation = InitialPreparation::Ready;
         }

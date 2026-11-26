@@ -91,7 +91,7 @@ def archive_witness(output):
             result = witness(directory, binary, launch, RECIPE, "launch",
                              stage_path="cooked", expect_refusal=omit is not None)
             rows = lookup_rows(directory)
-            if sha(file) != digest or receipts(directory, "THRUM_METAL_ARCHIVE_SAVED "):
+            if sha(file) != digest or archive_writes(directory):
                 raise ValueError(f"{name}: the strict process changed the archive")
             if len(receipts(directory, "THRUM_METAL_ARCHIVE_IMPORT ")) != 1:
                 raise ValueError(f"{name}: strict process did not open the cache")
@@ -129,6 +129,25 @@ def file_fault(source, target, cause):
         raise ValueError(f"{cause}: control changed archive length")
 
 
+def archive_writes(directory):
+    return (receipts(directory, "THRUM_METAL_ARCHIVE_SAVED ")
+            + receipts(directory, "THRUM_METAL_ARCHIVE_REPAIRED "))
+
+
+def repaired_witness(output, binary, env, file, expected, recovered):
+    digest = sha(file)
+    result = witness(output, binary, dict(env, THRUM_PIPELINE_PREPARATION="strict-archive"),
+                     RECIPE, "launch", stage_path="cooked")
+    prepared, _, _ = manifest(output, "cooked", parallel=True)
+    rows = lookup_rows(output)
+    hits = Counter({("Hit", label): count for label, count in names(expected).items()})
+    if (result["pid"] == recovered["pid"] or prepared != expected or Counter(rows) != hits
+            or len(receipts(output, "THRUM_METAL_ARCHIVE_IMPORT ")) != 1
+            or any(result["after_ready"].values()) or sha(file) != digest or archive_writes(output)):
+        raise ValueError(f"{output}: next launch did not strictly hit the repaired archive")
+    return dict(result=result, lookups=rows, unchanged_archive_sha256=digest)
+
+
 def archive_faults(output):
     with tempfile.TemporaryDirectory(prefix="apple-archive-faults-", dir=ROOT / "tmp") as temp:
         binary, env, route, build, expected, cook = setup(output, Path(temp))
@@ -141,14 +160,21 @@ def archive_faults(output):
                 file_fault(complete, file, cause)
             before = sha(file)
             directory = output / f"{cause}-route"
-            launch = dict(env, THRUM_PIPELINE_PREPARATION="archive", THRUM_PIPELINE_ARCHIVE=str(file))
+            launch = dict(env, THRUM_PIPELINE_ARCHIVE=str(file))
             result = witness(directory, binary, launch, RECIPE, "route", stage_path="cooked")
             prepared, _, _ = manifest(directory, "cooked", parallel=True)
             if (prepared != expected or any(result["after_ready"].values())
                     or result["routed_ticks"] != list(range(route["keys"][-1]["tick"] + 1))
                     or len(result["finished"]) != 1 or result["finished"][0][1:] != [0, 0]
-                    or sha(file) != before or receipts(directory, "THRUM_METAL_ARCHIVE_SAVED ")):
-                raise ValueError(f"{cause}: readiness, full route or archive integrity failed")
+                    or receipts(directory, "THRUM_METAL_PREPARATION ") != ["archive"]):
+                raise ValueError(f"{cause}: the unforced launch did not finish the archive route")
+            lines = (directory / "process.log").read_text().splitlines()
+            boundary = next(i for i, line in enumerate(lines) if READY.fullmatch(line))
+            repairs = [i for i, line in enumerate(lines)
+                       if line.startswith("THRUM_METAL_ARCHIVE_REPAIRED ")]
+            if (sha(file) == before or len(repairs) != 1 or repairs[0] >= boundary
+                    or receipts(directory, "THRUM_METAL_ARCHIVE_SAVED ")):
+                raise ValueError(f"{cause}: expected exactly one archive repair before readiness")
             rows = lookup_rows(directory)
             imports = receipts(directory, "THRUM_METAL_ARCHIVE_IMPORT ")
             rejections = receipts(directory, "THRUM_METAL_ARCHIVE_REJECT ")
@@ -160,8 +186,9 @@ def archive_faults(output):
                     raise ValueError(f"{cause}: expected one native miss and no rejection: {rows}")
             elif rejections != [cause] or imports or rows:
                 raise ValueError(f"{cause}: expected rejection before import, got {rejections} {imports} {rows}")
+            second = repaired_witness(output / f"{cause}-next-launch", binary, launch, file, expected, result)
             cases[cause] = dict(archive_sha256=before, result=result, archive_import_calls=len(imports),
-                                rejections=rejections, lookups=rows)
+                                rejections=rejections, lookups=rows, next_launch=second)
     return dict(target="mac-metal", build=build, cook=cook, harvests=dict(complete=full, partial=omitted),
                 cases=cases)
 
@@ -205,25 +232,36 @@ def launch_final(output):
                     launches.append(dict(mode=mode, repeat=repeat, temperature=temperature,
                                          cache_before=before, cache_after=after, **result,
                                          **describe(prepared, stages, threads)))
-        defaults = output / "registry-default"
-        result = witness(defaults, binary, env, RECIPE, "launch", stage_path=None)
-        rows = lookup_rows(defaults)
-        selected, = receipts(defaults, "THRUM_METAL_PREPARATION ")
-        stage_path = "wgsl" if selected == "wgsl" else "cooked"
-        prepared, _, _ = manifest(defaults, stage_path, parallel=selected != "wgsl")
-        default_hits = Counter({("Hit", label): count for label, count in names(expected).items()})
-        if (prepared != expected or Counter(rows) != (default_hits if selected == "archive" else Counter())
-                or sha(file) != archive_digest):
-            raise ValueError("registry default did not exercise its selected path with an unchanged archive")
+        defaults = {}
         pids = {row["pid"] for row in launches}
-        if len(pids) != len(launches) or result["pid"] in pids:
+        if len(pids) != len(launches):
             raise ValueError("launch comparison did not use fresh processes")
+        inputs = {
+            "archive": env,
+            "parallel": {key: value for key, value in env.items()
+                         if key not in ("THRUM_PIPELINE_ARCHIVE", "THRUM_PIPELINE_MANIFEST")},
+        }
+        for mode, launch in inputs.items():
+            directory = output / f"registry-default-{mode}"
+            result = witness(directory, binary, launch, RECIPE, "launch", stage_path="cooked")
+            prepared, stages, threads = manifest(directory, "cooked", parallel=True)
+            rows = lookup_rows(directory)
+            hits = names(expected) if mode == "archive" else Counter()
+            if (receipts(directory, "THRUM_METAL_PREPARATION ") != [mode]
+                    or prepared != expected or archive_writes(directory)
+                    or Counter(rows) != Counter({("Hit", label): count for label, count in hits.items()})
+                    or any(result["after_ready"].values()) or result["pid"] in pids):
+                raise ValueError(f"{directory}: fresh unforced launch did not prepare the expected manifest")
+            pids.add(result["pid"])
+            defaults[mode] = dict(result=result, lookups=rows, **describe(prepared, stages, threads))
+        if sha(file) != archive_digest:
+            raise ValueError("a healthy launch changed the archive")
         totals = {mode: {temperature: median(row["launch_to_ready_ns"] for row in launches
                                             if row["mode"] == mode and row["temperature"] == temperature)
                          for temperature in ("cold", "warm")} for mode in modes}
         ranked = sorted(modes, key=lambda mode: sum(totals[mode].values()))
     return dict(target="mac-metal", build=build, cook=cook, harvest=harvest_receipt, launches=launches,
-                median_ns=totals, ranking=ranked, default_mode=selected, default_launch=result,
+                median_ns=totals, ranking=ranked, registry_defaults=defaults,
                 ranking_policy="equal-weight cold and warm median launch-to-ready wall time",
                 cache_scope="fresh Metal process each time. Cold driver cache directory is empty, warm reuses its cold run. Local archive was harvested separately and stays present for both archive launches.",
                 timing_decides_pass=False)

@@ -20,6 +20,7 @@ pub(super) fn options(hardware: &mut Vec<HardwareRequest>) -> Result<Option<Prep
     #[cfg(not(all(feature = "proving", feature = "creation-counters")))]
     let harvest: Option<PathBuf> = None;
     let forced = env::var("THRUM_PIPELINE_PREPARATION").ok();
+    let serial_cooked = forced.as_deref() == Some("cooked");
     let strict = forced.as_deref() == Some("strict-archive");
 
     if let Some(output) = path("THRUM_METALLIB_HARVEST") {
@@ -27,17 +28,16 @@ pub(super) fn options(hardware: &mut Vec<HardwareRequest>) -> Result<Option<Prep
     }
     let selected = match forced.as_deref() {
         Some("wgsl") => PreparationPath::Wgsl,
-        Some("parallel") => PreparationPath::Parallel,
+        Some("cooked" | "parallel") => PreparationPath::Parallel,
         Some("archive" | "strict-archive") => PreparationPath::Archive,
         Some(_) => return Err("unknown THRUM_PIPELINE_PREPARATION path".to_owned()),
         None if harvest.is_some() => PreparationPath::Archive,
-        None if manifest.is_none() && archive.is_none() => {
-            if let Some(store) = store {
-                let parallel = env::var_os("THRUM_METALLIB_PARALLEL").is_some();
-                // SAFETY: Only the explicitly selected local build store is used.
-                return Ok(Some(unsafe { Preparation::trusted_store(store, parallel) }));
-            }
-            return Ok(env::var_os("THRUM_METALLIB_MANIFEST").map(|_| Preparation::default()));
+        None if store.is_none()
+            && manifest.is_none()
+            && archive.is_none()
+            && env::var_os("THRUM_METALLIB_MANIFEST").is_none() =>
+        {
+            return Ok(None);
         }
         None => {
             PreparationPath::preferred(store.is_some(), archive.is_some() && manifest.is_some())
@@ -46,6 +46,7 @@ pub(super) fn options(hardware: &mut Vec<HardwareRequest>) -> Result<Option<Prep
     if cfg!(feature = "creation-counters") {
         let selected = match selected {
             PreparationPath::Wgsl => "wgsl",
+            PreparationPath::Parallel if serial_cooked => "cooked",
             PreparationPath::Parallel => "parallel",
             PreparationPath::Archive => "archive",
         };
@@ -93,7 +94,7 @@ pub(super) fn options(hardware: &mut Vec<HardwareRequest>) -> Result<Option<Prep
                 forced.is_some(),
             );
             // SAFETY: Only the explicitly selected local build store is used.
-            unsafe { Preparation::trusted_store(store, true) }
+            unsafe { Preparation::trusted_store(store, !serial_cooked) }
         }
     };
     Ok(Some(prepared.with_archive(archive)))

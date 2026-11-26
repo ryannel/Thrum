@@ -118,10 +118,9 @@ def parity(output, *, build_only=False):
             arms = {}
             for path in ("wgsl", "cooked"):
                 arm = output / f"{recipe}-{path}"
-                launch = dict(env, THRUM_METALLIB_MANIFEST="1")
+                launch = dict(env, THRUM_PIPELINE_PREPARATION=path)
                 if path == "cooked":
                     launch["THRUM_METALLIB_STORE"] = str(store)
-                    launch["THRUM_HARDWARE"] = "metal-shader-passthrough"
                 result = witness(arm, binary, launch, recipe, "metallib", stage_path=path)
                 pipelines, stages, threads = manifest(arm, path)
                 if pipelines != baked or any(result["after_ready"].values()):
@@ -159,12 +158,9 @@ def launch_paths(output):
             "CoreFoundation", str(ROOT / "scripts/apple_metal_cache_probe.c"), "-o", str(probe))
         for mode in ("wgsl", "cooked", "parallel"):
             expected = "wgsl" if mode == "wgsl" else "cooked"
-            launch = dict(env, THRUM_METALLIB_MANIFEST="1")
+            launch = dict(env, THRUM_PIPELINE_PREPARATION=mode)
             if expected == "cooked":
                 launch["THRUM_METALLIB_STORE"] = str(store)
-                launch["THRUM_HARDWARE"] = "metal-shader-passthrough"
-            if mode == "parallel":
-                launch["THRUM_METALLIB_PARALLEL"] = "1"
             for repeat in (1, 2):
                 cache = scratch / f"cache-{mode}-{repeat}"
                 cache.mkdir()

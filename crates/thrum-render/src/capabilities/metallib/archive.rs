@@ -1,13 +1,15 @@
 //! The file identity and public wgpu cache operations used during Metal preparation.
 
 use std::{
-    fs, io,
+    fs,
+    io::{self, Write as _},
     path::{Path, PathBuf},
+    sync::atomic::{AtomicBool, AtomicU64, Ordering},
 };
 
 use objc2_foundation::NSProcessInfo;
 use objc2_metal::MTLDevice as _;
-use wgpu::hal::metal::{ArchiveOutcome, with_archive_policy};
+use wgpu::hal::metal::{ArchiveOutcome, with_archive_policy, with_archive_repair};
 
 use super::report;
 
@@ -46,12 +48,68 @@ pub(super) struct Archive {
 enum Mode {
     Read {
         strict: bool,
+        recovery: Option<Recovery>,
     },
+    Rebuild(Recovery),
     Harvest {
         path: PathBuf,
         identity: Identity,
         omit: Option<String>,
     },
+}
+
+#[derive(Debug)]
+struct Recovery {
+    path: PathBuf,
+    identity: Identity,
+    pending: AtomicBool,
+    dirty: AtomicBool,
+    failed: AtomicBool,
+}
+
+impl Recovery {
+    fn new(path: PathBuf, identity: Identity, dirty: bool) -> Self {
+        Self {
+            path,
+            identity,
+            pending: AtomicBool::new(true),
+            dirty: AtomicBool::new(dirty),
+            failed: AtomicBool::new(false),
+        }
+    }
+
+    fn active(&self) -> bool {
+        self.pending.load(Ordering::Relaxed) && !self.failed.load(Ordering::Relaxed)
+    }
+
+    fn observe(&self, cooked: bool, outcome: ArchiveOutcome) {
+        if !cooked || matches!(outcome, ArchiveOutcome::Error | ArchiveOutcome::Unavailable) {
+            self.failed.store(true, Ordering::Relaxed);
+        }
+        if outcome == ArchiveOutcome::Miss {
+            self.dirty.store(true, Ordering::Relaxed);
+        }
+    }
+
+    fn finish(&self, cache: &wgpu::PipelineCache) {
+        if !self.pending.swap(false, Ordering::Relaxed)
+            || !self.dirty.load(Ordering::Relaxed)
+            || self.failed.load(Ordering::Relaxed)
+        {
+            return;
+        }
+        let result = cache
+            .get_data()
+            .ok_or_else(|| io::Error::other("Metal archive serialization failed"))
+            .and_then(|data| {
+                self.identity.replace(&self.path, &data)?;
+                Ok(data.len())
+            });
+        match result {
+            Ok(bytes) => report(format_args!("THRUM_METAL_ARCHIVE_REPAIRED {bytes}")),
+            Err(error) => report(format_args!("THRUM_METAL_ARCHIVE_REPAIR_ERROR {error}")),
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -105,29 +163,54 @@ impl Identity {
     }
 
     fn write(&self, path: &Path, data: &[u8]) -> io::Result<()> {
-        use io::Write as _;
-
         let mut file = fs::OpenOptions::new()
             .create_new(true)
             .write(true)
             .open(path)?;
-        let result = (|| {
-            file.write_all(MAGIC)?;
-            writeln!(
-                file,
-                "\n{}\n{}\n{}\n{}",
-                self.device,
-                self.os,
-                self.manifest,
-                blake3::hash(data)
-            )?;
-            file.write_all(data)
-        })();
+        let result = self.write_contents(&mut file, data);
         if result.is_err() {
             drop(file);
             drop(fs::remove_file(path));
         }
         result
+    }
+
+    fn replace(&self, path: &Path, data: &[u8]) -> io::Result<()> {
+        static NEXT: AtomicU64 = AtomicU64::new(0);
+        let (temporary, mut file) = loop {
+            let serial = NEXT.fetch_add(1, Ordering::Relaxed);
+            let temporary =
+                path.with_file_name(format!(".metal-archive-{}-{serial}", std::process::id()));
+            match fs::OpenOptions::new()
+                .create_new(true)
+                .write(true)
+                .open(&temporary)
+            {
+                Ok(file) => break (temporary, file),
+                Err(error) if error.kind() == io::ErrorKind::AlreadyExists => continue,
+                Err(error) => return Err(error),
+            }
+        };
+        let result = self.write_contents(&mut file, data);
+        drop(file);
+        let result = result.and_then(|()| fs::rename(&temporary, path));
+        if result.is_err() {
+            drop(fs::remove_file(temporary));
+        }
+        result
+    }
+
+    fn write_contents(&self, file: &mut fs::File, data: &[u8]) -> io::Result<()> {
+        file.write_all(MAGIC)?;
+        writeln!(
+            file,
+            "\n{}\n{}\n{}\n{}",
+            self.device,
+            self.os,
+            self.manifest,
+            blake3::hash(data)
+        )?;
+        file.write_all(data)
     }
 }
 
@@ -136,30 +219,14 @@ impl Archive {
         device: &wgpu::Device,
         request: ArchiveRequest,
         admitted: bool,
+        repair: bool,
     ) -> Option<Self> {
         match request {
             ArchiveRequest::Read {
                 path,
                 manifest,
                 strict,
-            } => {
-                let loaded = if admitted {
-                    Self::load(device, &path, &manifest)
-                } else {
-                    Err("unsupported")
-                };
-                match loaded {
-                    Ok(cache) => Some(Self {
-                        cache,
-                        mode: Mode::Read { strict },
-                    }),
-                    Err(cause) => {
-                        report(format_args!("THRUM_METAL_ARCHIVE_REJECT {cause}"));
-                        assert!(!strict, "strict Metal archive refused: {cause}");
-                        None
-                    }
-                }
-            }
+            } => Self::read(device, path, &manifest, strict, admitted, repair),
             ArchiveRequest::Harvest {
                 path,
                 manifest,
@@ -184,12 +251,58 @@ impl Archive {
         }
     }
 
+    fn read(
+        device: &wgpu::Device,
+        path: PathBuf,
+        manifest: &Path,
+        strict: bool,
+        admitted: bool,
+        repair: bool,
+    ) -> Option<Self> {
+        let identity = if admitted {
+            Identity::new(device, manifest).map_err(|_| "missing-manifest")
+        } else {
+            Err("unsupported")
+        };
+        let loaded = identity
+            .as_ref()
+            .map_err(|cause| *cause)
+            .and_then(|identity| Self::load(device, &path, identity));
+        match loaded {
+            Ok(cache) => Some(Self {
+                cache,
+                mode: Mode::Read {
+                    strict,
+                    recovery: identity
+                        .ok()
+                        .filter(|_| repair && !strict)
+                        .map(|identity| Recovery::new(path, identity, false)),
+                },
+            }),
+            Err(cause) => {
+                report(format_args!("THRUM_METAL_ARCHIVE_REJECT {cause}"));
+                assert!(!strict, "strict Metal archive refused: {cause}");
+                if !repair || !matches!(cause, "absent" | "corrupt" | "stale" | "unreadable") {
+                    return None;
+                }
+                let (cache, outcome) = with_archive_repair(|| create_cache(device, None));
+                if outcome == ArchiveOutcome::Unavailable {
+                    report(format_args!("THRUM_METAL_ARCHIVE_REPAIR_ERROR unavailable"));
+                    return None;
+                }
+                Some(Self {
+                    cache,
+                    mode: Mode::Rebuild(Recovery::new(path, identity.ok()?, true)),
+                })
+            }
+        }
+    }
+
     fn load(
         device: &wgpu::Device,
         path: &Path,
-        manifest: &Path,
+        identity: &Identity,
     ) -> Result<wgpu::PipelineCache, &'static str> {
-        let identity = Identity::new(device, manifest).map_err(|_| "missing-manifest")?;
         let file = fs::read(path).map_err(|error| {
             if error.kind() == io::ErrorKind::NotFound {
                 "absent"
@@ -222,7 +335,7 @@ impl Archive {
     }
 
     pub(super) fn strict(&self) -> bool {
-        matches!(self.mode, Mode::Read { strict: true })
+        matches!(self.mode, Mode::Read { strict: true, .. })
     }
 
     pub(super) fn save(&self) -> io::Result<()> {
@@ -237,10 +350,22 @@ impl Archive {
         Ok(())
     }
 
+    pub(super) fn finish_recovery(&self) {
+        if let Mode::Read {
+            recovery: Some(recovery),
+            ..
+        }
+        | Mode::Rebuild(recovery) = &self.mode
+        {
+            recovery.finish(&self.cache);
+        }
+    }
+
     pub(super) fn create<T>(
         &self,
         device: &wgpu::Device,
         label: Option<&str>,
+        cooked: bool,
         create: impl FnOnce(Option<&wgpu::PipelineCache>) -> T,
     ) -> T {
         let name = label.unwrap_or("");
@@ -255,10 +380,27 @@ impl Archive {
                 ));
                 create(include.then_some(&self.cache))
             }
-            Mode::Read { strict } => {
+            Mode::Rebuild(recovery) => {
+                if !recovery.active() || !cooked {
+                    recovery.observe(cooked, ArchiveOutcome::Unused);
+                    return create(None);
+                }
+                let (pipeline, outcome) = with_archive_repair(|| create(Some(&self.cache)));
+                recovery.observe(cooked, outcome);
+                pipeline
+            }
+            Mode::Read { strict, recovery } => {
                 let error = strict.then(|| device.push_error_scope(wgpu::ErrorFilter::Internal));
+                let create = || create(Some(&self.cache));
                 let (pipeline, outcome) =
-                    with_archive_policy(*strict, || create(Some(&self.cache)));
+                    if cooked && recovery.as_ref().is_some_and(Recovery::active) {
+                        with_archive_repair(create)
+                    } else {
+                        with_archive_policy(*strict, create)
+                    };
+                if let Some(recovery) = recovery {
+                    recovery.observe(cooked, outcome);
+                }
                 report(format_args!(
                     "THRUM_METAL_ARCHIVE_LOOKUP {outcome:?} {name}"
                 ));
