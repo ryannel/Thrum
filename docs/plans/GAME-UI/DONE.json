@@ -380,7 +380,7 @@
           "check": "node scripts/check_v1_browser.mjs --case interface-status",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "evidence": ".orchestrate/evidence/GAME-UI/WP3/chrome-fixed/interface-status.json",
+          "evidence": ".orchestrate/evidence/GAME-UI/WP3/costs-chrome-retry/chrome-fixed/interface-status.json",
           "verdict": "",
           "review": "",
           "builder_result": "pass"
