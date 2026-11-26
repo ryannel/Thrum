@@ -1357,8 +1357,8 @@
           "statement": "Under the fair preset, at noon, at a 10\u00b0 Sun and at sunset, library clouds among procedural ones read as one sky, and their shade on the valley has their outlines. With the placed share at 1, a sky of library shapes alone reads as a fair sky to the horizon, and no shape is recognised as a repeat within one view.",
           "inspect": "Capture `fixed` stills at the three Suns from 2 m and from 40 m, and a `realtime` 30-second sequence at 8x. Judge each whole and in native-size crops where a library cloud meets a procedural one. Add `fixed` stills of the sky at a placed share of 1, at noon and at a 10\u00b0 Sun, from 2 m and from 40 m.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP10/qualification-fair.md",
           "verdict": "",
           "review": ""
         },

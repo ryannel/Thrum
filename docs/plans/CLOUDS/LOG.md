@@ -970,3 +970,25 @@ congestus core and mediocris twin turrets. The sky remains on the builder branch
 The matched 1440p Metal device profiles counted thirteen admitted volume forms throughout the timed arms and
 recorded R8 and BC4 bytes for both stacks. [WP10 target evidence](../../../.orchestrate/evidence/CLOUDS/WP10/README.md)
 Documented review observations and remaining work are in the [handoff](../../../.orchestrate/evidence/CLOUDS/WP10-handoff.md).
+
+The lead reopened placed-cloud lighting inside WP10 on 26 November. Tighter steps and a temporally rotated
+blue-noise offset both left the noon ridge bands in the same places. Separate Metal captures located the bands
+in the Sun-driven diffuse term. The retained light uses the broader Sun-path column for high-Sun diffuse
+transport and keeps the local beam. A filtered density probe keeps surface relief. Near a low Sun, the shaded
+flank now agrees with the neighbouring clouds while the forward rim remains visible.
+[Metal lighting controls](../../../.orchestrate/evidence/CLOUDS/WP10/lighting-controls/README.md)
+
+The broader column alone still gave flat lower lobes. The filtered density correction and the final stronger
+local-depth response also left weak noon relief on the congestus core and mediocris twins. The one-sided
+probe gave brighter relief but added a chain of pale marks across the core. The independent retake found no
+regular bands in the final local-depth trial and rejected its flat lower faces. The retained checkpoint keeps
+the filtered response and the lower-Sun flank correction. The three-look limit leaves WP10.1 and WP10.4 open.
+[Noon comparisons](../../../.orchestrate/evidence/CLOUDS/WP10/lighting-controls/daylight-comparison.png)
+
+The growth retake qualified both speeds and all ten key boundaries. The settled 8× sky, the six mixed stills,
+the four full-share stills and the shade control passed independent inspection. The paired 1440p Metal record
+observed all thirteen volume forms throughout both visible arms. WP6's focused Metal and Chrome checks passed,
+and independent comparison found its accepted fixed lighting, shade, overlap and tower cues.
+[Growth](../../../.orchestrate/evidence/CLOUDS/WP10/qualification-growth.md) ·
+[Fair sky](../../../.orchestrate/evidence/CLOUDS/WP10/qualification-fair.md) ·
+[Cost](../../../.orchestrate/evidence/CLOUDS/WP10/qualification-cost.md)
