@@ -1510,3 +1510,11 @@
   the same wake endpoints the shader samples. The vertex draw now calls
   a shared displaced-vertex function for the forthcoming summed cut.
   [Live wake control](../../../.orchestrate/evidence/WATERS/WP15/live-wake-ground.log).
+
+- 2026-11-26 WP15 rest cells. The lens now obtains the wake's horizontal
+  admission bounds from the draw's own mesh grids. The CPU fixture
+  proves clipping across a nested sea ring join and skipping the coarser
+  ring's unused interior. Metal's lens suite still passes all eight
+  existing cases. The per-pixel summed cut remains open.
+  [CPU bounds](../../../.orchestrate/evidence/WATERS/WP15/rest-lattice.log) ·
+  [Metal lens](../../../.orchestrate/evidence/WATERS/WP15/rest-lattice-metal.log).

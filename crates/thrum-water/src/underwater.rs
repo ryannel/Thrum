@@ -4,7 +4,9 @@ use thrum_render::contribution::ContributionFrame;
 use thrum_sea_model::{Cascade, LongWaves, Spectrum};
 use thrum_water_model::{Field, Map, MapSample, SurfSheet, Surface, WaterError, WholeCut};
 
+mod rest;
 mod short;
+pub(super) use rest::RestMesh;
 use short::ShortBand;
 pub(super) use short::ShortWaveDomain;
 
@@ -57,11 +59,13 @@ impl Underwater {
         map: &Map,
         seconds: f64,
         short_domain: Option<ShortWaveDomain>,
-        wake: Option<(&super::interaction::Interaction, f64, f64)>,
+        wake: Option<(&super::interaction::Interaction, &RestMesh, f64)>,
     ) -> Lens {
         let plane = Plane::new(frame);
-        let live_wake = wake.is_some_and(|(interaction, horizontal, static_cell)| {
-            interaction.live_wake_intersects(plane.rest_box(frame.camera, horizontal, static_cell))
+        let live_wake = wake.is_some_and(|(interaction, mesh, horizontal)| {
+            plane
+                .rest_box(mesh, frame.camera, horizontal)
+                .is_some_and(|bounds| interaction.live_wake_intersects(bounds))
         });
         let mut lens = Lens::zeroed();
         let may_fold = self.sample(&mut lens, &plane, map, seconds, SMOOTH_SIDE, live_wake);
@@ -436,21 +440,24 @@ impl Plane {
         )
     }
 
-    fn rest_box(&self, camera: [f32; 3], horizontal: f64, static_cell: f64) -> [[f64; 2]; 2] {
+    fn rest_box(
+        &self,
+        mesh: &RestMesh,
+        camera: [f32; 3],
+        horizontal: f64,
+    ) -> Option<[[f64; 2]; 2]> {
         let (centre, radius) = self.horizontal_box();
+        if !horizontal.is_finite() || !centre.into_iter().chain(radius).all(f64::is_finite) {
+            return Some([[f64::NEG_INFINITY; 2], [f64::INFINITY; 2]]);
+        }
         let anchor = [camera[0].floor(), camera[2].floor()].map(f64::from);
-        let reach_from_anchor = (0..2)
-            .map(|axis| (centre[axis] - anchor[axis]).abs() + radius[axis] + horizontal)
-            .fold(0.0, f64::max);
-        // Outside the innermost ring, no sea cell lies closer than half
-        // the preceding ring width in units of this ring's cell size.
-        // The joined sea can start at a half metre.
-        let sea_cell =
-            (reach_from_anchor / f64::from(super::prepare::SEA_RING_HALF_WIDTH / 2)).max(0.5);
-        let reach = radius.map(|span| span + horizontal + sea_cell.max(static_cell));
-        [
-            std::array::from_fn(|axis| centre[axis] - reach[axis]),
-            std::array::from_fn(|axis| centre[axis] + reach[axis]),
-        ]
+        let reach = radius.map(|span| span + horizontal);
+        mesh.bounds(
+            [
+                std::array::from_fn(|axis| centre[axis] - reach[axis]),
+                std::array::from_fn(|axis| centre[axis] + reach[axis]),
+            ],
+            anchor,
+        )
     }
 }

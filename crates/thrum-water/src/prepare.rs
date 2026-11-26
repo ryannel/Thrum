@@ -50,7 +50,7 @@ pub(super) struct Prepared {
     pattern: Option<Pattern>,
     pub(super) mesh: wgpu::Buffer,
     pub(super) vertices: u32,
-    pub(super) wake_cell_padding: f32,
+    pub(super) rest_mesh: Option<super::underwater::RestMesh>,
     pub(super) queue: wgpu::Queue,
     pub(super) map: Option<MapGpu>,
     pub(super) surf: Option<SurfGpu>,
@@ -237,17 +237,7 @@ pub(super) fn new(
         .transpose()
         .map_err(|error| error.to_string())?;
     let tidal_grid = mapped && map.surf_profile().is_none() && has_tidal_join(map);
-    let geometry = surface_mesh(mapped.then_some(map), tidal_grid);
-    let wake_cell_padding = if profile.underwater && interaction.is_some() {
-        geometry
-            .vertices
-            .iter()
-            .filter(|vertex| vertex[3] != 0.0)
-            .map(|vertex| vertex[2])
-            .fold(0.0, f32::max)
-    } else {
-        0.0
-    };
+    let geometry = surface_mesh(mapped.then_some(map), tidal_grid, profile.underwater);
     let count = u32::try_from(geometry.vertices.len()).map_err(|e| e.to_string())?;
     let (mesh, indices) = geometry.upload(device, surf.is_some())?;
     let surf_cache = surf
@@ -452,7 +442,7 @@ pub(super) fn new(
         pattern,
         mesh,
         vertices: count,
-        wake_cell_padding,
+        rest_mesh: geometry.rest_mesh,
         queue: surface.queue.clone(),
         map: map_gpu,
         surf,
@@ -1051,6 +1041,7 @@ struct Geometry {
     bodies: Vec<(String, u32)>,
     draws: Vec<WaterDraw>,
     hollow_tiles: Vec<hollow_tiles::Rectangle>,
+    rest_mesh: Option<super::underwater::RestMesh>,
 }
 
 fn has_tidal_join(map: &thrum_water_model::Map) -> bool {
@@ -1068,14 +1059,19 @@ fn has_tidal_join(map: &thrum_water_model::Map) -> bool {
     clippy::cast_possible_truncation,
     reason = "GPU vertices and at most 16 body slots"
 )]
-fn surface_mesh(map: Option<&thrum_water_model::Map>, tidal_grid: bool) -> Geometry {
-    let Some(map) = map else {
-        return Geometry {
-            vertices: mesh(),
-            ..Geometry::default()
-        };
+fn surface_mesh(
+    map: Option<&thrum_water_model::Map>,
+    tidal_grid: bool,
+    retain_rest_mesh: bool,
+) -> Geometry {
+    let mut geometry = Geometry {
+        rest_mesh: retain_rest_mesh.then(super::underwater::RestMesh::default),
+        ..Geometry::default()
     };
-    let mut geometry = Geometry::default();
+    let Some(map) = map else {
+        geometry.vertices = mesh(geometry.rest_mesh.as_mut());
+        return geometry;
+    };
     let surf = map.surf_profile().is_some();
     let mut river_receivers = [false; map_gpu::BODY_LIMIT];
     for (body, declaration) in (0..map_gpu::BODY_LIMIT)
@@ -1180,6 +1176,9 @@ impl Geometry {
     )]
     fn hollows(&mut self, hollows: &thrum_water_model::Hollows, slot: f32) {
         let ([x, z], cell, [width, height]) = hollows.lattice();
+        if let Some(rest) = &mut self.rest_mesh {
+            rest.hollows([x, z], cell, [width, height]);
+        }
         for row in 0..height {
             for column in 0..width {
                 for (corner, [dx, dz]) in [[0, 0], [1, 0], [0, 1], [1, 1]].into_iter().enumerate() {
@@ -1236,6 +1235,9 @@ impl Geometry {
         inner_half_width: i32,
         surf: bool,
     ) {
+        if let Some(rest) = &mut self.rest_mesh {
+            rest.grid(start, end, spacing, inner_half_width, body == 0.0);
+        }
         let base = u32::try_from(self.vertices.len()).expect("bounded mesh");
         let width = u32::try_from(end[0] - start[0] + 1).expect("grid width");
         for (row, z) in (0..).zip(start[1]..=end[1]) {
@@ -1259,15 +1261,26 @@ impl Geometry {
         }
     }
 }
-fn mesh() -> Vec<[f32; 4]> {
+fn mesh(mut rest: Option<&mut super::underwater::RestMesh>) -> Vec<[f32; 4]> {
     let mut vertices = Vec::new();
+    let half_width = i16::try_from(SEA_RING_HALF_WIDTH).expect("bounded sea ring");
     // Nested world-snapped square rings. Every outer boundary has the next ring's
     // even vertices; boundary heights are interpolated at the shared coarse edge.
     for level in 0_i32..17 {
         let spacing = 0.25 * 2.0_f32.powi(level);
-        for z in -32_i16..32 {
-            for x in -32_i16..32 {
-                if level > 0 && (-16..16).contains(&x) && (-16..16).contains(&z) {
+        let inner = if level == 0 { 0 } else { half_width / 2 };
+        if let Some(rest) = &mut rest {
+            rest.grid(
+                [-i32::from(half_width); 2],
+                [i32::from(half_width); 2],
+                spacing,
+                i32::from(inner),
+                true,
+            );
+        }
+        for z in -half_width..half_width {
+            for x in -half_width..half_width {
+                if (-inner..inner).contains(&x) && (-inner..inner).contains(&z) {
                     continue;
                 }
                 for [dx, dz] in [[0, 0], [0, 1], [1, 0], [1, 0], [0, 1], [1, 1]] {

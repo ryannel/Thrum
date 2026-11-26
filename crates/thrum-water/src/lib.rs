@@ -631,16 +631,20 @@ impl SceneContribution for Water {
             interaction.record(&p.queue, encoder, frame, &map);
         }
         if let Some(gather) = &mut p.gather {
-            let wake = p.interaction.as_ref().map(|interaction| {
-                // An unresolved shore transform can extend the reach beyond
-                // the ambient bound. Admit for any live window in that case.
-                let horizontal = if displayed_map.surf_profile().is_some() {
-                    f64::INFINITY
-                } else {
-                    f64::from(self.offshore_displacement[0])
-                };
-                (interaction, horizontal, f64::from(p.wake_cell_padding))
-            });
+            let wake =
+                p.interaction
+                    .as_ref()
+                    .zip(p.rest_mesh.as_ref())
+                    .map(|(interaction, mesh)| {
+                        // An unresolved shore transform can extend the reach beyond
+                        // the ambient bound. Admit for any live window in that case.
+                        let horizontal = if displayed_map.surf_profile().is_some() {
+                            f64::INFINITY
+                        } else {
+                            f64::from(self.offshore_displacement[0])
+                        };
+                        (interaction, mesh, horizontal)
+                    });
             gather.record(
                 &p.queue,
                 frame,
