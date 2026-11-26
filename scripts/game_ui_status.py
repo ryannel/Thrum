@@ -3,6 +3,7 @@
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import time
 
@@ -151,9 +152,16 @@ def costs(root, destination, scratch, revision, environment, target, load, diges
             build = {"binary_sha256": digest(executable)}
         else:
             arm = scratch / f"chrome-{index}"
-            subprocess.run(["node", "scripts/check_v1_browser.mjs", "--case", "interface-status-cost",
-                            "--output", arm], cwd=root, check=True, env=environment)
+            try:
+                subprocess.run(["node", "scripts/check_v1_browser.mjs", "--case", "interface-status-cost",
+                                "--output", arm], cwd=root, check=True, env=environment)
+            except subprocess.CalledProcessError:
+                for filename in ("chrome.log", "run.json"):
+                    if (arm / filename).is_file():
+                        shutil.copyfile(arm / filename, destination / f"failed-{index}-{filename}")
+                raise
             record = json.loads((arm / "interface-status-cost.json").read_text())
+            record["chrome_shutdown"] = json.loads((arm / "run.json").read_text())["chrome_shutdown"]
             build = record["build"]
         record.update(commit=revision, profile="release", build=build,
                       load_before=before, load_after=load(), run=index)

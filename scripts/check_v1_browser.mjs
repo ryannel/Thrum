@@ -2321,11 +2321,12 @@ function chromeGroupExited(pid) {
 }
 
 async function cleanup(child, exited, cdp, server, profile, {
-  graceMs = 10000, completedCost = false, ownedShutdown,
+  graceMs = 10000, completedCost = false, ownedShutdown, allowTeardownWatchdog = false,
 } = {}) {
   const failures = [];
   if (child?.pid && !exited()) {
     const closeRequested = cdp?.socket.readyState === WebSocket.OPEN;
+    let exitedDuringGrace = false;
     if (closeRequested) {
       // Browser.close can close its own CDP connection without replying.
       void cdp.call('Browser.close').catch(() => {});
@@ -2333,7 +2334,10 @@ async function cleanup(child, exited, cdp, server, profile, {
       failures.push('Chrome could not be closed through its own DevTools connection');
       child.kill('SIGTERM');
     }
-    try { await waitFor(() => exited(), graceMs, 'owned Chrome graceful exit'); }
+    try {
+      await waitFor(() => exited(), graceMs, 'owned Chrome graceful exit');
+      exitedDuringGrace = true;
+    }
     catch (error) {
       if (!completedCost) failures.push(error.message);
       child.kill('SIGTERM');
@@ -2354,7 +2358,9 @@ async function cleanup(child, exited, cdp, server, profile, {
     if (child.exitCode !== 0 || child.signalCode) {
       // A completed cost take retains its submitted samples if Chrome has
       // already exited after closing the final target. Retain its exit code.
-      if (!completedCost) {
+      const watchdogExit = allowTeardownWatchdog && closeRequested && exitedDuringGrace &&
+        ownedShutdown?.receipt.watchdog && ownedShutdown.receipt.owned_processes_gone;
+      if (!completedCost && !watchdogExit) {
         failures.push(`Chrome did not exit cleanly: code=${child.exitCode} signal=${child.signalCode}`);
       }
     }
@@ -2590,6 +2596,8 @@ async function main() {
   await fs.mkdir(output);
   const profile = await fs.mkdtemp(path.join(output, 'chrome-profile-'));
   const chromeLogPath = path.join(output, 'chrome.log');
+  const statusCost = args.case === 'interface-status-cost';
+  const verifyOwnedShutdown = args.verifyOwnedShutdown === true || statusCost;
   let server, child, cdp, cook, ended = false, failure;
   const results = [];
   try {
@@ -2602,7 +2610,7 @@ async function main() {
     const serving = await serve(files, (request, response) => rows?.receive(request, response) || lent?.receive(request, response) || content?.receive?.(request, response)); server = serving.server;
     const chromeLog = await fs.open(chromeLogPath, 'a');
     let startupError;
-    child = spawn(args.chrome, [`--user-data-dir=${profile}`, '--remote-debugging-port=0', '--headless=new', '--no-first-run', '--no-default-browser-check', '--disable-background-networking', '--disable-component-update', '--window-size=1280,1100', 'about:blank'], { detached: args.verifyOwnedShutdown === true, stdio: ['ignore', chromeLog.fd, chromeLog.fd] });
+    child = spawn(args.chrome, [`--user-data-dir=${profile}`, '--remote-debugging-port=0', '--headless=new', '--no-first-run', '--no-default-browser-check', '--disable-background-networking', '--disable-component-update', '--window-size=1280,1100', 'about:blank'], { detached: verifyOwnedShutdown, stdio: ['ignore', chromeLog.fd, chromeLog.fd] });
     child.once('error', error => { startupError = error; ended = true; });
     child.once('exit', () => { ended = true; });
     await chromeLog.close();
@@ -2733,14 +2741,17 @@ async function main() {
   } catch (error) { failure = error; }
   finally {
     cook?.kill();
-    // The reflection referee releases its WebGPU probe resources when its tab closes.
-    const drainGpuResources = args.case === 'environment' || args.case === 'clouds-controls' || args.case === 'sprites-crisp' || args.case.startsWith('sprites-field');
+    // These cases may leave Chrome draining WebGPU resources after tab close.
+    const drainGpuResources = statusCost || args.case === 'environment' || args.case === 'clouds-controls' || args.case === 'sprites-crisp' || args.case.startsWith('sprites-field');
     const shutdown = {};
     try {
       await cleanup(child, () => ended, cdp, server, profile, {
         graceMs: drainGpuResources ? 45000 : args.verifyOwnedShutdown ? 20000 : undefined,
         completedCost: args.case === 'sprites-field-cost' && results.length === 1,
-        ownedShutdown: args.verifyOwnedShutdown ? { log: chromeLogPath, receipt: shutdown } : undefined,
+        ownedShutdown: verifyOwnedShutdown ? { log: chromeLogPath, receipt: shutdown } : undefined,
+        // A fully sampled take has already retired its WebGPU device and
+        // unloaded the page before requesting Chrome's own shutdown.
+        allowTeardownWatchdog: statusCost && results.length === 1,
       });
     }
     catch (error) { failure = failure ? new AggregateError([failure, error], 'Qualification and cleanup failed') : error; }
