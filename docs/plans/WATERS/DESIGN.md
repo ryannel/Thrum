@@ -12,7 +12,9 @@ Revised again that day after WP19's builder stopped: the query is
 revision's review: the carry bound covers an ordinary post, and a post is answered only from
 [its own world's state](#bodies-and-the-query). Revised after the review of
 [WP21](#a-surf-view-a-running-game-can-afford-wp21): delivery decides it, the distant front is held by
-eye, and a held answer ends with its device.
+eye, and a held answer ends with its device. Revised 26 November 2026 after WP15's builder stopped: the lens
+is [cut from the summed sheet and admitted by a bound](#under-water), and the query stays
+[layer by layer](#bodies-and-the-query).
 [Plan](PLAN.md) · [done-when file](DONE.json) · [log](LOG.md) · [module list](../ARCHITECTURE.md) ·
 [the wave field, `SEA`](../SEA/DESIGN.md). C02, C04, C06, C07, C08, C09 and C12 in
 [CONTRACTS](../../design/CONTRACTS.md) and [the hardware-native decision](../../design/decisions/HARDWARE-NATIVE-ENGINE.md)
@@ -1044,8 +1046,22 @@ between the least and the greatest height the fine cut gives within one cell of 
 places of known height over their own world place, the 0.25 m cut answers below 28, and each of those stands
 within 46 mm of a lip's edge. The review's own witness is found, to the micrometre. WP12.12 holds the model to
 such a cut on such sheets, written in the test, so the GPU is compared with a model whose branch is
-established. The lens test of [the view from under water](#under-water) reads the same cut, made once for the
-lens: its near plane spans a cell or two, so one set of nodes serves every pixel.
+established.
+
+**Layer by layer, and not the lens's cut.** A query's answer is summed layer by layer at the world point: the
+long waves' surface there, found by the iteration or the cut above, then the cascades and the wake read at
+that point. The drawn sheet sums every layer at the rest place before it is displaced, so the two differ by
+the short waves' horizontal displacement and by where under a long wave's shift they are read: about 33 mm
+in a trade wind at sea, with the same statistics, and less over a footprint's mip. That is a declared
+approximation of the query and it stays. A float 33 mm off the sheet shows nothing. The summed sheet would
+put a cascade read in every node of a cut and bring horizontal displacement under the carry bound, and it
+would change every answer that WP5, WP6, WP13, WP19, WP21 and WP25 proved. So these keep the query as it
+is: the example's floats and craft, the wake's static dent and the lift WP6 compares, the surf query's
+age and its Metal check, `RIVERS`' carried floats, a float on `PUDDLES`' water, the conformance fallback in
+`thrum-water-model`, and [the interface](../ARCHITECTURE.md#interfaces). Only
+[the lens](#under-water) reads the summed sheet, through its own cut, because its line must meet the drawn
+surface to a pixel where a float need not. The lens takes nothing from a query's answer, and a game takes
+no height from the lens.
 
 What the coarse pass can miss is a part of the sheet inside one coarse cell that lands further outside the
 box of that cell's corners than the cell's margin: a bend its four corners do not show. The answer is then
@@ -1454,8 +1470,8 @@ is the map's depth, and where there is no bed it is unbounded.
 *What is copied.* Three readers, each with screen rectangles. The bodies a scene registers, each with a world box,
 which the craft and floats carry in their body records. See-through water: the map's tiles whose depth is under
 the water type's sight depth, where `T_water` falls below 1%. And the screen: while water still enough to mirror
-is in view and has no mirror view, for the scene's reflection, and while any pixel of the lens is
-[under water](#under-water). On an open sea with no body on screen and the camera above it that is nothing, which keeps the sea
+is in view and has no mirror view, for the scene's reflection, and while the lens is
+[admitted as under water](#under-water). On an open sea with no body on screen and the camera above it that is nothing, which keeps the sea
 design's economy on a tile GPU. Where shallow or mirror-still water fills the view it is the screen, and the copy
 is then `EFFECT-GRAPH`'s refraction copy in all but name. Opaque geometry outside every rectangle is neither
 reflected nor seen through the water, and takes the environment.
@@ -1683,15 +1699,47 @@ reflected.
 
 ### Under water
 
-The view from under water is a capability. While the whole lens stands above the highest surface within its
-reach, which the CPU tests from the model each frame, none of its work is done.
+The view from under water is a capability. Each frame the CPU admits it or not, by a bound (below), and
+while it is not admitted none of its work is done.
 
 - **The lens, pixel by pixel.** A pixel is under water when its own point on the near plane lies below the
-  water's surface in that column: the map's body there, its level, and the waves displaced onto it, by the
-  function the surface is drawn from. A lens half under is therefore split along the line where the surface
-  meets it, wave by wave, and a camera in the hollow of a swell is dry. Along that line a **meniscus** a few
-  pixels wide is drawn, in which the two compositions meet and the surface, seen edge on, takes its grazing
-  reflection.
+  water's surface in that column, and the surface in a column is the one drawn there. A lens half under is
+  therefore split along the line where the surface meets it, wave by wave, and a camera in the hollow of a
+  swell is dry. Along that line a **meniscus** a few pixels wide is drawn, in which the two compositions
+  meet and the surface, seen edge on, takes its grazing reflection.
+- **The lens cut.** The surface over a column of the lens is found forward, as
+  [the query's cut](#bodies-and-the-query) finds the long waves' and as the sheet is drawn. The rest places
+  round the lens, on the lattice of the surface's own vertices there, are each displaced by the sum of
+  everything a vertex takes at that rest place: the long waves through the shore transform and the section,
+  the cascades that mesh resolves, at the row's gains and short-wave weight and read where a current
+  carries them, each with its horizontal displacement, and the interaction waves. The sum is made at the
+  rest place, before anything is cut. The displaced triangles are then cut in world columns, and a column's
+  surface is the highest triangle over it. The near plane spans a cell or two of that lattice, so a few
+  nodes serve every pixel. `thrum-water-model` makes the same cut of the same sum in f64, and is the lens's
+  reference. Two rules bind the builder, and where each part is evaluated is otherwise theirs: no layer is
+  added at the world column to a cut of the others, and a layer whose displayed field the GPU owns, the
+  cascades on a current and the wake, is read from that field in the frame, so the line is the shown
+  surface's there too.
+
+  The form this replaces cut the long waves alone and added the short waves at the world column, as the
+  query does. In a trade wind at sea the long waves' rest place lies 1.6 to 2.6 m from the column, the two
+  surfaces stand about 33 mm apart, and with the lens half under that is a wedge 182 to 184 rows tall at
+  1440p in which neither the drawn sheet nor the composition covers the bed
+  ([WP15's reading](../../../.orchestrate/evidence/WATERS/WP15/residual-line/README.md#whole-crossings-and-the-trade-sea-gap)).
+  A millimetre of surface is several rows at the near plane, so the lens agrees with the drawn sheet by
+  being cut from it, never by a second function tuned to match.
+- **Admission.** The capability's passes run unless the CPU can place the whole lens above the water. It
+  does so by a bound: a height that no surface shown over the lens's footprint can pass. The bound is the
+  model's long-wave surface, the highest it stands over the footprint grown by the other layers' largest
+  horizontal displacement, and added to it a ceiling for each other layer: each cascade's amplitude at the
+  largest gain and short-wave weight in the footprint, wherever a current carries it, and, where a wake
+  window that is not at rest covers the footprint, the profile's **wake ceiling**. Where the CPU holds a
+  layer's whole field, on still water with no current and no wake, it may take that layer's highest value
+  over the footprint in place of its ceiling. The bound errs one way. It may admit a lens that is dry, which
+  costs the gather and a composition that keeps no pixel, and it never refuses a lens with a pixel under
+  the shown surface, which would be a dry hole in the picture. Exact admission is not sought under a wake
+  or on a current: those displayed fields are the GPU's, and reading them back would put a wait in the
+  frame. Whether a pixel is under water is never the bound's to say: the lens cut decides it.
 - **The surface from beneath.** The surface is drawn two-sided. Its underside is shaded by Fresnel's law
   from the water's side, with a refractive index of 1.333. Within 48.6° of the surface's normal a ray leaves
   the water, which is Snell's window. It reads the gather where it meets copied geometry that stands above
@@ -1712,7 +1760,7 @@ reach, which the CPU tests from the model each frame, none of its work is done.
   backscatter and `K` are the water type's. The exposure scale multiplies once.
 - **How it is drawn.** In the water's own pass. A draw over the pixels under water writes the composition
   for those that see no surface, from the gather, and the two-sided surface then draws over it wherever it
-  is nearer. The gather copies the screen while any pixel is under. Nothing is laid over the frame
+  is nearer. The gather copies the screen while the lens is admitted. Nothing is laid over the frame
   afterwards, so no pixel takes the water twice, which [WP15 tests](#optics) on a panel seen through two
   lengths of water.
 - **The frame contract.** The underside writes depth, motion and reactive coverage as the upper side does,
@@ -1724,7 +1772,14 @@ the bed is lit evenly through the surface, and without shafts the water's light 
 is the camera's, and follows the light down only where the game gives its camera the water's factor.
 Sunlight's path down to a body in the gather is taken vertically. Under a crest that overhangs, the highest surface decides, so inside the hollow of a pitching
 wave the lens reads as under water. Anything transparent that a scene draws after the water takes none of
-the water's murk.
+the water's murk. The wake ceiling is a profile value and not a bound on the solver: a profile sets it at
+least twice the highest wake its bodies raise, 1 m in the first profile, which WP15 holds against the
+example's craft at 15 m/s and its stone, read from the wake's state. A wake taller than the ceiling, over a
+lens that stands above every other layer's bound, shows as a dry hole.
+
+The views an item calls straight up are taken 0.01° off the vertical. The example's camera takes +Y for up
+and refuses a look along it, and 0.01° moves the centre of a 105° view 0.096 px at 1440p. No up vector is
+added to the camera for this.
 
 ### Light under water: caustics, shafts and the meter
 
@@ -2117,7 +2172,7 @@ rows are in [the sea's design](../SEA/DESIGN.md#cost-account).
 | Body and scene rays | Frame, inside the surface pass | Water pixels the mask marks: two ray-against-box tests for each marked body; a bounded march where a ray meets a box or the water is mirror-still | Unmeasured; WP8 records it on a calm sea and in a gale with zero, one and nine bodies, and at the lake | |
 | Mirror views | Frame, by `SCENE-VIEWS` | Up to two views of the scene's opaque geometry, each a quarter of the main view's pixels | The scene's own draw again for each view, less what its owner cuts. Unreal reports a planar reflection at up to half a frame at full detail, and GTA V ships one at 240×120. WP14 records it with no view, one and two | |
 | The mirror lookup | Frame, inside the surface pass | Water pixels of a body with a view: three reads of the image and its depth | Less than the screen-space march it replaces there | |
-| Under water | Frame, only while a pixel of the lens is under | The lens test for each pixel, one composition for each pixel under water, and a whole-screen gather | Of the order of the surface pass's own pixels; WP15 records it half under and wholly under | |
+| Under water | Frame, only while [admitted](#under-water) | The lens cut's few nodes, the lens test for each pixel, one composition for each pixel under water, and a whole-screen gather | Of the order of the surface pass's own pixels; WP15 records it half under and wholly under | |
 | The caustic field | Frame, while water with caustics is in the window | 13 rungs of an 18 m window at 3.5 cm cells; the rungs from 2 m down are drawn from coarser grids, since their blur is wider than a cell | About 1.8 million vertices and 13 small passes a frame, then a blur of each. Unmeasured; WP16 records it, and the rung count, the window and the cadence are knobs | |
 | The Sun-path factor | Frame, inside the forward pass | One read of the level for every opaque fragment in a scene with caustics, and two rungs for one under water | One texture more in the forward fragment stage, counted against the capability record | |
 | Shafts | Frame, only while a pixel of the lens is under | Pixels under water at half the render extent each way: 16 steps, each two rung reads and one Sun-visibility tap | Unmeasured; WP16 records it | |
@@ -2237,8 +2292,9 @@ decides nothing. [WP19](#a-surf-query-a-running-game-can-use-wp19) uses it.
     its reflection's. Early sign: WP14's pan. The designed remedy is reactive coverage where a mirrored
     reflection is most of a pixel. The wrong fix is taking the water out of reconstruction.
 23. **The line on the lens flickers, or a gap shows where the near plane cuts the surface.** Early sign:
-    WP15's crossing. The designed remedies are the meniscus's width and a lens test at each pixel's own point.
-    The wrong fix is a camera that is kept from touching the surface.
+    WP15's crossing. The designed remedies are the meniscus's width, a lens test at each pixel's own point
+    and [the lens cut](#under-water) of the sheet as it is drawn. The wrong fixes are a camera that is kept
+    from touching the surface, and a second surface function tuned toward the drawn one.
 24. **Deep water is black**, because the exposure is metered from the sky. Early sign: WP15's views at depth,
     which are built before the meter follows the light. [The meter](#light-under-water-caustics-shafts-and-the-meter),
     in WP16, is the remedy; the wrong fix is brightening the water's own light.
@@ -2352,6 +2408,21 @@ decides nothing. [WP19](#a-surf-query-a-running-game-can-use-wp19) uses it.
 - **Dependencies.** New crates and any third-party dependency are registered in `.config/architecture.toml`.
 - **Maturity.** A ledger row for `E1.water` is added in WP2 and kept current, with implementation, correctness,
   visuals and device apart.
+
+## Resuming WP15 from its branch
+
+WP15's builder stopped on 26 November 2026 with `build/waters` at `eb9042bce`, unmerged, and
+[a handoff](../../../.orchestrate/evidence/WATERS/WP15-handoff.md). The next builder continues that branch.
+
+- **What was ruled.** [The lens cut, admission and the straight-up views](#under-water), and
+  [the query, which stays layer by layer](#bodies-and-the-query). The calm, breeze and trade matrix, fixed
+  and elapsed, the bank inside the disc and the bands on the held lake's hull stay as the items have them.
+- **Before merging**, run on the merge candidate and not the old base: the seven serial tests in
+  match-proof, rain-model and river-model that timed out in the branch's last workspace run, and Clippy on
+  the shared app, which reported an unused `self`. One that fails on main alone goes to its owner's log and
+  is not repaired here.
+- **Against `PUDDLES` WP4**, keep main's `surface_lighting.wgsl` composition and both modules' check arms,
+  and take the inspected captures again on the integrated renderer.
 
 ## Open questions
 

@@ -1369,3 +1369,21 @@
   dispatch and both cut passes. The test process used 1.03 s of CPU, down from 3.16 s in a fresh baseline run.
   Selecting the lower hit or omitting half the wave lanes each failed a folded station's height comparison.
   The companion surf tests passed in `it`. [Target proof](../../../.orchestrate/evidence/WATERS/WP25/README.md).
+
+## WP15 unblocked
+
+- 2026-11-26 WP15 stopped `NEEDS_CONTEXT` on three questions, with `build/waters` at `eb9042bce` unmerged
+  ([handoff](../../../.orchestrate/evidence/WATERS/WP15-handoff.md)). The lead ruled by the owner's bar of
+  17 November. (1) Overhead views stay 0.01° off the vertical, 0.096 px at 1440p; no up vector for the
+  camera. (2) The trade sea's wedge of 182 to 184 rows is a visible defect: one cut of the summed sheet for
+  the lens and its reference. (3) Under a wake or on a current the CPU needs a bound that never leaves a dry
+  hole, not exact dry admission.
+- 2026-11-26 Planner, on the lead's ruling 2: the body query stays layer by layer. Moving it to the summed
+  sheet would change answers WP5, WP6, WP13, WP19, WP21 and WP25 proved, for about 33 mm a float does not
+  show. [The design](DESIGN.md#bodies-and-the-query) names who keeps it. No interface changed.
+- 2026-11-26 WP15.1 rewritten: the reference is the model's cut of the summed sheet, the sea's case is in a
+  trade wind, and the line is held within two pixels where it was one, because the builder's f64
+  reconstruction met Metal's drawn edge within two rows and the meniscus is wider. Strict dry admission
+  became the bound, with a stone's ring over a lens as the wake's case: the branch's bound has no wake term.
+  New profile value, the wake ceiling, 1 m.
+
