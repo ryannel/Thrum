@@ -316,7 +316,7 @@ impl Yard {
         crate::floating::YardFloat::new(ground.centre(index), ground.heights()[index])
     }
 
-    pub(super) fn prepare() -> Result<Self, Box<dyn Error>> {
+    pub(super) fn prepare(profile: Profile) -> Result<Self, Box<dyn Error>> {
         // The floor of each cell is sampled from the very triangles the
         // opaque pass will draw. The roof is a separate first-hit receiver.
         let mut triangles = super::mesh_triangles(
@@ -335,10 +335,6 @@ impl Yard {
         if bed.heights().contains(&f64::MAX) {
             return Err("yard cell has no ground triangle".into());
         }
-        let profile = Profile {
-            edge_width: 0.45,
-            ..Profile::default()
-        };
         let canopy = Canopy::prepare(
             ORIGIN,
             [100, 80],
@@ -523,7 +519,7 @@ mod tests {
 
     #[test]
     fn yard_fills_and_parts_with_stable_map_identity() {
-        let mut yard = Yard::prepare().expect("prepare authored yard triangles");
+        let mut yard = Yard::prepare(Profile::default()).expect("prepare authored yard triangles");
         let mut map = super::super::prepare_island_map(
             &super::super::Wind::Calm.forcing(),
             None,

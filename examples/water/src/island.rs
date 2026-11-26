@@ -431,6 +431,17 @@ pub fn build_rain_yard(wind: Wind, draw_water: bool) -> Result<RainYardScene, Bo
     build_yard(wind, draw_water, YardRoute::Game)
 }
 
+/// Build the still-level yard for the authored fill, depth and float proofs.
+///
+/// # Errors
+/// Propagates scene construction errors.
+pub fn build_rain_yard_levels(
+    wind: Wind,
+    draw_water: bool,
+) -> Result<RainYardScene, Box<dyn Error>> {
+    build_yard(wind, draw_water, YardRoute::Levels)
+}
+
 /// Build matched cost arms with the same opaque ground and no float.
 /// # Errors
 /// Propagates scene construction errors.
@@ -453,6 +464,7 @@ pub fn build_rain_bands_cost(
 #[derive(Clone, Copy)]
 enum YardRoute {
     Game,
+    Levels,
     Cost,
     BandsCost { rings: bool },
 }
@@ -462,8 +474,12 @@ fn build_yard(
     draw_water: bool,
     route: YardRoute,
 ) -> Result<RainYardScene, Box<dyn Error>> {
-    let mut rain = rain_yard::Yard::prepare()?;
-    rain.draw_float = matches!(route, YardRoute::Game);
+    let mut profile = thrum_rain_model::Profile::default();
+    if matches!(route, YardRoute::Game | YardRoute::BandsCost { .. }) {
+        profile.edge_width = 0.45;
+    }
+    let mut rain = rain_yard::Yard::prepare(profile)?;
+    rain.draw_float = matches!(route, YardRoute::Game | YardRoute::Levels);
     rain.draw_rings = matches!(
         route,
         YardRoute::Game | YardRoute::BandsCost { rings: true }
@@ -481,7 +497,7 @@ fn build_yard(
 /// Propagates invalid authored ground or shelter.
 pub fn measure_rain_yard_preparation() -> Result<(Duration, usize, usize), Box<dyn Error>> {
     let start = std::time::Instant::now();
-    let yard = rain_yard::Yard::prepare()?;
+    let yard = rain_yard::Yard::prepare(thrum_rain_model::Profile::default())?;
     let elapsed = start.elapsed();
     let (cells, hollows) = yard.size();
     Ok((elapsed, cells, hollows))

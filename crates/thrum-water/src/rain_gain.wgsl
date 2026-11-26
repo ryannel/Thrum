@@ -51,4 +51,3 @@ fn rain_gain(point: vec2<f32>, row: SurfaceRow) -> f32 {
     let maximum = 0.6 * (depth + row.swash) / max(rain.lengths.w, 1e-30);
     return min(response * rain_exposure(point, row.level), maximum);
 }
-

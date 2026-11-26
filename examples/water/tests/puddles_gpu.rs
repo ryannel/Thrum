@@ -25,7 +25,7 @@ fn submitted_yard_depth_matches_the_hollows_map() {
 fn check_yard_transitions(gpu: &thrum_test_support::Gpu) {
     use std::{collections::BTreeMap, time::Duration};
     use thrum_app::Game;
-    use water_scene::island::{Wind, build_rain_yard};
+    use water_scene::island::{Wind, build_rain_yard_levels};
     const EXTENT: [u32; 2] = [96, 64];
     const POINTS: [[f32; 2]; 5] = [
         [147.575, 66.225],
@@ -34,7 +34,7 @@ fn check_yard_transitions(gpu: &thrum_test_support::Gpu) {
         [147.2, 66.2],
         [149.75, 66.35],
     ];
-    let (game, report, map, replies) = build_rain_yard(Wind::Calm, true).expect("rain yard");
+    let (game, report, map, replies) = build_rain_yard_levels(Wind::Calm, true).expect("rain yard");
     let mut scene = support::Fixture::from_game(gpu, EXTENT, game, report);
     scene.parameters(r#"{"camera.island":3,"rain.rate":0}"#);
     scene.warm_cooked();
@@ -207,7 +207,7 @@ fn check_yard_depth(gpu: &thrum_test_support::Gpu) {
     use support::depth::DepthTap;
     use thrum_app::sky::{Camera, ContentStatus};
     use thrum_water_model::Map;
-    use water_scene::island::{Wind, build_rain_yard};
+    use water_scene::island::{Wind, build_rain_yard_levels};
 
     const EXTENT: [u32; 2] = [320, 200];
     const EPS_METRES: f64 = 0.000_04;
@@ -216,7 +216,8 @@ fn check_yard_depth(gpu: &thrum_test_support::Gpu) {
     let camera = Camera::look_at([149.0, 33.12, 64.94], [149.0, 18.12, 65.0], 45.0);
     let matrix = support::depth::matrix(camera, EXTENT);
     let make = |draw_water| {
-        let (game, report, map, _) = build_rain_yard(Wind::Calm, draw_water).expect("rain yard");
+        let (game, report, map, _) =
+            build_rain_yard_levels(Wind::Calm, draw_water).expect("rain yard");
         let tap = DepthTap::default();
         let game = game.with_contribution(Box::new(tap.contribution(EXTENT)), || {
             ContentStatus::Drawn(1)
