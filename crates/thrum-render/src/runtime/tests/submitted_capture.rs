@@ -1041,7 +1041,7 @@ fn edr_graph_retains_the_sdr_encode_only_for_an_sdr_readback() {
                 check_graph(&host, false, false);
                 let frame = submit(&mut host, &output);
                 assert!(frame.surface_presented);
-                assert!(host.try_submitted_image().unwrap().is_none());
+                assert_eq!(host.submitted_capture_usage(), None);
             }
         }
     });
