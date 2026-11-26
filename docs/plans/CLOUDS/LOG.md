@@ -888,3 +888,9 @@ belong to WP14. WP16.7 owns their knob proof. Stationary controls at the same
 yaw as the low-Sun pan show much of the same lower cloud detail on both targets.
 Chrome shows extra smearing at cloud edges during the pan, and the motion items
 remain open. The work stays on the builder branch. [Target evidence](../../../.orchestrate/evidence/CLOUDS/WP9/README.md)
+
+The planner revision on main limits WP9.7 to the eleven sky knobs. The
+post-rebase Metal check passed both endpoints for each knob. Cloud history
+applied its declared reset, the weather state and physical columns stayed
+identical, and the GPU creation ledger recorded no new work.
+[Metal evidence](../../../.orchestrate/evidence/CLOUDS/WP9/revised-knobs-metal.log)

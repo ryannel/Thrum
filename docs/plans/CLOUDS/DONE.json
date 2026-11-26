@@ -1226,7 +1226,7 @@
     {
       "id": "WP9",
       "name": "A visitor changes coverage, cloud type, wind and time of day with the controls, and the sky holds up in motion, on the Mac and in Chrome",
-      "status": "not_started",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -1304,8 +1304,8 @@
           "ask": "Can a caller that knows nothing of clouds list the knobs and set one, as the governor will? Does any pass the sky runs in `thrum-clouds` refresh on a constant cadence that is not one of these knobs?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP9/revised-knobs-metal.log",
           "verdict": "",
           "review": ""
         },
