@@ -33,8 +33,12 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
     let down = birth * input.discharge.x;
     let xy = vec2(lip, down) * vec2(2.4, 0.68);
     let span = FALL_LOOP * input.discharge.x * 0.68;
-    let rank = 0.68 * sheet_noise(xy, span, vec2(2.4), vec2(0.0))
-        + 0.32 * sheet_noise(xy, span, vec2(8.7), vec2(0.0));
+    // Broader parcels leave nearby parts of the lip together. Smaller
+    // strands within the parcel stretch at their own speeds.
+    let grouped = sheet_noise(vec2(lip * 0.015, birth), FALL_LOOP, vec2(2.7), vec2(0.0));
+    let coarse = sheet_noise(xy, span, vec2(2.4), vec2(0.0));
+    let fine = sheet_noise(xy, span, vec2(8.7), vec2(0.0));
+    let rank = 0.43 * coarse + 0.17 * fine + 0.40 * grouped;
     let pixel = max(length(dpdx(xy)), length(dpdy(xy)));
     let width = max(0.025, min(0.27, 0.10 * pixel));
     let world_dx = dpdx(point);
@@ -49,7 +53,8 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
     let broken = smoothstep(rank - 0.14 - width, rank + 0.06 + width, breakout);
     let white = mix(pow(breakout, 1.35), broken, 0.65);
     let clear = 1.0 - white;
-    let threshold = mix(rank, 0.5, smoothstep(1.0, 3.0, pixel));
+    let tear = 0.68 * coarse + 0.32 * fine;
+    let threshold = mix(tear, 0.5, smoothstep(1.0, 3.0, pixel));
     let presence = smoothstep(threshold - width, threshold + width, input.discharge.z);
     if (presence > 0.5) != solid || presence < 0.015 {
         discard;
