@@ -363,10 +363,10 @@ impl Selection {
     }
 }
 
-fn water_levels(map: &Map) -> [f64; 3] {
+fn water_levels(map: &Map) -> [u64; 3] {
     std::array::from_fn(|id| {
         let body = map.body(id).expect("island sea, lake and pond");
-        body.level + body.stage.value
+        (body.level + body.stage.value).to_bits()
     })
 }
 
