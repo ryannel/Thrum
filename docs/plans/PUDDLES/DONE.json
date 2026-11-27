@@ -598,7 +598,7 @@
     {
       "id": "WP5",
       "name": "The ground itself gets wet: paving and earth darken as the rain starts, a sheen gathers in the paving's joints and mirrors what stands on it, the ground under the roof stays dry, sand is dark where waves have run, and it dries sheen first and darkness last",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 3,
       "failed_reviews_with_repeat": 2,
       "diagnoses": 0,
@@ -680,7 +680,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/PUDDLES/WP5/shared-shore-edge/README.md#shore",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/PUDDLES/WP5-review.md"
         },
         {
@@ -704,14 +704,6 @@
           "evidence": ".orchestrate/evidence/PUDDLES/WP5/after-review/README.md#paired-cost",
           "verdict": "pass",
           "review": ".orchestrate/evidence/PUDDLES/WP5-review.md"
-        }
-      ],
-      "findings": [
-        {
-          "name": "The inland shore film ends inside the wet-sand edge",
-          "item": "WP5.7",
-          "different": "Lake and pond pore fill now matches the rain model, and the existing inner lake film is present. At a steady inland stage the film stops at 0.175 times body swash while the wetted material reaches full body swash. The split occurs without hollows.",
-          "repeat": false
         }
       ]
     },

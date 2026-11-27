@@ -859,7 +859,7 @@
         {
           "verdict": "fail",
           "commit": "0dd843d55118c5130d621e1e71e7169ff6dc852d",
-          "review": ".orchestrate/evidence/PUDDLES/WP5-review.md",
+          "review": ".orchestrate/evidence/PUDDLES/WP5-review-3.md",
           "items": {
             "WP5.1": "pass",
             "WP5.2": "pass",
@@ -896,6 +896,39 @@
             "turns": 1
           },
           "at": "2026-11-27T10:24:41Z"
+        },
+        {
+          "verdict": "pass",
+          "commit": "901c98290b417f759502e943cd55f1eab7a2431f",
+          "review": ".orchestrate/evidence/PUDDLES/WP5-review.md",
+          "items": {
+            "WP5.1": "pass",
+            "WP5.2": "pass",
+            "WP5.3": "pass",
+            "WP5.4": "pass",
+            "WP5.5": "pass",
+            "WP5.6": "pass",
+            "WP5.7": "pass",
+            "WP5.8": "pass",
+            "WP5.9": "pass"
+          },
+          "summary": "All nine WP5 items pass. At the previously failing lake column, the wet material begins at row 272 and the film at row 273, down from a 44-pixel gap. The pond edges coincide, the lake retains its inner film, and the yard shows joint-first wetting, delayed sheen on earth and fading margins as the two puddles dry.",
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 185598,
+            "cached": 7098240,
+            "output": 18927,
+            "turns": 1
+          },
+          "at": "2026-11-27T12:27:16Z"
         }
       ],
       "authorised": {
@@ -928,6 +961,13 @@
           "output": 75961,
           "turns": 1
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "901c98290b417f759502e943cd55f1eab7a2431f",
+        "review": ".orchestrate/evidence/PUDDLES/WP5-review.md",
+        "checked": "ddb41a6f17e026579226e01f7c8ac0062039616d",
+        "at": "2026-11-27T12:27:16Z"
       }
     },
     "WP6": {
