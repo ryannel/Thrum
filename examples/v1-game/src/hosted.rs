@@ -182,6 +182,16 @@ impl<T: RuntimeSetup> Game for HostedGame<T> {
     }
 
     fn apply(host: &mut Runtime, edits: ControlEdits) -> Result<(), GameError> {
+        #[cfg(all(target_os = "macos", feature = "proving"))]
+        if host.source().chart_jump.is_some() && host.source().solar_sweep.is_some() {
+            let next = host.last_submission().map_or(0, |last| last + 1);
+            let at_refresh_boundary = host
+                .governor_frame()
+                .and_then(|frame| frame.chart_position)
+                .is_none_or(|(_, position)| position == 0);
+            host.continuous_source_mut()
+                .observe_chart_submission(next, at_refresh_boundary);
+        }
         #[cfg(feature = "proving")]
         if let Some(output) = edits.interface_output {
             host.continuous_source_mut()

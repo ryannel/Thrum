@@ -1,5 +1,7 @@
 //! V1 fixture, camera and lighting policy for the engine frame runtime.
 
+#[cfg(all(target_os = "macos", feature = "proving"))]
+mod chart_proof;
 #[cfg(feature = "proving")]
 mod cloud;
 mod star_catalogue;
@@ -423,6 +425,8 @@ pub struct GameScene {
     pub(crate) solar_sweep: Option<SolarSweep>,
     #[cfg(all(target_os = "macos", feature = "proving"))]
     pub(crate) chart_jump: Option<(u64, f32)>,
+    #[cfg(all(target_os = "macos", feature = "proving"))]
+    chart_proof: chart_proof::ChartProof,
     #[cfg(feature = "proving")]
     pub(super) capture_solar_tick: Option<u64>,
     pub(super) camera_pitch: f32,
@@ -464,30 +468,22 @@ impl GameScene {
 
     fn sample_sun(&self, tick: u64, alpha: f32) -> crate::environment::SunSample {
         let offset = self.day_phase_offset;
+        #[cfg(all(target_os = "macos", feature = "proving"))]
+        let sweep = self.solar_sweep.filter(|_| self.chart_jump.is_none());
+        #[cfg(all(target_arch = "wasm32", feature = "proving"))]
+        let sweep = self.solar_sweep;
         #[cfg(all(any(target_os = "macos", target_arch = "wasm32"), feature = "proving"))]
-        let offset = self
-            .solar_sweep
-            .map_or(offset, |([first, last], [from, to])| {
-                #[cfg(target_os = "macos")]
-                if self.chart_jump.is_some() {
-                    // Enter on the second 120 Hz sample of the authored tick.
-                    if tick < first || (tick == first && alpha < 0.75) {
-                        return offset;
-                    }
-                    if tick > last {
-                        return DayCycle::offset_for_time(last, to / 24.0).unwrap_or(offset);
-                    }
-                }
-                #[expect(
-                    clippy::cast_precision_loss,
-                    reason = "a proof sweep fits within the route's bounded tick range"
-                )]
-                let progress = (tick.saturating_sub(first).min(last - first) as f32
-                    + if tick < first { 0.0 } else { alpha })
-                    / (last - first) as f32;
-                let solar = from + (to - from) * progress.clamp(0.0, 1.0);
-                DayCycle::offset_for_time(tick, solar / 24.0).unwrap_or(offset)
-            });
+        let offset = sweep.map_or(offset, |([first, last], [from, to])| {
+            #[expect(
+                clippy::cast_precision_loss,
+                reason = "a proof sweep fits within the route's bounded tick range"
+            )]
+            let progress = (tick.saturating_sub(first).min(last - first) as f32
+                + if tick < first { 0.0 } else { alpha })
+                / (last - first) as f32;
+            let solar = from + (to - from) * progress.clamp(0.0, 1.0);
+            DayCycle::offset_for_time(tick, solar / 24.0).unwrap_or(offset)
+        });
         #[cfg(all(target_os = "macos", feature = "proving"))]
         let offset = self
             .chart_jump
@@ -745,6 +741,8 @@ impl GameScene {
             solar_sweep: None,
             #[cfg(all(target_os = "macos", feature = "proving"))]
             chart_jump: None,
+            #[cfg(all(target_os = "macos", feature = "proving"))]
+            chart_proof: chart_proof::ChartProof::default(),
             #[cfg(feature = "proving")]
             capture_solar_tick: None,
             camera_pitch: 0.0,
@@ -1082,11 +1080,9 @@ impl SceneSource<PublishedPage> for GameScene {
         .with_jitter_sequence(0, [640, 360])
         .with_reconstruction(self.reconstruction != GameReconstruction::Off);
         #[cfg(all(target_os = "macos", feature = "proving"))]
-        let view = if self.chart_jump.is_some()
-            && self.solar_sweep.is_some_and(|([first, last], _)| {
-                source.tick <= last
-                    && (source.tick > first || (source.tick == first && alpha >= 0.75))
-            }) {
+        let chart_sweep = self.chart_sweep_sample(source.tick, alpha);
+        #[cfg(all(target_os = "macos", feature = "proving"))]
+        let view = if chart_sweep.is_some_and(|(_, scrubbing)| scrubbing) {
             view.with_phase_history_reset()
         } else {
             view
@@ -1111,6 +1107,10 @@ impl SceneSource<PublishedPage> for GameScene {
                 2.0
             };
         let sun = self.sample_sun(source.tick, alpha);
+        #[cfg(all(target_os = "macos", feature = "proving"))]
+        let sun = chart_sweep
+            .filter(|_| self.chart_jump.is_none_or(|(jump, _)| source.tick < jump))
+            .map_or(sun, |(sample, _)| sample);
         let sun = if let Some(tick) = self.held_solar_tick() {
             crate::environment::SunSample {
                 simulation_time_seconds: sun.simulation_time_seconds,
@@ -1427,6 +1427,8 @@ mod tests {
             solar_sweep: None,
             #[cfg(all(target_os = "macos", feature = "proving"))]
             chart_jump: None,
+            #[cfg(all(target_os = "macos", feature = "proving"))]
+            chart_proof: chart_proof::ChartProof::default(),
             #[cfg(feature = "proving")]
             capture_solar_tick: None,
             camera_pitch,
