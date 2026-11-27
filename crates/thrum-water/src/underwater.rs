@@ -62,6 +62,7 @@ impl Underwater {
         rest.is_some_and(|rest| {
             // The displayed rain field can retain ring height between evaluations.
             admission.rain
+                || (map.flow_bands().is_some() && intersects_river(map, rest))
                 || admission
                     .wake
                     .is_some_and(|wake| wake.live_wake_intersects(rest))
@@ -149,6 +150,17 @@ impl Underwater {
         let rounding = f64::from(f32::EPSILON) * 16.0 * roof.abs().max(plane.lowest.abs()).max(1.0);
         roof + rounding < plane.lowest
     }
+}
+
+// Near a flowing chart the cut must read the submitted crest. The
+// wind-only roof cannot bound a further independently phased field.
+fn intersects_river(map: &Map, [lo, hi]: [[f64; 2]; 2]) -> bool {
+    (0..super::map_gpu::BODY_LIMIT).any(|id| {
+        map.river_of(id).is_some()
+            && map.surface_bounds(id).is_some_and(|[bottom, top]| {
+                (0..2).all(|axis| bottom[axis] <= hi[axis] && top[axis] >= lo[axis])
+            })
+    })
 }
 
 fn scaled_upper(value: f64, [lo, hi]: [f64; 2]) -> f64 {

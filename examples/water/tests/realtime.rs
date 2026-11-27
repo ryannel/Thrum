@@ -198,6 +198,11 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
         ([960, 540], 8.0 * shot_seconds, 7.0, RIVER_SUBMISSIONS)
     } else if river_gauges {
         ([960, 540], 2.0 * shot_seconds, 16.0, CHANNEL_SUBMISSIONS)
+    } else if river_inspection
+        .as_ref()
+        .is_some_and(|shot| shot.name.starts_with("ledge-") || shot.name.starts_with("rock-"))
+    {
+        ([960, 540], 4.0, 20.0, MAX_SUBMISSIONS)
     } else if river_stage {
         ([1280, 720], 20.5, 8.0, CHANNEL_SUBMISSIONS)
     } else if river {

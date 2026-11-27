@@ -13,6 +13,8 @@ pub(super) fn shot() -> Option<Shot> {
         .expect("river inspection station and angle");
     let (target, start, stream) = match station {
         "pool" => ([179.3, 16.8, -63.0], 17.0, true),
+        "ledge" => ([179.0, 16.85, -52.8], 7.0, true),
+        "rock" => ([182.6, 16.40, -42.4], 7.0, true),
         "halfway" => ([282.0, 4.5, 6.5], 14.0, false),
         "tidal" => ([340.3, -0.4, 7.8], 28.7, false),
         "lake-inlet" => ([181.25, 12.5, -20.0], 8.0, true),

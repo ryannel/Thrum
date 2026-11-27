@@ -1,20 +1,20 @@
-// Make elongated openings by sampling along the flow in world metres. A
-// varying direction rotates only the kernel, so it cannot stretch a whole
-// world-space coordinate when the current turns.
+// Cross-filament holes use a world-metre kernel. Varying the current rotates
+// only that kernel, so a turn cannot shear a whole world-space coordinate.
 fn river_foam_cover(stocks: vec4<f32>, point: vec2<f32>, direction: vec2<f32>, footprint: f32) -> f32 {
-    let stock = stocks.y + 0.32 * stocks.z;
-    let cover = clamp(stock, 0.0, 1.0);
+    let cover = clamp(stocks.y + 0.16 * stocks.z, 0.0, 1.0);
     if cover < 0.0001 { return 0.0; }
-    let at = point * 4.4;
-    let axis = direction * 0.81;
-    let strand = 0.28 * foam_noise(at - axis) + 0.44 * foam_noise(at) + 0.28 * foam_noise(at + axis);
-    let opening = foam_noise(at * 0.57 + vec2(19.7, 5.3));
-    let grain = foam_noise(at * 2.2 + vec2(-9.3, 8.1));
-    let rank = 0.62 * strand + 0.24 * opening + 0.14 * grain;
-    let level = 0.12 + 0.49 * cover + 0.13 * stocks.y;
-    let strands = 1.0 - smoothstep(level - 0.08, level + 0.08, rank);
-    let resolved = sqrt(cover) * strands;
-    let filtered = cover * (0.26 + 0.28 * stocks.y);
-    return mix(resolved, filtered, smoothstep(0.11, 0.65, footprint))
-        * smoothstep(0.014, 0.072, cover);
+
+    let grain = point * 9.2;
+    let along = direction * 1.2;
+    let lace = 0.28 * foam_noise(grain - along)
+        + 0.44 * foam_noise(grain)
+        + 0.28 * foam_noise(grain + along);
+    let width = 0.055 + 0.14 * sqrt(cover);
+    let threads = 1.0 - smoothstep(0.35 * width, width, abs(lace - 0.48));
+    let openings = foam_noise(point * 3.5 + vec2(19.7, 5.3));
+    let groups = smoothstep(0.76 - 0.65 * sqrt(cover), 0.91 - 0.48 * sqrt(cover), openings);
+    let resolved = 0.83 * sqrt(cover) * threads * groups;
+    let average = 0.28 * cover;
+    let antialias = smoothstep(0.08, 0.30, footprint);
+    return mix(resolved, average, antialias) * smoothstep(0.014, 0.063, cover);
 }
