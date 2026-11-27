@@ -109,6 +109,8 @@ const STONES: [[f64; 2]; 3] = [[147.00, 66.14], [149.64, 65.52], [147.93, 66.23]
 const WALK_SECONDS: f64 = 4.4;
 const STEP_SECONDS: f64 = 0.34;
 const FOOT_IMPULSE_PER_METRE: f64 = 20.0;
+// RMS radius of the initial heel contact. The packet broadens as it propagates.
+const HEEL_RADIUS_METRES: f64 = 0.045;
 const MARKER_ID: u32 = 1;
 const FLOAT_CELL: [usize; 2] = [71, 104 - TRACK_ROWS];
 
@@ -601,7 +603,12 @@ impl Walk {
                     place[0],
                     place[1] + if self.right_foot { 0.045 } else { -0.045 },
                 ];
-                impulse(foot, FOOT_IMPULSE_PER_METRE * depth(foot), 0.065, 0);
+                impulse(
+                    foot,
+                    FOOT_IMPULSE_PER_METRE * depth(foot),
+                    HEEL_RADIUS_METRES,
+                    0,
+                );
                 self.next_step += STEP_SECONDS;
                 self.right_foot = !self.right_foot;
             }
