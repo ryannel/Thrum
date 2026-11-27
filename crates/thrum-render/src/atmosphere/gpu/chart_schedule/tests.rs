@@ -447,11 +447,11 @@ fn clock_remains_fresh_through_darkening_after_a_scrub() {
     }
 
     let mut night = ChartSchedule::default();
-    submit(&mut night, sun(-13.0), 8, false, false);
+    submit(&mut night, sun(-18.0), 8, false, false);
     for step in 1_u16..=16 {
         let frame = submit(
             &mut night,
-            sun(-13.0 - f32::from(step) * 0.02),
+            sun(-18.0 - f32::from(step) * 0.02),
             8,
             false,
             false,

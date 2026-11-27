@@ -101,7 +101,7 @@ impl Default for Tuning {
             light: 0.01,
             twilight: Some(Twilight {
                 tight_band: [-10.0_f32, 6.0].map(|degrees| degrees.to_radians().sin()),
-                widest_at: [-12.0_f32, 10.0].map(|degrees| degrees.to_radians().sin()),
+                widest_at: [-17.0_f32, 10.0].map(|degrees| degrees.to_radians().sin()),
                 sun: 0.009_f32.to_radians(),
             }),
         }
