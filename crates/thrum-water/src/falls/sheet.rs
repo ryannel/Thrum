@@ -13,7 +13,7 @@ use thrum_water_model::{Map, PathPoint};
 
 pub(in crate::falls) const ROWS: usize = 32;
 pub(crate) const PASS: &str = "waterfall sheet";
-const VERTICES_PER_SEGMENT: usize = 12 * (ROWS + 6);
+const VERTICES_PER_SEGMENT: usize = 24 * (ROWS + 3) + 36;
 const ATTRIBUTES: [wgpu::VertexAttribute; 4] =
     wgpu::vertex_attr_array![0 => Float32x4, 1 => Float32x4, 2 => Float32x4, 3 => Float32x4];
 
@@ -430,11 +430,18 @@ fn mesh(
             }
         };
         let strip = |t| [at(t, 0), at(t, 1), at(t, 2)];
+        let stations = || {
+            [-0.65, -0.33, 0.0]
+                .into_iter()
+                .chain((1..=rows).map(|row| row as f64 / rows as f64))
+        };
+        let half = strip(0.5)[1];
+        if half.discharge[2] < 0.53 {
+            filament(vertices, |fraction| at(fraction, 1), stations());
+            continue;
+        }
         let mut top = strip(-1.0);
-        for fraction in [-0.65, -0.33, 0.0]
-            .into_iter()
-            .chain((1..=rows).map(|row| row as f64 / rows as f64))
-        {
+        for fraction in stations() {
             let bottom = strip(fraction);
             stitch(vertices, top, bottom);
             top = bottom;
@@ -442,6 +449,57 @@ fn mesh(
         if segment.plunge.is_some() {
             splash(vertices, top);
         }
+    }
+}
+
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "station and geometry values are emitted as shader floats"
+)]
+fn filament(
+    vertices: &mut Vec<Vertex>,
+    sample: impl Fn(f64) -> Vertex,
+    stations: impl Iterator<Item = f64>,
+) {
+    use glam::Vec3;
+
+    let section = |fraction: f64| {
+        let mut vertex = sample(fraction);
+        let [ax, distance, az, _] = vertex.across_fraction;
+        let across = Vec3::new(ax, 0.0, az);
+        let velocity = Vec3::from_slice(&vertex.velocity_along);
+        let normal = across.cross(velocity).normalize_or_zero();
+        let reference = Vec3::new(velocity.x, 0.10, velocity.z);
+        let outward = if normal.dot(reference) >= 0.0 {
+            normal
+        } else {
+            -normal
+        };
+        let tip = 1.0 - fraction.clamp(0.0, 1.0) as f32;
+        let radius = (0.52 * vertex.discharge[3].sqrt()).min(0.046) * tip.sqrt();
+        let centre = Vec3::from_slice(&vertex.world_time) + outward * (radius + 0.025 * tip);
+        let age = vertex.world_time[3];
+        vertex.across_fraction[1] = -2.0 - distance;
+        [across, outward, -across, -outward].map(|normal| {
+            vertex.world_time = (centre + normal * radius).extend(age).to_array();
+            vertex
+        })
+    };
+    let mut top = section(-1.0);
+    for station in stations {
+        let bottom = section(station);
+        for (i, &first) in top.iter().enumerate() {
+            let next = (i + 1) % top.len();
+            vertices.extend([
+                first,
+                top[next],
+                bottom[i],
+                top[next],
+                bottom[next],
+                bottom[i],
+            ]);
+        }
+        top = bottom;
     }
 }
 
