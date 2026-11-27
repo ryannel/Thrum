@@ -1,27 +1,14 @@
 {
   "module": "WATERS",
   "design": {
-    "verdict": "changes",
-    "review": ".orchestrate/evidence/WATERS/design-review.md",
-    "commit": "a40862cb2b73c2653ad9ba3143bdbabffb2c7032",
-    "hash": "837cacfcde346c967d9fb5893e1eb7adabb4e5065cc71e700e5a8ce6c64240b4",
-    "by": "review",
-    "host": "codex",
-    "model": "gpt-6.2-astra",
-    "effort": "high",
-    "observed": {
-      "model": "gpt-6.2-astra",
-      "effort": "high"
-    },
-    "cli": "codex-cli 0.171.0-alpha.13.2",
-    "path": "headless",
-    "usage": {
-      "input": 82369,
-      "cached": 1012480,
-      "output": 6178,
-      "turns": 1
-    },
-    "at": "2026-11-27T18:14:47Z"
+    "verdict": "ok",
+    "by": "review_limit",
+    "hash": "69a313bb43f9aba157633a32dd82e0af7eaaf02e3d013356196ba5414db33214",
+    "after": [
+      ".orchestrate/evidence/WATERS/design-review-39.md",
+      ".orchestrate/evidence/WATERS/design-review.md"
+    ],
+    "at": "2026-11-27T18:18:35Z"
   },
   "work_packages": {
     "WP1": {
@@ -3501,12 +3488,12 @@
       }
     },
     "WP26": {
-      "definitions": "2e381acd00822ae862359a4eb0c0cd1bc7ac607770d6401462a3121f58a5d1ee",
+      "definitions": "b7c9016631c15659a40349e7a54f6f2fc980a374eae3ff257e66fb62cb5e6811",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 4 Must Fix find",
-        "at": "2026-11-27T18:11:29Z"
+        "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 2 Must Fix find",
+        "at": "2026-11-27T18:18:35Z"
       }
     }
   },
@@ -3730,11 +3717,15 @@
     {
       "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 4 Must Fix findings.",
       "at": "2026-11-27T18:11:29Z"
+    },
+    {
+      "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 2 Must Fix findings. That makes 2 design reviews in a row that asked for changes, so the script approves the design you leave without another review, and building starts from it.",
+      "at": "2026-11-27T18:18:35Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-27T18:11:29Z"
+    "at": "2026-11-27T18:18:35Z"
   },
   "design_history": [
     {
@@ -4697,6 +4688,29 @@
         "turns": 1
       },
       "at": "2026-11-27T18:04:28Z"
+    },
+    {
+      "verdict": "changes",
+      "review": ".orchestrate/evidence/WATERS/design-review.md",
+      "commit": "a40862cb2b73c2653ad9ba3143bdbabffb2c7032",
+      "hash": "837cacfcde346c967d9fb5893e1eb7adabb4e5065cc71e700e5a8ce6c64240b4",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6.2-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6.2-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.171.0-alpha.13.2",
+      "path": "headless",
+      "usage": {
+        "input": 82369,
+        "cached": 1012480,
+        "output": 6178,
+        "turns": 1
+      },
+      "at": "2026-11-27T18:14:47Z"
     }
   ]
 }
