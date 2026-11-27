@@ -434,6 +434,71 @@ pub fn build_surf(wind: Wind, draw_water: bool) -> Result<FoamScene, Box<dyn Err
     build_surf_paired(wind, draw_water, true)
 }
 
+/// Run the exposed shore with the beach wetness field following the water's tide.
+///
+/// # Errors
+/// Returns invalid controls, content or water declarations.
+///
+/// # Panics
+/// Panics if the already-prepared water map loses its sea row.
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "shore shader uses f32 metres"
+)]
+pub fn build_wet_shore(wind: Wind, draw_water: bool) -> Result<FoamScene, Box<dyn Error>> {
+    use thrum_water::wet_ground::{GroundClass, ShoreWetness, WetGround};
+
+    let (game, report, map, probes) = build_surf(wind, draw_water)?;
+    let profile = map_profile(true);
+    let swash = (profile.swash_ratio
+        * surf_spectrum(wind, &wind.surf_forcing())?.significant_height())
+    .min(profile.margin_height);
+    let classes = [GroundClass {
+        steepest: 1.0,
+        share: 0.69,
+        porosity: 0.96,
+        film_roughness: 0.13,
+        ..GroundClass::default()
+    }];
+    let dry = [[[0.0; 2]; 3]];
+    let mut ground = WetGround::new(None, None, &classes, 0).ok_or("wet shore field")?;
+    let wetness = move |level: f64, margin: f64| ShoreWetness {
+        bounds: [[-500.0, -500.0], [500.0, 500.0]],
+        level: level as f32,
+        swash: swash as f32,
+        margin: margin as f32,
+    };
+    ground.set_shore(Some(wetness(0.0, 0.0)));
+    assert!(ground.publish(&classes, &dry, &[]));
+    let stage_map = Arc::clone(&map);
+    let mut before = 0.0;
+    let mut margin = 0.0;
+    let game = game
+        .with_wetness(ground.provider())
+        .with_fixed_update_endpoint(move |_, step| {
+            let level = {
+                let map = stage_map.lock().expect("island tide");
+                let sea = map.body(0).expect("sea");
+                sea.level + sea.stage.value
+            };
+            // This inspection route scales drying so the ebb band
+            // recedes over a short take.
+            margin = thrum_rain_model::band_step(
+                margin,
+                before,
+                level,
+                step.as_secs_f64(),
+                0.24,
+                0.0015,
+                1.0,
+            );
+            before = level;
+            ground.set_shore(Some(wetness(level, margin)));
+            assert!(ground.publish(&classes, &dry, &[]));
+        });
+    Ok((game, report, map, probes))
+}
+
 /// Build a same-view, same-forcing arm with or without the surf capability.
 /// # Errors
 /// Returns invalid controls, content or water declarations.
@@ -479,6 +544,18 @@ pub fn build_rain_yard(wind: Wind, draw_water: bool) -> Result<RainYardScene, Bo
     build_yard(wind, draw_water, YardRoute::Game)
 }
 
+/// Build the yard with matched wet-ground provider and control arms.
+///
+/// # Errors
+/// Propagates scene construction errors.
+pub fn build_rain_ground(
+    wind: Wind,
+    draw_water: bool,
+    wetness: bool,
+) -> Result<RainYardScene, Box<dyn Error>> {
+    build_yard(wind, draw_water, YardRoute::WetGround { wetness })
+}
+
 /// Build the still-level yard for the authored fill, depth and float proofs.
 ///
 /// # Errors
@@ -513,6 +590,7 @@ pub fn build_rain_bands_cost(
 enum YardRoute {
     FootfallCost { fine: bool },
     Game,
+    WetGround { wetness: bool },
     Levels,
     Cost,
     BandsCost { rings: bool },
@@ -537,19 +615,32 @@ fn build_yard(
     let mut profile = thrum_rain_model::Profile::default();
     if matches!(
         route,
-        YardRoute::Game | YardRoute::BandsCost { .. } | YardRoute::FootfallCost { .. }
+        YardRoute::Game
+            | YardRoute::WetGround { .. }
+            | YardRoute::BandsCost { .. }
+            | YardRoute::FootfallCost { .. }
     ) {
         profile.edge_width = 0.45;
     }
-    let mut rain = rain_yard::Yard::prepare(profile)?;
-    rain.draw_float = matches!(route, YardRoute::Game | YardRoute::Levels);
+    let wetness = match route {
+        YardRoute::WetGround { wetness } => Some(wetness),
+        _ => None,
+    };
+    let mut rain = rain_yard::Yard::prepare(profile, wetness)?;
+    rain.draw_float = matches!(
+        route,
+        YardRoute::Game | YardRoute::WetGround { .. } | YardRoute::Levels
+    );
     rain.draw_rings = matches!(
         route,
-        YardRoute::Game | YardRoute::BandsCost { rings: true } | YardRoute::FootfallCost { .. }
+        YardRoute::Game
+            | YardRoute::WetGround { .. }
+            | YardRoute::BandsCost { rings: true }
+            | YardRoute::FootfallCost { .. }
     );
     rain.measure_regions = matches!(route, YardRoute::BandsCost { .. });
     rain.footfalls = match route {
-        YardRoute::Game | YardRoute::FootfallCost { fine: true } => {
+        YardRoute::Game | YardRoute::WetGround { .. } | YardRoute::FootfallCost { fine: true } => {
             Some(rain_yard::FootfallLevels::WithFine)
         }
         YardRoute::FootfallCost { fine: false } => Some(rain_yard::FootfallLevels::NearAndFar),
@@ -567,7 +658,7 @@ fn build_yard(
 /// Propagates invalid authored ground or shelter.
 pub fn measure_rain_yard_preparation() -> Result<(Duration, usize, usize), Box<dyn Error>> {
     let start = std::time::Instant::now();
-    let yard = rain_yard::Yard::prepare(thrum_rain_model::Profile::default())?;
+    let yard = rain_yard::Yard::prepare(thrum_rain_model::Profile::default(), None)?;
     let elapsed = start.elapsed();
     let (cells, hollows) = yard.size();
     Ok((elapsed, cells, hollows))
@@ -601,6 +692,9 @@ fn build_island(
         wind.forcing()
     };
     let yard = rain.is_some();
+    let wet_yard = rain
+        .as_ref()
+        .is_some_and(rain_yard::Yard::has_wet_ground_views);
     let mut map = prepare_island_map(&forcing, surf, rain.as_ref())?;
     if let Some(yard) = &rain
         && yard.draw_rings
@@ -683,7 +777,9 @@ fn build_island(
             } else {
                 "Island view"
             },
-            0.0..=if marker.is_some() {
+            0.0..=if wet_yard {
+                15.0
+            } else if marker.is_some() {
                 11.0
             } else if yard {
                 8.0
@@ -819,6 +915,18 @@ fn build_island(
     let mut meshes = placements(&map, !surf_route, 0.0);
     if yard {
         meshes.extend(rain_yard::placements());
+        if wet_yard {
+            meshes.push(
+                MeshPlacement::new("meshes/lens-panel", "textures/white")
+                    .at([147.6, 18.92, 68.035])
+                    .scale(0.82)
+                    .material(thrum_app::sky::CookedMaterial {
+                        base_colour: [0.32, 0.30, 0.27, 1.0],
+                        roughness: 0.49,
+                        metalness: 1.0,
+                    }),
+            );
+        }
     }
     let (game, lease) = game.with_meshes_and_texture_lease(
         meshes,

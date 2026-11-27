@@ -27,6 +27,7 @@ pub(super) fn prepare(
     device: &crate::runtime::DeviceSite,
     atmosphere: crate::shaders::AtmosphereVariant,
     cloud: Option<&crate::atmosphere::SunOpticalDepth>,
+    wetness: Option<&'static str>,
     shadowed: SunShadows,
     selection: ShadowSelection,
     (soft_sun, ambient): (bool, bool),
@@ -44,6 +45,7 @@ pub(super) fn prepare(
         ),
         atmosphere,
         cloud: crate::shaders::CloudVariant::from_provider(cloud),
+        wetness,
         shadows: shadowed,
         sun: selection.sun,
         traced_lamps: selection.lamps,
@@ -348,6 +350,7 @@ pub(crate) fn main_source(variant: crate::shaders::SceneVariant) -> String {
         source
     };
     let source = cloud_variant(source, variant.cloud);
+    let source = crate::wetness::compose(source, variant.wetness);
     let source = if variant.lighting == Lighting::Clear {
         source
     } else {

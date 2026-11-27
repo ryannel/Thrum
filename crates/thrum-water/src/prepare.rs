@@ -21,6 +21,8 @@ use thrum_render::{
 };
 use wgpu::util::DeviceExt;
 
+const WET_GROUND_BINDING: u32 = 26;
+
 pub(crate) const SEA_RING_HALF_WIDTH: i32 = 32;
 // A joined chart uses the same half-metre lattice as the sea throughout
 // the near view. This keeps the two displaced triangulations coincident
@@ -45,6 +47,9 @@ pub(super) struct Prepared {
     pub(super) pipeline: wgpu::RenderPipeline,
     pub(super) river_pipeline: Option<wgpu::RenderPipeline>,
     pub(super) film: Option<wgpu::RenderPipeline>,
+    pub(super) surface_sampled_textures: Option<usize>,
+    wet_ground: Option<thrum_render::wetness::PreparedWetness>,
+    standing_film: bool,
     pub(super) underwater: Option<UnderwaterPipelines>,
     pub(super) parameters: wgpu::Buffer,
     pub(super) group: wgpu::BindGroup,
@@ -69,6 +74,7 @@ pub(super) struct UnderwaterPipelines {
 }
 
 struct SurfacePipelines {
+    sampled_textures: Option<usize>,
     sheet: wgpu::RenderPipeline,
     river: Option<wgpu::RenderPipeline>,
     film: Option<wgpu::RenderPipeline>,
@@ -98,11 +104,16 @@ fn declaration(gather: bool) -> AfterOpaquePass {
         },
     }
 }
-fn film_declaration() -> AfterOpaquePass {
+fn film_declaration(standing_water: bool) -> AfterOpaquePass {
     AfterOpaquePass {
         name: "shore film".into(),
         depth: true,
         write_depth: false,
+        images: if standing_water {
+            optics::sampled(0)
+        } else {
+            thrum_render::contribution::AfterOpaqueImages::None
+        },
         ..declaration(false)
     }
 }
@@ -148,6 +159,9 @@ impl Prepared {
                 }
                 if let Some(gather) = &self.gather {
                     entries.push(optics::entry(&gather.buffer));
+                }
+                if let Some(wet) = &self.wet_ground {
+                    entries.push(wet.entry(WET_GROUND_BINDING));
                 }
                 if let Some(cut) = &self.lens_cut {
                     entries.extend(cut.render_entries(&self.mesh));
@@ -214,7 +228,7 @@ impl Prepared {
             graph.after_opaque.push(optics::declaration());
         }
         if self.film.is_some() {
-            let mut film = film_declaration();
+            let mut film = film_declaration(self.standing_film);
             film.accesses.clone_from(&surface.accesses);
             graph.after_opaque.push(film);
         }
@@ -375,9 +389,26 @@ pub(super) fn new(
         .environment_products_with_cloud()
         .ok_or("water needs the scene's physical environment")?;
     let library = environment.shader_source.replace("@group(0)", "@group(2)");
-    let gather = profile
-        .optics
-        .map(|optics| Gather::new(surface, &environment, optics, &library, profile.underwater));
+    let projection = surface
+        .wetness
+        .filter(|wet| wet.uses(super::wet_ground::SOURCE));
+    let standing_film = mapped
+        && projection.is_some()
+        && profile.optics.is_some()
+        && map_gpu
+            .as_ref()
+            .is_some_and(|map| map.hollows_entry().is_some());
+    let wet_ground = projection.filter(|_| standing_film || mapped && whitewater.is_some());
+    let gather = profile.optics.map(|optics| {
+        Gather::new(
+            surface,
+            &environment,
+            optics,
+            &library,
+            profile.underwater,
+            standing_film,
+        )
+    });
     let parameters = device.create_buffer(&wgpu::BufferDescriptor {
         label: Some("water parameters"),
         size: size_of::<Parameters>() as u64,
@@ -465,6 +496,12 @@ pub(super) fn new(
         bindings.push(cache.surface_entry());
     }
     bind_optics(gather.as_ref(), &mut entries, &mut bindings);
+    if let Some(wet) = wet_ground {
+        entries.push(thrum_render::wetness::PreparedWetness::layout(
+            WET_GROUND_BINDING,
+        ));
+        bindings.push(wet.entry(WET_GROUND_BINDING));
+    }
     if let Some(rain) = &rain {
         entries.extend(Rain::bindings());
         bindings.extend(rain.entries());
@@ -501,6 +538,7 @@ pub(super) fn new(
         tidal_grid,
         rain.is_some(),
         flow,
+        (wet_ground, standing_film),
     );
     let lens_cut = lens_buffers
         .as_ref()
@@ -525,6 +563,9 @@ pub(super) fn new(
         pipeline: pipelines.sheet,
         river_pipeline: pipelines.river,
         film: pipelines.film,
+        surface_sampled_textures: pipelines.sampled_textures,
+        wet_ground: wet_ground.cloned(),
+        standing_film,
         underwater: pipelines.underwater,
         parameters,
         group,
@@ -661,6 +702,8 @@ fn bind_optics<'a>(
     }
 }
 
+const UNUSED_UNDERSIDE: &str = "fn water_underside(input: VertexOut, n: vec3<f32>, v: vec3<f32>, variance: f32, foam: f32) -> vec4<f32> { return vec4(0.0); }";
+
 fn surface_pipelines(
     surface: &SceneSurface<'_>,
     layout: &wgpu::BindGroupLayout,
@@ -675,6 +718,7 @@ fn surface_pipelines(
     tidal_grid: bool,
     rain: bool,
     flow: Option<(thrum_water_model::FlowBandsProfile, u32)>,
+    (wet_ground, standing_film): (Option<&thrum_render::wetness::PreparedWetness>, bool),
 ) -> (
     SurfacePipelines,
     Option<thrum_render::runtime::PipelineInput<wgpu::ShaderModule>>,
@@ -769,15 +813,44 @@ fn surface_pipelines(
     let river = SurfaceDraw::River {
         gather: gather.is_some(),
     };
-    let ordinary = module(
-        source.clone()
-            + "fn water_underside(input: VertexOut, n: vec3<f32>, v: vec3<f32>, variance: f32, foam: f32) -> vec4<f32> { return vec4(0.0); }",
-    );
+    let ordinary_source = source.clone() + UNUSED_UNDERSIDE;
+    #[cfg(not(target_arch = "wasm32"))]
+    let sampled_textures = rain.then(|| sampled_textures(&ordinary_source, "water_fragment"));
+    #[cfg(target_arch = "wasm32")]
+    let sampled_textures = None;
+    let ordinary = module(ordinary_source);
     let pipeline = create_pipeline(surface, layout, environment, &ordinary, sheet);
     let river_pipeline =
         has_rivers.then(|| create_pipeline(surface, layout, environment, &ordinary, river));
-    let film = (foam.is_some() && shore)
-        .then(|| create_pipeline(surface, layout, environment, &ordinary, SurfaceDraw::Film));
+    let film = if let Some(wet) = wet_ground.filter(|_| standing_film || foam.is_some() && shore) {
+        let shader = if standing_film {
+            compose_rain_film(source.clone(), wet, foam.is_some(), rain)
+        } else {
+            compose_shore_support(&source, wet)
+        };
+        let shader = module(shader + UNUSED_UNDERSIDE);
+        Some(create_pipeline(
+            surface,
+            layout,
+            environment,
+            &shader,
+            SurfaceDraw::Film {
+                standing_water: standing_film,
+            },
+        ))
+    } else {
+        (foam.is_some() && shore).then(|| {
+            create_pipeline(
+                surface,
+                layout,
+                environment,
+                &ordinary,
+                SurfaceDraw::Film {
+                    standing_water: false,
+                },
+            )
+        })
+    };
     let shader = under.then(|| {
         let sheet = if has_rivers {
             include_str!("underwater/river_sheet.wgsl")
@@ -798,6 +871,7 @@ fn surface_pipelines(
     });
     (
         SurfacePipelines {
+            sampled_textures,
             sheet: pipeline,
             river: river_pipeline,
             film,
@@ -974,11 +1048,94 @@ fn shader_source(
     )
 }
 
+#[cfg(not(target_arch = "wasm32"))]
+fn sampled_textures(source: &str, entry: &str) -> usize {
+    use wgpu::naga;
+    let module = naga::front::wgsl::parse_str(source).expect("water WGSL");
+    let info = naga::valid::Validator::new(
+        naga::valid::ValidationFlags::all(),
+        naga::valid::Capabilities::all(),
+    )
+    .validate(&module)
+    .expect("validate water surface");
+    let index = module
+        .entry_points
+        .iter()
+        .position(|point| point.name == entry)
+        .expect("water surface entry");
+    module
+        .global_variables
+        .iter()
+        .filter(|(handle, global)| {
+            matches!(
+                module.types[global.ty].inner,
+                naga::TypeInner::Image {
+                    class: naga::ImageClass::Sampled { .. } | naga::ImageClass::Depth { .. },
+                    ..
+                }
+            ) && !info.get_entry_point(index)[*handle].is_empty()
+        })
+        .count()
+}
+
+fn compose_shore_support(source: &str, wet: &thrum_render::wetness::PreparedWetness) -> String {
+    const REACH: &str = "let reach = 0.175 * row.swash;";
+    let (before, after) = source.split_once(REACH).expect("shore film support");
+    let field = wet.shader(3, WET_GROUND_BINDING);
+    format!(
+        "{before}let authored = wet_shore(ground.xz);
+    let reach = select(0.175 * row.swash, authored.y, authored.w > 0.0);{after}\n{field}"
+    )
+}
+
+fn compose_rain_film(
+    mut source: String,
+    wet: &thrum_render::wetness::PreparedWetness,
+    shore: bool,
+    rain: bool,
+) -> String {
+    const APPEARANCE: &str = include_str!("foam/appearance.wgsl");
+    const VERTEX: &str = "@vertex fn film_vertex(";
+    const SHORE: &str = "    let footprint = length(ground - view.camera_xyz_time.xyz)";
+    let (_, film) = APPEARANCE.split_once(VERTEX).expect("film entry point");
+    let (header, tail) = film.split_once(SHORE).expect("film support");
+    if shore {
+        source.truncate(source.find(VERTEX).expect("shore film entry point"));
+    } else {
+        source.push_str("\n@group(1) @binding(0) var shore_depth: texture_depth_2d;\n");
+    }
+    source.push_str(VERTEX);
+    source.push_str(header);
+    source.push_str(
+        "    let normal = film_normal(pixel.xy, ground);
+    let wet = ground_wetness(ground, normal);
+    if wet.hollows_ground {
+        if wet.cover <= 0.0 { discard; }
+        return standing_film(pixel.xy, ground, normal, wet);
+    }
+",
+    );
+    if shore {
+        source.push_str(SHORE);
+        source.push_str(tail);
+    } else {
+        source.push_str("    discard;\n    return Output(vec4(0.0), vec2(0.0), 0.0);\n}\n");
+    }
+    source.push_str(&wet.shader(3, WET_GROUND_BINDING));
+    source.push_str(include_str!("wet_film.wgsl"));
+    source.push_str(if rain {
+        include_str!("wet_film_rings.wgsl")
+    } else {
+        "fn film_rings(_ground: vec3<f32>, _n: vec3<f32>, _footprint: f32) -> vec2<f32> { return vec2(0.0); }"
+    });
+    source
+}
+
 #[derive(Clone, Copy)]
 enum SurfaceDraw {
     Sheet { mapped: bool, gather: bool },
     River { gather: bool },
-    Film,
+    Film { standing_water: bool },
     Lens,
 }
 
@@ -995,18 +1152,24 @@ fn create_pipeline(
             (declaration(gather), "water_vertex", "water_fragment")
         }
         SurfaceDraw::River { gather } => (declaration(gather), "water_vertex", "river_fragment"),
-        SurfaceDraw::Film => (film_declaration(), "film_vertex", "film_fragment"),
+        SurfaceDraw::Film { standing_water } => (
+            film_declaration(standing_water),
+            "film_vertex",
+            "film_fragment",
+        ),
         SurfaceDraw::Lens => (
             declaration(true),
             "underwater_vertex",
             "underwater_fragment",
         ),
     };
-    let film = matches!(draw, SurfaceDraw::Film);
+    let film = matches!(draw, SurfaceDraw::Film { .. });
     let underwater = matches!(draw, SurfaceDraw::Lens);
     let mapped = matches!(
         draw,
-        SurfaceDraw::Sheet { mapped: true, .. } | SurfaceDraw::River { .. } | SurfaceDraw::Film
+        SurfaceDraw::Sheet { mapped: true, .. }
+            | SurfaceDraw::River { .. }
+            | SurfaceDraw::Film { .. }
     );
     let name = if underwater {
         super::underwater::DRAW

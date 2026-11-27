@@ -39,7 +39,11 @@ fn main() {
                     water_scene::island::build_dive(wind, site, true).map(|(game, _)| game)
                 }
                 Settings::RainYard(wind) => {
-                    water_scene::island::build_rain_yard(wind, true).map(|(game, _, _, _)| game)
+                    water_scene::island::build_rain_ground(wind, true, true)
+                        .map(|(game, _, _, _)| game)
+                }
+                Settings::WetShore(wind) => {
+                    water_scene::island::build_wet_shore(wind, true).map(|(game, _, _, _)| game)
                 }
                 Settings::River(wind) => {
                     #[cfg(not(target_arch = "wasm32"))]

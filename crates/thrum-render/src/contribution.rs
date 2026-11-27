@@ -255,6 +255,8 @@ pub struct SceneSurface<'a> {
     /// The prepared light group and shader include the shared `cloud_factor`
     /// operation. Volume contributions apply it once per lit march sample.
     pub sun_optical_depth: bool,
+    /// Optional ground wetness field shared with the forward material.
+    pub wetness: Option<&'a crate::wetness::PreparedWetness>,
     pub(crate) cloud: Option<&'a crate::atmosphere::CloudPrepared>,
     pub(crate) environment: Option<&'a crate::atmosphere::AtmospherePrepared>,
     pub(crate) directional: &'a wgpu::Buffer,

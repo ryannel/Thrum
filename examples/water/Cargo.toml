@@ -133,3 +133,16 @@ name = "flow_bands_gpu"
 
 [[test]]
 name = "river_foam_gpu"
+
+# PUDDLES WP5 checks these Metal targets.
+[[test]]
+name = "wet_provider_gpu"
+
+[[test]]
+name = "wet_look_gpu"
+
+[[test]]
+name = "standing_film_gpu"
+
+[[test]]
+name = "wet_shore_gpu"

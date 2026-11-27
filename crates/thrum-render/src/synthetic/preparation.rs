@@ -135,12 +135,18 @@ impl PreparedSynthetic {
                     < 9 + 2 * u32::from(shadow_enabled)
                         + u32::from(scene.sun_optical_depth.is_some())
                         + u32::from(has_ground_band)
+                        + u32::from(scene.wetness.is_some())
                         + 2 * u32::from(soft_sun_enabled)
                         + u32::from(ambient_selection.radius.is_some())
                     || limits.max_samplers_per_shader_stage < 3 + u32::from(shadow_enabled))
         {
             return Err(AbiError::DeviceLimits.into());
         }
+        let wetness = scene
+            .wetness
+            .as_ref()
+            .map(|field| crate::wetness::PreparedWetness::new(device, queue, field))
+            .transpose()?;
         let cloud = scene
             .sun_optical_depth
             .as_ref()
@@ -357,6 +363,9 @@ impl PreparedSynthetic {
                 wgpu::ShaderStages::FRAGMENT,
             ));
         }
+        if wetness.is_some() {
+            light_entries.push(crate::wetness::PreparedWetness::forward_layout());
+        }
         let map_light_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("synthetic directional and clustered sources"),
             entries: &light_entries,
@@ -487,6 +496,7 @@ impl PreparedSynthetic {
             indices: &cluster_indices,
             atmosphere: atmosphere.as_ref(),
             cloud: cloud.as_ref(),
+            wetness: wetness.as_ref(),
             aerial: None,
         }
         .bind(
@@ -711,6 +721,10 @@ impl PreparedSynthetic {
                 crate::shaders::AtmosphereVariant::new(atmosphere.is_some(), air_shadow.is_some())
             },
             scene.sun_optical_depth.as_ref(),
+            scene
+                .wetness
+                .as_ref()
+                .map(crate::wetness::WetnessProvider::source),
             scene_source::SunShadows::from(shadow.is_some()),
             shadow_selection,
             (soft_sun.is_some(), ambient.is_some()),
@@ -1034,6 +1048,7 @@ impl PreparedSynthetic {
             pending_view: None,
             frame_revision: 0,
             cloud,
+            wetness,
             directional_buffer: directional,
             environment_light,
             local_light_buffer: local_lights,

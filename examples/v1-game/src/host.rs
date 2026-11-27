@@ -333,6 +333,7 @@ impl GameSetup {
             None,
             shapes,
             sheet_source,
+            None,
         ))
         .await
         .map_err(|error| error.to_string())
@@ -366,9 +367,44 @@ impl GameSetup {
         config: FrameConfig,
         rows: Option<thrum_asset_gpu::rows::CookedRows>,
     ) -> Result<Runtime, runtime::FrameError> {
-        let mut host =
-            Box::pin(self.prepare_scene(device, queue, capabilities, config, rows, None, None))
-                .await?;
+        let mut host = Box::pin(self.prepare_scene(
+            device,
+            queue,
+            capabilities,
+            config,
+            rows,
+            None,
+            None,
+            None,
+        ))
+        .await?;
+        host.finish_preparation();
+        Ok(host)
+    }
+
+    /// Prepare the game with a ground wetness provider on its forward surfaces.
+    ///
+    /// # Errors
+    /// Refuses invalid device, scene or field preparation.
+    pub async fn prepare_with_wetness(
+        self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        capabilities: &DeviceCapabilities,
+        config: FrameConfig,
+        wetness: thrum_render::wetness::WetnessProvider,
+    ) -> Result<Runtime, runtime::FrameError> {
+        let mut host = Box::pin(self.prepare_scene(
+            device,
+            queue,
+            capabilities,
+            config,
+            None,
+            None,
+            None,
+            Some(wetness),
+        ))
+        .await?;
         host.finish_preparation();
         Ok(host)
     }
@@ -392,6 +428,7 @@ impl GameSetup {
             config,
             None,
             Some(sky),
+            None,
             None,
         ))
         .await?;
@@ -420,6 +457,7 @@ impl GameSetup {
             None,
             None,
             Some(source),
+            None,
         ))
         .await?;
         host.finish_preparation();
@@ -582,6 +620,7 @@ impl GameSetup {
         rows: Option<thrum_asset_gpu::rows::CookedRows>,
         shapes: Option<crate::PlacedSky>,
         sheet_source: Option<thrum_asset_gpu::CookedSource>,
+        wetness: Option<thrum_render::wetness::WetnessProvider>,
     ) -> Result<Runtime, runtime::FrameError> {
         use runtime::FrameError;
         let setup = self;
@@ -623,6 +662,7 @@ impl GameSetup {
                 .await;
         }
         let mut scene = GameScene::scene(config.render_extent, setup)?;
+        scene.wetness = wetness;
         #[cfg(not(target_arch = "wasm32"))]
         let rows = if rows.is_none() && setup.cooked_mesh_rows == MeshRowSource::Cooked {
             Some(

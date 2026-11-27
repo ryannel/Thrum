@@ -24,6 +24,7 @@ RECORDS = {'first-frame': ROOT / 'tests/fixtures/waters/first-frame-cost.json',
            'river': ROOT / '.orchestrate/evidence/RIVERS/WP4/river-cost.json',
            'rain-puddles': ROOT / 'tests/fixtures/puddles/yard-water-cost.json',
            'rain-rings': ROOT / 'tests/fixtures/puddles/rain-rings-cost.json',
+           'rain-ground': ROOT / '.orchestrate/evidence/PUDDLES/WP5/rain-ground-cost.json',
            'rain-footfall': ROOT / '.orchestrate/evidence/PUDDLES/WP8/rain-footfall-cost.json',
            'under': ROOT / 'tests/fixtures/waters/dive-cost-prior.json',
            'optics': ROOT / 'tests/fixtures/waters/optics-cost-prior.json'}
@@ -1359,6 +1360,77 @@ def compare_footfall_cost(row, control, comparison, fine=False):
                               f'{control["labelling_cpu_ms"]:.3f} ms adds a 256² window.')
 
 
+def rain_ground_cost():
+    output = ROOT / 'tmp/puddles-wp5/cost'
+    output.mkdir(parents=True, exist_ok=True)
+    store = output / 'store'
+    env = dict(os.environ, THRUM_WATER_PROOF='rain-ground-cost',
+               THRUM_WATER_OUTPUT=str(output), THRUM_ASSET_STORE=str(store), THRUM_REQUIRE_GPU='1')
+    run(['cargo', 'run', '--release', '--locked', '--offline', '-p', 'thrum-cook', '--',
+         'cook', 'examples/water/assets', str(store)])
+    run(['cargo', 'test', '--release', '--locked', '--offline', '-p', 'water-scene',
+         '--test', 'proof_gpu'], env=env)
+    data = json.loads((output / 'rain-ground-cost.json').read_text())
+    data['commit'] = run(['git', 'rev-parse', 'HEAD'], capture_output=True, text=True).stdout.strip()
+    data['load'] = run(['uptime'], capture_output=True, text=True).stdout.strip()
+    assert data['extent'] == [2560, 1440] and data['target'] == 'mac-metal'
+    assert data['capture'] is False and data['rain_rate_mm_h'] == 10
+    control, active = data['arms']
+    assert control['provider'] is False and active['provider'] is True
+    assert control['levels'] == active['levels'] and any(active['levels']), 'paired soaked water levels'
+    assert active['forward_sampled_textures'] == control['forward_sampled_textures'] + 1
+    for arm in data['arms']:
+        assert 0 < arm['forward_sampled_textures'] <= arm['sampled_texture_limit']
+        assert 0 < arm['surface_sampled_textures'] <= arm['sampled_texture_limit']
+        arm['summary'] = []
+        for tick_frame in (False, True):
+            frames = [f for f in arm['frames'] if f['tick_frame'] == tick_frame]
+            assert len(frames) >= 5 and all(f['gpu_ms'] > 0 for f in frames)
+            passes = {}
+            for name in set().union(*(frame['passes_ms'] for frame in frames)):
+                passes[name.split(': ')[-1]] = statistics.median(
+                    frame['passes_ms'][name] for frame in frames if name in frame['passes_ms'])
+            assert 'synthetic forward opaque' in passes, sorted(passes)
+            assert ('shore film' in passes) == arm['provider']
+            arm['summary'].append(dict(tick_frame=tick_frame, passes_ms=passes,
+                gpu_ms=statistics.median(f['gpu_ms'] for f in frames),
+                completion_upper_ms=statistics.median(f['completion_upper_ms'] for f in frames),
+                investigations=[]))
+    for row, baseline in zip(active['summary'], control['summary'], strict=True):
+        for name in ('synthetic forward opaque', 'water gather', 'water surface'):
+            new = row['passes_ms'][name]
+            old = baseline['passes_ms'][name]
+            if new > old * 1.25:
+                cause = {
+                    'synthetic forward opaque': 'Production wetness adds samplerless material field reads before lighting.',
+                    'water gather': 'The rain film requires scenery radiance and distance for reflected rays.',
+                    'water surface': 'The mapped surface retains the same sampled inputs. This difference is shared-load variation.',
+                }[name]
+                row['investigations'].append(f'{name} was {new:.3f} ms against {old:.3f} ms. {cause}')
+        for arm in (row, baseline):
+            if max(arm['gpu_ms'], arm['completion_upper_ms']) > 1000 / 120:
+                largest = max(arm['passes_ms'], key=arm['passes_ms'].get)
+                arm['investigations'].append(
+                    f'GPU sum {arm["gpu_ms"]:.3f} ms, queue completion {arm["completion_upper_ms"]:.3f} ms. '
+                    f'{largest} was the largest timed pass at {arm["passes_ms"][largest]:.3f} ms. '
+                    'Completion includes synchronous observer polling and shared-device wait.')
+    prior_path = RECORDS['rain-rings']
+    prior = json.loads(prior_path.read_text())
+    data['wp4'] = {'path': str(prior_path.relative_to(ROOT)), 'commit': prior['commit'],
+        'yard': prior['arms'][-1]['views'][0]['summary'],
+        'comparison': 'WP4 used 50 mm/h and the overhead yard view. WP5 uses 10 mm/h and an eye-height view.'}
+    browser = ROOT / '.orchestrate/evidence/PUDDLES/WP5/chrome/run.json'
+    if browser.exists():
+        chrome = json.loads(browser.read_text())
+        if chrome.get('passed'):
+            data['chrome'] = {'layout': chrome['ground']['layout'], 'commit': chrome['commit'],
+                              'wasm': chrome['wasm'], 'path': str(browser.relative_to(ROOT))}
+    evidence = RECORDS['rain-ground']
+    evidence.parent.mkdir(parents=True, exist_ok=True)
+    evidence.write_text(json.dumps(data, indent=2) + '\n')
+    print(f'PASS paired Metal wet ground cost: {evidence.relative_to(ROOT)}')
+
+
 def rain_footfall_cost():
     output = ROOT / 'tmp/puddles-wp8/cost'
     output.mkdir(parents=True, exist_ok=True)
@@ -1459,6 +1531,9 @@ def main():
         return
     if args.scene == 'surf':
         measure_surf()
+        return
+    if args.scene == 'rain-ground':
+        rain_ground_cost()
         return
     if args.scene == 'rain-footfall':
         rain_footfall_cost()

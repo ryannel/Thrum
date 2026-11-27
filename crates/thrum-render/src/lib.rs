@@ -43,6 +43,7 @@ mod test_device;
 mod timestamp_permit;
 pub mod timing;
 mod visibility;
+pub mod wetness;
 
 mod shared_gpu;
 pub(crate) use shared_gpu::SharedGpu;

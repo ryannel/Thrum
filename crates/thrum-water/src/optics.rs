@@ -191,6 +191,7 @@ pub(super) struct Gather {
     pipeline: wgpu::ComputePipeline,
     fields: regions::Shallows,
     dispatch: [u32; 2],
+    film: bool,
     pub(super) underwater: bool,
     pub(super) under: bool,
 }
@@ -230,6 +231,7 @@ impl Gather {
         profile: Optics,
         library: &str,
         underwater: bool,
+        film: bool,
     ) -> Self {
         let device = surface.device;
         let buffer = device.create_buffer(&wgpu::BufferDescriptor {
@@ -282,6 +284,7 @@ impl Gather {
             fields: regions::Shallows::default(),
             dispatch: [0; 2],
             underwater,
+            film,
             under: false,
         }
     }
@@ -313,6 +316,15 @@ impl Gather {
             for row in &mut inputs.mask {
                 for cell in row.iter_mut().flatten() {
                     *cell |= SOURCE | UNDER;
+                }
+            }
+        }
+        if self.film {
+            inputs.reach_slope_scene[2] = 1.0;
+            inputs.dispatch = [0, 0, frame.render_extent[0], frame.render_extent[1]];
+            for row in &mut inputs.mask {
+                for cell in row.iter_mut().flatten() {
+                    *cell |= SOURCE;
                 }
             }
         }

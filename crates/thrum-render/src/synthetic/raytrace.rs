@@ -403,6 +403,7 @@ impl PreparedSynthetic {
                 indices: &self.cluster_index_buffer,
                 atmosphere: self.atmosphere.as_ref(),
                 cloud: self.cloud.as_ref(),
+                wetness: self.wetness.as_ref(),
                 aerial: None,
             }
             .bind(

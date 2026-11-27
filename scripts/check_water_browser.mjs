@@ -8,14 +8,14 @@ import zlib from 'node:zlib';
 import {installWasmReceipt,readWasmReceipt} from './wasm_receipt.mjs';
 
 const mode = process.argv[process.argv.indexOf('--case') + 1];
-if (!['first-frame','frames','fixed','realtime','island','bodies','wake','foam','surf','channel','river','river-calm','rain-puddles','rain-rings','rain-footfall','under'].includes(mode)) throw Error('use --case first-frame|frames|fixed|realtime|island|bodies|wake|foam|surf|channel|river|river-calm|rain-puddles|rain-rings|rain-footfall|under');
+if (!['first-frame','frames','fixed','realtime','island','bodies','wake','foam','surf','channel','river','river-calm','rain-puddles','rain-rings','rain-footfall','rain-ground','under'].includes(mode)) throw Error('use --case first-frame|frames|fixed|realtime|island|bodies|wake|foam|surf|channel|river|river-calm|rain-puddles|rain-rings|rain-footfall|rain-ground|under');
 const opticsRoute = mode === 'fixed' ? process.env.THRUM_WATER_BROWSER_OPTICS : undefined;
 const diveRoute = ['fixed','realtime'].includes(mode) ? process.env.THRUM_WATER_BROWSER_DIVE : undefined;
 const surfInspection = process.env.THRUM_WATER_INSPECT_SURF === '1' && ['fixed','realtime'].includes(mode);
 const handoffCut = surfInspection && mode === 'realtime' && process.env.THRUM_WATER_ROUTE === 'handoff-cut';
 const [width,height] = mode === 'under' ? [48,27]
   : mode === 'realtime' && diveRoute ? [1280,720]
-  : ['rain-rings','rain-footfall'].includes(mode) ? [960,540]
+  : ['rain-rings','rain-footfall','rain-ground'].includes(mode) ? [960,540]
   : [2560,1440];
 const output = path.resolve(process.env.THRUM_WATER_OUTPUT ?? `tmp/waters-M3/${mode}-${Date.now()}`);
 await fs.mkdir(output,{recursive:true});
@@ -307,6 +307,9 @@ const islandObserver = `
     if(d.label==='water field')__island.bindings=d.entries;
   });
   wrap(GPUDevice.prototype,'createRenderPipeline',(pipeline,d)=>{
+    const entries=()=>__island.pipelines.get(d.layout)?.flatMap(layout=>__island.layouts.get(layout)??[])??[];
+    if(d.label==='prepared opaque synthetic role')__island.forwardEntries=entries();
+    if(d.label==='shore film')__island.filmEntries=entries();
     if(d.label!=='water surface')return;
     __island.surface=pipeline;
     __island.surfaceEntries=__island.pipelines.get(d.layout).flatMap(layout=>__island.layouts.get(layout)??[]);
@@ -608,8 +611,8 @@ try {
   await cdp.call('Page.enable',{},sid);await cdp.call('Runtime.enable',{},sid);
   await installWasmReceipt(cdp,sid);
   const surfRoute=mode==='surf'||surfInspection;
-  await cdp.call('Page.addScriptToEvaluateOnNewDocument',{source:observer+(mode==='under'?lensObserver:'')+(['island','surf','channel','river','river-calm','rain-puddles','rain-rings','rain-footfall'].includes(mode)?islandObserver:'')+`\ndocument.addEventListener('DOMContentLoaded',()=>{document.querySelector('canvas').width=${width};document.querySelector('canvas').height=${height};});`},sid);
-  const route=diveRoute??opticsRoute??(surfRoute?(handoffCut?'?surf=gale':'?surf=trade'):mode==='foam'?'?foam=calm&speed=6&view=overhead&wake-bodies=1':mode==='wake'?'?wake=calm&speed=6&view=overhead&wake-bodies=1':mode==='bodies'?'?bodies=trade&speed=5':mode==='island'?'?island=trade':mode==='channel'?'?channel=trade':mode==='river-calm'?'?river=calm':mode==='river'?'?river=trade':['rain-puddles','rain-rings','rain-footfall'].includes(mode)?'?rain=calm':mode==='under'?lensRoute('sea','baseline'):'');
+  await cdp.call('Page.addScriptToEvaluateOnNewDocument',{source:observer+(mode==='under'?lensObserver:'')+(['island','surf','channel','river','river-calm','rain-puddles','rain-rings','rain-footfall','rain-ground'].includes(mode)?islandObserver:'')+`\ndocument.addEventListener('DOMContentLoaded',()=>{document.querySelector('canvas').width=${width};document.querySelector('canvas').height=${height};});`},sid);
+  const route=diveRoute??opticsRoute??(surfRoute?(handoffCut?'?surf=gale':'?surf=trade'):mode==='foam'?'?foam=calm&speed=6&view=overhead&wake-bodies=1':mode==='wake'?'?wake=calm&speed=6&view=overhead&wake-bodies=1':mode==='bodies'?'?bodies=trade&speed=5':mode==='island'?'?island=trade':mode==='channel'?'?channel=trade':mode==='river-calm'?'?river=calm':mode==='river'?'?river=trade':['rain-puddles','rain-rings','rain-footfall','rain-ground'].includes(mode)?'?rain=calm':mode==='under'?lensRoute('sea','baseline'):'');
   result.route=route;
   const navigate=async search=>{
     await cdp.call('Page.navigate',{url:url+search},sid);
@@ -622,7 +625,7 @@ try {
     return readWasmReceipt(cdp,sid,url+'scene_bg.wasm',result.wasm,wasm.length);
   };
   result.instantiated_wasm=await navigate(route);
-  if(['rain-puddles','rain-rings','rain-footfall'].includes(mode))await evaluate("game.edit_control('rain.rate',0)");
+  if(['rain-puddles','rain-rings','rain-footfall','rain-ground'].includes(mode))await evaluate("game.edit_control('rain.rate',0)");
   const fixedSurf=surfRoute&&mode!=='realtime';
   const lensClockOrigin=async()=>{
     const {origin}=await until(async()=>{
@@ -631,7 +634,7 @@ try {
     },'the lens page clock origin');
     return origin;
   };
-  let now=mode==='under'?await lensClockOrigin():fixedSurf?await evaluate('performance.now()'):0;
+  let now=mode==='under'?await lensClockOrigin():(fixedSurf||mode==='rain-ground')?await evaluate('performance.now()'):0;
   const drive=async delta=>{now+=delta;await evaluate(`game.frame(${now})`);};
   const capture=async(name,delta=1000/120,probe=false)=>{
     await until(()=>evaluate('game.frame_ready()'),'free frame slot');
@@ -765,6 +768,71 @@ try {
     assert(ordinary.frame.tick===impact.frame.tick&&ordinary.frame.alpha===impact.frame.alpha,'impact arms sampled different endpoints');
     assert(impactPixels>16&&impact.frame.lens_passes.cut===1&&impact.frame.lens_passes.composition===1,'the lake impact did not wet the lens');
     assert(lensFailures.length===0,lensFailures.join('; '));
+  }else if(mode==='rain-ground'){
+    await until(async()=>{
+      const status=await evaluate(`game.frame(${now});game.report()`);
+      return /^Cooked generation [0-9]+ drawn/.test(status);
+    },'cooked wet ground drawn');
+    await evaluate("game.edit_control('camera.island',2);game.edit_control('sun.elevation',35);game.edit_control('rain.time_scale',600)");
+    const steps=async count=>{
+      for(let i=0;i<count;i++){
+        await until(()=>evaluate('game.frame_ready()'),'wet ground frame slot');
+        await drive(1000/60);
+      }
+    };
+    const source=await fs.readFile('crates/thrum-water/src/wet_ground.wgsl','utf8');
+    // Read the production ground function against the texture bound for the captured render.
+    const evaluator=await fs.readFile('scripts/wet_ground_browser.wgsl','utf8');
+    const sample=()=>evaluate(`(async()=>{
+      const d=__devices.at(-1);
+      const field=__island.bindings.find(e=>e.binding===26);
+      if(!field)throw Error('the water film has no shared wetness texture');
+      const code=${JSON.stringify(source+evaluator)};
+      const module=d.createShaderModule({code});
+      const stage=GPUShaderStage.COMPUTE;
+      const entries=[{binding:0,visibility:stage,buffer:{type:'storage'}},
+         {binding:26,visibility:stage,texture:{sampleType:'unfilterable-float'}}];
+      const layout=d.createBindGroupLayout({entries});
+      const pipeline=await d.createComputePipelineAsync({layout:d.createPipelineLayout({bindGroupLayouts:[layout]}),
+        compute:{module,entryPoint:'probe_wet_ground'}});
+      const size=48;
+      const buffer=d.createBuffer({size,usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_SRC});
+      const readback=d.createBuffer({size,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ});
+      const bind=d.createBindGroup({layout,entries:[{binding:0,resource:{buffer}},field]});
+      const encoder=d.createCommandEncoder(), pass=encoder.beginComputePass();
+      pass.setPipeline(pipeline);pass.setBindGroup(0,bind);pass.dispatchWorkgroups(1);pass.end();
+      encoder.copyBufferToBuffer(buffer,0,readback,0,size);d.queue.submit([encoder.finish()]);
+      await readback.mapAsync(GPUMapMode.READ);
+      const values=Array.from(new Float32Array(readback.getMappedRange()));
+      readback.unmap();readback.destroy();buffer.destroy();
+      return {joint:values.slice(0,4),face:values.slice(4,8),shelter:values.slice(8,12)};
+    })()`);
+    await steps(2);
+    await capture('ground-dry',0);
+    const dry=await sample();
+    await evaluate("game.edit_control('rain.rate',10)");
+    await steps(21);
+    await capture('ground-wet',0);
+    const wet=await sample();
+    await evaluate("game.edit_control('rain.rate',0);game.edit_control('rain.drying',100)");
+    await steps(55);
+    await capture('ground-dried',0);
+    const dried=await sample();
+    assert(dry.joint[0]===0&&dry.joint[1]===0,'joint starts dry');
+    assert(wet.joint[0]>0.05&&wet.joint[1]>0&&wet.joint[2]>wet.face[2],
+      `wetness should darken exposed paving and reach its joints first: ${JSON.stringify(wet)}`);
+    assert(wet.shelter[0]===0&&wet.shelter[1]===0,'sheltered point must stay dry');
+    assert(dried.joint[0]<wet.joint[0]*0.1&&dried.joint[2]===0,'film and then pores dry');
+    assert(new Set(result.frames.map(frame=>frame.sha256_rgba)).size===3,'submitted ground states must differ');
+    const layout=await evaluate(`(()=>{
+      const device=__devices.at(-1), stage=GPUShaderStage.FRAGMENT;
+      const count=entries=>entries.filter(e=>e.texture&&(e.visibility&stage)).length;
+      return {forward:count(__island.forwardEntries),surface:count(__island.surfaceEntries),
+        film:count(__island.filmEntries),limit:device.limits.maxSampledTexturesPerShaderStage};
+    })()`);
+    assert(layout.forward>0&&layout.surface>0&&layout.film>0&&
+      [layout.forward,layout.surface,layout.film].every(count=>count<=layout.limit),'portable layouts');
+    result.ground={dry,wet,dried,layout};
   }else if(mode==='rain-footfall'){
     await until(async()=>{
       const status=await evaluate(`game.frame(${now});game.report()`);

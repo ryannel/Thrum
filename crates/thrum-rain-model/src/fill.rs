@@ -198,6 +198,21 @@ impl RainState {
         &self.band
     }
 
+    /// Fill over the area held under a hollow's mark.
+    pub fn held_fill(&self, tree: &Tree, class: &GroundClass, hollow: usize) -> f64 {
+        let held_capacity = class.pores
+            * tree
+                .catchment
+                .band(hollow, f64::NEG_INFINITY, self.mark[hollow])
+                .0 as f64
+            * tree.ground().spacing().powi(2);
+        if held_capacity > 0.0 {
+            (self.under[hollow] / held_capacity).clamp(0.0, 1.0)
+        } else {
+            0.0
+        }
+    }
+
     /// The wetness at a point (x, y, z) on a hollows body's ground: full pores and no
     /// film under a puddle; on held ground the fill of the pores under its hollow's mark
     /// and no film; elsewhere the class's stores read at the point. Ground above a
@@ -237,7 +252,8 @@ impl RainState {
             return Some(base);
         }
         let level = self.level(tree, self.holder(tree, label));
-        if g.heights()[i] < level {
+        let pit = tree.node(label).lower;
+        if level > pit && point[1] < level {
             return Some(crate::Wetness {
                 pores: 1.0,
                 surface: 0.0,
@@ -245,17 +261,14 @@ impl RainState {
             });
         }
         let l = label as usize;
-        let fill = crate::band_fill(point[1] - level, self.band[l]);
-        if g.heights()[i] < self.mark[l] {
-            let pores = ground.classes[class].pores
-                * tree.catchment.band(l, f64::NEG_INFINITY, self.mark[l]).0 as f64
-                * g.spacing().powi(2);
+        let fill = if self.band[l] > 0.0 {
+            crate::band_fill(point[1] - level, self.band[l])
+        } else {
+            0.0
+        };
+        if self.mark[l] > pit && point[1] < self.mark[l] {
             let held = crate::Wetness {
-                pores: if pores > 0.0 {
-                    (self.under[l] / pores).clamp(0.0, 1.0)
-                } else {
-                    0.0
-                },
+                pores: self.held_fill(tree, &ground.classes[class], l),
                 surface: 0.0,
                 cover: 0.0,
             };

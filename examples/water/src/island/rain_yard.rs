@@ -14,7 +14,7 @@ use thrum_water::{
     query::{BodyQuery, QueryAnswer, QueryPoint},
 };
 use thrum_water_model::{
-    Bed, Body, BodyKind, HollowOptics, Hollows, Impulse, Map, NO_HOLLOW, RainBands,
+    Bed, Body, BodyKind, Exposure, HollowOptics, Hollows, Impulse, Map, NO_HOLLOW, RainBands,
     RainBandsProfile, RateHistory, RingTable, Stage,
 };
 
@@ -36,6 +36,10 @@ pub(super) fn camera(index: usize) -> Camera {
             let [x, z] = STONES[index - 9].map(|coordinate| coordinate as f32);
             Camera::look_at([x, 19.74, z + 1.73], [x, 18.04, z], 59.0)
         }
+        12 => Camera::look_at([153.65, 19.82, 66.0], [152.15, 18.78, 68.05], 56.0),
+        13 => Camera::look_at([146.15, 18.62, 64.82], [149.0, 18.42, 66.0], 59.0),
+        14 => Camera::look_at([147.45, 19.82, 65.70], [147.7, 18.10, 65.94], 61.0),
+        15 => Camera::look_at([144.85, 19.82, 64.8], [149.25, 18.73, 66.3], 56.0),
         _ => Camera::look_at([149.0, 33.12, 64.94], [149.0, 18.12, 65.0], 45.0),
     }
 }
@@ -102,6 +106,7 @@ const SIZE: [usize; 2] = [200, 160];
 const BODY: usize = 3;
 const TRACK_ROWS: usize = 60;
 const PAVING: usize = 1;
+const PROP: usize = 2;
 // Cross both puddles on the camera side of the post and floating marker.
 const WALK_ENDPOINTS: [[f64; 2]; 2] = [[147.0, 66.39], [149.64, 66.47]];
 // Two drops have room to travel along each basin. The third starts
@@ -224,6 +229,9 @@ pub(super) struct Yard {
     patches: [GroundPatch; 2],
     canopy: Arc<Canopy>,
     stores: GroundStores,
+    wet_ground: Option<thrum_water::wet_ground::WetGround>,
+    wet_classes: Option<[thrum_water::wet_ground::GroundClass; 3]>,
+    wet_rows: Vec<thrum_water::wet_ground::HollowWetness>,
     levels: Vec<f64>,
     replies: super::RainYardReplies,
     pub(super) draw_float: bool,
@@ -233,6 +241,10 @@ pub(super) struct Yard {
 }
 
 impl Yard {
+    pub(super) fn has_wet_ground_views(&self) -> bool {
+        self.stores.classes().len() > PROP
+    }
+
     pub(super) fn size(&self) -> (usize, usize) {
         (SIZE.iter().product(), self.levels.len())
     }
@@ -280,6 +292,10 @@ impl Yard {
         marker: Option<crate::floating::YardFloat>,
         mut readout: impl FnMut(&mut Controls, f64) + 'static,
     ) -> SkyGame {
+        let game = match &self.wet_ground {
+            Some(wet) => game.with_wetness(wet.provider()),
+            None => game,
+        };
         let float = self.float();
         let displayed_float = float.clone();
         let mailbox = water.query_mailbox();
@@ -391,7 +407,10 @@ impl Yard {
         crate::floating::YardFloat::new(ground.centre(index), ground.heights()[index])
     }
 
-    pub(super) fn prepare(profile: Profile) -> Result<Self, Box<dyn Error>> {
+    pub(super) fn prepare(
+        profile: Profile,
+        wet_look: Option<bool>,
+    ) -> Result<Self, Box<dyn Error>> {
         // The floor of each cell is sampled from the very triangles the
         // opaque pass will draw. The roof is a separate first-hit receiver.
         let mut triangles = super::mesh_triangles(
@@ -446,20 +465,72 @@ impl Yard {
             prepare_patch(0, TRACK_ROWS)?,
             prepare_patch(TRACK_ROWS, SIZE[1])?,
         ];
-        let track = GroundClass {
-            soak: 9.0 / 3600.0,
-            percolation: 3.0 / 3600.0,
-            pores: 0.008,
-            relief: 0.0005,
-            porosity: 0.55,
-            ..GroundClass::bare(0.0)
-        };
-        let stores = GroundStores::new(&[track, GroundClass::bare(0.0)])?;
+        let film_classes = [
+            GroundClass {
+                soak: 15.0 / 3600.0,
+                percolation: 2.0 / 3600.0,
+                pores: 0.003,
+                relief: 0.00085,
+                share: 0.68,
+                porosity: 0.84,
+                steepest: 0.34,
+                film_roughness: 0.19,
+            },
+            GroundClass {
+                soak: 2.0 / 3600.0,
+                percolation: 0.4 / 3600.0,
+                pores: 0.00045,
+                relief: 0.00062,
+                share: 0.47,
+                porosity: 0.65,
+                steepest: 0.16,
+                film_roughness: 0.075,
+            },
+            GroundClass {
+                soak: 4.0 / 3600.0,
+                percolation: 2.0 / 3600.0,
+                pores: 0.00065,
+                relief: 0.00018,
+                share: 0.46,
+                porosity: 0.42,
+                steepest: 0.16,
+                film_roughness: 0.16,
+            },
+        ];
+        let legacy = [
+            GroundClass {
+                soak: 9.0 / 3600.0,
+                percolation: 3.0 / 3600.0,
+                pores: 0.008,
+                relief: 0.0005,
+                porosity: 0.55,
+                ..GroundClass::bare(0.0)
+            },
+            GroundClass::bare(0.0),
+        ];
+        let stores = GroundStores::new(if wet_look.is_some() {
+            &film_classes[..]
+        } else {
+            &legacy
+        })?;
         let count = patches.iter().map(|patch| patch.tree.hollow_count()).sum();
+        let wet_classes = wet_look
+            .filter(|&enabled| enabled)
+            .map(|_| wet_classes(&film_classes));
+        let wet_ground = wet_classes
+            .as_ref()
+            .map(|classes| {
+                prepare_wet_ground(&canopy, &patches, classes, count)
+                    .ok_or("yard wetness exceeds the render projection")
+            })
+            .transpose()?;
         let mut yard = Self {
             patches,
             canopy: Arc::new(canopy),
             stores,
+            wet_ground,
+            wet_classes,
+            wet_rows: Vec::with_capacity(if wet_classes.is_some() { count } else { 0 }),
             levels: Vec::with_capacity(count),
             replies: Arc::default(),
             draw_float: true,
@@ -468,6 +539,7 @@ impl Yard {
             footfalls: None,
         };
         yard.refresh_levels();
+        yard.publish_wetness();
         Ok(yard)
     }
 
@@ -476,6 +548,40 @@ impl Yard {
         for patch in &self.patches {
             self.levels.extend(patch.rain.levels(&patch.tree));
         }
+    }
+
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "GPU projection of rain-model state"
+    )]
+    fn publish_wetness(&mut self) {
+        let Some((wet_ground, classes)) = self.wet_ground.as_mut().zip(self.wet_classes.as_ref())
+        else {
+            return;
+        };
+        self.wet_rows.clear();
+        for (class, patch) in self.patches.iter().enumerate() {
+            for hollow in 0..patch.tree.hollow_count() {
+                let level = self.levels[self.wet_rows.len()];
+                self.wet_rows.push(thrum_water::wet_ground::HollowWetness {
+                    level: level as f32,
+                    mark: patch.rain.marks()[hollow] as f32,
+                    margin: patch.rain.bands()[hollow] as f32,
+                    held_fill: patch.rain.held_fill(
+                        &patch.tree,
+                        &self.stores.classes()[class],
+                        hollow,
+                    ) as f32,
+                });
+            }
+        }
+        let stores = [PROP, 0, PAVING].map(|class| {
+            std::array::from_fn(|reach| {
+                let store = self.stores.store(class, reach);
+                [store.surface as f32, store.fill as f32]
+            })
+        });
+        assert!(wet_ground.publish(classes, &stores, &self.wet_rows));
     }
 
     pub(super) fn body(&self) -> Result<Body, Box<dyn Error>> {
@@ -544,10 +650,93 @@ impl Yard {
         }
         self.stores.step(weather.rain, step)?;
         self.refresh_levels();
+        self.publish_wetness();
         map.set_levels(BODY, &self.levels)
             .map_err(|error| format!("{error:?}"))?;
         Ok(())
     }
+}
+
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "authored yard values in GPU metres"
+)]
+fn wet_classes(classes: &[GroundClass]) -> [thrum_water::wet_ground::GroundClass; 3] {
+    [PROP, 0, PAVING].map(|index| {
+        let class = classes[index];
+        let pattern = if index == PAVING {
+            // The opaque yard's mesh and albedo share the same half-metre joints.
+            thrum_water::wet_ground::ReliefPattern {
+                period: [0.5; 2],
+                bank: 0.05,
+                elevation: [0.0; 2],
+            }
+        } else if index == 0 {
+            // The two ruts leave a crown as high as the track shoulders.
+            thrum_water::wet_ground::ReliefPattern {
+                elevation: [18.064, 18.11],
+                ..thrum_water::wet_ground::ReliefPattern::default()
+            }
+        } else {
+            thrum_water::wet_ground::ReliefPattern::default()
+        };
+        thrum_water::wet_ground::GroundClass {
+            relief: class.relief as f32,
+            steepest: class.steepest as f32,
+            share: class.share as f32,
+            porosity: class.porosity as f32,
+            film_roughness: class.film_roughness as f32,
+            pattern,
+        }
+    })
+}
+
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "yard dimensions and bed in GPU units"
+)]
+fn prepare_wet_ground(
+    canopy: &Canopy,
+    patches: &[GroundPatch; 2],
+    classes: &[thrum_water::wet_ground::GroundClass],
+    count: usize,
+) -> Option<thrum_water::wet_ground::WetGround> {
+    use thrum_water::wet_ground::{GroundCell, HollowsGround, WetGround};
+    let mut cells = Vec::with_capacity(SIZE.iter().product());
+    let mut offset = 0;
+    for (class, patch) in patches.iter().enumerate() {
+        let bed = patch.tree.ground().heights();
+        cells.extend(
+            bed.iter()
+                .zip(patch.tree.labels())
+                .map(|(&bed, &label)| GroundCell {
+                    bed: bed as f32,
+                    hollow: if label == NO_HOLLOW {
+                        NO_HOLLOW
+                    } else {
+                        label + offset
+                    },
+                    pit: if label == NO_HOLLOW {
+                        bed as f32
+                    } else {
+                        patch.tree.node(label).lower as f32
+                    },
+                    class: (class + 1) as u8,
+                }),
+        );
+        offset += patch.tree.hollow_count() as u32;
+    }
+    WetGround::new(
+        canopy.canopy_grid(),
+        Some(HollowsGround {
+            origin: ORIGIN.map(|v| v as f32),
+            spacing: CELL as f32,
+            size: SIZE.map(|v| v as u32),
+            cells,
+        }),
+        classes,
+        count,
+    )
 }
 
 #[derive(Default)]
@@ -694,7 +883,8 @@ mod tests {
 
     #[test]
     fn yard_fills_and_parts_with_stable_map_identity() {
-        let mut yard = Yard::prepare(Profile::default()).expect("prepare authored yard triangles");
+        let mut yard =
+            Yard::prepare(Profile::default(), None).expect("prepare authored yard triangles");
         let mut map = super::super::prepare_island_map(
             &super::super::Wind::Calm.forcing(),
             None,

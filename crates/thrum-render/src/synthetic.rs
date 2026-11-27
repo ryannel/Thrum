@@ -141,6 +141,8 @@ pub struct SyntheticScene {
     /// Optional Sun-path optical-depth provider. Presence is fixed at prepare
     /// time. Metadata and same-sized contents may change on the live frame.
     pub sun_optical_depth: Option<SunOpticalDepth>,
+    /// Optional ground wetness field. Its presence and shape are fixed at preparation.
+    pub wetness: Option<crate::wetness::WetnessProvider>,
     /// Allocate a world-space cloud sky overlay for a scene contribution.
     pub sky_overlay: bool,
     /// Nonempty storage-buffer material table.
@@ -249,6 +251,7 @@ impl SyntheticScene {
             lamp_shadows: false,
             ambient_occlusion_radius: None,
             sun_optical_depth: None,
+            wetness: None,
             sky_overlay: false,
             materials: Vec::new(),
             instances: Vec::new(),
@@ -311,6 +314,7 @@ impl SyntheticScene {
             .collect();
         Ok(Self {
             sun_optical_depth: None,
+            wetness: None,
             sky_overlay: false,
             materials,
             instances,
@@ -550,6 +554,7 @@ pub struct PreparedSynthetic {
     temporal: temporal::TemporalInputs,
     taau: Option<taau::Taau>,
     cloud: Option<CloudPrepared>,
+    wetness: Option<crate::wetness::PreparedWetness>,
     capabilities: DeviceCapabilities,
     classes: TextureClasses,
     owner: Arc<()>,
@@ -1396,6 +1401,11 @@ impl PreparedSynthetic {
         {
             return Err(RenderError::InvalidLighting);
         }
+        match (&self.wetness, &scene.wetness) {
+            (None, None) => {}
+            (Some(prepared), Some(provider)) if prepared.accepts(provider) => {}
+            _ => return Err(RenderError::WetnessFieldLayout),
+        }
         match (&self.cloud, &scene.sun_optical_depth) {
             (None, None) => {}
             (Some(cloud), Some(field)) if cloud.accepts(field) => {}
@@ -1520,6 +1530,9 @@ impl PreparedSynthetic {
         self.dropped_light_references = self.clusters.dropped_references;
         self.presentation_light_clamps = clamps;
         self.background = background;
+        if let Some(wetness) = &mut self.wetness {
+            wetness.upload(queue);
+        }
         if let (Some(cloud), Some(field)) = (&mut self.cloud, &scene.sun_optical_depth) {
             cloud.update(
                 queue,

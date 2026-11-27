@@ -72,6 +72,7 @@ wasm-bindgen-futures = "=0.4.79"
 web-sys = { version = "=0.3.106", features = ["HtmlCanvasElement", "Performance", "Window", "console"] }
 
 [dev-dependencies]
+thrum-water = { path = "../../crates/thrum-water" }
 thrum-asset-gpu = { path = "../../crates/thrum-asset-gpu", features = ["fault-probe"] }
 # The view-volume witnesses need counters when Cargo runs their named test targets.
 thrum-render = { path = "../../crates/thrum-render", features = ["creation-counters"] }
@@ -284,3 +285,7 @@ required-features = ["thrum-render/creation-counters"]
 [[test]]
 name = "clouds_depth_contract_gpu"
 path = "tests/placed/clouds_depth_contract_gpu.rs"
+
+# PUDDLES WP5 reads back the shared wetness evaluator on Metal.
+[[test]]
+name = "wet_provider_gpu"

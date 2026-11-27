@@ -160,6 +160,7 @@ impl PreparedSynthetic {
             secondary_surfaces: Vec::new(),
             secondary_views: &self.secondary_handles,
             sun_optical_depth: self.cloud.is_some(),
+            wetness: self.wetness.as_ref(),
             cloud: self.cloud.as_ref(),
             environment: self.atmosphere.as_ref(),
             directional: &self.directional_buffer,

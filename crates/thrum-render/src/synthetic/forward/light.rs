@@ -15,6 +15,7 @@ pub(in crate::synthetic) struct LightBindings<'a> {
     pub(in crate::synthetic) indices: &'a wgpu::Buffer,
     pub(in crate::synthetic) atmosphere: Option<&'a crate::atmosphere::AtmospherePrepared>,
     pub(in crate::synthetic) cloud: Option<&'a crate::atmosphere::CloudPrepared>,
+    pub(in crate::synthetic) wetness: Option<&'a crate::wetness::PreparedWetness>,
     pub(in crate::synthetic) aerial: Option<AerialBindings<'a>>,
 }
 
@@ -104,6 +105,9 @@ impl LightBindings<'_> {
         }
         if let Some(band) = self.cloud.and_then(|cloud| cloud.band.as_ref()) {
             entries.extend(band.entries());
+        }
+        if let Some(wetness) = self.wetness {
+            entries.push(wetness.forward_entry());
         }
         if let Some(structure) = structure {
             entries.push(wgpu::BindGroupEntry {

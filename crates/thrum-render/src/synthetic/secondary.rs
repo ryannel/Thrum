@@ -394,6 +394,10 @@ impl SecondaryPrepared {
                 crate::shaders::CloudVariant::Absent,
                 crate::atmosphere::CloudPrepared::variant,
             ),
+            wetness: prepared
+                .wetness
+                .as_ref()
+                .map(crate::wetness::PreparedWetness::source),
             shadows: prepared.shadow.is_some().into(),
             sun: crate::capabilities::SunShadowMethod::Maps,
             traced_lamps: false,
@@ -1006,6 +1010,7 @@ pub(crate) fn composed_source(variant: crate::shaders::SceneVariant) -> String {
         )
     };
     let source = super::scene_source::cloud_variant(shader_source(&scene), variant.cloud);
+    let source = crate::wetness::compose(source, variant.wetness);
     if variant.lighting == crate::atmosphere::overlay::Lighting::Clear {
         source
     } else {

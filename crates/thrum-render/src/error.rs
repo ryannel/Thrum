@@ -46,6 +46,8 @@ pub enum RenderError {
     GridInstanceCount,
     /// Cloud optical depth field does not match the prepared scene.
     CloudFieldLayout,
+    /// The scene changed the prepared wetness provider.
+    WetnessFieldLayout,
     /// Cloud optical depth exceeds the device texture extent.
     CloudTextureExtent,
     /// Instance count does not match the prepared scene.
@@ -169,6 +171,9 @@ impl fmt::Display for RenderError {
             Self::RayPreparation => f.write_str("Could not prepare the scene ray structure"),
             Self::GridInstanceCount => {
                 f.write_str("Synthetic grid requires between 1 and 1,000,000 instances")
+            }
+            Self::WetnessFieldLayout => {
+                f.write_str("wetness field changed without scene preparation")
             }
             Self::CloudFieldLayout => {
                 f.write_str("Cloud optical depth field does not match the prepared scene")

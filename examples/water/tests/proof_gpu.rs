@@ -1,5 +1,7 @@
 //! Opt-in submitted-output capture and paired GPU measurement driver.
 #[cfg(target_os = "macos")]
+mod ground_inspection;
+#[cfg(target_os = "macos")]
 mod optics_cost;
 #[cfg(target_os = "macos")]
 mod rain_cost;
@@ -35,7 +37,9 @@ fn settings() -> Settings {
 #[cfg(target_os = "macos")]
 fn island_wind() -> Option<Wind> {
     match settings() {
-        Settings::Island { wind, .. } | Settings::Surf(wind) => Some(wind),
+        Settings::Island { wind, .. } | Settings::Surf(wind) | Settings::WetShore(wind) => {
+            Some(wind)
+        }
         _ => None,
     }
 }
@@ -60,7 +64,7 @@ fn river_cost_view() -> usize {
 
 #[cfg(target_os = "macos")]
 fn surf_route() -> bool {
-    matches!(settings(), Settings::Surf(_))
+    matches!(settings(), Settings::Surf(_) | Settings::WetShore(_))
 }
 
 #[cfg(target_os = "macos")]
@@ -82,7 +86,7 @@ fn wake_route() -> bool {
 fn whitewater() -> bool {
     match settings() {
         Settings::Island { foam, .. } => foam,
-        Settings::Surf(_) => true,
+        Settings::Surf(_) | Settings::WetShore(_) => true,
         Settings::Floating(floating) => floating.wake.is_some_and(|wake| wake.whitewater),
         Settings::OpenSea
         | Settings::OpticsSea(_)
@@ -112,6 +116,11 @@ fn proof_game(water: bool) -> (thrum_app::sky::SkyGame, water_scene::SharedRepor
         Settings::RainYard(wind) => {
             let (game, report, _, _) =
                 water_scene::island::build_rain_yard(wind, water).expect("rain yard");
+            (game, report)
+        }
+        Settings::WetShore(wind) => {
+            let (game, report, _, _) =
+                water_scene::island::build_wet_shore(wind, water).expect("wet shore");
             (game, report)
         }
         Settings::River(wind) => {
@@ -212,6 +221,29 @@ fn driver(gpu: &thrum_test_support::Gpu) {
     let mode = std::env::var("THRUM_WATER_PROOF").expect("mode");
     let directory = PathBuf::from(std::env::var("THRUM_WATER_OUTPUT").expect("output"));
     std::fs::create_dir_all(&directory).expect("output folder");
+    if mode == "rain-ground-cost" {
+        std::fs::write(
+            directory.join("rain-ground-cost.json"),
+            serde_json::to_vec_pretty(&ground_inspection::cost(gpu)).expect("cost JSON"),
+        )
+        .expect("cost record");
+        return;
+    }
+    let wet_shore = match settings() {
+        Settings::WetShore(wind) => Some(wind),
+        _ => None,
+    };
+    if mode == "fixed"
+        && (wet_shore.is_some() || std::env::var_os("THRUM_WATER_WET_GROUND_FIXED").is_some())
+    {
+        std::fs::write(
+            directory.join("fixed.json"),
+            serde_json::to_vec_pretty(&ground_inspection::fixed(gpu, &directory, wet_shore))
+                .expect("checkpoints JSON"),
+        )
+        .expect("fixed record");
+        return;
+    }
     if mode == "rain-rings-inspection" {
         rain_inspection::sequences(gpu, &directory);
         return;

@@ -1,0 +1,149 @@
+struct GroundWetness {
+    pores: f32,
+    surface: f32,
+    cover: f32,
+    class_index: u32,
+    hollows_ground: bool,
+}
+
+fn wet_load(index: u32) -> vec4<f32> {
+    let width = textureDimensions(wetness_field).x;
+    return textureLoad(wetness_field, vec2<i32>(vec2(index % width, index / width)), 0);
+}
+
+fn wet_column(cell: vec2<i32>, y: f32, size: vec2<i32>, start: u32) -> f32 {
+    if any(cell < vec2(0)) || any(cell >= size) { return 1.0; }
+    let layers = wet_load(start + u32(cell.y * size.x + cell.x));
+    return select(1.0, layers.y, y < layers.x) * select(1.0, layers.w, y < layers.z);
+}
+
+fn wet_exposure(point: vec3<f32>, header: vec4<f32>) -> f32 {
+    let size = vec2<i32>(header.yz);
+    if any(size == vec2(0)) || point.y >= header.x { return 1.0; }
+    let canopy = wet_load(1u);
+    let p = (point.xz - canopy.xy) / canopy.z;
+    let bounds = wet_load(6u);
+    if any(p < bounds.xy) || any(p >= bounds.zw) { return 1.0; }
+    let half_width = 0.5 * canopy.w / canopy.z;
+    let start = u32(header.w);
+    if half_width == 0.0 { return wet_column(vec2<i32>(floor(p)), point.y, size, start); }
+    let lo = p - half_width;
+    let hi = p + half_width;
+    let first = vec2<i32>(floor(lo));
+    let last = vec2<i32>(floor(hi));
+    var sum = 0.0;
+    for (var z = first.y; z <= last.y; z += 1) {
+        for (var x = first.x; x <= last.x; x += 1) {
+            let cell = vec2(x, z);
+            let area = max(vec2(0.0), min(vec2<f32>(cell) + 1.0, hi) - max(vec2<f32>(cell), lo));
+            sum += area.x * area.y * wet_column(cell, point.y, size, start);
+        }
+    }
+    return min(1.0, sum / (4.0 * half_width * half_width));
+}
+
+fn wet_class_start(class_index: u32) -> u32 { return 7u + 4u * class_index; }
+
+fn wet_reach(first: vec4<f32>, quarter: vec2<f32>, exposure: f32) -> vec2<f32> {
+    if exposure >= 0.5 { return mix(first.zw, first.xy, 2.0 * exposure - 1.0); }
+    if exposure >= 0.25 { return mix(quarter, first.zw, 4.0 * exposure - 1.0); }
+    return quarter * (4.0 * exposure);
+}
+
+fn wet_pattern(point: vec2<f32>, period: vec2<f32>, bank: f32) -> f32 {
+    let repeats = point / max(period, vec2(1e-6));
+    let dist = abs(repeats - round(repeats)) * period;
+    let spacing = select(vec2(1e10), dist, period > vec2(0.0));
+    return smoothstep(0.0, bank, min(spacing.x, spacing.y));
+}
+
+fn wet_band(above: f32, margin: f32) -> f32 {
+    if above <= 0.0 { return 1.0; }
+    return max(0.0, 1.0 - above / max(margin, 1e-20));
+}
+
+fn wet_shore(point: vec2<f32>) -> vec4<f32> {
+    let shore = wet_load(5u);
+    if shore.w == 0.0 { return shore; }
+    let bounds = wet_load(4u);
+    return select(vec4(0.0), shore, all(point >= bounds.xy) && all(point <= bounds.zw));
+}
+
+fn ground_wetness(point: vec3<f32>, normal: vec3<f32>) -> GroundWetness {
+    let header = wet_load(0u);
+    let lattice = wet_load(2u);
+    var cell = vec4(0.0, -1.0, 0.0, 0.0);
+    var ground = false;
+    if lattice.z > 0.0 {
+        let at = floor((point.xz - lattice.xy) / lattice.z);
+        let field = wet_load(3u);
+        let size = vec2(lattice.w, field.y);
+        if all(at >= vec2(0.0)) && all(at < size) {
+            let start = u32(field.x);
+            let candidate = wet_load(start + u32(at.y) * u32(size.x) + u32(at.x));
+            // At a slope the authored triangle can differ from its cell centre.
+            // Keep props, including the roof, out of the ground's water account.
+            if abs(point.y - candidate.x) < 0.028 + 0.5 * lattice.z && normal.y > 0.0 {
+                ground = true;
+                cell = candidate;
+            }
+        }
+    }
+    let class_index = u32(cell.z);
+    let first = wet_class_start(class_index);
+    let class_data = wet_load(first);
+    let appearance = wet_load(first + 1u);
+    let low = wet_load(first + 3u);
+    let up = clamp(normal.y, -1.0, 1.0);
+    let sky = select(0.25 * (1.0 + up), 0.25 + 0.75 * up, up >= 0.0);
+    let store = wet_reach(wet_load(first + 2u), low.xy, wet_exposure(point, header) * sky);
+    let slope = length(normal.xz) / max(up, 1e-20);
+    let hold = class_data.x * max(0.0, 1.0 - slope / max(class_data.y, 1e-20));
+    let surface = select(0.0, min(store.x, hold), up > 0.0);
+    let share = clamp(surface / max(class_data.x, 1e-20), 0.0, 1.0);
+    var cover = share;
+    if appearance.z > 0.0 && any(low.zw > vec2(0.0)) {
+        let pattern = wet_pattern(point.xz, low.zw, appearance.z);
+        // Filter the advancing film edge over a small height interval.
+        cover = smoothstep(0.0, 0.065, share - 0.90 * pattern);
+    }
+    if appearance.w > class_data.w {
+        cover *= 1.0 - smoothstep(class_data.w, appearance.w, point.y);
+    }
+    var pores = store.y;
+    if !ground && up > 0.05 {
+        let shore = wet_shore(point.xz);
+        if shore.w > 0.0 {
+            pores = max(pores, wet_band(point.y - (shore.x + shore.y), shore.z));
+        }
+    }
+    let open = GroundWetness(pores, surface, cover, class_index, ground);
+    if cell.y < 0.0 { return open; }
+    let hollow = wet_load(39u + u32(cell.y));
+    if hollow.x > cell.w && point.y < hollow.x {
+        return GroundWetness(1.0, 0.0, 0.0, class_index, ground);
+    }
+    let margin = select(0.0, wet_band(point.y - hollow.x, hollow.z), hollow.z > 0.0);
+    if hollow.y > cell.w && point.y < hollow.y {
+        return GroundWetness(max(hollow.w, margin), 0.0, 0.0, class_index, ground);
+    }
+    return GroundWetness(max(open.pores, margin), surface, cover, class_index, ground);
+}
+
+fn wet_material(point: vec3<f32>, normal: vec3<f32>, base: vec3<f32>, roughness: f32,
+                metalness: f32) -> vec4<f32> {
+    let wet = ground_wetness(point, normal);
+    if wet.pores <= 0.0 && (wet.hollows_ground || wet.cover <= 0.0) {
+        return vec4(base, roughness);
+    }
+    let index = wet_class_start(wet.class_index);
+    let class_data = wet_load(index);
+    let appearance = wet_load(index + 1u);
+    let porosity = select(clamp((roughness - 0.35) / 0.65, 0.0, 1.0), appearance.x, appearance.x >= 0.0);
+    let weight = wet.pores * porosity * (1.0 - metalness);
+    let share = clamp(class_data.z, 0.0, 0.99);
+    let dark = 0.98 * (1.0 - share) * base / max(vec3(0.01), vec3(1.0) - share * base);
+    let film = select(wet.cover * (1.0 - metalness), 0.0, wet.hollows_ground);
+    let gloss = max(0.5 * weight, film);
+    return vec4(mix(base, dark, weight), mix(roughness, min(roughness, appearance.y), gloss));
+}

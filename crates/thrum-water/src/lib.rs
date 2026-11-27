@@ -15,6 +15,8 @@ mod records;
 mod sampling_tests;
 mod surf;
 mod underwater;
+/// The render projection of ground stores.
+pub mod wet_ground;
 pub use optics::{BodyBounds, Optics, OpticsBodies};
 use std::sync::{Arc, Mutex};
 pub use surf::cache::{SurfTap, SurfWitness};
@@ -108,6 +110,8 @@ pub struct WaterReport {
     pub hollow_surface_vertices: u32,
     /// Actual allocation sizes, keyed by resource name.
     pub resources: Vec<(String, u64)>,
+    /// Fragment-stage sampled textures used by the prepared rain water surface.
+    pub surface_sampled_textures: Option<usize>,
     /// Last submitted interaction counters, when enabled.
     pub interaction: Option<interaction::Report>,
     /// Whether the last submitted lens admitted underwater composition, when enabled.
@@ -611,6 +615,10 @@ impl SceneContribution for Water {
             hollow_surface_vertices: 0,
             bodies: self.prepared.as_ref().expect("prepared").bodies.clone(),
             resources: self.resource_bytes(),
+            surface_sampled_textures: self
+                .prepared
+                .as_ref()
+                .and_then(|p| p.surface_sampled_textures),
             interaction,
             underwater_admitted: None,
             foam,

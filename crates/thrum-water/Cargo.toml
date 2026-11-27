@@ -30,6 +30,7 @@ web-time = "=1.1.0"
 wgpu = { version = "=30.0.1", default-features = false, features = ["std", "wgsl"] }
 
 [dev-dependencies]
+thrum-rain-model = { path = "../thrum-rain-model" }
 thrum-fixtures = { path = "../thrum-fixtures" }
 pollster = "=1.0.1"
 thrum-core = { path = "../thrum-core" }
@@ -44,3 +45,7 @@ path = "tests/it.rs"
 # PUDDLES WP3.3 runs the Metal map proof by name.
 [[test]]
 name = "hollows_gpu"
+
+# PUDDLES WP5 reads back the shared wetness evaluator on Metal.
+[[test]]
+name = "wetness_gpu"

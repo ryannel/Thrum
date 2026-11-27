@@ -40,6 +40,8 @@ pub enum Settings {
     },
     /// The island's rain yard, with a named wind.
     RainYard(Wind),
+    /// Island beach with the shore's damp band exposed.
+    WetShore(Wind),
     /// A waterline inspection with wind, location and continuous camera depth control.
     Dive(Wind, DiveSite),
     /// Island beach with refraction of the long waves and the breaker section.
@@ -141,6 +143,12 @@ impl Settings {
                 _ => DiveSite::Lake,
             };
             return Self::Dive(wind, site);
+        }
+        if let Some(wind) = get(("wet-shore", "THRUM_WATER_WET_SHORE"))
+            .as_deref()
+            .and_then(Wind::named)
+        {
+            return Self::WetShore(wind);
         }
         if let Some(wind) = get(RAIN).as_deref().and_then(Wind::named) {
             return Self::RainYard(wind);

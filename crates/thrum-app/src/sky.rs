@@ -672,6 +672,7 @@ pub struct SkyGame {
     ground: Option<[f32; 3]>,
     local_lights: Vec<thrum_render::synthetic::SyntheticPointLight>,
     sun_optical_depth: Option<thrum_render::atmosphere::SunOpticalDepth>,
+    wetness: Option<thrum_render::wetness::WetnessProvider>,
     contribution: Option<Box<dyn SceneContribution>>,
     status: Option<StatusProbe>,
     #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
@@ -701,6 +702,13 @@ impl SkyGame {
         field: thrum_render::atmosphere::SunOpticalDepth,
     ) -> Self {
         self.sun_optical_depth = Some(field);
+        self
+    }
+
+    /// Register the field used by the scene's forward materials and water film.
+    #[must_use]
+    pub fn with_wetness(mut self, field: thrum_render::wetness::WetnessProvider) -> Self {
+        self.wetness = Some(field);
         self
     }
 
@@ -747,6 +755,7 @@ impl SkyGame {
             ground: Some(DEFAULT_GROUND),
             local_lights: Vec::new(),
             sun_optical_depth: None,
+            wetness: None,
             contribution: None,
             status: None,
             #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
@@ -1163,6 +1172,7 @@ impl SkyGame {
         let world = self.take_world();
         let mut scene = ground_scene(self.ground, &self.local_lights)?;
         scene.sun_optical_depth.clone_from(&self.sun_optical_depth);
+        scene.wetness.clone_from(&self.wetness);
         let mut host = FrameHost::new(
             capabilities,
             queue,
