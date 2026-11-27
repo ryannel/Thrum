@@ -1,6 +1,6 @@
 //! On-demand read-only bindings for independent scene contributions.
 
-use super::gpu::AtmospherePrepared;
+use super::{gpu::AtmospherePrepared, overlay::ChartBindings};
 use crate::binding;
 use crate::shaders::wgsl;
 
@@ -123,8 +123,15 @@ pub(crate) fn create(
         }
     }
     // Bindings 7–9 are the filtered reflection pair and its sampler.
+    // The chart records already have storage usage for their GPU writers.
+    // Ground readers lend them as storage to fit WebGPU's uniform budget.
+    let charts = if cloud.is_some_and(|cloud| cloud.band.is_some()) {
+        ChartBindings::Storage
+    } else {
+        ChartBindings::Uniform
+    };
     if atmosphere.has_overlay() {
-        entries.extend(super::overlay::chart_consumer_layout(visibility));
+        entries.extend(charts.layout(visibility));
     }
     let selected = |binding: u32| reflection || !(7..=9).contains(&binding);
     entries.retain(|entry| selected(entry.binding));
@@ -206,7 +213,12 @@ pub(crate) fn create(
     let lighting = atmosphere.overlay_lighting();
     let mut shader_source =
         if atmosphere.view_volume.is_some() || lighting != super::overlay::Lighting::Clear {
-            library_with_volume(far_aerial, atmosphere.view_volume.is_some(), lighting)
+            library_with_volume(
+                far_aerial,
+                atmosphere.view_volume.is_some(),
+                lighting,
+                charts,
+            )
         } else if far_aerial {
             crate::shaders::Shader::EnvironmentProductsFar
                 .source()
@@ -228,13 +240,19 @@ pub(crate) fn create(
 }
 
 pub(crate) fn library(far_aerial: bool) -> String {
-    library_with_volume(far_aerial, false, super::overlay::Lighting::Clear)
+    library_with_volume(
+        far_aerial,
+        false,
+        super::overlay::Lighting::Clear,
+        ChartBindings::Uniform,
+    )
 }
 
 fn library_with_volume(
     far_aerial: bool,
     view_volume: bool,
     lighting: super::overlay::Lighting,
+    charts: ChartBindings,
 ) -> String {
     let far_sky = if view_volume {
         wgsl!("atmosphere/products_terminal.wgsl")
@@ -308,7 +326,7 @@ fn library_with_volume(
     if lighting == super::overlay::Lighting::Clear {
         source
     } else {
-        super::overlay::chart_consumer_source(&source, 0)
+        charts.source(&source, 0)
     }
 }
 

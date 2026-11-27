@@ -1014,7 +1014,7 @@ pub(crate) fn composed_source(variant: crate::shaders::SceneVariant) -> String {
     if variant.lighting == crate::atmosphere::overlay::Lighting::Clear {
         source
     } else {
-        crate::atmosphere::overlay::chart_consumer_source(&source, 1)
+        crate::atmosphere::overlay::ChartBindings::Uniform.source(&source, 1)
     }
 }
 

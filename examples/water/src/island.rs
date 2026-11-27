@@ -424,7 +424,7 @@ pub type FoamScene = (SkyGame, SharedReport, SharedMap, Option<FoamProbes>);
 /// # Panics
 /// Panics if a scene lock is poisoned or a bounded control fails.
 pub fn build_foam(wind: Wind, draw_water: bool, foam: bool) -> Result<FoamScene, Box<dyn Error>> {
-    build_island(wind, draw_water, foam, None, true, None, |_| {})
+    build_island(wind, draw_water, foam, None, true, None, None, |_| {})
 }
 
 /// Use the island's surf profile and tide and beach inspection controls.
@@ -497,7 +497,16 @@ pub fn build_surf_paired(
     draw_water: bool,
     surf: bool,
 ) -> Result<FoamScene, Box<dyn Error>> {
-    build_island(wind, draw_water, true, Some(surf), false, None, |_| {})
+    build_island(
+        wind,
+        draw_water,
+        true,
+        Some(surf),
+        false,
+        None,
+        None,
+        |_| {},
+    )
 }
 
 /// Build the surf island with an observer for the cache's evaluated nodes and table reads.
@@ -507,7 +516,7 @@ pub fn build_surf_measured(
     wind: Wind,
 ) -> Result<(FoamScene, thrum_water::SurfTap), Box<dyn Error>> {
     let mut tap = None;
-    let scene = build_island(wind, true, true, Some(true), false, None, |water| {
+    let scene = build_island(wind, true, true, Some(true), false, None, None, |water| {
         tap = Some(water.tap_surf_work());
     })?;
     Ok((scene, tap.ok_or("missing surf work observer")?))
@@ -517,7 +526,7 @@ pub fn build_surf_measured(
 /// # Errors
 /// Propagates scene construction errors.
 pub fn build_optics_arm(wind: Wind, optics: bool) -> Result<FoamScene, Box<dyn Error>> {
-    build_island(wind, true, false, None, optics, None, |_| {})
+    build_island(wind, true, false, None, optics, None, None, |_| {})
 }
 
 /// The yard scene and its latest float/body-query reply.
@@ -637,8 +646,16 @@ fn build_yard(
         _ => None,
     };
     let replies = rain.replies();
-    let (game, report, map, _) =
-        build_island(wind, draw_water, false, None, true, Some(rain), |_| {})?;
+    let (game, report, map, _) = build_island(
+        wind,
+        draw_water,
+        false,
+        None,
+        true,
+        Some(rain),
+        None,
+        |_| {},
+    )?;
     Ok((game, report, map, replies))
 }
 
@@ -662,6 +679,24 @@ fn query_points(foam: bool, draw_water: bool, yard: Option<&rain_yard::Yard>) ->
     }
 }
 
+pub(crate) fn build_cloud_view(
+    wind: Wind,
+    selection: crate::clouds::Selection,
+    draw_craft: bool,
+) -> Result<(SkyGame, SharedReport, SharedMap), Box<dyn Error>> {
+    build_island(
+        wind,
+        true,
+        false,
+        None,
+        true,
+        None,
+        Some((selection, draw_craft)),
+        |_| {},
+    )
+    .map(|(game, report, map, _)| (game, report, map))
+}
+
 #[expect(
     clippy::too_many_lines,
     reason = "shared island setup and controls stay together"
@@ -673,6 +708,7 @@ fn build_island(
     surf: Option<bool>,
     optics: bool,
     rain: Option<rain_yard::Yard>,
+    clouds: Option<(crate::clouds::Selection, bool)>,
     configure: impl FnOnce(&mut Water),
 ) -> Result<FoamScene, Box<dyn Error>> {
     let surf_route = surf.is_some();
@@ -798,7 +834,9 @@ fn build_island(
     let yard_footfalls = marker.is_some();
     let sun = controls
         .slider("sun.elevation", "Sun elevation", -8.0..=80.0)
-        .default(if yard_footfalls {
+        .default(if let Some((clouds, _)) = clouds {
+            clouds.sun()
+        } else if yard_footfalls {
             44.0
         } else if surf_route && wind == Wind::Trade {
             38.0
@@ -836,7 +874,9 @@ fn build_island(
         .slider("lake.waves", "Lake wave gain", 0.0..=1.0)
         .default(1.0)
         .add()?;
-    let initial_camera = if yard {
+    let initial_camera = if let Some((clouds, _)) = clouds {
+        clouds.camera()
+    } else if yard {
         rain_yard::camera(0)
     } else {
         CAMERAS[3]
@@ -851,7 +891,9 @@ fn build_island(
             reason = "bounded discrete camera control"
         )]
         let index = c.get(camera).round() as usize;
-        sky.camera = if index == 11
+        sky.camera = if let Some((clouds, _)) = clouds {
+            clouds.camera()
+        } else if index == 11
             && let Some(marker) = &camera_marker
         {
             rain_yard::walk_camera(marker)
@@ -872,6 +914,7 @@ fn build_island(
         }
         sky.sun_elevation_degrees = c.get(sun);
         sky.sun_azimuth_degrees = match (yard, index, surf_route && wind == Wind::Trade) {
+            _ if clouds.is_some() => 105.0,
             (true, 12..=18, _) => 22.0,
             (true, 6, _) => 40.0,
             (true, 7, _) => 11.0,
@@ -939,6 +982,19 @@ fn build_island(
     if foam {
         water.lend_foam_pattern(lease);
     }
+    let game = if let Some((selection, true)) = clouds
+        && selection.weather == crate::clouds::Weather::SeaFog
+    {
+        let eye = selection.camera().position;
+        let craft = if selection.bank_view == crate::clouds::BankView::Shore {
+            [-237.0, 83.0]
+        } else {
+            [f64::from(eye[0]) + 12.0, f64::from(eye[2]) + 2.0]
+        };
+        crate::floating::install_moored_craft(game, &water, craft, 0.0, 1.0)
+    } else {
+        game
+    };
     let game = if draw_water {
         game.with_contribution(Box::new(water), || ContentStatus::Drawn(1))
     } else {

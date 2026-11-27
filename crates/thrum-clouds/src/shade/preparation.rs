@@ -214,6 +214,7 @@ impl Shade {
                     target,
                     placed_map.map(|map| &map.texture),
                     profile,
+                    self.sky_follows_extent,
                     shapes,
                     accepted,
                     ground,

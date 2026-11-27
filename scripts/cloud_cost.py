@@ -5,6 +5,7 @@ import json
 import math
 import os
 import platform
+from statistics import median
 import subprocess
 from pathlib import Path
 
@@ -1193,10 +1194,114 @@ def refuse_incomplete_mist_day(record):
         raise ValueError('mist-day validator accepted an incomplete pair or investigation')
 
 
+SEA_FIXTURE = ROOT / 'tests/fixtures/clouds/sea-cost.json'
+
+
+def sea_pass_medians(arm):
+    samples = {}
+    for frame in arm['frames']:
+        for name, value in frame['passes_ms']:
+            samples.setdefault(name.rsplit(': ', 1)[-1], []).append(value)
+    return {name: median(values) for name, values in samples.items()}
+
+
+def validate_sea(record):
+    if (record.get('target'), record.get('extent')) != ('mac-metal', [2560, 1440]):
+        raise ValueError('expected a paired 2560×1440 Metal record')
+    absent, visible = record['arms']
+    if [arm['enabled'] for arm in (absent, visible)] != [False, True]:
+        raise ValueError('expected a clouds-absent and a clouds-visible arm')
+    for arm in absent, visible:
+        if arm['capture'] or len(arm['frames']) < 16 or not arm['storage']:
+            raise ValueError('expected at least 16 capture-off frames and a storage report per arm')
+        for frame in arm['frames']:
+            for value in [frame['gpu_ms'], *(value for _, value in frame['passes_ms'])]:
+                if not math.isfinite(value) or value < 0:
+                    raise ValueError('invalid Metal timestamp')
+    baseline, overlaid = map(sea_pass_medians, (absent, visible))
+    water = {name for name in baseline if name.startswith(('sea ', 'water '))}
+    if not {'water gather', 'water surface'} <= water or not water <= overlaid.keys():
+        raise ValueError('missing named sea or water timings')
+    if any(name.startswith('cloud ') for name in baseline) or absent['cloud_resources'] or absent['trace']:
+        raise ValueError('the absent arm carries clouds')
+    required = (set(SKY_PASSES) - {'cloud hemisphere light'}) | set(WORLD_LIGHT_PASSES)
+    trace = visible['trace']
+    if not trace or trace['rays'] != 1280 * 720 or not 0 < trace['sampled_rays'] <= trace['rays'] or trace['samples_total'] <= 0:
+        raise ValueError('missing submitted 1440p Sky trace work')
+    if not required <= overlaid.keys() or not visible['cloud_resources']:
+        raise ValueError(f'missing visible cloud timings or allocations: {required - overlaid.keys()}')
+    if set(record['tripwires']) != set(record['investigations']) or not all(record['investigations'].values()):
+        raise ValueError('every sea tripwire needs its investigation')
+
+
+def sea_cost(command, output):
+    if command != 'record':
+        reference = json.loads(SEA_FIXTURE.read_text())
+        validate_sea(reference)
+    if command == 'refuse':
+        substitution = dict(reference, arms=[reference['arms'][0], reference['arms'][0]])
+        try:
+            validate_sea(substitution)
+        except ValueError as failure:
+            print(f'Refused missing visible sea arm: {failure}')
+            return
+        raise ValueError('sea validator accepted two clouds-absent arms')
+    scratch = ROOT / 'tmp/clouds-wp11/cost'
+    scratch.mkdir(parents=True, exist_ok=True)
+    revision = run(['git', 'rev-parse', 'HEAD'])
+    store = scratch / 'store'
+    run(['cargo', 'run', '--release', '--locked', '--offline', '-p', 'thrum-cook',
+         '--', 'cook', 'examples/water/assets', str(store)])
+    load = os.getloadavg()
+    run(['cargo', 'test', '--release', '--locked', '--offline', '-p', 'water-scene',
+         '--test', 'clouds_sea_gpu', 'capture_selected_water_weather', '--', '--exact'],
+        env=dict(os.environ, THRUM_REQUIRE_GPU='1', THRUM_WATER_CLOUDS='fair',
+                 THRUM_WATER_CLOUD_CAPTURE='cost', THRUM_WATER_OUTPUT=str(scratch),
+                 THRUM_WATER_COMMIT=revision, THRUM_ASSET_STORE=str(store)))
+    record = json.loads((scratch / 'cost.json').read_text())
+    record['load'] = {'before': load, 'after': os.getloadavg()}
+    record['adapter'] = run(['sysctl', '-n', 'machdep.cpu.brand_string'])
+    absent, visible = record['arms']
+    medians = [median(frame['gpu_ms'] for frame in arm['frames']) for arm in record['arms']]
+    record['median_scene_and_present_pass_sum_ms'] = medians
+    baseline, overlaid = map(sea_pass_medians, (absent, visible))
+    record['median_named_passes_ms'] = [baseline, overlaid]
+    first = sorted(((cost, name) for name, cost in overlaid.items()), reverse=True)[:5]
+    investigations = {}
+    if medians[1] > 1000 / 120:
+        investigations['display interval'] = (
+            f'The same water workload without clouds took {medians[0]:.3f} ms, '
+            f'and the overlaid arm took {medians[1]:.3f} ms. The largest pass medians were '
+            + ', '.join(f'{name} {cost:.3f} ms' for cost, name in first)
+            + '. The named pass sum localizes the excess for later tuning under concurrent load.'
+        )
+    comparable = baseline if command == 'record' else reference['median_named_passes_ms'][1]
+    for name, prior in comparable.items():
+        value = overlaid.get(name)
+        # Tiny deltas at timestamp granularity are outside the tripwire's measured scope.
+        if value is None or prior <= 0 or value - prior < max(0.025, 0.25 * prior):
+            continue
+        water_control = baseline.get(name)
+        investigations[name] = (
+            f'Compared the same 1440p scene under load. {name} was {value:.3f} ms '
+            f'against {prior:.3f} ms. The current clouds-absent arm '
+            + (f'measured {water_control:.3f} ms for that pass.' if water_control is not None
+               else 'does not schedule that pass.')
+        )
+    record['tripwires'] = list(investigations)
+    record['investigations'] = investigations
+    validate_sea(record)
+    encoded = json.dumps(record, indent=2) + '\n'
+    if output:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(encoded)
+    print(encoded, end='')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('command', choices=['record', 'check', 'refuse', 'cadence', 'hold'])
-    parser.add_argument('--scene', choices=[*FIXTURES, 'wind', 'scripted', 'mist-near', 'mist-far', 'mist-day'], required=True)
+    parser.add_argument('--scene', choices=[*FIXTURES, 'sea', 'wind', 'scripted', 'mist-near', 'mist-far', 'mist-day'], required=True)
     parser.add_argument('--previous', type=Path, help='previous renderer cost record at the same low-Sun view')
     parser.add_argument('--output', type=Path, help='write a cost record to an alternate destination')
     parser.add_argument('--resume', action='store_true',
@@ -1210,6 +1315,8 @@ def main():
     if args.command in ('cadence', 'hold') and args.scene == 'wind':
         from cloud_cadence_capture import run_wind
         return run_wind(args.command, args.output, resume=args.resume)
+    if args.scene == 'sea' and args.command in ('check', 'record', 'refuse'):
+        return sea_cost(args.command, args.output)
     if args.scene == 'mist-day' and args.command in ('check', 'record', 'refuse'):
         if args.command != 'record':
             retained = json.loads(MIST_DAY_FIXTURE.read_text())

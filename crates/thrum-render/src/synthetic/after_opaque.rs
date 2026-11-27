@@ -19,6 +19,8 @@ pub(super) struct LateGraph {
     pub(super) first: Option<usize>,
     pub(super) last: usize,
     pub(super) colour: usize,
+    depth: Option<(ResourceId, usize)>,
+    colour_targets: [ResourceId; 3],
 }
 impl LateGraph {
     pub(super) fn order_consumers(
@@ -31,6 +33,24 @@ impl LateGraph {
                 graph.dependency(self.last, pass)?;
                 if self.colour != self.last {
                     graph.dependency(self.colour, pass)?;
+                }
+                if let Some((depth, producer)) = &self.depth
+                    && *producer != self.last
+                    && graph.passes()[pass]
+                        .accesses
+                        .iter()
+                        .any(|access| access.resource == *depth)
+                {
+                    graph.select_producer(*producer, pass, depth)?;
+                    for target in &self.colour_targets {
+                        if graph.passes()[pass]
+                            .accesses
+                            .iter()
+                            .any(|access| access.resource == *target)
+                        {
+                            graph.select_producer(self.colour, pass, target)?;
+                        }
+                    }
                 }
             }
         }
@@ -192,6 +212,8 @@ impl SyntheticTargetInputs {
             first,
             last,
             colour: previous_render,
+            depth: (depth_writer != forward).then(|| (depth.clone(), depth_writer)),
+            colour_targets: [scene.clone(), motion.clone(), reactive.clone()],
         })
     }
 

@@ -50,11 +50,28 @@ pub struct ShadeConfig {
 /// A mailbox for the immutable state of the publication selected for rendering.
 /// Publishing here never steps the world or owns a second weather authority.
 #[derive(Clone, Default)]
-pub struct WeatherInput(Arc<Mutex<Mailbox>>);
+pub struct WeatherInput(Arc<Mutex<Mailbox>>, WeatherPublisher);
+
+/// CPU-only publication handle that stays with the world's fixed-tick owner.
+#[derive(Clone, Default)]
+pub struct WeatherPublisher(Arc<Mutex<Option<Arc<State>>>>);
+
+impl WeatherPublisher {
+    /// Publish the weather from one committed tick.
+    /// # Errors
+    /// Refuses an unavailable mailbox.
+    pub fn publish(&self, state: Arc<State>) -> Result<(), Error> {
+        *self.0.lock().map_err(|_| Error::InputUnavailable)? = Some(state);
+        Ok(())
+    }
+
+    fn current(&self) -> Option<Arc<State>> {
+        self.0.lock().ok()?.clone()
+    }
+}
 
 #[derive(Default)]
 struct Mailbox {
-    state: Option<Arc<State>>,
     field_overlay: crate::FieldOverlay,
     ground: Option<(wgpu::Texture, wgpu::Buffer)>,
     condensate: Option<crate::GroundProducts>,
@@ -82,7 +99,7 @@ impl WeatherInput {
 
     fn frame_input(&self) -> Option<(Arc<State>, crate::FieldOverlay)> {
         let input = self.0.lock().ok()?;
-        Some((Arc::clone(input.state.as_ref()?), input.field_overlay))
+        Some((self.1.current()?, input.field_overlay))
     }
 
     /// Physical weather columns on the current device, for optional readback after submission.
@@ -108,8 +125,13 @@ impl WeatherInput {
     /// # Errors
     /// Refuses an unavailable mailbox.
     pub fn publish(&self, state: Arc<State>) -> Result<(), Error> {
-        self.0.lock().map_err(|_| Error::InputUnavailable)?.state = Some(state);
-        Ok(())
+        self.1.publish(state)
+    }
+
+    /// Publish from a world lane without giving it access to GPU products.
+    #[must_use]
+    pub fn publisher(&self) -> WeatherPublisher {
+        self.1.clone()
     }
 
     /// Inspect the current device's submitted ground product and mapping.
@@ -145,6 +167,7 @@ impl WeatherInput {
 pub struct Shade {
     quality: QualitySettings,
     sky: Option<crate::SkyProfile>,
+    sky_follows_extent: bool,
     shapes: Option<ShapesConfig>,
     ground: Option<GroundConfig>,
     config: ShadeConfig,
@@ -178,6 +201,7 @@ impl Shade {
         Ok(Self {
             quality: quality::base()?,
             sky: None,
+            sky_follows_extent: false,
             shapes: None,
             ground: None,
             config,
@@ -203,6 +227,15 @@ impl Shade {
         self.sky = Some(profile);
         Ok(self)
     }
+    /// Match the Sky layer to the scene's render extent and follow later resizes.
+    /// # Errors
+    /// Rejects an invalid Sky profile.
+    pub fn with_sky_following_extent(self, profile: crate::SkyProfile) -> Result<Self, Error> {
+        let mut shade = self.with_sky(profile)?;
+        shade.sky_follows_extent = true;
+        Ok(shade)
+    }
+
     /// Configure or replace Shapes for the ground path and any declared visible layer.
     /// # Errors
     /// Rejects an invalid placement range or volume capacity.
@@ -253,7 +286,7 @@ impl Shade {
 
 impl SceneContribution for Shade {
     fn needs_render_capacity(&self, extent: [u32; 2]) -> bool {
-        self.ground.is_some()
+        (self.ground.is_some() || self.sky_follows_extent)
             && self
                 .gpu
                 .as_ref()
@@ -648,7 +681,7 @@ impl SceneContribution for Shade {
                     input.placed_map = Some((map.texture.clone(), gpu.weather.origins()[0], state));
                 }
                 #[cfg(target_arch = "wasm32")]
-                input.observe(gpu, self.generation);
+                input.observe(gpu, self.generation, self.input.1.current());
             }
         }
     }

@@ -70,6 +70,32 @@ radiance and distance only where the gather copied them. Registered boxes admit 
 geometry and the bed controls shore transmission. Still water can reflect visible scenery
 within reach. When that source is unavailable, the reflected path uses the lent sky.
 
+## Clouds and fog
+
+Clouds are off by default. Select fair or broken cloud over the open sea, a sea
+fog bank coming ashore, or dawn mist over the island lake.
+
+```sh
+THRUM_WATER_CLOUDS=broken THRUM_WATER_CLOUD_SUN=low ./dev scene examples/water
+```
+
+In Chrome, use `?clouds=broken&cloud-sun=low` on the scene page. Both hosts use
+the same startup settings.
+
+| Native variable | Chrome query | Values |
+|---|---|---|
+| `THRUM_WATER_CLOUDS` | `clouds` | `off`, `fair`, `broken`, `sea-fog`, `dawn-mist` |
+| `THRUM_WATER_CLOUD_SUN` | `cloud-sun` | `noon`, `low` (10°) |
+| `THRUM_WATER_CLOUD_HEIGHT` | `cloud-height` | `2`, `40` metres in the open-sea and inside-the-bank views |
+| `THRUM_WATER_CLOUD_VIEW` | `cloud-view` | `craft` follows the moving craft on the open sea |
+| `THRUM_WATER_WEATHER_SPEED` | `weather-speed` | `1`, `8` times ordinary weather time |
+| `THRUM_WATER_BANK_VIEW` | `bank-view` | `offshore`, `front`, `inside`, `shore` |
+| `THRUM_WATER_MIST_TIME` | `mist-time` | `dawn`, `after` (one hour after sunrise) |
+
+An active cloud preset selects its own view and takes precedence over the
+labelled stand-in shade. The accelerated weather clock leaves the swell and the
+craft on the scene's ordinary clock.
+
 ## Island
 
 Run the island on Metal with `THRUM_WATER_ISLAND=trade ./dev scene examples/water`.

@@ -8,13 +8,27 @@ import zlib from 'node:zlib';
 import {installWasmReceipt,readWasmReceipt} from './wasm_receipt.mjs';
 
 const mode = process.argv[process.argv.indexOf('--case') + 1];
-if (!['first-frame','frames','fixed','realtime','island','bodies','wake','foam','surf','channel','river','river-calm','rain-puddles','rain-rings','rain-footfall','rain-ground','under'].includes(mode)) throw Error('use --case first-frame|frames|fixed|realtime|island|bodies|wake|foam|surf|channel|river|river-calm|rain-puddles|rain-rings|rain-footfall|rain-ground|under');
+if (!['first-frame','frames','fixed','realtime','island','bodies','wake','foam','surf','channel','river','river-calm','rain-puddles','rain-rings','rain-footfall','rain-ground','under','clouds'].includes(mode)) throw Error('use --case first-frame|frames|fixed|realtime|island|bodies|wake|foam|surf|channel|river|river-calm|rain-puddles|rain-rings|rain-footfall|rain-ground|under|clouds');
 const opticsRoute = mode === 'fixed' ? process.env.THRUM_WATER_BROWSER_OPTICS : undefined;
 const diveRoute = ['fixed','realtime'].includes(mode) ? process.env.THRUM_WATER_BROWSER_DIVE : undefined;
 const surfInspection = process.env.THRUM_WATER_INSPECT_SURF === '1' && ['fixed','realtime'].includes(mode);
 const handoffCut = surfInspection && mode === 'realtime' && process.env.THRUM_WATER_ROUTE === 'handoff-cut';
+const cloudSelection = process.env.THRUM_WATER_BROWSER_CLOUDS;
+const cloudMatrix = [
+  ...['fair','broken'].flatMap(weather=>[2,40].map(height=>[
+    `${weather}-noon-${height}`,`?clouds=${weather}&cloud-height=${height}`,
+  ])),
+  ...['noon','low'].flatMap(sun=>['offshore','front','inside'].map(view=>[
+    `bank-${sun}-${view}`,`?clouds=sea-fog&cloud-sun=${sun}&bank-view=${view}`,
+  ])),
+  ['lake-dawn','?clouds=dawn-mist'],
+  ['lake-after','?clouds=dawn-mist&mist-time=after'],
+];
+const cloudRoute = cloudSelection === 'matrix' ? cloudMatrix[0][1] : cloudSelection;
+const cloudMotion = mode === 'realtime' && Boolean(cloudRoute);
 const [width,height] = mode === 'under' ? [48,27]
-  : mode === 'realtime' && diveRoute ? [1280,720]
+  : cloudMotion || (mode === 'realtime' && diveRoute) ? [1280,720]
+  : mode === 'clouds' && !cloudRoute ? [640,360]
   : ['rain-rings','rain-footfall','rain-ground'].includes(mode) ? [960,540]
   : [2560,1440];
 const output = path.resolve(process.env.THRUM_WATER_OUTPUT ?? `tmp/waters-M3/${mode}-${Date.now()}`);
@@ -612,7 +626,7 @@ try {
   await installWasmReceipt(cdp,sid);
   const surfRoute=mode==='surf'||surfInspection;
   await cdp.call('Page.addScriptToEvaluateOnNewDocument',{source:observer+(mode==='under'?lensObserver:'')+(['island','surf','channel','river','river-calm','rain-puddles','rain-rings','rain-footfall','rain-ground'].includes(mode)?islandObserver:'')+`\ndocument.addEventListener('DOMContentLoaded',()=>{document.querySelector('canvas').width=${width};document.querySelector('canvas').height=${height};});`},sid);
-  const route=diveRoute??opticsRoute??(surfRoute?(handoffCut?'?surf=gale':'?surf=trade'):mode==='foam'?'?foam=calm&speed=6&view=overhead&wake-bodies=1':mode==='wake'?'?wake=calm&speed=6&view=overhead&wake-bodies=1':mode==='bodies'?'?bodies=trade&speed=5':mode==='island'?'?island=trade':mode==='channel'?'?channel=trade':mode==='river-calm'?'?river=calm':mode==='river'?'?river=trade':['rain-puddles','rain-rings','rain-footfall','rain-ground'].includes(mode)?'?rain=calm':mode==='under'?lensRoute('sea','baseline'):'');
+  const route=cloudRoute??diveRoute??opticsRoute??(surfRoute?(handoffCut?'?surf=gale':'?surf=trade'):mode==='foam'?'?foam=calm&speed=6&view=overhead&wake-bodies=1':mode==='wake'?'?wake=calm&speed=6&view=overhead&wake-bodies=1':mode==='bodies'?'?bodies=trade&speed=5':mode==='island'?'?island=trade':mode==='channel'?'?channel=trade':mode==='river-calm'?'?river=calm':mode==='river'?'?river=trade':['rain-puddles','rain-rings','rain-footfall','rain-ground'].includes(mode)?'?rain=calm':mode==='under'?lensRoute('sea','baseline'):mode==='clouds'?'?clouds=fair':'');
   result.route=route;
   const navigate=async search=>{
     await cdp.call('Page.navigate',{url:url+search},sid);
@@ -681,7 +695,27 @@ try {
     const anchor=await capture('surf-clock-anchor',0);
     surfClockOrigin=now-anchor.observation*1000;
   }
-  if(mode==='under'){
+  if(mode==='clouds'){
+    for(const [name,search] of cloudSelection==='matrix' ? cloudMatrix : [['clouds-fixed',route]]){
+      if(search!==route){
+        result.instantiated_wasm=await navigate(search);
+        now=0;
+      }
+      await until(async()=>{
+        if(!await evaluate('game.frame_ready()'))return false;
+        await drive(0);
+        const status=await evaluate('game.report()');
+        if(status.startsWith('Asset load failed:'))throw Error(status);
+        return /^Cooked generation [0-9]+ drawn/.test(status);
+      },'water scene content drawn');
+      const frame=await capture(name,0);
+      assert(frame.submission>0,'no submitted water frame');
+      frame.route=search;
+      frame.faults=await evaluate('__faults');
+      assert(frame.faults.length===0,JSON.stringify(frame.faults));
+    }
+    result.extent=[width,height];
+  }else if(mode==='under'){
     const rustc=execFileSync('rustup',['which','--toolchain','stable','rustc'],{encoding:'utf8'}).trim();
     const oracle=JSON.parse(execFileSync('rustup',['run','stable','cargo','run','--quiet','--release',
       '--locked','--offline','-p','water-scene','--example','lens_oracle'],{
@@ -1363,8 +1397,8 @@ try {
       ['dive-up-5m',[5,89.99]],['dive-inclined-5m',[5,45]],['dive-hold',[0,0]],
     ]).get(process.env.THRUM_WATER_ROUTE):undefined;
     const sweepDive=dive&&!diveView;
-    const duration=offshore?22000:surfInspection?12000:dive?5000:1000;
-    const spacing=offshore?200:surfInspection?100:dive?50:0;
+    const duration=cloudMotion?20500:offshore?22000:surfInspection?12000:dive?5000:1000;
+    const spacing=cloudMotion?200:offshore?200:surfInspection?100:dive?50:0;
     if(dive){
       const [depth,pitch]=diveView??[-diveDepth,0];
       result.dive_camera=diveView?{depth,pitch}:{sweep_depth:diveDepth,pitch};
@@ -1389,6 +1423,15 @@ try {
       }
       await until(()=>evaluate('game.frame_ready()'),'surf warm-up completion');
     }
+    if(cloudMotion){
+      now=await evaluate('performance.now()');
+      await until(async()=>{
+        if(!await evaluate('game.frame_ready()'))return false;
+        const status=await evaluate(`game.frame(${now});game.report()`);
+        if(status.startsWith('Asset load failed:'))throw Error(status);
+        return /^Cooked generation [0-9]+ drawn/.test(status);
+      },'cooked cloud scene drawn');
+    }
     await evaluate(`globalThis.__motion=[];globalThis.__intervals=[];globalThis.__motionDone=false;globalThis.__start=null;globalThis.__cameraCut=null;globalThis.__motionOmissions=null;
       let lastOpportunity=-Infinity;
       globalThis.__opportunities=0;const presented=()=>Number(/presented=(\\d+)/.exec(game.frame_info())[1]);
@@ -1408,7 +1451,7 @@ try {
         __start??=timestamp;const elapsed=timestamp-__start;
         __intervals.push(timestamp);collect();
         if(${sweepDive})game.edit_control('camera.depth',${-diveDepth}*Math.cos(2*Math.PI*elapsed/${duration}));
-        else if(!${dive}&&!${surfInspection})game.edit_control('camera.bearing',90+elapsed*0.012);
+        else if(!${dive}&&!${surfInspection}&&!${cloudMotion})game.edit_control('camera.bearing',90+elapsed*0.012);
         if(${handoffCut}&&elapsed>=5000&&__cameraCut===null){
           game.edit_control('camera.island',8);
           __cameraCut={from:7,to:8,driver_elapsed:elapsed/1000,next_capture_index:presented()-__firstPresented};
@@ -1437,11 +1480,11 @@ try {
     const timestamps=await evaluate('__intervals');result.callback_intervals_ms=timestamps.slice(1).map((v,i)=>v-timestamps[i]);
     result.omissions=await evaluate('__motionOmissions');
     assert(result.omissions===0,'motion contains omissions');
-    if(surfInspection){
+    if(surfInspection||cloudMotion){
       const first=result.frames[0]?.observation_seconds;
       assert(result.frames.every((frame,index)=>index===0||frame.observation_seconds>
         result.frames[index-1].observation_seconds),'surf presentation clock stalled');
-      const minimumCoverage=offshore?20:10;
+      const minimumCoverage=offshore||cloudMotion?20:10;
       assert(result.frames.at(-1)?.observation_seconds-first>=minimumCoverage,'surf motion has incomplete engine time coverage');
       for(const frame of result.frames)frame.elapsed=frame.observation_seconds-first;
     }

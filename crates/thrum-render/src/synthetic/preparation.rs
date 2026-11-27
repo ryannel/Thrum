@@ -306,9 +306,10 @@ impl PreparedSynthetic {
         ];
         if matches!(lighting, FrameLighting::Atmosphere(_)) {
             if scene.sky_overlay {
-                light_entries.extend(crate::atmosphere::overlay::chart_consumer_layout(
-                    wgpu::ShaderStages::FRAGMENT,
-                ));
+                light_entries.extend(
+                    crate::atmosphere::overlay::ChartBindings::Uniform
+                        .layout(wgpu::ShaderStages::FRAGMENT),
+                );
             }
             for (binding, dimension) in [
                 (4, wgpu::TextureViewDimension::D2Array),

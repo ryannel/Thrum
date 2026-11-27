@@ -270,21 +270,36 @@ fn append_cloud_factor(source: &mut String, cloud: CloudVariant, observer: &str)
     }
 }
 
-pub(crate) fn chart_consumer_layout(
-    visibility: wgpu::ShaderStages,
-) -> [wgpu::BindGroupLayoutEntry; 2] {
-    [
-        crate::binding::uniform(CHART_LIGHTING_BINDING, visibility, CHART_LIGHTING_BYTES),
-        crate::binding::uniform(REFLECTION_TAGS_BINDING, visibility, REFLECTION_TAGS_BYTES),
-    ]
+#[derive(Clone, Copy)]
+pub(crate) enum ChartBindings {
+    Uniform,
+    Storage,
 }
 
-pub(crate) fn chart_consumer_source(source: &str, group: u32) -> String {
-    with_reflection_gain(&format!(
-        "{source}\n{}\n@group({group}) @binding({CHART_LIGHTING_BINDING}) var<uniform> chart_lighting: ChartLighting;\n@group({group}) @binding({REFLECTION_TAGS_BINDING}) var<uniform> reflection_tags: ReflectionTags;\n{}",
-        wgsl!("atmosphere/chart_lighting.wgsl"),
-        include_str!("chart_reflection_sample.wgsl"),
-    ))
+impl ChartBindings {
+    pub(crate) fn layout(self, visibility: wgpu::ShaderStages) -> [wgpu::BindGroupLayoutEntry; 2] {
+        let ty = match self {
+            Self::Uniform => wgpu::BufferBindingType::Uniform,
+            Self::Storage => wgpu::BufferBindingType::Storage { read_only: true },
+        };
+        [
+            (CHART_LIGHTING_BINDING, CHART_LIGHTING_BYTES),
+            (REFLECTION_TAGS_BINDING, REFLECTION_TAGS_BYTES),
+        ]
+        .map(|(binding, bytes)| crate::binding::buffer(binding, visibility, ty, bytes))
+    }
+
+    pub(crate) fn source(self, source: &str, group: u32) -> String {
+        let address = match self {
+            Self::Uniform => "uniform",
+            Self::Storage => "storage, read",
+        };
+        with_reflection_gain(&format!(
+            "{source}\n{}\n@group({group}) @binding({CHART_LIGHTING_BINDING}) var<{address}> chart_lighting: ChartLighting;\n@group({group}) @binding({REFLECTION_TAGS_BINDING}) var<{address}> reflection_tags: ReflectionTags;\n{}",
+            wgsl!("atmosphere/chart_lighting.wgsl"),
+            include_str!("chart_reflection_sample.wgsl"),
+        ))
+    }
 }
 
 pub(crate) fn reflection_source() -> String {

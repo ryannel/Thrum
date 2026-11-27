@@ -22,6 +22,14 @@ const OPTICS: (&str, &str) = ("optics", "THRUM_WATER_OPTICS");
 const SURF: (&str, &str) = ("surf", "THRUM_WATER_SURF");
 const RAIN: (&str, &str) = ("rain", "THRUM_WATER_RAIN");
 
+pub(crate) fn query_value(query: &str, key: &str) -> Option<String> {
+    query
+        .trim_start_matches('?')
+        .split('&')
+        .filter_map(|parameter| parameter.split_once('='))
+        .find_map(|(name, value)| (name == key).then(|| value.to_owned()))
+}
+
 /// The scene the settings choose.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Settings {
@@ -119,13 +127,7 @@ impl Settings {
 
     /// Read the settings from a page query such as `?wake=calm&view=overhead`.
     pub fn from_query(query: &str) -> Self {
-        Self::parse(|(key, _)| {
-            query
-                .trim_start_matches('?')
-                .split('&')
-                .filter_map(|parameter| parameter.split_once('='))
-                .find_map(|(name, value)| (name == key).then(|| value.to_owned()))
-        })
+        Self::parse(|(key, _)| query_value(query, key))
     }
 
     fn parse(get: impl Fn((&str, &str)) -> Option<String>) -> Self {

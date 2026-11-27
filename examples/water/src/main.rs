@@ -26,11 +26,18 @@ fn main() {
         return;
     }
     let settings = settings();
+    let weather = weather();
     let draw_float =
         cfg!(target_arch = "wasm32") || std::env::var_os(thrum_app::sky::STORE_VARIABLE).is_some();
     thrum_app::sky::run(
         thrum_app::Config::new("water-scene", "Thrum water"),
         move || {
+            if let Some(selection) = weather {
+                return selection
+                    .build(draw_float, true)
+                    .map(|scene| scene.game)
+                    .map_err(thrum_app::sky::SkyBuildError::Scene);
+            }
             let built = match settings {
                 Settings::Island { wind, foam } => {
                     water_scene::island::build_foam(wind, true, foam).map(|(game, _, _, _)| game)
@@ -126,6 +133,16 @@ fn settings() -> Settings {
 #[cfg(target_arch = "wasm32")]
 fn settings() -> Settings {
     Settings::from_query(&page_query())
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn weather() -> Option<water_scene::clouds::Selection> {
+    water_scene::clouds::Selection::from_variables(|name| std::env::var(name).ok())
+}
+
+#[cfg(target_arch = "wasm32")]
+fn weather() -> Option<water_scene::clouds::Selection> {
+    water_scene::clouds::Selection::from_query(&page_query())
 }
 
 #[cfg(target_arch = "wasm32")]

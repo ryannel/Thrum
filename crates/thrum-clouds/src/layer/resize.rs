@@ -107,6 +107,7 @@ pub(crate) struct Inputs {
     resolve_layout: wgpu::BindGroupLayout,
     params: wgpu::Buffer,
     extent: [u32; 2],
+    per_pixel_stops: bool,
 }
 
 pub(crate) struct Targets {
@@ -124,6 +125,7 @@ impl Layer {
             compose_layout: self.resize_bindings.compose_layout.clone(),
             resolve_layout: self.temporal.layout.clone(),
             params: self.params.clone(),
+            per_pixel_stops: self.per_pixel_stops,
             extent: [
                 extent[0].max(2 * size.width),
                 extent[1].max(2 * size.height),
@@ -134,7 +136,7 @@ impl Layer {
 
 impl Inputs {
     pub(crate) fn prepare(self, device: &wgpu::Device) -> Targets {
-        let fresh = prepare::transport_textures(device, self.extent, true);
+        let fresh = prepare::transport_textures(device, self.extent, self.per_pixel_stops);
         let trace = self.trace.bind(device, &fresh);
         let compose = temporal::compose_group(device, &self.params, &fresh, &self.compose_layout);
         let resolve = temporal::Targets::new(

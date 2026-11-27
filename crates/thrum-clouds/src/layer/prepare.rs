@@ -80,6 +80,7 @@ impl Layer {
         target: (&wgpu::Texture, &wgpu::Buffer),
         placed_map: Option<&wgpu::Texture>,
         profile: SkyProfile,
+        follows_extent: bool,
         shapes: Option<&crate::shapes::Shapes>,
         accepted: Option<&Self>,
         ground: Option<(&GroundField, &LightTable, &Band, &wgpu::Buffer)>,
@@ -103,7 +104,7 @@ impl Layer {
             super::light::Lighting::new(surface, weather, &environment, ground.is_some())?;
         let ground_stops = ground.is_some();
         let render_capacity = surface.render_capacity.unwrap_or(profile.extent);
-        let capacity = if ground_stops {
+        let capacity = if ground_stops || follows_extent {
             std::array::from_fn(|i| profile.extent[i].max(render_capacity[i]))
         } else {
             profile.extent
@@ -320,6 +321,7 @@ impl Layer {
                 has_placed_map: placed_map.is_some(),
                 per_pixel_stops: ground_stops,
                 profile_extent: profile.extent,
+                follows_extent,
                 render_extent: render_capacity,
                 overlay,
             },

@@ -1,5 +1,6 @@
 //! Game content and controls for the water example. The engine contains no sea preset.
 pub mod channel;
+pub mod clouds;
 pub mod floating;
 pub mod island;
 #[doc(hidden)]
@@ -120,7 +121,7 @@ pub fn build_paired(
     draw_float: bool,
     draw_water: bool,
 ) -> Result<(SkyGame, SharedReport), Box<dyn Error>> {
-    build_open_sea(draw_float, draw_water, None)
+    build_open_sea(draw_float, draw_water, None, None)
 }
 
 /// Run the open-sea optics route in a selected wind.
@@ -131,7 +132,7 @@ pub fn build_optics_sea(
     draw_float: bool,
     draw_water: bool,
 ) -> Result<(SkyGame, SharedReport), Box<dyn Error>> {
-    build_open_sea(draw_float, draw_water, Some(wind))
+    build_open_sea(draw_float, draw_water, Some(wind), None)
 }
 
 /// Open sea with a labelled, authored cloud-shade edge across the calibration float.
@@ -159,15 +160,16 @@ pub fn build_optics_shade(
     Ok((game.with_sun_optical_depth(field), report))
 }
 
-fn build_open_sea(
+pub(crate) fn build_open_sea(
     draw_float: bool,
     draw_water: bool,
     wind: Option<island::Wind>,
+    clouds: Option<clouds::Selection>,
 ) -> Result<(SkyGame, SharedReport), Box<dyn Error>> {
     let mut controls = Controls::new();
     let sun = controls
         .slider("sun.elevation", "Sun elevation", -25.0..=80.0)
-        .default(60.0)
+        .default(clouds.map_or(60.0, clouds::Selection::sun))
         .display(Display::plain(1, "°"))
         .add()?;
     let azimuth = controls
@@ -176,16 +178,16 @@ fn build_open_sea(
         .add()?;
     let height = controls
         .slider("camera.height", "Camera height", 2.0..=40.0)
-        .default(2.0)
+        .default(clouds.map_or(2.0, clouds::Selection::height))
         .add()?;
     let bearing = controls
         .slider("camera.bearing", "Camera bearing", 0.0..=360.0)
         .default(90.0)
         .add()?;
-    let initial_drop = if wind.is_some() {
-        65.0
-    } else {
-        CAMERA_LOOK_DROP
+    let (initial_drop, fov) = match (clouds, wind) {
+        (Some(selection), _) => (if selection.low_sun { 12.0 } else { 23.0 }, 100.0),
+        (None, Some(_)) => (65.0, CAMERA_FOV_DEGREES),
+        (None, None) => (CAMERA_LOOK_DROP, CAMERA_FOV_DEGREES),
     };
     let pitch = wind
         .map(|_| {
@@ -204,11 +206,28 @@ fn build_open_sea(
         Some(wind) => open_water(&wind.forcing(), true)?,
         None => water()?,
     };
+    let offset =
+        glam::Vec3::from_array(clouds.map_or([0.0; 3], clouds::Selection::open_sea_offset));
+    let sea_camera_position = move |height, bearing| {
+        let eye = camera_position(height, bearing);
+        if clouds.is_some() {
+            (glam::Vec3::from_array(eye) + offset).to_array()
+        } else {
+            eye
+        }
+    };
     let fleet = [
         ([CAMERA_FOCUS[0] - 12.0, -0.4, CAMERA_FOCUS[1]], 3.0),
         ([CAMERA_FOCUS[0] - 11.0, -0.5, CAMERA_FOCUS[1] - 2.6], 0.70),
         ([CAMERA_FOCUS[0] - 9.0, -2.0, CAMERA_FOCUS[1] + 2.2], 1.05),
-    ];
+    ]
+    .map(|(centre, scale)| {
+        if clouds.is_some() {
+            ((glam::Vec3::from_array(centre) + offset).to_array(), scale)
+        } else {
+            (centre, scale)
+        }
+    });
     let floats = &fleet[..if wind.is_some() { 3 } else { 1 }];
     if draw_float && wind.is_some() {
         let bounds: Vec<_> = floats
@@ -226,13 +245,13 @@ fn build_open_sea(
     let game = SkyGame::new(
         controls,
         Camera::look_at(
-            camera_position(2.0, 90.0),
+            sea_camera_position(2.0, 90.0),
             [
-                camera_position(2.0, 90.0)[0] + 100.0,
+                sea_camera_position(2.0, 90.0)[0] + 100.0,
                 2.0 - initial_drop,
-                CAMERA_FOCUS[1],
+                sea_camera_position(2.0, 90.0)[2],
             ],
-            CAMERA_FOV_DEGREES,
+            fov,
         ),
         move |c, sky| {
             sky.exposure_compensation_ev = 0.7;
@@ -241,7 +260,7 @@ fn build_open_sea(
             sky.sun_azimuth_degrees = c.get(azimuth);
             let angle = c.get(bearing).to_radians();
             let h = c.get(height);
-            let eye = camera_position(h, c.get(bearing));
+            let eye = sea_camera_position(h, c.get(bearing));
             let look_drop = pitch.map_or(CAMERA_LOOK_DROP, |pitch| {
                 -100.0 * c.get(pitch).to_radians().tan()
             });
@@ -252,7 +271,7 @@ fn build_open_sea(
                     h - look_drop,
                     eye[2] - angle.cos() * 100.0,
                 ],
-                CAMERA_FOV_DEGREES,
+                fov,
             );
             map.lock()
                 .expect("scene map")

@@ -41,6 +41,8 @@ name = "surf_floating_gpu"
 workspace = true
 
 [dependencies]
+thrum-cloud-model = { path = "../../crates/thrum-cloud-model" }
+thrum-clouds = { path = "../../crates/thrum-clouds" }
 thrum-app = { path = "../../crates/thrum-app" }
 thrum-water = { path = "../../crates/thrum-water" }
 thrum-water-model = { path = "../../crates/thrum-water-model" }
@@ -146,3 +148,13 @@ name = "standing_film_gpu"
 
 [[test]]
 name = "wet_shore_gpu"
+
+# CLOUDS WP11 names these three Metal checks.
+[[test]]
+name = "clouds_selection_gpu"
+
+[[test]]
+name = "clouds_sea_gpu"
+
+[[test]]
+name = "clouds_ground_gpu"

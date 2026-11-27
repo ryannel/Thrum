@@ -149,6 +149,7 @@ pub(crate) struct Layer {
     has_placed_map: bool,
     per_pixel_stops: bool,
     profile_extent: [u32; 2],
+    follows_extent: bool,
     render_extent: [u32; 2],
     overlay: Option<overlay::Overlay>,
 }
@@ -647,8 +648,12 @@ impl Layer {
         if self.per_pixel_stops {
             return self.render_extent.map(|side| side.div_ceil(2));
         }
-        self.profile_extent
-            .map(|side| (side.div_ceil(2) * self.quality.layer_percent).div_ceil(100))
+        let extent = if self.follows_extent {
+            self.render_extent
+        } else {
+            self.profile_extent
+        };
+        extent.map(|side| (side.div_ceil(2) * self.quality.layer_percent).div_ceil(100))
     }
 
     pub(crate) fn set_quality(&mut self, quality: Quality) {

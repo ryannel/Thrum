@@ -518,6 +518,7 @@ pub struct SkyScene {
     presentation_camera: Option<PresentationCamera>,
     ground: bool,
     nightglow: bool,
+    overlay_medium: Option<thrum_render::atmosphere::Aerosol>,
     temporal_sampling: bool,
     overlay: DisplayOverlay,
 }
@@ -565,6 +566,15 @@ impl SceneSource<SourceTick> for SkyScene {
         let lighting = match lighting {
             Some(published) => published,
             None => self.sky.lighting(self.nightglow)?,
+        };
+        let lighting = match (lighting, self.overlay_medium) {
+            (FrameLighting::Atmosphere(frame), Some(aerosol)) => FrameLighting::Atmosphere(
+                frame
+                    .with_aerosol(aerosol)
+                    .with_view_volume_medium(1)
+                    .with_overlay_exposure_adaptation(),
+            ),
+            (lighting, _) => lighting,
         };
         let view = match lighting {
             // A flat incident-light meter, darkened below daylight so twilight reads dim.
@@ -657,6 +667,8 @@ pub struct SkyGame {
     temporal_sampling: bool,
     nightglow: bool,
     overlay: DisplayOverlay,
+    sky_overlay: bool,
+    overlay_medium: Option<thrum_render::atmosphere::Aerosol>,
     #[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
     name: &'static str,
     #[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
@@ -705,6 +717,15 @@ impl SkyGame {
         self
     }
 
+    /// Allocate the directional sky overlay written by a scene contribution.
+    /// A supplied aerosol also declares the view volume and its near medium provider.
+    #[must_use]
+    pub fn with_sky_overlay(mut self, medium: Option<thrum_render::atmosphere::Aerosol>) -> Self {
+        self.sky_overlay = true;
+        self.overlay_medium = medium;
+        self
+    }
+
     /// Register the field used by the scene's forward materials and water film.
     #[must_use]
     pub fn with_wetness(mut self, field: thrum_render::wetness::WetnessProvider) -> Self {
@@ -733,6 +754,8 @@ impl SkyGame {
             temporal_sampling: false,
             nightglow: false,
             overlay: DisplayOverlay::Off,
+            sky_overlay: false,
+            overlay_medium: None,
             #[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
             name: "thrum",
             #[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
@@ -831,6 +854,21 @@ impl SkyGame {
     ) -> Self {
         self.fixed_update = Some(Box::new(update));
         self
+    }
+
+    /// Run a second game-owned update on the same committed tick, after the existing update.
+    #[must_use]
+    pub fn and_fixed_update(
+        mut self,
+        mut update: impl FnMut(u64, Duration) + Send + 'static,
+    ) -> Self {
+        let mut previous = self.fixed_update.take();
+        self.with_fixed_update_endpoint(move |endpoint, step| {
+            if let Some(previous) = &mut previous {
+                previous(endpoint, step);
+            }
+            update(endpoint.tick, step);
+        })
     }
 
     /// Sample a game-owned camera from the same interpolation fraction used to draw the scene.
@@ -1111,6 +1149,12 @@ impl SkyGame {
         SkyEdits(Some(sky))
     }
 
+    /// Latest content status polled by the native or browser shell.
+    #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
+    pub fn content_status(&self) -> Option<&ContentStatus> {
+        self.shown_status.as_ref()
+    }
+
     /// Poll the content probe and log a change. Offscreen callers can wait
     /// for the first cooked generation before recording a capture or timing.
     #[expect(
@@ -1171,6 +1215,7 @@ impl SkyGame {
         self.sky.check().map_err(GameError::InvalidScene)?;
         let world = self.take_world();
         let mut scene = ground_scene(self.ground, &self.local_lights)?;
+        scene.sky_overlay = self.sky_overlay;
         scene.sun_optical_depth.clone_from(&self.sun_optical_depth);
         scene.wetness.clone_from(&self.wetness);
         let mut host = FrameHost::new(
@@ -1183,6 +1228,7 @@ impl SkyGame {
                 presentation_camera: self.presentation_camera.take(),
                 ground: self.ground.is_some(),
                 nightglow: self.nightglow,
+                overlay_medium: self.overlay_medium,
                 temporal_sampling: self.temporal_sampling,
                 overlay: self.overlay,
             },

@@ -68,11 +68,16 @@ impl WeatherInput {
 }
 
 impl Mailbox {
-    pub(super) fn observe(&mut self, gpu: &mut Prepared, generation: u64) {
+    pub(super) fn observe(
+        &mut self,
+        gpu: &mut Prepared,
+        generation: u64,
+        state: Option<Arc<thrum_cloud_model::State>>,
+    ) {
         let Some(ground) = self.observation.armed.take() else {
             return;
         };
-        if let Some(state) = &self.state {
+        if let Some(state) = state {
             let ground_reference = ground.then(|| {
                 gpu.ground_reference
                     .get_or_insert_with(|| {
@@ -84,7 +89,7 @@ impl Mailbox {
                 device: gpu.device.clone(),
                 queue: gpu.queue.clone(),
                 generation,
-                state: Arc::clone(state),
+                state,
                 weather: gpu.weather.textures().clone(),
                 weather_origins: gpu.weather.origins().to_vec(),
                 weather_rows: gpu.weather.row_stamps().to_vec(),
