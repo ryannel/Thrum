@@ -191,15 +191,26 @@ fn tick_query_includes_the_submitted_fine_height() {
 }
 
 fn divided_puddles(offset: f64, spacing: f64, depth: f64) -> Map {
+    sill_puddles([offset, 0.0], spacing, depth, |x, _| {
+        ((47..53).contains(&x), x >= 50)
+    })
+}
+
+fn sill_puddles(
+    offset: [f64; 2],
+    spacing: f64,
+    depth: f64,
+    classify: impl Fn(usize, usize) -> (bool, bool),
+) -> Map {
     let size = [100, 60];
-    let base = [offset - 50.0 * spacing, -30.0 * spacing];
+    let base = [offset[0] - 50.0 * spacing, offset[1] - 30.0 * spacing];
     let mut bed = Vec::new();
     let mut labels = Vec::new();
-    for _ in 0..size[1] {
+    for z in 0..size[1] {
         for x in 0..size[0] {
-            let sill = (47..53).contains(&x);
+            let (sill, second) = classify(x, z);
             bed.push(if sill { 0.008 } else { -depth });
-            labels.push(u32::from(x >= 50));
+            labels.push(u32::from(second));
         }
     }
     let hollows =
@@ -224,6 +235,77 @@ fn divided_puddles(offset: f64, spacing: f64, depth: f64) -> Map {
         },
     )
     .expect("prepared sill")
+}
+
+#[test]
+fn wet_impact_at_a_narrow_sill_reaches_its_own_puddle() {
+    let depth = 0.03;
+    for (spacing, offset, diagonal) in [
+        (0.05, 0.0, true),
+        (0.05, 0.008, true),
+        (0.025, 0.0, true),
+        (0.025, 0.0, false),
+    ] {
+        let map = sill_puddles([offset; 2], spacing, depth, |x, z| {
+            let across = if diagonal { x + z } else { x + 30 };
+            (across == 81, across > 81)
+        });
+        let c = offset + 0.5 * spacing;
+        let source = [c; 2];
+        let receiver = [c + 2.0 * spacing, c];
+        assert!((map.sample(source).unwrap().depth - depth).abs() < 1e-9);
+        assert!(map.sample([c + spacing, c]).is_none_or(|s| s.depth <= 0.0));
+        assert!((map.sample(receiver).unwrap().depth - depth).abs() < 1e-9);
+        let Some(mut fixture) = Fixture::new_fine(map) else {
+            return;
+        };
+        step(&mut fixture, 0);
+        fixture.mailbox().post_impulse(Impulse {
+            id: 1,
+            place: source,
+            vertical: 0.6,
+            radius: 0.055,
+            tick: 1,
+        });
+        for tick in 1..=2 {
+            step(&mut fixture, tick);
+            let field = fixture.read();
+            let endpoint = field.endpoint.endpoints[1];
+            let fine = endpoint.fine.unwrap();
+            let peak = field
+                .fine()
+                .iter()
+                .fold(0.0_f32, |peak, state| peak.max(state[0].abs()));
+            assert!(
+                peak > 1e-4,
+                "lost the wet impact at {source:?}, bed spacing {spacing}, diagonal {diagonal}"
+            );
+            for (origin, metres, states) in [
+                (endpoint.origins[0], Witness::CELL_METRES[0], field.level(0)),
+                (endpoint.origins[1], Witness::CELL_METRES[1], field.level(1)),
+                (fine.origin, Witness::FINE_CELL_METRES, field.fine()),
+            ] {
+                assert!(states.iter().enumerate().all(|(i, state)| {
+                    let x = f64::from(origin[0]) + (i % SIDE) as f64 * f64::from(metres);
+                    let z = f64::from(origin[1]) + (i / SIDE) as f64 * f64::from(metres);
+                    let across = if diagonal {
+                        x + z - 2.0 * offset
+                    } else {
+                        x - offset
+                    };
+                    across < 2.0 * spacing || state.iter().all(|v| v.abs().to_bits() == 0)
+                }));
+            }
+            let receiver = receiver.map(|v| v as f32);
+            assert_eq!(
+                queried_surfaces(&mut fixture, tick, &[receiver])[0].sample,
+                Sample::default()
+            );
+            eprintln!(
+                "bed spacing {spacing}, offset {offset}, diagonal {diagonal}, tick {tick}: peak height {peak:.6} m, receiving puddle at exact rest"
+            );
+        }
+    }
 }
 
 fn queried_surfaces(fixture: &mut Fixture, tick: u64, points: &[[f32; 2]]) -> Vec<Surface> {

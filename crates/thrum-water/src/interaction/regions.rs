@@ -37,6 +37,7 @@ pub(super) struct Window {
     wet: Vec<Option<Wet>>,
     next_wet: Vec<Option<Wet>>,
     stack: Vec<usize>,
+    hollow_regions: Vec<(usize, u32)>,
     pub cells: Vec<Cell>,
     pub depths: Vec<u32>,
     pub current: [f32; 2],
@@ -151,6 +152,7 @@ impl Window {
         let ladder = DEPTHS[level];
         self.cells.clear();
         self.depths.clear();
+        self.hollow_regions.clear();
         let mut current = [0.0; 2];
         let mut wet_count = 0;
         self.cells.extend(self.wet.iter().map(|wet| {
@@ -191,6 +193,9 @@ impl Window {
                 continue;
             }
             let region = self.depths.len() as u32;
+            if let Some(component) = wet.component {
+                self.hollow_regions.push((wet.body, component));
+            }
             let mut depths = 0;
             self.stack.push(i);
             self.cells[i].region = region;
@@ -317,18 +322,45 @@ impl Window {
         {
             return self.cells[nearest].region;
         }
+        if !self.hollow_regions.contains(&(body, component)) {
+            return DRY;
+        }
+        let last = SIDE as i32 - 1;
         let mut best = (f32::INFINITY, DRY);
-        for z in (z - 1).max(0)..=(z + 1).min(SIDE as i32 - 1) {
-            for x in (x - 1).max(0)..=(x + 1).min(SIDE as i32 - 1) {
-                let i = z as usize * SIDE + x as usize;
-                if self.wet[i]
-                    .is_some_and(|wet| wet.body == body && wet.component == Some(component))
-                {
-                    let distance = (place[0] - x as f32).powi(2) + (place[1] - z as f32).powi(2);
-                    if distance < best.0 {
-                        best = (distance, self.cells[i].region);
-                    }
+        let visit = |sx: i32, sz: i32, best: &mut (f32, u32)| {
+            let i = sz as usize * SIDE + sx as usize;
+            if self.wet[i].is_some_and(|wet| wet.body == body && wet.component == Some(component)) {
+                let candidate = (
+                    (place[0] - sx as f32).powi(2) + (place[1] - sz as f32).powi(2),
+                    self.cells[i].region,
+                );
+                if candidate < *best {
+                    *best = candidate;
                 }
+            }
+        };
+        for radius in 1..=last {
+            let (left, right, bottom, top) = (x - radius, x + radius, z - radius, z + radius);
+            for sx in left.max(0)..=right.min(last) {
+                if bottom >= 0 {
+                    visit(sx, bottom, &mut best);
+                }
+                if top <= last {
+                    visit(sx, top, &mut best);
+                }
+            }
+            for sz in (bottom + 1).max(0)..=(top - 1).min(last) {
+                if left >= 0 {
+                    visit(left, sz, &mut best);
+                }
+                if right <= last {
+                    visit(right, sz, &mut best);
+                }
+            }
+            // A rounded coordinate is at most half a cell off the source.
+            // Points on the next perimeter cannot be closer than this.
+            if best.0 < (radius as f32 + 0.5).powi(2) {
+                break;
             }
         }
         best.1
