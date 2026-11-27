@@ -196,6 +196,16 @@ without one is their own screen's and stops nothing.
 
 Proposed: the planner chose this meaning, to keep a paused game apart from one player's open menu.
 
+### Game's tick
+
+In a game written on the game SDK, the count of ticks the game's rules have lived through, which is what `Tick`
+gives a rule. It stands still through a [pause](#pause). The engine's committed tick goes on counting every tick
+the world commits, and a digest and a recording go by that one.
+
+- **Source** — the planner's term. The field says simulation time or game time for the same thing.
+
+Proposed: the planner chose it, to keep the clock a rule reads apart from the engine's committed tick.
+
 ### Extension map
 
 The part of [the game SDK's design](GAME-SDK/DESIGN.md#the-extension-map) that says how each feature the SDK

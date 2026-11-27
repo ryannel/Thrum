@@ -320,3 +320,51 @@
 - 2026-11-27 Items changed: WP1.4, WP1.5 (and its check command), WP2.1, WP2.4 and WP2.10. Planner's choices
   in this revision, each for the owner to overturn, are the plan's four new assumptions and the three it
   extended.
+- 2026-11-27 Design review of the second revision asked for changes, with 7 Must Fix findings
+  ([the review](../../../.orchestrate/evidence/GAME-SDK/design-review.md)). It is the second in a row, so no
+  reviewer reads these fixes before the owner does. Each is settled below, and checked against its finding.
+  No other module's file changed, and `SESSION` is used as built.
+- 2026-11-27 Finding 1 (the committed tick in pause and replay proofs): two counts are named. The committed
+  tick is the engine's, counts every commit and is in the digest. The game's tick is what `Tick` gives and
+  stands through a pause. An empty paused tick moves only the committed tick, so how many are committed
+  stays the driver's, and a recording holds each input at the committed tick that admitted it, which keeps
+  the count and which inputs shared a tick. Runs are compared at the same committed tick: a replay equals
+  its run at every one, and two live runs under different drivers are compared value by value (section 4,
+  section 13, cost). Carried into WP3, WP13 and WP5, whose proofs no longer ask one digest of two different
+  committed ticks. The glossary gains "game's tick", proposed.
+- 2026-11-27 Finding 2 (the first solo game's replay): there is no unchecked way to play. A one-file game
+  keeps its rules in a `mod rules { .. }` block of that file, which the check lifts out and builds alone,
+  so examples A and B record, replay and go online as written. A game with no `rules` module is a sketch a
+  test steps, and `run()` and every `cargo play` command refuse it with the step to take, so D1 holds for
+  every game played (sections 1, 12, 13 and 14, examples A and B). WP2.10 gains the one-file layout and the
+  sketch, WP3 carries `run()`'s refusal, and WP13 carries example A recorded on the Mac and replayed in
+  Chrome. The plan's assumption is rewritten to match.
+- 2026-11-27 Finding 3 (two players and one entity): an entity is one player's character at most, and the
+  `Player` component, which the SDK alone gives and takes, says whose. `possess` returns whether this call
+  made the entity the player's character: false, with nothing changed, for another player's character, the
+  player's own or a despawned entity (section 5, the mistakes table). WP2.1 observes both players'
+  characters, components and control after a refused `possess`, and WP2.4 holds the compile errors for a
+  `Player` component a game writes. In the extension map a launched thing no longer carries the SDK's
+  `Player` component, so the rule holds there too.
+- 2026-11-27 Finding 4 (the bound on WP1.5): the guard refuses a type of any crate but `thrum`, its derive
+  crate and Rust's standard library, wherever it stands in a public signature and inside a standard
+  container, and allows Rust's own types and a generic parameter for the game's own. WP1.5 is written again
+  with seven controls: five the check must fail, an `Option` of an engine type among them, and two it must
+  pass, `Option<Entity>` and a generic `&T` (section 1, proof). Its check command is unchanged.
+- 2026-11-27 Finding 5 (a recovered press and the shooter's view): a button marked `#[seen]` sends the view
+  at its newest press with the set's latest values, standing until the next press as its count does, so a
+  press read from a later frame comes with its own picture. `space.as_seen_at_press(player, ACTION)` gives a
+  rule that view (the entry, depth 3's row in section 11).
+- 2026-11-27 Finding 6 (a teleport in a remembered layer): the memory marks each cut, and a collider whose
+  newer remembered tick is a cut stands at its new place whatever the fraction, as the picture showed it
+  (the entry).
+- 2026-11-27 Finding 7 (room for a loading seat's save commands): the set's `Heading` and `#[sent]` values
+  travel in one action, so a sampled frame always leaves seven slots for commands (section 5), and a seat
+  still loading sends idle frames with no action, so all eight take pieces (the entry).
+- 2026-11-27 Suggestions, both taken because each example would otherwise teach a mistake: the bolt keeps who
+  fired it and leaves that hull out of its sweep, with the depth sentence corrected to say depth 3 is asked
+  for in the hit rule; and the lobby's `Setup` has a written `Default` that names a declared arena.
+- 2026-11-27 Items changed: WP1.5, WP2.1, WP2.4 and WP2.10. No check command changed. Planner's choices in
+  this revision, each for the owner to overturn: a sketch is refused by `run()`, a refused `possess` returns
+  false and does not refuse the tick, a game cannot write the `Player` component, and presses read in one
+  tick share the newest one's view.

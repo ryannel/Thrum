@@ -14,41 +14,41 @@ and [the seam rulings](../ARCHITECTURE.md#seam-rulings-for-game-sdk) before any 
 
 ## Open for the user
 
-- Assumption: with multiplayer in for 2D and 3D games, the rest of your first-release scope stands until you answer [the design's open scope questions](DESIGN.md#scope-questions-for-the-owner).
+- Assumption: with multiplayer in for 2D and 3D games, the rest of your first-release scope stands until you answer [the design's scope questions](DESIGN.md#scope-questions-for-the-owner).
 - Assumption: SDK work packages start once you approve the design, and never take a builder a V1 work package is waiting for.
-- Assumption: the crate is named `thrum`, a game is run with `cargo play`, and the design's fifteen words are the SDK's vocabulary, proposed in the glossary.
+- Assumption: the crate is `thrum`, a game runs with `cargo play`, and the design's fifteen words are the SDK's vocabulary, proposed in the glossary.
 - Assumption: the core changes in [the design's table](DESIGN.md#decisions) stand, such as a save that resumes its phase.
 - Assumption: a scene is a type whose fields are what it is entered with, such as `GameOver { dodged }`.
-- Assumption: a player's default keys are written on the action map, beside each action, and a player can change their own.
-- Assumption: a control function may read anything a rule may. Online, one that reads what cannot be run ahead must say `.unpredicted()`.
+- Assumption: default keys are written on the action map, and a player can change their own.
+- Assumption: a control function may read anything a rule may. Online, one that reads what cannot be run ahead says `.unpredicted()`.
 - Assumption: in a 3D scene the first release's 2D colliders lie on the ground plane.
 - Assumption: "2D queries" includes rectangles, a level's fixed collision, tile maps and a sliding character move. Nothing pushes anything.
 - Assumption: in a match, a saved resource and a saved run are the host's, until you answer scope question 11.
-- Assumption: a one-file game runs with its rules unchecked and is told so. It needs a `rules` module before it can go online, record a run or replay one.
-- Assumption: a rule that panics stops the game in Chrome, with the message shown. Elsewhere it is reported with the world intact.
+- Assumption: every game that runs keeps its rules in a checked `rules` module, a `mod rules { .. }` block in a one-file game, so the first game records and replays as it stands. A game without one runs only in a test.
+- Assumption: a rule that panics stops the game in Chrome, with its message. Elsewhere it is reported with the world intact.
 - Assumption: the starter, stones and the lighthouse are rewritten on the SDK, and the sky kit is then removed.
-- Assumption: three fresh agents prove the documentation, one each for a 2D, a 3D and an online game.
-- Assumption: models that turn, scale or carry a texture wait for the V1 work packages that hold the engine's 3D drawing.
+- Assumption: three fresh agents prove the documentation: a 2D, a 3D and an online game.
+- Assumption: models that turn, scale or carry a texture wait for the V1 work packages that hold 3D drawing.
 - Assumption: a tick makes one change of scene or of phase, and the first asked for stands. A scene has one set of phases; a mode beside them is a resource.
-- Assumption: a person who joins a game bots have filled takes a bot's seat, with a new character.
-- Assumption: a pause is the same alone and in a match: the clock stands while a menu's command, a save and a rule marked for it still work. A marked rule runs only when input arrives.
-- Assumption: a game declares prefab names in `prefabs!` blocks, and content IDs its code names in `ids!` blocks. A name with nothing behind it is found when the game starts.
-- Assumption: one key can mean one thing in play and another in a menu, through named input contexts.
+- Assumption: a person who joins a game full of bots takes a bot's seat, with a new character.
+- Assumption: a pause is the same alone and in a match: the clock stands while a menu's command, a save and a rule marked for it still work. A marked rule runs only when input arrives. A replay does not wait through a pause.
+- Assumption: a game declares prefab names in `prefabs!` blocks and the content IDs its code names in `ids!` blocks. A name with nothing behind it is found at startup.
+- Assumption: one key can mean one thing in play and another in a menu, through input contexts.
 - Assumption: a content record holds no plain float. A save brought into a match is at most 64 KiB unless the game says otherwise.
-- Assumption: a press made while the presser's screen shows a pause is never read as play. One made in play is read when the pause ends.
-- Assumption: the SDK keeps a match of fewer than four players to its number, and a newcomer with no seat is told the match is full.
-- Assumption: a thing attached so that it keeps its place in the world keeps it within [the design's bound](DESIGN.md#2-the-world-entities-components-resources-and-prefabs), and is refused past it.
+- Assumption: a press made while the presser's screen shows a pause is never read as play.
+- Assumption: a match of fewer than four players is kept to its number, and a newcomer with no seat is told it is full.
+- Assumption: a thing attached keeping its place in the world keeps it within [the design's bound](DESIGN.md#2-the-world-entities-components-resources-and-prefabs), and is refused past it.
 - Assumption: the 3D starter's first page ends with a ball the player rolls, which passes through the rock.
 - Assumption: a 3D match is proved twice: with no window in WP5, and on screen in WP14.
-- Assumption: sheets, clips and tiles are cooked from a source image and a small file beside it, in WP3.
-- Assumption: a player has one character at a time. Anything else they own, such as a drone, is an ordinary entity a rule moves.
-- Assumption: every type a game is handed is the SDK's own: `thrum` re-exports no engine type.
-- Assumption: in [the extension map](DESIGN.md#the-extension-map), a predicted shot is one the control function fires, a data pack adds no prefab names, and a guest's saved progress travels as commands.
+- Assumption: sheets, clips and tiles are cooked from an image and a small file beside it, in WP3.
+- Assumption: a player has one character at a time, and taking another player's fails and changes nothing. Anything else they own, such as a drone, is an ordinary entity a rule moves.
+- Assumption: no engine or backend type reaches a game through `thrum`. Rust's own types and the game's own are ordinary.
+- Assumption: in [the extension map](DESIGN.md#the-extension-map), a predicted shot is one the control function fires, a data pack adds no prefab names, a guest's saved progress travels as commands, and a `#[seen]` button's press carries its picture.
 
 ## WP1 An agent writes a game's scenes, phases and rules in plain Rust against one crate, in the order they run, and proves them in an ordinary test with no window
 
 Start with WP1.1, the item most likely to overturn the design. `thrum-core` resolves structural edits when
-a tick ends, in `crates/thrum-core/src/sim/transaction.rs` and `runtime.rs`. The barrier after each
+a tick ends, in `sim/transaction.rs` and `sim/runtime.rs`. The barrier after each
 registered system is an addition under [ruling 2](../ARCHITECTURE.md#seam-rulings-for-game-sdk). If it
 cannot be built so, end `BLOCKED` with what you found.
 
