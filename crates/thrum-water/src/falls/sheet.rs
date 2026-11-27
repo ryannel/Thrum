@@ -1,6 +1,6 @@
 use super::{Falls, Segment, active};
 use bytemuck::{Pod, Zeroable};
-use glam::{DVec2, DVec3};
+use glam::{DVec2, DVec3, Vec3, Vec4};
 use thrum_render::{
     atmosphere::EnvironmentProducts,
     binding,
@@ -14,9 +14,10 @@ use thrum_water_model::{Map, PathPoint};
 pub(in crate::falls) const ROWS: usize = 32;
 pub(crate) const PASS: &str = "waterfall sheet";
 const SPLASHES_PER_SEGMENT: usize = 12;
-const VERTICES_PER_SEGMENT: usize = 24 * (ROWS + 3) + 6 * SPLASHES_PER_SEGMENT;
-const ATTRIBUTES: [wgpu::VertexAttribute; 4] =
-    wgpu::vertex_attr_array![0 => Float32x4, 1 => Float32x4, 2 => Float32x4, 3 => Float32x4];
+const RIBBONS_PER_SEGMENT: usize = 3;
+const VERTICES_PER_SEGMENT: usize =
+    12 * RIBBONS_PER_SEGMENT * (ROWS + 3) + 6 * SPLASHES_PER_SEGMENT;
+const ATTRIBUTES: [wgpu::VertexAttribute; 5] = wgpu::vertex_attr_array![0 => Float32x4, 1 => Float32x4, 2 => Float32x4, 3 => Float32x4, 4 => Float32];
 
 #[repr(C)]
 #[derive(Clone, Copy, Pod, Zeroable)]
@@ -25,6 +26,7 @@ struct Vertex {
     velocity_along: [f32; 4],
     discharge: [f32; 4],
     across_fraction: [f32; 4],
+    edge: f32,
 }
 
 #[repr(C)]
@@ -392,22 +394,18 @@ fn mesh(
             if fraction >= 0.0 {
                 let join = (1.0 - distance / (0.25 + 3.0 * launch_depth)).clamp(0.0, 1.0);
                 world.y += launch_depth * join * join;
+                let normal = DVec3::new(across.x, 0.0, across.y)
+                    .cross(velocity)
+                    .normalize_or_zero();
+                let forward = DVec3::new(velocity.x, 0.12, velocity.z);
+                let outward = if normal.dot(forward) >= 0.0 {
+                    normal
+                } else {
+                    -normal
+                };
                 if !edge {
-                    // The full part of each ribbon has a rounded wet face.
-                    // Its outer edges still meet the adjacent ribbons.
-                    let belly =
-                        0.65 * physical.thickness * (4.0 * fraction * (1.0 - fraction)).max(0.0);
-                    let normal = DVec3::new(across.x, 0.0, across.y)
-                        .cross(velocity)
-                        .normalize_or_zero();
-                    let forward = DVec3::new(velocity.x, 0.0, velocity.z);
-                    world += normal
-                        * belly
-                        * if normal.dot(forward) >= 0.0 {
-                            1.0
-                        } else {
-                            -1.0
-                        };
+                    let bulb = (4.0 * fraction * (1.0 - fraction)).max(0.0);
+                    world += outward * bulb * 0.65 * physical.thickness;
                 }
             }
             Vertex {
@@ -428,6 +426,7 @@ fn mesh(
                     across.y as f32,
                     fraction as f32,
                 ],
+                edge: f32::from(edge),
             }
         };
         let strip = |t| [at(t, 0), at(t, 1), at(t, 2)];
@@ -441,16 +440,65 @@ fn mesh(
             filament(vertices, |fraction| at(fraction, 1), stations());
             continue;
         }
-        let mut top = strip(-1.0);
+        let mut top = ribbons(strip(-1.0));
         for fraction in stations() {
-            let bottom = strip(fraction);
-            stitch(vertices, top, bottom);
+            let bottom = ribbons(strip(fraction));
+            for (a, b) in top.into_iter().zip(bottom) {
+                stitch(vertices, a, b);
+            }
             top = bottom;
         }
         if segment.plunge.is_some() {
-            splash(vertices, top);
+            splash(vertices, strip(1.0));
         }
     }
+}
+
+#[expect(clippy::cast_precision_loss, reason = "ribbon indices are bounded")]
+fn ribbons(section: [Vertex; 3]) -> [[Vertex; 3]; RIBBONS_PER_SEGMENT] {
+    let at = |distance: f32| {
+        let (a, b, t) = if distance <= 0.5 {
+            (section[0], section[1], 2.0 * distance)
+        } else {
+            (section[1], section[2], 2.0 * distance - 1.0)
+        };
+        let interpolate = |a, b| Vec4::from_array(a).lerp(Vec4::from_array(b), t).to_array();
+        Vertex {
+            world_time: interpolate(a.world_time, b.world_time),
+            velocity_along: interpolate(a.velocity_along, b.velocity_along),
+            discharge: interpolate(a.discharge, b.discharge),
+            across_fraction: interpolate(a.across_fraction, b.across_fraction),
+            edge: 0.0,
+        }
+    };
+    std::array::from_fn(|index| {
+        let half_width = 0.5 / RIBBONS_PER_SEGMENT as f32;
+        let middle = (2.0 * index as f32 + 1.0) * half_width;
+        let centre = at(middle);
+        let [ax, _, az, fraction] = centre.across_fraction;
+        let along = centre.velocity_along[3];
+        let fold = (0.5 + 0.5 * (along * 5.63).sin()) * (0.5 + 0.5 * (along * 12.29).cos());
+        let separation = ((fraction - 0.41 - 0.23 * fold) / 0.43).clamp(0.0, 1.0);
+        let split = separation * separation * (3.0 - 2.0 * separation);
+        let narrowed = half_width * (1.0 - split * (0.10 + 0.34 * fold));
+        let velocity = Vec3::from_slice(&centre.velocity_along);
+        let normal = Vec3::new(ax, 0.0, az).cross(velocity).normalize_or_zero();
+        let outward = normal
+            * if normal.dot(Vec3::new(velocity.x, 0.12, velocity.z)) >= 0.0 {
+                1.0
+            } else {
+                -1.0
+            };
+        let depth = (0.034 + 0.24 * fold) * split * (1.0 - fraction).max(0.0).sqrt();
+        [-1.0_f32, 0.0, 1.0].map(|edge| {
+            let mut vertex = at(edge.mul_add(narrowed, middle));
+            let position =
+                Vec3::from_slice(&vertex.world_time) + outward * depth * (1.0 - 0.42 * edge.abs());
+            vertex.world_time = position.extend(vertex.world_time[3]).to_array();
+            vertex.edge = edge.abs();
+            vertex
+        })
+    })
 }
 
 #[expect(
@@ -462,8 +510,6 @@ fn filament(
     sample: impl Fn(f64) -> Vertex,
     stations: impl Iterator<Item = f64>,
 ) {
-    use glam::Vec3;
-
     let section = |fraction: f64| {
         let mut vertex = sample(fraction);
         let [ax, distance, az, _] = vertex.across_fraction;
@@ -526,8 +572,6 @@ fn stitch(vertices: &mut Vec<Vertex>, top: [Vertex; 3], bottom: [Vertex; 3]) {
 // plunge's impulse and foam birth still use the original receiving level.
 #[expect(clippy::cast_precision_loss, reason = "only twelve drops per impact")]
 fn splash(vertices: &mut Vec<Vertex>, foot: [Vertex; 3]) {
-    use glam::Vec4;
-
     for drop in 0..SPLASHES_PER_SEGMENT {
         let fraction = (drop as f32 + 0.5) / SPLASHES_PER_SEGMENT as f32;
         let mut vertex = foot[1];
