@@ -394,6 +394,15 @@
           "../../.orchestrate/evidence/ATMOSPHERE/M9-checks.md"
         ]
       },
+      "chart_cadence_candidate": {
+        "implementation": "The WP12 builder branch spreads the nine Sun-following chart stages by submitted frame, retaining a shared input snapshot. Governed reflections track the encoding of each level and the governed aerial path has a separate writer for its haze scale.",
+        "correctness": "The mac-metal CPU schedule and Metal product, consumer, tier and creation probes passed on the candidate.",
+        "visuals": "The Mac window capture passed the cadence-4 twilight, climb and hour-jump inspection. Chrome hardware WebGPU showed a visible sky colour step at the cadence-8 twilight refresh. The candidate has not landed.",
+        "device": "On the Apple M3 Max under shared load, 550 submissions per arm gave chart GPU times p50/p95 of 1.176/1.605 ms at cadence 1 and 0.308/0.551 ms at cadence 4. Chrome's cadence-8 twilight capture submitted at a 16.7 ms median interval.",
+        "evidence": [
+          "../../.orchestrate/evidence/ATMOSPHERE/WP12/README.md"
+        ]
+      },
       "haze_input": {
         "implementation": "The atmosphere profile accepts extinction at 550 nm and an \u00c5ngstr\u00f6m exponent. The enabled chart family and lent Sun light use the eight-band extinction at submission. The default uses the original chart pipelines.",
         "correctness": "Metal readbacks exercise default chart identity, changed Sun and transmittance, distinct spectral bands and the unchanged environment epoch.",
