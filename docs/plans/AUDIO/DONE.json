@@ -24,7 +24,7 @@
         },
         {
           "id": "WP1.2",
-          "statement": "A place and the listener, in the buffer. (1) A mono sound placed at the listener's position is centred and has the power of the same sound played with no place. (2) With the place straight ahead at 0, 1/4, 1/2 and 3/4 of its radius, the gain is `(1 - d/radius)²` of the gain at the listener. At the radius and at twice the radius the play is dropped and counted as out of range, which the record keeps apart from every fault. (3) A place on the listener's left, against its right vector, is louder in channel 0, and one on its right is louder in channel 1. At one distance, the summed power of the two channels is the same at five pans from hard left to hard right. (4) A stereo sound with a place is summed to mono before it is panned. (5) Turning the listener's right vector about swaps the two channels' levels. (6) A place moved, in steps between pulls, along a line through the listener's position: the pan passes through the centre, and no frame's gain in either channel differs from the frame before by more than one glide step. (7) The listener moved and turned between pulls while a long sound plays: the gains reach the new values, and no frame's gain moves by more than one glide step. (8) A place or a listener that is not finite is dropped and counted as a bad value, and the listener stays where it was. Each comparison is at the tolerance its test states. Guard: CPU tests on the buffer, in `./dev check`.",
+          "statement": "A place and the listener, in the buffer. (1) A mono sound placed at the listener's position is centred and has the power of the same sound played with no place. (2) With the place straight ahead at 0, 1/4, 1/2 and 3/4 of its radius, the gain is `(1 - d/radius)\u00b2` of the gain at the listener. At the radius and at twice the radius the play is dropped and counted as out of range, which the record keeps apart from every fault. (3) A place on the listener's left, against its right vector, is louder in channel 0, and one on its right is louder in channel 1. At one distance, the summed power of the two channels is the same at five pans from hard left to hard right. (4) A stereo sound with a place is summed to mono before it is panned. (5) Turning the listener's right vector about swaps the two channels' levels. (6) A place moved, in steps between pulls, along a line through the listener's position: the pan passes through the centre, and no frame's gain in either channel differs from the frame before by more than one glide step. (7) The listener moved and turned between pulls while a long sound plays: the gains reach the new values, and no frame's gain moves by more than one glide step. (8) A place or a listener that is not finite is dropped and counted as a bad value, and the listener stays where it was. Each comparison is at the tolerance its test states. Guard: CPU tests on the buffer, in `./dev check`.",
           "check": "cargo nextest run --locked --offline -p thrum-audio --test it -E 'test(/^place::/)' --no-tests=fail",
           "reads": [
             "crates/",
@@ -154,7 +154,9 @@
           "verdict": "",
           "review": ""
         }
-      ]
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0
     },
     {
       "id": "WP2",
@@ -286,7 +288,9 @@
           "verdict": "",
           "review": ""
         }
-      ]
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0
     }
   ]
 }

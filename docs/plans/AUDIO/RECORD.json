@@ -1,0 +1,35 @@
+{
+  "module": "AUDIO",
+  "design": null,
+  "work_packages": {
+    "WP1": {
+      "definitions": "d574463458820783ca310e1326a1bd735d1ee047eb2075b0974b343c1dcf808b",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module AUDIO. It serves the approved Game SDK (owner approved 27 Nov; scope question 3: audio in the small form); r",
+        "at": "2026-11-27T22:06:56Z"
+      }
+    },
+    "WP2": {
+      "definitions": "eb5735ea8cbb17606643b7912aad56581686edb737782cf5335c66d6ebc4a46c",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Plan module AUDIO. It serves the approved Game SDK (owner approved 27 Nov; scope question 3: audio in the small form); r",
+        "at": "2026-11-27T22:06:56Z"
+      },
+      "ends_stretch": true
+    }
+  },
+  "tasks": [
+    {
+      "task": "Plan module AUDIO. It serves the approved Game SDK (owner approved 27 Nov; scope question 3: audio in the small form); read docs/plans/GAME-SDK/DESIGN.md (the Audio entry) for what the SDK expects. No agent can hear, so items that judge sound wait for the owner's ear; keep those few and clearly marked.",
+      "at": "2026-11-27T22:06:56Z"
+    }
+  ],
+  "planner": {
+    "host": "claude",
+    "at": "2026-11-27T22:06:56Z"
+  }
+}
