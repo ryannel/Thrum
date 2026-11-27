@@ -1555,3 +1555,8 @@
   carried-weight admission. Reviewed the crossings and overhead windows
   on Metal and hardware Chrome, and refreshed the paired 1440p cost record.
   [Radiance](../../../.orchestrate/evidence/WATERS/WP15/optical-repair-source-proof.md) · [Admission](../../../.orchestrate/evidence/WATERS/WP15/optical-repair-admission-proof.md) · [Views](../../../.orchestrate/evidence/WATERS/WP15/optical-repair-visual-proof.md).
+
+- 2026-11-27 Kept mixed-map water vertex positions invariant across the
+  regular and refined draws. Metal's tidal join returned within its original
+  depth tolerance and all 26 lens tests passed.
+  [Join and lens checks](../../../.orchestrate/evidence/WATERS/WP15/river-join-invariant-final.log).

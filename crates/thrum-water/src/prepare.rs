@@ -832,6 +832,10 @@ fn shader_source(
             + rain_geometry
             + include_str!("surface_vertex.wgsl")
             + if has_rivers { "    body: u32,\n" } else { "" }
+            + "}\nstruct VertexOut {\n    "
+            // Mixed maps draw the same geometry through regular and refined
+            // entry points. Keep their raster positions invariant on Metal.
+            + if has_rivers { "@invariant " } else { "" }
             + include_str!("surface_vertex_output.wgsl")
             + varying
             + include_str!("surface_vertex_entry.wgsl")
