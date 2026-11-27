@@ -7,7 +7,8 @@ struct CausticVertex {
     @builtin(vertex_index) vertex: u32,
     @builtin(instance_index) rung: u32,
 ) -> CausticVertex {
-    let cell_scale = min(max(rung / 4u, caustic_draw.quality.x), 2u);
+    let depth_scale = (rung - min(rung, CAUSTIC_GRID_RUNG_OFFSET)) / CAUSTIC_RUNGS_PER_GRID_SCALE;
+    let cell_scale = min(max(depth_scale, caustic_draw.quality.x), 2u);
     let side = 512u >> cell_scale;
     let draw_side = side + 32u;
     let node = vec2(vertex % (draw_side + 1u), vertex / (draw_side + 1u));
