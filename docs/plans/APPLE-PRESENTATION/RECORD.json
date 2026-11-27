@@ -2277,6 +2277,35 @@
         "by": "plan",
         "task": "The main-branch check long-tests fails on c6734fe1b087 (last pass 3d1f03509). Failing test: thrum-render generation_tran",
         "at": "2026-11-27T08:50:30Z"
+      },
+      "ready_for_review": {
+        "commit": "76ac4c4a795f6a7ba5c61d762401100909c8c276",
+        "checked": "76ac4c4a795f6a7ba5c61d762401100909c8c276",
+        "at": "2026-11-27T12:07:11Z",
+        "reused": [
+          "WP19.1"
+        ],
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.171.0-alpha.13.2",
+        "path": "headless",
+        "usage": {
+          "input": 217030,
+          "cached": 11199744,
+          "output": 17720,
+          "turns": 1
+        },
+        "session_usage": {
+          "input": 217030,
+          "cached": 11199744,
+          "output": 17720,
+          "turns": 1
+        }
       }
     }
   },

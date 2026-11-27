@@ -1241,7 +1241,7 @@
     {
       "id": "WP19",
       "name": "The long tests pass again: the output-scale device test passes beside the other tests of its binary",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "depends_on": [],
       "quality_bar": "A test suite as dependable as a shipped engine's: a proof gives the same answer whichever tests run beside it, and a fix to a test weakens nothing the test proves.",
       "items": [
