@@ -384,6 +384,49 @@ fn layered_draw_graph() -> EffectGraph {
 }
 
 #[test]
+fn simulate_draw_rules_refuse_retained_storage_writes_from_transient_draws() {
+    let mut graph = layered_draw_graph();
+    graph.passes.truncate(1);
+    graph.opaque_reads.clear();
+    graph.resources[0].1 = ResourceScope::Transient;
+    graph.resources.push((
+        ResourceDescriptor::Buffer {
+            bytes: 4,
+            usage: wgpu::BufferUsages::STORAGE,
+        },
+        ResourceScope::Persistent {
+            owner: 1,
+            epoch: 0,
+            initialized: true,
+        },
+    ));
+    graph.passes[0].accesses.push(EffectAccess {
+        resource: 1,
+        range: 0..4,
+        kind: AccessKind::StorageRead,
+        view: None,
+        history: None,
+    });
+    graph.validate().expect("capture may read retained state");
+    for kind in [AccessKind::StorageWrite, AccessKind::StorageReadWrite] {
+        graph.passes[0].accesses[1].kind = kind;
+        assert_eq!(
+            graph.validate(),
+            Err(draw_error(
+                "left",
+                "a draw with a transient colour attachment cannot write retained storage"
+            )),
+            "{kind:?}"
+        );
+    }
+    graph.resources[1].1 = ResourceScope::Transient;
+    graph.passes[0].accesses[1].kind = AccessKind::StorageWrite;
+    graph
+        .validate()
+        .expect("capture may write transient storage");
+}
+
+#[test]
 fn simulate_draw_rules_validate_attachment_ranges_and_ownership() {
     use super::draw::check_draw_format;
     use crate::graph::TextureKind;

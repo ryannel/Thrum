@@ -673,10 +673,18 @@ fn simulate_draw_list_gpu_routes_each_members_view_draw_and_cadence() {
     });
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum DrawResources {
+    SeparateDeclarations,
+    SharedDeclaration,
+    SplitBacking,
+}
+
 struct PreparedDraws {
     usage: wgpu::TextureUsages,
     persistent: bool,
     subresources: &'static [(u32, u32)],
+    resources: DrawResources,
     graph: EffectGraph,
     targets: Vec<EffectDrawTarget>,
 }
@@ -691,6 +699,7 @@ impl PreparedDraws {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT | usage,
             persistent,
             subresources,
+            resources: DrawResources::SeparateDeclarations,
             graph: EffectGraph::default(),
             targets: Vec::new(),
         }
@@ -711,7 +720,7 @@ impl SceneContribution for PreparedDraws {
             .max()
             .unwrap()
             + 1;
-        let texture = surface.device.create_texture(&wgpu::TextureDescriptor {
+        let descriptor = wgpu::TextureDescriptor {
             label: Some("simulate draw preparation test"),
             size: wgpu::Extent3d {
                 width: 1 << (mips - 1),
@@ -724,11 +733,19 @@ impl SceneContribution for PreparedDraws {
             format: FORMAT,
             usage: self.usage,
             view_formats: &[],
-        });
+        };
+        let texture = surface.device.create_texture(&descriptor);
+        let split = (self.resources == DrawResources::SplitBacking)
+            .then(|| surface.device.create_texture(&descriptor));
         self.graph = EffectGraph::default();
         self.targets.clear();
-        for (resource, &(mip, layer)) in self.subresources.iter().enumerate() {
-            let name = PASS_NAMES[resource];
+        for (index, &(mip, layer)) in self.subresources.iter().enumerate() {
+            let name = PASS_NAMES[index];
+            let resource = if self.resources == DrawResources::SeparateDeclarations {
+                index
+            } else {
+                0
+            };
             let scope = if self.persistent {
                 ResourceScope::Persistent {
                     owner: resource as u64,
@@ -738,9 +755,11 @@ impl SceneContribution for PreparedDraws {
             } else {
                 ResourceScope::Transient
             };
-            self.graph
-                .resources
-                .push((ResourceDescriptor::of_texture(&texture), scope));
+            if resource == self.graph.resources.len() {
+                self.graph
+                    .resources
+                    .push((ResourceDescriptor::of_texture(&texture), scope));
+            }
             let unit = u64::from(mip) * u64::from(layers) + u64::from(layer);
             self.graph.passes.push(EffectPass {
                 name: name.into(),
@@ -754,10 +773,15 @@ impl SceneContribution for PreparedDraws {
                     history: None,
                 }],
             });
+            let backing = if index == 0 {
+                &texture
+            } else {
+                split.as_ref().unwrap_or(&texture)
+            };
             self.targets.push(
                 EffectDrawTarget::new(
                     name,
-                    &texture,
+                    backing,
                     mip,
                     layer,
                     wgpu::Color::TRANSPARENT,
@@ -812,6 +836,41 @@ fn simulate_draw_gpu_preparation_rejects_two_writers_of_the_same_subresource() {
             "{err}"
         );
         println!("separate mips and layers prepared; two writers of mip 1, layer 0: {err}");
+    });
+}
+
+#[test]
+fn simulate_draw_gpu_preparation_requires_one_backing_for_a_declared_array() {
+    let Some(gpu) = crate::test_device::open(
+        "simulate_draw_gpu array backing",
+        Some(wgpu::Backend::Metal),
+        DeviceProfile::Portable,
+        &DeviceRestriction::default(),
+    ) else {
+        return;
+    };
+    pollster::block_on(async {
+        let mut host = host(&gpu).await;
+        let field = |resources| PreparedDraws {
+            resources,
+            ..PreparedDraws::new(wgpu::TextureUsages::empty(), true, &[(1, 0), (1, 1)])
+        };
+        host.set_scene_contribution(Box::new(field(DrawResources::SharedDeclaration)))
+            .unwrap();
+        let err = host
+            .set_scene_contribution(Box::new(field(DrawResources::SplitBacking)))
+            .unwrap_err();
+        assert!(
+            matches!(
+                &err,
+                FrameError::EffectGraph(EffectGraphError::SimulateDraw {
+                    pass,
+                    reason: "prepared colour views of one resource must share a backing texture",
+                }) if pass == PASS_NAMES[1]
+            ),
+            "{err}"
+        );
+        println!("both layers of one backing texture prepared; split backing: {err}");
     });
 }
 

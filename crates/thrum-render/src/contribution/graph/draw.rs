@@ -19,6 +19,7 @@ pub struct EffectDrawTarget {
 impl EffectDrawTarget {
     /// Prepare a single mip and layer of an effect-owned colour texture. Supply the same
     /// flattened mip/layer index in the graph access and the same blend choice in the pipeline.
+    /// Views of the same declared resource must use the same backing texture.
     ///
     /// # Errors
     /// Refuses an unsupported attachment format, blend mode or subresource, or a
@@ -188,6 +189,20 @@ impl EffectGraph {
             }) {
                 return Err(reject("cannot declare copy or acceleration build work"));
             }
+            // Capture runs transient draws to reproduce their output. All their writes
+            // must be transient so that submitting a capture preserves committed state.
+            if matches!(scope, ResourceScope::Transient)
+                && pass.accesses.iter().any(|access| {
+                    matches!(
+                        access.kind,
+                        AccessKind::StorageWrite | AccessKind::StorageReadWrite
+                    ) && !matches!(self.resources[access.resource].1, ResourceScope::Transient)
+                })
+            {
+                return Err(reject(
+                    "a draw with a transient colour attachment cannot write retained storage",
+                ));
+            }
             let has_other_writer = self
                 .declarations()
                 .enumerate()
@@ -264,16 +279,23 @@ impl EffectGraph {
                     "prepared colour view differs from the declaration",
                 ));
             }
-            // Graph indices identify declarations. Distinct declarations can be backed
-            // by views of the same texture, so also check the actual subresource.
-            let subresource = (target.view.texture(), target.unit);
-            if written.contains(&subresource) {
-                return Err(draw_error(
-                    &pass.name,
-                    "prepared colour subresource overlaps another pass's write",
-                ));
+            let texture = target.view.texture();
+            for &(resource, backing, unit) in &written {
+                if backing == texture {
+                    if unit == target.unit {
+                        return Err(draw_error(
+                            &pass.name,
+                            "prepared colour subresource overlaps another pass's write",
+                        ));
+                    }
+                } else if resource == attachment.resource {
+                    return Err(draw_error(
+                        &pass.name,
+                        "prepared colour views of one resource must share a backing texture",
+                    ));
+                }
             }
-            written.push(subresource);
+            written.push((attachment.resource, texture, target.unit));
         }
         Ok(())
     }
