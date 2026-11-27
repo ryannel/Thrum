@@ -94,7 +94,11 @@ impl SceneContributions {
             members.push((first..end, job, entry.effect_graph()));
             first = end;
         }
-        if (extent.is_none() && first == 0) || members.iter().all(|(_, job, _)| job.is_none()) {
+        let needs_job = match extent {
+            None => first != 0,
+            Some(_) => members.iter().any(|(_, job, _)| job.is_some()),
+        };
+        if !needs_job {
             return Ok(None);
         }
         Ok(Some(Box::new(move |slots| {
