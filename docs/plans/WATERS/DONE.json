@@ -1844,7 +1844,7 @@
     {
       "id": "WP16",
       "name": "Under water the Sun casts a moving net of light on the bed and the hull, shafts of light stand in the water, and the picture stays readable as the camera goes down",
-      "status": "blocked",
+      "status": "not_started",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -1985,17 +1985,7 @@
           "verdict": "",
           "review": ""
         }
-      ],
-      "blocked": {
-        "reason": "needs_context",
-        "what": "WP16.7 reached the approved three-look limit and needs a planner decision on how to achieve visible beam separation at the remaining stations.",
-        "work": {
-          "commit": "37bd113a3673c9d41cafcb26908fd913ee414188",
-          "branch": "build/waters",
-          "pushed": false
-        },
-        "handoff": ".orchestrate/evidence/WATERS/WP16-handoff.md"
-      }
+      ]
     },
     {
       "id": "WP20",
@@ -2387,7 +2377,9 @@
           "builder_result": "open",
           "evidence": ""
         }
-      ]
+      ],
+      "failed_reviews": 0,
+      "failed_reviews_with_repeat": 0
     },
     {
       "id": "WP11",

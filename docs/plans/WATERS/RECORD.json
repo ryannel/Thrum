@@ -21,7 +21,10 @@
       "output": 2470,
       "turns": 1
     },
-    "at": "2026-11-27T17:14:38Z"
+    "at": "2026-11-27T17:14:38Z",
+    "items_owed": [
+      "WP26"
+    ]
   },
   "work_packages": {
     "WP1": {
@@ -2817,12 +2820,12 @@
       }
     },
     "WP16": {
-      "definitions": "b72ef3a9ded8a81a8f5aec46a4b78f6de816e69c9b43b110161a6916a424e336",
+      "definitions": "0fc6f7ebf1ee92dd82e102256b91fbb3e85cf6e3946928e028069792789369fc",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 1 Must Fix find",
-        "at": "2026-11-27T17:13:06Z"
+        "task": "Lead ruling for WATERS WP16 (blocked again at the three-look limit on WP16.7, six looks in all on shallow beams; handoff",
+        "at": "2026-11-27T18:01:17Z"
       }
     },
     "WP17": {
@@ -3499,6 +3502,15 @@
         "checked": "8f6922ed15ae39739d92c845af3894ffb90ee7b1",
         "at": "2026-11-26T14:14:46Z"
       }
+    },
+    "WP26": {
+      "definitions": "b7a679deffe57d5f3fbd0dfe4c12067e355bb8d58a27cd112cf36801e09a123a",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "Lead ruling for WATERS WP16 (blocked again at the three-look limit on WP16.7, six looks in all on shallow beams; handoff",
+        "at": "2026-11-27T18:01:17Z"
+      }
     }
   },
   "tasks": [
@@ -3713,11 +3725,15 @@
     {
       "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 1 Must Fix findings.",
       "at": "2026-11-27T17:13:06Z"
+    },
+    {
+      "task": "Lead ruling for WATERS WP16 (blocked again at the three-look limit on WP16.7, six looks in all on shallow beams; handoff .claude/worktrees/waters/.orchestrate/evidence/WATERS/WP16-handoff.md, branch build/waters at 37bd113a3): park the two failing beam stations, the 3 m noon lake and the 1 m low-Sun sea. Keep in WP16.7 what reads now (beams at 10 m, rays in the low-Sun lake, the changing 1 m noon glow), so WP16 can close on its passing items and the other open inspections (WP16.6, WP16.8, WP16.11). Move the two parked stations to a new later WATERS work package that first settles the optics mismatch the builder found (part S3 assumed more opaque water than the dive showcase; with showcase coefficients the visibility proxy halves) by researching how shipped high-end games make shallow underwater shafts read (modern techniques only), then builds. Keep it from blocking SHOWCASE. Leave WP16 ready to resume.",
+      "at": "2026-11-27T18:01:17Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-27T17:13:06Z"
+    "at": "2026-11-27T18:01:17Z"
   },
   "design_history": [
     {
