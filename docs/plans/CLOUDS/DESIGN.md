@@ -929,7 +929,8 @@ overhead in the frame mist first forms. So a Ground scene whose fog amounts are 
 profile's march, refresh and compose. It is not held to the bytes it drew before WP15, when its layer kept one
 stop a texel: a full refresh and a stop for each pixel cannot reproduce them. WP15.16 judges that its clouds
 look as they do in a scene without Ground. A profile without Ground is as it was before stops existed: the same
-passes and the same bytes (WP15.15).
+passes, the same bytes and the same storage, which is one stop for each layer texel and none for a pixel
+(WP15.15).
 
 **A pixel of sky.** A pixel with no surface composes the transport of a whole ray, which is the stop a texel
 keeps for each of its pixels that is sky. Those stops are interpolated between texels at the pixel's centre, as
@@ -937,17 +938,31 @@ the layer is in a profile without Ground, so a cloud's edge is as smooth with Gr
 that ended in the sky is a tap. A texel with no sky pixel gives none, and the weights of the other taps are
 renormalised; the pixel's own texel always gives one. So transport that ended on a surface never reaches a sky
 pixel, and a ridge or a nearby occluder against cloud has a clean edge from the sky's side as it has from the
-surface's (WP15.14). A stop that ended in the sky keeps the frame contract below. A Ground profile may trace
-every texel in every frame, and that alone is no reason to call the cloud changed: such a stop writes reactive
-coverage where the cloud changed beyond what its motion explains, measured against the layer's history, as a
-profile without Ground does in a frame whose history is valid.
+surface's. What a sky pixel composes is that interpolation, and it is not the transport of its own texel's ray:
+beside a cloud's edge, sky taps of 0.2 and 0.8 at weights ¾ and ¼ compose 0.35 where the pixel's own texel
+traced 0.2. WP15.14 holds the composed pixel to the interpolation of the sky stops alone.
+
+**Reactive coverage of a sky stop.** A stop that ended in the sky keeps the frame contract below. A Ground
+profile may trace every texel in every frame, and that alone is no reason to call the cloud changed: such a stop
+writes reactive coverage where the cloud changed beyond what its motion explains, measured against the layer's
+history, as a profile without Ground does in a frame whose history is valid. So a cloud that stands unchanged
+before a still camera writes none, however opaque it is, and the reconstructor keeps its history there. In the
+first frame after a reset the same cloud writes its opacity, and where its transmittance has moved from the
+history's it writes in proportion (WP15.18). Opacity written in every frame would have the reconstructor drop
+its history over every cloud in every frame.
 
 **The scene's extent.** A profile without Ground keeps the layer it was prepared with and is sampled at any
 render extent. With a stop for each pixel the layer is addressed by render pixel, so it follows the scene's
 extent, and its layer scale is fixed at 100%, which its controls say. When the scene grows past what the layer
 holds, the replacement is prepared where the frame host prepares its own targets for the new extent
 ([ruling 10](#what-clouds-asks-of-other-modules)), the switch installs it and marks the layer's history
-invalid, and the first frame at the new extent has a stop for every pixel (WP15.17).
+invalid, and the first frame at the new extent has a stop for every pixel (WP15.17). On the Mac the render
+thread calls the contribution twice in a resize: when it collects the inputs the preparation worker will build
+from, and at the switch. Neither call makes any of the replacement. In the first the contribution hands over a
+job and the worker runs it, so from collecting the inputs to the end of publication the render thread creates
+no texture, view, bind group or pipeline, counted by thread as
+[the Mac's lifecycle](../APPLE-PRESENTATION/DESIGN.md#the-lifecycle-of-a-generation-build-wp4) counts a
+transition.
 
 **Carried stops.** A stop traced in an earlier frame is carried with the surface it ended on, by the scene's
 motion for that pixel; a stop that ended in the sky is carried by the cloud's own, as above. A pixel composes a
@@ -1202,6 +1217,10 @@ near the camera and this module's trace beyond it.
   through the ramp. The distance is short
   for three reasons: fog thick enough to hide the land is all inside it; every heaped cloud base is beyond it,
   so no cumulus is ever drawn at the volume's cell size; and a low deck overhead is featureless at that range.
+  The two weights divide every condensate, and not only what lies on the ground. Cloud nearer the camera than
+  the ramp's end, as around a camera inside a layer, is drawn whole with mist on as with it off; WP15.16
+  judges that from inside upper cloud, where a march that dropped the cloud's first 300 m once mist was on
+  would open a hole.
 - **The world's light.** The [sky overlay](#the-sky-the-world-sees) traces every condensate from the camera, so
   inside fog the land's ambient light is flat and reflections show fog. The Sun on a surface in fog is dimmed by
   the ground band through `ATMOSPHERE`'s one factor.
@@ -1292,11 +1311,12 @@ The owner's bar of 17 November 2026 ([the request](#the-request), and
   query's column, which is [the bound a query promises](#one-weather-field-in-the-air-frame) (WP6.2, WP7.6).
   Each test states its allowance for the map's filtering and shows that twice the amount fails. These compare
   two answers to one question a game asks. Neither is a reference for light, and no photon is counted.
-- **Contracts are tested.** The frame contract's motion, reactive coverage and history (WP3.4, WP15.7); the
-  stop each pixel composes, in named cases (WP15.1, WP15.14); air and
+- **Contracts are tested.** The frame contract's motion, reactive coverage and history (WP3.4, WP15.7, and
+  WP15.18 for a sky stop under Ground); the stop each pixel composes, in named cases (WP15.1, WP15.14); air and
   condensate composed once (WP3.6, WP14.3); one optical depth for every receiver, with the same bytes with
-  visible clouds off (WP3.8, WP6.12, WP8.9); a capability left out costing nothing (WP15.15 for Ground); a
-  resize with and without a contribution that must grow (WP15.17); state through pauses, hitches
+  visible clouds off (WP3.8, WP6.12, WP8.9); a capability left out costing nothing, in bytes drawn and in
+  storage held (WP15.15 for Ground); a resize with and without a contribution that must grow (WP15.17); state
+  through pauses, hitches
   and a replaced device; and no retained image moved.
 - **A wrong substitute still fails.** Where a test names a plausible wrong version, such as a shore mask that
   drifts or a cloud band's value counted twice, it runs that version through the same assertion and shows it
@@ -1820,10 +1840,15 @@ today. Rulings 6 to 8 are `ATMOSPHERE`'s own work, in its WP7 and WP8, and this 
     module's builder in WP15, in `thrum-render`'s contribution seam and the frame host's extent preparation).
     A contribution says whether an extent needs more than it holds, and one that does supplies a job that
     prepares the replacement where the frame host prepares its own targets: on the Mac that is the preparation
-    worker, and the switch creates no texture, view, bind group or pipeline. The ruling adds to a resize and
+    worker, and the render thread creates no texture, view, bind group or pipeline from the call that collects
+    the worker's inputs to the end of the switch. The ruling adds to a resize and
     changes none. When no contribution needs more, a resize is prepared, refused and published as it was
     before the ruling, for one contribution and for a list of them, whether or not a member declares secondary
-    view slots and whether or not such a member has bindings of its own to replace. WP15.17 lists the cases.
+    view slots and whether or not such a member has bindings of its own to replace. One input had two outcomes
+    before the ruling and keeps both. On the worker's route, a member that declares a slot and returns no job
+    from its secondary resize hook, at an extent that changes its slot's extent, is resized when a list holds
+    it, because the list supplies the job for its members, and is refused with an error when it is attached
+    directly. WP15.17 lists the cases.
 
 Everything else is used as built: effect stages, histories and cadence; the sea's depth write, which the trace
 treats as geometry; the temporal contribution; leases of volumes; typed controls; and `PLATFORM-RUNTIME-MAC`'s

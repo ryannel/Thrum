@@ -1190,3 +1190,31 @@ forwards both resize hooks and slices the replacement handles in member order.
   [ruling 9](../ARCHITECTURE.md#seam-rulings-for-clouds) now states it.
 - WP15.4 to WP15.13 are unchanged. PLAN.md gains one assumption, that a Ground scene pays the full-refresh
   trace at every fog amount, and WP14's note shrank to its review link, WP14 being Done.
+
+## Design review after the WP15 diagnosis
+
+- 2026-11-27 Planner, after [the design review at `422b93da8`](../../../.orchestrate/evidence/CLOUDS/design-review.md),
+  which asked for six changes to WP15's items. Each is settled in the files; none needed a change of scope.
+- Finding 1, the far-mist toggle could not show a hole in upper cloud. WP15.16's pair was taken from 40 m,
+  1,100 m below the cloud. It is now taken from inside the overcast layer, on a sightline that meets cloud
+  nearer than 500 m and passes no far mist, and point 5 of the list judges it. The 40 m views keep the edges
+  and the ridge. [The handover](DESIGN.md#condensate-that-meets-the-ground-mist-fog-and-low-cloud) says the
+  weights divide every condensate, upper cloud included.
+- Finding 2, WP15.14 case 2 expected the sky pixel's own ray. It now expects the interpolation of the sky
+  stops alone, with renormalised weights, compared with what composition wrote.
+  [A pixel of sky](DESIGN.md#the-visible-layer) gives the review's 0.2, 0.8 and 0.35.
+- Finding 3, the render thread was counted only at the switch. WP15.17 case 2 now counts it from the call
+  that collects the worker's inputs to the end of publication, and [the scene's extent](DESIGN.md#the-visible-layer)
+  and ruling 10 say the contribution hands over a job and makes nothing in that call.
+- Finding 4, a directly attached member had no case. WP15.17 has seven cases: case 4 is the list, resized, and
+  case 5 the same member attached directly, refused, both on the worker's route and both as before WP15.
+  Ruling 10 states the two outcomes.
+- Finding 5, no item told a steady cloud's reactive coverage from its opacity. WP15.18 is new: zero on a
+  steady opaque sky pixel with valid history, the opacity after a cut, and above zero where the
+  transmittance moved. The design's rule has its own paragraph, **Reactive coverage of a sky stop**.
+  The Ground resolve as merged writes each stop's opacity in every frame, which is what the builder replaces.
+- Finding 6, WP15.15 compared bytes alone. It gains a second case and a check: the Sky selection's layer
+  textures hold one stop a texel, in one array layer, where the Ground selection holds four.
+- The suggestion is taken as point 2 of WP15.16's list: the fair cloud's lobes and base keep their relief
+  in the stills already captured.
+- PLAN.md gains one assumption: from inside upper cloud only the mist toggle is inspected.
