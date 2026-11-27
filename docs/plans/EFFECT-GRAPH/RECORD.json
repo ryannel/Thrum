@@ -687,7 +687,39 @@
         "task": "The design review of EFFECT-GRAPH at .orchestrate/evidence/EFFECT-GRAPH/design-review.md asked for changes, with its 5 M",
         "at": "2026-11-27T06:24:12Z"
       },
-      "ends_stretch": true
+      "ends_stretch": true,
+      "ready_for_review": {
+        "commit": "6f76053c0df7b0962f16e3443ce25aa61a65a1e1",
+        "checked": "6f76053c0df7b0962f16e3443ce25aa61a65a1e1",
+        "at": "2026-11-27T08:02:07Z",
+        "reused": [
+          "WP7.1",
+          "WP7.2",
+          "WP7.3",
+          "WP7.4"
+        ],
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.171.0-alpha.13.2",
+        "path": "headless",
+        "usage": {
+          "input": 527172,
+          "cached": 56583680,
+          "output": 94836,
+          "turns": 1
+        },
+        "session_usage": {
+          "input": 527172,
+          "cached": 56583680,
+          "output": 94836,
+          "turns": 1
+        }
+      }
     }
   },
   "tasks": [
