@@ -48,9 +48,10 @@ fn standing_film(pixel: vec2<f32>, ground: vec3<f32>, normal: vec3<f32>, wet: Gr
     var light = sky;
     if clarity > 0.0 && optics.reach_slope_scene.z > 0.0 {
         let origin = ground + vec3(0.0, 0.009, 0.0);
-        // A film already lies on the opaque bed. Its ray needs a scenery
-        // hit rather than the mapped bank fallback used by the water sheet.
-        let hit = trace_scene(origin, ray, reach, reach, false);
+        // The opaque bed is the film's own surface. Use the upward side
+        // test to find scenery above it, including the wall and roof.
+        let scenery = OpticsBody(vec4(0.0), vec4(0.0));
+        let hit = trace(origin, ray, vec2(0.06, reach), scenery, false, vec2(0.0), 1.0);
         let along = dot(hit.point - origin, ray);
         let border = scene_edge(optics_uv(hit.pixel));
         let scene = ReflectionLayer(hit, along, clarity * hit.edge * border * reach_weight(along, reach));
