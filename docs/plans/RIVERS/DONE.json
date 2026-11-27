@@ -502,8 +502,8 @@
     {
       "id": "WP5",
       "name": "On a windless day the stream still reads as running water: its riffles are rough and glitter, its pools lie glassy, and foam forms below its ledges and behind its rocks and trails away downstream",
-      "status": "ready_for_review",
-      "failed_reviews": 0,
+      "status": "in_progress",
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [],
@@ -518,8 +518,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RIVERS/WP5/README.md#submitted-depth-and-opt-out",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RIVERS/WP5-review.md"
         },
         {
           "id": "WP5.2",
@@ -529,8 +529,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RIVERS/WP5/flow-metal.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RIVERS/WP5-review.md"
         },
         {
           "id": "WP5.10",
@@ -541,8 +541,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RIVERS/WP5/flow-metal.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RIVERS/WP5-review.md"
         },
         {
           "id": "WP5.3",
@@ -551,30 +551,30 @@
           "ask": "Is the birth constant the shallows' own, or a recorded constant of the water type with its reason in the log?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RIVERS/WP5/foam-metal.log",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/RIVERS/WP5-review.md"
         },
         {
           "id": "WP5.4",
           "statement": "In a dead calm the stream reads as running water: the riffle and the narrows are rough and glitter, the pool lies glassy and mirrors its banks, ripples travel downstream and faster through the narrows, and the water piled in front of a rock stays put while ripples pass over it. There is no sheet sliding at one speed, no pulse at the carriage's period, and no look of a small sea.",
           "inspect": "`realtime` sequences in a dead calm from the bank at 2 m, across and along the riffle, the pool and the narrows, and one from 40 m above the stream, at noon and with the Sun at 15\u00b0; the same views in a trade wind.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RIVERS/WP5/README.md#metal-inspection",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/RIVERS/WP5-review.md"
         },
         {
           "id": "WP5.5",
           "statement": "Foam reads as made by the flow: white below the ledge and behind each rock, drawn out into streaks that thin, break into lace and vanish downstream, gathering in the pool's slack water; none on the glide or the pool but what drifts in; no stamped or tiled pattern.",
           "inspect": "`realtime` sequences from the bank at 2 m of the ledge, a rock in the narrows and the pool below them, and one from 40 m above, in a calm; then the same rock's reach after the gauge is taken to its lowest and highest.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RIVERS/WP5/README.md#metal-inspection",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/RIVERS/WP5-review.md"
         },
         {
           "id": "WP5.6",
@@ -585,8 +585,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RIVERS/WP5/flow-metal.log",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RIVERS/WP5-review.md"
         },
         {
           "id": "WP5.7",
@@ -596,8 +596,8 @@
           "target": "chrome-webgpu",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RIVERS/WP5/chrome/run.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RIVERS/WP5-review.md"
         },
         {
           "id": "WP5.8",
@@ -607,8 +607,25 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/RIVERS/WP5/river-calm-cost.json",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/RIVERS/WP5-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "name": "Flow ripples stretch into straight bands at the narrows",
+          "item": "WP5.4",
+          "repeat": false
+        },
+        {
+          "name": "Rock foam breaks into jagged bands instead of thinning lace",
+          "item": "WP5.5",
+          "repeat": false
+        },
+        {
+          "name": "The pool and glide generate foam locally",
+          "item": "WP5.3",
+          "repeat": false
         }
       ]
     },

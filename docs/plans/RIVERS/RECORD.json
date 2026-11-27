@@ -882,7 +882,57 @@
     },
     "WP5": {
       "definitions": "b1d00ec6a67ff934e033b682dd6feac4ac3001a566cda7e00062712c5aa348e8",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "b56c49ab0617e53e6243ba7e7e3b8bfb383c825c",
+          "review": ".orchestrate/evidence/RIVERS/WP5-review.md",
+          "items": {
+            "WP5.1": "pass",
+            "WP5.2": "pass",
+            "WP5.10": "pass",
+            "WP5.3": "fail",
+            "WP5.4": "fail",
+            "WP5.5": "fail",
+            "WP5.6": "pass",
+            "WP5.7": "pass",
+            "WP5.8": "pass"
+          },
+          "findings": [
+            {
+              "name": "Flow ripples stretch into straight bands at the narrows",
+              "item": "WP5.4",
+              "repeat": false
+            },
+            {
+              "name": "Rock foam breaks into jagged bands instead of thinning lace",
+              "item": "WP5.5",
+              "repeat": false
+            },
+            {
+              "name": "The pool and glide generate foam locally",
+              "item": "WP5.3",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 286576,
+            "cached": 11539328,
+            "output": 29280,
+            "turns": 1
+          },
+          "at": "2026-11-27T05:20:23Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
