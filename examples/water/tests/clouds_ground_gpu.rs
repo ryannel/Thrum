@@ -57,34 +57,40 @@ fn the_advected_water_row_keeps_the_island_shore_in_world_space() {
 thrum_test_support::macos_gpu_test! {
 fn accepted_lake_stage_updates_the_weather_surface_at_a_held_tick() {
     use support::Fixture;
+    use thrum_app::{Game, sky::SkyGame};
     use water_scene::{clouds::Selection, island::Wind};
 
     support::island::with_cooked_island("accepted_lake_stage_updates_the_weather_surface_at_a_held_tick", || {
-    let Some(gpu) = thrum_test_support::gpu("lake stage and weather", Some(wgpu::Backend::Metal)) else { return };
-    let selection = Selection::from_query("?clouds=dawn-mist").expect("dawn mist");
-    let scene = selection.build(false, true).expect("lake scene");
-    let weather = scene.weather.expect("live Ground");
-    let mut fixture = Fixture::from_game(&gpu, [64, 36], scene.game, scene.report);
-    let mut map = water_scene::island::map(Wind::Trade).expect("island water authority");
-    let mut before = weather.ground_surface().expect("initial surface");
-    for (stage, json) in [(0.0, "{}"), (0.35, r#"{"lake.stage":0.35}"#),
-        (1.0, r#"{"lake.stage":1.0}"#), (0.0, r#"{"lake.stage":0.0}"#)] {
-        map.set_stage(1, stage).expect("accepted stage");
-        fixture.parameters(json);
-        assert_eq!(fixture.frame_without_timings(0.0).tick, 0);
-        let current = weather.ground_surface().expect("published surface");
-        let lake = [180.0, 5.0];
-        let water = map.sample(lake).expect("water row").row.level;
-        let [height, _, shore] = current.sample(lake);
-        assert!((height - water).abs() < 1e-6 && shore > 0.0);
-        eprintln!("Metal held tick 0, lake stage {stage:.2}, water {water:.2}, Ground {height:.2}, shore {shore:.2}");
-        if stage != 0.0 {
-            assert!(!std::sync::Arc::ptr_eq(&before, &current), "stage must replace the surface");
+        let Some(gpu) = thrum_test_support::gpu("lake stage and weather", Some(wgpu::Backend::Metal)) else { return };
+        let selection = Selection::from_query("?clouds=dawn-mist").expect("dawn mist");
+        let scene = selection.build(false, true).expect("lake scene");
+        let weather = scene.weather.expect("live Ground");
+        let mut fixture = Fixture::from_game(&gpu, [64, 36], scene.game, scene.report);
+        let mut map = water_scene::island::map(Wind::Trade).expect("island water authority");
+        let original = weather.ground_surface().expect("initial surface");
+        let edits = [(0.0, "{}"), (0.35, r#"{"lake.stage":0.35}"#),
+            (1.0, r#"{"lake.stage":1.0}"#), (0.0, r#"{"lake.stage":0.0}"#)].map(|(stage, json)| {
+                let report = fixture.game.controls_mut().apply_file(json).expect("controls");
+                assert!(report.problems.is_empty(), "{report}");
+                let (edits, _) = fixture.game.take_edits();
+                assert!(std::sync::Arc::ptr_eq(&original, &weather.ground_surface().expect("still published")));
+                (stage, edits)
+            });
+        // Every request applies its own accepted slider snapshot, even though
+        // the window has already accepted a newer value before these frames.
+        for (stage, edits) in edits {
+            map.set_stage(1, stage).expect("accepted stage");
+            SkyGame::apply(&mut fixture.host, edits).expect("apply frame request");
+            assert_eq!(fixture.frame_without_timings(0.0).tick, 0);
+            let current = weather.ground_surface().expect("published surface");
+            let lake = [180.0, 5.0];
+            let water = map.sample(lake).expect("water row").row.level;
+            let [height, _, shore] = current.sample(lake);
+            assert!((height - water).abs() < 1e-6 && shore > 0.0);
+            eprintln!("Metal held tick 0, lake stage {stage:.2}, water {water:.2}, Ground {height:.2}, shore {shore:.2}");
+            SkyGame::apply(&mut fixture.host, edits).expect("replay frame request");
+            assert!(std::sync::Arc::ptr_eq(&current, &weather.ground_surface().expect("unchanged surface")));
         }
-        fixture.parameters(json);
-        assert!(std::sync::Arc::ptr_eq(&current, &weather.ground_surface().expect("retained surface")));
-        before = current;
-    }
     });
 }
 }

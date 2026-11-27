@@ -1347,8 +1347,9 @@ The fresh timing and the tripwire investigations are in the evidence.
 The water receiver reads the directional reflection overlay. Metal
 isolates the direction lookup and Chrome swaps reflection mip zero just
 before the water draw while holding the scene inputs. Ground republishes
-accepted lake stages on the existing lattice, and the fixed weather
-step reads the accepted Sun. The lake's resolved near mist retains its
+accepted lake stages on the existing lattice. The render request carries
+the stage and Sun together so frames in flight keep their own inputs.
+The fixed weather step reads the rendered Sun. The lake's resolved near mist retains its
 wisps in a same-Sun pair. The paired sea cost now derives each required
 investigation from the measured frames and rejects missing entries.
 [Target captures and checks](../../../.orchestrate/evidence/CLOUDS/WP11/repair/README.md)

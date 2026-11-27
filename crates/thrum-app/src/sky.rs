@@ -516,6 +516,8 @@ impl FrameWorld for StillWorld {
 pub struct SkyScene {
     sky: Sky,
     presentation_camera: Option<PresentationCamera>,
+    #[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
+    render_control: Option<(f32, RenderControlUpdate)>,
     ground: bool,
     nightglow: bool,
     overlay_medium: Option<thrum_render::atmosphere::Aerosol>,
@@ -528,6 +530,20 @@ struct PresentationCamera(Box<dyn Fn(f32) -> Camera + Send>);
 impl std::fmt::Debug for PresentationCamera {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("PresentationCamera").finish_non_exhaustive()
+    }
+}
+
+#[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
+type ApplyRenderControl = dyn FnMut(f32, &Sky) + Send;
+
+#[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
+struct RenderControlUpdate(Box<ApplyRenderControl>);
+
+#[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
+impl std::fmt::Debug for RenderControlUpdate {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("RenderControlUpdate")
+            .finish_non_exhaustive()
     }
 }
 
@@ -601,7 +617,7 @@ impl SceneSource<SourceTick> for SkyScene {
 /// The desired sky carried to the render owner, when it changed.
 #[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
 #[derive(Clone, Copy, Debug, Default)]
-pub struct SkyEdits(Option<Sky>);
+pub struct SkyEdits(Option<Sky>, Option<f32>);
 
 #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
 impl Edits for SkyEdits {
@@ -616,17 +632,15 @@ impl Edits for SkyEdits {
 #[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
 impl SkyEdits {
     fn merge_edits(self, newer: Self) -> Self {
-        Self(newer.0.or(self.0))
+        Self(newer.0.or(self.0), newer.1.or(self.1))
     }
     fn no_changes(&self) -> bool {
-        self.0.is_none()
+        self.0.is_none() && self.1.is_none()
     }
 }
 
 #[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
 type Update = Box<dyn FnMut(&Controls, &mut Sky)>;
-#[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
-type AcceptedUpdate = Box<dyn FnMut(&Sky)>;
 type StatusProbe = Box<dyn FnMut() -> ContentStatus>;
 #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
 type StatusReadouts = Box<dyn FnMut(&mut Controls)>;
@@ -684,7 +698,11 @@ pub struct SkyGame {
     #[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
     update: Update,
     #[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
-    accepted_update: Option<AcceptedUpdate>,
+    render_control: Option<thrum_controls::ControlId>,
+    #[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
+    render_control_update: Option<RenderControlUpdate>,
+    #[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
+    render_control_value: Option<f32>,
     ground: Option<[f32; 3]>,
     local_lights: Vec<thrum_render::synthetic::SyntheticPointLight>,
     sun_optical_depth: Option<thrum_render::atmosphere::SunOpticalDepth>,
@@ -780,7 +798,11 @@ impl SkyGame {
             #[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
             update: Box::new(update),
             #[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
-            accepted_update: None,
+            render_control: None,
+            #[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
+            render_control_update: None,
+            #[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
+            render_control_value: None,
             ground: Some(DEFAULT_GROUND),
             local_lights: Vec::new(),
             sun_optical_depth: None,
@@ -833,19 +855,35 @@ impl SkyGame {
         self
     }
 
-    /// Observe the accepted sky after each control update.
-    #[must_use]
-    pub fn on_accepted_controls(mut self, update: impl FnMut(&Sky) + 'static) -> Self {
+    /// Apply a numeric scene control with the accepted sky on the render owner.
+    /// The value travels on the frame request and is applied before fixed ticks and rendering.
+    /// # Errors
+    /// Refuses an undeclared or non-numeric control on the supported shells.
+    pub fn with_render_control(
+        mut self,
+        key: &str,
+        update: impl FnMut(f32, &Sky) + Send + 'static,
+    ) -> Result<Self, GameError> {
         #[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
         {
-            self.accepted_update = Some(Box::new(update));
+            let id = self
+                .controls
+                .lookup(key)
+                .map_err(|error| GameError::InvalidScene(error.to_string()))?;
+            if !matches!(self.controls.value(id), thrum_controls::Value::Number(_)) {
+                return Err(GameError::InvalidScene(format!(
+                    "numeric render control required: {key}"
+                )));
+            }
+            self.render_control = Some(id);
+            self.render_control_update = Some(RenderControlUpdate(Box::new(update)));
         }
         #[cfg(not(any(test, target_os = "macos", target_arch = "wasm32")))]
         {
-            let _ = &mut self;
+            let _ = (&mut self, key);
             drop(update);
         }
-        self
+        Ok(self)
     }
 
     /// Advance this game's world at a fixed step. The default kit world stays still.
@@ -1159,18 +1197,20 @@ impl SkyGame {
                 );
                 self.refused = Some(error);
             }
-            return SkyEdits(None);
+            return SkyEdits::default();
         }
         self.refused = None;
         self.sky = sky;
-        if let Some(update) = &mut self.accepted_update {
-            update(&sky);
-        }
-        if self.sent == Some(sky) {
-            return SkyEdits(None);
-        }
+        let edits = (self.sent != Some(sky)).then_some(sky);
         self.sent = Some(sky);
-        SkyEdits(Some(sky))
+        let control = self.render_control.map(|id| match self.controls.value(id) {
+            thrum_controls::Value::Number(value) => *value,
+            _ => unreachable!("registered numeric render control"),
+        });
+        let control_edit = control
+            .filter(|value| Some(value.to_bits()) != self.render_control_value.map(f32::to_bits));
+        self.render_control_value = control;
+        SkyEdits(edits, control_edit)
     }
 
     /// Latest content status polled by the native or browser shell.
@@ -1237,6 +1277,11 @@ impl SkyGame {
     ) -> Result<FrameHost<StillWorld, SkyScene>, GameError> {
         let _ = self.update();
         self.sky.check().map_err(GameError::InvalidScene)?;
+        let render_control = self.render_control_update.take().and_then(|mut update| {
+            let value = self.render_control_value?;
+            (update.0)(value, &self.sky);
+            Some((value, update))
+        });
         let world = self.take_world();
         let mut scene = ground_scene(self.ground, &self.local_lights)?;
         scene.sky_overlay = self.sky_overlay;
@@ -1250,6 +1295,7 @@ impl SkyGame {
             SkyScene {
                 sky: self.sky,
                 presentation_camera: self.presentation_camera.take(),
+                render_control,
                 ground: self.ground.is_some(),
                 nightglow: self.nightglow,
                 overlay_medium: self.overlay_medium,
@@ -1342,7 +1388,7 @@ impl Game for SkyGame {
     }
 
     fn replay(&self) -> SkyEdits {
-        SkyEdits(Some(self.sky))
+        SkyEdits(Some(self.sky), self.render_control_value)
     }
 
     fn apply(host: &mut FrameHost<StillWorld, SkyScene>, edits: SkyEdits) -> Result<(), GameError> {
@@ -1353,6 +1399,13 @@ impl Game for SkyGame {
                 host.continuous_source_mut().sky = sky;
             } else {
                 host.source_mut().sky = sky;
+            }
+        }
+        if !edits.no_changes() {
+            let source = host.continuous_source_mut();
+            if let Some((value, update)) = &mut source.render_control {
+                *value = edits.1.unwrap_or(*value);
+                (update.0)(*value, &source.sky);
             }
         }
         Ok(())

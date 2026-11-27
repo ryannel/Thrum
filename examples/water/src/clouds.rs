@@ -185,6 +185,13 @@ impl Selection {
                 ground,
             })
         } else {
+            let game = if let Some(map) = map {
+                game.with_render_control("lake.stage", move |stage, _| {
+                    set_lake_stage(&mut map.lock().expect("island map"), stage);
+                })?
+            } else {
+                game
+            };
             Ok(Scene {
                 game,
                 report,
@@ -248,22 +255,19 @@ impl Selection {
             let map = Arc::clone(map);
             let sun = Arc::clone(&sun);
             let publication = publication.clone();
-            let mut levels = {
-                let map = map.lock().map_err(|_| "water map")?;
-                water_levels(&map)
-            };
+            let mut last_stage = 0.0_f32.to_bits();
             publication.publish_surface(Arc::clone(&ground.surface))?;
-            game.on_accepted_controls(move |sky| {
+            game.with_render_control("lake.stage", move |stage, sky| {
                 sun.store(sky.sun_elevation_degrees.to_bits(), Ordering::Relaxed);
-                let map = map.lock().expect("island map");
-                let current = water_levels(&map);
-                if current != levels {
+                if stage.to_bits() != last_stage {
+                    let mut map = map.lock().expect("island map");
+                    set_lake_stage(&mut map, stage);
                     publication
                         .publish_surface(Arc::new(surface(&map).expect("bounded water levels")))
                         .expect("weather surface publication");
-                    levels = current;
+                    last_stage = stage.to_bits();
                 }
-            })
+            })?
         } else {
             game
         };
@@ -363,11 +367,9 @@ impl Selection {
     }
 }
 
-fn water_levels(map: &Map) -> [u64; 3] {
-    std::array::from_fn(|id| {
-        let body = map.body(id).expect("island sea, lake and pond");
-        (body.level + body.stage.value).to_bits()
-    })
+fn set_lake_stage(map: &mut Map, stage: f32) {
+    map.set_stage(1, f64::from(stage))
+        .expect("bounded lake stage");
 }
 
 fn surface(map: &Map) -> Result<Surface, thrum_cloud_model::Error> {

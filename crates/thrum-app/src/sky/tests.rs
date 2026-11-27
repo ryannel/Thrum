@@ -219,10 +219,11 @@ fn update_sends_only_changed_drawable_skies() {
         Some(5.0)
     );
     assert!(game.refused.is_none());
-    let merged = SkyEdits(Some(sky(1.0, 0.0))).merge_edits(SkyEdits(None));
+    let merged = SkyEdits(Some(sky(1.0, 0.0)), Some(1.0)).merge_edits(SkyEdits(None, Some(2.0)));
     assert_eq!(merged.0, Some(sky(1.0, 0.0)));
-    let merged = merged.merge_edits(SkyEdits(Some(sky(2.0, 0.0))));
+    let merged = merged.merge_edits(SkyEdits(Some(sky(2.0, 0.0)), None));
     assert_eq!(merged.0, Some(sky(2.0, 0.0)));
+    assert_eq!(merged.1.map(f32::to_bits), Some(2.0_f32.to_bits()));
 }
 
 #[test]

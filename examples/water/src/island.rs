@@ -925,8 +925,10 @@ fn build_island(
         sky.exposure_compensation_ev = 0.3;
         sky.temporal_inputs = true;
         let mut map = display_map.lock().expect("island map");
-        map.set_stage(1, f64::from(c.get(stage)))
-            .expect("bounded stage control");
+        if clouds.is_none() {
+            map.set_stage(1, f64::from(c.get(stage)))
+                .expect("bounded stage control");
+        }
         if !surf_route {
             let factor = f64::from(c.get(lake_waves));
             map.set_wave_gains(1, basin_gains.map(|gain| gain * factor))
