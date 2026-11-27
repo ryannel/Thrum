@@ -2365,7 +2365,7 @@
         {
           "verdict": "fail",
           "commit": "31ad023df943acc5d30f4d9c133683a0fc9e219f",
-          "review": ".orchestrate/evidence/CLOUDS/WP16-review.md",
+          "review": ".orchestrate/evidence/CLOUDS/WP16-review-1.md",
           "items": {
             "WP16.1": "pass",
             "WP16.2": "fail",
@@ -2431,6 +2431,40 @@
             "turns": 1
           },
           "at": "2026-11-27T10:14:45Z"
+        },
+        {
+          "verdict": "pass",
+          "commit": "3b82e9f12d0cbf393cd0e2f270e300269360eca8",
+          "review": ".orchestrate/evidence/CLOUDS/WP16-review.md",
+          "items": {
+            "WP16.1": "pass",
+            "WP16.2": "pass",
+            "WP16.3": "pass",
+            "WP16.4": "pass",
+            "WP16.11": "pass",
+            "WP16.5": "pass",
+            "WP16.6": "pass",
+            "WP16.7": "pass",
+            "WP16.8": "pass",
+            "WP16.9": "pass"
+          },
+          "summary": "WP16 passes all ten items. In the cooked valley on Metal and Chrome, mist gathers in the calm hollow overnight, retreats after sunrise and stays absent in the two dry controls. The held-noon route stays dry, the low sunset retains its colour, the lit pool is free of the previously visible stripes, and the 1440p cost record pairs each weather rate with a clouds-absent night.",
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 224788,
+            "cached": 11112960,
+            "output": 25441,
+            "turns": 1
+          },
+          "at": "2026-11-27T12:23:23Z"
         }
       ],
       "authorised": {
@@ -2463,6 +2497,13 @@
           "output": 255840,
           "turns": 2
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "3b82e9f12d0cbf393cd0e2f270e300269360eca8",
+        "review": ".orchestrate/evidence/CLOUDS/WP16-review.md",
+        "checked": "76ac4c4a795f6a7ba5c61d762401100909c8c276",
+        "at": "2026-11-27T12:23:23Z"
       }
     },
     "WP17": {

@@ -1708,7 +1708,7 @@
     {
       "id": "WP16",
       "name": "Through a day mist forms after dusk and burns off in the morning, haze runs from crisp to murky, and a visitor sets them, on the Mac and in Chrome",
-      "status": "ready_for_review",
+      "status": "done",
       "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -1732,7 +1732,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP16/repair/PROOF.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP16-review.md"
         },
         {
@@ -1742,7 +1742,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP16/repair/PROOF.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP16-review.md"
         },
         {
@@ -1784,7 +1784,7 @@
           "target": "chrome-webgpu",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP16/repair/PROOF.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP16-review.md"
         },
         {
@@ -1806,7 +1806,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP16/repair/COST.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP16-review.md"
         },
         {
@@ -1816,44 +1816,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP16/repair/PROOF.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP16-review.md"
-        }
-      ],
-      "findings": [
-        {
-          "name": "A camera route can hold noon while radiative mist cycles through the night",
-          "repeat": false
-        },
-        {
-          "name": "Sunward mist clips to white below a dimmer sunset sky",
-          "item": "WP16.2",
-          "repeat": false
-        },
-        {
-          "name": "Sunlit far mist shows horizontal bands on Metal",
-          "item": "WP16.3",
-          "repeat": false
-        },
-        {
-          "name": "Sunlit far mist shows horizontal bands in Chrome",
-          "item": "WP16.6",
-          "repeat": false
-        },
-        {
-          "name": "The mist-day cost pair omits the clouds-absent night",
-          "item": "WP16.8",
-          "repeat": false
-        },
-        {
-          "name": "Named-pass tripwires lack a pass-specific investigation or disposition",
-          "item": "WP16.8",
-          "repeat": false
-        },
-        {
-          "name": "The ledger's solar-clock claim omits the route divergence",
-          "item": "WP16.9",
-          "repeat": false
         }
       ]
     },
