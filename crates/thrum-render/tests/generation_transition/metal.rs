@@ -17,7 +17,7 @@ use thrum_render::{
         CaptureLimits, ExtentRequest, ExtentTransition, FrameConfig, FrameError, FrameSample,
         PreparedExtent, SubmittedImage, SurfaceOutput, SurfaceSwitchOutcome,
     },
-    synthetic::{FrameLighting, SyntheticLight, SyntheticScene},
+    synthetic::{FrameLighting, RenderScale, SyntheticLight, SyntheticScene},
 };
 #[cfg(target_os = "macos")]
 use thrum_test_support::creation_trace::Creations;
@@ -42,7 +42,7 @@ static METAL: Mutex<()> = Mutex::new(());
 fn request(extent: [u32; 2], device: u64) -> ExtentRequest {
     ExtentRequest {
         extent,
-        output_scale: Default::default(),
+        output_scale: RenderScale::Native,
         backing_scale: 2_f64.to_bits(),
         format: FORMAT,
         device,

@@ -139,14 +139,14 @@ impl ExtentCapture {
         })
     }
 
-    pub(super) fn frame(&mut self, frame: FrameExtent, drawable: [u32; 2]) {
+    pub(super) fn frame(&mut self, frame: &FrameExtent, drawable: [u32; 2]) {
         if self.frames.len() == 64 {
             self.frames.pop_front();
         }
         if self.resize.is_none() && self.resized_extent == Some(drawable) {
             self.first_resized.get_or_insert(frame.submission);
         }
-        self.frames.push_back((frame, drawable));
+        self.frames.push_back((*frame, drawable));
     }
 
     pub(super) fn collect<W: FrameWorld, V: SceneSource<W::Page>>(

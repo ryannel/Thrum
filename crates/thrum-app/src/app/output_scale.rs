@@ -20,10 +20,9 @@ pub(super) fn resolve(
     forced: Option<RenderScale>,
 ) -> OutputScale {
     let (step, forced) = match (kind, forced) {
-        (SceneKind::TwoD, _) => (RenderScale::Native, false),
         (SceneKind::ThreeD, Some(step)) => (step, true),
         (SceneKind::ThreeD, None) if fullscreen && panel_hz > 60.0 => (registry, false),
-        (SceneKind::ThreeD, None) => (RenderScale::Native, false),
+        (SceneKind::TwoD, _) | (SceneKind::ThreeD, None) => (RenderScale::Native, false),
     };
     OutputScale { step, forced }
 }

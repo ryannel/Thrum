@@ -59,6 +59,7 @@ impl WindowMode {
         // SAFETY: NSObject initializes this subclass, which implements the single notification
         // selector. The observer is retained until it unregisters on the main thread.
         let observer: Retained<ModeObserver> = unsafe { msg_send![super(observer), init] };
+        // SAFETY: The registered selector takes one notification. Drop unregisters this observer.
         unsafe {
             for name in [
                 NSWindowWillEnterFullScreenNotification,

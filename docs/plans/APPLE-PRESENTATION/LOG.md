@@ -790,3 +790,11 @@ layer profile change. [Metal controls](../../../.orchestrate/evidence/CLOUDS/WP9
   probe depended on WP12's archive constructor. The same proof must show a cooked stage used by a game
   pipeline and a successful native library load before readiness on both sets of pins. This catches a
   WGSL-only launch in the removal rehearsal.
+
+- 2026-11-27 Built WP18. The Mac resolves the output scale from the window mode, display and launch configuration,
+  and uses the resulting extent for preparation, recovery, surface configuration and capture. AppKit notifications
+  hold the previous extent and scale through native full-screen changes.
+- Verified on the Apple M3 Max. Both release recipes passed the launch setting and drawable capture checks. The
+  native mode changes took one generation and one configure each. The device test verified allocation, draw and
+  presentation sizes, history reset and detached creation in both directions. The final visual and refresh-rate
+  judgment belongs to WP17. [WP18 evidence](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP18/README.md)

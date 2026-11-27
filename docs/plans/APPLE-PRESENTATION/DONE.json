@@ -1241,7 +1241,7 @@
     {
       "id": "WP18",
       "name": "A launch setting draws the valley below the window's pixel size and the display scales it to fill, with no hitch at the change",
-      "status": "not_started",
+      "status": "in_progress",
       "depends_on": [],
       "quality_bar": "A shipped high-end Mac game set to an output resolution below the panel's own at full screen, such as Resident Evil Village with MetalFX: the picture fills the display edge to edge with no band and no stretch, and changing the output resolution never hitches or compiles. This work package builds the mechanism and holds it to that; the look of the scaled picture is judged in WP17, at the scale that is chosen there.",
       "items": [
@@ -1250,8 +1250,8 @@
           "statement": "The output scale a request resolves, and the output extent it gives, are right in each of these cases. A window that is not full screen resolves 100%. A full-screen window on a 60 Hz display resolves 100%. A full-screen window on a 120 Hz display resolves the registry's full-screen value, shown with a value of 75% given to the resolver. For a 3D scene, a forced value of each of the five steps is resolved in a window and at full screen, and the resolved record says it was forced. A host whose scene is 2D resolves 100%, not forced, at full screen on a 120 Hz display, both with that 75% given and with the launch setting at 50%. The registry's full-screen value for this Mac is 100% in this work package. A 3456\u00d72234 backing gives 3456\u00d72234, 2938\u00d71899, 2592\u00d71676, 2316\u00d71497 and 1728\u00d71117 at the five steps, by the render scale's own rounding. Guard: tests on the CPU, with no device.",
           "check": "cargo nextest run --locked --offline -p thrum-app -E 'test(/output_scale/)' --no-tests=fail",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP18/resolver.log",
           "verdict": "",
           "review": ""
         },
@@ -1262,8 +1262,8 @@
           "lock": "gpu",
           "ask": "Read the test. Is the change made through the host's request and frame calls, as D4.4's resize is, and not by setting a generation's extent directly? Does a control in which one target is sized from the backing extent fail it? Does it read the forward attachments' own size apart from the viewport and scissor, so that attachments allocated at the drawn subrectangle's size would fail it?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP18/generation.log",
           "verdict": "",
           "review": ""
         },
@@ -1273,8 +1273,8 @@
           "check": "python3 scripts/apple_presentation.py output-scale --target mac-metal",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP18/launch/output-scale.json",
           "verdict": "",
           "review": ""
         },
@@ -1283,8 +1283,8 @@
           "statement": "The request is the one authority for a generation's extent, on every path the output scale reaches, and nothing changes where it resolves 100%.",
           "ask": "Read the change, and answer each. 1. Does anything size a target, a viewport, a scissor or a capture from the window's backing size, other than the request's own resolution of the output extent? 2. Does anything that maps a position in the window to the picture divide by the drawable's size? 3. Is the launch setting read by the game and passed in the app's configuration, with no engine library reading the environment? 4. Do the iPhone shell and Chrome resolve 100% with no setting read? 5. When the output scale is below 100%, does any pass, upscaler or sharpening step run at the backing size?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP18/code-review.md",
           "verdict": "",
           "review": ""
         },
@@ -1295,8 +1295,8 @@
           "lock": "gpu",
           "ask": "Read how the run changes the window's mode. Is it by sending the window AppKit's `toggleFullScreen:` in both directions, and not by winit's `set_fullscreen` or `set_simple_fullscreen`?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP18/mode/output-scale-mode.json",
           "verdict": "",
           "review": ""
         },
@@ -1305,8 +1305,8 @@
           "statement": "Across a full-screen change that AppKit animates, the Mac platform publishes one request, at the change's completion, whatever the window reports meanwhile. A test drives the platform's own mode-change state on a clock it sets, with 75% given as the registry's full-screen value and a 120 Hz display, through these five sequences. 1. Entering with the flag early: after the start, the window reports its windowed backing extent with winit's full-screen flag already set for 500 ms, then two intermediate extents, then the completion at the full-screen extent. One request is published, at the completion, naming the full-screen extent and 75%. 2. Leaving with the flag late: after the start, the window reports its windowed backing extent while winit's flag still says full screen for 500 ms, then the completion. One request is published, at the completion, naming the windowed extent and 100%. 3. No completion: 3 s after a start with no completion, one request is published, naming the backing extent and the mode the window itself then reports, and the record names the limit. 4. A recovered device during the hold is published at once, with the extent and scale held from before the start. 5. A drag of the window's edge with no mode change publishes each extent as it arrives, as before this work package. A control with the hold switched off publishes the windowed extent with 75% in sequence 1, for longer than the debounce. Guard: tests on the CPU, with no device and no window.",
           "check": "cargo nextest run --locked --offline -p thrum-app -E 'test(/mode_change/)' --no-tests=fail",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP18/mode-state.log",
           "verdict": "",
           "review": ""
         }

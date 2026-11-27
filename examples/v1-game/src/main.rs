@@ -209,6 +209,8 @@ fn window_menu() -> Result<v1_game::WindowMenu, String> {
 fn window_display_options(
     transition: Option<&thrum_app::WindowTransitionProof>,
 ) -> Result<Option<thrum_app::WindowDisplayOptions>, thrum_app::DisplayOverrideError> {
+    use thrum_render::runtime::CaptureLimits;
+
     let Ok(forced) = std::env::var("THRUM_MAC_EDR") else {
         return Ok(None);
     };
@@ -220,13 +222,13 @@ fn window_display_options(
         capture_limits: if transition
             .is_some_and(|proof| proof.arm == thrum_app::TransitionArm::OutputScaleFullscreen)
         {
-            thrum_render::runtime::CaptureLimits {
+            CaptureLimits {
                 staging_slots: 2,
                 cpu_buffers: 2,
-                ..Default::default()
+                ..CaptureLimits::default()
             }
         } else {
-            Default::default()
+            CaptureLimits::default()
         },
     }))
 }

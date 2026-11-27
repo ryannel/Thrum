@@ -643,13 +643,13 @@ impl<G: Game> Actor<G> {
         if report.surface_presented {
             *present_call = Some(self.present(frame));
             if let Some(proof) = &mut self.transition_proof {
-                proof.presented(frame_extent);
+                proof.presented(frame_extent.as_ref());
             }
             reply.platform.surface_status = SurfaceStatus::Presented;
             if let Some(extent) = frame_extent
                 && let Some(capture) = &mut self.extent_capture
             {
-                capture.frame(extent, drawable_extent);
+                capture.frame(&extent, drawable_extent);
             }
         } else {
             reply.platform.surface_status = SurfaceStatus::SubmissionSkipped;

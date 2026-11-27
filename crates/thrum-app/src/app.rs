@@ -57,6 +57,7 @@ use winit::{
     event::{ElementState, WindowEvent},
     event_loop::{ActiveEventLoop, ControlFlow, EventLoop, EventLoopProxy},
     keyboard::PhysicalKey,
+    platform::macos::WindowExtMacOS,
     window::{Window, WindowId},
 };
 
@@ -112,6 +113,7 @@ enum UserEvent {
 enum WindowVisibility {
     Visible,
     Occluded,
+    OccludedDuringModeChange,
 }
 
 struct App<G: Game> {
@@ -148,7 +150,6 @@ struct App<G: Game> {
     #[cfg(feature = "interface")]
     interface_script: Option<interface_script::Script>,
     window_visibility: WindowVisibility,
-    mode_occlusion: bool,
     surface_generation: Arc<AtomicU64>,
     render_stopped: Arc<AtomicBool>,
     render: Option<RenderWorker<G>>,
@@ -276,7 +277,7 @@ impl<G: WindowGame + 'static> App<G> {
         self.frame_rate = Some(rate);
     }
 
-    fn output_record(&mut self, row: serde_json::Value) -> Result<(), String> {
+    fn output_record(&mut self, row: &serde_json::Value) -> Result<(), String> {
         use std::io::Write as _;
         if let Some(file) = &mut self.output_log {
             writeln!(file, "{row}").map_err(|error| error.to_string())?;
@@ -312,7 +313,7 @@ impl<G: WindowGame + 'static> App<G> {
                 ModeEvent::Complete(fullscreen) => ("complete", fullscreen),
             };
             if self.output_log.is_some() {
-                self.output_record(serde_json::json!({
+                self.output_record(&serde_json::json!({
                     "event": phase, "media": media, "fullscreen": fullscreen, "backing": backing,
                 }))?;
             }
@@ -323,7 +324,7 @@ impl<G: WindowGame + 'static> App<G> {
         if let Some(fullscreen) = fallback {
             self.refresh_monitor_period();
             if self.output_log.is_some() {
-                self.output_record(serde_json::json!({
+                self.output_record(&serde_json::json!({
                     "event": "limit", "media": CACurrentMediaTime(),
                     "fullscreen": fullscreen, "backing": backing,
                 }))?;
@@ -346,7 +347,7 @@ impl<G: WindowGame + 'static> App<G> {
         }) && self.output_log.is_some()
         {
             let output = request.extent();
-            self.output_record(serde_json::json!({
+            self.output_record(&serde_json::json!({
                 "event": "request", "media": CACurrentMediaTime(),
                 "fullscreen": self.output_mode.fullscreen(), "panel_hz": hz,
                 "backing": request.backing, "output": output, "monitor_extent": monitor_extent,
@@ -362,7 +363,7 @@ impl<G: WindowGame + 'static> App<G> {
 
     fn record_held_backing(&mut self, backing: [u32; 2]) -> Result<(), String> {
         if self.output_mode.held() && self.output_log.is_some() {
-            self.output_record(serde_json::json!({
+            self.output_record(&serde_json::json!({
                 "event": "held_backing", "media": objc2_quartz_core::CACurrentMediaTime(),
                 "backing": backing,
             }))?;
@@ -372,28 +373,30 @@ impl<G: WindowGame + 'static> App<G> {
 
     fn observe_occlusion(&mut self, occluded: bool) -> Result<(), String> {
         self.sample_output()?;
-        let visibility = if occluded {
-            WindowVisibility::Occluded
+        let held = self.output_mode.held();
+        if occluded {
+            if self.window_visibility != WindowVisibility::Visible {
+                return Ok(());
+            }
+            self.window_occlusions += 1;
+            self.window_visibility = if held {
+                WindowVisibility::OccludedDuringModeChange
+            } else {
+                WindowVisibility::Occluded
+            };
+            if held {
+                // AppKit moves the window between Spaces. The drawable can
+                // become temporarily unavailable while its configuration stays valid.
+                return Ok(());
+            }
         } else {
-            WindowVisibility::Visible
-        };
-        if std::mem::replace(&mut self.window_visibility, visibility) == visibility {
-            return Ok(());
+            let previous =
+                std::mem::replace(&mut self.window_visibility, WindowVisibility::Visible);
+            if held || previous != WindowVisibility::Occluded {
+                return Ok(());
+            }
         }
-        self.window_occlusions += u64::from(occluded);
-        // AppKit briefly moves the window between Spaces. Its drawable can
-        // become unavailable without invalidating the configured surface.
-        let mode_occlusion = if occluded {
-            self.mode_occlusion = self.output_mode.held();
-            self.mode_occlusion
-        } else {
-            std::mem::take(&mut self.mode_occlusion) || self.output_mode.held()
-        };
-        if mode_occlusion {
-            Ok(())
-        } else {
-            self.invalidate_surface()
-        }
+        self.invalidate_surface()
     }
 
     fn toggle_for_proof(&mut self, request: OutputRequest) {
@@ -487,7 +490,6 @@ impl<G: WindowGame + 'static> App<G> {
             #[cfg(feature = "interface")]
             interface_script: None,
             window_visibility: WindowVisibility::Visible,
-            mode_occlusion: false,
             surface_generation: Arc::new(AtomicU64::new(1)),
             render_stopped: Arc::new(AtomicBool::new(false)),
             render: None,
@@ -791,6 +793,46 @@ impl<G: WindowGame + 'static> App<G> {
         }
     }
 
+    fn attach_output_policy(&mut self, window: &Arc<Window>) -> Result<OutputRequest, String> {
+        self.output_mode.event(
+            ModeEvent::Complete(window.fullscreen().is_some() || window.simple_fullscreen()),
+            Duration::ZERO,
+        );
+        self.window_mode = Some(window_mode::WindowMode::attach(window)?);
+        self.window = Some(Arc::clone(window));
+        self.scene_kind = self.game.mac_scene_kind();
+        self.refresh_monitor_period();
+        self.sample_output()
+    }
+
+    fn prepare_transition_window(&mut self, window: &Window) -> Result<(), String> {
+        if let Some(proof) = &self.transition_proof {
+            if matches!(
+                proof.arm,
+                TransitionArm::Fullscreen | TransitionArm::OutputScaleFullscreen
+            ) {
+                window.set_borderless_game(true);
+                if !window.set_simple_fullscreen(true) {
+                    return Err("could not enter fullscreen for the route proof".to_owned());
+                }
+            }
+            self.transition_ticks = Some(qualification::TransitionTicks::start(proof)?);
+            if matches!(
+                proof.arm,
+                TransitionArm::OutputScaleFullscreen | TransitionArm::OutputScaleMode
+            ) {
+                self.output_log = Some(
+                    std::fs::File::create(proof.output.join("output-requests.jsonl"))
+                        .map_err(|error| error.to_string())?,
+                );
+            }
+            let id = display_link::window_number(window)?;
+            std::fs::write(proof.output.join("window-id"), id.to_string())
+                .map_err(|error| error.to_string())?;
+        }
+        Ok(())
+    }
+
     fn prepare(
         &mut self,
         event_loop: &ActiveEventLoop,
@@ -837,31 +879,7 @@ impl<G: WindowGame + 'static> App<G> {
         if let Some(capture) = &self.extent_capture {
             capture.prepare_window(&window)?;
         }
-        if let Some(proof) = &self.transition_proof {
-            if matches!(
-                proof.arm,
-                TransitionArm::Fullscreen | TransitionArm::OutputScaleFullscreen
-            ) {
-                use winit::platform::macos::WindowExtMacOS;
-                window.set_borderless_game(true);
-                if !window.set_simple_fullscreen(true) {
-                    return Err("could not enter fullscreen for the route proof".to_owned());
-                }
-            }
-            self.transition_ticks = Some(qualification::TransitionTicks::start(proof)?);
-            if matches!(
-                proof.arm,
-                TransitionArm::OutputScaleFullscreen | TransitionArm::OutputScaleMode
-            ) {
-                self.output_log = Some(
-                    std::fs::File::create(proof.output.join("output-requests.jsonl"))
-                        .map_err(|error| error.to_string())?,
-                );
-            }
-            let id = display_link::window_number(&window)?;
-            std::fs::write(proof.output.join("window-id"), id.to_string())
-                .map_err(|error| error.to_string())?;
-        }
+        self.prepare_transition_window(&window)?;
         let mut descriptor = wgpu::InstanceDescriptor::new_without_display_handle();
         descriptor.backends = wgpu::Backends::METAL;
         let instance = wgpu::Instance::new(descriptor);
@@ -883,16 +901,7 @@ impl<G: WindowGame + 'static> App<G> {
             display.sample(0, window.scale_factor());
             self.display = Some(display);
         }
-        use winit::platform::macos::WindowExtMacOS as _;
-        self.output_mode.event(
-            ModeEvent::Complete(window.fullscreen().is_some() || window.simple_fullscreen()),
-            Duration::ZERO,
-        );
-        self.window_mode = Some(window_mode::WindowMode::attach(&window)?);
-        self.window = Some(Arc::clone(&window));
-        self.scene_kind = self.game.mac_scene_kind();
-        self.refresh_monitor_period();
-        let output = self.sample_output()?;
+        let output = self.attach_output_policy(&window)?;
         let backing_scale = window.scale_factor().to_bits();
         let recipe = WindowDevice {
             instance,

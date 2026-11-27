@@ -1227,6 +1227,16 @@
         },
         "evidence": "../../.orchestrate/evidence/APPLE-PRESENTATION/WP16/README.md",
         "scope": "Timestamp query sets requested through the renderer's shared allocation path and delayed frame timing publication."
+      },
+      "WP18": {
+        "implementation": "Mac output scale resolves with each window generation request. Initial configuration, detached preparation, switching and recovery use the resulting output extent. AppKit full-screen transitions hold the prior request through the animation.",
+        "functional_validation": "Apple M3 Max Metal passed CPU scale and mode checks, a real-surface test of both scale transitions, release launches on both recipes and native AppKit toggles in both directions. Engine capture recorded drawable extents at 75% and 100%.",
+        "experienced_quality": "Both Mac recipes recorded a layer filling its bounds with linear magnification. WP17 owns the visual evaluation of scaled output.",
+        "platform_performance": {
+          "mac": "The device test recorded one configure and zero host-thread GPU creations per switch. WP17 measures refresh-rate performance."
+        },
+        "evidence": "../../.orchestrate/evidence/APPLE-PRESENTATION/WP18/README.md",
+        "scope": "Mac output grid, launch override and animated window-mode transitions."
       }
     }
   },

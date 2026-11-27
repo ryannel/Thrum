@@ -232,9 +232,9 @@ impl TransitionProof {
         self.stage = (next, now);
     }
 
-    pub(in crate::app) fn presented(&mut self, extent: Option<FrameExtent>) {
+    pub(in crate::app) fn presented(&mut self, extent: Option<&FrameExtent>) {
         self.present_media = Some(CACurrentMediaTime());
-        self.frame_extent = extent;
+        self.frame_extent = extent.copied();
     }
 
     pub(in crate::app) fn configure(

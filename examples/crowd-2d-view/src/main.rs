@@ -17,7 +17,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 forced: forced.parse()?,
                 output: std::env::var_os("THRUM_MAC_EDR_PROOF").map(Into::into),
                 capture: false,
-                capture_limits: Default::default(),
+                capture_limits: thrum_render::runtime::CaptureLimits::default(),
                 capture_first_pixels: false,
             },
             game,
