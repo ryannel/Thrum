@@ -1895,13 +1895,13 @@
   Shared-load GPU sums exceeded one refresh in both arms and each tripwire
   has its matching pass comparison in the record.
   [Receiver checks](../../../.orchestrate/evidence/WATERS/WP16/metal-checks.md) ·
-  [Paired cost](../../../.orchestrate/evidence/WATERS/WP16/under-light-cost-7c960f84c1d8.json).
+  [Paired cost](../../../.orchestrate/evidence/WATERS/WP16/under-light-cost-42bdfa59ef17.json).
 - Hardware Chrome confirmed unity in calm water, a moving normalized Trade
   ladder, a directly lit receiver and a zero signed march in calm without a
   blocker. Its east-lit box shadow darkened both the bed and the water just
   above it at the same stations. The unit and half-factor meter arms passed
   and the browser reported no validation faults.
-  [Chrome WebGPU proof](../../../.orchestrate/evidence/WATERS/WP16/chrome-calm-clear/run.json).
+  [Chrome WebGPU proof](../../../.orchestrate/evidence/WATERS/WP16/separable-webgpu/run.json).
 
 ## WP16 visual inspection checkpoint
 
@@ -1923,3 +1923,14 @@
   [Sea hull](../../../.orchestrate/evidence/WATERS/WP16/visual-checkpoint/sea-hull-filtered-pair.png) ·
   [Lake hull](../../../.orchestrate/evidence/WATERS/WP16/visual-checkpoint/lake-hull-filtered-pair.png) ·
   [Handoff](../../../.orchestrate/evidence/WATERS/WP16-handoff.md).
+
+- The lake's regular clusters persisted with a sparse disk kernel. Integrating
+  the same focal spread over contiguous texels removed them from the matched
+  lake view. The native and portable tests still hold the flat rung at exactly
+  one. The new paired 1440p record includes the extra horizontal pass and its
+  texture. The lake descent now turns toward the bed and stays above the
+  surveyed terrain at maximum depth.
+  [Matched captures](../../../.orchestrate/evidence/WATERS/WP16/inspection-round-3/)
+  · [Metal tests](../../../.orchestrate/evidence/WATERS/WP16/continuous-caustic-rerun.log)
+  · [Hardware Chrome](../../../.orchestrate/evidence/WATERS/WP16/separable-webgpu/run.json)
+  · [Paired cost](../../../.orchestrate/evidence/WATERS/WP16/under-light-cost-42bdfa59ef17.json).
