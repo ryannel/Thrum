@@ -1341,3 +1341,14 @@ passed the first frame, all noon sea views and the Ground inspection.
 The paired 1440p Metal pass sums under shared load were 22.11 ms and 63.46 ms.
 The fresh timing and the tripwire investigations are in the evidence.
 [Capture and check records](../../../.orchestrate/evidence/CLOUDS/WP11/README.md).
+
+### WP11 review repair
+
+The water receiver reads the directional reflection overlay. Metal
+isolates the direction lookup and Chrome swaps reflection mip zero just
+before the water draw while holding the scene inputs. Ground republishes
+accepted lake stages on the existing lattice, and the fixed weather
+step reads the accepted Sun. The lake's resolved near mist retains its
+wisps in a same-Sun pair. The paired sea cost now derives each required
+investigation from the measured frames and rejects missing entries.
+[Target captures and checks](../../../.orchestrate/evidence/CLOUDS/WP11/repair/README.md)

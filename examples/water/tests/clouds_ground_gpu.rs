@@ -69,7 +69,7 @@ fn accepted_lake_stage_updates_the_weather_surface_at_a_held_tick() {
     let mut before = weather.ground_surface().expect("initial surface");
     for (stage, json) in [(0.0, "{}"), (0.35, r#"{"lake.stage":0.35}"#),
         (1.0, r#"{"lake.stage":1.0}"#), (0.0, r#"{"lake.stage":0.0}"#)] {
-        map.set_stage(1, f64::from(stage)).expect("accepted stage");
+        map.set_stage(1, stage).expect("accepted stage");
         fixture.parameters(json);
         assert_eq!(fixture.frame_without_timings(0.0).tick, 0);
         let current = weather.ground_surface().expect("published surface");

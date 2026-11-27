@@ -16,7 +16,7 @@ fn sea_weather_is_opt_in_and_submitted_after_water() {
     };
     assert_eq!(Selection::from_variables(|key| (key == "THRUM_WATER_CLOUDS").then(|| "fair".into())), Some(selection));
     let off = selection.build(false, false).expect("paired control");
-    assert!(off.weather.is_none() && off.ground.is_none());
+    assert!(off.weather.is_none() && off.ground().is_none());
     let mut off = Fixture::from_game(&gpu, [48, 28], off.game.with_temporal_sampling(true), off.report);
     let first = off.frame_without_timings(0.0);
     assert!(off.host.scene_graph().expect("compiled graph").pass_names().all(|name| !name.contains("cloud ")));
