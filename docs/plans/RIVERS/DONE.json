@@ -615,7 +615,7 @@
     {
       "id": "WP6",
       "name": "A waterfall pours over its lip in a smooth tongue, breaks into white strands as it gathers speed and plunges into its pool, which boils, foams and sends out rings",
-      "status": "blocked",
+      "status": "not_started",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -744,17 +744,7 @@
           "verdict": "",
           "review": ""
         }
-      ],
-      "blocked": {
-        "reason": "needs_context",
-        "what": "May the receiving basin wet the bed below the brink while the upstream chart keeps its existing boundary?",
-        "work": {
-          "commit": "380a78fc7307372e1e7077fbd30fcb82a9fc764c",
-          "branch": "build/rivers",
-          "pushed": true
-        },
-        "handoff": ".orchestrate/evidence/RIVERS/WP6-handoff.md"
-      }
+      ]
     },
     {
       "id": "WP7",

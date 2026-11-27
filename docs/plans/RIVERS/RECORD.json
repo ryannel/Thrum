@@ -1058,12 +1058,12 @@
       }
     },
     "WP6": {
-      "definitions": "fcb5aaf98d4827011ef37418897d4ac93b9bca228e4073dde44a6845c4c34c1e",
+      "definitions": "8d97dc64cedf9f63724b1c17b08f5682dcd0b289457eb7d86775db33d7b7ab23",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Builders are blocking on the \"no exact baseline moves\" item. About 60 open items across 18 modules (CLOUDS WP7.9, RAY-TR",
-        "at": "2026-11-24T22:06:49Z"
+        "task": "RIVERS WP6 (waterfall and plunge pool) is Blocked, Needs Context: may the receiving basin wet the bed below the brink wh",
+        "at": "2026-11-27T10:11:50Z"
       }
     },
     "WP7": {
@@ -1374,11 +1374,15 @@
     {
       "task": "Lead decision on RIVERS WP4.3, which has now failed five reviews, each on a new camera pose (see .orchestrate/evidence/RIVERS/WP4-review.md and WP4-review-4.md). The real defect (a 42 cm draw/query wave-phase mismatch at the tidal mouth) was fixed. The latest finding is 1.9 cm at a grazing bank view, 2 m above the water, where reconstructed depth is least precise. A per-pixel absolute bound invites endless pose hunting. By the project's bar (plausible shipped-game look; proof proportional to risk), rewrite WP4.3's interior written-depth clause: (a) a numeric bound that scales with view angle and distance, justified from depth-buffer precision at that pose, or an equivalent bound in screen space (for example, a fraction of a pixel of vertical surface displacement); and (b) a visual check that floating bodies sit on the drawn surface and no seam, gap or step shows, from both a standard camera and a low bank camera. Keep the tight bound on the map rows and on the step at each of the three ends. Record the reasoning and the fixed phase bug in the design. Leave the builder's branch alone.",
       "at": "2026-11-26T22:31:59Z"
+    },
+    {
+      "task": "RIVERS WP6 (waterfall and plunge pool) is Blocked, Needs Context: may the receiving basin wet the bed below the brink while the upstream chart keeps its existing boundary? The builder measured a dry-to-1.6-2.1 m depth jump at the lower chart edge (z = -25 m) causing the plunge seam (WP6.5) and proposes letting the receiving basin follow the authored plunge bed below the brink; the alternative is reauthoring the fall with a dry bank. The lower-sheet curtain look in the flood (WP6.4) also remains. Handoff: .claude/worktrees/rivers/.orchestrate/evidence/RIVERS/WP6-handoff.md. Decide the brink rule from first principles (best-looking, plausible result at shipped-game quality), amend the design and WP6 items as needed, and leave WP6 ready to resume.",
+      "at": "2026-11-27T10:11:50Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-26T22:31:59Z"
+    "at": "2026-11-27T10:11:50Z"
   },
   "design_history": [
     {
