@@ -390,9 +390,9 @@
     {
       "id": "WP4",
       "name": "On the island a stream runs from a spring through a pool and a narrows to the lake, and a river runs from the lake to the sea; raise the lake and the river swells, and a float rides from the spring to the sea",
-      "status": "ready_for_review",
-      "failed_reviews": 1,
-      "failed_reviews_with_repeat": 0,
+      "status": "in_progress",
+      "failed_reviews": 2,
+      "failed_reviews_with_repeat": 1,
       "diagnoses": 0,
       "depends_on": [
         "WATERS:WP9"
@@ -429,8 +429,8 @@
           "ask": "Is a river reached only through declarations any game can make, with no path in `thrum-water` that knows the island? Does the test fail when the GPU's map reads one sample for every gauge, and when it ignores the wetting gauge, on the hollow and on the dry reach alike? Does it fail when the map is right and the draw wets the hollow, or the reach, from the upper sample at a gauge below its wetting?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/RIVERS/WP4/pool-seam/README.md",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/RIVERS/WP4-review.md"
         },
@@ -500,9 +500,9 @@
       ],
       "findings": [
         {
-          "name": "A visible seam cuts across the spring pool highlights",
+          "name": "An unrelated sampled river changes the surface queried on a one-sample chart",
           "item": "WP4.3",
-          "different": "The prior finding concerned the depth written at the tidal bank. Both named tidal depth series pass. This finding is the visible break in the spring pool under inspection line 3.",
+          "different": "The previous finding was a visible seam in the spring pool, which is resolved. This changes the public body-query height on a separate one-sample chart when only another river gains samples.",
           "repeat": false
         }
       ]

@@ -652,7 +652,7 @@
         {
           "verdict": "fail",
           "commit": "696e1fb31995f93ba95d6e41742e8f554176ff62",
-          "review": ".orchestrate/evidence/RIVERS/WP4-review.md",
+          "review": ".orchestrate/evidence/RIVERS/WP4-review-6.md",
           "items": {
             "WP4.1": "pass",
             "WP4.2": "pass",
@@ -688,6 +688,46 @@
             "turns": 1
           },
           "at": "2026-11-26T23:30:01Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "b3f159930c3f57d7931d65c449a128add5a250bb",
+          "review": ".orchestrate/evidence/RIVERS/WP4-review.md",
+          "items": {
+            "WP4.1": "pass",
+            "WP4.2": "pass",
+            "WP4.3": "fail",
+            "WP4.4": "pass",
+            "WP4.5": "pass",
+            "WP4.6": "pass",
+            "WP4.7": "pass",
+            "WP4.8": "pass",
+            "WP4.9": "pass"
+          },
+          "findings": [
+            {
+              "name": "An unrelated sampled river changes the surface queried on a one-sample chart",
+              "item": "WP4.3",
+              "different": "The previous finding was a visible seam in the spring pool, which is resolved. This changes the public body-query height on a separate one-sample chart when only another river gains samples.",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 249060,
+            "cached": 12974208,
+            "output": 29642,
+            "turns": 1
+          },
+          "at": "2026-11-27T00:57:44Z"
         }
       ],
       "authorised": {
