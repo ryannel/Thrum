@@ -33,32 +33,37 @@ fn compare_dry(name: &str, wind: Wind) {
         let make = |enabled| {
             let (game, report, _, _) = build_rain_ground(wind, true, enabled).expect("yard");
             let mut f = support::Fixture::from_game(&gpu, [384, 216], game, report);
-            f.parameters(r#"{"camera.island":0,"rain.rate":0,"rain.drying":0,"sun.elevation":30}"#);
-            let mut drawn = false;
-            thrum_test_support::wait::until(
-                "cooked grass texture",
-                Duration::from_secs(30),
-                || {
-                    // Keep the simulation endpoint fixed while streaming both arms.
-                    f.frame_without_timings(0.0);
-                    match f.game.poll_status() {
-                        Some(thrum_app::sky::ContentStatus::Drawn(_)) => drawn = true,
-                        Some(thrum_app::sky::ContentStatus::Failed(error)) => panic!("{error}"),
-                        _ => {}
-                    }
-                    if !drawn {
-                        return None;
-                    }
-                    let pixels = f.image();
-                    let grass = (60 * 384 + 32) * 4;
-                    (pixels[grass + 1].saturating_sub(pixels[grass + 2]) > 15).then_some(())
-                },
-            );
-            f.frame_without_timings(1.0);
+            f.parameters(r#"{"camera.island":0,"rain.rate":0,"rain.drying":0,"sun.elevation":8}"#);
             f
         };
         let mut absent = make(false);
         let mut dry = make(true);
+        let mut drawn = [false; 2];
+        thrum_test_support::wait::until(
+            "both cooked grass textures",
+            Duration::from_secs(30),
+            || {
+                // Stream both arms at one endpoint with identical submission counts.
+                for (fixture, seen) in [&mut absent, &mut dry].into_iter().zip(&mut drawn) {
+                    fixture.frame_without_timings(0.0);
+                    match fixture.game.poll_status() {
+                        Some(thrum_app::sky::ContentStatus::Drawn(_)) => *seen = true,
+                        Some(thrum_app::sky::ContentStatus::Failed(error)) => panic!("{error}"),
+                        _ => {}
+                    }
+                }
+                (drawn.into_iter().all(|seen| seen)
+                    && [&absent, &dry].into_iter().all(|fixture| {
+                        let pixels = fixture.image();
+                        let grass = (60 * 384 + 32) * 4;
+                        pixels[grass + 1].saturating_sub(pixels[grass + 2]) > 15
+                    }))
+                .then_some(())
+            },
+        );
+        for fixture in [&mut absent, &mut dry] {
+            fixture.frame_without_timings(1.0);
+        }
         for (fixture, registered) in [(&absent, false), (&dry, true)] {
             assert_eq!(
                 fixture
@@ -84,8 +89,22 @@ fn compare_dry(name: &str, wind: Wind) {
         {
             let get = |f: &mut support::Fixture| {
                 f.parameters(&format!(r#"{{"camera.island":{camera},"sun.elevation":8,"camera.pan":{pan},"camera.tilt":{tilt}}}"#));
-                let frame =
-                    f.frame(2.0 + f64::from(u32::try_from(index).expect("camera count")) / 120.0);
+                f.host.invalidate_history();
+                let seconds = 2.0 + f64::from(u32::try_from(index).expect("camera count")) / 120.0;
+                f.frame_without_timings(seconds);
+                let mut prior = f.image();
+                let (frame, image) = (0..6)
+                    .find_map(|_| {
+                        let frame = f.frame(seconds);
+                        let image = f.image();
+                        if image == prior {
+                            Some((frame, image))
+                        } else {
+                            prior = image;
+                            None
+                        }
+                    })
+                    .expect("held camera produces two identical RGBA samples");
                 let gather = frame
                     .gpu_pass_ns
                     .as_ref()
@@ -93,7 +112,7 @@ fn compare_dry(name: &str, wind: Wind) {
                     .passes()
                     .iter()
                     .any(|pass| pass.name.ends_with("water gather"));
-                (f.image(), gather)
+                (image, gather)
             };
             let (ordinary, ordinary_gather) = get(&mut absent);
             let (registered, registered_gather) = get(&mut dry);
