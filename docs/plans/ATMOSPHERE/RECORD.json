@@ -1,27 +1,14 @@
 {
   "module": "ATMOSPHERE",
   "design": {
-    "verdict": "changes",
-    "review": ".orchestrate/evidence/ATMOSPHERE/design-review.md",
-    "commit": "35a4003171f2cb3c0c27a247d1fbc9596af5246d",
-    "hash": "9b903ea96a368922a9229c3450d6e94f04ab35fb149b4cf4d633b66132e5ac42",
-    "by": "review",
-    "host": "codex",
-    "model": "gpt-6.2-astra",
-    "effort": "high",
-    "observed": {
-      "model": "gpt-6.2-astra",
-      "effort": "high"
-    },
-    "cli": "codex-cli 0.171.0-alpha.13.2",
-    "path": "headless",
-    "usage": {
-      "input": 78816,
-      "cached": 1159552,
-      "output": 7905,
-      "turns": 1
-    },
-    "at": "2026-11-27T07:06:15Z"
+    "verdict": "ok",
+    "by": "review_limit",
+    "hash": "86ff404e05a927f7914c75557f789fbafa9dab9616b706bf694c16775367c5c1",
+    "after": [
+      ".orchestrate/evidence/ATMOSPHERE/design-review-3.md",
+      ".orchestrate/evidence/ATMOSPHERE/design-review.md"
+    ],
+    "at": "2026-11-27T07:15:46Z"
   },
   "work_packages": {
     "WP5": {
@@ -910,12 +897,12 @@
       }
     },
     "WP12": {
-      "definitions": "ebd629cd2c8af7a417bb1f1d21c5c4bd08ed554e51bd66c0681f72bb8a769b80",
+      "definitions": "47642febe51da8bdeb339b6a03261e06d63eabad06b4a92c3a9daa3f9d5218db",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of ATMOSPHERE at .orchestrate/evidence/ATMOSPHERE/design-review.md asked for changes, with its 4 Must ",
-        "at": "2026-11-27T06:59:24Z"
+        "task": "The design review of ATMOSPHERE at .orchestrate/evidence/ATMOSPHERE/design-review.md asked for changes, with its 3 Must ",
+        "at": "2026-11-27T07:15:46Z"
       },
       "ends_stretch": true
     }
@@ -1032,11 +1019,15 @@
     {
       "task": "The design review of ATMOSPHERE at .orchestrate/evidence/ATMOSPHERE/design-review.md asked for changes, with its 4 Must Fix findings.",
       "at": "2026-11-27T06:59:24Z"
+    },
+    {
+      "task": "The design review of ATMOSPHERE at .orchestrate/evidence/ATMOSPHERE/design-review.md asked for changes, with its 3 Must Fix findings. That makes 2 design reviews in a row that asked for changes, so the script approves the design you leave without another review, and building starts from it.",
+      "at": "2026-11-27T07:15:46Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-27T06:59:24Z"
+    "at": "2026-11-27T07:15:46Z"
   },
   "design_history": [
     {
@@ -1565,6 +1556,29 @@
         "turns": 1
       },
       "at": "2026-11-27T06:49:43Z"
+    },
+    {
+      "verdict": "changes",
+      "review": ".orchestrate/evidence/ATMOSPHERE/design-review.md",
+      "commit": "35a4003171f2cb3c0c27a247d1fbc9596af5246d",
+      "hash": "9b903ea96a368922a9229c3450d6e94f04ab35fb149b4cf4d633b66132e5ac42",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6.2-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6.2-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.171.0-alpha.13.2",
+      "path": "headless",
+      "usage": {
+        "input": 78816,
+        "cached": 1159552,
+        "output": 7905,
+        "turns": 1
+      },
+      "at": "2026-11-27T07:06:15Z"
     }
   ]
 }
