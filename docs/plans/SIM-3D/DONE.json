@@ -1,0 +1,306 @@
+{
+  "module": "SIM-3D",
+  "work_packages": [
+    {
+      "id": "WP1",
+      "name": "A rule asks whether two 3D shapes touch, where a ray meets one and where a moving one is stopped, and gets the same answer on the Mac, in Chrome and on the iPhone simulator",
+      "status": "not_started",
+      "depends_on": [
+        "SIM-2D:WP3"
+      ],
+      "quality_bar": "Shape tests as dependable as Jolt's and Parry's at touching, grazing and degenerate cases, and the same bits on every device, as Box2D 3.1 holds its results across platforms.",
+      "items": [
+        {
+          "id": "WP1.1",
+          "statement": "Built first, because the other items test against the two constants it sets. (1) The crate states the query domain's bound and the contact tolerance as public constants, each a power of two: the bound at least 32,768 units, the tolerance at most 1/64 of a unit. (2) A sphere, a capsule, a cuboid and a triangle placed at each corner of the query domain, each as large as the domain allows, give finite answers from the distance, overlap, ray and sweep tests. (3) Each of those tests refuses, with a typed error that names what was wrong: a shape with a coordinate beyond the bound; a non-finite coordinate; a negative radius; and a motion that ends outside the domain. Guard: CPU tests, in `./dev check`.",
+          "check": "cargo test --locked --offline -p thrum-sim3d --test it domain::",
+          "reads": [
+            "crates/thrum-sim3d/",
+            "crates/thrum-core/",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP1.2",
+          "statement": "Distance and overlap. For the six pairs among sphere, capsule and cuboid and for each of the three against a triangle, the distance and the overlap test give answers written out by hand, at: apart by more than the contact tolerance; crossing by more than the tolerance; one wholly inside the other, for the pairs where one can be; and touching, set up for each pair with every closest point at a coordinate the profile holds exactly, which is an overlap at distance zero. The same with a sphere of zero radius, a capsule of zero length, a flat cuboid, a cuboid turned so that no half-edge lies along an axis, and a triangle whose corners lie on one line. In every case the overlap test is true exactly where the distance is zero. Every case is asserted at the origin and at a corner of the working range, and with the two shapes given in either order. Guard: CPU tests, in `./dev check`.",
+          "check": "cargo test --locked --offline -p thrum-sim3d --test it overlap::",
+          "reads": [
+            "crates/thrum-sim3d/",
+            "crates/thrum-core/",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP1.3",
+          "statement": "Rays. A ray against a sphere, a capsule, a cuboid, a turned cuboid and a triangle gives the hand-worked fraction, point and normal for: a hit from outside; a start inside a sphere, a capsule or a cuboid, which is a hit at fraction zero with the normal of the shallowest way out; a ray that stops short of the shape; one that points away from it; one that passes beside it; a ray of zero length, inside a shape and outside it; a triangle met from each side, with the normal toward the ray's start each time; and a triangle met edge-on and a triangle of no area, which are misses. Each normal's length is within 2⁻²⁰ of one. Every case is asserted at the origin and at a corner of the working range. Guard: CPU tests, in `./dev check`.",
+          "check": "cargo test --locked --offline -p thrum-sim3d --test it ray::",
+          "reads": [
+            "crates/thrum-sim3d/",
+            "crates/thrum-core/",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP1.4",
+          "statement": "Sweeps, for a sphere, a capsule and a cuboid moved against each of the three and against a triangle: twelve pairs. In hand-worked cases for each pair (head-on; grazing, where the path passes within half the contact tolerance; passing by, where it stays twice the tolerance clear; onto a corner and onto an edge of a cuboid and of a triangle; and a triangle met from each side): (1) passing by reports nothing and every other case reports a hit; (2) at a hit, the mover set at its start plus the motion times the fraction does not overlap what it struck, and its distance from it is at most the contact tolerance; (3) the normal's length is within 2⁻²⁰ of one and it points from what was struck toward the mover; (4) a sweep that starts overlapping reports fraction zero with the hand-worked shallowest way out, and one that starts within the tolerance and moves along the surface or away from it reports nothing; (5) a motion of zero length reports a hit exactly where the overlap test is true; (6) a motion 10,000 times the mover's size through a triangle, and through a flat cuboid, reports the hit; (7) with both shapes moving, the answer is that of the mover swept by the difference of the two motions against the other standing still. Every case is asserted at the origin and at a corner of the working range. Guard: CPU tests, in `./dev check`.",
+          "check": "cargo test --locked --offline -p thrum-sim3d --test it sweep::",
+          "reads": [
+            "crates/thrum-sim3d/",
+            "crates/thrum-core/",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP1.5",
+          "statement": "The crate computes with the profile's numbers and nothing else. It is registered as a rule package, so the profile's check holds it and its tests to the profile's lints, with none suppressed, on native, Wasm and simulator builds, in development and release: six passing rows that name `thrum-sim3d`. Guard: the profile's check, in `./dev check`.",
+          "check": "python3 scripts/sim2d_profile.py check --output tmp/sim3d/profile-check.json && python3 -c \"import json; rows = [r for r in json.load(open('tmp/sim3d/profile-check.json'))['rows'] if r['package'] == 'thrum-sim3d']; assert len(rows) == 6 and all(r['result'] == 'pass' for r in rows), rows\"",
+          "reads": [
+            "crates/thrum-sim3d/",
+            "crates/thrum-core/",
+            ".config/architecture.toml",
+            ".config/sim2d-profile/",
+            "scripts/sim2d_profile.py",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP1.6",
+          "statement": "On the Mac, in a release build and a development build, every retained vector is reproduced bit for bit. The retained vectors are test data: every bit of the answer of each case of WP1.2, WP1.3 and WP1.4, at the origin and at a corner of the working range, and of 1,000 seeded cases of each of the four tests, drawn across the working range with the profile's keyed random function. The same run with one retained value changed fails and names the vector. Guard: the native comparison is a CPU test in `./dev check`.",
+          "check": "cargo test --locked --offline -p sim3d-run --test it vectors:: && python3 scripts/sim3d_conformance.py vectors --target mac-metal",
+          "reads": [
+            "crates/thrum-sim3d/",
+            "crates/thrum-core/",
+            "examples/sim3d-run/",
+            "scripts/sim3d_conformance.py",
+            ".config/architecture.toml",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP1.7",
+          "statement": "As Wasm in Chrome, every retained vector of WP1.6 is reproduced bit for bit. The conformance command takes Chrome's lock itself around its browser run, so the item names none. Record: the Chrome arm of the three-target run.",
+          "check": "python3 scripts/sim3d_conformance.py vectors --target chrome-webgpu",
+          "reads": [
+            "crates/thrum-sim3d/",
+            "crates/thrum-core/",
+            "examples/sim3d-run/",
+            "scripts/sim3d_conformance.py",
+            ".config/architecture.toml",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "chrome-webgpu",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP1.8",
+          "statement": "In the iPhone simulator, every retained vector of WP1.6 is reproduced bit for bit. Function only. The conformance command takes the simulator for its turn itself, so the item names no lock. Record: the simulator arm of the three-target run.",
+          "check": "python3 scripts/sim3d_conformance.py vectors --target ios-sim",
+          "reads": [
+            "crates/thrum-sim3d/",
+            "crates/thrum-core/",
+            "examples/sim3d-run/",
+            "scripts/sim3d_conformance.py",
+            ".config/architecture.toml",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "ios-sim",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP1.9",
+          "statement": "The tests are proved by answers that do not come from themselves, the two constants were set from a measurement, and what was translated from elsewhere is on record.",
+          "ask": "1. Are the expected answers in the distance, overlap, ray and sweep tests written out from geometry, with coordinates the profile holds exactly, and not computed by the functions under test? 2. Does each test's answer depend on its arguments alone: is there no cache, counter or other state that outlives a call? 3. Does each test subtract one reference point from the coordinates it reads before it multiplies, so that a case at a corner of the working range is computed in a local frame? 4. Does the work package's evidence hold a record, made before the constants were fixed, of the gap left at the reported place for every sweep case of WP1.4 at the origin and at the corners of the working range, and of the largest magnitude an intermediate reaches for shapes at the domain's bound? Is the contact tolerance no smaller than the largest gap recorded, and is that largest magnitude finite? 5. Does `docs/provenance/SIM-3D.md` list every file translated or adapted from another project with its source, revision and licence, or say that none was, and is none GPL or share-alike?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
+    },
+    {
+      "id": "WP2",
+      "name": "A rule finds what is near a point, along a ray and in a moving shape's path among 10,000 colliders, and every answer matches a brute-force search",
+      "status": "not_started",
+      "quality_bar": "Queries as dependable as Jolt's and Unity Physics' world queries: the right colliders, every time, in an order a game can rely on, with whatever a warmed build or query allocates on record.",
+      "items": [
+        {
+          "id": "WP2.1",
+          "statement": "For an overlap with a sphere, a capsule and a cuboid, the nearest k to a point within a distance, a ray, and a sweep of each of the three shapes, the last two asked for every answer and for the first alone, the index gives exactly the sequence a brute-force search over the same colliders gives with the same pair tests, sorted by the design's order. The scenes are: an empty index; one collider; two that coincide; 500 colliders spread so that few touch, 500 packed so that each touches several, 500 at one point, and 500 mixed in kind and in size from a point to larger than the whole crowd, each of those four at the origin and at a corner of the working range; colliders that exactly touch the query shape, at the origin and at a corner of the working range; a query wider than every collider together; a query with one slot left out; and 10,000 colliders packed three deep, for four queries of each kind. Guard: CPU tests, each inside the merge tier's ten seconds, in `./dev check`.",
+          "check": "cargo test --locked --offline -p thrum-sim3d --test it oracle::",
+          "ask": "Does the brute-force side visit every collider without using the index's tree or its boxes, and sort by the design's key? Is each scene in the statement generated, with its colliders drawn from the profile's keyed random function?",
+          "reads": [
+            "crates/thrum-sim3d/",
+            "crates/thrum-core/",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP2.2",
+          "statement": "The order of answers is the design's, in hand-worked cases: an overlap and the nearest k come nearest centre first, and colliders at one distance in ascending slot; a ray and a sweep come earliest first, and colliders at one fraction in ascending slot; the nearest k among more than k colliders at one distance are the k lowest slots; and the first hit asked for alone is the first of every hit. Guard: CPU tests, in `./dev check`.",
+          "check": "cargo test --locked --offline -p thrum-sim3d --test it order::",
+          "reads": [
+            "crates/thrum-sim3d/",
+            "crates/thrum-core/",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP2.3",
+          "statement": "A build is refused, with an error that names the slot, for a collider outside the query domain, for a non-finite coordinate or a negative radius, and for slots that do not ascend; after a refused build the index holds what it held and gives the answers it gave. A query outside the domain is refused with an error that names it. Colliders at the edge of the domain are answered as the brute-force search answers them. Guard: CPU tests, in `./dev check`.",
+          "check": "cargo test --locked --offline -p thrum-sim3d --test it index_domain::",
+          "reads": [
+            "crates/thrum-sim3d/",
+            "crates/thrum-core/",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP2.4",
+          "statement": "An index built from a list gives the answers a new index built from that list gives, whatever it held before: after a build from another list, and after a build of 10,000 colliders followed by one of three. Its queries take the index by shared reference, and a compile-time test shows its type can be shared between threads. Guard: CPU tests, in `./dev check`.",
+          "check": "cargo test --locked --offline -p thrum-sim3d --test it rebuild::",
+          "reads": [
+            "crates/thrum-sim3d/",
+            "crates/thrum-core/",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP2.5",
+          "statement": "The index keeps its storage between builds, and a query writes into storage its caller keeps. The allocations made by a warmed build and by a warmed query of each kind at 10,000 colliders are counted on the Mac and printed by name: a build, an overlap with each of the three shapes, the nearest k, a ray and a sweep. The counts are observations: the test fails only when one is missing, and the log explains any that is not zero. Guard: the counting test stays in the tree as its own test binary and runs in `./dev check`.",
+          "check": "cargo test --locked --offline -p sim3d-run --test allocations -- --nocapture",
+          "reads": [
+            "crates/thrum-sim3d/",
+            "crates/thrum-core/",
+            "examples/sim3d-run/",
+            "scripts/sim3d_conformance.py",
+            ".config/architecture.toml",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP2.6",
+          "statement": "The retained vectors gain the index's cases: the answers, as slots in order with every bit of each fraction, point and normal, of each query kind of WP2.1 on its 500-collider mixed scene, at the origin and at a corner of the working range. On the Mac they are reproduced bit for bit in a release build and a development build, with WP1's vectors unchanged. Guard: the native comparison is a CPU test in `./dev check`.",
+          "check": "cargo test --locked --offline -p sim3d-run --test it vectors:: && python3 scripts/sim3d_conformance.py vectors --target mac-metal",
+          "reads": [
+            "crates/thrum-sim3d/",
+            "crates/thrum-core/",
+            "examples/sim3d-run/",
+            "scripts/sim3d_conformance.py",
+            ".config/architecture.toml",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP2.7",
+          "statement": "As Wasm in Chrome, where a machine word is 32 bits, every retained vector is reproduced bit for bit, the index's cases among them. The conformance command takes Chrome's lock itself, so the item names none. The simulator's arm waits for the module's last work package: it shares the Mac's processor and word size, so here it could show nothing the Mac did not. Record: the Chrome arm of the conformance run.",
+          "check": "python3 scripts/sim3d_conformance.py vectors --target chrome-webgpu",
+          "reads": [
+            "crates/thrum-sim3d/",
+            "crates/thrum-core/",
+            "examples/sim3d-run/",
+            "scripts/sim3d_conformance.py",
+            ".config/architecture.toml",
+            "Cargo.toml",
+            "Cargo.lock"
+          ],
+          "target": "chrome-webgpu",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "WP2.8",
+          "statement": "The index's answers do not depend on how its tree was built.",
+          "ask": "1. Is the order of every answer made by sorting on the design's key, so that it would not change if the tree were built another way? 2. Is each pair test called with the shapes and the whole motion as given, also when only the first hit is asked for, so that its answer cannot depend on what else was found? 3. Are the tree's boxes widened by more than the contact tolerance, and do the exactly-touching scenes of WP2.1 exercise that? 4. Does a build reuse the index's storage by design, and does a query take its scratch from its caller? 5. Is the tree a function of the list alone: does its build use no `usize` or pointer value as a key, and nothing left from an earlier build?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
+    }
+  ]
+}

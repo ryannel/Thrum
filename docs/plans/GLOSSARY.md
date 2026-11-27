@@ -116,6 +116,29 @@ look has, so giving the model to an entity is how it comes to move.
 
 Proposed: the planner chose the name, in place of "scenery".
 
+### Fixed collision
+
+What a level is made of that stops things and never moves: the triangles of its solid models, its terrain's
+heights and its boxes. It is not made of entities. Rules ask it what a ray meets, where a moving shape is
+stopped and how high the ground is. Other engines call it static collision. Defined in
+[SIM-3D's design](SIM-3D/DESIGN.md#5-fixed-collision); the game SDK's `Level2d` and `Level3d` are a game's way
+to it.
+
+- **Source** — the game SDK's design; the field's term is static collider or static geometry.
+
+Proposed: the planner chose "fixed" over "static", which in Rust means something else.
+
+### Kinematic move
+
+One call that moves a character's shape through the level by a motion, slides it along what it meets, climbs a
+step, keeps it to the ground downhill and reports every contact. Nothing pushes the shape and it pushes
+nothing: there are no rigid bodies. Defined in [SIM-3D's design](SIM-3D/DESIGN.md#6-the-kinematic-move); in
+game code it is `move_shape`.
+
+- **Source** — the field's term (kinematic character controller; move and slide in Godot).
+
+Proposed: the planner chose the name.
+
 ### Setting
 
 A named value a game shows on the tuning panel, in the Mac window and on the Chrome page: a slider, a toggle, a
