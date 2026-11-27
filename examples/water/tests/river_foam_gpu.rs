@@ -9,7 +9,7 @@ mod river_foam {
         time::Duration,
     };
     use thrum_app::sky::{Camera, ContentStatus, Controls, SkyGame};
-    use thrum_water::foam::{CHART_LOSS_BIRTH_RATE, Witness};
+    use thrum_water::foam::{CHART_LOSS_BIRTH_RATE, Input, Tap, Witness};
     use thrum_water_model::{FlowBands, FlowBandsProfile, Map};
     use water_scene::{channel, island::Wind, river};
 
@@ -85,11 +85,15 @@ mod river_foam {
         stations
     }
 
-    #[expect(
-        clippy::print_stdout,
-        reason = "record measured loss, birth rate and cover at the valley stations"
-    )]
-    pub(super) fn run(gpu: &thrum_test_support::Gpu) {
+    struct Trial {
+        scene: Fixture,
+        map: Arc<Mutex<Map>>,
+        control: Input,
+        tap: Tap,
+        gauge: [f64; 2],
+    }
+
+    fn trial(gpu: &thrum_test_support::Gpu) -> Trial {
         let forcing = channel::forcing(Wind::Calm);
         let (mut map, files) =
             river::map(&forcing, Some(&super::support::river_store())).expect("prepared island");
@@ -120,71 +124,59 @@ mod river_foam {
             .expect("flow cadence")
             .name;
         scene.host.set_quality_knob(&knob, 4).expect("cadence");
-        let mut frame = |seconds: f64| drop(scene.frame_without_timings(seconds));
-        frame(0.0);
-        for tick in (4..=24).step_by(4) {
-            frame(f64::from(tick) * STEP.as_secs_f64());
+        scene.frame_without_timings(0.0);
+        Trial {
+            scene,
+            map,
+            control,
+            tap,
+            gauge: [lower, upper],
         }
-        let current = measure(
-            &scene,
-            &map.lock().expect("valley"),
-            &tap.latest().expect("foam"),
-            true,
-        );
-        control.set_chart_loss_births(false);
-        for tick in (28..=68).step_by(4) {
-            scene.frame_without_timings(f64::from(tick) * STEP.as_secs_f64());
+    }
+
+    impl Trial {
+        fn advance(&mut self, ticks: std::ops::RangeInclusive<u32>) {
+            for tick in ticks.step_by(4) {
+                self.scene
+                    .frame_without_timings(f64::from(tick) * STEP.as_secs_f64());
+            }
         }
-        let fading = measure(
-            &scene,
-            &map.lock().expect("valley"),
-            &tap.latest().expect("ageing foam"),
-            false,
-        );
-        control.set_chart_loss_births(true);
-        map.lock()
-            .expect("valley")
-            .set_gauge(0, lower)
-            .expect("low gauge");
-        for tick in (72..=84).step_by(4) {
-            scene.frame_without_timings(f64::from(tick) * STEP.as_secs_f64());
+
+        fn measure(&self, enabled: bool) -> [Station; 8] {
+            measure(
+                &self.scene,
+                &self.map.lock().expect("valley"),
+                &self.tap.latest().expect("foam"),
+                enabled,
+            )
         }
-        let low = measure(
-            &scene,
-            &map.lock().expect("valley"),
-            &tap.latest().expect("low foam"),
-            true,
-        );
-        map.lock()
-            .expect("valley")
-            .set_gauge(0, upper)
-            .expect("high gauge");
-        for tick in (88..=100).step_by(4) {
-            scene.frame_without_timings(f64::from(tick) * STEP.as_secs_f64());
+
+        fn gauge(&self, end: usize) {
+            self.map
+                .lock()
+                .expect("valley")
+                .set_gauge(0, self.gauge[end])
+                .expect("gauge");
         }
-        let high = measure(
-            &scene,
-            &map.lock().expect("valley"),
-            &tap.latest().expect("high foam"),
-            true,
-        );
+    }
+
+    #[expect(
+        clippy::print_stdout,
+        reason = "record measured loss, birth rate and cover at the valley stations"
+    )]
+    pub(super) fn transport(gpu: &thrum_test_support::Gpu) {
+        let mut trial = trial(gpu);
+        trial.advance(4..=24);
+        let current = trial.measure(true);
+        trial.control.set_chart_loss_births(false);
+        trial.advance(28..=68);
+        let fading = trial.measure(false);
+
         println!("chart loss birth constant {CHART_LOSS_BIRTH_RATE} m²/J");
-        for (((((name, _), nominal), fading), low), high) in STATIONS
-            .into_iter()
-            .zip(&current)
-            .zip(&fading)
-            .zip(&low)
-            .zip(&high)
-        {
+        for (((name, _), nominal), fading) in STATIONS.into_iter().zip(&current).zip(&fading) {
             println!(
-                "{name}: {} wet cells; power {:.3} W/m²; birth {:.5}/s; cover {:.5}, births off {:.5}, low {:.5}, high {:.5}",
-                nominal.cells,
-                nominal.loss,
-                nominal.births,
-                nominal.cover,
-                fading.cover,
-                low.cover,
-                high.cover
+                "{name}: {} wet cells; power {:.3} W/m²; birth {:.5}/s; cover {:.5}, births off {:.5}",
+                nominal.cells, nominal.loss, nominal.births, nominal.cover, fading.cover
             );
         }
         assert!(current[4].births > 0.05 && current[5].births > 0.05 && current[6].births > 0.05);
@@ -199,6 +191,20 @@ mod river_foam {
             "the transition receives transported foam even though births are off"
         );
         assert!(fading[4].cover < current[4].cover && fading[5].cover < current[5].cover);
+    }
+
+    #[expect(clippy::print_stdout, reason = "record both gauge endpoints")]
+    pub(super) fn gauges(gpu: &thrum_test_support::Gpu) {
+        let mut trial = trial(gpu);
+        trial.gauge(0);
+        trial.advance(4..=16);
+        let low = trial.measure(true);
+        trial.gauge(1);
+        trial.advance(20..=32);
+        let high = trial.measure(true);
+        for (((name, _), low), high) in STATIONS.into_iter().zip(&low).zip(&high) {
+            println!("{name} cover: low {:.5}, high {:.5}", low.cover, high.cover);
+        }
         assert!(low[4].cover < high[4].cover);
     }
 }
@@ -206,6 +212,13 @@ mod river_foam {
 thrum_test_support::macos_gpu_test! {
 fn chart_loss_makes_and_carries_whitewater_on_the_valley() {
     let Some(gpu) = thrum_test_support::gpu("river whitewater", Some(wgpu::Backend::Metal)) else { return };
-    river_foam::run(&gpu);
+    river_foam::transport(&gpu);
+}
+}
+
+thrum_test_support::macos_gpu_test! {
+fn lowering_the_valley_gauge_reduces_foam_below_the_ledge() {
+    let Some(gpu) = thrum_test_support::gpu("river gauge whitewater", Some(wgpu::Backend::Metal)) else { return };
+    river_foam::gauges(&gpu);
 }
 }
