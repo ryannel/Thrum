@@ -517,3 +517,58 @@
   kept entities come back under kept parents; and one terrain is drawn and stood on from one source.
 - 2026-11-27 Left as they are, because they are other modules' files: `GAME-UI`'s plan still assumes no
   gamepad and `SWARM`'s no sound and no gamepad. The vision and scope document does not carry the approval.
+- 2026-11-27 The design review after the approval asked for changes, with 12 Must Fix findings
+  ([the review](../../../.orchestrate/evidence/GAME-SDK/design-review.md)). Each is settled below. Every
+  change adds names or says what an existing name does in a case it left open; no name and no invariant of
+  the core changes, no decision of the owner's is touched, and no other module's file changed.
+- 2026-11-27 Finding 1 (a wall slide loses the path the stomp needs): a written position is a straight path,
+  and `at.follow(&moved)` gives the entity the move's own legs for the tick, each with the share of the tick
+  the move spent on it. `motion_of(entity).sweep()` sweeps those legs, so the courier that slid from (1, 1)
+  to (1, 3) meets the watch at (1, 2). The path is the tick's working memory and in no digest (section 7,
+  R2, R3, cost, risk 19). The examples move a body with `follow`. Carried into WP12 with the review's numbers.
+- 2026-11-27 Finding 2 (an overlapping sweep has two positions): a `Hit` gains `depth`. A path meets a thing
+  on the way, begins touching it or begins inside it, and each has one `fraction`, `mover_position`, `depth`
+  and `remaining_motion` (the table in section 7). `mover_position` is always where the mover stood, and
+  `mover_position + normal * depth` always touches without overlapping. A move that begins inside something
+  is not pushed out and goes no deeper. WP2.12 proves the three against a collider and WP12 against the level.
+- 2026-11-27 Finding 3 (a kept prefab missing what its spawn must bring): `keep.all` of a `Prefab<N>`
+  compiles only into a `Kept` that lists its `N`, and a file that names a prefab its field cannot spawn is
+  `Loaded::Failed` (section 10, R2, R3, the mistakes table, risk 18). WP13 proves two rocks with their own
+  speeds.
+- 2026-11-27 Finding 4 (a reloaded map duplicates or resurrects kept entities): a `Kept` holds the prefab
+  names it was filled from, and `respawn` first takes out what stands of those prefabs, so the load places
+  the level and the save decides those things, with the load called first (sections 7 and 10).
+  `Kept::none()` is for a conversion. WP13 proves the review's two coins.
+- 2026-11-27 Finding 5 (the lobby cannot choose the scene a save names): `.continues_with(slot, f)`, where
+  `f` is a read-only function of the save that returns the scene, asked on every machine at the tick the
+  save lands (section 11, R1). `host().continue_saved()` presses it in a test. Carried into WP5.
+- 2026-11-27 Finding 6 (a host with no window has no screen to read its save from): its process reads the
+  slot its lobby continues from before the first tick and the world it seeds holds the bytes, so *Continue*
+  is shown from world state to the lowest seat, whose press carries no bytes. The world lets them go when
+  the lobby is left. `SESSION` is used as built: its host with no window has no slot to send input from. A
+  frame function's save and a game's own `restoring` stay with a host that has a screen (sections 10 and 11,
+  the entry, the state table). Carried into WP5, with `start_match_with_no_window()`.
+- 2026-11-27 Finding 7 (WP11.2 against WP11.5): WP11.2's clause 6 now speaks of an ordinary query, one with
+  neither filter, and of the `Disabled` filter. WP11.5 judges `WithDisabled`.
+- 2026-11-27 Finding 8 (a terrain with no layer): `LevelMut3d::load(&terrain, LAYER)`. Every solid thing in
+  a level is on the layer the rule that put it there named, the recipe keeps it, and `ground_height` takes
+  layers. The ray example, example G's `load_the_valley` and what the SDK asks of `SIM-3D` say the same.
+  The module list's row for `SIM-3D` points at that text and is unchanged. Carried into WP16.
+- 2026-11-27 Finding 9 (a live mesh edit parts the drawn surface from its collision): a running game keeps
+  the pair it started with. An edit that changes the cooked collision waits for the next start and is named
+  on the console and the panel; one that leaves it as it was is redrawn at once; a test, a replay and every
+  machine of a match use the pair they started with (section 10, the 3D entry). Carried into WP17.
+- 2026-11-27 Finding 10 (`invert_y` on a `Heading`): `invert_y` takes an `Aim` and nothing else. WP15 proves
+  `sensitivity` and `invert_x` on a `Heading`, and WP17 builds and proves `invert_y` with the `Aim`.
+- 2026-11-27 Finding 11 (starts counted where voices are bounded): `.limit(n)` bounds the voices of one sound
+  playing at once and never how many start. WP18 proves both of the review's cases: forty plays of a
+  one-second sound and of a 10 ms one.
+- 2026-11-27 Finding 12 (the bolt example threw its contact away): `fly_bolt` ends at the pier with
+  `end_at(hit)` and ends a spent fuse with `end()`, and the entry says what each leaves for later rules.
+- 2026-11-27 Suggestion, taken: assets are what a screen shows and plays, in section 10 and in the
+  glossary's `Content` entry, which is this planner's proposal. It costs a sentence and audio is in the
+  first release.
+- 2026-11-27 Items changed: WP11.2 and WP2.12, each by its statement. No check command changed. Planner's
+  choices in this revision, each for the owner to overturn: a body's bent path is kept only where the game
+  says `follow`; `respawn` replaces what stands of the prefabs a save names; a shape's edit waits for the
+  next start in a 3D game; and a host with no window continues a run only through the standard lobby.

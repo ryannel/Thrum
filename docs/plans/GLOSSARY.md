@@ -159,7 +159,8 @@ Proposed: the planner chose it for the game SDK.
 ### Content
 
 Typed records a game's rules read and cannot change, such as waves, levels and enemies' numbers. Each is loaded
-from a file and named by a stable ID. Assets are what is drawn; content is what the rules read.
+from a file and named by a stable ID. Assets are what a screen shows and plays, sounds and music among them;
+content is what the rules read.
 
 - **Source** — the field's term (data tables in Unreal, resources in Godot).
 

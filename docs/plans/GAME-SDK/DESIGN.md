@@ -958,6 +958,29 @@ and `Me` in [R4](#r4-what-a-frame-function-may-take).
   hits and how a stomp knows it came from above. **A `teleport` starts a new path**: an entity teleported
   this tick is swept from where the teleport put it, so a respawn across a patrol touches nothing between
   the two places.
+- **A written position is a straight path, and a move that bent says so.** Where a function writes a
+  position, the entity's path this tick is the straight line from where its path began to where it now
+  stands, over the whole tick. That is right for a shot and for a walker that met nothing. It is wrong for a
+  body that slid: a courier whose step of (3, 3) from (0, 0) met a wall at (1, 1) and slid up it to (1, 3)
+  passed through a watch at (1, 2) that the line between its two ends misses by 0.316.
+  So **a transform follows a move**. `at.follow(&moved)` puts the entity where the move ended and makes the
+  move's own path the entity's path for this tick: each leg in order, from where the move began, with the
+  share of the tick the move spent on it. The move spends its step as it goes, so the courier's first leg
+  took a third of the tick and its second two thirds, and a shape stopped before its step was spent rests
+  where it stopped for what is left. From then on `motion_of(entity)` is those legs. Its sweep meets the
+  watch on the second leg, against where the watch itself stood at that moment of the tick; `fraction` is
+  the time along the whole path; and `mover_position` is on the leg the contact was found on.
+  - **A followed path lasts while the entity stands where the move ended.** A position written after it
+    makes the path a straight line again, from the same beginning to the new place, and a second move
+    followed replaces it with its own.
+  - **It begins where the move began**, as a `teleport`'s begins where it put the entity. What moved the
+    entity earlier in the tick, such as the ferry that carried it, is not swept.
+  - **It is the tick's working memory**, as the place each entity stood at the tick's start is. It is made
+    again when a tick is stepped again, and is gone when the tick ends, so it is in no digest. A move
+    that met nothing is one straight leg, so an entity that follows one from where it stood as the tick
+    began keeps nothing more than a written position does.
+  - A control function and a rule follow a move the same way, and `Level2d::move_shape` and
+    `Space2d::move_shape` both give one. Every guide and example moves a body with `follow`.
 - **The level is a scene's fixed collision** (R7). It does not move, so it is not made of entities. What the
   world holds is **the level's recipe**: each tile map loaded, by that map's identity in the game's content,
   its origin and the tile sheet it is drawn with where its load named one, and each fixed shape a rule has
@@ -987,7 +1010,10 @@ and `Me` in [R4](#r4-what-a-frame-function-may-take).
   sways about, a spitter times its first shot from where it stands, a `Prefab<N>` is given its `N`, and no
   prefab holds a zero for a second function to fill in. It runs once for each such cell when the load
   lands, in row order. It makes world state, so it is defined in the `rules` module. An object in
-  [an editor's file](#levels-from-an-editors-file) brings its fields through the same function.
+  [an editor's file](#levels-from-an-editors-file) brings its fields through the same function. A load
+  places everything its map names every time, in a scene entered from a save too: there
+  [`entities.respawn(save)`](#10-content-assets-saves-and-settings), called after the load, puts what the
+  save kept in place of what the load placed from the same prefabs.
 - **A level may be several maps.** `load` replaces the level, and `add_tiles(&map, origin)` adds a map
   beside what is loaded, so a level of three screens is three small maps in a record that lists them.
   Either may say `.drawn_with(sheet)`, for a record that names its own tile sheet: what a glyph means is the
@@ -1001,15 +1027,30 @@ and `Me` in [R4](#r4-what-a-frame-function-may-take).
   level's fixed collision.** One `Hit` says which: its `entity` is `None` for the level. So one ray tells
   whether a guard sees past a hill, and one sweep whether a bolt reached the pier or the hull first. Overlaps
   find entities. **`Level2d` asks the fixed collision alone, and that is the part a match can run ahead.**
-- **A hit's normal points out of what was struck, toward the mover.** A sweep that starts in contact reports
-  that contact at fraction zero, with the normal of the shallowest way out, never a zero one.
+- **A hit's normal points out of what was struck, toward the mover**, and is never zero.
 - **A hit says where the mover was, and what motion it had left.** `mover_position` is where the moving shape
-  itself stood at first contact: its own position, and not the point touched, so a shape set there touches
-  what it struck and does not overlap it. `remaining_motion` is the part of its path it had not travelled.
-  For `motion_of(entity).sweep()` both lie on the path the entity took this tick, so the two together end
-  where the entity ended. A stomp sets the hero at the contact and spends the rest of the tick going up, and
-  a bolt stops with its centre clear of the pier, each with no second query. For a ray the mover is the
-  ray's own point.
+  itself stood at first contact: its own position, and not the point touched. `remaining_motion` is the way
+  from there to where its path ended, so the two together end where the path ended, always. For
+  `motion_of(entity).sweep()` `mover_position` lies on the path the entity took this tick. A stomp sets the
+  hero at the contact and spends the rest of the tick going up, and a bolt stops with its centre clear of
+  the pier, each with no second query. For a ray the mover is the ray's own point.
+- **A hit says how deep, so a contact that was there from the start means one thing.** `depth` is how far the
+  mover's shape stood inside what it struck at first contact, measured along the normal, which is then the
+  shallowest way out. A path meets a thing in one of three ways:
+
+  | The path | `fraction` | `mover_position` | `depth` | `remaining_motion` |
+  |---|---|---|---|---|
+  | Meets it on the way | Where the two first touch | Touching it, not overlapping | Zero | The rest of the path |
+  | Begins touching it | Zero | Where the path began, which touches it and does not overlap | Zero | The whole path |
+  | Begins inside it | Zero | Where the path began, which overlaps it: where the mover in truth stood | More than zero | The whole path |
+
+  In all three a shape set at `mover_position + normal * depth` touches what it struck and does not overlap
+  it. So two circles of radius 1 whose centres begin one apart report fraction zero, the place the mover
+  began, and a depth of 1 along the line between the centres, and the mover set one further out along the
+  normal touches the other. A contact there from the start is reported whichever way the path leads, in,
+  along or away, and `remaining_motion.dot(hit.normal) > 0` is a mover on its way out, so the tick after a
+  stomp is told from a second stomp. Where no way out is the shallowest, as for a shape met with itself,
+  the normal is a fixed direction the reference states.
 - **Moving a character is one call that slides along what it meets and reports it**: both axes in one step,
   so no game moves an axis at a time or compares positions to learn what happened. It is given the
   character's own collider, which a control function takes as a component, so a shape is written once.
@@ -1018,7 +1059,12 @@ and `Me` in [R4](#r4-what-a-frame-function-may-take).
   `.unpredicted()` in a match. One-way tiles stop a shape that comes from above.
 - **A move is told who is moving.** A shape does not say whose it is, so a move asked on its mover's own
   layer says `.except(me)`, with the `Entity` a control function may take, as an overlap and a sweep do.
-  Without it the first thing such a move meets is its own collider, at fraction zero.
+  Without it the first thing such a move meets is its own collider, at fraction zero and at its whole depth.
+- **A move that begins inside something is not pushed out of it and goes no deeper.** Colliders never push,
+  and a move does not either. The contact is the first of `contacts()`, at fraction zero with its `depth`.
+  The part of the step that leads further in is taken out, as a wall takes it, and the rest is travelled,
+  so a shape leaves what it began inside by its own step or by the game's line,
+  `at.position += hit.normal * hit.depth`. A shape that begins touching a wall slides along it as any does.
 - **A move reports what the shape rests against when it ends, moved into or not**, within a skin the
   reference states. A hero falling beside a wall with the stick at rest still has `wall()`, so a wall kick
   needs no second probe.
@@ -1189,7 +1235,7 @@ and the asset catalog in [R5](#r5-looks-cameras-the-interface-and-assets).
 
 Three kinds of data, each with a stable identity (D4, R10), and the tuning panel.
 
-**Assets are what is drawn.**
+**Assets are what a screen shows and plays**: what is drawn, and [what is heard](#audio).
 
 - A game keeps them under `assets/`, and `cargo play` cooks them, watches them and writes **the asset
   catalog**, `src/art.rs`: one typed constant for each asset, in a module for each folder. The kind is in the
@@ -1197,6 +1243,23 @@ Three kinds of data, each with a stable identity (D4, R10), and the tuning panel
   The catalog is committed with the game, and `cargo play --check` fails when it is stale.
 - A saved asset is redrawn in the running game without a stall, as [CONTENT-LOOP](../CONTENT-LOOP/DESIGN.md)
   built.
+- **A shape the rules stand on is fixed for a run.** In a game with
+  [3D space](#3d-space-and-a-kinematic-character) a mesh and a terrain are each cooked into a pair, what is
+  drawn and what is stood on, and the collision half is in the rule-set identity. A running game keeps the
+  pair it started with, both halves, so the surface drawn is always the surface stood on.
+  - **An edit that changes the collision waits for the next start.** `cargo play` cooks the new pair, names
+    the asset that is waiting on its console and on the panel, and gives the running game neither half.
+    The game takes the new pair when it is next started. So a rock made taller under a character is not
+    redrawn over the old surface, and no machine of a match changes what a move meets at a tick of its own.
+  - **An edit that leaves the collision as it was is redrawn at once**: a material, a texture, a normal. The
+    cooked collision is compared, so a mesh saved again with its triangles where they were waits for
+    nothing.
+  - **Every run uses the pair it started with.** A test and a replay take the pair cooked when they start.
+    Every machine of a match started with the pair its rule-set identity names, and a machine whose own
+    differs does not join, as with any other difference of content. A late joiner steps the same pair as
+    the host from its first tick.
+  - A game with no 3D space cooks no collision from a mesh, so every edit to one is redrawn at once. In 2D
+    what is solid is the scene's `Tileset` and a content record's map, and a sheet only draws.
 - `Sprite::named("enemies/bat")` and its like take a name found at run time. A name that matches nothing draws
   a visible placeholder and is reported once, with the nearest names that exist.
 - How a sheet, a clip and a tile get from a source image into the catalog is
@@ -1256,14 +1319,29 @@ outlive the build that wrote it.
   left as it was and the tick is stepped again without the restore, inside the one world step the driver
   asked for. A match is not ended by a save that will not load.
 - **A save keeps entities for the game, so it is not a second copy of the world.** A field of type
-  `Kept<N>` holds entities: for each, the stable name of the prefab it was spawned from, whether it is
-  disabled, and the components `N` lists. The capture fills it with `Keep`, a read-only parameter:
-  `keep.all(WARDEN)`, or `keep.all((BAT, ELITE_BAT))`, takes every entity a rule or a spawn function spawned
-  from those names, the disabled ones too, in the order they were spawned. One call brings a save's kept
-  entities back, `entities.respawn(save)`: each is spawned from its prefab, with the kept components in
-  place of the prefab's defaults, disabled where it was disabled, in the order kept, field after field. So
-  no component is written again as a field of the save and again as the lines that respawn
-  it, and a capture cannot quietly leave out what a query skips.
+  `Kept<N>` holds the prefab names it was filled from, and entities: for each, the stable name of the prefab
+  it was spawned from, whether it is disabled, and the components `N` lists. The capture fills it with
+  `Keep`, a read-only parameter: `keep.all(WARDEN)`, or `keep.all((BAT, ELITE_BAT))`, takes every entity a
+  rule or a spawn function spawned from those names, the disabled ones too, in the order they were spawned.
+  One call brings a save's kept entities back, `entities.respawn(save)`: each is spawned from its prefab,
+  with the kept components in place of the prefab's defaults, disabled where it was disabled, in the order
+  kept, field after field. So no component is written again as a field of the save and again as the lines
+  that respawn it, and a capture cannot quietly leave out what a query skips.
+  - **What a spawn must bring, a save must keep.** A [`Prefab<N>`](#2-the-world-entities-components-resources-and-prefabs)
+    says in its type what every spawn of it brings, and the definition has no value for those. So
+    `keep.all` of a prefab compiles only into a `Kept` that lists all of them, for each prefab named:
+    `keep.all(ROCK)` of `ROCK: Prefab<Rock>` into a `Kept<Transform2d>` is a compile error that names
+    `Rock`, as a spawn without it is. Into a `Kept<(Rock, Transform2d)>` two rocks spawned with different
+    fall speeds come back each with its own. What a file holds of an entity is always enough to spawn it.
+  - **After `respawn`, the things of the prefabs a save names are the save's and no others.** `respawn`
+    first takes out every entity that `keep.all` of each field's names would take now: those in the world,
+    and those the function that calls it has itself spawned or loaded before the call. Then it spawns the
+    kept ones. So a scene entered from a save builds its level as it always does and calls `respawn`
+    after: the floor, the marks and the things no field names are the load's, and what a field names is the
+    save's. Of two coins a map places, with one collected before the save, the restored level has the map's
+    floor and exactly the surviving coin. A field filled from a name and holding none of it, because every
+    coin was collected, leaves no coin. What is spawned from those prefabs after the call, by a rule or by
+    a later map's load, is an ordinary spawn. A game mirrors no list of what it placed.
   - **The tree comes back with them.** A kept entity that hung under another entity the same save keeps
     comes back under it, at its local place, whichever field each is in: a parent is spawned before what
     hangs under it. One whose parent the save does not
@@ -1276,7 +1354,11 @@ outlive the build that wrote it.
     named prefab that lacks a listed component fails the capture, with the prefab, the entity and the
     component, and nothing is written. A kept name the game no longer declares makes the file
     `Loaded::Failed`, with the field and the name, unless the save's chain carries it forward: a conversion
-    renames a prefab with `kept.renamed("husk", HUSK)` and changes what is kept with `kept.map(..)`.
+    renames a prefab with `kept.renamed("husk", HUSK)` and changes what is kept with `kept.map(..)`. A
+    rename is held to what the new prefab's spawn must bring, as `keep.all` is. A file that names a prefab
+    whose spawn must bring a component its field does not hold is `Loaded::Failed` too, with the field, the
+    name and the component, so no entity is ever spawned short. A conversion from a version that had no
+    such field starts it as `Kept::none()`, which names no prefab and so takes nothing out.
   - A `Kept` is in a save and nowhere else. It is not world state, so the save's size limit is its only
     bound.
 - **What a save may hold** is what a resource may hold, except `Entity` and `Player`, which name nothing in
@@ -1287,8 +1369,11 @@ outlive the build that wrote it.
   simulator. Chrome's is asynchronous, which is why reading is `Loaded` and not a `Result`.
 - **Every save has an owner, said where it is registered**, as a resource's lifetime is (R5).
   - **The match's**: `Game::saved::<T>(slot)` and `Game::save::<T>(capture)`. One value for the game, kept on
-    the machine that runs it. In a match that is the host's: only the host's screen may ask for a restore,
-    and only the host's machine writes a slot.
+    the machine that runs it. In a match that is the host's: only the host's machine reads and writes a
+    slot, and only the host's own screen may ask for a save or a restore. A guest's `saves.can_save` is
+    false. [A host with no window](#11-multiplayer-an-opt-in-over-input-only-networking) has no screen:
+    its process reads the slot its lobby continues from before the first tick, and a rule's `Saving` still
+    writes there.
   - **A player's: a profile.** `Game::profile::<T>(slot)` gives every player a `T` of their own, kept on that
     player's own machine beside whatever the match saves: a best haul, an unlock, a logbook. In the world it
     is one game resource, `PerPlayer<T>`. A rule writes `books[player].best = haul` in the tick that decides
@@ -1399,11 +1484,44 @@ panel, the Chrome page and parameter files work as they do today, and the profil
   reads content to list what there is to pick. What the host chose stays a game resource, so every later
   round and a rematch read the same plan with nothing copied from scene to scene.
 - **The standard lobby continues a saved run.** `Lobby::standard().continues::<T>(slot)` shows the host
-  *Continue* where that slot holds a save of the match's, and it then enters the scene `starts` names with
+  *Continue*, beside *Start*, where that slot on the host's machine holds a save of the match's. *Start*
+  enters a scene afresh. *Continue* enters one with
   [the save restored](#10-content-assets-saves-and-settings), as `request.scene(..).restoring` does. So a
   host and a friend take up a journey through the standard lobby.
+- **The save says which scene it continues in, where a game needs it to.** `continues` enters the scene
+  `starts` names, which is right for a game whose every run begins in one place. `.continues_with(slot, f)`
+  takes a read-only function of the save that returns the scene to enter,
+  `fn fell_from(journey: &Journey) -> Fell`, as `starts_with` takes one of the setup. Every machine asks it
+  at the tick the save lands, once the save has passed its check and been carried forward through its
+  chain, so it is defined in the `rules` module. So a journey saved in region B is continued in region B
+  from a lobby whose *Start* begins in region A, and a scene that checks its save against its own value
+  passes. *Start* is not changed by it.
 - **A host needs no window** (O8). `cargo play --host` runs the game with `thrum`'s default features off and
-  prints the ticket to join by ([entry](#smaller-entries)). No line of the game changes.
+  prints the ticket to join by ([entry](#smaller-entries)). No line of the game changes. What the host's
+  screen would do in the lobby falls to the lowest seat's player: the panel, *Start* and *Continue*.
+- **A host with no window brings its save in before the first tick.** It has no screen to find a file from,
+  and `SESSION`'s host with no window has no slot of its own to send one from. So nothing of the save
+  travels as input:
+  - **The host's process reads the slot**, once, before the first tick, as it reads a saved resource: the
+    slot its lobby's `continues` or `continues_with` line names. Where that holds a save of the line's
+    type that passes its check and is of no newer version, **the world the host seeds holds the save's
+    bytes**, in the state a restore's pieces gather into. The host prints which it found: a save held, an
+    empty slot, or a file it could not take, with the reason.
+  - **Whether there is a run to continue is read from the world**, the same on every machine. The lobby
+    shows *Continue* to the lowest seat's player where the world holds a save, whatever that player's own
+    storage holds, and shows *Start* alone where it holds none.
+  - **Their press carries no bytes.** It is a request admitted at a tick, as *Start* is. At that tick every
+    machine decodes the save the world holds, asks the `continues_with` function and enters the scene, as
+    for a restore whose last piece had just landed, and one that fails leaves the world as it was. A peer
+    who joined the lobby was sent the bytes in its baseline, and a recording holds them with the rest of
+    how the run started. No player's machine reads or sends the host's file.
+  - **The world lets the bytes go when the lobby is left**, by *Start* or by *Continue*, so no tick of
+    play digests them. The file is read once: a run a rule saves later in that match is on the host's
+    disk for the next time it hosts, and a lobby the same match returns to offers *Start* alone.
+  - **What only a host's own screen can ask stays with a host that has one**: a save asked for by a frame
+    function, and a game's own `request.scene(..).restoring`. On a host with no window `saves.can_save` is
+    false on every screen, a `restoring` request is refused with a message that names the lobby's
+    `continues`, and a rule's `Saving` writes the host's slot as it always does.
 - **`Session`**, in a frame function, is for a game with its own screens, and for a screen that asks whether
   it is alone.
 - **Not offered in the first release**: depths 2 and 3 above, and
@@ -1431,7 +1549,7 @@ panel, the Chrome page and parameter files work as they do today, and the profil
 | Compile | A bare `Player` spawned, inserted or removed as a component, or a query that asks for `&mut Player` | That the SDK gives a character its `Player`, and to keep one in a component of the game's own |
 | Compile | A frame function asks for `&Transform2d` or `&Transform3d` | To ask for `&Pose2d` or `&Pose3d` |
 | Compile | World state holds a `Vec`, a `String`, a reference, a raw float or `usize`; a content record holds a raw float | What to use: `Num`, `Text<N>`, `List<T, N>`, content, or a local setting |
-| Compile | A spawn of a `Prefab<N>` without its `N`; `Sprite::new` given a mesh; a field of an action map with no binding; a first scene with no default | Rust's own type error, with the SDK's note on what is missing |
+| Compile | A spawn of a `Prefab<N>` without its `N`; `keep.all` of a `Prefab<N>` into a `Kept` that does not list its `N`, or a `renamed` to such a prefab; `invert_y` on an action that is not an `Aim`; `Sprite::new` given a mesh; a field of an action map with no binding; a first scene with no default | Rust's own type error, with the SDK's note on what is missing |
 | Check | Raw-float arithmetic, an unordered container, a file, a clock or an outside crate in the `rules` module; a path from it to the rest of the game | The line, why it can differ between machines, and what to write |
 | Check | `#[cfg(..)]`, `#[cfg_attr(..)]` or `cfg!(..)` in the `rules` module | The line; that a build setting would choose the rules, so a pass could not say which rules are played; and to give the value from `game()` or a shared setting, or for a test to move it out of the module |
 | Startup | One parameter names a component twice and writes it; two parameters of one rule, or a control function's query and its character, conflict over a prefab | The function, the parameters, the component and the prefab, and what to drop |
@@ -1456,6 +1574,7 @@ panel, the Chrome page and parameter files work as they do today, and the profil
 | Running | A rule returns an error, or panics | The rule, the tick and the error, [as each target allows](#3-rules-and-the-tick) |
 | Running, on screen | An entity with a look in a scene with no camera, or a 3D look under a 2D camera; a named asset that matches nothing | Once: the scene and the look, or the name and the nearest names |
 | Running, on screen | A session is refused or closed, or the match has no seat for this player | `SESSION`'s reason, or that the match is full, in words a player can read |
+| Running, on screen | In a match, a save or a restore asked for by a screen that is not the host's own, a host with no window's lowest seat included | Once: that the match's saves are on the host's machine; for a guest, that the host asks; for a host with no window, the lobby's `continues` line and a rule's `Saving` |
 
 ### 13. Tests without a window, recordings and pictures
 
@@ -1509,7 +1628,7 @@ Cargo aliases onto the engine's tool. The game's `main` is the same file on ever
 | `cargo play --record <file>`, `--replay <file>` | Records a run while a person plays, and shows one. The one-file starter records as it stands |
 | `cargo play --shot <file>` | Writes a picture |
 | `cargo play --scene <name>` | Starts in another scene, with its default value, or with the value given in RON where it has none: `--scene 'Level(def: "cellar")'` |
-| `cargo play --host [--port <n>]` | Hosts a match with no window and prints the ticket to join by (O8) |
+| `cargo play --host [--port <n>]` | Hosts a match with no window, and prints the ticket to join by and what it found in the slot its lobby continues from (O8) |
 
 Every one of these refuses a game with no `rules` module, with the functions to move and the step to take
 ([section 1](#1-a-game-one-crate-one-package-one-value)). A game started any other way, such as `cargo run`
@@ -1618,9 +1737,11 @@ Lobby:        Lobby::standard()      // alone, host or join by a link, a paste o
               .ready_up()            // a ready mark each player sets for themselves
               .host_panel(pick_arena)                       // each change is sent as the host's command
               .starts(Arena) | .starts_with(arena_from)     // asked at the tick *Start* is admitted
-              .continues::<Journey>(Slot::AUTO)             // *Continue* for the host, where the slot holds a save
+              .continues::<Journey>(Slot::AUTO)             // *Continue* for the host, where the slot holds a save:
+                | .continues_with(Slot::AUTO, fell_from)    // into the scene `starts` names, or the one the save says
 // fn pick_arena(ui: &mut Ui, setup: &mut Setup, arenas: Content<ArenaDef>): any read-only frame parameter after the two
 // fn arena_from(setup: &Setup, arenas: Content<ArenaDef>) -> Arena: any read-only parameter after the first
+// fn fell_from(journey: &Journey) -> Fell: the scene a save continues in; any read-only parameter after the first
 // `Setup` is the game's own `Data` type. An `Id` has no default, so the game writes one that names a declared record:
 //   impl Default for Setup { fn default() -> Self { Setup { arena: HARBOUR } } }
 // The lobby keeps it in the world as a game resource: every screen shows the host's choice, a late joiner is sent
@@ -1735,15 +1856,18 @@ PerPlayer<T>: one T for each seat, the default again when the seat's player leav
               per[player], which refuses the tick for a player who has gone;  get(player) -> Option<&T>,
               get_mut(player);  iter() -> (Player, &T) and iter_mut(), for the players here, in seat order;
               departed(player) -> Option<&T>: what a leaver's seat held, for the rest of the tick they leave in
-Kept<N>:      entities a save keeps (section 10).  In a save only.  What `keep.all(..)` returns and
-              `entities.respawn(save)` brings back.  len()  is_empty()  iter() -> (&str, &N), each entity's prefab
-              name and what was kept of it;  in a save's conversion, renamed(old_name, PREFAB) and map(|old| new)
+Kept<N>:      entities a save keeps, with the prefab names it was filled from (section 10).  In a save only.
+              What `keep.all(..)` returns and `entities.respawn(save)` brings back.  N lists at least what each
+              named prefab's spawn must bring.  len()  is_empty()  iter() -> (&str, &N), each entity's prefab
+              name and what was kept of it;  in a save's conversion, renamed(old_name, PREFAB),  map(|old| new)
+              and Kept::none(), which names no prefab
 
 // Places.
-Transform2d:  Transform2d::at(x, y) .turned(angle) .scaled(s);  fields position, turn, scale;  teleport(point)
+Transform2d:  Transform2d::at(x, y) .turned(angle) .scaled(s);  fields position, turn, scale;  teleport(point);
+              follow(&moved): stands where the move ended, with the move's legs as this tick's path (section 7)
 Transform3d:  Transform3d::at(x, y, z) .turned_y(angle) .facing(direction) .scaled(s);  fields position, rotation,
-              scale;  teleport(point)  face(direction)  turn_y(angle)  forward() -> Vec3  heading() -> Angle
-              turn_toward(direction, at_most): a turn about y toward that way, limited to a rate
+              scale;  teleport(point)  follow(&moved)  face(direction)  turn_y(angle)  forward() -> Vec3
+              heading() -> Angle;  turn_toward(direction, at_most): a turn about y toward that way, limited to a rate
 Collider2d:   Collider2d::circle(r), ::rect(w, h), ::capsule(r, length)   .offset(x, y)  .on(LAYER)
 Side:         Left | Right.  Kept in a component as any name is
 
@@ -1777,7 +1901,8 @@ Single<D, F>: the one entity that matches, used as its item;  into_inner() to ta
 Res<T>, ResMut<T>:  a resource, used as its value.  `Res<Level>` of the running scene's type is the scene's value
 Entities:     spawn(spawn_or_tuple) -> Entity;  despawn(e) -> bool, true for the call that despawns it;
               insert(e, component), which replaces one of that type already there,  remove::<C>(e);
-              respawn(save): every entity the save's `Kept` fields hold, each from its prefab (section 10);
+              respawn(save): every entity the save's `Kept` fields hold, each from its prefab, in place of
+              whatever stands of the prefabs those fields name (section 10);
               attach(child).to(parent).keep_world() | .keep_local(pose);
               detach(child).keep_world() | .keep_local() | .at(pose);
               disable(e) -> bool,  enable(e) -> bool, each true for the call that changes it;
@@ -1838,10 +1963,12 @@ Found:        .on(layers) .except(entity) .within(r), then first(), any(), count
 Near:         entity,  position,  distance
 Swept:        .on(layers) .except(entity), then first_hit() -> Option<Hit>, or hits() in order, for a shot that pierces
 Hit:          entity: Option<Entity>, None for the level;  layer;  point;  normal: out of what was struck, toward
-              the mover;  fraction: Num, how far along the path;  mover_position: where the mover itself stood
-              at first contact;  remaining_motion: the part of its path it had not travelled
+              the mover, never zero;  fraction: Num, how far along the path, by time;  mover_position: where
+              the mover itself stood at first contact;  remaining_motion: from there to where its path ended;
+              depth: Num, how far the mover stood inside what it struck, zero unless the path began inside it
 Move2d:       [.up(direction)] [.except(entity)] .on(layers) -> Moved2d
-Moved2d:      position: Vec2;  on_floor(),  on_ceiling(),  wall() -> Option<Side>,  blocked(): what the shape rests
+Moved2d:      what `Transform2d::follow` takes, with the path the move took.
+              position: Vec2;  on_floor(),  on_ceiling(),  wall() -> Option<Side>,  blocked(): what the shape rests
               against when the move ends, moved into or not;  contacts() -> &[Hit], everything it met, in order;
               floor() -> Option<Hit>, what it stands on;  slide(velocity) -> Vec2, with what was stopped taken out
 Level2d:      the level's fixed collision alone.  move_shape(from, &shape, step) -> Move2d;  ray(from, to) -> Swept;
@@ -1859,7 +1986,8 @@ Tilemap:      content, read by a validator and a test too.  Tilemap::from_rows([
 Content<T>:   get(id) -> &T;  find(name) -> Option<Id<T>>;  iter() -> (Id<T>, &T), in name order
 Saving:       request::<T>(slot): "save now", such as at a shrine
 Keep:         in a capture.  all(PREFAB) or all((BAT, ELITE_BAT)) -> Kept<N>: every entity a rule or a spawn
-              function spawned from those names, disabled or not, with the components N lists
+              function spawned from those names, disabled or not, with the components N lists.  It compiles
+              only where N lists what each of those prefabs' spawns must bring
 Restored<T>:  get() -> Option<&T>: the save a scene was entered with.  Some in the functions run as the scene is
               entered from that save, its enter functions and the spawn functions run then, and None from then on
 ```
@@ -1955,7 +2083,8 @@ pub mod meshes  { pub const ROCK: MeshAsset = MeshAsset::new("meshes/rock"); }
 ```rust
 game().test() | .test_in(scene) -> thrum::Result<TestGame>          .test_match() -> thrum::Result<TestMatch>
 game().test_setup() .in_scene(s) .with_content(name, record) .with_saved(value) .with_save(slot, save)
-      .with_profile(value) .seed(n) .start() | .start_match()     // a match takes the same fixtures
+      .with_profile(value) .seed(n) .start() | .start_match() | .start_match_with_no_window()
+      // a match takes the same fixtures, and `with_save` is what its host's slot holds
 test_id::<T>("yard"):  the Id of a record a test adds with `with_content`, for a test and nowhere else;
       starting fails where no fixture and no file has that name.  `with_save` and `with_profile` take any
       type of the save's chain, so a test restores an old version
@@ -1991,8 +2120,10 @@ thrum::Result<T>, thrum::Error:  one error enum, each variant with a stable code
 `TestMatch` has `host()` and `peer(p)`, each with a `TestGame`'s calls and `shown::<Pose2d>(e)` or
 `shown::<Pose3d>(e)`, the pose that machine's screen shows; `join(Link::delayed(millis(120)))`,
 `disconnect(p)`, `reconnect(p)`, `step_for(..)`, `digests_agree()`; and for the lobby `host().set_setup(value)`,
-which sends the host's panel choice as its command, and `host().start()`, which presses *Start*, so the scene
-entered is the one `starts` names or `starts_with` returns. `set_resource`, `spawn`, `set` and `run` called on
+which sends the host's panel choice as its command, `host().start()`, which presses *Start*, so the scene
+entered is the one `starts` names or `starts_with` returns, and `host().continue_saved()`, which presses
+*Continue*. `start_match_with_no_window()` starts a match whose host has no seat and no screen, where
+`peer(p)` of the lowest seat makes those two presses. `set_resource`, `spawn`, `set` and `run` called on
 the table itself make the same change on every machine between ticks, where the same call on `host()` or a
 peer changes that one world. `Link::delayed(millis(120)).with_profile(value)` gives the machine that joins
 by that link a profile to bring.
@@ -2026,20 +2157,31 @@ WP16 with no window and in WP17 on screen. Extension points 1 and 5. Needs the e
 a heightfield, and the move.*
 
 Everything [section 7](#7-space-and-the-level) says holds with a 3 on it: colliders detect and never push, a
-space meets the level, one `move_shape` takes the character's own collider, a hit's normal points out of
-what was struck, a hit says where the mover stood, and what a rule adds to the level it can take away. **Every
+space meets the level, one `move_shape` takes the character's own collider, a transform follows a move by
+the path it took, a climbed step's legs among them, a hit's normal points out of what was struck, a hit says
+where the mover stood and how deep, and what a rule adds to the level it can take away. **Every
 name of R3's space and level groups exists with a 3 for its 2**, with `Vec3` for `Vec2` and the same
 methods: `Collider3d`, `Space3d`, `Level3d`, `LevelMut3d`, `Move3d`, `Moved3d`. What differs is said here.
 
-- **A 3D level is the same recipe**: which terrain is loaded, by its identity in content, and the pieces a
-  rule added, in order. Its collision is cooked beside each mesh, from its triangles, and from the terrain's
-  heights. It is content, so it is in the rule-set identity and a test builds it with no renderer. `Level3d`
-  is on the control table's second row, so a 3D character runs ahead against the ground it stands on.
+- **A 3D level is the same recipe**: which terrain is loaded, by its identity in content, with the layer its
+  load gave it, and the pieces a rule added, in order. Its collision is cooked beside each mesh, from its
+  triangles, and from the terrain's heights. It is content, so it is in the rule-set identity and a test
+  builds it with no renderer, and
+  [a running game keeps the pair it started with](#10-content-assets-saves-and-settings), what is drawn
+  and what is stood on together. `Level3d` is on the control table's second row, so a 3D character runs
+  ahead against the ground it stands on.
 - **One terrain is one thing, drawn and stood on.** A `Terrain` is content: a field of a record, cooked from
   a height image and a small file beside it that gives its size and its material, as a sheet is cooked.
-  `LevelMut3d::load(&terrain)` makes it the level's ground: its collision, and the ground this scene draws,
-  from the one source, as a 2D load draws the tiles it makes solid. So a region chosen at run time cannot
-  stand on one terrain and show another. A test makes one with `Terrain::from_heights(rows, cell)`.
+  `LevelMut3d::load(&terrain, LAYER)` makes it the level's ground: its collision, and the ground this scene
+  draws, from the one source, as a 2D load draws the tiles it makes solid. So a region chosen at run time
+  cannot stand on one terrain and show another. A test makes one with `Terrain::from_heights(rows, cell)`.
+- **Every solid thing in a level is on the layer the rule that put it there named.** A terrain has no layer
+  of its own, in its file or in a test: the load names it, as `add` names a model's and `add_box` a box's,
+  and the recipe keeps it. A level holds one terrain, so its ground is on one layer. Every query asks
+  layers, and meets the level's fixed collision on those layers and no others. So with the hills loaded on
+  `TERRAIN` and the rocks added on `SOLID`, a ray on `TERRAIN` meets a hill and passes a rock, a ray on
+  `SOLID` meets the rock and passes through the hill, and a line of sight that a hill and a boulder should
+  both block asks `(TERRAIN, SOLID)`. A game that wants one layer for both gives both the same one.
 - **What a level adds is said once.** `add(model, pose, LAYER)` is drawn as a placement and is solid on its
   layer, from the model's own triangles, and `add_box` is solid and not drawn. `place(model, pose)` is drawn
   and not solid, as a tile map's `.draws` glyph is, for the bushes a region's file lists: it is in the
@@ -2050,16 +2192,17 @@ methods: `Collider3d`, `Space3d`, `Level3d`, `LevelMut3d`, `Move3d`, `Moved3d`. 
   `hit.surface` says which. `Moved3d` has `on_floor()`, `on_ceiling()` and `floor()` as in 2D, and `wall()`
   gives the wall's `Hit` where 2D gives a `Side`. `snap_down` holds a walking shape to a slope it walks down,
   and never pulls down one that is moving up, so a jump is the same chain.
-- **`ground_height(x, z)`** is the top of the fixed collision under that point on the layers asked: the
-  terrain, or a solid model that stands on it. `None` where there is none.
+- **`ground_height(x, z, layers)`** is the top of the fixed collision under that point on the layers asked:
+  on `TERRAIN` the terrain's own height, and on `(TERRAIN, SOLID)` the top of a solid model that stands on
+  it. `None` where those layers hold nothing there.
 - **Marks are set by a rule**, from content: `level.set_mark(SHRINE, point)`, and `Level3d::mark` and `marks`
   read them as in 2D.
 
 ```rust
 Collider3d::sphere(r) | ::capsule(r, height) | ::cuboid(x, y, z)      .offset(x, y, z)  .on(LAYER)
 // Space3d:    touching, within, nearest, motion_of, at_tick_start, ray, sweep_sphere, move_shape
-// Level3d:    move_shape, ray, sweep_sphere, touching, solid_at, ground_height(x, z), mark, marks, bounds
-// LevelMut3d: load(&terrain), add(model, pose, LAYER), add_box(center, size, LAYER), place(model, pose),
+// Level3d:    move_shape, ray, sweep_sphere, touching, solid_at, ground_height(x, z, layers), mark, marks, bounds
+// LevelMut3d: load(&terrain, LAYER), add(model, pose, LAYER), add_box(center, size, LAYER), place(model, pose),
 //             set_mark(MARK, point), remove(piece), clear()
 // Move3d:     [.up(direction)] [.except(entity)] .max_slope(angle) .step_up(height) .snap_down(height)
 //             .on(layers) -> Moved3d
@@ -2070,10 +2213,11 @@ Collider3d::sphere(r) | ::capsule(r, height) | ::cuboid(x, y, z)      .offset(x,
 fn walk(at: &mut Transform3d, body: &mut Body, shape: &Collider3d, ground: Level3d, tick: Tick) {
     let moved = ground.move_shape(at.position, shape, body.velocity * tick.dt())
         .max_slope(Angle::degrees(40.0)).step_up(0.3).snap_down(0.35).on((TERRAIN, SOLID));
-    at.position = moved.position;
+    at.follow(&moved);
     body.velocity = moved.slide(body.velocity);
 }
-let in_sight = space.ray(eye, chest).on(SOLID).first_hit().is_none();   // a hill hides as a boulder does
+// The valley was loaded with `level.load(&vale.terrain, TERRAIN)` and its boulders added on SOLID.
+let in_sight = space.ray(eye, chest).on((TERRAIN, SOLID)).first_hit().is_none();   // a hill hides as a boulder does
 ```
 
 ### Gamepads
@@ -2090,6 +2234,13 @@ its own first pad. A pad is one more thing `Bindings::rebind` takes, and `Rumble
 pulse is felt on this screen's pad and is nothing where there is none. The phone's shell is touch alone in
 the first release.
 
+**Sensitivity and inversion are each player's own**, kept with their bindings, and they change what a look
+action reads from a mouse, a stick or a drag before it travels. `sensitivity` scales how far it turns.
+`invert_x` turns a `Heading`, or the yaw of an [`Aim`](#camera-pitch-and-rigs), the other way.
+**`invert_y` is the pitch's, so it takes an `Aim` and nothing else**: a `Heading` is one angle with no pitch,
+and `invert_y` given one does not compile. WP15 builds and proves `sensitivity` and `invert_x`, on a
+`Heading`, and WP17 builds `invert_y` with the `Aim` it turns.
+
 ```rust
 // Pad::LEFT_STICK RIGHT_STICK (and _X _Y of each) DPAD DPAD_X DPAD_Y SOUTH EAST WEST NORTH
 //      LEFT_SHOULDER RIGHT_SHOULDER LEFT_TRIGGER RIGHT_TRIGGER START SELECT
@@ -2100,7 +2251,8 @@ fn feel_the_landing(landed: Events<Landed>, mut rumble: Rumble) {
     for hit in landed.read() { rumble.pulse(hit.speed.f32() / 20.0, 0.15); }
 }
 if let Some(input) = bindings.listen() { bindings.rebind(Controls::JUMP, input); }   // a remap screen
-bindings.sensitivity(Walk::LOOK, 1.4);   bindings.invert_x(Walk::LOOK, true);   bindings.invert_y(Walk::LOOK, true);
+bindings.sensitivity(Walk::LOOK, 1.4);   bindings.invert_x(Walk::LOOK, true);   // a Heading, or an Aim's yaw
+bindings.invert_y(Walk::LOOK, true);     // compiles where `look` is an Aim: its pitch, push up to look down
 my_input.device()   // Keys, Pad or Touch: what this player last used
 // In a test: `game.hold(..)`, `press(..)` and `steer(..)` set the action whatever fills it, and a TestScreen's
 // `pad(Pad::SOUTH)` and `pad_stick(Pad::LEFT_STICK, x, y)` work a modal by pad.
@@ -2116,7 +2268,11 @@ Sound is presentation. A rule cannot take `Audio`, and nothing heard changes the
 and each has an owner, so nothing leaks:
 
 - **A sound that happens** is played by a frame function on an event, as a burst is drawn. A predicted event
-  is heard once. `.limit(n)` keeps at most `n` voices of one sound, so forty hits a second are four voices.
+  is heard once.
+- **`.limit(n)` bounds how many voices of one sound play at once, and never how many start.** A play asked
+  for while `n` voices of that sound are sounding is dropped, and one asked for once a voice has ended
+  plays. So forty hits spread through a second with a sound a second long are four voices and thirty-six
+  dropped, and the same forty with a click 10 ms long are all heard, one voice at a time.
 - **A sound a thing makes** is a look, `Sound`, on the entity. It starts and stops with the entity as a
   `Light` does, and `Shown<Sound>` is how one screen turns it up, down or off, said each frame as a tint is, so a hum follows
   speed and a scrape plays only while its hero slides.
@@ -2140,7 +2296,7 @@ and each has an owner, so nothing leaks:
 .prefab(WARDEN, (Warden, model, Sound::looping(art::sounds::HUM).radius(14.0)))   // heard while it exists
 
 fn sounds(hits: Events<Struck>, mut audio: Audio) {
-    // Also .volume(x) and .pitch(x). Each call starts one voice, and `limit` drops what is past it.
+    // Also .volume(x) and .pitch(x). Each call starts one voice, unless four of this sound are sounding now.
     for hit in hits.read() { audio.play(art::sounds::HIT).at(hit.at).pitch_between(0.9, 1.1).limit(4); }
 }
 fn score(mut music: Screen<Music>, hunt: Res<Hunt>) {
@@ -2170,12 +2326,14 @@ predicts one entity, the character. Depth 2 lets a control line declare more:
   bolt's spark on a wall is not a round trip late.
 - **Who spawns it and how it ends.** The control function spawns it, through `Launch`, and it appears when
   that function finishes, as any spawn does. A launched thing ends in one of two ways. Its own function
-  ends it, with `Launched::end()`, for a fuse that ran out or a wall of the level: that is predicted. Or a
-  rule despawns it at the confirmed tick, for what it did to the world, and the predicted one goes when
-  that tick confirms. **A flight ended at a contact is judged to the end.** `Launched::end_at(hit)` sets the
-  thing at the hit's `mover_position` and ends it when the tick does, so its last path stays for the rules
-  written after the control line, and a hull it grazed before the pier in that step is still found by
-  `motion_of(bolt).sweep()`.
+  ends it, which is predicted: with `Launched::end()` for a fuse that ran out, and with
+  `Launched::end_at(hit)` for a wall of the level. Or a rule despawns it at the confirmed tick, for what it
+  did to the world, and the predicted one goes when that tick confirms. **A flight ended at a contact is
+  judged to the end, and no further.** `end()` takes the thing out as its function finishes, so no later
+  rule sweeps it. `end_at(hit)` sets the thing at the hit's `mover_position` and ends it when the tick
+  does, so its last path, from where it stood to the contact, stays for the rules written after the
+  control line: `motion_of(bolt).sweep()` still finds a hull it passed before the pier in that step, and
+  finds none that stands behind the pier.
 - **Where it runs: in its seat's turn on the control line, whether or not its launcher is steered.** Each
   seat has a turn on the line, in seat order: the control function for that seat's character, where the
   player has one, and then `f` once for each thing launched from that seat that is still in flight, in the
@@ -2231,7 +2389,7 @@ fn drive(me: Entity, pilot: &Player, at: &mut Transform3d, craft: &mut Craft, sh
          mut bolts: Launch<Bolt>, space: Space3d, tick: Tick) {
     // SOLID is the level's fixed cover. HULLS is the one layer of colliders, named by `.against`.
     let moved = space.move_shape(at.position, shape, craft.velocity * tick.dt()).except(me).on((SOLID, HULLS));
-    at.position = moved.position;
+    at.follow(&moved);
     if input.fire.held && craft.gun.take(tick, seconds(0.2)) {
         // The bolt starts at the craft's centre, so it keeps who fired it, to leave that hull out of its sweep.
         bolts.spawn(BOLT.with(Bolt { from: me, pilot: *pilot, velocity: at.forward() * 90.0 }).at_point(at.position));
@@ -2239,11 +2397,16 @@ fn drive(me: Entity, pilot: &Player, at: &mut Transform3d, craft: &mut Craft, sh
 }
 /// One bolt's whole flight, under the control function's table: its own components, the level and the tick.
 fn fly_bolt(at: &mut Transform3d, bolt: &Bolt, mut me: Launched, level: Level3d, tick: Tick) {
-    let next = at.position + bolt.velocity * tick.dt();
-    if me.age() > seconds(2) || level.ray(at.position, next).on(SOLID).first_hit().is_some() {
-        me.end();                                     // predicted: my bolt stops at the pier on my screen at once
+    if me.age() > seconds(2) {
+        return me.end();                              // its fuse ran out: gone now, with nothing left to judge
     }
-    at.position = next;
+    let next = at.position + bolt.velocity * tick.dt();
+    match level.ray(at.position, next).on(SOLID).first_hit() {
+        // The pier. The bolt stops at the contact on my screen at once, and its path up to the pier stays for
+        // this tick's rules: a hull it passed before the pier is still hit, and one behind the pier is not.
+        Some(pier) => me.end_at(pier),
+        None => at.position = next,
+    }
 }
 ```
 
@@ -2496,6 +2659,8 @@ pitch, travelling as a `Heading` does. A rig takes it.
 [A rig's numbers](#9-frame-functions-looks-and-the-interface) are already a frame function's to change, and
 a boom avoids the level's fixed collision on the layers it is given. A test sets one with
 `game.steer(Walk::LOOK, (yaw, pitch))`, and a bot with `Aim::of(yaw, pitch)`.
+[`bindings.invert_y`](#gamepads) is built here, with the pitch it turns: with it on, the same push of a
+stick or a mouse pitches the `Aim` the other way, within the same limits, and its yaw is as it was.
 
 ```rust
 #[bind(Mouse::look(), Pad::RIGHT_STICK)]
@@ -2556,7 +2721,7 @@ Each plugs in at the extension point named, with the code it allows and what mus
 
 | Entry | When | Point | The game code it allows | What must hold |
 |---|---|---|---|---|
-| **A host with no window** | **In the first release** (O8, question 7), built in WP5 | 8 | `cargo play --host --port 7777`, which prints the ticket to join by | No line of the game changes. It is `thrum` with its default features off. What a host's screen may do (a scene request, a shared setting, *Start*) falls to the lowest seat |
+| **A host with no window** | **In the first release** (O8, question 7), built in WP5 | 8 | `cargo play --host --port 7777`, which prints the ticket to join by | No line of the game changes. It is `thrum` with its default features off. What a host's screen may do (a scene request, a shared setting, the lobby's panel, *Start* and *Continue*) falls to the lowest seat. [Its save is read by its own process before the first tick and held in the world](#11-multiplayer-an-opt-in-over-input-only-networking), so *Continue* needs no file on any player's machine |
 | **Text in the world** | After the first release | 2 | `draw.text(hit.at, hit.damage).color(Color::GOLD).rising(1.5).lasting(seconds(0.6))` | Drawn as sprites in one batch, so sixty damage numbers are not sixty interface nodes. Played out by the SDK, as a burst is |
 | **Two views of one component in one rule** | After the first release | 1 | `fn revive(mut wardens: Views<(Query<&Vitals>, Query<&mut Vitals>)>)`, then `wardens.first()` and `wardens.second()` | It lends one at a time, so the access check has nothing to refuse. `Query::pair_mut` gives two entities of one query already. Until then anything more is two passes over one query with a local `List` between them |
 | **A tile with a shape smaller than its cell** | After the first release | 5 | `Tileset::new(art::TILES).solid('^', SPIKES).shaped(TileShape::rect(1.0, 0.4).at_bottom()).solid('/', TERRAIN).shaped(TileShape::slope(Side::Right))` | The shape is said on the glyph's own line of the scene's `Tileset`, after `.solid` or `.one_way`, beside its layer: it is what the glyph means, so it is part of the rule-set identity and never the sheet's, and `.drawn_with` changes no collision. It is built into the level's fixed collision from the recipe with every other tile. So `Level2d::move_shape`, `ray`, `touching` and `solid_at`, and a space's rays, sweeps and moves, meet the shape with no new call, and a match runs it ahead. A glyph with no `.shaped` fills its cell, as today |
@@ -3044,7 +3209,7 @@ fn run_and_jump(
     }
 
     let moved = tiles.move_shape(at.position, body, hero.velocity * tick.dt()).on(TERRAIN);
-    at.position = moved.position;
+    at.follow(&moved); // where the move ended, by the path it took: a slide is two legs, not one straight line
     hero.velocity = moved.slide(hero.velocity); // what a wall, a floor or a ceiling stopped is gone
     hero.on_floor = moved.on_floor();
     if hero.on_floor {
@@ -3687,6 +3852,15 @@ pub fn vale(scene: &mut Scene<Vale>) {
     scene.rules((take_or_set_down, wardens_look, wardens_move, wardens_catch));
 }
 
+/// The valley's ground and what stands on it, from content. Each solid thing is on the layer named here.
+fn load_the_valley(vales: Content<ValeDef>, mut level: LevelMut3d) {
+    let vale = vales.get(HOLLOW_VALE);
+    level.load(&vale.terrain, TERRAIN); // the hills: drawn and stood on, on TERRAIN
+    for boulder in &vale.boulders {
+        level.add(Model::new(boulder.mesh), boulder.pose, SOLID); // drawn, and solid on SOLID
+    }
+}
+
 /// "Forward" is away from the camera, and the camera's angle arrives as input. The pilgrim's own collider is
 /// the shape that moves. Everything here is something a match runs ahead.
 fn walk(
@@ -3707,7 +3881,7 @@ fn walk(
         .max_slope(Angle::degrees(40.0))
         .step_up(0.3)
         .on((TERRAIN, SOLID));
-    at.position = moved.position;
+    at.follow(&moved);
     body.velocity = moved.slide(body.velocity);
     if wish != Vec3::ZERO {
         at.face(wish);
@@ -3871,14 +4045,14 @@ that give the core its shape, and what would change each:
 | The frame, the recipe, reconstruction, EDR, the governor | `APPLE-TILE`, `APPLE-PRESENTATION` | None. A game gets them by default |
 | Sprite rows, sheets, the 2D scene | `RENDER-2D` | Maps `Sprite`, `Shape2d`, the tile layer and `Transform2d` to rows |
 | Sky, Sun, air | `ATMOSPHERE` | `Sky` sets its inputs |
-| Cooked products and live edits | `CONTENT-LOOP`, `COOKED-DRAW` | Resolves the catalog's names; gives an entity's `Model` its cooked mesh row and a placement to the cooked placement as built; cooks content files |
+| Cooked products and live edits | `CONTENT-LOOP`, `COOKED-DRAW` | Resolves the catalog's names; gives an entity's `Model` its cooked mesh row and a placement to the cooked placement as built; cooks content files; in a game with 3D space, gives a running game no new mesh or terrain whose cooked collision differs from the one it started with |
 | The 3D scene's entity rows and the passes that place them | `thrum-render` | Maps an entity's `Model`, its material and `Transform3d` to a row |
 | Typed controls, parameter files, the profiler | `CREATOR` | `Settings` declares controls |
 | The interface tree, events, fonts | `GAME-UI` | `Ui` keeps the tree |
 | The device, recovery, the game contract | `HOST` | Implements the game contract once, for every game |
 | The match, the roster, prediction | `SESSION`, over `TRANSPORT` | Implements the session's world once, and gives a control function to the predicted controller as its step |
-| Which scene and phase run, the tick each was entered at and the transition asked for; the seats, with who is a bot, each button's last count and any slot given no seat; whether the game is paused, by whom, and the game's tick; open offers, and commands and answers waiting for a pause to end; the turn kept for each player's heading; the level's recipe, with each tile map's identity, origin and the sheet its load named, and the pieces that stand; each phase's clock; the lobby's setup; each player's profile; the pieces of a save being brought in; which prefab each entity was spawned from; what a leaver's seat held, until the tick they left in ends; an offer's choices once they are drawn; how many times a rule has run at the game's tick | The world, as resources and components the SDK registers | Keeps them as world state, so they are digested, rewound and sent to a late joiner |
-| Events for the frame, effects under way, `Screen<T>` with the input context, `Shown<L>`, bindings with a pad's, the music and the sounds under way, the built collision of each recent level recipe | The SDK, as this screen's or this machine's state. It is not world state and is in no digest | The ring of recent ticks' events, each cursor, the count of this player's predicted emissions shown for each recent tick, the bursts still playing; on each machine, whether its screen shows the pause, which decides what its sampler counts, which `Player` the machine is and what its profile's slot last held |
+| Which scene and phase run, the tick each was entered at and the transition asked for; the seats, with who is a bot, each button's last count and any slot given no seat; whether the game is paused, by whom, and the game's tick; open offers, and commands and answers waiting for a pause to end; the turn kept for each player's heading; the level's recipe, with each tile map's identity, origin and the sheet its load named, and the pieces that stand; each phase's clock; the lobby's setup; each player's profile; the pieces of a save being brought in, and the save a host with no window read before the first tick, until its lobby is left; which prefab each entity was spawned from; what a leaver's seat held, until the tick they left in ends; an offer's choices once they are drawn; how many times a rule has run at the game's tick | The world, as resources and components the SDK registers | Keeps them as world state, so they are digested, rewound and sent to a late joiner |
+| Events for the frame, effects under way, `Screen<T>` with the input context, `Shown<L>`, bindings with a pad's, the music and the sounds under way, the built collision of each recent level recipe, the path a followed move gave an entity until its tick ends | The SDK, as this screen's or this machine's state. It is not world state and is in no digest | The ring of recent ticks' events, each cursor, the count of this player's predicted emissions shown for each recent tick, the bursts still playing; on each machine, whether its screen shows the pause, which decides what its sampler counts, which `Player` the machine is and what its profile's slot last held |
 | Saves and recordings | The SDK, in each target's storage | Runs the capture on the world as last committed, writes away from the tick, brings a save in as input, and keeps a profile's slot equal to what the world confirms for its own player, after a tick and after a baseline. It records each pass of the rules check against the rule sources' digest, in the game's build folder |
 | The game's scenes, rules, looks and content | The game | — |
 
@@ -3904,7 +4078,7 @@ order and C13's authority are what the core stands on.
    dependency checked rules may have; refusals of files, sockets, processes and standard input; a check of a
    game's `rules` module built on its own, outside the engine's registry; and, as additions to `thrum-sim2d`,
    exact tests for rectangles and capsules beside the index's circles, fixed collision built from tiles and
-   shapes, and the box and circle move that reports contacts.
+   shapes, and the box and circle move that reports its contacts and the legs it took.
 2. **The registered simulation** (core): queries over several components with filters; a barrier after each
    registered system at which the tick's staged structural edits are applied, inside the tick's one
    transaction, for a schedule that asks for it; and what a parent link and a disabled entity need.
@@ -3930,10 +4104,11 @@ order and C13's authority are what the core stands on.
    when its entity is spawned; and a row's material taking a texture.
 7. **3D space** (`SIM-3D`, a new module the owner's answer to question 1 asks for). Used through its public
    interface, as `SIM-2D`'s is: an index of spheres, capsules and cuboids on layers that answers overlaps,
-   rays and swept shapes; fixed collision built from triangle meshes, a heightfield and boxes, which answers
-   the same and the height of the ground; and a kinematic move against both that slides, climbs a step,
-   holds to a slope, and reports its contacts with each one's normal, where the mover stood and the motion
-   it had left. All of it is in the rules profile's numbers and equal on the three targets, with no rigid
+   rays and swept shapes; fixed collision built from triangle meshes, a heightfield and boxes, each on the
+   layer the SDK gives it from the level's recipe, which answers the same for the layers asked and the
+   height of the ground on them; and a kinematic move against both that slides, climbs a step, holds to a
+   slope, and reports the legs it took with their share of the step, and its contacts with each one's
+   normal, where the mover stood, how deep it began and the motion it had left. All of it is in the rules profile's numbers and equal on the three targets, with no rigid
    body. [The module list](../ARCHITECTURE.md#track-7-the-game-sdk) holds the interface.
 8. **Sound** (`AUDIO`, a new module the owner's answer to question 3 asks for). Used through its public
    interface: sounds and music cooked from `.wav` and `.ogg` sources; a mix on the Mac, in Chrome and on the
@@ -3953,6 +4128,7 @@ of entities beyond what the engine does.
 | A query | A walk over the engine's columns. `par_each` uses the engine's chunks |
 | A space query | One index for each layer, with its storage kept. A layer is rebuilt at most once after each rule that changed it, and not at all in a tick that did not: a crowd that moves once a tick is indexed once a tick, as the reference crowd is |
 | The level | Built once for what is solid in each recipe, when a rule that changed it finishes, and kept by that identity while a rewind or a step run ahead may ask for it. A character move tests the tiles its box sweeps |
+| A followed move's path | Kept only for an entity whose followed move bent this tick, or began away from where the entity stood as the tick began, and dropped when the tick ends. A move that met nothing keeps nothing, so a crowd that follows its moves across open ground pays for none |
 | A parent's children | `under(parent)` walks that parent's own children and searches nothing else. An entity with no parent and no child pays nothing for the tree |
 | Where an entity came from | One small value on each entity spawned from a prefab, which a spawn from a bare tuple does not carry |
 | A control function | One call for each player's character |
@@ -3961,7 +4137,7 @@ of entities beyond what the engine does.
 | A frame function | Runs once a frame, over what it names |
 | The interface | A description of tens to a few hundred nodes compared with the last one. An unchanged interface draws once |
 | A save | The capture, once, on the world as last committed, with no tick stepped for it; the file is written off the tick. A restore is gathered a frame's room of pieces a tick, about 850 bytes in a match, and decoded once |
-| A save's kept entities | Read once at the capture, over the entities of the prefabs it names, and spawned once at the restore |
+| A save's kept entities | Read once at the capture, over the entities of the prefabs it names, and spawned once at the restore, after one pass that takes out what stands of those prefabs |
 | Sound | Mixed by `AUDIO`, off the frame and off the tick. A frame function's call queues a voice and returns |
 | A pause | A paused tick that admits input runs the rules marked for it. One that admits nothing moves the committed tick and nothing else, so alone it is not stepped, and a recording keeps the count |
 | A capability left out | Nothing: a 2D game compiles no 3D pass, a game with no interface has no stage, a game without the `multiplayer` feature links no network crate |
@@ -3990,17 +4166,17 @@ a module not yet built come after WP7, so nothing `SWARM` waits on waits for the
 | WP1 | Sections 2, 3 and 4 with no window, for [the headless subset](#what-wp1-compiles): the world, rules in written order with each rule's edits landing when it ends, parameter structs, scenes as types, phases with their clock and `resume`, timers, the test harness; the surface and documentation checks | Nothing |
 | WP11 | Prefabs and the tree of section 2: prefab names in `prefabs!` blocks that the program lists for the SDK, variants and what a spawn must bring; `Transform2d` and `Transform3d` as plain data made from integers; children, parts, attaching and disabling, with turns that are quarter turns, which need none of WP2's angle maths (WP2.3 proves `keep_world` under any other angle); `keep_world` with its bound and its refusals; the access check made on what exists | Nothing |
 | WP2 | Sections 5 and 8 and `Space2d`: the numbers page and the rules check; action maps and how a button's presses are counted, players as stays in seats, a controlled character, bots; the crowd on the SDK, equal on three targets, with its cost | `SIM-2D:WP3`, Done |
-| WP12 | The rest of section 7 and content: the level's recipe and fixed collision, tile maps, a space that meets the level, the character move; typed content, its validator and IDs; and a shared setting as a game resource with its defaults, which rules read and a test sets, with no panel. Example D's rules, proved with no window | Nothing |
+| WP12 | The rest of section 7 and content: the level's recipe and fixed collision, tile maps, a space that meets the level, the character move and the path a followed move leaves, a contact's depth; typed content, its validator and IDs; and a shared setting as a game resource with its defaults, which rules read and a test sets, with no panel. Example D's rules, proved with no window | Nothing |
 | WP3 | 2D on screen: section 9 in 2D, section 14's commands and the asset catalog for the Mac and Chrome, with [sheets cooked from source images](#sprites-clips-and-tiles-from-source-images), the first `run()`, which plays only rules the check has passed as built, cameras and rigs, `Shown`, local actions, input contexts, the pointer, the pause alone and `--shot`. Rockfall and Skylark without their interface | Nothing still open |
 | WP4 | 3D on screen: section 9 in 3D, with entities' models drawn as entity rows that turn, scale and take a texture, placements, and the rest of settings: local settings and the panel, and a shared setting's panel edit admitted at a tick. The starter, stones and the lighthouse are written on the SDK as new kit games | For its change to the instance passes, the V1 work packages that hold them |
 | WP6 | Section 6 and the interface: modals, commands, offers that queue with a bot's answer, requests, what a menu does under its own pause, and `TestScreen`. The interface of Rockfall (its score and result page) and of Skylark (its pause menu) | `GAME-UI:WP4` |
 | WP13 | Saves and recordings: a saved resource, a run saved and resumed alone into its phase, the entities a save keeps, [a profile](#saved-progress-for-every-player) for a game played alone, `--record`, `--replay` and `play_recording`, with each input held at its committed tick | Its own WP6 |
-| WP5 | Section 11: the crowd hosted and joined, a control function run ahead with what it reads, the standard lobby on the match's clock with `continues`, seats and bots in a match, a pause in a match, a save restored in a match, a guest's profile brought in and kept, [a host with no window](#smaller-entries), `TestMatch`, and a 3D match rehearsed with no window | `SESSION:WP7` |
+| WP5 | Section 11: the crowd hosted and joined, a control function run ahead with what it reads, the standard lobby on the match's clock with `continues` and `continues_with`, seats and bots in a match, a pause in a match, a save restored in a match, a guest's profile brought in and kept, [a host with no window](#smaller-entries) and the save it brings in, `TestMatch`, and a 3D match rehearsed with no window | `SESSION:WP7` |
 | WP14 | A 3D match on screen (O6): the 3D starter hosted on the Mac and joined from Chrome and a second Mac process through the standard lobby, each player's ball answering at once on their own screen | Its own WP4 and WP5 |
 | WP7 | The iPhone simulator | `GAME-UI:WP6` |
-| WP15 | [Gamepads](#gamepads): a pad as a binding for every action kind, a trigger, a modal worked by pad, the prompt's glyph for the device last used, remapping, sensitivity and inversion, and rumble, on the Mac and in Chrome | Its own WP6. Pad input in the shells is its own to build, under ruling 3 |
+| WP15 | [Gamepads](#gamepads): a pad as a binding for every action kind, a trigger, a modal worked by pad, the prompt's glyph for the device last used, remapping, a `Heading`'s sensitivity and inversion, and rumble, on the Mac and in Chrome | Its own WP6. Pad input in the shells is its own to build, under ruling 3 |
 | WP16 | [3D space](#3d-space-and-a-kinematic-character) with no window: `Collider3d`, `Space3d`, `Level3d` and `LevelMut3d` over `SIM-3D`, a terrain as content, the character move, and a 3D character run ahead against the level in a rehearsed match | `SIM-3D`, once it is planned: the work package that delivers the move |
-| WP17 | 3D space on screen: a terrain drawn from the source that is stood on, what a level adds and places drawn, [`Aim` and a rig that pitches](#camera-pitch-and-rigs) with a boom that avoids the level, and the 3D starter given ground and a rock that stops the ball, on the Mac and in Chrome | Its own WP4 and WP16 |
+| WP17 | 3D space on screen: a terrain drawn from the source that is stood on, what a level adds and places drawn, [`Aim` and a rig that pitches](#camera-pitch-and-rigs) with the pitch's inversion and a boom that avoids the level, the 3D starter given ground and a rock that stops the ball, and [a solid shape's edit held for the next start](#10-content-assets-saves-and-settings), on the Mac and in Chrome | Its own WP4 and WP16 |
 | WP18 | [Audio](#audio): sounds and music cooked into the catalog, `Audio`, the `Sound` look with `Shown<Sound>`, `Screen<Music>` and `Mix`, on the Mac and in Chrome, with function on the simulator | `AUDIO`, once it is planned: the work package that delivers the mix on the three targets |
 | WP8 | The guides, the reference file and the templates of section 14, [the guard](#1-a-game-one-crate-one-package-one-value), and three fresh agents | Its own WP1 to WP7 and WP15 to WP18 |
 | WP19 | The owner's sitting: the owner plays a 2D game and a 3D game with a pad in hand and the sound on, and says what is wrong | Its own WP15, WP17 and WP18 |
@@ -4038,11 +4214,27 @@ first work package that has everything it uses, so no item waits on a later one.
   a rule, refused at startup when no file has its name, with the nearest name; rules that read a shared setting registered with its defaults and
   set by the test; a rectangle a rule added and kept as a `LevelPiece` in a resource, removed by a later
   rule with `remove` returning true once and false after, where a move that stopped at it passes, the
-  recipe's count goes down by one, and a rewind to a tick before the removal stops the move again; a hit
-  against the level and a hit from a sweep that starts in contact, each with a `mover_position` at which the
-  shape touches and does not overlap and a `remaining_motion` that with it ends where the path ended; an
+  recipe's count goes down by one, and a rewind to a tick before the removal stops the move again; an
   entity teleported in a tick whose `motion_of(..).sweep()` meets nothing that stands between the two
-  places; a group of rules `.during` two of a scene's three phases, which runs in those two and not in the
+  places; **the three ways a path meets a thing, against the level**, as WP2.12 proves them against a
+  collider: a swept circle that meets a wall on the way, whose `mover_position` touches the wall and does
+  not overlap it, with a `depth` of zero and a `remaining_motion` that with it ends where the path ended;
+  one that begins touching the wall, which reports fraction zero, the place it began, a depth of zero and
+  the whole path; one of radius 1 that begins with its centre half a unit inside the wall's face, which
+  reports fraction zero, the place it began, a depth of 1.5 along the wall's normal and the whole path, and
+  which set at `mover_position + normal * depth` touches the wall and does not overlap it; each of the
+  last two reported the same when the path leads away; and a move that begins inside a wall, which reports
+  that contact first with its depth, goes no deeper, travels the part of its step that leads along and
+  out, and is not pushed out; **a followed move:** a hero whose step of (3, 3) from (0, 0) is
+  stopped by a wall when its centre reaches (1, 1) and slides up it to (1, 3), with a still circle on
+  another layer at (1, 2) and the two radii summing to 0.20, where after `at.follow(&moved)` the hero's
+  `motion_of(..).sweep()` reports the circle with a `fraction` between one third and one, a `mover_position`
+  on the wall's leg and `mover_position + remaining_motion` at (1, 3), and the same move with its position
+  written by hand reports nothing; a circle that crosses the wall's leg and is gone before the hero's first
+  third of the tick is over, which is not reported, and one that crosses it while the hero is on it, which
+  is; a position written after the `follow`, after which the path is the straight line again; a move that
+  met nothing, followed, which sweeps as the same position written by hand does; and each of these the
+  same after a rewind and a replay; a group of rules `.during` two of a scene's three phases, which runs in those two and not in the
   third; a `List` in a scene's fields, read in the scene entered with it; a `Side` kept in a component; a
   test that names a fixture's record with `test_id`, reads it back with `content`, and hands a value to
   `game.run` in a closure; and example D's two coyote tests.
@@ -4139,8 +4331,17 @@ first work package that has everything it uses, so no item waits on a later one.
   character not at all; two captures with no tick between them equal; an entity of a named prefab that
   lacks a listed component, which fails the capture with the three names and writes nothing; a file whose
   kept name the game no longer declares, which is `Loaded::Failed` with the field and the name, and the
-  same file loaded through a conversion that renames it; and the size of a save that keeps a thousand
-  entities, recorded beside its limit. **A profile alone:** registered with `Game::profile`, read before
+  same file loaded through a conversion that renames it; two entities of a `Prefab<N>` spawned with
+  different values of its `N`, each coming back with its own; `keep.all` of that prefab into a `Kept` that
+  leaves its `N` out, which does not compile and names the component; a file that names a prefab whose
+  spawn must bring a component its field does not hold, which is `Loaded::Failed` with the field, the name
+  and the component; and the size of a save that keeps a thousand entities, recorded beside its limit.
+  **A level and a save together:** a map whose glyphs place two coins and a moth, with one coin collected,
+  saved with a `Kept` field filled from the coin's prefab and restored into a scene whose enter function
+  loads the same map and then calls `respawn`: a move is stopped by the floor where the map put it, exactly
+  one coin stands, in the survivor's cell, and the moth stands once; the same with the load in one enter
+  function and the `respawn` in the next; the same save taken with both coins collected, restored to no
+  coin; and a field a conversion started as `Kept::none()`, whose `respawn` takes nothing out. **A profile alone:** registered with `Game::profile`, read before
   the first tick from a fixture, written to the slot when a tick commits a change to the player's value and
   not by a step a test rewinds, restored from an older version through its chain, landing as the default
   where its `validate` fails, and held in a recording, which replays to the same digest with another value
@@ -4192,11 +4393,24 @@ first work package that has everything it uses, so no item waits on a later one.
   to find it in their slot though they stepped no tick that changed it; a guest who returns after the grace
   and joins as a new stay with what their slot held; a value that fails `validate`, landing as the default
   on every machine; no slot written for another seat's player or for a bot; and the digests equal
-  throughout. **`continues`:** a host's lobby given a save by `test_setup()..start_match()`, where *Start*
-  after *Continue* enters the scene with the save restored on the host and on a guest who joined the lobby.
+  throughout. **`continues`:** a host's lobby given a save by `test_setup()..start_match()`, where
+  *Continue* enters the scene with the save restored on the host and on a guest who joined the lobby, and
+  *Start* from the same lobby enters it afresh; with `continues_with`, a save made in region B continued
+  from a lobby whose `starts` names region A, which enters region B on every machine and passes a scene's
+  own check of its save against its value, while *Start* enters A; and a `continues_with` function defined
+  outside the `rules` module refused at startup.
   **A host with no window:** `cargo play --host` on the Mac, joined from Chrome and a second Mac process,
   with no renderer, window or GPU crate in the host's program, the lowest seat's player pressing *Start*,
-  and the digests equal. **In the harness:** `peer(p).my_player()` for a peer between a wreck and a
+  and the digests equal. **Its save:** the same host started with a save in the slot its lobby continues
+  from and nothing in the Chrome player's storage, where the lowest seat's screen shows *Continue*, the
+  press enters the scene with the save restored on the host and on both peers, and the digests are equal;
+  started with that slot empty, and with a file of a newer version, where the host prints which and the
+  lobby shows *Start* alone; and in a rehearsed match started with `start_match_with_no_window()`: a peer
+  who joins the lobby after the host started is shown *Continue*, no player's input frame carries a piece
+  of the save, the world holds none of its bytes once the lobby is left by *Continue* and by *Start*, a
+  recording of the match replays to its digest with another value in the slot, `saves.can_save` is false
+  on the lowest seat's screen and its `restoring` request is refused with the message, and a rule's
+  `Saving` writes the host's slot. **In the harness:** `peer(p).my_player()` for a peer between a wreck and a
   relaunch, and `set_resource` on the table changing every machine alike.
 - **WP14:** example B's game with its hop, `.multiplayer(..)` and the standard lobby, hosted on the Mac and
   joined from Chrome and a second Mac process: a late joiner's ball on the host's screen, the joiner's own
@@ -4208,7 +4422,10 @@ first work package that has everything it uses, so no item waits on a later one.
   travel; a pause menu opened, walked with the D-pad and the stick, activated with south and closed with
   east, while the stick that walks the hero is not read by the game under the modal; `ui.prompt` showing the
   key after a key press and the pad's glyph after a pad press, captured on both targets; a remap screen
-  that listens and rebinds a pad button, kept across a restart; `invert_y` and `sensitivity` on a `Heading`;
+  that listens and rebinds a pad button, kept across a restart; `sensitivity` and `invert_x` on a `Heading`,
+  where the same scripted movement of the right stick, and of the mouse, turns the angle the rules read
+  1.4 times as far under `sensitivity(.., 1.4)` and the other way under `invert_x`, each kept across a
+  restart (the pitch's `invert_y` is WP17's);
   a `Rumble` pulse that reaches the shell's pad route and is nothing with no pad; and no pad crate in the
   closure of a game built with `thrum`'s default features off. A pad in a person's hand is WP19's.
 - **WP16:** each proof of WP2.2, WP2.12 and WP12 for a space and a level, with a 3 on it, over `SIM-3D`: an
@@ -4216,8 +4433,12 @@ first work package that has everything it uses, so no item waits on a later one.
   level; a capsule moved by `Level3d::move_shape` over a terrain made with `Terrain::from_heights`, which
   walks up a slope under `max_slope` and is stopped by a steeper one, climbs a step under `step_up` and is
   stopped by a taller one, holds to a slope it walks down with `snap_down`, and is not pulled down while it
-  rises; `ground_height` on the terrain and on a box that stands on it; `hit.surface` for a floor, a wall
-  and a ceiling; a model added with `add`, solid from its own triangles, and one given to `place`, which
+  rises; a terrain loaded on one layer with a box added on another, where a ray, a swept sphere and a move
+  asked on the terrain's layer alone meet the hill and pass the box, asked on the box's layer alone meet
+  the box and pass through the hill, and asked on both meet whichever stands nearer; `ground_height` under
+  that box, which is the terrain's height on the terrain's layer and the box's top on both; a climbed step
+  followed with `follow`, whose legs a sweep of the capsule meets as it does a slide's; `hit.surface` for a
+  floor, a wall and a ceiling; a model added with `add`, solid from its own triangles, and one given to `place`, which
   stops nothing; a piece removed, with a rewind; a mark set and read; a terrain and a level built from a
   content record in an enter function, the same after a rewind and a replay and for a peer who joined
   after; the same digests for a scripted walk on the Mac, in Chrome and on the simulator; and in a rehearsed
@@ -4226,12 +4447,22 @@ first work package that has everything it uses, so no item waits on a later one.
 - **WP17:** example G on the Mac and in Chrome through T2 capture: the terrain drawn where the pilgrim's
   feet meet it across a walk over a ridge; an added model and a placed one drawn, the first stopping the
   pilgrim; a rig that takes an `Aim` and pitches within its limits, whose boom shortens against a hillside
-  and a wall and lengthens again; `game.steer` of an `Aim` in a test; and the 3D starter's second page, on
-  which the rock stops the ball, alone and in WP14's match.
+  and a wall and lengthens again; `game.steer` of an `Aim` in a test; `invert_y` on that `Aim`, where the
+  same scripted push of the right stick, and of the mouse, pitches it up with it off and down with it on,
+  within the pitch's limits and with the yaw as it was, and `invert_y` given a `Heading` does not compile;
+  and the 3D starter's second page, on which the rock stops the ball, alone and in WP14's match. **A solid
+  shape edited while the game runs:** with the ball at rest on the starter's rock under `cargo play` on
+  the Mac, the rock's source made taller and saved: no later picture shows the taller rock, the ball rests
+  where it did, and the console and the panel name the asset that is waiting; started again, the rock is
+  drawn taller and the ball rests on its new top; and that rock's texture changed alone, which is redrawn
+  in the running game with the ball's rest unchanged.
 - **WP18:** a `.wav` and an `.ogg` cooked into the catalog, a `Music(..)` file making a `MusicAsset`, and a
   misnamed sound refused by the check; with `AUDIO`'s mix rendered to a buffer and no device: a sound played
   on an event present in the buffer once, a sound sent by a predicted event not played again at its
-  confirmation, forty plays in a second under `.limit(4)` making four voices, a sound `.at` a place louder
+  confirmation; under `.limit(4)`, forty plays spread evenly through one second: of a sound one second long,
+  where the buffer never holds more than four voices of it, four are heard and thirty-six dropped, and one
+  more play made after the first voice has ended is heard; and of a sound 10 ms long, where all forty are
+  heard and no two voices of it sound together; a sound `.at` a place louder
   near the camera than far and on the side it stands, a thing's `Sound` starting and stopping with its
   entity and with `disable` and `enable`, `Shown<Sound>` turning one down for one screen, music that
   cross-fades on a change and does not restart when the same track is said again, a pause that holds a
@@ -4330,6 +4561,15 @@ in place of each prefab and a plain position in place of `Transform2d`.
     triangles are its collision, as a solid model's are.
 17. **A save that keeps entities outgrows its limit** in a game with thousands of them. Early sign: WP13's
     record of a save of a thousand entities beside the 64 KiB default. `#[save(max_kib = n)]` raises it.
+18. **The compiler cannot hold `keep.all` to what a prefab's spawn must bring**, or says it in words nobody
+    can read. It is a bound over two lists of types, as a spawn's own check is. Early sign: WP13's first
+    doc test that must fail. If the type cannot say it, the builder writes the difference in the log and
+    ends `BLOCKED`: the same check made when the capture first runs is the fallback, and moving a mistake
+    from the compiler to a run is the planner's to bring to the owner.
+19. **A transform cannot carry a followed move's path to the end of its tick without every entity paying
+    for it.** `follow` is a call on plain data, as `teleport` is. Early sign: WP12's followed-move proof,
+    and the size of a transform before and after it, which WP12's builder records. If only a path kept in
+    every transform can be built, the builder ends `BLOCKED`, because the crowd's cost is the owner's.
 
 ## Proof
 
@@ -4379,6 +4619,11 @@ keeps reading as what is true.
   sees. WP5 derives the rule-set identity from the same digest, with the content and the build.
 - **Whether 64 KiB is the right default limit for a save.** At the host's frame budget it takes about a
   second and a third to bring in to a match. WP5 records the time it measures.
+- **How a followed move's path reaches the end of its tick** ([risk 19](#risks)): what a transform carries
+  and where the legs are kept. WP12's builder chooses, and says in the log what an entity that followed no
+  bent move pays.
+- **Which fixed direction is the normal where no way out is the shallowest.** WP2's builder chooses, and the
+  reference says it.
 - **How a terrain's height image is laid out, and how fine its cells are.** WP16's builder chooses, over what
   `SIM-3D` gives, and the reference says it.
 - **Which sound formats a `MusicAsset` streams from.** `AUDIO`'s planner chooses, and WP18 follows.

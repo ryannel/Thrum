@@ -21,6 +21,8 @@ and [the seam rulings](../ARCHITECTURE.md#seam-rulings-for-game-sdk) before any 
 - Assumption: [round 4's smaller additions](DESIGN.md#what-round-4-found), beyond the four you were told of, are wanted.
 - Assumption: a save's kept entities come back under the kept parents they hung from, and a relic on a player's back comes back on the ground.
 - Assumption: one terrain is drawn and stood on from one source, and a level may place things that are drawn and not solid.
+- Assumption: in a 3D game, an edit that changes a mesh's or a terrain's shape waits for the game to be started again, and an edit to how it looks is redrawn at once.
+- Assumption: a host with no window continues a saved run only through the standard lobby, reads its save once as it starts, and takes no save or restore asked for by a player's screen.
 
 ## WP1 An agent writes a game's scenes, phases and rules in plain Rust against one crate, in the order they run, and proves them in an ordinary test with no window
 
@@ -63,7 +65,8 @@ Every package under `examples/crowd-sdk` names `thrum` and no other engine crate
 [WP8's guard](DESIGN.md#1-a-game-one-crate-one-package-one-value) will cover it. For WP2.10 you write
 `scripts/test_game_rules.py`, on scratch games outside the checkout as `scripts/test_game_gate.py` makes one.
 
-WP2.11 and WP2.12 are round 4's: `CharacterSpawned`, `PerPlayer::departed` and what a `Hit` says of its mover.
+WP2.11 and WP2.12 are round 4's: `CharacterSpawned`, `PerPlayer::departed` and what a `Hit` says of its mover,
+with [the three ways a path meets a thing](DESIGN.md#7-space-and-the-level).
 
 ## WP12 A platformer's hero runs, jumps and lands on a level loaded from a file, proved with no window
 
