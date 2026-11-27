@@ -206,6 +206,17 @@ the world commits, and a digest and a recording go by that one.
 
 Proposed: the planner chose it, to keep the clock a rule reads apart from the engine's committed tick.
 
+### Profile
+
+In a game written on the game SDK, the saved value each player keeps on their own machine, such as a best
+score or an unlock, beside whatever the match saves on the host's. In the world it is one value for each
+player, which rules write and each machine saves for its own player alone. Defined in
+[the game SDK's design](GAME-SDK/DESIGN.md#10-content-assets-saves-and-settings).
+
+- **Source** — the field's term (a player profile, Unreal's local-player save).
+
+Proposed: the planner chose the name, to say whose a save is.
+
 ### Extension map
 
 The part of [the game SDK's design](GAME-SDK/DESIGN.md#the-extension-map) that says how each feature the SDK

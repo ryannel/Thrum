@@ -368,3 +368,30 @@
   this revision, each for the owner to overturn: a sketch is refused by `run()`, a refused `possess` returns
   false and does not refuse the tick, a game cannot write the `Player` component, and presses read in one
   tick share the newest one's view.
+- 2026-11-27 Round 3: four agents each wrote a whole game and judged the core and the extension map apart
+  (reports and source in the main checkout under `tmp/sdk-dogfood-3/`). Three would lock the core in
+  (confidence 7, 8 and 7). The online swarm game's author would not (7), because no save was a guest's to
+  keep. The lead asked for the core frictions they rank to be fixed at shape depth, and for one reference
+  place for every public type's methods, keeping the owner's aim of 27 November, quoted above: "Out goal is
+  to lock in the shape of the SDK, not design every feature."
+- 2026-11-27 **Round 3 read the design of 26 November, not the rewrite of 27 November**: the main checkout
+  the four worked in had not been brought up to it. So each ranked friction was checked against the rewrite
+  first, and part was answered there already
+  ([the notes](../../../.orchestrate/evidence/GAME-SDK/round-3-revision.md)). The next round should read the
+  design from a checkout that has it.
+- 2026-11-27 The reference: the Names blocks of the core's sections are gathered into one chapter with an
+  index, every public type once with its methods, and each section points at it. K10 now points at it.
+- 2026-11-27 Core changes from the five items the lead named, each for the owner to overturn: every save has
+  an owner, the match's or a player's profile; a frame function reads the tick's clock through `Tick` and
+  `Frame`; what a tile map places is made by a spawn function; a launched thing's function has the control
+  function's contract; and a capture needs no tick. Whether the first release builds a profile stays scope
+  question 11.
+- 2026-11-27 Further core changes, each from a report that showed the core fighting a genre: `then_run`, the
+  `Disabled` filter, `pair_mut`, a lobby setup that stays a resource, `face`, the pointer following the input
+  context, an offer with no expiry, and example D with dying kept on the hero. The notes list each with its
+  report, and what was left as a missing feature.
+- 2026-11-27 Items changed to match: WP1.1 (`pair_mut`), WP1.2 (`then_run`, and `left`, `fraction` and
+  `ready_after`), WP1.7 (it now names the reference's group R3) and WP11.2 (the `Disabled` filter and what
+  `disable` returns). No check command changed. The proofs later work packages carry are extended in the
+  design for WP12, WP3, WP4, WP6, WP13 and WP5. No other module's file changed, and nothing new is asked of
+  one. The glossary gains "profile", proposed.

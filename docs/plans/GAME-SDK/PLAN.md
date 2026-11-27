@@ -8,42 +8,44 @@ A developer or an agent builds a 2D, a 3D or an online game in plain Rust agains
 Design Approved is not that approval. [Its decisions](DESIGN.md#decisions) are the owner's.
 
 Read [the game at a glance](DESIGN.md#the-game-at-a-glance), [the core](DESIGN.md#the-core),
-[the worked examples](DESIGN.md#worked-examples), [what a builder may change](DESIGN.md#what-a-builder-may-change)
+[the reference](DESIGN.md#the-reference), [the worked examples](DESIGN.md#worked-examples),
+[what a builder may change](DESIGN.md#what-a-builder-may-change)
 and [the seam rulings](../ARCHITECTURE.md#seam-rulings-for-game-sdk) before any work package. Build nothing from
 [the extension map](DESIGN.md#the-extension-map) but an entry your work package is given.
 
 ## Open for the user
 
-- Assumption: with multiplayer in for 2D and 3D games, the rest of your first-release scope stands until you answer [the design's scope questions](DESIGN.md#scope-questions-for-the-owner).
+- Assumption: your first-release scope stands until you answer [the design's scope questions](DESIGN.md#scope-questions-for-the-owner).
 - Assumption: SDK work packages start once you approve the design, and never take a builder a V1 work package is waiting for.
-- Assumption: the crate is `thrum`, a game runs with `cargo play`, and the design's fifteen words are the SDK's vocabulary, proposed in the glossary.
-- Assumption: the core changes in [the design's table](DESIGN.md#decisions) stand, such as a save that resumes its phase.
+- Assumption: the crate is `thrum`, a game runs with `cargo play`, and the design's fifteen words are proposed in the glossary.
+- Assumption: the core changes in [the design's two tables](DESIGN.md#decisions) stand.
 - Assumption: a scene is a type whose fields are what it is entered with, such as `GameOver { dodged }`.
 - Assumption: default keys are written on the action map, and a player can change their own.
-- Assumption: a control function may read anything a rule may. Online, one that reads what cannot be run ahead says `.unpredicted()`.
+- Assumption: a control function may read anything a rule may, and online says `.unpredicted()` where that cannot be run ahead.
 - Assumption: in a 3D scene the first release's 2D colliders lie on the ground plane.
 - Assumption: "2D queries" includes rectangles, a level's fixed collision, tile maps and a sliding character move. Nothing pushes anything.
-- Assumption: in a match, a saved resource and a saved run are the host's, until you answer scope question 11.
-- Assumption: every game that runs keeps its rules in a checked `rules` module, a `mod rules { .. }` block in a one-file game, so the first game records and replays as it stands. A game without one runs only in a test.
+- Assumption: a saved resource and a saved run are the match's, on the host's machine. A profile is each player's own, on theirs, built with a yes to scope question 11.
+- Assumption: every game that runs keeps its rules in a checked `rules` module, a `mod rules { .. }` block in a one-file game. A game without one runs only in a test.
 - Assumption: a rule that panics stops the game in Chrome, with its message. Elsewhere it is reported with the world intact.
 - Assumption: the starter, stones and the lighthouse are rewritten on the SDK, and the sky kit is then removed.
 - Assumption: three fresh agents prove the documentation: a 2D, a 3D and an online game.
 - Assumption: models that turn, scale or carry a texture wait for the V1 work packages that hold 3D drawing.
-- Assumption: a tick makes one change of scene or of phase, and the first asked for stands. A scene has one set of phases; a mode beside them is a resource.
+- Assumption: a tick makes one change of scene or of phase, and the first asked for stands. A scene has one set of phases, for everyone; what happens to one character is kept on it.
 - Assumption: a person who joins a game full of bots takes a bot's seat, with a new character.
-- Assumption: a pause is the same alone and in a match: the clock stands while a menu's command, a save and a rule marked for it still work. A marked rule runs only when input arrives. A replay does not wait through a pause.
+- Assumption: a pause is the same alone and in a match: the clock stands while a menu's command and a rule marked for it still work. A replay does not wait through it, and a save steps no tick.
 - Assumption: a game declares prefab names in `prefabs!` blocks and the content IDs its code names in `ids!` blocks. A name with nothing behind it is found at startup.
 - Assumption: one key can mean one thing in play and another in a menu, through input contexts.
 - Assumption: a content record holds no plain float. A save brought into a match is at most 64 KiB unless the game says otherwise.
 - Assumption: a press made while the presser's screen shows a pause is never read as play.
-- Assumption: a match of fewer than four players is kept to its number, and a newcomer with no seat is told it is full.
+- Assumption: a match of fewer than four players is kept to its number, and a newcomer is told it is full.
 - Assumption: a thing attached keeping its place in the world keeps it within [the design's bound](DESIGN.md#2-the-world-entities-components-resources-and-prefabs), and is refused past it.
 - Assumption: the 3D starter's first page ends with a ball the player rolls, which passes through the rock.
 - Assumption: a 3D match is proved twice: with no window in WP5, and on screen in WP14.
 - Assumption: sheets, clips and tiles are cooked from an image and a small file beside it, in WP3.
-- Assumption: a player has one character at a time, and taking another player's fails and changes nothing. Anything else they own, such as a drone, is an ordinary entity a rule moves.
-- Assumption: no engine or backend type reaches a game through `thrum`. Rust's own types and the game's own are ordinary.
-- Assumption: in [the extension map](DESIGN.md#the-extension-map), a predicted shot is one the control function fires, a data pack adds no prefab names, a guest's saved progress travels as commands, and a `#[seen]` button's press carries its picture.
+- Assumption: a player has one character at a time, and taking another player's fails and changes nothing. Anything else they own is an ordinary entity.
+- Assumption: no engine or backend type reaches a game through `thrum`.
+- Assumption: in [the extension map](DESIGN.md#the-extension-map), a predicted shot is one the control function fires, moved under that function's contract, a data pack adds no prefab names, a guest's profile travels as commands, and a `#[seen]` button's press carries its picture.
+- Assumption: a rule may turn a player to face a way, the pointer follows the input context, an offer with no expiry stays open, and what a tile map places is made by a spawn function.
 
 ## WP1 An agent writes a game's scenes, phases and rules in plain Rust against one crate, in the order they run, and proves them in an ordinary test with no window
 
