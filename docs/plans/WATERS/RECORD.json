@@ -2817,12 +2817,12 @@
       }
     },
     "WP16": {
-      "definitions": "8e8d61c686052818e72f391d7e183a524bfab95ef6c7b1735c58863900d0aaa8",
+      "definitions": "b72ef3a9ded8a81a8f5aec46a4b78f6de816e69c9b43b110161a6916a424e336",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "WATERS WP16 (underwater light) is Blocked, Needs Context: the three-look rule stopped tuning because WP16.7 standing bea",
-        "at": "2026-11-27T17:06:51Z"
+        "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 1 Must Fix find",
+        "at": "2026-11-27T17:13:06Z"
       }
     },
     "WP17": {
@@ -3709,11 +3709,15 @@
     {
       "task": "WATERS WP16 (underwater light) is Blocked, Needs Context: the three-look rule stopped tuning because WP16.7 standing beams at 1 m below the sea at noon in a breeze still read as a soft glow after focal blur, contiguous blur and a broader scattering phase. Beams already read at depth and in the low-Sun lake. Handoff: .claude/worktrees/waters/.orchestrate/evidence/WATERS/WP16-handoff.md (branch build/waters at 6e811b61c). Decide how WP16.7 is delivered, judged by the bar of shipped high-end games and plausibility, not physical accuracy: either a modern technique change for shallow beams (say which and why) or narrowing the cue to the conditions where beams plausibly read (if a real shallow noon breeze gives a dappled glow rather than standing beams, say so and amend the item). Keep the other open items (WP16.6, WP16.8, WP16.11) as they are unless the decision touches them, and leave WP16 ready to resume.",
       "at": "2026-11-27T17:06:51Z"
+    },
+    {
+      "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 1 Must Fix findings.",
+      "at": "2026-11-27T17:13:06Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-27T17:06:51Z"
+    "at": "2026-11-27T17:13:06Z"
   },
   "design_history": [
     {
