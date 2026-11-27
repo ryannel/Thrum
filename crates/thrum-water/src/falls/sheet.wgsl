@@ -51,7 +51,10 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
     let tear = 0.68 * coarse + 0.32 * fine;
     let threshold = mix(tear, 0.5, smoothstep(1.0, 3.0, pixel));
     let presence = smoothstep(threshold - width, threshold + width, input.discharge.z);
-    if (presence > 0.5) != solid || presence < 0.015 {
+    let spread = mix(0.63 * coarse + 0.37 * grouped, 0.5, smoothstep(0.9, 3.0, pixel));
+    let contact = 0.65 + 0.22 * spread;
+    let foot = 1.0 - smoothstep(contact, 1.0, input.across_fraction.w);
+    if (presence > 0.5 && foot > 0.35) != solid || presence * foot < 0.015 {
         discard;
     }
     let seam = smoothstep(0.0, 0.05, input.world_time.w);
@@ -75,9 +78,6 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
     let uv = input.clip.xy * view_aux.viewport_inv_viewport.zw;
     let aerial = environment_aerial(point, uv);
     let colour = (mix(glass, churn, white) * aerial.transmission + aerial.scatter) * environment_storage_scale();
-    let spread = sheet_noise(xy, span, vec2(0.71, 0.5), vec2(12.0, 7.0));
-    let contact = 0.67 + 0.22 * spread;
-    let foot = 1.0 - smoothstep(contact, 1.0, input.across_fraction.w);
     let opacity = (clear * min(0.88, fresnel + 0.07 + 1.7 * input.discharge.w + 0.35 * breakout) + white * (0.90 + 0.18 * grain))
         * presence * mix(0.62, 1.0, seam) * foot;
     let displacement = input.velocity_along.xyz * sheet_clock.y;
@@ -85,7 +85,7 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
     let current = view.unjittered_view_proj * vec4(point, 1.0);
     let motion = (previous.xy / previous.w - current.xy / current.w)
         * vec2(0.5, -0.5) * view_aux.viewport_inv_viewport.xy;
-    return FallOutput(vec4(colour, opacity), select(motion, vec2(65504.0), sheet_clock.z > 0.5), white * presence);
+    return FallOutput(vec4(colour, opacity), select(motion, vec2(65504.0), sheet_clock.z > 0.5), white * presence * foot);
 }
 
 @fragment fn sheet_thin(input: SheetVertex) -> FallOutput { return sheet_shade(input, false); }
