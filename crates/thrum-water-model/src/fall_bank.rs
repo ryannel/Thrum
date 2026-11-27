@@ -105,7 +105,7 @@ impl Map {
         let original = *split.stage(self);
         // At this scale a remaining overlap cannot certify clearance. This
         // also closes the search for a lip tangent to an interior maximum.
-        if original.value == original.min || original.value == original.max {
+        if !(original.min < original.value && original.value < original.max) {
             return false;
         }
         split.stage(self).max = original.value;

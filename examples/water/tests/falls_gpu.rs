@@ -147,7 +147,7 @@ fn metal_map_agrees_with_the_model_down_the_rock_below_a_brink() {
                 let answers = map_probe::probe(&gpu, &map, &input);
                 for (&place, [answer, _, _]) in locations.iter().zip(answers) {
                     let want = map.sample(place);
-                    let bed = if place[1] == CENTRE {
+                    let bed = if place[1].to_bits() == CENTRE.to_bits() {
                         rock(width, place[0])
                     } else {
                         map.bed().height(place).expect("cliff flank")
@@ -169,7 +169,7 @@ fn metal_map_agrees_with_the_model_down_the_rock_below_a_brink() {
                         }
                     }
                 }
-                eprintln!("Metal and f64 agree at {} quarter-cell stations, width {width}, basin={basin}, stage {stage}", input.len());
+                eprintln!("Metal and f64 agree at {} stations, width {width}, basin={basin}, stage {stage}", input.len());
             }
         }
     }

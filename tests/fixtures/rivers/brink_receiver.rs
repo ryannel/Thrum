@@ -35,7 +35,7 @@ pub(super) fn points(width: u32) -> impl Iterator<Item = [f64; 2]> {
 }
 
 pub(super) fn flanks() -> [[f64; 2]; 2] {
-    [[2.953125, 1.953125], [2.953125, 4.046875]]
+    [[2.953_125, 1.953_125], [2.953_125, 4.046_875]]
 }
 
 pub(super) fn rock(width: u32, x: f64) -> f64 {

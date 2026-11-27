@@ -15,10 +15,10 @@ fn basin_and_reach_wet_and_support_the_rock_below_narrow_and_wide_brinks() {
                 map.set_stage(receiver, stage).expect("receiver stage");
                 let level = setup::LEVEL + stage;
                 let mut seen = [false; 3];
-                for place in setup::points(width) {
+                for (station, place) in setup::points(width).enumerate() {
                     let bed = setup::rock(width, place[0]);
                     let actual = map.sample(place);
-                    if place[0] == f64::from(setup::LIP) {
+                    if station == 0 {
                         let lip = actual.expect("upper chart at the brink");
                         assert_eq!(lip.body, 0);
                         close(lip.row.level, setup::TOP);
