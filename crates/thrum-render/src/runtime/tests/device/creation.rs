@@ -868,10 +868,11 @@ fn chart_cadence_gpu_public_source_cut_refreshes_charts_and_phase_edit_does_not(
                     timeout: Some(Duration::from_secs(5)),
                 })
                 .unwrap();
-            let sample = host
-                .poll_completed()
-                .unwrap()
-                .expect("completed chart frame");
+            let sample = thrum_test_support::wait::until(
+                "chart frame did not retire",
+                Duration::from_secs(5),
+                || host.poll_completed().unwrap(),
+            );
             host.governor_present_called();
             let quality = sample.governor.expect("governed chart record");
             let timings = sample.gpu_pass_ns.expect("Metal chart timings");

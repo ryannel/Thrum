@@ -98,17 +98,18 @@ def refresh_counts(rows, cadence, route):
             spread = row["position"][0]
             started[spread] += 1
             window = rows[start:start + spread]
-            if any(r["whole_update"] for r in window):
+            stop = next((index for index, frame in enumerate(window) if frame["whole_update"]), None)
+            prefix = window[:stop]
+            if any(frame["position"] != [spread, index] or frame["change"] != row["change"]
+                   for index, frame in enumerate(prefix)):
+                raise ValueError(f"inconsistent refresh positions at submission {row['submission']}")
+            if stop is not None:
                 interrupted[spread] += 1
                 continue
             if len(window) < spread:
                 unfinished[spread] += 1
                 continue
             actual = tuple(stage for frame in window for stage in frame["stages"])
-            positions = [r["position"] for r in window]
-            if positions != [[spread, index] for index in range(spread)] or any(
-                    r["change"] != row["change"] for r in window):
-                raise ValueError(f"inconsistent refresh positions at submission {row['submission']}")
             if all(first <= frame["tick"] < last for frame in window) and actual != STAGES:
                 raise ValueError(f"incomplete chart stages in moving refresh {row['submission']}: {actual}")
             matched.append({"spread": spread, "first": row["submission"], "last": window[-1]["submission"]})
