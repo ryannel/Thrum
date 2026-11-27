@@ -865,3 +865,19 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   seven levels against independent old- and new-light controls through forward and lent shading.
   The protected reference guard passed with zero set refreshes.
   [Governor-entry evidence](../../../.orchestrate/evidence/ATMOSPHERE/WP12/governor-entry/README.md)
+
+- 2026-11-27 The owner reported three faults in the showcase's Sun shadows on the Mac: flicker flying toward
+  the beige balloon and on the rocks' shadows "in the scene with the squares"; "a very clear line where the
+  shadows suddenly appear"; and "very obvious" flicker at the cubes, which read as floating. A planner
+  reproduced all three at `968d2e5dc` with realtime Metal captures on thirteen routes.
+  [Diagnosis, with the reports in full](../../../.orchestrate/evidence/ATMOSPHERE/WP13-diagnosis/README.md)
+- 2026-11-27 What the frames showed. The flicker is the Sun's motion, 1.2° a second on the game's clock, over
+  two 1024² maps whose edges are filtered narrower than a texel: with the Sun held nothing flickers. The
+  floating is a bias sized by the texel, and the line is the 512 m reach, past which no prop casts.
+  [The causes](../../../.orchestrate/evidence/ATMOSPHERE/WP13-diagnosis/README.md#the-causes)
+- 2026-11-27 WP13 planned, with no change to any earlier work package or item: the two fitted cascades become
+  a nested set round the camera with a wider filter, a bias in texels, casters left out by size and a
+  2,048 m reach that fades. [Design](DESIGN.md#the-suns-cascades-round-the-camera-wp13). The module list
+  gained [a seam ruling](../ARCHITECTURE.md#seam-ruling-for-atmosphere-wp13) and
+  [a baseline ruling](../ARCHITECTURE.md#ruling-on-atmosphere-wp13).
+  [What was rejected and what is left for the lead](../../../.orchestrate/evidence/ATMOSPHERE/WP13-diagnosis/README.md#the-plan)

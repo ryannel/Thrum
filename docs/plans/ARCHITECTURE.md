@@ -422,6 +422,25 @@ comparisons do not change, and an aloft row is left out the same way in every cu
 generator, routes and launcher do not change. No registered exact baseline moves. Once built, the
 membership belongs to the Sun path and the mark to the exit scene.
 
+<a id="seam-ruling-for-atmosphere-wp13"></a>
+**Seam ruling for `ATMOSPHERE` WP13, 27 November 2026.** The owner reported Sun shadows that flicker, float
+above the ground and stop at a line. The Sun's visibility at a receiver is `ATMOSPHERE`'s, so how many Sun
+cascades there are, how they are laid out and which casters each holds are too
+([its design](ATMOSPHERE/DESIGN.md#the-suns-cascades-round-the-camera-wp13)). The WP13 builder builds it in
+`thrum-render`'s Sun files (`synthetic/shadow.rs`, the Sun read in `synthetic.wgsl`, the cascade record, the
+view volume's cascade read and the Sun passes of `synthetic/{scene_graph,scene_source}.rs`), and in four places
+other modules own: the bucket route's caster draws and the caster cull (`synthetic/mesh_route.rs` and
+`visibility/casters`, `CULLING`'s), for more passes and the size rule; a secondary view's cascade
+(`synthetic/shadow/secondary.rs`, `SCENE-VIEWS`'), laid out by the same rule; the typed pass names
+(`pass_key.rs`, `REVIEW-RENDER`'s), for the new passes; and `SyntheticView::with_sun_shadow_profile`, which
+admits more cascades. The contribution interface does not change: a contribution is asked to draw its casters
+into each cascade, as it is asked for two today. No item of `CULLING`, `SCENE-VIEWS`, `REVIEW-RENDER`,
+`RAY-TRACING`, `WATERS` or `SHOWCASE` changes. Their tests that `./dev check` runs keep passing, restated for
+more passes where they name two, with the same claims (`ATMOSPHERE` WP13.3). The interface rows that say "Sun
+cascades" hold as written: the aloft mark, the lent Sun visibility, which `WATERS` WP16 builds as one tap of
+whichever cascade holds the point, and a secondary view's one cascade. If `WATERS` WP16 and WP13 are built at
+once, whichever lands second carries the other's change. Once built, the layout belongs to the Sun path.
+
 <a id="seam-ruling-for-effect-graph-m4"></a>
 **Seam ruling for `EFFECT-GRAPH` WP4.** `CLOUDS` WP2 found that the interpolation alpha is not the display's time:
 it stops at the committed tick, and under a display lead the target is past that tick for part of every tick, so
@@ -1030,6 +1049,39 @@ stop is a defect of the one aerial product and a selection would keep it in ever
   ends `BLOCKED` with it.
 - **Everyone else.** Nothing is owed: the run on main after WP9's landing compares with the new references,
   and a module whose work package carries the verifier as an item needs no change.
+
+<a id="ruling-on-atmosphere-wp13"></a>
+
+**Ruling on `ATMOSPHERE` WP13 (with `APPLE-TILE` and `SHOWCASE`), 27 November 2026.** WP13 is meant to change
+the default output of every scene with a Sun shadow: the two fitted cascades become a nested set round the
+camera, read with a wider filter and a bias counted in texels
+([its design](ATMOSPHERE/DESIGN.md#the-suns-cascades-round-the-camera-wp13)). It is not built behind a
+selection, because the flicker, the gap at a caster's foot and the line where shadows stop are defects of the
+one Sun visibility every scene reads.
+
+- **Which baselines move.** `apple-tile-native`, `chrome-day-sdr` and `chrome-day-scene-linear` are expected
+  to: each holds the sphere's and the rock's shadows and the terrain's own. The two night sets hold no Sun
+  shadow and are predicted not to move. The pixels that move lie where a Sun shadow or its soft edge falls
+  and at the foot of an object; the sky, the stars and the bars are predicted not to. WP13's builder records
+  which sets moved.
+- **Who refreshes them.** As for [`ATMOSPHERE` WP9](#ruling-on-atmosphere-m9), the change and the references
+  land together as rule 2's planned refresh, so no work package of `APPLE-TILE`'s could hold them. WP13's
+  builder regenerates each reference that moved, from the changed commit, with `APPLE-TILE`'s own scripts, in
+  the landing that makes the change. In the registry it changes the `pin` and the `refresh` of each baseline
+  whose reference moved, and the refresh names `ruling-on-atmosphere-wp13`, `ATMOSPHERE` and `WP13`. Every
+  other field of the registry, the comparisons, their sampling and every script stay as they are. Both
+  modules' logs record the cause and each moved reference's old and new SHA-256. `ATMOSPHERE` WP13.9 holds
+  this, and WP13.10 has a reviewer see that only shadows moved.
+- **`SHOWCASE`'s two thresholded baselines.** The bare valley's six stops and the exit's rows show the same
+  shadows and are expected to move past their thresholds at the stops where a prop's shadow shows. They are
+  not in the verifier and nothing on main compares them. WP13's builder does not touch them. `SHOWCASE`
+  replaces them in its next work package by [its own refresh](SHOWCASE/DESIGN.md#the-route-check-sees-a-missing-prop),
+  which keeps their identity and thresholds and records the cause, as its design provides for a reviewed
+  change that moves a stop. Until then a run of `SHOWCASE`'s comparison reports those stops over.
+- **Other exact tests.** Any other module's exact test that WP13 moves is that module's under rule 1, and the
+  builder ends `BLOCKED` with it. A test that compares a run with itself, as `CULLING`'s and `SCENE-VIEWS`'
+  equalities do, needs no change.
+- **Everyone else.** Nothing is owed: the run on main after WP13's landing compares with the new references.
 
 <a id="ruling-on-culling-m3"></a>
 
@@ -3801,6 +3853,14 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   its effect's own textures, under [a seam ruling](#seam-ruling-for-effect-graph-wp7), and `WATERS` WP16 now
   waits for it. The effect-passes interface row and the module table's row 15 follow. `WATERS`' design and
   items, every contract's words, every Done item and every exact baseline stand.
+- 2026-11-27 The owner reported Sun shadows in the showcase that flicker, leave props floating and stop at a
+  line. `ATMOSPHERE` gained WP13: the Sun cascades become a nested set round the camera. It adds
+  [a seam ruling](#seam-ruling-for-atmosphere-wp13) and [a baseline ruling](#ruling-on-atmosphere-wp13) under
+  which its builder refreshes `APPLE-TILE`'s day sets in its own landing. No interface row, no other module's
+  section, item or dependency, no contract and no line of the exit coverage table changed. Left for the lead
+  and the owner: whether the V1 exit waits for WP13, which `SHOWCASE` WP8.12 does not list; `SHOWCASE` WP8
+  naming the refresh of its two thresholded baselines; and taking `APPLE-PRESENTATION` WP17's sitting on a
+  frame that holds WP13's cost.
 - 2026-11-27 `RIVERS` WP11, the heavy fall, moved ahead of its WP7 with a technique chosen in
   [its design](RIVERS/DESIGN.md#the-heavy-fall-at-the-highest-gauge): layers about the sheet and spray at the
   foot, drawn by ruling 7's pass with that pass's outputs. Owner decision 24 says so: a heavy fall has spray at
