@@ -572,3 +572,31 @@
   choices in this revision, each for the owner to overturn: a body's bent path is kept only where the game
   says `follow`; `respawn` replaces what stands of the prefabs a save names; a shape's edit waits for the
   next start in a 3D game; and a host with no window continues a run only through the standard lobby.
+- 2026-11-28 Design review 10 asked for five changes to the motion contract, all settled in this revision,
+  the last before building. [Review](../../../.orchestrate/evidence/GAME-SDK/design-review.md).
+- 2026-11-28 Finding 1 (a straight move stopped early loses when it arrived): a leg takes the share of the
+  tick it took of the step, and a stopped body rests for the remainder, so a followed path keeps each leg's
+  times. What keeps nothing is now a path of one straight leg over the whole tick from the tick's start,
+  in section 7, the cost table and the open question. WP12's handoff gains the step of (4, 0) stopped at
+  (1, 0), told from the same end written by hand by a `fraction` of one eighth against one half.
+- 2026-11-28 Finding 2 (a second followed move erased a ferry's carry): a move followed from where the
+  entity stands adds to the path it has, the two over the one tick, so a carry and a step come to the
+  straight line between the ends and a rider carried through a coin meets it. A move followed from another
+  place still begins a new path. Section 7 has the two lines a rider writes, and WP12's handoff the proof.
+- 2026-11-28 Finding 3 (`remaining_motion.dot(normal)` misread a moving target): a `Hit` has
+  `approach_speed`, the speed the two were closing at along the normal, from the leg each was on. Section
+  7, R3, and WP2.12's clause 7 with the review's hero and watch.
+- 2026-11-28 Finding 4 (exact tangency cannot be held on a diagonal): touching means within the contact
+  tolerance, either side, and `depth` is exactly zero inside it. In 2D it is a fraction of the numbers
+  compared, at most 2⁻¹⁶, which WP2's builder measures and sets and `thrum-sim2d` holds; in 3D it is
+  `SIM-3D`'s own constant. Overlap queries keep their exact test. WP2.12's clause 5 is the review's two
+  circles at (0, 0) and (1, 1). The glossary gains the name.
+- 2026-11-28 Finding 5 (the bolt gave `end_at` a ray's hit): `fly_bolt` sweeps the bolt's own sphere, and
+  `end_at` keeps the hit's `fraction` as the moment the path ends, so a hull that crosses the bolt's last
+  place later in the tick is not hit. The entry stays after the first release.
+- 2026-11-28 Suggestion, taken: `.continues_with(..)` is in section 1's list of functions checked as rules,
+  because section 11 and WP5 already refuse one defined outside the rules module.
+- 2026-11-28 Item changed: WP2.12, by its statement, written again whole. No check command changed.
+  Planner's choices in this revision, each for the owner to overturn: two moves followed in one tick run
+  together and are not taken one after the other; `approach_speed` is in units a second; and the overlap
+  queries do not use the tolerance.

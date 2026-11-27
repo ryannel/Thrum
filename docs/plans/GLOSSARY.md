@@ -172,6 +172,18 @@ to it.
 
 Proposed: the planner chose "fixed" over "static", which in Rust means something else.
 
+### Contact tolerance
+
+The small distance within which two shapes count as touching. The engine's numbers cannot hold most places of
+exact contact, so a moving shape stopped at a thing stands within the tolerance of it, and a contact that close
+has no depth. It is one stated value of a rule set, the same on every device. Defined for 3D in
+[SIM-3D's design](SIM-3D/DESIGN.md#2-shapes-and-the-pair-tests) and for a game in
+[the game SDK's](GAME-SDK/DESIGN.md#7-space-and-the-level).
+
+- **Source** — SIM-3D's design; the field's terms are contact tolerance and linear slop (Box2D).
+
+Proposed: the planner carried SIM-3D's name into the game SDK.
+
 ### Kinematic move
 
 One call that moves a character's shape through the level by a motion, slides it along what it meets, climbs a

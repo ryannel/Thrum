@@ -66,7 +66,8 @@ Every package under `examples/crowd-sdk` names `thrum` and no other engine crate
 `scripts/test_game_rules.py`, on scratch games outside the checkout as `scripts/test_game_gate.py` makes one.
 
 WP2.11 and WP2.12 are round 4's: `CharacterSpawned`, `PerPlayer::departed` and what a `Hit` says of its mover,
-with [the three ways a path meets a thing](DESIGN.md#7-space-and-the-level).
+with [the three ways a path meets a thing](DESIGN.md#7-space-and-the-level). WP2.12 also sets the 2D contact
+tolerance: measure what its cases leave, set the fraction as that section says, and write it in the reference.
 
 ## WP12 A platformer's hero runs, jumps and lands on a level loaded from a file, proved with no window
 

@@ -413,7 +413,7 @@ Each invariant here is a mechanism a builder builds as written
   `scene.players().spawn(..)` or to a tileset's `.spawns(..)`; an enter or exit function of a scene or a
   phase; a condition in `.when(..)`; the function a phase's `.lasts(..)` is given and the rule its
   `.then_run(..)` is given; a save's capture, its condition and its `validate`; the function an offer's `.choices_with(..)` is given;
-  and the function a lobby is given in `.starts_with(..)`. A registration a
+  and the functions a lobby is given in `.starts_with(..)` and `.continues_with(..)`. A registration a
   later feature adds joins this list when it is added
   ([extension point 5](#the-extension-map)).
 - **A `Save` type is defined there too, with the older types of its chain.** Every machine carries an old
@@ -958,27 +958,59 @@ and `Me` in [R4](#r4-what-a-frame-function-may-take).
   hits and how a stomp knows it came from above. **A `teleport` starts a new path**: an entity teleported
   this tick is swept from where the teleport put it, so a respawn across a patrol touches nothing between
   the two places.
-- **A written position is a straight path, and a move that bent says so.** Where a function writes a
-  position, the entity's path this tick is the straight line from where its path began to where it now
-  stands, over the whole tick. That is right for a shot and for a walker that met nothing. It is wrong for a
-  body that slid: a courier whose step of (3, 3) from (0, 0) met a wall at (1, 1) and slid up it to (1, 3)
-  passed through a watch at (1, 2) that the line between its two ends misses by 0.316.
+- **A written position is a straight path, and a move that bent or stopped short says so.** Where a function
+  writes a position, the entity's path this tick is the straight line from where its path began to where it
+  now stands, over the whole tick. That is right for a shot and for a walker that met nothing. It is wrong
+  for a body that slid: a courier whose step of (3, 3) from (0, 0) met a wall at (1, 1) and slid up it to
+  (1, 3) passed through a watch at (1, 2) that the line between its two ends misses by 0.316. It is wrong
+  too for a body that was stopped: a hero whose step of (4, 0) from (0, 0) is stopped by a wall when its
+  centre reaches (1, 0) was at (0.5, 0) one eighth of the way through the tick and at rest from one quarter
+  of it, where the line between its two ends has it at (0.5, 0) half-way through.
   So **a transform follows a move**. `at.follow(&moved)` puts the entity where the move ended and makes the
   move's own path the entity's path for this tick: each leg in order, from where the move began, with the
-  share of the tick the move spent on it. The move spends its step as it goes, so the courier's first leg
-  took a third of the tick and its second two thirds, and a shape stopped before its step was spent rests
-  where it stopped for what is left. From then on `motion_of(entity)` is those legs. Its sweep meets the
-  watch on the second leg, against where the watch itself stood at that moment of the tick; `fraction` is
-  the time along the whole path; and `mover_position` is on the leg the contact was found on.
+  share of the tick the move spent on it.
+  - **A leg takes the share of the tick that it took of the step.** The move spends its step as it goes: a
+    leg that ends at a contact met a fraction of the way through the step that was left takes that fraction
+    of the tick that was left, and a shape stopped before its step was spent rests where it stopped for the
+    rest of the tick. So the courier's first leg took a third of the tick and its second two thirds, and the
+    stopped hero's one leg took a quarter of the tick and it rested for three quarters. A path keeps when
+    each leg began and ended, a rest included.
+  - **`motion_of(entity)` is then those legs, by time.** Its sweep meets the courier's watch on the second
+    leg, against where the watch itself stood at that moment of the tick. `fraction` is the time along the
+    whole tick, `mover_position` is on the leg the contact was found on, or where the body rests, and
+    `remaining_motion` is from there to where the path ended, which for a body at rest is nothing. A small
+    thing that crosses the stopped hero's line at (0.5, 0) half-way through the tick is not met, and one that
+    comes against the hero at (1, 0) in the tick's last quarter is.
   - **A followed path lasts while the entity stands where the move ended.** A position written after it
-    makes the path a straight line again, from the same beginning to the new place, and a second move
-    followed replaces it with its own.
-  - **It begins where the move began**, as a `teleport`'s begins where it put the entity. What moved the
-    entity earlier in the tick, such as the ferry that carried it, is not swept.
+    makes the path a straight line again, from the same beginning to the new place.
+  - **A move followed from where the entity stands adds to the path the entity already has this tick, and
+    the two run together.** Both took the same tick, so at each moment the entity is where the earlier path
+    had it, moved on by as far as the new move had gone by that moment. The earlier path is whatever the
+    entity has: a followed move's legs, the line a written position gave, or standing still, for which the
+    sum is the new move's own legs. So a rider whose ferry carried it by (2, 0) and whose own move then took
+    it up by (0, 1) crossed the straight line from where it began to (2, 1), and was at (1, 0.5) half-way
+    through the tick. A rider carried through a coin, who then stands still, meets the coin at the moment
+    the ferry brought it there: its own move, of nothing, adds nothing, and takes nothing away.
+    `fraction` is the time along the tick, as on any path. This sum is what the entity passed, for a
+    pick-up, a trigger and a stomp. What stopped it is in each move's own `contacts()`.
+
+    ```rust
+    let carried = tiles.move_shape(at.position, body, space.motion_of(ferry).delta()).on(TERRAIN);
+    at.follow(&carried);    // the ferry's step this tick, stopped by the level if a ceiling is in the way
+    let moved = space.move_shape(at.position, body, hero.velocity * tick.dt()).except(me).on((TERRAIN, PLATFORMS));
+    at.follow(&moved);      // from where the hero now stands: added to the carry, both over the one tick
+    ```
+  - **A move followed from any other place begins a new path where that move began**, as a `teleport`'s
+    begins where it put the entity. What moved the entity earlier in the tick is then not swept, so a jump
+    between two places that should touch nothing between them is a `teleport` or a move begun at the new
+    place.
   - **It is the tick's working memory**, as the place each entity stood at the tick's start is. It is made
-    again when a tick is stepped again, and is gone when the tick ends, so it is in no digest. A move
-    that met nothing is one straight leg, so an entity that follows one from where it stood as the tick
-    began keeps nothing more than a written position does.
+    again when a tick is stepped again, and is gone when the tick ends, so it is in no digest. **A path that
+    is one straight leg taking the whole tick, from where the entity stood as the tick began, is what a
+    written position gives, so an entity whose followed moves come to that keeps nothing more**: a move that
+    met nothing, a walker's step along the floor it stands on, a rider's carry and its own step across open
+    ground. A path that bent, that came to rest before the tick was over or that began somewhere else keeps
+    its legs and their times.
   - A control function and a rule follow a move the same way, and `Level2d::move_shape` and
     `Space2d::move_shape` both give one. Every guide and example moves a body with `follow`.
 - **The level is a scene's fixed collision** (R7). It does not move, so it is not made of entities. What the
@@ -1034,23 +1066,66 @@ and `Me` in [R4](#r4-what-a-frame-function-may-take).
   `motion_of(entity).sweep()` `mover_position` lies on the path the entity took this tick. A stomp sets the
   hero at the contact and spends the rest of the tick going up, and a bolt stops with its centre clear of
   the pier, each with no second query. For a ray the mover is the ray's own point.
+- **Touching is said at the profile's precision: within the contact tolerance.** The profile's numbers
+  cannot hold most places of exact contact. Two circles of radius 1, one at (0, 0) and one on the diagonal,
+  touch with the second at (√2, √2), and the two numbers nearest √2 put the centres 3.99999976 and
+  4.00000048 apart when squared, either side of the 4 that contact asks for. So wherever this design says a
+  mover's shape *touches* a thing, or *touches it and does not overlap it*, it means this: **the gap between
+  the two shapes, or the depth of one inside the other, is no more than the contact tolerance.**
+  - **The tolerance is one stated value of the rule set**, the same on every machine and in the reference,
+    and small beside anything a game measures. In 2D it is a fixed fraction, a power of two, of the largest
+    coordinate or size of the two shapes, and of one unit where those are smaller, so it grows with the
+    numbers as their rounding does. WP2's builder measures what its proof's cases leave and sets the
+    fraction no smaller than that and no larger than 2⁻¹⁶. The sweep and move tests this module adds to
+    `thrum-sim2d` hold it as that crate's public constant, so the SDK and the crate under it mean one
+    thing by a contact. In 3D it is
+    [`SIM-3D`](../SIM-3D/DESIGN.md#2-shapes-and-the-pair-tests)'s contact tolerance, a public constant, which
+    its own sweeps already keep: the place one reports is clear of what was struck and within the tolerance
+    of it.
+  - **Every answer that speaks of contact uses it the same way**: the `mover_position` of a sweep's and of a
+    move's hit; `depth`, which is exactly zero for a contact within the tolerance and more than the
+    tolerance otherwise; which of the three ways below a path meets a thing; and a move that begins touching
+    a wall. A path that begins within the tolerance of a thing begins touching
+    it. One that only grazes a thing, passing within the tolerance of it and no nearer, may be reported or
+    not, the same on every machine.
+  - **The overlaps keep their exact test.** `touching`, `within`, `in_rect` and `Level2d::touching` answer
+    by the profile's own arithmetic, so a pair that stands within the tolerance may be found or not, the
+    same on every machine. A rule that needs a shape clear of what it struck moves it on, as a stomp does,
+    or sets it out by more than the tolerance.
 - **A hit says how deep, so a contact that was there from the start means one thing.** `depth` is how far the
   mover's shape stood inside what it struck at first contact, measured along the normal, which is then the
   shallowest way out. A path meets a thing in one of three ways:
 
   | The path | `fraction` | `mover_position` | `depth` | `remaining_motion` |
   |---|---|---|---|---|
-  | Meets it on the way | Where the two first touch | Touching it, not overlapping | Zero | The rest of the path |
-  | Begins touching it | Zero | Where the path began, which touches it and does not overlap | Zero | The whole path |
-  | Begins inside it | Zero | Where the path began, which overlaps it: where the mover in truth stood | More than zero | The whole path |
+  | Meets it on the way | Where the two first touch | Touching it | Zero | The rest of the path |
+  | Begins touching it | Zero | Where the path began, which touches it | Zero | The whole path |
+  | Begins inside it, deeper than the tolerance | Zero | Where the path began, which overlaps it: where the mover in truth stood | More than the tolerance | The whole path |
 
-  In all three a shape set at `mover_position + normal * depth` touches what it struck and does not overlap
-  it. So two circles of radius 1 whose centres begin one apart report fraction zero, the place the mover
-  began, and a depth of 1 along the line between the centres, and the mover set one further out along the
-  normal touches the other. A contact there from the start is reported whichever way the path leads, in,
-  along or away, and `remaining_motion.dot(hit.normal) > 0` is a mover on its way out, so the tick after a
-  stomp is told from a second stomp. Where no way out is the shallowest, as for a shape met with itself,
-  the normal is a fixed direction the reference states.
+  In all three a shape set at `mover_position + normal * depth`, worked out in a rule's own numbers as
+  written, touches what it struck: it stands within the contact tolerance of it. Where the numbers can hold
+  the place, it is exact: two circles of radius 1 whose centres begin one apart along an axis report
+  fraction zero, the place the mover began and a depth of exactly 1 along the line between the centres, and
+  the mover set one further out stands exactly two from the other. Where they cannot, it is within the
+  tolerance: with the struck circle at (0, 0) and the mover beginning at (1, 1), the depth is 2 − √2 as
+  nearly as the numbers hold it, the mover set out by it stands within the tolerance of (√2, √2), and a
+  sweep that begins there reports the same circle at fraction zero with a depth of zero, as a path that
+  begins touching. A contact there from the start is reported whichever way the path leads, in, along or
+  away. Where no way out is the shallowest, as for a shape met with itself, the normal is a fixed direction
+  the reference states.
+- **A hit says how fast the two were closing.** `approach_speed` is the speed, in units a second, at which
+  the mover and what it struck were coming together along the normal at first contact: what the struck
+  thing's motion gave along the normal, less what the mover's gave. Each motion is taken from the leg of its
+  own path that the thing was on at that moment, and is nothing for the level, for a thing that did not
+  move and for a body at rest after a move that stopped. It is above zero where the two were closing, zero
+  where neither gained on the other, and below zero where they were parting. A contact met on the way was
+  closing. For a contact there from the start it is what tells a second stomp from the tick after the
+  first: a hero that begins a tick touching the top of a watch, and rises one unit in it while the watch
+  rises two, has an `approach_speed` above zero, because the watch is gaining on it. With the watch still
+  it is below zero. `remaining_motion.dot(hit.normal)` is above zero in both, and says only which way the
+  mover itself went, which answers the question where what was struck stood still. For a `ray` and a
+  `sweep_circle`, which are asked of things where they stand, the asked path is taken as crossed in one
+  tick.
 - **Moving a character is one call that slides along what it meets and reports it**: both axes in one step,
   so no game moves an axis at a time or compares positions to learn what happened. It is given the
   character's own collider, which a control function takes as a component, so a shape is written once.
@@ -1864,7 +1939,8 @@ Kept<N>:      entities a save keeps, with the prefab names it was filled from (s
 
 // Places.
 Transform2d:  Transform2d::at(x, y) .turned(angle) .scaled(s);  fields position, turn, scale;  teleport(point);
-              follow(&moved): stands where the move ended, with the move's legs as this tick's path (section 7)
+              follow(&moved): stands where the move ended.  The move's legs, with the time each took, are this
+              tick's path, added to the path the entity has where the move began where it stands (section 7)
 Transform3d:  Transform3d::at(x, y, z) .turned_y(angle) .facing(direction) .scaled(s);  fields position, rotation,
               scale;  teleport(point)  follow(&moved)  face(direction)  turn_y(angle)  forward() -> Vec3
               heading() -> Angle;  turn_toward(direction, at_most): a turn about y toward that way, limited to a rate
@@ -1966,6 +2042,8 @@ Hit:          entity: Option<Entity>, None for the level;  layer;  point;  norma
               the mover, never zero;  fraction: Num, how far along the path, by time;  mover_position: where
               the mover itself stood at first contact;  remaining_motion: from there to where its path ended;
               depth: Num, how far the mover stood inside what it struck, zero unless the path began inside it
+              by more than the contact tolerance;  approach_speed: Num, units a second, how fast the two were
+              closing along the normal at first contact: above zero closing, below zero parting (section 7)
 Move2d:       [.up(direction)] [.except(entity)] .on(layers) -> Moved2d
 Moved2d:      what `Transform2d::follow` takes, with the path the move took.
               position: Vec2;  on_floor(),  on_ceiling(),  wall() -> Option<Side>,  blocked(): what the shape rests
@@ -2159,7 +2237,8 @@ a heightfield, and the move.*
 Everything [section 7](#7-space-and-the-level) says holds with a 3 on it: colliders detect and never push, a
 space meets the level, one `move_shape` takes the character's own collider, a transform follows a move by
 the path it took, a climbed step's legs among them, a hit's normal points out of what was struck, a hit says
-where the mover stood and how deep, and what a rule adds to the level it can take away. **Every
+where the mover stood, how deep and how fast the two were closing, touching is said within the contact
+tolerance, and what a rule adds to the level it can take away. **Every
 name of R3's space and level groups exists with a 3 for its 2**, with `Vec3` for `Vec2` and the same
 methods: `Collider3d`, `Space3d`, `Level3d`, `LevelMut3d`, `Move3d`, `Moved3d`. What differs is said here.
 
@@ -2328,12 +2407,20 @@ predicts one entity, the character. Depth 2 lets a control line declare more:
   that function finishes, as any spawn does. A launched thing ends in one of two ways. Its own function
   ends it, which is predicted: with `Launched::end()` for a fuse that ran out, and with
   `Launched::end_at(hit)` for a wall of the level. Or a rule despawns it at the confirmed tick, for what it
-  did to the world, and the predicted one goes when that tick confirms. **A flight ended at a contact is
-  judged to the end, and no further.** `end()` takes the thing out as its function finishes, so no later
-  rule sweeps it. `end_at(hit)` sets the thing at the hit's `mover_position` and ends it when the tick
-  does, so its last path, from where it stood to the contact, stays for the rules written after the
-  control line: `motion_of(bolt).sweep()` still finds a hull it passed before the pier in that step, and
-  finds none that stands behind the pier.
+  did to the world, and the predicted one goes when that tick confirms.
+- **A flight ended at a contact is judged to the moment of the contact, and no further.** `end()` takes the
+  thing out as its function finishes, so no later rule sweeps it. `end_at(hit)` takes the hit of a sweep of
+  the thing's own shape along this tick's step, from where it stands to where the step would have taken it:
+  for a bolt with a sphere for a collider, `sweep_sphere` with the collider's radius. A ray's hit is the
+  wrong one to give it. A ray's `mover_position` is the point on the pier's face, so a bolt of radius 0.25
+  set there stands a quarter of a unit inside a pier whose face is at x = 5, where its swept sphere stops
+  with its centre at x = 4.75. `end_at` sets the thing at the hit's `mover_position` and ends it when the
+  tick does. Its last path is the one leg from where it stood to there, taken in the hit's `fraction` of
+  the tick, **and the path ends at that moment**: the thing does not rest there as a stopped body does. So
+  for the rules written after the control line `motion_of(bolt).sweep()` reports what the bolt met up to
+  the moment it struck and nothing later: it still finds a hull the bolt passed before the pier in that
+  step, finds none that stands behind the pier, and finds none that crosses the bolt's last place later in
+  the tick.
 - **Where it runs: in its seat's turn on the control line, whether or not its launcher is steered.** Each
   seat has a turn on the line, in seat order: the control function for that seat's character, where the
   player has one, and then `f` once for each thing launched from that seat that is still in flight, in the
@@ -2395,15 +2482,20 @@ fn drive(me: Entity, pilot: &Player, at: &mut Transform3d, craft: &mut Craft, sh
         bolts.spawn(BOLT.with(Bolt { from: me, pilot: *pilot, velocity: at.forward() * 90.0 }).at_point(at.position));
     }
 }
+const BOLT_RADIUS: Num = num(0.25);                   // the BOLT prefab's collider is Collider3d::sphere(BOLT_RADIUS)
+
 /// One bolt's whole flight, under the control function's table: its own components, the level and the tick.
 fn fly_bolt(at: &mut Transform3d, bolt: &Bolt, mut me: Launched, level: Level3d, tick: Tick) {
     if me.age() > seconds(2) {
         return me.end();                              // its fuse ran out: gone now, with nothing left to judge
     }
     let next = at.position + bolt.velocity * tick.dt();
-    match level.ray(at.position, next).on(SOLID).first_hit() {
-        // The pier. The bolt stops at the contact on my screen at once, and its path up to the pier stays for
-        // this tick's rules: a hull it passed before the pier is still hit, and one behind the pier is not.
+    // The bolt's own sphere, swept along this tick's step, and not a ray: the hit's `mover_position` is the
+    // bolt's centre with its surface on the pier, a radius short of the face, and its `fraction` is when.
+    match level.sweep_sphere(at.position, next, BOLT_RADIUS).on(SOLID).first_hit() {
+        // The pier. The bolt stops at the contact on my screen at once, and its path up to that moment stays
+        // for this tick's rules: a hull it passed before the pier is still hit, and one behind the pier, or
+        // one that crosses where the bolt stopped later in the tick, is not.
         Some(pier) => me.end_at(pier),
         None => at.position = next,
     }
@@ -4078,7 +4170,8 @@ order and C13's authority are what the core stands on.
    dependency checked rules may have; refusals of files, sockets, processes and standard input; a check of a
    game's `rules` module built on its own, outside the engine's registry; and, as additions to `thrum-sim2d`,
    exact tests for rectangles and capsules beside the index's circles, fixed collision built from tiles and
-   shapes, and the box and circle move that reports its contacts and the legs it took.
+   shapes, the box and circle move that reports its contacts and the legs it took with the time of each,
+   and [the 2D contact tolerance](#7-space-and-the-level) as a public constant its sweeps and moves hold.
 2. **The registered simulation** (core): queries over several components with filters; a barrier after each
    registered system at which the tick's staged structural edits are applied, inside the tick's one
    transaction, for a schedule that asks for it; and what a parent link and a disabled entity need.
@@ -4108,8 +4201,9 @@ order and C13's authority are what the core stands on.
    layer the SDK gives it from the level's recipe, which answers the same for the layers asked and the
    height of the ground on them; and a kinematic move against both that slides, climbs a step, holds to a
    slope, and reports the legs it took with their share of the step, and its contacts with each one's
-   normal, where the mover stood, how deep it began and the motion it had left. All of it is in the rules profile's numbers and equal on the three targets, with no rigid
-   body. [The module list](../ARCHITECTURE.md#track-7-the-game-sdk) holds the interface.
+   normal, where the mover stood, how deep it began and the motion it had left. Its contact tolerance, a
+   public constant of its pair tests, is what [touching](#7-space-and-the-level) means in a 3D game. All of
+   it is in the rules profile's numbers and equal on the three targets, with no rigid body. [The module list](../ARCHITECTURE.md#track-7-the-game-sdk) holds the interface.
 8. **Sound** (`AUDIO`, a new module the owner's answer to question 3 asks for). Used through its public
    interface: sounds and music cooked from `.wav` and `.ogg` sources; a mix on the Mac, in Chrome and on the
    iPhone simulator that plays a sound as a voice with a volume, a pitch and a place, loops one, streams
@@ -4128,7 +4222,7 @@ of entities beyond what the engine does.
 | A query | A walk over the engine's columns. `par_each` uses the engine's chunks |
 | A space query | One index for each layer, with its storage kept. A layer is rebuilt at most once after each rule that changed it, and not at all in a tick that did not: a crowd that moves once a tick is indexed once a tick, as the reference crowd is |
 | The level | Built once for what is solid in each recipe, when a rule that changed it finishes, and kept by that identity while a rewind or a step run ahead may ask for it. A character move tests the tiles its box sweeps |
-| A followed move's path | Kept only for an entity whose followed move bent this tick, or began away from where the entity stood as the tick began, and dropped when the tick ends. A move that met nothing keeps nothing, so a crowd that follows its moves across open ground pays for none |
+| A followed move's path | Kept only for an entity whose path this tick is something other than one straight leg that took the whole tick from where the entity stood as the tick began: a move that bent, one that was stopped and came to rest before the tick was over, or one that began somewhere else. Dropped when the tick ends. A move that met nothing, a step along the floor stood on, and a carry with a step across open ground each come to that one leg and keep nothing, so a crowd that follows its moves across open ground pays for none |
 | A parent's children | `under(parent)` walks that parent's own children and searches nothing else. An entity with no parent and no child pays nothing for the tree |
 | Where an entity came from | One small value on each entity spawned from a prefab, which a spawn from a bare tuple does not carry |
 | A control function | One call for each player's character |
@@ -4229,11 +4323,28 @@ first work package that has everything it uses, so no item waits on a later one.
   stopped by a wall when its centre reaches (1, 1) and slides up it to (1, 3), with a still circle on
   another layer at (1, 2) and the two radii summing to 0.20, where after `at.follow(&moved)` the hero's
   `motion_of(..).sweep()` reports the circle with a `fraction` between one third and one, a `mover_position`
-  on the wall's leg and `mover_position + remaining_motion` at (1, 3), and the same move with its position
+  on the wall's leg, `mover_position + remaining_motion` at (1, 3) and an `approach_speed` that is the
+  second leg's own, three units in a tick's length, and the same move with its position
   written by hand reports nothing; a circle that crosses the wall's leg and is gone before the hero's first
   third of the tick is over, which is not reported, and one that crosses it while the hero is on it, which
   is; a position written after the `follow`, after which the path is the straight line again; a move that
-  met nothing, followed, which sweeps as the same position written by hand does; and each of these the
+  met nothing, followed, which sweeps as the same position written by hand does; **a move stopped
+  short:** a hero whose step of (4, 0) from (0, 0) is stopped by a wall when its centre reaches (1, 0),
+  with a still circle on another layer at (0.7, 0) and the two radii summing to 0.20, where after
+  `at.follow(&moved)` the sweep reports the circle at a `fraction` of one eighth with
+  `mover_position + remaining_motion` at (1, 0), and the same end written by hand reports it at one half; a
+  circle that crosses the hero's line at (0.75, 0) three quarters of the way through the tick, which the
+  hero that followed does not report and the one written by hand does; and a circle that comes against
+  (1, 0) in the tick's last quarter, which the hero that followed reports with a `mover_position` of (1, 0),
+  a `remaining_motion` of nothing and an `approach_speed` that is the circle's own; **a carried rider:** a
+  rider that follows a carry of (2, 0) from (0, 0) that met nothing, and then a move of nothing from where
+  it stands, with a still circle on another layer at (1, 0) and the two radii summing to 0.20, whose sweep
+  reports the circle at a `fraction` of 0.4; the same rider with a second move of (0, 1), whose path is
+  the straight line to (2, 1), so that a still circle at (1, 0.5) is reported at a `fraction` between 0.4
+  and 0.5 and one at (2, 0.5), which the carry and then the step taken one after the other would pass
+  through, is not; the same carry written by hand as a position and the move of (0, 1) followed after it,
+  which reports the same two answers; and a second move followed from another place, after which the path
+  begins at that place and the circle at (1, 0.5) is not reported; and each of these the
   same after a rewind and a replay; a group of rules `.during` two of a scene's three phases, which runs in those two and not in the
   third; a `List` in a scene's fields, read in the scene entered with it; a `Side` kept in a component; a
   test that names a fixture's record with `test_id`, reads it back with `content`, and hands a value to
@@ -4620,8 +4731,10 @@ keeps reading as what is true.
 - **Whether 64 KiB is the right default limit for a save.** At the host's frame budget it takes about a
   second and a third to bring in to a match. WP5 records the time it measures.
 - **How a followed move's path reaches the end of its tick** ([risk 19](#risks)): what a transform carries
-  and where the legs are kept. WP12's builder chooses, and says in the log what an entity that followed no
-  bent move pays.
+  and where the legs and their times are kept. WP12's builder chooses, and says in the log what an entity
+  pays whose path is one straight leg over the whole tick.
+- **The fraction that is the 2D contact tolerance.** WP2's builder measures it on WP2.12's cases and sets
+  it, a power of two no larger than 2⁻¹⁶, and the reference says it.
 - **Which fixed direction is the normal where no way out is the shallowest.** WP2's builder chooses, and the
   reference says it.
 - **How a terrain's height image is laid out, and how fine its cells are.** WP16's builder chooses, over what
