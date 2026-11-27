@@ -123,6 +123,7 @@ fn metal_keeps_the_lens_dry_above_still_water_without_rain() {
 }
 }
 
+#[cfg(target_os = "macos")]
 fn check_rain_ring_lens(rate: f64, active: bool) {
     let Some((_serial, gpu)) = super::metal::gpu("rain ring lens admission") else {
         return;
