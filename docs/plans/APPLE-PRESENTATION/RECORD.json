@@ -21,7 +21,10 @@
       "output": 2330,
       "turns": 1
     },
-    "at": "2026-11-27T04:45:35Z"
+    "at": "2026-11-27T04:45:35Z",
+    "items_owed": [
+      "WP19"
+    ]
   },
   "work_packages": {
     "WP1": {
@@ -2232,6 +2235,15 @@
         "at": "2026-11-27T04:42:48Z"
       },
       "ends_stretch": true
+    },
+    "WP19": {
+      "definitions": "a859ec2da1ce32f04cabbdb351ae97f94de2a85344abef311139133bf82a79b0",
+      "reviews": [],
+      "authorised": {
+        "by": "plan",
+        "task": "The main-branch check long-tests fails on c6734fe1b087 (last pass 3d1f03509). Failing test: thrum-render generation_tran",
+        "at": "2026-11-27T08:50:30Z"
+      }
     }
   },
   "tasks": [
@@ -2346,11 +2358,15 @@
     {
       "task": "The design review of APPLE-PRESENTATION at .orchestrate/evidence/APPLE-PRESENTATION/design-review.md asked for changes, with its 1 Must Fix findings.",
       "at": "2026-11-27T04:42:48Z"
+    },
+    {
+      "task": "The main-branch check long-tests fails on c6734fe1b087 (last pass 3d1f03509). Failing test: thrum-render generation_transition::metal::output_scale_switches_the_scene_and_metal_surface_together, panicking at crates/thrum-render/tests/generation_transition/metal.rs:806 because the detached output build worker no longer records Device::create_bind_group (it records only create_texture and create_view). The test came in with APPLE-PRESENTATION WP18 (05a420f3d, be71a6d7f); CLOUDS WP15 and PUDDLES WP5 also touched thrum-render in that range. Find which commit breaks it, decide whether the test or the code is wrong, and plan the fix in the module whose code it is, in its plan or as its next work package. Logs: .git/orchestrate/main-checks/long-tests/logs/20261127-093605-c6734fe1b087-91921-451.stdout",
+      "at": "2026-11-27T08:50:30Z"
     }
   ],
   "planner": {
-    "host": "codex",
-    "at": "2026-11-27T04:42:48Z"
+    "host": "claude",
+    "at": "2026-11-27T08:50:30Z"
   },
   "design_history": [
     {
