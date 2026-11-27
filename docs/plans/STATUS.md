@@ -326,30 +326,33 @@ A planner or the lead chose each of these where your words left it open. Each st
 - DEAD-CODE assumes: the simulation keeps no public query for what changed. WP1 removes the three that read the four-tick change history, and WP3 the one that reads each slot's change tick. Nothing calls any of them, but the simulation decision lists a change journal among the core's responsibilities. The other choice keeps the per-slot query, `visit_with_changes`, as the engine's change detection, which costs nothing per tick, and removes only the history. ([plan](DEAD-CODE/PLAN.md))
 - DEAD-CODE assumes: the serial transaction visits are deleted, about 190 lines. They are not copies of the chunked visit: they give a callback a mutable context in slot order and can visit a query that is not indexed. Nothing uses either ability. The other choice keeps one ordered mutable visit. ([plan](DEAD-CODE/PLAN.md))
 - DEAD-CODE assumes: the game's state projection, about 650 lines, and the crate `thrum-content-runtime`, about 180, are deleted once `HOST` WP3 has removed the host they sit in. The projection copies every committed page's changes for a reader that was never built, and the crate has no producer. The other choice keeps either for a reader you still expect. ([plan](DEAD-CODE/PLAN.md))
-- GAME-SDK assumes: the first-release scope you set on 25 November stands until you answer [the design's ten scope questions](GAME-SDK/DESIGN.md#scope-questions-for-the-owner). ([plan](GAME-SDK/PLAN.md))
+- GAME-SDK assumes: with multiplayer in for 2D and 3D games, the rest of your first-release scope stands until you answer [the design's ten open scope questions](GAME-SDK/DESIGN.md#scope-questions-for-the-owner). ([plan](GAME-SDK/PLAN.md))
 - GAME-SDK assumes: SDK work packages start once you approve the design, and take a builder only when no V1 work package is waiting for one. ([plan](GAME-SDK/PLAN.md))
 - GAME-SDK assumes: the crate is named `thrum`, a game is run with `cargo play`, and the design's fifteen words are the SDK's vocabulary, proposed in the glossary. ([plan](GAME-SDK/PLAN.md))
+- GAME-SDK assumes: the core changes in [the design's table](GAME-SDK/DESIGN.md#decisions) stand, such as a save that resumes its phase and a `Player` that names one stay in a seat. ([plan](GAME-SDK/PLAN.md))
 - GAME-SDK assumes: a scene is a type whose fields are what it is entered with, such as `GameOver { dodged }`. ([plan](GAME-SDK/PLAN.md))
 - GAME-SDK assumes: a player's default keys are written on the action map, beside each action, and a player can change their own. ([plan](GAME-SDK/PLAN.md))
 - GAME-SDK assumes: a control function may read anything a rule may. With multiplayer on, one that reads what a match cannot run ahead must say `.unpredicted()`. ([plan](GAME-SDK/PLAN.md))
 - GAME-SDK assumes: in a 3D scene the first release's 2D colliders lie on the ground plane. ([plan](GAME-SDK/PLAN.md))
 - GAME-SDK assumes: "2D queries" includes rectangles, a level's fixed collision, tile maps and a character move that slides. Nothing pushes anything. ([plan](GAME-SDK/PLAN.md))
-- GAME-SDK assumes: in a match, a saved resource and a saved run are the host's. ([plan](GAME-SDK/PLAN.md))
-- GAME-SDK assumes: a one-file game runs with its rules unchecked and is told so. A game needs a `rules` module before it can turn multiplayer on. ([plan](GAME-SDK/PLAN.md))
+- GAME-SDK assumes: in a match, a saved resource and a saved run are the host's, until you answer scope question 11. ([plan](GAME-SDK/PLAN.md))
+- GAME-SDK assumes: a one-file game runs with its rules unchecked and is told so, and needs a `rules` module before it can turn multiplayer on. ([plan](GAME-SDK/PLAN.md))
 - GAME-SDK assumes: a rule that panics stops the game in Chrome, with the message shown. Elsewhere it is reported with the world intact. ([plan](GAME-SDK/PLAN.md))
 - GAME-SDK assumes: the starter, stones and the lighthouse are rewritten on the SDK and the sky kit is then removed. ([plan](GAME-SDK/PLAN.md))
 - GAME-SDK assumes: three fresh agents prove the documentation, one each for a 2D, a 3D and an online game. ([plan](GAME-SDK/PLAN.md))
 - GAME-SDK assumes: models that turn, scale or carry a texture as they move wait for the V1 work packages that hold the engine's 3D drawing. ([plan](GAME-SDK/PLAN.md))
-- GAME-SDK assumes: a tick makes one change of scene or of phase, and the one asked for first stands. A change asked for while one is landing waits a tick. ([plan](GAME-SDK/PLAN.md))
+- GAME-SDK assumes: a tick makes one change of scene or of phase, and the one asked for first stands. ([plan](GAME-SDK/PLAN.md))
 - GAME-SDK assumes: a person who joins a game that bots have filled takes a bot's seat and starts with a new character, not the bot's. ([plan](GAME-SDK/PLAN.md))
-- GAME-SDK assumes: a paused match keeps its clock running underneath, so whoever the game allows can end the pause. Alone, the clock stops. ([plan](GAME-SDK/PLAN.md))
-- GAME-SDK assumes: a game declares its prefab names in `prefabs!` blocks, and a name with no definition is found when the game starts, with no line of the game listing the blocks. ([plan](GAME-SDK/PLAN.md))
+- GAME-SDK assumes: a pause is the same alone and in a match: the game's clock stands while a menu's own command, a save and a rule marked for it still work. ([plan](GAME-SDK/PLAN.md))
+- GAME-SDK assumes: a game declares its prefab names in `prefabs!` blocks that no line of the game lists, and a name with no definition is found when the game starts. ([plan](GAME-SDK/PLAN.md))
 - GAME-SDK assumes: one key can mean one thing in play and another in a menu through named input contexts, one active at a time on each screen. ([plan](GAME-SDK/PLAN.md))
-- GAME-SDK assumes: a content record holds no plain float. A save brought into a running match is at most 64 KiB unless the game says otherwise, and one that size takes about a second and a third to arrive. ([plan](GAME-SDK/PLAN.md))
-- GAME-SDK assumes: a press is made in play or in a pause by what the presser's own screen showed. One made in a pause is never read, and one made in play that reaches a paused match is read when the pause ends. ([plan](GAME-SDK/PLAN.md))
-- GAME-SDK assumes: a match of fewer than four players is kept to its number by the SDK. A newcomer who arrives while an away player's seat is kept connects, gets no seat and is told the match is full. ([plan](GAME-SDK/PLAN.md))
-- GAME-SDK assumes: a thing attached so that it keeps its place in the world keeps it to within about 8 parts in a million, and is refused under a parent scaled outside 1/10,000 to 10,000. ([plan](GAME-SDK/PLAN.md))
+- GAME-SDK assumes: a content record holds no plain float. A save brought into a running match is at most 64 KiB unless the game says otherwise. ([plan](GAME-SDK/PLAN.md))
+- GAME-SDK assumes: a press made while the presser's own screen shows a pause is never read as play, and one made in play that reaches a paused match is read when the pause ends. ([plan](GAME-SDK/PLAN.md))
+- GAME-SDK assumes: a match of fewer than four players is kept to its number by the SDK, and a newcomer with no seat to take is told the match is full. ([plan](GAME-SDK/PLAN.md))
+- GAME-SDK assumes: a thing attached so that it keeps its place in the world keeps it within [the design's bound](GAME-SDK/DESIGN.md#2-the-world-entities-components-resources-and-prefabs), and is refused under a parent scaled outside it. ([plan](GAME-SDK/PLAN.md))
 - GAME-SDK assumes: the 3D starter's first page ends with a ball the player rolls, which passes through the rock. ([plan](GAME-SDK/PLAN.md))
+- GAME-SDK assumes: a 3D match is proved twice: rehearsed with no window in WP5, and on screen with the 3D starter in WP14. ([plan](GAME-SDK/PLAN.md))
+- GAME-SDK assumes: sheets, clips and tiles are cooked from a source image and a small file beside it, in WP3. ([plan](GAME-SDK/PLAN.md))
 - A name in the glossary waits for your agreement: Game SDK (the planner chose the name and the crate's name, `thrum`)
 - A name in the glossary waits for your agreement: Scene (the planner chose this meaning for game code)
 - A name in the glossary waits for your agreement: Rule (the planner chose "rule" over "system" and "behaviour" for game code)
@@ -365,6 +368,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - A name in the glossary waits for your agreement: Content (the planner chose the name and the split from assets)
 - A name in the glossary waits for your agreement: Offer (the planner chose the name)
 - A name in the glossary waits for your agreement: Input context (the planner chose it for the game SDK)
+- A name in the glossary waits for your agreement: Extension map (the planner chose the names, in place of "reserved shapes")
 - A name in the glossary waits for your agreement: Output scale (the planner chose the name)
 
 ### Now and next
@@ -376,7 +380,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 - On a windless day the stream still reads as running water: its riffles are rough and glitter, its pools lie glassy, and foam forms below its ledges and behind its rocks and trails away downstream (RIVERS WP5): In Progress · [plan](RIVERS/PLAN.md) · [latest review](../../.orchestrate/evidence/RIVERS/WP5-review.md)
 - The ground itself gets wet: paving and earth darken as the rain starts, a sheen gathers in the paving's joints and mirrors what stands on it, the ground under the roof stays dry, sand is dark where waves have run, and it dries sheen first and darkness last (PUDDLES WP5): In Progress · [plan](PUDDLES/PLAN.md) · [latest review](../../.orchestrate/evidence/PUDDLES/WP5-review.md)
 - GATE-TIME WP5 The post-rollout record shows a five-minute median for Rust landings: Blocked: Needs Context: WP5.1 needs 17 more qualifying ordinary Rust landings before the fixed window can be judged. The lead finds the missing fact, or asks you for it
-- An agent writes a game's scenes, phases and rules in plain Rust against one crate, in the order they run, and proves them in an ordinary test with no window (GAME-SDK WP1): Not Started · [plan](GAME-SDK/PLAN.md)
+- GAME-SDK's design: Design Ready for Review · [design](GAME-SDK/DESIGN.md) · [plan](GAME-SDK/PLAN.md)
 
 ### Recently done
 
@@ -545,4 +549,4 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 34 | GATE-TIME | A merge's check takes about five minutes where it took fifty: it runs only the fast tests its change can reach, side by side and each once, and the long tests and the whole workspace run on main after the merge | Nothing to start; TEST-SUPPORT WP2 for the runs that happen twice; TEST-SUPPORT WP6 for the guard rules; WATERS WP7 for the water scene's slow tests; REVIEW-RENDER WP2 for the reference tests; DEAD-TOOLS WP2 for the contributor guide | WP5 of 15 · Blocked: Needs Context |
 | 35 | DEAD-TOOLS | Scripts, benches and records that nothing runs or reads are gone and the check refuses new ones, no tool writes into `docs/evidence`, and each module's record of what it copied is tracked in Git | Nothing to start; TEST-SUPPORT WP2 for its last work package | Done 21 Nov |
 | 36 | DEAD-CODE | Engine code that nothing calls is gone, and a scene contribution no longer writes empty methods | GATE-TIME WP1 to start; GATE-TIME WP6 for the contribution's defaults; WATERS WP7 for the water scene's settings; HOST WP3 for the game's projection; REVIEW-RENDER WP3 and GATE-TIME WP6 for the two helpers | Done 22 Nov |
-| 37 | GAME-SDK | A developer or an agent builds a 2D, a 3D or an online game in plain Rust against one documented crate, and the showcase and the swarm game are written on it | The owner's approval of its design to start; SESSION WP7 for a game played online; GAME-UI WP4 for menus and status displays and GAME-UI WP6 for the iPhone simulator; APPLE-PRESENTATION WP8 to WP12, RAY-TRACING WP6 and MESH-SHADING WP3 for 3D models that turn between ticks; GAME-SPLIT WP4 for the showcase on the SDK | WP1 of 13 · Not Started |
+| 37 | GAME-SDK | A developer or an agent builds a 2D, a 3D or an online game in plain Rust against one documented crate, and the showcase and the swarm game are written on it | The owner's approval of its design to start; SESSION WP7 for a game played online; GAME-UI WP4 for menus and status displays and GAME-UI WP6 for the iPhone simulator; APPLE-PRESENTATION WP8 to WP12, RAY-TRACING WP6 and MESH-SHADING WP3 for 3D models that turn between ticks; GAME-SPLIT WP4 for the showcase on the SDK | Design Ready for Review |
