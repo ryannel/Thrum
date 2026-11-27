@@ -2188,7 +2188,7 @@
         {
           "verdict": "fail",
           "commit": "4139974f4ac1309180534efcdf50d3c522b16ded",
-          "review": ".orchestrate/evidence/CLOUDS/WP15-review.md",
+          "review": ".orchestrate/evidence/CLOUDS/WP15-review-7.md",
           "items": {
             "WP15.1": "pass",
             "WP15.14": "pass",
@@ -2229,6 +2229,51 @@
             "turns": 1
           },
           "at": "2026-11-27T06:09:35Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "3a7a63496514459bde2ede5ff3c4ef253735044d",
+          "review": ".orchestrate/evidence/CLOUDS/WP15-review.md",
+          "items": {
+            "WP15.1": "pass",
+            "WP15.14": "pass",
+            "WP15.15": "pass",
+            "WP15.16": "pass",
+            "WP15.17": "pass",
+            "WP15.4": "pass",
+            "WP15.13": "pass",
+            "WP15.5": "pass",
+            "WP15.6": "pass",
+            "WP15.7": "pass",
+            "WP15.18": "pass",
+            "WP15.8": "pass",
+            "WP15.9": "pass",
+            "WP15.10": "pass",
+            "WP15.11": "pass"
+          },
+          "findings": [
+            {
+              "name": "A ridge behind the camera changes distant cloud density",
+              "repeat": false
+            }
+          ],
+          "summary": "All 15 numbered items pass, including the repaired near-cloud handover. WP15 fails a separate design requirement because raising a ridge behind the camera from 899 to 901 m changes how much light passes through a cloud ahead of it. On Metal one ray\u2019s transmittance fell from 0.8784 to 0.2091 with the weather, camera, and surface depth held fixed.",
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 181146,
+            "cached": 9165056,
+            "output": 22402,
+            "turns": 1
+          },
+          "at": "2026-11-27T06:54:38Z"
         }
       ],
       "authorised": {
