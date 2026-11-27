@@ -598,7 +598,7 @@
     {
       "id": "WP5",
       "name": "The ground itself gets wet: paving and earth darken as the rain starts, a sheen gathers in the paving's joints and mirrors what stands on it, the ground under the roof stays dry, sand is dark where waves have run, and it dries sheen first and darkness last",
-      "status": "not_started",
+      "status": "in_progress",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -612,8 +612,8 @@
           "ask": "Is the read composed into the shader as the cloud factor is, with no change to the light, the shadows, the air or the cloud factor? Does a material hook run before the wetness, so that a hook's colours are wetted too?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP5/README.md#dry-provider",
           "verdict": "",
           "review": ""
         },
@@ -623,8 +623,8 @@
           "check": "cargo test --locked --offline -p thrum-water --test wetness_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP5/README.md#model-agreement",
           "verdict": "",
           "review": ""
         },
@@ -634,8 +634,8 @@
           "check": "cargo test --locked --offline -p water-scene --test wet_look_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP5/README.md#wet-materials",
           "verdict": "",
           "review": ""
         },
@@ -646,8 +646,8 @@
           "ask": "Is the film the pass `WATERS` built, given a second support, and not a second pass or a term in the ground's material?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP5/README.md#standing-film",
           "verdict": "",
           "review": ""
         },
@@ -656,8 +656,8 @@
           "statement": "As a shower starts the paving and the earth darken and their colour deepens, the earth more than the pale paving. On the paving a sheen gathers in the joints first and then across the slabs, and at a grazing view it mirrors the post, the wall and the roof's edge. The earth darkens at once and takes no sheen while its pores fill; once they are full a sheen stands in its ruts, after the paving's. The ground under the roof stays dry to a soft edge, the roof's top is wet, rocks and the wall darken, the wall less than the ground, and metal does not.",
           "inspect": "`realtime` sequences of the yard from 1.7 m at three places through a shower from dry, with the rates the sequence names, one framed on the roof's edge; `fixed` stills at 0.5 m and 1.7 m, looking down and at a grazing view, dry, damp and with a full sheen, at noon and at a low Sun.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP5/README.md#shower",
           "verdict": "",
           "review": ""
         },
@@ -666,8 +666,8 @@
           "statement": "After the rain it dries in order: the sheen goes first, from the slope before the level slabs and from the slabs' faces before their joints; the darkness lingers and lifts last; and each shrinking puddle leaves a dark margin that fades. Nothing pops, and no edge of a cell or a texture's tile shows.",
           "inspect": "`realtime` sequences from 1.7 m and from 15 m above while the yard dries from soaked to dry, with the rate the sequence names; `fixed` stills at four stages, cropped at native size on the joints and on a puddle's margin.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP5/README.md#drying",
           "verdict": "",
           "review": ""
         },
@@ -678,8 +678,8 @@
           "inspect": "`fixed` stills of the beach from 2 m in a calm, a trade wind and a gale, and a `realtime` sequence as the tide falls through its range.",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP5/README.md#shore",
           "verdict": "",
           "review": ""
         },
@@ -689,8 +689,8 @@
           "check": "node scripts/check_water_browser.mjs --case rain-ground",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP5/README.md#chrome",
           "verdict": "",
           "review": ""
         },
@@ -700,8 +700,8 @@
           "check": "python3 scripts/water_cost.py check --scene rain-ground",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP5/README.md#paired-cost",
           "verdict": "",
           "review": ""
         }

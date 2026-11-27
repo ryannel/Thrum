@@ -299,3 +299,11 @@
   The walking route clears the post and float. The yard uses a tighter heel contact in shallow
   water, softens uncertain grazing reflections, and shades positive crests using the resolved
   interaction height. [Target checks and realtime takes](../../../.orchestrate/evidence/PUDDLES/WP8/round3.md)
+
+- 2026-11-27 WP5. The optional wetness provider shares one forward material read with cooked placements.
+  Wet paving and ruts use the existing shore-film role and the water gather. The wetness read uses the
+  submitted ground height inside each hollow cell so the damp margin follows the ground. The calm, trade and
+  gale beach uses the sea stage and wave-support height for the damp band.
+  Metal verifies dry pixel identity, 4,096 wetness samples, materials and film depth. Chrome verifies the
+  wetting and drying checkpoints with the film at its 16-texture limit. The 1440p Metal record was taken
+  under shared load. [Target evidence and tuning values](../../../.orchestrate/evidence/PUDDLES/WP5/README.md)
