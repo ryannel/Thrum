@@ -2817,12 +2817,12 @@
       }
     },
     "WP16": {
-      "definitions": "bb874a46cd653290f41c583df82ff05648f7df600412b5c8c99a24404285a9f1",
+      "definitions": "8e8d61c686052818e72f391d7e183a524bfab95ef6c7b1735c58863900d0aaa8",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "WATERS WP16 needs something no plan provides yet. The builder wrote: WP16 needs a planner-approved EFFECT-GRAPH change t",
-        "at": "2026-11-27T06:01:53Z"
+        "task": "WATERS WP16 (underwater light) is Blocked, Needs Context: the three-look rule stopped tuning because WP16.7 standing bea",
+        "at": "2026-11-27T17:06:51Z"
       }
     },
     "WP17": {
@@ -3705,11 +3705,15 @@
     {
       "task": "WATERS WP16 needs something no plan provides yet. The builder wrote: WP16 needs a planner-approved EFFECT-GRAPH change that lets the caustic field draw with additive blending before opaque shading. The builder's handoff, .orchestrate/evidence/WATERS/WP16-handoff.md, says what is finished, what was tried and what to do first. Its work is on branch build/waters at e67b55584b0c, which isn't merged; read it with `git show`. A plan you keep ends with `KEEP WATERS WP16: builder: <where the plan provides it>`.",
       "at": "2026-11-27T06:01:53Z"
+    },
+    {
+      "task": "WATERS WP16 (underwater light) is Blocked, Needs Context: the three-look rule stopped tuning because WP16.7 standing beams at 1 m below the sea at noon in a breeze still read as a soft glow after focal blur, contiguous blur and a broader scattering phase. Beams already read at depth and in the low-Sun lake. Handoff: .claude/worktrees/waters/.orchestrate/evidence/WATERS/WP16-handoff.md (branch build/waters at 6e811b61c). Decide how WP16.7 is delivered, judged by the bar of shipped high-end games and plausibility, not physical accuracy: either a modern technique change for shallow beams (say which and why) or narrowing the cue to the conditions where beams plausibly read (if a real shallow noon breeze gives a dappled glow rather than standing beams, say so and amend the item). Keep the other open items (WP16.6, WP16.8, WP16.11) as they are unless the decision touches them, and leave WP16 ready to resume.",
+      "at": "2026-11-27T17:06:51Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-27T06:01:53Z"
+    "at": "2026-11-27T17:06:51Z"
   },
   "design_history": [
     {

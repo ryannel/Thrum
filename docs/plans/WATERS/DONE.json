@@ -1844,7 +1844,7 @@
     {
       "id": "WP16",
       "name": "Under water the Sun casts a moving net of light on the bed and the hull, shafts of light stand in the water, and the picture stays readable as the camera goes down",
-      "status": "blocked",
+      "status": "not_started",
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
@@ -1985,17 +1985,7 @@
           "verdict": "",
           "review": ""
         }
-      ],
-      "blocked": {
-        "reason": "needs_context",
-        "what": "The planner needs to decide how to deliver WP16.7\u2019s standing beams in a shallow noon breeze before tuning resumes.",
-        "work": {
-          "commit": "6e811b61c6e08b4f75efc3a457a7feae6d8e96fd",
-          "branch": "build/waters",
-          "pushed": false
-        },
-        "handoff": ".orchestrate/evidence/WATERS/WP16-handoff.md"
-      }
+      ]
     },
     {
       "id": "WP20",
