@@ -417,7 +417,7 @@
     },
     {
       "id": "WP5",
-      "name": "The world lane\u2019s resume origin is proved without real-time pacing",
+      "name": "The world lane’s resume origin is proved without real-time pacing",
       "status": "done",
       "quality_bar": "Keep the original regression coverage with the smallest fixture that exposes it and ample headroom in the fast tier.",
       "items": [
@@ -545,8 +545,8 @@
           "statement": "A contribution declares a `simulate` pass that draws, and preparation holds the stage's rules for it. It accepts two passes, one for each of two layers of their effect's own persistent, single-sample 2D-array texture, each clearing one mip of its layer as its one colour attachment, one run every frame and one skippable, with a later `simulate` pass and the opaque reads sampling that texture. It refuses each of these with a named error: a drawing pass that loads its attachment; one with two colour attachments; one whose attachment spans two layers; one whose attachment another pass of the effect also writes, once as a second drawing pass and once as a storage write; one that is time-sliced; one that is skippable and attaches a transient; one declared async-eligible; one that attaches a history side; one with a depth attachment; one that attaches a 3D texture; one that attaches a multisampled texture; one whose attachment's format the capability record does not allow as a colour attachment; one that says it blends into a format the record does not allow blending into; and one declared in a 2D scene. In a contribution list of two members, the first member's drawing pass whose attachment names the index one past that member's own resources is refused with a named error, though the second member declares a renderable texture that the joined declarations hold at that place. Guard: CPU tests of the declaration checks in `thrum-render`.",
           "check": "cargo nextest run --locked --offline -p thrum-render -E 'test(/simulate_draw_rules/)' --no-tests=fail",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP7/WP7.1.log",
           "verdict": "",
           "review": ""
         },
@@ -557,8 +557,8 @@
           "ask": "Are the expected texels, and the expected lit places in scene colour, written from the script's places and never read from the engine? Would the test fail in each of three cases: forward sampling the texture before the passes ran, the executor loading where a pass declared a clear, and both passes drawing into the first layer? Is the scene's executor the only code that begins the pass and chooses its load and store, with the effect handed an open render pass and no encoder of its own in `simulate`?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP7/WP7.2.md",
           "verdict": "",
           "review": ""
         },
@@ -568,8 +568,8 @@
           "check": "node scripts/check_v1_browser.mjs --case effect-simulate-draw",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP7/chrome-effect-simulate-draw.json",
           "verdict": "",
           "review": ""
         },
@@ -579,8 +579,8 @@
           "check": "THRUM_REQUIRE_GPU=1 cargo nextest run --locked --offline -p thrum-render -E 'test(/simulate_draw_list_gpu/)' --no-tests=fail",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/EFFECT-GRAPH/WP7/WP7.4.log",
           "verdict": "",
           "review": ""
         }

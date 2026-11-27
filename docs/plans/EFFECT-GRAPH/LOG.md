@@ -297,3 +297,9 @@
   layers in the scene colour of the frame that drew them (finding 4). Loading another pass's draw is left
   out, as an assumption in the plan.
   [Finding by finding](../../../.orchestrate/evidence/EFFECT-GRAPH/WP7-design-revision.md)
+- 2026-11-27 Builder, WP7. Simulate draw passes use prepared effect-owned colour views, with the executor
+  clearing and storing the declared subresource before the Sun passes and forward. The contribution list
+  routes each member's pass index and view. Mac checks passed the declaration refusals, exact layer and
+  member contents, same-submission colour, named timing, discard and first draw on a replacement device.
+  Chrome WebGPU passed the two submitted-frame checks with zero validation errors.
+  [Target evidence and code inspection](../../../.orchestrate/evidence/EFFECT-GRAPH/WP7/README.md).
