@@ -3245,6 +3245,13 @@
         "device": "Apple M3 Max Metal capture-off at 2560\u00d71440 compares each of 1\u00d7, 8\u00d7 and 60\u00d7 with a clouds-absent arm over matching solar windows. The cost record retains allocated bytes, named pass timings, pass-specific investigations and the separate WP15 reference. All three clouds-on runs cross the 120 Hz investigation wire under shared load.",
         "record": "../../.orchestrate/evidence/CLOUDS/WP16/repair/PROOF.md"
       },
+      "sea_and_shore_evidence": {
+        "implementation": "The water example's opt-in weather steps on its fixed clock. Its cloud contribution follows the water surface pass, drives the direct Sun-path factor and writes the overlay which filters the water's sky reflection. Ground uses the island's bed and still water levels for its surface field and lends its medium to the atmospheric view volume.",
+        "correctness": "Metal checks exercise the default-off and selected routes. The Ground test reads the four water depth stops and the submitted near-medium extinction, and the water-only fog row stays dry inland as the bank travels. The existing water Sun-factor check and the hardware Chrome first-frame check pass.",
+        "visuals": "Submitted Metal stills cover fair and broken skies at noon and a 10-degree Sun from 2 and 40 metres. Two 20-second TAAU sequences cover the moving craft at 1x and 8x weather speed. Both Metal and Chrome record the fog bank moving ashore at 8x and the lake at dawn and one hour later.",
+        "device": "Capture-off 2560 by 1440 timed pass sums on Apple M3 Max Metal under shared load were 22.11 ms with clouds absent and 63.46 ms with clouds visible. The fresh pair took 31.87 and 69.53 ms. The records retain each pass, the shared-load tripwire investigations and the submitted trace workload.",
+        "record": "../../.orchestrate/evidence/CLOUDS/WP11/README.md"
+      },
       "name": "Cloud fields and projections",
       "scope": "selectable",
       "design": "modules/ENVIRONMENT.md",

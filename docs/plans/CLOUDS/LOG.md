@@ -1326,3 +1326,18 @@ occurrence counts and unresolved causes. The WP15 reference stays beside them.
 The workspace checks again for Linux and Windows. The clouds-off mist-day cost
 example on Mac recorded the same 71 sample ticks and solar hours as WP16.8.
 [WP11.11 target evidence](../../../.orchestrate/evidence/CLOUDS/WP11/portability.md)
+
+## WP11 Sea, reflections and a fog bank ashore
+
+The water example selects the cloud contribution, uses its own map for Ground
+and passes the surface's depth to the following cloud passes. The render
+graph names the final depth and colour writers separately for reconstruction.
+The lent Ground chart bindings fit the portable WebGPU uniform limit.
+
+Metal verified the selection, water stops, Sun factor and reflection ordering.
+Submitted stills and elapsed-time sequences cover sea shade, the moving craft,
+the bank reaching the island, and steam mist at the lake. Hardware Chrome
+passed the first frame, all noon sea views and the Ground inspection.
+The paired 1440p Metal pass sums under shared load were 22.11 ms and 63.46 ms.
+The fresh timing and the tripwire investigations are in the evidence.
+[Capture and check records](../../../.orchestrate/evidence/CLOUDS/WP11/README.md).

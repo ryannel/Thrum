@@ -1851,8 +1851,8 @@
           "ask": "Does the scene reach clouds only through public interfaces, with its presets and type table in the scene? Did any item or test of `WATERS` or `SEA` change? None may.",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP11/item-check.json",
           "verdict": "",
           "review": ""
         },
@@ -1862,8 +1862,8 @@
           "check": "cargo test --locked --offline -p water-scene --test clouds_sea_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP11/README.md",
           "verdict": "",
           "review": ""
         },
@@ -1872,8 +1872,8 @@
           "statement": "At noon and at a 10\u00b0 Sun, under fair and broken skies, shade crosses the swell under its clouds, the glitter dims inside shade, the water's reflection shows cloud where the sky has it, and sea and cloud meet at a clean, hazed horizon.",
           "inspect": "Capture `fixed` stills in the sea scene at both Suns and both skies, from 2 m and from 40 m. Judge each whole and in native-size crops of a shade edge on water, the glitter path and the horizon.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP11/sea-stills.md",
           "verdict": "",
           "review": ""
         },
@@ -1882,8 +1882,8 @@
           "statement": "In motion under TAAU, with the craft in frame, nothing ghosts where cloud meets the sea's horizon or the craft's edge, and shade and reflection move with the clouds.",
           "inspect": "Capture a `realtime` 20-second sequence at 1x and one at 8x, with temporal sampling selected. Judge consecutive frames, whole and in native-size crops of the horizon and the craft.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP11/sea-motion.md",
           "verdict": "",
           "review": ""
         },
@@ -1894,8 +1894,8 @@
           "inspect": "Capture the noon `fixed` stills in Chrome. Judge them by WP11.3's list.",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP11/chrome-sea.md",
           "verdict": "",
           "review": ""
         },
@@ -1905,8 +1905,8 @@
           "check": "python3 scripts/cloud_cost.py check --scene sea",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP11/sea-cost.json",
           "verdict": "",
           "review": ""
         },
@@ -1917,8 +1917,8 @@
           "ask": "Did any file of `WATERS` beyond the example's selection change? None may.",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP11/README.md",
           "verdict": "",
           "review": ""
         },
@@ -1927,8 +1927,8 @@
           "statement": "A bank of fog stands on the open sea and drifts with the wind onto the shore: its front has depth and a soft top, the sea and the craft fade into it with distance, it shades the water beside it at a 10\u00b0 Sun, and it meets the beach without a line. At dawn steam mist lies in wisps on the lake and thins after sunrise.",
           "inspect": "Capture `fixed` stills of the bank from the deck camera at 2 km, at its front and inside it, at noon and at a 10\u00b0 Sun, a `realtime` sequence at 8x of the bank reaching the shore, and stills of the lake at dawn and an hour after. Judge each whole and in native-size crops of the bank's foot on the water and at the beach.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP11/metal-ground.md",
           "verdict": "",
           "review": ""
         },
@@ -1937,8 +1937,8 @@
           "statement": "In Chrome the fog bank on the sea passes WP11.9's list.",
           "inspect": "Capture the same `fixed` stills and the `realtime` 8x sequence of the bank reaching the shore in Chrome. Judge them by that list.",
           "target": "chrome-webgpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/CLOUDS/WP11/chrome-ground.md",
           "verdict": "",
           "review": ""
         }
