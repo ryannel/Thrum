@@ -1241,7 +1241,7 @@
     {
       "id": "WP19",
       "name": "The long tests pass again: the output-scale device test passes beside the other tests of its binary",
-      "status": "not_started",
+      "status": "in_progress",
       "depends_on": [],
       "quality_bar": "A test suite as dependable as a shipped engine's: a proof gives the same answer whichever tests run beside it, and a fix to a test weakens nothing the test proves.",
       "items": [
@@ -1252,8 +1252,8 @@
           "lock": "gpu",
           "ask": "Read the change and the test. 1. For each direction of the switch, does the test assert that the worker thread's creations include a texture, a view and a bind group, and that the render thread's creations equal its control, with no branch that skips either assertion in a whole-binary run? 2. Is every changed file a test or a test-support file, with nothing changed under `crates/thrum-render/src`?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP19/README.md",
           "verdict": "",
           "review": ""
         }

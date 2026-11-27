@@ -817,3 +817,10 @@ layer profile change. [Metal controls](../../../.orchestrate/evidence/CLOUDS/WP9
   one generation each way and preserved the presented policy while a newer request was pending. The Mac
   CPU test verified that the cancelled change publishes once at the deadline.
   [Repair evidence](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP18/repair/proof-index.md)
+
+- 2026-11-27 WP19. The output-scale test takes the existing Metal test mutex before opening its device.
+  Both directions still check that the detached worker creates a texture, a view and a bind group, and
+  that the render thread's creation trace equals its control.
+- Verified WP19.1 on the Apple M3 Max. All six tests passed in each of ten whole-binary runs with 16 test
+  threads, and the output-scale test passed alone under nextest.
+  [WP19.1 evidence](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP19/README.md)
