@@ -1,27 +1,14 @@
 {
   "module": "GAME-SDK",
   "design": {
-    "verdict": "changes",
-    "review": ".orchestrate/evidence/GAME-SDK/design-review.md",
-    "commit": "abc7c62ff01040a7b169e3a092739e055d36a5e7",
-    "hash": "8ebf063cf79c00891cd9f87a5e20ae67a125e3365a7b7c6fa0da2697fc42779c",
-    "by": "review",
-    "host": "codex",
-    "model": "gpt-6.2-astra",
-    "effort": "high",
-    "observed": {
-      "model": "gpt-6.2-astra",
-      "effort": "high"
-    },
-    "cli": "codex-cli 0.171.0-alpha.13.2",
-    "path": "headless",
-    "usage": {
-      "input": 112780,
-      "cached": 2420224,
-      "output": 10662,
-      "turns": 1
-    },
-    "at": "2026-11-27T22:05:42Z"
+    "verdict": "ok",
+    "by": "review_limit",
+    "hash": "7e97374d4169d21a205ae9e96f221daf4861a60624fd896fc59774748eb50eaa",
+    "after": [
+      ".orchestrate/evidence/GAME-SDK/design-review-9.md",
+      ".orchestrate/evidence/GAME-SDK/design-review.md"
+    ],
+    "at": "2026-11-27T23:12:49Z"
   },
   "work_packages": {
     "WP1": {
@@ -34,12 +21,12 @@
       }
     },
     "WP2": {
-      "definitions": "a627ee7744597532a053a13f10d43d4e268b511488ee03ed7082c04884d5de62",
+      "definitions": "9863a573316eaf5be729f760f1dd051f42af071a705b0518365061f11e0b1e25",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of GAME-SDK at .orchestrate/evidence/GAME-SDK/design-review.md asked for changes, with its 12 Must Fix",
-        "at": "2026-11-27T21:58:28Z"
+        "task": "The design review of GAME-SDK at .orchestrate/evidence/GAME-SDK/design-review.md asked for changes, with its 5 Must Fix ",
+        "at": "2026-11-27T23:12:49Z"
       },
       "ends_stretch": true
     },
@@ -109,11 +96,15 @@
     {
       "task": "The design review of GAME-SDK at .orchestrate/evidence/GAME-SDK/design-review.md asked for changes, with its 12 Must Fix findings.",
       "at": "2026-11-27T21:58:28Z"
+    },
+    {
+      "task": "The design review of GAME-SDK at .orchestrate/evidence/GAME-SDK/design-review.md asked for changes, with its 5 Must Fix findings (and one suggestion). That makes 2 design reviews in a row that asked for changes, so the script approves the design you leave without another review, and building starts from it. Settle every finding; none needs an owner decision.",
+      "at": "2026-11-27T23:12:49Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-27T21:58:28Z"
+    "at": "2026-11-27T23:12:49Z"
   },
   "design_history": [
     {
@@ -365,6 +356,29 @@
         "turns": 1
       },
       "at": "2026-11-27T21:30:35Z"
+    },
+    {
+      "verdict": "changes",
+      "review": ".orchestrate/evidence/GAME-SDK/design-review.md",
+      "commit": "abc7c62ff01040a7b169e3a092739e055d36a5e7",
+      "hash": "8ebf063cf79c00891cd9f87a5e20ae67a125e3365a7b7c6fa0da2697fc42779c",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6.2-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6.2-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.171.0-alpha.13.2",
+      "path": "headless",
+      "usage": {
+        "input": 112780,
+        "cached": 2420224,
+        "output": 10662,
+        "turns": 1
+      },
+      "at": "2026-11-27T22:05:42Z"
     }
   ]
 }
