@@ -2004,3 +2004,14 @@
   the lake and sea travel captures with zero observer omissions.
   WP16.6, WP16.7, WP16.8 and WP16.11 remain open.
   [Target inspection](../../../.orchestrate/evidence/WATERS/WP16/replanned-visuals/README.md).
+
+- 2026-11-27 Rechecked the eight executable target receipts and the Metal
+  frames at the two weak shaft stations. Reusing part S3's synthetic
+  wave section with the dive showcase's optics gives a 6.2–7.9% green
+  visibility proxy for the 3 m noon lake, down from 12.7–18.8% with
+  S3's optics. The 1 m low-Sun sea reaches 2.4–3.8% in green and
+  1.3–2.0% in blue. This comparison measures sensitivity to the optical
+  coefficients. The three-look limit leaves the design decision with
+  the planner. WP16.6, WP16.7, WP16.8 and WP16.11 remain open.
+  [Optics comparison](../../../.orchestrate/evidence/WATERS/WP16/replanned-visuals/README.md#s3-visibility-sensitivity)
+  · [Handoff](../../../.orchestrate/evidence/WATERS/WP16-handoff.md).
