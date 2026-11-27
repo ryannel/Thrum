@@ -285,6 +285,49 @@ fn build(
         water.enable_foam(surface_wind.velocity())?;
     }
     let report = water.report();
+    let game = dive_camera_game(
+        eye_at_surface,
+        initial_depth,
+        max_depth,
+        &map,
+        meter_field,
+        optics,
+    )?;
+    let meshes = dive_meshes(&map, site, eye_at_surface, vertical_offset, draw_craft);
+    let [x, level, z] = eye_at_surface;
+    let (game, _) = game.with_meshes_and_texture_lease(
+        meshes,
+        Some(("water island", &island_material(vertical_offset))),
+        &[],
+    )?;
+    let game = if draw_craft && !surf && site != DiveSite::Pond {
+        crate::floating::install_moored_craft(
+            game,
+            &water,
+            [f64::from(x) + 1.7, f64::from(z)],
+            f64::from(level),
+            std::f64::consts::FRAC_PI_2,
+        )
+    } else {
+        game
+    };
+    let game = if draw_water {
+        game.with_sun_path(water.sun_path_provider())
+            .with_contribution(Box::new(water), || ContentStatus::Drawn(1))
+    } else {
+        game
+    };
+    Ok((game, report))
+}
+
+fn dive_camera_game(
+    eye_at_surface: [f32; 3],
+    initial_depth: f32,
+    max_depth: f32,
+    map: &Arc<Mutex<thrum_water_model::Map>>,
+    meter_field: Option<Field>,
+    optics: Optics,
+) -> Result<SkyGame, Box<dyn Error>> {
     let mut controls = Controls::new();
     let depth = controls
         .slider("camera.depth", "Depth (m)", -2.0..=max_depth)
@@ -307,7 +350,7 @@ fn build(
         .slider(
             "camera.setback",
             "Distance back from dive station (m)",
-            0.0..=24.0,
+            -70.0..=24.0,
         )
         .default(0.0)
         .add()?;
@@ -343,69 +386,45 @@ fn build(
     .with_ground(None)
     .with_temporal_sampling(cfg!(target_arch = "wasm32"))
     .with_tick_duration(step)?;
-    let wave_tick = Arc::new(AtomicU64::new(1));
-    let game = if let Some(field) = meter_field {
+    if let Some(field) = meter_field {
+        let wave_tick = Arc::new(AtomicU64::new(1));
         let field = Arc::new(field);
         let camera_field = Arc::clone(&field);
-        let camera_map = Arc::clone(&map);
+        let camera_map = Arc::clone(map);
         let camera_tick = Arc::clone(&wave_tick);
-        let map = Arc::clone(&map);
+        let map = Arc::clone(map);
         let downwelling = optics.downwelling.map(f64::from);
-        game.with_presentation_camera(move |alpha| {
-            let (pose, follow) = *presentation_camera.lock().expect("dive camera");
-            if follow == 0.0 {
-                return pose;
-            }
-            let time = display_time(camera_tick.load(Ordering::Relaxed), alpha, step);
-            follow_surface(pose, follow, &camera_map, &camera_field, time)
-        })
-        .with_meter_medium(move |camera, source, alpha| {
-            let [x, y, z] = camera.position.map(f64::from);
-            let time = display_time(source.tick, alpha, step);
-            let Some(surface) = map
-                .lock()
-                .ok()
-                .and_then(|map| map.surface(&field, [x, z], time).ok())
-                .filter(|surface| surface.wet)
-            else {
-                return [1.0; 3];
-            };
-            thrum_water_model::meter_light_factor(
-                surface.sample.height - y,
-                downwelling,
-                SURFACE_TRANSMISSION,
-            )
-            .map(adapt_transmission)
-        })
+        Ok(game
+            .with_presentation_camera(move |alpha| {
+                let (pose, follow) = *presentation_camera.lock().expect("dive camera");
+                if follow == 0.0 {
+                    return pose;
+                }
+                let time = display_time(camera_tick.load(Ordering::Relaxed), alpha, step);
+                follow_surface(pose, follow, &camera_map, &camera_field, time)
+            })
+            .with_meter_medium(move |camera, source, alpha| {
+                let [x, y, z] = camera.position.map(f64::from);
+                let time = display_time(source.tick, alpha, step);
+                let Some(surface) = map
+                    .lock()
+                    .ok()
+                    .and_then(|map| map.surface(&field, [x, z], time).ok())
+                    .filter(|surface| surface.wet)
+                else {
+                    return [1.0; 3];
+                };
+                thrum_water_model::meter_light_factor(
+                    surface.sample.height - y,
+                    downwelling,
+                    SURFACE_TRANSMISSION,
+                )
+                .map(adapt_transmission)
+            })
+            .and_fixed_update(move |tick, _| wave_tick.store(tick, Ordering::Relaxed)))
     } else {
-        game
-    };
-    let meshes = dive_meshes(&map, site, eye_at_surface, vertical_offset, draw_craft);
-    let [x, level, z] = eye_at_surface;
-    let (game, _) = game.with_meshes_and_texture_lease(
-        meshes,
-        Some(("water island", &island_material(vertical_offset))),
-        &[],
-    )?;
-    let game = if draw_craft && !surf && site != DiveSite::Pond {
-        crate::floating::install_moored_craft(
-            game,
-            &water,
-            [f64::from(x) + 1.7, f64::from(z)],
-            f64::from(level),
-            std::f64::consts::FRAC_PI_2,
-        )
-    } else {
-        game
-    };
-    let game = game.and_fixed_update(move |tick, _| wave_tick.store(tick, Ordering::Relaxed));
-    let game = if draw_water {
-        game.with_sun_path(water.sun_path_provider())
-            .with_contribution(Box::new(water), || ContentStatus::Drawn(1))
-    } else {
-        game
-    };
-    Ok((game, report))
+        Ok(game)
+    }
 }
 
 #[expect(

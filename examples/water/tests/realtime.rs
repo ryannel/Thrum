@@ -276,9 +276,10 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
             dive_travel.is_some()
                 || (route == "under-light" && held_dive.is_some_and(|(depth, _)| depth == 0.0)),
         );
+        let setback = 1.7 * f64::from(follow);
         runtime
             .parameters(&format!(
-                r#"{{"camera.depth":{depth},"camera.pitch":{pitch},"camera.bearing":{dive_bearing},"camera.fov":{dive_fov},"camera.surface_follow":{follow},"sun.elevation":{dive_light}}}"#
+                r#"{{"camera.depth":{depth},"camera.pitch":{pitch},"camera.bearing":{dive_bearing},"camera.fov":{dive_fov},"camera.surface_follow":{follow},"camera.setback":{setback},"sun.elevation":{dive_light}}}"#
             ))
             .expect("initial dive view");
     }
@@ -555,7 +556,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
                 -crossing * (elapsed * std::f64::consts::TAU / interval).cos()
             };
             if dive_travel.is_some() {
-                let distance = 0.9 * (depth - crossing).max(0.0);
+                let distance = 1.7 + 0.9 * (depth - crossing).max(0.0);
                 let pitch = 32.0 * ((depth - crossing) / 4.0).clamp(0.0, 1.0);
                 let release = ((depth - crossing) / 1.5).clamp(0.0, 1.0);
                 let follow = 1.0 - release * release * (3.0 - 2.0 * release);

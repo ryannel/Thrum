@@ -614,7 +614,7 @@ fn driver(gpu: &thrum_test_support::Gpu) {
                     .map(|step| {
                         let depth = f64::from(step) * 0.025;
                         (
-                            format!("crossing-{:+04}", step),
+                            format!("crossing-{step:+04}"),
                             format!(
                                 r#"{{"camera.depth":{depth},"camera.pitch":0,"sun.elevation":1}}"#
                             ),
@@ -806,7 +806,13 @@ fn dive_depth_checkpoints(site: DiveSite) -> Vec<(String, String, f64)> {
             } else {
                 (35.0, depth * 0.9)
             };
-            [("hull", hull_pitch, setback), ("bed", -72.0, 0.0), ("level", 0.0, 0.0)]
+            let bed_setback = if site == DiveSite::Sea && *depth <= 3.0 {
+                -65.0
+            } else {
+                0.0
+            };
+            let bed_pitch = if *depth >= 20.0 { -35.0 } else { -72.0 };
+            [("hull", hull_pitch, setback), ("bed", bed_pitch, bed_setback), ("level", 0.0, 0.0)]
                 .map(|(view, pitch, setback)| (
                     format!("{light}-{view}-{depth}m"),
                     format!(r#"{{"camera.depth":{depth},"camera.pitch":{pitch},"camera.setback":{setback},"sun.elevation":{sun}}}"#),
