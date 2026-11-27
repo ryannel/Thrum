@@ -179,10 +179,20 @@ Use `dive-hold` to keep the camera at mean water level or leave the route unset
 to lower and raise it.
 
 For WP16 lighting captures, set `THRUM_WATER_ROUTE=under-light` in fixed mode.
+Use `THRUM_WATER_DIVE_SHADE=1` on Metal or `&dive-shade=1` in Chrome for
+the corresponding cloud-shade view. The `dive-depths` fixed route includes
+separate bed, hull and open-water views. The `dive-waterline` route moves the
+lens through the waterline at a fixed wave phase.
+
 A realtime take can hold a depth and pitch using `THRUM_WATER_DIVE_HOLD=3,67`
 or descend and return with `THRUM_WATER_DIVE_TRAVEL=20` at the deep sea site.
-Use bearing 228° to face the Sun. At 60° air elevation aim near 67° pitch and
-at 15° aim near 43° pitch to follow the refracted beam.
+The travel take follows the model surface near the crossing, then turns toward
+the bed at maximum depth. A depth-zero hold with the `under-light` route
+also follows the local surface. The bearing, field of view and setback
+can be set with `THRUM_WATER_DIVE_BEARING`, `THRUM_WATER_DIVE_FOV` and
+`THRUM_WATER_DIVE_SETBACK`. Use bearing 228° to face the Sun. At 60° air
+elevation aim near 67° pitch and at 15° aim near 43° pitch to follow the
+refracted beam.
 
 ## Lake outlet
 
