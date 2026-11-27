@@ -14,7 +14,7 @@ use super::{
 };
 
 const LUT_OWNER_BASE: u64 = 0x4154_4d4f;
-const SNAPSHOT_OWNER: u64 = 0x4154_4d54;
+pub(crate) const SNAPSHOT_OWNER: u64 = 0x4154_4d54;
 const AERIAL_OWNER_BASE: u64 = 0x4154_4d60;
 const REFLECTION_OWNER_BASE: u64 = 0x4154_4d70;
 const _: () = assert!(AERIAL_OWNER_BASE >= LUT_OWNER_BASE + 4);

@@ -118,9 +118,9 @@ fn reflection_queries_keep_raw_identity_and_the_existing_sky_bucket() {
             values.diffuse(),
             values.aerial()
         ],
-        &[1.0, 2.0, 9.0, 1.0, 1.0]
+        &[1.0, 2.0, 9.0, 2.0, 1.0]
     );
-    let cached = timings(&names[7..]);
+    let cached = timings(&names[8..]);
     let (values, _, _) = pass_durations(&cached, false, TRANSFORMS).unwrap();
     assert_eq!(
         &[

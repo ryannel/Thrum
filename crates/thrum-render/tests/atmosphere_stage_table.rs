@@ -39,7 +39,11 @@ fn check(label: &str, graph: &CompiledGraph, stages: &mut BTreeMap<String, Stage
             stage.timing, stage.key_timing,
             "{label}: {name}'s timing bucket is not its key's"
         );
-        assert_ne!(stage.validity, 0, "{label}: {name} has no cache bit");
+        assert_eq!(
+            stage.validity == 0,
+            name == "atmosphere chart overlay lighting",
+            "{label}: {name} has an unexpected cache bit"
+        );
         stages.insert(name.clone(), stage);
     }
 }
@@ -58,9 +62,13 @@ fn stage_registry_keys_list_chart_bindings_roles_and_cache_bits() {
             .role
             .unwrap_or_else(|| panic!("{name} has no pipeline role"));
         assert!(roles.insert(role), "{name} reuses role {role}");
-        assert_ne!(stage.validity, 0, "{name} has no cache bit");
+        assert_eq!(
+            stage.validity == 0,
+            name == "atmosphere chart overlay lighting",
+            "{name} has an unexpected cache bit"
+        );
     }
-    assert_eq!(table.len(), 14, "stages seen: {:?}", table.keys());
+    assert_eq!(table.len(), 15, "stages seen: {:?}", table.keys());
     // The table, as the bind groups are built from it.
     let reads = |charts: &[(&str, u32)]| -> Vec<(String, u32)> {
         charts
@@ -69,6 +77,7 @@ fn stage_registry_keys_list_chart_bindings_roles_and_cache_bits() {
             .collect()
     };
     assert_eq!(table["atmosphere transmittance"], reads(&[]));
+    assert_eq!(table["atmosphere chart overlay lighting"], reads(&[]));
     assert_eq!(
         table["atmosphere multiple scattering"],
         reads(&[("Transmittance", 1)])
@@ -140,6 +149,7 @@ fn stage_registry_prepared_graph_reads_its_keys_and_has_timestamp_slots() {
     let scene_slots = usize::try_from(prepared.scene_pass_count()).expect("scene slot count");
     let expected: BTreeSet<_> = registry_audit::atmosphere_stage_keys()
         .map(|stage| stage.name)
+        .filter(|name| *name != "atmosphere chart overlay lighting")
         .collect();
     let size = thrum_test_support::target::SIZE;
     for source in [CaptureSource::Sdr, CaptureSource::SceneLinear] {

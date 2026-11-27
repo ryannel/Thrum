@@ -8,15 +8,21 @@ const EDGE: u32 = 48;
 const GAIN: f32 = 32.0;
 pub(crate) const CHART_LIGHTING_BINDING: u32 = 30;
 pub(crate) const REFLECTION_TAGS_BINDING: u32 = 31;
-pub(crate) const REFLECTION_TAGS_BYTES: u64 = size_of::<[[u32; 4]; 2]>() as u64;
+pub(crate) const REFLECTION_TAGS_BYTES: u64 = size_of::<ReflectionTags>() as u64;
 
 #[repr(C, align(16))]
 #[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
-struct ChartLighting {
-    mode: u32,
-    cloudy: u32,
-    haze: f32,
-    padding: u32,
+pub(crate) struct ChartLighting {
+    pub(crate) mode: u32,
+    pub(crate) cloudy: u32,
+    pub(crate) haze: f32,
+    pub(crate) padding: u32,
+}
+
+#[repr(C, align(16))]
+#[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
+pub(crate) struct ReflectionTags {
+    pub(crate) tags: [[u32; 4]; 2],
 }
 
 pub(crate) const CHART_LIGHTING_BYTES: u64 = size_of::<ChartLighting>() as u64;
@@ -193,7 +199,7 @@ pub(super) fn prepare_chart_lighting(
 pub(crate) fn chart_overlay_source(haze: bool, cloud: CloudVariant) -> String {
     let mut source = format!(
         "{}\n{}\n{}",
-        include_str!("chart_lighting.wgsl"),
+        wgsl!("atmosphere/chart_lighting.wgsl"),
         include_str!("chart_overlay_classify.wgsl"),
         include_str!("chart_overlay.wgsl"),
     );
@@ -242,7 +248,7 @@ pub(crate) fn chart_consumer_layout(
 pub(crate) fn chart_consumer_source(source: &str, group: u32) -> String {
     with_reflection_gain(&format!(
         "{source}\n{}\n@group({group}) @binding({CHART_LIGHTING_BINDING}) var<uniform> chart_lighting: ChartLighting;\n@group({group}) @binding({REFLECTION_TAGS_BINDING}) var<uniform> reflection_tags: ReflectionTags;\n{}",
-        include_str!("chart_lighting.wgsl"),
+        wgsl!("atmosphere/chart_lighting.wgsl"),
         include_str!("chart_reflection_sample.wgsl"),
     ))
 }
@@ -265,7 +271,7 @@ fn publish_reflection_encoding(mip: u32, cloudy: bool) {{
         super::reflection::cube_source_with(integrate),
         include_str!("overlay.wgsl"),
         wgsl!("environment_light.wgsl"),
-        include_str!("chart_lighting.wgsl"),
+        wgsl!("atmosphere/chart_lighting.wgsl"),
     ))
 }
 

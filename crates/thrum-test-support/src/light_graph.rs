@@ -83,15 +83,56 @@ impl BeforeLightSplit {
     /// # Panics
     /// Panics for malformed indices or a remaining reference to the extra buffer.
     pub fn resource_indices(&self, record: &str) -> String {
-        let mut parts = record.split(RESOURCE);
-        let mut historical = parts.next().unwrap_or_default().to_owned();
-        for part in parts {
-            let (id, rest) = part.split_once(',').expect("resource index separator");
-            let id: usize = id.parse().expect("graph resource index");
-            assert_ne!(id, self.environment);
-            let historical_id = id - usize::from(id > self.environment);
-            write!(historical, "{RESOURCE}{historical_id},{rest}").expect("snapshot string");
+        without_resource_index(record, self.environment)
+    }
+}
+
+fn without_resource_index(record: &str, removed: usize) -> String {
+    let mut parts = record.split(RESOURCE);
+    let mut historical = parts.next().unwrap_or_default().to_owned();
+    for part in parts {
+        let (id, rest) = part.split_once(',').expect("resource index separator");
+        let id: usize = id.parse().expect("graph resource index");
+        assert_ne!(id, removed);
+        let historical_id = id - usize::from(id > removed);
+        write!(historical, "{RESOURCE}{historical_id},{rest}").expect("snapshot string");
+    }
+    historical
+}
+
+/// Projection for graph fixtures captured before the retained chart inputs.
+#[cfg(feature = "render-registry")]
+pub struct BeforeChartSnapshot<'a> {
+    resource: Option<&'a ResourceId>,
+}
+
+#[cfg(feature = "render-registry")]
+impl<'a> BeforeChartSnapshot<'a> {
+    /// Find the retained chart inputs by graph ownership.
+    pub fn new(graph: &'a CompiledGraph) -> Self {
+        Self {
+            resource: thrum_render::registry_audit::atmosphere_chart_snapshot(graph),
         }
-        historical
+    }
+
+    /// Exclude just the new uniform lifetime from a historical comparison.
+    pub fn lifetimes(&self, lifetimes: Vec<Lifetime>) -> Vec<Lifetime> {
+        lifetimes
+            .into_iter()
+            .filter(|life| self.resource != Some(&life.resource))
+            .collect()
+    }
+
+    /// Rebase resource indices after the retained input buffer.
+    pub fn resource_indices(&self, record: &str) -> String {
+        self.resource.map_or_else(
+            || record.to_owned(),
+            |resource| without_resource_index(record, index(resource)),
+        )
+    }
+
+    /// Number of retained chart input buffers excluded from the comparison.
+    pub fn buffer_count(&self) -> usize {
+        usize::from(self.resource.is_some())
     }
 }

@@ -339,7 +339,11 @@ fn quality_controls_change_only_the_reflection_on_both_recipes() {
             assert!(objects_before[0] > 0 && objects_before[1] > 0);
             assert_ne!(main_draw.len(), 0);
         }
-        let declarations = host.quality_knobs();
+        let declarations: Vec<_> = host
+            .quality_knobs()
+            .into_iter()
+            .filter(|knob| !knob.name.starts_with("atmosphere."))
+            .collect();
         assert_eq!(declarations.len(), 5);
         for knob in declarations {
             let name = knob.name.rsplit('/').next().expect("control name");

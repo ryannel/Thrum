@@ -52,6 +52,21 @@ pub fn pipeline_pass_count(graph: &CompiledGraph) -> usize {
     graph.pipeline_pass_count()
 }
 
+/// The retained chart input buffer, for comparing pre-cadence graph fixtures.
+#[cfg(feature = "test-support")]
+pub fn atmosphere_chart_snapshot(graph: &CompiledGraph) -> Option<&crate::graph::ResourceId> {
+    graph.lifetimes.iter().find_map(|life| {
+        matches!(
+            graph.resource_scope(&life.resource),
+            Some(ResourceScope::Persistent {
+                owner: crate::atmosphere::graph::SNAPSHOT_OWNER,
+                ..
+            })
+        )
+        .then_some(&life.resource)
+    })
+}
+
 /// Metadata supplied by an atmosphere stage key before device preparation.
 #[cfg(feature = "test-support")]
 pub struct StageKeyAudit {

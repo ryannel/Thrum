@@ -267,6 +267,8 @@ fn snapshot(
                 "storage={:?}\ntransients={slots:?}\n",
                 graph.attachment_storage
             );
+            let chart = thrum_test_support::BeforeChartSnapshot::new(&graph);
+            let storage = chart.resource_indices(&storage);
             if historical {
                 let light = thrum_test_support::BeforeLightSplit::new(&graph);
                 records.push_str(&light.resource_indices(&storage));

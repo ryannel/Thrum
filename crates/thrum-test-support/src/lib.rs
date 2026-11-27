@@ -23,6 +23,8 @@ use thrum_render::capabilities::{
 
 #[cfg(feature = "render")]
 mod light_graph;
+#[cfg(feature = "render-registry")]
+pub use light_graph::BeforeChartSnapshot;
 #[cfg(feature = "render")]
 pub use light_graph::BeforeLightSplit;
 // The record check reflects WGSL through naga, which wgpu exposes only on native targets.

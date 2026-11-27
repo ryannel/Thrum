@@ -150,11 +150,13 @@ pub(crate) fn snapshot(gpu: &thrum_test_support::Gpu) -> String {
                     .expect("write the snapshot string");
                     // ResourceId's graph-local index is stable; its owner is printed as unit.
                     let light = thrum_test_support::BeforeLightSplit::new(&graph);
-                    records.push_str(&light.resource_indices(&format!(
+                    let chart = thrum_test_support::BeforeChartSnapshot::new(&graph);
+                    let resources = format!(
                         "storage={:?}\nlifetimes={:?}\n",
                         graph.attachment_storage,
-                        light.lifetimes(&graph)
-                    )));
+                        chart.lifetimes(light.lifetimes(&graph))
+                    );
+                    records.push_str(&light.resource_indices(&chart.resource_indices(&resources)));
                 }
             }
         }

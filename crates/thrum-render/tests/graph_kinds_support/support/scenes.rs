@@ -4,7 +4,7 @@ use thrum_render::atmosphere::AtmosphereFrame;
 use thrum_render::synthetic::{
     CaptureSource, FrameLighting, OffscreenTarget, PreparedSynthetic, SyntheticScene, SyntheticView,
 };
-use thrum_test_support::BeforeLightSplit;
+use thrum_test_support::{BeforeChartSnapshot, BeforeLightSplit};
 
 pub(crate) fn prove_scenes(gpu: &thrum_test_support::Gpu) {
     let (device, queue, caps) = device(gpu, 11);
@@ -67,8 +67,9 @@ pub(crate) fn prove_scenes(gpu: &thrum_test_support::Gpu) {
                 )
                 .expect("snapshot string");
                 let light = BeforeLightSplit::new(&graph);
+                let chart = BeforeChartSnapshot::new(&graph);
                 let mut resources = String::new();
-                for life in light.lifetimes(&graph) {
+                for life in chart.lifetimes(light.lifetimes(&graph)) {
                     writeln!(
                         resources,
                         "life={:?}:{}..{}:{:?}",
@@ -84,7 +85,7 @@ pub(crate) fn prove_scenes(gpu: &thrum_test_support::Gpu) {
                     )
                     .expect("snapshot string");
                 }
-                records.push_str(&light.resource_indices(&resources));
+                records.push_str(&light.resource_indices(&chart.resource_indices(&resources)));
             }
         }
     }

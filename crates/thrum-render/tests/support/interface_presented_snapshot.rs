@@ -64,6 +64,8 @@ pub(crate) fn snapshot(gpu: &thrum_test_support::Gpu) -> String {
                 );
             }
             let graph = host.scene_graph().expect("prepared presented graph");
+            let chart = thrum_test_support::BeforeChartSnapshot::new(&graph);
+            let buffers = usize::try_from(buffers).expect("live buffers") - chart.buffer_count();
             assert!(graph.pass_names().any(|name| name == provider.pass));
             let creation = host.creation_report();
             assert!(
@@ -99,12 +101,12 @@ pub(crate) fn snapshot(gpu: &thrum_test_support::Gpu) -> String {
                     Some((life.transient_slot?, &life.resource, life.first, life.last))
                 })
                 .collect();
-            writeln!(
-                records,
+            let resources = format!(
                 "storage={:?}\ntransients={slots:?}",
                 graph.attachment_storage
-            )
-            .expect("write attachment storage and transient slots");
+            );
+            writeln!(records, "{}", chart.resource_indices(&resources))
+                .expect("write attachment storage and transient slots");
         }
     }
     records
