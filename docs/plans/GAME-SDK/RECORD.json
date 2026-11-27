@@ -1,45 +1,32 @@
 {
   "module": "GAME-SDK",
   "design": {
-    "verdict": "changes",
-    "review": ".orchestrate/evidence/GAME-SDK/design-review.md",
-    "commit": "7180c04751b9874071e14fe5cec8590af3aae368",
-    "hash": "72c107551e53fe0c4abaa8dcd87413e7fcfe0b0cf7a9272b47b5afdb8d5154cb",
-    "by": "review",
-    "host": "codex",
-    "model": "gpt-6.2-astra",
-    "effort": "high",
-    "observed": {
-      "model": "gpt-6.2-astra",
-      "effort": "high"
-    },
-    "cli": "codex-cli 0.171.0-alpha.13.2",
-    "path": "headless",
-    "usage": {
-      "input": 122394,
-      "cached": 2344576,
-      "output": 12583,
-      "turns": 1
-    },
-    "at": "2026-11-27T06:36:16Z"
+    "verdict": "ok",
+    "by": "review_limit",
+    "hash": "97ea5098dbe0e885986c73065aa42cfa4e98edde9f2f16a08287d42a8401a710",
+    "after": [
+      ".orchestrate/evidence/GAME-SDK/design-review-5.md",
+      ".orchestrate/evidence/GAME-SDK/design-review.md"
+    ],
+    "at": "2026-11-27T06:53:06Z"
   },
   "work_packages": {
     "WP1": {
-      "definitions": "1f715e42cfd915a88abce896355bcc5f17c948245f48d26a9707f9a23936afc2",
+      "definitions": "a5fcdd59622d8f74fad7c0a3f6e3362563a8f7340eb30f15b8cafc337c586bb5",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of GAME-SDK at .orchestrate/evidence/GAME-SDK/design-review.md asked for changes, with its Must Fix fi",
-        "at": "2026-11-27T06:20:30Z"
+        "task": "The design review of GAME-SDK at .orchestrate/evidence/GAME-SDK/design-review.md asked for changes, with its 7 Must Fix ",
+        "at": "2026-11-27T06:53:06Z"
       }
     },
     "WP2": {
-      "definitions": "346009738576371d0dfc44d3d14c87014c1c1e22b8ad83ec21f638855d1b8117",
+      "definitions": "f05e233dd60d47a2265581aa433d4d859027185136a0482029fe0a8098641472",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of GAME-SDK at .orchestrate/evidence/GAME-SDK/design-review.md asked for changes, with its Must Fix fi",
-        "at": "2026-11-27T06:20:30Z"
+        "task": "The design review of GAME-SDK at .orchestrate/evidence/GAME-SDK/design-review.md asked for changes, with its 7 Must Fix ",
+        "at": "2026-11-27T06:53:06Z"
       },
       "ends_stretch": true
     },
@@ -85,11 +72,15 @@
     {
       "task": "The design review of GAME-SDK at .orchestrate/evidence/GAME-SDK/design-review.md asked for changes, with its Must Fix findings.\n\nKeep the owner's aim from the last change in view: lock in the core shape, not design every feature. Fix each Must Fix in the core where it is a shape question; where a finding asks for feature-level detail, settle it in the fewest words that keep the shape sound.",
       "at": "2026-11-27T06:20:30Z"
+    },
+    {
+      "task": "The design review of GAME-SDK at .orchestrate/evidence/GAME-SDK/design-review.md asked for changes, with its 7 Must Fix findings. That makes 2 design reviews in a row that asked for changes, so the script approves the design you leave without another review, and building starts from it.",
+      "at": "2026-11-27T06:53:06Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-27T06:20:30Z"
+    "at": "2026-11-27T06:53:06Z"
   },
   "design_history": [
     {
@@ -229,6 +220,29 @@
         "turns": 1
       },
       "at": "2026-11-27T05:49:55Z"
+    },
+    {
+      "verdict": "changes",
+      "review": ".orchestrate/evidence/GAME-SDK/design-review.md",
+      "commit": "7180c04751b9874071e14fe5cec8590af3aae368",
+      "hash": "72c107551e53fe0c4abaa8dcd87413e7fcfe0b0cf7a9272b47b5afdb8d5154cb",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6.2-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6.2-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.171.0-alpha.13.2",
+      "path": "headless",
+      "usage": {
+        "input": 122394,
+        "cached": 2344576,
+        "output": 12583,
+        "turns": 1
+      },
+      "at": "2026-11-27T06:36:16Z"
     }
   ]
 }
