@@ -756,7 +756,7 @@ async function inspectSurf(evaluate,result,frame) {
 const log=await fs.open(path.join(output,'command.log'),'w');
 const command=spawn('./dev',['scene','examples/water','--web'],{env:{...process.env,THRUM_SCENE_OUTPUT:output,THRUM_SCENE_WEB_CAPTURE:'1'},stdio:['ignore',log.fd,log.fd],detached:true});
 let chrome,cdp,sid,failure;
-const result={mode,command:'./dev scene examples/water --web',commit:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),target:'chrome-webgpu',output,frames:[]};
+const result={mode,command:'./dev scene examples/water --web',commit:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),target:'chrome-webgpu',extent:[width,height],output,frames:[]};
 result.dirty_diff_sha256=hash(execFileSync('git',['diff','HEAD']));
 result.source_sha256={};
 for(const file of ['crates/thrum-app/src/sky.rs','crates/thrum-app/src/sky/browser.rs','crates/thrum-app/web/scene.js','crates/thrum-render/src/runtime.rs','crates/thrum-render/src/runtime/device.rs','examples/water/src/lib.rs','examples/water/src/main.rs','examples/water/examples/field_oracle.rs','scripts/check_water_browser.mjs'])result.source_sha256[file]=hash(await fs.readFile(file));
@@ -1699,7 +1699,7 @@ try {
       const openSea=['sea','deep-sea'].includes(site);
       const views=shallow?[['through-shallows',-2,-73,90]]:[
         ['bed-0.5m',0.5,-45,90],['bed-3m',3,-45,90],['level-0.5m',0.5,0,90],['level-3m',3,0,90],
-        ['shaft-1m',1,67,228],['away-1m',1,67,273],['sunk-float',0.5,-12,127.5],
+        ['shaft-1m',1,67,228],['away-1m',1,67,273],['sunk-float',0.5,-12,151],
         ...(openSea?[['shaft-3m',3,67,228],['away-3m',3,67,273],['shaft-10m',10,67,228],['away-10m',10,67,273]]:[]),
         ...(site==='deep-sea'?[['bed-20m',20,-35,90],['level-20m',20,0,90]]:[]),
       ];
