@@ -366,9 +366,13 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
         let gauge = std::env::var("THRUM_WATER_RIVER_GAUGE")
             .ok()
             .map_or_else(String::new, |v| format!(r#","spring.stage":{v}"#));
+        let azimuth = fall
+            .then(|| std::env::var("THRUM_WATER_FALL_AZIMUTH").ok())
+            .flatten()
+            .map_or_else(String::new, |v| format!(r#","sun.azimuth":{v}"#));
         runtime
             .parameters(&format!(
-                r#"{{"camera.river":{river_view}{stages}{sun}{gauge}}}"#
+                r#"{{"camera.river":{river_view}{stages}{sun}{gauge}{azimuth}}}"#
             ))
             .expect("river view");
     }

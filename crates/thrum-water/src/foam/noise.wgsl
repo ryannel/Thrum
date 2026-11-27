@@ -1,3 +1,4 @@
+
 fn noise_hash(at: vec2<f32>) -> f32 {
     var p = fract(vec3(at.x, at.y, at.x) * vec3(0.1031, 0.1030, 0.0973));
     p += dot(p, p.yzx + 33.33);
