@@ -4,7 +4,7 @@
     {
       "id": "WP1",
       "name": "An agent writes a game's scenes, phases and rules in plain Rust against one crate, in the order they run, and proves them in an ordinary test with no window",
-      "status": "not_started",
+      "status": "in_progress",
       "quality_bar": "Game code that reads as plainly as Bevy's `breakout` example with less ceremony: a scene function reads top to bottom as one tick, and no line names engine plumbing. Compiler and startup messages as useful as Rust's own, each naming the object, the cause and the next step. Correctness held as `SIM-2D` holds it: one trace, one digest. The reference for how game code reads is the design's worked examples, which the owner approves.",
       "items": [
         {
@@ -17,8 +17,8 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GAME-SDK/WP1/WP1.1-rules.log",
           "verdict": "",
           "review": ""
         },
@@ -32,8 +32,8 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GAME-SDK/WP1/WP1.2-scenes.log",
           "verdict": "",
           "review": ""
         },
@@ -47,8 +47,8 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GAME-SDK/WP1/WP1.3-replay.log",
           "verdict": "",
           "review": ""
         },
@@ -62,8 +62,8 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GAME-SDK/WP1/WP1.4-mistakes.log",
           "verdict": "",
           "review": ""
         },
@@ -79,8 +79,8 @@
             "Cargo.lock"
           ],
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GAME-SDK/WP1/WP1.5-surface.log",
           "verdict": "",
           "review": ""
         },
@@ -89,8 +89,8 @@
           "statement": "The SDK is a layer over the engine's simulation and adds no second one.",
           "ask": "Read `thrum` and the tests' games. 1. Is world state held anywhere but `thrum-core`'s registered simulation: is there a second store, clock or undo? Which scene and phase run are world state there too? 2. Are a rule's structural edits applied when the rule ends inside the tick's one transaction, so that a refused tick undoes them with everything else, and does a rule that staged none pay nothing for the barrier? 3. Is the loop over entities inside a rule monomorphised for that rule's parameters, with no dynamic call and no allocation for each entity, and no allocation for each tick once warm? One call for each rule each tick through the engine's registered callback is as designed. 4. Does a component's schema identity come from its name and fields, and never from a Rust type ID? 5. Are the changes made in `thrum-core` additions only, with its existing tests unedited and passing? 6. Does any test's game name a crate other than `thrum`, or a schema number, permit, executor, page or device?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GAME-SDK/WP1/WP1.6-engine-layer.md",
           "verdict": "",
           "review": ""
         },
@@ -99,8 +99,8 @@
           "statement": "Game code for the headless subset is written as the design's worked examples write it. Every difference between the built API and the parts of the examples that the design's section \"What WP1 compiles\" lists is a line in the module's log, and none is a change of shape as the design's section \"What a builder may change\" defines one.",
           "ask": "Set the tests' games beside the parts of the worked examples that the design's section \"What WP1 compiles\" lists: from example A, `Score`, `drop_rocks` with its cadence, `fall`, and `Play` and `GameOver` joined by `go_to` with the score as the scene's field; from example E, `Run`, `Stage`, its three phase blocks with their lengths, `next_wave`, `enemies_die`, `heroes_fall` and `clear_enemies`. Set the rule parameters beside these entries of the design's reference, group R3, and the `Params` derive in R1: `Query`, `Single`, `Res` and `ResMut`, `Entities`, `Events` and `Emit`, `Tick`, `Random`, `Scenes`, `Phase` and `PhaseMut`, and a struct that derives `Params`. Leave out what that section gives to later work packages. List each difference in how a game maker writes the same thing. Is each one in the log as a spelling? Is any a change of shape? A change of shape that is not the owner's own fails this item.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/GAME-SDK/WP1/WP1.7-worked-examples.md",
           "verdict": "",
           "review": ""
         }
