@@ -1533,9 +1533,9 @@
     {
       "id": "WP15",
       "name": "Mist and fog banks reach the horizon, low cloud hides the hilltops, and a climbing camera passes into the cloud and out above it",
-      "status": "ready_for_review",
-      "failed_reviews": 3,
-      "failed_reviews_with_repeat": 2,
+      "status": "in_progress",
+      "failed_reviews": 4,
+      "failed_reviews_with_repeat": 3,
       "diagnoses": 0,
       "depends_on": [],
       "quality_bar": "The far mists of Red Dead Redemption 2 and the low cloud of Horizon Forbidden West: banks and filled valleys to the horizon with clean ridge lines in front of them, a cloud base that hills rise into, and a climb through it with no seam between what is near and what is far.",
@@ -1547,8 +1547,8 @@
           "ask": "Would the nearest and farthest stops blended to the middle depth fail the bank cases? Is the unchanged frame compared with one from the commit this work package started at, or with a retained image?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP15/review-repair-r3/REPAIR.md",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/CLOUDS/WP15-review.md"
         },
@@ -1650,11 +1650,16 @@
         {
           "name": "Clear Ground changes the composed bytes of elevated cloud",
           "item": "WP15.1",
-          "different": "The directed-only mixed-depth case now preserves its far stop. This failure is the unchanged-frame clause with ordinary procedural cloud above all geometry, zero fog amounts and no placements.",
+          "repeat": true
+        },
+        {
+          "name": "Clear Ground sky pixels compose a neighbouring foreground stop inside cloud",
+          "item": "WP15.1",
+          "different": "The trace already stored the correct full sky stop. Inside the cloud, moving a foreground edge changes which surface stop the sky filter composes. This occurs at a fixed extent without reconstruction and is separate from byte parity below an elevated band.",
           "repeat": false
         },
         {
-          "name": "SceneContributions drops the public secondary resize hook",
+          "name": "A secondary slot with no private replacement blocks frame-host resize",
           "repeat": false
         }
       ]

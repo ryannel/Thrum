@@ -2004,7 +2004,7 @@
         {
           "verdict": "fail",
           "commit": "d75fd9fe27b0fd4ca8746c961b890e8c7599031e",
-          "review": ".orchestrate/evidence/CLOUDS/WP15-review.md",
+          "review": ".orchestrate/evidence/CLOUDS/WP15-review-3.md",
           "items": {
             "WP15.1": "fail",
             "WP15.4": "pass",
@@ -2045,6 +2045,56 @@
             "turns": 1
           },
           "at": "2026-11-27T00:33:01Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "16c05d77e7806b0872952a702a3fca217dc421fe",
+          "review": ".orchestrate/evidence/CLOUDS/WP15-review.md",
+          "items": {
+            "WP15.1": "fail",
+            "WP15.4": "pass",
+            "WP15.13": "pass",
+            "WP15.5": "pass",
+            "WP15.6": "pass",
+            "WP15.7": "pass",
+            "WP15.8": "pass",
+            "WP15.9": "pass",
+            "WP15.10": "pass",
+            "WP15.11": "pass"
+          },
+          "findings": [
+            {
+              "name": "Clear Ground changes the composed bytes of elevated cloud",
+              "item": "WP15.1",
+              "repeat": true
+            },
+            {
+              "name": "Clear Ground sky pixels compose a neighbouring foreground stop inside cloud",
+              "item": "WP15.1",
+              "different": "The trace already stored the correct full sky stop. Inside the cloud, moving a foreground edge changes which surface stop the sky filter composes. This occurs at a fixed extent without reconstruction and is separate from byte parity below an elevated band.",
+              "repeat": false
+            },
+            {
+              "name": "A secondary slot with no private replacement blocks frame-host resize",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 203886,
+            "cached": 10492928,
+            "output": 27452,
+            "turns": 1
+          },
+          "at": "2026-11-27T02:03:59Z"
         }
       ],
       "authorised": {
