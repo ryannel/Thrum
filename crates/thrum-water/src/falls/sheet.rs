@@ -18,7 +18,7 @@ const SPLASHES_PER_SEGMENT: usize = 24;
 const RIBBONS_PER_SEGMENT: usize = 6;
 const VERTICES_PER_SEGMENT: usize =
     12 * RIBBONS_PER_SEGMENT * (ROWS + 3) + 6 * SPLASHES_PER_SEGMENT;
-const ATTRIBUTES: [wgpu::VertexAttribute; 5] = wgpu::vertex_attr_array![0 => Float32x4, 1 => Float32x4, 2 => Float32x4, 3 => Float32x4, 4 => Float32x3];
+const ATTRIBUTES: [wgpu::VertexAttribute; 5] = wgpu::vertex_attr_array![0 => Float32x4, 1 => Float32x4, 2 => Float32x4, 3 => Float32x4, 4 => Float32x4];
 
 #[repr(C)]
 #[derive(Clone, Copy, Pod, Zeroable)]
@@ -27,7 +27,7 @@ struct Vertex {
     velocity_along: [f32; 4],
     discharge: [f32; 4],
     across_fraction: [f32; 4],
-    edge_receiver: [f32; 3],
+    edge_receiver: [f32; 4],
 }
 
 #[repr(C)]
@@ -459,7 +459,7 @@ fn mesh(
                     across.y as f32,
                     fraction as f32,
                 ],
-                edge_receiver: [f32::from(edge), level as f32, contact],
+                edge_receiver: [f32::from(edge), level as f32, contact, 0.0],
             }
         };
         let strip = |t| [at(t, 0), at(t, 1), at(t, 2)];
@@ -469,7 +469,8 @@ fn mesh(
                 .chain((1..=rows).map(|row| row as f64 / rows as f64))
         };
         let half = strip(0.5)[1];
-        if half.discharge[2] < 0.53 {
+        let is_filament = half.discharge[2] < 0.53;
+        if is_filament {
             filament(vertices, |fraction| at(fraction, 1), stations());
         } else {
             let mut top = ribbons(strip(-1.0));
@@ -482,7 +483,7 @@ fn mesh(
             }
         }
         if segment.plunge.is_some() {
-            splash(vertices, strip(1.0));
+            splash(vertices, strip(1.0), is_filament);
         }
     }
 }
@@ -501,36 +502,17 @@ fn ribbons(section: [Vertex; 3]) -> [[Vertex; 3]; RIBBONS_PER_SEGMENT] {
             velocity_along: interpolate(a.velocity_along, b.velocity_along),
             discharge: interpolate(a.discharge, b.discharge),
             across_fraction: interpolate(a.across_fraction, b.across_fraction),
-            edge_receiver: [0.0, a.edge_receiver[1], a.edge_receiver[2]],
+            edge_receiver: [0.0, a.edge_receiver[1], a.edge_receiver[2], 0.0],
         }
     };
     std::array::from_fn(|index| {
         let half_width = 0.5 / RIBBONS_PER_SEGMENT as f32;
         let middle = (2.0 * index as f32 + 1.0) * half_width;
-        let centre = at(middle);
-        let [ax, _, az, fraction] = centre.across_fraction;
-        let along = centre.velocity_along[3];
-        let fold = (0.5 + 0.5 * (along * 5.63).sin()) * (0.5 + 0.5 * (along * 12.29).cos());
-        let separation = ((fraction - 0.41 - 0.23 * fold) / 0.43).clamp(0.0, 1.0);
-        let split = separation * separation * (3.0 - 2.0 * separation);
-        let film = centre.discharge[2];
-        let tearing = 0.20 + 0.80 * (1.0 - film);
-        let narrowed = half_width * (1.0 - split * tearing * (0.10 + 0.34 * fold));
-        let velocity = Vec3::from_slice(&centre.velocity_along);
-        let normal = Vec3::new(ax, 0.0, az).cross(velocity).normalize_or_zero();
-        let outward = normal
-            * if normal.dot(Vec3::new(velocity.x, 0.12, velocity.z)) >= 0.0 {
-                1.0
-            } else {
-                -1.0
-            };
-        let depth = (0.034 + 0.24 * fold) * split * (1.0 - fraction).max(0.0).sqrt();
+        let along = at(middle).velocity_along[3];
         [-1.0_f32, 0.0, 1.0].map(|edge| {
-            let mut vertex = at(edge.mul_add(narrowed, middle));
-            let position =
-                Vec3::from_slice(&vertex.world_time) + outward * depth * (1.0 - 0.42 * edge.abs());
-            vertex.world_time = position.extend(vertex.world_time[3]).to_array();
+            let mut vertex = at(edge.mul_add(half_width, middle));
             vertex.edge_receiver[0] = edge.abs();
+            vertex.edge_receiver[3] = along;
             vertex
         })
     })
@@ -614,16 +596,22 @@ fn stitch(vertices: &mut Vec<Vertex>, top: [Vertex; 3], bottom: [Vertex; 3]) {
 // Render the liquid thrown back out of the impact as separate drops. The
 // plunge's impulse and foam birth still use the original receiving level.
 #[expect(clippy::cast_precision_loss, reason = "the drop count is bounded")]
-fn splash(vertices: &mut Vec<Vertex>, foot: [Vertex; 3]) {
+fn splash(vertices: &mut Vec<Vertex>, foot: [Vertex; 3], is_filament: bool) {
+    let contacts = ribbons(foot);
     for drop in 0..SPLASHES_PER_SEGMENT {
         let fraction = (drop as f32 + 0.5) / SPLASHES_PER_SEGMENT as f32;
         let mut vertex = foot[1];
-        vertex.world_time = Vec4::from_array(foot[0].world_time)
-            .lerp(Vec4::from_array(foot[2].world_time), fraction)
-            .to_array();
+        if is_filament {
+            vertex.world_time = Vec4::from_array(foot[0].world_time)
+                .lerp(Vec4::from_array(foot[2].world_time), fraction)
+                .to_array();
+            vertex.velocity_along[3] = (foot[2].velocity_along[3] - foot[0].velocity_along[3])
+                .mul_add(fraction, foot[0].velocity_along[3]);
+            vertex.discharge[1] = 0.0;
+        } else {
+            vertex = contacts[drop * RIBBONS_PER_SEGMENT / SPLASHES_PER_SEGMENT][1];
+        }
         vertex.world_time[1] = vertex.edge_receiver[1];
-        vertex.velocity_along[3] = (foot[2].velocity_along[3] - foot[0].velocity_along[3])
-            .mul_add(fraction, foot[0].velocity_along[3]);
         vertex.discharge[2] = drop as f32;
         vertex.across_fraction[1] = -1.0;
         vertices.extend([0.0, 1.0, 2.0, 2.0, 1.0, 3.0].map(|corner| {
