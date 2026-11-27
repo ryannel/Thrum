@@ -2,6 +2,7 @@
 
 use super::HistoryBinding;
 use super::{AfterOpaqueImages, AfterOpaqueKind};
+use crate::error::EffectGraphError;
 use crate::graph::PassBody;
 use crate::graph::{
     Access, AccessKind, FrameGraph, PassScope, PipelineKey, ResourceDescriptor, ResourceId,
@@ -9,6 +10,10 @@ use crate::graph::{
 };
 use crate::pass_key::{PassKey, PipelineRole};
 use std::{collections::BTreeSet, ops::Range};
+
+mod draw;
+pub use draw::EffectDrawTarget;
+use draw::draw_error;
 
 /// Work frequency, independent of graph compilation.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -47,6 +52,19 @@ pub struct EffectPass {
     pub async_eligible: bool,
     /// Real resource hazards, never placeholder token resources.
     pub accesses: Vec<EffectAccess>,
+}
+
+impl EffectPass {
+    pub(crate) fn attachments(&self) -> impl Iterator<Item = &EffectAccess> {
+        self.accesses.iter().filter(|access| {
+            matches!(
+                access.kind,
+                AccessKind::AttachmentLoad
+                    | AccessKind::AttachmentClear
+                    | AccessKind::DepthAttachmentRead
+            )
+        })
+    }
 }
 
 /// One named compute pass that answers posts independently of the drawn view.
@@ -106,6 +124,7 @@ pub(crate) struct EffectResources {
     pub(crate) medium_read: Option<Access>,
     pub(crate) ground_band_read: Option<Access>,
     pub(crate) simulate: Vec<usize>,
+    pub(crate) simulate_draws: Vec<usize>,
     pairs: Vec<(ResourceId, ResourceId)>,
 }
 impl EffectResources {
@@ -131,8 +150,8 @@ impl EffectResources {
 }
 
 impl EffectGraph {
-    fn sun_path_read_indices(&self) -> Result<Option<[usize; 2]>, crate::error::EffectGraphError> {
-        use crate::error::EffectGraphError as Error;
+    fn sun_path_read_indices(&self) -> Result<Option<[usize; 2]>, EffectGraphError> {
+        use EffectGraphError as Error;
         let path = match self.sun_paths.as_slice() {
             [] => return Ok(None),
             [path] => path,
@@ -157,8 +176,8 @@ impl EffectGraph {
         ]))
     }
 
-    fn medium_read(&self) -> Result<Option<EffectAccess>, crate::error::EffectGraphError> {
-        use crate::error::EffectGraphError as Error;
+    fn medium_read(&self) -> Result<Option<EffectAccess>, EffectGraphError> {
+        use EffectGraphError as Error;
         let resource = match self.view_volume_media.as_slice() {
             [] => return Ok(None),
             [provider] => provider.coefficients,
@@ -188,7 +207,7 @@ impl EffectGraph {
         }))
     }
 
-    fn ground_band_read_index(&self) -> Result<Option<usize>, crate::error::EffectGraphError> {
+    fn ground_band_read_index(&self) -> Result<Option<usize>, EffectGraphError> {
         let [provider] = self.view_volume_media.as_slice() else {
             return Ok(None);
         };
@@ -204,7 +223,7 @@ impl EffectGraph {
                     && access.kind == AccessKind::SampledRead
                     && access.history.is_none()
             })
-            .ok_or(crate::error::EffectGraphError::InvalidViewVolumeMedium)?;
+            .ok_or(EffectGraphError::InvalidViewVolumeMedium)?;
         Ok(Some(read))
     }
 
@@ -239,9 +258,10 @@ impl EffectGraph {
     /// Refuse declarations whose runtime skips could violate the compiled graph.
     /// # Errors
     /// Returns a named preparation error for a cadence, producer or binding misuse.
-    pub fn validate(&self) -> Result<(), crate::error::EffectGraphError> {
-        use crate::error::EffectGraphError as Error;
+    pub fn validate(&self) -> Result<(), EffectGraphError> {
+        use EffectGraphError as Error;
 
+        self.validate_simulate_draws()?;
         self.sun_path_read_indices()?;
         self.medium_read()?;
         self.ground_band_read_index()?;
@@ -435,11 +455,19 @@ impl EffectGraph {
         Ok(())
     }
 
-    pub(crate) fn validate_2d_tick_stage(&self) -> Result<(), crate::error::EffectGraphError> {
-        if let Some(pass) = self.tick_passes.first() {
-            return Err(crate::error::EffectGraphError::TickPassIn2d(
-                pass.name.clone(),
+    pub(crate) fn validate_2d_stages(&self) -> Result<(), EffectGraphError> {
+        if let Some(pass) = self
+            .passes
+            .iter()
+            .find(|pass| pass.attachments().next().is_some())
+        {
+            return Err(draw_error(
+                &pass.name,
+                "2D scenes do not support simulate draws",
             ));
+        }
+        if let Some(pass) = self.tick_passes.first() {
+            return Err(EffectGraphError::TickPassIn2d(pass.name.clone()));
         }
         Ok(())
     }
@@ -449,7 +477,7 @@ impl EffectGraph {
         &self,
         limits: &wgpu::Limits,
         features: wgpu::Features,
-    ) -> Result<(), crate::error::EffectGraphError> {
+    ) -> Result<(), EffectGraphError> {
         for (index, pass) in self.tick_passes.iter().enumerate() {
             crate::graph::validate_storage_textures(
                 pass.reads
@@ -459,7 +487,7 @@ impl EffectGraph {
                 features,
                 index,
             )
-            .map_err(|source| crate::error::EffectGraphError::InvalidTickRead {
+            .map_err(|source| EffectGraphError::InvalidTickRead {
                 pass: pass.name.clone(),
                 source,
             })?;
@@ -520,6 +548,7 @@ impl EffectGraph {
             medium_read: None,
             ground_band_read: None,
             simulate: Vec::new(),
+            simulate_draws: Vec::new(),
             pairs,
         };
         for (index, pass) in self.passes.iter().enumerate() {
@@ -529,6 +558,11 @@ impl EffectGraph {
             .key(base);
             keys.insert(key);
             let mut accesses = resources.accesses(&pass.accesses);
+            for access in &mut accesses {
+                if access.kind == AccessKind::AttachmentClear {
+                    access.view = Some(wgpu::TextureViewDimension::D2);
+                }
+            }
             if pass.accesses.iter().any(|access| {
                 Some(access.resource) == overlay && access.kind == AccessKind::StorageWrite
             }) {
@@ -545,6 +579,9 @@ impl EffectGraph {
                 },
             );
             resources.simulate.push(id);
+            if pass.attachments().next().is_some() {
+                resources.simulate_draws.push(id);
+            }
             if pass.async_eligible {
                 graph.mark_async_eligible(id);
             }

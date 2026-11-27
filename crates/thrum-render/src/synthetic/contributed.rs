@@ -70,7 +70,7 @@ impl super::SyntheticTargetInputs {
                 ResourceScope::Imported { initialized: true },
             )
         };
-        let products = if passes.upload {
+        let (upload, products) = if passes.upload {
             let products = token(
                 graph,
                 wgpu::BufferUsages::COPY_DST
@@ -81,7 +81,7 @@ impl super::SyntheticTargetInputs {
                         wgpu::BufferUsages::empty()
                     },
             )?;
-            graph.declare(
+            let upload = graph.declare(
                 PassKey::ContributionUpload,
                 PassBody {
                     scope: PassScope::View(1),
@@ -99,9 +99,9 @@ impl super::SyntheticTargetInputs {
                 0..CONTRIBUTION_TOKEN_BYTES,
                 AccessKind::StorageRead,
             ));
-            Some(products)
+            (Some(upload), Some(products))
         } else {
-            None
+            (None, None)
         };
         let ray_structure = self.append_ray_structure(graph, mesh, products.as_ref())?;
         if passes.compute {
@@ -140,6 +140,13 @@ impl super::SyntheticTargetInputs {
         let resources = self
             .effect_graph
             .append(graph, self.key, prepared_keys, overlay_inputs)?;
+        if let Some(upload) = upload {
+            for &draw in &resources.simulate_draws {
+                graph.dependency(upload, draw)?;
+            }
+        }
+        self.effect_graph
+            .validate_draw_formats(&self.capabilities)?;
         self.effect_graph.validate_tick_texture_support(
             self.capabilities.limits(),
             self.capabilities.features(),
@@ -248,15 +255,51 @@ impl super::SceneContext<'_> {
         index: usize,
         compiled: &super::CompiledPass,
     ) -> Result<(), RenderError> {
-        if let Some(contribution) = self.contribution.as_deref_mut()
-            && contribution.effect_runs(index, &self.contribution_frame)
-        {
+        let Some(contribution) = self.contribution.as_deref_mut() else {
+            return Ok(());
+        };
+        let graph = self.prepared.effect_graph();
+        let declaration = &graph.passes[index];
+        if compiled.kind == Some(crate::graph::PassKind::Render) {
+            let attachment = declaration
+                .attachments()
+                .next()
+                .ok_or(RenderError::GraphPassMismatch)?;
+            if (self.contribution_frame.time.capture
+                && matches!(
+                    graph.resources[attachment.resource].1,
+                    ResourceScope::Persistent { .. }
+                ))
+                || (declaration.cadence == crate::contribution::EffectCadence::Skippable
+                    && !contribution.effect_runs(index, &self.contribution_frame))
+            {
+                return Ok(());
+            }
+            let target = contribution
+                .effect_draw_target(index)
+                .ok_or(RenderError::GraphPassMismatch)?;
+            let color = compiled
+                .single_color_attachment(&target.view, target.clear)
+                .ok_or(RenderError::GraphPassMismatch)?;
+            let mut pass = compiled
+                .begin_render(
+                    self.encoder,
+                    [Some(color)],
+                    None,
+                    self.generation,
+                    self.timings.as_deref_mut(),
+                )?
+                .ok_or(RenderError::GraphPassMismatch)?;
+            contribution.draw_effect(index, &mut pass, &self.contribution_frame);
+        } else {
+            if !contribution.effect_runs(index, &self.contribution_frame) {
+                return Ok(());
+            }
             let mut pass = compiled
                 .begin_compute(self.encoder, self.generation, self.timings.as_deref_mut())?
                 .ok_or(RenderError::GraphPassMismatch)?;
             contribution.encode_effect(index, &mut pass, &self.contribution_frame);
-            let graph = self.prepared.effect_graph();
-            self.overlay_written |= graph.passes[index].accesses.iter().any(|access| {
+            self.overlay_written |= declaration.accesses.iter().any(|access| {
                 access.kind == AccessKind::StorageWrite
                     && graph.sky_overlays.contains(&access.resource)
             });

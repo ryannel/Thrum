@@ -152,7 +152,7 @@ fn tick_stage_rules_only_allow_committed_retained_compute_reads_in_3d() {
     ];
     assert_eq!(graph.validate(), Ok(()));
     assert_eq!(
-        graph.validate_2d_tick_stage(),
+        graph.validate_2d_stages(),
         Err(Error::TickPassIn2d("query field".into()))
     );
     for history in [HistoryBinding::Next, HistoryBinding::Result] {
@@ -320,5 +320,209 @@ fn tick_stage_rules_enforce_device_storage_texture_support_per_pass() {
     assert_eq!(
         validate(&graph),
         invalid_read(GraphError::StorageTextureLimit { pass: 1 })
+    );
+}
+
+#[test]
+fn simulate_draw_rules_validate_attachment_ranges_and_ownership() {
+    use super::draw::check_draw_format;
+    use crate::graph::TextureKind;
+    use AccessKind as A;
+    use EffectCadence as C;
+    use wgpu::{TextureFormat as F, TextureUsages as U};
+
+    let access = |kind, range| EffectAccess {
+        resource: 0,
+        range,
+        kind,
+        view: None,
+        history: None,
+    };
+    let pass = |name: &str, cadence, accesses| EffectPass {
+        name: name.into(),
+        cadence,
+        async_eligible: false,
+        accesses,
+    };
+    let graph = EffectGraph {
+        resources: vec![(
+            ResourceDescriptor::Texture {
+                dimension: TextureKind::D2,
+                width: 4,
+                height: 4,
+                layers: 2,
+                mips: 2,
+                samples: 1,
+                format: F::Rgba16Float,
+                usage: U::RENDER_ATTACHMENT | U::TEXTURE_BINDING | U::STORAGE_BINDING,
+            },
+            ResourceScope::Persistent {
+                owner: 0,
+                epoch: 0,
+                initialized: true,
+            },
+        )],
+        passes: vec![
+            pass(
+                "left",
+                C::EveryFrame,
+                vec![access(A::AttachmentClear, 0..1)],
+            ),
+            pass(
+                "right",
+                C::Skippable,
+                vec![access(A::AttachmentClear, 1..2)],
+            ),
+            pass("reader", C::EveryFrame, vec![access(A::SampledRead, 0..2)]),
+            pass(
+                "other mip",
+                C::EveryFrame,
+                vec![access(A::StorageWrite, 2..3)],
+            ),
+        ],
+        opaque_reads: vec![access(A::SampledRead, 0..2)],
+        ..EffectGraph::default()
+    };
+    graph.validate().expect("disjoint layers and mips");
+    let mut frame = FrameGraph::default();
+    let mut keys = BTreeSet::new();
+    graph
+        .append(
+            &mut frame,
+            PipelineKey {
+                device_generation: 1,
+                revision: 1,
+                role: 0,
+            },
+            &mut keys,
+            &[],
+        )
+        .expect("declare draws and sampled reads");
+    let compiled = frame
+        .compile(1, &keys)
+        .expect("draws ordered before the reads");
+    assert_eq!(
+        compiled.pass_names().take(3).collect::<Vec<_>>(),
+        ["effect 0: left", "effect 1: right", "effect 2: reader"]
+    );
+    assert_eq!(
+        graph.validate_2d_stages(),
+        Err(draw_error(
+            "left",
+            "2D scenes do not support simulate draws"
+        ))
+    );
+
+    type Edit = fn(&mut EffectGraph);
+    let cases: &[(&str, &str, Edit)] = &[
+        ("load", "left", |g| {
+            g.passes[0].accesses[0].kind = A::AttachmentLoad
+        }),
+        ("two attachments", "left", |g| {
+            let other = g.passes[1].accesses[0].clone();
+            g.passes[0].accesses.push(other);
+        }),
+        ("two layers", "left", |g| {
+            g.passes[0].accesses[0].range = 0..2
+        }),
+        ("two mips", "left", |g| g.passes[0].accesses[0].range = 0..4),
+        ("draw overlap", "left", |g| {
+            g.passes[1].accesses[0].range = 0..1
+        }),
+        ("storage overlap", "left", |g| {
+            g.passes[3].accesses[0].range = 0..1
+        }),
+        ("copy overlap", "left", |g| {
+            g.passes[3].accesses[0].range = 0..1;
+            g.passes[3].accesses[0].kind = A::CopyWrite;
+        }),
+        ("time slice", "left", |g| {
+            g.passes[0].cadence = C::TimeSliced
+        }),
+        ("skipped transient", "right", |g| {
+            g.resources[0].1 = ResourceScope::Transient
+        }),
+        ("async draw", "left", |g| g.passes[0].async_eligible = true),
+        ("history", "left", |g| {
+            g.resources[0].1 = ResourceScope::History {
+                owner: 0,
+                epoch: 0,
+                initialized: true,
+            };
+            g.passes[0].accesses[0].history = Some(HistoryBinding::Next);
+        }),
+        ("depth", "left", |g| {
+            if let ResourceDescriptor::Texture { format, .. } = &mut g.resources[0].0 {
+                *format = F::Depth32Float;
+            }
+        }),
+        ("3D", "left", |g| {
+            if let ResourceDescriptor::Texture {
+                dimension, layers, ..
+            } = &mut g.resources[0].0
+            {
+                *dimension = TextureKind::D3 { depth: 2 };
+                *layers = 1;
+            }
+        }),
+        ("multisample", "left", |g| {
+            if let ResourceDescriptor::Texture {
+                samples,
+                mips,
+                layers,
+                ..
+            } = &mut g.resources[0].0
+            {
+                *samples = 4;
+                *mips = 1;
+                *layers = 1;
+            }
+        }),
+    ];
+    for (case, name, edit) in cases {
+        let mut invalid = graph.clone();
+        edit(&mut invalid);
+        let err = invalid.validate().expect_err(case);
+        assert!(
+            matches!(err,
+                EffectGraphError::SimulateDraw { ref pass, .. }
+                | EffectGraphError::CadenceRequiresRetainedOutput(ref pass)
+                | EffectGraphError::AsyncRequiresCompute(ref pass) if pass == name
+            ),
+            "{case}: {err}"
+        );
+    }
+
+    let features = wgpu::Features::empty();
+    for (format, blend, reason) in [
+        (
+            F::Rgb9e5Ufloat,
+            false,
+            "format is not supported as a colour attachment",
+        ),
+        (
+            F::R32Uint,
+            true,
+            "colour attachment format does not support blending",
+        ),
+    ] {
+        assert_eq!(
+            check_draw_format(
+                "left",
+                format,
+                format.guaranteed_format_features(features),
+                blend
+            ),
+            Err(draw_error("left", reason))
+        );
+    }
+    assert!(
+        check_draw_format(
+            "left",
+            F::Rgba16Float,
+            F::Rgba16Float.guaranteed_format_features(features),
+            true
+        )
+        .is_ok()
     );
 }

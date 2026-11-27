@@ -1725,6 +1725,19 @@ pub async fn qualify_effect_tick() -> Result<String, JsValue> {
     .map_err(js_error)
 }
 
+/// Qualify exact blended layer contents and same-frame forward reads on WebGPU.
+///
+/// # Errors
+/// Returns a submitted-image mismatch or WebGPU preparation or validation error.
+#[cfg(feature = "proving")]
+#[wasm_bindgen]
+pub async fn qualify_effect_simulate_draw() -> Result<String, JsValue> {
+    let (_, device, queue, caps) = effect_diagnostic_device().await?;
+    crate::effect::drawn_field::qualify(&device, &queue, &caps)
+        .await
+        .map_err(js_error)
+}
+
 /// Run the late slab's submitted-input script on Chrome's hardware WebGPU device.
 /// # Errors
 /// Returns a graph, depth, refraction or motion mismatch from the target.

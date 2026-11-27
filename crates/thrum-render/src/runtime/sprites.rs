@@ -20,11 +20,11 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         let PreparedRenderer::TwoD(prepared) = &mut self.prepared else {
             unreachable!()
         };
-        check_stages(contribution)?;
         let graph = contribution.effect_graph();
         graph
-            .validate_2d_tick_stage()
+            .validate_2d_stages()
             .map_err(FrameError::EffectGraph)?;
+        check_stages(contribution)?;
         if !graph.after_opaque.is_empty() {
             return Err(FrameError::InvalidState(
                 "2D scene refuses contribution after-opaque stage",
@@ -35,11 +35,11 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             capabilities: &prepared.capabilities,
             queue: &self.queue,
         })?;
-        check_stages(contribution)?;
         let graph = contribution.effect_graph();
         graph
-            .validate_2d_tick_stage()
+            .validate_2d_stages()
             .map_err(FrameError::EffectGraph)?;
+        check_stages(contribution)?;
         if !graph.after_opaque.is_empty() {
             return Err(FrameError::InvalidState(
                 "2D scene refuses contribution after-opaque stage",

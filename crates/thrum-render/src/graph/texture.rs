@@ -250,3 +250,21 @@ impl FrameGraph {
         Ok(())
     }
 }
+
+impl super::CompiledPass {
+    pub(crate) fn single_color_attachment<'a>(
+        &'a self,
+        view: &'a wgpu::TextureView,
+        clear: wgpu::Color,
+    ) -> Option<super::GraphColorAttachment<'a>> {
+        let [attachment] = self.attachments.as_slice() else {
+            return None;
+        };
+        Some(super::GraphColorAttachment {
+            resource: &attachment.resource,
+            range: attachment.range.clone(),
+            view,
+            clear,
+        })
+    }
+}

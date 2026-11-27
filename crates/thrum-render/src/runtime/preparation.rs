@@ -69,6 +69,11 @@ pub(super) fn rebuild_3d_contribution(
         }
         let graph = contribution.effect_graph();
         graph.validate().map_err(FrameError::EffectGraph)?;
+        graph
+            .validate_draw_targets(prepared.capabilities(), |index| {
+                contribution.effect_draw_target(index)
+            })
+            .map_err(FrameError::EffectGraph)?;
         let mut passes = contribution.passes();
         passes.upload |= prepared.secondary_view_count() != 0;
         if !attaching
@@ -147,6 +152,12 @@ impl TargetPreparation {
         replacement
             .graph
             .validate()
+            .map_err(FrameError::EffectGraph)?;
+        replacement
+            .graph
+            .validate_draw_targets(&self.capabilities, |index| {
+                replacement.draw_targets.get(&index)
+            })
             .map_err(FrameError::EffectGraph)?;
         inputs.effect_graph.clone_from(&replacement.graph);
         Ok((views, replacement))
@@ -345,6 +356,12 @@ impl PreparedScene {
         candidate
             .graph
             .validate()
+            .map_err(FrameError::EffectGraph)?;
+        candidate
+            .graph
+            .validate_draw_targets(self.prepared.capabilities(), |index| {
+                candidate.draw_targets.get(&index)
+            })
             .map_err(FrameError::EffectGraph)?;
         self.prepared.set_effect_graph(candidate.graph.clone());
         let mut passes = candidate.passes;

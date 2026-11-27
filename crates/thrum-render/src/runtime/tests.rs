@@ -2,6 +2,8 @@
 mod creation_sites;
 #[cfg(not(target_arch = "wasm32"))]
 mod device;
+#[cfg(target_os = "macos")]
+mod simulate_draw;
 #[cfg(not(target_arch = "wasm32"))]
 mod submitted_capture;
 #[cfg(not(target_arch = "wasm32"))]

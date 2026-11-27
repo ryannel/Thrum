@@ -439,7 +439,7 @@ impl super::SyntheticTargetInputs {
             (&mesh, &route),
             &mut accesses,
             &mut prepared_keys,
-            &contribution_reads,
+            (&contribution_reads, &effect_resources.simulate_draws),
         )?;
         if let (Some(atmosphere), Some((_, uniform))) = (&self.atmosphere, &atmosphere_inputs) {
             atmosphere.append_view_volume(
@@ -1185,7 +1185,7 @@ impl super::SyntheticTargetInputs {
         (mesh, route): (&[Access], &[Access]),
         accesses: &mut Vec<Access>,
         prepared_keys: &mut BTreeSet<PipelineKey>,
-        contribution_reads: &[Access],
+        (contribution_reads, simulate_draws): (&[Access], &[usize]),
     ) -> Result<Option<ResourceId>, RenderError> {
         if self.shadow.is_none() {
             return Ok(None);
@@ -1303,7 +1303,7 @@ impl super::SyntheticTargetInputs {
             };
             let key = self.shadow_key(index);
             prepared_keys.insert(key);
-            graph.declare(
+            let draw = graph.declare(
                 match index {
                     0 => PassKey::ShadowNear,
                     1 => PassKey::ShadowFar,
@@ -1341,6 +1341,9 @@ impl super::SyntheticTargetInputs {
                     external_side_effect: false,
                 },
             );
+            for &simulate in simulate_draws {
+                graph.dependency(simulate, draw)?;
+            }
         }
         let sample = graph.resource(
             ResourceDescriptor::Buffer {
@@ -1649,9 +1652,17 @@ impl super::SyntheticTargetInputs {
             }),
             PassKey::Effect(index) => {
                 let index = index as usize;
-                B::new(id, PassKind::Compute, move |frame, pass| {
-                    frame.effect(index, pass)
-                })
+                let declaration = self
+                    .effect_graph
+                    .passes
+                    .get(index)
+                    .ok_or(RenderError::GraphPassMismatch)?;
+                let kind = if declaration.attachments().next().is_some() {
+                    PassKind::Render
+                } else {
+                    PassKind::Compute
+                };
+                B::new(id, kind, move |frame, pass| frame.effect(index, pass))
             }
             PassKey::AfterOpaque(index) => {
                 let index = index as usize;

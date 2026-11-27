@@ -400,6 +400,15 @@ pub enum EffectGraphError {
     TimeSlicedHistory(String),
     /// Retained effect owner is declared more than once.
     DuplicateEffectOwner,
+    /// A named simulate pass references an undeclared resource.
+    UnknownSimulateResource(String),
+    /// A named simulate draw violates an attachment rule.
+    SimulateDraw {
+        /// Name of the pass.
+        pass: String,
+        /// The attachment rule that was violated.
+        reason: &'static str,
+    },
     /// Effect access names an unknown resource.
     UnknownEffectResource,
     /// Opaque effect inputs must declare read access.
@@ -485,6 +494,10 @@ impl fmt::Display for EffectGraphError {
             Self::DuplicateEffectOwner => {
                 f.write_str("Retained effect owner is declared more than once")
             }
+            Self::UnknownSimulateResource(pass) => {
+                write!(f, "Simulate pass {pass} names an undeclared resource")
+            }
+            Self::SimulateDraw { pass, reason } => write!(f, "Simulate draw {pass}: {reason}"),
             Self::UnknownEffectResource => f.write_str("Effect access names an unknown resource"),
             Self::OpaqueReadRequiresReadAccess => {
                 f.write_str("Opaque effect inputs must declare read access")

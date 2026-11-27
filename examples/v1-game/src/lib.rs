@@ -77,8 +77,8 @@ pub use browser::{BrowserLightProbe, create_light_list_probe};
 pub use browser::{
     GovernorBrowser, create_cooked_sprite_game, create_field_game, create_governor_game,
     create_interface_game, create_interface_text_game, create_placed_browser_game,
-    create_sprite_game, create_sprite_probe, qualify_effect_after_opaque, qualify_effect_state,
-    qualify_effect_tick, qualify_lent_products,
+    create_sprite_game, create_sprite_probe, qualify_effect_after_opaque,
+    qualify_effect_simulate_draw, qualify_effect_state, qualify_effect_tick, qualify_lent_products,
 };
 #[cfg(all(target_os = "macos", feature = "proving"))]
 pub use camera::route_scale_replay;

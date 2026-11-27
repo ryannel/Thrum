@@ -537,7 +537,7 @@
     {
       "id": "WP7",
       "name": "A test effect draws into a texture of its own before the scene is shaded, and the scene's shading reads it in the same frame, on the Mac and in Chrome",
-      "status": "not_started",
+      "status": "in_progress",
       "quality_bar": "A raster pass declared as in Unreal's RDG or Unity's render graph: a module draws into a target of its own, and the one executor orders it, clears it, stores it and times it. A wrong declaration is refused when the scene is prepared, with a named error, and never becomes a lost frame or a texture holding an earlier frame's light.",
       "items": [
         {

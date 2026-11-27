@@ -74,7 +74,7 @@ impl FrameWorld for World {
         None
     }
 }
-struct Scene;
+pub(super) struct Scene;
 impl SceneSource<SourceTick> for Scene {
     fn extract(&self, into: &mut RenderExtractor, page: &SourceTick) -> ExtractReport {
         into.extract(*page, [0.; 3], |sink| {
@@ -94,7 +94,7 @@ impl SceneSource<SourceTick> for Scene {
         })
     }
 }
-fn error(e: impl std::fmt::Debug) -> String {
+pub(super) fn error(e: impl std::fmt::Debug) -> String {
     format!("{e:?}")
 }
 
@@ -117,7 +117,11 @@ pub(super) async fn submitted_colour<W: FrameWorld, V: SceneSource<W::Page>>(
             host.recycle_submitted_image(image);
             return Ok(pixels);
         }
-        drop(read_texture(device, queue, progress, 0).await?);
+        let bytes = progress
+            .format()
+            .block_copy_size(None)
+            .ok_or("capture progress texture format")?;
+        drop(read_texture_bytes(device, queue, progress, 0, bytes).await?);
     }
     Err("submitted colour readback did not complete".into())
 }

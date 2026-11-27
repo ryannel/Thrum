@@ -95,13 +95,22 @@ impl SceneContributions {
             } else {
                 None
             };
-            members.push((first..end, job, entry.effect_graph()));
+            let graph = entry.effect_graph();
+            let targets: std::collections::BTreeMap<_, _> = (0..graph.passes.len())
+                .filter_map(|index| {
+                    entry
+                        .effect_draw_target(index)
+                        .map(|target| (index, target.clone()))
+                })
+                .collect();
+            members.push((first..end, job, graph, targets));
             first = end;
         }
         let needs_job = match extent {
             None => first != 0,
             Some(_) => {
-                (resize_secondary && first != 0) || members.iter().any(|(_, job, _)| job.is_some())
+                (resize_secondary && first != 0)
+                    || members.iter().any(|(_, job, _, _)| job.is_some())
             }
         };
         if !needs_job {
@@ -110,7 +119,9 @@ impl SceneContributions {
         Ok(Some(Box::new(move |slots| {
             let mut replacements = Vec::with_capacity(members.len());
             let mut graphs = Vec::with_capacity(members.len());
-            for (range, job, graph) in members {
+            let mut draw_targets = Vec::new();
+            let mut first_pass = 0;
+            for (range, job, graph, targets) in members {
                 let member_slots = slots
                     .map(|views| {
                         views.get(range).ok_or(FrameError::InvalidState(
@@ -119,11 +130,16 @@ impl SceneContributions {
                     })
                     .transpose()?;
                 let replacement = job.map(|job| job(member_slots)).transpose()?;
-                graphs.push(
-                    replacement
-                        .as_ref()
-                        .map_or(graph, |next| next.graph.clone()),
+                let (graph, targets) = replacement.as_ref().map_or((graph, targets), |next| {
+                    (next.graph.clone(), next.draw_targets.clone())
+                });
+                draw_targets.extend(
+                    targets
+                        .into_iter()
+                        .map(|(index, target)| (first_pass + index, target)),
                 );
+                first_pass += graph.passes.len();
+                graphs.push(graph);
                 replacements.push(replacement);
             }
             Ok(super::SecondaryResize::new(
@@ -138,7 +154,8 @@ impl SceneContributions {
                         }
                     }
                 },
-            ))
+            )
+            .with_effect_draw_targets(draw_targets))
         })))
     }
 
@@ -166,6 +183,16 @@ impl SceneContributions {
             .iter_mut()
             .flat_map(|candidate| std::mem::take(&mut candidate.initialization))
             .collect();
+        let mut first_pass = 0;
+        let mut draw_targets = Vec::new();
+        for candidate in &mut candidates {
+            draw_targets.extend(
+                std::mem::take(&mut candidate.draw_targets)
+                    .into_iter()
+                    .map(|(index, target)| (first_pass + index, target)),
+            );
+            first_pass += candidate.graph.passes.len();
+        }
         Ok(
             super::ContributionCandidate::new(passes, graph, move |owner: &mut Self| {
                 owner.pass_counts.clear();
@@ -178,7 +205,8 @@ impl SceneContributions {
                     candidate.commit(entry.as_mut());
                 }
             })
-            .with_initialization(initialization),
+            .with_initialization(initialization)
+            .with_effect_draw_targets(draw_targets),
         )
     }
 
@@ -201,7 +229,11 @@ impl SceneContributions {
             for pass in &mut declaration.passes {
                 pass.name = format!("effect {member}: {}", pass.name);
                 for access in &mut pass.accesses {
-                    access.resource += offset;
+                    access.resource = if access.resource < declaration.resources.len() {
+                        offset + access.resource
+                    } else {
+                        usize::MAX
+                    };
                 }
             }
             for pass in &mut declaration.tick_passes {
@@ -526,6 +558,31 @@ impl SceneContribution for SceneContributions {
         }
     }
 
+    fn effect_draw_target(&self, mut index: usize) -> Option<&super::EffectDrawTarget> {
+        for (entry, &count) in self.entries.iter().zip(&self.pass_counts) {
+            if index < count {
+                return entry.effect_draw_target(index);
+            }
+            index -= count;
+        }
+        None
+    }
+
+    fn draw_effect(
+        &mut self,
+        mut index: usize,
+        pass: &mut wgpu::RenderPass<'_>,
+        frame: &ContributionFrame,
+    ) {
+        for (entry, &count) in self.entries.iter_mut().zip(&self.pass_counts) {
+            if index < count {
+                entry.draw_effect(index, pass, frame);
+                return;
+            }
+            index -= count;
+        }
+    }
+
     fn encode_effect_readback(&mut self, mut index: usize, encoder: &mut wgpu::CommandEncoder) {
         for (entry, count) in self
             .entries
@@ -639,6 +696,60 @@ mod tests {
     use std::sync::{Arc, Mutex};
 
     type Seen = Arc<Mutex<Vec<&'static str>>>;
+
+    #[test]
+    fn simulate_draw_rules_reject_an_index_into_the_next_member() {
+        use super::super::{EffectAccess, EffectCadence, EffectGraph, EffectPass};
+        use crate::{
+            error::EffectGraphError,
+            graph::{AccessKind, ResourceDescriptor, ResourceScope, TextureKind},
+        };
+
+        let member = |resource| EffectGraph {
+            resources: vec![(
+                ResourceDescriptor::Texture {
+                    dimension: TextureKind::D2,
+                    width: 4,
+                    height: 4,
+                    layers: 1,
+                    mips: 1,
+                    samples: 1,
+                    format: wgpu::TextureFormat::Rgba16Float,
+                    usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+                },
+                ResourceScope::Persistent {
+                    owner: 0,
+                    epoch: 0,
+                    initialized: false,
+                },
+            )],
+            passes: vec![EffectPass {
+                name: "local draw".into(),
+                cadence: EffectCadence::EveryFrame,
+                async_eligible: false,
+                accesses: vec![EffectAccess {
+                    resource,
+                    range: 0..1,
+                    kind: AccessKind::AttachmentClear,
+                    view: None,
+                    history: None,
+                }],
+            }],
+            ..EffectGraph::default()
+        };
+        assert_eq!(
+            SceneContributions::combined_graph([member(0), member(0)]).validate(),
+            Ok(())
+        );
+        let invalid = SceneContributions::combined_graph([member(1), member(0)]);
+        assert_eq!(invalid.resources.len(), 2);
+        assert_eq!(
+            invalid.validate(),
+            Err(EffectGraphError::UnknownSimulateResource(
+                "effect 0: local draw".into()
+            ))
+        );
+    }
 
     #[test]
     fn a_tick_pass_can_only_reference_its_own_members_resources() {

@@ -39,8 +39,11 @@
 //! of real resource descriptors and named simulate passes. Resource owner identities are local to
 //! each member. The graph validates the declarations against the prepared generation's capability
 //! record; physical resources and both sides' bind groups are created by the member in `rebuild`.
-//! Each named simulate pass calls [`SceneContribution::encode_effect`] before the Sun and opaque
-//! passes, under its own executor timing name. A runtime skip creates no graph or pipeline.
+//! A named simulate pass computes with [`SceneContribution::encode_effect`] or draws into one
+//! cleared mip and layer of its own colour texture with [`SceneContribution::draw_effect`]. The
+//! executor opens the prepared view before the Sun and opaque passes and controls load, store and
+//! timing. A skippable draw targets retained state, and its owner runs it on the first frame of
+//! each epoch. A runtime skip creates no graph or pipeline.
 //!
 //! [`EffectState`] implements the tentative protocol for an effect's clock, anchor and independent
 //! history sides. Start each upload with `begin`; a reset is a full write of every producer and
@@ -60,8 +63,8 @@ mod views;
 pub use after_opaque::{AfterOpaqueImages, AfterOpaqueKind, AfterOpaquePass};
 pub(crate) use graph::EffectResources;
 pub use graph::{
-    EffectAccess, EffectCadence, EffectGraph, EffectPass, SunPathResources, TickPass,
-    ViewVolumeResources,
+    EffectAccess, EffectCadence, EffectDrawTarget, EffectGraph, EffectPass, SunPathResources,
+    TickPass, ViewVolumeResources,
 };
 pub use list::SceneContributions;
 pub use quality::{QualityError, QualityInvalidation, QualityKnob, QualitySettings};
@@ -92,6 +95,7 @@ pub type ExtentResizeJob = Box<
 #[cfg(not(target_arch = "wasm32"))]
 pub struct SecondaryResize {
     pub(crate) graph: EffectGraph,
+    pub(crate) draw_targets: std::collections::BTreeMap<usize, EffectDrawTarget>,
     publish: PublishSecondary,
 }
 
@@ -109,10 +113,21 @@ impl SecondaryResize {
     ) -> Self {
         Self {
             graph,
+            draw_targets: std::collections::BTreeMap::new(),
             publish: Box::new(move |owner| {
                 publish(owner.downcast_mut::<T>().expect("secondary view owner"));
             }),
         }
+    }
+
+    /// Include the prepared views the replacement will publish for its simulate draws.
+    #[must_use]
+    pub fn with_effect_draw_targets(
+        mut self,
+        targets: impl IntoIterator<Item = (usize, EffectDrawTarget)>,
+    ) -> Self {
+        self.draw_targets.extend(targets);
+        self
     }
 
     pub(crate) fn publish(self, owner: &mut dyn SceneContribution) -> EffectGraph {
@@ -128,6 +143,7 @@ pub struct ContributionCandidate {
     pub(crate) graph: EffectGraph,
     commit: PublishSecondary,
     pub(crate) initialization: Vec<wgpu::CommandBuffer>,
+    pub(crate) draw_targets: std::collections::BTreeMap<usize, EffectDrawTarget>,
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -146,6 +162,7 @@ impl ContributionCandidate {
             passes,
             graph,
             initialization: Vec::new(),
+            draw_targets: std::collections::BTreeMap::new(),
             commit: Box::new(move |owner| {
                 commit(
                     owner
@@ -164,6 +181,16 @@ impl ContributionCandidate {
         self
     }
 
+    /// Include the prepared views the candidate will publish for its declared simulate draws.
+    #[must_use]
+    pub fn with_effect_draw_targets(
+        mut self,
+        targets: impl IntoIterator<Item = (usize, EffectDrawTarget)>,
+    ) -> Self {
+        self.draw_targets.extend(targets);
+        self
+    }
+
     /// Forward a wrapped member's candidate through an adapter.
     #[must_use]
     pub fn map_owner<T: SceneContribution, M: SceneContribution>(
@@ -175,9 +202,11 @@ impl ContributionCandidate {
             graph,
             commit,
             initialization,
+            draw_targets,
         } = self;
         Self::new(passes, graph, move |owner| commit(member(owner)))
             .with_initialization(initialization)
+            .with_effect_draw_targets(draw_targets)
     }
 
     pub(crate) fn commit(self, owner: &mut dyn SceneContribution) {
@@ -303,6 +332,12 @@ pub struct SceneSurface<'a> {
 }
 
 impl SceneSurface<'_> {
+    /// Portable format guarantees from the prepared generation's enabled features.
+    #[must_use]
+    pub fn texture_format(&self, format: wgpu::TextureFormat) -> wgpu::TextureFormatFeatures {
+        format.guaranteed_format_features(self.features)
+    }
+
     /// Shared GPU Sun-path target declared by this scene's provider, with its
     /// [`crate::atmosphere::GpuSunMapping`]. Absent for a CPU-fed diagnostic or no provider. A
     /// contribution creates its bindings here at rebuild and declares the
@@ -755,7 +790,21 @@ pub trait SceneContribution: wgpu::WasmNotSend + std::any::Any {
     ) {
     }
 
-    /// Record copies of a named effect's results into its own readback buffers.
+    /// Return the colour view and clear value prepared for a simulate draw.
+    fn effect_draw_target(&self, _index: usize) -> Option<&EffectDrawTarget> {
+        None
+    }
+
+    /// Record a simulate draw in the executor's open pass. Use [Self::submitted] to commit state.
+    fn draw_effect(
+        &mut self,
+        _index: usize,
+        _pass: &mut wgpu::RenderPass<'_>,
+        _frame: &ContributionFrame,
+    ) {
+    }
+
+    /// Record copies of a named simulate compute pass into its own readback buffers.
     /// Called only for a recorded pass, on the same tentative encoder.
     fn encode_effect_readback(&mut self, _index: usize, _encoder: &mut wgpu::CommandEncoder) {}
 

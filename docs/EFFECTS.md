@@ -51,6 +51,14 @@ the whole output is written. Resolve previous/next/result with `EffectState::sid
 output when its producer ran and the committed side otherwise. Commit clocks, anchors, history sides and prior
 deformation only in `submitted(true)`. A discarded encoder commits nothing.
 
+A simulate pass with an `AttachmentClear` access draws before the Sun passes and opaque shading.
+Declare one mip and layer of an effect-owned, single-sample 2D colour texture and no other writer for that
+subresource. In `rebuild`, choose the colour format using `SceneSurface::texture_format` and create an
+`EffectDrawTarget` with the clear colour and the pipeline's blend choice. Return it from `effect_draw_target`
+at the pass's local index. The executor opens and times the pass. In `draw_effect`, record draws into that open
+pass with the effect's prepared pipeline and bindings. A skippable draw requires persistent storage and runs
+on the first frame of each effect epoch. A skipped pass leaves its last submitted contents available to readers.
+
 Declare late render or compute passes in `EffectGraph::after_opaque` with `AfterOpaquePass`. They run after opaque,
 sky and the optional stars, in contribution order, before temporal consumers and the pre-tone input.
 Each pass declares effect-local `accesses` with the same ranges and history bindings as simulate passes.

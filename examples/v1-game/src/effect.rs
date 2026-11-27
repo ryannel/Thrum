@@ -1,6 +1,8 @@
 //! Opt-in integer diagnostic for EFFECT-GRAPH. It is never installed by default.
 mod after_compute;
 pub mod after_opaque;
+#[cfg(all(feature = "proving", target_arch = "wasm32"))]
+pub(crate) mod drawn_field;
 pub mod qualification;
 mod slab;
 mod tick;
