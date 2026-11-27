@@ -1336,6 +1336,10 @@ impl PreparedSynthetic {
         self.atmosphere.as_ref()?.pending_chart_update()
     }
 
+    pub(crate) fn pending_chart_position(&self) -> Option<(u32, u32)> {
+        self.atmosphere.as_ref()?.pending_chart_position()
+    }
+
     pub(crate) fn aerial_age(&self) -> Option<u32> {
         self.atmosphere
             .as_ref()

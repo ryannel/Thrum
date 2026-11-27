@@ -91,6 +91,8 @@ pub struct WindowTransitionProof {
     pub scale_replay: Option<ScaleReplay>,
     /// Substitute this value for the registry default in the fullscreen output policy.
     pub fullscreen_output_scale: Option<thrum_render::synthetic::RenderScale>,
+    /// Stage this chart cadence for the presented proof arm.
+    pub chart_cadence: Option<u32>,
 }
 
 /// Scale trace used in place of the live governor for a paired comparison.
@@ -184,6 +186,7 @@ pub(in crate::app) struct TransitionProof {
     #[cfg(feature = "creation-counters")]
     pub(in crate::app) creation_record: Option<PathBuf>,
     pub(in crate::app) scale_replay: Option<ScaleReplay>,
+    pub(in crate::app) chart_cadence: Option<u32>,
 }
 
 impl TransitionProof {
@@ -204,6 +207,7 @@ impl TransitionProof {
             #[cfg(feature = "creation-counters")]
             creation_record: closing_route.then(|| options.output.join("creations.txt")),
             scale_replay: options.scale_replay,
+            chart_cadence: options.chart_cadence,
             output: BufWriter::new(file),
             configure_log: BufWriter::new(configure),
             configure_error: None,
@@ -472,6 +476,7 @@ fn governor_record(frame: &thrum_render::runtime::GovernorFrame) -> Value {
         "held": frame.mark.held(),
         "aerial_age": frame.aerial_age,
         "chart_update": frame.chart_update,
+        "chart_position": frame.chart_position,
         "knobs": frame.knobs.iter().map(|knob| (&knob.name, knob.value)).collect::<std::collections::BTreeMap<_, _>>(),
     })
 }

@@ -32,6 +32,7 @@ fn current_cloud_sun_factor_scales_aerial_between_diffuse_writes() {
         let air = sun(5.0, 90_000.0, [1.0; 3]).with_nightglow();
         let mut scene = SyntheticScene::grid(1).unwrap();
         scene.sky_overlay = true;
+        scene.sun_shadows = false;
         scene.sun_optical_depth = Some(cloud_field(0.0));
         let mut spread = Probe::prepare(&caps, &queue, air, scene.clone()).await;
         let mut control = Probe::prepare(&caps, &queue, air, scene).await;

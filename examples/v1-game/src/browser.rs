@@ -932,6 +932,14 @@ impl BrowserGame {
         self.page.shell.enable_governor()
     }
 
+    /// Move the chart proof along the cooked valley camera path.
+    /// # Errors
+    /// Refuses an invalid or unavailable camera.
+    #[cfg(feature = "proving")]
+    pub fn set_chart_capture_eye(&mut self, x: f32, y: f32, z: f32) -> Result<(), JsValue> {
+        game::set_haze_eye(&mut self.page.shell, [x, y, z], false).map_err(js_error)
+    }
+
     /// Stage the chart cadence selected by the realtime proof.
     /// # Errors
     /// Refuses a capture without a governed atmosphere.
@@ -1004,6 +1012,7 @@ impl BrowserGame {
                 "chart_cadence": sample.governor.as_ref().and_then(|quality| quality.knobs.iter()
                     .find(|knob| knob.name == "atmosphere.chart cadence").map(|knob| knob.value)).unwrap_or(1),
                 "chart_update": sample.governor.as_ref().and_then(|quality| quality.chart_update),
+                "chart_position": sample.governor.as_ref().and_then(|quality| quality.chart_position),
                 "gpu_present_ns": sample.gpu_present_ns,
                 "timing_requested": sample.timing_requested, "timing_fault": sample.timing_fault,
             }));

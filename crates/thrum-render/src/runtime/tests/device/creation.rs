@@ -757,6 +757,7 @@ fn chart_cadence_gpu_host_tiers_reuse_the_atmosphere_resources() {
             },
             Policy {
                 atmosphere: true,
+                reconstruction: true,
                 ..Policy::default()
             },
             scene,

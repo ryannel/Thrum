@@ -53,12 +53,7 @@ impl LightBindings<'_> {
             },
         ];
         if let Some(atmosphere) = self.atmosphere {
-            if let Some(lighting) = atmosphere.chart_lighting() {
-                entries.push(wgpu::BindGroupEntry {
-                    binding: crate::atmosphere::overlay::CHART_LIGHTING_BINDING,
-                    resource: lighting.as_entire_binding(),
-                });
-            }
+            entries.extend(atmosphere.chart_consumer_bindings());
             let (views, sampler, uniform) =
                 self.aerial.unwrap_or_else(|| atmosphere.aerial_sampled());
             let (reflection, dfg, reflection_sampler) = atmosphere.reflection_sampled();

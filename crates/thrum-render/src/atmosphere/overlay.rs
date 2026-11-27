@@ -7,6 +7,8 @@ const EDGE: u32 = 48;
 // Decode before the BRDF and exposure, just as for the clear-sky encoding.
 const GAIN: f32 = 32.0;
 pub(crate) const CHART_LIGHTING_BINDING: u32 = 30;
+pub(crate) const REFLECTION_TAGS_BINDING: u32 = 31;
+pub(crate) const REFLECTION_TAGS_BYTES: u64 = size_of::<[[u32; 4]; 2]>() as u64;
 
 #[repr(C, align(16))]
 #[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
@@ -15,7 +17,6 @@ struct ChartLighting {
     cloudy: u32,
     haze: f32,
     padding: u32,
-    reflection_tags: [[u32; 4]; 2],
 }
 
 pub(crate) const CHART_LIGHTING_BYTES: u64 = size_of::<ChartLighting>() as u64;
@@ -34,6 +35,7 @@ pub(super) struct Target {
     pub(super) view: wgpu::TextureView,
     pub(super) lighting: Lighting,
     pub(super) chart_lighting: wgpu::Buffer,
+    pub(super) reflection_tags: wgpu::Buffer,
 }
 
 impl Target {
@@ -79,10 +81,17 @@ impl Target {
                 | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
+        let reflection_tags = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("atmosphere reflection tags"),
+            size: REFLECTION_TAGS_BYTES,
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::STORAGE,
+            mapped_at_creation: false,
+        });
         Self {
             texture,
             view: overlay,
             chart_lighting,
+            reflection_tags,
             lighting: if view_volume {
                 Lighting::Overlay
             } else {
@@ -138,13 +147,12 @@ pub(super) fn prepare_diffuse(
 
 pub(super) fn prepare_chart_lighting(
     device: &crate::runtime::DeviceSite,
-    buffers: [&wgpu::Buffer; 3],
+    [snapshot, live]: [&wgpu::Buffer; 2],
     chart: &wgpu::TextureView,
     sampler: &wgpu::Sampler,
     target: &Target,
     (directional, cloud): (&wgpu::Buffer, Option<&super::CloudPrepared>),
 ) -> (wgpu::ComputePipeline, wgpu::BindGroup) {
-    let [snapshot, live, environment] = buffers;
     let haze = target.lighting == Lighting::OverlayAndHaze;
     let variant = cloud.map_or(CloudVariant::Absent, super::CloudPrepared::variant);
     let pipeline = pipeline(
@@ -157,11 +165,7 @@ pub(super) fn prepare_chart_lighting(
         dimension: Some(wgpu::TextureViewDimension::D2Array),
         ..Default::default()
     });
-    let mut entries = vec![
-        buffer(3, environment),
-        view(7, &faces),
-        buffer(8, &target.chart_lighting),
-    ];
+    let mut entries = vec![view(7, &faces), buffer(8, &target.chart_lighting)];
     if haze {
         entries.extend([
             buffer(0, snapshot),
@@ -188,8 +192,7 @@ pub(super) fn prepare_chart_lighting(
 
 pub(crate) fn chart_overlay_source(haze: bool, cloud: CloudVariant) -> String {
     let mut source = format!(
-        "{}\n{}\n{}\n{}",
-        wgsl!("environment_light.wgsl"),
+        "{}\n{}\n{}",
         include_str!("chart_lighting.wgsl"),
         include_str!("chart_overlay_classify.wgsl"),
         include_str!("chart_overlay.wgsl"),
@@ -227,9 +230,18 @@ fn append_cloud_factor(source: &mut String, cloud: CloudVariant, observer: &str)
     }
 }
 
+pub(crate) fn chart_consumer_layout(
+    visibility: wgpu::ShaderStages,
+) -> [wgpu::BindGroupLayoutEntry; 2] {
+    [
+        crate::binding::uniform(CHART_LIGHTING_BINDING, visibility, CHART_LIGHTING_BYTES),
+        crate::binding::uniform(REFLECTION_TAGS_BINDING, visibility, REFLECTION_TAGS_BYTES),
+    ]
+}
+
 pub(crate) fn chart_consumer_source(source: &str, group: u32) -> String {
     with_reflection_gain(&format!(
-        "{source}\n{}\n@group({group}) @binding({CHART_LIGHTING_BINDING}) var<uniform> chart_lighting: ChartLighting;\n{}",
+        "{source}\n{}\n@group({group}) @binding({CHART_LIGHTING_BINDING}) var<uniform> chart_lighting: ChartLighting;\n@group({group}) @binding({REFLECTION_TAGS_BINDING}) var<uniform> reflection_tags: ReflectionTags;\n{}",
         include_str!("chart_lighting.wgsl"),
         include_str!("chart_reflection_sample.wgsl"),
     ))
@@ -241,14 +253,13 @@ pub(crate) fn reflection_source() -> String {
     with_reflection_gain(&format!(
         "{}\n{}\n{}\n{}
 @group(0) @binding(6) var<uniform> overlay_flags: EnvironmentLight;
-@group(0) @binding(7) var<storage, read_write> overlay_chart: ChartLighting;
+@group(0) @binding(7) var<uniform> overlay_chart: ChartLighting;
+@group(0) @binding(8) var<storage, read_write> reflection_tags: ReflectionTags;
 fn reflection_is_cloudy() -> bool {{
     return select(overlay_chart.cloudy != 0u, overlay_flags.sky_diffuse[2].w != 0.0, overlay_chart.mode == 0u);
 }}
 fn publish_reflection_encoding(mip: u32, cloudy: bool) {{
-    if overlay_chart.mode != 0u {{
-        overlay_chart.reflection_tags[mip / 4u][mip % 4u] = u32(cloudy);
-    }}
+    reflection_tags.tags[mip / 4u][mip % 4u] = u32(cloudy);
 }}
 ",
         super::reflection::cube_source_with(integrate),

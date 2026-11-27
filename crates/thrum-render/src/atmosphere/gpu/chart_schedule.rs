@@ -104,6 +104,7 @@ pub(super) struct ChartSubmission {
     written: Source,
     next_refresh: Option<Refresh>,
     cadence: u32,
+    pub(super) position: Option<(u32, u32)>,
     writes: u16,
     pub(super) whole_update: Option<WholeUpdate>,
 }
@@ -188,6 +189,7 @@ impl ChartSchedule {
         let mut writes = 0;
         let mut written = live;
         let mut next_refresh = None;
+        let position = refresh.map(|refresh| (refresh.cadence, refresh.cursor));
         if let Some(mut refresh) = refresh {
             written = Source {
                 overlay_revision: live.overlay_revision,
@@ -218,6 +220,7 @@ impl ChartSchedule {
             written,
             next_refresh,
             cadence,
+            position,
             writes,
             whole_update,
         }

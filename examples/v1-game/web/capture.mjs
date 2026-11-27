@@ -349,7 +349,7 @@ async function runCapture() {
         ? 16.0 + Math.max(0, submitted - 12) * 0.1
         : seconds >= 5.6 ? 12 : 16 + Math.min(6, Math.max(0, seconds - 0.35) * 2.45);
       if (lastPresented !== submitted) {
-        game.set_cloud_capture_eye(...eye);
+        game.set_chart_capture_eye(...eye);
         game.set_time_of_day(Math.min(23.9, hours) / 24);
         if (governed) game.set_capture_chart_cadence(chartCadence);
         record.actions.push({kind: 'chart pose', submission_after: Number(game.presented()), frame_ms: timestamp,

@@ -703,6 +703,12 @@ impl<W: InlineWorld, V: SceneSource<W::Page>> WebShell<W, V> {
         self.host.continuous_source_mut()
     }
 
+    /// Edit the scene source at an explicit camera cut.
+    pub fn camera_source_mut(&mut self) -> &mut V {
+        self.host.invalidate_history();
+        self.host.source_mut()
+    }
+
     /// Attach a scene contribution. While the device is lost it is held, with no GPU call,
     /// and attached right after the replacement device is published; a later attach
     /// replaces a held one, and a refusal then is reported by [`Self::take_attach_error`].

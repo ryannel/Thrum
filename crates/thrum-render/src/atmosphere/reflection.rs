@@ -61,7 +61,7 @@ impl ReflectionPrepared {
         uniform: &wgpu::Buffer,
         charts: &[wgpu::BindGroupEntry<'_>],
         sky_sampler: &wgpu::Sampler,
-        overlay: Option<(&wgpu::TextureView, &wgpu::Buffer, &wgpu::Buffer)>,
+        overlay: Option<(&wgpu::TextureView, [&wgpu::Buffer; 3])>,
     ) -> Self {
         let cube = texture(device, "atmosphere specular cube", CUBE_SIZE, 6, MIP_COUNT);
         let dfg = texture(device, "atmosphere DFG", DFG_SIZE, 1, 1);
@@ -130,22 +130,30 @@ impl ReflectionPrepared {
                 ]
                 .into_iter()
                 .chain(charts.iter().cloned())
-                .chain(overlay.into_iter().flat_map(|(view, flags, lighting)| {
-                    [
-                        wgpu::BindGroupEntry {
-                            binding: 5,
-                            resource: wgpu::BindingResource::TextureView(view),
-                        },
-                        wgpu::BindGroupEntry {
-                            binding: 6,
-                            resource: flags.as_entire_binding(),
-                        },
-                        wgpu::BindGroupEntry {
-                            binding: 7,
-                            resource: lighting.as_entire_binding(),
-                        },
-                    ]
-                }))
+                .chain(
+                    overlay
+                        .into_iter()
+                        .flat_map(|(view, [flags, lighting, tags])| {
+                            [
+                                wgpu::BindGroupEntry {
+                                    binding: 5,
+                                    resource: wgpu::BindingResource::TextureView(view),
+                                },
+                                wgpu::BindGroupEntry {
+                                    binding: 6,
+                                    resource: flags.as_entire_binding(),
+                                },
+                                wgpu::BindGroupEntry {
+                                    binding: 7,
+                                    resource: lighting.as_entire_binding(),
+                                },
+                                wgpu::BindGroupEntry {
+                                    binding: 8,
+                                    resource: tags.as_entire_binding(),
+                                },
+                            ]
+                        }),
+                )
                 .collect::<Vec<_>>(),
             })
         });
@@ -301,7 +309,8 @@ fn reflection_bindings(overlay: bool) -> Vec<wgpu::BindGroupLayoutEntry> {
         entries.extend([
             binding::texture(5, compute, sample, wgpu::TextureViewDimension::Cube),
             binding::uniform(6, compute, crate::light::ENVIRONMENT_BYTES),
-            binding::storage(7, compute, false, super::overlay::CHART_LIGHTING_BYTES),
+            binding::uniform(7, compute, super::overlay::CHART_LIGHTING_BYTES),
+            binding::storage(8, compute, false, super::overlay::REFLECTION_TAGS_BYTES),
         ]);
     }
     entries

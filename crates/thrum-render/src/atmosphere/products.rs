@@ -124,10 +124,7 @@ pub(crate) fn create(
     }
     // Bindings 7–9 are the filtered reflection pair and its sampler.
     if atmosphere.has_overlay() {
-        entries.push(buffer(
-            super::overlay::CHART_LIGHTING_BINDING,
-            super::overlay::CHART_LIGHTING_BYTES,
-        ));
+        entries.extend(super::overlay::chart_consumer_layout(visibility));
     }
     let selected = |binding: u32| reflection || !(7..=9).contains(&binding);
     entries.retain(|entry| selected(entry.binding));
@@ -191,12 +188,7 @@ pub(crate) fn create(
             bindings.extend(band.entries());
         }
     }
-    if let Some(lighting) = atmosphere.chart_lighting() {
-        bindings.push(wgpu::BindGroupEntry {
-            binding: super::overlay::CHART_LIGHTING_BINDING,
-            resource: lighting.as_entire_binding(),
-        });
-    }
+    bindings.extend(atmosphere.chart_consumer_bindings());
     bindings.retain(|entry| selected(entry.binding));
     let groups = std::array::from_fn(|side| {
         bindings.push(wgpu::BindGroupEntry {

@@ -75,7 +75,7 @@ pub(crate) fn set_haze_eye(shell: &mut Shell, eye: [f32; 3], cut: bool) -> Resul
         return Ok(());
     }
     if cut {
-        shell.source_mut().move_capture_eye(eye)
+        shell.camera_source_mut().move_capture_eye(eye)
     } else {
         shell.continuous_source_mut().move_capture_eye(eye)
     }
@@ -245,7 +245,7 @@ pub(crate) fn set_camera_yaw(shell: &mut Shell, radians: f32) -> Result<(), Stri
 
 /// Select a checked authored camera.
 pub(crate) fn set_scene_camera(shell: &mut Shell, camera: SceneCamera) -> Result<(), String> {
-    shell.source_mut().select_camera(camera)
+    shell.camera_source_mut().select_camera(camera)
 }
 
 /// Validate and replace continuous local input.
@@ -309,7 +309,7 @@ pub(crate) fn install_route(
         ));
     }
     let tick = shell.host().world().tick();
-    shell.source_mut().install_route(route, tick)
+    shell.camera_source_mut().install_route(route, tick)
 }
 
 /// The route step target in page milliseconds from the clock origin: `(tick + 1 + φ)·P`.

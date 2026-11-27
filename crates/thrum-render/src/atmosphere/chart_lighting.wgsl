@@ -5,5 +5,8 @@ struct ChartLighting {
     cloudy: u32,
     haze: f32,
     padding: u32,
-    reflection_tags: array<vec4<u32>, 2>,
+}
+
+struct ReflectionTags {
+    tags: array<vec4<u32>, 2>,
 }

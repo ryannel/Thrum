@@ -32,6 +32,7 @@ impl<'a> Probe<'a> {
     ) -> Self {
         let mut scene = SyntheticScene::grid(1).unwrap();
         scene.sky_overlay = overlay;
+        scene.sun_shadows = false;
         Self::prepare(caps, queue, frame, scene).await
     }
 

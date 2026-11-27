@@ -8,7 +8,7 @@ use crate::pass_key::{AtmosphereStage, PassKey};
 
 use super::{
     gpu::{AERIAL_EXTENT, AtmospherePrepared, SKY_MOTION_BYTES, UNIFORM_BYTES},
-    overlay::CHART_LIGHTING_BYTES,
+    overlay::{CHART_LIGHTING_BYTES, REFLECTION_TAGS_BYTES},
     reflection::{CUBE_SIZE, DFG_SIZE, MIP_COUNT, SAMPLE_BYTES},
     stage::{Chart, Charts},
 };
@@ -254,25 +254,20 @@ impl AtmospherePrepared {
         let snapshot = graph
             .persistent(SNAPSHOT_OWNER)
             .ok_or(crate::error::RenderError::GraphPassMismatch)?;
-        let chart_lighting = graph.resource(
-            ResourceDescriptor::Buffer {
-                bytes: CHART_LIGHTING_BYTES,
-                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::STORAGE,
-            },
-            ResourceScope::Imported { initialized: true },
-        )?;
+        let state_buffer = |graph: &mut FrameGraph, bytes| {
+            graph.resource(
+                ResourceDescriptor::Buffer {
+                    bytes,
+                    usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::STORAGE,
+                },
+                ResourceScope::Imported { initialized: true },
+            )
+        };
+        let chart_lighting = state_buffer(graph, CHART_LIGHTING_BYTES)?;
+        let reflection_tags = state_buffer(graph, REFLECTION_TAGS_BYTES)?;
         let mut accesses = vec![
             read.clone(),
-            Access::new(
-                environment_light.clone(),
-                0..crate::light::ENVIRONMENT_BYTES,
-                AccessKind::UniformRead,
-            ),
-            Access::new(
-                chart_lighting.clone(),
-                0..CHART_LIGHTING_BYTES,
-                AccessKind::StorageReadWrite,
-            ),
+            Access::new(chart_lighting.clone(), 4..12, AccessKind::StorageWrite),
         ];
         if self.uses_haze_scale() {
             accesses.extend([
@@ -298,11 +293,19 @@ impl AtmospherePrepared {
             &snapshot,
             &charts,
             forward,
-            Some((&read, environment_light, &chart_lighting)),
+            Some((
+                &read,
+                [environment_light, &chart_lighting, &reflection_tags],
+            )),
         )?;
         forward.push(Access::new(
             chart_lighting,
             0..CHART_LIGHTING_BYTES,
+            AccessKind::UniformRead,
+        ));
+        forward.push(Access::new(
+            reflection_tags,
+            0..REFLECTION_TAGS_BYTES,
             AccessKind::UniformRead,
         ));
         Ok(())
@@ -431,7 +434,7 @@ impl AtmospherePrepared {
         uniform: &ResourceId,
         charts: &Charts<ResourceId>,
         forward: &mut Vec<Access>,
-        overlay: Option<(&Access, &ResourceId, &ResourceId)>,
+        overlay: Option<(&Access, [&ResourceId; 3])>,
     ) -> Result<(), GraphError> {
         let resources = [
             (&self.reflection.dfg, DFG_SIZE, 1, 1, self.generation),
@@ -489,7 +492,7 @@ impl AtmospherePrepared {
             .chain(
                 overlay
                     .into_iter()
-                    .flat_map(|(cube, flags, chart_lighting)| {
+                    .flat_map(|(cube, [flags, chart_lighting, tags])| {
                         [
                             cube.clone(),
                             Access::new(
@@ -500,7 +503,12 @@ impl AtmospherePrepared {
                             Access::new(
                                 chart_lighting.clone(),
                                 0..CHART_LIGHTING_BYTES,
-                                AccessKind::StorageReadWrite,
+                                AccessKind::UniformRead,
+                            ),
+                            Access::new(
+                                tags.clone(),
+                                u64::from(mip * 4)..u64::from(mip * 4 + 4),
+                                AccessKind::StorageWrite,
                             ),
                         ]
                     }),

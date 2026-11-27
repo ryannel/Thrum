@@ -402,6 +402,15 @@ fn window_transition_proof() -> Result<Option<thrum_app::WindowTransitionProof>,
         capture_cue: window_capture_cue(arm)?,
         scale_replay,
         fullscreen_output_scale: output_scale_setting("THRUM_MAC_OUTPUT_SCALE_PROOF_REGISTRY")?,
+        chart_cadence: match std::env::var("THRUM_MAC_CHART_CADENCE").as_deref() {
+            Err(std::env::VarError::NotPresent) => None,
+            Ok("4") if arm == TransitionArm::Route && governor_enabled()? => Some(4),
+            _ => {
+                return Err(
+                    "the chart proof requires the governed Mac window at cadence 4".to_owned(),
+                );
+            }
+        },
         governor: match record.as_deref() {
             Ok("thermal") => Some(thrum_app::GovernorProof::Thermal {
                 from: 90,

@@ -324,7 +324,7 @@ try {
     if (receipt.result.value) manifest.instantiated_wasm_sha256 = receipt.result.value;
   }
   await fs.writeFile(path.join(output, 'runtime.json'), JSON.stringify(record, null, 2));
-  if (exitRecord !== 'off' && record.error) throw new Error(record.error);
+  if ((exitRecord !== 'off' || chartTake !== 'off') && record.error) throw new Error(record.error);
   const admittedGovernor = chartTake !== 'off'
     ? record.chart_frames?.some(sample => sample.chart_cadence === Number(chartCadence))
     : exitRecord === 'off'

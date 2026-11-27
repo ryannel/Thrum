@@ -13,6 +13,7 @@ struct Policy {
     native_content_origin: Option<[u32; 2]>,
     camera: f32,
     atmosphere: bool,
+    reconstruction: bool,
     empty: bool,
     last_override: Cell<bool>,
     camera_cut_tick: Option<u64>,
@@ -72,6 +73,7 @@ impl SceneSource<SourceTick> for Policy {
         });
         let history_epoch = u64::from(self.camera_cut_tick.is_some_and(|cut| source.tick >= cut));
         let view = view
+            .with_reconstruction(self.reconstruction)
             .with_history_epoch(history_epoch)
             .with_native_witness(self.native);
         let view = self

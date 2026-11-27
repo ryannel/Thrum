@@ -2512,6 +2512,12 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             discarded.map_err(|timing| FrameError::gpu("render timing discard", timing))?;
             return Err(FrameError::gpu("render encode", error));
         }
+        if let Some(quality) = &mut prepared.sample.governor {
+            quality.chart_position = self
+                .prepared
+                .three_d()
+                .and_then(PreparedSynthetic::pending_chart_position);
+        }
         Ok(RecordedScene {
             native,
             segments,

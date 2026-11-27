@@ -147,6 +147,10 @@ impl AtmospherePrepared {
             .map(chart_schedule::WholeUpdate::name)
     }
 
+    pub(crate) fn pending_chart_position(&self) -> Option<(u32, u32)> {
+        self.pending_charts[usize::from(self.overlay_write.0.load(Ordering::Relaxed))].position
+    }
+
     pub(crate) fn pending_aerial_age(&self) -> u32 {
         self.pending_aerial_age
     }
@@ -328,7 +332,7 @@ impl AtmospherePrepared {
         let chart_lighting = overlay.as_ref().zip(world_light).map(|(target, inputs)| {
             super::overlay::prepare_chart_lighting(
                 device,
-                [&chart_uniform, &uniform, environment_light],
+                [&chart_uniform, &uniform],
                 &views.sky_view,
                 &sampler,
                 target,
@@ -365,7 +369,14 @@ impl AtmospherePrepared {
                 &chart_uniform,
                 &reflection_charts,
                 &sampler,
-                Some((&overlay.view, environment_light, &overlay.chart_lighting)),
+                Some((
+                    &overlay.view,
+                    [
+                        environment_light,
+                        &overlay.chart_lighting,
+                        &overlay.reflection_tags,
+                    ],
+                )),
             )
         } else {
             ReflectionPrepared::new(device, &chart_uniform, &reflection_charts, &sampler)
@@ -453,8 +464,19 @@ impl AtmospherePrepared {
         self.overlay.is_some()
     }
 
-    pub(crate) fn chart_lighting(&self) -> Option<&wgpu::Buffer> {
-        self.overlay.as_ref().map(|overlay| &overlay.chart_lighting)
+    pub(crate) fn chart_consumer_bindings(&self) -> impl Iterator<Item = wgpu::BindGroupEntry<'_>> {
+        self.overlay.iter().flat_map(|overlay| {
+            [
+                wgpu::BindGroupEntry {
+                    binding: super::overlay::CHART_LIGHTING_BINDING,
+                    resource: overlay.chart_lighting.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: super::overlay::REFLECTION_TAGS_BINDING,
+                    resource: overlay.reflection_tags.as_entire_binding(),
+                },
+            ]
+        })
     }
 
     pub(crate) fn uses_haze_scale(&self) -> bool {
@@ -596,15 +618,9 @@ impl AtmospherePrepared {
         record.sky_mapping = self.pending_sky_mapping;
         self.pending_charts = [charts, self.plan_charts(true)];
         self.overlay_write.0.store(false, Ordering::Relaxed);
-        if let Some(buffer) = self.chart_lighting() {
-            let mode = if self.quality()[1].value == 1 {
-                0_u32
-            } else if self.schedule.was_governed() {
-                1
-            } else {
-                2
-            };
-            queue.write_buffer(buffer, 0, bytemuck::bytes_of(&mode));
+        if let Some(overlay) = &self.overlay {
+            let mode = u32::from(self.quality()[1].value > 1);
+            queue.write_buffer(&overlay.chart_lighting, 0, bytemuck::bytes_of(&mode));
         }
         queue.write_buffer(&self.uniform, 0, bytemuck::bytes_of(&record));
     }

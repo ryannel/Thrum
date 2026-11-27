@@ -536,6 +536,15 @@ impl<G: Game> Actor<G> {
         if let Some(proof) = &mut self.transition_proof {
             proof.stage("advancing the world and polling GPU completions");
         }
+        if let Some(cadence) = self
+            .transition_proof
+            .as_ref()
+            .and_then(|proof| proof.chart_cadence)
+        {
+            self.host
+                .set_quality_knob("atmosphere.chart cadence", cadence)
+                .map_err(|error| FrameError::Scene(error.to_string()))?;
+        }
         let mut advanced = self.host.advance(observation)?;
         if !advanced.can_acquire_serial() {
             let report = advanced.submit(None)?;

@@ -42,6 +42,7 @@ cooked-assets = { max-threads = 1 }
 frame-alloc = { max-threads = 1 }
 foam-scene = { max-threads = 1 }
 lens-scene = { max-threads = 1 }
+chart-cadence = { max-threads = 1 }
 water-interaction = { max-threads = 1 }
 # Not a device mutex: the game's cooked-row and lent-product cases each draw a game host through
 # edited cooked content and wait on the device every frame, so beyond two at once they only queue
@@ -70,6 +71,11 @@ test-group = 'foam-scene'
 # Paired lens measurements retain two hosts and their Metal timestamp sets.
 filter = 'package(water-scene) & binary(=lens_gpu)'
 test-group = 'lens-scene'
+
+[[profile.default.overrides]]
+# The chart probes make several GPU readbacks on the same Metal device.
+filter = 'package(thrum-render) & test(/chart_cadence_gpu/)'
+test-group = 'chart-cadence'
 
 [[profile.default.overrides]]
 # One live interaction fixture at a time: a Metal device and several full-grid buffers each.

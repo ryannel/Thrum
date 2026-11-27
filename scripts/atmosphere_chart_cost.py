@@ -37,6 +37,7 @@ def stage_rows(directory, cadence):
         quality = sample["quality"]
         actual = quality["knobs"].get("atmosphere.chart cadence") if quality else 1
         reason = quality.get("chart_update") if quality else None
+        position = quality.get("chart_position") if quality else None
         order, timestamps = sample["gpu_pass_order"], sample["gpu_pass_ns"]
         if order is None or timestamps is None:
             raise ValueError(f"missing GPU execution trace for submission {sample['submission']}")
@@ -54,10 +55,12 @@ def stage_rows(directory, cadence):
                 raise ValueError(f"invalid whole update at submission {sample['submission']}: {reason}")
         elif cadence == 1 and not rows and tuple(stages) == STAGES:
             reason = "initialization"
-        elif actual > 1 and len(stages) > math.ceil(len(STAGES) / actual):
-            raise ValueError(f"ordinary submission {sample['submission']} exceeds cadence {actual} bound")
+        elif actual > 1:
+            effective = position[0] if position else actual
+            if len(stages) > math.ceil(len(STAGES) / effective):
+                raise ValueError(f"ordinary submission {sample['submission']} exceeds cadence {effective} bound")
         rows.append({"submission": sample["submission"], "tick": sample["tick"], "cadence": actual,
-                     "whole_update": reason, "stages": stages, "chart_ns": sum(times)})
+                     "position": position, "whole_update": reason, "stages": stages, "chart_ns": sum(times)})
     return rows
 
 
@@ -70,9 +73,19 @@ def complete_refreshes(rows, cadence, route):
         window = moving[start:start + cadence]
         neighbors = len(window) == cadence and all(
             b["submission"] == a["submission"] + 1 for a, b in zip(window, window[1:]))
-        if (neighbors and not any(r["whole_update"] for r in window)
-                and tuple(s for r in window for s in r["stages"]) == STAGES and row["stages"][0] == STAGES[0]):
-            matched.append([window[0]["submission"], window[-1]["submission"]])
+        if not neighbors or any(r["whole_update"] for r in window):
+            continue
+        actual = tuple(stage for frame in window for stage in frame["stages"])
+        if cadence == 1:
+            if actual != STAGES:
+                continue
+        else:
+            expected = [[cadence, i] for i in range(cadence)]
+            if [r["position"] for r in window] != expected:
+                continue
+            if actual != STAGES:
+                raise ValueError(f"incomplete chart stages in moving refresh {row['submission']}: {actual}")
+        matched.append([window[0]["submission"], window[-1]["submission"]])
     return matched
 
 

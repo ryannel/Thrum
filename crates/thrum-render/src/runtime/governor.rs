@@ -28,6 +28,8 @@ pub struct GovernorFrame {
     pub aerial_age: Option<u32>,
     /// Cause of a whole chart update scheduled for this encoded frame.
     pub chart_update: Option<&'static str>,
+    /// Active chart refresh's cadence and zero-based submission within it.
+    pub chart_position: Option<(u32, u32)>,
 }
 
 pub(super) struct GovernorHost {
@@ -296,6 +298,10 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 .prepared
                 .three_d()
                 .and_then(PreparedSynthetic::pending_chart_update),
+            chart_position: self
+                .prepared
+                .three_d()
+                .and_then(PreparedSynthetic::pending_chart_position),
         })
     }
 }

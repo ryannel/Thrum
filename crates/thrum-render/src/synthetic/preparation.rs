@@ -306,10 +306,8 @@ impl PreparedSynthetic {
         ];
         if matches!(lighting, FrameLighting::Atmosphere(_)) {
             if scene.sky_overlay {
-                light_entries.push(binding::uniform(
-                    crate::atmosphere::overlay::CHART_LIGHTING_BINDING,
+                light_entries.extend(crate::atmosphere::overlay::chart_consumer_layout(
                     wgpu::ShaderStages::FRAGMENT,
-                    crate::atmosphere::overlay::CHART_LIGHTING_BYTES,
                 ));
             }
             for (binding, dimension) in [

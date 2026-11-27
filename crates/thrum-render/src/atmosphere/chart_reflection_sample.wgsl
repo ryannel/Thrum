@@ -8,8 +8,8 @@ fn sample_overlay_reflection(encoded: vec4<f32>, direction: vec3<f32>, level: f3
     }
     let lower = u32(floor(level));
     let upper = min(lower + 1u, textureNumLevels(sky_reflection) - 1u);
-    let lower_cloudy = chart_lighting.reflection_tags[lower / 4u][lower % 4u] != 0u;
-    let upper_cloudy = chart_lighting.reflection_tags[upper / 4u][upper % 4u] != 0u;
+    let lower_cloudy = reflection_tags.tags[lower / 4u][lower % 4u] != 0u;
+    let upper_cloudy = reflection_tags.tags[upper / 4u][upper % 4u] != 0u;
     if lower_cloudy == upper_cloudy || fract(level) == 0.0 {
         return decode_overlay_reflection(encoded, solar, lower_cloudy);
     }
