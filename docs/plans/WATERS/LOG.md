@@ -1902,3 +1902,24 @@
   above it at the same stations. The unit and half-factor meter arms passed
   and the browser reported no validation faults.
   [Chrome WebGPU proof](../../../.orchestrate/evidence/WATERS/WP16/chrome-qualified/run.json).
+
+## WP16 visual inspection checkpoint
+
+- 2026-11-27 Three Metal looks at the deep-sea descent still left the twilight
+  bed difficult to read at 3 m and 10 m. The baseline used the offshore dive
+  and its incident meter. The next look added surveyed bed landmarks,
+  lowered the adaptation share to 0.55, and slowed both waterline approaches.
+  The third used clearer offshore water coefficients. At 20 m the foreground
+  bed and rocks are visible. At the earlier depths the small shapes of the
+  rocks are visible but the bed loses its detail. The dip in contrast needs a
+  design decision before more tuning.
+  [Twilight comparison](../../../.orchestrate/evidence/WATERS/WP16/visual-checkpoint/depth-clearer-pair.png).
+- The example craft now casts a shadow and samples direct Sun through the
+  water. The filtered refracted exit removes the broad diagonal self-shadow
+  stripes on the hull and retains the low-Sun net. Sea-bed frames confirm
+  the caustic window fade. The lake's close noon shadow still has a coarse
+  silhouette, and the night and calm controls and motion must be judged
+  alongside the final receiver views. WP16.6, .7, .8 and .11 remain open.
+  [Sea hull](../../../.orchestrate/evidence/WATERS/WP16/visual-checkpoint/sea-hull-filtered-pair.png) ·
+  [Lake hull](../../../.orchestrate/evidence/WATERS/WP16/visual-checkpoint/lake-hull-filtered-pair.png) ·
+  [Handoff](../../../.orchestrate/evidence/WATERS/WP16-handoff.md).

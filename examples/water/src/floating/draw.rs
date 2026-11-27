@@ -290,7 +290,7 @@ impl SceneContribution for Draw {
 fn sun_source(surface: &SceneSurface<'_>) -> &'static str {
     match (surface.sun_path.is_some(), surface.shadow.is_some()) {
         (false, _) => {
-            "fn floating_sun_factor(_point: vec3<f32>, _normal: vec3<f32>) -> f32 { return 1.0; }"
+            "fn floating_sun_factor(_point: vec3<f32>, _normal: vec3<f32>, _clip: vec4<f32>) -> f32 { return 1.0; }"
         }
         (true, false) => include_str!("sun_unshadowed.wgsl"),
         (true, true) => include_str!("sun_shadowed.wgsl"),

@@ -244,8 +244,8 @@ fn build(
     let mut optics = if draw_craft && matches!(site, DiveSite::Sea | DiveSite::DeepSea) {
         // The shelf and offshore station share one clear-sea water type.
         Optics {
-            extinction: [0.40, 0.13, 0.070],
-            downwelling: [0.22, 0.080, 0.048],
+            extinction: [0.37, 0.105, 0.054],
+            downwelling: [0.22, 0.075, 0.042],
             ..Optics::default()
         }
     } else {
