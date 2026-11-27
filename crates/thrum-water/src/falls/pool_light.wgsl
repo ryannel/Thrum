@@ -8,6 +8,7 @@
     // Dense pockets of fresh air at the impact scatter close to white.
     // Diffuse bubbles farther down the pool retain the water's pale tint.
     let turning = smoothstep(0.021, 0.18, abs(wake.w));
-    let boil = smoothstep(0.23, 0.69, whitewater.x)
-        * (0.55 + 0.16 * turning + 0.21 * whitewater.y);
+    let bubbles = smoothstep(0.14, 0.65, whitewater.x) * (0.54 + 0.27 * turning + 0.19 * whitewater.y);
+    let path = 1.0 / (0.37 + 0.63 * nv);
+    let boil = 1.0 - exp(-1.85 * bubbles * path);
     light = mix(light, incident * vec3(0.84, 0.90, 0.89) / 3.14159265, boil);
