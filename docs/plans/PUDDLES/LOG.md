@@ -291,3 +291,11 @@
   matched stone sites at about 64 and 20 mm, and the same drop on both sides of the flooding comparison.
   The 1440p Metal cost record includes the walking yard with water absent, both water profiles, the
   fine solve counts and WP4's record. [WP8 follow-up evidence](../../../.orchestrate/evidence/PUDDLES/WP8/revision.md)
+
+- 2026-11-27 WP8 review follow-up. An impact beside a narrow sill finds the closest supported
+  sample in its own wet component while keeping the source's world position. Metal covers
+  one-cell straight and diagonal sills, including an 8 mm translation, and checks both lanes and
+  the public query across them.
+  The walking route clears the post and float. The yard uses a tighter heel contact in shallow
+  water, softens uncertain grazing reflections, and shades positive crests using the resolved
+  interaction height. [Target checks and realtime takes](../../../.orchestrate/evidence/PUDDLES/WP8/round3.md)
