@@ -262,6 +262,13 @@ for a sea, a basin and a reach, because it reads the map's level and never asks 
 a short reach that drains to a lake is refused when the lake's highest stage backs that reach up to the lip,
 though the lip stands clear at the lake's lowest.
 
+The highest level is the highest anywhere in those ranges, and not the higher of the levels at their ends,
+because the map's level at a foot need not rise with the stage that sets it. Near a mouth the map's join
+gives the joined body's level more weight as it nears the reach's own, so a rising lake can first lift the
+level at the foot of a short reach and then draw it down towards the lake's. A fall whose lip that level covers
+only at a stage inside the lake's range, and clears at the lake's lowest and at its highest, is drowned and is
+refused. How preparation finds the highest level is the builder's choice.
+
 The rule this replaces left all the ground below a brink in no body. On the island the pool then began at the
 lower reach's first row of cells, 1.6 m to 2.1 m deep, with rock under its own level drawn dry behind it: a
 straight waterline a cell out from the cliff, and at the middle gauge every path passed 0.02 m to 0.56 m under
@@ -287,8 +294,9 @@ For each reach, a chart as [the map defines one](../WATERS/DESIGN.md#the-water-m
 
 And once for the reach: its **footprint**, the cells any sample wets, grown by a margin of cells whose bed
 stands above the level beside them, so a dry cell whose bed is below that level is in the footprint only if
-some sample wets it, and below a brink that margin is the rock above the reach's level, or the brink's own
-cells where the rock is narrower ([above](#falls-inside-the-solve)); its **ends**, each a source end, a mouth
+some sample wets it, and below a brink that margin is the rock above the reach's level, and where the rock
+is too narrow to hold it the footprint stops at the brink's cells, which bank it and stay the upper reach's
+alone ([above](#falls-inside-the-solve)); its **ends**, each a source end, a mouth
 or a **brink end**; its join lengths; and the **gauge level** of each sample.
 
 For each fall, a **fall record**: along its lip, for each sample, the path as a line of points with the time the
@@ -846,11 +854,14 @@ dependencies. In addition:
   or the surface would pass the look and leave a float, a ring and the foam with no water there. The look is
   WP6.5's. The answers are sorted by the bed's height against the receiving level, so the item holds the
   shore margin `WATERS` WP1.13 already gives a bank, and a map that cut the receiving body off at its still
-  level would fail it. The drowned fall's refusal is proved by three falls that are drowned only at the top of
-  a range, each of which prepares when that range stops short of the lip, so neither refusing every fall nor
-  testing the lowest level passes; the third is backed up by a lake the reach joins. A reviewer's question
-  holds that the refusal is one comparison for every kind of receiver, which is why a sea has no case of its
-  own. `brink_end` and `falls` were written to the rule this replaces: a case of theirs that pins ground under
+  level would fail it. The drowned fall's refusal is proved by four falls, each with a twin that prepares.
+  Three are drowned only at the top of a range and prepare when that range stops short of the lip, so neither
+  refusing every fall nor testing the lowest level passes; the third is backed up by a lake the reach joins.
+  The fourth is drowned only at a lake stage inside the range and clear at both its ends, and its twin, with
+  the same lake and a lip above the map's highest level at the foot, prepares, so comparing the ends of each
+  range does not pass, and neither does refusing every fall a lake backs up. A reviewer's question holds that
+  the refusal is one comparison for every kind of receiver, over the whole of each range, which is why a sea
+  has no case of its own. `brink_end` and `falls` were written to the rule this replaces: a case of theirs that pins ground under
   the receiving level, or on the receiving body's shore margin, as no body changes to this rule, and nothing
   else in them does.
 - **Maturity.** A ledger row for `E1.rivers` is added in WP4 and kept current.

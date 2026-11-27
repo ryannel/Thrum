@@ -389,3 +389,11 @@
   kind of receiver.
 - 2026-11-27 Planner, design review 13, suggestion taken. WP6.12 closes with its `Guard:` line and says what
   only Metal shows, as the project's rule for a planned check asks.
+- 2026-11-27 Planner, design review 14, Must Fix. A drowned fall is decided by the map's highest level at the
+  foot anywhere in the declared ranges, and not at their ends, because that level can peak at a middle lake
+  stage. [The design](DESIGN.md#falls-inside-the-solve) says so and why. WP6.12's refusal is written again
+  with a fourth fall, drowned only inside the lake's range, beside a twin with a higher lip that prepares,
+  and its reviewer's question asks for the whole of the ranges. Its check and ruling 1 are unchanged.
+- 2026-11-27 Planner, design review 14, suggestion taken. The footprint's words no longer call the brink's
+  cells the lower reach's margin on narrow rock: the footprint stops at them, and they bank it and stay the
+  upper reach's alone, as the rule above them says.
