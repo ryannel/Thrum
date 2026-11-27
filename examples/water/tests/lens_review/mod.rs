@@ -1,4 +1,6 @@
 //! Submitted-depth controls for refined river surfaces and the shared rain array.
+mod optical_sources;
+
 #[cfg(target_os = "macos")]
 use crate::support::{
     half_value,

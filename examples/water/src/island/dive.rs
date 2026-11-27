@@ -52,10 +52,21 @@ impl DiveSite {
     }
 }
 
-fn camera([x, level, z]: [f32; 3], depth: f32, pitch: f32) -> Camera {
+fn camera(site: DiveSite, [x, level, z]: [f32; 3], depth: f32, pitch: f32) -> Camera {
     let y = level - depth;
     let (rise, forward) = pitch.to_radians().sin_cos();
-    Camera::look_at([x, y, z], [x + 10.0 * forward, y + 10.0 * rise, z], 105.0)
+    // The overhead lake inspection includes the shallow air rays that meet
+    // the distant bank so the opaque pass can supply their scenery.
+    let vertical = if site == DiveSite::HighLake && pitch > 45.0 {
+        105.0 + (154.0 - 105.0) * ((pitch - 45.0) / 44.99).min(1.0)
+    } else {
+        105.0
+    };
+    Camera::look_at(
+        [x, y, z],
+        [x + 10.0 * forward, y + 10.0 * rise, z],
+        vertical,
+    )
 }
 
 // Strengthen a short group of travelling wind modes in the exposed lake
@@ -218,9 +229,14 @@ fn build(
         .add()?;
     let game = SkyGame::new(
         controls,
-        camera(eye_at_surface, initial_depth, 45.0),
+        camera(site, eye_at_surface, initial_depth, 45.0),
         move |controls, sky| {
-            sky.camera = camera(eye_at_surface, controls.get(depth), controls.get(pitch));
+            sky.camera = camera(
+                site,
+                eye_at_surface,
+                controls.get(depth),
+                controls.get(pitch),
+            );
             sky.sun_elevation_degrees = controls.get(sun);
             sky.sun_azimuth_degrees = 228.0;
             sky.temporal_inputs = true;
