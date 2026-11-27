@@ -12,6 +12,8 @@ pub struct RainWitness {
     pub point: [[f32; 4]; 2],
     /// The model's wetness at the sample.
     pub wetness: Wetness,
+    /// Canopy exposure before the normal and store weighting.
+    pub exposure: f64,
     /// The model's level and depth for a patch cell in water or its shore margin.
     pub puddle: Option<[f64; 2]>,
     /// The sample belongs to a patch cell, including dry cells.
@@ -28,10 +30,9 @@ pub struct RainWitness {
     reason = "the oracle uses the exact submitted f32 coordinates"
 )]
 pub fn rain_witness_points(selection: RainSelection) -> Result<Vec<RainWitness>, RainValleyError> {
-    let (world, surface) = ValleyRain::prepare(selection).map_err(RainValleyError::Model)?;
-    let (_, water) = surface.proof_products();
-    let canopy = ground::canopy(&super::model_profile())
-        .map_err(|error| RainValleyError::Model(error.to_string()))?;
+    let canopy = ground::canopy().map_err(|error| RainValleyError::Model(error.to_string()))?;
+    let world = ValleyRain::prepare_model(selection, &canopy).map_err(RainValleyError::Model)?;
+    let water = world.water_map().map_err(RainValleyError::Model)?;
     let make = |position: [f32; 3], normal: [f32; 3], patch: bool| {
         let p = position.map(f64::from);
         let n = normal.map(f64::from);
@@ -49,6 +50,7 @@ pub fn rain_witness_points(selection: RainSelection) -> Result<Vec<RainWitness>,
                 [normal[0], normal[1], normal[2], 0.0],
             ],
             wetness,
+            exposure: canopy.exposure(p),
             puddle: None,
             patch,
         }
@@ -81,19 +83,49 @@ pub fn rain_witness_points(selection: RainSelection) -> Result<Vec<RainWitness>,
             false,
         ));
     }
+    // The slope stop's boulder is outside the earlier lookout-only canopy.
+    let [x, y, z] = crate::exit_scene::layout().entities[7899]
+        .position()
+        .map(|v| v as f32);
+    points.push(make([x, y + 3.0, z], [0.0, 1.0, 0.0], false));
+    points.push(make([x, y + 0.05, z], [0.0, 1.0, 0.0], false));
+    if selection == RainSelection::Soaked {
+        let [crown, under] = &points[points.len() - 2..] else {
+            unreachable!()
+        };
+        assert!(crown.wetness.pores - under.wetness.pores > 0.2);
+    }
     let bed = world.tree.ground();
-    for (i, (&height, &hollow)) in bed.heights().iter().zip(world.tree.labels()).enumerate() {
-        let [x, z] = bed.centre(i);
-        let mut point = make([x as f32, height as f32, z as f32], [0.0, 1.0, 0.0], true);
-        if hollow != thrum_water_model::NO_HOLLOW {
-            let level = world
-                .state
-                .level(&world.tree, world.state.holder(&world.tree, hollow));
-            if (level - height).abs() <= 0.000_04 {
-                // The exact waterline has its own quantisation threshold.
-                continue;
-            }
+    let [width, height] = bed.size();
+    let near_level = |index: usize| {
+        let label = world.tree.labels()[index];
+        if label == thrum_water_model::NO_HOLLOW {
+            return false;
         }
+        let level = world
+            .state
+            .level(&world.tree, world.state.holder(&world.tree, label));
+        (level - bed.heights()[index]).abs() <= 0.000_04
+    };
+    for (i, &elevation) in bed.heights().iter().enumerate() {
+        let (x, z) = (i % width, i / width);
+        // The margin can be supplied by any of the eight surrounding cells.
+        // Omit the admission check only where one of those wet/dry thresholds
+        // falls inside the agreed 40-micrometre level tolerance.
+        let columns = x.saturating_sub(1)..=(x + 1).min(width - 1);
+        if (z.saturating_sub(1)..=(z + 1).min(height - 1)).any(|row| {
+            columns
+                .clone()
+                .any(|column| near_level(row * width + column))
+        }) {
+            continue;
+        }
+        let [x, z] = bed.centre(i);
+        let mut point = make(
+            [x as f32, elevation as f32, z as f32],
+            [0.0, 1.0, 0.0],
+            true,
+        );
         point.puddle = water
             .sample([x, z])
             .map(|sample| [sample.row.level, sample.depth]);

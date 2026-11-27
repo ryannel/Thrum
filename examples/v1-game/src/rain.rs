@@ -123,10 +123,55 @@ pub(crate) struct RainSurface {
 
 impl ValleyRain {
     pub(crate) fn prepare(selection: RainSelection) -> Result<(Self, RainSurface), String> {
+        let canopy = ground::canopy().map_err(|error| error.to_string())?;
+        let world = Self::prepare_model(selection, &canopy)?;
+        let mut map = world.water_map()?;
+        // At 60 mm/h, roughly 40 drops per square metre per second are
+        // at least 4 mm across. Resolve those rings and leave the smaller
+        // drops in the same model's slope variance.
+        let schedule = RainBandsProfile {
+            count: 40.0,
+            ..RainBandsProfile::default()
+        };
+        let rings = RingProfile {
+            count: schedule.count,
+            reference_rate: 60.0,
+            classes: vec![[4.0, 4.5], [4.5, 5.2], [5.2, 6.5]],
+            ..RingProfile::default()
+        };
+        let bands = RainBands::new(
+            schedule,
+            Arc::new(rings.table()),
+            world.page.history.clone(),
+            Arc::<thrum_rain_model::Canopy>::clone(&canopy),
+        )
+        .map_err(|error| format!("{error:?}"))?;
+        map.set_rain(Some(bands));
+        let mut surface = RainSurface {
+            ground: WetGround::new_forward_at_datum(
+                canopy.canopy_grid(),
+                ground::wetness_grid(&world.tree),
+                &[wet_class()],
+                world.tree.hollow_count(),
+                PATCH_DATUM,
+            )
+            .ok_or("valley wetness field exceeds its render projection")?,
+            map: Arc::new(Mutex::new(map)),
+            last_tick: None,
+            open_store: [0.0; 2],
+            report: None,
+        };
+        surface.publish(&world.page);
+        Ok((world, surface))
+    }
+
+    fn prepare_model(
+        selection: RainSelection,
+        canopy: &thrum_rain_model::Canopy,
+    ) -> Result<Self, String> {
         let profile = model_profile();
-        let canopy = Arc::new(ground::canopy(&profile).map_err(|error| error.to_string())?);
         let bed = ground::bed()?;
-        let tree = Tree::prepare(&bed, &canopy, &profile).map_err(|error| error.to_string())?;
+        let tree = Tree::prepare(&bed, canopy, &profile).map_err(|error| error.to_string())?;
         let mut world = Self {
             state: RainState::new(&tree),
             stores: GroundStores::new(&[CLASS]).map_err(|error| error.to_string())?,
@@ -156,9 +201,13 @@ impl ValleyRain {
         }
         world.page.record = weather(world.start).0;
         world.project();
-        let hollows = world
+        Ok(world)
+    }
+
+    fn water_map(&self) -> Result<Map, String> {
+        let hollows = self
             .tree
-            .water_hollows(&world.page.levels)
+            .water_hollows(&self.page.levels)
             .and_then(|hollows| {
                 hollows.with_optical_types(vec![
                     Some(HollowOptics {
@@ -166,7 +215,7 @@ impl ValleyRain {
                         scatter: [0.10, 0.072, 0.046],
                         bed_tint: [0.72, 0.75, 0.78],
                     });
-                    world.tree.hollow_count()
+                    self.tree.hollow_count()
                 ])
             })
             .map_err(|error| format!("{error:?}"))?;
@@ -182,48 +231,16 @@ impl ValleyRain {
             fetch: 1.0,
             gains: [0.0; 4],
         };
-        let mut map = Map::prepare_with(
-            ground::map_bed(&world.tree)?,
+        Map::prepare_with(
+            ground::map_bed(&self.tree)?,
             vec![body],
             thrum_water_model::Profile {
                 margin_height: 0.0,
                 swash_ratio: 0.0,
             },
-            profile.map_limits(),
+            model_profile().map_limits(),
         )
-        .map_err(|error| format!("{error:?}"))?;
-        let schedule = RainBandsProfile {
-            count: 256.0,
-            ..RainBandsProfile::default()
-        };
-        let rings = RingProfile {
-            count: schedule.count,
-            ..RingProfile::default()
-        };
-        let bands = RainBands::new(
-            schedule,
-            Arc::new(rings.table()),
-            world.page.history.clone(),
-            Arc::<thrum_rain_model::Canopy>::clone(&canopy),
-        )
-        .map_err(|error| format!("{error:?}"))?;
-        map.set_rain(Some(bands));
-        let mut surface = RainSurface {
-            ground: WetGround::new_with_hollow_datum(
-                canopy.canopy_grid(),
-                ground::wetness_grid(&world.tree),
-                &[wet_class()],
-                world.tree.hollow_count(),
-                PATCH_DATUM,
-            )
-            .ok_or("valley wetness field exceeds its render projection")?,
-            map: Arc::new(Mutex::new(map)),
-            last_tick: None,
-            open_store: [0.0; 2],
-            report: None,
-        };
-        surface.publish(&world.page);
-        Ok((world, surface))
+        .map_err(|error| format!("{error:?}"))
     }
 
     fn advance_stores(&mut self, age: u64) {
@@ -437,7 +454,7 @@ pub fn prepare_rain_cooked_valley(
         .find(|placement| placement.mesh == "terrain")
         .ok_or(RainValleyError::MissingTerrain)?
         .clone();
-    "rain-patch".clone_into(&mut ground.mesh);
+    "exit-rain-patch".clone_into(&mut ground.mesh);
     config.meshes.push(ground);
     config.draw_path = path;
     let assets = thrum_asset_gpu::CookedAssets::new(config).map_err(RainValleyError::Cooked)?;

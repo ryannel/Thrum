@@ -1126,6 +1126,12 @@ impl PreparedSynthetic {
             .unwrap_or(0)
     }
 
+    pub(crate) fn wetness_bytes(&self) -> Option<u64> {
+        self.wetness
+            .as_ref()
+            .map(crate::wetness::PreparedWetness::bytes)
+    }
+
     pub(crate) fn view_volume_storage(&self) -> Option<crate::atmosphere::ViewVolumeStorage> {
         self.atmosphere.as_ref()?.volume_storage()
     }

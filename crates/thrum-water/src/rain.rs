@@ -64,27 +64,39 @@ impl Rain {
             .ok_or("rain bands need prepared canopy columns")?;
         let response = &model.table().depth_response;
         let [columns, height] = grid.size;
-        if columns.checked_mul(height) != Some(grid.columns.len()) {
-            return Err("rain canopy columns do not match its dimensions".into());
-        }
-        let width = columns.max(1);
-        let rows = height
-            .checked_add(response.len().div_ceil(width))
-            .ok_or("rain canopy height overflow")?;
+        let (origin, offset) = super::canopy::origin_parts(&grid);
+        let (mut records, width, code) = if grid.sparse_cells.is_empty() {
+            if columns.checked_mul(height) != Some(grid.columns.len()) {
+                return Err("rain canopy columns do not match its dimensions".into());
+            }
+            (
+                grid.columns
+                    .iter()
+                    .copied()
+                    .map(super::canopy::layers)
+                    .collect(),
+                columns.max(1),
+                0,
+            )
+        } else {
+            let sparse =
+                super::canopy::SparseColumns::pack(&grid).ok_or("invalid sparse canopy")?;
+            let mut texels = Vec::with_capacity(sparse.texels.len() + 1);
+            texels.push([offset[0], offset[1], 0.0, 0.0]);
+            texels.extend(sparse.texels);
+            (texels, 1024, sparse.code)
+        };
+        let depth_start = records.len();
+        records.extend(
+            response
+                .iter()
+                .map(|&[depth, gain]| [depth as f32, gain as f32, 0.0, 0.0]),
+        );
+        let rows = records.len().div_ceil(width);
         let limit = device.limits().max_texture_dimension_2d as usize;
         if width > limit || rows > limit {
             return Err("rain canopy exceeds the device texture dimension limit".into());
         }
-        let mut records: Vec<[f32; 4]> = grid
-            .columns
-            .iter()
-            .map(|&[[h0, s0], [h1, s1]]| [h0 as f32, s0 as f32, h1 as f32, s1 as f32])
-            .chain(
-                response
-                    .iter()
-                    .map(|&[depth, gain]| [depth as f32, gain as f32, 0.0, 0.0]),
-            )
-            .collect();
         records.resize(width * rows, [0.0; 4]);
         let extent = wgpu::Extent3d {
             width: width as u32,
@@ -121,14 +133,19 @@ impl Rain {
         let settings = RainSurface {
             lengths: [a as f32, b as f32, 0.0, 0.0],
             canopy: [
-                grid.origin[0] as f32,
-                grid.origin[1] as f32,
+                origin[0],
+                origin[1],
                 grid.cell as f32,
                 grid.edge_width as f32,
             ],
             grid: [columns as u32, height as u32, response.len() as u32, 0],
             // Preserve the physical filtering range used by the two bands.
-            footprint_scale: [(a / 1.28) as f32, (b / 2.1) as f32, 0.0, 0.0],
+            footprint_scale: [
+                (a / 1.28) as f32,
+                (b / 2.1) as f32,
+                code as f32,
+                depth_start as f32,
+            ],
         };
         Ok(Self {
             bands: Bands::in_cascades(device, model, cascades)

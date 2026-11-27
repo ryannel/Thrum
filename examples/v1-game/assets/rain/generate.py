@@ -6,29 +6,38 @@ from pathlib import Path
 import struct
 
 HERE = Path(__file__).resolve().parent
+EXIT = HERE.with_name("exit")
 ORIGIN = (-4, 2)
-SIZE = (72, 56)
-SPACING = 0.125
+SIZE = (144, 112)
+SPACING = 0.0625
+HOLLOWS = ((3.0, 2.8, 1.65, 0.98, 0.044, 239.938),
+           (6.1, 4.35, 1.32, 1.05, 0.040, 239.946))
+
+
+def radius(x, z, cx, cz, rx, rz):
+    dx, dz = x - cx, z - cz
+    edge = 1 + 0.055 * math.sin(5 * dx + 4 * dz)
+    return math.hypot((dx + 0.27 * dz) / rx, dz / rz) / edge
 
 
 def relief(x, z, ground):
-    edge = ((x - 4.5) / 4.32)**4 + ((z - 3.5 + 0.08 * math.cos(2.7 * x)) / 3.4)**4
-    irregular = 0.06 * math.cos(2.8 * x + 2.1 * z) * math.sin(1.3 * z - 2.0 * x)
-    skirt = min(1, max(0, (1 - edge + irregular) / 0.64))
-    shoulder = skirt * skirt * (3 - 2 * skirt)
+    terrain, _ = ground(ORIGIN[0] + x, ORIGIN[1] + z)
 
-    def bowl(cx, cz, rx, rz, depth):
-        dx, dz = x - cx, z - cz
-        r = math.hypot((dx + 0.27 * dz) / rx, dz / rz)
-        border = 1 + 0.1 * math.sin(6 * dx + 4 * dz)
-        return depth * min(1, max(0, 1 - (r / border)**2))
+    def hollow(cx, cz, rx, rz, depth, bank):
+        r = radius(x, z, cx, cz, rx, rz)
+        # Give each hollow its own bank. The shoulder meets the original
+        # floor with zero slope, outside the water and between the pools.
+        t = min(1, max(0, (1.72 - r) / 0.67))
+        shoulder = t**3 * (10 - 15*t + 6*t*t)
+        bowl = depth * max(0, 1 - r*r)**1.1
+        rock = 0.0008 * math.cos(2.8 * x + 4.1 * z)
+        return shoulder * max(0, bank + rock - bowl - terrain)
 
-    rim = (240.01 - bowl(3.0, 2.8, 1.65, 0.98, 0.065)
-           - bowl(6.1, 4.35, 1.32, 1.05, 0.056)
-           + 0.002 * math.cos(2.8 * x + 4.1 * z)
-           + 0.001 * math.sin(7.2 * z - 3.3 * x))
-    bed, _ = ground(ORIGIN[0] + x, ORIGIN[1] + z)
-    return bed + shoulder * max(0.005, rim - bed) - 0.0015
+    edge = min(x, 9 - x, z, 7 - z)
+    t = min(1, max(0, edge / 0.45))
+    boundary = t*t * (3 - 2*t)
+    raise_by = max(hollow(*bowl) for bowl in HOLLOWS)
+    return terrain + boundary * raise_by - 0.0015
 
 
 def terrain_sample():
@@ -89,12 +98,20 @@ def generate():
                 a = row * (width + 1) + col
                 b, c = a + 1, a + width + 1
                 indices.extend((a, c, b, b, c, c + 1))
+    # The lattice contains both catchments. Ground beyond the banks
+    # belongs to the valley's open runoff rather than the two pools.
+    outlets = bytes(
+        not any(radius((x + 0.5) * SPACING, (z + 0.5) * SPACING, *bowl[:4]) < 1.14
+                for bowl in HOLLOWS)
+        for z in range(height) for x in range(width)
+    )
+    (HERE / 'outlets.bin').write_bytes(outlets)
     streams = [b''.join(struct.pack('<3f', *v) for v in positions),
                b''.join(struct.pack('<3f', *v) for v in normals),
                b''.join(struct.pack('<2f', *v) for v in uv),
                struct.pack(f'<{len(indices)}H', *indices)]
     raw = b''.join(streams)
-    (HERE / 'rain-patch.bin').write_bytes(raw)
+    (EXIT / 'exit-rain-patch.bin').write_bytes(raw)
     fields = [
         {'buffer': 0, 'byteOffset': sum(map(len, streams[:i])), 'byteLength': len(data),
          'target': 34963 if i == 3 else 34962} for i, data in enumerate(streams)
@@ -106,13 +123,13 @@ def generate():
         {'bufferView': 2, 'componentType': 5126, 'count': len(positions), 'type': 'VEC2'},
         {'bufferView': 3, 'componentType': 5123, 'count': len(indices), 'type': 'SCALAR'},
     ]
-    (HERE / 'rain-patch.gltf').write_text(json.dumps({
+    (EXIT / 'exit-rain-patch.gltf').write_text(json.dumps({
         'asset': {'version': '2.0', 'generator': 'Thrum valley rain patch'},
         'scene': 0, 'scenes': [{'nodes': [0]}], 'nodes': [{'mesh': 0}],
-        'meshes': [{'name': 'rain-patch', 'primitives': [{
+        'meshes': [{'name': 'exit-rain-patch', 'primitives': [{
             'attributes': {'POSITION': 0, 'NORMAL': 1, 'TEXCOORD_0': 2}, 'indices': 3,
         }]}],
-        'buffers': [{'uri': 'rain-patch.bin', 'byteLength': len(raw)}],
+        'buffers': [{'uri': 'exit-rain-patch.bin', 'byteLength': len(raw)}],
         'bufferViews': fields, 'accessors': accessors,
     }, separators=(',', ':')) + '\n')
 

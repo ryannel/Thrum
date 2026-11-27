@@ -57,7 +57,7 @@ fn read(
             let p = points[id.x];
             let wet = ground_wetness(p.position.xyz, p.normal.xyz);
             let puddle = map_sample(p.position.xz);
-            answers[id.x][0] = vec4(wet.pores, wet.surface, wet.cover, 0.0);
+            answers[id.x][0] = vec4(wet.pores, wet.surface, wet.cover, wet_exposure(p.position.xyz, wet_load(0u)));
             answers[id.x][1] = vec4(select(-1.0, f32(puddle.body), puddle.body != NO_BODY),
                 puddle.row.water.x, puddle.row.water.x - puddle.bed, 0.0);
         }";
@@ -176,6 +176,13 @@ fn compare_model(selection: RainSelection) {
         for ([actual, water], sample) in output.into_iter().zip(&expected) {
             let position = sample.point[0];
             let model = sample.wetness;
+            assert!(
+                (f64::from(actual[3]) - sample.exposure).abs() < FILL,
+                "{selection:?} {position:?} normal {:?}, canopy actual {} expected {}",
+                sample.point[1],
+                actual[3],
+                sample.exposure
+            );
             assert!(
                 (f64::from(actual[0]) - model.pores).abs() < FILL,
                 "{selection:?} {position:?} {actual:?} {model:?}"

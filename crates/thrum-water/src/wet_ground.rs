@@ -17,6 +17,7 @@ const ADMISSION_ROW: usize = HEADER + 3;
 pub(super) const BED_REACHES: &str = include_str!("bed_reaches.wgsl");
 pub(super) const SOURCE: &str = concat!(
     include_str!("bed_reaches.wgsl"),
+    include_str!("canopy.wgsl"),
     include_str!("wet_ground.wgsl"),
 );
 
@@ -143,18 +144,20 @@ impl WetGround {
         Self::prepare(canopy, ground, classes, hollow_count, None, 0.0)
     }
 
-    /// Prepare hollows whose dynamic levels and marks are published relative
-    /// to a vertical datum. The static bed, pits and canopy remain in world
-    /// metres. This preserves sub-millimetre wetness changes on high ground.
+    /// Prepare high ground whose thin film uses the forward material lobe.
+    /// Dynamic hollow levels and marks are relative to the vertical datum.
+    /// The static bed, pits and canopy stay in world metres.
     #[must_use]
-    pub fn new_with_hollow_datum(
+    pub fn new_forward_at_datum(
         canopy: Option<CanopyGrid>,
         ground: HollowsGround,
         classes: &[GroundClass],
         hollow_count: usize,
         datum: f32,
     ) -> Option<Self> {
-        Self::prepare(canopy, Some(ground), classes, hollow_count, None, datum)
+        let mut field = Self::prepare(canopy, Some(ground), classes, hollow_count, None, datum)?;
+        field.ground_classes = 0;
+        Some(field)
     }
 
     #[expect(
@@ -169,7 +172,15 @@ impl WetGround {
         shore: Option<(&Map, [f32; 4])>,
         datum: f32,
     ) -> Option<Self> {
-        let width = ROW_WIDTH as usize;
+        let row_width = if canopy
+            .as_ref()
+            .is_some_and(|grid| !grid.sparse_cells.is_empty())
+        {
+            1024
+        } else {
+            ROW_WIDTH
+        };
+        let width = row_width as usize;
         if classes.is_empty()
             || classes.len() > MAX_CLASSES
             || hollow_count >= 1 << 24
@@ -261,7 +272,7 @@ impl WetGround {
         }
         static_rows.resize(static_rows.len().next_multiple_of(width), [0.0; 4]);
         let mut wet = Self {
-            provider: WetnessProvider::new(SOURCE, ROW_WIDTH, rows.clone(), static_rows)?,
+            provider: WetnessProvider::new(SOURCE, row_width, rows.clone(), static_rows)?,
             rows,
             class_count: classes.len(),
             hollow_count,
@@ -415,7 +426,8 @@ fn append_canopy(
     atlas: &mut Vec<[f32; 4]>,
 ) -> Option<()> {
     let [width, height] = canopy.size;
-    if canopy.columns.len() != width.checked_mul(height)?
+    let sparse = !canopy.sparse_cells.is_empty();
+    if (!sparse && canopy.columns.len() != width.checked_mul(height)?)
         || !canopy.cell.is_finite()
         || canopy.cell <= 0.0
         || !canopy.edge_width.is_finite()
@@ -427,10 +439,13 @@ fn append_canopy(
     let mut lower = [width, height];
     let mut upper = [0; 2];
     let mut ceiling = f64::NEG_INFINITY;
-    for (index, [[a, b], [c, d]]) in canopy.columns.into_iter().enumerate() {
-        atlas.push([a as f32, b as f32, c as f32, d as f32]);
+    for (index, &[[a, b], [c, d]]) in canopy.columns.iter().enumerate() {
         if b < 1.0 || d < 1.0 {
-            let [x, z] = [index % width, index / width];
+            let [x, z] = if sparse {
+                canopy.sparse_cells.get(index)?.map(|value| value as usize)
+            } else {
+                [index % width, index / width]
+            };
             lower = [lower[0].min(x), lower[1].min(z)];
             upper = [upper[0].max(x + 1), upper[1].max(z + 1)];
             if b < 1.0 {
@@ -444,15 +459,27 @@ fn append_canopy(
     if ceiling == f64::NEG_INFINITY {
         return Some(());
     }
+    let (origin, offset) = crate::canopy::origin_parts(&canopy);
+    if sparse {
+        let columns = crate::canopy::SparseColumns::pack(&canopy)?;
+        atlas.push([columns.code as f32, offset[0], offset[1], 0.0]);
+        atlas.extend(columns.texels);
+    } else {
+        atlas.extend(canopy.columns.into_iter().map(crate::canopy::layers));
+    }
     rows[0] = [
-        ceiling as f32,
+        crate::canopy::ceiling(ceiling),
         width as f32,
-        height as f32,
+        if sparse {
+            -(height as f32)
+        } else {
+            height as f32
+        },
         rows.len() as f32,
     ];
     rows[1] = [
-        canopy.origin[0] as f32,
-        canopy.origin[1] as f32,
+        origin[0],
+        origin[1],
         canopy.cell as f32,
         canopy.edge_width as f32,
     ];

@@ -1,5 +1,7 @@
 //! Exposure: the share of the rain that reaches a point, from shelters a game gives as
 //! content. Rain falls straight down, so a shelter covers the columns its triangles cross.
+use std::collections::HashMap;
+
 use crate::{Profile, RainError};
 
 /// Triangles that shelter what is under them, and the share of the rain they let through:
@@ -32,8 +34,14 @@ pub struct Canopy {
     origin: [f64; 2],
     cell: f64,
     size: [usize; 2],
-    layers: Vec<[Layer; 2]>,
+    layers: Columns,
     edge_width: f64,
+}
+
+#[derive(Clone, Debug)]
+enum Columns {
+    Dense(Vec<[Layer; 2]>),
+    Sparse(HashMap<[usize; 2], [Layer; 2]>),
 }
 
 impl Canopy {
@@ -43,7 +51,7 @@ impl Canopy {
             origin: [0.0; 2],
             cell: 1.0,
             size: [0, 0],
-            layers: Vec::new(),
+            layers: Columns::Dense(Vec::new()),
             edge_width: 0.0,
         }
     }
@@ -60,6 +68,31 @@ impl Canopy {
         shelters: &[Shelter],
         profile: &Profile,
     ) -> Result<Self, RainError> {
+        Self::prepare_columns(origin, size, shelters, profile, false)
+    }
+
+    /// Prepare only occupied canopy columns across a large world.
+    /// # Errors
+    /// Refuses the same malformed input and overlapping layers as `prepare`.
+    pub fn prepare_sparse(
+        origin: [f64; 2],
+        size: [usize; 2],
+        shelters: &[Shelter],
+        profile: &Profile,
+    ) -> Result<Self, RainError> {
+        Self::prepare_columns(origin, size, shelters, profile, true)
+    }
+
+    fn prepare_columns(
+        origin: [f64; 2],
+        size: [usize; 2],
+        shelters: &[Shelter],
+        profile: &Profile,
+        sparse: bool,
+    ) -> Result<Self, RainError> {
+        if sparse && size.iter().any(|&n| u32::try_from(n).is_err()) {
+            return Err(RainError::Ground("sparse canopy coordinate overflow"));
+        }
         let cell = profile.canopy_cell;
         if !cell.is_finite() || cell <= 0.0 || !(profile.edge_width.is_finite()) {
             return Err(RainError::Profile("invalid canopy cell or edge width"));
@@ -77,7 +110,11 @@ impl Canopy {
             origin,
             cell,
             size,
-            layers: vec![[NO_LAYER; 2]; count],
+            layers: if sparse {
+                Columns::Sparse(HashMap::new())
+            } else {
+                Columns::Dense(vec![[NO_LAYER; 2]; count])
+            },
             edge_width: profile.edge_width,
         };
         for shelter in shelters {
@@ -108,7 +145,55 @@ impl Canopy {
         {
             return Err(refuse(first, "nonfinite triangle"));
         }
-        if self.layers.is_empty() {
+        if self.size.contains(&0) || shelter.triangles.is_empty() {
+            return Ok(());
+        }
+        if matches!(self.layers, Columns::Sparse(_)) {
+            // Rasterise one triangle at a time, combining coincident facets
+            // of this shelter before adding its single layer to each column.
+            let mut undersides: HashMap<[usize; 2], f64> = HashMap::new();
+            for triangle in &shelter.triangles {
+                let bounds = |select: fn(f64, f64) -> f64| {
+                    [0, 2].map(|axis| {
+                        select(
+                            select(triangle[0][axis], triangle[1][axis]),
+                            triangle[2][axis],
+                        )
+                    })
+                };
+                let Some(([x0, z0], [x1, z1])) =
+                    self.cell_range(bounds(f64::min), bounds(f64::max))
+                else {
+                    continue;
+                };
+                for z in z0..=z1 {
+                    for x in x0..=x1 {
+                        if let Some(height) =
+                            lowest(std::slice::from_ref(triangle), self.centre(x, z))
+                        {
+                            undersides
+                                .entry([x, z])
+                                .and_modify(|h| *h = h.min(height))
+                                .or_insert(height);
+                        }
+                    }
+                }
+            }
+            for ([x, z], underside) in undersides {
+                if !self.add_layer(
+                    x,
+                    z,
+                    Layer {
+                        underside,
+                        share: shelter.share,
+                    },
+                ) {
+                    return Err(refuse(
+                        self.centre(x, z),
+                        "a third shelter crosses this column",
+                    ));
+                }
+            }
             return Ok(());
         }
         let mut lo = [f64::INFINITY; 2];
@@ -124,28 +209,48 @@ impl Canopy {
         };
         for iz in z0..=z1 {
             for ix in x0..=x1 {
-                let centre = [
-                    self.origin[0] + (ix as f64 + 0.5) * self.cell,
-                    self.origin[1] + (iz as f64 + 0.5) * self.cell,
-                ];
-                let Some(underside) = lowest(&shelter.triangles, centre) else {
-                    continue;
-                };
-                let column = &mut self.layers[iz * self.size[0] + ix];
-                let layer = Layer {
-                    underside,
-                    share: shelter.share,
-                };
-                if column[0] == NO_LAYER {
-                    column[0] = layer;
-                } else if column[1] == NO_LAYER {
-                    column[1] = layer;
-                } else {
+                let centre = self.centre(ix, iz);
+                if let Some(underside) = lowest(&shelter.triangles, centre)
+                    && !self.add_layer(
+                        ix,
+                        iz,
+                        Layer {
+                            underside,
+                            share: shelter.share,
+                        },
+                    )
+                {
                     return Err(refuse(centre, "a third shelter crosses this column"));
                 }
             }
         }
         Ok(())
+    }
+
+    fn centre(&self, x: usize, z: usize) -> [f64; 2] {
+        [
+            self.origin[0] + (x as f64 + 0.5) * self.cell,
+            self.origin[1] + (z as f64 + 0.5) * self.cell,
+        ]
+    }
+
+    fn add_layer(&mut self, x: usize, z: usize, layer: Layer) -> bool {
+        let column = match &mut self.layers {
+            Columns::Dense(rows) => &mut rows[z * self.size[0] + x],
+            Columns::Sparse(rows) => rows.entry([x, z]).or_insert([NO_LAYER; 2]),
+        };
+        let Some(open) = column.iter_mut().find(|entry| **entry == NO_LAYER) else {
+            return false;
+        };
+        *open = layer;
+        true
+    }
+
+    fn layers(&self, x: usize, z: usize) -> [Layer; 2] {
+        match &self.layers {
+            Columns::Dense(rows) => rows[z * self.size[0] + x],
+            Columns::Sparse(rows) => rows.get(&[x, z]).copied().unwrap_or([NO_LAYER; 2]),
+        }
     }
 
     /// Columns whose centres may lie in a world x/z box, clamped to the grid.
@@ -179,7 +284,7 @@ impl Canopy {
         let (Some(x), Some(z)) = (inside(ix, self.size[0]), inside(iz, self.size[1])) else {
             return 1.0;
         };
-        self.layers[z * self.size[0] + x]
+        self.layers(x, z)
             .iter()
             .filter(|l| l.underside > height)
             .map(|l| l.share)
@@ -192,7 +297,7 @@ impl Canopy {
     pub(crate) fn steps(&self, point: [f64; 3]) -> Vec<(f64, f64)> {
         let [x, y, z] = point;
         let mut heights: Vec<f64> = Vec::new();
-        if !self.layers.is_empty() {
+        if !self.size.contains(&0) {
             let ((x0, x1), (z0, z1)) = self.span(x, z);
             for iz in z0..=z1 {
                 for ix in x0..=x1 {
@@ -201,7 +306,7 @@ impl Canopy {
                     else {
                         continue;
                     };
-                    for l in &self.layers[cz * self.size[0] + cx] {
+                    for l in self.layers(cx, cz) {
                         if l.underside > y {
                             heights.push(l.underside);
                         }
@@ -236,7 +341,7 @@ impl Canopy {
     /// over a square of the profile's edge width centred on the point, so it passes from
     /// one shelter's share to the next over that width. The same function on any device.
     pub fn exposure(&self, point: [f64; 3]) -> f64 {
-        if self.layers.is_empty() {
+        if self.size.contains(&0) {
             return 1.0;
         }
         let [x, y, z] = point;
@@ -280,16 +385,33 @@ impl thrum_water_model::Exposure for Canopy {
     }
 
     fn canopy_grid(&self) -> Option<thrum_water_model::CanopyGrid> {
+        let pack = |layers: [Layer; 2]| layers.map(|layer| [layer.underside, layer.share]);
+        let (sparse_cells, columns) = match &self.layers {
+            Columns::Dense(rows) => (Vec::new(), rows.iter().copied().map(pack).collect()),
+            Columns::Sparse(rows) if rows.is_empty() => {
+                return thrum_water_model::OpenSky.canopy_grid();
+            }
+            Columns::Sparse(rows) => {
+                let mut entries = rows.iter().collect::<Vec<_>>();
+                entries.sort_unstable_by_key(|&(cell, _)| *cell);
+                entries
+                    .into_iter()
+                    .map(|(cell, layers)| {
+                        (
+                            cell.map(|i| u32::try_from(i).expect("validated sparse coordinates")),
+                            pack(*layers),
+                        )
+                    })
+                    .unzip()
+            }
+        };
         Some(thrum_water_model::CanopyGrid {
             origin: self.origin,
             cell: self.cell,
             size: self.size,
             edge_width: self.edge_width,
-            columns: self
-                .layers
-                .iter()
-                .map(|column| column.map(|layer| [layer.underside, layer.share]))
-                .collect(),
+            sparse_cells,
+            columns,
         })
     }
 }

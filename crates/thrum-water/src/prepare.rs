@@ -760,6 +760,7 @@ fn surface_pipelines(
             thrum_sea::rain::SHARED_LAYERS + if flow.is_some() { 10 } else { 0 }
         )
         .expect("write shader source");
+        suffix.push_str(super::canopy::COLUMNS_WGSL);
         suffix.push_str(super::RAIN_GAIN_WGSL);
         suffix.push_str(include_str!("rain.wgsl"));
     }
@@ -1126,15 +1127,24 @@ fn lend_shore_support(source: &str) -> String {
 }
 
 fn compose_shore_support(source: &str, wet: &thrum_render::wetness::PreparedWetness) -> String {
-    lend_shore_support(source) + &mapped_film_wetness(wet)
+    lend_shore_support(source) + &mapped_film_wetness(wet, false)
 }
 
-fn mapped_film_wetness(wet: &thrum_render::wetness::PreparedWetness) -> String {
+fn mapped_film_wetness(
+    wet: &thrum_render::wetness::PreparedWetness,
+    shared_canopy: bool,
+) -> String {
     // The map source has already declared the shared bed reach test.
     let source = wet.shader(3, WET_GROUND_BINDING);
     let (binding, body) = source
         .split_once(crate::wet_ground::BED_REACHES)
         .expect("known ground wetness source");
+    let body = if shared_canopy {
+        body.strip_prefix(super::canopy::COLUMNS_WGSL)
+            .expect("known canopy source")
+    } else {
+        body
+    };
     binding.to_owned() + body
 }
 
@@ -1169,7 +1179,7 @@ fn compose_rain_film(
         source.push_str(STANDING_WATER);
         source.push_str("    discard;\n    return Output(vec4(0.0), vec2(0.0), 0.0);\n}\n");
     }
-    source.push_str(&mapped_film_wetness(wet));
+    source.push_str(&mapped_film_wetness(wet, rain));
     writeln!(
         source,
         "const FILM_REFLECTION_REACH: f32 = {};",

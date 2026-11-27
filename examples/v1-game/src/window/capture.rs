@@ -847,6 +847,15 @@ fn rain_camera(host: &mut crate::host::Runtime, name: &str) -> Result<(), String
             30_000.0,
         )?);
     }
+    if name == "slope-rock" {
+        return host.set_scene_camera(crate::SceneCamera::perspective(
+            [-108.65, 82.64, -408.0],
+            [-112.5905, 81.75, -411.7874],
+            48_f32.to_radians(),
+            0.1,
+            30_000.0,
+        )?);
+    }
     let route = crate::CameraRoute::parse_long_capture(
         include_str!("../../routes/exit-flythrough.json"),
         camera,
@@ -857,7 +866,7 @@ fn rain_camera(host: &mut crate::host::Runtime, name: &str) -> Result<(), String
         .checkpoints
         .iter()
         .find(|stop| stop.name == name)
-        .ok_or("rain view must be patch, rock, or a named exit route stop")?;
+        .ok_or("rain view must be patch, rock, slope-rock, or a named exit route stop")?;
     let pose = route.pose(route.origin_tick + stop.tick + 1, 0.0);
     host.set_scene_camera(camera.at(pose.eye)?)?;
     host.set_camera_pitch(pose.pitch)?;
@@ -1359,6 +1368,9 @@ async fn record(
             "extent": knob.value,
             "settle_frames": penumbra.iter().find(|knob| knob.name == "Ambient occlusion settle length").map(|knob| knob.value),
         });
+    }
+    if scenario == "rain-cost" {
+        result["forward_ground_wetness_bytes"] = json!(driver.host().wetness_bytes());
     }
     if let Some(rain) = driver.host().source().rain_observation() {
         result["rain"] = rain;

@@ -863,6 +863,8 @@ def chrome(args):
         inputs = {'assets': assets, 'params': f'showcase-{args.stop}.params.json'}
         if args.exit:
             inputs['scene'] = 'exit'
+            if rain := os.environ.get('THRUM_RAIN'):
+                inputs['rain'] = rain
         query = urllib.parse.urlencode(inputs)
         url = f'http://127.0.0.1:{server.server_address[1]}/index.html?{query}'
         record['url'] = url

@@ -327,12 +327,6 @@ async function serveCooked(args, output, temporalDefinition) {
       if (/^exit-.*\.(bin|gltf)$/.test(name)) await fs.copyFile(path.join(exit, name), path.join(source, name));
     }
   }
-  if (args.case === 'rain') {
-    const patch = path.join(repo, 'examples/v1-game/assets/rain');
-    for (const file of ['rain-patch.bin', 'rain-patch.gltf']) {
-      await fs.copyFile(path.join(patch, file), path.join(source, file));
-    }
-  }
   if (temporalDefinition) {
     const fixture=JSON.parse(temporalDefinition);
     const v=fixture.volume, bytes=Buffer.alloc(16+v.extent.reduce((a,b)=>a*b,1),v.density);

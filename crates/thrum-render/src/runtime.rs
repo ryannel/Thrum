@@ -1786,6 +1786,12 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         }
     }
 
+    /// Resident bytes of the prepared forward wetness texture, when selected.
+    #[must_use]
+    pub fn wetness_bytes(&self) -> Option<u64> {
+        self.prepared.three_d()?.wetness_bytes()
+    }
+
     /// Resident view-volume bytes, when declared by the prepared 3D scene.
     #[must_use]
     pub fn view_volume_storage(&self) -> Option<crate::atmosphere::ViewVolumeStorage> {

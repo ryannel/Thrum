@@ -10,7 +10,7 @@ use thrum_render::runtime::FrameWorld;
 use v1_game::{GameContent, GameSetup, RainSelection, exit_authority};
 
 #[test]
-fn exit_keeps_its_authority_graph_and_pixels_until_rain_is_selected() {
+fn exit_keeps_its_authority_graph_and_pixels_with_rain_off() {
     let Some(gpu) = rain::open("rain selection on Metal") else {
         return;
     };
@@ -52,13 +52,6 @@ fn exit_keeps_its_authority_graph_and_pixels_until_rain_is_selected() {
                 .expect("ordinary shader")
                 .contains("fn ground_wetness(")
         );
-        let passes = |host: &rain::Host| {
-            host.scene_graph()
-                .expect("exit graph")
-                .pass_names()
-                .map(str::to_owned)
-                .collect::<Vec<_>>()
-        };
         assert_eq!(passes(&baseline), passes(&off));
         assert!(
             !passes(&off)
@@ -70,13 +63,25 @@ fn exit_keeps_its_authority_graph_and_pixels_until_rain_is_selected() {
             baseline.capture_pixels().expect("default frame"),
             off.capture_pixels().expect("rain off frame")
         );
+    });
+}
 
+#[test]
+fn standard_exit_assets_submit_ground_and_hollows_with_rain_selected() {
+    let Some(gpu) = rain::open("selected valley on Metal") else {
+        return;
+    };
+    let store = rain::Store::cook();
+    pollster::block_on(async {
+        let mut original = exit_authority().expect("ordinary exit authority");
+        let original_page = original.published_page().expect("ordinary endpoint");
         let mut on = store
             .host(
                 &gpu,
                 GameSetup {
+                    content: GameContent::Exit,
                     rain: RainSelection::Soaked,
-                    ..setup
+                    ..GameSetup::default()
                 },
             )
             .await;
@@ -101,4 +106,12 @@ fn exit_keeps_its_authority_graph_and_pixels_until_rain_is_selected() {
             "{soaked}"
         );
     });
+}
+
+fn passes(host: &rain::Host) -> Vec<String> {
+    host.scene_graph()
+        .expect("exit graph")
+        .pass_names()
+        .map(str::to_owned)
+        .collect::<Vec<_>>()
 }

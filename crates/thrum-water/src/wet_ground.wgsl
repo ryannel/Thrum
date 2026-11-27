@@ -11,35 +11,19 @@ fn wet_load(index: u32) -> vec4<f32> {
     return textureLoad(wetness_field, vec2<i32>(vec2(index % width, index / width)), 0);
 }
 
-fn wet_column(cell: vec2<i32>, y: f32, size: vec2<i32>, start: u32) -> f32 {
-    if any(cell < vec2(0)) || any(cell >= size) { return 1.0; }
-    let layers = wet_load(start + u32(cell.y * size.x + cell.x));
-    return select(1.0, layers.y, y < layers.x) * select(1.0, layers.w, y < layers.z);
-}
-
 fn wet_exposure(point: vec3<f32>, header: vec4<f32>) -> f32 {
-    let size = vec2<i32>(header.yz);
+    let size = vec2<i32>(abs(header.yz));
     if any(size == vec2(0)) || point.y >= header.x { return 1.0; }
     let canopy = wet_load(1u);
-    let p = (point.xz - canopy.xy) / canopy.z;
+    let base = u32(header.w);
+    let sparse = header.z < 0.0;
+    var projection = vec4(0.0);
+    if sparse { projection = wet_load(base); }
+    let p = (point.xz - canopy.xy) / canopy.z - projection.yz;
     let bounds = wet_load(6u);
     if any(p < bounds.xy) || any(p >= bounds.zw) { return 1.0; }
-    let half_width = 0.5 * canopy.w / canopy.z;
-    let start = u32(header.w);
-    if half_width == 0.0 { return wet_column(vec2<i32>(floor(p)), point.y, size, start); }
-    let lo = p - half_width;
-    let hi = p + half_width;
-    let first = vec2<i32>(floor(lo));
-    let last = vec2<i32>(floor(hi));
-    var sum = 0.0;
-    for (var z = first.y; z <= last.y; z += 1) {
-        for (var x = first.x; x <= last.x; x += 1) {
-            let cell = vec2(x, z);
-            let area = max(vec2(0.0), min(vec2<f32>(cell) + 1.0, hi) - max(vec2<f32>(cell), lo));
-            sum += area.x * area.y * wet_column(cell, point.y, size, start);
-        }
-    }
-    return min(1.0, sum / (4.0 * half_width * half_width));
+    let start = base + select(0u, 1u, sparse);
+    return canopy_exposure(wetness_field, point, canopy, size, start, projection.x, vec2<i32>(projection.yz));
 }
 
 fn wet_class_start(class_index: u32) -> u32 { return 7u + 4u * class_index; }
@@ -200,20 +184,22 @@ fn ground_wetness_footprint(point: vec3<f32>, normal: vec3<f32>, footprint: f32)
             pores = max(pores, wet_band(point.y - wet_shore_edge(shore), shore.z));
         }
     }
-    let open = GroundWetness(pores, surface, cover, class_index, ground);
+    let admission = wet_load(10u);
+    let resolved_film = ground && admission.z > 0.0;
+    let open = GroundWetness(pores, surface, cover, class_index, resolved_film);
     if cell.y < 0.0 { return open; }
     let hollow = wet_load(39u + u32(cell.y));
-    let datum = wet_load(10u).w;
+    let datum = admission.w;
     let height = point.y - datum;
     let pit = cell.w - datum;
     if hollow.x > pit && height < hollow.x {
-        return GroundWetness(1.0, 0.0, 0.0, class_index, ground);
+        return GroundWetness(1.0, 0.0, 0.0, class_index, resolved_film);
     }
     let margin = select(0.0, wet_band(height - hollow.x, hollow.z), hollow.z > 0.0);
     if hollow.y > pit && height < hollow.y {
-        return GroundWetness(max(hollow.w, margin), 0.0, 0.0, class_index, ground);
+        return GroundWetness(max(hollow.w, margin), 0.0, 0.0, class_index, resolved_film);
     }
-    return GroundWetness(max(open.pores, margin), surface, cover, class_index, ground);
+    return GroundWetness(max(open.pores, margin), surface, cover, class_index, resolved_film);
 }
 
 fn ground_wetness(point: vec3<f32>, normal: vec3<f32>) -> GroundWetness {

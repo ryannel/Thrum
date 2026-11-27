@@ -152,6 +152,13 @@ impl PreparedWetness {
         })
     }
 
+    /// Bytes in the allocated RGBA32Float extent, including every padded row.
+    #[must_use]
+    pub fn bytes(&self) -> u64 {
+        let size = self.texture.size();
+        u64::from(size.width) * u64::from(size.height) * 16
+    }
+
     pub(crate) fn source(&self) -> &'static str {
         self.field.source()
     }

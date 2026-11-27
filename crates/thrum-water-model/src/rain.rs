@@ -82,7 +82,10 @@ pub struct CanopyGrid {
     pub size: [usize; 2],
     /// Width of the square over which exposure is averaged, in metres.
     pub edge_width: f64,
-    /// Row-major columns, ordered x then z.
+    /// Cell coordinates of sparse columns, in the same order as their layers.
+    /// Empty for a dense row-major lattice.
+    pub sparse_cells: Vec<[u32; 2]>,
+    /// Layers of each column, ordered x then z when dense.
     pub columns: Vec<[[f64; 2]; 2]>,
 }
 

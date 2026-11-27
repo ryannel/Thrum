@@ -7,36 +7,19 @@ struct RainSurface {
 @group(3) @binding(19) var<uniform> rain: RainSurface;
 @group(3) @binding(20) var rain_columns: texture_2d<f32>;
 
-fn rain_column(cell: vec2<i32>, level: f32) -> f32 {
-    if any(cell < vec2(0)) || any(vec2<u32>(cell) >= rain.grid.xy) { return 1.0; }
-    let column = textureLoad(rain_columns, cell, 0);
-    return select(1.0, column.y, level < column.x) * select(1.0, column.w, level < column.z);
-}
-
 fn rain_exposure(point: vec2<f32>, level: f32) -> f32 {
-    let p = (point - rain.canopy.xy) / rain.canopy.z;
+    let code = rain.footprint_scale.z;
+    var offset = vec2(0.0);
+    if code != 0.0 { offset = canopy_load(rain_columns, 0u).xy; }
+    let p = (point - rain.canopy.xy) / rain.canopy.z - offset;
     let half_width = 0.5 * rain.canopy.w / rain.canopy.z;
     if any(p < vec2(-half_width)) || any(p >= vec2<f32>(rain.grid.xy) + half_width) { return 1.0; }
-    if half_width == 0.0 { return rain_column(vec2<i32>(floor(p)), level); }
-    let lo = p - half_width;
-    let hi = p + half_width;
-    let first = vec2<i32>(floor(lo));
-    let last = vec2<i32>(floor(hi));
-    var sum = 0.0;
-    for (var z = first.y; z <= last.y; z += 1) {
-        for (var x = first.x; x <= last.x; x += 1) {
-            let cell = vec2(x, z);
-            let area = max(vec2(0.0), min(vec2<f32>(cell)+1.0, hi) - max(vec2<f32>(cell), lo));
-            sum += area.x * area.y * rain_column(cell, level);
-        }
-    }
-    return min(1.0, sum / (4.0 * half_width * half_width));
+    return canopy_exposure(rain_columns, vec3(point.x, level, point.y), rain.canopy,
+        vec2<i32>(rain.grid.xy), select(0u, 1u, code != 0.0), code, vec2<i32>(offset));
 }
 
 fn rain_response(index: u32) -> vec2<f32> {
-    let width = max(1u, rain.grid.x);
-    let texel = vec2<u32>(index % width, rain.grid.y + index / width);
-    return textureLoad(rain_columns, vec2<i32>(texel), 0).xy;
+    return canopy_load(rain_columns, u32(rain.footprint_scale.w) + index).xy;
 }
 
 fn rain_gain(point: vec2<f32>, row: SurfaceRow) -> f32 {

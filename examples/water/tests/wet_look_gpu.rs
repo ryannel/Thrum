@@ -40,6 +40,7 @@ fn check(gpu: &thrum_test_support::Gpu) {
             cell: 4.0,
             size: [4, 4],
             edge_width: 0.3,
+            sparse_cells: Vec::new(),
             columns: vec![[[5.0, 0.0], [-1e20, 1.0]]; 16],
         });
         let mut field = WetGround::new(canopy, None, &classes, 0).expect("wetness table");

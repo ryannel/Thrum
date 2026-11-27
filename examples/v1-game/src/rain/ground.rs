@@ -1,13 +1,16 @@
 //! Geometry, bed and shelter used by the opt-in valley patch.
 
+use std::sync::{Arc, OnceLock};
+
 use thrum_rain_model::{Canopy, Ground, Profile, RainError, Shelter, Tree};
 use thrum_water::wet_ground::{GroundCell, HollowsGround};
 use thrum_water_model::{Bed, NO_HOLLOW};
 
 const ORIGIN: [f64; 2] = [-4.0, 2.0];
-const SIZE: [usize; 2] = [72, 56];
-const SPACING: f64 = 0.125;
-const PATCH: &[u8] = include_bytes!("../../assets/rain/rain-patch.bin");
+const SIZE: [usize; 2] = [144, 112];
+const SPACING: f64 = 0.0625;
+const OUTLETS: &[u8] = include_bytes!("../../assets/rain/outlets.bin");
+const PATCH: &[u8] = include_bytes!("../../assets/exit/exit-rain-patch.bin");
 
 // The centres lie on each cell's shared triangle edge. Read the same f32
 // heights the cooker gets from the patch mesh.
@@ -24,7 +27,9 @@ pub(super) fn bed() -> Result<Ground, String> {
     let values = (0..height)
         .flat_map(|z| (0..width).map(move |x| f64::midpoint(vertex(x + 1, z), vertex(x, z + 1))))
         .collect();
-    Ground::new(ORIGIN, SPACING, SIZE, values).map_err(|error| error.to_string())
+    Ground::new(ORIGIN, SPACING, SIZE, values)
+        .and_then(|bed| bed.with_outlets(OUTLETS.iter().map(|&value| value != 0).collect()))
+        .map_err(|error| error.to_string())
 }
 
 pub(super) fn map_bed(tree: &Tree) -> Result<Bed, String> {
@@ -73,12 +78,17 @@ pub(super) fn wetness_grid(tree: &Tree) -> HollowsGround {
     }
 }
 
-// The exposed shelf and the first three stops fall within this prepared
-// shelter grid. More distant ground uses the open store.
-pub(super) fn canopy(profile: &Profile) -> Result<Canopy, RainError> {
-    const LOWER: [f64; 2] = [-56.0, -210.0];
-    const UPPER: [f64; 2] = [30.0, 22.0];
-    const SIZE: [usize; 2] = [344, 928];
+// The lattice extends across all authored rocks, with open columns omitted.
+pub(super) fn canopy() -> Result<Arc<Canopy>, RainError> {
+    static CANOPY: OnceLock<Result<Arc<Canopy>, RainError>> = OnceLock::new();
+    CANOPY
+        .get_or_init(|| prepare_canopy(&super::model_profile()).map(Arc::new))
+        .clone()
+}
+
+fn prepare_canopy(profile: &Profile) -> Result<Canopy, RainError> {
+    const LOWER: [f64; 2] = [-5000.0, -6500.0];
+    const SIZE: [usize; 2] = [40_000, 44_000];
     const BOULDER: &[u8] = include_bytes!("../../assets/exit/exit-boulder.bin");
     const STANDING: &[u8] = include_bytes!("../../assets/exit/exit-standing-rock.bin");
     const ROCK: &[u8] = include_bytes!("../../assets/showcase/rock.bin");
@@ -105,13 +115,6 @@ pub(super) fn canopy(profile: &Profile) -> Result<Canopy, RainError> {
     add(ROCK, 114, [3.8, 240.645_977_762_758_75, -7.0], 0.0, 1.0);
     for prop in &crate::exit_scene::layout().entities {
         let position = prop.position();
-        if position[0] < LOWER[0] - 6.0
-            || position[0] > UPPER[0] + 6.0
-            || position[2] < LOWER[1] - 6.0
-            || position[2] > UPPER[1] + 6.0
-        {
-            continue;
-        }
         let (bytes, count) = match prop.mesh_row() {
             0 => (BOULDER, 26),
             3 => (STANDING, 26),
@@ -120,7 +123,7 @@ pub(super) fn canopy(profile: &Profile) -> Result<Canopy, RainError> {
         let (angle, scale) = prop.orientation();
         add(bytes, count, position, angle, scale);
     }
-    Canopy::prepare(
+    Canopy::prepare_sparse(
         LOWER,
         SIZE,
         &[Shelter {

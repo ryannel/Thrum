@@ -21,6 +21,7 @@ pub struct Ground {
     spacing: f64,
     size: [usize; 2],
     heights: Vec<f64>,
+    outlets: Vec<bool>,
 }
 
 impl Ground {
@@ -49,7 +50,22 @@ impl Ground {
             spacing,
             size,
             heights,
+            outlets: Vec::new(),
         })
+    }
+
+    /// Cells that drain into the surrounding ground outside the authored
+    /// catchment. Their measured heights still determine the overflow sills.
+    /// # Errors
+    /// Refuses a mask that does not have one entry per cell.
+    pub fn with_outlets(mut self, outlets: Vec<bool>) -> Result<Self, RainError> {
+        if outlets.len() != self.heights.len() {
+            return Err(RainError::Ground(
+                "outlet mask size differs from the ground",
+            ));
+        }
+        self.outlets = outlets;
+        Ok(self)
     }
 
     /// Cell counts in x and z.
@@ -459,7 +475,7 @@ fn flood(ground: &Ground) -> Flood {
     let n = z.len();
     let mut labels = vec![u32::MAX; n];
     let mut heap = BinaryHeap::new();
-    for i in (0..n).filter(|&i| ground.edge(i)) {
+    for i in (0..n).filter(|&i| ground.edge(i) || ground.outlets.get(i).copied().unwrap_or(false)) {
         labels[i] = 0;
         heap.push(Reverse(key(z[i], i)));
     }
