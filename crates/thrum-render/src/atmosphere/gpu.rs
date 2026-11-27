@@ -764,8 +764,11 @@ impl AtmospherePrepared {
         if self.omit_reflection && matches!(stage, AtmosphereStage::Reflection(_)) {
             return Ok(());
         }
+        let haze = stage == AtmosphereStage::OverlayLighting
+            && self.quality()[1].value > 1
+            && self.uses_haze_scale();
         let due = if stage == AtmosphereStage::OverlayLighting {
-            self.quality()[1].value > 1 && (overlay_written || self.uses_haze_scale())
+            overlay_written || haze
         } else {
             self.pending_charts[usize::from(overlay_written)]
                 .writes(stage)
@@ -791,7 +794,7 @@ impl AtmospherePrepared {
                 let (pipeline, group) = self
                     .chart_lighting
                     .as_ref()
-                    .and_then(|pass| pass.select(overlay_written))
+                    .and_then(|pass| pass.select(overlay_written, haze))
                     .ok_or(RenderError::GraphPassMismatch)?;
                 (pipeline, group, [1, 1, 1])
             }

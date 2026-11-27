@@ -7,8 +7,7 @@ fn overlay_open_sun() -> f32 {
 @group(0) @binding(1) var sky: texture_2d<f32>;
 @group(0) @binding(2) var aerial_sampler: sampler;
 @group(0) @binding(3) var<storage,read_write> environment_light: EnvironmentLight;
-@group(0) @binding(7) var overlay_faces: texture_2d_array<f32>;
-@group(0) @binding(8) var<storage, read_write> overlay_chart: ChartLighting;
+@group(0) @binding(8) var<uniform> overlay_chart: ChartLighting;
 var<workgroup> clear_meter: array<f32,64>;
 var<workgroup> irradiance: array<vec4<f32>,64>;
 var<workgroup> moments: array<array<vec4<f32>,9>,64>;
@@ -17,16 +16,7 @@ var<workgroup> moments: array<array<vec4<f32>,9>,64>;
 fn diffuse_main(@builtin(local_invocation_index) index: u32) {
     // Preserve the existing horizontal incident meter, including sample order
     // and reduction. It is not reconstructed from the truncated SH expansion.
-    if index == 0u { active_overlay = overlay_chart.mode; }
-    let governed = workgroupUniformLoad(&active_overlay) != 0u;
-    var cloudy: bool;
-    if governed {
-        cloudy = overlay_chart.cloudy != 0u;
-    } else {
-        // Keep the legacy scan and seed a later governed submission if the
-        // overlay producer skips its write at the handoff.
-        cloudy = classify_overlay(index);
-    }
+    let cloudy = overlay_chart.cloudy != 0u;
     let solar=atmosphere.sun_lux.w*atmosphere.colour_pre_exposure.rgb;
     var sum=vec4(0.0);
     var clear_lux = 0.0;

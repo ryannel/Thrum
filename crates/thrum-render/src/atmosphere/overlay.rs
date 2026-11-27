@@ -133,11 +133,6 @@ pub(super) fn prepare_diffuse(
         view(5, &target.view),
         buffer(6, directional),
     ];
-    let faces = target.texture.create_view(&wgpu::TextureViewDescriptor {
-        dimension: Some(wgpu::TextureViewDimension::D2Array),
-        ..Default::default()
-    });
-    entries.push(view(7, &faces));
     entries.push(buffer(8, &target.chart_lighting));
     if haze && let Some(cloud) = cloud {
         entries.extend([view(13, &cloud.view), buffer(14, &cloud.uniform)]);
@@ -155,7 +150,8 @@ pub(super) fn prepare_diffuse(
 
 #[derive(Clone)]
 pub(super) struct ChartLightingPass {
-    changed: (wgpu::ComputePipeline, wgpu::BindGroup),
+    classify: (wgpu::ComputePipeline, wgpu::BindGroup),
+    changed_haze: Option<(wgpu::ComputePipeline, wgpu::BindGroup)>,
     cached_haze: Option<(wgpu::ComputePipeline, wgpu::BindGroup)>,
 }
 
@@ -163,11 +159,13 @@ impl ChartLightingPass {
     pub(super) fn select(
         &self,
         classify: bool,
+        haze: bool,
     ) -> Option<(&wgpu::ComputePipeline, &wgpu::BindGroup)> {
-        let pair = if classify {
-            Some(&self.changed)
-        } else {
-            self.cached_haze.as_ref()
+        let pair = match (classify, haze) {
+            (true, true) => self.changed_haze.as_ref(),
+            (true, false) => Some(&self.classify),
+            (false, true) => self.cached_haze.as_ref(),
+            (false, false) => None,
         };
         pair.map(|(pipeline, group)| (pipeline, group))
     }
@@ -220,16 +218,14 @@ pub(super) fn prepare_chart_lighting(
     };
     let cached_haze = haze.then(|| prepare("haze_main", &entries));
     entries.push(view(7, &faces));
-    let changed = prepare(
-        if haze {
-            "changed_haze_main"
-        } else {
-            "classify_main"
-        },
-        &entries,
+    let changed_haze = haze.then(|| prepare("changed_haze_main", &entries));
+    let classify = prepare(
+        "classify_main",
+        &[buffer(8, &target.chart_lighting), view(7, &faces)],
     );
     ChartLightingPass {
-        changed,
+        classify,
+        changed_haze,
         cached_haze,
     }
 }
@@ -318,7 +314,6 @@ pub(crate) fn diffuse_source(haze: bool, cloud: CloudVariant) -> String {
         include_str!("diffuse_nodes.wgsl"),
         include_str!("overlay_diffuse.wgsl"),
         include_str!("overlay.wgsl"),
-        include_str!("chart_overlay_classify.wgsl"),
         include_str!("chart_overlay_meter.wgsl"),
         wgsl!("atmosphere/chart_lighting.wgsl"),
     ));
