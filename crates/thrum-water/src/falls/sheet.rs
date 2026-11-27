@@ -18,7 +18,7 @@ const SPLASHES_PER_SEGMENT: usize = 24;
 const RIBBONS_PER_SEGMENT: usize = 3;
 const VERTICES_PER_SEGMENT: usize =
     12 * RIBBONS_PER_SEGMENT * (ROWS + 3) + 6 * SPLASHES_PER_SEGMENT;
-const ATTRIBUTES: [wgpu::VertexAttribute; 5] = wgpu::vertex_attr_array![0 => Float32x4, 1 => Float32x4, 2 => Float32x4, 3 => Float32x4, 4 => Float32x2];
+const ATTRIBUTES: [wgpu::VertexAttribute; 5] = wgpu::vertex_attr_array![0 => Float32x4, 1 => Float32x4, 2 => Float32x4, 3 => Float32x4, 4 => Float32x3];
 
 #[repr(C)]
 #[derive(Clone, Copy, Pod, Zeroable)]
@@ -27,7 +27,7 @@ struct Vertex {
     velocity_along: [f32; 4],
     discharge: [f32; 4],
     across_fraction: [f32; 4],
-    edge_receiver: [f32; 2],
+    edge_receiver: [f32; 3],
 }
 
 #[repr(C)]
@@ -436,7 +436,11 @@ fn mesh(
                     across.y as f32,
                     fraction as f32,
                 ],
-                edge_receiver: [f32::from(edge), f32::from(segment.plunge.is_some())],
+                edge_receiver: [
+                    f32::from(edge),
+                    segment.bottom.height as f32,
+                    f32::from(segment.plunge.is_some()),
+                ],
             }
         };
         let strip = |t| [at(t, 0), at(t, 1), at(t, 2)];
@@ -478,7 +482,7 @@ fn ribbons(section: [Vertex; 3]) -> [[Vertex; 3]; RIBBONS_PER_SEGMENT] {
             velocity_along: interpolate(a.velocity_along, b.velocity_along),
             discharge: interpolate(a.discharge, b.discharge),
             across_fraction: interpolate(a.across_fraction, b.across_fraction),
-            edge_receiver: [0.0, a.edge_receiver[1]],
+            edge_receiver: [0.0, a.edge_receiver[1], a.edge_receiver[2]],
         }
     };
     std::array::from_fn(|index| {
@@ -490,7 +494,9 @@ fn ribbons(section: [Vertex; 3]) -> [[Vertex; 3]; RIBBONS_PER_SEGMENT] {
         let fold = (0.5 + 0.5 * (along * 5.63).sin()) * (0.5 + 0.5 * (along * 12.29).cos());
         let separation = ((fraction - 0.41 - 0.23 * fold) / 0.43).clamp(0.0, 1.0);
         let split = separation * separation * (3.0 - 2.0 * separation);
-        let narrowed = half_width * (1.0 - split * (0.10 + 0.34 * fold));
+        let film = centre.discharge[2];
+        let tearing = 0.20 + 0.80 * (1.0 - film);
+        let narrowed = half_width * (1.0 - split * tearing * (0.10 + 0.34 * fold));
         let velocity = Vec3::from_slice(&centre.velocity_along);
         let normal = Vec3::new(ax, 0.0, az).cross(velocity).normalize_or_zero();
         let outward = normal

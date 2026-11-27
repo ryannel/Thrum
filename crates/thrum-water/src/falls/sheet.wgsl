@@ -7,7 +7,7 @@ struct SheetVertex {
     @location(2) discharge: vec4<f32>,
     @location(3) across_fraction: vec4<f32>,
     @location(4) edge: f32,
-    @location(5) receiving_motion: f32,
+    @location(5) receiving: vec3<f32>,
 }
 
 fn sheet_age(age: f32) -> f32 { return age - floor(age / FALL_LOOP) * FALL_LOOP; }
@@ -60,7 +60,7 @@ fn splash_vertex(world_time: vec4<f32>, velocity_along: vec4<f32>, discharge: ve
     let world = vec4(point, phase);
     return SheetVertex(view.view_proj * vec4(point, 1.0), world, velocity_along,
         vec4(random, kick, strength, select(0.0, 1.0, impact)),
-        vec4(corner.x, -1.0, corner.y, phase), 0.0, 0.0);
+        vec4(corner.x, -1.0, corner.y, phase), 0.0, vec3(0.0));
 }
 
 fn strand_swelling(birth: f32, velocity_along: vec4<f32>, across_fraction: vec4<f32>,
@@ -82,7 +82,7 @@ fn strand_swelling(birth: f32, velocity_along: vec4<f32>, across_fraction: vec4<
     @location(1) velocity_along: vec4<f32>,
     @location(2) discharge: vec4<f32>,
     @location(3) across_fraction: vec4<f32>,
-    @location(4) edge_receiver: vec2<f32>,
+    @location(4) edge_receiver: vec3<f32>,
 ) -> SheetVertex {
     let is_splash = across_fraction.y < 0.0 && across_fraction.y > -1.5;
     if is_splash { return splash_vertex(world_time, velocity_along, discharge, across_fraction); }
@@ -93,18 +93,20 @@ fn strand_swelling(birth: f32, velocity_along: vec4<f32>, across_fraction: vec4<
     var position = world_time.xyz + fold;
     if is_filament { position += strand_swelling(birth, velocity_along, across_fraction, edge_receiver.x); }
     var receiving_motion = 0.0;
-    if edge_receiver.y > 0.5 && across_fraction.w > 0.63 {
+    var receiving_level = edge_receiver.y;
+    if edge_receiver.z > 0.5 && across_fraction.w > 0.63 {
         // Follow the same interaction height as the receiving surface. Only
         // the optical contact moves; source locations stay on the fall record.
         let contact = smoothstep(0.63, 1.0, across_fraction.w);
         let height = clamp(wake_at(position.xz, 0.0).x, -0.42, 0.42);
         let previous = clamp(wake_at(position.xz, -sheet_clock.y).x, -0.42, 0.42);
         position.y += contact * height;
+        receiving_level += height;
         receiving_motion = contact * (height - previous);
     }
     let world = vec4(position, world_time.w);
     return SheetVertex(view.view_proj * vec4(world.xyz, 1.0), world, velocity_along, discharge,
-        across_fraction, edge_receiver.x, receiving_motion);
+        across_fraction, edge_receiver.x, vec3(receiving_motion, position.y - receiving_level, edge_receiver.z));
 }
 
 struct FallOutput {
@@ -183,13 +185,19 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
     let strand_presence = smoothstep(-0.12, 0.07, input.across_fraction.w)
         * (1.0 - smoothstep(0.73, 1.0, input.across_fraction.w))
         * mix(1.0, pulses, smoothstep(0.16, 0.77, input.across_fraction.w));
-    let breaks_apart = smoothstep(0.45, 0.92, input.across_fraction.w);
+    let ruptures = 1.0 - 0.62 * smoothstep(0.55, 1.0, input.discharge.z);
+    let breaks_apart = ruptures * smoothstep(0.45, 0.92, input.across_fraction.w);
     let feather = 1.0 - breaks_apart * smoothstep(0.50 + 0.19 * fine, 1.0, input.edge);
     let presence = select(sheet_presence * feather, strand_presence, is_filament);
     let spread = mix(0.63 * coarse + 0.37 * grouped, 0.5, smoothstep(0.9, 3.0, pixel));
     let contact = 0.85 + 0.055 * spread;
-    let foot = 1.0 - smoothstep(contact, 0.98 + 0.02 * spread, input.across_fraction.w);
-    let contact_cover = mix(0.035 * (1.0 - thinness), 1.0, foot)
+    let path_foot = 1.0 - smoothstep(contact, 0.98 + 0.02 * spread, input.across_fraction.w);
+    let side = input.edge * input.edge;
+    let rounding = (0.018 + 0.13 * side) * (0.72 + 0.56 * fine);
+    let plunge_foot = smoothstep(rounding - 0.025, rounding + 0.22, input.receiving.y);
+    let meets_pool = input.receiving.z > 0.5;
+    let foot = select(path_foot, plunge_foot, meets_pool);
+    let contact_cover = foot
         * mix(1.0, smoothstep(0.18, 0.71, tear + 0.54 * fine),
         smoothstep(0.51, 0.90, input.across_fraction.w));
     if (presence > 0.5 && foot > 0.35) != solid || presence * contact_cover < 0.015 {
@@ -216,7 +224,8 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
     let glass = mirror * (0.18 + 0.82 * fresnel) + glint;
     let uv = input.clip.xy * view_aux.viewport_inv_viewport.zw;
     let aerial = environment_aerial(point, uv);
-    let mixing = smoothstep(0.72, 0.99, input.across_fraction.w);
+    let mixing = select(smoothstep(0.72, 0.99, input.across_fraction.w),
+        1.0 - smoothstep(0.05, 0.58, input.receiving.y), meets_pool);
     let aerated = (environment_diffuse(vec3(0.0, 1.0, 0.0)) + direct * max(0.0, light.y))
         * vec3(0.84, 0.90, 0.89) / 3.14159265;
     let sheet_colour = mix(glass, churn, white);
@@ -230,7 +239,7 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
     let fold_delta = (fold_weight(input.across_fraction.w) - fold_weight(last_fraction))
         * select(1.0, 0.18, is_filament);
     let displacement = input.velocity_along.xyz * sheet_clock.y
-        + fold_delta * sheet_fold(lip, birth, across) + vec3(0.0, input.receiving_motion, 0.0);
+        + fold_delta * sheet_fold(lip, birth, across) + vec3(0.0, input.receiving.x, 0.0);
     let previous = view.previous_view_proj * vec4(point - displacement, 1.0);
     let current = view.unjittered_view_proj * vec4(point, 1.0);
     let motion = (previous.xy / previous.w - current.xy / current.w)
