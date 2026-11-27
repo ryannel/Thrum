@@ -1700,7 +1700,13 @@ try {
       },'optics content drawn');
     }
     let checkpoints;
-    if(routeParams.has('dive')&&process.env.THRUM_WATER_ROUTE==='under-light'){
+    const causticWindow=routeParams.has('dive')&&process.env.THRUM_WATER_ROUTE==='caustic-window';
+    if(causticWindow){
+      checkpoints=[[0,-50],[0.6,-50],[1.2,-50],[1.8,-50],[5.5,-12],[7,-12],[8.5,-12],[10,-12]]
+        .map(([setback,pitch],index)=>['window-'+index,{
+          'camera.depth':1.8,'camera.pitch':pitch,'camera.setback':setback,'camera.bearing':90,'sun.elevation':60,
+        }]);
+    }else if(routeParams.has('dive')&&process.env.THRUM_WATER_ROUTE==='under-light'){
       const site=routeParams.get('location')??'lake';
       const shallow=['swash','pond'].includes(site);
       const openSea=['sea','deep-sea'].includes(site);
@@ -1756,9 +1762,10 @@ try {
         [2,40].map(height=>[name+'-'+height,{'camera.height':height,'camera.bearing':90,'camera.pitch':sun===60?-33.024:-18.004,'sun.elevation':sun}]));
       checkpoints.push(['submerged-noon-6',{'camera.height':6,'camera.bearing':90,'camera.pitch':-33.024,'sun.elevation':60}]);
     }
-    for(const [name,params] of checkpoints){
+    for(const [index,[name,params]] of checkpoints.entries()){
       await evaluate(`game.apply_params(${JSON.stringify(JSON.stringify(params))})`);
-      await capture(name,1000/60);
+      const frame=await capture(name,causticWindow&&index>0?0:1000/60);
+      frame.camera_controls=params;
     }
   } else if(mode==='fixed' && surfInspection){
     const views=['sand','beach','offshore','lee','headland','island','seaward','handoff','approach'];

@@ -607,9 +607,12 @@ fn driver(gpu: &thrum_test_support::Gpu) {
             } else if settings().dive().is_some()
                 && std::env::var("THRUM_WATER_ROUTE").as_deref() == Ok("caustic-window")
             {
-                [0.0, 0.6, 1.2, 1.8].into_iter().enumerate().map(|(index, setback)| (
+                [
+                    (0.0, -50), (0.6, -50), (1.2, -50), (1.8, -50),
+                    (5.5, -12), (7.0, -12), (8.5, -12), (10.0, -12),
+                ].into_iter().enumerate().map(|(index, (setback, pitch))| (
                     format!("window-{index}"),
-                    format!(r#"{{"camera.depth":1.8,"camera.pitch":-50,"camera.setback":{setback},"sun.elevation":60}}"#),
+                    format!(r#"{{"camera.depth":1.8,"camera.pitch":{pitch},"camera.setback":{setback},"sun.elevation":60}}"#),
                     10.0,
                 )).collect()
             } else if let Some((_, site @ (DiveSite::Sea | DiveSite::DeepSea | DiveSite::Lake))) =
