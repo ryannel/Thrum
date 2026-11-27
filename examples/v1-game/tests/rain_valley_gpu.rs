@@ -140,6 +140,10 @@ fn receding_valley_matches_the_model() {
     compare_model(RainSelection::HalfDry);
 }
 
+#[expect(
+    clippy::print_stdout,
+    reason = "retain both measured values for review"
+)]
 fn compare_model(selection: RainSelection) {
     let Some(gpu) = rain::open("valley model on Metal") else {
         return;
