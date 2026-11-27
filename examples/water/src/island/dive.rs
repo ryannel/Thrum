@@ -222,7 +222,16 @@ fn build(
         let profile = crate::profile(&spectrum);
         (spectrum, profile)
     };
-    let mut optics = Optics::default();
+    let mut optics = if draw_craft && matches!(site, DiveSite::Sea | DiveSite::DeepSea) {
+        // The shelf and offshore station share one clear-sea water type.
+        Optics {
+            extinction: [0.40, 0.13, 0.070],
+            downwelling: [0.22, 0.065, 0.033],
+            ..Optics::default()
+        }
+    } else {
+        Optics::default()
+    };
     if lake {
         optics = Optics {
             extinction: [0.37, 0.18, 0.25],
