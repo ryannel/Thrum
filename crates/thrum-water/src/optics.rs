@@ -373,6 +373,7 @@ mod tests {
                     downwelling_mirror,
                     reach_slope_scene,
                     dispatch,
+                    film_sources,
                     inverse_raster_view_proj,
                     mask,
                     bodies,

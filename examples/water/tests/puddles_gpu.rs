@@ -207,7 +207,7 @@ fn check_yard_depth(gpu: &thrum_test_support::Gpu) {
     use support::depth::DepthTap;
     use thrum_app::sky::{Camera, ContentStatus};
     use thrum_water_model::Map;
-    use water_scene::island::{Wind, build_rain_yard_levels};
+    use water_scene::island::{Wind, build_rain_yard_cost};
 
     const EXTENT: [u32; 2] = [320, 200];
     const EPS_METRES: f64 = 0.000_04;
@@ -216,8 +216,10 @@ fn check_yard_depth(gpu: &thrum_test_support::Gpu) {
     let camera = Camera::look_at([149.0, 33.12, 64.94], [149.0, 18.12, 65.0], 45.0);
     let matrix = support::depth::matrix(camera, EXTENT);
     let make = |draw_water| {
+        // Both arms use the same opaque ground. The moving float has its own
+        // query check and would otherwise contribute a different opaque depth.
         let (game, report, map, _) =
-            build_rain_yard_levels(Wind::Calm, draw_water).expect("rain yard");
+            build_rain_yard_cost(Wind::Calm, draw_water).expect("rain yard");
         let tap = DepthTap::default();
         let game = game.with_contribution(Box::new(tap.contribution(EXTENT)), || {
             ContentStatus::Drawn(1)
@@ -233,7 +235,7 @@ fn check_yard_depth(gpu: &thrum_test_support::Gpu) {
     let (mut opaque, opaque_depth, _) = make(false);
     let mut split = false;
     let mut joined = false;
-    for time in [1.5, 2.0] {
+    for time in [1.25, 2.0] {
         wet.frame(time);
         opaque.frame(time);
         let surface = depth.read(&wet);
