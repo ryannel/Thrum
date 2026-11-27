@@ -1241,7 +1241,7 @@
     {
       "id": "WP18",
       "name": "A launch setting draws the valley below the window's pixel size and the display scales it to fill, with no hitch at the change",
-      "status": "in_progress",
+      "status": "ready_for_review",
       "depends_on": [],
       "quality_bar": "A shipped high-end Mac game set to an output resolution below the panel's own at full screen, such as Resident Evil Village with MetalFX: the picture fills the display edge to edge with no band and no stretch, and changing the output resolution never hitches or compiles. This work package builds the mechanism and holds it to that; the look of the scaled picture is judged in WP17, at the scale that is chosen there.",
       "items": [
