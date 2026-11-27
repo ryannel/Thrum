@@ -604,6 +604,23 @@ fn driver(gpu: &thrum_test_support::Gpu) {
                 && std::env::var("THRUM_WATER_ROUTE").as_deref() == Ok("under-light")
             {
                 under_light_checkpoints(site)
+            } else if let Some((_, site)) = settings().dive()
+                && std::env::var("THRUM_WATER_ROUTE").as_deref() == Ok("dive-crossing-detail")
+            {
+                // Supplement the elapsed-time take with a denser look at its entry.
+                let clock_offset = std::env::var("THRUM_WATER_DIVE_CLOCK_OFFSET")
+                    .expect("crossing clock offset from the realtime receipt")
+                    .parse::<f64>()
+                    .expect("crossing clock offset in seconds");
+                (42..=93).map(|index| {
+                    let elapsed = f64::from(index) / 30.0;
+                    let depth = realtime::dive_crossing_depth(elapsed, site.crossing_depth());
+                    (
+                        format!("entry-{index:02}"),
+                        format!(r#"{{"camera.depth":{depth:.4},"camera.pitch":0,"camera.setback":4.2,"camera.surface_follow":1,"sun.elevation":1}}"#),
+                        elapsed + clock_offset,
+                    )
+                }).collect()
             } else if settings().dive().is_some()
                 && std::env::var("THRUM_WATER_ROUTE").as_deref() == Ok("caustic-window")
             {
@@ -1002,6 +1019,7 @@ fn under_light_checkpoints(site: DiveSite) -> Vec<(String, String, f64)> {
             ("bed-0.5m", 0.5, -45.0, 90.0),
             ("bed-3m", 3.0, -45.0, 90.0),
             ("level-0.5m", 0.5, 0.0, 90.0),
+            ("level-1m", 1.0, 0.0, 90.0),
             ("level-3m", 3.0, 0.0, 90.0),
             ("sunk-float", 0.5, -20.0, 349.0),
             ("shaft-1m", 1.0, 67.0, 228.0),
@@ -1013,6 +1031,7 @@ fn under_light_checkpoints(site: DiveSite) -> Vec<(String, String, f64)> {
             ("bed-0.5m", 0.5, -45.0, 90.0),
             ("bed-3m", 3.0, -45.0, 90.0),
             ("level-0.5m", 0.5, 0.0, 90.0),
+            ("level-1m", 1.0, 0.0, 90.0),
             ("level-3m", 3.0, 0.0, 90.0),
             ("sunk-float", 0.5, -20.0, 349.0),
             ("shaft-1m", 1.0, 67.0, 228.0),

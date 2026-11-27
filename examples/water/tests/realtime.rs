@@ -36,6 +36,11 @@ const _: () = assert!(DIVE_SUBMISSIONS < WRITER_QUEUE);
 const _: () = assert!(DIVE_SUBMISSIONS < CPU_LEASES);
 const _: () = assert!(DIVE_SUBMISSIONS as u64 * 2560 * 1440 * 4 < PIXEL_ALLOWANCE);
 
+pub(super) fn dive_crossing_depth(way_down: f64, crossing: f64) -> f64 {
+    let phase = (2.0 * way_down / DIVE_CROSSING_SECONDS - 1.0) * std::f64::consts::FRAC_PI_2;
+    crossing * phase.sin().powi(3)
+}
+
 fn dive_view(route: &str) -> Option<(f64, f64)> {
     match route {
         "dive-up-1m" => Some((1.0, 89.99)),
@@ -551,9 +556,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
                 let way_down = elapsed.min(interval - elapsed).max(0.0);
                 let crossing_time = DIVE_CROSSING_SECONDS;
                 if way_down < crossing_time {
-                    let phase =
-                        (2.0 * way_down / crossing_time - 1.0) * std::f64::consts::FRAC_PI_2;
-                    crossing * phase.sin().powi(3)
+                    dive_crossing_depth(way_down, crossing)
                 } else {
                     let progress = (way_down - crossing_time) / (0.5 * interval - crossing_time);
                     let eased = 0.5 * (1.0 - (progress * std::f64::consts::PI).cos());

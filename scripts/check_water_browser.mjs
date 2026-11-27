@@ -1711,7 +1711,7 @@ try {
       const shallow=['swash','pond'].includes(site);
       const openSea=['sea','deep-sea'].includes(site);
       const views=shallow?[['through-shallows',-2,-73,90]]:[
-        ['bed-0.5m',0.5,-45,90],['bed-3m',3,-45,90],['level-0.5m',0.5,0,90],['level-3m',3,0,90],
+        ['bed-0.5m',0.5,-45,90],['bed-3m',3,-45,90],['level-0.5m',0.5,0,90],['level-1m',1,0,90],['level-3m',3,0,90],
         ['shaft-1m',1,67,228],['away-1m',1,22,228],['sunk-float',0.5,-20,349],
         ['shaft-3m',3,67,228],['away-3m',3,22,228],
         ...(openSea?[['shaft-10m',10,67,228],['away-10m',10,22,228],['level-10m',10,0,90]]:[]),
