@@ -1960,7 +1960,7 @@
           "lock": "chrome",
           "target": "chrome-webgpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP16/chrome-qualified/run.json",
+          "evidence": ".orchestrate/evidence/WATERS/WP16/chrome-calm-clear/run.json",
           "verdict": "",
           "review": ""
         },

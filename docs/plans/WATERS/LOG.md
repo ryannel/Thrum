@@ -1901,7 +1901,7 @@
   blocker. Its east-lit box shadow darkened both the bed and the water just
   above it at the same stations. The unit and half-factor meter arms passed
   and the browser reported no validation faults.
-  [Chrome WebGPU proof](../../../.orchestrate/evidence/WATERS/WP16/chrome-qualified/run.json).
+  [Chrome WebGPU proof](../../../.orchestrate/evidence/WATERS/WP16/chrome-calm-clear/run.json).
 
 ## WP16 visual inspection checkpoint
 
