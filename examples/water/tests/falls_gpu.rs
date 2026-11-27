@@ -34,7 +34,7 @@ fn sheet_draws_before_the_gather_and_writes_temporal_inputs() {
     }
     fixture.frame_without_timings((fall::STEP * 5).as_secs_f64());
     let graph = fixture.host.scene_graph().expect("prepared Metal scene");
-    let names = graph.pass_bindings().map(|(_, pass)| pass.name.to_string()).collect::<Vec<_>>();
+    let names = graph.pass_names().map(str::to_owned).collect::<Vec<_>>();
     let index = |name: &str| names.iter().position(|candidate| candidate.ends_with(name)).unwrap_or_else(|| panic!("{name} absent: {names:?}"));
     assert!(index("waterfall sheet") < index("water gather"));
 
@@ -66,6 +66,26 @@ fn sheet_draws_before_the_gather_and_writes_temporal_inputs() {
     fixture.frame_without_timings((fall::STEP * 6).as_secs_f64());
     assert_eq!(fixture.host.pipeline_creation_count(), creations);
     assert_eq!(map.lock().expect("fall map").sample(fall::POOL), authority);
+    let lower = fixture.witness();
+    map.lock().expect("fall map").set_stage(1, 0.33).expect("upper pool stage");
+    for tick in 7..=9 {
+        fixture.frame_without_timings((fall::STEP * tick).as_secs_f64());
+    }
+    let raised = fixture.witness();
+    let covered = path(0.76);
+    let lower_hit = sample(covered, &lower);
+    let upper_hit = sample(covered, &raised);
+    eprintln!("Metal sheet foot at the two pool stages {lower_hit:?} / {upper_hit:?}");
+    assert!(upper_hit[1] > lower_hit[1] + 0.0004, "raised pool covers the foot");
+    map.lock().expect("fall map").set_gauge(0, 0.5).expect("trickle sample");
+    for tick in 10..=12 {
+        fixture.frame_without_timings((fall::STEP * tick).as_secs_f64());
+    }
+    let thin = fixture.witness().iter().zip(&raised)
+        .filter(|(trickle, flood)| flood[0] > 0.28 && trickle[1] < flood[1] - 0.001)
+        .count();
+    eprintln!("Metal flood pixels that open into gaps at the lowest running sample {thin}");
+    assert!(thin > 40, "the trickle leaves gaps in the flood's sheet");
     fixture.host.world_mut().pause();
     let time = fixture.host.world().source().tick;
     fixture.frame_without_timings(2.0);
@@ -78,7 +98,7 @@ fn sheet_draws_before_the_gather_and_writes_temporal_inputs() {
     let (mut off, _) = start(false);
     off.frame_without_timings(0.0);
     let graph = off.host.scene_graph().expect("disabled graph");
-    assert!(graph.pass_bindings().all(|(_, pass)| !pass.name.ends_with("waterfall sheet")));
+    assert!(graph.pass_names().all(|name| !name.ends_with("waterfall sheet")));
     assert!(off.host.quality_knobs().iter().all(|entry| entry.name != knob.name));
     assert!(off.report.lock().expect("resources").resources.iter().all(|(name, _)| !name.contains("waterfall")));
 }
