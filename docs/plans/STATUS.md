@@ -390,7 +390,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Now and next
 
-- The long tests pass again: the output-scale device test passes beside the other tests of its binary (APPLE-PRESENTATION WP19): Not Started · [plan](APPLE-PRESENTATION/PLAN.md)
+- The long tests pass again: the output-scale device test passes beside the other tests of its binary (APPLE-PRESENTATION WP19): Ready for Review · [plan](APPLE-PRESENTATION/PLAN.md)
 - The sky's charts are rebuilt over several frames under the governor, so they cost each frame a fraction of what they did and nothing in the sky is seen to update (ATMOSPHERE WP12): In Progress · [plan](ATMOSPHERE/PLAN.md) · [latest review](../../.orchestrate/evidence/ATMOSPHERE/WP12-review.md)
 - A test effect draws into a texture of its own before the scene is shaded, and the scene's shading reads it in the same frame, on the Mac and in Chrome (EFFECT-GRAPH WP7): In Progress · [plan](EFFECT-GRAPH/PLAN.md) · [latest review](../../.orchestrate/evidence/EFFECT-GRAPH/WP7-review.md)
 - Through a day mist forms after dusk and burns off in the morning, haze runs from crisp to murky, and a visitor sets them, on the Mac and in Chrome (CLOUDS WP16): In Progress · [plan](CLOUDS/PLAN.md) · [latest review](../../.orchestrate/evidence/CLOUDS/WP16-review.md)
@@ -525,9 +525,6 @@ A planner or the lead chose each of these where your words left it open. Each st
 - Clouds are lit through the whole day: bright sides and shadowed bases at noon, a silver lining against the Sun, sunset colour, and dark shapes against the stars (CLOUDS WP5), 20 Nov · review `.orchestrate/evidence/CLOUDS/WP5-review.md` (cleared)
 - Every record a renderer shader reads is one Rust struct and one WGSL declaration, held equal by a test (REVIEW-RENDER WP2), 20 Nov · review `.orchestrate/evidence/REVIEW-RENDER/WP2-review.md` (cleared)
 - From the lookout at sunset the ground runs to its rim with no bright band along it, and at the sunrise stop the sphere and the rock cast long shadows (SHOWCASE WP9), 20 Nov · review `.orchestrate/evidence/SHOWCASE/WP9-review.md` (cleared)
-- Ten thousand sprites follow the simulation, gliding between ticks in an overlap order that holds still (RENDER-2D WP2), 20 Nov · review `.orchestrate/evidence/RENDER-2D/WP2-review.md` (cleared)
-- The valley fills the window at any size, and keeps presenting while the window is resized (APPLE-PRESENTATION WP4), 20 Nov · review `.orchestrate/evidence/APPLE-PRESENTATION/WP4-review.md` (cleared)
-- A player's own character answers at once, while the crowd stays exact (SESSION WP4), 20 Nov · review `.orchestrate/evidence/SESSION/WP4-review.md` (cleared)
 
 ## All modules
 
@@ -539,7 +536,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 4 | COOKED-DRAW | Cooked scenes draw on devices that cannot run GPU-driven draws, such as the iPhone simulator | PLATFORM-RUNTIME-IOS WP7 | Done 9 Nov |
 | 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE WP0 and WP1, PLATFORM-RUNTIME-MAC WP1, COOKED-DRAW WP1 | Done 25 Nov |
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE WP3 | Done 24 Nov |
-| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE WP0, WP2, WP3, WP11, WP12 and WP13; ATMOSPHERE WP12 and SHOWCASE WP7 for its WP17 | WP19 of 22 · Not Started |
+| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE WP0, WP2, WP3, WP11, WP12 and WP13; ATMOSPHERE WP12 and SHOWCASE WP7 for its WP17 | WP19 of 22 · Ready for Review |
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | CONTENT-LOOP WP4 for its WP9 to pass the full check; APPLE-PRESENTATION WP3 and SHOWCASE WP9 for its WP6; APPLE-PRESENTATION WP7 for its WP12 | WP12 of 10 · In Progress |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is found on main within about two hours and traced to the commit that made it |  | Done 25 Nov |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE WP2, BASELINE-GUARD WP1 | Done 17 Nov |
