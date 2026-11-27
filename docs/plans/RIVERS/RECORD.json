@@ -1,27 +1,14 @@
 {
   "module": "RIVERS",
   "design": {
-    "verdict": "changes",
-    "review": ".orchestrate/evidence/RIVERS/design-review.md",
-    "commit": "f90369bc1f3f472a39a72c4517f556b3bc4fc20b",
-    "hash": "1ed0b2b6fde22d96c469830461f1ed3e657a4c3b7ea00a191bcd98d2f6bd4d1f",
-    "by": "review",
-    "host": "codex",
-    "model": "gpt-6.2-astra",
-    "effort": "high",
-    "observed": {
-      "model": "gpt-6.2-astra",
-      "effort": "high"
-    },
-    "cli": "codex-cli 0.171.0-alpha.13.2",
-    "path": "headless",
-    "usage": {
-      "input": 82195,
-      "cached": 1187328,
-      "output": 6016,
-      "turns": 1
-    },
-    "at": "2026-11-27T13:37:52Z"
+    "verdict": "ok",
+    "by": "review_limit",
+    "hash": "8c7595f6dc4ec107474f826ecdf81ac5d998a03c67b1d0d8f15a6535cb601719",
+    "after": [
+      ".orchestrate/evidence/RIVERS/design-review-15.md",
+      ".orchestrate/evidence/RIVERS/design-review.md"
+    ],
+    "at": "2026-11-27T14:03:05Z"
   },
   "work_packages": {
     "WP1": {
@@ -1322,12 +1309,12 @@
       }
     },
     "WP11": {
-      "definitions": "f995c66084659fbc32b94e8f3c4be192e7fe4d9c8ec25162630a8d0e8a5d7308",
+      "definitions": "a73c15508fe97f9243c22e2794231928a0bb7c861299335ac978c8a1e479f72d",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of RIVERS at .orchestrate/evidence/RIVERS/design-review.md asked for changes, with its 4 Must Fix find",
-        "at": "2026-11-27T13:34:05Z"
+        "task": "The design review of RIVERS at .orchestrate/evidence/RIVERS/design-review.md asked for changes, with its 2 Must Fix find",
+        "at": "2026-11-27T14:03:05Z"
       },
       "ends_stretch": true
     }
@@ -1404,11 +1391,15 @@
     {
       "task": "The design review of RIVERS at .orchestrate/evidence/RIVERS/design-review.md asked for changes, with its 4 Must Fix findings.",
       "at": "2026-11-27T13:34:05Z"
+    },
+    {
+      "task": "The design review of RIVERS at .orchestrate/evidence/RIVERS/design-review.md asked for changes, with its 2 Must Fix findings. That makes 2 design reviews in a row that asked for changes, so the script approves the design you leave without another review, and building starts from it.",
+      "at": "2026-11-27T14:03:05Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-27T13:34:05Z"
+    "at": "2026-11-27T14:03:05Z"
   },
   "design_history": [
     {
@@ -1777,6 +1768,29 @@
         "turns": 1
       },
       "at": "2026-11-27T12:53:33Z"
+    },
+    {
+      "verdict": "changes",
+      "review": ".orchestrate/evidence/RIVERS/design-review.md",
+      "commit": "f90369bc1f3f472a39a72c4517f556b3bc4fc20b",
+      "hash": "1ed0b2b6fde22d96c469830461f1ed3e657a4c3b7ea00a191bcd98d2f6bd4d1f",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6.2-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6.2-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.171.0-alpha.13.2",
+      "path": "headless",
+      "usage": {
+        "input": 82195,
+        "cached": 1187328,
+        "output": 6016,
+        "turns": 1
+      },
+      "at": "2026-11-27T13:37:52Z"
     }
   ]
 }
