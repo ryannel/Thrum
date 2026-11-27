@@ -2804,12 +2804,12 @@
       }
     },
     "WP16": {
-      "definitions": "071bf5df4dc9dd47ea92c671acfbf56bdfb8ce4c7cbf63987534d4d226edbb09",
+      "definitions": "ba6d2f420bca8ac52b1f6eb7c3749b84a9f0f48546024338b10d8444e03122cd",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "Lead ruling for WATERS WP16 (blocked at the three-look stop on WP16.6, the moving caustic net on the hull and float; han",
-        "at": "2026-11-27T20:44:21Z"
+        "task": "WATERS WP16 is Blocked again (handoff .claude/worktrees/waters/.orchestrate/evidence/WATERS/WP16-handoff.md, branch buil",
+        "at": "2026-11-27T22:00:57Z"
       }
     },
     "WP17": {
@@ -3488,12 +3488,12 @@
       }
     },
     "WP26": {
-      "definitions": "8b0e1d216d781921f0eb8ec2eb22668284689b799d5b5fdc3b7ad43a21ea1849",
+      "definitions": "84888fdefb51ee7ea93d65027f33396df0dd469bd4cdd92c9854c20fe0370855",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 1 Must Fix find",
-        "at": "2026-11-27T21:02:39Z"
+        "task": "WATERS WP16 is Blocked again (handoff .claude/worktrees/waters/.orchestrate/evidence/WATERS/WP16-handoff.md, branch buil",
+        "at": "2026-11-27T22:00:57Z"
       }
     }
   },
@@ -3737,11 +3737,15 @@
     {
       "task": "The owner asked in chat: \"Yes, move Waters WP26 forward now\" (after I explained WP26, the research-first study of shallow underwater beams and the joined hull-and-float caustic net, was queued after other Waters work). Make WP26 the next WATERS work package to build after WP16 closes, ahead of any other unstarted WATERS work, keeping its research-first step (how shipped high-end games make shallow underwater shafts and receiver caustic nets read, modern techniques only) and its dependencies honest. Do not change WP16, which a builder is closing now. It still must not block SHOWCASE.",
       "at": "2026-11-27T21:34:21Z"
+    },
+    {
+      "task": "WATERS WP16 is Blocked again (handoff .claude/worktrees/waters/.orchestrate/evidence/WATERS/WP16-handoff.md, branch build/waters at da0e65a1d): 9 of 12 items pass; open are WP16.6 joined bright lines on the lake and sea beds (three more looks: diffuse patches and disconnected streaks), WP16.7 water beside the keel, and WP16.11 Chrome (inherits those two). Lead ruling, in line with the owner's wish to research stubborn looks now rather than later (\"Yes, move Waters WP26 forward now\"): the bed caustic net and the keel-side light are the same underwater-light problem WP26 studies, and WP26 builds next. Move the open bed-net and keel cues from WP16.6, WP16.7 and WP16.11 into WP26, so WP16 closes and merges on what passes (keep any part of those items that reads now). WP26's research step must cover bed caustic nets too (how shipped high-end games make joined caustic lines on beds and hulls, modern techniques only), and use the builder's suggested diagnosis: one clock-matched bed view that reads the caustic field, the receiver's Sun factor and the composited image separately, to find which stage loses the lines. Leave WP16 ready to resume and merge.",
+      "at": "2026-11-27T22:00:57Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-27T21:34:21Z"
+    "at": "2026-11-27T22:00:57Z"
   },
   "design_history": [
     {
