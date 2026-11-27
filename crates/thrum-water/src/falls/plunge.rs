@@ -117,7 +117,10 @@ impl Plunges {
 fn rank(along: f64, down: f64, launch: f64) -> f64 {
     let at = Vec2::new(along as f32, down as f32) * Vec2::new(2.4, 0.68);
     let span = (thrum_sea_model::LOOP_SECONDS * launch) as f32 * 0.68;
-    f64::from(0.68 * noise(at, span, 2.4) + 0.32 * noise(at, span, 8.7))
+    let seconds = down as f32 / (launch as f32).max(0.001);
+    let seconds_span = thrum_sea_model::LOOP_SECONDS as f32;
+    let grouped = noise(Vec2::new(along as f32 * 0.015, seconds), seconds_span, 2.7);
+    f64::from(0.43 * noise(at, span, 2.4) + 0.17 * noise(at, span, 8.7) + 0.4 * grouped)
 }
 
 fn noise(point: Vec2, span: f32, frequency: f32) -> f32 {
