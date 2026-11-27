@@ -102,3 +102,92 @@ fn a_contribution_reads_its_own_colour_depth_and_record_through_the_public_seam(
         );
     });
 }
+
+#[cfg(not(target_arch = "wasm32"))]
+#[test]
+fn lists_forward_secondary_resize_through_both_public_hooks() {
+    use thrum_render::{
+        contribution::{
+            ContributionFrame, ContributionPasses, EffectGraph, SceneContribution,
+            SceneContributions, SceneSurface, SecondaryResize, SecondaryResizeJob,
+        },
+        runtime::FrameError,
+    };
+
+    struct Owner;
+
+    impl SceneContribution for Owner {
+        fn secondary_view_slots(&self) -> Vec<SecondaryViewSlot> {
+            vec![SecondaryViewSlot::new(1.0).expect("slot")]
+        }
+
+        fn secondary_resize_job(&self) -> Result<Option<SecondaryResizeJob>, FrameError> {
+            Ok(Some(Box::new(|views| {
+                assert_eq!(views.len(), 1);
+                Ok(SecondaryResize::new(
+                    EffectGraph::default(),
+                    |_: &mut Self| {},
+                ))
+            })))
+        }
+
+        fn passes(&self) -> ContributionPasses {
+            ContributionPasses::default()
+        }
+
+        fn rebuild(&mut self, _: &SceneSurface<'_>) -> Result<(), FrameError> {
+            Ok(())
+        }
+
+        fn encode_upload(&mut self, _: &mut wgpu::CommandEncoder, _: &ContributionFrame) {}
+    }
+
+    struct Forwarder(SceneContributions);
+
+    impl SceneContribution for Forwarder {
+        fn secondary_view_slots(&self) -> Vec<SecondaryViewSlot> {
+            self.0.secondary_view_slots()
+        }
+
+        fn secondary_resize_job(&self) -> Result<Option<SecondaryResizeJob>, FrameError> {
+            self.0.secondary_resize_job()
+        }
+
+        fn passes(&self) -> ContributionPasses {
+            self.0.passes()
+        }
+
+        fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), FrameError> {
+            self.0.rebuild(surface)
+        }
+
+        fn encode_upload(&mut self, encoder: &mut wgpu::CommandEncoder, frame: &ContributionFrame) {
+            self.0.encode_upload(encoder, frame);
+        }
+    }
+
+    let list = SceneContributions::new(vec![Box::new(Owner)]);
+    assert!(
+        list.secondary_resize_job()
+            .expect("list secondary job")
+            .is_some()
+    );
+    assert!(
+        list.extent_resize_job([80, 60], true)
+            .expect("list extent job")
+            .is_some()
+    );
+    let forwarder = Forwarder(list);
+    assert!(
+        forwarder
+            .extent_resize_job([80, 60], true)
+            .expect("forwarded extent job")
+            .is_some()
+    );
+    assert!(
+        forwarder
+            .extent_resize_job([80, 60], false)
+            .expect("no resize needed")
+            .is_none()
+    );
+}

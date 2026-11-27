@@ -73,6 +73,66 @@ impl SceneContributions {
     }
 
     #[cfg(not(target_arch = "wasm32"))]
+    fn resize_job(
+        &self,
+        extent: Option<[u32; 2]>,
+        resize_secondary: bool,
+    ) -> Result<Option<super::ExtentResizeJob>, FrameError> {
+        let mut first = 0;
+        let mut members = Vec::with_capacity(self.entries.len());
+        for entry in &self.entries {
+            let end = first + entry.secondary_view_slots().len();
+            let job = if let Some(extent) = extent {
+                entry.extent_resize_job(extent, resize_secondary)?
+            } else {
+                entry.secondary_resize_job()?.map(|job| {
+                    let job: super::ExtentResizeJob =
+                        Box::new(move |slots| job(slots.expect("replacement secondary views")));
+                    job
+                })
+            };
+            members.push((first..end, job, entry.effect_graph()));
+            first = end;
+        }
+        if (extent.is_none() && first == 0) || members.iter().all(|(_, job, _)| job.is_none()) {
+            return Ok(None);
+        }
+        Ok(Some(Box::new(move |slots| {
+            let mut replacements = Vec::with_capacity(members.len());
+            let mut graphs = Vec::with_capacity(members.len());
+            for (range, job, graph) in members {
+                let member_slots = slots
+                    .map(|views| {
+                        views.get(range).ok_or(FrameError::InvalidState(
+                            "secondary view declaration changed during preparation",
+                        ))
+                    })
+                    .transpose()?;
+                let replacement = job.map(|job| job(member_slots)).transpose()?;
+                graphs.push(
+                    replacement
+                        .as_ref()
+                        .map_or(graph, |next| next.graph.clone()),
+                );
+                replacements.push(replacement);
+            }
+            Ok(super::SecondaryResize::new(
+                Self::combined_graph(graphs),
+                move |owner: &mut Self| {
+                    for (index, replacement) in replacements.into_iter().enumerate() {
+                        if let Some(next) = replacement {
+                            owner.pass_counts[index] = next.graph.passes.len();
+                            owner.tick_counts[index] = next.graph.tick_passes.len();
+                            owner.after_counts[index] = next.graph.after_opaque.len();
+                            next.publish(owner.entries[index].as_mut());
+                        }
+                    }
+                },
+            ))
+        })))
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
     pub(crate) fn prepare_members(
         &self,
         mut prepare: impl FnMut(
@@ -296,59 +356,22 @@ impl SceneContribution for SceneContributions {
             .collect()
     }
     #[cfg(not(target_arch = "wasm32"))]
+    fn secondary_resize_job(&self) -> Result<Option<super::SecondaryResizeJob>, FrameError> {
+        Ok(self.resize_job(None, true)?.map(|job| {
+            let job: super::SecondaryResizeJob = Box::new(move |slots| job(Some(slots)));
+            job
+        }))
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
     fn extent_resize_job(
         &self,
         extent: [u32; 2],
         resize_secondary: bool,
     ) -> Result<Option<super::ExtentResizeJob>, FrameError> {
-        let mut first = 0;
-        let mut members = Vec::with_capacity(self.entries.len());
-        for entry in &self.entries {
-            let end = first + entry.secondary_view_slots().len();
-            members.push((
-                first..end,
-                entry.extent_resize_job(extent, resize_secondary)?,
-                entry.effect_graph(),
-            ));
-            first = end;
-        }
-        if members.iter().all(|(_, job, _)| job.is_none()) {
-            return Ok(None);
-        }
-        Ok(Some(Box::new(move |slots| {
-            let mut replacements = Vec::with_capacity(members.len());
-            let mut graphs = Vec::with_capacity(members.len());
-            for (range, job, graph) in members {
-                let member_slots = slots
-                    .map(|views| {
-                        views.get(range).ok_or(FrameError::InvalidState(
-                            "secondary view declaration changed during preparation",
-                        ))
-                    })
-                    .transpose()?;
-                let replacement = job.map(|job| job(member_slots)).transpose()?;
-                graphs.push(
-                    replacement
-                        .as_ref()
-                        .map_or(graph, |next| next.graph.clone()),
-                );
-                replacements.push(replacement);
-            }
-            Ok(super::SecondaryResize::new(
-                Self::combined_graph(graphs),
-                move |owner: &mut Self| {
-                    for (index, replacement) in replacements.into_iter().enumerate() {
-                        if let Some(next) = replacement {
-                            owner.pass_counts[index] = next.graph.passes.len();
-                            owner.tick_counts[index] = next.graph.tick_passes.len();
-                            owner.after_counts[index] = next.graph.after_opaque.len();
-                            next.publish(owner.entries[index].as_mut());
-                        }
-                    }
-                },
-            ))
-        })))
+        self.resize_job(Some(extent), resize_secondary)
     }
+
     fn quality_knobs(&self) -> Vec<super::QualityKnob> {
         self.entries
             .iter()

@@ -247,6 +247,10 @@ impl GroundField {
         self.parameters.upper_heights = heights.map(|value| value as f32);
     }
 
+    pub(crate) fn has_active_rows(&self) -> bool {
+        self.parameters.has_active_rows != 0
+    }
+
     pub(crate) fn terrain_top(&self) -> f64 {
         f64::from(self.parameters.ground_heights[2])
     }

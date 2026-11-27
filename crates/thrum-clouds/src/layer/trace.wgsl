@@ -10,8 +10,8 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
     if any(texel>=size) {return;}
     let per_pixel = SURFACE_STOPS;
     let block_centre = min(vec2<f32>(texel * 2u + 1u), vec2<f32>(cloud.render_extent) - 0.5);
-    let uv = select((vec2<f32>(texel) + 0.5) / vec2<f32>(size),
-                    block_centre / vec2<f32>(cloud.render_extent), per_pixel);
+    let uv = select(cloud_texel_uv(texel), block_centre / vec2<f32>(cloud.render_extent),
+                    per_pixel && cloud.stop_mode != CLOUD_STOP_CLEAR_GROUND);
     let clip=cloud.inverse_raster*vec4(uv*vec2(2.0,-2.0)+vec2(-1.0,1.0),0.0,1.0);
     let camera=atmosphere.camera_altitude.xyz;let ray=normalize(clip.xyz/clip.w-camera);
     let air_camera=camera-vec3(cloud.drift.x,0.0,cloud.drift.y);

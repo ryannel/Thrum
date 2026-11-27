@@ -365,7 +365,8 @@ pub(super) fn trace_shader(
     surface_stops: bool,
 ) -> String {
     let source = layer_shader(environment, TRACE_SHADER, shapes, ground, false);
-    format!("{source}\nconst SURFACE_STOPS: bool = {surface_stops};")
+    let stop_modes = super::StopMode::shader();
+    format!("{source}\n{stop_modes}\nconst SURFACE_STOPS: bool = {surface_stops};")
 }
 
 fn layer_shader(
@@ -512,7 +513,8 @@ fn compose(
         label: Some(COMPOSE),
         source: wgpu::ShaderSource::Wgsl(
             format!(
-                "{}\n{}\n{}",
+                "{}\n{}\n{}\n{}",
+                super::StopMode::shader(),
                 include_str!("params.wgsl"),
                 concat!(include_str!("view.wgsl"), include_str!("stop_pixels.wgsl")),
                 include_str!("compose.wgsl")

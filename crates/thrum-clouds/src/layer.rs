@@ -86,6 +86,25 @@ pub struct SkyProducts {
     pub raster_view_projection: [[f32; 4]; 4],
 }
 
+#[repr(u32)]
+#[derive(Clone, Copy)]
+enum StopMode {
+    Sky,
+    Surface,
+    ClearGround,
+}
+
+impl StopMode {
+    fn shader() -> String {
+        format!(
+            "const CLOUD_STOP_SKY: u32 = {}u;
+const CLOUD_STOP_CLEAR_GROUND: u32 = {}u;",
+            Self::Sky as u32,
+            Self::ClearGround as u32,
+        )
+    }
+}
+
 #[repr(C)]
 #[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
 pub(crate) struct Uniform {
@@ -102,7 +121,7 @@ pub(crate) struct Uniform {
     noise: [f32; 4],
     bank_noise: [f32; 4],
     density_profile: [f32; 2],
-    per_pixel_stops: u32,
+    stop_mode: u32,
     low_deck: u32,
     active_extent: [u32; 2],
     sample_cap: u32,
@@ -399,6 +418,18 @@ impl Layer {
             state.parameters().coverage > 0.0 && kind.base <= field.terrain_top()
         });
         let per_pixel_stops = self.per_pixel_stops;
+        let stop_mode = match ground {
+            None => StopMode::Sky,
+            Some(field)
+                if !field.has_active_rows()
+                    && !low_deck
+                    && (shapes.is_none()
+                        || (state.shapes().is_empty() && state.hashed_shapes().is_none())) =>
+            {
+                StopMode::ClearGround
+            }
+            Some(_) => StopMode::Surface,
+        };
         self.render_extent = frame.render_extent;
         let stride = self.quality.stride;
         let active_extent = self.active_extent();
@@ -497,7 +528,7 @@ impl Layer {
                 model.detail_mean as f32,
                 if self.has_placed_map { 1.0 } else { 0.0 },
             ],
-            per_pixel_stops: u32::from(per_pixel_stops),
+            stop_mode: stop_mode as u32,
             low_deck: u32::from(low_deck),
             active_extent,
             sample_cap: self.quality.cap,

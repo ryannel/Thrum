@@ -60,7 +60,7 @@ fn cloud_history(field:texture_2d_array<f32>,uv:vec2<f32>)->vec4<f32> {
 fn resolve(@builtin(global_invocation_id) id:vec3<u32>) {
     let size=cloud.active_extent;if any(id.xy>=size) {return;}
     let at=vec2<i32>(id.xy);
-    if cloud.per_pixel_stops != 0u {
+    if cloud.stop_mode != CLOUD_STOP_SKY {
         for (var slot = 0; slot < 4; slot++) {
             let value = textureLoad(fresh, at, slot, 0);
             let metadata = textureLoad(fresh_front, at, slot, 0);
