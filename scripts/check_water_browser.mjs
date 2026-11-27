@@ -765,7 +765,7 @@ try {
     for(let i=0;i<23;i++){
       await step();
       const {tick}=frameInfo(await evaluate('game.frame_info()'));
-      const {fine}=await evaluate(`__readWake(${tick},[],null,[147.0,66.18,148.44])`);
+      const {fine}=await evaluate(`__readWake(${tick},[],null,[147.0,66.39,148.44])`);
       samples.push({tick,...fine});
     }
     const first=samples.find(row=>row.source>0.0004);

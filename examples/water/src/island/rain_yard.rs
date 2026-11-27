@@ -49,7 +49,7 @@ pub(super) fn walk_camera(marker: &crate::floating::YardFloat) -> Camera {
     let x = if position.y > 0.0 {
         position.x
     } else {
-        PITS[0][0]
+        WALK_ENDPOINTS[0][0]
     } as f32;
     Camera::look_at([x, 19.74, 67.95], [x + 0.15, 18.04, 66.15], 74.0)
 }
@@ -102,7 +102,8 @@ const SIZE: [usize; 2] = [200, 160];
 const BODY: usize = 3;
 const TRACK_ROWS: usize = 60;
 const PAVING: usize = 1;
-const PITS: [[f64; 2]; 2] = [[147.0, 66.18], [149.64, 66.32]];
+// Cross both puddles on the camera side of the post and floating marker.
+const WALK_ENDPOINTS: [[f64; 2]; 2] = [[147.0, 66.39], [149.64, 66.47]];
 // Two drops have room to travel along each basin. The third starts
 // on the pothole side of the sill, at both fills.
 const STONES: [[f64; 2]; 3] = [[147.00, 66.14], [149.64, 65.52], [147.93, 66.23]];
@@ -267,7 +268,7 @@ impl Yard {
     pub(super) fn marker(&self) -> Option<crate::floating::YardFloat> {
         self.footfalls
             .is_some()
-            .then(|| crate::floating::YardFloat::new(PITS[0], 0.0))
+            .then(|| crate::floating::YardFloat::new(WALK_ENDPOINTS[0], 0.0))
     }
 
     pub(super) fn install(
@@ -594,8 +595,10 @@ impl Walk {
         }
         let (place, height) = if weather.walking {
             let phase = (self.elapsed / WALK_SECONDS).clamp(0.0, 1.0);
-            let place =
-                std::array::from_fn(|axis| PITS[0][axis] + phase * (PITS[1][axis] - PITS[0][axis]));
+            let place = std::array::from_fn(|axis| {
+                WALK_ENDPOINTS[0][axis]
+                    + phase * (WALK_ENDPOINTS[1][axis] - WALK_ENDPOINTS[0][axis])
+            });
             if self.elapsed >= self.next_step && self.elapsed <= WALK_SECONDS {
                 let foot = [
                     place[0],
@@ -621,7 +624,9 @@ impl Walk {
             self.next_step = 0.0;
             self.right_foot = false;
             (
-                std::array::from_fn(|axis| f64::midpoint(PITS[0][axis], PITS[1][axis])),
+                std::array::from_fn(|axis| {
+                    f64::midpoint(WALK_ENDPOINTS[0][axis], WALK_ENDPOINTS[1][axis])
+                }),
                 0.0,
             )
         };
