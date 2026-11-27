@@ -20,11 +20,13 @@ fn emission_delta(
     panel: Panel,
     pixel: [u32; 2],
     underwater: bool,
+    bed: Option<f64>,
 ) -> f32 {
     let samples = [false, true].map(|radiant| {
         let panel = Panel { radiant, ..panel };
         let mut rig = Rig::with_extent(gpu, view, sun(0.0, 0.0), &[panel], None, EXTENT);
-        let boxes = attach(&mut rig, water_with_profile(None, true, underwater));
+        let bed = bed.map(|height| (height, [-6.0; 2], 12.0));
+        let boxes = attach(&mut rig, water_with_profile(bed, true, underwater));
         assert!(boxes.publish(&[panel.bounds()]));
         let (scale, pixels) = rig.scene_colour();
         pixels[(pixel[1] * EXTENT[0] + pixel[0]) as usize][1] / scale
@@ -46,14 +48,14 @@ fn only_the_refracted_ray_can_see_an_air_panel_from_below() {
         half_size: [0.9, 0.12, 0.06],
         radiant: false,
     };
-    let reflected = emission_delta(&gpu, &view, panel, [161, 144], true);
+    let reflected = emission_delta(&gpu, &view, panel, [161, 144], true, None);
     assert!(reflected.abs() < 1.0, "an air source leaked into the reflected ray: {reflected}");
     let along_refracted_ray = Panel {
         centre: [0.0, 0.18, 1.5],
         half_size: [0.25, 0.06, 0.04],
         ..panel
     };
-    let transmitted = emission_delta(&gpu, &view, along_refracted_ray, [160, 90], true);
+    let transmitted = emission_delta(&gpu, &view, along_refracted_ray, [160, 90], true, None);
     assert!(transmitted > 100.0, "the refracted ray should see opaque geometry: {transmitted}");
 }
 }
@@ -68,7 +70,7 @@ fn wet_side_of_a_split_lens_reflects_water_instead_of_the_dry_hull() {
         half_size: [0.35, 0.025, 0.04],
         radiant: false,
     };
-    let reflected = emission_delta(&gpu, &view, panel, [160, 90], true);
+    let reflected = emission_delta(&gpu, &view, panel, [160, 90], true, None);
     assert!(reflected.abs() < 1.0, "the wet lens sees a dry source outside the window: {reflected}");
 }
 }
@@ -83,9 +85,23 @@ fn ordinary_water_does_not_borrow_a_panel_the_optical_rays_miss() {
     };
     for distance in [1.0, 4.0] {
         let view = camera([0.0, 0.1 * distance, 1.0 - distance], [0.0, 0.0, 1.0], 0.55, 1.0 / 32768.0);
-        let delta = emission_delta(&gpu, &view, panel, [160, 90], false);
+        let delta = emission_delta(&gpu, &view, panel, [160, 90], false, None);
         assert!(delta.abs() < 1.0, "the off-ray submerged source leaked at {distance} m: {delta}");
     }
+}
+}
+
+thrum_test_support::macos_gpu_test! {
+fn shallow_scenery_does_not_replace_the_refracted_ray_with_a_registered_panel() {
+    let Some((_serial, gpu)) = crate::metal::gpu("shallow scenery source paths") else { return };
+    let view = camera([0.0, 0.1, 0.0], [0.0, 0.0, 1.0], 0.55, 1.0 / 32768.0);
+    let panel = Panel {
+        centre: [0.0, -0.103, 2.04],
+        half_size: [0.35, 0.025, 0.04],
+        radiant: false,
+    };
+    let delta = emission_delta(&gpu, &view, panel, [160, 90], false, Some(-0.8));
+    assert!(delta.abs() < 1.0, "the shallow scenery fallback borrowed a registered source: {delta}");
 }
 }
 

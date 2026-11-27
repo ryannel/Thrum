@@ -420,7 +420,10 @@ fn water_optical_paths(
     var straight = empty_hit();
     if (mask & (GATHER_SHALLOW | GATHER_BODY_MASK)) != 0u {
         let sample = gather_at(optics_uv(pixel));
-        if sample.distance > surface_distance && sample.point.y <= world.y + 0.005 {
+        // Registered objects contribute through their traced optical path.
+        // The shallow scenery approximation must not pick them up again.
+        if sample.distance > surface_distance && sample.point.y <= world.y + 0.005
+            && !registered_source(sample) {
             straight = sample;
             edge_depth = min(edge_depth, max(0.0, world.y - sample.point.y));
         }
@@ -438,8 +441,8 @@ fn water_optical_paths(
             let shift = n.xz * min(d, 4.0) * 0.35;
             let shifted = optics_project(straight.point + vec3(shift.x, 0.0, shift.y));
             let candidate = gather_at(shifted.xy);
-            if candidate.distance > surface_distance
-                && candidate.point.y <= world.y + 0.005 {
+            if candidate.distance > surface_distance && candidate.point.y <= world.y + 0.005
+                && !registered_source(candidate) {
                 moved = candidate;
             }
         }
