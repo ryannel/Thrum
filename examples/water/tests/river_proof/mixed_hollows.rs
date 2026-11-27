@@ -1,4 +1,7 @@
-use crate::support::optics::{EXTENT, Rig, attach, camera, sun};
+use crate::support::{
+    device_restricted,
+    optics::{EXTENT, Rig, attach, camera, sun},
+};
 use std::sync::{Arc, Mutex};
 use thrum_render::synthetic::DisplayOverlay;
 use thrum_water_model::{
@@ -99,7 +102,14 @@ pub(crate) fn check(gpu: &thrum_test_support::Gpu) {
         ("steady chart + hollows", baseline, 3.0),
         ("sampled chart + hollows", sampled, 3.5),
     ] {
-        let mut rig = Rig::new(gpu, &view, sun(0.0, 0.0), &[], None);
+        let device = device_restricted(
+            &gpu.fresh_adapter(),
+            &thrum_test_support::Restriction {
+                features: Some(wgpu::Features::all() - wgpu::Features::TIMESTAMP_QUERY),
+                ..Default::default()
+            },
+        );
+        let mut rig = Rig::with_device(device, &view, sun(0.0, 0.0), &[], None, EXTENT);
         let scope = rig.device.push_error_scope(wgpu::ErrorFilter::Validation);
         let mut profile = water_scene::profile(&spectrum);
         profile.optics = Some(thrum_water::Optics::default());

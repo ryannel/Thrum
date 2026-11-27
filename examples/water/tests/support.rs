@@ -25,12 +25,19 @@ pub(crate) type Host = FrameHost<StillWorld, SkyScene>;
 pub(crate) fn device(
     gpu: &thrum_test_support::Gpu,
 ) -> (wgpu::Device, wgpu::Queue, DeviceCapabilities) {
+    device_restricted(gpu, &thrum_test_support::Restriction::default())
+}
+
+pub(crate) fn device_restricted(
+    gpu: &thrum_test_support::Gpu,
+    restriction: &thrum_test_support::Restriction,
+) -> (wgpu::Device, wgpu::Queue, DeviceCapabilities) {
     let profile = if std::env::var("THRUM_WATER_RECIPE").is_ok_and(|v| v == "portable") {
         thrum_test_support::Profile::Portable
     } else {
         thrum_test_support::Profile::Native
     };
-    let (device, queue) = gpu.device(profile, &thrum_test_support::Restriction::default());
+    let (device, queue) = gpu.device(profile, restriction);
     let caps = DeviceCapabilities::capture(&gpu.adapter, &device, 1);
     (device, queue, caps)
 }

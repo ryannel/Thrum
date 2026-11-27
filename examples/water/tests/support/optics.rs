@@ -12,6 +12,7 @@ use thrum_app::sky::StillWorld;
 use thrum_render::{
     abi::{InstanceRecord, MaterialRecord},
     atmosphere::{Aerosol, AtmosphereFrame, SunOpticalDepth},
+    capabilities::DeviceCapabilities,
     extract::{ExtractReport, RenderExtractor, SourceTick},
     present::SurfaceProfile,
     runtime::{
@@ -115,7 +116,24 @@ impl Rig {
         cloud: Option<SunOpticalDepth>,
         extent: [u32; 2],
     ) -> Self {
-        let (device, queue, caps) = crate::support::device(&gpu.fresh_adapter());
+        Self::with_device(
+            crate::support::device(&gpu.fresh_adapter()),
+            view,
+            light,
+            panels,
+            cloud,
+            extent,
+        )
+    }
+
+    pub(crate) fn with_device(
+        (device, queue, caps): (wgpu::Device, wgpu::Queue, DeviceCapabilities),
+        view: &SyntheticView,
+        light: FrameLighting,
+        panels: &[Panel],
+        cloud: Option<SunOpticalDepth>,
+        extent: [u32; 2],
+    ) -> Self {
         let mut scene =
             SyntheticScene::grid(u32::try_from(panels.len().max(1)).expect("small fixture"))
                 .expect("optical fixture");
