@@ -26,8 +26,7 @@
 - Assumption: "persists after the hull stops or turns" is met inside windows that follow the craft: short waves to about 30 m behind, longer to about 250 m.
 - Assumption: cost is recorded on the Mac only, at 2560×1440 until the showcase's extent exists; no timing figure decides an item.
 - Assumption: under the owner's bar of 17 November, tests cover what a game reads, the frame contract and what one pass hands another; wakes, foam and underwater light are judged by eye, and a defect found only by enlarging, reading pixels or instrumenting fails no inspection.
-- Assumption: carried ripples are proved on four named charts (WP9.2); their speed on a sheared chart is a known gap, left to `RIVERS`.
-- Assumption: the lens alone is cut from the drawn sheet, floats staying 33 mm off; a dry camera over a live wake pays the gather.
+- Assumption: "move Waters WP26 forward now" (27 November) means next after WP16, so `RIVERS` WP7 and `PUDDLES` WP7 wait on it.
 
 ## WP1 Where water lies is worked out on the CPU alone: a sea, a lake in a hollow and a channel with a current each have a level, a depth and a flow at every point
 
@@ -107,6 +106,10 @@
 
 WP16.6 and WP16.7 changed ([log](LOG.md#wp16-hull-and-float-net-parked)); three-look counts restart. Resume at `d072eb924`.
 
+## WP26 The Sun's net joins on the hull and float, and sunbeams stand in shallow water, on the Mac and in Chrome
+
+WP20, WP10 and WP14 wait on this too, despite the design ([log](LOG.md#wp26-moved-forward)).
+
 ## WP20 A pitching crest seen close is drawn whole, with no tabs, strands, bands or flashing patch on its face, on the Mac and in Chrome
 
 Begin with WP20.1 and WP20.4. [WP13's reading](LOG.md#wp13-face-finish-parked) is a lead only. Repair only a stage a diagnosis names ([risk 18](DESIGN.md#risks)), on the
@@ -119,8 +122,6 @@ A defect in `APPLE-PRESENTATION`'s reconstructor, not the water's inputs, goes t
 ## WP14 Still water mirrors the hills, trees and far shore that the camera cannot see, on the Mac and in Chrome
 
 Ask `SCENE-VIEWS` through [its interface](../SCENE-VIEWS/DESIGN.md#what-the-consumer-reads), and log what it lacks as a proposal.
-
-## WP26 The Sun's net joins on the hull and float, and sunbeams stand in shallow water, on the Mac and in Chrome
 
 ## WP11 On the Mac's Apple recipe the water runs with MetalFX and the governor, its cadence on the built-in display is measured, and the module is closed
 

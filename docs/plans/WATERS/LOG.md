@@ -1749,3 +1749,26 @@
   only with further pictures at the receiver's points in which only the field's fineness differs. Only
   WP26.6 and [its design](DESIGN.md#the-net-on-the-hull-and-a-sunk-float) changed.
   [The change](../../../.orchestrate/evidence/WATERS/WP26-level-plane-fix.md).
+
+## WP26 moved forward
+
+- 2026-11-27 Owner, in chat, after the lead explained that WP26 was queued behind other water work: "Yes, move
+  Waters WP26 forward now".
+- 2026-11-27 Planner: WP26 now follows WP16 in the done-when file and the plan file, ahead of WP20, WP10, WP14
+  and WP11. No item, quality bar or `depends_on` changed, so the study still comes first (WP26.1, WP26.6) and
+  its accounts are still of engines and games from 2020 on. WP26 needs only WP16, which the file's order gives
+  it. WP16 is untouched.
+- 2026-11-27 Planner, what now waits for WP26: WP20, WP10, WP14 and WP11 here, and through WP10 and WP14
+  `RIVERS` from WP7 and `PUDDLES` WP7. `SHOWCASE` waits for no water work package, directly or through another
+  module. If WP26 ends `BLOCKED`, a planner can move it back behind WP14 to free them. The builder stops at
+  the design's three-look stop, as before.
+- 2026-11-27 Planner, left for the next change to the design: its line in
+  [WP26's section](DESIGN.md#light-under-water-that-wp16-left-wp26) that inside the module only WP11 waits for
+  WP26 is from before the move. Changing the design's text holds every unfinished work package, WP16's review
+  included, until a design review passes, and the task bars a change that reaches WP16. The plan file's note
+  under WP26 says what waits.
+- 2026-11-27 Planner, to keep the plan file under 1,500 words, two assumptions about Done work left it. Both
+  still hold, and the design has them ([the query's layers](DESIGN.md#bodies-and-the-query),
+  [carriage](DESIGN.md#carriage-by-the-current)): "carried ripples are proved on four named charts (WP9.2);
+  their speed on a sheared chart is a known gap, left to `RIVERS`", and "the lens alone is cut from the drawn
+  sheet, floats staying 33 mm off; a dry camera over a live wake pays the gather".
