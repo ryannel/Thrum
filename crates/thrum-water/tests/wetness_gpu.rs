@@ -31,6 +31,41 @@ fn shelter(name: &str, low: [f64; 3], high: [f64; 3], share: f64) -> Shelter {
     }
 }
 
+fn wet_and_recede(tree: &Tree, stores: &mut GroundStores) -> RainState {
+    let mut rain = RainState::new(tree);
+    let mut report = TickReport::default();
+    for (weather, steps) in [
+        (
+            Rain {
+                flux: 60.0 / 3600.0,
+                drying: 0.0,
+            },
+            120,
+        ),
+        (
+            Rain {
+                flux: 0.0,
+                drying: 55.0 / 3600.0,
+            },
+            8,
+        ),
+        (
+            Rain {
+                flux: 8.0 / 3600.0,
+                drying: 0.0,
+            },
+            8,
+        ),
+    ] {
+        for _ in 0..steps {
+            rain.step_with(tree, weather, stores, 0, 11.0, 1, &mut report)
+                .expect("rain step");
+            stores.step(weather, 11.0).expect("stores");
+        }
+    }
+    rain
+}
+
 #[expect(
     clippy::cast_possible_truncation,
     clippy::cast_sign_loss,
@@ -68,37 +103,7 @@ fn run(opened: &thrum_test_support::Opened) {
     };
     let mut stores = GroundStores::new(&[class]).expect("class");
     let tree = Tree::prepare(&ground, &canopy, &profile).expect("tree");
-    let mut rain = RainState::new(&tree);
-    let mut report = TickReport::default();
-    for (weather, steps) in [
-        (
-            Rain {
-                flux: 60.0 / 3600.0,
-                drying: 0.0,
-            },
-            120,
-        ),
-        (
-            Rain {
-                flux: 0.0,
-                drying: 55.0 / 3600.0,
-            },
-            8,
-        ),
-        (
-            Rain {
-                flux: 8.0 / 3600.0,
-                drying: 0.0,
-            },
-            8,
-        ),
-    ] {
-        for _ in 0..steps {
-            rain.step_with(&tree, weather, &stores, 0, 11.0, 1, &mut report)
-                .expect("rain step");
-            stores.step(weather, 11.0).expect("stores");
-        }
-    }
+    let rain = wet_and_recede(&tree, &mut stores);
     let levels = rain.levels(&tree);
     let hollows: Vec<_> = levels
         .iter()
