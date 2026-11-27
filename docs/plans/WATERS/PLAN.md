@@ -11,7 +11,7 @@
 - Assumption: "breaking waves" (14 November) is met by the sea's own swell shaped into a breaker and a swash profile ([surf](DESIGN.md#surf-the-shore-transform-and-the-breaker)): neither baked nor a live solver, with no spray, splash, ride inside a barrel or current from surf.
 - Assumption: the island's exposed beach gets a swell set for the look: several lines at once, and a period inside the surf cue's 6 s to 14 s.
 - Assumption: from 1 km the surf is judged for fronts starting at different distances and running in; a set's taller crest breaking farther out is held on the model (WP12.4), not by eye.
-- Assumption: WP20's close crest finish and WP26's shallow beams and hull net are not foundational; WP20 precedes WP10's motion review, and WP26's light may outshine the model's.
+- Assumption: WP20's close crest finish and WP26's beams, nets and keel shadow are not foundational; WP20 precedes WP10's motion review, and WP26's light may outshine the model's.
 - Assumption: wet long-wave loss keeps WP7.5's distributed foam wherever no breaking face is available, swash included; an eligible crest concentrates part on its face and under a resolved lip; distant beaches take steady cover from the same loss.
 - Assumption: as part of surf an island shelters its lee: a lee beach laps with short waves only.
 - Assumption: the surf query's age is proved for the example's eight floats in a gale on the Mac (nine answers in ten within two ticks), not for 2,048 points in breakers or in Chrome; the coarse-cell rule is measured, not proved.
@@ -104,9 +104,9 @@
 
 ## WP16 Under water the Sun casts a moving net of light on the bed and plays on the hull, shafts of light stand in the water, and the picture stays readable as the camera goes down
 
-WP16.6 and WP16.7 changed ([log](LOG.md#wp16-hull-and-float-net-parked)); three-look counts restart. Resume at `d072eb924`.
+WP16.6 and WP16.7 changed ([log](LOG.md#wp16-bed-net-and-keel-parked)). Resume at `da0e65a1d`.
 
-## WP26 The Sun's net joins on the hull and float, and sunbeams stand in shallow water, on the Mac and in Chrome
+## WP26 The Sun's net joins on the lake and sea beds, the hull and the float, sunbeams stand in shallow water and the water beside the keel is dark, on the Mac and in Chrome
 
 WP20, WP10 and WP14 wait on this too, despite the design ([log](LOG.md#wp26-moved-forward)).
 

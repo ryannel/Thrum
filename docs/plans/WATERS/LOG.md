@@ -1772,3 +1772,39 @@
   [carriage](DESIGN.md#carriage-by-the-current)): "carried ripples are proved on four named charts (WP9.2);
   their speed on a sheared chart is a known gap, left to `RIVERS`", and "the lens alone is cut from the drawn
   sheet, floats staying 33 mm off; a dry camera over a live wake pays the gather".
+
+## WP16 bed net and keel parked
+
+- 2026-11-27 Lead's ruling, after WP16's builder ended `BLOCKED needs_context` again with nine of twelve items
+  passing ([handoff](../../../.orchestrate/evidence/WATERS/WP16-handoff.md), `build/waters` at `da0e65a1d`):
+  the bed's net and the light beside the keel are the underwater-light problem WP26 studies, and WP26 builds
+  next, in line with the owner's "Yes, move Waters WP26 forward now". Move the open bed-net and keel cues from
+  WP16.6, WP16.7 and WP16.11 into WP26, keep what reads, and have WP26's research cover bed nets too, with the
+  builder's diagnosis: one bed view at one clock that reads the caustic field, the receiver's Sun factor and
+  the composited picture apart.
+- 2026-11-27 Planner. WP16.6 is written again as ten questions. It keeps a fine net in the pond and the beach's
+  shallows, where a line with gaps passes; uneven light that travels on the lake's bed at both Suns and the
+  sea's at noon, with its shape not judged; the hull's and the float's moving light; and the calm, night,
+  shade, hull-shadow, tile, swim and window-edge controls. It asks nothing of the sea's bed with the Sun 15°
+  up, where the crops show almost none. WP16.7 loses the water beside the keel and its view, and has six
+  questions. WP16's bar says the same. WP16.11 is unchanged and takes both lists by reference. Resume
+  `build/waters` at `da0e65a1d`.
+- 2026-11-27 Planner. WP26 takes both cues. WP26.8 is new, the bed's part of the study: the hull's four
+  pictures taken of the lake's and the sea's beds, whether the bed's Sun rays leave the water inside the
+  window, and frames of beds in four shipped games. WP26.9 is new, the keel's part: the frame, the frame with
+  the craft casting no shadow, their difference, the scattered light alone and part S3's water. WP26.7 judges
+  the joined net on the two beds from 3 m under, and WP26.2 the dark water beside the keel, with a question
+  that it lies where the hull stands before the Sun. WP26.4 judges both at noon in Chrome. WP26.1's accounts
+  read cover the net on a bed, and its remedy is one for four cues. WP26.6, WP26.3 and WP26.5 are unchanged.
+- 2026-11-27 Planner. [The design](DESIGN.md#light-under-water-that-wp16-left-wp26) has two new sections,
+  [the net on the deeper beds](DESIGN.md#the-net-on-the-deeper-beds) and
+  [dark water beside the keel](DESIGN.md#dark-water-beside-the-keel), with what is known, the leads and the
+  study of each. Its line on what waits for WP26 now follows the move of WP26. A design review precedes the
+  builders, as for any change to the design.
+- 2026-11-27 Planner, from the images: the pond's and the beach's crops hold a net, and the lake's and the
+  sea's hold soft patches (`WP16/resume/receivers/bed-*.jpg`). The planner opened Unity's HDRP caustics page
+  for what it says of beds. Three searches found no talk from 2022 on about a shipped game's net on a sea bed.
+- 2026-11-27 Planner, for WP26's builder: WP16's fresh Chrome capture beside the keel stalled the host while
+  frames were exported and wrote no receipt, so try that route before WP26.4's captures. The keel is 1.37 m
+  below the mean water, and the example's pose marked for it, at 0.82 m, is above it.
+  [The change](../../../.orchestrate/evidence/WATERS/WP16-parked-beds-and-keel.md).
