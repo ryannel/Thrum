@@ -1,0 +1,549 @@
+{
+  "extent": [
+    1920,
+    1080
+  ],
+  "refresh_hz": 120,
+  "arms": {
+    "off": {
+      "adapter": "Apple M3 Max",
+      "recipe": "Ok(Portable)",
+      "timings": [
+        {
+          "tick": true,
+          "samples": 180,
+          "gpu_ms": 5.0795,
+          "wall_ms": 3.330479,
+          "tick_cpu_ms": 0.174958,
+          "passes_ms": {
+            "V1 surface present": 3.7146670000000004,
+            "camera visibility": 0.025687,
+            "contribution compute": 0.013,
+            "portable TAAU": 1.204063,
+            "synthetic Sun air shadow heights": 0.195104,
+            "synthetic Sun caster cull": 0.066125,
+            "synthetic Sun horizon heights": 0.153792,
+            "synthetic Sun shadow far": 0.1312295,
+            "synthetic Sun shadow near": 0.02625,
+            "synthetic exposure resolve": 0.005083,
+            "synthetic forward opaque": 2.3224584999999998,
+            "synthetic tone encode": 3.713292,
+            "synthetic transform history": 0.0191045,
+            "temporal exposure texture": 1.8044164999999999
+          }
+        },
+        {
+          "tick": false,
+          "samples": 133,
+          "gpu_ms": 5.17825,
+          "wall_ms": 2.470625,
+          "tick_cpu_ms": 0.0,
+          "passes_ms": {
+            "V1 surface present": 3.590625,
+            "camera visibility": 0.02525,
+            "contribution compute": 0.02075,
+            "portable TAAU": 1.138334,
+            "synthetic Sun air shadow heights": 0.197583,
+            "synthetic Sun caster cull": 0.142625,
+            "synthetic Sun horizon heights": 0.154625,
+            "synthetic Sun shadow far": 0.140833,
+            "synthetic Sun shadow near": 0.060208,
+            "synthetic exposure resolve": 0.005,
+            "synthetic forward opaque": 2.300458,
+            "synthetic tone encode": 3.675584,
+            "synthetic transform history": 0.017125,
+            "temporal exposure texture": 1.655083
+          }
+        }
+      ],
+      "rain": null,
+      "system_load": {
+        "before_load_1_5_15": [
+          34.5390625,
+          22.74365234375,
+          22.39208984375
+        ],
+        "after_load_1_5_15": [
+          35.6533203125,
+          23.3759765625,
+          22.62060546875
+        ],
+        "sample_duration_ns": 8301668708,
+        "disk_samples": "system-iostat.txt",
+        "disk_scope": "default devices including spool disk0; first row since boot; subsequent rows 1 s averages",
+        "background_process_snapshot": [
+          "  PID  %CPU COMM",
+          "84825 171.7 ffmpeg",
+          "85406  62.7 /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld",
+          "62360  52.8 /Users/ryannel/Workspace/thrum/.git/orchestrate/main-checks/long-tests/checkout/target/release/build/water-scene/c9d71f8759c66332/out/floating_gpu-c9d71f8759c66332",
+          "85206  43.9 rustc",
+          "85308  43.8 rustc",
+          "84692  43.1 rustc",
+          "84945  41.7 rustc",
+          " 2703  40.8 /System/Library/PrivateFrameworks/XprotectFramework.framework/Versions/A/XPCServices/XprotectService.xpc/Contents/MacOS/XprotectService",
+          "85187  39.9 rustc",
+          "85025  39.7 rustc",
+          "84713  37.3 rustc",
+          "85228  33.6 /Users/ryannel/.rustup/toolchains/stable-aarch64-apple-darwin/bin/rustc",
+          "85355  33.4 rustc",
+          "81340  28.6 rustc",
+          "84890  26.1 rustc"
+        ],
+        "process_cpu_scope": "ps lifetime CPU snapshot, not interval CPU; load averages are host-wide",
+        "sampler": "iostat -d -C -U -w 1 subprocess plus one ps snapshot, same recipe in each arm"
+      },
+      "source_revision": "ebfd0ca279ab0442a01d1f35f34f8c3876c5f406",
+      "build_source_digest": "fc84646ac9b999c1d97ae564d212e134d423d0b8d2b3baa86e9f8fdb3304dd6d"
+    },
+    "soaked": {
+      "adapter": "Apple M3 Max",
+      "recipe": "Ok(Portable)",
+      "timings": [
+        {
+          "tick": true,
+          "samples": 116,
+          "gpu_ms": 12.9973955,
+          "wall_ms": 9.591792,
+          "tick_cpu_ms": 0.1789165,
+          "passes_ms": {
+            "V1 surface present": 5.4350000000000005,
+            "camera visibility": 0.0548545,
+            "contribution compute": 0.033479,
+            "effect 0: effect 1: sea long waves": 0.0193125,
+            "effect 10: effect 1: sea filtered 0 mip 5": 0.005417,
+            "effect 11: effect 1: sea filtered 0 mip 6": 0.005167,
+            "effect 12: effect 1: sea filtered 0 mip 7": 0.005062499999999999,
+            "effect 13: effect 1: sea filtered 0 mip 8": 0.005,
+            "effect 14: effect 1: sea filtered 1 mip 1": 0.0393745,
+            "effect 15: effect 1: sea filtered 1 mip 2": 0.0071455,
+            "effect 16: effect 1: sea filtered 1 mip 3": 0.0056454999999999995,
+            "effect 17: effect 1: sea filtered 1 mip 4": 0.005292,
+            "effect 18: effect 1: sea filtered 1 mip 5": 0.004958499999999999,
+            "effect 19: effect 1: sea filtered 1 mip 6": 0.004875,
+            "effect 1: effect 1: sea cascade evolve": 0.073708,
+            "effect 20: effect 1: sea filtered 1 mip 7": 0.005,
+            "effect 21: effect 1: rain bands": 0.489187,
+            "effect 22: effect 1: rain mip 1": 0.0388335,
+            "effect 23: effect 1: rain mip 2": 0.011958,
+            "effect 24: effect 1: rain mip 3": 0.006375,
+            "effect 25: effect 1: rain mip 4": 0.005083,
+            "effect 26: effect 1: rain mip 5": 0.004667,
+            "effect 27: effect 1: rain mip 6": 0.004542,
+            "effect 28: effect 1: rain mip 7": 0.0045415,
+            "effect 29: effect 1: rain mip 8": 0.00425,
+            "effect 2: effect 1: sea cascade rows": 0.2019995,
+            "effect 30: effect 1: rain mip 9": 0.00425,
+            "effect 3: effect 1: sea cascade columns": 0.223104,
+            "effect 4: effect 1: sea cascade unpack": 0.0430205,
+            "effect 5: effect 1: sea filtered pack": 0.1652705,
+            "effect 6: effect 1: sea filtered 0 mip 1": 0.0644165,
+            "effect 7: effect 1: sea filtered 0 mip 2": 0.0184375,
+            "effect 8: effect 1: sea filtered 0 mip 3": 0.00825,
+            "effect 9: effect 1: sea filtered 0 mip 4": 0.005667,
+            "effect after 0: effect 1: water gather": 0.2071875,
+            "effect after 1: effect 1: shore film": 3.3074375,
+            "effect after 2: effect 1: water surface": 4.0353545,
+            "portable TAAU": 1.2344795,
+            "synthetic Sun air shadow heights": 0.187604,
+            "synthetic Sun caster cull": 0.085771,
+            "synthetic Sun horizon heights": 0.1536045,
+            "synthetic Sun shadow far": 0.1305,
+            "synthetic Sun shadow near": 0.028604,
+            "synthetic exposure resolve": 0.0053545,
+            "synthetic forward opaque": 2.987146,
+            "synthetic tone encode": 5.362604,
+            "synthetic transform history": 0.026458,
+            "temporal exposure texture": 1.9851670000000001
+          }
+        },
+        {
+          "tick": false,
+          "samples": 29,
+          "gpu_ms": 13.52825,
+          "wall_ms": 8.072666,
+          "tick_cpu_ms": 0.0,
+          "passes_ms": {
+            "V1 surface present": 5.463875,
+            "camera visibility": 0.03175,
+            "contribution compute": 0.060625,
+            "effect 0: effect 1: sea long waves": 0.027542,
+            "effect 10: effect 1: sea filtered 0 mip 5": 0.005292,
+            "effect 11: effect 1: sea filtered 0 mip 6": 0.005083,
+            "effect 12: effect 1: sea filtered 0 mip 7": 0.004875,
+            "effect 13: effect 1: sea filtered 0 mip 8": 0.004833,
+            "effect 14: effect 1: sea filtered 1 mip 1": 0.037167,
+            "effect 15: effect 1: sea filtered 1 mip 2": 0.007042,
+            "effect 16: effect 1: sea filtered 1 mip 3": 0.0055,
+            "effect 17: effect 1: sea filtered 1 mip 4": 0.005417,
+            "effect 18: effect 1: sea filtered 1 mip 5": 0.005083,
+            "effect 19: effect 1: sea filtered 1 mip 6": 0.005,
+            "effect 1: effect 1: sea cascade evolve": 0.079333,
+            "effect 20: effect 1: sea filtered 1 mip 7": 0.005,
+            "effect 21: effect 1: rain bands": 0.551208,
+            "effect 22: effect 1: rain mip 1": 0.038542,
+            "effect 23: effect 1: rain mip 2": 0.012584,
+            "effect 24: effect 1: rain mip 3": 0.006625,
+            "effect 25: effect 1: rain mip 4": 0.005292,
+            "effect 26: effect 1: rain mip 5": 0.005166,
+            "effect 27: effect 1: rain mip 6": 0.004708,
+            "effect 28: effect 1: rain mip 7": 0.004708,
+            "effect 29: effect 1: rain mip 8": 0.004292,
+            "effect 2: effect 1: sea cascade rows": 0.197584,
+            "effect 30: effect 1: rain mip 9": 0.004167,
+            "effect 3: effect 1: sea cascade columns": 0.239125,
+            "effect 4: effect 1: sea cascade unpack": 0.042333,
+            "effect 5: effect 1: sea filtered pack": 0.165541,
+            "effect 6: effect 1: sea filtered 0 mip 1": 0.064958,
+            "effect 7: effect 1: sea filtered 0 mip 2": 0.018542,
+            "effect 8: effect 1: sea filtered 0 mip 3": 0.008125,
+            "effect 9: effect 1: sea filtered 0 mip 4": 0.005625,
+            "effect after 0: effect 1: water gather": 0.203375,
+            "effect after 1: effect 1: shore film": 3.334125,
+            "effect after 2: effect 1: water surface": 4.051,
+            "portable TAAU": 1.143625,
+            "synthetic Sun air shadow heights": 0.189292,
+            "synthetic Sun caster cull": 0.117541,
+            "synthetic Sun horizon heights": 0.154125,
+            "synthetic Sun shadow far": 0.130833,
+            "synthetic Sun shadow near": 0.029625,
+            "synthetic exposure resolve": 0.005,
+            "synthetic forward opaque": 2.800083,
+            "synthetic tone encode": 5.1605,
+            "synthetic transform history": 0.014916,
+            "temporal exposure texture": 1.876792
+          }
+        }
+      ],
+      "rain": {
+        "open_pores_fill": 1.0,
+        "open_surface_m": 0.0006500000017695129,
+        "rain_drops": [
+          5165,
+          6601
+        ],
+        "resources": [
+          [
+            "sea parameters",
+            176
+          ],
+          [
+            "sea spectrum",
+            6291456
+          ],
+          [
+            "sea long components",
+            6144
+          ],
+          [
+            "sea query points",
+            32768
+          ],
+          [
+            "sea transform A",
+            9437184
+          ],
+          [
+            "sea transform B",
+            9437184
+          ],
+          [
+            "sea final transform",
+            9437184
+          ],
+          [
+            "sea transform twiddles",
+            1024
+          ],
+          [
+            "sea cascades",
+            9437184
+          ],
+          [
+            "sea long field",
+            6488064
+          ],
+          [
+            "sea upload staging",
+            39088
+          ],
+          [
+            "sea filtered 0",
+            53127800
+          ],
+          [
+            "sea filtered 1",
+            6990400
+          ],
+          [
+            "water parameters",
+            352
+          ],
+          [
+            "water mesh",
+            258048
+          ],
+          [
+            "water hollows tile indices",
+            96768
+          ],
+          [
+            "water gather regions",
+            3216
+          ],
+          [
+            "water map lattice",
+            64512
+          ],
+          [
+            "water map records",
+            2096
+          ],
+          [
+            "water hollows",
+            33104
+          ],
+          [
+            "rain bands",
+            25661340
+          ]
+        ],
+        "submitted_hollow_vertices": 3388,
+        "tick": 209,
+        "wet_depths_m": [
+          0.05884552001953125,
+          0.05680084228515625
+        ]
+      },
+      "system_load": {
+        "before_load_1_5_15": [
+          35.6533203125,
+          23.3759765625,
+          22.62060546875
+        ],
+        "after_load_1_5_15": [
+          35.5302734375,
+          23.998046875,
+          22.85791015625
+        ],
+        "sample_duration_ns": 12402964625,
+        "disk_samples": "system-iostat.txt",
+        "disk_scope": "default devices including spool disk0; first row since boot; subsequent rows 1 s averages",
+        "background_process_snapshot": [
+          "  PID  %CPU COMM",
+          "85354 102.8 /Users/ryannel/Workspace/thrum/.claude/worktrees/puddles/target/release/v1-game",
+          "62360  76.2 /Users/ryannel/Workspace/thrum/.git/orchestrate/main-checks/long-tests/checkout/target/release/build/water-scene/c9d71f8759c66332/out/floating_gpu-c9d71f8759c66332",
+          "85574  54.3 rustc",
+          "85413  42.3 /opt/homebrew/bin/rustc",
+          "85619  41.1 (ffmpeg)",
+          "85522  40.0 rustc",
+          "85308  39.0 rustc",
+          "85228  38.8 /Users/ryannel/.rustup/toolchains/stable-aarch64-apple-darwin/bin/rustc",
+          "85449  36.2 rustc",
+          "81340  36.1 rustc",
+          "85503  34.2 rustc",
+          "85187  34.0 rustc",
+          "85645  33.7 rustc",
+          "85483  32.1 rustc",
+          "85355  32.0 rustc"
+        ],
+        "process_cpu_scope": "ps lifetime CPU snapshot, not interval CPU; load averages are host-wide",
+        "sampler": "iostat -d -C -U -w 1 subprocess plus one ps snapshot, same recipe in each arm"
+      },
+      "source_revision": "ebfd0ca279ab0442a01d1f35f34f8c3876c5f406",
+      "build_source_digest": "fc84646ac9b999c1d97ae564d212e134d423d0b8d2b3baa86e9f8fdb3304dd6d"
+    }
+  },
+  "investigations": [
+    {
+      "wire": "GPU span exceeds a 120 Hz interval",
+      "selection": "soaked",
+      "tick": true,
+      "measurement": {
+        "gpu_ms": 12.9973955,
+        "dominant_passes_ms": [
+          [
+            "V1 surface present",
+            5.4350000000000005
+          ],
+          [
+            "synthetic tone encode",
+            5.362604
+          ],
+          [
+            "effect after 2: effect 1: water surface",
+            4.0353545
+          ],
+          [
+            "effect after 1: effect 1: shore film",
+            3.3074375
+          ]
+        ],
+        "rain_and_water_pass_sum_ms": 8.1236665,
+        "paired_gpu_ms": 5.0795
+      },
+      "finding": "The paired span and named passes account for shared scene work and the extra effect. Shared machine load is recorded alongside each arm."
+    },
+    {
+      "wire": "paired pass at least 25% slower",
+      "selection": "soaked",
+      "tick": true,
+      "measurement": {
+        "pass": "V1 surface present",
+        "off_ms": 3.7146670000000004,
+        "soaked_ms": 5.4350000000000005,
+        "delta_ms": 1.7203330000000001
+      },
+      "finding": "This pass shares its algorithm with the dry arm. The paired timestamps bound its absolute contribution under the recorded load."
+    },
+    {
+      "wire": "paired pass at least 25% slower",
+      "selection": "soaked",
+      "tick": true,
+      "measurement": {
+        "pass": "camera visibility",
+        "off_ms": 0.025687,
+        "soaked_ms": 0.0548545,
+        "delta_ms": 0.0291675
+      },
+      "finding": "This pass shares its algorithm with the dry arm. The paired timestamps bound its absolute contribution under the recorded load."
+    },
+    {
+      "wire": "paired pass at least 25% slower",
+      "selection": "soaked",
+      "tick": true,
+      "measurement": {
+        "pass": "contribution compute",
+        "off_ms": 0.013,
+        "soaked_ms": 0.033479,
+        "delta_ms": 0.020479000000000004
+      },
+      "finding": "This pass shares its algorithm with the dry arm. The paired timestamps bound its absolute contribution under the recorded load."
+    },
+    {
+      "wire": "paired pass at least 25% slower",
+      "selection": "soaked",
+      "tick": true,
+      "measurement": {
+        "pass": "synthetic Sun caster cull",
+        "off_ms": 0.066125,
+        "soaked_ms": 0.085771,
+        "delta_ms": 0.019645999999999997
+      },
+      "finding": "This pass shares its algorithm with the dry arm. The paired timestamps bound its absolute contribution under the recorded load."
+    },
+    {
+      "wire": "paired pass at least 25% slower",
+      "selection": "soaked",
+      "tick": true,
+      "measurement": {
+        "pass": "synthetic forward opaque",
+        "off_ms": 2.3224584999999998,
+        "soaked_ms": 2.987146,
+        "delta_ms": 0.6646875000000003
+      },
+      "finding": "The forward pass evaluates wetness on each cooked and entity fragment and draws the added ground."
+    },
+    {
+      "wire": "paired pass at least 25% slower",
+      "selection": "soaked",
+      "tick": true,
+      "measurement": {
+        "pass": "synthetic tone encode",
+        "off_ms": 3.713292,
+        "soaked_ms": 5.362604,
+        "delta_ms": 1.6493120000000001
+      },
+      "finding": "This pass shares its algorithm with the dry arm. The paired timestamps bound its absolute contribution under the recorded load."
+    },
+    {
+      "wire": "paired pass at least 25% slower",
+      "selection": "soaked",
+      "tick": true,
+      "measurement": {
+        "pass": "synthetic transform history",
+        "off_ms": 0.0191045,
+        "soaked_ms": 0.026458,
+        "delta_ms": 0.007353499999999999
+      },
+      "finding": "This pass shares its algorithm with the dry arm. The paired timestamps bound its absolute contribution under the recorded load."
+    },
+    {
+      "wire": "GPU span exceeds a 120 Hz interval",
+      "selection": "soaked",
+      "tick": false,
+      "measurement": {
+        "gpu_ms": 13.52825,
+        "dominant_passes_ms": [
+          [
+            "V1 surface present",
+            5.463875
+          ],
+          [
+            "synthetic tone encode",
+            5.1605
+          ],
+          [
+            "effect after 2: effect 1: water surface",
+            4.051
+          ],
+          [
+            "effect after 1: effect 1: shore film",
+            3.334125
+          ]
+        ],
+        "rain_and_water_pass_sum_ms": 8.225792,
+        "paired_gpu_ms": 5.17825
+      },
+      "finding": "The paired span and named passes account for shared scene work and the extra effect. Shared machine load is recorded alongside each arm."
+    },
+    {
+      "wire": "paired pass at least 25% slower",
+      "selection": "soaked",
+      "tick": false,
+      "measurement": {
+        "pass": "V1 surface present",
+        "off_ms": 3.590625,
+        "soaked_ms": 5.463875,
+        "delta_ms": 1.8732499999999996
+      },
+      "finding": "This pass shares its algorithm with the dry arm. The paired timestamps bound its absolute contribution under the recorded load."
+    },
+    {
+      "wire": "paired pass at least 25% slower",
+      "selection": "soaked",
+      "tick": false,
+      "measurement": {
+        "pass": "camera visibility",
+        "off_ms": 0.02525,
+        "soaked_ms": 0.03175,
+        "delta_ms": 0.006499999999999999
+      },
+      "finding": "This pass shares its algorithm with the dry arm. The paired timestamps bound its absolute contribution under the recorded load."
+    },
+    {
+      "wire": "paired pass at least 25% slower",
+      "selection": "soaked",
+      "tick": false,
+      "measurement": {
+        "pass": "contribution compute",
+        "off_ms": 0.02075,
+        "soaked_ms": 0.060625,
+        "delta_ms": 0.039874999999999994
+      },
+      "finding": "This pass shares its algorithm with the dry arm. The paired timestamps bound its absolute contribution under the recorded load."
+    },
+    {
+      "wire": "paired pass at least 25% slower",
+      "selection": "soaked",
+      "tick": false,
+      "measurement": {
+        "pass": "synthetic tone encode",
+        "off_ms": 3.675584,
+        "soaked_ms": 5.1605,
+        "delta_ms": 1.4849159999999997
+      },
+      "finding": "This pass shares its algorithm with the dry arm. The paired timestamps bound its absolute contribution under the recorded load."
+    }
+  ],
+  "scope": "Metal offscreen submissions, no capture tap, shared machine load"
+}
