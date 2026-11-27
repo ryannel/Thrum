@@ -670,15 +670,19 @@ impl<G: Game> Actor<G> {
         let display = self.transition_proof.as_ref().map_or(observed, |proof| {
             proof.display_record(observed, request.platform.display_tick)
         });
-        self.host
-            .governor_display(display, self.transition.holds_governor());
-        self.host
-            .governor_display_tick(now, request.platform.display_tick);
-        if let Some(cadence) = self
+        // The chart comparison holds the quality tier and scale while the
+        // governor supplies its chart knob and frame record.
+        let chart_cadence = self
             .transition_proof
             .as_ref()
-            .and_then(|proof| proof.chart_cadence)
-        {
+            .and_then(|proof| proof.chart_cadence);
+        self.host.governor_display(
+            display,
+            self.transition.holds_governor() || chart_cadence.is_some(),
+        );
+        self.host
+            .governor_display_tick(now, request.platform.display_tick);
+        if let Some(cadence) = chart_cadence {
             self.host
                 .set_quality_knob("atmosphere.chart cadence", cadence)
                 .map_err(|error| FrameError::Scene(error.to_string()))?;
