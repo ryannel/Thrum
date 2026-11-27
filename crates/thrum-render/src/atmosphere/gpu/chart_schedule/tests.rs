@@ -414,7 +414,10 @@ fn authored_clock_and_scrub_steps_anchor_the_tuning() {
 
 #[test]
 fn tighter_sun_tolerance_shortens_a_new_refresh_or_cuts_a_running_one() {
-    let widest = Tuning::default();
+    let widest = Tuning {
+        twilight: None,
+        ..Tuning::default()
+    };
     let step = widest.sun.to_degrees() * 0.1;
     for crossing in [5, 9] {
         let elevation = 8.0_f32;

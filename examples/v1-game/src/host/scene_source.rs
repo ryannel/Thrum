@@ -1428,7 +1428,7 @@ mod tests {
             #[cfg(all(target_os = "macos", feature = "proving"))]
             chart_jump: None,
             #[cfg(all(target_os = "macos", feature = "proving"))]
-            chart_proof: chart_proof::ChartProof::default(),
+            chart_proof: super::chart_proof::ChartProof::default(),
             #[cfg(feature = "proving")]
             capture_solar_tick: None,
             camera_pitch,
