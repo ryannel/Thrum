@@ -217,7 +217,8 @@ mod tests {
         let samples = [sample(0.0, 0.0), sample(3.0, 1.0)];
         track.bound_entire_current(&[&samples], [2, 2], 1.0);
         assert!(track.cells().iter().all(|cell| cell[..2] == [0.0; 2]));
-        assert!((track.period_limit - 1.0 / 3.0).abs() < 1e-6);
+        let gradient = 3.0_f32.hypot(3.0);
+        assert!((track.period_limit - gradient.recip()).abs() < 1e-6);
     }
 
     #[test]
