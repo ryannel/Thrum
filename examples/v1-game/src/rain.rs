@@ -386,6 +386,40 @@ impl RainSurface {
     }
 }
 
+/// Why the opt-in valley's cooked scene or model could not be prepared.
+#[derive(Debug)]
+pub enum RainValleyError {
+    /// The shared cooked valley recipe was refused.
+    Valley(crate::showcase::CookedValleyError),
+    /// The valley needs the terrain material for the patch.
+    MissingTerrain,
+    /// The cooked contribution was refused.
+    Cooked(thrum_asset_gpu::PlacementError),
+    /// The rain model could not prepare the authored ground or canopy.
+    Model(String),
+}
+
+impl std::fmt::Display for RainValleyError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Valley(error) => error.fmt(f),
+            Self::MissingTerrain => f.write_str("the valley patch needs the terrain's material"),
+            Self::Cooked(error) => error.fmt(f),
+            Self::Model(error) => f.write_str(error),
+        }
+    }
+}
+
+impl std::error::Error for RainValleyError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Valley(error) => Some(error),
+            Self::Cooked(error) => Some(error),
+            Self::MissingTerrain | Self::Model(_) => None,
+        }
+    }
+}
+
 /// Prepare the populated valley's cooked placements with its optional patch.
 ///
 /// # Errors
@@ -394,17 +428,18 @@ impl RainSurface {
 pub fn prepare_rain_cooked_valley(
     source: thrum_asset_gpu::CookedSource,
     path: thrum_asset_gpu::CookedDrawPath,
-) -> Result<(crate::SceneCamera, thrum_asset_gpu::CookedAssets), String> {
+) -> Result<(crate::SceneCamera, thrum_asset_gpu::CookedAssets), RainValleyError> {
     let (camera, mut config) =
-        crate::showcase::valley_config(source).map_err(|error| error.to_string())?;
+        crate::showcase::valley_config(source).map_err(RainValleyError::Valley)?;
     let mut ground = config
         .meshes
-        .first()
-        .ok_or("the valley patch needs the terrain's material")?
+        .iter()
+        .find(|placement| placement.mesh == "terrain")
+        .ok_or(RainValleyError::MissingTerrain)?
         .clone();
     "rain-patch".clone_into(&mut ground.mesh);
     config.meshes.push(ground);
     config.draw_path = path;
-    let assets = thrum_asset_gpu::CookedAssets::new(config).map_err(|error| error.to_string())?;
+    let assets = thrum_asset_gpu::CookedAssets::new(config).map_err(RainValleyError::Cooked)?;
     Ok((camera, assets))
 }

@@ -42,7 +42,7 @@ pub use interface_text::InterfaceText;
 #[cfg(feature = "proving")]
 pub mod lent;
 mod rain;
-pub use rain::{RainSelection, prepare_rain_cooked_valley};
+pub use rain::{RainSelection, RainValleyError, prepare_rain_cooked_valley};
 #[cfg(all(target_os = "macos", feature = "proving"))]
 pub use rain::{RainWitness, rain_witness_points};
 mod scene;

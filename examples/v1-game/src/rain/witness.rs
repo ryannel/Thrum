@@ -2,7 +2,7 @@
 
 use thrum_rain_model::{Wetness, wetness_at};
 
-use super::{RainSelection, ValleyRain, ground};
+use super::{RainSelection, RainValleyError, ValleyRain, ground};
 
 /// Samples on the cooked floor, a rock's exposed side and shaded overhang,
 /// and cell centres in the actual valley patch.
@@ -27,10 +27,11 @@ pub struct RainWitness {
     clippy::cast_possible_truncation,
     reason = "the oracle uses the exact submitted f32 coordinates"
 )]
-pub fn rain_witness_points(selection: RainSelection) -> Result<Vec<RainWitness>, String> {
-    let (world, surface) = ValleyRain::prepare(selection)?;
+pub fn rain_witness_points(selection: RainSelection) -> Result<Vec<RainWitness>, RainValleyError> {
+    let (world, surface) = ValleyRain::prepare(selection).map_err(RainValleyError::Model)?;
     let (_, water) = surface.proof_products();
-    let canopy = ground::canopy(&super::model_profile()).map_err(|error| error.to_string())?;
+    let canopy = ground::canopy(&super::model_profile())
+        .map_err(|error| RainValleyError::Model(error.to_string()))?;
     let make = |position: [f32; 3], normal: [f32; 3], patch: bool| {
         let p = position.map(f64::from);
         let n = normal.map(f64::from);

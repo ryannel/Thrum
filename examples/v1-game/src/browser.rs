@@ -1094,6 +1094,7 @@ impl BrowserGame {
         #[cfg(feature = "proving")]
         let (camera, assets) = if self.page.shell.host().source().has_rain() {
             crate::rain::prepare_rain_cooked_valley(source, thrum_asset_gpu::CookedDrawPath::Auto)
+                .map_err(|error| error.to_string())
         } else if preview {
             crate::showcase::prepare_content_preview(source)
         } else if chart_level_six == Some(true) {
@@ -1107,6 +1108,7 @@ impl BrowserGame {
         #[cfg(not(feature = "proving"))]
         let (camera, assets) = if self.page.shell.host().source().has_rain() {
             crate::rain::prepare_rain_cooked_valley(source, thrum_asset_gpu::CookedDrawPath::Auto)
+                .map_err(|error| error.to_string())
         } else {
             crate::showcase::prepare_showcase(source)
         }

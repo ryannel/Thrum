@@ -327,3 +327,11 @@
   and pond stages, and check the original inner lake film. The beach takes cover three winds and
   the fading ebb band. The mixed shore comparison holds both clocks while assets load and verifies
   the same submitted wave phase. [Target evidence](../../../.orchestrate/evidence/PUDDLES/WP5/shared-shore-edge/README.md)
+
+- 2026-11-27 WP6. The opt-in exit valley draws a cooked hollows patch using the floor's UVs and material.
+  Its tick page lends rain and drying to the wetness provider and water map. The 240 m wetness datum
+  keeps the receding margin within the model tolerance. Metal verifies exact off frames and the
+  terrain, prop and hollow readings. Chrome WebGPU verifies the live shower and both puddles.
+  The native sequences cover two route stops and the patch at eye height. Wetting is subtler on the
+  rock's low-Sun face. The capture-off 1080p record includes the surface and film costs under shared load.
+  [Target evidence, native sequences and cost](../../../.orchestrate/evidence/PUDDLES/WP6/README.md)

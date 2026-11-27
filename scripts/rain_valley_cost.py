@@ -80,7 +80,7 @@ def investigations(arms):
 
 
 def measure_valley():
-    run(['cargo', 'build', '--release', '--locked', '--offline', '-p', 'v1-game', '-p', 'thrum-cook'])
+    run(['cargo', 'build', '--release', '--locked', '--offline', '--target-dir', 'target', '-p', 'v1-game', '-p', 'thrum-cook'])
     scratch = ROOT / 'tmp/puddles-wp6'
     scratch.mkdir(parents=True, exist_ok=True)
     with TemporaryDirectory(prefix='cost-', dir=scratch) as temporary:

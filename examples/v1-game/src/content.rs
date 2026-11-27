@@ -618,7 +618,8 @@ fn attach_selected(
         Ok("valley" | "exit") => {
             let source = std::path::PathBuf::from(store).into();
             let (camera, assets) = if host.source().has_rain() {
-                crate::rain::prepare_rain_cooked_valley(source, path)?
+                crate::rain::prepare_rain_cooked_valley(source, path)
+                    .map_err(|error| error.to_string())?
             } else {
                 crate::showcase::prepare_showcase_with_path(source, path)?
             };
