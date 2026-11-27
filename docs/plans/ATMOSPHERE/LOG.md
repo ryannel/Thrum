@@ -859,3 +859,9 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   WP12.3 now uses the fixed offscreen Metal route at one ordinary submission per game tick.
   It times GPU passes for every submission at cadence 1 and held cadence 4 with the image tap off.
   [Route proof](../../../.orchestrate/evidence/ATMOSPHERE/WP12/review-route/README.md)
+- 2026-11-27 WP12 recovers the chart set on governor entry when a resident reflection level
+  under an overlay is more than one light tolerance behind. The CPU guard covers held illuminance
+  and colour edits at each governed tier. The Metal probe compares the first governed frame's
+  seven levels against independent old- and new-light controls through forward and lent shading.
+  The protected reference guard passed with zero set refreshes.
+  [Governor-entry evidence](../../../.orchestrate/evidence/ATMOSPHERE/WP12/governor-entry/README.md)
