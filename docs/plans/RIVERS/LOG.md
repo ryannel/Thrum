@@ -381,3 +381,10 @@
   the cliff solved all three wet gauges, but the map refused the basin meeting the chart away
   from a joined end. The two visual checks remain open.
   [Target evidence](../../../.orchestrate/evidence/RIVERS/WP6/README.md)
+- 2026-11-27 WP6 planner proposal. Allow a basin to follow the plunge bed below a brink while
+  the brink remains a chart boundary with its own unmixed row. The fall-scene receiver test
+  solved the three wet gauges and produced intersections at the actual pool level. The map
+  refused the basin because it borders the brink without a joined end. A planner ruling on
+  basin support below a brink would let the visual proof compare a continuous shoreline
+  against the current grid-row jump. The flood silhouette still needs a strand-breakup pass.
+  [Receiver experiment and Metal takes](../../../.orchestrate/evidence/RIVERS/WP6/README.md)
