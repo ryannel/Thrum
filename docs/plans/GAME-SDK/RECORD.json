@@ -34,22 +34,22 @@
       }
     },
     "WP2": {
-      "definitions": "7c05473f53e140ad7add182a88405a9118248742c7e9c2fe99acb7ab9914ec88",
+      "definitions": "a627ee7744597532a053a13f10d43d4e268b511488ee03ed7082c04884d5de62",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The owner approved the Game SDK design in chat on 27 Nov 2026. I asked: \"Approve the core and take the recommended scope",
-        "at": "2026-11-27T21:24:12Z"
+        "task": "The design review of GAME-SDK at .orchestrate/evidence/GAME-SDK/design-review.md asked for changes, with its 12 Must Fix",
+        "at": "2026-11-27T21:58:28Z"
       },
       "ends_stretch": true
     },
     "WP11": {
-      "definitions": "80ecb7ed40424de4d570aa2c06f77c18dba7c01fb0c30b253b02272b8b4b2bed",
+      "definitions": "8ec6bcb68dcc76f1adde0c61e49036af515c1a836db8f822ecf7dab045eec13e",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The owner approved the Game SDK design in chat on 27 Nov 2026. I asked: \"Approve the core and take the recommended scope",
-        "at": "2026-11-27T21:24:12Z"
+        "task": "The design review of GAME-SDK at .orchestrate/evidence/GAME-SDK/design-review.md asked for changes, with its 12 Must Fix",
+        "at": "2026-11-27T21:58:28Z"
       }
     }
   },
@@ -105,11 +105,15 @@
     {
       "task": "The owner approved the Game SDK design in chat on 27 Nov 2026. I asked: \"Approve the core and take the recommended scope answers?\" (after reporting dogfood round 4: all four games would lock in the core, confidence 7-8/10). The owner said: \"I approve the sdk plan.\"\n\nRecord that approval in the design's Decisions, and answer the scope questions in \"Scope questions for the owner\" with the planner's recommendations, as approved: 1 yes (3D collision queries and a kinematic move, no rigid bodies); 2 yes (gamepads); 3 yes (audio, small form); 4 no, the release after (predicted projectiles and contact); 5 no, after 4 (hits as the shooter saw them); 6 already yes (3D multiplayer); 7 yes (headless host); 8 skeletal animation stays out, first engine module after; 9 no (text field, lists); 10 after the first release (editor levels); 11 yes (per-player profiles). Add the work packages and engine modules those yeses need.\n\nThen fold in the four core frictions from dogfood round 4 (reports in tmp/sdk-dogfood-4/*/REPORT.md), each as an addition to the core, not a reshaping:\n- saves: a save field that captures and respawns the entities of named prefabs/components by stable prefab name, so a save is not a hand-written mirror of the world (explorer-3d);\n- ownership: a spawn that brings its children with a \"spawned\" moment, and a query that reads a parent's children (swarm-2d-online);\n- PerPlayer departure: a \"player left\" rule can read the departing player's final per-player values for that tick (arena-3d-online);\n- sweeps: a sweep result exposes the moving body's position and remaining motion at first contact (platformer-2d).\nRead the other round-4 friction and extension notes and take any that are additions of the same kind. Keep the core's shape and names. Leave WP1 ready to build.",
       "at": "2026-11-27T21:24:12Z"
+    },
+    {
+      "task": "The design review of GAME-SDK at .orchestrate/evidence/GAME-SDK/design-review.md asked for changes, with its 12 Must Fix findings.",
+      "at": "2026-11-27T21:58:28Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-27T21:24:12Z"
+    "at": "2026-11-27T21:58:28Z"
   },
   "design_history": [
     {
