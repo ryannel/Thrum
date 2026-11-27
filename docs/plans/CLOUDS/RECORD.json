@@ -1959,7 +1959,7 @@
         {
           "verdict": "fail",
           "commit": "59b64a9f93dabacb61a7c40140c8cef7d7b58a16",
-          "review": ".orchestrate/evidence/CLOUDS/WP15-review.md",
+          "review": ".orchestrate/evidence/CLOUDS/WP15-review-2.md",
           "items": {
             "WP15.1": "fail",
             "WP15.4": "pass",
@@ -2000,6 +2000,51 @@
             "turns": 1
           },
           "at": "2026-11-26T23:06:36Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "d75fd9fe27b0fd4ca8746c961b890e8c7599031e",
+          "review": ".orchestrate/evidence/CLOUDS/WP15-review.md",
+          "items": {
+            "WP15.1": "fail",
+            "WP15.4": "pass",
+            "WP15.13": "pass",
+            "WP15.5": "pass",
+            "WP15.6": "pass",
+            "WP15.7": "pass",
+            "WP15.8": "pass",
+            "WP15.9": "pass",
+            "WP15.10": "pass",
+            "WP15.11": "pass"
+          },
+          "findings": [
+            {
+              "name": "Clear Ground changes the composed bytes of elevated cloud",
+              "item": "WP15.1",
+              "different": "The directed-only mixed-depth case now preserves its far stop. This failure is the unchanged-frame clause with ordinary procedural cloud above all geometry, zero fog amounts and no placements.",
+              "repeat": false
+            },
+            {
+              "name": "SceneContributions drops the public secondary resize hook",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 223132,
+            "cached": 15524864,
+            "output": 28511,
+            "turns": 1
+          },
+          "at": "2026-11-27T00:33:01Z"
         }
       ],
       "authorised": {
