@@ -13,16 +13,20 @@ fn a_flat_surface_draws_a_unit_value_at_every_rung() {
     };
     let view = camera([0.0, 1.0, 0.0], [0.0, 0.5, 1.0], 0.8, 1.0);
     let mut rig = Rig::new(&gpu, &view, sun(1.0, 0.0), &[], None);
-    let mut water = water_configured(None, Profile { caustics: true, ..Profile::default() });
-    let tap = water.tap_caustics();
-    attach(&mut rig, water);
-    rig.frame();
-    let ladder = tap.texture().expect("prepared caustic ladder");
-    assert_eq!(ladder.depth_or_array_layers(), 13);
-    let contents = texture(&rig.device, &rig.queue, &ladder, Mip::level(0), ..);
     let unit = 0x3c00u16.to_le_bytes();
-    for (index, &value) in contents.as_chunks::<2>().0.iter().enumerate() {
-        assert_eq!(value, unit, "flat caustic texel {index}");
+    for bed in [None, Some((-24.0, [-12.0; 2], 24.0))] {
+        let mut water = water_configured(bed, Profile { caustics: true, ..Profile::default() });
+        let tap = water.tap_caustics();
+        attach(&mut rig, water);
+        rig.frame();
+        let ladder = tap.texture().expect("prepared caustic ladder");
+        assert_eq!(ladder.depth_or_array_layers(), 13);
+        for mip in [0, ladder.mip_level_count() - 1] {
+            let contents = texture(&rig.device, &rig.queue, &ladder, Mip::level(mip), ..);
+            for (index, value) in contents.as_chunks::<8>().0.iter().enumerate() {
+                assert_eq!(value[..2], unit, "flat caustic texel {index} of mip {mip}");
+            }
+        }
     }
 }
 }
@@ -59,8 +63,8 @@ fn a_ripple_moves_light_between_places_and_depths() {
     let ladder = tap.texture().expect("prepared caustic ladder");
     let read = |rig: &Rig| {
         texture(&rig.device, &rig.queue, &ladder, Mip::level(0), ..)
-            .as_chunks::<2>().0.iter()
-            .map(|&value| f64::from(support::half_value(u16::from_le_bytes(value))))
+            .as_chunks::<8>().0.iter()
+            .map(|value| f64::from(support::half_value(u16::from_le_bytes([value[0], value[1]]))))
             .collect::<Vec<_>>()
     };
     let first = rig.frame_at(Duration::from_millis(100));

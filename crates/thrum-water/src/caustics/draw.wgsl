@@ -1,9 +1,3 @@
-struct CausticDrawFrame {
-    window: vec4<f32>,
-    sun: vec4<f32>,
-}
-@group(1) @binding(0) var<uniform> caustic_draw: CausticDrawFrame;
-
 struct CausticVertex {
     @builtin(position) clip: vec4<f32>,
     @location(0) displacement_in_texels: vec2<f32>,
@@ -16,7 +10,7 @@ struct CausticVertex {
     let side = select(select(128u, 256u, rung < 8u), 512u, rung < 4u);
     let node = vec2(vertex % (side + 1u), vertex / (side + 1u));
     let extent = caustic_draw.window.z;
-    let depth = 0.25 * exp2(f32(rung) * 0.5);
+    let depth = caustic_rung_depth(rung);
     let guard = min(depth * 0.2, 2.0);
     let spacing = (extent + 2.0 * guard) / f32(side);
     let rest = vec2<f32>(node) * spacing - guard;

@@ -1,5 +1,7 @@
 //! Draw each refracted sheet into its own caustic depth rung.
 
+mod filter;
+
 use bytemuck::{Pod, Zeroable};
 use std::sync::{Arc, Mutex};
 use thrum_render::{
@@ -43,6 +45,7 @@ struct DrawFrame {
 pub(super) struct Caustics {
     first: usize,
     texture: wgpu::Texture,
+    filter: filter::Filter,
     targets: Vec<EffectDrawTarget>,
     names: Vec<String>,
     pipeline: wgpu::RenderPipeline,
@@ -72,9 +75,7 @@ impl Caustics {
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
             format: FORMAT,
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT
-                | wgpu::TextureUsages::TEXTURE_BINDING
-                | wgpu::TextureUsages::COPY_SRC,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING,
             view_formats: &[],
         });
         let names: Vec<_> = (0..RUNGS)
@@ -105,7 +106,7 @@ impl Caustics {
             label: Some("water caustic window"),
             entries: &[binding::uniform(
                 0,
-                wgpu::ShaderStages::VERTEX,
+                wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::COMPUTE,
                 uniform.size(),
             )],
         });
@@ -146,7 +147,11 @@ impl Caustics {
             } else {
                 "fn caustic_slot(_point: vec2<f32>) -> u32 { return 0u; }"
             },
-            include_str!("caustics/draw.wgsl"),
+            concat!(
+                include_str!("caustics/frame.wgsl"),
+                include_str!("caustics/rungs.wgsl"),
+                include_str!("caustics/draw.wgsl"),
+            ),
         );
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("water caustic refraction"),
@@ -186,9 +191,11 @@ impl Caustics {
             cache: None,
         });
         let grids = [512, 256, 128].map(|side| grid(device, side));
+        let filter = filter::Filter::new(device, &texture, &layout);
         Ok(Self {
             first,
             texture,
+            filter,
             targets,
             names,
             pipeline,
@@ -225,9 +232,19 @@ impl Caustics {
                 accesses,
             });
         }
+        self.filter.declare(graph, resource);
     }
 
-    pub(super) fn record(&self, queue: &wgpu::Queue, frame: &ContributionFrame) {
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "the GPU reads f32 wave slopes"
+    )]
+    pub(super) fn record(
+        &self,
+        queue: &wgpu::Queue,
+        frame: &ContributionFrame,
+        tail_variance: f64,
+    ) {
         if frame.time.capture {
             return;
         }
@@ -245,13 +262,22 @@ impl Caustics {
                 WINDOW,
                 f32::from(u8::from(sun[1] > 0.0)),
             ],
-            sun: [sun[0], sun[1], sun[2], 0.0],
+            sun: [sun[0], sun[1], sun[2], tail_variance.sqrt() as f32],
         };
         queue.write_buffer(&self.uniform, 0, bytemuck::bytes_of(&mapping));
     }
 
     pub(super) fn target(&self, index: usize) -> Option<&EffectDrawTarget> {
         self.targets.get(index.checked_sub(self.first)?)
+    }
+
+    pub(super) fn contains(&self, index: usize) -> bool {
+        (self.first..self.first + (RUNGS + filter::MIPS) as usize).contains(&index)
+    }
+
+    pub(super) fn encode(&self, index: usize, pass: &mut wgpu::ComputePass<'_>) {
+        let mip = u32::try_from(index - self.first - RUNGS as usize).expect("caustic filter index");
+        self.filter.encode(mip, pass, &self.frame);
     }
 
     pub(super) fn draw(
@@ -278,11 +304,12 @@ impl Caustics {
     pub(super) fn bytes(&self) -> u64 {
         2 * u64::from(SIDE) * u64::from(SIDE) * u64::from(RUNGS)
             + self.uniform.size()
+            + filter::Filter::bytes()
             + self.grids.iter().map(wgpu::Buffer::size).sum::<u64>()
     }
 
     pub(super) fn texture(&self) -> &wgpu::Texture {
-        &self.texture
+        &self.filter.texture
     }
 }
 

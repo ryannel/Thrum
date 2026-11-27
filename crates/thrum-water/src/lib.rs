@@ -884,7 +884,7 @@ impl SceneContribution for Water {
         p.queue
             .write_buffer(&p.parameters, 0, bytemuck::bytes_of(&parameters));
         if let Some(caustics) = &p.caustics {
-            caustics.record(&p.queue, frame);
+            caustics.record(&p.queue, frame, self.spectrum.tail_slope_variance);
         }
     }
     fn effect_draw_target(
@@ -905,13 +905,13 @@ impl SceneContribution for Water {
             caustics.draw(index, pass, frame, p.render_group());
         }
     }
-    fn effect_runs(&self, index: usize, _frame: &ContributionFrame) -> bool {
+    fn effect_runs(&self, index: usize, frame: &ContributionFrame) -> bool {
         self.prepared.as_ref().is_some_and(|p| {
             if p.caustics
                 .as_ref()
-                .is_some_and(|caustics| caustics.target(index).is_some())
+                .is_some_and(|caustics| caustics.contains(index))
             {
-                true
+                !frame.time.capture
             } else if index < p.ambient_passes {
                 p.ambient
                     .flow_pass_start()
@@ -937,7 +937,13 @@ impl SceneContribution for Water {
         _frame: &ContributionFrame,
     ) {
         if let Some(p) = &self.prepared {
-            if index < p.ambient_passes {
+            if let Some(caustics) = p
+                .caustics
+                .as_ref()
+                .filter(|caustics| caustics.contains(index))
+            {
+                caustics.encode(index, pass);
+            } else if index < p.ambient_passes {
                 p.ambient.encode_pass(index, pass);
             } else if index == p.ambient_passes
                 && let Some(interaction) = &p.interaction

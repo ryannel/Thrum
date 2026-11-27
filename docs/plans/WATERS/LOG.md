@@ -1873,3 +1873,12 @@
   after wave simulation, with the rung attachment and the forward sampled read
   in the graph. This keeps the approved raster producer and its per-pass
   timing. [Builder handoff](../../../.orchestrate/evidence/WATERS/WP16-handoff.md).
+
+- 2026-11-27 After rebasing onto main with EFFECT-GRAPH WP7, the water uses
+  named additive draws for the 13 caustic rungs, then filters and reduces
+  their irradiance for larger footprints. Metal verified exact unity on
+  flat water and moving, depth-dependent patterns with near-unit means.
+  [Field proof](../../../.orchestrate/evidence/WATERS/WP16/caustic-field-proof.md).
+- The `deep-sea` route submitted Metal frames at 20 m with the eye 6 m
+  above the sky datum. The noon bed has very low contrast in this baseline.
+  [Route record](../../../.orchestrate/evidence/WATERS/WP16/deep-sea-fixed.json).
