@@ -5,6 +5,7 @@ use crate::{
     error::EffectGraphError,
     graph::{AccessKind, ResourceDescriptor, ResourceScope, TextureKind},
 };
+use std::collections::BTreeSet;
 
 /// A simulate pass's prepared colour view and clear value.
 #[derive(Clone)]
@@ -21,7 +22,8 @@ impl EffectDrawTarget {
     /// flattened mip/layer index in the graph access and the same blend choice in the pipeline.
     ///
     /// # Errors
-    /// Refuses an unsupported attachment format, blend mode or subresource.
+    /// Refuses an unsupported attachment format, blend mode or subresource, or a
+    /// memoryless texture whose contents cannot be stored by the executor.
     pub fn new(
         pass: &str,
         texture: &wgpu::Texture,
@@ -31,6 +33,15 @@ impl EffectDrawTarget {
         blend: bool,
         surface: &crate::contribution::SceneSurface<'_>,
     ) -> Result<Self, EffectGraphError> {
+        if texture
+            .usage()
+            .contains(wgpu::TextureUsages::TRANSIENT_ATTACHMENT)
+        {
+            return Err(draw_error(
+                pass,
+                "memoryless colour attachments are unsupported",
+            ));
+        }
         let format = texture.format();
         check_draw_format(pass, format, surface.texture_format(format), blend)?;
         if texture.dimension() != wgpu::TextureDimension::D2
@@ -230,6 +241,7 @@ impl EffectGraph {
         capabilities: &crate::capabilities::DeviceCapabilities,
         target: impl Fn(usize) -> Option<&'a EffectDrawTarget>,
     ) -> Result<(), EffectGraphError> {
+        let mut written = BTreeSet::new();
         for (index, pass) in self.passes.iter().enumerate() {
             let Some(attachment) = pass.attachments().next() else {
                 continue;
@@ -251,6 +263,14 @@ impl EffectGraph {
                 return Err(draw_error(
                     &pass.name,
                     "prepared colour view differs from the declaration",
+                ));
+            }
+            // Graph indices identify declarations. Distinct declarations can be backed
+            // by views of the same texture, so also check the actual subresource.
+            if !written.insert((target.view.texture(), target.unit)) {
+                return Err(draw_error(
+                    &pass.name,
+                    "prepared colour subresource overlaps another pass's write",
                 ));
             }
         }

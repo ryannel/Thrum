@@ -6,6 +6,7 @@ use crate::{
         ContributionFrame, ContributionPasses, EffectAccess, EffectCadence, EffectDrawTarget,
         EffectGraph, EffectPass, EffectState, SceneContribution, SceneContributions, SceneSurface,
     },
+    error::EffectGraphError,
     extract::{ExtractReport, RenderExtractor, SourceTick},
     graph::{AccessKind, PassKind, ResourceDescriptor, ResourceScope},
     pass_key::PassKey,
@@ -667,6 +668,193 @@ fn simulate_draw_list_gpu_routes_each_members_view_draw_and_cadence() {
             host.recycle_submitted_image(image);
             println!(
                 "tick {tick}: exact member-owned attachments and submitted scene colour at {origins:?}"
+            );
+        }
+    });
+}
+
+struct PreparedDraws {
+    usage: wgpu::TextureUsages,
+    persistent: bool,
+    subresources: &'static [(u32, u32)],
+    graph: EffectGraph,
+    targets: Vec<EffectDrawTarget>,
+}
+
+impl PreparedDraws {
+    fn new(
+        usage: wgpu::TextureUsages,
+        persistent: bool,
+        subresources: &'static [(u32, u32)],
+    ) -> Self {
+        Self {
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | usage,
+            persistent,
+            subresources,
+            graph: EffectGraph::default(),
+            targets: Vec::new(),
+        }
+    }
+}
+
+impl SceneContribution for PreparedDraws {
+    fn passes(&self) -> ContributionPasses {
+        ContributionPasses::default()
+    }
+
+    fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), FrameError> {
+        let mips = self.subresources.iter().map(|&(mip, _)| mip).max().unwrap() + 1;
+        let layers = self
+            .subresources
+            .iter()
+            .map(|&(_, layer)| layer)
+            .max()
+            .unwrap()
+            + 1;
+        let texture = surface.device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("simulate draw preparation test"),
+            size: wgpu::Extent3d {
+                width: 1 << (mips - 1),
+                height: 1 << (mips - 1),
+                depth_or_array_layers: layers,
+            },
+            mip_level_count: mips,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: FORMAT,
+            usage: self.usage,
+            view_formats: &[],
+        });
+        self.graph = EffectGraph::default();
+        self.targets.clear();
+        for (resource, &(mip, layer)) in self.subresources.iter().enumerate() {
+            let name = PASS_NAMES[resource];
+            let scope = if self.persistent {
+                ResourceScope::Persistent {
+                    owner: resource as u64,
+                    epoch: 0,
+                    initialized: false,
+                }
+            } else {
+                ResourceScope::Transient
+            };
+            self.graph
+                .resources
+                .push((ResourceDescriptor::of_texture(&texture), scope));
+            let unit = u64::from(mip) * u64::from(layers) + u64::from(layer);
+            self.graph.passes.push(EffectPass {
+                name: name.into(),
+                cadence: EffectCadence::EveryFrame,
+                async_eligible: false,
+                accesses: vec![EffectAccess {
+                    resource,
+                    range: unit..unit + 1,
+                    kind: AccessKind::AttachmentClear,
+                    view: None,
+                    history: None,
+                }],
+            });
+            self.targets.push(
+                EffectDrawTarget::new(
+                    name,
+                    &texture,
+                    mip,
+                    layer,
+                    wgpu::Color::TRANSPARENT,
+                    false,
+                    surface,
+                )
+                .map_err(FrameError::EffectGraph)?,
+            );
+        }
+        Ok(())
+    }
+
+    fn encode_upload(&mut self, _: &mut wgpu::CommandEncoder, _: &ContributionFrame) {}
+
+    fn effect_graph(&self) -> EffectGraph {
+        self.graph.clone()
+    }
+
+    fn effect_draw_target(&self, index: usize) -> Option<&EffectDrawTarget> {
+        self.targets.get(index)
+    }
+}
+
+#[test]
+fn simulate_draw_gpu_preparation_rejects_two_writers_of_the_same_subresource() {
+    let Some(gpu) = crate::test_device::open(
+        "simulate_draw_gpu alias preparation",
+        Some(wgpu::Backend::Metal),
+        DeviceProfile::Portable,
+        &DeviceRestriction::default(),
+    ) else {
+        return;
+    };
+    pollster::block_on(async {
+        let mut host = host(&gpu).await;
+        let usage = wgpu::TextureUsages::empty();
+        for subresources in [&[(1, 0), (1, 1)], &[(1, 0), (0, 0)]] {
+            host.set_scene_contribution(Box::new(PreparedDraws::new(usage, true, subresources)))
+                .unwrap();
+        }
+        let err = host
+            .set_scene_contribution(Box::new(PreparedDraws::new(usage, true, &[(1, 0), (1, 0)])))
+            .unwrap_err();
+        assert!(
+            matches!(
+                &err,
+                FrameError::EffectGraph(EffectGraphError::SimulateDraw {
+                    pass,
+                    reason: "prepared colour subresource overlaps another pass's write",
+                }) if pass == PASS_NAMES[1]
+            ),
+            "{err}"
+        );
+        println!("separate mips and layers prepared; two writers of mip 1, layer 0: {err}");
+    });
+}
+
+#[test]
+fn simulate_draw_gpu_preparation_refuses_memoryless_views_before_wgpu_validation() {
+    let Some(gpu) = crate::test_device::open(
+        "simulate_draw_gpu memoryless preparation",
+        Some(wgpu::Backend::Metal),
+        DeviceProfile::Portable,
+        &DeviceRestriction::default(),
+    ) else {
+        return;
+    };
+    pollster::block_on(async {
+        let mut host = host(&gpu).await;
+        host.set_scene_contribution(Box::new(PreparedDraws::new(
+            wgpu::TextureUsages::empty(),
+            false,
+            &[(0, 0)],
+        )))
+        .unwrap();
+        for persistent in [false, true] {
+            let validation = gpu.device.push_error_scope(wgpu::ErrorFilter::Validation);
+            let result = host.set_scene_contribution(Box::new(PreparedDraws::new(
+                wgpu::TextureUsages::TRANSIENT_ATTACHMENT,
+                persistent,
+                &[(0, 0)],
+            )));
+            let validation_error = validation.pop().await;
+            assert!(validation_error.is_none(), "{validation_error:?}");
+            let err = result.unwrap_err();
+            assert!(
+                matches!(
+                    &err,
+                    FrameError::EffectGraph(EffectGraphError::SimulateDraw {
+                        pass,
+                        reason: "memoryless colour attachments are unsupported",
+                    }) if pass == PASS_NAMES[0]
+                ),
+                "{err}"
+            );
+            println!(
+                "memoryless texture with persistent scope={persistent}: {err}; no wgpu validation error"
             );
         }
     });
