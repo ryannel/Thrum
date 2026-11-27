@@ -710,8 +710,8 @@
     {
       "id": "WP6",
       "name": "In the V1 valley, behind a selection, a shower darkens the desert floor and its rocks and leaves puddles in a patch of ground, and with the selection off the exit scene is what it was",
-      "status": "ready_for_review",
-      "failed_reviews": 0,
+      "status": "in_progress",
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
@@ -726,10 +726,10 @@
           "ask": "With the selection off, does any code path of the game differ from before this work package? Is anything of `SHOWCASE`'s (the generator, a route, the exit configuration, a retained reference) changed?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/PUDDLES/WP6/README.md#selection-and-exit-parity",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/PUDDLES/WP6-review.md"
         },
         {
           "id": "WP6.2",
@@ -739,18 +739,18 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/PUDDLES/WP6/README.md#metal-model-comparison",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/PUDDLES/WP6-review.md"
         },
         {
           "id": "WP6.3",
           "statement": "Through a shower the valley's floor and rocks darken and their colour deepens, the patch's hollows fill with level puddles that hold the sky and ring with the rain, and afterward it dries back to the desert it was. Nothing changes the valley's light, haze or shadows.",
           "inspect": "`realtime` sequences at two of the route's stops and at the patch from 1.7 m, through a shower and its drying with the rates the sequence names; `fixed` stills dry, soaked and half dry at noon and at a low Sun, whole and cropped at native size on the floor, a rock and a puddle's edge.",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/PUDDLES/WP6/README.md#metal-visual-inspection",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/PUDDLES/WP6-review.md"
         },
         {
           "id": "WP6.4",
@@ -758,10 +758,10 @@
           "check": "node scripts/check_v1_browser.mjs --case rain",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/PUDDLES/WP6/README.md#chrome-webgpu",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/PUDDLES/WP6-review.md"
         },
         {
           "id": "WP6.5",
@@ -769,10 +769,42 @@
           "check": "python3 scripts/rain_cost.py check --scene valley",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/PUDDLES/WP6/README.md#paired-metal-cost",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/PUDDLES/WP6-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "name": "The native rain selection drops the cooked valley with the showcase launcher's store",
+          "item": "WP6.1",
+          "repeat": false
+        },
+        {
+          "name": "The soaked patch exposes a stepped waterline and a separate ground outline",
+          "item": "WP6.3",
+          "repeat": false
+        },
+        {
+          "name": "Valley rain reads as moving grain at the patch camera",
+          "item": "WP6.3",
+          "repeat": false
+        },
+        {
+          "name": "Rock overhangs lose their rain shelter beyond the early route",
+          "item": "WP6.3",
+          "repeat": false
+        },
+        {
+          "name": "The shipping Chrome rain page loses the ground with the standard exit assets",
+          "item": "WP6.4",
+          "repeat": false
+        },
+        {
+          "name": "The valley cost record omits the forward wetness texture",
+          "item": "WP6.5",
+          "repeat": false
         }
       ]
     },
