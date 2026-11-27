@@ -107,3 +107,11 @@ fn submitted_tidal_depth_from_the_bank_through_the_first_seven_seconds() {
     river_proof::surface::check_tidal_depth(&gpu, true, 1..=420);
 }
 }
+
+thrum_test_support::macos_gpu_test! {
+fn unrelated_sampled_river_preserves_the_one_sample_surface() {
+    let Some(gpu) = thrum_test_support::gpu("separate reaches", Some(wgpu::Backend::Metal))
+    else { return };
+    river_proof::surface::compatibility::check(&gpu);
+}
+}

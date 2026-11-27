@@ -1139,7 +1139,7 @@ fn surface_mesh(
         .map_while(|body| map.body(body).map(|declaration| (body, declaration)))
     {
         if let thrum_water_model::BodyKind::Chart(chart) = &declaration.kind
-            && sampled_river(map, body)
+            && map_gpu::sampled_river(map, body)
         {
             for end in chart.ends.iter().filter(|end| !end.is_brink()) {
                 river_receivers[end.body] = true;
@@ -1213,7 +1213,7 @@ fn surface_mesh(
             geometry.grid(start, end, spacing, (body + 1) as f32, 0, surf);
             geometry.draws.push(WaterDraw {
                 indices: first_index..geometry.indices.len() as u32,
-                river: sampled_river(map, body) || receiver,
+                river: map_gpu::sampled_river(map, body) || receiver,
                 offshore: None,
             });
         }
@@ -1223,11 +1223,6 @@ fn surface_mesh(
         ));
     }
     geometry
-}
-
-fn sampled_river(map: &thrum_water_model::Map, body: usize) -> bool {
-    map.river_of(body)
-        .is_some_and(|(river, _)| map.river(river).is_some_and(|river| river.gauges.len() > 1))
 }
 
 impl Geometry {

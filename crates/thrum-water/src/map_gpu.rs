@@ -18,6 +18,7 @@ use hollows::HollowsGpu;
 struct SharedTrack {
     layer: u32,
     track: BoundedTrack,
+    sampled: bool,
 }
 
 pub(crate) struct WaveTracks {
@@ -25,7 +26,6 @@ pub(crate) struct WaveTracks {
     groups: [usize; BODY_LIMIT],
     bounded: [Option<SharedTrack>; BODY_LIMIT],
     parallel: [Option<CurrentTrack>; BODY_LIMIT],
-    sampled_rivers: bool,
 }
 
 impl WaveTracks {
@@ -106,7 +106,6 @@ impl WaveTracks {
             groups,
             bounded: std::array::from_fn(|_| None),
             parallel: std::array::from_fn(|_| None),
-            sampled_rivers: false,
         }
     }
 
@@ -145,25 +144,35 @@ impl WaveTracks {
             return [0.0; 4];
         }
         let shared = self.bounded[group].get_or_insert_with(|| {
-            let charts: Vec<_> = self
+            let charts = self
                 .groups
                 .iter()
                 .enumerate()
                 .filter(|&(_, &value)| value == group)
                 .filter_map(|(member, _)| match &map.body(member)?.kind {
-                    BodyKind::Chart(chart) => Some(chart),
+                    BodyKind::Chart(chart) => Some((member, chart)),
                     _ => None,
-                })
-                .collect();
+                });
             let (_, spacing, size) = map.bed().lattice();
             let layer = *layers;
             *layers += 1;
+            // Joined charts must agree on carriage at their ends. Keep the
+            // steady reference for any track shared with a one-sample chart.
+            let sampled = charts.clone().all(|(member, _)| sampled_river(map, member));
+            let charts: Vec<_> = charts.map(|(_, chart)| chart).collect();
             SharedTrack {
                 layer,
                 track: BoundedTrack::prepare(&charts, size, spacing),
+                sampled,
             }
         });
-        [shared.layer as f32, 0.0, shared.track.period_limit, -1.0]
+        // The bounded record's y component selects its reference rule.
+        [
+            shared.layer as f32,
+            f32::from(shared.sampled),
+            shared.track.period_limit,
+            -1.0,
+        ]
     }
 
     #[expect(
@@ -180,7 +189,7 @@ impl WaveTracks {
     ) -> [f64; 4] {
         let mut record = self.records[body].map(f64::from);
         if let Some(shared) = &self.bounded[self.groups[body]] {
-            if self.sampled_rivers {
+            if shared.sampled {
                 record[..2]
                     .copy_from_slice(&shared.track.sampled_river_reference(world, current, bed));
                 return record;
@@ -221,6 +230,10 @@ impl WaveTracks {
     }
 }
 
+pub(super) fn sampled_river(map: &Map, body: usize) -> bool {
+    map.river_of(body)
+        .is_some_and(|(river, _)| map.river(river).is_some_and(|river| river.gauges.len() > 1))
+}
 pub(crate) const BODY_LIMIT: usize = 16;
 
 #[repr(C)]
@@ -231,6 +244,7 @@ struct BodyRecord {
     layers: [u32; 4],
     ends: [[f32; 4]; 2],
     joins: [[f32; 4]; 2],
+    // A bounded track stores its layer, sampled-reference flag, period limit and mode.
     track: [f32; 4],
 }
 
@@ -382,10 +396,14 @@ fn map_source(group: u32, hollows: bool, rivers: bool) -> String {
     let (map_head, map_tail) = map_sample
         .split_once("        // Bounded wave reference.\n")
         .expect("bounded wave reference");
+    let steady_reference = include_str!("map_gpu/steady_wave_reference.wgsl");
     let wave_reference = if rivers {
-        include_str!("map_gpu/river_wave_reference.wgsl")
+        format!(
+            "        if record.track.y != 0.0 {{\n{}        }}\n{steady_reference}",
+            include_str!("map_gpu/river_wave_reference.wgsl"),
+        )
     } else {
-        include_str!("map_gpu/steady_wave_reference.wgsl")
+        steady_reference.to_owned()
     };
     let source = format!(
         "const BODY_LIMIT = {BODY_LIMIT}u;\nconst WATER_MAP_GROUP = {group}u;\n{}{cell_coordinates}{}            let raw = {chart_cell};\n{before}{chart_join}{after}{sample_hollows}{map_head}{wave_reference}{map_tail}\n{}{river_source}",
@@ -569,7 +587,6 @@ impl MapGpu {
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
         tracks.records = record.bodies.map(|body| body.track);
-        tracks.sampled_rivers = rivers.iter().any(Option::is_some);
         let mut gpu = Self {
             texture,
             info,

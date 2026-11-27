@@ -4,12 +4,14 @@ use std::{
     time::Duration,
 };
 use thrum_app::sky::{Camera, ContentStatus, Controls, SkyGame};
-use thrum_water::query::{BodyQuery, QueryLimits, QueryPoint};
+use thrum_water::query::{BodyQuery, QueryAnswer, QueryLimits, QueryPoint};
 use thrum_water_model::{Field, Map, RiverFile};
 use water_scene::{channel, island::Wind, river};
 
 use super::map::{FALL_REACH, HOLLOW, REACHES, WETTING_GAUGES, transect_points, wetting_fixture};
 use crate::support::{self, Fixture};
+
+pub(crate) mod compatibility;
 
 const EXTENT: [u32; 2] = [95, 13];
 const STEP: Duration = Duration::from_nanos(16_666_667);
@@ -118,6 +120,31 @@ impl TradeDepth {
         assert!(submitted.presentation_alpha.abs() < 1e-5);
     }
 
+    fn query_at(&mut self, position: [f32; 2]) -> QueryAnswer {
+        let use_tick = u64::from(self.tick);
+        // Dispatch from the field of the submitted frame. A predicted query
+        // from an earlier wave field has its own time extrapolation error.
+        self.query.post(
+            self.scene.endpoint(use_tick - 1),
+            vec![BodyQuery {
+                id: 91,
+                generation: 1,
+                points: vec![QueryPoint {
+                    position,
+                    radius: 0.001,
+                    use_tick,
+                }],
+            }],
+        );
+        self.scene.finish_tick_queries();
+        self.query
+            .drain(self.scene.endpoint(use_tick), STEP)
+            .into_iter()
+            .flat_map(|body| body.points)
+            .find(|answer| answer.point.use_tick == use_tick)
+            .expect("query at the submitted use tick")
+    }
+
     #[expect(
         clippy::cast_possible_truncation,
         reason = "query coordinates use GPU metres"
@@ -136,28 +163,7 @@ impl TradeDepth {
         let inverse = support::depth::matrix(camera, EXTENT).as_dmat4().inverse();
         let hit = (depth > 0.0).then(|| ray_hit(inverse, column, row, depth));
         let position = hit.map_or(point, |p| [p.x as f32, p.z as f32]);
-        // Dispatch from the field of the submitted frame. A predicted query
-        // from an earlier wave field has its own time extrapolation error.
-        self.query.post(
-            self.scene.endpoint(use_tick - 1),
-            vec![BodyQuery {
-                id: 91,
-                generation: 1,
-                points: vec![QueryPoint {
-                    position,
-                    radius: 0.001,
-                    use_tick,
-                }],
-            }],
-        );
-        self.scene.finish_tick_queries();
-        let answer = self
-            .query
-            .drain(self.scene.endpoint(use_tick), STEP)
-            .into_iter()
-            .flat_map(|body| body.points)
-            .find(|answer| answer.point.use_tick == use_tick)
-            .expect("query at the submitted use tick");
+        let answer = self.query_at(position);
         if !answer.surface.wet || answer.surface.body != Some(body) {
             return None;
         }
