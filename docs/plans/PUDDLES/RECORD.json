@@ -1133,16 +1133,9 @@
         "at": "2026-11-27T17:51:11Z"
       },
       "ready_for_review": {
-        "commit": "9238a3b873bb315cc1e58ce3e6231280d9e0531f",
-        "checked": "9238a3b873bb315cc1e58ce3e6231280d9e0531f",
-        "at": "2026-11-27T18:08:29Z",
-        "reused": [
-          "WP6.6",
-          "WP6.1",
-          "WP6.2",
-          "WP6.4",
-          "WP6.5"
-        ],
+        "commit": "b8d988602ea8aedbf23d794a988a91c80163c5f4",
+        "checked": "b8d988602ea8aedbf23d794a988a91c80163c5f4",
+        "at": "2026-11-27T18:47:55Z",
         "host": "codex",
         "model": "gpt-6.2-sol",
         "effort": "medium",
@@ -1153,16 +1146,16 @@
         "cli": "codex-cli 0.171.0-alpha.13.2",
         "path": "headless",
         "usage": {
-          "input": 340267,
-          "cached": 82071168,
-          "output": 79334,
+          "input": 179649,
+          "cached": 17481984,
+          "output": 29638,
           "turns": 1
         },
         "session_usage": {
-          "input": 1579450,
-          "cached": 239033600,
-          "output": 321758,
-          "turns": 4
+          "input": 1759099,
+          "cached": 256515584,
+          "output": 351396,
+          "turns": 5
         }
       }
     },
