@@ -664,7 +664,7 @@ layer profile change. [Metal controls](../../../.orchestrate/evidence/CLOUDS/WP9
   owner's words as the whole record of a stop, posted or not. Only a go ahead needs the link to the owner's
   comment, the replies it rests on, if any, and the three decisions. U2's name, its question to the owner and
   the design's U2 paragraph say the same.
-  [Design](DESIGN.md#offering-the-cache-upstream-u1-to-u3) ·
+  [Design](DESIGN.md#local-metal-pipeline-cache-patches-u2-and-u3) ·
   [review](../../../.orchestrate/evidence/APPLE-PRESENTATION/design-review.md)
 
 - 2026-11-26 Planner, design review Must Fix 2 (U1.4's account check cannot establish who acted). U1.4 no
@@ -781,3 +781,8 @@ layer profile change. [Metal controls](../../../.orchestrate/evidence/CLOUDS/WP9
   assumption was added and no other module's file changed.
   [Review](../../../.orchestrate/evidence/APPLE-PRESENTATION/design-review.md) ·
   [what changed for the finding](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP17-plan/REVISED-2-2026-11-27.md)
+
+- 2026-11-27 Owner, answering U2.2 in User Feedback in the [record](RECORD.json): "I'm not in a position to understand every line of wgpu. it's not my area. But i would like you to make sure the patch is done well and to a high quality. Eventually they will fix this and we're going to have to strip it out."
+- 2026-11-27 The answer is stop. Thrum posts nothing upstream. U2 puts both local cache patches through
+  independent review and Metal tests. U3 isolates their extensions, rehearses their removal and watches
+  released wgpu for Metal support. WP11’s completed 60 Hz proof and V1 have no dependency on either package.

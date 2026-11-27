@@ -17,7 +17,7 @@ fresh design review of that revision passed on 11 November. Revised 14 November 
 after a failed configure and for a stated iOS transition. Revised 26 November for
 [the wgpu-core pin](#pipeline-preparation-wp10-and-wp12) that WP12's archive needs, after
 [the WP12 builder's handoff](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP12-handoff.md), and again that day for
-[offering the cache upstream](#offering-the-cache-upstream-u1-to-u3), once WP12 was Done. Revised a third time
+the upstream briefing, once WP12 was Done. Revised a third time
 that day for [the requested frame rate at full screen](#the-requested-frame-rate-at-full-screen-wp11), after
 [the WP11 builder's handoff](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP11-handoff.md) measured that
 the full-screen route misses the display's 120 Hz at the governor's floor, and a fourth time after
@@ -28,7 +28,7 @@ after the owner answered the question
 [the WP17 planner's record](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP17-plan/README.md) put, and again that
 day after [that revision's design review](../../../.orchestrate/evidence/APPLE-PRESENTATION/design-review.md), and a third time that day after the review that followed, for the hold across a full-screen change. It answers the three independent reviews of revision 1
 (`86ec3b6b`) and the re-reviews of revision 2 (`c507ad3d`) recorded in [the log](LOG.md). Interface and path names below are
-proposals.
+proposals. The [local patch plan](#local-metal-pipeline-cache-patches-u2-and-u3) follows the owner’s U2.2 answer on 27 November.
 
 **The owner's request.** The V1 exit in [the build plan](../VISION.md#goal-and-exit-rule) asks for "MetalFX,
 EDR and a quality governor" and gate G4 for "No pipeline compilation during play." The 10 November planning task
@@ -57,7 +57,7 @@ paragraph of this page disagree, that section governs. The 26 November revision 
 only: the wgpu-core pin, the archive's round trip through wgpu's public pipeline cache, and, after
 [its design review](../../../.orchestrate/evidence/APPLE-PRESENTATION/design-review.md), the game's check of the
 saved cache data before import. The second revision of that day adds
-[offering the cache upstream](#offering-the-cache-upstream-u1-to-u3) and the work packages U1 to U3. It changes
+U1’s upstream briefing and the original U2 decision. It changes
 no mechanism of the engine and nothing WP1 to WP12 or WP11 build or prove. The third revision of that day
 adds [the requested frame rate at full screen](#the-requested-frame-rate-at-full-screen-wp11), rewrites what
 WP11 proves about the whole path in motion, and names WP17. It changes nothing WP1 to WP10 or WP12 built: a
@@ -437,8 +437,8 @@ current display shader is a pre-AA diagnostic. So TAAU at scale 1.0 becomes the 
 - WP9 takes a planning baseline of launch-to-ready. WP10 then builds and proves the pipeline preparation work: the
   pinned backend, offline metallibs and parallel pre-warm, and WP12 local archive qualification, all within V1. Their
   mechanism is [settled below](#pipeline-preparation-wp10-and-wp12).
-- Contributing the cache upstream (gfx-rs/wgpu#8526) is later work that does not gate V1, under the owner's rules
-  in [offering the cache upstream](#offering-the-cache-upstream-u1-to-u3).
+- After WP11, U2 reviews the two local cache patches and U3 prepares their removal when released wgpu supports
+  the feature on Metal. [Local Metal pipeline-cache patches](#local-metal-pipeline-cache-patches-u2-and-u3)
 
 **What would change these choices:**
 - A MetalFX neural upscaler (M5 Pro/Max) would be a new provider behind the same contract.
@@ -844,8 +844,7 @@ Three techniques, each behind the registry, each kept only if WP9's and WP12's l
 3. **The archive (WP12).** wgpu 30.0.1 offers a pipeline cache only on Vulkan. The backend's second patch backs
    that cache with an `MTLBinaryArchive` on Metal, and the wgpu-core pin lets its data out and back in. The
    game saves and loads the archive only through wgpu's public `PipelineCache`: `get_data` to save, and
-   `create_pipeline_cache` to load. The engine has no Metal persistence call of its own, so there is one
-   route to keep right and one to offer upstream. In **harvest**, a separate command, pipelines
+   `create_pipeline_cache` to load. This public API is the persistence boundary on both sides of a future wgpu upgrade. In **harvest**, a separate command, pipelines
    are created with the archive attached and added to it, and the cache's data is written to a file under the
    game's own header, which carries the device, the OS build, the manifest's digest, and a digest of the whole
    byte sequence `get_data` returned.
@@ -866,106 +865,59 @@ Three techniques, each behind the registry, each kept only if WP9's and WP12's l
    Metal's option that makes an archive miss an error, so no fallback can hide a miss. The archive is local to
    the device that harvested it; nothing is shipped to another device in V1.
 
-### Offering the cache upstream (U1 to U3)
+### Local Metal pipeline-cache patches (U2 and U3)
 
-The owner may offer the Metal pipeline cache to wgpu. This is not part of V1 and nothing in V1 waits for it: U1
-to U3 are built after WP11, and no work package of any module depends on them.
+The owner stopped the offer on gfx-rs/wgpu#8526. Thrum keeps both patches local and posts nothing upstream.
+wgpu asks the submitter to understand and explain every line. U1's reviewed briefing and the owner's U2.2
+answer are historical records. WP11's 60 Hz proof is complete. No V1 work depends on U2 or U3.
 
-**What could be offered.** The two cache patches, the archive in wgpu-hal and the cache header in wgpu-core,
-which together are the Metal half of gfx-rs/wgpu#8526. The cache-header patch is written as a change wgpu could
-take as it stands: it names nothing of Thrum's, follows the code and the tests around it, and is a separate file
-from the archive patch, so the owner can offer one or both. The archive patch holds more than the issue's
-proposal asks for: beside the cache itself it carries the policy that makes a miss an error, and the repair of
-a partial archive with the bundle that holds it. The stage-record patch is not part of this. Its blob keeps
-that change inside wgpu-hal; typed fields on wgpu's passthrough descriptor would be its upstream form, and
-would mean pinning wgpu-types as well.
+**U2 reviews the code Thrum runs.** Review the [HAL archive patch](../../../vendor/wgpu-hal-patches/0002-metal-pipeline-archive.patch)
+and the [core header patch](../../../vendor/wgpu-core-patches/0001-metal-cache-header.patch) against the vendored
+30.0.1 source Cargo selects. The independent work-package reviewer reads
+both diffs beside the pinned release's Metal pipeline constructors, core cache validation and corresponding
+tests. In particular, the HAL protects a shared native archive during parallel preparation, scopes miss
+handling to a pipeline creation, and owns temporary files used to import and export Metal archives. The core
+patch supplies Metal adapter identity through the existing header. Check these against wgpu's ownership,
+unsafe-code, error and testing conventions. Fix findings in the local diffs and verify the resulting copies.
 
-**The owner's rules** (7 November 2026, [the log](LOG.md)'s revision 6), in order:
+Run focused cache cases in wgpu's test harness on the Mac's Metal adapter using the release source
+corresponding to the pins and the local changes. Keep replayable commands, the exact patches tested and the
+executed cases with the review. Exercise render and compute pipelines through public save and fresh-process
+load, a real strict warm hit and a deliberate miss, rejection of a mismatched header, and recovery from a
+partial archive. WP12's Thrum witnesses cover the game-level digest and repair before readiness. Reuse them
+for that layer. The evidence must distinguish which harness exercised each path.
 
-1. coordinate on #8526 first, with an owner-written comment to the contributor who proposed the design;
-2. Metal only, against wgpu trunk rather than the 30.0.1 pin;
-3. tests in wgpu's GPU suite: a cache round trip, rejection of corrupt or mismatched data, and a warm hit under
-   fail-on-miss;
-4. a full `cargo xtask test` run on this Mac;
-5. an independent review;
-6. an owner walkthrough before submission.
+**U3 confines the patch-specific behaviour to one private boundary in thrum-render.** The existing
+`capabilities/metallib/archive.rs` already owns archive preparation. Its callers request preparation or a
+strict witness and observe Thrum's results. Only the implementation there knows HAL's `with_archive_policy`,
+`with_archive_repair`, `ArchiveOutcome`, and what the patched backend can prove about a hit. Cache payloads
+are opaque outside the backend. That boundary also owns any dependency on the patched header layout. Today
+`tests/pipeline_archive.rs` calls the HAL policy directly and changes a header byte at a fixed offset.
+Move those dependencies behind the boundary or into the backend's own tests. Keep the public round trip
+covered. Game, registry, other engine code, Thrum test callers and proof scripts must work with ordinary wgpu
+types or Thrum's behaviour, including a truthful unavailable result where a backend cannot prove a strict hit.
 
-The owner writes every public description and comment, and nothing is posted without the owner's OK on each
-post.
+**Removing the patches.** Keep the instructions beside the pin provenance. Confirm that an unpatched
+released wgpu advertises Metal `PIPELINE_CACHE` on this Mac and can save and reload render and compute
+pipelines. Switch the private implementation to the released API. Invalidate incompatible saved archives
+before import and rebuild them during preparation. If a release lacks strict hit reporting or incremental
+repair, use an independent Metal witness for the warm-hit claim and rebuild a partial cache from the
+manifest. A launch that silently compiled a missed pipeline cannot qualify as a strict hit.
 
-**What no agent does.** No agent posts, comments or reacts on wgpu's GitHub or its chat channels, opens or
-edits an issue or a pull request there, or pushes a branch to any public remote but this repository's own. No
-agent writes text for the owner to post either: no draft of a comment, an issue or a pull request description.
-wgpu asks contributors to write those themselves, and its maintainers act on it, as the next paragraph shows.
-Agents read wgpu's public pages and repository freely. A clone of wgpu is scratch under `tmp/`.
+Remove the HAL archive patch and the core header patch and its sole core override. Rebase the separate WP10
+stage-record patch onto the matching HAL release while the metallib loader needs it. Update the lockfile,
+vendored sources, pin registrations, pin checks and provenance together. Verify the surviving HAL pin,
+offline metallib preparation, the public Metal cache round trip, the strict hit and miss controls, and
+stale, corrupt and partial-cache recovery before retiring the local implementation. If the released path
+fails those checks, retain the pins and record the failing case. U3 rehearses the boundary today by compiling the Mac callers and tests against stock core and HAL with only WP10's patch,
+using the existing cache-unavailable preparation path inside the boundary.
 
-Each half of this rule is judged from what can establish it. Whether text was written to be posted is read from
-the delivered notes. What agents did is read from the record each builder session's host keeps of the commands
-and tool calls it ran, which the script's delivery history lists by work package. What an account shows upstream
-is not evidence either way: the owner may post, or push to a fork of their own, at any time, and wgpu's chat
-leaves nothing on GitHub.
-
-**wgpu's side, as read on 26 November 2026.** Each of these is evidence for the shape of an offer, not a
-specification, and U1 reads them again.
-
-- The issue is open and assigned to a maintainer, and its last comment is from 20 October. The proposal of
-  4 October names the same core change as the cache-header patch, a Metal case in `adapter_key` taken from the
-  GPU's name with header unit tests, and an archive behind wgpu-hal's cache. A maintainer answered that it
-  "looks about right" and had not then read it in detail. Its author has opened no pull request. Nothing there
-  is agreed.
-- The proposal leaves the OS version out of the backend's validation key on purpose. The archive patch puts
-  the OS build in. That is one difference the conversation has to settle.
-- An earlier pull request for the same feature, gfx-rs/wgpu#9623, was closed in June 2026 with no review, after
-  a maintainer asked its author to review it before the maintainers did. On #8526 itself, on 20 October, a
-  maintainer asked another commenter to write their comments themselves.
-- `CONTRIBUTING.md` on trunk allows code an LLM wrote. The author who submits it answers for every line, and
-  writes issue and pull request descriptions and large explanatory comment blocks by hand. It asks
-  contributors to agree an approach with the maintainers before investing in a large change. The pull request
-  template asks how LLMs were used.
-- Trunk at `60cef2be` still gives only Vulkan an adapter key in `wgpu-core/src/pipeline_cache.rs`.
-
-**How it proceeds.** Three work packages, each ending where only the owner can go on.
-
-*U1, the upstream notes.* Agents write one document for the owner, kept in U1's evidence: what the owner needs
-in order to write that first comment and to judge what to offer. It is written for someone who knows wgpu's
-public API and has not read the patches. A reviewer checks it against its sources before the owner reads it,
-because the owner will speak from it in public. It has six parts:
-
-1. *Upstream.* The issue, and each pull request that proposes a Metal pipeline cache: author, dates, status and
-   what maintainers said, with links and the day read.
-2. *wgpu's rules.* What `CONTRIBUTING.md` and the pull request template say, at a named trunk commit, on change
-   ownership, LLM use, designing new features and large pull requests, quoted.
-3. *The patches, part by part.* For each of the two cache patches, each part of what it does, with the lines of
-   the patch it rests on and one of three marks against the proposal: as proposed; proposed but done
-   differently, saying how; or not in the proposal, saying why Thrum needs it and whether an upstream change
-   could leave it out.
-4. *Trunk.* At the same commit: whether trunk has the Metal adapter key and a Metal pipeline cache, and what
-   applying each cache patch to it does.
-5. *The use case.* Launch-to-ready by preparation path from WP12's launch record, with the conditions that
-   record states. Nothing is measured anew.
-6. *What the conversation has to settle.* Three decisions: who writes the Metal change, the proposal's author,
-   the owner or both; which parts of part 3 are offered; and whether the cache header and the archive go as one
-   pull request or two. Each has its options, what the patches as they stand support, and the agents'
-   recommendation, marked as theirs.
-
-*U2, the owner's answer.* On the day the owner is asked, agents read wgpu's side again and add a dated line to
-each of parts 1, 2 and 4: it still holds, or what changed. That reading looks for pull requests proposing a
-Metal pipeline cache opened since U1 as well as the ones part 1 lists, because a new one can appear with no
-comment on the issue and no change to trunk, and it bears on who should write the change. The owner then reads
-the notes and answers the loop **go ahead** or **stop**.
-
-- **Stop** can come at any point, before a comment is posted or after. The owner's words in the log are its
-  whole record, and they are all the next planner needs to drop U3.
-- **Go ahead** follows a comment the owner wrote and posted on the issue themselves, once the thread has
-  settled enough for them. Its record in the log links that comment and each reply the answer rests on, if
-  there is one, and gives the three decisions as far as the thread settled them. How long to wait for a
-  reply, and whether silence is enough to go ahead, is the owner's call.
-
-*U3, the change.* A planner writes U3's items from U2's answer, under rules 2 to 6 above. On **stop** that
-planner drops U3. Either way the pinned copies stay as V1 needs them until a released wgpu carries the cache.
-
-U1 and U2 change nothing under `vendor/`: the pinned copies and their patch files are V1's, and WP12 proved
-them as they are.
+**Noticing a release.** While the patches are carried, a weekly read-only check looks for the latest stable
+wgpu release, independently of the version in Thrum's lockfile. For a new version it reads the features of
+the Mac's Metal adapter using that unpatched release. A positive result appears in the lead's local
+maintenance report with the version and the removal instructions until the patches are retired. An unavailable
+release or probe is reported as unknown and retried. Keep this check outside offline builds and merge gates. U3 proves the
+notification with controlled release results so it can finish before upstream ships.
 
 ### The requested frame rate at full screen (WP11)
 
@@ -1527,9 +1479,8 @@ The module list accepted seams 1–4 on 10 November and settled seams 5–9 on 1
 9. **Pipeline preparation and archives.** Owned by G4 WP10 and WP12 under the G3t boundary: the measured split; a
    pinned copy of wgpu-hal from WP10, whose first patch carries stage records for offline metallibs through
    passthrough and whose second (WP12) is the Metal `PIPELINE_CACHE`; from WP12 a pinned copy of wgpu-core,
-   changed only in the cache header it writes and checks on Metal; upstream later, by the owner
-   ([U1 to U3](#offering-the-cache-upstream-u1-to-u3)). V1's archive item stays as
-   written.
+   changed only in the cache header it writes and checks on Metal. U2 and U3 own the
+   [local patch review and removal](#local-metal-pipeline-cache-patches-u2-and-u3).
 
 ## Open questions
 

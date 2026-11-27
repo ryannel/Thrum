@@ -24,10 +24,6 @@ Build in the order below.
   protected, because that needs a change to wgpu's Metal backend. The owner can ask for that change.
 - Assumption: a viewer cannot see a brightness difference under 1% of a frame's mean luminance, so D8.3 allows
   MetalFX that much. It is a little under one step of the 8-bit output at the brightness of D8.3's frames.
-- Assumption: "later" for offering the cache upstream means after WP11, not after the V1 exit. So
-  U1's notes are written while V1's last modules build, and nothing waits for the owner's answer in U2.
-- Assumption: agents draft no text for the owner to post upstream, not even a comment to rewrite. The upstream
-  notes give facts, options and a recommendation, and the owner writes the comment. The owner can ask for drafts.
 - Assumption: until WP17 shows 120 Hz held, a full-screen window asks for 60 Hz by itself and a smaller window
   keeps the display's full refresh. A launch setting forces either.
 - Assumption: the owner's "120 upscale for full screen" covers an output scale down to 67% of the panel's size
@@ -115,25 +111,17 @@ The evidence page is `.orchestrate/evidence/render/G4-PAIRED-<date>.md`, which W
 `docs/design/maturity.json`. Ask for the owner's look at the panel there and in your report, and never wait
 for it.
 
-## U1 The owner can read, in one reviewed document, what Thrum's Metal pipeline cache would offer wgpu and what to settle there first
+## U1 The owner can read, in one reviewed document, what Thrum's Metal pipeline cache would offer wgpu and what to settle there first: done
+[review record](RECORD.json)
 
-Not part of V1. [The design](DESIGN.md#offering-the-cache-upstream-u1-to-u3) gives the owner's rules, what no
-agent does, wgpu's side as read on 26 November, and the six parts of the upstream notes; it is all of the
-design this work package needs. The two cache patches are `vendor/wgpu-hal-patches/0002-metal-pipeline-archive.patch`
-and `vendor/wgpu-core-patches/0001-metal-cache-header.patch`. WP12's launch record is D12.4's evidence,
-[the paired record](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP12/review-repair/registry-first-run/launch.json);
-[its README](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP12/review-repair/README.md) also links the rerun
-on the merge candidate, which is a second record and not the one part 5 quotes. `gh` is signed in
-here: use it to read wgpu's issue, pull requests and files, and for nothing that writes. The notes are evidence,
-so the landing is a log entry and no more, and `./dev check-docs` is the check to build against. U1.4's
-reviewer reads what each session ran from the host's own record of it, found through `sessions.jsonl` in the
-folder `agent_loop.py settings` prints as `paths.history`, so there is nothing to keep for that part.
+## U2 The two local wgpu cache patches pass independent code review and cache tests on Metal
 
-## U2 The owner has said go ahead or stop on offering the Metal pipeline cache to wgpu, and the answer is on record with whatever the issue's thread settled
+Review the HAL archive and core header against the release Thrum builds. The [refreshed U1 briefing](../../../.orchestrate/evidence/APPLE-PRESENTATION/U2/upstream-notes.md)
+maps the diffs. Use the independent work-package review for the code judgement.
+[Local patch design](DESIGN.md#local-metal-pipeline-cache-patches-u2-and-u3)
 
-The upstream notes are U1's evidence; U1.1's `evidence` field has the path. Do U2.1, then end
-`BLOCKED needs_human_feedback` with the question U2.2 carries. The owner answers when they choose: a stop may
-come at once and with nothing posted, and a go ahead follows the owner's own comment and replies that can take
-weeks. A long wait here is expected and is not a fault to work around. The log entry follows the owner's answer.
+## U3 Thrum isolates the local cache patches and flags the wgpu release that can replace them
 
-## U3 The Metal pipeline-cache change is offered to wgpu by the owner: on trunk, tested in wgpu's suite, reviewed and walked through
+Start at thrum-render's archive preparation and its public round-trip test. Put the removal steps in
+[the pin provenance](../../provenance/APPLE-PRESENTATION.md). Exercise the release notice with a
+known-positive case while the live release is still outside Thrum's control.

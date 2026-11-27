@@ -1430,14 +1430,15 @@
     },
     {
       "id": "U2",
-      "name": "The owner has said go ahead or stop on offering the Metal pipeline cache to wgpu, and the answer is on record with whatever the issue's thread settled",
+      "name": "The two local wgpu cache patches pass independent code review and cache tests on Metal",
       "status": "in_progress",
-      "quality_bar": "A record from which the next planner can drop the trunk change or plan it without asking the owner again, and which says of the public thread only what the thread says. Nothing is judged against an image or a shipped game.",
+      "quality_bar": "The independent reviewer can defend the two local diffs against wgpu 30.0.1's own Metal backend, cache-header code and tests. The Metal test results identify the exact reviewed code.",
       "items": [
         {
-          "id": "U2.1",
-          "statement": "On the day the owner is asked, wgpu's side is read again, and the upstream notes reach the owner with a dated line for each of parts 1, 2 and 4: it still holds, or what changed. The reading covers the issue, the pull requests of part 1, each pull request proposing a Metal pipeline cache that was opened since the day part 1 was read, the two files of part 2, and trunk. Part 1's line gives a pull request opened since then as part 1 gives the others: its author, dates, status and what maintainers said of it, with its link. Where trunk moved in the files a cache patch touches, part 4's applying is done again at the new commit. Record: the dated lines, kept with the notes.",
-          "ask": "Do the dated lines agree with the issue, the pull requests, the two files and trunk as they stood that day, going by the dates the comments and commits carry? Does one search of wgpu's pull requests opened since the day part 1 was read, for a Metal pipeline cache or `MTLBinaryArchive`, find a pull request that part 1's line leaves out?",
+          "id": "U2.3",
+          "statement": "Cargo uses the two verified vendor copies. An independent reviewer has read the complete HAL archive and core header patches against their wgpu 30.0.1 counterparts. The review cites the code compared, its findings and their resolution in the final diffs.",
+          "check": "python3 scripts/apple_presentation.py wgpu-pin --crate wgpu-hal --crate wgpu-core",
+          "ask": "Read both patches and the surrounding wgpu implementations. Do feature admission and adapter validation follow wgpu's existing paths? Are Metal object lifetimes, shared archive access, unsafe operations and temporary-file cleanup justified on success and error? Does a scoped policy restore the previous state? Can the code distinguish a known Metal archive miss from another device error, and preserve existing hits after partial repair? Identify and verify the fix for each defect found.",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -1445,13 +1446,9 @@
           "review": ""
         },
         {
-          "id": "U2.2",
-          "statement": "The owner has answered go ahead or stop, and this module's log holds the answer in the owner's words, where the next planner reads it. For stop, the words are the whole record, whether or not the owner posted anything upstream. For go ahead, the entry also links the comment the owner posted on gfx-rs/wgpu#8526 and each reply the answer rests on, if there is one, and gives each of the three decisions as the thread settled it or left it open: who writes the Metal change, which parts of the patches are offered, and whether the cache header and the archive go as one pull request or two. The landing changes nothing under `vendor/`. Record: the log entry.",
-          "ask": "From the log entry alone, can you say whether the owner chose go ahead or stop? A stop asks nothing more of the entry. For go ahead: does the entry link a comment on the issue that the owner named as theirs, and say how each of the three decisions stands, and do the linked comments say the same? Does the landing change any file under `vendor/`?",
-          "needs": {
-            "type": "human_feedback",
-            "what": "Read the upstream notes and answer go ahead or stop. A stop needs nothing more, and you can stop without posting anything. To go ahead, first write and post your own comment on gfx-rs/wgpu#8526: wgpu asks that comments be written by hand, and no agent has drafted one. Then answer once the thread has settled enough for you, with a link to your comment and, as far as the thread settled them, who writes the Metal change, which parts are offered, and one pull request or two. There is no deadline, and nothing in V1 waits for this."
-          },
+          "id": "U2.4",
+          "statement": "On the M3 Max the patched release passes wgpu's core cache-header tests and focused tests using wgpu’s own GPU harness on Metal. Render and compute cache data survive public save and fresh-process load, a wrong adapter header is rejected, a strict lookup hits a harvested pipeline and fails on a known omission. A repaired partial archive yields all hits in the next process. The WP12 game witness may supply the repair case.",
+          "ask": "Replay the recorded focused wgpu test command against the final patch revisions. Do the executed cases name the Metal adapter and cover the public round trip, mismatch, strict hit and miss without skips or a fallback compile? Does the repair witness use the same patches and exercise the omitted pipeline after recovery?",
           "target": "mac-metal",
           "builder_result": "open",
           "evidence": "",
@@ -1461,6 +1458,45 @@
       ],
       "failed_reviews": 0,
       "failed_reviews_with_repeat": 0
+    },
+    {
+      "id": "U3",
+      "name": "Thrum isolates the local cache patches and flags the wgpu release that can replace them",
+      "status": "not_started",
+      "quality_bar": "The two cache patches can be removed at one private Thrum boundary while WP10's stage-record loader continues to work. A maintainer learns of released Metal cache support through a recurring local check and can follow the tracked removal instructions.",
+      "items": [
+        {
+          "id": "U3.1",
+          "statement": "One private thrum-render archive implementation owns all use of patch-only cache types, functions, outcomes and encodings on the Thrum side. Its callers, including the game and tests, build in a scratch checkout with the two cache patches absent, stock wgpu-core and only WP10's HAL stage-record patch. Normal preparation reaches readiness via fallback there. With the patches present the WP12 public round trip, strict positive and negative controls, and repair cases still pass.",
+          "ask": "Inspect the caller signatures and trace archive use in the engine, game, tests and proof scripts. In the removal rehearsal, did all those callers compile untouched after switching only the private implementation and pins? Do the patched and fallback run records distinguish a verified warm hit from ordinary pipeline creation?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "U3.2",
+          "statement": "The tracked Apple presentation provenance gives the release prerequisite, files and commands to remove both cache patches, retire the core override, retain the WP10 HAL stage records, and verify the replacement with WP10 and WP12’s Metal cases. It explains how to discard incompatible on-disk archives and handle a release without strict hit reporting or partial repair.",
+          "ask": "Follow the instructions against the manifests, registry entries, lockfile, patch directories, private implementation and rehearsal diff. Do they identify what to remove, what to rebase, when old archive bytes are safe to import, and which executable checks qualify public caching, strict warm hits, miss recovery and metallib loading on the replacement?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        },
+        {
+          "id": "U3.3",
+          "statement": "A recurring local check reads stable wgpu release support on the Mac's Metal adapter independently of Thrum's pins. A release with support produces a notice naming its version and the removal instructions. An unsupported Metal release stays quiet even if another backend has the feature. A failed read stays unknown and is retried. Offline build and WP11 completion do not depend on the check.",
+          "check": "python3 -m unittest scripts/test_metal_cache_release.py",
+          "ask": "Inspect the active weekly invocation and its local report. Trace the live input to an unpatched stable release and the Metal adapter. Exercise the same reporting path with supported, unsupported and unavailable inputs. Does only the supported Metal case deliver the removal notice, and can a later successful read recover from an unavailable one?",
+          "target": "mac-metal",
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "",
+          "review": ""
+        }
+      ]
     }
   ]
 }
