@@ -1,14 +1,27 @@
 {
   "module": "CLOUDS",
   "design": {
-    "verdict": "ok",
-    "by": "review_limit",
-    "hash": "906f1b2c9c2d13f78f58ecbe3701b91ce94f6d97cc5ae91d1770c6f15b1c386e",
-    "after": [
-      ".orchestrate/evidence/CLOUDS/design-review-27.md",
-      ".orchestrate/evidence/CLOUDS/design-review.md"
-    ],
-    "at": "2026-11-26T17:09:40Z"
+    "verdict": "changes",
+    "review": ".orchestrate/evidence/CLOUDS/design-review.md",
+    "commit": "422b93da8107fd53830c00c129d31bece4d82b56",
+    "hash": "c47992a5e617992c94171437c8a8bebbe6234d5be3ebe3edfdc00b457ebdb7f1",
+    "by": "review",
+    "host": "codex",
+    "model": "gpt-6.2-astra",
+    "effort": "high",
+    "observed": {
+      "model": "gpt-6.2-astra",
+      "effort": "high"
+    },
+    "cli": "codex-cli 0.171.0-alpha.13.2",
+    "path": "headless",
+    "usage": {
+      "input": 125677,
+      "cached": 3000192,
+      "output": 10403,
+      "turns": 1
+    },
+    "at": "2026-11-27T02:31:44Z"
   },
   "work_packages": {
     "WP1": {
@@ -3243,7 +3256,7 @@
     },
     {
       "verdict": "changes",
-      "review": ".orchestrate/evidence/CLOUDS/design-review.md",
+      "review": ".orchestrate/evidence/CLOUDS/design-review-28.md",
       "commit": "d5a99f718b81a5d3110038e9f3975272d919fae5",
       "hash": "68fad04ceb4185e7f2667094a92fc5995e7d22b08f43f7f08d16be8a5b92f752",
       "by": "review",
@@ -3263,6 +3276,16 @@
         "turns": 1
       },
       "at": "2026-11-26T17:05:08Z"
+    },
+    {
+      "verdict": "ok",
+      "by": "review_limit",
+      "hash": "906f1b2c9c2d13f78f58ecbe3701b91ce94f6d97cc5ae91d1770c6f15b1c386e",
+      "after": [
+        ".orchestrate/evidence/CLOUDS/design-review-27.md",
+        ".orchestrate/evidence/CLOUDS/design-review.md"
+      ],
+      "at": "2026-11-26T17:09:40Z"
     }
   ]
 }
