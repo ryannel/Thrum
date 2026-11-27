@@ -3227,6 +3227,13 @@
         "device": "On Apple M3 Max Metal, the capture-off 2560 by 1440 WP14 dawn comparison averaged 11.78 ms with clouds off, 123.94 ms with far mist and 157.58 ms with the low deck under shared load. The occupied arms each traced 921,600 rays, with mean and p95 sample counts of 156.56 and 476 for far mist and 128.94 and 471 for the low deck.",
         "record": "../../.orchestrate/evidence/CLOUDS/WP15/terrain-independent/PROOF.md"
       },
+      "day_mist_and_haze_evidence": {
+        "implementation": "CLOUDS WP16 steps radiative valley mist against the game\u2019s committed solar clock. Ground controls select authored fog sources, moisture, clear-air range, aerosol spectral exponent and the radiative day. Both panels and parameter files use the same declarations. The ground band and near medium coefficients expose retained refresh cadences.",
+        "correctness": "The model\u2019s spectral edit preserves clear-air range, extinction, path depth and column bits. Portable Metal verifies both cadence endpoints with unchanged authoritative weather and GPU weather columns, and applies the typed Ground controls without rebuilding. Chrome WebGPU applies both presets and reloads the Ground study file through the page.",
+        "visuals": "Builder-inspected Metal and Chrome T2 captures show the calm hollow filling overnight and clearing from its shallow edges after sunrise. Overcast and 10 m/s wind keep it clear. Metal twilight and a matched star field show darkening mist and attenuated low stars. Both targets show far ridges, clouds and mist losing contrast together and low-Sun shafts in denser air.",
+        "device": "Apple M3 Max Metal capture-off timings compare 1\u00d7, 8\u00d7 and 60\u00d7 at 2560\u00d71440 beside the WP15 far-mist fixture. The cost record retains named passes, allocated bytes and an investigation for each wire that tripped. The Metal and Chrome visual captures cover submitted engine output.",
+        "record": "../../.orchestrate/evidence/CLOUDS/WP16/PROOF.md"
+      },
       "name": "Cloud fields and projections",
       "scope": "selectable",
       "design": "modules/ENVIRONMENT.md",

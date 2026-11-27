@@ -1,0 +1,2277 @@
+{
+  "commit": "c09dd84b6f6250c283ffc7b7dc0f48b53c880a8e",
+  "machine": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "paired_wp15": {
+    "commit": "51e4da6246ea49ef759b31a6d270bbd23e34f13e",
+    "run": {
+      "adapter": "AdapterInfo { name: \"Apple M3 Max\", vendor: 0, device: 0, device_type: IntegratedGpu, device_pci_bus_id: \"\", driver: \"\", driver_info: \"\", backend: Metal, subgroup_min_size: 4, subgroup_max_size: 64, transient_saves_memory: Some(true), limit_bucket: None }",
+      "capture": false,
+      "extent": [
+        2560,
+        1440
+      ],
+      "first_submission": {
+        "pass_gpu_ns": {
+          "atmosphere DFG integration": 745750.0,
+          "atmosphere aerial perspective": 1018208.0,
+          "atmosphere diffuse irradiance": 285208.0,
+          "atmosphere ground irradiance": 143125.0,
+          "atmosphere multiple scattering": 840375.0,
+          "atmosphere reflection mip 0": 18917.0,
+          "atmosphere reflection mip 1": 154541.0,
+          "atmosphere reflection mip 2": 255917.0,
+          "atmosphere reflection mip 3": 126000.0,
+          "atmosphere reflection mip 4": 120000.0,
+          "atmosphere reflection mip 5": 112083.0,
+          "atmosphere reflection mip 6": 102459.0,
+          "atmosphere sky view": 70500.0,
+          "atmosphere stars": 3909375.0,
+          "atmosphere transmittance": 14625.0,
+          "camera visibility": 43917.0,
+          "contribution compute": 231958.0,
+          "effect 0: effect 1: cloud weather map": 570584.0,
+          "effect 1: effect 1: cloud Sun path near": 1884959.0,
+          "effect 2: effect 1: cloud Sun path middle": 2539084.0,
+          "effect 3: effect 1: cloud Sun path far": 2405458.0,
+          "effect 4: effect 1: cloud ground field": 44167.0,
+          "effect 5: effect 1: cloud far transmittance": 104500.0,
+          "effect 6: effect 1: cloud ground band": 363833.0,
+          "effect 7: effect 1: cloud medium coefficients": 52208.0,
+          "effect 8: effect 1: cloud sky overlay": 340042.0,
+          "effect after 0: effect 1: cloud trace": 18281209.0,
+          "effect after 1: effect 1: cloud resolve": 761958.0,
+          "effect after 2: effect 1: cloud compose": 18752916.0,
+          "synthetic Sun horizon heights": 757333.0,
+          "synthetic Sun shadow far": 63083.0,
+          "synthetic Sun shadow near": 56292.0,
+          "synthetic cluster build": 4625.0,
+          "synthetic exposure resolve": 11333.0,
+          "synthetic forward opaque": 1715042.0,
+          "synthetic tone encode": 18874750.0,
+          "synthetic transform history": 9042.0,
+          "temporal exposure texture": 1330417.0
+        },
+        "whole_frame_gpu_ns": 77115793.0
+      },
+      "frames": 80,
+      "maximum_sun_refill_ns": 9747042.0,
+      "minimum_volume_instances": null,
+      "pass_gpu_ns": {
+        "atmosphere aerial perspective": 852397.85,
+        "atmosphere diffuse irradiance": 349516.2,
+        "atmosphere reflection mip 0": 139920.3,
+        "atmosphere reflection mip 1": 192579.75,
+        "atmosphere reflection mip 2": 319680.8,
+        "atmosphere reflection mip 3": 161009.3875,
+        "atmosphere reflection mip 4": 139855.725,
+        "atmosphere reflection mip 5": 124499.5375,
+        "atmosphere reflection mip 6": 111587.0125,
+        "atmosphere sky view": 385438.6125,
+        "atmosphere stars": 4070031.3375,
+        "camera visibility": 319492.15,
+        "contribution compute": 241353.15,
+        "effect 0: effect 1: cloud weather map": 308727.075,
+        "effect 1: effect 1: cloud Sun path near": 1054614.0625,
+        "effect 2: effect 1: cloud Sun path middle": 1009510.95,
+        "effect 3: effect 1: cloud Sun path far": 964184.8375,
+        "effect 4: effect 1: cloud ground field": 618010.475,
+        "effect 5: effect 1: cloud far transmittance": 145262.5375,
+        "effect 6: effect 1: cloud ground band": 546673.4375,
+        "effect 7: effect 1: cloud medium coefficients": 197077.1125,
+        "effect 8: effect 1: cloud sky overlay": 173584.375,
+        "effect after 0: effect 1: cloud trace": 18292006.85,
+        "effect after 1: effect 1: cloud resolve": 751240.1125,
+        "effect after 2: effect 1: cloud compose": 17195192.725,
+        "synthetic Sun horizon heights": 746516.7,
+        "synthetic Sun shadow far": 882383.375,
+        "synthetic Sun shadow near": 1087838.525,
+        "synthetic cluster build": 311539.65,
+        "synthetic exposure resolve": 14082.8375,
+        "synthetic forward opaque": 3824682.3,
+        "synthetic tone encode": 16963349.5125,
+        "synthetic transform history": 576511.4375,
+        "temporal exposure texture": 15389998.0
+      },
+      "quality": [
+        {
+          "name": "1/cloud weather map cadence",
+          "value": 100
+        },
+        {
+          "name": "1/cloud near Sun path cadence",
+          "value": 100
+        },
+        {
+          "name": "1/cloud middle Sun path cadence",
+          "value": 100
+        },
+        {
+          "name": "1/cloud far Sun path cadence",
+          "value": 100
+        },
+        {
+          "name": "1/cloud refresh exponent",
+          "value": 0
+        },
+        {
+          "name": "1/cloud local light samples",
+          "value": 3
+        },
+        {
+          "name": "1/cloud layer scale",
+          "value": 100
+        },
+        {
+          "name": "1/cloud trace step length",
+          "value": 100
+        },
+        {
+          "name": "1/cloud trace sample cap",
+          "value": 768
+        },
+        {
+          "name": "1/cloud sky overlay cadence",
+          "value": 8
+        }
+      ],
+      "ray_statistics": {
+        "mean_samples": 156.56099609375,
+        "p95_samples": 476.0,
+        "rays_beyond_refresh_phase": 0,
+        "rays_traced": 921600,
+        "refresh_fraction": 1.0,
+        "refresh_stride": 1,
+        "scope": "last completed capture-off frame, selected fresh texels, readback after timed interval"
+      },
+      "resources": [
+        [
+          "cloud texture 0 Rgba32Float",
+          4194304
+        ],
+        [
+          "cloud texture 1 Rgba32Float",
+          4194304
+        ],
+        [
+          "cloud texture 2 Rgba32Uint",
+          4194304
+        ],
+        [
+          "cloud texture 3 Rgba16Float",
+          12582912
+        ],
+        [
+          "cloud texture 4 Rgba16Float",
+          16777216
+        ],
+        [
+          "cloud texture 5 Rgba16Float",
+          16777216
+        ],
+        [
+          "cloud texture 6 Rgba16Float",
+          8388608
+        ],
+        [
+          "cloud shape noise",
+          9586980
+        ],
+        [
+          "cloud buffer 0",
+          128
+        ],
+        [
+          "cloud buffer 1",
+          128
+        ],
+        [
+          "cloud buffer 2",
+          128
+        ],
+        [
+          "cloud buffer 3",
+          128
+        ],
+        [
+          "cloud buffer 4",
+          160
+        ],
+        [
+          "cloud buffer 5",
+          160
+        ],
+        [
+          "cloud buffer 6",
+          160
+        ],
+        [
+          "cloud buffer 7",
+          160
+        ],
+        [
+          "cloud buffer 8",
+          8192
+        ],
+        [
+          "cloud buffer 9",
+          8192
+        ],
+        [
+          "cloud buffer 10",
+          8192
+        ],
+        [
+          "cloud buffer 11",
+          8192
+        ],
+        [
+          "cloud buffer 12",
+          96
+        ],
+        [
+          "cloud surface field",
+          1449616
+        ],
+        [
+          "cloud ground frame",
+          64
+        ],
+        [
+          "cloud fog table",
+          128
+        ],
+        [
+          "cloud fog phase tables",
+          8256
+        ],
+        [
+          "cloud ground band",
+          1318200
+        ],
+        [
+          "cloud ground band mapping",
+          32
+        ],
+        [
+          "cloud medium hemisphere light",
+          32
+        ],
+        [
+          "cloud medium droplet phase tables",
+          12300
+        ],
+        [
+          "cloud layer texture 0",
+          29491200
+        ],
+        [
+          "cloud layer texture 1",
+          29491200
+        ],
+        [
+          "cloud layer texture 2",
+          29491200
+        ],
+        [
+          "cloud layer texture 3",
+          29491200
+        ],
+        [
+          "cloud layer texture 4",
+          29491200
+        ],
+        [
+          "cloud layer texture 5",
+          29491200
+        ],
+        [
+          "cloud detail noise",
+          1198372
+        ],
+        [
+          "cloud layer parameters",
+          368
+        ],
+        [
+          "cloud phase tables",
+          12300
+        ],
+        [
+          "cloud hemisphere light",
+          32
+        ],
+        [
+          "cloud sky overlay",
+          110592
+        ],
+        [
+          "cloud overlay rows",
+          16
+        ],
+        [
+          "view volume in-scatter and terminal pair",
+          9446400
+        ],
+        [
+          "view volume transmittance and night in-scatter",
+          9446400
+        ],
+        [
+          "view volume low bands history A",
+          13824000
+        ],
+        [
+          "view volume high bands history A",
+          9216000
+        ],
+        [
+          "view volume low bands history B",
+          13824000
+        ],
+        [
+          "view volume high bands history B",
+          9216000
+        ],
+        [
+          "view volume history camera",
+          96
+        ],
+        [
+          "atmosphere aerosol",
+          80
+        ],
+        [
+          "view volume medium coefficients",
+          4608000
+        ]
+      ],
+      "setup_pass_peaks_ns": {},
+      "storage": "slot=0\nday capture=false role=auxiliary resource=ResourceId { index: 75, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=depth resource=ResourceId { index: 100, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=scene resource=ResourceId { index: 101, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=motion resource=ResourceId { index: 102, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=reactive resource=ResourceId { index: 103, owner: () } reason=explicit store usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=resolved exposure resource=ResourceId { index: 115, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=output resource=ResourceId { index: 116, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=auxiliary resource=ResourceId { index: 75, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=depth resource=ResourceId { index: 100, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=scene resource=ResourceId { index: 101, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=motion resource=ResourceId { index: 102, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=reactive resource=ResourceId { index: 103, owner: () } reason=explicit store usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=resolved exposure resource=ResourceId { index: 115, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=output resource=ResourceId { index: 116, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nunique textures/nominal bytes=(7, 89997314) fallback-only bytes=0; retained generations accounted by FrameHost\nslot=1\nday capture=false role=auxiliary resource=ResourceId { index: 75, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=depth resource=ResourceId { index: 100, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=scene resource=ResourceId { index: 101, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=motion resource=ResourceId { index: 102, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=reactive resource=ResourceId { index: 103, owner: () } reason=explicit store usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=resolved exposure resource=ResourceId { index: 115, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=output resource=ResourceId { index: 116, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=auxiliary resource=ResourceId { index: 75, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=depth resource=ResourceId { index: 100, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=scene resource=ResourceId { index: 101, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=motion resource=ResourceId { index: 102, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=reactive resource=ResourceId { index: 103, owner: () } reason=explicit store usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=resolved exposure resource=ResourceId { index: 115, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=output resource=ResourceId { index: 116, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nunique textures/nominal bytes=(7, 89997314) fallback-only bytes=0; retained generations accounted by FrameHost",
+      "view": [
+        35.0,
+        246.0,
+        16.0
+      ],
+      "view_angles": {
+        "pitch_degrees": 10.0,
+        "start_solar_hours": 6.947723865509033,
+        "start_sun_elevation_degrees": 10.000000953674316,
+        "yaw_degrees": 79.8441162109375
+      },
+      "view_volume_grid": [
+        160,
+        90,
+        80
+      ],
+      "whole_frame_gpu_ns": 88460348.7,
+      "selection": "ground-mist-far",
+      "investigations": {
+        "atmosphere aerial perspective": "0.852 ms. Current off 0.293 ms, WP14 occupied 1.364 ms (0 denotes an absent pass). 921600 rays at 156.56 mean samples. Far transport clips at the last surface stop and skips empty intervals. The low deck occupies a shorter altitude interval than the high cloud bank. Device load was shared.",
+        "atmosphere sky view": "0.385 ms. Current off 0.184 ms, WP14 occupied 0.470 ms (0 denotes an absent pass). 921600 rays at 156.56 mean samples. Far transport clips at the last surface stop and skips empty intervals. The low deck occupies a shorter altitude interval than the high cloud bank. Device load was shared.",
+        "atmosphere stars": "4.070 ms. Current off 0.172 ms, WP14 occupied 9.158 ms (0 denotes an absent pass). 921600 rays at 156.56 mean samples. Far transport clips at the last surface stop and skips empty intervals. The low deck occupies a shorter altitude interval than the high cloud bank. Device load was shared.",
+        "camera visibility": "0.319 ms. Current off 0.250 ms, WP14 occupied 0.296 ms (0 denotes an absent pass). 921600 rays at 156.56 mean samples. Far transport clips at the last surface stop and skips empty intervals. The low deck occupies a shorter altitude interval than the high cloud bank. Device load was shared.",
+        "contribution compute": "0.241 ms. Current off 0.033 ms, WP14 occupied 0.418 ms (0 denotes an absent pass). 921600 rays at 156.56 mean samples. Far transport clips at the last surface stop and skips empty intervals. The low deck occupies a shorter altitude interval than the high cloud bank. Device load was shared.",
+        "synthetic Sun horizon heights": "0.747 ms. Current off 0.305 ms, WP14 occupied 0.539 ms (0 denotes an absent pass). 921600 rays at 156.56 mean samples. Far transport clips at the last surface stop and skips empty intervals. The low deck occupies a shorter altitude interval than the high cloud bank. Device load was shared.",
+        "synthetic Sun shadow far": "0.882 ms. Current off 0.413 ms, WP14 occupied 0.454 ms (0 denotes an absent pass). 921600 rays at 156.56 mean samples. Far transport clips at the last surface stop and skips empty intervals. The low deck occupies a shorter altitude interval than the high cloud bank. Device load was shared.",
+        "synthetic Sun shadow near": "1.088 ms. Current off 0.478 ms, WP14 occupied 0.693 ms (0 denotes an absent pass). 921600 rays at 156.56 mean samples. Far transport clips at the last surface stop and skips empty intervals. The low deck occupies a shorter altitude interval than the high cloud bank. Device load was shared.",
+        "synthetic cluster build": "0.312 ms. Current off 0.043 ms, WP14 occupied 0.145 ms (0 denotes an absent pass). 921600 rays at 156.56 mean samples. Far transport clips at the last surface stop and skips empty intervals. The low deck occupies a shorter altitude interval than the high cloud bank. Device load was shared.",
+        "synthetic forward opaque": "3.825 ms. Current off 2.293 ms, WP14 occupied 8.538 ms (0 denotes an absent pass). 921600 rays at 156.56 mean samples. Far transport clips at the last surface stop and skips empty intervals. The low deck occupies a shorter altitude interval than the high cloud bank. Device load was shared.",
+        "synthetic tone encode": "16.963 ms. Current off 0.219 ms, WP14 occupied 30.782 ms (0 denotes an absent pass). 921600 rays at 156.56 mean samples. Far transport clips at the last surface stop and skips empty intervals. The low deck occupies a shorter altitude interval than the high cloud bank. Device load was shared.",
+        "synthetic transform history": "0.577 ms. Current off 0.117 ms, WP14 occupied 0.643 ms (0 denotes an absent pass). 921600 rays at 156.56 mean samples. Far transport clips at the last surface stop and skips empty intervals. The low deck occupies a shorter altitude interval than the high cloud bank. Device load was shared.",
+        "temporal exposure texture": "15.390 ms. Current off 1.580 ms, WP14 occupied 26.986 ms (0 denotes an absent pass). 921600 rays at 156.56 mean samples. Far transport clips at the last surface stop and skips empty intervals. The low deck occupies a shorter altitude interval than the high cloud bank. Device load was shared.",
+        "whole frame": "88.460 ms against 8.333 ms. Current off 9.738 ms, WP14 occupied 149.438 ms. 921600 rays at 156.56 mean samples. Far transport clips at the last surface stop and skips empty intervals. The low deck occupies a shorter altitude interval than the high cloud bank. Device load was shared."
+      }
+    }
+  },
+  "load": {
+    "before": [
+      40.08203125,
+      48.31201171875,
+      53.1640625
+    ],
+    "after": [
+      40.31689453125,
+      47.95166015625,
+      52.92919921875
+    ]
+  },
+  "runs": [
+    {
+      "adapter": "AdapterInfo { name: \"Apple M3 Max\", vendor: 0, device: 0, device_type: IntegratedGpu, device_pci_bus_id: \"\", driver: \"\", driver_info: \"\", backend: Metal, subgroup_min_size: 4, subgroup_max_size: 64, transient_saves_memory: Some(true), limit_bucket: None }",
+      "capture": false,
+      "day_samples": [
+        {
+          "mist_amount": 0.0,
+          "solar_hours": 16.501333236694336,
+          "whole_frame_gpu_ns": 14270918.0
+        },
+        {
+          "mist_amount": 0.0,
+          "solar_hours": 16.502666473388672,
+          "whole_frame_gpu_ns": 21859126.0
+        },
+        {
+          "mist_amount": 0.0,
+          "solar_hours": 16.505332946777344,
+          "whole_frame_gpu_ns": 21487000.0
+        },
+        {
+          "mist_amount": 0.0,
+          "solar_hours": 16.50666618347168,
+          "whole_frame_gpu_ns": 19789248.0
+        },
+        {
+          "mist_amount": 0.0,
+          "solar_hours": 16.50933265686035,
+          "whole_frame_gpu_ns": 11971669.0
+        },
+        {
+          "mist_amount": 0.0,
+          "solar_hours": 19.001333236694336,
+          "whole_frame_gpu_ns": 25361833.0
+        },
+        {
+          "mist_amount": 0.0,
+          "solar_hours": 19.002666473388672,
+          "whole_frame_gpu_ns": 57709621.0
+        },
+        {
+          "mist_amount": 0.0,
+          "solar_hours": 19.005332946777344,
+          "whole_frame_gpu_ns": 23152043.0
+        },
+        {
+          "mist_amount": 0.0,
+          "solar_hours": 19.00666618347168,
+          "whole_frame_gpu_ns": 76508543.0
+        },
+        {
+          "mist_amount": 0.0,
+          "solar_hours": 19.00933265686035,
+          "whole_frame_gpu_ns": 24237542.0
+        },
+        {
+          "mist_amount": 0.36919965564065554,
+          "solar_hours": 21.501333236694336,
+          "whole_frame_gpu_ns": 54612129.0
+        },
+        {
+          "mist_amount": 0.3695795062537773,
+          "solar_hours": 21.502666473388672,
+          "whole_frame_gpu_ns": 129760916.0
+        },
+        {
+          "mist_amount": 0.37033891672576774,
+          "solar_hours": 21.505332946777344,
+          "whole_frame_gpu_ns": 75256755.0
+        },
+        {
+          "mist_amount": 0.37071847611603626,
+          "solar_hours": 21.506668090820312,
+          "whole_frame_gpu_ns": 124799416.0
+        },
+        {
+          "mist_amount": 0.37147730203838186,
+          "solar_hours": 21.509334564208984,
+          "whole_frame_gpu_ns": 84596997.0
+        },
+        {
+          "mist_amount": 0.7815423153932951,
+          "solar_hours": 23.501333236694336,
+          "whole_frame_gpu_ns": 136598252.0
+        },
+        {
+          "mist_amount": 0.7817119705912309,
+          "solar_hours": 23.502666473388672,
+          "whole_frame_gpu_ns": 128889746.0
+        },
+        {
+          "mist_amount": 0.7820509265432247,
+          "solar_hours": 23.505332946777344,
+          "whole_frame_gpu_ns": 79796957.0
+        },
+        {
+          "mist_amount": 0.7822202274204764,
+          "solar_hours": 23.50666618347168,
+          "whole_frame_gpu_ns": 132339081.0
+        },
+        {
+          "mist_amount": 0.7825584752854985,
+          "solar_hours": 23.50933265686035,
+          "whole_frame_gpu_ns": 101961707.0
+        },
+        {
+          "mist_amount": 0.8968626038806369,
+          "solar_hours": 0.7506667375564575,
+          "whole_frame_gpu_ns": 102481836.0
+        },
+        {
+          "mist_amount": 0.8970317964396511,
+          "solar_hours": 0.753333330154419,
+          "whole_frame_gpu_ns": 127902001.0
+        },
+        {
+          "mist_amount": 0.8971162939825718,
+          "solar_hours": 0.7546666860580444,
+          "whole_frame_gpu_ns": 111351834.0
+        },
+        {
+          "mist_amount": 0.8972850918254689,
+          "solar_hours": 0.7573333382606506,
+          "whole_frame_gpu_ns": 101921414.0
+        },
+        {
+          "mist_amount": 0.8973693922174643,
+          "solar_hours": 0.7586666345596313,
+          "whole_frame_gpu_ns": 126641754.0
+        },
+        {
+          "mist_amount": 0.9820035990906899,
+          "solar_hours": 3.501333475112915,
+          "whole_frame_gpu_ns": 87378292.0
+        },
+        {
+          "mist_amount": 0.982019141092338,
+          "solar_hours": 3.502666711807251,
+          "whole_frame_gpu_ns": 101752875.0
+        },
+        {
+          "mist_amount": 0.9820501854692282,
+          "solar_hours": 3.505333185195923,
+          "whole_frame_gpu_ns": 102119334.0
+        },
+        {
+          "mist_amount": 0.9820656878663504,
+          "solar_hours": 3.506666660308838,
+          "whole_frame_gpu_ns": 110769705.0
+        },
+        {
+          "mist_amount": 0.9820966531325844,
+          "solar_hours": 3.5093331336975098,
+          "whole_frame_gpu_ns": 87207961.0
+        },
+        {
+          "mist_amount": 0.9820966531325844,
+          "solar_hours": 3.5093331336975098,
+          "whole_frame_gpu_ns": 136019621.0
+        },
+        {
+          "mist_amount": 0.9942646093096424,
+          "solar_hours": 5.253333568572998,
+          "whole_frame_gpu_ns": 121509707.0
+        },
+        {
+          "mist_amount": 0.9942696275278463,
+          "solar_hours": 5.254666805267334,
+          "whole_frame_gpu_ns": 104294915.0
+        },
+        {
+          "mist_amount": 0.9942696275278463,
+          "solar_hours": 5.254666805267334,
+          "whole_frame_gpu_ns": 99316458.0
+        },
+        {
+          "mist_amount": 0.9942846560661625,
+          "solar_hours": 5.2586669921875,
+          "whole_frame_gpu_ns": 82359749.0
+        },
+        {
+          "mist_amount": 0.45071850319234835,
+          "solar_hours": 7.001333236694336,
+          "whole_frame_gpu_ns": 73655960.0
+        },
+        {
+          "mist_amount": 0.4491560445025642,
+          "solar_hours": 7.00266695022583,
+          "whole_frame_gpu_ns": 94977335.0
+        },
+        {
+          "mist_amount": 0.4460302748994281,
+          "solar_hours": 7.005333423614502,
+          "whole_frame_gpu_ns": 92325246.0
+        },
+        {
+          "mist_amount": 0.44446699696706343,
+          "solar_hours": 7.006666660308838,
+          "whole_frame_gpu_ns": 95204000.0
+        },
+        {
+          "mist_amount": 0.44133973862808773,
+          "solar_hours": 7.00933313369751,
+          "whole_frame_gpu_ns": 96443002.0
+        },
+        {
+          "mist_amount": 0.0,
+          "solar_hours": 9.501333236694336,
+          "whole_frame_gpu_ns": 97872082.0
+        },
+        {
+          "mist_amount": 0.0,
+          "solar_hours": 9.502666473388672,
+          "whole_frame_gpu_ns": 15417166.0
+        },
+        {
+          "mist_amount": 0.0,
+          "solar_hours": 9.505332946777344,
+          "whole_frame_gpu_ns": 14248871.0
+        },
+        {
+          "mist_amount": 0.0,
+          "solar_hours": 9.50666618347168,
+          "whole_frame_gpu_ns": 13507920.0
+        },
+        {
+          "mist_amount": 0.0,
+          "solar_hours": 9.509333610534668,
+          "whole_frame_gpu_ns": 13491752.0
+        }
+      ],
+      "extent": [
+        2560,
+        1440
+      ],
+      "first_submission": {
+        "pass_gpu_ns": {
+          "atmosphere DFG integration": 2557417.0,
+          "atmosphere aerial perspective": 905458.0,
+          "atmosphere diffuse irradiance": 425792.0,
+          "atmosphere ground irradiance": 1073708.0,
+          "atmosphere multiple scattering": 1651875.0,
+          "atmosphere reflection mip 0": 20625.0,
+          "atmosphere reflection mip 1": 133875.0,
+          "atmosphere reflection mip 2": 206167.0,
+          "atmosphere reflection mip 3": 109250.0,
+          "atmosphere reflection mip 4": 142833.0,
+          "atmosphere reflection mip 5": 135417.0,
+          "atmosphere reflection mip 6": 111875.0,
+          "atmosphere sky view": 146125.0,
+          "atmosphere stars": 6407708.0,
+          "atmosphere transmittance": 16875.0,
+          "camera visibility": 1168500.0,
+          "contribution compute": 13125.0,
+          "effect 0: effect 1: cloud weather map": 2079334.0,
+          "effect 1: effect 1: cloud Sun path near": 2450166.0,
+          "effect 2: effect 1: cloud Sun path middle": 3210792.0,
+          "effect 3: effect 1: cloud Sun path far": 3252542.0,
+          "effect 4: effect 1: cloud ground field": 82125.0,
+          "effect 5: effect 1: cloud far transmittance": 153750.0,
+          "effect 6: effect 1: cloud ground band": 430833.0,
+          "effect 7: effect 1: cloud medium coefficients": 48541.0,
+          "effect 8: effect 1: cloud sky overlay": 30333.0,
+          "effect after 0: effect 1: cloud trace": 462792.0,
+          "effect after 1: effect 1: cloud resolve": 3479042.0,
+          "effect after 2: effect 1: cloud compose": 5179084.0,
+          "synthetic Sun horizon heights": 1328625.0,
+          "synthetic Sun shadow far": 75166.0,
+          "synthetic Sun shadow near": 1359250.0,
+          "synthetic cluster build": 573542.0,
+          "synthetic exposure resolve": 8125.0,
+          "synthetic forward opaque": 2460375.0,
+          "synthetic tone encode": 4355750.0,
+          "synthetic transform history": 191125.0,
+          "temporal exposure texture": 4285125.0
+        },
+        "whole_frame_gpu_ns": 50723042.0
+      },
+      "frames": 45,
+      "maximum_sun_refill_ns": 58932458.0,
+      "minimum_volume_instances": null,
+      "pass_gpu_ns": {
+        "atmosphere aerial perspective": 897042.6222222223,
+        "atmosphere diffuse irradiance": 369770.3777777778,
+        "atmosphere reflection mip 0": 37876.84444444445,
+        "atmosphere reflection mip 1": 196763.02222222224,
+        "atmosphere reflection mip 2": 248336.11111111112,
+        "atmosphere reflection mip 3": 146051.8,
+        "atmosphere reflection mip 4": 119012.0,
+        "atmosphere reflection mip 5": 120487.08888888889,
+        "atmosphere reflection mip 6": 113349.11111111111,
+        "atmosphere sky view": 123504.62222222223,
+        "atmosphere stars": 3544912.8444444444,
+        "camera visibility": 119772.2,
+        "contribution compute": 16970.466666666667,
+        "effect 0: effect 1: cloud weather map": 163784.22222222222,
+        "effect 1: effect 1: cloud Sun path near": 5387557.4,
+        "effect 2: effect 1: cloud Sun path middle": 5620647.266666667,
+        "effect 3: effect 1: cloud Sun path far": 5382958.244444445,
+        "effect 4: effect 1: cloud ground field": 68856.42222222222,
+        "effect 5: effect 1: cloud far transmittance": 132890.75555555554,
+        "effect 6: effect 1: cloud ground band": 484778.7555555556,
+        "effect 7: effect 1: cloud medium coefficients": 119813.91111111111,
+        "effect 8: effect 1: cloud sky overlay": 184426.84444444443,
+        "effect after 0: effect 1: cloud trace": 13765923.111111112,
+        "effect after 1: effect 1: cloud resolve": 585907.4222222222,
+        "effect after 2: effect 1: cloud compose": 13605433.244444445,
+        "synthetic Sun horizon heights": 612983.3111111111,
+        "synthetic Sun shadow far": 133719.48888888888,
+        "synthetic Sun shadow near": 456892.6222222222,
+        "synthetic cluster build": 86096.33333333333,
+        "synthetic exposure resolve": 17382.37777777778,
+        "synthetic forward opaque": 2860266.6,
+        "synthetic tone encode": 13648466.666666666,
+        "synthetic transform history": 262008.4,
+        "temporal exposure texture": 9368252.8
+      },
+      "quality": [
+        {
+          "name": "1/cloud weather map cadence",
+          "value": 100
+        },
+        {
+          "name": "1/cloud near Sun path cadence",
+          "value": 100
+        },
+        {
+          "name": "1/cloud middle Sun path cadence",
+          "value": 100
+        },
+        {
+          "name": "1/cloud far Sun path cadence",
+          "value": 100
+        },
+        {
+          "name": "1/cloud refresh exponent",
+          "value": 0
+        },
+        {
+          "name": "1/cloud local light samples",
+          "value": 3
+        },
+        {
+          "name": "1/cloud layer scale",
+          "value": 100
+        },
+        {
+          "name": "1/cloud trace step length",
+          "value": 100
+        },
+        {
+          "name": "1/cloud trace sample cap",
+          "value": 768
+        },
+        {
+          "name": "1/cloud sky overlay cadence",
+          "value": 8
+        },
+        {
+          "name": "1/cloud ground band cadence",
+          "value": 1
+        },
+        {
+          "name": "1/cloud medium coefficients cadence",
+          "value": 1
+        }
+      ],
+      "ray_statistics": {
+        "mean_samples": 0.0,
+        "p95_samples": 0.0,
+        "rays_beyond_refresh_phase": 0,
+        "rays_traced": 921600,
+        "refresh_fraction": 1.0,
+        "refresh_stride": 1,
+        "scope": "last completed capture-off frame, selected fresh texels, readback after timed interval"
+      },
+      "resources": [
+        [
+          "cloud texture 0 Rgba32Float",
+          4194304
+        ],
+        [
+          "cloud texture 1 Rgba32Float",
+          4194304
+        ],
+        [
+          "cloud texture 2 Rgba32Uint",
+          4194304
+        ],
+        [
+          "cloud texture 3 Rgba16Float",
+          12582912
+        ],
+        [
+          "cloud texture 4 Rgba16Float",
+          16777216
+        ],
+        [
+          "cloud texture 5 Rgba16Float",
+          16777216
+        ],
+        [
+          "cloud texture 6 Rgba16Float",
+          8388608
+        ],
+        [
+          "cloud shape noise",
+          9586980
+        ],
+        [
+          "cloud buffer 0",
+          128
+        ],
+        [
+          "cloud buffer 1",
+          128
+        ],
+        [
+          "cloud buffer 2",
+          128
+        ],
+        [
+          "cloud buffer 3",
+          128
+        ],
+        [
+          "cloud buffer 4",
+          160
+        ],
+        [
+          "cloud buffer 5",
+          160
+        ],
+        [
+          "cloud buffer 6",
+          160
+        ],
+        [
+          "cloud buffer 7",
+          160
+        ],
+        [
+          "cloud buffer 8",
+          8192
+        ],
+        [
+          "cloud buffer 9",
+          8192
+        ],
+        [
+          "cloud buffer 10",
+          8192
+        ],
+        [
+          "cloud buffer 11",
+          8192
+        ],
+        [
+          "cloud buffer 12",
+          96
+        ],
+        [
+          "cloud surface field",
+          1449616
+        ],
+        [
+          "cloud ground frame",
+          64
+        ],
+        [
+          "cloud fog table",
+          128
+        ],
+        [
+          "cloud fog phase tables",
+          8256
+        ],
+        [
+          "cloud ground band",
+          1318200
+        ],
+        [
+          "cloud ground band mapping",
+          32
+        ],
+        [
+          "cloud medium hemisphere light",
+          544
+        ],
+        [
+          "cloud medium droplet phase tables",
+          12300
+        ],
+        [
+          "cloud layer texture 0",
+          29491200
+        ],
+        [
+          "cloud layer texture 1",
+          29491200
+        ],
+        [
+          "cloud layer texture 2",
+          29491200
+        ],
+        [
+          "cloud layer texture 3",
+          29491200
+        ],
+        [
+          "cloud layer texture 4",
+          29491200
+        ],
+        [
+          "cloud layer texture 5",
+          29491200
+        ],
+        [
+          "cloud detail noise",
+          1198372
+        ],
+        [
+          "cloud layer parameters",
+          368
+        ],
+        [
+          "cloud phase tables",
+          12300
+        ],
+        [
+          "cloud hemisphere light",
+          544
+        ],
+        [
+          "cloud sky overlay",
+          110592
+        ],
+        [
+          "cloud overlay rows",
+          16
+        ],
+        [
+          "view volume in-scatter and terminal pair",
+          9446400
+        ],
+        [
+          "view volume transmittance and night in-scatter",
+          9446400
+        ],
+        [
+          "view volume low bands history A",
+          13824000
+        ],
+        [
+          "view volume high bands history A",
+          9216000
+        ],
+        [
+          "view volume low bands history B",
+          13824000
+        ],
+        [
+          "view volume high bands history B",
+          9216000
+        ],
+        [
+          "view volume history camera",
+          96
+        ],
+        [
+          "atmosphere aerosol",
+          80
+        ],
+        [
+          "view volume medium coefficients",
+          4608000
+        ]
+      ],
+      "setup_pass_peaks_ns": {},
+      "storage": "slot=0\nday capture=false role=auxiliary resource=ResourceId { index: 75, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=depth resource=ResourceId { index: 100, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=scene resource=ResourceId { index: 101, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=motion resource=ResourceId { index: 102, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=reactive resource=ResourceId { index: 103, owner: () } reason=explicit store usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=resolved exposure resource=ResourceId { index: 116, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=output resource=ResourceId { index: 117, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=auxiliary resource=ResourceId { index: 75, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=depth resource=ResourceId { index: 100, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=scene resource=ResourceId { index: 101, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=motion resource=ResourceId { index: 102, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=reactive resource=ResourceId { index: 103, owner: () } reason=explicit store usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=resolved exposure resource=ResourceId { index: 116, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=output resource=ResourceId { index: 117, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nunique textures/nominal bytes=(7, 89997314) fallback-only bytes=0; retained generations accounted by FrameHost\nslot=1\nday capture=false role=auxiliary resource=ResourceId { index: 75, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=depth resource=ResourceId { index: 100, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=scene resource=ResourceId { index: 101, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=motion resource=ResourceId { index: 102, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=reactive resource=ResourceId { index: 103, owner: () } reason=explicit store usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=resolved exposure resource=ResourceId { index: 116, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=output resource=ResourceId { index: 117, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=auxiliary resource=ResourceId { index: 75, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=depth resource=ResourceId { index: 100, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=scene resource=ResourceId { index: 101, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=motion resource=ResourceId { index: 102, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=reactive resource=ResourceId { index: 103, owner: () } reason=explicit store usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=resolved exposure resource=ResourceId { index: 116, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=output resource=ResourceId { index: 117, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nunique textures/nominal bytes=(7, 89997314) fallback-only bytes=0; retained generations accounted by FrameHost",
+      "view": [
+        35.0,
+        246.0,
+        16.0
+      ],
+      "view_angles": {
+        "pitch_degrees": 10.0,
+        "start_solar_hours": 16.5,
+        "start_sun_elevation_degrees": 15.699857711791992,
+        "yaw_degrees": 79.8441162109375
+      },
+      "view_volume_grid": [
+        160,
+        90,
+        80
+      ],
+      "whole_frame_gpu_ns": 79002895.31111111,
+      "weather_rate": 1,
+      "investigations": {
+        "effect 1: effect 1: cloud Sun path near": "5.388 ms, this cycle at 1\u00d7 5.388 ms and WP15 at 1.055 ms (zero means absent). Dry submissions average 30.059 ms and occupied ones 109.131 ms at this rate. The WP15 reference has static 10\u00b0 lighting and an advected bank, while this arm covers daylight, twilight and night with varying mist. Device load was shared.",
+        "effect 2: effect 1: cloud Sun path middle": "5.621 ms, this cycle at 1\u00d7 5.621 ms and WP15 at 1.010 ms (zero means absent). Dry submissions average 30.059 ms and occupied ones 109.131 ms at this rate. The WP15 reference has static 10\u00b0 lighting and an advected bank, while this arm covers daylight, twilight and night with varying mist. Device load was shared.",
+        "effect 3: effect 1: cloud Sun path far": "5.383 ms, this cycle at 1\u00d7 5.383 ms and WP15 at 0.964 ms (zero means absent). Dry submissions average 30.059 ms and occupied ones 109.131 ms at this rate. The WP15 reference has static 10\u00b0 lighting and an advected bank, while this arm covers daylight, twilight and night with varying mist. Device load was shared.",
+        "whole frame": "79.003 ms against the 8.333 ms wire, WP15 at 88.460 ms. Dry submissions average 30.059 ms and occupied ones 109.131 ms at this rate. The WP15 reference has static 10\u00b0 lighting and an advected bank, while this arm covers daylight, twilight and night with varying mist. Device load was shared."
+      }
+    },
+    {
+      "adapter": "AdapterInfo { name: \"Apple M3 Max\", vendor: 0, device: 0, device_type: IntegratedGpu, device_pci_bus_id: \"\", driver: \"\", driver_info: \"\", backend: Metal, subgroup_min_size: 4, subgroup_max_size: 64, transient_saves_memory: Some(true), limit_bucket: None }",
+      "capture": false,
+      "day_samples": [
+        {
+          "mist_amount": 0.0,
+          "solar_hours": 16.51066780090332,
+          "whole_frame_gpu_ns": 20266794.0
+        },
+        {
+          "mist_amount": 0.0,
+          "solar_hours": 16.521333694458008,
+          "whole_frame_gpu_ns": 18816752.0
+        },
+        {
+          "mist_amount": 0.0,
+          "solar_hours": 16.542667388916016,
+          "whole_frame_gpu_ns": 20172417.0
+        },
+        {
+          "mist_amount": 0.0,
+          "solar_hours": 16.553333282470703,
+          "whole_frame_gpu_ns": 17007665.0
+        },
+        {
+          "mist_amount": 0.0,
+          "solar_hours": 16.57466697692871,
+          "whole_frame_gpu_ns": 20197086.0
+        },
+        {
+          "mist_amount": 0.0,
+          "solar_hours": 19.00666618347168,
+          "whole_frame_gpu_ns": 20149750.0
+        },
+        {
+          "mist_amount": 0.0,
+          "solar_hours": 19.017333984375,
+          "whole_frame_gpu_ns": 45742921.0
+        },
+        {
+          "mist_amount": 0.0,
+          "solar_hours": 19.038667678833008,
+          "whole_frame_gpu_ns": 55626958.0
+        },
+        {
+          "mist_amount": 0.0,
+          "solar_hours": 19.049333572387695,
+          "whole_frame_gpu_ns": 49539462.0
+        },
+        {
+          "mist_amount": 0.0,
+          "solar_hours": 19.070667266845703,
+          "whole_frame_gpu_ns": 53288664.0
+        },
+        {
+          "mist_amount": 0.37090776071827297,
+          "solar_hours": 21.502666473388672,
+          "whole_frame_gpu_ns": 69862377.0
+        },
+        {
+          "mist_amount": 0.3739403117197323,
+          "solar_hours": 21.51333236694336,
+          "whole_frame_gpu_ns": 143395667.0
+        },
+        {
+          "mist_amount": 0.37998619513149556,
+          "solar_hours": 21.534666061401367,
+          "whole_frame_gpu_ns": 142310668.0
+        },
+        {
+          "mist_amount": 0.38299929944596983,
+          "solar_hours": 21.545333862304688,
+          "whole_frame_gpu_ns": 153596082.0
+        },
+        {
+          "mist_amount": 0.38900528173152626,
+          "solar_hours": 21.566667556762695,
+          "whole_frame_gpu_ns": 145689753.0
+        },
+        {
+          "mist_amount": 0.3919979464010202,
+          "solar_hours": 21.577333450317383,
+          "whole_frame_gpu_ns": 182335874.0
+        },
+        {
+          "mist_amount": 0.7816269527613421,
+          "solar_hours": 23.497333526611328,
+          "whole_frame_gpu_ns": 161300874.0
+        },
+        {
+          "mist_amount": 0.7843263507092062,
+          "solar_hours": 23.518667221069336,
+          "whole_frame_gpu_ns": 144368577.0
+        },
+        {
+          "mist_amount": 0.7856647814095132,
+          "solar_hours": 23.529333114624023,
+          "whole_frame_gpu_ns": 131075752.0
+        },
+        {
+          "mist_amount": 0.7883192640592075,
+          "solar_hours": 23.55066680908203,
+          "whole_frame_gpu_ns": 136449085.0
+        },
+        {
+          "mist_amount": 0.7896353791421787,
+          "solar_hours": 23.56133270263672,
+          "whole_frame_gpu_ns": 143471713.0
+        },
+        {
+          "mist_amount": 0.8968201622242147,
+          "solar_hours": 0.7453333139419556,
+          "whole_frame_gpu_ns": 135523379.0
+        },
+        {
+          "mist_amount": 0.8981668783059725,
+          "solar_hours": 0.7666667103767395,
+          "whole_frame_gpu_ns": 134422499.0
+        },
+        {
+          "mist_amount": 0.898833966408522,
+          "solar_hours": 0.7773333191871643,
+          "whole_frame_gpu_ns": 143817748.0
+        },
+        {
+          "mist_amount": 0.9001557195544598,
+          "solar_hours": 0.7986665964126587,
+          "whole_frame_gpu_ns": 133300456.0
+        },
+        {
+          "mist_amount": 0.9008104310255426,
+          "solar_hours": 0.809333324432373,
+          "whole_frame_gpu_ns": 135494621.0
+        },
+        {
+          "mist_amount": 0.9820113529633016,
+          "solar_hours": 3.497333526611328,
+          "whole_frame_gpu_ns": 154785252.0
+        },
+        {
+          "mist_amount": 0.9822583407954979,
+          "solar_hours": 3.5186667442321777,
+          "whole_frame_gpu_ns": 138874377.0
+        },
+        {
+          "mist_amount": 0.9823805797253775,
+          "solar_hours": 3.5293331146240234,
+          "whole_frame_gpu_ns": 136206916.0
+        },
+        {
+          "mist_amount": 0.9826225752118634,
+          "solar_hours": 3.5506668090820312,
+          "whole_frame_gpu_ns": 139078125.0
+        },
+        {
+          "mist_amount": 0.9827423427035088,
+          "solar_hours": 3.561333417892456,
+          "whole_frame_gpu_ns": 144043332.0
+        },
+        {
+          "mist_amount": 0.9942570677337683,
+          "solar_hours": 5.246666431427002,
+          "whole_frame_gpu_ns": 122705831.0
+        },
+        {
+          "mist_amount": 0.9942971439463499,
+          "solar_hours": 5.257333278656006,
+          "whole_frame_gpu_ns": 135899831.0
+        },
+        {
+          "mist_amount": 0.9943764659980271,
+          "solar_hours": 5.2786664962768555,
+          "whole_frame_gpu_ns": 138855040.0
+        },
+        {
+          "mist_amount": 0.9944157156169644,
+          "solar_hours": 5.289333343505859,
+          "whole_frame_gpu_ns": 146905165.0
+        },
+        {
+          "mist_amount": 0.9944934013958898,
+          "solar_hours": 5.310666561126709,
+          "whole_frame_gpu_ns": 162151333.0
+        },
+        {
+          "mist_amount": 0.9945318412602615,
+          "solar_hours": 5.321332931518555,
+          "whole_frame_gpu_ns": 105559411.0
+        },
+        {
+          "mist_amount": 0.43899971328882964,
+          "solar_hours": 7.006666660308838,
+          "whole_frame_gpu_ns": 136474546.0
+        },
+        {
+          "mist_amount": 0.42648222623931575,
+          "solar_hours": 7.017333030700684,
+          "whole_frame_gpu_ns": 103061875.0
+        },
+        {
+          "mist_amount": 0.40144742357548135,
+          "solar_hours": 7.038666725158691,
+          "whole_frame_gpu_ns": 103640747.0
+        },
+        {
+          "mist_amount": 0.3889479616744688,
+          "solar_hours": 7.049333095550537,
+          "whole_frame_gpu_ns": 95985874.0
+        },
+        {
+          "mist_amount": 0.36403074712168854,
+          "solar_hours": 7.070666313171387,
+          "whole_frame_gpu_ns": 104669083.0
+        },
+        {
+          "mist_amount": 0.0,
+          "solar_hours": 9.502666473388672,
+          "whole_frame_gpu_ns": 101981624.0
+        },
+        {
+          "mist_amount": 0.0,
+          "solar_hours": 9.513333320617676,
+          "whole_frame_gpu_ns": 17049334.0
+        },
+        {
+          "mist_amount": 0.0,
+          "solar_hours": 9.534666061401367,
+          "whole_frame_gpu_ns": 19170583.0
+        },
+        {
+          "mist_amount": 0.0,
+          "solar_hours": 9.545332908630371,
+          "whole_frame_gpu_ns": 15183621.0
+        },
+        {
+          "mist_amount": 0.0,
+          "solar_hours": 9.566666603088379,
+          "whole_frame_gpu_ns": 19362876.0
+        },
+        {
+          "mist_amount": 0.0,
+          "solar_hours": 9.577333450317383,
+          "whole_frame_gpu_ns": 20785500.0
+        }
+      ],
+      "extent": [
+        2560,
+        1440
+      ],
+      "first_submission": {
+        "pass_gpu_ns": {
+          "atmosphere DFG integration": 1612292.0,
+          "atmosphere aerial perspective": 638750.0,
+          "atmosphere diffuse irradiance": 359708.0,
+          "atmosphere ground irradiance": 252916.0,
+          "atmosphere multiple scattering": 1345708.0,
+          "atmosphere reflection mip 0": 46875.0,
+          "atmosphere reflection mip 1": 223667.0,
+          "atmosphere reflection mip 2": 200083.0,
+          "atmosphere reflection mip 3": 107875.0,
+          "atmosphere reflection mip 4": 105583.0,
+          "atmosphere reflection mip 5": 90667.0,
+          "atmosphere reflection mip 6": 89792.0,
+          "atmosphere sky view": 134708.0,
+          "atmosphere stars": 598500.0,
+          "atmosphere transmittance": 15833.0,
+          "camera visibility": 33667.0,
+          "contribution compute": 142000.0,
+          "effect 0: effect 1: cloud weather map": 873791.0,
+          "effect 1: effect 1: cloud Sun path near": 2187083.0,
+          "effect 2: effect 1: cloud Sun path middle": 2540875.0,
+          "effect 3: effect 1: cloud Sun path far": 2560041.0,
+          "effect 4: effect 1: cloud ground field": 78333.0,
+          "effect 5: effect 1: cloud far transmittance": 227458.0,
+          "effect 6: effect 1: cloud ground band": 652833.0,
+          "effect 7: effect 1: cloud medium coefficients": 54750.0,
+          "effect 8: effect 1: cloud sky overlay": 31375.0,
+          "effect after 0: effect 1: cloud trace": 743083.0,
+          "effect after 1: effect 1: cloud resolve": 506834.0,
+          "effect after 2: effect 1: cloud compose": 2107959.0,
+          "synthetic Sun horizon heights": 90166.0,
+          "synthetic Sun shadow far": 62000.0,
+          "synthetic Sun shadow near": 56375.0,
+          "synthetic cluster build": 221125.0,
+          "synthetic exposure resolve": 7209.0,
+          "synthetic forward opaque": 2138708.0,
+          "synthetic tone encode": 2199209.0,
+          "synthetic transform history": 730375.0,
+          "temporal exposure texture": 374750.0
+        },
+        "whole_frame_gpu_ns": 24442956.0
+      },
+      "frames": 48,
+      "maximum_sun_refill_ns": 54077125.0,
+      "minimum_volume_instances": null,
+      "pass_gpu_ns": {
+        "atmosphere aerial perspective": 927126.7916666666,
+        "atmosphere diffuse irradiance": 365558.9375,
+        "atmosphere reflection mip 0": 30076.395833333332,
+        "atmosphere reflection mip 1": 174010.375,
+        "atmosphere reflection mip 2": 265709.2291666667,
+        "atmosphere reflection mip 3": 133960.9375,
+        "atmosphere reflection mip 4": 124414.08333333333,
+        "atmosphere reflection mip 5": 117754.25,
+        "atmosphere reflection mip 6": 106214.33333333333,
+        "atmosphere sky view": 142879.3125,
+        "atmosphere stars": 2412790.8958333335,
+        "camera visibility": 202180.54166666666,
+        "contribution compute": 30861.958333333332,
+        "effect 0: effect 1: cloud weather map": 232568.52083333334,
+        "effect 1: effect 1: cloud Sun path near": 8368282.125,
+        "effect 2: effect 1: cloud Sun path middle": 9097062.458333334,
+        "effect 3: effect 1: cloud Sun path far": 8880857.729166666,
+        "effect 4: effect 1: cloud ground field": 81718.79166666667,
+        "effect 5: effect 1: cloud far transmittance": 146752.5625,
+        "effect 6: effect 1: cloud ground band": 566190.1458333334,
+        "effect 7: effect 1: cloud medium coefficients": 131296.0625,
+        "effect 8: effect 1: cloud sky overlay": 322815.1041666667,
+        "effect after 0: effect 1: cloud trace": 14813113.6875,
+        "effect after 1: effect 1: cloud resolve": 582664.0625,
+        "effect after 2: effect 1: cloud compose": 15260675.395833334,
+        "synthetic Sun horizon heights": 2222187.5625,
+        "synthetic Sun shadow far": 147456.5625,
+        "synthetic Sun shadow near": 553540.7708333334,
+        "synthetic cluster build": 94472.27083333333,
+        "synthetic exposure resolve": 12938.333333333334,
+        "synthetic forward opaque": 3244350.6666666665,
+        "synthetic tone encode": 15467651.020833334,
+        "synthetic transform history": 353993.0416666667,
+        "temporal exposure texture": 14795330.708333334
+      },
+      "quality": [
+        {
+          "name": "1/cloud weather map cadence",
+          "value": 100
+        },
+        {
+          "name": "1/cloud near Sun path cadence",
+          "value": 100
+        },
+        {
+          "name": "1/cloud middle Sun path cadence",
+          "value": 100
+        },
+        {
+          "name": "1/cloud far Sun path cadence",
+          "value": 100
+        },
+        {
+          "name": "1/cloud refresh exponent",
+          "value": 0
+        },
+        {
+          "name": "1/cloud local light samples",
+          "value": 3
+        },
+        {
+          "name": "1/cloud layer scale",
+          "value": 100
+        },
+        {
+          "name": "1/cloud trace step length",
+          "value": 100
+        },
+        {
+          "name": "1/cloud trace sample cap",
+          "value": 768
+        },
+        {
+          "name": "1/cloud sky overlay cadence",
+          "value": 8
+        },
+        {
+          "name": "1/cloud ground band cadence",
+          "value": 1
+        },
+        {
+          "name": "1/cloud medium coefficients cadence",
+          "value": 1
+        }
+      ],
+      "ray_statistics": {
+        "mean_samples": 0.0,
+        "p95_samples": 0.0,
+        "rays_beyond_refresh_phase": 0,
+        "rays_traced": 921600,
+        "refresh_fraction": 1.0,
+        "refresh_stride": 1,
+        "scope": "last completed capture-off frame, selected fresh texels, readback after timed interval"
+      },
+      "resources": [
+        [
+          "cloud texture 0 Rgba32Float",
+          4194304
+        ],
+        [
+          "cloud texture 1 Rgba32Float",
+          4194304
+        ],
+        [
+          "cloud texture 2 Rgba32Uint",
+          4194304
+        ],
+        [
+          "cloud texture 3 Rgba16Float",
+          12582912
+        ],
+        [
+          "cloud texture 4 Rgba16Float",
+          16777216
+        ],
+        [
+          "cloud texture 5 Rgba16Float",
+          16777216
+        ],
+        [
+          "cloud texture 6 Rgba16Float",
+          8388608
+        ],
+        [
+          "cloud shape noise",
+          9586980
+        ],
+        [
+          "cloud buffer 0",
+          128
+        ],
+        [
+          "cloud buffer 1",
+          128
+        ],
+        [
+          "cloud buffer 2",
+          128
+        ],
+        [
+          "cloud buffer 3",
+          128
+        ],
+        [
+          "cloud buffer 4",
+          160
+        ],
+        [
+          "cloud buffer 5",
+          160
+        ],
+        [
+          "cloud buffer 6",
+          160
+        ],
+        [
+          "cloud buffer 7",
+          160
+        ],
+        [
+          "cloud buffer 8",
+          8192
+        ],
+        [
+          "cloud buffer 9",
+          8192
+        ],
+        [
+          "cloud buffer 10",
+          8192
+        ],
+        [
+          "cloud buffer 11",
+          8192
+        ],
+        [
+          "cloud buffer 12",
+          96
+        ],
+        [
+          "cloud surface field",
+          1449616
+        ],
+        [
+          "cloud ground frame",
+          64
+        ],
+        [
+          "cloud fog table",
+          128
+        ],
+        [
+          "cloud fog phase tables",
+          8256
+        ],
+        [
+          "cloud ground band",
+          1318200
+        ],
+        [
+          "cloud ground band mapping",
+          32
+        ],
+        [
+          "cloud medium hemisphere light",
+          544
+        ],
+        [
+          "cloud medium droplet phase tables",
+          12300
+        ],
+        [
+          "cloud layer texture 0",
+          29491200
+        ],
+        [
+          "cloud layer texture 1",
+          29491200
+        ],
+        [
+          "cloud layer texture 2",
+          29491200
+        ],
+        [
+          "cloud layer texture 3",
+          29491200
+        ],
+        [
+          "cloud layer texture 4",
+          29491200
+        ],
+        [
+          "cloud layer texture 5",
+          29491200
+        ],
+        [
+          "cloud detail noise",
+          1198372
+        ],
+        [
+          "cloud layer parameters",
+          368
+        ],
+        [
+          "cloud phase tables",
+          12300
+        ],
+        [
+          "cloud hemisphere light",
+          544
+        ],
+        [
+          "cloud sky overlay",
+          110592
+        ],
+        [
+          "cloud overlay rows",
+          16
+        ],
+        [
+          "view volume in-scatter and terminal pair",
+          9446400
+        ],
+        [
+          "view volume transmittance and night in-scatter",
+          9446400
+        ],
+        [
+          "view volume low bands history A",
+          13824000
+        ],
+        [
+          "view volume high bands history A",
+          9216000
+        ],
+        [
+          "view volume low bands history B",
+          13824000
+        ],
+        [
+          "view volume high bands history B",
+          9216000
+        ],
+        [
+          "view volume history camera",
+          96
+        ],
+        [
+          "atmosphere aerosol",
+          80
+        ],
+        [
+          "view volume medium coefficients",
+          4608000
+        ]
+      ],
+      "setup_pass_peaks_ns": {},
+      "storage": "slot=0\nday capture=false role=auxiliary resource=ResourceId { index: 75, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=depth resource=ResourceId { index: 100, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=scene resource=ResourceId { index: 101, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=motion resource=ResourceId { index: 102, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=reactive resource=ResourceId { index: 103, owner: () } reason=explicit store usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=resolved exposure resource=ResourceId { index: 116, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=output resource=ResourceId { index: 117, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=auxiliary resource=ResourceId { index: 75, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=depth resource=ResourceId { index: 100, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=scene resource=ResourceId { index: 101, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=motion resource=ResourceId { index: 102, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=reactive resource=ResourceId { index: 103, owner: () } reason=explicit store usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=resolved exposure resource=ResourceId { index: 116, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=output resource=ResourceId { index: 117, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nunique textures/nominal bytes=(7, 89997314) fallback-only bytes=0; retained generations accounted by FrameHost\nslot=1\nday capture=false role=auxiliary resource=ResourceId { index: 75, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=depth resource=ResourceId { index: 100, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=scene resource=ResourceId { index: 101, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=motion resource=ResourceId { index: 102, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=reactive resource=ResourceId { index: 103, owner: () } reason=explicit store usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=resolved exposure resource=ResourceId { index: 116, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=output resource=ResourceId { index: 117, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=auxiliary resource=ResourceId { index: 75, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=depth resource=ResourceId { index: 100, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=scene resource=ResourceId { index: 101, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=motion resource=ResourceId { index: 102, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=reactive resource=ResourceId { index: 103, owner: () } reason=explicit store usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=resolved exposure resource=ResourceId { index: 116, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=output resource=ResourceId { index: 117, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nunique textures/nominal bytes=(7, 89997314) fallback-only bytes=0; retained generations accounted by FrameHost",
+      "view": [
+        35.0,
+        246.0,
+        16.0
+      ],
+      "view_angles": {
+        "pitch_degrees": 10.0,
+        "start_solar_hours": 16.5,
+        "start_sun_elevation_degrees": 15.699857711791992,
+        "yaw_degrees": 79.8441162109375
+      },
+      "view_volume_grid": [
+        160,
+        90,
+        80
+      ],
+      "whole_frame_gpu_ns": 100409455.625,
+      "weather_rate": 8,
+      "investigations": {
+        "camera visibility": "0.202 ms, this cycle at 1\u00d7 0.120 ms and WP15 at 0.319 ms (zero means absent). Dry submissions average 32.146 ms and occupied ones 139.252 ms at this rate. The WP15 reference has static 10\u00b0 lighting and an advected bank, while this arm covers daylight, twilight and night with varying mist. Device load was shared.",
+        "contribution compute": "0.031 ms, this cycle at 1\u00d7 0.017 ms and WP15 at 0.241 ms (zero means absent). Dry submissions average 32.146 ms and occupied ones 139.252 ms at this rate. The WP15 reference has static 10\u00b0 lighting and an advected bank, while this arm covers daylight, twilight and night with varying mist. Device load was shared.",
+        "effect 0: effect 1: cloud weather map": "0.233 ms, this cycle at 1\u00d7 0.164 ms and WP15 at 0.309 ms (zero means absent). Dry submissions average 32.146 ms and occupied ones 139.252 ms at this rate. The WP15 reference has static 10\u00b0 lighting and an advected bank, while this arm covers daylight, twilight and night with varying mist. Device load was shared.",
+        "effect 1: effect 1: cloud Sun path near": "8.368 ms, this cycle at 1\u00d7 5.388 ms and WP15 at 1.055 ms (zero means absent). Dry submissions average 32.146 ms and occupied ones 139.252 ms at this rate. The WP15 reference has static 10\u00b0 lighting and an advected bank, while this arm covers daylight, twilight and night with varying mist. Device load was shared.",
+        "effect 2: effect 1: cloud Sun path middle": "9.097 ms, this cycle at 1\u00d7 5.621 ms and WP15 at 1.010 ms (zero means absent). Dry submissions average 32.146 ms and occupied ones 139.252 ms at this rate. The WP15 reference has static 10\u00b0 lighting and an advected bank, while this arm covers daylight, twilight and night with varying mist. Device load was shared.",
+        "effect 3: effect 1: cloud Sun path far": "8.881 ms, this cycle at 1\u00d7 5.383 ms and WP15 at 0.964 ms (zero means absent). Dry submissions average 32.146 ms and occupied ones 139.252 ms at this rate. The WP15 reference has static 10\u00b0 lighting and an advected bank, while this arm covers daylight, twilight and night with varying mist. Device load was shared.",
+        "effect 8: effect 1: cloud sky overlay": "0.323 ms, this cycle at 1\u00d7 0.184 ms and WP15 at 0.174 ms (zero means absent). Dry submissions average 32.146 ms and occupied ones 139.252 ms at this rate. The WP15 reference has static 10\u00b0 lighting and an advected bank, while this arm covers daylight, twilight and night with varying mist. Device load was shared.",
+        "synthetic Sun horizon heights": "2.222 ms, this cycle at 1\u00d7 0.613 ms and WP15 at 0.747 ms (zero means absent). Dry submissions average 32.146 ms and occupied ones 139.252 ms at this rate. The WP15 reference has static 10\u00b0 lighting and an advected bank, while this arm covers daylight, twilight and night with varying mist. Device load was shared.",
+        "synthetic transform history": "0.354 ms, this cycle at 1\u00d7 0.262 ms and WP15 at 0.577 ms (zero means absent). Dry submissions average 32.146 ms and occupied ones 139.252 ms at this rate. The WP15 reference has static 10\u00b0 lighting and an advected bank, while this arm covers daylight, twilight and night with varying mist. Device load was shared.",
+        "temporal exposure texture": "14.795 ms, this cycle at 1\u00d7 9.368 ms and WP15 at 15.390 ms (zero means absent). Dry submissions average 32.146 ms and occupied ones 139.252 ms at this rate. The WP15 reference has static 10\u00b0 lighting and an advected bank, while this arm covers daylight, twilight and night with varying mist. Device load was shared.",
+        "whole frame": "100.409 ms against the 8.333 ms wire, WP15 at 88.460 ms. Dry submissions average 32.146 ms and occupied ones 139.252 ms at this rate. The WP15 reference has static 10\u00b0 lighting and an advected bank, while this arm covers daylight, twilight and night with varying mist. Device load was shared."
+      }
+    },
+    {
+      "adapter": "AdapterInfo { name: \"Apple M3 Max\", vendor: 0, device: 0, device_type: IntegratedGpu, device_pci_bus_id: \"\", driver: \"\", driver_info: \"\", backend: Metal, subgroup_min_size: 4, subgroup_max_size: 64, transient_saves_memory: Some(true), limit_bucket: None }",
+      "capture": false,
+      "day_samples": [
+        {
+          "mist_amount": 0.0,
+          "solar_hours": 16.579999923706055,
+          "whole_frame_gpu_ns": 18171124.0
+        },
+        {
+          "mist_amount": 0.0,
+          "solar_hours": 16.65999984741211,
+          "whole_frame_gpu_ns": 16761836.0
+        },
+        {
+          "mist_amount": 0.0,
+          "solar_hours": 16.81999969482422,
+          "whole_frame_gpu_ns": 21814462.0
+        },
+        {
+          "mist_amount": 0.0,
+          "solar_hours": 16.899999618530273,
+          "whole_frame_gpu_ns": 23828458.0
+        },
+        {
+          "mist_amount": 0.0,
+          "solar_hours": 17.059999465942383,
+          "whole_frame_gpu_ns": 20522541.0
+        },
+        {
+          "mist_amount": 0.0,
+          "solar_hours": 18.979999542236328,
+          "whole_frame_gpu_ns": 23866207.0
+        },
+        {
+          "mist_amount": 0.0,
+          "solar_hours": 19.060001373291016,
+          "whole_frame_gpu_ns": 48474583.0
+        },
+        {
+          "mist_amount": 0.0,
+          "solar_hours": 19.220001220703125,
+          "whole_frame_gpu_ns": 47250203.0
+        },
+        {
+          "mist_amount": 0.0,
+          "solar_hours": 19.299999237060547,
+          "whole_frame_gpu_ns": 49223704.0
+        },
+        {
+          "mist_amount": 0.0,
+          "solar_hours": 19.459999084472656,
+          "whole_frame_gpu_ns": 53089709.0
+        },
+        {
+          "mist_amount": 0.0,
+          "solar_hours": 19.540000915527344,
+          "whole_frame_gpu_ns": 48638251.0
+        },
+        {
+          "mist_amount": 0.4134494625951106,
+          "solar_hours": 21.619998931884766,
+          "whole_frame_gpu_ns": 51915081.0
+        },
+        {
+          "mist_amount": 0.43524560815744984,
+          "solar_hours": 21.69999885559082,
+          "whole_frame_gpu_ns": 147587460.0
+        },
+        {
+          "mist_amount": 0.4774138815373186,
+          "solar_hours": 21.860000610351562,
+          "whole_frame_gpu_ns": 132207418.0
+        },
+        {
+          "mist_amount": 0.49773725899858245,
+          "solar_hours": 21.940000534057617,
+          "whole_frame_gpu_ns": 131624546.0
+        },
+        {
+          "mist_amount": 0.5367772675981676,
+          "solar_hours": 22.100000381469727,
+          "whole_frame_gpu_ns": 125331042.0
+        },
+        {
+          "mist_amount": 0.7912571940086973,
+          "solar_hours": 23.540000915527344,
+          "whole_frame_gpu_ns": 137058998.0
+        },
+        {
+          "mist_amount": 0.8008278337246907,
+          "solar_hours": 23.6200008392334,
+          "whole_frame_gpu_ns": 156602959.0
+        },
+        {
+          "mist_amount": 0.8187842342070129,
+          "solar_hours": 23.780000686645508,
+          "whole_frame_gpu_ns": 125520003.0
+        },
+        {
+          "mist_amount": 0.8271963469370404,
+          "solar_hours": 23.860000610351562,
+          "whole_frame_gpu_ns": 130411665.0
+        },
+        {
+          "mist_amount": 0.8429532278011741,
+          "solar_hours": 0.019999999552965164,
+          "whole_frame_gpu_ns": 133256123.0
+        },
+        {
+          "mist_amount": 0.8503233680050071,
+          "solar_hours": 0.10000000894069672,
+          "whole_frame_gpu_ns": 171421962.0
+        },
+        {
+          "mist_amount": 0.8986609601575138,
+          "solar_hours": 0.7400000095367432,
+          "whole_frame_gpu_ns": 147815207.0
+        },
+        {
+          "mist_amount": 0.9035414015024628,
+          "solar_hours": 0.8200000524520874,
+          "whole_frame_gpu_ns": 166584376.0
+        },
+        {
+          "mist_amount": 0.9126395176235342,
+          "solar_hours": 0.9799999594688416,
+          "whole_frame_gpu_ns": 209844754.0
+        },
+        {
+          "mist_amount": 0.9168756272418341,
+          "solar_hours": 1.059999942779541,
+          "whole_frame_gpu_ns": 219549288.0
+        },
+        {
+          "mist_amount": 0.9247657080006834,
+          "solar_hours": 1.2200000286102295,
+          "whole_frame_gpu_ns": 239832411.0
+        },
+        {
+          "mist_amount": 0.9284362666825642,
+          "solar_hours": 1.2999999523162842,
+          "whole_frame_gpu_ns": 253608962.0
+        },
+        {
+          "mist_amount": 0.9837550998223666,
+          "solar_hours": 3.620000123977661,
+          "whole_frame_gpu_ns": 152114042.0
+        },
+        {
+          "mist_amount": 0.9845773126635418,
+          "solar_hours": 3.700000047683716,
+          "whole_frame_gpu_ns": 177300208.0
+        },
+        {
+          "mist_amount": 0.9861005910242888,
+          "solar_hours": 3.859999895095825,
+          "whole_frame_gpu_ns": 177366336.0
+        },
+        {
+          "mist_amount": 0.9868055722264484,
+          "solar_hours": 3.940000057220459,
+          "whole_frame_gpu_ns": 201061916.0
+        },
+        {
+          "mist_amount": 0.988111324853309,
+          "solar_hours": 4.099999904632568,
+          "whole_frame_gpu_ns": 194736833.0
+        },
+        {
+          "mist_amount": 0.9945791392351073,
+          "solar_hours": 5.300000190734863,
+          "whole_frame_gpu_ns": 199004418.0
+        },
+        {
+          "mist_amount": 0.9948566734663614,
+          "solar_hours": 5.380000114440918,
+          "whole_frame_gpu_ns": 218576459.0
+        },
+        {
+          "mist_amount": 0.9951863513736304,
+          "solar_hours": 5.539999961853027,
+          "whole_frame_gpu_ns": 217297208.0
+        },
+        {
+          "mist_amount": 0.9949847850099167,
+          "solar_hours": 5.619999885559082,
+          "whole_frame_gpu_ns": 269548916.0
+        },
+        {
+          "mist_amount": 0.9932218367963632,
+          "solar_hours": 5.779999732971191,
+          "whole_frame_gpu_ns": 246805711.0
+        },
+        {
+          "mist_amount": 0.4299555292995409,
+          "solar_hours": 6.979999542236328,
+          "whole_frame_gpu_ns": 228424086.0
+        },
+        {
+          "mist_amount": 0.3365295894952466,
+          "solar_hours": 7.059999465942383,
+          "whole_frame_gpu_ns": 114843500.0
+        },
+        {
+          "mist_amount": 0.16487570303471774,
+          "solar_hours": 7.220000267028809,
+          "whole_frame_gpu_ns": 125953077.0
+        },
+        {
+          "mist_amount": 0.09526376304302875,
+          "solar_hours": 7.300000190734863,
+          "whole_frame_gpu_ns": 153408041.0
+        },
+        {
+          "mist_amount": 0.00940094477327463,
+          "solar_hours": 7.460000038146973,
+          "whole_frame_gpu_ns": 186539542.0
+        },
+        {
+          "mist_amount": 0.0,
+          "solar_hours": 7.539999961853027,
+          "whole_frame_gpu_ns": 158300414.0
+        },
+        {
+          "mist_amount": 0.0,
+          "solar_hours": 9.619999885559082,
+          "whole_frame_gpu_ns": 23469750.0
+        },
+        {
+          "mist_amount": 0.0,
+          "solar_hours": 9.699999809265137,
+          "whole_frame_gpu_ns": 48114498.0
+        },
+        {
+          "mist_amount": 0.0,
+          "solar_hours": 9.859999656677246,
+          "whole_frame_gpu_ns": 27547377.0
+        },
+        {
+          "mist_amount": 0.0,
+          "solar_hours": 9.9399995803833,
+          "whole_frame_gpu_ns": 46157374.0
+        },
+        {
+          "mist_amount": 0.0,
+          "solar_hours": 10.09999942779541,
+          "whole_frame_gpu_ns": 50469084.0
+        }
+      ],
+      "extent": [
+        2560,
+        1440
+      ],
+      "first_submission": {
+        "pass_gpu_ns": {
+          "atmosphere DFG integration": 311500.0,
+          "atmosphere aerial perspective": 757708.0,
+          "atmosphere diffuse irradiance": 409500.0,
+          "atmosphere ground irradiance": 155792.0,
+          "atmosphere multiple scattering": 1396417.0,
+          "atmosphere reflection mip 0": 21333.0,
+          "atmosphere reflection mip 1": 171167.0,
+          "atmosphere reflection mip 2": 216625.0,
+          "atmosphere reflection mip 3": 279500.0,
+          "atmosphere reflection mip 4": 145292.0,
+          "atmosphere reflection mip 5": 94042.0,
+          "atmosphere reflection mip 6": 126083.0,
+          "atmosphere sky view": 1665125.0,
+          "atmosphere stars": 638833.0,
+          "atmosphere transmittance": 73083.0,
+          "camera visibility": 46875.0,
+          "contribution compute": 30708.0,
+          "effect 0: effect 1: cloud weather map": 1436917.0,
+          "effect 1: effect 1: cloud Sun path near": 1988500.0,
+          "effect 2: effect 1: cloud Sun path middle": 2766917.0,
+          "effect 3: effect 1: cloud Sun path far": 2664208.0,
+          "effect 4: effect 1: cloud ground field": 379542.0,
+          "effect 5: effect 1: cloud far transmittance": 452834.0,
+          "effect 6: effect 1: cloud ground band": 450250.0,
+          "effect 7: effect 1: cloud medium coefficients": 224583.0,
+          "effect 8: effect 1: cloud sky overlay": 25458.0,
+          "effect after 0: effect 1: cloud trace": 765125.0,
+          "effect after 1: effect 1: cloud resolve": 508083.0,
+          "effect after 2: effect 1: cloud compose": 2487666.0,
+          "synthetic Sun horizon heights": 81458.0,
+          "synthetic Sun shadow far": 63166.0,
+          "synthetic Sun shadow near": 55875.0,
+          "synthetic cluster build": 5542.0,
+          "synthetic exposure resolve": 7625.0,
+          "synthetic forward opaque": 1793833.0,
+          "synthetic tone encode": 2563167.0,
+          "synthetic transform history": 1130292.0,
+          "temporal exposure texture": 393708.0
+        },
+        "whole_frame_gpu_ns": 26784332.0
+      },
+      "frames": 49,
+      "maximum_sun_refill_ns": 58662207.0,
+      "minimum_volume_instances": null,
+      "pass_gpu_ns": {
+        "atmosphere aerial perspective": 1080883.4897959183,
+        "atmosphere diffuse irradiance": 380744.8367346939,
+        "atmosphere reflection mip 0": 126899.63265306123,
+        "atmosphere reflection mip 1": 317262.79591836734,
+        "atmosphere reflection mip 2": 296080.7755102041,
+        "atmosphere reflection mip 3": 270281.5306122449,
+        "atmosphere reflection mip 4": 219017.02040816325,
+        "atmosphere reflection mip 5": 132545.89795918367,
+        "atmosphere reflection mip 6": 204864.8775510204,
+        "atmosphere sky view": 165039.04081632654,
+        "atmosphere stars": 3399931.9591836734,
+        "camera visibility": 130478.73469387754,
+        "contribution compute": 123948.0,
+        "effect 0: effect 1: cloud weather map": 1405946.469387755,
+        "effect 1: effect 1: cloud Sun path near": 9656541.632653061,
+        "effect 2: effect 1: cloud Sun path middle": 10273659.81632653,
+        "effect 3: effect 1: cloud Sun path far": 10565774.693877552,
+        "effect 4: effect 1: cloud ground field": 437844.387755102,
+        "effect 5: effect 1: cloud far transmittance": 150958.32653061225,
+        "effect 6: effect 1: cloud ground band": 709053.5714285715,
+        "effect 7: effect 1: cloud medium coefficients": 386071.48979591834,
+        "effect 8: effect 1: cloud sky overlay": 385169.1836734694,
+        "effect after 0: effect 1: cloud trace": 17507901.408163264,
+        "effect after 1: effect 1: cloud resolve": 842832.5714285715,
+        "effect after 2: effect 1: cloud compose": 19044235.530612245,
+        "synthetic Sun horizon heights": 2300405.6530612246,
+        "synthetic Sun shadow far": 1339474.5102040817,
+        "synthetic Sun shadow near": 1249813.7959183673,
+        "synthetic cluster build": 67994.91836734694,
+        "synthetic exposure resolve": 117769.67346938775,
+        "synthetic forward opaque": 6401223.530612245,
+        "synthetic tone encode": 19319992.285714287,
+        "synthetic transform history": 238884.306122449,
+        "temporal exposure texture": 18686231.265306123
+      },
+      "quality": [
+        {
+          "name": "1/cloud weather map cadence",
+          "value": 100
+        },
+        {
+          "name": "1/cloud near Sun path cadence",
+          "value": 100
+        },
+        {
+          "name": "1/cloud middle Sun path cadence",
+          "value": 100
+        },
+        {
+          "name": "1/cloud far Sun path cadence",
+          "value": 100
+        },
+        {
+          "name": "1/cloud refresh exponent",
+          "value": 0
+        },
+        {
+          "name": "1/cloud local light samples",
+          "value": 3
+        },
+        {
+          "name": "1/cloud layer scale",
+          "value": 100
+        },
+        {
+          "name": "1/cloud trace step length",
+          "value": 100
+        },
+        {
+          "name": "1/cloud trace sample cap",
+          "value": 768
+        },
+        {
+          "name": "1/cloud sky overlay cadence",
+          "value": 8
+        },
+        {
+          "name": "1/cloud ground band cadence",
+          "value": 1
+        },
+        {
+          "name": "1/cloud medium coefficients cadence",
+          "value": 1
+        }
+      ],
+      "ray_statistics": {
+        "mean_samples": 0.0,
+        "p95_samples": 0.0,
+        "rays_beyond_refresh_phase": 0,
+        "rays_traced": 921600,
+        "refresh_fraction": 1.0,
+        "refresh_stride": 1,
+        "scope": "last completed capture-off frame, selected fresh texels, readback after timed interval"
+      },
+      "resources": [
+        [
+          "cloud texture 0 Rgba32Float",
+          4194304
+        ],
+        [
+          "cloud texture 1 Rgba32Float",
+          4194304
+        ],
+        [
+          "cloud texture 2 Rgba32Uint",
+          4194304
+        ],
+        [
+          "cloud texture 3 Rgba16Float",
+          12582912
+        ],
+        [
+          "cloud texture 4 Rgba16Float",
+          16777216
+        ],
+        [
+          "cloud texture 5 Rgba16Float",
+          16777216
+        ],
+        [
+          "cloud texture 6 Rgba16Float",
+          8388608
+        ],
+        [
+          "cloud shape noise",
+          9586980
+        ],
+        [
+          "cloud buffer 0",
+          128
+        ],
+        [
+          "cloud buffer 1",
+          128
+        ],
+        [
+          "cloud buffer 2",
+          128
+        ],
+        [
+          "cloud buffer 3",
+          128
+        ],
+        [
+          "cloud buffer 4",
+          160
+        ],
+        [
+          "cloud buffer 5",
+          160
+        ],
+        [
+          "cloud buffer 6",
+          160
+        ],
+        [
+          "cloud buffer 7",
+          160
+        ],
+        [
+          "cloud buffer 8",
+          8192
+        ],
+        [
+          "cloud buffer 9",
+          8192
+        ],
+        [
+          "cloud buffer 10",
+          8192
+        ],
+        [
+          "cloud buffer 11",
+          8192
+        ],
+        [
+          "cloud buffer 12",
+          96
+        ],
+        [
+          "cloud surface field",
+          1449616
+        ],
+        [
+          "cloud ground frame",
+          64
+        ],
+        [
+          "cloud fog table",
+          128
+        ],
+        [
+          "cloud fog phase tables",
+          8256
+        ],
+        [
+          "cloud ground band",
+          1318200
+        ],
+        [
+          "cloud ground band mapping",
+          32
+        ],
+        [
+          "cloud medium hemisphere light",
+          544
+        ],
+        [
+          "cloud medium droplet phase tables",
+          12300
+        ],
+        [
+          "cloud layer texture 0",
+          29491200
+        ],
+        [
+          "cloud layer texture 1",
+          29491200
+        ],
+        [
+          "cloud layer texture 2",
+          29491200
+        ],
+        [
+          "cloud layer texture 3",
+          29491200
+        ],
+        [
+          "cloud layer texture 4",
+          29491200
+        ],
+        [
+          "cloud layer texture 5",
+          29491200
+        ],
+        [
+          "cloud detail noise",
+          1198372
+        ],
+        [
+          "cloud layer parameters",
+          368
+        ],
+        [
+          "cloud phase tables",
+          12300
+        ],
+        [
+          "cloud hemisphere light",
+          544
+        ],
+        [
+          "cloud sky overlay",
+          110592
+        ],
+        [
+          "cloud overlay rows",
+          16
+        ],
+        [
+          "view volume in-scatter and terminal pair",
+          9446400
+        ],
+        [
+          "view volume transmittance and night in-scatter",
+          9446400
+        ],
+        [
+          "view volume low bands history A",
+          13824000
+        ],
+        [
+          "view volume high bands history A",
+          9216000
+        ],
+        [
+          "view volume low bands history B",
+          13824000
+        ],
+        [
+          "view volume high bands history B",
+          9216000
+        ],
+        [
+          "view volume history camera",
+          96
+        ],
+        [
+          "atmosphere aerosol",
+          80
+        ],
+        [
+          "view volume medium coefficients",
+          4608000
+        ]
+      ],
+      "setup_pass_peaks_ns": {},
+      "storage": "slot=0\nday capture=false role=auxiliary resource=ResourceId { index: 75, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=depth resource=ResourceId { index: 100, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=scene resource=ResourceId { index: 101, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=motion resource=ResourceId { index: 102, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=reactive resource=ResourceId { index: 103, owner: () } reason=explicit store usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=resolved exposure resource=ResourceId { index: 116, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=output resource=ResourceId { index: 117, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=auxiliary resource=ResourceId { index: 75, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=depth resource=ResourceId { index: 100, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=scene resource=ResourceId { index: 101, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=motion resource=ResourceId { index: 102, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=reactive resource=ResourceId { index: 103, owner: () } reason=explicit store usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=resolved exposure resource=ResourceId { index: 116, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=output resource=ResourceId { index: 117, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nunique textures/nominal bytes=(7, 89997314) fallback-only bytes=0; retained generations accounted by FrameHost\nslot=1\nday capture=false role=auxiliary resource=ResourceId { index: 75, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=depth resource=ResourceId { index: 100, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=scene resource=ResourceId { index: 101, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=motion resource=ResourceId { index: 102, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=reactive resource=ResourceId { index: 103, owner: () } reason=explicit store usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=resolved exposure resource=ResourceId { index: 116, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=false role=output resource=ResourceId { index: 117, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=auxiliary resource=ResourceId { index: 75, owner: () } reason=transient descriptor requires one layer and mip usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=depth resource=ResourceId { index: 100, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=scene resource=ResourceId { index: 101, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=motion resource=ResourceId { index: 102, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=reactive resource=ResourceId { index: 103, owner: () } reason=explicit store usage=TextureUsages(RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=resolved exposure resource=ResourceId { index: 116, owner: () } reason=explicit store usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nday capture=true role=output resource=ResourceId { index: 117, owner: () } reason=sampled/copied/native/storage input usage=TextureUsages(COPY_SRC | TEXTURE_BINDING | RENDER_ATTACHMENT) metal=Some(\"Private\")\nunique textures/nominal bytes=(7, 89997314) fallback-only bytes=0; retained generations accounted by FrameHost",
+      "view": [
+        35.0,
+        246.0,
+        16.0
+      ],
+      "view_angles": {
+        "pitch_degrees": 10.0,
+        "start_solar_hours": 16.5,
+        "start_sun_elevation_degrees": 15.699857711791992,
+        "yaw_degrees": 79.8441162109375
+      },
+      "view_volume_grid": [
+        160,
+        90,
+        80
+      ],
+      "whole_frame_gpu_ns": 127935757.6122449,
+      "weather_rate": 60,
+      "investigations": {
+        "atmosphere aerial perspective": "1.081 ms, this cycle at 1\u00d7 0.897 ms and WP15 at 0.852 ms (zero means absent). Dry submissions average 42.688 ms and occupied ones 185.680 ms at this rate. The WP15 reference has static 10\u00b0 lighting and an advected bank, while this arm covers daylight, twilight and night with varying mist. Device load was shared.",
+        "atmosphere reflection mip 0": "0.127 ms, this cycle at 1\u00d7 0.038 ms and WP15 at 0.140 ms (zero means absent). Dry submissions average 42.688 ms and occupied ones 185.680 ms at this rate. The WP15 reference has static 10\u00b0 lighting and an advected bank, while this arm covers daylight, twilight and night with varying mist. Device load was shared.",
+        "atmosphere reflection mip 1": "0.317 ms, this cycle at 1\u00d7 0.197 ms and WP15 at 0.193 ms (zero means absent). Dry submissions average 42.688 ms and occupied ones 185.680 ms at this rate. The WP15 reference has static 10\u00b0 lighting and an advected bank, while this arm covers daylight, twilight and night with varying mist. Device load was shared.",
+        "atmosphere reflection mip 3": "0.270 ms, this cycle at 1\u00d7 0.146 ms and WP15 at 0.161 ms (zero means absent). Dry submissions average 42.688 ms and occupied ones 185.680 ms at this rate. The WP15 reference has static 10\u00b0 lighting and an advected bank, while this arm covers daylight, twilight and night with varying mist. Device load was shared.",
+        "atmosphere reflection mip 4": "0.219 ms, this cycle at 1\u00d7 0.119 ms and WP15 at 0.140 ms (zero means absent). Dry submissions average 42.688 ms and occupied ones 185.680 ms at this rate. The WP15 reference has static 10\u00b0 lighting and an advected bank, while this arm covers daylight, twilight and night with varying mist. Device load was shared.",
+        "atmosphere reflection mip 6": "0.205 ms, this cycle at 1\u00d7 0.113 ms and WP15 at 0.112 ms (zero means absent). Dry submissions average 42.688 ms and occupied ones 185.680 ms at this rate. The WP15 reference has static 10\u00b0 lighting and an advected bank, while this arm covers daylight, twilight and night with varying mist. Device load was shared.",
+        "atmosphere sky view": "0.165 ms, this cycle at 1\u00d7 0.124 ms and WP15 at 0.385 ms (zero means absent). Dry submissions average 42.688 ms and occupied ones 185.680 ms at this rate. The WP15 reference has static 10\u00b0 lighting and an advected bank, while this arm covers daylight, twilight and night with varying mist. Device load was shared.",
+        "contribution compute": "0.124 ms, this cycle at 1\u00d7 0.017 ms and WP15 at 0.241 ms (zero means absent). Dry submissions average 42.688 ms and occupied ones 185.680 ms at this rate. The WP15 reference has static 10\u00b0 lighting and an advected bank, while this arm covers daylight, twilight and night with varying mist. Device load was shared.",
+        "effect 0: effect 1: cloud weather map": "1.406 ms, this cycle at 1\u00d7 0.164 ms and WP15 at 0.309 ms (zero means absent). Dry submissions average 42.688 ms and occupied ones 185.680 ms at this rate. The WP15 reference has static 10\u00b0 lighting and an advected bank, while this arm covers daylight, twilight and night with varying mist. Device load was shared.",
+        "effect 1: effect 1: cloud Sun path near": "9.657 ms, this cycle at 1\u00d7 5.388 ms and WP15 at 1.055 ms (zero means absent). Dry submissions average 42.688 ms and occupied ones 185.680 ms at this rate. The WP15 reference has static 10\u00b0 lighting and an advected bank, while this arm covers daylight, twilight and night with varying mist. Device load was shared.",
+        "effect 2: effect 1: cloud Sun path middle": "10.274 ms, this cycle at 1\u00d7 5.621 ms and WP15 at 1.010 ms (zero means absent). Dry submissions average 42.688 ms and occupied ones 185.680 ms at this rate. The WP15 reference has static 10\u00b0 lighting and an advected bank, while this arm covers daylight, twilight and night with varying mist. Device load was shared.",
+        "effect 3: effect 1: cloud Sun path far": "10.566 ms, this cycle at 1\u00d7 5.383 ms and WP15 at 0.964 ms (zero means absent). Dry submissions average 42.688 ms and occupied ones 185.680 ms at this rate. The WP15 reference has static 10\u00b0 lighting and an advected bank, while this arm covers daylight, twilight and night with varying mist. Device load was shared.",
+        "effect 4: effect 1: cloud ground field": "0.438 ms, this cycle at 1\u00d7 0.069 ms and WP15 at 0.618 ms (zero means absent). Dry submissions average 42.688 ms and occupied ones 185.680 ms at this rate. The WP15 reference has static 10\u00b0 lighting and an advected bank, while this arm covers daylight, twilight and night with varying mist. Device load was shared.",
+        "effect 6: effect 1: cloud ground band": "0.709 ms, this cycle at 1\u00d7 0.485 ms and WP15 at 0.547 ms (zero means absent). Dry submissions average 42.688 ms and occupied ones 185.680 ms at this rate. The WP15 reference has static 10\u00b0 lighting and an advected bank, while this arm covers daylight, twilight and night with varying mist. Device load was shared.",
+        "effect 7: effect 1: cloud medium coefficients": "0.386 ms, this cycle at 1\u00d7 0.120 ms and WP15 at 0.197 ms (zero means absent). Dry submissions average 42.688 ms and occupied ones 185.680 ms at this rate. The WP15 reference has static 10\u00b0 lighting and an advected bank, while this arm covers daylight, twilight and night with varying mist. Device load was shared.",
+        "effect 8: effect 1: cloud sky overlay": "0.385 ms, this cycle at 1\u00d7 0.184 ms and WP15 at 0.174 ms (zero means absent). Dry submissions average 42.688 ms and occupied ones 185.680 ms at this rate. The WP15 reference has static 10\u00b0 lighting and an advected bank, while this arm covers daylight, twilight and night with varying mist. Device load was shared.",
+        "effect after 0: effect 1: cloud trace": "17.508 ms, this cycle at 1\u00d7 13.766 ms and WP15 at 18.292 ms (zero means absent). Dry submissions average 42.688 ms and occupied ones 185.680 ms at this rate. The WP15 reference has static 10\u00b0 lighting and an advected bank, while this arm covers daylight, twilight and night with varying mist. Device load was shared.",
+        "effect after 1: effect 1: cloud resolve": "0.843 ms, this cycle at 1\u00d7 0.586 ms and WP15 at 0.751 ms (zero means absent). Dry submissions average 42.688 ms and occupied ones 185.680 ms at this rate. The WP15 reference has static 10\u00b0 lighting and an advected bank, while this arm covers daylight, twilight and night with varying mist. Device load was shared.",
+        "effect after 2: effect 1: cloud compose": "19.044 ms, this cycle at 1\u00d7 13.605 ms and WP15 at 17.195 ms (zero means absent). Dry submissions average 42.688 ms and occupied ones 185.680 ms at this rate. The WP15 reference has static 10\u00b0 lighting and an advected bank, while this arm covers daylight, twilight and night with varying mist. Device load was shared.",
+        "synthetic Sun horizon heights": "2.300 ms, this cycle at 1\u00d7 0.613 ms and WP15 at 0.747 ms (zero means absent). Dry submissions average 42.688 ms and occupied ones 185.680 ms at this rate. The WP15 reference has static 10\u00b0 lighting and an advected bank, while this arm covers daylight, twilight and night with varying mist. Device load was shared.",
+        "synthetic Sun shadow far": "1.339 ms, this cycle at 1\u00d7 0.134 ms and WP15 at 0.882 ms (zero means absent). Dry submissions average 42.688 ms and occupied ones 185.680 ms at this rate. The WP15 reference has static 10\u00b0 lighting and an advected bank, while this arm covers daylight, twilight and night with varying mist. Device load was shared.",
+        "synthetic Sun shadow near": "1.250 ms, this cycle at 1\u00d7 0.457 ms and WP15 at 1.088 ms (zero means absent). Dry submissions average 42.688 ms and occupied ones 185.680 ms at this rate. The WP15 reference has static 10\u00b0 lighting and an advected bank, while this arm covers daylight, twilight and night with varying mist. Device load was shared.",
+        "synthetic exposure resolve": "0.118 ms, this cycle at 1\u00d7 0.017 ms and WP15 at 0.014 ms (zero means absent). Dry submissions average 42.688 ms and occupied ones 185.680 ms at this rate. The WP15 reference has static 10\u00b0 lighting and an advected bank, while this arm covers daylight, twilight and night with varying mist. Device load was shared.",
+        "synthetic forward opaque": "6.401 ms, this cycle at 1\u00d7 2.860 ms and WP15 at 3.825 ms (zero means absent). Dry submissions average 42.688 ms and occupied ones 185.680 ms at this rate. The WP15 reference has static 10\u00b0 lighting and an advected bank, while this arm covers daylight, twilight and night with varying mist. Device load was shared.",
+        "synthetic tone encode": "19.320 ms, this cycle at 1\u00d7 13.648 ms and WP15 at 16.963 ms (zero means absent). Dry submissions average 42.688 ms and occupied ones 185.680 ms at this rate. The WP15 reference has static 10\u00b0 lighting and an advected bank, while this arm covers daylight, twilight and night with varying mist. Device load was shared.",
+        "temporal exposure texture": "18.686 ms, this cycle at 1\u00d7 9.368 ms and WP15 at 15.390 ms (zero means absent). Dry submissions average 42.688 ms and occupied ones 185.680 ms at this rate. The WP15 reference has static 10\u00b0 lighting and an advected bank, while this arm covers daylight, twilight and night with varying mist. Device load was shared.",
+        "whole frame": "127.936 ms against the 8.333 ms wire, WP15 at 88.460 ms. Dry submissions average 42.688 ms and occupied ones 185.680 ms at this rate. The WP15 reference has static 10\u00b0 lighting and an advected bank, while this arm covers daylight, twilight and night with varying mist. Device load was shared."
+      }
+    }
+  ]
+}

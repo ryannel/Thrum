@@ -1284,3 +1284,17 @@ The ground band still supplies terrain visibility and fog optical depth for illu
 A Metal regression holds the weather and a 3,500 m opaque stop fixed and raises a ridge behind the camera
 across the bank's base. Fresh transmittance is identical at every stop in both the lowland and inside-cloud views.
 [Target proof](../../../.orchestrate/evidence/CLOUDS/WP15/terrain-independent/PROOF.md)
+
+
+### WP16 mist through a day and variable haze
+
+Ground now uses the valley's committed solar clock and weather controls. The Mac panel,
+Chrome page and parameter files share the Ground declaration. The view volume and far
+transport use the same twilight mist lighting, with the dark-side source limited by
+the sky above that bearing.
+
+Metal and Chrome captures verify the calm, overcast and 10 m/s nights, and both targets'
+haze range and sweep. Metal checks verify the live Ground edits, cadence isolation and
+the spectral exponent's separation from weather queries. The paired 1440p Metal cost
+record retains the named passes, resources and tripped-wire observations.
+[WP16 proof](../../../.orchestrate/evidence/CLOUDS/WP16/PROOF.md)
