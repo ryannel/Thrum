@@ -1446,7 +1446,7 @@ checkpoint's scheduler, device probes, trace and route timing stay.
 
 | Cue | Where it must hold | Bar |
 |---|---|---|
-| C1 The sky, the sky's light on the ground and the sky's reflection follow the Sun and the camera with no step, flicker or flash while their charts are rebuilt over several frames | The game's clock through the sharpest twilight, a time-of-day scrub entered from that clock and left to it, a climb from the valley floor to the lookout's height and a jump of the hour, with the knob at 4 in the Mac window at 120 Hz and at 8 in Chrome at 60 Hz. Chrome's scrub is the fastest planned, 90° of Sun a second | Time of day as in Red Dead Redemption 2 or Horizon Forbidden West, which is [WP6's bar](#closing-g3s): colour that moves continuously, and no frame where the sky can be seen to update. Against the governor-off take at the same Sun and camera pose, no frame steps to catch up |
+| C1 The sky, the sky's light on the ground and the sky's reflection follow the Sun and the camera with no step, flicker or flash while their charts are rebuilt over several frames | The game's clock through the sharpest twilight, a time-of-day scrub entered from that clock and left to it, a climb from the valley floor to the lookout's height and a jump of the hour, with the knob at 4 in the Mac window at 120 Hz and at 8 in Chrome at 60 Hz. Chrome's scrub is the fastest planned, 90° of Sun a second. In Chrome, where the oldest reflection level trails longest, the reflection is judged on a surface that reads level 6 alone | Time of day as in Red Dead Redemption 2 or Horizon Forbidden West, which is [WP6's bar](#closing-g3s): colour that moves continuously, and no frame where the sky can be seen to update. Against the governor-off take at the same Sun and camera pose, no frame steps to catch up |
 | C2 With the governor off, nothing changes | Every offscreen run, every capture that does not enable the governor, every exact baseline taken without it | Identical work in each frame and identical pixels |
 
 ### What is wrong today
@@ -1495,11 +1495,24 @@ no overlay, or a registered overlay producer that skips the write, the keys alon
 A registered overlay write adds diffuse and reflection levels 0–6. An allocated overlay with no registered
 graph producer adds those same eight stages on every submission because a contribution can upload it
 directly through the queue. This also refreshes cloudy reflections, whose stored radiance includes solar
-illuminance, on the submission that changes the light. The encoder runs the union in its existing order.
+illuminance, on the submission that changes the light. Under a registered producer that skips its write,
+these keys leave a cloudy reflection at the old solar light until the producer next writes. Cadence 1 keeps
+that, because C2 keeps every governor-off frame as it is, and
+[the governed keys](#governed-keys) do not. The encoder runs the union in its existing order.
 The current diffuse, reflection and haze producers run together as today.
 
 **A governed refresh** visits the due stages in dependency order, sky view, diffuse irradiance, then reflection
 levels 0 to 6. On continuous Sun or altitude motion all nine are due.
+
+<a id="governed-keys"></a>**Under the governor a stage is due when what it stores has changed.** The sky view
+stores the sky for one Sun direction and altitude. Diffuse stores that sky lit by the solar illuminance and
+colour. A clear reflection level stores separate solar and night terms and is lit when it is read, so the
+light is not its key. A cloudy level stores radiance with the transmitted clear-sky light already in it, and
+both lookups return that radiance as stored, so the light is its key. The scheduler cannot see a level's
+encoding without a readback. So in a scene with an allocated overlay, a change in solar illuminance or colour
+makes reflection levels 0 to 6 due with diffuse, whether or not the overlay's producer wrote. With no overlay
+it makes diffuse alone due. The light is part of [the measure](#the-spread-follows-the-motion), so a halved
+illuminance refreshes those eight on the submission that halves it.
 
 - The atmosphere takes one snapshot of the chart inputs at the first submission of the refresh, including Sun
   direction, solar illuminance and colour, altitude and sky mapping. Later stages that read the sky view use
@@ -1508,7 +1521,7 @@ levels 0 to 6. On continuous Sun or altitude motion all nine are due.
 - A refresh has a **spread**, the number of consecutive submissions it takes: from 1 to the knob's value N,
   chosen [by the motion](#the-spread-follows-the-motion). Distribute the nine stages over the S submissions
   of a spread S. When due, the sky view runs first, on the first frame. Each ordinary frame encodes at most
-  ⌈9/S⌉ stages (5 at 2, 3 at 3 or 4, 2 from 5 to 8). Within this bound the builder may balance their GPU costs. Skip stages
+  ⌈9/S⌉ stages (9 at 1, 5 at 2, 3 at 3 or 4, 2 from 5 to 8). Within this bound the builder may balance their GPU costs. Skip stages
   whose keys and overlay are current. Submit commits the cursor, product keys and observed overlay writes. An
   abandoned frame leaves the same stages due.
 - While the inputs keep moving, refreshes follow one another. Preserve changes arriving after a product's
@@ -1535,43 +1548,62 @@ levels 0 to 6. On continuous Sun or altitude motion all nine are due.
 spread a refresh may take. The atmosphere's scheduler chooses each refresh's spread from how fast the chart
 inputs are changing, so a chart trails the sky by a bounded amount of change and not by a fixed count of
 frames. The registry, the governor's policy and the knob's values are untouched: the frame record still
-reports the tier's value, and the chart trace reports the spread each submission ran under.
+reports the tier's value, and the chart trace reports the spread each submission ran under and the change
+that chose it.
 
 - *The measure.* The change between two records of chart inputs is counted in **tolerances**. It is the
   largest of four ratios: the angle between the two Sun directions over the Sun tolerance, the altitude
   difference over the altitude tolerance, and the relative differences in solar illuminance and in any solar
-  colour channel over the light tolerance. The scheduler already holds each of these for its keys. The
+  colour channel over the light tolerance. A relative difference is the difference over the larger of the
+  two values. It is 0 between equal values, two zeros included, and 1 from or to zero, which is far past
+  any light tolerance and takes a spread of 1. The scheduler already holds each of these for its keys. The
   overlay is not measured. Its producer owns how fast it changes, and
   [the module list's ruling](../ARCHITECTURE.md#seam-ruling-for-atmosphere-wp12) on a cloud's reflection
   stands.
 - *Choosing.* On the submission that starts a refresh, take the change c from the previous submission's
-  inputs. The spread is the largest whole number S with S × c ≤ 1, kept between 1 and the knob's value.
-  Inputs that have not moved since the previous submission take the knob's value. A refresh of spread 1 runs
-  its due stages on that submission from that submission's inputs, as the governor-off path does on a moving
-  frame.
+  inputs, however long the interval between the two was. The spread is the largest whole number S with
+  S × c ≤ 1, kept between 1 and the knob's value. Inputs that have not moved since the previous submission
+  take the knob's value. A refresh of spread 1 runs its due stages on that submission from that submission's
+  inputs, as the governor-off path does on a moving frame. The stages a submission may encode follow the
+  spread chosen, ⌈9/S⌉, and not the knob. With the knob at 4 and the Sun tolerance at 0.2°, a refresh that
+  starts four ticks of the game's clock after the submission before it, 0.08° on, takes two submissions of
+  up to five stages.
 - *Cutting short.* On a later submission of a spread refresh, if the inputs have moved more than one
-  tolerance from the refresh's snapshot, the motion quickened after the spread was chosen. Abandon the
-  refresh and produce all nine from this submission's inputs before readers run, as the whole updates above
-  do, with motion named as the reason in the trace. The next refresh chooses again. A refresh is never cut
-  for a change inside one tolerance of its snapshot, so an uneven frame interval at a steady speed cuts
-  none: a refresh chosen at steady speed ends at most (S − 1)/S of a tolerance from its snapshot.
-- *What it bounds.* Successive snapshots of one chart differ by about one tolerance at most, and that is
-  the size of the step when the chart is replaced. On every governed submission, each chart was built from
-  inputs within three tolerances of that frame's in what the chart reads. The chart being rewritten is
-  within one of its snapshot, or the refresh is cut. One not yet rewritten comes from the refresh before,
-  whose snapshot lies at most a tolerance and one submission's change earlier, and that change is at most
-  half a tolerance whenever the running spread is 2 or more. The knob's bound in submissions still holds.
+  tolerance from the refresh's snapshot, abandon the refresh and produce all nine from this submission's
+  inputs before readers run, as the whole updates above do, with motion named as the reason in the trace.
+  A refresh is never cut for a change inside one tolerance of its snapshot.
+- *Uneven submissions.* The measure is the change in the inputs and not their speed, so a long interval
+  between submissions counts as the motion it carried. At a steady speed and an even pace a refresh ends at
+  most (S − 1)/S of a tolerance from its snapshot and is not cut. An interval long enough to carry the rest
+  of the tolerance cuts it: with the knob at 8 and the Sun tolerance at 0.2°, six clock steps of 0.02° and
+  then one of 0.10°, a submission four ticks late, end 0.22° from the snapshot. That is one whole update
+  after a hitch, and it is what makes the bound below hold at any pace. A refresh after a shortened or cut
+  one chooses from its own first submission's change, so one long interval shortens or cuts one refresh and
+  the spread returns with the next. The trace counts both.
+- *What it bounds.* While refreshes are spread, successive snapshots of one chart differ by at most one
+  tolerance at an even pace and one and a half at any pace, and that is the size of the step when the chart
+  is replaced. On every governed submission, each chart was built from inputs within three tolerances of
+  that frame's in what the chart stores, at any pace. The chart being rewritten is within one of its
+  snapshot, or the refresh is cut. One not yet rewritten comes from the refresh before, whose snapshot lies
+  at most a tolerance and one submission's change earlier, and that change is at most half a tolerance
+  whenever the running spread is 2 or more. The knob's bound in submissions still holds.
 - *The tolerances* start at 0.2° of Sun, 10 m of altitude and 1% of light. In the retained Chrome take the
   governor-off sky patch moves 11.3 SDR codes for 1.5° of Sun near 17.7 solar hours, close to the most it
   moves in that take, so 0.2° is a step of about 1.5 codes when a chart is replaced, the size an 8-bit
   picture of a steadily changing sky already steps by. 10 m is under 1% of the aerosol's 1,200 m scale
-  height. The builder tunes the three by eye against WP12.4 and WP12.5 and records the values kept. Two
-  anchors hold whatever the tuning, and WP12.1 checks them: the game's clock at 60 Hz, 0.02° of Sun a
-  submission in a five-minute day, spreads over four submissions at the first tier, and a scrub of 1.5° a
-  submission rebuilds on every submission at every tier.
-- *One tolerance serves every hour.* It is sized where the sky changes fastest and is stricter than needed
-  at noon. Widening it away from twilight is not built: the game's clock already takes the knob's value at
-  every hour, 0.16° over eight submissions at 60 Hz, and only a time-lapse at midday would gain.
+  height. The builder tunes the three by eye against WP12.4 and WP12.5 and records the values kept. The Sun
+  tolerance may tighten toward the horizon, where the sky changes most for each degree, so that the game's
+  clock through the sharpest twilight takes a shorter spread than the knob's value, down to every
+  submission, if the pictures there need it. Two anchors hold whatever the tuning, and WP12.1 checks them.
+  With the Sun 10° or more above the horizon, the game's clock at 60 Hz, 0.02° of Sun a submission in a
+  five-minute day, takes the knob's value at every tier. A scrub of 1.5° a submission rebuilds on every
+  submission at every tier and every hour.
+- *Where the saving is owed.* The sustained saving is owed where the light changes slowly, which is most
+  of play. The Sun is 10° or more above the horizon from about 7 to 17 solar hours of the valley's day, and
+  WP12.3's route runs there, from 16 hours. Through the sharpest twilight the bar is the picture alone, and
+  a tuning that pays the governor-off cost for those minutes passes. The starting values spread the game's
+  clock at every hour, 0.16° over eight submissions at 60 Hz, and they stand if the pictures support them.
+  Widening a tolerance at midday is not built, because only a time-lapse there would gain.
 
 **Reflection handoff.** An integer level and its encoding become readable together before forward shading
 and the lent lookup run. In a scene with an overlay, classify the current cube on the GPU after each overlay
@@ -1617,7 +1649,9 @@ aerial knob does not use it and is unchanged.
 no environment epoch and leaves aerial transport on its existing path. The lent sky radiance, diffuse and
 reflection products are whole on every submission. At tiers 1, 2 and 3 the maximum age of differing
 atmosphere inputs on continuous motion is respectively 6, 10 and 14 submissions, including on tier changes,
-and those inputs are within three tolerances of this frame's however fast the Sun or the camera moves.
+and those inputs are within three tolerances of this frame's however fast the Sun, its light or the camera
+moves and however the submissions are paced. That covers what each product stores, the solar light in a
+cloudy reflection level included.
 Live overlay samples can be newer than the atmosphere snapshot. Both reflection lookups return radiance in
 the same units throughout the handoff. [Environment products](../ARCHITECTURE.md#interfaces)
 
@@ -1666,29 +1700,39 @@ and position to the trace. Its recovery path is the whole update a cut needs.
 
 ### How it is proved
 
-WP12.1 exercises the schedule, the chosen spread, the cut and the recovery bound on submitted CPU frames.
-Its steps are written as fractions of a tolerance, so tuning the tolerances moves no case but the two
-anchors, which are in degrees. WP12.2 uses small Metal probes, and moves its Sun slowly enough to keep the
-spread it tests. With the overlay held fixed, compare a moving, spread refresh to a cadence-1 host at the first
-frame's atmosphere inputs. With the Sun held fixed, change the overlay after diffuse runs and compare
-integer and fractional reflection lookups to the corresponding clear and cloudy control levels. Probe the
-aerial result while a cloud shadow crosses the camera between diffuse updates.
+WP12.1 exercises the schedule, the governed keys, the chosen spread, the cut, uneven steps and the recovery
+bound on submitted CPU frames. Its steps are written as fractions of a tolerance, so tuning the tolerances
+moves no case but the two anchors, which are in degrees. WP12.2 uses small Metal probes, and moves its Sun
+slowly enough to keep the spread it tests. With the overlay held fixed, compare a moving, spread refresh to a
+cadence-1 host at the first frame's atmosphere inputs. With the Sun held fixed, change the overlay after
+diffuse runs and compare integer and fractional reflection lookups to the corresponding clear and cloudy
+control levels. With a cloudy overlay whose producer has stopped writing, halve the solar illuminance and
+compare every reflection level to controls at the old and the new light. Probe the aerial result while a
+cloud shadow crosses the camera between diffuse updates.
 
 WP12.3 pairs the valley takes on this Mac. Read the identities of the GPU passes that executed in each
-submission. An ordinary four-frame refresh during motion must contain each of the nine stages once, with
-at most three per frame. Mark initialization, discontinuities and tier recovery separately in the same
-trace and keep their cost in the whole-take figures. The p50 and p95 of summed chart time are tripwires.
+submission, and each refresh's spread and the change that chose it. Every refresh's spread must be the one
+its change gives, and every submission of a refresh of spread S must run at most ⌈9/S⌉ stages. The saving
+is sustained when complete four-submission refreshes cover at least three quarters of the submissions of
+the route's moving segment. A healthy take is far above that, since at the starting tolerance a
+refresh there shortens only after an interval of more than 2.5 ticks. A tuning that spreads nothing is at zero. Mark initialization,
+discontinuities, tier recovery and motion cuts separately in the same trace, count the refreshes at each
+spread, and keep the cost of all of them in the whole-take figures. The p50 and p95 of summed chart time
+are tripwires.
 
 WP12.4 and WP12.5 judge C1 in paired realtime captures, governed against governor off. Match Sun and
 camera pose on the same material. Attach the chosen spread and the executed stages to submitted frame IDs,
-so the images establish which schedule produced them. Each target judges the two cases the mechanism
-separates. On the game's clock through the sharpest twilight the charts are spread, and no refresh may show.
-Through a scrub, with the clock running before and after it, the spread shortens and lengthens, and no
-frame may step more than the governor-off take does at the same pose. The Mac holds the knob at 4, its
-first tier. Chrome holds it at 8, the longest spread at the slower display, and scrubs at 1.5° per
+so the images establish which schedule produced them. Each target judges the cases the mechanism
+separates. On the game's clock through the sharpest twilight, at whatever spread the tuning chooses there,
+no frame may step more than the governor-off take does at the same pose. Through a scrub, with the clock
+running before and after it, the spread shortens and lengthens under the same bar. The Mac holds the knob at
+4, its first tier. Chrome holds it at 8, the longest spread at the slower display, and scrubs at 1.5° per
 submitted frame, which is the take that failed: the first build's
 [retained frames](../../../.orchestrate/evidence/ATMOSPHERE/WP12/README.md) from submissions 150 to 165 are
-the example of the fault. WP12.6 checks the protected references locally.
+the example of the fault. Chrome also frames a surface of roughness 1, which reads reflection level 6 alone,
+and judges it where refreshes take eight submissions: there level 6 is the oldest chart a reader sees, up
+to fourteen submissions behind, and the first build's takes left it unjudged. WP12.6 checks the protected
+references locally.
 
 ### Risks
 
@@ -1697,9 +1741,11 @@ the example of the fault. WP12.6 checks the protected references locally.
 | The worst frame is not lowered | The 95th percentile of the summed chart time stays where the median was | Reporting the mean alone |
 | A later stage reads this frame's inputs | A seam in the reflected sky, or reflection and sky that disagree in azimuth, while the Sun moves | Testing a still Sun |
 | The sky steps where it changes fastest | At twilight in Chrome, the whole sky's brightness changes at each refresh and holds between | Judging a noon scrub only, or a scrub only, where nothing is spread |
-| The tolerance is tuned until nothing is spread | The game's clock rebuilds all nine on every frame, and the route's chart time returns to the governor-off figure | Passing the pictures with the saving gone |
+| The tolerance is tuned until nothing is spread | With the Sun high, the game's clock rebuilds all nine on every frame, and the route's chart time returns to the governor-off figure | Passing the pictures with the saving gone |
 | A scrub that starts mid-refresh is noticed late | The first scrub frames show the pre-scrub sky over newly lit ground | Starting every scrub take from a still Sun on a refresh boundary |
-| A hitch is read as fast motion | A nine-stage frame follows each long frame on the game's clock | Widening the tolerance until a hitch fits inside it |
+| One long frame costs more than one refresh | After a single late submission on the game's clock, a second refresh is shortened or cut | Widening the tolerance until a hitch fits inside it, or cutting on elapsed time and not on the change |
+| A cloudy reflection keeps the old light | After a light edit under cloud whose producer is not writing, the ground dims and its reflections do not | Testing the edit under a clear sky, or with the overlay rewritten on the same submission |
+| The oldest reflection level is never looked at | The inspected surface is smooth and reads level 0, or level 6 is shown only as a line in the trace | Passing the reflection on the trace's word that level 6 ran |
 | A jump shows the old sky | Up to six frames of the old hour's sky over newly lit ground after the hour is set | Lowering the cadence's value to hide it |
 | The governor-off path changed | An exact image taken without the governor moves | Refreshing it |
 
@@ -1709,7 +1755,9 @@ On ordinary moving frames at the first tier, nine stages that summed to about 1.
 per submission. The first build measured 0.31 ms at the median and 0.55 ms at the 95th percentile on the Mac
 route at 4, against 1.18 and 1.61 ms with the governor off. While the sky's inputs move faster than half a
 tolerance a submission, as in a scrub, the charts cost what they cost with the governor off, and choosing
-the spread is a few comparisons on the CPU. Keep the full-refresh frames in the cost record. In overlay scenes account separately for
+the spread is a few comparisons on the CPU. A long interval costs one shortened refresh or one whole
+update. Keep the full-refresh frames and the shortened refreshes in the cost record. In an overlay scene a
+light-only edit under the governor makes eight stages due where cadence 1 makes one. In overlay scenes account separately for
 classification (at most one scan of the 48² × 6 overlay per write), horizontal haze reduction (256 sky samples
 when due), and the second reflection sample at a mixed-encoding boundary. The clear valley incurs none of
 these overlay costs.

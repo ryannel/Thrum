@@ -818,3 +818,10 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   the Sun, altitude and light, and cuts a refresh short when the motion quickens. WP12.1, WP12.4 and WP12.5
   were rewritten for it. The Mac is judged at 4 and Chrome at 8, each on the game's clock through twilight and
   through a scrub entered from that clock. No file of `APPLE-PRESENTATION` and no interface changed.
+
+- 2026-11-27 Revised WP12 after the [four findings at `0223de186`](../../../.orchestrate/evidence/ATMOSPHERE/design-review.md).
+  1. Under the governor a stage is due when what it stores has changed. In a scene with an allocated overlay a change of solar illuminance or colour now makes reflection levels 0–6 due with diffuse, because a cloudy level stores the light. WP12.1 checks the due set and WP12.2 probes all seven levels against controls at the old and the halved light with the overlay held. Cadence 1 keeps its keys.
+  2. The Sun tolerance may tighten toward the horizon. The game's clock is held to the knob's value only with the Sun 10° or more above the horizon. WP12.4 and WP12.5 judge the sharpest twilight at whatever spread the trace names, and WP12.3 proves the saving on the route from 16 solar hours.
+  3. The design no longer claims that an uneven pace cuts no refresh. A long interval counts as the motion it carried, and shortens or cuts one refresh. A submission's stage limit follows the chosen spread. WP12.1 has the review's two examples. WP12.3 checks each refresh's spread against its recorded change, requires four-submission refreshes over three quarters of the moving segment, and counts shortened and cut refreshes in the timing record.
+  4. WP12.5 frames a surface of roughness 1, which reads level 6 alone, and judges it through three replacements where refreshes take eight submissions, through twilight and through the scrub.
+  Took the suggestion: a relative light change is the difference over the larger value, 0 between two zeros and 1 from or to zero.

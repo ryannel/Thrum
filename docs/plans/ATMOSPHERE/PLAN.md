@@ -6,8 +6,10 @@
 
 - Assumption: WP3 ends with a CPU diagnosis. The authored-spur replay and an in-game correction remain open under G3s. A later proposal needs the original inputs and the fixed and realtime captures specified in the design.
 - Assumption: WP4 compares the reconstructed geometry cases in one bounded CPU trial. The original ray inputs and exact finite-disk match remain open under G3s.
-- Assumption: the governor's chart knob (4, 6 and 8 by tier) is the longest a chart refresh may be spread, and the atmosphere chooses each refresh's spread from how fast the Sun, the camera's altitude and the Sun's light are changing. The governor's registry and policy are unchanged. On the game's clock the charts take the knob's full value. A scrub shortens the spread, to every frame at 1.5° of Sun a frame, and costs what the charts cost with the governor off while it lasts.
-- Assumption: a refresh may let the sky's inputs move 0.2° of Sun, 10 m of altitude or 1% of light. These are the planner's starting values, and the builder tunes them by eye against WP12.4 and WP12.5.
+- Assumption: the governor's chart knob (4, 6 and 8 by tier) is the longest a chart refresh may be spread, and the atmosphere chooses each refresh's spread from how fast the Sun, the camera's altitude and the Sun's light are changing. The governor's registry and policy are unchanged. On the game's clock the charts take the knob's full value while the Sun is 10° or more above the horizon, about 7 to 17 solar hours. A scrub shortens the spread, to every frame at 1.5° of Sun a frame, and costs what the charts cost with the governor off while it lasts.
+- Assumption: a refresh may let the sky's inputs move 0.2° of Sun, 10 m of altitude or 1% of light. These are the planner's starting values, and the builder tunes them by eye against WP12.4 and WP12.5. The builder may tighten the Sun's value toward the horizon, so the charts may be rebuilt as often as every frame through the sharpest twilight, at the governor-off cost for those minutes, if the picture needs it.
+- Assumption: WP12.3 counts the saving as kept when four-frame refreshes cover at least three quarters of the frames of the Mac route's moving segment. The planner chose the fraction. The first build's fixed spread covered about 94%.
+- Assumption: with the governor off, a cloud's reflection under a cloud producer that has stopped writing keeps the old sunlight after a change of the Sun's brightness or colour, until the producer next writes. That is today's behaviour, kept so that no governor-off picture changes. Under the governor it is corrected.
 - Assumption: WP12 judges the knob at 4 in the Mac window and at 8 in Chrome, the longest spread at the slower display. Chrome at 4 is not captured.
 
 ## WP5 Other modules read the one sky and Sun, and one cloud optical depth dims direct sunlight once
@@ -48,8 +50,10 @@ Start from the first build's verified checkpoint, `286a34491` on `build/atmosphe
 device probes, trace, route timing and compatibility fixes. What changes is
 [how a refresh's spread is chosen](DESIGN.md#the-spread-follows-the-motion): the knob becomes the ceiling,
 with nothing new in the governor's files. That checkpoint's schedule tests and probes step the Sun by 0.5° or
-more, which now shortens the spread, so restate their steps as fractions of a tolerance. Its WP12.4 and WP12.5
-takes are not reused: the game's clock, not the scrub, is now where the charts are spread. Its Chrome frames
+more, which now shortens the spread, so restate their steps as fractions of a tolerance. Its scheduler keys
+only diffuse on the Sun's light, and [the governed keys](DESIGN.md#governed-keys) add the reflection levels in
+an overlay scene. Its WP12.4 and WP12.5 takes are not reused: the game's clock, not the scrub, is now where
+the charts are spread, and Chrome's takes need a surface of roughness 1 in view. Its Chrome frames
 150 to 165 at 8 stay as the example of the fault, and its
 [handoff](../../../.orchestrate/evidence/ATMOSPHERE/WP12-handoff.md) lists what else is owed, a clean run of
 the workspace's tests among it.
