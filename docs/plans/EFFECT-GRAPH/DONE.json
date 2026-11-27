@@ -546,7 +546,9 @@
           "check": "cargo nextest run --locked --offline -p thrum-render -E 'test(/simulate_draw_rules/)' --no-tests=fail",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP7.2",
@@ -567,7 +569,9 @@
           "lock": "chrome",
           "target": "chrome-webgpu",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         },
         {
           "id": "WP7.4",
@@ -576,7 +580,9 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "open",
-          "evidence": ""
+          "evidence": "",
+          "verdict": "",
+          "review": ""
         }
       ],
       "failed_reviews": 0,

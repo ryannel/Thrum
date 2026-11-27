@@ -680,12 +680,12 @@
       }
     },
     "WP7": {
-      "definitions": "315486f5619fdb3cff134a2b8c63dce4e5caac4c9af0c635a6234184bf32b016",
+      "definitions": "6935cc87c143bfdfe1d2bbfa529dccc09b37ffe3eba51f584507e0968ee02a20",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "WATERS WP16 needs something no plan provides yet. The builder wrote: WP16 needs a planner-approved EFFECT-GRAPH change t",
-        "at": "2026-11-27T06:01:53Z"
+        "task": "The design review of EFFECT-GRAPH at .orchestrate/evidence/EFFECT-GRAPH/design-review.md asked for changes, with its 5 M",
+        "at": "2026-11-27T06:24:12Z"
       },
       "ends_stretch": true
     }
@@ -742,11 +742,15 @@
     {
       "task": "WATERS WP16 needs something no plan provides yet. The builder wrote: WP16 needs a planner-approved EFFECT-GRAPH change that lets the caustic field draw with additive blending before opaque shading. The builder's handoff, .orchestrate/evidence/WATERS/WP16-handoff.md, says what is finished, what was tried and what to do first. Its work is on branch build/waters at e67b55584b0c, which isn't merged; read it with `git show`. A plan you keep ends with `KEEP WATERS WP16: builder: <where the plan provides it>`.",
       "at": "2026-11-27T06:01:53Z"
+    },
+    {
+      "task": "The design review of EFFECT-GRAPH at .orchestrate/evidence/EFFECT-GRAPH/design-review.md asked for changes, with its 5 Must Fix findings.",
+      "at": "2026-11-27T06:24:12Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-27T06:01:53Z"
+    "at": "2026-11-27T06:24:12Z"
   },
   "design_history": [
     {
