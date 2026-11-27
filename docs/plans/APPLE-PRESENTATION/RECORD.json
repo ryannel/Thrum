@@ -2098,7 +2098,17 @@
         "task": "The design review of APPLE-PRESENTATION at .orchestrate/evidence/APPLE-PRESENTATION/design-review.md asked for changes, ",
         "at": "2026-11-26T13:01:01Z"
       },
-      "ends_stretch": true
+      "ends_stretch": true,
+      "human_feedback": [
+        {
+          "asked": "Go ahead or stop with offering Thrum's Metal pipeline-cache patch to wgpu on issue #8526? wgpu requires the submitter to understand, justify and explain every line, and the owner writes the comment.",
+          "said": "I'm not in a position to understand every line of wgpu. it's not my area. But i would like you to make sure the patch is done well and to a high quality. Eventually they will fix this and we're going to have to strip it out.",
+          "items": [
+            "U2.2"
+          ],
+          "at": "2026-11-27T04:18:18Z"
+        }
+      ]
     },
     "WP18": {
       "definitions": "56a93f73d43cedc41216f498c8ae3a9f3f242eb513588e83ec7c178cb6156c9e",
@@ -2782,6 +2792,18 @@
         "turns": 1
       },
       "at": "2026-11-27T04:04:52Z"
+    }
+  ],
+  "decisions": [
+    {
+      "action": "feedback",
+      "work_package": "U2",
+      "words": "I'm not in a position to understand every line of wgpu. it's not my area. But i would like you to make sure the patch is done well and to a high quality. Eventually they will fix this and we're going to have to strip it out.",
+      "at": "2026-11-27T04:18:18Z",
+      "asked": "Go ahead or stop with offering Thrum's Metal pipeline-cache patch to wgpu on issue #8526? wgpu requires the submitter to understand, justify and explain every line, and the owner writes the comment.",
+      "items": [
+        "U2.2"
+      ]
     }
   ]
 }
