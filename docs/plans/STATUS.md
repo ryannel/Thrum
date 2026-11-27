@@ -391,7 +391,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 
 ### Now and next
 
-- The valley holds the display's full 120 Hz at full screen on the built-in display (APPLE-PRESENTATION WP17): In Progress · [plan](APPLE-PRESENTATION/PLAN.md)
+- APPLE-PRESENTATION WP17 The valley holds the display's full 120 Hz at full screen on the built-in display: Blocked: Needs Context: May WP17 try 50% output scale, or should 67% remain the minimum with further performance work before another sitting? The lead finds the missing fact, or asks you for it
 - Under water the Sun casts a moving net of light on the bed and the hull, shafts of light stand in the water, and the picture stays readable as the camera goes down (WATERS WP16): Not Started · [plan](WATERS/PLAN.md)
 - Clouds drift over the open sea, shade it and show in its reflections, and a fog bank drifts ashore (CLOUDS WP11): In Progress · [plan](CLOUDS/PLAN.md) · [latest review](../../.orchestrate/evidence/CLOUDS/WP11-review.md)
 - In the V1 valley, behind a selection, a shower darkens the desert floor and its rocks and leaves puddles in a patch of ground, and with the selection off the exit scene is what it was (PUDDLES WP6): In Progress · [plan](PUDDLES/PLAN.md) · [latest review](../../.orchestrate/evidence/PUDDLES/WP6-review.md)
@@ -538,7 +538,7 @@ A planner or the lead chose each of these where your words left it open. Each st
 | 4 | COOKED-DRAW | Cooked scenes draw on devices that cannot run GPU-driven draws, such as the iPhone simulator | PLATFORM-RUNTIME-IOS WP7 | Done 9 Nov |
 | 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE WP0 and WP1, PLATFORM-RUNTIME-MAC WP1, COOKED-DRAW WP1 | Done 25 Nov |
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE WP3 | Done 24 Nov |
-| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE WP0, WP2, WP3, WP11, WP12 and WP13; ATMOSPHERE WP12 and SHOWCASE WP7 for its WP17 | WP17 of 22 · In Progress |
+| 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE WP0, WP2, WP3, WP11, WP12 and WP13; ATMOSPHERE WP12 and SHOWCASE WP7 for its WP17 | WP17 of 22 · Blocked: Needs Context |
 | 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | CONTENT-LOOP WP4 for its WP9 to pass the full check; APPLE-PRESENTATION WP3 and SHOWCASE WP9 for its WP6; APPLE-PRESENTATION WP7 for its WP12 | Done 27 Nov |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is found on main within about two hours and traced to the commit that made it |  | Done 25 Nov |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE WP2, BASELINE-GUARD WP1 | Done 17 Nov |
