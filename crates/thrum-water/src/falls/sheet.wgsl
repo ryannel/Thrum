@@ -8,6 +8,7 @@ struct SheetVertex {
     @location(3) across_fraction: vec4<f32>,
     @location(4) edge: f32,
     @location(5) receiving: vec3<f32>,
+    @location(6) foam: vec2<f32>,
 }
 
 fn sheet_age(age: f32) -> f32 { return age - floor(age / FALL_LOOP) * FALL_LOOP; }
@@ -34,19 +35,22 @@ fn splash_vertex(world_time: vec4<f32>, velocity_along: vec4<f32>, discharge: ve
     let phase = fract(clock);
     let random = noise_hash(seed + vec2(17.0, cycle));
     let kick = noise_hash(seed + vec2(cycle, 32.0));
-    let strength = smoothstep(0.005, 0.047, discharge.w);
     let impact = discharge.z < FALL_CONTACT_DROPS;
     let axis = across_fraction.xz;
     let across = vec3(axis.x, 0.0, axis.y);
     let face = vec3(-axis.y, 0.0, axis.x);
     let flow = velocity_along.xyz * vec3(1.0, 0.0, 1.0);
     let outward = select(-face, face, dot(face, flow) >= 0.0);
+    let source = world_time.xyz + outward * select(0.0, 0.14, impact);
+    let foam = fall_foam(source.xz);
+    let strength = max(smoothstep(0.005, 0.047, discharge.w),
+        select(0.0, 0.72 * smoothstep(0.08, 0.48, foam.x + foam.y), impact));
     let drift = outward * mix(0.13, 0.59, kick) * select(1.0, 0.56, impact)
         + across * (random - 0.5) * 0.54;
     let loft = select(mix(0.034, 0.39, kick * kick), mix(0.037, 0.13, kick), impact)
         * mix(0.30, 1.0, strength);
-    let pool_height = clamp(wake_at(world_time.xz, 0.0).x, -0.42, 0.42);
-    let centre = world_time.xyz + drift * phase + vec3(0.0, pool_height, 0.0)
+    let pool_height = clamp(wake_at(source.xz, 0.0).x, -0.42, 0.42);
+    let centre = source + drift * phase + vec3(0.0, pool_height, 0.0)
         + vec3(0.0, 4.0 * loft * phase * (1.0 - phase), 0.0);
     let eye = normalize(view.camera_xyz_time.xyz - centre);
     let climb = drift + vec3(0.0, 4.0 * loft * (1.0 - 2.0 * phase), 0.0);
@@ -54,13 +58,13 @@ fn splash_vertex(world_time: vec4<f32>, velocity_along: vec4<f32>, discharge: ve
     let up = cross(right, eye);
     let index = u32(across_fraction.w);
     let corner = vec2(f32(index & 1u), f32(index >> 1u)) * 2.0 - 1.0;
-    let radius = select(mix(0.018, 0.089, random * random), mix(0.068, 0.166, random), impact)
+    let radius = select(mix(0.018, 0.089, random * random), mix(0.11, 0.23, random), impact)
         * mix(0.45, 1.0, strength);
     let point = centre + radius * (right * corner.x + up * corner.y * (1.0 + 1.3 * kick));
     let world = vec4(point, phase);
     return SheetVertex(view.view_proj * vec4(point, 1.0), world, velocity_along,
         vec4(random, kick, strength, select(0.0, 1.0, impact)),
-        vec4(corner.x, -1.0, corner.y, phase), 0.0, vec3(0.0));
+        vec4(corner.x, -1.0, corner.y, phase), 0.0, vec3(0.0), foam);
 }
 
 fn strand_swelling(birth: f32, velocity_along: vec4<f32>, across_fraction: vec4<f32>,
@@ -94,6 +98,7 @@ fn strand_swelling(birth: f32, velocity_along: vec4<f32>, across_fraction: vec4<
     if is_filament { position += strand_swelling(birth, velocity_along, across_fraction, edge_receiver.x); }
     var receiving_motion = 0.0;
     var receiving_level = edge_receiver.y;
+    var foam = vec2(0.0);
     if edge_receiver.z > 0.5 && across_fraction.w > 0.63 {
         // Follow the same interaction height as the receiving surface. Only
         // the optical contact moves; source locations stay on the fall record.
@@ -103,10 +108,11 @@ fn strand_swelling(birth: f32, velocity_along: vec4<f32>, across_fraction: vec4<
         position.y += contact * height;
         receiving_level += height;
         receiving_motion = contact * (height - previous);
+        foam = fall_foam(position.xz);
     }
     let world = vec4(position, world_time.w);
     return SheetVertex(view.view_proj * vec4(world.xyz, 1.0), world, velocity_along, discharge,
-        across_fraction, edge_receiver.x, vec3(receiving_motion, position.y - receiving_level, edge_receiver.z));
+        across_fraction, edge_receiver.x, vec3(receiving_motion, position.y - receiving_level, edge_receiver.z), foam);
 }
 
 struct FallOutput {
@@ -121,8 +127,9 @@ fn splash_shade(input: SheetVertex) -> FallOutput {
     let lobes = 0.82 + 0.18 * noise_hash(floor(corner * 4.0 + input.discharge.xx * 29.0));
     let support = 1.0 - smoothstep(0.06, lobes, dot(corner, corner));
     let alive = smoothstep(0.0, 0.15, phase) * (1.0 - smoothstep(0.69, 1.0, phase));
-    let alpha = input.discharge.z * support * alive
-        * mix(0.32, 0.92, input.discharge.x) * mix(1.0, 0.66, input.discharge.w);
+    let foam_gain = 0.57 + 0.43 * smoothstep(0.04, 0.50, input.foam.x + input.foam.y);
+    let alpha = input.discharge.z * support * alive * foam_gain
+        * mix(0.32, 0.92, input.discharge.x) * mix(1.0, 0.78, input.discharge.w);
     if alpha < 0.012 { discard; }
     let up = vec3(0.0, 1.0, 0.0);
     let point = input.world_time.xyz;
@@ -194,7 +201,10 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
     let path_foot = 1.0 - smoothstep(contact, 0.98 + 0.02 * spread, input.across_fraction.w);
     let side = input.edge * input.edge;
     let rounding = (0.018 + 0.13 * side) * (0.72 + 0.56 * fine);
-    let plunge_foot = smoothstep(rounding - 0.025, rounding + 0.22, input.receiving.y);
+    let contact_foam = smoothstep(0.10, 0.68, input.foam.x + 0.64 * input.foam.y);
+    let plunge_foot = smoothstep(rounding - 0.065 * contact_foam,
+        rounding + 0.17 + 0.21 * contact_foam,
+        input.receiving.y);
     let meets_pool = input.receiving.z > 0.5;
     let foot = select(path_foot, plunge_foot, meets_pool);
     let contact_cover = foot
@@ -229,7 +239,8 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
     let aerated = (environment_diffuse(vec3(0.0, 1.0, 0.0)) + direct * max(0.0, light.y))
         * vec3(0.84, 0.90, 0.89) / 3.14159265;
     let sheet_colour = mix(glass, churn, white);
-    let spray_light = mix(sheet_colour, aerated, mixing * (1.0 - thinness) * (0.70 + 0.25 * fine));
+    let spray_light = mix(sheet_colour, aerated,
+        mixing * (1.0 - thinness) * (0.32 + 0.58 * contact_foam + 0.10 * fine));
     let colour = (spray_light * aerial.transmission + aerial.scatter) * environment_storage_scale();
     let opacity = (clear * min(0.88, fresnel + 0.07 + 1.7 * input.discharge.w + 0.35 * breakout) + white * (0.90 + 0.18 * grain))
         * presence * mix(0.62, 1.0, seam) * contact_cover;

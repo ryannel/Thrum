@@ -230,10 +230,11 @@ impl Prepared {
             .surf_cache
             .as_ref()
             .map(|cache| cache.declare(&mut graph));
-        if let Some(foam) = &self.foam {
-            let read = foam.declare(&mut graph, surface.accesses.clone());
-            surface.accesses.push(read);
-        }
+        let foam_read = self
+            .foam
+            .as_ref()
+            .map(|foam| foam.declare(&mut graph, surface.accesses.clone()));
+        surface.accesses.extend(foam_read.clone());
         if let Some(rain) = &self.rain {
             surface.accesses.extend(rain.bands.declare(&mut graph));
         }
@@ -241,6 +242,7 @@ impl Prepared {
         if self.sheet.is_some() {
             let mut sheet = falls::declaration();
             sheet.accesses.extend(wake);
+            sheet.accesses.extend(foam_read);
             graph.after_opaque.push(sheet);
         }
         if self.gather.is_some() {
@@ -418,17 +420,6 @@ pub(super) fn new(
         .environment_products_with_cloud()
         .ok_or("water needs the scene's physical environment")?;
     let library = environment.shader_source.replace("@group(0)", "@group(2)");
-    let sheet = falls
-        .map(|config| {
-            falls::Sheet::new(
-                surface,
-                &environment,
-                &library,
-                config,
-                interaction.as_ref(),
-            )
-        })
-        .transpose()?;
     let plunge_capacity = falls.map(|config| {
         config
             .records
@@ -518,6 +509,18 @@ pub(super) fn new(
             plunge_capacity,
         )
     });
+    let sheet = falls
+        .map(|config| {
+            falls::Sheet::new(
+                surface,
+                &environment,
+                &library,
+                config,
+                interaction.as_ref(),
+                foam.as_ref(),
+            )
+        })
+        .transpose()?;
     let shared_samplers = rain
         .as_ref()
         .map(|_| field_samplers(surface, f32::from(thrum_sea::rain::WIND_BASE_MIP)));

@@ -1,5 +1,5 @@
 use super::{Falls, Segment, active};
-use crate::interaction::Interaction;
+use crate::{foam::Foam, interaction::Interaction};
 use bytemuck::{Pod, Zeroable};
 use glam::{DVec2, DVec3, Vec3, Vec4};
 use thrum_render::{
@@ -67,6 +67,7 @@ impl Sheet {
         library: &str,
         falls: &Falls,
         interaction: Option<&Interaction>,
+        foam: Option<&Foam>,
     ) -> Result<Self, String> {
         let device = surface.device;
         let capacity = falls
@@ -102,6 +103,13 @@ impl Sheet {
             layout_entries.extend(Interaction::sample_layout(1, wgpu::ShaderStages::VERTEX));
             group_entries.extend(waves.sample_entries(1));
         }
+        if let Some(stocks) = foam {
+            layout_entries.extend(Foam::sample_layout().map(|mut entry| {
+                entry.visibility = wgpu::ShaderStages::VERTEX;
+                entry
+            }));
+            group_entries.extend(stocks.sample_entries());
+        }
         let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some(PASS),
             entries: &layout_entries,
@@ -126,8 +134,13 @@ impl Sheet {
         } else {
             "1.0"
         };
+        let stocks = foam.map_or_else(
+            || "fn fall_foam(_point: vec2<f32>) -> vec2<f32> { return vec2(0.0); }".into(),
+            |foam| foam.stock_source()
+                + "fn fall_foam(point: vec2<f32>) -> vec2<f32> { return foam_at(point, vec4(0.0)).stocks.xy; }",
+        );
         let source = format!(
-            "{library}\n{}\nconst FALL_LOOP: f32 = {:?};\nconst FALL_CONTACT_DROPS: f32 = {}.0;\nfn fall_cloud(point: vec3<f32>) -> f32 {{ return {cloud}; }}\n{}\n{}\n{}",
+            "{library}\n{}\nconst FALL_LOOP: f32 = {:?};\nconst FALL_CONTACT_DROPS: f32 = {}.0;\nfn fall_cloud(point: vec3<f32>) -> f32 {{ return {cloud}; }}\n{}\n{stocks}\n{}\n{}",
             crate::VIEW_RECORDS,
             thrum_sea_model::LOOP_SECONDS,
             SPLASHES_PER_SEGMENT / 2,
