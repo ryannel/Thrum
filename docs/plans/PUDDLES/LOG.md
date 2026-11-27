@@ -325,4 +325,5 @@
   from the same wetness rows as the forward material. The basin sheen feathers over the outer
   15% of that reach. Matched Metal captures isolate the film and material edges at steady lake
   and pond stages, and check the original inner lake film. The beach takes cover three winds and
-  the fading ebb band. [Target evidence](../../../.orchestrate/evidence/PUDDLES/WP5/shared-shore-edge/README.md)
+  the fading ebb band. The mixed shore comparison holds both clocks while assets load and verifies
+  the same submitted wave phase. [Target evidence](../../../.orchestrate/evidence/PUDDLES/WP5/shared-shore-edge/README.md)

@@ -45,6 +45,7 @@ fn wet_shore_follows_the_tide() {
 thrum_test_support::macos_gpu_test! {
 fn a_dry_hollow_keeps_the_authored_shore_film_edge() {
     use std::sync::{Arc, Mutex};
+    use std::time::Duration;
     use thrum_app::sky::ContentStatus;
     use thrum_sea_model::Spectrum;
     use thrum_water::Water;
@@ -59,7 +60,7 @@ fn a_dry_hollow_keeps_the_authored_shore_film_edge() {
         let wind = Wind::Trade;
         let width = 384;
         let height = 216;
-        let record = |mixed| {
+        let build = |mixed| {
             let (game, _, coast, _) = build_wet_shore(wind, false).expect("coast");
             let coast = coast.lock().expect("coastal map");
             let mut bodies: Vec<_> = (0..).map_while(|i| coast.body(i).cloned()).collect();
@@ -81,15 +82,34 @@ fn a_dry_hollow_keeps_the_authored_shore_film_edge() {
             let game = game.with_contribution(Box::new(water), || ContentStatus::Drawn(1));
             let mut f = support::Fixture::from_game(&gpu, [width, height], game, report);
             f.parameters(r#"{"camera.island":0,"sun.elevation":37}"#);
-            f.warm_cooked();
+            f
+        };
+        let mut coast = build(false);
+        let mut mixed = build(true);
+        // Asset completion takes a varying number of frames. Keep both arm
+        // clocks at zero and give them the same submissions while it settles.
+        thrum_test_support::wait::until("both cooked shores", Duration::from_secs(30), || {
+            let ready = [&mut coast, &mut mixed].map(|fixture| {
+                fixture.frame_without_timings(0.0);
+                match fixture.game.poll_status() {
+                    Some(ContentStatus::Drawn(_)) => true,
+                    Some(ContentStatus::Failed(error)) => panic!("{error}"),
+                    _ => false,
+                }
+            });
+            ready.into_iter().all(|drawn| drawn).then_some(())
+        });
+        let record = |f: &mut support::Fixture| {
             let frame = f.frame(2.0);
             let names = frame.gpu_pass_ns.as_ref().expect("Metal timestamps").passes();
             assert!(names.iter().any(|p| p.name.ends_with("shore film")));
             assert_eq!(f.report.lock().unwrap().hollow_surface_vertices, 0);
-            f.image()
+            let clock = f.host.last_submitted_clock().expect("shore frame clock");
+            (f.image(), (clock.tick, clock.presentation_alpha.to_bits(), clock.display_time))
         };
-        let coast = record(false);
-        let mixed = record(true);
+        let (coast, coast_clock) = record(&mut coast);
+        let (mixed, mixed_clock) = record(&mut mixed);
+        assert_eq!(coast_clock, mixed_clock, "compare both shores at the same wave phase");
         let mut difference = 0;
         for y in (height / 2 - 13)..(height / 2 + 10) {
             for x in (width * 17 / 20)..(width - 4) {
