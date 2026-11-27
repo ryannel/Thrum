@@ -1,27 +1,14 @@
 {
   "module": "APPLE-PRESENTATION",
   "design": {
-    "verdict": "changes",
-    "review": ".orchestrate/evidence/APPLE-PRESENTATION/design-review.md",
-    "commit": "09022449928b37100ef771dfac284eb05e708a3b",
-    "hash": "dc94b8f480617d2e1c33d48161d90d737c63ebb1b21a9709d025c2b2f29a9b87",
-    "by": "review",
-    "host": "codex",
-    "model": "gpt-6.2-astra",
-    "effort": "high",
-    "observed": {
-      "model": "gpt-6.2-astra",
-      "effort": "high"
-    },
-    "cli": "codex-cli 0.171.0-alpha.13.2",
-    "path": "headless",
-    "usage": {
-      "input": 83618,
-      "cached": 1444608,
-      "output": 4831,
-      "turns": 1
-    },
-    "at": "2026-11-27T04:04:52Z"
+    "verdict": "ok",
+    "by": "review_limit",
+    "hash": "ba0f79705b4219adb7d0d3cd1ec2b12420836cd2c6a434144c35d5aba6fd5d37",
+    "after": [
+      ".orchestrate/evidence/APPLE-PRESENTATION/design-review-22.md",
+      ".orchestrate/evidence/APPLE-PRESENTATION/design-review.md"
+    ],
+    "at": "2026-11-27T04:14:56Z"
   },
   "work_packages": {
     "WP1": {
@@ -2114,12 +2101,12 @@
       "ends_stretch": true
     },
     "WP18": {
-      "definitions": "54e2bf9be4824a9d9a0944b9a71ecfcc7c3d7bfb27a4bea204a8b10cf46d2112",
+      "definitions": "56a93f73d43cedc41216f498c8ae3a9f3f242eb513588e83ec7c178cb6156c9e",
       "reviews": [],
       "authorised": {
         "by": "plan",
         "task": "The design review of APPLE-PRESENTATION at .orchestrate/evidence/APPLE-PRESENTATION/design-review.md asked for changes, ",
-        "at": "2026-11-27T03:59:50Z"
+        "at": "2026-11-27T04:14:56Z"
       }
     },
     "WP17": {
@@ -2232,11 +2219,15 @@
     {
       "task": "The design review of APPLE-PRESENTATION at .orchestrate/evidence/APPLE-PRESENTATION/design-review.md asked for changes, with its 5 Must Fix findings.",
       "at": "2026-11-27T03:59:50Z"
+    },
+    {
+      "task": "The design review of APPLE-PRESENTATION at .orchestrate/evidence/APPLE-PRESENTATION/design-review.md asked for changes, with its 1 Must Fix findings. That makes 2 design reviews in a row that asked for changes, so the script approves the design you leave without another review, and building starts from it.",
+      "at": "2026-11-27T04:14:56Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-27T03:59:50Z"
+    "at": "2026-11-27T04:14:56Z"
   },
   "design_history": [
     {
@@ -2768,6 +2759,29 @@
         "turns": 1
       },
       "at": "2026-11-27T03:48:09Z"
+    },
+    {
+      "verdict": "changes",
+      "review": ".orchestrate/evidence/APPLE-PRESENTATION/design-review.md",
+      "commit": "09022449928b37100ef771dfac284eb05e708a3b",
+      "hash": "dc94b8f480617d2e1c33d48161d90d737c63ebb1b21a9709d025c2b2f29a9b87",
+      "by": "review",
+      "host": "codex",
+      "model": "gpt-6.2-astra",
+      "effort": "high",
+      "observed": {
+        "model": "gpt-6.2-astra",
+        "effort": "high"
+      },
+      "cli": "codex-cli 0.171.0-alpha.13.2",
+      "path": "headless",
+      "usage": {
+        "input": 83618,
+        "cached": 1444608,
+        "output": 4831,
+        "turns": 1
+      },
+      "at": "2026-11-27T04:04:52Z"
     }
   ]
 }
