@@ -102,7 +102,7 @@ fn strand_swelling(birth: f32, velocity_along: vec4<f32>, across_fraction: vec4<
     if edge_receiver.z > 0.5 && across_fraction.w > 0.63 {
         // Follow the same interaction height as the receiving surface. Only
         // the optical contact moves; source locations stay on the fall record.
-        let contact = smoothstep(0.63, 1.0, across_fraction.w);
+        let contact = select(0.0, smoothstep(0.63, 1.0, across_fraction.w), edge_receiver.z > 1.5);
         let height = clamp(wake_at(position.xz, 0.0).x, -0.42, 0.42);
         let previous = clamp(wake_at(position.xz, -sheet_clock.y).x, -0.42, 0.42);
         position.y += contact * height;
@@ -190,7 +190,6 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
         input.discharge.z * (1.0 - 0.88 * thinness * taper));
     let pulses = mix(0.42, 1.0, smoothstep(0.26, 0.70, 0.7 * coarse + 0.3 * fine));
     let strand_presence = smoothstep(-0.12, 0.07, input.across_fraction.w)
-        * (1.0 - smoothstep(0.73, 1.0, input.across_fraction.w))
         * mix(1.0, pulses, smoothstep(0.16, 0.77, input.across_fraction.w));
     let ruptures = 1.0 - 0.62 * smoothstep(0.55, 1.0, input.discharge.z);
     let breaks_apart = ruptures * smoothstep(0.45, 0.92, input.across_fraction.w);
@@ -200,12 +199,12 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
     let contact = 0.85 + 0.055 * spread;
     let path_foot = 1.0 - smoothstep(contact, 0.98 + 0.02 * spread, input.across_fraction.w);
     let side = input.edge * input.edge;
-    let rounding = (0.018 + 0.13 * side) * (0.72 + 0.56 * fine);
+    let rounding = select((0.018 + 0.13 * side) * (0.72 + 0.56 * fine), 0.0, is_filament);
     let contact_foam = smoothstep(0.10, 0.68, input.foam.x + 0.64 * input.foam.y);
     let plunge_foot = smoothstep(rounding - 0.065 * contact_foam,
-        rounding + 0.17 + 0.21 * contact_foam,
+        rounding + select(0.17 + 0.21 * contact_foam, 0.06, is_filament),
         input.receiving.y);
-    let meets_pool = input.receiving.z > 0.5;
+    let meets_pool = input.receiving.z > 1.5;
     let foot = select(path_foot, plunge_foot, meets_pool);
     let contact_cover = foot
         * mix(1.0, smoothstep(0.18, 0.71, tear + 0.54 * fine),
