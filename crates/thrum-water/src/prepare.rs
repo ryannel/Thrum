@@ -237,7 +237,7 @@ impl Prepared {
             surface.images = optics::sampled(sheet);
         }
         surface.accesses = self.ambient.filtered_accesses();
-        surface.accesses.extend(wake);
+        surface.accesses.extend(wake.clone());
         let caustic_reads = self.caustics.as_ref().map(|_| surface.accesses.clone());
         let surf_cache = self
             .surf_cache
@@ -257,7 +257,9 @@ impl Prepared {
             .zip(caustic_reads.as_ref())
             .and_then(|(caustics, reads)| caustics.declare(&mut graph, reads));
         if self.sheet.is_some() {
-            graph.after_opaque.push(falls::declaration());
+            let mut sheet = falls::declaration();
+            sheet.accesses.extend(wake);
+            graph.after_opaque.push(sheet);
         }
         if self.gather.is_some() {
             graph.after_opaque.push(optics::declaration());
@@ -438,7 +440,15 @@ pub(super) fn new(
         .ok_or("water needs the scene's physical environment")?;
     let library = environment.shader_source.replace("@group(0)", "@group(2)");
     let sheet = falls
-        .map(|config| falls::Sheet::new(surface, &environment, &library, config))
+        .map(|config| {
+            falls::Sheet::new(
+                surface,
+                &environment,
+                &library,
+                config,
+                interaction.as_ref(),
+            )
+        })
         .transpose()?;
     let plunge_capacity = falls.map(|config| {
         config
