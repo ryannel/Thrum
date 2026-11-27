@@ -1824,9 +1824,9 @@
     {
       "id": "WP11",
       "name": "Clouds drift over the open sea, shade it and show in its reflections, and a fog bank drifts ashore",
-      "status": "ready_for_review",
-      "failed_reviews": 1,
-      "failed_reviews_with_repeat": 0,
+      "status": "in_progress",
+      "failed_reviews": 2,
+      "failed_reviews_with_repeat": 1,
       "diagnoses": 0,
       "depends_on": [
         "WATERS:WP8"
@@ -1864,7 +1864,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP11/repair/reflection.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP11-review.md"
         },
         {
@@ -1874,7 +1874,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP11/repair/metal-sea.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP11-review.md"
         },
         {
@@ -1884,7 +1884,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP11/repair/sea-motion.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP11-review.md"
         },
         {
@@ -1896,7 +1896,7 @@
           "target": "chrome-webgpu",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP11/repair/chrome-sea.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP11-review.md"
         },
         {
@@ -1905,8 +1905,8 @@
           "check": "python3 scripts/cloud_cost.py check --scene sea",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/CLOUDS/WP11/repair/sea-cost.json",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/CLOUDS/WP11-review.md"
         },
@@ -1919,7 +1919,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP11/repair/controls.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP11-review.md"
         },
         {
@@ -1929,7 +1929,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP11/repair/metal-ground.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP11-review.md"
         },
         {
@@ -1939,53 +1939,19 @@
           "target": "chrome-webgpu",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/CLOUDS/WP11/repair/chrome-ground.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/CLOUDS/WP11-review.md"
         }
       ],
       "findings": [
         {
-          "name": "Water reflection samples the clear sky chart",
-          "item": "WP11.2",
+          "name": "Lake stage changes leave the sky overlay and reflection cube stale",
           "repeat": false
         },
         {
-          "name": "Metal sea stills lack directional cloud reflections",
-          "item": "WP11.3",
-          "repeat": false
-        },
-        {
-          "name": "Cloud reflections do not move across the sea under TAAU",
-          "item": "WP11.4",
-          "repeat": false
-        },
-        {
-          "name": "Chrome noon water lacks directional cloud reflections",
-          "item": "WP11.5",
-          "repeat": false
-        },
-        {
-          "name": "Metal lake mist has no readable dawn wisps",
-          "item": "WP11.9",
-          "repeat": false
-        },
-        {
-          "name": "Chrome lake mist has no readable dawn wisps",
-          "item": "WP11.10",
-          "repeat": false
-        },
-        {
-          "name": "The fog surface keeps the original lake stage",
-          "item": "WP11.8",
-          "repeat": false
-        },
-        {
-          "name": "Lake mist follows the startup Sun after a Sun control edit",
-          "repeat": false
-        },
-        {
-          "name": "The sea cost record omits tripped named passes",
+          "name": "Replacing the sea cost record skips the previous clouds-visible run",
           "item": "WP11.6",
+          "different": "The earlier absolute time floor omitted crossings within one absent/visible pair. That comparison is repaired. Replacing an existing fixture now omits crossings against the previous visible arm.",
           "repeat": false
         }
       ]

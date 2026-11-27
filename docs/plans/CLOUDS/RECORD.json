@@ -1576,7 +1576,7 @@
         {
           "verdict": "fail",
           "commit": "d21064e1f17ce8f6036924552c5200f6092a589e",
-          "review": ".orchestrate/evidence/CLOUDS/WP11-review.md",
+          "review": ".orchestrate/evidence/CLOUDS/WP11-review-1.md",
           "items": {
             "WP11.11": "pass",
             "WP11.1": "pass",
@@ -1652,6 +1652,52 @@
             "turns": 1
           },
           "at": "2026-11-27T15:07:06Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "a2fc287ddf7a1fca42f5d0a72fdcdc9c83b17b32",
+          "review": ".orchestrate/evidence/CLOUDS/WP11-review.md",
+          "items": {
+            "WP11.11": "pass",
+            "WP11.1": "pass",
+            "WP11.2": "pass",
+            "WP11.3": "pass",
+            "WP11.4": "pass",
+            "WP11.5": "pass",
+            "WP11.6": "fail",
+            "WP11.8": "pass",
+            "WP11.9": "pass",
+            "WP11.10": "pass"
+          },
+          "findings": [
+            {
+              "name": "Lake stage changes leave the sky overlay and reflection cube stale",
+              "repeat": false
+            },
+            {
+              "name": "Replacing the sea cost record skips the previous clouds-visible run",
+              "item": "WP11.6",
+              "different": "The earlier absolute time floor omitted crossings within one absent/visible pair. That comparison is repaired. Replacing an existing fixture now omits crossings against the previous visible arm.",
+              "repeat": false
+            }
+          ],
+          "summary": "Nine of ten items pass. On Metal and Chrome, clouds reflect in the swell, the fog bank reaches the beach, and separate wisps stand over the dawn lake. A lake-stage edit leaves reflected fog at the preceding water level on a held frame, and the replacement sea cost record omits two pass investigations.",
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 207892,
+            "cached": 10225152,
+            "output": 22967,
+            "turns": 1
+          },
+          "at": "2026-11-27T20:45:41Z"
         }
       ],
       "authorised": {
