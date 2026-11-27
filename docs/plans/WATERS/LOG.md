@@ -1664,3 +1664,23 @@
 - 2026-11-27 Planner, for WP26's builder. Take WP26.5's figures at the starting revision before any
   change, under the load the later record will have. Bound 4's test wants a view of open water with no
   receiver in it, since the net on a panel is the one thing caustics alone add to the frame.
+- 2026-11-27 Planner, for the two Must Fix findings of the design review at `a40862cb2b73`, the last
+  round: the script approves this design without another review. Only WP26 and
+  [its section](DESIGN.md#beams-in-shallow-water-wp26) changed.
+- 2026-11-27 Planner, Must Fix 1, a remedy in the composition could dim the net with the field and the
+  water untouched: bound 6 now has three paths to a receiver, and the new one is what the frame draws
+  between a receiver and a lens under water, the receiver's light that reaches the lens and the light
+  added in front of it, the shafts' included. A change to code the receiver's view shares with the view
+  of the surface from below counts as reaching the receiver, and has WP16.6 judged at its views from
+  under water, in WP26.2 (question 10) and at noon in Chrome in WP26.4 (question 5). A change only the
+  surface's view runs stays at the two stations and WP16.7's views. WP26.2's reviewer question settles
+  which of the three from the diff.
+- 2026-11-27 Planner, Must Fix 2, one depth of the field cannot tell the field from the march: the
+  study's picture of the field at the rung nearest the lens is gone. WP26.1 keeps three pictures of each
+  view, which settle the example's water and the composition. It names the field or the march only with
+  evidence of what the field supplies along the view's rays over the whole path from the lens to the
+  surface, beside what the march returns: the field where that supply, summed, holds no separate beams,
+  the march where the sum holds them and its output does not. The builder chooses the diagnostic.
+- 2026-11-27 Planner, the review's suggestion taken: WP26.5 passes on its check alone, as the project's
+  proof policy has a tripwire record pass, and its reviewer question is gone. A pass the remedy adds is
+  marked absent at the starting revision and counts in the shafts' passes taken together.

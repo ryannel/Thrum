@@ -2970,17 +2970,29 @@ its frames show rays. If a review fails a station that stays on this cue, a plan
 
 **The study comes first (WP26.1).** Before anything is changed, the builder records:
 
-- *The cause in the frame.* Four pictures of each station in each wind, at one camera and engine time:
-  the frame as shipped; the frame in part S3's water; the water's scattered light alone as shipped,
-  shafts included, without the surface seen through it; and the caustic field over the station, at the
-  rung nearest the lens's depth. The first two settle one thing, whether part S3's water brings separate
-  beams back, and where it does the example's water is a cause. They cannot tell the other three causes
-  apart, because the frame adds the shafts' light to the light of the surface seen through the water, and
-  a bright surface hides beams the march resolved as surely as it shows none where the march resolved
-  none. The other two pictures do. Separate beams in the scattered light alone and not in the frame make
-  the composition a cause. Separate bright lines in the field and no separate beams in the scattered
-  light make the march one. No separate bright lines in the field make the field one. The record names a
-  cause only with the pictures that show it, and may name more than one.
+- *The cause in the frame.* Three pictures of each station in each wind, at one camera and engine time:
+  the frame as shipped; the frame in part S3's water; and the water's scattered light alone as shipped,
+  shafts included, without the surface seen through it. The first two settle one thing, whether part S3's
+  water brings separate beams back, and where it does the example's water is a cause. They cannot tell
+  the other causes apart, because the frame adds the shafts' light to the light of the surface seen
+  through the water, and a bright surface hides beams the march resolved as surely as it shows none where
+  the march resolved none. The third does that much: separate beams in the scattered light alone and not
+  in the frame make the composition a cause.
+- *The field or the march.* Where the scattered light alone holds no separate beams, the fault is the
+  field's or the march's, and a picture of the field at one depth does not say which. The march sums
+  [the shafts' source](#light-under-water-caustics-shafts-and-the-meter) along each ray from the lens to
+  the surface, across every rung between. The design review of 27 November counted five of the handoff
+  march's sixteen steps reading the rung nearest the lens at these views. Lines that are sharp at the
+  lens's depth can be weak, or lie elsewhere, along the rest of the ray, and a march that sums them truly
+  then shows little. So for each such view the record sets two things side by side, over the whole of
+  that path: what the field supplies along the view's rays, and what the march returns from it. The field
+  is a cause where what it supplies, summed along the rays as the source has it, differs too little from
+  ray to ray to make separate beams. The march is a cause where that sum holds separate beams and the
+  march's output does not. The builder chooses the diagnostic. A sum of the same source at many more
+  steps and at full resolution, on the GPU or the CPU, is one. It is a diagnostic as
+  [the bar](#proof-and-builder-handoff) has it, and nothing holds the shader to it.
+- *The causes named.* Of four: the example's water, the composition, the march and the field. The record
+  names a cause only with the evidence that shows it, and may name more than one.
 - *What shipped games show.* Frames from shallow water looking up toward the Sun in Subnautica and Sea of
   Thieves, the games WP16's bar names, and in at least two high-end 3D games released from 2022 on: whether
   separate beams stand, how far the water lets the eye see, and whether the beams move with the surface
@@ -2994,14 +3006,16 @@ its frames show rays. If a review fails a station that stays on this cue, a plan
   and Ray Tracing Gems, chapter 14, on volumetric water caustics traced with DXR
   ([2019](https://rd.springer.com/content/pdf/10.1007/978-1-4842-4427-2_14.pdf)), which is not portable and
   shows the look.
-- *The remedy*, with the candidates not chosen and why, and whether it reaches the field the receivers
-  read or a body's water.
+- *The remedy*, with the candidates not chosen and why, and which of bound 6's three paths to a receiver
+  it takes, if any.
 
 **What a remedy may change.** The example's water, which is the example's own and tuned by eye. How the
 march reads the field: its phase function, the contrast and blur of what the shafts read, its steps and
 its resolution. How the composition sets the beams against the surface seen through the water. The field's
-grid. The first and the last of these reach past the shafts: a body's water is its whole picture under
-water, and the field is the net on every receiver, so bound 6 has each judged again where it changed.
+grid. Each of these can reach past the shafts. A body's water is its whole picture under water. The field
+is the net on every receiver. The march and the composition draw the water in front of a receiver as well
+as the water under the surface, wherever the two views run the same code. So bound 6 has the receivers
+judged again by the path the remedy took.
 Under [the owner's bar](#proof-and-builder-handoff), plausible before accurate, a beam may stand out
 more than the model's light gives it. The glow from 1 m under a high Sun is the cue there and stays.
 WP16's six looks changed the blur, the phase, the jitter and the aim, and are not repeated.
@@ -3028,30 +3042,46 @@ WP16's six looks changed the blur, the phase, the jitter and the aim, and are no
    knob the remedy adds has a declared invalidation. A history the remedy keeps is declared with its
    invalidation and honours the frame's reset flag.
 5. *Both targets.* The remedy is the portable path's, and draws in Chrome what it draws on Metal.
-6. *What WP16 passed stays passed.* Its tests, and WP16.7's list at its own views. Where the remedy
-   changed the field the receivers read, the net of WP16.6 on the bed, the hull and the sunk float, in the
-   sea and the lake, on Metal and at noon in Chrome. Where it changed a body's water, that body's net and
-   its readable descent of WP16.8, to 20 m in the sea and to the lake's bed, on both targets too. The eye
-   judges the net here, because the receivers' test counts brighter and darker pixels, and broad moving
-   patches pass it that are not the fine net of lines WP16.6 asks in the shallows. The work package's
-   diff from the revision it started at says which of the two the remedy changed.
+6. *What WP16 passed stays passed.* Its tests, and WP16.7's list at its own views. The receivers are
+   judged again wherever the remedy reached what the frame shows of them. There are three paths:
+
+   | The remedy changed | Judged again, on Metal and at noon in Chrome |
+   |---|---|
+   | The field the receivers read: its grid, window, rungs, blur or cadence | The net of WP16.6 at all its views: the bed, the hull and the sunk float, in the sea and the lake |
+   | What the frame draws between a receiver and a lens under water: how much of the receiver's light reaches the lens, or the light the water adds in front of it, the shafts' included | The net of WP16.6 at its views from under water: from 0.5 m and 3 m under the lake and the sea, looking down and level |
+   | A body's water | That body's net of WP16.6 and its readable descent of WP16.8, to 20 m in the sea and to the lake's bed |
+
+   The second path is there because the view up to the surface and the view of a receiver share code. At
+   WP16's handoff both pass their light through one function for the water's path and add the shafts from
+   another (`water_path` and the calls to `shaft_scattering` in `crates/thrum-water/src/underwater.wgsl`
+   at `37bd113a3`). A remedy that dims what is seen through the water, so that beams show against the
+   surface, would in that shared function dim the net on a sunlit bed too, with the field and the water
+   untouched. So a change to anything both views run counts as reaching the receiver. A change that only
+   the view of the surface from below runs reaches none, and is judged at this section's two stations and
+   WP16.7's views alone. The eye judges the net here, because the receivers' test counts brighter and
+   darker pixels: broad moving patches pass it that are not the fine net of lines WP16.6 asks in the
+   shallows, and so does a net dimmed or veiled until it is hard to see. The work package's diff from the
+   revision it started at says which paths the remedy took.
 
 A remedy that cannot keep a bound, or a study that finds the named games draw no separate beams from such
 views, ends `BLOCKED` with the record, and a planner decides. After the study, three looks that fail the
 same cue end `BLOCKED` as [the handoff](#proof-and-builder-handoff) says.
 
 **Proof.** WP26.1 holds the study. WP26.2 judges the two stations on Metal, with a calm, a sequence under
-temporal sampling and WP16.7's list again, and judges the receivers again wherever bound 6 says the
-remedy reached them. WP26.3 runs WP16's tests with the remedy in, and a rippled, sunlit profile with
+temporal sampling and WP16.7's list again, and judges the receivers again by each of bound 6's paths the
+remedy took. WP26.3 runs WP16's tests with the remedy in, and a rippled, sunlit profile with
 caustics and without shafts for bound 4. WP26.4 judges Chrome, at both stations and at WP16.7's noon
-views, and at the receivers' noon views where bound 6 applies: this is where the lake's separate beams at
-noon are judged in Chrome, which the design review of 27 November asked of WP16.11 and WP16 no longer
-holds.
+views, and at the receivers' noon views for each of bound 6's paths the remedy took: this is where the
+lake's separate beams at noon are judged in Chrome, which the design review of 27 November asked of
+WP16.11 and WP16 no longer holds.
 
 WP26.5 takes the paired cost record again, and its comparison is WP16 and not WP15. The scene's own
 check sets the light on beside the light off, and the arm with it off has no shaft pass, so a march that
 doubled would trip nothing there. This record holds each water pass's time from 3 m under the sea and
 the lake at the revision the work package started from, measured before anything is changed, and beside
 it the same pass with the remedy in. A pass, or the shafts' passes taken together, 25% or more over the
-figure at that revision trips a wire, whether or not the whole frame is inside the refresh. As
-[everywhere](#cost-account), the wire asks for an investigation and decides nothing.
+figure at that revision trips a wire, whether or not the whole frame is inside the refresh. A pass the
+remedy adds is marked absent at that revision and counts in the shafts' passes taken together. As
+[everywhere](#cost-account), the wire asks for an investigation and decides nothing. The check carries
+this item alone, as [the project's proof policy](../../../ORCHESTRATE.md) has a tripwire record pass, and
+the module's one reviewer question on cost stays with its close, WP11.
