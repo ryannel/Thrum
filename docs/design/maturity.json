@@ -3405,10 +3405,10 @@
         "functional_validation": "passed",
         "experienced_quality": "builder_inspected_review_owed",
         "scope": "WATERS WP15 provides the optional underwater lens cut, meniscus, underside optics and water-path composition.",
-        "correctness": "Metal fixtures compare the submitted near-plane split against the summed surface and check conservative admission, one water path and exposure scale, and submitted depth, motion and reactive coverage. Hardware Chrome checks the submitted lens masks and pass admission without validation faults.",
-        "visuals": "Fixed and elapsed sea and lake views cover the refracted window and its surrounding reflection, surface crossings and the effect of depth. On the ordinary lake at 1 m the real bank is visible inside the overhead window on Metal and Chrome and disappears when the control lowers the terrain. Independent review of the repair is pending.",
-        "device": "Apple M3 Max native and portable Metal and hardware Chrome WebGPU. The paired 1440p Metal record is a shared-load tripwire with above-water, crossing, submerged and live-wake cases.",
-        "evidence": "../../.orchestrate/evidence/WATERS/WP15/bank-repair/README.md"
+        "correctness": "Metal verifies the submitted lens split against the summed surface, conservative admission, one water path and exposure scale, and underside depth, motion and reactive coverage. A registered-panel test finds a visible face 2 cm along the air ray. Hardware Chrome checks the submitted lens masks and pass admission without validation faults.",
+        "visuals": "Fixed and elapsed views at 105° show the craft joining through the lake and sea windows, with weather moving the rim and overhead foam. The camera crossings and depth and light comparisons were inspected on their planned targets. Formal WP15 review is pending.",
+        "device": "Apple M3 Max native and portable Metal and hardware Chrome WebGPU. The paired 1440p Metal record covers above-water, half-under, submerged and dry live-wake cases under shared load. The two wake arms retain completion bounds after GPU timestamp refusal.",
+        "evidence": "../../.orchestrate/evidence/WATERS/WP15/hull-repair/README.md"
       },
       "waters_chart_optics": {
         "implementation": "partial",

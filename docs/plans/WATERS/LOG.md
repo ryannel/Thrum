@@ -1579,3 +1579,13 @@
   for registered bodies, and fixes the inspected field of view.
   [Finishing WP15](DESIGN.md#finishing-wp15-after-its-diagnosis) replaces the note on resuming its branch.
   The other seven items stand as written and passed reviews 3 and 4.
+
+## WP15 hull and window repair
+
+- 2026-11-27 Restored the 105° dive camera. The underwater air ray searches
+  registered bounds from the interface and refines the copied hull depth
+  before choosing its colour. The near-face control, the five configured checks
+  and the native Metal, portable Metal and Chrome inspections passed. The
+  raised-lake crest still produces pale overhead foam after its authored modes
+  were adjusted to clear the angular edge. The paired 1440p record covers the
+  shared-load cost. [Target proof](../../../.orchestrate/evidence/WATERS/WP15/hull-repair/README.md).
