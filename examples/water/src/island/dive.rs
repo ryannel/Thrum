@@ -148,6 +148,25 @@ pub fn build_dive_light_cost(
     build(wind, site, true, true, under_light)
 }
 
+/// The sea or lake under an authored opaque cloud-shade patch.
+/// # Errors
+/// Propagates scene preparation and the optical-depth field's validation errors.
+pub fn build_dive_shade(
+    wind: Wind,
+    site: DiveSite,
+) -> Result<(SkyGame, SharedReport), Box<dyn Error>> {
+    let (game, report) = build_dive(wind, site, true)?;
+    let shade = thrum_render::atmosphere::SunOpticalDepth::new(
+        [2, 2],
+        &[16.0; 4],
+        100.0,
+        [-4096.0, -4096.0, 4096.0, 4096.0],
+        0.02,
+        1,
+    )?;
+    Ok((game.with_sun_optical_depth(shade), report))
+}
+
 fn build(
     wind: Wind,
     site: DiveSite,

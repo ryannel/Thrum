@@ -158,11 +158,12 @@ example `?foam=gale&location=beach`. The browser proof is `node scripts/check_wa
 Use `THRUM_WATER_DIVE=calm ./dev scene examples/water` on the Mac or
 `?dive=calm` in the browser for the island lake. Add
 `THRUM_WATER_LOCATION=sea` on the Mac or `&location=sea` in the browser for
-the offshore shelf. The dive routes expose camera depth, pitch and Sun elevation.
+the offshore shelf. The dive routes expose camera depth, pitch, bearing and Sun elevation.
 Choose `breeze` for a 5 m/s local wind without swell or `trade` for wind and swell.
 The offshore route lifts the terrain and water levels 16 m so the sky camera
 can reach 10 m underwater within its supported altitude range.
-Choose `deep-sea` as the location for the 20 m offshore inspection.
+Choose `deep-sea` as the location for the 20 m offshore inspection or `pond` to look down
+through the sheltered shallows.
 Choose `THRUM_WATER_LOCATION=swash` or `&location=swash` to cross the
 waterline on the beach. This view uses the same raised datum and the island
 breaker section.
@@ -176,6 +177,12 @@ presets use 89.99° within the sky camera's pitch range. At either lake stage th
 overhead view widens to 154° vertically so the refraction can sample the bank.
 Use `dive-hold` to keep the camera at mean water level or leave the route unset
 to lower and raise it.
+
+For WP16 lighting captures, set `THRUM_WATER_ROUTE=under-light` in fixed mode.
+A realtime take can hold a depth and pitch using `THRUM_WATER_DIVE_HOLD=3,67`
+or descend and return with `THRUM_WATER_DIVE_TRAVEL=20` at the deep sea site.
+Use bearing 228° to face the Sun. At 60° air elevation aim near 67° pitch and
+at 15° aim near 43° pitch to follow the refracted beam.
 
 ## Lake outlet
 

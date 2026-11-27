@@ -3455,6 +3455,15 @@
         "device": "Apple M3 Max Metal meter fixture and submitted lake and sea frames. The water scene type-checks for Wasm.",
         "evidence": "../../.orchestrate/evidence/WATERS/WP16/meter-proof.md"
       },
+      "waters_underwater_sun": {
+        "implementation": "partial",
+        "functional_validation": "passed",
+        "experienced_quality": "not_run",
+        "scope": "WATERS WP16 adds direct-Sun caustics at opaque receivers and signed underwater beam scattering.",
+        "correctness": "Metal checks the depth ladder, receiver application, common refracted exit, calm march and live quality controls. Hardware Chrome checks the portable ladder, receiver, signed shadow and incident meter without validation errors.",
+        "device": "Apple M3 Max Metal and Chrome WebGPU. The paired 1440p Metal cost record measures the sea, lake and beach with both light profiles under shared load.",
+        "evidence": "../../.orchestrate/evidence/WATERS/WP16/metal-checks.md"
+      },
       "waters_chart_optics": {
         "implementation": "partial",
         "functional_validation": "passed",

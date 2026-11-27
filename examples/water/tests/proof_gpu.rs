@@ -111,7 +111,11 @@ fn proof_game(water: bool) -> (thrum_app::sky::SkyGame, water_scene::SharedRepor
             (game, report)
         }
         Settings::Dive(wind, site) => {
-            water_scene::island::build_dive(wind, site, water).expect("dive scene")
+            if std::env::var("THRUM_WATER_DIVE_SHADE").as_deref() == Ok("1") {
+                water_scene::island::build_dive_shade(wind, site).expect("shaded dive scene")
+            } else {
+                water_scene::island::build_dive(wind, site, water).expect("dive scene")
+            }
         }
         Settings::RainYard(wind) => {
             let (game, report, _, _) =

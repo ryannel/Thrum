@@ -15,7 +15,7 @@ use crate::{SharedMap, SharedReport};
 
 mod dive;
 mod rain_yard;
-pub use dive::{DiveSite, build_dive, build_dive_cost, build_dive_light_cost};
+pub use dive::{DiveSite, build_dive, build_dive_cost, build_dive_light_cost, build_dive_shade};
 
 pub(crate) fn island_material(vertical_offset: f32) -> String {
     format!(

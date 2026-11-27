@@ -1896,3 +1896,9 @@
   has its matching pass comparison in the record.
   [Receiver checks](../../../.orchestrate/evidence/WATERS/WP16/metal-checks.md) ·
   [Paired cost](../../../.orchestrate/evidence/WATERS/WP16/under-light-cost-3da0f7adfa4b.json).
+- Hardware Chrome confirmed unity in calm water, a moving normalized Trade
+  ladder, a directly lit receiver and a zero signed march in calm without a
+  blocker. Its east-lit box shadow darkened both the bed and the water just
+  above it at the same stations. The unit and half-factor meter arms passed
+  and the browser reported no validation faults.
+  [Chrome WebGPU proof](../../../.orchestrate/evidence/WATERS/WP16/chrome-qualified/run.json).
