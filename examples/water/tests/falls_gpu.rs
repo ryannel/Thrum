@@ -129,6 +129,7 @@ fn metal_map_agrees_with_the_model_down_the_rock_below_a_brink() {
     use brink_receiver::{CENTRE, LEVEL, RISE, fixture, points, rock};
     let Some(gpu) = thrum_test_support::open(
         "brink receiver map", Some(wgpu::Backend::Metal), thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
     ) else {
         return;
     };
