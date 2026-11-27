@@ -3733,11 +3733,15 @@
     {
       "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 1 Must Fix findings. That makes 2 design reviews in a row that asked for changes, so the script approves the design you leave without another review, and building starts from it.",
       "at": "2026-11-27T21:02:39Z"
+    },
+    {
+      "task": "The owner asked in chat: \"Yes, move Waters WP26 forward now\" (after I explained WP26, the research-first study of shallow underwater beams and the joined hull-and-float caustic net, was queued after other Waters work). Make WP26 the next WATERS work package to build after WP16 closes, ahead of any other unstarted WATERS work, keeping its research-first step (how shipped high-end games make shallow underwater shafts and receiver caustic nets read, modern techniques only) and its dependencies honest. Do not change WP16, which a builder is closing now. It still must not block SHOWCASE.",
+      "at": "2026-11-27T21:34:21Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-27T21:02:39Z"
+    "at": "2026-11-27T21:34:21Z"
   },
   "design_history": [
     {
