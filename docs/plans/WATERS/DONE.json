@@ -1960,7 +1960,7 @@
           "lock": "chrome",
           "target": "chrome-webgpu",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP16/shadow-comparison/run.json",
+          "evidence": ".orchestrate/evidence/WATERS/WP16/rebased-target-checks/chrome.json",
           "verdict": "",
           "review": ""
         },
@@ -1981,7 +1981,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/WATERS/WP16/under-light-cost-42bdfa59ef17.json",
+          "evidence": ".orchestrate/evidence/WATERS/WP16/under-light-cost-bfc67b802e18.json",
           "verdict": "",
           "review": ""
         }

@@ -1978,3 +1978,29 @@
   crossing, and WP16.11 depends on the open visual lists.
   [Metal frames and receipts](../../../.orchestrate/evidence/WATERS/WP16/noon-breeze-checkpoint/)
   · [Handoff](../../../.orchestrate/evidence/WATERS/WP16-handoff.md).
+
+## WP16 visual inspection after the replan
+
+- 2026-11-27 Rebased onto the revised WP16.7, preserving the builder
+  log and the eight passes on unchanged items. All eight configured
+  item commands passed at `bfc67b802`, including hardware Chrome and
+  the 1440p paired cost record. The full repository check timed out
+  during the serial test reruns. Linux and Windows cross-checks
+  also report an upstream PUDDLES Metal-only test helper compiled
+  without its target guard.
+  [Configured replay](../../../.orchestrate/evidence/WATERS/WP16/rebased-target-checks/check.json)
+  · [Cost](../../../.orchestrate/evidence/WATERS/WP16/under-light-cost-bfc67b802e18.json).
+- The three Metal shaft looks since the replan retain the soft changing
+  noon glow from 1 m. Contracting the jitter around the midpoint
+  reduces the visible grain, while some 3 m noon lake rays still merge
+  into the glow and the 1 m low-Sun sea still lacks clearly separated
+  beams. The adjusted camera angle improves separation in the lake.
+  The moving receiver light reads on the sun-facing float and the
+  lit hull, while their low-Sun patterns remain soft and fragmented.
+- Six Metal descent routes preserve the bed at depth. The sea's split
+  lens still shows an abrupt change between the direct and refracted
+  hull with smooth exposure. A fixed-time light-on/light-off comparison
+  shows the same spatial split in both arms. Hardware Chrome completed
+  the lake and sea travel captures with zero observer omissions.
+  WP16.6, WP16.7, WP16.8 and WP16.11 remain open.
+  [Target inspection](../../../.orchestrate/evidence/WATERS/WP16/replanned-visuals/README.md).
