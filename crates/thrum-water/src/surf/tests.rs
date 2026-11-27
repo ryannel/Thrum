@@ -50,7 +50,7 @@ fn surf_records_match_the_cache_and_query() {
         + include_str!("../column.wgsl")
         + include_str!("../carriage.wgsl")
         + &crate::interaction::Interaction::sample_source(0, 5, 6, true)
-        + crate::query::sampling_source(false);
+        + &crate::query::sampling_source(false, false);
     validate(&query);
 }
 

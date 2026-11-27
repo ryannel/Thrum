@@ -248,7 +248,7 @@ fn river_query_records_extend_the_plain_layout() {
         + include_str!("../../column/records.wgsl")
         + include_str!("../../column.wgsl")
         + include_str!("../../carriage.wgsl")
-        + super::sampling_source(true)
+        + &super::sampling_source(true, false)
         + super::PLAIN_QUERY;
     records::named(
         "river query shader",
@@ -274,7 +274,7 @@ fn query_records_match_the_shader_layout() {
         + include_str!("../../column/records.wgsl")
         + include_str!("../../column.wgsl")
         + include_str!("../../carriage.wgsl")
-        + super::sampling_source(false)
+        + &super::sampling_source(false, false)
         + super::PLAIN_QUERY;
     records::named(
         "water query shader",
@@ -326,7 +326,7 @@ fn surf_query_passes_parse_with_all_shared_bindings() {
         + include_str!("../../column/records.wgsl")
         + include_str!("../../column.wgsl")
         + include_str!("../../carriage.wgsl")
-        + super::sampling_source(true)
+        + &super::sampling_source(true, false)
         + &crate::map_gpu::declarations_at(super::SURF_GROUP)
         + &crate::surf::SurfGpu::query_source(super::SURF_GROUP, super::SURF_BINDING);
     records::named("surf body query passes", &source, &[]);

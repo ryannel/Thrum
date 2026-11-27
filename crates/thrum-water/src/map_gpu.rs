@@ -377,10 +377,10 @@ pub fn declarations() -> String {
 
 /// Map shader declarations with the specified resource group.
 pub fn declarations_at(group: u32) -> String {
-    map_source(group, false, false)
+    map_source(group, false, false, false)
 }
 
-fn map_source(group: u32, hollows: bool, rivers: bool) -> String {
+fn map_source(group: u32, hollows: bool, rivers: bool, flow: bool) -> String {
     let sample_hollows = if hollows {
         "    let local = hollows_sample(point);\n    if local.has_bed { return local; }\n"
     } else {
@@ -427,7 +427,13 @@ fn map_source(group: u32, hollows: bool, rivers: bool) -> String {
     };
     let source = format!(
         "const BODY_LIMIT = {BODY_LIMIT}u;\nconst WATER_MAP_GROUP = {group}u;\n{}{cell_coordinates}{}            let raw = {chart_cell};\n{before}{chart_join}{after}{sample_hollows}{map_head}{wave_reference}{map_tail}\n{}{river_source}",
-        include_str!("map.wgsl"),
+        include_str!("map_gpu/body_record.wgsl").to_owned()
+            + if flow {
+                include_str!("map_gpu/flow_record.wgsl")
+            } else {
+                include_str!("map_gpu/map_record.wgsl")
+            }
+            + include_str!("map.wgsl"),
         include_str!("map_gpu/map_cell_body.wgsl"),
         include_str!("gains.wgsl"),
     );
@@ -664,17 +670,9 @@ impl MapGpu {
 
     /// Map shader declarations specialized to the products that were prepared.
     pub fn source(&self, group: u32) -> String {
-        let source = map_source(group, self.hollows.is_some(), self.has_rivers());
+        let source = map_source(group, self.hollows.is_some(), self.has_rivers(), self.flow);
         if self.flow {
-            source.replace(
-                "bodies: array<BodyRecord, BODY_LIMIT>,",
-                "bodies: array<BodyRecord, BODY_LIMIT>, flow_layers: array<vec4<u32>, BODY_LIMIT>,",
-            ) + include_str!("map_gpu/flow.wgsl")
-                + if self.has_rivers() {
-                    "\nfn flow_chart_level(cell: Cell, k: u32, body: BodyRecord) -> f32 { return river_chart_cell(cell, k, body).x; }\n"
-                } else {
-                    "\nfn flow_chart_level(cell: Cell, k: u32, body: BodyRecord) -> f32 { return textureLoad(bed_map, cell.corners[k], i32(body.layers.z), 0).x; }\n"
-                }
+            source + include_str!("map_gpu/flow.wgsl")
         } else {
             source
         }

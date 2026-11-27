@@ -1,5 +1,3 @@
-fn sample_scaled_field(t:texture_2d_array<f32>,s:sampler,uv:vec2<f32>,layer:i32,dx:vec2<f32>,dy:vec2<f32>,footprint_scale:f32)->vec4<f32> {
-    let wind = textureNumLayers(t) == RAIN_SHARED_LAYERS && layer < i32(RAIN_FIRST_LAYER);
     let extent=vec2<f32>(textureDimensions(t, select(0, 1, wind)));
     let x=dx*extent;let y=dy*extent;
     let trace=dot(x,x)+dot(y,y);let determinant=x.x*y.y-x.y*y.x;

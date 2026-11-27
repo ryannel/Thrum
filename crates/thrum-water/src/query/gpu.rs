@@ -93,8 +93,9 @@ struct RiverPoint {
 #[repr(C)]
 #[derive(Clone, Copy, Pod, Zeroable)]
 struct FlowPoint {
-    river: RiverPoint,
+    point: Point,
     flow: [f32; 4],
+    receiver: RiverReceiver,
 }
 
 fn point_stride(rivers: bool, flow: bool) -> u64 {
@@ -151,40 +152,6 @@ fn answer_stride(flow: bool) -> u64 {
     }
 }
 
-fn flow_shader(source: &str, profile: thrum_water_model::FlowBandsProfile, first: u32) -> String {
-    source
-        .replace("receiver: RiverReceiver,", "receiver: RiverReceiver, flow: vec4<f32>,")
-        .replace("wake: vec4<f32>,\n}", "wake: vec4<f32>, flow: array<vec4<f32>, 2>, flow_velocity: array<vec4<f32>, 2>,\n}")
-        .replace("fn cascade_column(uv: vec2<f32>, band: u32, lod: f32) -> Wave {\n    let layer = i32(band * 5u);",
-            "fn cascade_column_layer(uv: vec2<f32>, layer: i32, lod: f32) -> Wave {")
-        .replace("    var carried = cascade_column(motion.departure / extent, band, lod);",
-            "    return carried_column_layer(motion, extent, i32(band * 5u), lod, gradient);\n}\n\nfn carried_column_layer(motion: CascadeMotion, extent: f32, layer: i32, lod: f32, gradient: CarriageGradient) -> CarriedColumn {\n    var carried = cascade_column_layer(motion.departure / extent, layer, lod);")
-        .replace("cascade_column(motion.second / extent, band, lod)", "cascade_column_layer(motion.second / extent, layer, lod)")
-        .replace("fn query_gains(point: QueryPoint)", "fn query_gains(index: u32, point: QueryPoint)")
-        .replace("var gains = query_gains(point);", "var gains = query_gains(station, point);")
-        .replace("query_gains(point)", "query_gains(index, point)")
-        .replace("query_gains(query)", "query_gains(index, query)")
-        .replace("    return limit_gains(point.gains, depth, settings.heights, settings.swash_margin.x, settings.swash_margin.y);",
-            "    let swash = flow_swatch(point.gains * settings.heights, points[index].flow.xy, settings.swash_margin.x, settings.swash_margin.y);\n    return limit_wind_with_flow(point.gains, settings.heights, depth, swash);")
-        .replace("    if point.body != 0xffffffffu {\n        let depth", "    query_flows(index, point, carriage, &out);\n    if point.body != 0xffffffffu {\n        let depth")
-        .replace("        out.wake = wake_at", concat!(
-            "        let raw_flow = points[index].flow.xy;\n",
-            "        let swash = flow_swatch(point.gains * settings.heights, raw_flow, settings.swash_margin.x, settings.swash_margin.y);\n",
-            "        let flow_gains = limit_flow(raw_flow, depth, swash);\n",
-            "        var flow_height = 0.0;\n",
-            "        for (var band = 0; band < 2; band++) {\n",
-            "            let wave = flow_gains[band] * out.flow[band];\n",
-            "            flow_height += wave.x + point.carry.x * wave.w;\n",
-            "            slope += wave.yz;\n",
-            "            rate += wave.w;\n",
-            "            velocity += flow_gains[band] * out.flow_velocity[band].xyz;\n",
-            "        }\n        out.wake = wake_at"
-        ))
-        .replace(" + out.wake.x;", " + out.wake.x + flow_height;")
-        + &crate::flow::constants(profile, first)
-        + include_str!("../query/flow.wgsl")
-}
-
 struct Slot {
     group: wgpu::BindGroup,
     settings: wgpu::Buffer,
@@ -214,7 +181,11 @@ impl Slot {
             if let Some(flows) = flows {
                 let values: Vec<_> = river
                     .zip(flows)
-                    .map(|(river, flow)| FlowPoint { river, flow })
+                    .map(|(river, flow)| FlowPoint {
+                        point: river.point,
+                        flow,
+                        receiver: river.receiver,
+                    })
                     .collect();
                 queue.write_buffer(&self.points, 0, bytemuck::cast_slice(&values));
             } else {
@@ -455,11 +426,11 @@ impl Readback {
                 include_str!("../column.wgsl"),
                 include_str!("../carriage.wgsl")
             ),
-            sampling_source(rivers),
+            sampling_source(rivers, flow.is_some()),
             surf_source,
         );
         let source = if let Some((profile, first)) = flow {
-            flow_shader(&source, profile, first)
+            source + &crate::flow::constants(profile, first) + include_str!("../query/flow.wgsl")
         } else {
             source
         };

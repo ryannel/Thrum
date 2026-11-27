@@ -254,22 +254,15 @@ impl Foam {
             + &crate::interaction::Interaction::sample_source(0, 7, 8, wake)
             + include_str!("../carriage.wgsl")
             + &shore
+            + include_str!("births.wgsl")
+            + if flow.is_some() {
+                include_str!("river_transport.wgsl")
+            } else {
+                include_str!("transport.wgsl")
+            }
             + include_str!("step.wgsl");
         if let Some((profile, first)) = flow {
             use std::fmt::Write;
-            source = source
-                .replace("        let gain = limit_gains(row.row.gains, depth, water.heights, map.swash.x, map.origin_spacing_margin.w);",
-                    concat!(
-                        "        let flow = map_flow(point, row.body);\n",
-                        "        let swash = flow_swatch(row.row.gains * water.heights, flow.xy, map.swash.x, map.origin_spacing_margin.w);\n",
-                        "        let gain = limit_wind_with_flow(row.row.gains, water.heights, depth, swash);\n",
-                        "        let flow_gains = limit_flow(flow.xy, depth, swash);"
-                    ))
-                .replace("            column = foam_column(point, gain, dt_column, current, track);",
-                    "            column = foam_column(point, gain, dt_column, current, track);\n                     column.displacement.y += foam_flow_height(point, current, track, flow_gains, spacing);")
-                .replace("            let rates = vec4(", "            let river_birth = min(3.3, flow.z * CHART_LOSS_BIRTH_RATE) * foam_settings.long_bounds.z;\n            let rates = vec4(")
-                .replace(" + vec4(hull.xy, 0.0, hull.w);", " + vec4(hull.xy, 0.0, hull.w) + river_birth * vec4(0.22, 1.0, 0.0, 0.14);")
-                .replace("movement = vec4(shift, diffusion, shore.x);", "movement = vec4(shift, diffusion, shore.x + river_birth);");
             source.push_str(&crate::flow::constants(profile, first));
             source.push_str(include_str!("flow.wgsl"));
             writeln!(

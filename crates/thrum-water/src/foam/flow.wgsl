@@ -18,7 +18,8 @@ fn foam_flow_height(point: vec2<f32>, current: vec2<f32>, track: vec4<f32>, gain
 }
 
 fn foam_flow_sample(uv: vec2<f32>, layer: i32, lod: f32) -> f32 {
+    let velocity = textureSampleLevel(cascades, periodic, uv, layer + 2, lod);
     return textureSampleLevel(cascades, periodic, uv, layer, lod).y
         + textureSampleLevel(cascades, periodic, uv, layer + 4, lod).z
-        + water.cache[0].w * textureSampleLevel(cascades, periodic, uv, layer + 2, lod).y;
+        + water.cache[0].w * (velocity.y + velocity.w);
 }

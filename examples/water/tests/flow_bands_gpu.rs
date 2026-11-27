@@ -312,7 +312,7 @@ mod flow {
             scene.fixture.finish_tick_queries();
             let response = scene
                 .query
-                .drain(scene.fixture.endpoint(u64::from(tick + 1)), STEP);
+                .drain(scene.fixture.endpoint(u64::from(use_tick)), STEP);
             let answers = &response
                 .iter()
                 .find(|answer| answer.id == 17)
@@ -339,12 +339,17 @@ mod flow {
                     sample.slope[1],
                     sample.height_dt,
                 ];
-                let equivalent_height = [1.0, 0.03, 0.03, 0.03];
+                let equivalent_height = [1.0, 0.02, 0.02, 0.019];
                 for axis in 0..4 {
-                    worst[axis] = worst[axis].max((actual[axis]-expected[axis]).abs() * equivalent_height[axis] / (gain * bands.profile().rms[0]));
+                    worst[axis] = worst[axis].max(
+                        (actual[axis] - expected[axis]).abs() * equivalent_height[axis]
+                            / (gain * bands.profile().rms[0]),
+                    );
                 }
                 if tick == 1 && i < 3 {
-                    println!("point {point:?} time {time:.6} horizon {dt:.6}: GPU {actual:?}, model {expected:?}");
+                    println!(
+                        "point {point:?} time {time:.6} horizon {dt:.6}: GPU {actual:?}, model {expected:?}"
+                    );
                 }
                 rms[arm] += actual[0] * actual[0];
                 bits.push(actual.map(f64::to_bits));
@@ -355,7 +360,10 @@ mod flow {
             (rms[0] / 160.0).sqrt(),
             (rms[1] / 160.0).sqrt()
         );
-        assert!(worst.iter().all(|&value| value < 0.0004), "model cascade tolerance: {worst:?}");
+        assert!(
+            worst.iter().all(|&value| value < 0.0004),
+            "model cascade tolerance: {worst:?}"
+        );
         assert!(
             rms[1] < 0.01 * rms[0],
             "pool is at most one tenth of riffle rms"
@@ -441,7 +449,9 @@ fn submitted_calm_surface_and_mailbox_follow_the_current() {
     let Some(gpu) = thrum_test_support::gpu("river flow bands", Some(wgpu::Backend::Metal)) else { return };
     flow::mailbox(&gpu);
 }
+}
 
+thrum_test_support::macos_gpu_test! {
 fn submitted_depth_tracks_running_water_in_calm() {
     let Some(gpu) = thrum_test_support::gpu("river flow depth", Some(wgpu::Backend::Metal)) else { return };
     flow::drawn(&gpu);

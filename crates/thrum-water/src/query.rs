@@ -15,19 +15,45 @@ use thrum_render::extract::SourceTick;
 use thrum_sea_model::LongWaves;
 use thrum_water_model::{Map, Surface};
 
-pub(super) fn sampling_source(rivers: bool) -> &'static str {
-    if rivers {
-        concat!(
-            include_str!("query/sample.wgsl"),
-            include_str!("map_gpu/river_carriage.wgsl"),
-            include_str!("query/river.wgsl"),
+const QUERY_RECORDS: &str = include_str!("query/records.wgsl");
+
+pub(super) fn sampling_source(rivers: bool, flow: bool) -> String {
+    let point = include_str!("query/point.wgsl");
+    let (point_fields, answer_fields, gains, read, sum, height) = if flow {
+        (
+            "    flow: vec4<f32>,\n",
+            "    flow: array<vec4<f32>, 2>,\n    flow_velocity: array<vec4<f32>, 2>,\n",
+            include_str!("query/flow_gains.wgsl"),
+            include_str!("query/flow_read.wgsl"),
+            include_str!("query/flow_sum.wgsl"),
+            include_str!("query/flow_height.wgsl"),
         )
     } else {
-        concat!(
-            include_str!("query/sample.wgsl"),
-            include_str!("query/plain.wgsl")
+        (
+            "",
+            "",
+            include_str!("query/gains.wgsl"),
+            "",
+            "",
+            include_str!("query/height.wgsl"),
         )
-    }
+    };
+    let carriage = if rivers {
+        concat!(
+            include_str!("map_gpu/river_carriage.wgsl"),
+            include_str!("query/river.wgsl")
+        )
+    } else {
+        include_str!("query/plain.wgsl")
+    };
+    format!(
+        "{point}{point_fields}{QUERY_RECORDS}{answer_fields}{}{gains}{}{read}{}{sum}{}{height}{}{carriage}",
+        include_str!("query/sampling.wgsl"),
+        include_str!("query/sample.wgsl"),
+        include_str!("query/wind.wgsl"),
+        include_str!("query/wake.wgsl"),
+        include_str!("query/answer.wgsl"),
+    )
 }
 
 /// Query capacity in points and the maximum age in ticks since posting.

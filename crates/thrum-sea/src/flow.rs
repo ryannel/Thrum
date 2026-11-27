@@ -283,7 +283,13 @@ impl Flow {
         };
         for spec in specs.iter().filter(|spec| spec.key != PassKey::Long) {
             graph.passes.push(pass(
-                spec.name.replace("sea cascade", PASS),
+                match spec.key {
+                    PassKey::Evolve => "river flow bands evolve".into(),
+                    PassKey::Rows => "river flow bands rows".into(),
+                    PassKey::Columns => "river flow bands columns".into(),
+                    PassKey::Unpack => "river flow bands unpack".into(),
+                    PassKey::Long => unreachable!("flow bands have no long cache"),
+                },
                 spec.bindings
                     .iter()
                     .map(|b| buffer_access(b.buffer, b.access))

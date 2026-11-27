@@ -690,6 +690,7 @@ fn surface_pipelines(
         foam,
         gather,
         rain,
+        flow.is_some(),
     ) + &Cache::source(cache, tidal_grid);
     let wind_base_mip = if rain {
         thrum_sea::rain::WIND_BASE_MIP
@@ -721,6 +722,12 @@ fn surface_pipelines(
             include_str!("map_gpu/river_surface_waves.wgsl"),
             include_str!("map_gpu/river_surface_depth.wgsl"),
         ));
+        source.push_str(if flow.is_some() {
+            include_str!("flow/river_column.wgsl")
+        } else {
+            include_str!("map_gpu/river_column.wgsl")
+        });
+        source.push_str(include_str!("map_gpu/river_depth_refine.wgsl"));
         source.push_str(if rain {
             "\nfn river_rain_height(point: vec2<f32>, spacing: f32, row: SurfaceRow, motion: CascadeMotion) -> f32 {
                 return rain_geometry(point, spacing, row, motion).x;
@@ -732,30 +739,6 @@ fn surface_pipelines(
         });
     }
     if let Some((profile, first)) = flow {
-        source = source
-            .replace("    return f;\n}\nstruct SurfaceRow", concat!(
-                "    let flow = surface_flow(spacing, row, motion);\n",
-                "    f.displacement.y += flow.x;\n    f.velocity.y += flow.y;\n",
-                "    return f;\n}\nstruct SurfaceRow"
-            ))
-            .replace("    let gains = limit_gains(row.gains, depth, water.heights, map.swash.x, map.origin_spacing_margin.w);", concat!(
-                "    let raw_flow = map_flow(point, body).xy;\n",
-                "    let swash = flow_swatch(row.gains * water.heights, raw_flow, map.swash.x, map.origin_spacing_margin.w);\n",
-                "    let gains = limit_wind_with_flow(row.gains, water.heights, depth, swash);"
-            ))
-            .replace("    body: u32,\n}\nstruct VertexOut", "    body: u32, flow_gains: vec2<f32>,\n}\nstruct VertexOut")
-            .replace("map_wave_track(point, body, row.water.yz), body);", "map_wave_track(point, body, row.water.yz), body, limit_flow(raw_flow, depth, swash));")
-            .replace("    var swash = 0.0;\n    var loss", "    var loss")
-            .replace("        swash = min(map.swash.x * length(before), map.origin_spacing_margin.w);\n", "")
-            .replace("    if map.bodies[id].joins[0].w > 0.0 { return 1.0; }", "    if map.flow_layers[id].x != 0u || map.bodies[id].joins[0].w > 0.0 { return 1.0; }")
-            .replace("    return row.level + height + river_rain_height", "    height += surface_flow(0.0, row, motion).x;\n    return row.level + height + river_rain_height")
-            .replace(include_str!("surface_lighting.wgsl"), &format!("{}{}", include_str!("flow/normal.wgsl"), include_str!("surface_lighting.wgsl")));
-        if rain {
-            source = source.replace(
-                "layer < i32(RAIN_FIRST_LAYER)",
-                "(layer < i32(RAIN_FIRST_LAYER) || layer >= FLOW_FIRST)",
-            );
-        }
         source.push_str(&crate::flow::constants(profile, first));
         source.push_str(include_str!("flow/surface.wgsl"));
     }
@@ -820,6 +803,7 @@ fn shader_source(
     foam: Option<&Foam>,
     gather: Option<&Gather>,
     rain: bool,
+    flow: bool,
 ) -> String {
     let gather = gather.is_some();
     let sun = if surface.sun_optical_depth {
@@ -864,10 +848,13 @@ fn shader_source(
         super::VIEW_RECORDS,
         include_str!("fresnel.wgsl"),
         if rain {
-            concat!(
-                include_str!("sampling_weights.wgsl"),
-                include_str!("sampling_shared.wgsl")
-            )
+            if flow {
+                concat!(include_str!("sampling_weights.wgsl"),
+                    include_str!("flow/sampling_wind.wgsl"), include_str!("sampling_shared.wgsl"))
+            } else {
+                concat!(include_str!("sampling_weights.wgsl"),
+                    include_str!("sampling_wind.wgsl"), include_str!("sampling_shared.wgsl"))
+            }
         } else {
             concat!(
                 include_str!("sampling_weights.wgsl"),
@@ -884,8 +871,10 @@ fn shader_source(
             }
             + include_str!("surface_cascades.wgsl")
             + rain_geometry
+            + if flow { include_str!("flow/geometry.wgsl") } else { "" }
             + include_str!("surface_vertex.wgsl")
             + if has_rivers { "    body: u32,\n" } else { "" }
+            + if flow { "    flow_gains: vec2<f32>,\n" } else { "" }
             + "}\nstruct VertexOut {\n    "
             // Mixed maps draw the same geometry through regular and refined
             // entry points. Keep their raster positions invariant on Metal.
@@ -914,6 +903,7 @@ fn shader_source(
             }
             + include_str!("surface_shading.wgsl")
             + rain_normal
+            + if flow { include_str!("flow/normal.wgsl") } else { "" }
             + include_str!("surface_lighting.wgsl")
             + if has_hollows && gather {
                 include_str!("map_gpu/hollows_transport.wgsl")
@@ -940,8 +930,9 @@ fn shader_source(
             |map| {
                 let mut source = map.source(3)
                     + include_str!("mapped_surface.wgsl")
+                    + if flow { include_str!("flow/surface_row.wgsl") } else { include_str!("map_gpu/surface_row.wgsl") }
                     + "        owned, swash, loss, loss_without_long, row.water.yz, map_wave_track(point, body, row.water.yz)"
-                    + if has_rivers { ", body);\n" } else { ");\n" }
+                    + if flow { ", body, limit_flow(raw_flow, depth, swash));\n" } else if has_rivers { ", body);\n" } else { ");\n" }
                     + include_str!("mapped_surface_geometry.wgsl");
                 if has_hollows {
                     let motion = if rain {
@@ -960,6 +951,9 @@ fn shader_source(
         ),
         if let Some(foam) = foam {
             foam.sample_source() + include_str!("foam/appearance.wgsl")
+                + if flow { include_str!("foam/river_lace.wgsl") } else { include_str!("foam/lace.wgsl") }
+                + include_str!("foam/film.wgsl")
+                + if flow { include_str!("foam/river_appearance.wgsl") } else { "" }
         } else {
             "const FOAM_ENABLED: bool = false;
              fn foam_surface(_p: vec3<f32>, _r: SurfaceRow, _v: f32, _d: f32, _face: f32) -> vec4<f32> { return vec4(0.0); }"

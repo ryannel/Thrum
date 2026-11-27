@@ -1,17 +1,3 @@
-struct BodyRecord {
-    level: vec4<f32>,
-    gains: vec4<f32>,
-    layers: vec4<u32>,
-    ends: array<vec4<f32>, 2>,
-    joins: array<vec4<f32>, 2>,
-    track: vec4<f32>, // parallel reference and axis, or bounded layer, period limit and mode
-}
-struct MapRecord {
-    origin_spacing_margin: vec4<f32>,
-    size_count_sea: vec4<u32>,
-    swash: vec4<f32>,
-    bodies: array<BodyRecord, BODY_LIMIT>,
-}
 @group(WATER_MAP_GROUP) @binding(5) var bed_map: texture_2d_array<f32>;
 @group(WATER_MAP_GROUP) @binding(6) var<uniform> map: MapRecord;
 

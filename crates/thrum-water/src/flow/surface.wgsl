@@ -3,7 +3,8 @@ fn flow_height_rate(place: vec2<f32>, drift: vec2<f32>, scale: f32, layer: i32, 
     let height = textureSampleLevel(cascades, periodic, uv, layer, lod).y
         + textureSampleLevel(cascades, periodic, uv, layer + 4, lod).z;
     let slope = textureSampleLevel(cascades, periodic, uv, layer + 1, lod).xy;
-    let rate = textureSampleLevel(cascades, periodic, uv, layer + 2, lod).y;
+    let velocity = textureSampleLevel(cascades, periodic, uv, layer + 2, lod);
+    let rate = velocity.y + velocity.w;
     // The field ages at a fixed rest coordinate. Carry its samples to their
     // current departure points before applying the Eulerian derivative.
     return vec2(height + water.cache[0].w * rate, rate - dot(slope, drift));

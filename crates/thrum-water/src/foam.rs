@@ -10,7 +10,7 @@ use std::sync::{
 pub(crate) use gpu::Foam;
 
 /// Bounded whitewater birth rate per watt per square metre of chart loss.
-pub const CHART_LOSS_BIRTH_RATE: f32 = 0.004;
+pub const CHART_LOSS_BIRTH_RATE: f32 = 0.0014;
 
 #[derive(Clone)]
 pub(crate) struct Whitewater {
