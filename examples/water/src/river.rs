@@ -542,6 +542,23 @@ impl FallViews {
             .map(|point| (DVec2::from_array(point) - stop).dot(across))
             .fold(0.0, f64::max);
         let bank_target = stop + 0.45 * forward;
+        let bank_eye = pool_level + 2.0;
+        let bank_aim = pool_level + 0.3;
+        let bank_position =
+            std::iter::successors(Some(bank_offset + 1.4), |&offset| Some(offset - 0.25))
+                .take_while(|&offset| offset >= 0.5)
+                .map(|offset| bank_target + 1.15 * forward + offset * across)
+                .find(|&position| {
+                    (0..=10).all(|step| {
+                        let t = f64::from(step) * 0.1;
+                        let place = position.lerp(bank_target, t).to_array();
+                        let ray = (bank_aim - bank_eye).mul_add(t, bank_eye);
+                        map.bed()
+                            .height(place)
+                            .is_some_and(|rock| rock < ray - 0.35)
+                    })
+                })
+                .unwrap_or(bank_target + 1.15 * forward + 2.0 * across);
         let look = |position: DVec2, eye, target, target_height, angle| {
             let base = map.bed().height(position.to_array()).unwrap_or(eye);
             Camera::look_at(
@@ -594,13 +611,7 @@ impl FallViews {
                     middle_height,
                     26.0,
                 ),
-                look(
-                    bank_target + 1.15 * forward + (bank_offset + 1.40) * across,
-                    pool_level + 2.0,
-                    bank_target,
-                    pool_level + 0.3,
-                    62.0,
-                ),
+                look(bank_position, bank_eye, bank_target, bank_aim, 62.0),
                 look(
                     pool + 3.0 * forward + across,
                     pool_level + 15.0,
