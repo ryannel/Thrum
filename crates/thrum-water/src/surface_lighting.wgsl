@@ -97,7 +97,7 @@
         }
         // The unresolved solar lobe keeps a graded peak even on glassy water.
         // Limit its response before lent irradiance so cloud shade stays linear.
-        let peak = select(0.55, 0.25, hollow_surface);
+        let peak = select(0.55, mix(0.045, 0.25, smoothstep(0.14, 0.45, l.y)), hollow_surface);
         light += sunlight * (glint / (1.0 + glint / peak));
     } else {
         light+=sunlight*d*gv*gl*fh/(4.0*nv+0.00001);

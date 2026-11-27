@@ -296,6 +296,10 @@ fn wet_impact_at_a_narrow_sill_reaches_its_own_puddle() {
                     across < 2.0 * spacing || state.iter().all(|v| v.abs().to_bits() == 0)
                 }));
             }
+            #[expect(
+                clippy::cast_possible_truncation,
+                reason = "the body query takes GPU coordinates"
+            )]
             let receiver = receiver.map(|v| v as f32);
             assert_eq!(
                 queried_surfaces(&mut fixture, tick, &[receiver])[0].sample,
