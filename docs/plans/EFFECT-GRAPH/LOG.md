@@ -307,3 +307,7 @@
   and layer. It refuses memoryless colour attachments by pass name before creating the view. Metal verified
   both refusals, disjoint mips and layers, and an ordinary texture in transient scope. All four pinned
   checks passed. [Target evidence](../../../.orchestrate/evidence/EFFECT-GRAPH/WP7/review-fix/README.md).
+- 2026-11-27 Builder, WP7 second review. Preparation refuses retained storage writes from a draw with a
+  transient colour attachment, and requires one backing texture per declared draw resource. Mac declaration
+  and Metal attachment regressions passed, along with all four pinned checks.
+  [Target evidence](../../../.orchestrate/evidence/EFFECT-GRAPH/WP7/second-review/README.md).
