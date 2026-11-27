@@ -287,6 +287,7 @@ impl Water {
                             variance(spectrum.cascades[2].components()),
                         ],
                         profile.carriage_period,
+                        flow.is_some(),
                     )
                 } else {
                     mailbox

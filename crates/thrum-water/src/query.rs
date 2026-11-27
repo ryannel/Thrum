@@ -46,9 +46,24 @@ pub(super) fn sampling_source(rivers: bool, flow: bool) -> String {
     } else {
         include_str!("query/plain.wgsl")
     };
+    let sampling = include_str!("query/sampling.wgsl");
+    let sampling = if flow {
+        std::borrow::Cow::Owned(sampling.replace(
+            concat!(
+                "let renewal = cascade_renewal(settings.swash_margin.z, min(settings.swash_margin.w, track.z));\n",
+                "        let reference = mat2x2<f32>(derivative.xy, derivative.zw);\n",
+                "        let current = mat2x2<f32>(point.current_gradient.xy, point.current_gradient.zw);\n",
+                "        let residual = current - reference;\n",
+                "        let base = COLUMN_IDENTITY - reference * settings.swash_margin.z;"
+            ),
+            include_str!("query/flow_renewal.wgsl"),
+        ))
+    } else {
+        std::borrow::Cow::Borrowed(sampling)
+    };
     format!(
         "{point}{point_fields}{QUERY_RECORDS}{answer_fields}{}{gains}{}{read}{}{sum}{}{height}{}{carriage}",
-        include_str!("query/sampling.wgsl"),
+        sampling,
         include_str!("query/sample.wgsl"),
         include_str!("query/wind.wgsl"),
         include_str!("query/wake.wgsl"),
@@ -337,10 +352,16 @@ impl QueryMailbox {
         }
     }
 
-    pub(super) fn with_rain(mut self, variances: [f64; 4], period: Option<Duration>) -> Self {
+    pub(super) fn with_rain(
+        mut self,
+        variances: [f64; 4],
+        period: Option<Duration>,
+        flow: bool,
+    ) -> Self {
         self.rain = Some(rain::QueryRain {
             variances,
             period: period.unwrap_or(Duration::from_secs(4)).as_secs_f64(),
+            flow,
         });
         self
     }

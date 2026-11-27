@@ -9,6 +9,7 @@ use thrum_water_model::Map;
 pub(super) struct QueryRain {
     pub(super) variances: [f64; 4],
     pub(super) period: f64,
+    pub(super) flow: bool,
 }
 
 impl QueryRain {
@@ -42,7 +43,15 @@ impl QueryRain {
                 tracks.query_track(column.body, world, column.row.current, map)
             });
             let radius = f64::from(point.point.radius);
-            let motion = carriage(world.into(), current, track, gradients, time, self.period);
+            let motion = carriage(
+                world.into(),
+                current,
+                track,
+                gradients,
+                time,
+                self.period,
+                self.flow,
+            );
             let sample = |at: DVec2, drift: DVec2, derivative: DMat2| {
                 let wave = query.sample(at.into(), radius);
                 let slope = DVec2::from_array(wave.slope);
@@ -97,6 +106,7 @@ fn carriage(
     gradients: [[f64; 4]; 2],
     time: f64,
     period: f64,
+    flow: bool,
 ) -> Motion {
     let [x, y, blend, axis] = track;
     let mut motion = Motion {
@@ -117,9 +127,16 @@ fn carriage(
         let [current_gradient, reference_gradient] =
             gradients.map(|values| DMat2::from_cols_array(&values));
         let residual_gradient = current_gradient - reference_gradient;
-        let base_gradient = DMat2::IDENTITY - reference_gradient * time;
         let span = period.min(blend);
-        let a = (time / span).rem_euclid(1.0);
+        let (phase, phase_gradient) = if flow {
+            crate::flow::renewal_phase(point)
+        } else {
+            (0.0, DVec2::ZERO)
+        };
+        let phase_shear =
+            DMat2::from_cols(residual * phase_gradient.x, residual * phase_gradient.y);
+        let base_gradient = DMat2::IDENTITY - reference_gradient * time - phase_shear * span;
+        let a = (time / span + phase).rem_euclid(1.0);
         let b = (a + 0.5).rem_euclid(1.0);
         let u = 2.0 * a.min(1.0 - a);
         let weight = u * u * (3.0 - 2.0 * u);
@@ -137,6 +154,7 @@ fn carriage(
             motion.second_drift = current;
             motion.weight = weight;
             motion.weight_rate = 12.0 * u * (1.0 - u) * direction / span;
+            motion.weight_gradient = motion.weight_rate * span * phase_gradient;
             motion.first_gradient = base_gradient - residual_gradient * da;
             motion.second_gradient = base_gradient - residual_gradient * db;
         }

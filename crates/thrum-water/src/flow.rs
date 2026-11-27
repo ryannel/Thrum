@@ -4,6 +4,43 @@ use thrum_render::contribution::{
 };
 use thrum_water_model::Map;
 
+const PHASE_GRADIENT: [f64; 2] = [0.137, 0.173];
+const PHASE_BEND: [f64; 2] = [-0.49, 0.37];
+const PHASE_BEND_AMPLITUDE: f64 = 0.14;
+
+pub(super) fn renewal_phase(point: glam::DVec2) -> (f64, glam::DVec2) {
+    let gradient = glam::DVec2::from_array(PHASE_GRADIENT);
+    let bend = glam::DVec2::from_array(PHASE_BEND);
+    let (sin, cos) = point.dot(bend).sin_cos();
+    (
+        point.dot(gradient) + PHASE_BEND_AMPLITUDE * sin,
+        gradient + bend * (PHASE_BEND_AMPLITUDE * cos),
+    )
+}
+
+pub(super) fn carriage_source(flow: bool) -> std::borrow::Cow<'static, str> {
+    const CARRIAGE: &str = include_str!("carriage.wgsl");
+    const UNIFORM_RENEWAL: &str = "let renewal = cascade_renewal(seconds, min(period, track.z));";
+    if !flow {
+        return CARRIAGE.into();
+    }
+    let [x, z] = PHASE_GRADIENT;
+    let [bx, bz] = PHASE_BEND;
+    let phase = format!(
+        "const PHASE_GRADIENT = vec2<f32>({x}, {z});\n\
+         const PHASE_BEND = vec2<f32>({bx}, {bz});\n\
+         const PHASE_BEND_AMPLITUDE: f32 = {PHASE_BEND_AMPLITUDE};\n"
+    );
+    assert!(CARRIAGE.contains(UNIFORM_RENEWAL), "cascade renewal hook");
+    (phase
+        + include_str!("flow/renewal.wgsl")
+        + &CARRIAGE.replace(
+            UNIFORM_RENEWAL,
+            "let renewal = flow_renewal(point, seconds, min(period, track.z));",
+        ))
+        .into()
+}
+
 pub(super) const CADENCE: &str = "river.flow_band_cadence";
 
 #[derive(Clone, Copy)]

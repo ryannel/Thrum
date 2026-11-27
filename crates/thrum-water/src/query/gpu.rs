@@ -422,10 +422,8 @@ impl Readback {
             },
             Interaction::sample_source(0, 5, 6, wake.is_some()),
             include_str!("../column/records.wgsl"),
-            concat!(
-                include_str!("../column.wgsl"),
-                include_str!("../carriage.wgsl")
-            ),
+            include_str!("../column.wgsl").to_owned()
+                + &crate::flow::carriage_source(flow.is_some()),
             sampling_source(rivers, flow.is_some()),
             surf_source,
         );

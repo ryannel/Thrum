@@ -949,7 +949,8 @@ fn shader_source(
         },
         include_str!("field.wgsl"),
         Interaction::sample_source(3, 7, 8, wake),
-        concat!(include_str!("carriage.wgsl"), include_str!("surface.wgsl")).to_owned()
+        crate::flow::carriage_source(flow).into_owned()
+            + include_str!("surface.wgsl")
             + if has_rivers {
                 "    let motion = river_surface_motion(point, row);\n"
             } else {
