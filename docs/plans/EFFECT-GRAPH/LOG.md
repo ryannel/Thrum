@@ -311,3 +311,7 @@
   transient colour attachment, and requires one backing texture per declared draw resource. Mac declaration
   and Metal attachment regressions passed, along with all four pinned checks.
   [Target evidence](../../../.orchestrate/evidence/EFFECT-GRAPH/WP7/second-review/README.md).
+- 2026-11-27 Builder, WP7 third review. Preparation names and refuses a persistent-colour draw that writes
+  transient storage, because detached capture skips that draw. Metal verified the refusal and all 128 pixels
+  of the all-transient control in both submitted colour and detached capture. All four pinned checks passed.
+  [Target evidence](../../../.orchestrate/evidence/EFFECT-GRAPH/WP7/third-review/README.md).
