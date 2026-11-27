@@ -1094,6 +1094,39 @@
         "by": "plan",
         "task": "Main-branch check cross-target fails on 9b0fa426f for x86_64-pc-windows-msvc and x86_64-unknown-linux-gnu: examples/wate",
         "at": "2026-11-27T17:51:11Z"
+      },
+      "ready_for_review": {
+        "commit": "9238a3b873bb315cc1e58ce3e6231280d9e0531f",
+        "checked": "9238a3b873bb315cc1e58ce3e6231280d9e0531f",
+        "at": "2026-11-27T18:08:29Z",
+        "reused": [
+          "WP6.6",
+          "WP6.1",
+          "WP6.2",
+          "WP6.4",
+          "WP6.5"
+        ],
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.171.0-alpha.13.2",
+        "path": "headless",
+        "usage": {
+          "input": 340267,
+          "cached": 82071168,
+          "output": 79334,
+          "turns": 1
+        },
+        "session_usage": {
+          "input": 1579450,
+          "cached": 239033600,
+          "output": 321758,
+          "turns": 4
+        }
       }
     },
     "WP7": {
