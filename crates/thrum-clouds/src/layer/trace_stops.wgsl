@@ -1,5 +1,4 @@
-fn cloud_stop_distance(pixel: vec2<u32>, camera: vec3<f32>) -> f32 {
-    let depth = textureLoad(scene_depth, vec2<i32>(pixel), 0);
+fn cloud_stop_distance(pixel: vec2<u32>, camera: vec3<f32>, depth: f32) -> f32 {
     if depth == 0.0 { return cloud.heights.w; }
     let uv = (vec2<f32>(pixel) + 0.5) / vec2<f32>(cloud.render_extent);
     let hit = cloud.inverse_raster * vec4(uv * vec2(2.0, -2.0) + vec2(-1.0, 1.0), depth, 1.0);
@@ -50,6 +49,6 @@ fn cloud_partial_stop(part: CloudTracePart, sigma: f32, radiance: vec3<f32>, sta
 fn cloud_write_stop(texel: vec2<i32>, slot: i32, stop: CloudStop, samples: u32, distance: f32) {
     textureStore(transport, texel, slot,
                  vec4(stop.transport.scattering * environment_storage_scale(), stop.transport.transmittance));
-    // Both distances are kilometres to remain representable in fp16.
+    // Both distances are in kilometres. Zero stop distance identifies sky.
     textureStore(front, texel, slot, vec4(stop.front * 0.001, stop.opacity, f32(samples), distance));
 }

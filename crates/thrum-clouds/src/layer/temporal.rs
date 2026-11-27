@@ -69,10 +69,9 @@ impl Temporal {
             label: Some(PASS),
             source: wgpu::ShaderSource::Wgsl(
                 format!(
-                    "{}\n{}\n{}\n{}",
-                    super::StopMode::shader(),
+                    "{}\n{}\n{}",
                     include_str!("params.wgsl"),
-                    include_str!("view.wgsl"),
+                    concat!(include_str!("view.wgsl"), include_str!("stop_pixels.wgsl")),
                     include_str!("resolve.wgsl")
                 )
                 .into(),

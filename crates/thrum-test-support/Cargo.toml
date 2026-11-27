@@ -12,11 +12,14 @@ workspace = true
 [dependencies]
 wgpu = { version = "=30.0.1", default-features = false, features = ["std", "wgsl", "metal", "vulkan", "dx12"] }
 pollster = "=1.0.1"
+tracing = { version = "=0.1.44", default-features = false, features = ["std"], optional = true }
+tracing-subscriber = { version = "=0.3.23", default-features = false, features = ["registry"], optional = true }
 thrum-render = { path = "../thrum-render", optional = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wgpu = { version = "=30.0.1", default-features = false, features = ["webgpu"] }
 
 [features]
+creation-trace = ["dep:tracing", "dep:tracing-subscriber"]
 render = ["dep:thrum-render"]
 render-registry = ["render", "thrum-render/test-support"]

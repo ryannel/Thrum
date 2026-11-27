@@ -240,7 +240,7 @@ impl Layer {
             bind_group_layouts: &layouts,
             immediate_size: 0,
         });
-        let source = trace_shader(&environment, shapes.is_some(), ground_stops, ground_stops);
+        let source = trace_shader(&environment, shapes.is_some(), ground_stops);
         let overlay = surface.sky_overlay_target().map(|target| {
             super::overlay::Overlay::new(
                 surface,
@@ -252,10 +252,6 @@ impl Layer {
             )
         });
         let trace = trace_pipeline(device, &source, &pipeline_layout);
-        let clear_ground_trace = ground_stops.then(|| {
-            let source = trace_shader(&environment, shapes.is_some(), true, false);
-            trace_pipeline(device, &source, &pipeline_layout)
-        });
         let (field_layout, field_group) = field_bindings(
             device,
             weather,
@@ -308,8 +304,6 @@ impl Layer {
                 textures,
                 detail_noise,
                 trace,
-                clear_ground_trace,
-                stop_mode: super::StopMode::Sky,
                 compose,
                 field_pipeline,
                 field_overlay: crate::FieldOverlay::Off,
@@ -368,13 +362,9 @@ pub(super) fn trace_shader(
     environment: &thrum_render::atmosphere::EnvironmentProducts,
     shapes: bool,
     ground: bool,
-    surface_stops: bool,
 ) -> String {
     let source = layer_shader(environment, TRACE_SHADER, shapes, ground, false);
-    let stop_modes = super::StopMode::shader();
-    format!(
-        "{source}\n{stop_modes}\nconst GROUND_TRACE: bool = {ground};\nconst SURFACE_STOPS: bool = {surface_stops};"
-    )
+    format!("{source}\nconst SURFACE_STOPS: bool = {ground};")
 }
 
 fn layer_shader(
@@ -521,8 +511,7 @@ fn compose(
         label: Some(COMPOSE),
         source: wgpu::ShaderSource::Wgsl(
             format!(
-                "{}\n{}\n{}\n{}",
-                super::StopMode::shader(),
+                "{}\n{}\n{}",
                 include_str!("params.wgsl"),
                 concat!(include_str!("view.wgsl"), include_str!("stop_pixels.wgsl")),
                 include_str!("compose.wgsl")

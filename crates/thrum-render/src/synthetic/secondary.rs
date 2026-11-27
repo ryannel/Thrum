@@ -351,7 +351,7 @@ impl SecondaryPrepared {
             prepared.bucket_route.is_some(),
             prepared.camera_culling(),
             prepared.shadow.is_some(),
-            prepared.atmosphere.is_some(),
+            prepared.air_shadow.is_some(),
         );
         entries.push(binding::uniform(
             6,

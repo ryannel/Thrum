@@ -56,17 +56,42 @@ fn cloud_history(field:texture_2d_array<f32>,uv:vec2<f32>)->vec4<f32> {
     let lo=vec2<i32>(floor(at));let f=fract(at);
     return mix(mix(textureLoad(field,clamp(lo,vec2(0),size-1),0,0),textureLoad(field,clamp(lo+vec2(1,0),vec2(0),size-1),0,0),f.x),mix(textureLoad(field,clamp(lo+vec2(0,1),vec2(0),size-1),0,0),textureLoad(field,clamp(lo+vec2(1),vec2(0),size-1),0,0),f.x),f.y);
 }
+fn ground_sky_reactive(texel: vec2<u32>, transmittance: f32, front: f32) -> f32 {
+    let opacity = 1.0 - transmittance;
+    if opacity <= 0.0 || cloud.temporal.x == 0u { return opacity; }
+
+    let uv = cloud_ground_texel_uv(texel);
+    let far = cloud.inverse_raster * vec4(uv * vec2(2.0, -2.0) + vec2(-1.0, 1.0), 0.0, 1.0);
+    let ray = normalize(far.xyz / far.w - view.camera.xyz);
+    let point = view.camera.xyz + ray * front * 1000.0 - vec3(cloud.drift.z, 0.0, cloud.drift.w);
+    let clip = cloud.previous_raster * vec4(point, 1.0);
+    let old_uv = clip.xy / clip.w * vec2(0.5, -0.5) + 0.5;
+    if clip.w <= 0.0 || any(old_uv < vec2(0.0)) || any(old_uv > vec2(1.0)) { return opacity; }
+
+    let old = cloud_ground_sky(previous, previous_front, old_uv);
+    if old.a < 0.0 { return opacity; }
+    return opacity * abs(transmittance - old.a);
+}
+
 @compute @workgroup_size(8,8)
 fn resolve(@builtin(global_invocation_id) id:vec3<u32>) {
     let size=cloud.active_extent;if any(id.xy>=size) {return;}
     let at=vec2<i32>(id.xy);
-    if cloud.stop_mode != CLOUD_STOP_SKY {
+    if cloud.per_pixel_stops != 0u {
+        // Each sky slot is the same whole ray. Reproject it once per texel.
+        var sky_reactive = -1.0;
         for (var slot = 0; slot < 4; slot++) {
             let value = textureLoad(fresh, at, slot, 0);
             let metadata = textureLoad(fresh_front, at, slot, 0);
+            var reactive = metadata.y;
+            if metadata.w == 0.0 {
+                if sky_reactive < 0.0 {
+                    sky_reactive = ground_sky_reactive(id.xy, value.a, metadata.x);
+                }
+                reactive = sky_reactive;
+            }
             textureStore(next, at, slot, value);
-            let opacity = select(metadata.y, 1.0 - value.a, cloud.stop_mode == CLOUD_STOP_CLEAR_GROUND);
-            textureStore(next_front, at, slot, vec4(metadata.x, opacity, opacity, metadata.w));
+            textureStore(next_front, at, slot, vec4(metadata.xy, reactive, metadata.w));
         }
         return;
     }

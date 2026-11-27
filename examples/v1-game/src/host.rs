@@ -942,6 +942,10 @@ pub trait GameHost {
     /// Optional submitted cloud transport and lighting products for inspection.
     #[cfg(feature = "proving")]
     fn cloud_sky_products(&self) -> Option<thrum_clouds::SkyProducts>;
+    /// Submit a proving weather edit through the same tick inbox as the live controls.
+    #[doc(hidden)]
+    #[cfg(all(feature = "proving", target_os = "macos"))]
+    fn edit_cloud_weather_for_test(&self, target: thrum_cloud_model::Parameters);
     /// Current Weather and Shade product, for optional GPU inspection.
     #[cfg(feature = "proving")]
     fn cloud_ground_product(&self) -> Option<(wgpu::Texture, wgpu::Buffer)>;
@@ -1055,6 +1059,17 @@ impl GameHost for Runtime {
     #[cfg(feature = "proving")]
     fn cloud_sky_products(&self) -> Option<thrum_clouds::SkyProducts> {
         self.source().cloud_input.as_ref()?.sky_products()
+    }
+    #[cfg(all(feature = "proving", target_os = "macos"))]
+    fn edit_cloud_weather_for_test(&self, target: thrum_cloud_model::Parameters) {
+        apply_cloud_edits(
+            self,
+            crate::controls::CloudEdits {
+                weather: Some(target),
+                overlay: None,
+            },
+        )
+        .expect("weather edit inbox");
     }
     #[cfg(feature = "proving")]
     fn cloud_ground_product(&self) -> Option<(wgpu::Texture, wgpu::Buffer)> {

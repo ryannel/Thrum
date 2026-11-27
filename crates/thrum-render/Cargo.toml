@@ -46,11 +46,10 @@ profiling = { version = "=1.0.18", default-features = false, features = ["profil
 
 [dev-dependencies]
 thrum-fixtures = { path = "../thrum-fixtures" }
-thrum-test-support = { path = "../thrum-test-support", features = ["render-registry"] }
+thrum-test-support = { path = "../thrum-test-support", features = ["render-registry", "creation-trace"] }
 serde_json = "=1.0.154"
 pollster = "=1.0.1"
 tracing = { version = "=0.1.44", default-features = false, features = ["std"] }
-tracing-subscriber = { version = "=0.3.23", default-features = false, features = ["registry"] }
 
 [target.'cfg(target_os = "macos")'.dev-dependencies]
 thrum-cook = { path = "../thrum-cook" }

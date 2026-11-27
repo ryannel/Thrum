@@ -82,21 +82,27 @@ impl SceneContributions {
         let mut members = Vec::with_capacity(self.entries.len());
         for entry in &self.entries {
             let end = first + entry.secondary_view_slots().len();
-            let job = if let Some(extent) = extent {
+            let job = if let Some(extent) =
+                extent.filter(|&extent| entry.needs_render_capacity(extent))
+            {
                 entry.extent_resize_job(extent, resize_secondary)?
-            } else {
+            } else if resize_secondary {
                 entry.secondary_resize_job()?.map(|job| {
                     let job: super::ExtentResizeJob =
                         Box::new(move |slots| job(slots.expect("replacement secondary views")));
                     job
                 })
+            } else {
+                None
             };
             members.push((first..end, job, entry.effect_graph()));
             first = end;
         }
         let needs_job = match extent {
             None => first != 0,
-            Some(_) => members.iter().any(|(_, job, _)| job.is_some()),
+            Some(_) => {
+                (resize_secondary && first != 0) || members.iter().any(|(_, job, _)| job.is_some())
+            }
         };
         if !needs_job {
             return Ok(None);

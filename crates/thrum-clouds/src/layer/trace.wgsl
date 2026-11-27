@@ -9,10 +9,7 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
     let texel=select(id.xy*stride+offset,id.xy,cloud.temporal.w!=0u);
     if any(texel>=size) {return;}
     let per_pixel = SURFACE_STOPS;
-    let clear_ground = GROUND_TRACE && cloud.stop_mode == CLOUD_STOP_CLEAR_GROUND;
-    let block_centre = min(vec2<f32>(texel * 2u + 1u), vec2<f32>(cloud.render_extent) - 0.5);
-    let uv = select(cloud_texel_uv(texel), block_centre / vec2<f32>(cloud.render_extent),
-                    per_pixel && !clear_ground);
+    let uv = select(cloud_texel_uv(texel), cloud_ground_texel_uv(texel), per_pixel);
     let clip=cloud.inverse_raster*vec4(uv*vec2(2.0,-2.0)+vec2(-1.0,1.0),0.0,1.0);
     let camera=atmosphere.camera_altitude.xyz;let ray=normalize(clip.xyz/clip.w-camera);
     let air_camera=camera-vec3(cloud.drift.x,0.0,cloud.drift.y);
@@ -36,21 +33,16 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
         end=max(end,fog_interval.y);
     }
     var distances = vec4(end);
+    var sky = vec4(false);
     var next_stop = end;
     var stored = array<bool, 4>(false, false, false, false);
     var stops: array<CloudStop, 4>;
-    if per_pixel || clear_ground {
+    if per_pixel {
         for (var slot = 0u; slot < 4u; slot++) {
             let pixel = min(texel * 2u + cloud_stop_offset(slot), cloud.render_extent - 1u);
-            distances[slot] = cloud_stop_distance(pixel, camera);
-        }
-        // In clear Ground, rays with all surfaces ahead of the whole cloud band
-        // can use the Sky march. The other dispatch handles the remaining rays.
-        // Each texel is integrated by exactly one of those dispatches.
-        if clear_ground {
-            let surfaces = distances < vec4(cloud.heights.w);
-            let needs_surface_march = any(select(vec4(false), distances >= vec4(begin), surfaces));
-            if needs_surface_march != per_pixel { return; }
+            let depth = textureLoad(scene_depth, vec2<i32>(pixel), 0);
+            sky[slot] = depth == 0.0;
+            distances[slot] = cloud_stop_distance(pixel, camera, depth);
         }
         end = min(end, max(max(distances.x, distances.y), max(distances.z, distances.w)));
         next_stop = min(min(distances.x, distances.y), min(distances.z, distances.w));
@@ -191,24 +183,13 @@ fn trace(@builtin(global_invocation_id) id:vec3<u32>) {
         for (var slot = 0u; slot < 4u; slot++) {
             var stop = final_stop;
             if stored[slot] { stop = stops[slot]; }
-            cloud_write_stop(vec2<i32>(texel), i32(slot), stop, samples, distances[slot] * 0.001);
+            cloud_write_stop(vec2<i32>(texel), i32(slot), stop, samples, select(distances[slot] * 0.001, 0.0, sky[slot]));
         }
     } else {
         let front_distance = weighted / max(opacity, 1e-10);
         total = cloud_then(total, cloud_air_part(part, part_weighted, part_mass, camera, ray, uv));
         let value = vec4(total.scattering * environment_storage_scale(), total.transmittance);
-        if clear_ground {
-            for (var slot = 0u; slot < 4u; slot++) {
-                // Depth beyond the trace limit receives the same full transport as sky.
-                let reaches_far_edge = distances[slot] >= cloud.heights.w;
-                textureStore(transport, vec2<i32>(texel), i32(slot), select(vec4(0.0, 0.0, 0.0, 1.0), value, reaches_far_edge));
-                textureStore(front, vec2<i32>(texel), i32(slot),
-                    vec4(select(vec2(0.0), vec2(front_distance * 0.001, opacity), reaches_far_edge),
-                         f32(samples), distances[slot] * 0.001));
-            }
-        } else {
-            textureStore(transport, vec2<i32>(texel), 0, value);
-            textureStore(front, vec2<i32>(texel), 0, vec4(front_distance * 0.001, opacity, f32(samples), 1.0));
-        }
+        textureStore(transport, vec2<i32>(texel), 0, value);
+        textureStore(front, vec2<i32>(texel), 0, vec4(front_distance * 0.001, opacity, f32(samples), 1.0));
     }
 }

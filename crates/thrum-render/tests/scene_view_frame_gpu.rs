@@ -395,3 +395,112 @@ fn the_first_asked_frame_is_whole_after_discard_capture_cut_resize_and_device_re
         );
     });
 }
+
+#[cfg(not(target_arch = "wasm32"))]
+#[test]
+fn worker_resize_preserves_legacy_secondary_slot_admission() {
+    use std::sync::atomic::AtomicBool;
+    use thrum_render::contribution::{SecondaryResizeJob, SecondaryViewSlot};
+
+    struct Slot {
+        refuse: bool,
+    }
+
+    impl SceneContribution for Slot {
+        fn secondary_view_slots(&self) -> Vec<SecondaryViewSlot> {
+            vec![SecondaryViewSlot::new(1.0).expect("full-sized slot")]
+        }
+
+        fn secondary_resize_job(&self) -> Result<Option<SecondaryResizeJob>, FrameError> {
+            if self.refuse {
+                return Ok(Some(Box::new(|_| {
+                    Err(FrameError::InvalidState("slot refused preparation"))
+                })));
+            }
+            Ok(None)
+        }
+
+        fn passes(&self) -> ContributionPasses {
+            ContributionPasses::default()
+        }
+
+        fn rebuild(&mut self, _: &SceneSurface<'_>) -> Result<(), FrameError> {
+            Ok(())
+        }
+
+        fn encode_upload(&mut self, _: &mut wgpu::CommandEncoder, _: &ContributionFrame) {}
+    }
+
+    let Some(thrum_test_support::Opened {
+        device,
+        queue,
+        capabilities,
+        ..
+    }) = thrum_test_support::open(
+        "legacy secondary slot admission",
+        Some(wgpu::Backend::Metal),
+        thrum_test_support::Profile::Portable,
+        &thrum_test_support::Restriction::default(),
+    )
+    else {
+        return;
+    };
+    let old = [32, 18];
+    let new = [65, 37];
+    let old_target = surface(&device, old);
+    let new_target = surface(&device, new);
+    for (in_list, refuse) in [(true, false), (false, false), (true, true)] {
+        let mut host = pollster::block_on(host_with_config(
+            &capabilities,
+            &queue,
+            SyntheticScene::grid(1).expect("scene"),
+            FrameLighting::Diagnostic(thrum_render::synthetic::SyntheticLight::default()),
+            FrameConfig {
+                render_extent: old,
+                surface: Some(SurfaceProfile {
+                    format: wgpu::TextureFormat::Rgba8Unorm,
+                    extent: old,
+                }),
+            },
+        ));
+        let slot = Box::new(Slot { refuse });
+        let effect: Box<dyn SceneContribution> = if in_list {
+            Box::new(SceneContributions::new(vec![slot]))
+        } else {
+            slot
+        };
+        host.set_scene_contribution(effect).expect("initial slot");
+        submit(&mut host, &device, &old_target, old);
+        let inputs = host.extent_prepare_inputs(new);
+        if !in_list {
+            assert!(matches!(
+                inputs,
+                Err(FrameError::InvalidState(
+                    "missing secondary view resize job"
+                ))
+            ));
+            submit(&mut host, &device, &old_target, old);
+            continue;
+        }
+        let inputs = inputs.expect("list retains its secondary resize coordinator");
+        let built = std::thread::spawn(move || inputs.build(&AtomicBool::new(false)))
+            .join()
+            .expect("preparation worker");
+        if refuse {
+            assert!(matches!(
+                built,
+                Err(FrameError::InvalidState("slot refused preparation"))
+            ));
+            submit(&mut host, &device, &old_target, old);
+        } else {
+            assert!(
+                host.publish_extent(
+                    built
+                        .expect("empty replacement job")
+                        .expect("prepared extent")
+                )
+            );
+            submit(&mut host, &device, &new_target, new);
+        }
+    }
+}

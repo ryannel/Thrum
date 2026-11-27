@@ -4,6 +4,8 @@
 use std::io::Write as _;
 
 pub mod allocations;
+#[cfg(feature = "creation-trace")]
+pub mod creation_trace;
 pub mod ppm;
 pub mod readback;
 mod scratch;

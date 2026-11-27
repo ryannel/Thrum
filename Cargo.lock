@@ -3390,7 +3390,6 @@ dependencies = [
  "thrum-fixtures",
  "thrum-test-support",
  "tracing",
- "tracing-subscriber",
  "web-time",
  "wgpu",
 ]
@@ -3451,6 +3450,8 @@ version = "0.1.0"
 dependencies = [
  "pollster",
  "thrum-render",
+ "tracing",
+ "tracing-subscriber",
  "wgpu",
 ]
 

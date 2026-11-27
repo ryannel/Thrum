@@ -188,13 +188,28 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                 .map_err(FrameError::SecondaryView)?;
             let extents: Vec<_> = slots.iter().map(|slot| slot.extent(extent)).collect();
             let resize_secondary = extents.iter().copied().ne(scene.secondary_extents());
-            if resize_secondary || contribution.needs_render_capacity(extent) {
+            if contribution.needs_render_capacity(extent) {
                 let job = contribution
                     .extent_resize_job(extent, resize_secondary)?
                     .ok_or(FrameError::InvalidState(
                         "missing contribution extent resize job",
                     ))?;
                 replacement = Some((resize_secondary.then_some(extents), job));
+            } else if resize_secondary {
+                // A secondary-only resize keeps the original admission rules,
+                // including a list whose members have no private replacements.
+                let secondary =
+                    contribution
+                        .secondary_resize_job()?
+                        .ok_or(FrameError::InvalidState(
+                            "missing secondary view resize job",
+                        ))?;
+                let job: ExtentResizeJob = Box::new(move |views| {
+                    secondary(
+                        views.ok_or(FrameError::InvalidState("missing resized secondary views"))?,
+                    )
+                });
+                replacement = Some((Some(extents), job));
             }
         }
         Ok(ExtentPrepareInputs {

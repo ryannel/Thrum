@@ -1,21 +1,29 @@
 //! The real V1 after-opaque trace sees a foreground occluder uncover a farther surface.
 
+#[cfg(target_os = "macos")]
+mod clouds_sky_contract;
 #[expect(dead_code, reason = "the placement tests share this fixture")]
 mod fixture;
 
 use std::{
     sync::{
         Arc,
-        atomic::{AtomicU32, Ordering},
+        atomic::{AtomicBool, AtomicU32, Ordering},
     },
     time::Duration,
 };
 use thrum_render::{
-    contribution::{ContributionFrame, ContributionPasses, SceneContribution, SceneSurface},
-    runtime::{FrameConfig, FrameError, SurfaceOutput},
+    contribution::{
+        ContributionFrame, ContributionPasses, EffectGraph, SceneContribution, SceneContributions,
+        SceneSurface, SecondaryResize, SecondaryResizeJob, SecondaryView, SecondaryViewRequest,
+        SecondaryViewSlot, ViewAir,
+    },
+    runtime::{CaptureLimits, FrameConfig, FrameError, SurfaceOutput},
+    synthetic::CaptureSource,
 };
 use thrum_test_support::{
     Opened, Restriction,
+    creation_trace::{Creations, with_default},
     readback::{self, Mip},
 };
 use v1_game::{CloudSelection, GameHost, GameSetup, GroundWeather, SceneCamera};
@@ -47,12 +55,45 @@ fn stop_channel(bytes: &[u8], [width, height]: [u32; 2], x: u32, y: u32, channel
     half::f16::from_le_bytes([bytes[index], bytes[index + 1]]).to_f32()
 }
 
+fn submitted_linear(
+    host: &mut fixture::Host,
+    device: &wgpu::Device,
+) -> thrum_render::runtime::SubmittedImage {
+    thrum_test_support::wait::until("submitted pre-tone image", Duration::from_secs(5), || {
+        device
+            .poll(wgpu::PollType::wait_indefinitely())
+            .expect("Metal complete");
+        host.try_submitted_image().expect("pre-tone readback")
+    })
+}
+
+fn composed_transmittance(image: &thrum_render::runtime::SubmittedImage, x: u32, y: u32) -> f32 {
+    assert_eq!(image.pixel_source, CaptureSource::SceneLinear);
+    let offset = ((y * image.extent[0] + x) * 8 + 6) as usize;
+    half::f16::from_le_bytes([image.rgba[offset], image.rgba[offset + 1]]).to_f32()
+}
+
+fn wait_for_retirement(host: &mut fixture::Host, device: &wgpu::Device) {
+    thrum_test_support::wait::until("retire submitted frames", Duration::from_secs(5), || {
+        device
+            .poll(wgpu::PollType::wait_indefinitely())
+            .expect("Metal idle");
+        host.poll_completed().expect("retire timing");
+        (host.pending_frames() == 0).then_some(())
+    });
+}
+
 #[test]
+fn metal_uncover_cut_and_resize_use_current_surface_stops() {
+    prove_surface_stops(false);
+    prove_surface_stops(true);
+}
+
 #[expect(
     clippy::cast_precision_loss,
     reason = "the test pixel coordinates are at most 32"
 )]
-fn metal_uncover_cut_and_worker_extent_use_current_surface_stops() {
+fn prove_surface_stops(worker: bool) {
     let Some(Opened {
         device,
         queue,
@@ -93,11 +134,23 @@ fn metal_uncover_cut_and_worker_extent_use_current_surface_stops() {
     let camera = SceneCamera::perspective(eye, [-450.0, 100.0, 0.0], 0.35, 0.1, 4000.0)
         .expect("bank camera");
     let position = Arc::new(AtomicU32::new(0));
-    host.set_game_contribution(Box::new(Occluder {
+    let occluder = Box::new(Occluder {
         position: Arc::clone(&position),
         pipeline: None,
-    }))
-    .expect("opaque mover");
+    });
+    let replaced = Arc::new(AtomicBool::new(false));
+    if worker {
+        host.set_game_contribution(Box::new(SceneContributions::new(vec![
+            occluder,
+            Box::new(SecondaryProbe {
+                view: None,
+                replaced: Arc::clone(&replaced),
+            }),
+        ])))
+        .expect("opaque mover and secondary slot beside Ground");
+    } else {
+        host.set_game_contribution(occluder).expect("opaque mover");
+    }
     host.set_scene_camera(camera).expect("starting camera");
     let refresh = host
         .quality_knobs()
@@ -126,7 +179,11 @@ fn metal_uncover_cut_and_worker_extent_use_current_surface_stops() {
             while host.poll_completed().expect("retire V1 frame").is_some() {}
             host.cloud_sky_products().expect("submitted cloud layer")
         };
+    host.enable_submitted_capture_from(1, CaptureLimits::default(), CaptureSource::SceneLinear)
+        .expect("submitted transport tap");
     let occluded = submit(&mut host, 0, &view, EXTENT);
+    let first_image = submitted_linear(&mut host, &device);
+    host.recycle_submitted_image(first_image);
     assert!(!occluded.history_valid);
     let read =
         |texture: &wgpu::Texture| readback::texture(&device, &queue, texture, Mip::level(0), ..);
@@ -138,6 +195,8 @@ fn metal_uncover_cut_and_worker_extent_use_current_surface_stops() {
     assert_eq!(uncovered.trace_stride, 1);
     let resolved = read(&uncovered.front);
     let fresh = read(&uncovered.fresh_front);
+    let fresh_transport = read(&uncovered.fresh_transport);
+    let image = submitted_linear(&mut host, &device);
     let half = |bytes: &[u8], pixel, channel| {
         stop_channel(bytes, EXTENT, pixel % EXTENT[0], pixel / EXTENT[0], channel)
     };
@@ -164,12 +223,18 @@ fn metal_uncover_cut_and_worker_extent_use_current_surface_stops() {
                 distance,
                 "carried or borrowed stop at {x},{y}"
             );
+            assert!(
+                (composed_transmittance(&image, x, y) - half(&fresh_transport, pixel, 3)).abs()
+                    < 0.002,
+                "uncovered pixel {x},{y} must compose its own fresh stop"
+            );
             let opacity = half(&fresh, pixel, 1);
             assert_eq!(half(&resolved, pixel, 2), opacity);
             mist_covered += u32::from(opacity > 0.02);
         }
     }
     assert!(mist_covered > 0, "the uncovered surface must show far mist");
+    host.recycle_submitted_image(image);
     host.set_scene_camera(camera).expect("request cut");
     let cut = submit(&mut host, 50, &view, EXTENT);
     assert!(!cut.history_valid);
@@ -187,75 +252,134 @@ fn metal_uncover_cut_and_worker_extent_use_current_surface_stops() {
     assert_eq!(scale.range, 100..=100);
     assert!(host.set_game_quality_knob(&scale.name, 50).is_err());
 
-    thrum_test_support::wait::until("retire before resize", Duration::from_secs(5), || {
-        device
-            .poll(wgpu::PollType::wait_indefinitely())
-            .expect("Metal idle");
-        host.poll_completed().expect("retire timing");
-        (host.pending_frames() == 0).then_some(())
-    });
-    publish_worker_extent(&mut host, &device);
+    wait_for_retirement(&mut host, &device);
+    if worker {
+        publish_worker_extent(&mut host);
+    } else {
+        assert!(host.resize_scene_surface(GROWN).expect("immediate grow"));
+    }
     assert_eq!(host.contribution_error(), None);
     let grown_view =
         output_texture(&device, GROWN).create_view(&wgpu::TextureViewDescriptor::default());
     let grown = submit(&mut host, 75, &grown_view, GROWN);
     assert_grown_stops(&grown, eye, read);
+    if worker {
+        assert!(
+            replaced.load(Ordering::Relaxed),
+            "first frame reads the resized secondary slot"
+        );
+    }
 }
 
 #[expect(
     clippy::print_stderr,
     reason = "save publication counters in the Metal proof"
 )]
-fn publish_worker_extent(
-    host: &mut thrum_render::runtime::FrameHost<v1_game::GameWorld, v1_game::GameScene>,
-    device: &wgpu::Device,
-) {
-    let inputs = host
-        .extent_prepare_inputs(GROWN)
-        .expect("new extent inputs");
-    let pipelines = host.pipeline_creation_count();
-    let candidate = std::thread::Builder::new()
-        .name("cloud extent worker".into())
-        .spawn(move || {
-            inputs
-                .build(&std::sync::atomic::AtomicBool::new(false))
-                .expect("build new extent")
-                .expect("prepared extent")
+fn publish_worker_extent(host: &mut fixture::Host) {
+    let render = std::thread::current().id();
+    let creations = Creations::default();
+    let dispatch = creations.dispatch();
+    let worker_dispatch = dispatch.clone();
+    let worker = with_default(&dispatch, || {
+        let inputs = host
+            .extent_prepare_inputs(GROWN)
+            .expect("new extent inputs");
+        let (worker, candidate) = std::thread::spawn(move || {
+            with_default(&worker_dispatch, || {
+                (
+                    std::thread::current().id(),
+                    inputs
+                        .build(&AtomicBool::new(false))
+                        .expect("build new extent")
+                        .expect("prepared extent"),
+                )
+            })
         })
-        .expect("extent worker")
         .join()
         .expect("worker completed");
-    assert_eq!(
-        host.pipeline_creation_count(),
-        pipelines,
-        "worker must reuse pipelines"
-    );
-
-    // Do not poll between these samples. Dropping renderer handles queues
-    // disposal, and the next frame has not yet created a scene input group.
-    let live = || {
-        let hal = device.get_internal_counters().hal;
-        [
-            hal.textures.read(),
-            hal.texture_views.read(),
-            hal.bind_groups.read(),
-        ]
-    };
-    let before = live();
-    assert!(host.publish_extent(candidate));
-    let creates = host.pipeline_creation_count();
-    let after = live();
-    assert_eq!(creates, pipelines, "pipeline events at publication");
+        assert!(host.publish_extent(candidate));
+        worker
+    });
     assert!(
-        after
-            .iter()
-            .zip(before)
-            .all(|(after, before)| *after <= before),
-        "publication increased live textures, views or bind groups: {before:?} -> {after:?}"
+        creations.on(render).is_empty(),
+        "render thread creations: {:?}",
+        creations.on(render)
     );
+    let events = creations.on(worker);
+    for kind in [
+        "Device::create_texture",
+        "Texture::create_view",
+        "Device::create_bind_group",
+    ] {
+        assert!(
+            events.contains(&kind),
+            "worker did not create {kind}: {events:?}"
+        );
+    }
     eprintln!(
-        "Mac extent 32×18 -> 65×37: pipeline events {pipelines:?} -> {creates:?}, live textures/views/groups {before:?} -> {after:?}"
+        "Mac extent 32×18 -> 65×37: render created zero objects, worker recorded {} creations",
+        events.len()
     );
+}
+
+struct SecondaryProbe {
+    view: Option<SecondaryView>,
+    replaced: Arc<AtomicBool>,
+}
+
+impl SceneContribution for SecondaryProbe {
+    fn passes(&self) -> ContributionPasses {
+        ContributionPasses {
+            upload: true,
+            compute: false,
+        }
+    }
+
+    fn secondary_view_slots(&self) -> Vec<SecondaryViewSlot> {
+        vec![SecondaryViewSlot::new(1.0).expect("full-sized secondary slot")]
+    }
+
+    fn rebuild(&mut self, surface: &SceneSurface<'_>) -> Result<(), FrameError> {
+        self.view = Some(surface.secondary_views[0].clone());
+        Ok(())
+    }
+
+    fn secondary_resize_job(&self) -> Result<Option<SecondaryResizeJob>, FrameError> {
+        Ok(Some(Box::new(|views| {
+            let view = views[0].clone();
+            Ok(SecondaryResize::new(
+                EffectGraph::default(),
+                move |owner: &mut Self| {
+                    owner.view = Some(view);
+                },
+            ))
+        })))
+    }
+
+    fn encode_upload(&mut self, _: &mut wgpu::CommandEncoder, frame: &ContributionFrame) {
+        if frame.render_extent != GROWN {
+            return;
+        }
+        let view = self.view.as_ref().expect("secondary binding");
+        assert_eq!(view.maximum_extent(), GROWN);
+        let [x, y, z] = frame.camera;
+        let camera = thrum_render::synthetic::SyntheticView::perspective(
+            [x, y + 10.0, z],
+            [x, y + 10.0, z - 10.0],
+            [0.0, 1.0, 0.0],
+            1.0,
+            1.0,
+            0.1,
+            1000.0,
+        )
+        .expect("secondary camera");
+        view.request(
+            &SecondaryViewRequest::new(&camera, GROWN, None, ViewAir::Camera)
+                .expect("view request"),
+        )
+        .expect("the first grown frame uses replacement slot bindings");
+        self.replaced.store(true, Ordering::Relaxed);
+    }
 }
 
 #[expect(
@@ -364,7 +488,12 @@ fn metal_directed_cloud_keeps_its_far_stop_with_clear_ground_rows() {
             (transmission, channel(&metadata))
         })
     };
+    wait_for_retirement(&mut host, &gpu.device);
+    host.enable_submitted_capture_from(1, CaptureLimits::default(), CaptureSource::SceneLinear)
+        .expect("submitted surface transport tap");
+    frames.submit(&mut host);
     let level = read_centre(&host);
+    let level_image = submitted_linear(&mut host, &gpu.device);
     assert!(
         level[2].0 < 0.2,
         "all-far control must see the slab: {level:?}"
@@ -374,7 +503,17 @@ fn metal_directed_cloud_keeps_its_far_stop_with_clear_ground_rows() {
         .expect("same camera, fresh stops");
     frames.submit(&mut host);
     let mixed = read_centre(&host);
-    for ((transmission, distance), expected) in mixed.into_iter().zip([0.42, 0.70, 2.0, 0.42]) {
+    let mixed_image = submitted_linear(&mut host, &gpu.device);
+    for (slot, ((transmission, distance), expected)) in
+        mixed.into_iter().zip([0.42, 0.70, 2.0, 0.42]).enumerate()
+    {
+        let slot = u32::try_from(slot).unwrap();
+        let x = fixture::EXTENT[0] / 2 + slot % 2;
+        let y = fixture::EXTENT[1] / 2 + slot / 2;
+        assert!((composed_transmittance(&mixed_image, x, y) - transmission).abs() < 0.002);
+        assert!(
+            (composed_transmittance(&level_image, x, y) - level[slot as usize].0).abs() < 0.002
+        );
         assert!(
             (distance - expected).abs() < 0.003,
             "mixed stop depths: {mixed:?}"
@@ -425,6 +564,10 @@ impl SceneContribution for Occluder {
                         let slot = x % 2u + 2u * (u32(v.position.y) % 2u);
                         let mixed = array(420.0, 700.0, 2000.0, 420.0);
                         distance = select(2000.0, mixed[slot], v.mover == 3u);
+                    }
+                    if v.mover >= 16u {
+                        if x < v.mover { return 0.0; }
+                        distance = 3.0;
                     }
                     return (1.0 / distance - 1.0 / 4000.0) / (1.0 / 0.1 - 1.0 / 4000.0);
                 }".into()),

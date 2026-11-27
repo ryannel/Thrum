@@ -3,7 +3,7 @@ use crate::support;
 #[cfg(target_os = "macos")]
 use std::{
     sync::{
-        Arc, Mutex,
+        Mutex,
         atomic::{AtomicBool, Ordering},
         mpsc,
     },
@@ -20,9 +20,9 @@ use thrum_render::{
     synthetic::{FrameLighting, SyntheticLight, SyntheticScene},
 };
 #[cfg(target_os = "macos")]
-use tracing::{Dispatch, Subscriber, span};
+use thrum_test_support::creation_trace::Creations;
 #[cfg(target_os = "macos")]
-use tracing_subscriber::{Layer, layer::Context, prelude::*};
+use tracing::Dispatch;
 
 #[cfg(target_os = "macos")]
 const OLD: [u32; 2] = [64, 64];
@@ -37,49 +37,6 @@ const FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba8Unorm;
 // and capture observations.
 #[cfg(target_os = "macos")]
 static METAL: Mutex<()> = Mutex::new(());
-
-#[derive(Clone, Default)]
-#[cfg(target_os = "macos")]
-struct Creations(Arc<Mutex<Vec<(std::thread::ThreadId, &'static str)>>>);
-
-#[cfg(target_os = "macos")]
-impl<S: Subscriber> Layer<S> for Creations {
-    fn on_new_span(&self, attributes: &span::Attributes<'_>, _: &span::Id, _: Context<'_, S>) {
-        let metadata = attributes.metadata();
-        if metadata.target().starts_with("wgpu_core::")
-            && matches!(
-                metadata.name(),
-                "Device::create_texture"
-                    | "Device::create_texture_from_hal"
-                    | "Texture::create_view"
-                    | "Device::create_bind_group"
-                    | "Device::create_general_render_pipeline"
-                    | "Device::create_compute_pipeline"
-            )
-        {
-            self.0
-                .lock()
-                .expect("creation event")
-                .push((std::thread::current().id(), metadata.name()));
-        }
-    }
-}
-
-#[cfg(target_os = "macos")]
-impl Creations {
-    fn on(&self, thread: std::thread::ThreadId) -> Vec<&'static str> {
-        self.0
-            .lock()
-            .expect("creation events")
-            .iter()
-            .filter_map(|&(creator, kind)| (creator == thread).then_some(kind))
-            .collect()
-    }
-
-    fn dispatch(&self) -> Dispatch {
-        Dispatch::new(tracing_subscriber::registry().with(self.clone()))
-    }
-}
 
 #[cfg(target_os = "macos")]
 fn request(extent: [u32; 2], device: u64) -> ExtentRequest {

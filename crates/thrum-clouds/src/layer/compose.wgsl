@@ -8,41 +8,40 @@
 struct Output {@location(0) colour:vec4<f32>,@location(1) motion:vec4<f32>,@location(2) reactive:f32}
 // Interpolate the sky's scattered light and transmittance from layer texel
 // centres to render pixel centres. Clamp to the active rectangle at any scale.
-fn sky_slot(texel:vec2<i32>, clear_ground:bool)->i32 {
-    return select(0,cloud_sky_stop_slot(vec2<u32>(texel)),clear_ground);
-}
-
-fn sky_tap(texel:vec2<i32>, size:vec2<i32>, clear_ground:bool)->vec4<f32> {
+fn sky_tap(texel:vec2<i32>, size:vec2<i32>)->vec4<f32> {
     let at=clamp(texel,vec2(0),size-1);
-    return textureLoad(transport,at,sky_slot(at,clear_ground),0);
+    return textureLoad(transport,at,0,0);
 }
 
-fn sky_transport(uv:vec2<f32>,clear_ground:bool)->vec4<f32> {
+fn sky_transport(uv:vec2<f32>)->vec4<f32> {
     let size=vec2<i32>(cloud.active_extent);
     let p=uv*vec2<f32>(size)-0.5;
     let base=vec2<i32>(floor(p));
     let f=fract(p);
-    let a=sky_tap(base,size,clear_ground);
-    let b=sky_tap(base+vec2(1,0),size,clear_ground);
-    let c=sky_tap(base+vec2(0,1),size,clear_ground);
-    let d=sky_tap(base+vec2(1),size,clear_ground);
+    let a=sky_tap(base,size);
+    let b=sky_tap(base+vec2(1,0),size);
+    let c=sky_tap(base+vec2(0,1),size);
+    let d=sky_tap(base+vec2(1),size);
     return mix(mix(a,b,f.x),mix(c,d,f.x),f.y);
 }
 @fragment fn fragment(@builtin(position) position:vec4<f32>)->Output {
     let uv=position.xy/aux.extent.xy;
     let pixel = vec2<u32>(position.xy);
-    let per_pixel = cloud.stop_mode != CLOUD_STOP_SKY;
-    let clear_ground = cloud.stop_mode == CLOUD_STOP_CLEAR_GROUND;
+    let per_pixel = cloud.per_pixel_stops != 0u;
     let opaque_depth = textureLoad(depth, vec2<i32>(pixel), 0);
-    let filter_sky = opaque_depth == 0.0 && (!per_pixel || clear_ground);
+    let filter_sky = opaque_depth == 0.0;
     let legacy_texel = vec2<u32>(clamp(uv * vec2<f32>(cloud.active_extent),
                                       vec2(0.0), vec2<f32>(cloud.active_extent) - 1.0));
-    let at = vec2<i32>(select(legacy_texel, pixel / 2u, per_pixel && !filter_sky));
-    let slot = select(cloud_stop_slot(pixel), sky_slot(at, clear_ground), filter_sky || !per_pixel);
+    let at = vec2<i32>(select(legacy_texel, pixel / 2u, per_pixel));
+    let slot = select(0, cloud_stop_slot(pixel), per_pixel);
     let front_value = textureLoad(front, at, slot, 0);
     var layer: vec4<f32>;
     if filter_sky {
-        layer = sky_transport(uv, clear_ground);
+        if per_pixel {
+            layer = cloud_ground_sky(transport, front, uv);
+        } else {
+            layer = sky_transport(uv);
+        }
         if front_value.y <= 0.0 {
             if layer.a >= 1.0 { discard; }
             return Output(layer, vec4(0.0), 0.0);
@@ -65,6 +64,6 @@ fn sky_transport(uv:vec2<f32>,clear_ground:bool)->vec4<f32> {
         let current=view.unjittered*vec4(point,1.0);
         if previous.w>0.0 && current.w>0.0 {motion=(previous.xy/previous.w-current.xy/current.w)*vec2(0.5,-0.5)*aux.extent.xy;}
     }
-    let reactive=select(front_value.z,front_value.y,cloud.temporal.w!=0u);
+    let reactive=select(front_value.z,front_value.y,!per_pixel && cloud.temporal.w!=0u);
     return Output(layer,vec4(motion,0.0,select(0.0,1.0,front_value.y>0.5)),reactive);
 }

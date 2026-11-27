@@ -79,7 +79,7 @@ bytemuck = "=1.25.2"
 half = { version = "=2.7.1", default-features = false }
 image = { version = "=0.25.10", default-features = false, features = ["png"] }
 sha2 = "=0.10.9"
-thrum-test-support = { path = "../../crates/thrum-test-support", features = ["render"] }
+thrum-test-support = { path = "../../crates/thrum-test-support", features = ["render", "creation-trace"] }
 thrum-cook = { path = "../../crates/thrum-cook", features = ["fault-probe"] }
 
 [[bench]]

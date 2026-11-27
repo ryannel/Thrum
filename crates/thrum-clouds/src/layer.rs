@@ -64,9 +64,11 @@ pub struct SkyProducts {
     pub transport: wgpu::Texture,
     /// Current trace RGB in-scatter and transmittance, before history resolve.
     pub fresh_transport: wgpu::Texture,
-    /// Resolved front distance in kilometres, opacity and reactive coverage.
+    /// Resolved front distance in kilometres, opacity and reactive coverage. In Ground,
+    /// alpha holds the surface stop distance in kilometres or zero for sky.
     pub front: wgpu::Texture,
-    /// Latest traced distance, opacity, sample count and traced flag.
+    /// Latest front distance, opacity and sample count. Alpha is the Ground stop distance
+    /// in kilometres (zero for sky), or the Sky trace flag.
     pub fresh_front: wgpu::Texture,
     /// Prepared droplet phase tables, unchanged from the CPU model.
     pub phase_tables: wgpu::Buffer,
@@ -86,25 +88,6 @@ pub struct SkyProducts {
     pub raster_view_projection: [[f32; 4]; 4],
 }
 
-#[repr(u32)]
-#[derive(Clone, Copy)]
-enum StopMode {
-    Sky,
-    Surface,
-    ClearGround,
-}
-
-impl StopMode {
-    fn shader() -> String {
-        format!(
-            "const CLOUD_STOP_SKY: u32 = {}u;
-const CLOUD_STOP_CLEAR_GROUND: u32 = {}u;",
-            Self::Sky as u32,
-            Self::ClearGround as u32,
-        )
-    }
-}
-
 #[repr(C)]
 #[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
 pub(crate) struct Uniform {
@@ -121,7 +104,7 @@ pub(crate) struct Uniform {
     noise: [f32; 4],
     bank_noise: [f32; 4],
     density_profile: [f32; 2],
-    stop_mode: u32,
+    per_pixel_stops: u32,
     low_deck: u32,
     active_extent: [u32; 2],
     sample_cap: u32,
@@ -155,8 +138,6 @@ pub(crate) struct Layer {
     textures: [wgpu::Texture; 2],
     detail_noise: Noise,
     trace: wgpu::ComputePipeline,
-    clear_ground_trace: Option<wgpu::ComputePipeline>,
-    stop_mode: StopMode,
     compose: wgpu::RenderPipeline,
     field_pipeline: wgpu::RenderPipeline,
     field_overlay: crate::FieldOverlay,
@@ -420,19 +401,6 @@ impl Layer {
             state.parameters().coverage > 0.0 && kind.base <= field.terrain_top()
         });
         let per_pixel_stops = self.per_pixel_stops;
-        let stop_mode = match ground {
-            None => StopMode::Sky,
-            Some(field)
-                if !field.has_active_rows()
-                    && !low_deck
-                    && (shapes.is_none()
-                        || (state.shapes().is_empty() && state.hashed_shapes().is_none())) =>
-            {
-                StopMode::ClearGround
-            }
-            Some(_) => StopMode::Surface,
-        };
-        self.stop_mode = stop_mode;
         self.render_extent = frame.render_extent;
         let stride = self.quality.stride;
         let active_extent = self.active_extent();
@@ -531,7 +499,7 @@ impl Layer {
                 model.detail_mean as f32,
                 if self.has_placed_map { 1.0 } else { 0.0 },
             ],
-            stop_mode: stop_mode as u32,
+            per_pixel_stops: u32::from(per_pixel_stops),
             low_deck: u32::from(low_deck),
             active_extent,
             sample_cap: self.quality.cap,
@@ -600,12 +568,6 @@ impl Layer {
         let [width, height] = self.active_extent();
         let dispatch = [width, height].map(|side| side.div_ceil(8 * self.trace_stride));
         pass.dispatch_workgroups(dispatch[0], dispatch[1], 1);
-        if let StopMode::ClearGround = self.stop_mode
-            && let Some(trace) = &self.clear_ground_trace
-        {
-            pass.set_pipeline(trace);
-            pass.dispatch_workgroups(dispatch[0], dispatch[1], 1);
-        }
     }
 
     pub(crate) fn field_runs(&self) -> bool {
