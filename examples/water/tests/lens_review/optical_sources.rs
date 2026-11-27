@@ -61,6 +61,23 @@ fn only_the_refracted_ray_can_see_an_air_panel_from_below() {
 }
 
 thrum_test_support::macos_gpu_test! {
+fn the_air_ray_finds_a_registered_face_just_above_the_waterline() {
+    let Some((_serial, gpu)) = crate::metal::gpu("near waterline source") else { return };
+    let view = camera([0.0, -1.0, 0.0], [0.0, 0.0, 1.0], 0.7, 1.0 / 32768.0);
+    // The centre ray meets the surface at z=1. Refraction reaches the
+    // panel's near face at y≈0.007, 2 cm beyond the surface. The camera
+    // ray goes over that face, and the registered box encloses the origin.
+    let panel = Panel {
+        centre: [0.0, 0.007, 1.026],
+        half_size: [0.25, 0.004, 0.006],
+        radiant: false,
+    };
+    let delta = emission_delta(&gpu, &view, panel, [160, 90], true, None);
+    assert!(delta > 100.0, "the near registered face should be visible: {delta}");
+}
+}
+
+thrum_test_support::macos_gpu_test! {
 fn the_reflected_ray_can_see_a_submerged_panel() {
     let Some((_serial, gpu)) = crate::metal::gpu("underwater reflected source") else { return };
     let view = camera([0.0, -0.4, 0.0], [0.0, 0.0, 1.0], 105.0_f32.to_radians(), 1.0 / 32768.0);

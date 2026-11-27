@@ -47,8 +47,8 @@ fn hit_light(hit: GatherHit) -> vec3<f32> {
 }
 
 // Slab interval in metres along the surface ray. Handle parallel axes without 0/0.
-fn box_interval(origin: vec3<f32>, ray: vec3<f32>, body: OpticsBody, reach: f32) -> vec2<f32> {
-    var result = vec2(0.015, reach);
+fn box_interval(origin: vec3<f32>, ray: vec3<f32>, body: OpticsBody, range: vec2<f32>) -> vec2<f32> {
+    var result = range;
     for (var axis = 0u; axis < 3u; axis++) {
         let d = ray[axis];
         let low = body.low[axis] - origin[axis];
@@ -83,7 +83,10 @@ fn registered_source(hit: GatherHit) -> bool {
 fn trace_source(
     hit: GatherHit, origin: vec3<f32>, body: OpticsBody, registered: bool, side: f32,
 ) -> bool {
-    if registered { return in_box(hit.point, body); }
+    if registered {
+        return in_box(hit.point, body) && (side == 0.0 || side * (hit.point.y - origin.y) > 0.0);
+    }
+    if side > 0.0 { return hit.point.y > origin.y && !registered_source(hit); }
     if side != 0.0 { return side * (hit.point.y - origin.y) > 0.01; }
     return hit.point.y > origin.y - 0.04 && !registered_source(hit);
 }
@@ -97,24 +100,28 @@ fn trace(
     if interval.x >= interval.y { return empty_hit(); }
     // The scene's silhouettes need finer brackets over the full reach.
     // Registered geometry already restricts the trace to its short interval.
-    let steps = select(48u, 16u, registered);
+    let air_body = registered && side > 0.0;
+    let steps = select(48u, select(16u, 32u, air_body), registered);
     let step = (interval.y - interval.x) / f32(steps);
     var previous = interval.x;
     var clear = false;
+    var near_texel = empty_hit();
+    var near_error = 1.0;
     for (var i = 0u; i <= steps; i++) {
-        // Spend more of a scene trace near the water, where an edge moves
-        // most in screen space. A constrained body interval is already short.
+        // An air ray can enter a hull just above the interface. Concentrate
+        // its samples at box entry before its projection passes the waterline.
         let f = f32(i) / f32(steps);
-        let t = mix(interval.x, interval.y, select(f * f, f, registered));
+        let phase = select(select(f * f, f, registered), f * f * f, air_body);
+        let t = mix(interval.x, interval.y, phase);
         let p = origin + ray * t;
         let projected = optics_project(p);
-        if projected.z < 0.0 { return empty_hit(); }
+        if projected.z < 0.0 { return near_texel; }
         let uv = projected.xy + offset;
         // Underwater traces begin at the visible surface fragment and use
         // zero screen offset. While clip w stays positive, the projection of
         // this ray is monotone on both axes, so it cannot re-enter the view.
         if side != 0.0 && (any(uv < vec2(0.0)) || any(uv >= vec2(1.0))) {
-            return empty_hit();
+            return near_texel;
         }
         let hit = gather_at(uv);
         if hit.distance == 0.0 {
@@ -129,18 +136,33 @@ fn trace(
             continue;
         }
         let eligible = trace_source(hit, origin, body, registered, side);
+        if air_body && eligible {
+            // At the waterline a subpixel run of air-side depth may end
+            // between march samples. Accept the nearest depth texel only
+            // when its reconstructed point is within one texel of the ray.
+            let offset_from_origin = hit.point - origin;
+            let along = dot(offset_from_origin, ray);
+            let footprint = hit.distance * 2.0 * max(
+                view_aux.viewport_inv_viewport.z, view_aux.viewport_inv_viewport.w,
+            );
+            let error = length(offset_from_origin - along * ray) / footprint;
+            if along > 0.0 && along <= interval.y && error < near_error {
+                near_texel = hit;
+                near_error = error;
+            }
+        }
         let projected_step = max(step, t - previous);
         if delta >= 0.0 && eligible && (clear || delta < 0.75 * projected_step + 0.04) {
             var left = previous;
             var right = t;
             var best = hit;
-            let refine = select(7u, 5u, registered);
+            let refine = select(7u, 5u, registered && side == 0.0);
             for (var j = 0u; j < refine; j++) {
                 let middle = 0.5 * (left + right);
                 let q = origin + ray * middle;
                 let candidate = gather_at(optics_project(q).xy + offset);
                 if candidate.distance > 0.0 && length(q - view.camera_xyz_time.xyz) >= candidate.distance
-                    && (registered || trace_source(candidate, origin, body, false, side)) {
+                    && ((registered && side == 0.0) || trace_source(candidate, origin, body, registered, side)) {
                     right = middle;
                     best = candidate;
                 } else {
@@ -153,7 +175,8 @@ fn trace(
                 + best.distance * select(1.8, 3.0, registered) * max(
                 view_aux.viewport_inv_viewport.z, view_aux.viewport_inv_viewport.w,
             );
-            if along > 0.02 && along <= interval.y + 0.03 && error < 2.0 * tolerance
+            let minimum = select(0.02, 0.0, registered && side > 0.0);
+            if along > minimum && along <= interval.y + 0.03 && error < 2.0 * tolerance
                 && (!registered || in_box(best.point, body)) {
                 let agreement = 1.0 - smoothstep(0.75 * tolerance, 2.0 * tolerance, error);
                 if registered || side != 0.0 {
@@ -169,19 +192,21 @@ fn trace(
         clear = delta < 0.0;
         previous = t;
     }
-    return empty_hit();
+    return near_texel;
 }
 
-fn trace_bodies(origin: vec3<f32>, ray: vec3<f32>, reach: f32, mask: u32) -> GatherHit {
+fn trace_bodies(origin: vec3<f32>, ray: vec3<f32>, reach: f32, mask: u32, side: f32) -> GatherHit {
     var remaining = mask & GATHER_BODY_MASK;
     var closest = reach;
     var best = empty_hit();
     while remaining != 0u {
         let index = firstTrailingBit(remaining);
         remaining &= remaining - 1u;
+        if optics.sources[index].z == 0u { continue; }
         let body = optics.bodies[index];
-        let interval = box_interval(origin, ray, body, closest);
-        let hit = trace(origin, ray, interval, body, true, vec2(0.0), 0.0);
+        let start = select(0.015, 0.0, side > 0.0);
+        let interval = box_interval(origin, ray, body, vec2(start, closest));
+        let hit = trace(origin, ray, interval, body, true, vec2(0.0), side);
         if hit.distance > 0.0 {
             closest = dot(hit.point - origin, ray);
             best = hit;
@@ -392,8 +417,8 @@ fn water_optical_paths(
     var reflected = empty_hit();
     var through = empty_hit();
     if (mask & GATHER_BODY_MASK) != 0u && slope_weight > 0.0 {
-        reflected = trace_bodies(world, reflected_ray, reach, mask);
-        through = trace_bodies(world, refracted_ray, optics.extinction_sight.w, mask);
+        reflected = trace_bodies(world, reflected_ray, reach, mask, 0.0);
+        through = trace_bodies(world, refracted_ray, optics.extinction_sight.w, mask, 0.0);
     }
     let depth = max(0.0, world.y - row.bed);
     let rough_limit = optics.downwelling_mirror.w;

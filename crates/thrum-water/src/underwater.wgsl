@@ -124,9 +124,17 @@ fn underside_light(world: vec3<f32>, n: vec3<f32>, v: vec3<f32>, variance: f32,
         let c = max(cosine, critical + 0.0001);
         let out_cos = sqrt(max(0.0, 1.0 - WATER_INDEX * WATER_INDEX * (1.0 - c * c)));
         let ray = normalize(-v * WATER_INDEX + (WATER_INDEX * cosine - out_cos) * normal);
-        let air_reach = max(reach, 128.0);
-        let hit = trace(world, ray, vec2(0.03, air_reach), scenery, false, vec2(0.0), 1.0);
+        // The receiving mask was built for rays from above. A ray leaving the
+        // water can meet any visible body, including one enclosing its origin.
+        let bodies = (1u << u32(optics.reach_slope_scene.w)) - 1u;
+        let body = trace_bodies(world, ray, reach, bodies, 1.0);
+        let scene_reach = select(reach, dot(body.point - world, ray), body.edge >= 1.0);
+        let hit = trace(world, ray, vec2(0.03, scene_reach), scenery, false, vec2(0.0), 1.0);
         transmitted = environment_sky_radiance(normalize(vec3(ray.x, max(0.001, ray.y), ray.z)));
+        if body.distance > 0.0 {
+            transmitted = mix(transmitted,
+                air_path_to(hit_light(body), world, body.point, optics_uv(body.pixel)), body.edge);
+        }
         if hit.distance > 0.0 {
             transmitted = mix(transmitted,
                 air_path_to(hit_light(hit), world, hit.point, optics_uv(hit.pixel)), hit.edge);
