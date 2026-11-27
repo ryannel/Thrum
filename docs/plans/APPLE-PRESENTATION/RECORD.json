@@ -2272,7 +2272,33 @@
     },
     "WP19": {
       "definitions": "a859ec2da1ce32f04cabbdb351ae97f94de2a85344abef311139133bf82a79b0",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "pass",
+          "commit": "ac8954677f6c00ea11131a82c933e67316e23047",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP19-review.md",
+          "items": {
+            "WP19.1": "pass"
+          },
+          "summary": "WP19 passes. All six generation-transition tests passed in ten consecutive runs on the M3 Max with 16 test threads, and the output-scale test passed alone. The change prevents other Metal tests from interfering with the creation trace while preserving the worker and render-thread assertions in both directions.",
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 47086,
+            "cached": 645248,
+            "output": 2984,
+            "turns": 1
+          },
+          "at": "2026-11-27T12:09:18Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The main-branch check long-tests fails on c6734fe1b087 (last pass 3d1f03509). Failing test: thrum-render generation_tran",
@@ -2306,6 +2332,13 @@
           "output": 17720,
           "turns": 1
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "ac8954677f6c00ea11131a82c933e67316e23047",
+        "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP19-review.md",
+        "checked": "76ac4c4a795f6a7ba5c61d762401100909c8c276",
+        "at": "2026-11-27T12:09:18Z"
       }
     }
   },

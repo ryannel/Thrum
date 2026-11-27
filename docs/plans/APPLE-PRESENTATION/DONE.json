@@ -1241,7 +1241,7 @@
     {
       "id": "WP19",
       "name": "The long tests pass again: the output-scale device test passes beside the other tests of its binary",
-      "status": "ready_for_review",
+      "status": "done",
       "depends_on": [],
       "quality_bar": "A test suite as dependable as a shipped engine's: a proof gives the same answer whichever tests run beside it, and a fix to a test weakens nothing the test proves.",
       "items": [
@@ -1254,8 +1254,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP19/README.md",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP19-review.md"
         }
       ],
       "failed_reviews": 0,
