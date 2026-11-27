@@ -732,7 +732,7 @@
         {
           "verdict": "fail",
           "commit": "ab3c269f0ec001625f0158411494c0b8d18849de",
-          "review": ".orchestrate/evidence/RIVERS/WP4-review.md",
+          "review": ".orchestrate/evidence/RIVERS/WP4-review-8.md",
           "items": {
             "WP4.1": "pass",
             "WP4.2": "pass",
@@ -766,6 +766,44 @@
             "turns": 1
           },
           "at": "2026-11-27T01:55:33Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "f62cbc63f3ce6348cfbe9698e9b5774b4e53bd41",
+          "review": ".orchestrate/evidence/RIVERS/WP4-review.md",
+          "items": {
+            "WP4.1": "pass",
+            "WP4.2": "pass",
+            "WP4.3": "pass",
+            "WP4.4": "pass",
+            "WP4.5": "pass",
+            "WP4.6": "pass",
+            "WP4.7": "pass",
+            "WP4.8": "pass",
+            "WP4.9": "pass"
+          },
+          "findings": [
+            {
+              "name": "A sampled river and a hollows body cannot prepare the shared water shader",
+              "repeat": false
+            }
+          ],
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "visible",
+          "usage": {
+            "input": 175772,
+            "cached": 8680064,
+            "output": 21406,
+            "turns": 1
+          },
+          "at": "2026-11-27T02:50:38Z"
         }
       ],
       "authorised": {
