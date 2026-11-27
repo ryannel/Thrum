@@ -162,6 +162,7 @@ the offshore shelf. The dive routes expose camera depth, pitch and Sun elevation
 Choose `breeze` for a 5 m/s local wind without swell or `trade` for wind and swell.
 The offshore route lifts the terrain and water levels 16 m so the sky camera
 can reach 10 m underwater within its supported altitude range.
+Choose `deep-sea` as the location for the 20 m offshore inspection.
 Choose `THRUM_WATER_LOCATION=swash` or `&location=swash` to cross the
 waterline on the beach. This view uses the same raised datum and the island
 breaker section.

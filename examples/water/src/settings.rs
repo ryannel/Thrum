@@ -140,6 +140,7 @@ impl Settings {
         {
             let site = match get(LOCATION).as_deref() {
                 Some("sea") => DiveSite::Sea,
+                Some("deep-sea") => DiveSite::DeepSea,
                 Some("swash") => DiveSite::Swash,
                 Some("lake-high-stage") => DiveSite::HighLake,
                 _ => DiveSite::Lake,

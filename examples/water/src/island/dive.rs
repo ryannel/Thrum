@@ -15,6 +15,7 @@ use thrum_water_model::Field;
 // Keep the inspection camera in the sky shell's altitude range while retaining
 // the island's relative sea, seabed and camera elevations.
 const SEA_LEVEL: f32 = 16.0;
+const DEEP_SEA_LEVEL: f32 = 26.0;
 const LAKE_LEVEL: f32 = 12.0;
 const HIGH_LAKE_STAGE: f32 = 2.75;
 const STEP_SECONDS: f64 = 1.0 / 60.0;
@@ -30,6 +31,8 @@ pub enum DiveSite {
     HighLake,
     /// The exposed sea over the offshore shelf.
     Sea,
+    /// Deep water off the southwest side of the island.
+    DeepSea,
     /// The seaward side of the beach's swash.
     Swash,
 }
@@ -42,6 +45,7 @@ impl DiveSite {
             Self::Lake => "lake",
             Self::HighLake => "lake-high-stage",
             Self::Sea => "sea",
+            Self::DeepSea => "deep-sea",
             Self::Swash => "swash",
         }
     }
@@ -50,7 +54,7 @@ impl DiveSite {
     #[must_use]
     pub const fn crossing_depth(self) -> f64 {
         match self {
-            Self::Lake | Self::HighLake | Self::Sea => 0.6,
+            Self::Lake | Self::HighLake | Self::Sea | Self::DeepSea => 0.6,
             Self::Swash => 0.35,
         }
     }
@@ -130,6 +134,7 @@ fn build(
         DiveSite::Lake => ([183.0, LAKE_LEVEL, 5.0], 0.0, 1.0, 3.4),
         DiveSite::HighLake => ([190.0, LAKE_LEVEL + HIGH_LAKE_STAGE, 0.0], 0.0, 1.0, 5.3),
         DiveSite::Sea => ([-293.0, SEA_LEVEL, 20.0], SEA_LEVEL, 1.0, 10.0),
+        DiveSite::DeepSea => ([-300.0, DEEP_SEA_LEVEL, 190.0], DEEP_SEA_LEVEL, 1.0, 20.0),
         DiveSite::Swash => ([-112.0, SEA_LEVEL, 0.0], SEA_LEVEL, 0.1, 0.4),
     };
     let surf = site == DiveSite::Swash;
@@ -166,16 +171,16 @@ fn build(
         map.set_wave_gains(1, gains)
             .map_err(|error| format!("{error:?}"))?;
     }
-    if site == DiveSite::HighLake {
+    if matches!(site, DiveSite::HighLake | DiveSite::DeepSea) {
         let [x, level, z] = eye_at_surface.map(f64::from);
         let sample = map
             .sample([x, z])
-            .ok_or("high-stage inspection has no water body")?;
+            .ok_or("deep dive inspection has no water body")?;
         let bed = sample
             .bed
-            .ok_or("high-stage inspection has no surveyed bed")?;
+            .ok_or("deep dive inspection has no surveyed bed")?;
         if (sample.row.level - level).abs() > 0.001 || level - bed <= f64::from(max_depth) {
-            return Err("high-stage inspection camera is outside the lake".into());
+            return Err("deep dive inspection camera must clear the surveyed bed".into());
         }
     }
     let map = Arc::new(Mutex::new(map));

@@ -1537,14 +1537,18 @@ try {
           ['split-swash',{'camera.depth':0,'camera.pitch':0}],
           ['under-swash',{'camera.depth':0.25,'camera.pitch':25}],
         ];
-      }else if(['sea','lake-high-stage'].includes(routeParams.get('location'))){
+      }else if(['sea','deep-sea','lake-high-stage'].includes(routeParams.get('location'))){
         checkpoints.push(
           ['up-5m',{'camera.depth':5,'camera.pitch':89.99}],
           ['inclined-5m',{'camera.depth':5,'camera.pitch':45}],
         );
-        if(routeParams.get('location')==='sea')checkpoints.push(
+        if(['sea','deep-sea'].includes(routeParams.get('location')))checkpoints.push(
           ['level-10m',{'camera.depth':10,'camera.pitch':0}],
           ['down-10m',{'camera.depth':10,'camera.pitch':-35}],
+        );
+        if(routeParams.get('location')==='deep-sea')checkpoints.push(
+          ['level-20m',{'camera.depth':20,'camera.pitch':0}],
+          ['down-20m',{'camera.depth':20,'camera.pitch':-35}],
         );
       }
     }else if(routeParams.has('island')){

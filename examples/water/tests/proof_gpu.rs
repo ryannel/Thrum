@@ -587,7 +587,8 @@ fn driver(gpu: &thrum_test_support::Gpu) {
                 && (floating().is_some() || island_wind().is_some())
             {
                 optics_checkpoints()
-            } else if let Some((_, site @ (DiveSite::Sea | DiveSite::Lake))) = settings().dive()
+            } else if let Some((_, site @ (DiveSite::Sea | DiveSite::DeepSea | DiveSite::Lake))) =
+                settings().dive()
                 && std::env::var("THRUM_WATER_ROUTE").as_deref() == Ok("dive-depths")
             {
                 dive_depth_checkpoints(site)
@@ -763,10 +764,10 @@ fn dive_wake_cost(gpu: &thrum_test_support::Gpu, directory: &std::path::Path) {
 
 #[cfg(target_os = "macos")]
 fn dive_depth_checkpoints(site: DiveSite) -> Vec<(String, String, f64)> {
-    let depths: &[f64] = if site == DiveSite::Sea {
-        &[0.5, 3.0, 10.0]
-    } else {
-        &[0.5, 3.0]
+    let depths: &[f64] = match site {
+        DiveSite::DeepSea => &[0.5, 3.0, 10.0, 20.0],
+        DiveSite::Sea => &[0.5, 3.0, 10.0],
+        _ => &[0.5, 3.0],
     };
     [("dawn", 1), ("noon", 60), ("twilight", -5)].into_iter()
         .flat_map(|(light, sun)| depths.iter().flat_map(move |depth| {
