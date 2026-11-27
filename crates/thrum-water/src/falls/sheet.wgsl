@@ -35,10 +35,10 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
     let span = FALL_LOOP * input.discharge.x * 0.68;
     // Broader parcels leave nearby parts of the lip together. Smaller
     // strands within the parcel stretch at their own speeds.
-    let grouped = sheet_noise(vec2(lip * 0.015, birth), FALL_LOOP, vec2(2.7), vec2(0.0));
+    let grouped = sheet_noise(vec2(lip * 0.12, birth), FALL_LOOP, vec2(2.7), vec2(0.0));
     let coarse = sheet_noise(xy, span, vec2(2.4), vec2(0.0));
     let fine = sheet_noise(xy, span, vec2(8.7), vec2(0.0));
-    let rank = 0.43 * coarse + 0.17 * fine + 0.40 * grouped;
+    let rank = 0.28 * coarse + 0.10 * fine + 0.62 * grouped;
     let pixel = max(length(dpdx(xy)), length(dpdy(xy)));
     let width = max(0.025, min(0.27, 0.10 * pixel));
     let tangent = normalize(input.velocity_along.xyz + vec3(1e-8, -1e-8, 0.0));

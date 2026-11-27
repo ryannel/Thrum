@@ -119,8 +119,8 @@ fn rank(along: f64, down: f64, launch: f64) -> f64 {
     let span = (thrum_sea_model::LOOP_SECONDS * launch) as f32 * 0.68;
     let seconds = down as f32 / (launch as f32).max(0.001);
     let seconds_span = thrum_sea_model::LOOP_SECONDS as f32;
-    let grouped = noise(Vec2::new(along as f32 * 0.015, seconds), seconds_span, 2.7);
-    f64::from(0.43 * noise(at, span, 2.4) + 0.17 * noise(at, span, 8.7) + 0.4 * grouped)
+    let grouped = noise(Vec2::new(along as f32 * 0.12, seconds), seconds_span, 2.7);
+    f64::from(0.28 * noise(at, span, 2.4) + 0.10 * noise(at, span, 8.7) + 0.62 * grouped)
 }
 
 fn noise(point: Vec2, span: f32, frequency: f32) -> f32 {
