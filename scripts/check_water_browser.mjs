@@ -919,7 +919,7 @@ try {
       globalThis.__riverPasses=passes;
       return passes;
     })()`);
-    for(const [camera,name] of [[2,'riffle'],[0,'pool'],[3,'ledge']]){
+    for(const [camera,name] of [[17,'riffle'],[0,'pool'],[3,'ledge']]){
       await evaluate(`game.edit_control('camera.river',${camera})`);
       for(let tick=0;tick<(name==='ledge'?72:16);tick++){
         await until(()=>evaluate('game.frame_ready()'),'calm river frame slot');
