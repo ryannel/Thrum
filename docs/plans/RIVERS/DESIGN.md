@@ -540,12 +540,14 @@ Rings exist where the interaction windows are, which is round the body the game 
 beside it and from the bank as a curtain, and its strands end hard at the pool. Three bounded attempts left both
 as they were: the sheet's optics and light; the island profile's lengths and tear thickness, which draw the
 flood 0.97 to 0.99 white at its foot; and strands parted by the time they left the lip, each with its own
-contact and spray at the pool, which also moved a depth the frame contract's test pins and was taken out
+contact and spray at the pool, which also opened a gap at one of five places WP6's test fixes on the sheet's
+path and was taken out
 ([handoff](../../../.orchestrate/evidence/RIVERS/WP6-handoff.md),
 [the trial](../../../.orchestrate/evidence/RIVERS/WP6/strand-pass/README.md)). All three tuned one mechanism, a
 single surface along the water's path with a pattern thresholded on it and a cut at the pool's level, so a
 fourth pass of that kind is not the remedy. WP6 closes on the lowest and middle gauges, where the sheet passes.
-At the highest gauge the sheet draws as it does, and no item judges its look there until WP11.
+At the highest gauge the sheet draws as it does. Its lip is judged there as at every gauge, a smooth tongue
+that shows the rock behind it (WP6.4), and no item judges its look below the lip there until WP11.
 
 **What WP11 decides.** Which mechanism draws a fall too heavy for the sheet to carry. Its first item is research
 into how high-end games shipped in 2020 or later draw a heavy waterfall, from published accounts and from the
@@ -554,7 +556,9 @@ current game ships it and it answers the two failures, never because code or an 
 [The candidates above](#the-candidates-decided-against-the-cues) were judged for R5's whole range before any
 fall was drawn, and they do not bind the selection: particles, and mist, were set aside there for want of an
 owner, which is a fact about the build order and not about the look. The research judges them on the look and
-says what each would need. It also answers the question this design left open, whether a fall needs mist to
+says what each would need. Footage shows that a fall's foot is lost in white water and not which technique
+drew it, so for each game the record sets apart what was seen, what identifies the game's technique, and what
+the builder inferred. It also answers the question this design left open, whether a fall needs mist to
 meet its bar. The selection and its reasons go in the log, with the research record linked from it.
 
 **What holds whatever is selected.**
@@ -563,14 +567,24 @@ meet its bar. The selection and its reasons go in the log, with the research rec
   how much. What is drawn is made from it. Nothing drawn is a body or answers a query.
 - *What a game reads does not move.* The plunge's births and impulses stay the fall record's, at the same places
   and amounts whatever the camera sees and whichever recipe draws the fall, on every machine ([the plunge](#the-plunge)).
-- *The frame contract.* Whatever is drawn writes depth, motion from unjittered positions and reactive coverage
-  as [the sheet](#the-falls-sheet) does, holds on a pause and shows a capture's time
-  ([ruling 7](../ARCHITECTURE.md#seam-rulings-for-rivers)).
+  They are the ones the engine gave before the drawing changed.
+- *The frame contract.* Whatever is drawn writes depth, motion from unjittered positions and reactive coverage,
+  holds on a pause and shows a capture's time ([ruling 7](../ARCHITECTURE.md#seam-rulings-for-rivers)). Depth
+  follows what is drawn and not [the sheet](#the-falls-sheet)'s path: it is written where the drawn water hides
+  the scene, and an opening in the fall keeps the scene's depth. What is drawn stays within a distance of the
+  fall record's paths that its recipe declares.
+- *Light.* Whatever is drawn is lit by the water's own functions and has no light of its own: the direct Sun
+  on it takes the scene's Sun visibility ([ruling 7](../ARCHITECTURE.md#seam-rulings-for-rivers)), as WP7 builds
+  it for the sheet, and its white follows the sky to dusk and night.
+- *The lip.* At the highest gauge the lip is still a smooth tongue that shows the rock behind it, as WP6.4
+  passes it on the sheet.
 - *The lower gauges.* The lowest and middle gauges keep the look WP6 passed, and the fall thickens from the
   middle gauge to the highest with no jump (R6).
 - *Both targets.* By [the hardware-native decision](../../design/decisions/HARDWARE-NATIVE-ENGINE.md) the
   approach is a recipe the registry selects, with a portable fallback, and Chrome draws the fall at the highest
-  gauge by one or the other.
+  gauge by one or the other. The fallback clears the curtain and the hard strand ends as the selected recipe
+  does, because Chrome is where a visitor to a teaching demo sees the fall. WP6's sheet is therefore no
+  fallback at the highest gauge.
 - *Cost.* Recorded as a tripwire beside WP6's ([cost account](#cost-account)); no figure decides it.
 
 **What it may not build alone.** Water that leaves the surface as drops is still
@@ -923,9 +937,28 @@ dependencies. In addition:
   ([the heavy fall](#the-heavy-fall-at-the-highest-gauge)). WP6.4 takes its views at the lowest and middle
   gauges. WP6.5 judges the pool at the middle and highest gauges and the sheet's meeting with it at the middle
   gauge alone. WP7's views of the fall are taken at the middle gauge, and a curtain or a hard strand end seen at
-  the highest gauge is not a finding against WP6 or WP7. Until WP11 closes the ledger says that look is
-  unjudged. WP11's two inspections are written from what the three attempts left on screen, and they pass any
-  mechanism that removes it: neither names how the fall is drawn.
+  the highest gauge is not a finding against WP6 or WP7. The lip is the exception: WP6.4 judges it at the
+  highest gauge too, in one take and a still, since the rock showing through the tongue was never one of the
+  two parked cues, and WP11.2 holds it on whatever replaces the sheet. Until WP11 closes the ledger says the
+  look below the lip is unjudged. WP11's inspections of the fall and its foot are written from what the three
+  attempts left on screen, and they pass any mechanism that removes it: neither names how the fall is drawn.
+  Its other proofs are written so that a recipe unlike the sheet can pass them and the sheet, kept as a
+  fallback, cannot:
+  - *In Chrome (WP11.5).* The curtain from beside and the strand ends from the bank are judged in Chrome's own
+    `realtime` takes. The script's case alone would pass WP6's sheet, which reaches the pool, speeds up and
+    makes foam.
+  - *The frame (WP11.4).* WP6's test reads depth at five places fixed on the sheet's ballistic path, which is
+    the sheet's outline and not the contract: a true opening at one of them fails it. The heavy fall's case
+    runs on each recipe that draws the highest gauge, takes its places from that recipe's own coverage in the
+    frame, and holds depth where the water hides the scene and the scene's depth at an opening. The sheet's
+    case stays for where the sheet still draws.
+  - *The pool (WP11.4).* One camera and least amounts of foam and rings cannot tell the fall record's sources
+    from sources that follow the camera. The sources the engine submits are compared to the bit across two
+    cameras that both hold the foot in view and one turned away, across the recipes, and with those recorded
+    before the drawing changed.
+  - *Light (WP11.8).* WP7 proves ruling 7 on the sheet at the middle gauge. A recipe of its own could pass at
+    noon and glow in the gorge, so WP7.3's measure and WP7.4's and WP7.6's views are taken again at the highest
+    gauge on each recipe that draws it.
 - **Maturity.** A ledger row for `E1.rivers` is added in WP4 and kept current.
 
 ## Open questions

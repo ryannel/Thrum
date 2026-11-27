@@ -416,3 +416,21 @@
   are in [the design](DESIGN.md#proof-and-builder-handoff), which gained why the island's plunge pool stays a
   reach. The trial that parted the strands is `594fe0a62` on `build/rivers`, kept as a record of what did not
   work and not as a start for WP11. The earlier note is in git at `d22018303`.
+- 2026-11-27 Planner, design review 15, Must Fix 1. Chrome could ship the curtain: WP11.5 passed WP6's sheet as
+  the fallback. WP11.5 now judges the two flood cues in Chrome's own `realtime` takes, from beside the fall and
+  from the bank, and [the design](DESIGN.md#the-heavy-fall-at-the-highest-gauge) says the fallback clears both
+  cues, so WP6's sheet is no fallback at the highest gauge.
+- 2026-11-27 Planner, design review 15, Must Fix 2. The heavy fall's light was proved nowhere: WP7 judges
+  ruling 7 on the sheet at the middle gauge. Added WP11.8, WP7.3's measure and WP7.4's and WP7.6's views at the
+  highest gauge on each recipe that draws it, and a *Light* line to what holds whatever WP11 selects.
+- 2026-11-27 Planner, design review 15, Must Fix 3. WP11.4 is written again. Its frame case runs on each recipe
+  that draws the highest gauge and reads depth at places taken from that recipe's own coverage, with the
+  scene's depth at an opening; WP6's five places on the sheet's path stay the sheet's own case. Its pool case
+  compares the plunge sources the engine submits, to the bit, across two cameras that hold the foot in view and
+  one turned away, across the recipes, and with sources recorded before the drawing changes. Its check runs
+  the two files in the package's one test binary, which they join in WP11.
+- 2026-11-27 Planner, design review 15, Must Fix 4. The rock showing through the tongue at the flood's lip was
+  dropped by the split and was never one of the two parked cues. WP6.4 judges the lip at the highest gauge
+  again, in one take and a still, and WP11.2's point 5 holds it on whatever replaces the sheet.
+- 2026-11-27 Planner, design review 15, suggestion taken. WP11.1's record sets apart, for each game, what was
+  seen, what identifies its technique and what the builder inferred, and says which the selection rests on.

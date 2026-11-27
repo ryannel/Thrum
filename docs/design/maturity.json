@@ -3369,7 +3369,7 @@
       "id": "E1.rivers",
       "name": "Rivers and falls",
       "design": "../plans/RIVERS/DESIGN.md",
-      "current_design_sha256": "a1a26008b26bd246eac6be7619a1ab65d716262451e4d714285011630a1e3471",
+      "current_design_sha256": "1ed0b2b6fde22d96c469830461f1ed3e657a4c3b7ea00a191bcd98d2f6bd4d1f",
       "parent": "E1",
       "contracts": [
         "C08",
