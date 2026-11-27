@@ -228,19 +228,17 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
     let foam = (diffuse + direct * (0.24 + 0.76 * max(dot(face, light), 0.0)))
         * (select(0.22, 0.34, is_filament) + 0.36 * grain);
     let translucence = mix(vec3(0.97, 1.0, 1.04), vec3(0.71, 0.94, 1.0), breakout * (0.36 - grain));
-    let white_path = max(0.0, 1.0 - exp(-18.0 * input.discharge.w * white / max(0.23, nv)));
-    let clouded = (environment_diffuse(vec3(0.0, 1.0, 0.0)) + direct * max(0.0, light.y))
-        * vec3(0.84, 0.90, 0.89) / 3.14159265;
-    let churn = mix(foam * translucence * (0.60 + 0.72 * smoothstep(-0.44, 0.32, grain)),
-        clouded, white_path * mix(0.35, 0.82, coarse));
+    let churn = foam * translucence * (0.60 + 0.72 * smoothstep(-0.44, 0.32, grain));
     let glint = pow(max(dot(reflect(-light, face), look), 0.0), 160.0) * 0.055 * direct;
     let glass = mirror * (0.18 + 0.82 * fresnel) + glint;
     let uv = input.clip.xy * view_aux.viewport_inv_viewport.zw;
     let aerial = environment_aerial(point, uv);
     let mixing = select(smoothstep(0.72, 0.99, input.across_fraction.w),
         1.0 - smoothstep(0.05, 0.58, input.receiving.y), meets_pool);
+    let aerated = (environment_diffuse(vec3(0.0, 1.0, 0.0)) + direct * max(0.0, light.y))
+        * vec3(0.84, 0.90, 0.89) / 3.14159265;
     let sheet_colour = mix(glass, churn, white);
-    let spray_light = mix(sheet_colour, clouded,
+    let spray_light = mix(sheet_colour, aerated,
         mixing * (1.0 - thinness) * (0.32 + 0.58 * contact_foam + 0.10 * fine));
     let colour = (spray_light * aerial.transmission + aerial.scatter) * environment_storage_scale();
     let opacity = (clear * min(0.88, fresnel + 0.07 + 1.7 * input.discharge.w + 0.35 * breakout) + white * (0.90 + 0.18 * grain))
