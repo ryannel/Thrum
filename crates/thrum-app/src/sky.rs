@@ -625,6 +625,8 @@ impl SkyEdits {
 
 #[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
 type Update = Box<dyn FnMut(&Controls, &mut Sky)>;
+#[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
+type AcceptedUpdate = Box<dyn FnMut(&Sky)>;
 type StatusProbe = Box<dyn FnMut() -> ContentStatus>;
 #[cfg(any(target_os = "macos", target_arch = "wasm32"))]
 type StatusReadouts = Box<dyn FnMut(&mut Controls)>;
@@ -681,6 +683,8 @@ pub struct SkyGame {
     refused: Option<String>,
     #[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
     update: Update,
+    #[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
+    accepted_update: Option<AcceptedUpdate>,
     ground: Option<[f32; 3]>,
     local_lights: Vec<thrum_render::synthetic::SyntheticPointLight>,
     sun_optical_depth: Option<thrum_render::atmosphere::SunOpticalDepth>,
@@ -775,6 +779,8 @@ impl SkyGame {
             refused: None,
             #[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
             update: Box::new(update),
+            #[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
+            accepted_update: None,
             ground: Some(DEFAULT_GROUND),
             local_lights: Vec::new(),
             sun_optical_depth: None,
@@ -824,6 +830,21 @@ impl SkyGame {
     #[must_use]
     pub fn with_display_overlay(mut self, overlay: DisplayOverlay) -> Self {
         self.overlay = overlay;
+        self
+    }
+
+    /// Observe the accepted sky after each control update.
+    #[must_use]
+    pub fn on_accepted_controls(mut self, update: impl FnMut(&Sky) + 'static) -> Self {
+        #[cfg(any(test, target_os = "macos", target_arch = "wasm32"))]
+        {
+            self.accepted_update = Some(Box::new(update));
+        }
+        #[cfg(not(any(test, target_os = "macos", target_arch = "wasm32")))]
+        {
+            let _ = &mut self;
+            drop(update);
+        }
         self
     }
 
@@ -1142,6 +1163,9 @@ impl SkyGame {
         }
         self.refused = None;
         self.sky = sky;
+        if let Some(update) = &mut self.accepted_update {
+            update(&sky);
+        }
         if self.sent == Some(sky) {
             return SkyEdits(None);
         }

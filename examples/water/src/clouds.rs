@@ -1,5 +1,11 @@
 //! The water scene's authored weather, surface field and fog table.
-use std::{error::Error, sync::Arc};
+use std::{
+    error::Error,
+    sync::{
+        Arc,
+        atomic::{AtomicU32, Ordering},
+    },
+};
 use thrum_app::sky::{Camera, ContentStatus, SkyGame};
 use thrum_cloud_model::{
     Affinity, Fog, Ground, GroundProfile, GroundState, Parameters, Profile, State, Surface,
@@ -72,8 +78,19 @@ pub struct Scene {
     pub report: SharedReport,
     /// Read-only handles for the scene's submitted cloud products.
     pub weather: Option<WeatherInput>,
-    /// The ground configuration shared by the CPU and GPU.
-    pub ground: Option<GroundConfig>,
+    ground: Option<GroundConfig>,
+}
+
+impl Scene {
+    /// Ground configuration with the surface from the game's latest accepted levels.
+    #[must_use]
+    pub fn ground(&self) -> Option<GroundConfig> {
+        let mut ground = self.ground.clone()?;
+        if let Some(surface) = self.weather.as_ref().and_then(WeatherInput::ground_surface) {
+            ground.surface = surface;
+        }
+        Some(ground)
+    }
 }
 
 impl Selection {
@@ -179,7 +196,7 @@ impl Selection {
 
     pub(crate) fn camera(self) -> Camera {
         match self.weather {
-            Weather::DawnMist => Camera::look_at([171.0, 14.0, 34.0], [188.0, 13.0, 12.0], 57.0),
+            Weather::DawnMist => Camera::look_at([181.0, 18.0, 30.0], [182.0, 12.2, 6.0], 55.0),
             _ => match self.bank_view {
                 BankView::Offshore => {
                     Camera::look_at([-4090.0, 2.0, 150.0], [-1000.0, 22.0, 22.0], 55.0)
@@ -226,14 +243,38 @@ impl Selection {
             .as_ref()
             .filter(|_| self.weather == Weather::DawnMist)
             .map(|ground| Arc::clone(&ground.fog));
-        let sun = f64::from(self.sun());
+        let sun = Arc::new(AtomicU32::new(self.sun().to_bits()));
+        let game = if let (Some(map), Some(ground)) = (map, &ground) {
+            let map = Arc::clone(map);
+            let sun = Arc::clone(&sun);
+            let publication = publication.clone();
+            let mut levels = {
+                let map = map.lock().map_err(|_| "water map")?;
+                water_levels(&map)
+            };
+            publication.publish_surface(Arc::clone(&ground.surface))?;
+            game.on_accepted_controls(move |sky| {
+                sun.store(sky.sun_elevation_degrees.to_bits(), Ordering::Relaxed);
+                let map = map.lock().expect("island map");
+                let current = water_levels(&map);
+                if current != levels {
+                    publication
+                        .publish_surface(Arc::new(surface(&map).expect("bounded water levels")))
+                        .expect("weather surface publication");
+                    levels = current;
+                }
+            })
+        } else {
+            game
+        };
         let game = game
             .with_sky_overlay(aerosol)
             .with_sun_optical_depth(provider)
             .and_fixed_update(move |tick, step| {
                 if tick != 0 {
                     if let Some(fog) = &radiative {
-                        state.step_day(tick, step.as_secs_f64(), sun, fog)
+                        let elevation = f32::from_bits(sun.load(Ordering::Relaxed));
+                        state.step_day(tick, step.as_secs_f64(), f64::from(elevation), fog)
                     } else {
                         state.step(tick, step.as_secs_f64())
                     }
@@ -269,7 +310,8 @@ impl Selection {
         )?;
         if let Some(ground) = ground {
             let mist = self.weather == Weather::DawnMist;
-            let mut controls = GroundState::new(vec![1.0], 1.0, 244_000.0)?;
+            let mut controls =
+                GroundState::new(vec![1.0], if mist { 0.46 } else { 1.0 }, 244_000.0)?;
             controls.set_radiative_day(mist);
             state.set_ground(controls);
             if mist {
@@ -283,37 +325,25 @@ impl Selection {
     }
 
     fn ground(self, map: &Map) -> Result<GroundConfig, thrum_cloud_model::Error> {
-        let bed = map.bed();
-        let (origin, spacing, size) = bed.lattice();
-        let nodes = bed
-            .heights()
-            .iter()
-            .enumerate()
-            .map(|(index, &ground)| {
-                let water = map.sample(bed.point(index)).map(|sample| sample.row.level);
-                SurfacePoint { ground, water }
-            })
-            .collect::<Vec<_>>();
-        let surface = Surface::new(origin, size, spacing, 3000.0, &nodes)?;
         let steam = self.weather == Weather::DawnMist;
         let row = Fog {
-            liquid_water: if steam { 0.000_022 } else { 0.000_067 },
+            liquid_water: if steam { 0.002_100 } else { 0.000_067 },
             droplet_radius: if steam { 8e-6 } else { 10e-6 },
-            depth: if steam { 2.6 } else { 100.0 },
-            softness: if steam { 2.2 } else { 48.0 },
+            depth: if steam { 10.5 } else { 100.0 },
+            softness: if steam { 1.2 } else { 48.0 },
             depression: 0.0,
             pooling: 0.0,
             drifting: !steam,
             affinity: Affinity::Water,
             centre: [-1110.0, 0.0],
             radius: [950.0, 1700.0],
-            noise: if steam { 0.92 } else { 0.30 },
-            noise_scale: if steam { 16.0 } else { 110.0 },
+            noise: if steam { 1.0 } else { 0.30 },
+            noise_scale: if steam { 5.0 } else { 110.0 },
             radiative: steam,
         };
         let fog = Ground::new(
             GroundProfile {
-                shore_margin: 18.0,
+                shore_margin: if steam { 3.5 } else { 18.0 },
                 calm: [2.0, 8.0],
                 twilight: [-6.0, 10.0],
                 cooling_seconds: 10_800.0,
@@ -321,11 +351,38 @@ impl Selection {
             },
             vec![row],
         )?;
+        let fog = if steam {
+            fog.with_noise_stretch([2.1, 1.0])?
+        } else {
+            fog
+        };
         Ok(GroundConfig {
-            surface: Arc::new(surface),
+            surface: Arc::new(surface(map)?),
             fog: Arc::new(fog),
         })
     }
+}
+
+fn water_levels(map: &Map) -> [f64; 3] {
+    std::array::from_fn(|id| {
+        let body = map.body(id).expect("island sea, lake and pond");
+        body.level + body.stage.value
+    })
+}
+
+fn surface(map: &Map) -> Result<Surface, thrum_cloud_model::Error> {
+    let bed = map.bed();
+    let (origin, spacing, size) = bed.lattice();
+    let nodes = bed
+        .heights()
+        .iter()
+        .enumerate()
+        .map(|(index, &ground)| {
+            let water = map.sample(bed.point(index)).map(|sample| sample.row.level);
+            SurfacePoint { ground, water }
+        })
+        .collect::<Vec<_>>();
+    Surface::new(origin, size, spacing, 3000.0, &nodes)
 }
 
 fn profile() -> ShadeConfig {

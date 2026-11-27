@@ -91,6 +91,7 @@ the same startup settings.
 | `THRUM_WATER_WEATHER_SPEED` | `weather-speed` | `1`, `8` times ordinary weather time |
 | `THRUM_WATER_BANK_VIEW` | `bank-view` | `offshore`, `front`, `inside`, `shore` |
 | `THRUM_WATER_MIST_TIME` | `mist-time` | `dawn`, `after` (one hour after sunrise) |
+| `THRUM_WATER_CLOUD_CONTROL=1` | `cloud-control=off` | Keep the preset camera and Sun for a weather-absent comparison |
 
 An active cloud preset selects its own view and takes precedence over the
 labelled stand-in shade. The accelerated weather clock leaves the swell and the

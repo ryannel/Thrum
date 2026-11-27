@@ -45,7 +45,11 @@ fn ground_light(point: vec3<f32>, ray: vec3<f32>, true_sun: vec3<f32>,
     let lo = min(u32(phase_index), GROUND_PHASE_ENTRIES - 2u);
     let angles = vec4(mapping.path_border.y, -ray.y, 0.0, 1.0);
     for (var row = 0u; row < arrayLength(&ground_rows); row++) {
-        let local = ground_row(point, surface, ground_rows[row], coarse);
+        let fog = ground_rows[row];
+        // The visible medium needs the authored thin wisps. The Sun band and
+        // field overview still use the inexpensive mean density.
+        let use_mean = coarse && all(fog.noise_stretch == vec2(1.0));
+        let local = ground_row(point, surface, fog, use_mean);
         if local.x == 0.0 { continue; }
         if result.extinction == 0.0 {
             depths = ground_sun_depths(point, surface.x).xyz;

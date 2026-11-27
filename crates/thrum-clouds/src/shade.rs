@@ -54,19 +54,38 @@ pub struct WeatherInput(Arc<Mutex<Mailbox>>, WeatherPublisher);
 
 /// CPU-only publication handle that stays with the world's fixed-tick owner.
 #[derive(Clone, Default)]
-pub struct WeatherPublisher(Arc<Mutex<Option<Arc<State>>>>);
+pub struct WeatherPublisher(Arc<Mutex<PublishedWeather>>);
+
+#[derive(Clone, Default)]
+struct PublishedWeather {
+    state: Option<Arc<State>>,
+    surface: Option<Arc<thrum_cloud_model::Surface>>,
+}
 
 impl WeatherPublisher {
     /// Publish the weather from one committed tick.
     /// # Errors
     /// Refuses an unavailable mailbox.
     pub fn publish(&self, state: Arc<State>) -> Result<(), Error> {
-        *self.0.lock().map_err(|_| Error::InputUnavailable)? = Some(state);
+        self.0.lock().map_err(|_| Error::InputUnavailable)?.state = Some(state);
         Ok(())
     }
 
-    fn current(&self) -> Option<Arc<State>> {
-        self.0.lock().ok()?.clone()
+    /// Publish surface values when the game changes a water level. The grid
+    /// must keep the origin, extent and spacing used to prepare Ground.
+    /// # Errors
+    /// Refuses an unavailable mailbox or a change to a published lattice.
+    pub fn publish_surface(&self, surface: Arc<thrum_cloud_model::Surface>) -> Result<(), Error> {
+        let mut weather = self.0.lock().map_err(|_| Error::InputUnavailable)?;
+        if weather
+            .surface
+            .as_ref()
+            .is_some_and(|current| current.grid() != surface.grid())
+        {
+            return Err(Error::Unsupported("cloud surface field lattice changed"));
+        }
+        weather.surface = Some(surface);
+        Ok(())
     }
 }
 
@@ -97,9 +116,16 @@ impl WeatherInput {
         Ok(())
     }
 
-    fn frame_input(&self) -> Option<(Arc<State>, crate::FieldOverlay)> {
-        let input = self.0.lock().ok()?;
-        Some((self.1.current()?, input.field_overlay))
+    fn frame_input(&self) -> Option<(PublishedWeather, crate::FieldOverlay)> {
+        let overlay = self.0.lock().ok()?.field_overlay;
+        let weather = self.1.0.lock().ok()?.clone();
+        Some((weather, overlay))
+    }
+
+    /// The most recent surface published by the game, when it supplies live levels.
+    #[must_use]
+    pub fn ground_surface(&self) -> Option<Arc<thrum_cloud_model::Surface>> {
+        self.1.0.lock().ok()?.surface.clone()
     }
 
     /// Physical weather columns on the current device, for optional readback after submission.
@@ -440,7 +466,14 @@ impl SceneContribution for Shade {
         let Some(gpu) = &mut self.gpu else {
             return;
         };
-        let Some((state, field_overlay)) = self.input.frame_input() else {
+        let Some((
+            PublishedWeather {
+                state: Some(state),
+                surface,
+            },
+            field_overlay,
+        )) = self.input.frame_input()
+        else {
             gpu.sun.disable(&gpu.queue);
             self.dropped += 1;
             return;
@@ -490,18 +523,27 @@ impl SceneContribution for Shade {
                     frame.time.tick_duration.as_secs_f64(),
                     frame.history_reset,
                 );
+                let surface_changed = if let Some(surface) = surface {
+                    ground.field.update_surface(&gpu.queue, surface)?
+                } else {
+                    false
+                };
                 ground.field.set_upper_heights(gpu.sun.frame_heights);
                 ground.field.upload(&gpu.queue, &state, travel);
                 ground
                     .phases
                     .upload(&gpu.queue, environment.true_sun.angular_radius_radians)?;
                 let anchor = crate::ground::band::Band::anchor(camera, travel);
-                if ground.band_cadence.plan(anchor, frame.history_reset) {
-                    ground.targets.band.upload(&gpu.queue, camera, travel);
+                let reset_ground = frame.history_reset || surface_changed;
+                if ground.band_cadence.plan(anchor, reset_ground) {
+                    ground
+                        .targets
+                        .band
+                        .upload(&gpu.queue, camera, travel, ground.field.heights());
                 }
                 ground
                     .medium_cadence
-                    .plan(crate::ground::MediumView::new(frame), frame.history_reset);
+                    .plan(crate::ground::MediumView::new(frame), reset_ground);
                 if ground.targets.medium.sky_params.is_some() {
                     ground
                         .targets
@@ -681,7 +723,16 @@ impl SceneContribution for Shade {
                     input.placed_map = Some((map.texture.clone(), gpu.weather.origins()[0], state));
                 }
                 #[cfg(target_arch = "wasm32")]
-                input.observe(gpu, self.generation, self.input.1.current());
+                input.observe(
+                    gpu,
+                    self.generation,
+                    self.input
+                        .1
+                        .0
+                        .lock()
+                        .ok()
+                        .and_then(|weather| weather.state.clone()),
+                );
             }
         }
     }

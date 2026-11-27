@@ -27,6 +27,7 @@ fn main() {
     }
     let settings = settings();
     let weather = weather();
+    let clouds_enabled = clouds_enabled();
     let draw_float =
         cfg!(target_arch = "wasm32") || std::env::var_os(thrum_app::sky::STORE_VARIABLE).is_some();
     thrum_app::sky::run(
@@ -34,7 +35,7 @@ fn main() {
         move || {
             if let Some(selection) = weather {
                 return selection
-                    .build(draw_float, true)
+                    .build(draw_float, clouds_enabled)
                     .map(|scene| scene.game)
                     .map_err(thrum_app::sky::SkyBuildError::Scene);
             }
@@ -143,6 +144,19 @@ fn weather() -> Option<water_scene::clouds::Selection> {
 #[cfg(target_arch = "wasm32")]
 fn weather() -> Option<water_scene::clouds::Selection> {
     water_scene::clouds::Selection::from_query(&page_query())
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn clouds_enabled() -> bool {
+    std::env::var_os("THRUM_WATER_CLOUD_CONTROL").is_none()
+}
+
+#[cfg(target_arch = "wasm32")]
+fn clouds_enabled() -> bool {
+    !page_query()
+        .trim_start_matches('?')
+        .split('&')
+        .any(|parameter| parameter == "cloud-control=off")
 }
 
 #[cfg(target_arch = "wasm32")]

@@ -51,7 +51,6 @@ pub(crate) struct Band {
     pub(crate) texture: wgpu::Texture,
     pub(crate) mapping: wgpu::Buffer,
     pub(crate) view: wgpu::TextureView,
-    top_m: f32,
     group: wgpu::BindGroup,
     pipeline: wgpu::ComputePipeline,
 }
@@ -187,7 +186,6 @@ impl Band {
             texture,
             mapping,
             view: output,
-            top_m: top_m(field.heights()),
             group,
             pipeline,
         })
@@ -205,13 +203,19 @@ impl Band {
         clippy::cast_possible_truncation,
         reason = "compute display-relative mapping in f64 first"
     )]
-    pub(crate) fn upload(&self, queue: &wgpu::Queue, camera: [f64; 2], travel: [f64; 2]) {
+    pub(crate) fn upload(
+        &self,
+        queue: &wgpu::Queue,
+        camera: [f64; 2],
+        travel: [f64; 2],
+        heights: [f32; 4],
+    ) {
         let snap = f64::from(SPACING_M);
         let origin = std::array::from_fn(|i| {
             (((camera[i] - travel[i]) / snap).round() * snap - 0.5 * f64::from(WIDTH_M) + travel[i])
                 as f32
         });
-        let window = mapping(origin, self.top_m);
+        let window = mapping(origin, top_m(heights));
         queue.write_buffer(&self.mapping, 0, bytemuck::bytes_of(&window));
     }
 

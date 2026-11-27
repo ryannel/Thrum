@@ -11,6 +11,103 @@ use std::fmt::Write as _;
 
 mod stored;
 
+#[cfg(feature = "creation-counters")]
+#[test]
+fn metal_facet_reflection_follows_overlay_directions_with_other_light_held() {
+    let Some(Opened {
+        gpu, device, queue, ..
+    }) = open(
+        "isolated water facet reflection",
+        Some(wgpu::Backend::Metal),
+        DeviceProfile::Portable,
+        &DeviceRestriction::default(),
+    )
+    else {
+        return;
+    };
+    let caps = DeviceCapabilities::capture(&gpu.adapter, &device, 140);
+    let mut scene = SyntheticScene::grid(1).unwrap();
+    scene.sky_overlay = true;
+    let frame = AtmosphereFrame::new([0.0, 1.0, 0.0], 90_000.0, [1.0; 3], 2.0, 1).unwrap();
+    let mut prepared = pollster::block_on(PreparedSynthetic::prepare_with_capabilities(
+        &caps,
+        &queue,
+        &scene,
+        FrameLighting::Atmosphere(frame),
+        1.0,
+    ))
+    .unwrap();
+    let target = OffscreenTarget::new(&device, &prepared, 8, 8).unwrap();
+    filtered::submit(&device, &queue, &mut prepared, &target);
+    let surface = prepared.scene_surface(&queue);
+    let atmosphere = surface.environment.unwrap();
+    let overlay = atmosphere.overlay_target().unwrap();
+    queue.write_buffer(
+        atmosphere.overlay_classification_witness().unwrap(),
+        0,
+        bytemuck::bytes_of(&crate::atmosphere::overlay::ChartLighting {
+            mode: 1,
+            cloudy: 1,
+            haze: 1.0,
+            classifications: 1,
+        }),
+    );
+    let products = surface.environment_products_with_cloud().unwrap();
+    let probe = observer::Probe::new(
+        &device,
+        &products,
+        "let ray = normalize(q.xyz);",
+        [
+            "vec4(environment_sky_radiance(ray),1.0)",
+            "vec4(environment_clear_sky_radiance(ray),1.0)",
+            "vec4(environment_diffuse(ray),1.0)",
+            "vec4(sun_irradiance(vec3(0.0)),1.0)",
+        ],
+    );
+    let directions = [[1.0, 0.25, 0.0, 0.0], [-1.0, 0.25, 0.0, 0.0]];
+    let [before, after] = [false, true].map(|swap| {
+        observer::write_field(&queue, &overlay, |_, _, face| match face {
+            0 | 1 if (face == 0) != swap => [24_000.0, 80.0, 40.0, 0.1],
+            0 | 1 => [40.0, 80.0, 24_000.0, 0.1],
+            _ => [0.0, 0.0, 0.0, 1.0],
+        });
+        // Rebuild only the directional reflection mip. This deliberately
+        // leaves the Sun, diffuse, clear chart and exposure products alone.
+        let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+        {
+            let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor::default());
+            atmosphere
+                .reflection
+                .encode(AtmosphereStage::Reflection(0), &mut pass)
+                .unwrap();
+        }
+        queue.submit([encoder.finish()]);
+        probe.sample(&device, &queue, &products, &directions, 0)
+    });
+    for (index, (old, new)) in before.iter().zip(&after).enumerate() {
+        assert_eq!(
+            old[1..]
+                .iter()
+                .flatten()
+                .map(|v| v.to_bits())
+                .collect::<Vec<_>>(),
+            new[1..]
+                .iter()
+                .flatten()
+                .map(|v| v.to_bits())
+                .collect::<Vec<_>>()
+        );
+        let hot = 2 * index;
+        let cold = 2 - hot;
+        assert!(old[0][hot] > 5.0 * old[0][cold], "{old:?}");
+        assert!(new[0][cold] > 5.0 * new[0][hot], "{new:?}");
+        eprintln!(
+            "Metal facet {index}: {:?} -> {:?}; clear, diffuse and direct terms identical",
+            old[0], new[0]
+        );
+    }
+}
+
 #[test]
 #[expect(
     clippy::cast_possible_truncation,

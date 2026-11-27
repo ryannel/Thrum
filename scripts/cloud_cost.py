@@ -1205,7 +1205,57 @@ def sea_pass_medians(arm):
     return {name: median(values) for name, values in samples.items()}
 
 
-def validate_sea(record):
+def sea_crossings(record, reference=None):
+    absent, visible = record['arms']
+    baseline, overlaid = map(sea_pass_medians, (absent, visible))
+    comparisons = [('clouds absent', baseline)]
+    if reference is not None:
+        comparisons.append(('previous clouds visible', sea_pass_medians(reference['arms'][1])))
+    crossings = {}
+    if median(frame['gpu_ms'] for frame in visible['frames']) > 1000 / 120:
+        crossings['display interval'] = []
+    for label, prior in comparisons:
+        for name, earlier in prior.items():
+            current = overlaid.get(name)
+            if current is not None and earlier > 0 and current >= 1.25 * earlier:
+                crossings.setdefault(name, []).append((label, earlier, current))
+    return crossings
+
+
+def explain_sea(record, reference=None):
+    crossings = sea_crossings(record, reference)
+    baseline, overlaid = map(sea_pass_medians, record['arms'])
+    sums = [median(frame['gpu_ms'] for frame in arm['frames']) for arm in record['arms']]
+    record['median_scene_and_present_pass_sum_ms'] = sums
+    record['median_named_passes_ms'] = [baseline, overlaid]
+    largest = sorted(overlaid, key=overlaid.get, reverse=True)[:5]
+    details = {}
+    for name, comparisons in crossings.items():
+        if name == 'display interval':
+            details[name] = (
+                f'Capture-off frame pass sums were {sums[0]:.3f} ms absent and {sums[1]:.3f} ms visible. '
+                'The largest visible pass medians were '
+                + ', '.join(f'{entry} {overlaid[entry]:.3f} ms' for entry in largest)
+                + '. This localizes the excess under the recorded shared load.'
+            )
+            continue
+        comparison = '; '.join(
+            f'{label} {before:.6f} ms vs {after:.6f} ms ({100 * (after / before - 1):.1f}%)'
+            for label, before, after in comparisons)
+        if name.startswith(('sea ', 'water ')):
+            context = ('The pair holds the water route, geometry and settings fixed. The water surface samples '
+                       'the composited reflection when clouds are visible. Small changes elsewhere in the water '
+                       'passes can reflect timestamp variation and competing work under the recorded load. '
+                       'The paired run does not isolate GPU contention from any per-pass residual.')
+        else:
+            context = ('The same 1440p route was measured with capture off. The measurements under shared load '
+                       'do not isolate a change in GPU occupancy from timestamp variation or added work.')
+        details[name] = f'{name}: {comparison}. {context}'
+    record['tripwires'] = list(crossings)
+    record['investigations'] = details
+
+
+def validate_sea(record, reference=None):
     if (record.get('target'), record.get('extent')) != ('mac-metal', [2560, 1440]):
         raise ValueError('expected a paired 2560×1440 Metal record')
     absent, visible = record['arms']
@@ -1219,6 +1269,10 @@ def validate_sea(record):
                 if not math.isfinite(value) or value < 0:
                     raise ValueError('invalid Metal timestamp')
     baseline, overlaid = map(sea_pass_medians, (absent, visible))
+    sums = [median(frame['gpu_ms'] for frame in arm['frames']) for arm in record['arms']]
+    if (record.get('median_named_passes_ms') != [baseline, overlaid]
+            or record.get('median_scene_and_present_pass_sum_ms') != sums):
+        raise ValueError('sea timing summaries must agree with the individual frames')
     water = {name for name in baseline if name.startswith(('sea ', 'water '))}
     if not {'water gather', 'water surface'} <= water or not water <= overlaid.keys():
         raise ValueError('missing named sea or water timings')
@@ -1230,8 +1284,11 @@ def validate_sea(record):
         raise ValueError('missing submitted 1440p Sky trace work')
     if not required <= overlaid.keys() or not visible['cloud_resources']:
         raise ValueError(f'missing visible cloud timings or allocations: {required - overlaid.keys()}')
-    if set(record['tripwires']) != set(record['investigations']) or not all(record['investigations'].values()):
-        raise ValueError('every sea tripwire needs its investigation')
+    required_wires = set(sea_crossings(record, reference))
+    if (len(record['tripwires']) != len(required_wires) or set(record['tripwires']) != required_wires
+            or set(record['investigations']) != required_wires
+            or not all(isinstance(note, str) and note.strip() for note in record['investigations'].values())):
+        raise ValueError(f'every measured sea tripwire needs its investigation: {sorted(required_wires)}')
 
 
 def sea_cost(command, output):
@@ -1239,13 +1296,21 @@ def sea_cost(command, output):
         reference = json.loads(SEA_FIXTURE.read_text())
         validate_sea(reference)
     if command == 'refuse':
-        substitution = dict(reference, arms=[reference['arms'][0], reference['arms'][0]])
-        try:
-            validate_sea(substitution)
-        except ValueError as failure:
-            print(f'Refused missing visible sea arm: {failure}')
-            return
-        raise ValueError('sea validator accepted two clouds-absent arms')
+        substitutions = (
+            dict(reference, arms=[reference['arms'][0], reference['arms'][0]]),
+            dict(reference, tripwires=[], investigations={}),
+            *(dict(reference, tripwires=[other for other in reference['tripwires'] if other != name],
+                   investigations={key: note for key, note in reference['investigations'].items() if key != name})
+              for name in reference['tripwires']),
+        )
+        for substitution in substitutions:
+            try:
+                validate_sea(substitution)
+            except ValueError:
+                continue
+            raise ValueError('sea validator accepted a missing arm or investigation')
+        print('Refused the missing visible arm and all omitted tripwire investigations')
+        return
     scratch = ROOT / 'tmp/clouds-wp11/cost'
     scratch.mkdir(parents=True, exist_ok=True)
     revision = run(['git', 'rev-parse', 'HEAD'])
@@ -1261,36 +1326,9 @@ def sea_cost(command, output):
     record = json.loads((scratch / 'cost.json').read_text())
     record['load'] = {'before': load, 'after': os.getloadavg()}
     record['adapter'] = run(['sysctl', '-n', 'machdep.cpu.brand_string'])
-    absent, visible = record['arms']
-    medians = [median(frame['gpu_ms'] for frame in arm['frames']) for arm in record['arms']]
-    record['median_scene_and_present_pass_sum_ms'] = medians
-    baseline, overlaid = map(sea_pass_medians, (absent, visible))
-    record['median_named_passes_ms'] = [baseline, overlaid]
-    first = sorted(((cost, name) for name, cost in overlaid.items()), reverse=True)[:5]
-    investigations = {}
-    if medians[1] > 1000 / 120:
-        investigations['display interval'] = (
-            f'The same water workload without clouds took {medians[0]:.3f} ms, '
-            f'and the overlaid arm took {medians[1]:.3f} ms. The largest pass medians were '
-            + ', '.join(f'{name} {cost:.3f} ms' for cost, name in first)
-            + '. The named pass sum localizes the excess for later tuning under concurrent load.'
-        )
-    comparable = baseline if command == 'record' else reference['median_named_passes_ms'][1]
-    for name, prior in comparable.items():
-        value = overlaid.get(name)
-        # Tiny deltas at timestamp granularity are outside the tripwire's measured scope.
-        if value is None or prior <= 0 or value - prior < max(0.025, 0.25 * prior):
-            continue
-        water_control = baseline.get(name)
-        investigations[name] = (
-            f'Compared the same 1440p scene under load. {name} was {value:.3f} ms '
-            f'against {prior:.3f} ms. The current clouds-absent arm '
-            + (f'measured {water_control:.3f} ms for that pass.' if water_control is not None
-               else 'does not schedule that pass.')
-        )
-    record['tripwires'] = list(investigations)
-    record['investigations'] = investigations
-    validate_sea(record)
+    comparable = reference if command == 'check' else None
+    explain_sea(record, comparable)
+    validate_sea(record, comparable)
     encoded = json.dumps(record, indent=2) + '\n'
     if output:
         output.parent.mkdir(parents=True, exist_ok=True)

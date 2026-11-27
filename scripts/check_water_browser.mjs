@@ -14,6 +14,8 @@ const diveRoute = ['fixed','realtime'].includes(mode) ? process.env.THRUM_WATER_
 const surfInspection = process.env.THRUM_WATER_INSPECT_SURF === '1' && ['fixed','realtime'].includes(mode);
 const handoffCut = surfInspection && mode === 'realtime' && process.env.THRUM_WATER_ROUTE === 'handoff-cut';
 const cloudSelection = process.env.THRUM_WATER_BROWSER_CLOUDS;
+const cloudControls = mode === 'clouds' && cloudSelection === 'controls';
+const cloudReflection = mode === 'clouds' && cloudSelection === 'reflection';
 const cloudMatrix = [
   ...['fair','broken'].flatMap(weather=>[2,40].map(height=>[
     `${weather}-noon-${height}`,`?clouds=${weather}&cloud-height=${height}`,
@@ -22,13 +24,16 @@ const cloudMatrix = [
     `bank-${sun}-${view}`,`?clouds=sea-fog&cloud-sun=${sun}&bank-view=${view}`,
   ])),
   ['lake-dawn','?clouds=dawn-mist'],
+  ['lake-dawn-clear','?clouds=dawn-mist&cloud-control=off'],
   ['lake-after','?clouds=dawn-mist&mist-time=after'],
 ];
-const cloudRoute = cloudSelection === 'matrix' ? cloudMatrix[0][1] : cloudSelection;
+const cloudRoute = cloudSelection === 'matrix' ? cloudMatrix[0][1]
+  : cloudControls ? '?clouds=dawn-mist&weather-speed=8'
+  : cloudReflection ? '?clouds=fair&cloud-height=40' : cloudSelection;
 const cloudMotion = mode === 'realtime' && Boolean(cloudRoute);
 const [width,height] = mode === 'under' ? [48,27]
   : cloudMotion || (mode === 'realtime' && diveRoute) ? [1280,720]
-  : mode === 'clouds' && !cloudRoute ? [640,360]
+  : mode === 'clouds' && (!cloudRoute || cloudControls || cloudReflection) ? [640,360]
   : ['rain-rings','rain-footfall','rain-ground'].includes(mode) ? [960,540]
   : [2560,1440];
 const output = path.resolve(process.env.THRUM_WATER_OUTPUT ?? `tmp/waters-M3/${mode}-${Date.now()}`);
@@ -63,6 +68,91 @@ const lensObserver = `
   watchLensPipeline(GPURenderPassEncoder.prototype,'water through lens','composition');
   watchLensPipeline(GPUComputePassEncoder.prototype,'water lens cut','cut');
 `;
+// Read only the published Ground inputs from the same ordinary scene submission.
+const cloudObserver = `
+  let groundSurface;
+  const createTexture=GPUDevice.prototype.createTexture;
+  GPUDevice.prototype.createTexture=function(desc){
+    if(desc.label!=='cloud surface field')return createTexture.call(this,desc);
+    groundSurface=createTexture.call(this,{...desc,usage:desc.usage|GPUTextureUsage.COPY_SRC});
+    return groundSurface;
+  };
+  const groundBuffers={};
+  const createBuffer=GPUDevice.prototype.createBuffer;
+  GPUDevice.prototype.createBuffer=function(desc){
+    if(!['cloud ground frame','cloud fog table'].includes(desc.label))return createBuffer.call(this,desc);
+    const buffer=createBuffer.call(this,{...desc,usage:desc.usage|GPUBufferUsage.COPY_SRC});
+    groundBuffers[desc.label]=buffer;
+    return buffer;
+  };
+  globalThis.__readGround=async()=>{
+    const device=__devices.at(-1);
+    const stage=device.createBuffer({size:256,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ});
+    const commands=device.createCommandEncoder();
+    // [180,5] is a node of the example's (-320,-225), 2.5 m bed lattice.
+    commands.copyTextureToBuffer({texture:groundSurface,origin:[200,92,0]},
+      {buffer:stage,bytesPerRow:256},[1,1,1]);
+    commands.copyBufferToBuffer(groundBuffers['cloud ground frame'],0,stage,16,16);
+    commands.copyBufferToBuffer(groundBuffers['cloud fog table'],32,stage,32,16);
+    device.queue.submit([commands.finish()]);
+    await stage.mapAsync(GPUMapMode.READ);
+    const values=Array.from(new Float32Array(stage.getMappedRange(),0,12));
+    stage.unmap();stage.destroy();
+    return {surface:values.slice(0,3),lattice:values.slice(4,7),amount:values[9]};
+  };
+`;
+// Change only reflection mip zero immediately before the real water pass.
+const reflectionObserver = `
+  let reflection, paint;
+  globalThis.__reflectionWrites=0;
+  const createTexture=GPUDevice.prototype.createTexture;
+  GPUDevice.prototype.createTexture=function(desc){
+    const texture=createTexture.call(this,desc);
+    if(desc.label==='atmosphere specular cube') reflection=texture;
+    return texture;
+  };
+  globalThis.__setReflectionPaint=swap=>{
+    const device=__devices.at(-1);
+    const shader=device.createShaderModule({code:\`
+      @group(0) @binding(0) var output: texture_storage_2d_array<rgba16float,write>;
+      @compute @workgroup_size(8,8)
+      fn paint(@builtin(global_invocation_id) id:vec3<u32>) {
+        let size=textureDimensions(output);
+        if any(id.xy>=size) { return; }
+        let q=2.0*(vec2<f32>(id.xy)+0.5)/vec2<f32>(size)-1.0;
+        let z=array<f32,6>(-q.x,q.x,q.y,-q.y,1.0,-1.0)[id.z];
+        let red=vec4(500.0,8.0,4.0,0.0);
+        let blue=vec4(4.0,8.0,500.0,0.0);
+        textureStore(output,vec2<i32>(id.xy),i32(id.z),select(blue,red,z*\${swap?-1:1}.0>0.0));
+      }\`});
+    const pipeline=device.createComputePipeline({layout:'auto',compute:{module:shader,entryPoint:'paint'}});
+    const view=reflection.createView({dimension:'2d-array',baseMipLevel:0,mipLevelCount:1});
+    const group=device.createBindGroup({layout:pipeline.getBindGroupLayout(0),entries:[{binding:0,resource:view}]});
+    paint={pipeline,group};
+  };
+  const beginRender=GPUCommandEncoder.prototype.beginRenderPass;
+  GPUCommandEncoder.prototype.beginRenderPass=function(desc){
+    if(paint&&desc.label?.endsWith('water surface')){
+      const pass=this.beginComputePass({label:'reflection-only water inspection'});
+      pass.setPipeline(paint.pipeline);pass.setBindGroup(0,paint.group);
+      pass.dispatchWorkgroups(Math.ceil(reflection.width/8),Math.ceil(reflection.height/8),6);pass.end();
+      paint=undefined;
+      __reflectionWrites++;
+    }
+    return beginRender.call(this,desc);
+  };
+`;
+
+function waterChroma(bytes, start, end){
+  let sum=0,count=0;
+  for(let y=Math.floor(0.68*height);y<0.88*height;y++){
+    for(let x=Math.floor(start*width);x<end*width;x++){
+      const at=4*(y*width+x);
+      sum+=bytes[at]-bytes[at+2];count++;
+    }
+  }
+  return sum/count;
+}
 function riverLook(rgba, station) {
   // Windows stay within the submitted water for the three fixed river lenses.
   const windows={
@@ -625,7 +715,7 @@ try {
   await cdp.call('Page.enable',{},sid);await cdp.call('Runtime.enable',{},sid);
   await installWasmReceipt(cdp,sid);
   const surfRoute=mode==='surf'||surfInspection;
-  await cdp.call('Page.addScriptToEvaluateOnNewDocument',{source:observer+(mode==='under'?lensObserver:'')+(['island','surf','channel','river','river-calm','rain-puddles','rain-rings','rain-footfall','rain-ground'].includes(mode)?islandObserver:'')+`\ndocument.addEventListener('DOMContentLoaded',()=>{document.querySelector('canvas').width=${width};document.querySelector('canvas').height=${height};});`},sid);
+  await cdp.call('Page.addScriptToEvaluateOnNewDocument',{source:observer+(cloudControls?cloudObserver:'')+(cloudReflection?reflectionObserver:'')+(mode==='under'?lensObserver:'')+(['island','surf','channel','river','river-calm','rain-puddles','rain-rings','rain-footfall','rain-ground'].includes(mode)?islandObserver:'')+`\ndocument.addEventListener('DOMContentLoaded',()=>{document.querySelector('canvas').width=${width};document.querySelector('canvas').height=${height};});`},sid);
   const route=cloudRoute??diveRoute??opticsRoute??(surfRoute?(handoffCut?'?surf=gale':'?surf=trade'):mode==='foam'?'?foam=calm&speed=6&view=overhead&wake-bodies=1':mode==='wake'?'?wake=calm&speed=6&view=overhead&wake-bodies=1':mode==='bodies'?'?bodies=trade&speed=5':mode==='island'?'?island=trade':mode==='channel'?'?channel=trade':mode==='river-calm'?'?river=calm':mode==='river'?'?river=trade':['rain-puddles','rain-rings','rain-footfall','rain-ground'].includes(mode)?'?rain=calm':mode==='under'?lensRoute('sea','baseline'):mode==='clouds'?'?clouds=fair':'');
   result.route=route;
   const navigate=async search=>{
@@ -713,6 +803,60 @@ try {
       frame.route=search;
       frame.faults=await evaluate('__faults');
       assert(frame.faults.length===0,JSON.stringify(frame.faults));
+    }
+    if(cloudControls){
+      const read=()=>evaluate('__readGround()');
+      const stage=[];
+      for(const level of [0,0.35,1,0]){
+        await evaluate(`game.edit_control('lake.stage',${level})`);
+        const frame=await capture(`lake-stage-${stage.length}`,0);
+        const ground=await read();
+        assert(frame.tick===0, 'stage proof must hold the clock');
+        assert(ground.lattice.join(',')==='-320,-225,2.5',JSON.stringify(ground));
+        assert(Math.abs(ground.surface[0]-(12+level))<1e-5,JSON.stringify({level,ground}));
+        stage.push({level,ground,submission:frame.submission});
+      }
+      assert(stage[2].ground.surface[2]>stage[0].ground.surface[2], 'raised lake should move the sampled shore');
+      assert(JSON.stringify(stage[0].ground.surface)===JSON.stringify(stage[3].ground.surface), 'original lake stage should restore the same ground');
+      const sun=[];
+      for(const elevation of [-8,60]){
+        const sunRoute=route+`&sun-proof=${elevation}`;
+        result.instantiated_wasm=await navigate(sunRoute);
+        now=0;
+        await until(()=>evaluate('game.frame_ready()'), 'Sun probe first frame');
+        await drive(0);
+        const initial=await read();
+        await evaluate(`game.edit_control('sun.elevation',${elevation})`);
+        const targetTick=1500;
+        let tick=0;
+        for(let frame=0;tick<targetTick&&frame<180;frame++){
+          await until(()=>evaluate('game.frame_ready()'), 'Sun probe frame slot');
+          await drive(tick<targetTick-24?250:1000/120);
+          tick=frameInfo(await evaluate('game.frame_info()')).tick;
+        }
+        assert(tick===targetTick, `Sun probe stopped at tick ${tick}`);
+        const frame=await capture(elevation<0?'lake-night':'lake-day',0);
+        sun.push({elevation,tick:frame.tick,submission:frame.submission,initial:initial.amount,amount:(await read()).amount});
+      }
+      assert(sun[0].tick===sun[1].tick && sun[0].tick>1000,JSON.stringify(sun));
+      assert(sun[0].initial===sun[1].initial && sun[0].amount>sun[1].amount+0.02,JSON.stringify(sun));
+      result.ground_controls={stage,sun};
+    }
+    if(cloudReflection){
+      const reflected=[];
+      for(const swap of [false,true]){
+        const writes=await evaluate('__reflectionWrites');
+        await evaluate(`__setReflectionPaint(${swap})`);
+        const frame=await capture(swap?'swapped-mip-zero':'painted-mip-zero',0);
+        assert(await evaluate('__reflectionWrites')===writes+1,'reflection probe did not reach the next water pass');
+        const rgba=await pixels('__capturePixels');
+        reflected.push({swap,frame:frame.frame,left:waterChroma(rgba,0.14,0.36),right:waterChroma(rgba,0.64,0.86)});
+        assert(frame.tick===0,'reflection probe must hold camera, waves and weather at tick zero');
+      }
+      const [a,b]=reflected;
+      assert(a.left<a.right&&b.left>b.right&&b.left-a.left>20&&a.right-b.right>20,
+        JSON.stringify(reflected));
+      result.reflection_only=reflected;
     }
     result.extent=[width,height];
   }else if(mode==='under'){

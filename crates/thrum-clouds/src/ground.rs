@@ -18,27 +18,31 @@ pub struct GroundConfig {
 }
 
 impl GroundConfig {
-    #[expect(
-        clippy::cast_possible_truncation,
-        reason = "bound the uploaded f32 inputs"
-    )]
     fn heights(&self) -> [f32; 4] {
-        let mut terrain_min = f32::INFINITY;
-        let mut terrain_max = f32::NEG_INFINITY;
-        let mut datum_max = f32::NEG_INFINITY;
-        for [height, datum, _] in self.surface.nodes() {
-            terrain_min = terrain_min.min(height as f32);
-            terrain_max = terrain_max.max(height as f32);
-            datum_max = datum_max.max(datum as f32);
-        }
-        let fog_top = self.fog.rows().iter().fold(terrain_max, |top, row| {
-            let pooling = row.pooling as f32;
-            let even = terrain_max + row.depth as f32;
-            let pooled = datum_max + row.depth as f32 - row.depression as f32;
-            top.max((1.0 - pooling) * even + pooling * pooled)
-        });
-        [terrain_min, fog_top, terrain_max, 0.0]
+        surface_heights(&self.surface, &self.fog)
     }
+}
+
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "bound the uploaded f32 heights"
+)]
+fn surface_heights(surface: &Surface, fog: &Ground) -> [f32; 4] {
+    let mut terrain_min = f32::INFINITY;
+    let mut terrain_max = f32::NEG_INFINITY;
+    let mut datum_max = f32::NEG_INFINITY;
+    for [height, datum, _] in surface.nodes() {
+        terrain_min = terrain_min.min(height as f32);
+        terrain_max = terrain_max.max(height as f32);
+        datum_max = datum_max.max(datum as f32);
+    }
+    let fog_top = fog.rows().iter().fold(terrain_max, |top, row| {
+        let pooling = row.pooling as f32;
+        let even = terrain_max + row.depth as f32;
+        let pooled = datum_max + row.depth as f32 - row.depression as f32;
+        top.max((1.0 - pooling) * even + pooling * pooled)
+    });
+    [terrain_min, fog_top, terrain_max, 0.0]
 }
 
 #[repr(C)]
@@ -63,7 +67,7 @@ struct GroundRow {
     bank: [f32; 4],
     optics: [f32; 4],
     affinity: [u32; 2],
-    padding: [f32; 2],
+    noise_stretch: [f32; 2],
 }
 
 #[expect(
@@ -71,7 +75,7 @@ struct GroundRow {
     reason = "weather GPU arithmetic uses f32"
 )]
 impl GroundRow {
-    fn new(row: Fog) -> Self {
+    fn new(row: Fog, stretch: [f64; 2]) -> Self {
         Self {
             shape: [row.depth, row.depression, row.softness, row.pooling].map(|value| value as f32),
             bank: [row.centre[0], row.centre[1], row.radius[0], row.radius[1]]
@@ -90,9 +94,41 @@ impl GroundRow {
                 },
                 u32::from(row.drifting),
             ],
-            padding: [0.0; 2],
+            noise_stretch: stretch.map(|value| value as f32),
         }
     }
+}
+
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "validate f32 surface data before upload"
+)]
+fn surface_texels(surface: &Surface) -> Result<Vec<[f32; 4]>, Error> {
+    let data: Vec<_> = surface
+        .nodes()
+        .map(|[height, datum, shore]| {
+            let shore = shore.clamp(-f64::from(f32::MAX) * 0.25, f64::from(f32::MAX) * 0.25);
+            [height as f32, datum as f32, shore as f32, 0.0]
+        })
+        .collect();
+    if data.iter().flatten().any(|value| !value.is_finite()) {
+        return Err(Error::Unsupported("cloud surface field height"));
+    }
+    Ok(data)
+}
+
+fn upload_surface(queue: &wgpu::Queue, surface: &wgpu::Texture, data: &[[f32; 4]]) {
+    let extent = surface.size();
+    queue.write_texture(
+        surface.as_image_copy(),
+        bytemuck::cast_slice(data),
+        wgpu::TexelCopyBufferLayout {
+            offset: 0,
+            bytes_per_row: Some(16 * extent.width),
+            rows_per_image: Some(extent.height),
+        },
+        extent,
+    );
 }
 
 /// GPU surface field, fog table and display coordinates.
@@ -104,6 +140,7 @@ pub struct GroundField {
     parameters: GroundFrame,
     table: Vec<GroundRow>,
     fog: Arc<Ground>,
+    source: Arc<Surface>,
 }
 
 impl GroundField {
@@ -160,17 +197,7 @@ impl GroundField {
             height: size[1] as u32,
             depth_or_array_layers: 1,
         };
-        let data: Vec<_> = config
-            .surface
-            .nodes()
-            .map(|[height, datum, shore]| {
-                let shore = shore.clamp(-f64::from(f32::MAX) * 0.25, f64::from(f32::MAX) * 0.25);
-                [height as f32, datum as f32, shore as f32, 0.0]
-            })
-            .collect();
-        if data.iter().flatten().any(|value| !value.is_finite()) {
-            return Err(Error::Unsupported("cloud surface field height"));
-        }
+        let data = surface_texels(&config.surface)?;
         let surface = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("cloud surface field"),
             size: extent,
@@ -181,16 +208,7 @@ impl GroundField {
             usage: wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::TEXTURE_BINDING,
             view_formats: &[],
         });
-        queue.write_texture(
-            surface.as_image_copy(),
-            bytemuck::cast_slice(&data),
-            wgpu::TexelCopyBufferLayout {
-                offset: 0,
-                bytes_per_row: Some(16 * extent.width),
-                rows_per_image: Some(extent.height),
-            },
-            extent,
-        );
+        upload_surface(queue, &surface, &data);
         let view = surface.create_view(&wgpu::TextureViewDescriptor::default());
         let frame = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("cloud ground frame"),
@@ -209,7 +227,7 @@ impl GroundField {
             .rows()
             .iter()
             .copied()
-            .map(GroundRow::new)
+            .map(|row| GroundRow::new(row, config.fog.noise_stretch()))
             .collect();
         Ok(Self {
             surface,
@@ -219,7 +237,26 @@ impl GroundField {
             parameters,
             table,
             fog: Arc::clone(&config.fog),
+            source: Arc::clone(&config.surface),
         })
+    }
+
+    pub(crate) fn update_surface(
+        &mut self,
+        queue: &wgpu::Queue,
+        surface: Arc<Surface>,
+    ) -> Result<bool, Error> {
+        if Arc::ptr_eq(&self.source, &surface) {
+            return Ok(false);
+        }
+        if self.source.grid() != surface.grid() {
+            return Err(Error::Unsupported("cloud surface field lattice changed"));
+        }
+        let data = surface_texels(&surface)?;
+        upload_surface(queue, &self.surface, &data);
+        self.parameters.ground_heights = surface_heights(&surface, &self.fog);
+        self.source = surface;
+        Ok(true)
     }
 
     #[expect(
@@ -461,7 +498,7 @@ mod tests {
                     origin, spacing, shore_margin, travel, time, seed, upper_heights,
                     has_active_rows, padding, ground_heights
                 ),
-                thrum_test_support::record!(GroundRow as "GroundRow", shape, bank, optics, affinity, padding),
+                thrum_test_support::record!(GroundRow as "GroundRow", shape, bank, optics, affinity, noise_stretch),
             ],
         );
     }

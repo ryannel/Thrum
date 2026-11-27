@@ -18,7 +18,7 @@ fn environment_sun_direction() -> vec3<f32> {
 // This scale is applied once by the caller after lighting and aerial composition.
 fn environment_storage_scale() -> f32 { return environment_exposure.x; }
 
-fn environment_sky_radiance(direction: vec3<f32>) -> vec3<f32> {
+fn environment_clear_sky_radiance(direction: vec3<f32>) -> vec3<f32> {
     let size=vec2<f32>(textureDimensions(environment_sky));
     let uv=clamp(sky_uv(normalize(direction),atmosphere.sun_lux.xyz),0.5/size,1.0-0.5/size);
     let encoded=textureSampleLevel(environment_sky,aerial_sampler,uv,0.0);

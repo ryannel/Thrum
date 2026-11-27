@@ -192,6 +192,7 @@ pub(super) fn with_exposure(
             far_aerial: false,
             cloud: None,
             reflection: true,
+            surface_sky: false,
         },
     )
 }

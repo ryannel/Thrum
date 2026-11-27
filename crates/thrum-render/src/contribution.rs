@@ -375,17 +375,18 @@ impl SceneSurface<'_> {
     /// `None`. Rebuild the result when this surface is replaced.
     #[must_use]
     pub fn environment_products(&self) -> Option<crate::atmosphere::EnvironmentProducts> {
-        self.environment_products_impl(None, true)
+        self.environment_products_impl(None, true, false)
     }
 
-    /// Borrow the environment and the prepared cloud optical-depth operation.
+    /// Borrow the environment for a lit receiver such as the water surface.
+    /// Its directional sky lookup includes the active reflection overlay.
     /// When `sun_optical_depth` is true, the shader also provides
     /// `cloud_factor(world_point)`. Apply it to direct sunlight only.
     #[must_use]
     pub fn environment_products_with_cloud(
         &self,
     ) -> Option<crate::atmosphere::EnvironmentProducts> {
-        self.environment_products_impl(self.cloud, true)
+        self.environment_products_impl(self.cloud, true, true)
     }
 
     /// Borrow Sun, sky, diffuse and aerial products for a volume pipeline.
@@ -393,13 +394,14 @@ impl SceneSurface<'_> {
     /// may use the other lighting operations and the scene storage scale.
     #[must_use]
     pub fn environment_transport_products(&self) -> Option<crate::atmosphere::EnvironmentProducts> {
-        self.environment_products_impl(None, false)
+        self.environment_products_impl(None, false, false)
     }
 
     fn environment_products_impl(
         &self,
         cloud: Option<&crate::atmosphere::CloudPrepared>,
         reflection: bool,
+        surface_sky: bool,
     ) -> Option<crate::atmosphere::EnvironmentProducts> {
         self.environment.map(|environment| {
             crate::atmosphere::products::create(
@@ -412,6 +414,7 @@ impl SceneSurface<'_> {
                     far_aerial: self.cloud.is_some(),
                     cloud,
                     reflection,
+                    surface_sky,
                 },
             )
         })

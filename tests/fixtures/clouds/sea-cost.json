@@ -8869,12 +8869,22 @@
   ],
   "tripwires": [
     "display interval",
+    "sea filtered 1 mip 1",
+    "sea filtered 1 mip 2",
+    "sea filtered 1 mip 3",
+    "sea filtered 1 mip 6",
+    "synthetic exposure resolve",
     "synthetic tone encode",
     "V1 surface present"
   ],
   "investigations": {
-    "display interval": "The same water workload without clouds took 22.112 ms, and the overlaid arm took 63.462 ms. The largest pass medians were synthetic tone encode 16.894 ms, cloud compose 15.063 ms, cloud trace 10.370 ms, V1 surface present 9.498 ms, water surface 5.305 ms. The named pass sum localizes the excess for later tuning under concurrent load.",
-    "synthetic tone encode": "Compared the same 1440p scene under load. synthetic tone encode was 16.894 ms against 6.302 ms. The current clouds-absent arm measured 6.302 ms for that pass.",
-    "V1 surface present": "Compared the same 1440p scene under load. V1 surface present was 9.498 ms against 6.293 ms. The current clouds-absent arm measured 6.293 ms for that pass."
+    "display interval": "Capture-off frame pass sums were 22.112 ms absent and 63.462 ms visible. The largest visible pass medians were synthetic tone encode 16.894 ms, cloud compose 15.063 ms, cloud trace 10.370 ms, V1 surface present 9.498 ms, water surface 5.305 ms. This localizes the excess under the recorded shared load.",
+    "sea filtered 1 mip 1": "sea filtered 1 mip 1: clouds absent 0.029541 ms vs 0.039688 ms (34.3%). The pair holds the water route, geometry and settings fixed. The water surface samples the composited reflection when clouds are visible. Small changes elsewhere in the water passes can reflect timestamp variation and competing work under the recorded load. The paired run does not isolate GPU contention from any per-pass residual.",
+    "sea filtered 1 mip 2": "sea filtered 1 mip 2: clouds absent 0.007437 ms vs 0.014250 ms (91.6%). The pair holds the water route, geometry and settings fixed. The water surface samples the composited reflection when clouds are visible. Small changes elsewhere in the water passes can reflect timestamp variation and competing work under the recorded load. The paired run does not isolate GPU contention from any per-pass residual.",
+    "sea filtered 1 mip 3": "sea filtered 1 mip 3: clouds absent 0.005125 ms vs 0.007542 ms (47.2%). The pair holds the water route, geometry and settings fixed. The water surface samples the composited reflection when clouds are visible. Small changes elsewhere in the water passes can reflect timestamp variation and competing work under the recorded load. The paired run does not isolate GPU contention from any per-pass residual.",
+    "sea filtered 1 mip 6": "sea filtered 1 mip 6: clouds absent 0.004334 ms vs 0.005500 ms (26.9%). The pair holds the water route, geometry and settings fixed. The water surface samples the composited reflection when clouds are visible. Small changes elsewhere in the water passes can reflect timestamp variation and competing work under the recorded load. The paired run does not isolate GPU contention from any per-pass residual.",
+    "synthetic exposure resolve": "synthetic exposure resolve: clouds absent 0.004688 ms vs 0.005895 ms (25.8%). The same 1440p route was measured with capture off. The measurements under shared load do not isolate a change in GPU occupancy from timestamp variation or added work.",
+    "synthetic tone encode": "synthetic tone encode: clouds absent 6.301792 ms vs 16.893625 ms (168.1%). The same 1440p route was measured with capture off. The measurements under shared load do not isolate a change in GPU occupancy from timestamp variation or added work.",
+    "V1 surface present": "V1 surface present: clouds absent 6.293000 ms vs 9.498125 ms (50.9%). The same 1440p route was measured with capture off. The measurements under shared load do not isolate a change in GPU occupancy from timestamp variation or added work."
   }
 }

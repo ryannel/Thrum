@@ -278,6 +278,7 @@ pub struct GroundProfile {
 pub struct Ground {
     pub(crate) rows: Vec<Fog>,
     profile: GroundProfile,
+    noise_stretch: [f64; 2],
 }
 
 impl Ground {
@@ -300,7 +301,32 @@ impl Ground {
         {
             return Err(Error::Invalid);
         }
-        Ok(Self { rows, profile })
+        Ok(Self {
+            rows,
+            profile,
+            noise_stretch: [1.0; 2],
+        })
+    }
+
+    /// Stretch the fog noise along the horizontal world axes by these ratios.
+    /// An anisotropic field keeps its resolved shape in the visible near medium.
+    /// # Errors
+    /// Refuses stretch ratios outside 0.125 to 8.
+    pub fn with_noise_stretch(mut self, stretch: [f64; 2]) -> Result<Self, Error> {
+        if !stretch
+            .into_iter()
+            .all(|value| (0.125..=8.0).contains(&value))
+        {
+            return Err(Error::Invalid);
+        }
+        self.noise_stretch = stretch;
+        Ok(self)
+    }
+
+    /// Horizontal fog noise stretch, in X/Z order.
+    #[must_use]
+    pub fn noise_stretch(&self) -> [f64; 2] {
+        self.noise_stretch
     }
 
     /// The authored rows in the same order as the state's amounts.
@@ -388,9 +414,9 @@ impl Ground {
             Density::Coarse => 0.5,
             Density::Full => field.noise(
                 [
-                    air[0] / r.noise_scale,
+                    air[0] / r.noise_scale / self.noise_stretch[0],
                     point[1] / r.noise_scale,
-                    air[1] / r.noise_scale + state.time() / 1000.0,
+                    air[1] / r.noise_scale / self.noise_stretch[1] + state.time() / 1000.0,
                 ],
                 70,
             ),

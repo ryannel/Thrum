@@ -16,7 +16,7 @@ struct GroundRow {
     bank: vec4<f32>,   // air centre and radii
     optics: vec4<f32>, // extinction, amount, noise share, inverse scale
     affinity: vec2<u32>,
-    padding: vec2<f32>,
+    noise_stretch: vec2<f32>,
 }
 
 fn ground_cubic(t: f32) -> f32 {
@@ -80,7 +80,7 @@ fn ground_row(point: vec3<f32>, surface: vec3<f32>, row: GroundRow, coarse: bool
     if peak == 0.0 { return vec3(0.0); }
     var noise = 0.5;
     if !coarse && row.optics.z > 0.0 {
-        noise = ground_noise(vec3(air.x, point.y, air.y) * row.optics.w
+        noise = ground_noise(vec3(air.x / row.noise_stretch.x, point.y, air.y / row.noise_stretch.y) * row.optics.w
                              + vec3(0.0, 0.0, ground_frame.time / 1000.0));
     }
     let eroded = peak * mix(1.0, ground_cubic((noise - (1.0 - amount)) / 0.2), row.optics.z);

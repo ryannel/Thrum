@@ -8,12 +8,15 @@ use crate::shaders::wgsl;
 ///
 /// The WGSL uses group 0. A consumer appends its entry points and binds `group`
 /// against `layout`. All returned light is un-pre-exposed scene-linear Rec.709.
-/// The five operations are `sun_irradiance(world_point)` in RGB lux,
+/// The lighting operations include `sun_irradiance(world_point)` in RGB lux,
 /// `environment_sky_radiance(direction)` in RGB radiance,
 /// `environment_diffuse(normal)` in RGB lux, `environment_aerial(world_point, uv)`
 /// returning dimensionless transmission and RGB in-scatter, and
 /// `environment_reflection(direction, roughness, view_cosine)` returning filtered
 /// RGB radiance and the dimensionless split-sum pair.
+/// For a surface receiver, `environment_sky_radiance(direction)` uses the
+/// overlay's directional reflection product when available. The clear
+/// chart remains available as `environment_clear_sky_radiance(direction)`.
 /// `environment_sun_direction()` returns the same direction toward the Sun
 /// that the forward shader reads from the scene's directional record.
 ///
@@ -63,6 +66,7 @@ pub(crate) struct ProductSelection<'a> {
     pub(crate) far_aerial: bool,
     pub(crate) cloud: Option<&'a super::CloudPrepared>,
     pub(crate) reflection: bool,
+    pub(crate) surface_sky: bool,
 }
 
 pub(crate) fn create(
@@ -77,6 +81,7 @@ pub(crate) fn create(
         far_aerial,
         cloud,
         reflection,
+        surface_sky,
     } = selection;
     let visibility = wgpu::ShaderStages::FRAGMENT | wgpu::ShaderStages::COMPUTE;
     let buffer = |binding, bytes| binding::uniform(binding, visibility, bytes);
@@ -218,6 +223,7 @@ pub(crate) fn create(
                 atmosphere.view_volume.is_some(),
                 lighting,
                 charts,
+                surface_sky,
             )
         } else if far_aerial {
             crate::shaders::Shader::EnvironmentProductsFar
@@ -245,6 +251,7 @@ pub(crate) fn library(far_aerial: bool) -> String {
         false,
         super::overlay::Lighting::Clear,
         ChartBindings::Uniform,
+        false,
     )
 }
 
@@ -253,6 +260,7 @@ fn library_with_volume(
     view_volume: bool,
     lighting: super::overlay::Lighting,
     charts: ChartBindings,
+    surface_sky: bool,
 ) -> String {
     let far_sky = if view_volume {
         wgsl!("atmosphere/products_terminal.wgsl")
@@ -260,7 +268,7 @@ fn library_with_volume(
         wgsl!("atmosphere/overlay_aerial_terminal.wgsl")
     } else {
         "fn environment_far_sky(direction: vec3<f32>, uv: vec2<f32>) -> vec3<f32> {
-            return environment_sky_radiance(direction);
+            return environment_clear_sky_radiance(direction);
         }"
     };
     let far = if far_aerial {
@@ -322,6 +330,16 @@ fn library_with_volume(
         sample,
         decode.replace("aerial_frame", "atmosphere"),
         grid
+    );
+    let sky = if surface_sky && lighting != super::overlay::Lighting::Clear {
+        "let encoded = textureSampleLevel(sky_reflection, sky_reflection_sampler, direction, 0.0);
+         return sample_overlay_reflection(encoded, direction, 0.0,
+             atmosphere.sun_lux.w * atmosphere.colour_pre_exposure.rgb);"
+    } else {
+        "return environment_clear_sky_radiance(direction);"
+    };
+    let source = format!(
+        "{source}\nfn environment_sky_radiance(direction: vec3<f32>) -> vec3<f32> {{ {sky} }}"
     );
     if lighting == super::overlay::Lighting::Clear {
         source
