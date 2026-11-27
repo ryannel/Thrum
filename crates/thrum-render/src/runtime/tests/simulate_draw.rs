@@ -610,6 +610,7 @@ fn simulate_draw_gpu_orders_clears_blends_and_retains_each_layer() {
         assert_frame(&gpu.device, &gpu.queue, &image, textures, [0, 4]);
         host.recycle_submitted_image(image);
         println!("discard tick 4, submit tick 5: right layer stays at x=4");
+        host.disable_submitted_capture();
 
         let (device, queue) = crate::test_device::portable(&gpu.gpu, None).await;
         let caps = DeviceCapabilities::capture(&gpu.gpu.adapter, &device, 2);
