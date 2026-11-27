@@ -303,3 +303,10 @@
   agree on phase. Ordinary chart draws still read their material-space row on mixed maps.
   The Metal regression compares the same chart with and without samples on a separate chart.
   [Target evidence](../../../.orchestrate/evidence/RIVERS/WP4/one-sample/README.md)
+
+- 2026-11-27 WP4 review fix. An ordinary body keeps its material-space row on a mixed map.
+  The coarse sea rings use world-position ownership when a declared sampled river joins the sea.
+  On Metal, the disconnected-basin regression reduced 870 above-bed coverage changes over three
+  matched frames to zero. The one-sample chart guard, regular river checks, both 420-tick tidal
+  comparisons, unchanged channel checks, hardware Chrome and paired cost record passed.
+  [Target evidence](../../../.orchestrate/evidence/RIVERS/WP4/basin-shoreline/README.md)
