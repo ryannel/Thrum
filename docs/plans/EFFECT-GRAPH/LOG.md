@@ -303,3 +303,7 @@
   member contents, same-submission colour, named timing, discard and first draw on a replacement device.
   Chrome WebGPU passed the two submitted-frame checks with zero validation errors.
   [Target evidence and code inspection](../../../.orchestrate/evidence/EFFECT-GRAPH/WP7/README.md).
+- 2026-11-27 Builder, WP7 review fixes. Preparation checks writer identity against the backing texture, mip
+  and layer. It refuses memoryless colour attachments by pass name before creating the view. Metal verified
+  both refusals, disjoint mips and layers, and an ordinary texture in transient scope. All four pinned
+  checks passed. [Target evidence](../../../.orchestrate/evidence/EFFECT-GRAPH/WP7/review-fix/README.md).
