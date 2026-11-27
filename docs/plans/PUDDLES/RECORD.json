@@ -826,9 +826,9 @@
         "at": "2026-11-26T19:46:25Z"
       },
       "ready_for_review": {
-        "commit": "7b442af11fb22aa55541f4a479b3d0dd32cae801",
-        "checked": "174cc616eb186e0c69d64a409f3a3372d701fd67",
-        "at": "2026-11-27T00:23:33Z",
+        "commit": "2c54ac76baf8da909490adce6fdcf4e354f36263",
+        "checked": "ab3c269f0ec001625f0158411494c0b8d18849de",
+        "at": "2026-11-27T01:40:12Z",
         "host": "codex",
         "model": "gpt-6.2-sol",
         "effort": "medium",
@@ -839,16 +839,16 @@
         "cli": "codex-cli 0.171.0-alpha.13.2",
         "path": "visible",
         "usage": {
-          "input": 380351,
-          "cached": 54060544,
-          "output": 93698,
+          "input": 420302,
+          "cached": 61866752,
+          "output": 105712,
           "turns": 1
         },
         "session_usage": {
-          "input": 380351,
-          "cached": 54060544,
-          "output": 93698,
-          "turns": 1
+          "input": 800653,
+          "cached": 115927296,
+          "output": 199410,
+          "turns": 2
         }
       }
     }
