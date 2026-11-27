@@ -396,8 +396,8 @@ ten times a threshold. One bound for every stop is as loose everywhere as its ha
    - **The median stays at 1.0, at every stop.** It is the statistic of the picture as a whole. A change of
      brightness or colour over most of the frame moves it: exposure, a tint, or haze or sky that fills more
      than half the cells. The reconstructors agree in it to a twentieth of a code. It is never calibrated, so
-     a difference of that kind can never be absorbed. A loss in fewer than half the cells leaves it where it
-     was: with every entity removed at sunrise the median difference is 0 and the largest cell 53.74.
+     a difference of that kind can never be absorbed. A loss in fewer than half the cells can leave the median
+     unchanged. With every entity removed at sunrise the median difference is 0 and the largest cell 53.74.
    - **The 95th percentile and the maximum are, for each stop, the larger of 1.0 and three times the worst
      value among that stop's three pairs.** They are the statistics of edges and fine detail, where the
      reconstructors differ. This is the route decision's formula, applied to one stop at a time.
@@ -524,11 +524,10 @@ populated flythrough reaching the panel in every refresh, by the OS's own report
 takes with the other builders paused.
 
 **The owner's answer, 27 November 2026:** "So the 120 upscale for full screen." At full screen on the built-in
-display the picture is reconstructed below the panel's pixel size and scaled to the panel by the display's
-layer, at [the output scale](../APPLE-PRESENTATION/DESIGN.md#the-output-scale-wp18) `APPLE-PRESENTATION` WP17
-promotes. WP17 chooses that scale as the largest that holds on the bare valley route and on this module's exit
-flythrough, so the value WP8.6 runs at has already held the populated scene by the engine's refresh account.
-No take here is held to a drawable of the panel's pixel extent.
+display the game reconstructs to the drawable extent set by
+[the output scale](../APPLE-PRESENTATION/DESIGN.md#the-output-scale-wp18) that `APPLE-PRESENTATION` WP17 promotes.
+WP17 chooses the largest scale that holds on the bare valley route and the populated exit flythrough, so the
+value WP8.6 runs at has already held on both routes by the engine's refresh account.
 
 - **The run.** The exit configuration's Apple recipe row, launched as WP7 launches it, with the window at full
   screen and nothing else changed: capture off, the release game, the exit flythrough from its first tick to its
@@ -568,12 +567,11 @@ No take here is held to a drawable of the panel's pixel extent.
   full refresh at full screen changes the vision's bar, which is the owner's: the builder ends `NEEDS_CONTEXT`
   with the record, and WP8.6 stays open.
 - **The portable recipe and startup (WP8.14).** The portable row runs the same flythrough at full screen with
-  the same record and witness. It resolves the same output scale as the Apple row, so the two compare at one
-  extent. It is the Mac's fallback recipe and no work package brings it to 120 Hz at full screen, so its record
-  says what it held, and each missed refresh, classified the same way,
-  is listed with a cause that is
-  fixed, proposed to its owning module, or shown to lie outside the game. Startup to the first exit-scene frame
-  is recorded windowed on both recipes, apart from the full-screen takes, so neither waits on the other.
+  the same record and witness. On the built-in panel its take must match WP8.6 in both the output scale
+  resolved from WP17's registry value without a launch override and the recorded drawable extent in pixels.
+  The record gives the cadence the portable row achieved. Each missed refresh is classified the same way
+  and listed with a cause that is fixed, proposed to its owning module, or shown to lie outside the game.
+  Both recipes record windowed startup through the first exit-scene frame separately from the full-screen takes.
 
 ### Motion on a shared machine
 
@@ -683,9 +681,10 @@ exit is judged "smooth at the display's full refresh" on that display, so WP8 de
 it, and WP8.12 lists WP17 among the work packages the exit rests on. An open WP17 keeps the exit open. WP17
 waits in turn for `APPLE-PRESENTATION` WP18 and `ATMOSPHERE` WP12, so it covers both. WP17 proves present calls
 in refresh intervals, so the exit record's claim for the showcase cites WP8.6's two takes of the populated
-flythrough, with their output scale and drawable extent, and not WP17 alone. The record says in plain words
-that the full-screen picture is reconstructed below the panel's pixel size and scaled to it
-([the full refresh at full screen](#the-full-refresh-at-full-screen-on-the-populated-exit)).
+flythrough. The record gives their observed output scale, backing extent and drawable extent and explains how
+the picture filled the panel. Below 100% output scale, the layer enlarged the reconstructed drawable to the
+panel's backing extent. At 100%, the drawable already matched the panel. The governor's render scale sets the
+size drawn before reconstruction to the drawable. [Full-screen takes](#the-full-refresh-at-full-screen-on-the-populated-exit)
 
 ### Check that it can work
 

@@ -232,3 +232,11 @@
   panel's pixel extent. WP8.12 says that WP17 covers `APPLE-PRESENTATION` WP18 and `ATMOSPHERE` WP12; its list
   of twelve and its check are unchanged. WP17 now chooses its scale on the exit flythrough as well as the bare
   valley, by the engine's refresh account, and WP8.6 still witnesses presented time.
+- 2026-11-27 Design review, Must Fix 1. WP8.14 now compares the portable take's unforced registry output scale
+  and recorded drawable dimensions with WP8.6 on the same built-in panel. The portable take reports the
+  cadence it achieves at that extent.
+- 2026-11-27 Design review, Must Fix 2. WP8.8 now checks the exit record against the output scale and both
+  extents from WP8.6. The design and item distinguish enlargement by the layer below 100% from a drawable
+  that already fills the panel at 100%, and place the governor's render scale before reconstruction.
+- 2026-11-27 Took the review's wording suggestion for WP7.5. A loss in fewer than half the grid cells can
+  leave the median unchanged, as it did in the sunrise control.

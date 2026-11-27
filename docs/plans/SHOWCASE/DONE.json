@@ -552,8 +552,8 @@
         },
         {
           "id": "WP8.8",
-          "statement": "The V1 exit record names, for each clause of the V1 exit and of gate G7 in the brief, the evidence at the claimed commit, the rows it ran on, and its status as implementation, correctness, visuals and device, kept apart.",
-          "ask": "Take the clauses one at a time. Does each have evidence at the claimed commit on the rows it names? Is any clause claimed on a row it did not run on, or from a stand-in not labelled `proxy:iphone`? Does the GPU culling clause cite equality receipts, for both Mac recipes and for Chrome, taken on the exit root the claimed commit cooks?",
+          "statement": "For each clause of the V1 exit and gate G7, the exit record identifies the evidence at the claimed commit, the rows it covers and the separate implementation, correctness, visual and device status. Its full-screen claim reports the output scale and the backing and drawable extents observed in WP8.6, and describes how that drawable filled the panel.",
+          "ask": "Does each clause cite evidence at the claimed commit for the rows it names, with any iPhone stand-in labelled `proxy:iphone`? Do the GPU culling equality receipts cover both Mac recipes and Chrome on the exit root that commit cooks? For the full-screen claim, do the output scale and both pixel extents match WP8.6's two takes? Below 100% output scale, does the record say the layer enlarged the reconstructed drawable to fill the panel? At 100%, does it say the drawable already matched the panel? Does it distinguish the governor's render scale before reconstruction from the observed output scale?",
           "target": "mac-metal",
           "evidence": "",
           "verdict": "",
@@ -602,8 +602,8 @@
         },
         {
           "id": "WP8.14",
-          "statement": "ATTENDED SETUP: on the built-in display the capture-off release game is recorded on two further kinds of run. The exit configuration's portable recipe row runs the exit flythrough at full screen, with the output scale, the drawable extent and the requested frame rate the game resolved and an OS-reported presented interval for every submission, and each missed refresh is listed and investigated. Windowed startup to the first exit-scene frame is recorded on both recipes.",
-          "ask": "Does the presented-time witness, as PLATFORM-RUNTIME-MAC qualified it, cover the portable recipe's whole flythrough at full screen with capture off, and does the record give that take's output scale, drawable extent and requested frame rate as the game resolved them? Is each missed refresh listed with a cause that is fixed, proposed to its owning module, or shown to lie outside the game? Is windowed startup to the first exit-scene frame recorded on both recipes?",
+          "statement": "ATTENDED SETUP: In the capture-off release game on the built-in panel, the exit configuration's portable row runs the full-screen exit flythrough at the same unforced registry output scale and drawable extent as the Apple row in WP8.6. Its record gives the resolved requested frame rate and the cadence achieved, with an OS-reported presented interval for every submission and an investigation of each missed refresh. Both recipes have a windowed startup record through the first exit-scene frame.",
+          "ask": "Compare the portable take with WP8.6's Apple takes on the same panel. Did the portable game resolve WP17's promoted output scale without a launch override, and do its recorded scale and drawable dimensions match the Apple takes? Does the capture-off release record give the resolved requested frame rate and the PLATFORM-RUNTIME-MAC witness's presented interval for every submission across the exit flythrough? Is every missed refresh listed with a cause fixed, proposed to its owning module, or shown to lie outside the game? Do both recipes' windowed startup records reach the first exit-scene frame?",
           "target": "mac-metal",
           "needs": {
             "type": "access",
