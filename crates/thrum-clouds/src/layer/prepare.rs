@@ -342,10 +342,9 @@ fn trace_pipeline(
     })
 }
 
-const UNPLACED: &str =
-    "fn cloud_placed(point: vec3<f32>, footprint: f32) -> vec4<f32> { return vec4(0.0); }";
 const TRACE_SHADER: &str = concat!(
     include_str!("../layer.wgsl"),
+    include_str!("billow.wgsl"),
     "@group(1) @binding(0) var scene_depth:texture_depth_2d;\n",
     include_str!("trace_library.wgsl"),
     include_str!("stop_pixels.wgsl"),
@@ -354,7 +353,9 @@ const TRACE_SHADER: &str = concat!(
 );
 const OVERLAY_SHADER: &str = concat!(
     include_str!("../layer.wgsl"),
+    include_str!("billow.wgsl"),
     include_str!("trace_library.wgsl"),
+    "fn cloud_placed(point: vec3<f32>, footprint: f32) -> vec4<f32> { return cloud_coarse_placed(point, footprint); }",
     include_str!("overlay.wgsl"),
 );
 
@@ -374,26 +375,7 @@ fn layer_shader(
     ground: bool,
     coarse: bool,
 ) -> String {
-    let placed = if shapes {
-        let density = if coarse {
-            concat!(
-                include_str!("placed_coarse.wgsl"),
-                "fn cloud_placed_edge_footprint() -> f32 { return 0.0; }"
-            )
-        } else {
-            concat!(
-                include_str!("placed.wgsl"),
-                "fn cloud_placed_edge_footprint() -> f32 { return 60.0 * cloud.physical.y; }"
-            )
-        };
-        format!(
-            "{}\n{}\n{density}",
-            crate::shapes::shader(3),
-            include_str!("placed_column.wgsl")
-        )
-    } else {
-        UNPLACED.into()
-    };
+    let placed = placed_source(3, shapes, !coarse, coarse || ground);
     format!(
         "{}\n{}\n{transport}\n{}\n{}\n{}\n{}\n{}\n{}\n{placed}\n{}",
         environment.shader_source,
@@ -406,6 +388,41 @@ fn layer_shader(
         include_str!("../erosion.wgsl"),
         lighting::trace_source(ground),
     )
+}
+
+// Generate the coarse sampler for the view volume and the Ground handover
+// from the same code used by the overlay.
+pub(crate) fn placed_source(group: u32, shapes: bool, detailed: bool, coarse: bool) -> String {
+    let mut source = if shapes {
+        crate::shapes::shader(group)
+    } else {
+        String::new()
+    };
+    let column = include_str!("placed_column.wgsl");
+    if detailed {
+        source.push_str(if shapes {
+            "fn cloud_placed_edge_footprint() -> f32 { return 60.0 * cloud.physical.y; }"
+        } else {
+            "fn cloud_placed(point: vec3<f32>, footprint: f32) -> vec4<f32> { return vec4(0.0); }"
+        });
+        if shapes {
+            source.push_str(column);
+            source.push_str(include_str!("placed.wgsl"));
+        }
+    }
+    if coarse {
+        if shapes {
+            source.push_str(
+                &column
+                    .replace("cloud_placed(", "cloud_coarse_placed(")
+                    .replace("cloud_placed_edge_footprint()", "0.0"),
+            );
+            source.push_str(include_str!("placed_coarse.wgsl"));
+        } else {
+            source.push_str("fn cloud_coarse_placed(point: vec3<f32>, footprint: f32) -> vec4<f32> { return vec4(0.0); }");
+        }
+    }
+    source
 }
 
 pub(super) fn overlay_source(

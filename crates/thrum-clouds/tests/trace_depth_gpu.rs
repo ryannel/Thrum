@@ -60,8 +60,81 @@ fn one_trace_keeps_the_middle_stop_on_both_sides_of_the_bank() {
     }
 }
 
-#[derive(Default)]
-struct DepthSteps(Option<wgpu::RenderPipeline>);
+#[test]
+fn elevated_cloud_uses_the_near_view_volume_before_the_surface() {
+    let Some(gpu) = ground_support::open() else {
+        return;
+    };
+    for remote_ridge in [false, true] {
+        let ground =
+            ground_support::fixture_at_height(ground_support::fog(false), remote_ridge, 890.0);
+        for coverage in [0.0, 1.0] {
+            let state = ground_support::state(coverage, 0.0);
+            let (_host, input, _) = ground_support::render_ground(
+                &gpu,
+                &ground,
+                &state,
+                35.0,
+                930.0,
+                Some(Box::new(DepthSteps::new([120; 4]))),
+            );
+            let medium = input
+                .ground_condensate_products()
+                .expect("submitted medium");
+            let products = input.sky_products().expect("submitted Sky products");
+            let depth = ground_support::read(&gpu, &products.fresh_front, Mip::layer(0, 0));
+            assert!((depth[72][3] * 1000.0 - 120.0).abs() < 1.0);
+            let min_transmittance = (0..4)
+                .flat_map(|slot| {
+                    ground_support::read(&gpu, &products.fresh_transport, Mip::layer(0, slot))
+                })
+                .map(|value| value[3])
+                .fold(1.0_f32, f32::min);
+            assert_eq!(
+                min_transmittance, 1.0,
+                "near cloud belongs to the view volume"
+            );
+            // The first cell layer is wholly in front of the 120 m depth writer.
+            let extinction =
+                ground_support::read(&gpu, &medium.medium.coefficients, Mip::layer(0, 0));
+            let max_extinction = extinction
+                .iter()
+                .map(|cell| cell[0])
+                .fold(0.0_f32, f32::max);
+            if coverage > 0.0 {
+                assert!(
+                    max_extinction > 0.0,
+                    "elevated cloud contributes to the near field"
+                );
+            } else {
+                assert_eq!(max_extinction, 0.0, "clear control has no cloud or fog");
+            }
+            eprintln!(
+                "remote ridge {remote_ridge}, coverage {coverage}, max medium extinction {max_extinction}, min far transmittance {min_transmittance}"
+            );
+        }
+    }
+}
+
+struct DepthSteps {
+    metres: [u32; 4],
+    pipeline: Option<wgpu::RenderPipeline>,
+}
+
+impl DepthSteps {
+    fn new(metres: [u32; 4]) -> Self {
+        Self {
+            metres,
+            pipeline: None,
+        }
+    }
+}
+
+impl Default for DepthSteps {
+    fn default() -> Self {
+        Self::new([420, 700, 920, 420])
+    }
+}
 
 impl SceneContribution for DepthSteps {
     fn passes(&self) -> ContributionPasses {
@@ -73,18 +146,18 @@ impl SceneContribution for DepthSteps {
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("depth steps"),
             source: wgpu::ShaderSource::Wgsl(
-                r"
-                @vertex fn vertex(@builtin(vertex_index) i: u32) -> @builtin(position) vec4<f32> {
+                format!(r"
+                @vertex fn vertex(@builtin(vertex_index) i: u32) -> @builtin(position) vec4<f32> {{
                     let points = array(vec2(-1.0, -1.0), vec2(3.0, -1.0), vec2(-1.0, 3.0));
                     return vec4(points[i], 0.0, 1.0);
-                }
-                @fragment fn fragment(@builtin(position) p: vec4<f32>) -> @builtin(frag_depth) f32 {
+                }}
+                @fragment fn fragment(@builtin(position) p: vec4<f32>) -> @builtin(frag_depth) f32 {{
                     let pixel = vec2<u32>(p.xy);
                     let slot = pixel.x % 2u + 2u * (pixel.y % 2u);
-                    let ranges = array(420.0, 700.0, 920.0, 420.0);
+                    let ranges = array({}.0, {}.0, {}.0, {}.0);
                     let distance = ranges[slot];
                     return (1.0 / distance - 1.0 / 4000.0) / (1.0 / 0.1 - 1.0 / 4000.0);
-                }"
+                }}", self.metres[0], self.metres[1], self.metres[2], self.metres[3])
                 .into(),
             ),
         });
@@ -95,7 +168,7 @@ impl SceneContribution for DepthSteps {
                 write_mask: wgpu::ColorWrites::empty(),
             })
         });
-        self.0 = Some(device.render(&wgpu::RenderPipelineDescriptor {
+        self.pipeline = Some(device.render(&wgpu::RenderPipelineDescriptor {
             label: Some("depth steps"),
             layout: None,
             vertex: wgpu::VertexState {
@@ -128,7 +201,7 @@ impl SceneContribution for DepthSteps {
     fn encode_upload(&mut self, _: &mut wgpu::CommandEncoder, _: &ContributionFrame) {}
 
     fn draw(&self, pass: &mut wgpu::RenderPass<'_>) {
-        pass.set_pipeline(self.0.as_ref().expect("prepared depth steps"));
+        pass.set_pipeline(self.pipeline.as_ref().expect("prepared depth steps"));
         pass.draw(0..3, 0..1);
     }
 }

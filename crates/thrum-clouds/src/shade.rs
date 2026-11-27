@@ -536,7 +536,11 @@ impl SceneContribution for Shade {
             let index = match (&gpu.ground, index) {
                 (Some(ground), 6) => return ground.targets.band.encode(pass),
                 (Some(ground), 7) => {
-                    return ground.targets.medium.encode(pass, frame.exposure_side);
+                    return ground.targets.medium.encode(
+                        pass,
+                        frame.exposure_side,
+                        gpu.shapes.as_deref(),
+                    );
                 }
                 (Some(_), 8..) => index - 2,
                 _ => index,

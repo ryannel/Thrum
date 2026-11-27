@@ -330,6 +330,7 @@ impl GroundTargets {
         field: &GroundField,
         phases: &lighting::LightTable,
         sky: bool,
+        shapes: Option<&crate::shapes::Shapes>,
     ) -> Result<Self, Error> {
         let band = band::Band::new(surface, field, sun, sun_mapping)?;
         let medium = medium::Medium::new(
@@ -341,6 +342,7 @@ impl GroundTargets {
             phases,
             &band,
             sky,
+            shapes,
         )?;
         Ok(Self { band, medium })
     }
@@ -353,11 +355,20 @@ impl GroundGpu {
         weather: &crate::WeatherMap,
         sun: &crate::SunPath,
         sky: bool,
+        shapes: Option<&crate::shapes::Shapes>,
     ) -> Result<Self, Error> {
         let field = GroundField::new(surface.device, surface.queue, config, weather.seed())?;
         let phases = lighting::LightTable::new(surface.device, &config.fog)?;
-        let targets =
-            GroundTargets::new(surface, weather, sun, sun.mapping(), &field, &phases, sky)?;
+        let targets = GroundTargets::new(
+            surface,
+            weather,
+            sun,
+            sun.mapping(),
+            &field,
+            &phases,
+            sky,
+            shapes,
+        )?;
         Ok(Self {
             field,
             phases,

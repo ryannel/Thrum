@@ -76,10 +76,14 @@ pub(crate) fn fog(drifting: bool) -> Fog {
 }
 
 pub(crate) fn fixture(row: Fog, ridge: bool) -> GroundConfig {
+    fixture_at_height(row, ridge, 0.0)
+}
+
+pub(crate) fn fixture_at_height(row: Fog, ridge: bool, ground_height: f64) -> GroundConfig {
     let nodes: Vec<_> = (0..3)
         .flat_map(|_| {
-            (0..17).map(|x| SurfacePoint {
-                ground: if ridge && x == 12 { 60.0 } else { 0.0 },
+            (0..17).map(move |x| SurfacePoint {
+                ground: ground_height + if ridge && x == 12 { 60.0 } else { 0.0 },
                 water: None,
             })
         })

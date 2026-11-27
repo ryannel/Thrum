@@ -3,7 +3,7 @@ use super::{
     band::Band,
     lighting::{FIRST, LightTable},
 };
-use crate::{Error, SunPath, WeatherMap, layer};
+use crate::{Error, SunPath, WeatherMap, layer, shapes::Shapes};
 use thrum_render::{
     atmosphere::{EnvironmentProducts, ViewVolumeMediumTarget},
     binding,
@@ -32,7 +32,9 @@ impl Medium {
         phases: &LightTable,
         band: &Band,
         sky: bool,
+        shapes: Option<&Shapes>,
     ) -> Result<Self, Error> {
+        let shapes = shapes.filter(|_| sky);
         let target = surface
             .view_volume_medium_target()
             .ok_or(Error::Unsupported(
@@ -154,13 +156,15 @@ impl Medium {
             entries: &entries,
         });
         let target_group = target.bind(device, &target_layout);
-        let deck_source = if sky {
+        let layer_source = if sky {
+            let placed = layer::prepare::placed_source(2, shapes.is_some(), false, true);
             format!(
                 "{}\n@group(1) @binding(0) var<uniform> cloud: CloudParams;\n
-                 @group(1) @binding(11) var shape_noise: texture_3d<f32>;\n{}\n{}\n{}",
+                 @group(1) @binding(11) var shape_noise: texture_3d<f32>;\n{}\n{}\n{}\n{}\n{placed}",
                 include_str!("../layer/params.wgsl"),
                 layer::prepare::density_and_light_source(1),
                 include_str!("../erosion.wgsl"),
+                include_str!("../layer/billow.wgsl"),
                 include_str!("deck.wgsl"),
             )
         } else {
@@ -174,7 +178,7 @@ impl Medium {
             label: Some(PASS),
             source: wgpu::ShaderSource::Wgsl(
                 format!(
-                    "{}\n{}\n{}\n{}\nconst PI: f32 = 3.141592653589793;\n{deck_source}\n{}",
+                    "{}\n{}\n{}\n{}\nconst PI: f32 = 3.141592653589793;\n{layer_source}\n{}",
                     target.shader_source(),
                     layer::sun_source(1),
                     layer::SCATTERING,
@@ -184,9 +188,14 @@ impl Medium {
                 .into(),
             ),
         });
+        let mut layouts: Vec<Option<&wgpu::BindGroupLayout>> =
+            vec![Some(&target_layout), Some(&input_layout)];
+        if let Some(shapes) = shapes {
+            layouts.push(Some(&shapes.layout));
+        }
         let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some(PASS),
-            bind_group_layouts: &[Some(&target_layout), Some(&input_layout)],
+            bind_group_layouts: &layouts,
             immediate_size: 0,
         });
         let pipeline = device.compute(&wgpu::ComputePipelineDescriptor {
@@ -208,11 +217,19 @@ impl Medium {
         })
     }
 
-    pub(crate) fn encode(&self, pass: &mut wgpu::ComputePass<'_>, exposure_side: usize) {
+    pub(crate) fn encode(
+        &self,
+        pass: &mut wgpu::ComputePass<'_>,
+        exposure_side: usize,
+        shapes: Option<&Shapes>,
+    ) {
         self.lighting.encode(pass, &self.environment, exposure_side);
         pass.set_pipeline(&self.pipeline);
         pass.set_bind_group(0, &self.target_group, &[]);
         pass.set_bind_group(1, &self.input_group, &[]);
+        if let Some(shapes) = shapes.filter(|_| self.sky_params.is_some()) {
+            pass.set_bind_group(2, &shapes.group, &[]);
+        }
         let extent = self.target.coefficients.size();
         pass.dispatch_workgroups(
             extent.width.div_ceil(8),

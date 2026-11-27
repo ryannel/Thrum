@@ -62,6 +62,7 @@ impl Shade {
                         &ground.field,
                         &ground.phases,
                         self.sky.is_some(),
+                        gpu.shapes.as_deref(),
                     )
                     .map(Box::new)
                     .map_err(|error| frame_prepare_error(&error))
@@ -148,8 +149,15 @@ impl Shade {
             .ground
             .as_ref()
             .map(|config| {
-                GroundGpu::new(surface, config, &weather, &sun, self.sky.is_some())
-                    .map_err(|error| frame_prepare_error(&error))
+                GroundGpu::new(
+                    surface,
+                    config,
+                    &weather,
+                    &sun,
+                    self.sky.is_some(),
+                    shapes.as_deref(),
+                )
+                .map_err(|error| frame_prepare_error(&error))
             })
             .transpose()?;
         let sky = self.prepare_sky(
@@ -311,6 +319,14 @@ impl Prepared {
             let reads = shapes.append_reads(&mut graph);
             for pass in &mut graph.passes[1..4] {
                 pass.accesses.extend(reads.iter().cloned());
+            }
+            if sky.is_some()
+                && let Some(medium) = graph
+                    .passes
+                    .iter_mut()
+                    .find(|pass| pass.name == crate::ground::medium::PASS)
+            {
+                medium.accesses.extend(reads.iter().cloned());
             }
             if let Some(trace) = graph
                 .after_opaque
