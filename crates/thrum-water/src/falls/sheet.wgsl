@@ -35,7 +35,7 @@ fn sheet_fold(lip: f32, birth: f32, across: vec2<f32>) -> vec3<f32> {
     let fold = sheet_fold(velocity_along.w, birth, across_fraction.xz) * weight;
     let churning = sheet_noise(vec2(velocity_along.w * 1.7, birth), FALL_LOOP,
         vec2(1.8, 3.0), vec2(3.6, 0.0));
-    let crown = vec3(0.0, 0.13 * churning * (1.0 - across_fraction.w), 0.0);
+    let crown = vec3(0.0, 0.22 * churning * churning * (1.0 - across_fraction.w), 0.0);
     let world = vec4(world_time.xyz + select(fold, crown, is_splash), world_time.w);
     return SheetVertex(view.view_proj * vec4(world.xyz, 1.0), world, velocity_along, discharge, across_fraction);
 }
@@ -56,7 +56,7 @@ fn splash_shade(input: SheetVertex, birth: f32, solid: bool) -> FallOutput {
     let froth = smoothstep(0.22, 0.78, 0.66 * motion + 0.34 * pockets);
     let support = smoothstep(0.0, 0.10, distance) * (1.0 - smoothstep(0.25, 1.0, distance));
     let strength = smoothstep(0.008, 0.055, input.discharge.w);
-    let alpha = strength * support * (0.20 + 0.68 * froth);
+    let alpha = strength * support * (0.12 + 0.78 * froth);
     if solid || alpha < 0.012 { discard; }
     let up = vec3(0.0, 1.0, 0.0);
     let point = input.world_time.xyz;
@@ -107,7 +107,8 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
     let taper = smoothstep(tip - 0.25, tip, input.across_fraction.w);
     let sheet_presence = smoothstep(threshold - width, threshold + width,
         input.discharge.z * (1.0 - 0.88 * thinness * taper));
-    let strand_presence = 1.0 - smoothstep(0.73, 1.0, input.across_fraction.w);
+    let strand_presence = smoothstep(-0.12, 0.07, input.across_fraction.w)
+        * (1.0 - smoothstep(0.73, 1.0, input.across_fraction.w));
     let presence = select(sheet_presence, strand_presence, is_filament);
     let spread = mix(0.63 * coarse + 0.37 * grouped, 0.5, smoothstep(0.9, 3.0, pixel));
     let contact = 0.56 + 0.24 * spread;

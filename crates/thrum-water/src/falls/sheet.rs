@@ -476,8 +476,13 @@ fn filament(
             -normal
         };
         let tip = 1.0 - fraction.clamp(0.0, 1.0) as f32;
-        let radius = (0.52 * vertex.discharge[3].sqrt()).min(0.046) * tip.sqrt();
-        let centre = Vec3::from_slice(&vertex.world_time) + outward * (radius + 0.025 * tip);
+        let radius = (0.65 * vertex.discharge[3].sqrt()).clamp(0.015, 0.073) * tip.sqrt();
+        let world = Vec3::from_slice(&vertex.world_time);
+        let before = Vec3::from_slice(&sample((fraction - 0.09).max(0.0)).world_time);
+        let after = Vec3::from_slice(&sample((fraction + 0.09).clamp(0.0, 1.0)).world_time);
+        let smoothing = (1.0 - 4.0 * (fraction - 0.5).powi(2)).max(0.0) as f32;
+        let centre = world.lerp((before + after) * 0.5, 0.66 * smoothing)
+            + outward * (radius + (0.03 + 0.05 * smoothing) * tip);
         let age = vertex.world_time[3];
         vertex.across_fraction[1] = -2.0 - distance;
         [across, outward, -across, -outward].map(|normal| {
