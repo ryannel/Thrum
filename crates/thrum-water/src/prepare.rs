@@ -1114,6 +1114,8 @@ fn compose_rain_film(
     shore: bool,
     rain: bool,
 ) -> String {
+    use std::fmt::Write;
+
     const SHORE_FILM: &str = include_str!("foam/film.wgsl");
     const VERTEX: &str = "@vertex fn film_vertex(";
     const SHORE: &str = "    let footprint = length(ground - view.camera_xyz_time.xyz)";
@@ -1138,7 +1140,6 @@ fn compose_rain_film(
         source.push_str("    discard;\n    return Output(vec4(0.0), vec2(0.0), 0.0);\n}\n");
     }
     source.push_str(&wet.shader(3, WET_GROUND_BINDING));
-    use std::fmt::Write;
     writeln!(
         source,
         "const FILM_REFLECTION_REACH: f32 = {};",

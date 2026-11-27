@@ -9,6 +9,7 @@ const MAX_CLASSES: usize = 8;
 const HEADER: usize = 7;
 const CLASS_TEXELS: usize = 4;
 const HOLLOW_START: usize = HEADER + MAX_CLASSES * CLASS_TEXELS;
+const ADMISSION_ROW: usize = HEADER + 3;
 
 pub(super) const SOURCE: &str = include_str!("wet_ground.wgsl");
 
@@ -133,7 +134,7 @@ impl WetGround {
         if classes.is_empty() || classes.len() > MAX_CLASSES || hollow_count >= 1 << 24 {
             return None;
         }
-        let mut rows = vec![[0.0; 4]; (HOLLOW_START + hollow_count + 1).next_multiple_of(width)];
+        let mut rows = vec![[0.0; 4]; (HOLLOW_START + hollow_count).next_multiple_of(width)];
         let mut static_rows = Vec::new();
         let mut ground_classes = 0;
         let mut hollow_pits = vec![f32::INFINITY; hollow_count];
@@ -170,7 +171,8 @@ impl WetGround {
                 let label = if cell.hollow == NO_HOLLOW {
                     -1.0
                 } else {
-                    hollow_pits[cell.hollow as usize] = cell.pit;
+                    let pit = &mut hollow_pits[cell.hollow as usize];
+                    *pit = pit.min(cell.pit);
                     cell.hollow as f32
                 };
                 [cell.bed, label, f32::from(cell.class), cell.pit]
@@ -257,7 +259,7 @@ impl WetGround {
         for (row, hollow) in self.rows[HOLLOW_START..].iter_mut().zip(hollows) {
             *row = [hollow.level, hollow.mark, hollow.margin, hollow.held_fill];
         }
-        self.rows.last_mut().expect("film admission row")[0] =
+        self.rows[ADMISSION_ROW][2] =
             f32::from(u8::from(classes.iter().zip(stores).enumerate().any(
                 |(index, (class, reaches))| {
                     self.ground_classes & (1 << index) != 0
@@ -306,7 +308,7 @@ pub(super) fn film_bounds(
     wetness: &thrum_render::wetness::PreparedWetness,
 ) -> Option<crate::optics::BodyBounds> {
     wetness.read_rows(|rows| {
-        if rows.last()?[0] == 0.0 {
+        if rows[ADMISSION_ROW][2] == 0.0 {
             return None;
         }
         let [x, z, spacing, width] = rows[2];
