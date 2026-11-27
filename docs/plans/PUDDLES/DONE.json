@@ -726,8 +726,8 @@
           "ask": "With the selection off, does any code path of the game differ from before this work package? Is anything of `SHOWCASE`'s (the generator, a route, the exit configuration, a retained reference) changed?",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP6/after-review/README.md#native-launch-and-off-parity",
           "verdict": "fail",
           "review": ".orchestrate/evidence/PUDDLES/WP6-review.md"
         },
@@ -738,7 +738,7 @@
           "lock": "gpu",
           "target": "mac-metal",
           "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/PUDDLES/WP6/README.md#metal-model-comparison",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP6/after-review/README.md#metal-model-agreement",
           "verdict": "pass",
           "review": ".orchestrate/evidence/PUDDLES/WP6-review.md"
         },
@@ -747,8 +747,8 @@
           "statement": "Through a shower the valley's floor and rocks darken and their colour deepens, the patch's hollows fill with level puddles that hold the sky and ring with the rain, and afterward it dries back to the desert it was. Nothing changes the valley's light, haze or shadows.",
           "inspect": "`realtime` sequences at two of the route's stops and at the patch from 1.7 m, through a shower and its drying with the rates the sequence names; `fixed` stills dry, soaked and half dry at noon and at a low Sun, whole and cropped at native size on the floor, a rock and a puddle's edge.",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP6/after-review/README.md#metal-visual-inspection",
           "verdict": "fail",
           "review": ".orchestrate/evidence/PUDDLES/WP6-review.md"
         },
@@ -758,8 +758,8 @@
           "check": "node scripts/check_v1_browser.mjs --case rain",
           "lock": "chrome",
           "target": "chrome-webgpu",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP6/after-review/README.md#chrome-webgpu",
           "verdict": "fail",
           "review": ".orchestrate/evidence/PUDDLES/WP6-review.md"
         },
@@ -769,8 +769,8 @@
           "check": "python3 scripts/rain_cost.py check --scene valley",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP6/after-review/README.md#paired-metal-cost",
           "verdict": "fail",
           "review": ".orchestrate/evidence/PUDDLES/WP6-review.md"
         }

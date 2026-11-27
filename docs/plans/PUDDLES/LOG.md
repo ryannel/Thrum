@@ -335,3 +335,12 @@
   The native sequences cover two route stops and the patch at eye height. Wetting is subtler on the
   rock's low-Sun face. The capture-off 1080p record includes the surface and film costs under shared load.
   [Target evidence, native sequences and cost](../../../.orchestrate/evidence/PUDDLES/WP6/README.md)
+
+- 2026-11-27 WP6 review repair. The native and shipping WebGPU launchers cook the patch in the
+  standard exit bundle. The two 6.25 cm basins drain beyond their banks and inherit the original
+  terrain normals at the join. The sparse canopy covers every shipped rock row. Metal checks the
+  floor, boulder faces and near and distant shelter, and submits the full shower and drying at the
+  three required cameras. Lower-Sun crops show individually expanding rings and a few pixel-scale
+  teeth at the near pool's tip. The 1080p pair records 33,832,960 bytes of forward wetness in the
+  soaked arm, and both arms crossed the 120 Hz interval in the recorded run.
+  [Repair evidence](../../../.orchestrate/evidence/PUDDLES/WP6/after-review/README.md)
