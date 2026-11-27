@@ -739,7 +739,7 @@
         {
           "verdict": "fail",
           "commit": "b5cb5000a6b3529da7d53ae5d79a690a926b897d",
-          "review": ".orchestrate/evidence/PUDDLES/WP5-review.md",
+          "review": ".orchestrate/evidence/PUDDLES/WP5-review-1.md",
           "items": {
             "WP5.1": "fail",
             "WP5.2": "fail",
@@ -808,6 +808,53 @@
             "turns": 1
           },
           "at": "2026-11-27T05:35:53Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "4f88c3e4cee705baca6035054b819834ac57e222",
+          "review": ".orchestrate/evidence/PUDDLES/WP5-review.md",
+          "items": {
+            "WP5.1": "pass",
+            "WP5.2": "pass",
+            "WP5.3": "pass",
+            "WP5.4": "fail",
+            "WP5.5": "pass",
+            "WP5.6": "pass",
+            "WP5.7": "fail",
+            "WP5.8": "pass",
+            "WP5.9": "pass"
+          },
+          "findings": [
+            {
+              "name": "The sea wetness provider removes the lake's existing shore film",
+              "item": "WP5.4",
+              "different": "The previous optics-off and paving-relief defects are resolved. This failure discards existing WATERS film at an elevated lake when sea wetness is enabled, with optics on and no hollows.",
+              "repeat": false
+            },
+            {
+              "name": "Lake and pond sand inside wave support reads dry",
+              "item": "WP5.7",
+              "different": "The mixed sea/hollows beach edge now matches. The forward ground field uses only the sea level and swash, producing zero pore fill inside the lake and pond wave support even without hollows.",
+              "repeat": false
+            }
+          ],
+          "summary": "WP5 fails two of nine items. Wetting and drying read in the yard, and the exposed sea beach passes its calm-to-gale and ebb inspections. On the same island, registering the sea's wetness removes the existing film at the higher lake, and the ground shader reports dry pores at lake and pond points where the rain model reports full pores.",
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 187188,
+            "cached": 11235584,
+            "output": 23419,
+            "turns": 1
+          },
+          "at": "2026-11-27T09:02:39Z"
         }
       ],
       "authorised": {
