@@ -1275,3 +1275,12 @@ of the terrain-height test for distant deck lighting. The near volume and the fa
 through the handover. Metal readbacks at a 120 m opaque stop show occupied near cells and unit fresh trace
 transmittance with and without a ridge behind the stop. The clear controls have zero near extinction.
 [Target proof](../../../.orchestrate/evidence/CLOUDS/WP15/near-handover/PROOF.md)
+
+## WP15 Terrain-independent cloud extinction
+
+The view volume, cloud trace and sky overlay now take a cloud's density from the weather field without a
+terrain-height classification. The shared billow and bank shape apply to both the coarse and full density.
+The ground band still supplies terrain visibility and fog optical depth for illumination.
+A Metal regression holds the weather and a 3,500 m opaque stop fixed and raises a ridge behind the camera
+across the bank's base. Fresh transmittance is identical at every stop in both the lowland and inside-cloud views.
+[Target proof](../../../.orchestrate/evidence/CLOUDS/WP15/terrain-independent/PROOF.md)
