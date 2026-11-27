@@ -6,6 +6,7 @@ struct SheetVertex {
     @location(1) velocity_along: vec4<f32>,
     @location(2) discharge: vec4<f32>,
     @location(3) across_fraction: vec4<f32>,
+    @location(4) edge: f32,
 }
 
 fn sheet_age(age: f32) -> f32 { return age - floor(age / FALL_LOOP) * FALL_LOOP; }
@@ -38,8 +39,8 @@ fn splash_vertex(world_time: vec4<f32>, velocity_along: vec4<f32>, discharge: ve
     let face = vec3(-axis.y, 0.0, axis.x);
     let flow = velocity_along.xyz * vec3(1.0, 0.0, 1.0);
     let outward = select(-face, face, dot(face, flow) >= 0.0);
-    let drift = outward * mix(0.09, 0.48, kick) + across * (random - 0.5) * 0.45;
-    let loft = mix(0.028, 0.26, kick * kick) * mix(0.30, 1.0, strength);
+    let drift = outward * mix(0.13, 0.59, kick) + across * (random - 0.5) * 0.54;
+    let loft = mix(0.034, 0.39, kick * kick) * mix(0.30, 1.0, strength);
     let centre = world_time.xyz + drift * phase + vec3(0.0, 4.0 * loft * phase * (1.0 - phase), 0.0);
     let eye = normalize(view.camera_xyz_time.xyz - centre);
     let climb = drift + vec3(0.0, 4.0 * loft * (1.0 - 2.0 * phase), 0.0);
@@ -47,11 +48,11 @@ fn splash_vertex(world_time: vec4<f32>, velocity_along: vec4<f32>, discharge: ve
     let up = cross(right, eye);
     let index = u32(across_fraction.w);
     let corner = vec2(f32(index & 1u), f32(index >> 1u)) * 2.0 - 1.0;
-    let radius = mix(0.014, 0.055, random * random) * mix(0.45, 1.0, strength);
+    let radius = mix(0.018, 0.089, random * random) * mix(0.45, 1.0, strength);
     let point = centre + radius * (right * corner.x + up * corner.y * (1.0 + 1.3 * kick));
     let world = vec4(point, phase);
     return SheetVertex(view.view_proj * vec4(point, 1.0), world, velocity_along,
-        vec4(random, kick, strength, discharge.w), vec4(corner.x, -1.0, corner.y, phase));
+        vec4(random, kick, strength, discharge.w), vec4(corner.x, -1.0, corner.y, phase), 0.0);
 }
 
 @vertex fn sheet_vertex(
@@ -59,6 +60,7 @@ fn splash_vertex(world_time: vec4<f32>, velocity_along: vec4<f32>, discharge: ve
     @location(1) velocity_along: vec4<f32>,
     @location(2) discharge: vec4<f32>,
     @location(3) across_fraction: vec4<f32>,
+    @location(4) edge: f32,
 ) -> SheetVertex {
     let is_splash = across_fraction.y < 0.0 && across_fraction.y > -1.5;
     if is_splash { return splash_vertex(world_time, velocity_along, discharge, across_fraction); }
@@ -67,7 +69,7 @@ fn splash_vertex(world_time: vec4<f32>, velocity_along: vec4<f32>, discharge: ve
     let weight = fold_weight(across_fraction.w) * select(1.0, 0.18, is_filament);
     let fold = sheet_fold(velocity_along.w, birth, across_fraction.xz) * weight;
     let world = vec4(world_time.xyz + fold, world_time.w);
-    return SheetVertex(view.view_proj * vec4(world.xyz, 1.0), world, velocity_along, discharge, across_fraction);
+    return SheetVertex(view.view_proj * vec4(world.xyz, 1.0), world, velocity_along, discharge, across_fraction, edge);
 }
 
 struct FallOutput {
@@ -117,13 +119,18 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
     let across = input.across_fraction.xz;
     let is_filament = input.across_fraction.y <= -2.0;
     let normal = normalize(cross(vec3(across.x, 0.0, across.y), tangent));
-    let contour = select(normal, geometry_normal, is_filament);
+    let geometric = select(-geometry_normal, geometry_normal, dot(geometry_normal, normal) > 0.0);
+    let contour = normalize(mix(normal, geometric,
+        select(0.38 * smoothstep(0.34, 0.76, input.across_fraction.w), 1.0, is_filament)));
     var face = select(-contour, contour, dot(contour, look) >= 0.0);
     let breakout = input.discharge.y;
     let broken = smoothstep(rank - 0.24 - width, rank + 0.09 + width, breakout);
     let filament_white = smoothstep(0.06, 0.48, input.across_fraction.w)
-        * smoothstep(0.18, 0.72, 0.72 * coarse + 0.28 * fine);
-    let white = select(mix(pow(breakout, 1.18), broken, 0.74), filament_white, is_filament);
+        * smoothstep(0.08, 0.58, 0.72 * coarse + 0.28 * fine);
+    let streak_white = smoothstep(0.42, 0.89, input.across_fraction.w)
+        * smoothstep(0.23, 0.78, 0.65 * coarse + 0.35 * fine);
+    let white = select(max(mix(pow(breakout, 1.18), broken, 0.74), 0.63 * streak_white),
+        filament_white, is_filament);
     let clear = 1.0 - white;
     // Preserve the long strands of a small discharge when the trail widens
     // in time. The lower-frequency mask follows each parcel from the lip.
@@ -139,11 +146,14 @@ fn sheet_shade(input: SheetVertex, solid: bool) -> FallOutput {
     let strand_presence = smoothstep(-0.12, 0.07, input.across_fraction.w)
         * (1.0 - smoothstep(0.73, 1.0, input.across_fraction.w))
         * mix(1.0, pulses, smoothstep(0.16, 0.77, input.across_fraction.w));
-    let presence = select(sheet_presence, strand_presence, is_filament);
+    let breaks_apart = smoothstep(0.45, 0.92, input.across_fraction.w);
+    let feather = 1.0 - breaks_apart * smoothstep(0.50 + 0.19 * fine, 1.0, input.edge);
+    let presence = select(sheet_presence * feather, strand_presence, is_filament);
     let spread = mix(0.63 * coarse + 0.37 * grouped, 0.5, smoothstep(0.9, 3.0, pixel));
     let contact = 0.56 + 0.24 * spread;
     let foot = 1.0 - smoothstep(contact, 0.91 + 0.09 * spread, input.across_fraction.w);
-    let contact_cover = foot * mix(1.0, smoothstep(0.27, 0.73, tear + 0.44 * fine),
+    let contact_cover = mix(0.21 * (1.0 - thinness), 1.0, foot)
+        * mix(1.0, smoothstep(0.18, 0.71, tear + 0.54 * fine),
         smoothstep(0.51, 0.90, input.across_fraction.w));
     if (presence > 0.5 && foot > 0.35) != solid || presence * contact_cover < 0.015 {
         discard;
