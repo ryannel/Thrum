@@ -82,11 +82,19 @@ impl Segment {
         });
         let bottom = plunge.map_or_else(
             || *data.path.last().expect("stored fall path"),
-            |impact| PathPoint {
-                place: impact.place,
-                height: impact.level,
-                time: impact.time,
-                distance: impact.distance,
+            |impact| {
+                let k = data
+                    .path
+                    .partition_point(|point| point.distance < impact.distance)
+                    .clamp(1, data.path.len() - 1);
+                let [a, b] = [data.path[k - 1], data.path[k]];
+                let fraction = (impact.distance - a.distance) / (b.distance - a.distance).max(1e-9);
+                PathPoint {
+                    place: impact.place,
+                    height: (b.height - a.height).mul_add(fraction, a.height),
+                    time: impact.time,
+                    distance: impact.distance,
+                }
             },
         );
         let lip = data.path[0];

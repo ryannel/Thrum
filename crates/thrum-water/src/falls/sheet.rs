@@ -15,7 +15,7 @@ use thrum_water_model::{Map, PathPoint};
 pub(in crate::falls) const ROWS: usize = 32;
 pub(crate) const PASS: &str = "waterfall sheet";
 const SPLASHES_PER_SEGMENT: usize = 24;
-const RIBBONS_PER_SEGMENT: usize = 3;
+const RIBBONS_PER_SEGMENT: usize = 6;
 const VERTICES_PER_SEGMENT: usize =
     12 * RIBBONS_PER_SEGMENT * (ROWS + 3) + 6 * SPLASHES_PER_SEGMENT;
 const ATTRIBUTES: [wgpu::VertexAttribute; 5] = wgpu::vertex_attr_array![0 => Float32x4, 1 => Float32x4, 2 => Float32x4, 3 => Float32x4, 4 => Float32x3];
@@ -356,6 +356,16 @@ fn mesh(
         let lip = segment.data.lip.map(DVec2::from_array);
         let centre = (lip[0] + lip[1]) * 0.5;
         let across = (lip[1] - lip[0]).normalize_or_zero();
+        let level = segment
+            .plunge
+            .map_or(segment.bottom.height, |hit| hit.level);
+        // A path entering at the bank is already below the pool's level,
+        // so its foot stays on the rock as the surface moves.
+        let contact = match segment.plunge {
+            None => 0.0,
+            Some(hit) if segment.bottom.height < hit.level - 0.01 => 1.0,
+            Some(_) => 2.0,
+        };
         let at = |fraction: f64, side: usize| {
             let sample = |segment: &Segment| {
                 if fraction >= 0.0 {
@@ -449,11 +459,7 @@ fn mesh(
                     across.y as f32,
                     fraction as f32,
                 ],
-                edge_receiver: [
-                    f32::from(edge),
-                    segment.bottom.height as f32,
-                    f32::from(segment.plunge.is_some()),
-                ],
+                edge_receiver: [f32::from(edge), level as f32, contact],
             }
         };
         let strip = |t| [at(t, 0), at(t, 1), at(t, 2)];
@@ -465,15 +471,15 @@ fn mesh(
         let half = strip(0.5)[1];
         if half.discharge[2] < 0.53 {
             filament(vertices, |fraction| at(fraction, 1), stations());
-            continue;
-        }
-        let mut top = ribbons(strip(-1.0));
-        for fraction in stations() {
-            let bottom = ribbons(strip(fraction));
-            for (a, b) in top.into_iter().zip(bottom) {
-                stitch(vertices, a, b);
+        } else {
+            let mut top = ribbons(strip(-1.0));
+            for fraction in stations() {
+                let bottom = ribbons(strip(fraction));
+                for (a, b) in top.into_iter().zip(bottom) {
+                    stitch(vertices, a, b);
+                }
+                top = bottom;
             }
-            top = bottom;
         }
         if segment.plunge.is_some() {
             splash(vertices, strip(1.0));
@@ -552,7 +558,8 @@ fn filament(
             -normal
         };
         let tip = 1.0 - fraction.clamp(0.0, 1.0) as f32;
-        let radius = (1.15 * vertex.discharge[3].sqrt()).clamp(0.037, 0.098) * tip.sqrt();
+        let throat = tip.max(0.16).sqrt();
+        let radius = (1.15 * vertex.discharge[3].sqrt()).clamp(0.028, 0.098) * throat;
         let world = Vec3::from_slice(&vertex.world_time);
         let before = Vec3::from_slice(&sample((fraction - 0.09).max(0.0)).world_time);
         let after = Vec3::from_slice(&sample((fraction + 0.09).clamp(0.0, 1.0)).world_time);
@@ -614,6 +621,7 @@ fn splash(vertices: &mut Vec<Vertex>, foot: [Vertex; 3]) {
         vertex.world_time = Vec4::from_array(foot[0].world_time)
             .lerp(Vec4::from_array(foot[2].world_time), fraction)
             .to_array();
+        vertex.world_time[1] = vertex.edge_receiver[1];
         vertex.velocity_along[3] = (foot[2].velocity_along[3] - foot[0].velocity_along[3])
             .mul_add(fraction, foot[0].velocity_along[3]);
         vertex.discharge[2] = drop as f32;
