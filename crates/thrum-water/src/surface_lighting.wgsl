@@ -86,18 +86,19 @@
     let fh=water_fresnel(max(dot(v,h),0.0));
     if OPTICS_ENABLED {
         var glint = d*gv*gl*fh/(4.0*nv+0.00001);
+        let low_sun = 1.0 - smoothstep(0.14, 0.45, l.y);
         if hollow_surface {
-            // A weak, wider lobe for the unresolved capillary slopes of a
-            // puddle. Both lobes follow the resolved normal from the solver.
-            let wide = max(a2, 0.0169);
+            // Broaden the capillary lobe at grazing illumination so it
+            // resolves the curved front over several pixels.
+            let wide = max(a2, mix(0.0169, 0.0324, low_sun));
             let wd = wide / (3.14159265 * pow(nh*nh*(wide-1.0)+1.0, 2.0));
             let wg_v = 2.0*nv / (nv + sqrt(wide + (1.0-wide)*nv*nv));
             let wg_l = 2.0*nl / (nl + sqrt(wide + (1.0-wide)*nl*nl));
-            glint = mix(glint, wd*wg_v*wg_l*fh/(4.0*nv+0.00001), 0.36);
+            glint = mix(glint, wd*wg_v*wg_l*fh/(4.0*nv+0.00001), mix(0.36, 0.70, low_sun));
         }
         // The unresolved solar lobe keeps a graded peak even on glassy water.
         // Limit its response before lent irradiance so cloud shade stays linear.
-        let peak = select(0.55, mix(0.025, 0.25, smoothstep(0.14, 0.45, l.y)), hollow_surface);
+        let peak = select(0.55, mix(0.25, 0.032, low_sun), hollow_surface);
         light += sunlight * (glint / (1.0 + glint / peak));
     } else {
         light+=sunlight*d*gv*gl*fh/(4.0*nv+0.00001);
