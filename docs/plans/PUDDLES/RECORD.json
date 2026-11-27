@@ -812,7 +812,7 @@
         {
           "verdict": "fail",
           "commit": "4f88c3e4cee705baca6035054b819834ac57e222",
-          "review": ".orchestrate/evidence/PUDDLES/WP5-review.md",
+          "review": ".orchestrate/evidence/PUDDLES/WP5-review-2.md",
           "items": {
             "WP5.1": "pass",
             "WP5.2": "pass",
@@ -855,6 +855,47 @@
             "turns": 1
           },
           "at": "2026-11-27T09:02:39Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "0dd843d55118c5130d621e1e71e7169ff6dc852d",
+          "review": ".orchestrate/evidence/PUDDLES/WP5-review.md",
+          "items": {
+            "WP5.1": "pass",
+            "WP5.2": "pass",
+            "WP5.3": "pass",
+            "WP5.4": "pass",
+            "WP5.5": "pass",
+            "WP5.6": "pass",
+            "WP5.7": "fail",
+            "WP5.8": "pass",
+            "WP5.9": "pass"
+          },
+          "findings": [
+            {
+              "name": "The inland shore film ends inside the wet-sand edge",
+              "item": "WP5.7",
+              "different": "Lake and pond pore fill now matches the rain model, and the existing inner lake film is present. At a steady inland stage the film stops at 0.175 times body swash while the wetted material reaches full body swash. The split occurs without hollows.",
+              "repeat": false
+            }
+          ],
+          "summary": "WP5 passes eight of nine items. The yard wets and dries in the specified order, and both previous shoreline defects are resolved. WP5.7 still fails at inland shores because a visible band of fully wetted sand extends beyond the film at a steady lake level.",
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 173464,
+            "cached": 7715712,
+            "output": 20686,
+            "turns": 1
+          },
+          "at": "2026-11-27T10:24:41Z"
         }
       ],
       "authorised": {

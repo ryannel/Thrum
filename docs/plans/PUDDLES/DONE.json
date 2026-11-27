@@ -598,9 +598,9 @@
     {
       "id": "WP5",
       "name": "The ground itself gets wet: paving and earth darken as the rain starts, a sheen gathers in the paving's joints and mirrors what stands on it, the ground under the roof stays dry, sand is dark where waves have run, and it dries sheen first and darkness last",
-      "status": "ready_for_review",
-      "failed_reviews": 2,
-      "failed_reviews_with_repeat": 1,
+      "status": "in_progress",
+      "failed_reviews": 3,
+      "failed_reviews_with_repeat": 2,
       "diagnoses": 0,
       "depends_on": [],
       "quality_bar": "Wet ground as on the streets of The Last of Us Part II's Seattle and in Red Dead Redemption 2's Saint Denis: deeper, darker colour where the ground drinks, a sheen where it cannot, reflections at a grazing view, a dry floor under every roof, and drying that goes in the order real ground dries, with no tint laid over the scene and nothing that pops.",
@@ -648,7 +648,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/PUDDLES/WP5/shore-ownership/README.md#standing-film",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/PUDDLES/WP5-review.md"
         },
         {
@@ -678,8 +678,8 @@
           "inspect": "`fixed` stills of the beach from 2 m in a calm, a trade wind and a gale, and a `realtime` sequence as the tide falls through its range.",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/PUDDLES/WP5/shore-ownership/README.md#shore",
+          "builder_result": "open",
+          "evidence": "",
           "verdict": "fail",
           "review": ".orchestrate/evidence/PUDDLES/WP5-review.md"
         },
@@ -708,15 +708,9 @@
       ],
       "findings": [
         {
-          "name": "The sea wetness provider removes the lake's existing shore film",
-          "item": "WP5.4",
-          "different": "The previous optics-off and paving-relief defects are resolved. This failure discards existing WATERS film at an elevated lake when sea wetness is enabled, with optics on and no hollows.",
-          "repeat": false
-        },
-        {
-          "name": "Lake and pond sand inside wave support reads dry",
+          "name": "The inland shore film ends inside the wet-sand edge",
           "item": "WP5.7",
-          "different": "The mixed sea/hollows beach edge now matches. The forward ground field uses only the sea level and swash, producing zero pore fill inside the lake and pond wave support even without hollows.",
+          "different": "Lake and pond pore fill now matches the rain model, and the existing inner lake film is present. At a steady inland stage the film stops at 0.175 times body swash while the wetted material reaches full body swash. The split occurs without hollows.",
           "repeat": false
         }
       ]
