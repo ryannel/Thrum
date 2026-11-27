@@ -202,12 +202,10 @@ const SURFACE_MAX_GRADIENT: f32 = 30.0;
 // bends away from that plane; at grazing light a height deviation h appears as
 // h/(n.l) along the ray. Accept bounded bending that grows with the tap's world
 // offset, so a concave join near the receiver is not its own blocker.
-fn surface_tolerance(index:u32,gradient:vec2<f32>,delta:vec2<f32>) -> f32 {
-    let metrics = shadows.cascade_metrics[index];
-    let uv_metres_span = 1.0 / (f32(textureDimensions(shadow_maps).x) * metrics.y * metrics.z);
-    let slope=min(length(gradient)*uv_metres_span,SURFACE_MAX_GRADIENT);
-    let bend=min(SURFACE_ELEVATION_FRACTION/max(slope,1e-3),SURFACE_MAX_SLOPE);
-    return bend*length(delta)*(1.0+slope*slope)/max(uv_metres_span,1e-20);
+fn surface_tolerance_per_uv(gradient: vec2<f32>, uv_metres_span: f32) -> f32 {
+    let slope = min(length(gradient) * uv_metres_span, SURFACE_MAX_GRADIENT);
+    let bend = min(SURFACE_ELEVATION_FRACTION / max(slope, 1e-3), SURFACE_MAX_SLOPE);
+    return bend * (1.0 + slope * slope) / max(uv_metres_span, 1e-20);
 }
 
 const SUN_SEARCH_TEXELS: f32 = 8.0;
@@ -222,6 +220,7 @@ struct CascadeReceiver {
     epsilon: f32,
     metres_to_depth: f32,
     texel_metres: f32,
+    tolerance_per_uv: f32,
 };
 
 fn cascade_receiver(index: u32, receiver: ShadowReceiver, size: f32) -> CascadeReceiver {
@@ -240,7 +239,8 @@ fn cascade_receiver(index: u32, receiver: ShadowReceiver, size: f32) -> CascadeR
     let normal_bias = 1.0 - clamp(dot(receiver.normal, light.direction_to_light.xyz), 0.0, 1.0);
     let bias = clamp(footprint, metrics.w, 8.0 * metrics.w) + 0.25 * metrics.w * normal_bias;
     let epsilon = max(0.06 * metrics.y * metrics.z, 4e-7);
-    return CascadeReceiver(uv, p.z, gradient, bias, epsilon, metrics.z, metrics.y);
+    let tolerance = surface_tolerance_per_uv(gradient, 1.0 / (size * metrics.y * metrics.z));
+    return CascadeReceiver(uv, p.z, gradient, bias, epsilon, metrics.z, metrics.y, tolerance);
 }
 
 fn caster_gap(index: u32, receiver: CascadeReceiver, texel: vec2<i32>, size: f32) -> f32 {
@@ -248,7 +248,7 @@ fn caster_gap(index: u32, receiver: CascadeReceiver, texel: vec2<i32>, size: f32
     let delta = uv - receiver.uv;
     let depth = textureLoad(shadow_maps, texel, i32(index), 0);
     let gap = depth - receiver.depth - dot(receiver.gradient, delta);
-    let tolerance = receiver.epsilon + surface_tolerance(index, receiver.gradient, delta);
+    let tolerance = receiver.epsilon + receiver.tolerance_per_uv * length(delta);
     if depth <= 0.0 || depth <= receiver.depth + receiver.epsilon || gap <= max(receiver.bias, tolerance) {
         return 0.0;
     }
@@ -270,8 +270,30 @@ fn nearest_blocker(index: u32, receiver: CascadeReceiver, size: f32, radius: f32
     return vec2(nearest, centre_gap);
 }
 
+// For the minimum footprint each map texel is integrated once. Fractional
+// footprint coverage keeps the ramp continuous across the snapped raster.
+fn contact_filter(index: u32, receiver: CascadeReceiver, size: f32, lower: f32, upper: f32) -> f32 {
+    let centre = receiver.uv * size;
+    let lo = centre - SUN_MIN_FILTER_RADIUS;
+    let hi = centre + SUN_MIN_FILTER_RADIUS;
+    let first = floor(lo);
+    var lit = 0.0;
+    for (var y = 0u; y < 4u; y++) {
+        for (var x = 0u; x < 4u; x++) {
+            let sample = first + vec2(f32(x), f32(y));
+            let weight = max(vec2(0.0), min(hi, sample + 1.0) - max(lo, sample));
+            let texel = vec2<i32>(clamp(sample, vec2(0.0), vec2(size - 1.0)));
+            let gap = caster_gap(index, receiver, texel, size);
+            lit += weight.x * weight.y * select(0.0, 1.0, gap <= lower || gap > upper);
+        }
+    }
+    let width = 2.0 * SUN_MIN_FILTER_RADIUS;
+    return lit / (width * width);
+}
+
 fn filtered_shadow(index: u32, receiver: CascadeReceiver, size: f32, radius: f32,
     lower: f32, upper: f32) -> f32 {
+    if radius <= SUN_MIN_FILTER_RADIUS { return contact_filter(index, receiver, size, lower, upper); }
     var visible = 0.0;
     // Nine bilinear taps spread the minimum footprint over neighbouring texels.
     for (var tap = 0u; tap < 9u; tap++) {
@@ -302,6 +324,9 @@ fn penumbra_layer(first: u32, world_radius: f32) -> u32 {
 fn cascade_visibility(index: u32, receiver: ShadowReceiver) -> f32 {
     let size = f32(textureDimensions(shadow_maps).x);
     let local = cascade_receiver(index, receiver, size);
+    if any(local.uv < vec2(0.0)) || any(local.uv > vec2(1.0)) || local.depth < 0.0 || local.depth > 1.0 {
+        return 1.0;
+    }
     let maximum_gap = max(0.0, 1.0 - local.depth) / local.metres_to_depth;
     var gap_bound = maximum_gap;
     if shadows.height_support.y > 1e-6 {
@@ -327,7 +352,13 @@ fn cascade_visibility(index: u32, receiver: ShadowReceiver) -> f32 {
     let filter_layer = penumbra_layer(index, world_radius);
     let filtered = cascade_receiver(filter_layer, receiver, size);
     let radius = clamp(world_radius / filtered.texel_metres, SUN_MIN_FILTER_RADIUS, SUN_SEARCH_TEXELS);
-    return min(near_filtered, filtered_shadow(filter_layer, filtered, size, radius, split, NO_BLOCKER));
+    let far_filtered = filtered_shadow(filter_layer, filtered, size, radius, split, NO_BLOCKER);
+    if far.x == NO_BLOCKER && near.y > split && far_filtered >= 1.0 {
+        // A small caster omitted from the broader search keeps its soft core
+        // where the fine map saw it in the receiver's own texel.
+        return min(near_filtered, contact_filter(index, local, size, split, NO_BLOCKER));
+    }
+    return min(near_filtered, far_filtered);
 }
 
 const HORIZON_STEPS: u32 = 96u;
@@ -362,7 +393,7 @@ fn horizon_visibility(receiver: ShadowReceiver) -> f32 {
     let ratio = pow(reach/start,1.0/f32(HORIZON_STEPS-1u));
     // Nearest-texel heights can stand half a texel's rise above the true
     // surface on a slope; allow that much before a sample counts as horizon.
-    let extent = vec2<f32>(textureDimensions(shadow_maps));
+    let extent = vec2<f32>(f32(SHADOW_HEIGHT_SIZE));
     var steepest = -1e9;
     var distance = start;
     for (var i = 0u; i < HORIZON_STEPS; i++) {

@@ -14,8 +14,8 @@ use constants::{
     MEMBER_PADDING, NIGHT_TERMINAL_MAX_ALTITUDE, OVERLAY_EXPOSURE_ZONES, OVERLAY_MOTION,
     OVERLAY_TEMPORAL_INPUTS, OVERLAY_UNDITHERED, PHASE_FINAL, PHASE_FRUSTUM, PHASE_PREPASS,
     PLANET_RADIUS, PYRAMID_WORKGROUP_EDGE, REC709_LUMA, RECONSTRUCTION_WORKGROUP_EDGE,
-    SHADOW_HEIGHT_LAYER, SUN_ANGULAR_RADIUS, SUN_CASCADE_COUNT, TONE_MAP_NEUTRAL_HIGHLIGHTS,
-    VISIBILITY_WORKGROUP,
+    SHADOW_HEIGHT_LAYER, SHADOW_HEIGHT_SIZE, SUN_ANGULAR_RADIUS, SUN_CASCADE_COUNT,
+    TONE_MAP_NEUTRAL_HIGHLIGHTS, VISIBILITY_WORKGROUP,
 };
 
 fn emit(out: &std::path::Path, name: &str, integers: &[(&str, u32)], floats: &[(&str, f32)]) {
@@ -75,6 +75,7 @@ fn main() {
         &[
             ("AIR_SHADOW_SIZE", AIR_SHADOW_SIZE),
             ("SHADOW_HEIGHT_LAYER", SHADOW_HEIGHT_LAYER),
+            ("SHADOW_HEIGHT_SIZE", SHADOW_HEIGHT_SIZE),
         ],
         &[],
     );
@@ -95,7 +96,10 @@ fn main() {
     emit(
         &out,
         "scene_shadows.wgsl",
-        &[("SHADOW_HEIGHT_LAYER", SHADOW_HEIGHT_LAYER)],
+        &[
+            ("SHADOW_HEIGHT_LAYER", SHADOW_HEIGHT_LAYER),
+            ("SHADOW_HEIGHT_SIZE", SHADOW_HEIGHT_SIZE),
+        ],
         &[("SUN_TAN_RADIUS", shader_tangent)],
     );
     for (file, name, size) in [

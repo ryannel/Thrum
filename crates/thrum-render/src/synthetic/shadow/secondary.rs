@@ -1,8 +1,8 @@
 //! Per-view cascade uniforms reuse the scene's caster pipelines and global
 //! caster bounds. The distant height map keeps the main scene's fit.
 use super::{
-    CASTER_VIEW_RANGE, Cascade, FitInputs, FittedShadow, RenderError, SAMPLE_BYTES, ShadowBounds,
-    ShadowPrepared, SyntheticView,
+    CASTER_VIEW_RANGE, Cascade, FitInputs, RenderError, SAMPLE_BYTES, ShadowBounds, ShadowPrepared,
+    SyntheticView,
 };
 
 impl ShadowPrepared {
@@ -32,11 +32,7 @@ impl ShadowPrepared {
             queue: self.queue.clone(),
             view_layout: self.view_layout.clone(),
             inputs: FitInputs { ..self.inputs },
-            fitted: FittedShadow {
-                count: self.fitted.count,
-                matrices: self.fitted.matrices,
-                samples: self.fitted.samples,
-            },
+            fitted: self.fitted.clone(),
             sample_buffer: device.create_buffer(&wgpu::BufferDescriptor {
                 label: Some("secondary Sun samples"),
                 size: SAMPLE_BYTES as u64,

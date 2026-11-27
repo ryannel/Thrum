@@ -1,7 +1,12 @@
 //! Observe production Sun visibility at world points against rendered caster depth.
 
+use std::fmt::Write as _;
+
 use super::{observer, *};
-use crate::synthetic::{OffscreenTarget, PreparedSynthetic, SyntheticLight, SyntheticScene};
+use crate::synthetic::{
+    OffscreenTarget, PreparedSynthetic, SyntheticLight, SyntheticMeshChoice, SyntheticMeshes,
+    SyntheticScene,
+};
 
 fn box_at(slot: u32, centre: Vec3, size: Vec3) -> InstanceRecord {
     let mut instance = InstanceRecord::identity(slot, 0);
@@ -26,6 +31,19 @@ fn scene(count: u32) -> SyntheticScene {
     .unwrap();
     scene.sun_shadows = true;
     scene
+}
+
+fn mark_box_rows_aloft(scene: &mut SyntheticScene, count: usize) {
+    let mut geometry = layout::Geometry::default();
+    geometry.box_at(Vec3::ZERO, Vec3::splat(2.0));
+    let mut slots = vec![SyntheticMeshChoice::Cube; scene.instances.len()];
+    slots[..count].fill(SyntheticMeshChoice::Mesh(0));
+    scene.meshes = Some(std::sync::Arc::new(SyntheticMeshes {
+        meshes: vec![geometry.mesh()],
+        updates: None,
+        slots,
+    }));
+    scene.aloft_mesh_rows = vec![0];
 }
 
 fn observe(
@@ -53,7 +71,6 @@ fn observe(
          const points = array<vec3<f32>, {}>(",
         receivers.len(),
     );
-    use std::fmt::Write as _;
     for point in receivers {
         write!(source, "vec3({:?},{:?},{:?}),", point.x, point.y, point.z).unwrap();
     }
@@ -109,7 +126,7 @@ fn sun_cascades_gpu_handover_keeps_wide_casters_and_fades_fine_only_casters() {
         }
     }
     let observed = observe(&device, &queue, &scene, Vec3::Y, &receivers);
-    for (index, row) in observed.chunks_exact(10).enumerate() {
+    for (index, row) in observed.as_chunks::<10>().0.iter().enumerate() {
         let (fine, wide) = row.split_at(5);
         assert!(
             wide.iter().all(|&value| value < 0.15),
@@ -132,6 +149,7 @@ fn sun_cascades_gpu_far_penumbra_and_near_contact_use_different_maps() {
         return;
     };
     let mut scene = scene(2);
+    mark_box_rows_aloft(&mut scene, 1);
     let (y, z) = 10.0_f32.to_radians().sin_cos();
     let sun = Vec3::new(0.0, y, z);
     scene.instances[0] = box_at(
@@ -167,6 +185,7 @@ fn sun_cascades_gpu_low_sun_reach_is_radial_and_fades_to_height_map() {
         return;
     };
     let mut scene = scene(5);
+    mark_box_rows_aloft(&mut scene, 5);
     let (y, z) = 5.0_f32.to_radians().sin_cos();
     let sun = Vec3::new(0.0, y, z);
     let along = [60.0, 85.0, 103.0, 120.0, 500.0];
@@ -201,10 +220,10 @@ fn sun_cascades_gpu_threshold_casts_at_quarter_texel_grid_placements() {
     let texel = fit.samples.cascade_metrics[0][1];
     let size = fit.caster_view(0).minimum_cast_width[0];
     let mut points = Vec::new();
-    for i in 0..16 {
+    for (i, instance) in scene.instances.iter_mut().enumerate() {
         let x = (24.0 * (i as f32 - 8.0) + i as f32 * 0.25) * texel;
         points.push(Vec3::new(x, 0.0, -1.0));
-        scene.instances[i] = box_at(
+        *instance = box_at(
             u32::try_from(i).unwrap(),
             Vec3::new(x, size * 0.5, -1.0),
             Vec3::splat(size),
@@ -216,7 +235,6 @@ fn sun_cascades_gpu_threshold_casts_at_quarter_texel_grid_placements() {
 
 #[test]
 fn sun_cascades_gpu_thin_post_with_wide_arms_is_excluded() {
-    use crate::synthetic::{SyntheticMeshChoice, SyntheticMeshes};
     let Some((device, queue)) = observer::device("thin Sun caster", None) else {
         return;
     };

@@ -72,8 +72,32 @@ impl Gpu {
     /// Every map's depth, read through a texel load (the maps are not copy
     /// sources).
     fn depth_bits(&self, target: &OffscreenTarget) -> Vec<u32> {
-        let maps = &target.shadow.as_ref().expect("shadowed target").array_view;
-        let bytes = (TEXELS * shadow::MAPS * 4) as u64;
+        let maps = target
+            .textures
+            .texture(target.ids.shadow.as_ref().unwrap())
+            .unwrap();
+        let layer_bytes = (TEXELS * 4) as u64;
+        let group_size = u32::try_from(
+            (self.device.limits().max_storage_buffer_binding_size / layer_bytes)
+                .min(u64::from(shadow::LAYERS)),
+        )
+        .unwrap();
+        assert!(group_size > 0);
+        let mut all_depth = Vec::with_capacity(TEXELS * shadow::MAPS);
+        for first in (0..shadow::LAYERS).step_by(group_size as usize) {
+            let layers = (shadow::LAYERS - first).min(group_size);
+            let view = maps.create_view(&wgpu::TextureViewDescriptor {
+                base_array_layer: first,
+                array_layer_count: Some(layers),
+                dimension: Some(wgpu::TextureViewDimension::D2Array),
+                ..Default::default()
+            });
+            all_depth.extend(self.depth_group(&view, layers, layer_bytes * u64::from(layers)));
+        }
+        all_depth
+    }
+
+    fn depth_group(&self, maps: &wgpu::TextureView, layers: u32, bytes: u64) -> Vec<u32> {
         let out = self.device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("caster cull test depth"),
             size: bytes,
@@ -117,7 +141,7 @@ impl Gpu {
             let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor::default());
             pass.set_pipeline(&pipeline);
             pass.set_bind_group(0, &group, &[]);
-            pass.dispatch_workgroups(shadow::SIZE / 16, shadow::SIZE / 16, shadow::LAYERS);
+            pass.dispatch_workgroups(shadow::SIZE / 16, shadow::SIZE / 16, layers);
         }
         let readback =
             thrum_test_support::readback::Readback::buffer(&self.device, &mut encoder, &out, ..);

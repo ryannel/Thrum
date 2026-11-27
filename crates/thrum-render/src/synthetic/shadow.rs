@@ -15,9 +15,11 @@ use crate::contribution::{
 };
 use crate::graph::{CompiledPass, GraphDepthAttachment, ResourceId};
 use crate::records::{ShadowCascades, ShadowView};
-use crate::shader_constants::{SHADOW_HEIGHT_LAYER, SUN_ANGULAR_RADIUS, SUN_CASCADE_COUNT};
+use crate::shader_constants::{
+    SHADOW_HEIGHT_LAYER, SHADOW_HEIGHT_SIZE, SUN_ANGULAR_RADIUS, SUN_CASCADE_COUNT,
+};
 
-pub(super) const SIZE: u32 = 1024;
+pub(super) const SIZE: u32 = 2048;
 pub(super) const FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
 pub(super) const SAMPLE_BYTES: usize = size_of::<ShadowCascades>();
 const CASTER_VIEW_BYTES: usize = size_of::<ShadowView>();
@@ -190,7 +192,7 @@ pub(super) struct ShadowPrepared {
     queue: wgpu::Queue,
     view_layout: crate::runtime::PipelineInput<wgpu::BindGroupLayout>,
     inputs: FitInputs,
-    fitted: FittedShadow,
+    fitted: Box<FittedShadow>,
     pub(super) sample_buffer: wgpu::Buffer,
 }
 
@@ -327,7 +329,7 @@ impl ShadowPrepared {
             queue: queue.clone(),
             view_layout,
             inputs,
-            fitted,
+            fitted: Box::new(fitted),
             sample_buffer,
         })
     }
@@ -362,7 +364,7 @@ impl ShadowPrepared {
     ) -> Result<(), RenderError> {
         let mut inputs = FitInputs::new(view, casters, light_direction)?;
         inputs.profile = self.inputs.profile;
-        self.fitted = inputs.fit(None)?;
+        *self.fitted = inputs.fit(None)?;
         self.inputs = inputs;
         Ok(())
     }
@@ -444,6 +446,12 @@ impl ShadowPrepared {
             }
             (Some(_), None) => return Err(RenderError::GraphPassMismatch),
         };
+        if index == HEIGHT_LAYER {
+            // The height layer shares the allocation, with its original terrain grid.
+            let size = SHADOW_HEIGHT_SIZE as f32;
+            pass.set_viewport(0.0, 0.0, size, size, 0.0, 1.0);
+            pass.set_scissor_rect(0, 0, SHADOW_HEIGHT_SIZE, SHADOW_HEIGHT_SIZE);
+        }
         pass.set_pipeline(pipeline);
         pass.set_bind_group(0, &cascade.view_group, &[]);
         pass.set_bind_group(1, instances, &[]);
@@ -574,7 +582,7 @@ impl FitInputs {
             let a = heights.row(2).y;
             let b = heights.row(2).w;
             let uv_per_metre = heights.row(0).truncate().length() * 0.5;
-            let texel = 2.0 * HORIZON_RADIUS / SIZE as f32;
+            let texel = 2.0 * HORIZON_RADIUS / SHADOW_HEIGHT_SIZE as f32;
             samples.horizon = [a, b, uv_per_metre, texel];
         }
         Ok(FittedShadow {
@@ -631,7 +639,7 @@ fn cascade_matrix(
 fn height_matrix(eye: Vec3, caster_height: Option<(f32, f32)>) -> Result<(Mat4, f32), RenderError> {
     let rotation = light_rotation(Vec3::Y);
     let (low, high) = caster_height.unwrap_or((0.0, 1.0));
-    let texel = 2.0 * HORIZON_RADIUS / SIZE as f32;
+    let texel = 2.0 * HORIZON_RADIUS / SHADOW_HEIGHT_SIZE as f32;
     let center = rotation.transform_point3(eye);
     let snapped_x = (center.x / texel).round() * texel;
     let snapped_y = (center.y / texel).round() * texel;

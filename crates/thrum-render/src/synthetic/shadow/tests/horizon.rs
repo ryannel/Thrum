@@ -1,7 +1,7 @@
 //! The shipping height-map march against a flat plateau at a known height and extent.
 use super::disk;
 use super::observer::{SAMPLE_FLOATS, constant_depth_maps, device, pipeline, read_visibility};
-use super::{HORIZON_RADIUS, SIZE, SUN_ANGULAR_RADIUS, Vec3, height_matrix};
+use super::{HORIZON_RADIUS, SHADOW_HEIGHT_SIZE, SUN_ANGULAR_RADIUS, Vec3, height_matrix};
 
 const OBSERVER: &str = r"
 @group(2) @binding(6) var<storage,read_write> result: array<f32>;
@@ -25,7 +25,7 @@ fn a_below_horizontal_sun_is_partially_hidden_by_distant_lower_terrain() {
     };
     pollster::block_on(async {
         let (matrix, _) = height_matrix(Vec3::ZERO, Some((0.0, 0.0))).expect("height map fit");
-        let texel = 2.0 * HORIZON_RADIUS / SIZE as f32;
+        let texel = 2.0 * HORIZON_RADIUS / SHADOW_HEIGHT_SIZE as f32;
         let depth = matrix.row(2);
         let mut samples = [0.0; SAMPLE_FLOATS];
         let height_offset = std::mem::offset_of!(super::ShadowCascades, height_view_proj) / 4;
@@ -38,7 +38,7 @@ fn a_below_horizontal_sun_is_partially_hidden_by_distant_lower_terrain() {
         ]);
         let mut depths = [0.0; super::MAPS];
         depths[super::HEIGHT_LAYER] = depth.w;
-        let maps = constant_depth_maps(&device, &queue, SIZE, &depths);
+        let maps = constant_depth_maps(&device, &queue, SHADOW_HEIGHT_SIZE, &depths);
         let elevation = -0.1_f32.to_radians();
         let (sin, cos) = elevation.sin_cos();
         let observed = read_visibility(

@@ -44,8 +44,10 @@ fn sun_cascade_layout_is_radial_snapped_and_has_upstream_depth() {
         let turned = fit(&b);
         let translated = fit(&moved);
         assert_eq!(
-            original.matrices.map(|m| m.to_cols_array_2d()),
-            turned.matrices.map(|m| m.to_cols_array_2d())
+            original
+                .matrices
+                .map(|m| m.to_cols_array().map(f32::to_bits)),
+            turned.matrices.map(|m| m.to_cols_array().map(f32::to_bits))
         );
         assert_eq!(original.samples.profile[0], SUN_CASCADE_COUNT as f32);
         assert_eq!(original.samples.profile[1], RECEIVER_REACH);
@@ -107,7 +109,8 @@ fn sun_cascade_layout_profiles_and_bias() {
         assert!(
             fit.samples.cascade_metrics[count as usize..]
                 .iter()
-                .all(|&row| row == [0.0; 4])
+                .flatten()
+                .all(|&value| value.to_bits() == 0)
         );
         assert_eq!(fit.caster_view(HEIGHT_LAYER).minimum_cast_width[0], 0.0);
     }
@@ -119,7 +122,7 @@ fn sun_cascade_layout_profiles_and_bias() {
             .with_sun_shadow_profile(SUN_CASCADE_COUNT + 1, 128.0)
             .is_err()
     );
-    assert!(CAST_WIDTH_TEXELS >= std::f32::consts::SQRT_2);
+    const { assert!(CAST_WIDTH_TEXELS >= std::f32::consts::SQRT_2) };
 }
 
 #[derive(Default)]
@@ -153,10 +156,12 @@ impl Geometry {
             let v = Vec3::AXES[(axis + 2) % 3];
             for side in [-1.0, 1.0] {
                 let n = side * Vec3::AXES[axis];
-                self.quad(
-                    [n - u - v, n + u - v, n + u + v, n - u + v]
-                        .map(|point| centre + 0.5 * size * point),
-                );
+                let mut face = [n - u - v, n + u - v, n + u + v, n - u + v]
+                    .map(|point| centre + 0.5 * size * point);
+                if side < 0.0 {
+                    face.swap(1, 3);
+                }
+                self.quad(face);
             }
         }
     }
