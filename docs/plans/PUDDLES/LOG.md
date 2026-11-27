@@ -320,3 +320,9 @@
   The sea treatment uses the existing film pass and is selected by the map's sea body. The lake and pond keep
   their ordinary film. Metal compares the sea, lake and pond to the CPU model across stage changes and checks the
   same lake view against matched opaque controls. [Shore evidence](../../../.orchestrate/evidence/PUDDLES/WP5/shore-ownership/README.md)
+
+- 2026-11-27 WP5 shore review follow-up. The shore film uses the owning body's level and swash
+  from the same wetness rows as the forward material. The basin sheen feathers over the outer
+  15% of that reach. Matched Metal captures isolate the film and material edges at steady lake
+  and pond stages, and check the original inner lake film. The beach takes cover three winds and
+  the fading ebb band. [Target evidence](../../../.orchestrate/evidence/PUDDLES/WP5/shared-shore-edge/README.md)

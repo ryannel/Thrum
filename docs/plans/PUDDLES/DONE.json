@@ -678,8 +678,8 @@
           "inspect": "`fixed` stills of the beach from 2 m in a calm, a trade wind and a gale, and a `realtime` sequence as the tide falls through its range.",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/PUDDLES/WP5/shared-shore-edge/README.md#shore",
           "verdict": "fail",
           "review": ".orchestrate/evidence/PUDDLES/WP5-review.md"
         },
