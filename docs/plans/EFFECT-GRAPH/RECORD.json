@@ -681,7 +681,47 @@
     },
     "WP7": {
       "definitions": "6935cc87c143bfdfe1d2bbfa529dccc09b37ffe3eba51f584507e0968ee02a20",
-      "reviews": [],
+      "reviews": [
+        {
+          "verdict": "fail",
+          "commit": "79deba379ee5d1df633b4510d49914b0ad490f8c",
+          "review": ".orchestrate/evidence/EFFECT-GRAPH/WP7-review.md",
+          "items": {
+            "WP7.1": "fail",
+            "WP7.2": "pass",
+            "WP7.3": "pass",
+            "WP7.4": "pass"
+          },
+          "findings": [
+            {
+              "name": "Two draw passes can clear the same physical subresource under different resource indices",
+              "item": "WP7.1",
+              "repeat": false
+            },
+            {
+              "name": "Preparation reports success with an invalid memoryless attachment view",
+              "repeat": false
+            }
+          ],
+          "summary": "WP7 fails the single-writer rule. On the M3 Max, two passes prepared successfully against the same physical mip and layer, and the second clear changed a pixel in the first producer\u2019s forward output from 2.5 to 0.25. Preparation also accepted a memoryless attachment whose view wgpu had rejected. The Metal and Chrome proofs of correctly prepared fields passed.",
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 268116,
+            "cached": 4757632,
+            "output": 16116,
+            "turns": 1
+          },
+          "at": "2026-11-27T08:13:32Z"
+        }
+      ],
       "authorised": {
         "by": "plan",
         "task": "The design review of EFFECT-GRAPH at .orchestrate/evidence/EFFECT-GRAPH/design-review.md asked for changes, with its 5 M",
