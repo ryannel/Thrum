@@ -1264,7 +1264,7 @@
     {
       "id": "WP18",
       "name": "A launch setting draws the valley below the window's pixel size and the display scales it to fill, with no hitch at the change",
-      "status": "ready_for_review",
+      "status": "done",
       "depends_on": [],
       "quality_bar": "A shipped high-end Mac game set to an output resolution below the panel's own at full screen, such as Resident Evil Village with MetalFX: the picture fills the display edge to edge with no band and no stretch, and changing the output resolution never hitches or compiles. This work package builds the mechanism and holds it to that; the look of the scaled picture is judged in WP17, at the scale that is chosen there.",
       "items": [
@@ -1308,7 +1308,7 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP18/repair/D18.4.md",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP18-review.md"
         },
         {
@@ -1330,38 +1330,12 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/APPLE-PRESENTATION/WP18/repair/mode-state.log",
-          "verdict": "fail",
+          "verdict": "pass",
           "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP18-review.md"
         }
       ],
       "failed_reviews": 1,
-      "failed_reviews_with_repeat": 0,
-      "findings": [
-        {
-          "name": "Window input targets the pending generation",
-          "item": "D18.4",
-          "repeat": false
-        },
-        {
-          "name": "Resized capture waits for backing pixels",
-          "item": "D18.4",
-          "repeat": false
-        },
-        {
-          "name": "Presented frame records report the pending scale",
-          "item": "D18.4",
-          "repeat": false
-        },
-        {
-          "name": "Game-facing records omit the resolved output policy",
-          "repeat": false
-        },
-        {
-          "name": "A cancelled full-screen change publishes no request at the timeout",
-          "item": "D18.6",
-          "repeat": false
-        }
-      ]
+      "failed_reviews_with_repeat": 0
     },
     {
       "id": "WP17",

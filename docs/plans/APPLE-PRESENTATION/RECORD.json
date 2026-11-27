@@ -2131,7 +2131,7 @@
         {
           "verdict": "fail",
           "commit": "cf3612502770390b5d079c9c13eb0e74f2db023b",
-          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP18-review.md",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP18-review-1.md",
           "items": {
             "D18.1": "pass",
             "D18.2": "pass",
@@ -2183,6 +2183,36 @@
             "turns": 1
           },
           "at": "2026-11-27T08:07:34Z"
+        },
+        {
+          "verdict": "pass",
+          "commit": "fd5fda0b7877820d0974230699fbe25e16e25071",
+          "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP18-review.md",
+          "items": {
+            "D18.1": "pass",
+            "D18.2": "pass",
+            "D18.3": "pass",
+            "D18.4": "pass",
+            "D18.5": "pass",
+            "D18.6": "pass"
+          },
+          "summary": "All six items pass, and all five previous Must Fix findings are resolved. In an independent full-screen round trip, both game-facing records matched the acquired drawable on all 160 presentations, including 51 while a different output extent was pending. At 67%, the portable recipe also captured the first submission at the new window size.",
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 138895,
+            "cached": 3975680,
+            "output": 11968,
+            "turns": 1
+          },
+          "at": "2026-11-27T11:11:24Z"
         }
       ],
       "authorised": {
@@ -2215,6 +2245,13 @@
           "output": 186691,
           "turns": 2
         }
+      },
+      "done": {
+        "by": "review",
+        "commit": "fd5fda0b7877820d0974230699fbe25e16e25071",
+        "review": ".orchestrate/evidence/APPLE-PRESENTATION/WP18-review.md",
+        "checked": "a7d987e165e14e95bc94e9ceb41563efe87ee8ed",
+        "at": "2026-11-27T11:11:24Z"
       }
     },
     "WP17": {
