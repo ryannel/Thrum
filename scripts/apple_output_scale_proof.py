@@ -58,6 +58,52 @@ def require_frame(row, extent):
         raise ValueError(f"expected a complete {extent} frame, got {row}")
 
 
+def require_output_records(arm, presented):
+    fields = ("backing_extent", "output_scale", "output_extent", "output_scale_forced")
+    expected = {row["submission"]: tuple(row[key] for key in fields) for row in presented}
+    game = read_rows(arm / "game-output.jsonl")
+    for source in ("frame", "display"):
+        rows = [row for row in game if row["source"] == source]
+        outputs = {row["submission"]: tuple(row[key] for key in fields) for row in rows}
+        if len(rows) != len(outputs) or outputs != expected:
+            raise ValueError(f"{arm}: game {source} records did not match the submitted drawables")
+    return game
+
+
+def require_output_policy(row, request):
+    actual = (row["backing_extent"], row["output_extent"], row["output_scale"],
+              row["output_scale_forced"])
+    expected = (request["backing"], request["output"], request["output_scale"], request["forced"])
+    if actual != expected:
+        raise ValueError(f"presented policy {actual} does not match generation {expected}")
+
+
+def capture_resize(arm, binary, launch_env, scale):
+    arm.mkdir()
+    env = dict(launch_env, THRUM_V1_FRAMES="120", THRUM_MAC_OUTPUT_SCALE=str(scale),
+               THRUM_MAC_EXTENT_WINDOW="640x360", THRUM_MAC_EXTENT_RESIZE="800x450",
+               THRUM_MAC_EXTENT_PROOF=str(arm))
+    with (arm / "game.log").open("w") as log:
+        subprocess.run([binary], cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT,
+                       timeout=150, check=True)
+    window = json.loads((arm / "window.json").read_text())
+    if window["points"] != [640, 360]:
+        raise ValueError(f"{arm}: unexpected initial window: {window}")
+    results = {}
+    for stem, points in (("submitted", (640, 360)), ("resized", (800, 450))):
+        row = json.loads((arm / f"{stem}.json").read_text())
+        raw = (arm / f"{stem}.rgba").read_bytes()
+        extent = [(round(axis * window["scale"]) * scale + 50) // 100 for axis in points]
+        if (any(row[field] != extent for field in ("capture_extent", "destination", "drawable"))
+                or row["viewport"] != [0, 0, *extent] or len(raw) != extent[0] * extent[1] * 4
+                or (stem == "resized" and row["first_resized_submission"] != row["submission"])):
+            raise ValueError(f"{arm}: {stem} did not capture the submitted {extent} drawable: {row}")
+        results[stem] = dict(row, rgba_sha256=hashlib.sha256(raw).hexdigest())
+    if results["resized"]["submission"] <= results["submitted"]["submission"]:
+        raise ValueError(f"{arm}: the resized capture did not follow the original")
+    return results
+
+
 def mac_output_scale(output):
     report = {}
     with tempfile.TemporaryDirectory(prefix="output-scale-store-", dir=ROOT / "tmp") as scratch:
@@ -89,6 +135,8 @@ def mac_output_scale(output):
                     presented = [row for row in frames if row["presented"]]
                     for row in presented:
                         require_frame(row, extent)
+                        require_output_policy(row, request)
+                    game_records = require_output_records(arm, presented)
                     capture_rows = read_rows(arm / "display" / "frames.jsonl")
                     images = {row["capture_submission"]: row for row in capture_rows
                               if "capture_submission" in row and row["presented"]}
@@ -100,10 +148,25 @@ def mac_output_scale(output):
                     recipe_report[scale] = dict(
                         request=request, frame=presented[0]["frame_extent"],
                         drawable=presented[0]["drawable"], captured_frames=len(images),
-                        capture=next(iter(images.values())),
+                        capture=next(iter(images.values())), game_records=game_records,
                     )
                 recipe_report[80] = launch(output / f"{recipe}-80", binary, env, value=80)
                 report["recipes"][recipe] = recipe_report
+
+            env.update(THRUM_RECIPE="apple-tile", THRUM_RECONSTRUCTION="metalfx")
+            arm = output / "apple-tile-forced-100"
+            requests, frames, _, _ = launch(arm, binary, env, value=100)
+            presented = [row for row in frames if row["presented"]]
+            if not presented or len(requests) != 1 or not requests[0]["forced"]:
+                raise ValueError(f"{arm}: expected a forced 100% generation")
+            for row in presented:
+                require_frame(row, BACKING)
+                require_output_policy(row, requests[0])
+            report["forced_100"] = require_output_records(arm, presented)
+            report["window_resize"] = {
+                scale: capture_resize(output / f"window-resize-{scale}", binary, env, scale)
+                for scale in (100, 75)
+            }
     return dict(report, target="mac-metal")
 
 
@@ -114,6 +177,7 @@ def mac_output_scale_mode(output):
         with awake_display():
             rows, frames, configures, identity = launch(output / "mode", binary, env, mode=True)
     report = verify_mode(rows, frames, configures, identity)
+    require_output_records(output / "mode", [row for row in frames if row["presented"]])
     return dict(report, target="mac-metal", binary_sha256=hashlib.sha256(binary.read_bytes()).hexdigest())
 
 
@@ -146,8 +210,13 @@ def verify_mode(rows, frames, configures, identity):
     initial = [row for row in presented if row["present_media"] < changes[0]["media"]]
     if not initial:
         raise ValueError("mode proof has no initial windowed frames")
-    for row in initial:
-        require_frame(row, window)
+    revision = initial[0]["frame_extent"]["revision"]
+    for row in presented:
+        generation = row["frame_extent"]["revision"] - revision
+        if not 0 <= generation < len(requests):
+            raise ValueError(f"unexpected presented generation: {row}")
+        require_frame(row, requests[generation]["output"])
+        require_output_policy(row, requests[generation])
 
     intervals = []
     for index, (start, complete) in enumerate(zip(changes[::2], changes[1::2], strict=True)):
@@ -176,7 +245,7 @@ def verify_mode(rows, frames, configures, identity):
         occluded = sum(row["status"] == "Occluded" for row in attempts)
         if not backing or not attempts or not (held or occluded):
             raise ValueError("mode animation has no backing observations or old-surface activity")
-        if any((row["window"], row["output_scale"], row["surface"])
+        if any((row["window"], row["requested_output"]["scale"], row["surface"])
                != (old["backing"], old["output_scale"], old["output"]) for row in attempts):
             raise ValueError("the render owner received a different grid during the AppKit hold")
         for row in held:

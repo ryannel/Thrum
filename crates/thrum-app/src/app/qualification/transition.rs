@@ -413,15 +413,22 @@ impl TransitionProof {
                 "pipelines": pipelines,
             })
         });
+        let output = reply.platform.presented.map(|record| record.output);
         writeln!(
             self.output,
             "{}",
             json!({
                 "sequence": reply.sequence,
                 "window": request.backing,
-                "output_extent": request.extent(),
-                "output_scale": request.scale.step.percent(),
-                "output_scale_forced": request.scale.forced,
+                "requested_output": {
+                    "extent": request.extent(),
+                    "scale": request.scale.step.percent(),
+                    "forced": request.scale.forced,
+                },
+                "backing_extent": output.map(|output| output.backing_extent),
+                "output_extent": output.map(|output| output.output_extent),
+                "output_scale": output.map(|output| output.output_scale.percent()),
+                "output_scale_forced": output.map(|output| output.output_scale_forced),
                 "scale": f64::from_bits(scale),
                 "surface": reply.surface_extent,
                 "presented": presented,

@@ -387,6 +387,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.retired_slots.clear();
         self.invalidate_submitted_capture();
         self.presenter = candidate.presenter.take();
+        self.surface_output_policy = None;
         self.presenter_generation += 1;
         self.reset_replacement_history();
         self.visual_owner = Arc::new(());

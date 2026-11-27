@@ -138,6 +138,7 @@ struct App<G: Game> {
     pending_display_target: bool,
     surface_format: Option<wgpu::TextureFormat>,
     surface_extent: [u32; 2],
+    presented_output: Option<crate::DisplayRecord>,
     output_mode: ModeChange,
     scene_kind: SceneKind,
     window_mode: Option<window_mode::WindowMode>,
@@ -478,6 +479,7 @@ impl<G: WindowGame + 'static> App<G> {
             pending_display_target: false,
             surface_format: None,
             surface_extent: [0, 0],
+            presented_output: None,
             output_mode: ModeChange::default(),
             scene_kind: SceneKind::default(),
             window_mode: None,
@@ -1044,6 +1046,11 @@ impl<G: WindowGame + 'static> App<G> {
         }
     }
 
+    fn keep_sample(&mut self, sample: FrameSample) {
+        self.game.observe_frame(&sample);
+        self.samples.push(sample);
+    }
+
     fn receive_render(&mut self, mut reply: RenderReply<G::Readback>) -> Result<(), String> {
         self.trim_history();
         if let RenderOutcome::Recovered { attempted, result } = reply.outcome {
@@ -1056,11 +1063,10 @@ impl<G: WindowGame + 'static> App<G> {
             }
             self.render_in_flight = None;
             self.counters = reply.platform.counters;
-            self.samples
-                .extend(reply.samples.into_iter().flatten().map(|mut sample| {
-                    sample.detach_gpu_timing();
-                    sample
-                }));
+            for mut sample in reply.samples.into_iter().flatten() {
+                sample.detach_gpu_timing();
+                self.keep_sample(sample);
+            }
             match result {
                 Ok(info) => {
                     self.adapter_name = info.adapter_name;
@@ -1117,7 +1123,13 @@ impl<G: WindowGame + 'static> App<G> {
             self.presented as u64,
             false,
         );
-        self.samples.extend(reply.samples.into_iter().flatten());
+        if let Some(display) = reply.platform.presented {
+            self.presented_output = Some(display);
+            self.game.observe_display(display);
+        }
+        for sample in reply.samples.into_iter().flatten() {
+            self.keep_sample(sample);
+        }
         self.surface_extent = reply.surface_extent;
         if self.surface_format != Some(reply.platform.surface_format) {
             self.surface_format = Some(reply.platform.surface_format);
@@ -1378,11 +1390,10 @@ impl<G: WindowGame + 'static> App<G> {
             // earlier submissions. Keep those completions for the final report.
             if self.window_closed && matches!(reply.outcome, RenderOutcome::Frame(Err(_))) {
                 self.render_in_flight = None;
-                self.samples
-                    .extend(reply.samples.into_iter().flatten().map(|mut sample| {
-                        sample.detach_gpu_timing();
-                        sample
-                    }));
+                for mut sample in reply.samples.into_iter().flatten() {
+                    sample.detach_gpu_timing();
+                    self.keep_sample(sample);
+                }
             } else {
                 self.receive_render(reply)?;
             }
@@ -1402,7 +1413,9 @@ impl<G: WindowGame + 'static> App<G> {
         let final_device_loss = match final_reply.outcome {
             RenderOutcome::Finish(result) => {
                 let finished = result?;
-                self.samples.extend(finished.samples);
+                for sample in finished.samples {
+                    self.keep_sample(sample);
+                }
                 finished.lost_device
             }
             RenderOutcome::Frame(_)

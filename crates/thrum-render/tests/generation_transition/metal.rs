@@ -43,6 +43,7 @@ fn request(extent: [u32; 2], device: u64) -> ExtentRequest {
     ExtentRequest {
         extent,
         output_scale: RenderScale::Native,
+        output_scale_forced: false,
         backing_scale: 2_f64.to_bits(),
         format: FORMAT,
         device,
@@ -678,7 +679,7 @@ fn output_scale_switches_the_scene_and_metal_surface_together() {
     .expect("Metal surface");
     let format = wgpu::TextureFormat::Bgra8Unorm;
     let old = ExtentRequest { format, ..request(OLD, 1) };
-    let scaled = ExtentRequest { output_scale: Percent75, ..old };
+    let scaled = ExtentRequest { output_scale: Percent75, output_scale_forced: true, ..old };
     let config = |extent: [u32; 2]| wgpu::SurfaceConfiguration {
         format,
         color_space: wgpu::SurfaceColorSpace::Auto,
@@ -706,6 +707,7 @@ fn output_scale_switches_the_scene_and_metal_surface_together() {
             surface: Some(SurfaceProfile { format, extent: old.output_extent() }),
         },
     ));
+    host.bind_surface_output(old).expect("bind initial output policy");
     host.set_timing_requested(false);
     let creations = Creations::default();
     let dispatch = creations.dispatch();
@@ -746,8 +748,10 @@ fn output_scale_switches_the_scene_and_metal_surface_together() {
             .expect("submit to Metal");
         assert!(report.submitted && report.surface_presented);
         queue.present(frame);
-        complete(host, &device);
-        (details, history)
+        let sample = complete(host, &device);
+        assert_eq!(sample.submission_order, details.submission);
+        assert_eq!(sample.output.output_extent, output);
+        (details, history, sample.output)
     };
     let verify = |frame: FrameExtent, output, drawn: [u32; 2]| {
         assert_eq!(frame.attachments, [output; 4]);
@@ -758,7 +762,8 @@ fn output_scale_switches_the_scene_and_metal_surface_together() {
         assert_eq!(frame.viewport, [0, 0, output[0], output[1]]);
     };
     assert_eq!(old.output_scale, Native);
-    let (native, initial_history) = draw(&mut host, Half, OLD);
+    let (native, initial_history, initial_output) = draw(&mut host, Half, OLD);
+    assert_eq!(initial_output, old.output());
     verify(native, OLD, [32, 32]);
     let mut transition = ExtentTransition::new(old);
     for (index, (current, next, expected)) in
@@ -789,7 +794,8 @@ fn output_scale_switches_the_scene_and_metal_surface_together() {
         assert_ne!(worker, render_thread);
 
         let previous = current.output_extent();
-        let (held, held_history) = draw(&mut host, Half, previous);
+        let (held, held_history, held_output) = draw(&mut host, Half, previous);
+        assert_eq!(held_output, current.output());
         verify(held, previous, Half.extent(previous));
         assert_ne!(held_history[1], 0, "old history remains live during the build");
         if index == 0 {
@@ -817,7 +823,8 @@ fn output_scale_switches_the_scene_and_metal_surface_together() {
         let receipt = transition.surface.record();
         assert_eq!((receipt.configure_calls, receipt.restore_calls, receipt.generations_taken), (1, 0, 1));
 
-        let (first, history) = draw(&mut host, Half, expected);
+        let (first, history, first_output) = draw(&mut host, Half, expected);
+        assert_eq!(first_output, next.output());
         verify(first, expected, Half.extent(expected));
         assert_eq!(first.revision, held.revision + 1);
         assert_eq!(history[1], 0, "history resets on the first reconstructed frame");
@@ -827,7 +834,8 @@ fn output_scale_switches_the_scene_and_metal_surface_together() {
             let wrong = FrameExtent { attachments: [native.attachments[0], first.attachments[1],
                                                       first.attachments[2], first.attachments[3]], ..first };
             assert!(std::panic::catch_unwind(|| verify(wrong, expected, Half.extent(expected))).is_err());
-            let (stepped, next_history) = draw(&mut host, Percent67, expected);
+            let (stepped, next_history, stepped_output) = draw(&mut host, Percent67, expected);
+            assert_eq!(stepped_output, next.output());
             verify(stepped, expected, [32, 32]);
             assert_eq!(stepped.revision, first.revision);
             assert_eq!(next_history[1], history[0]);

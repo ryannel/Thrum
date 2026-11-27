@@ -140,6 +140,16 @@ pub enum KeyResponse {
     Input,
 }
 
+/// The output policy of the Mac display's most recent presentation.
+#[cfg(target_os = "macos")]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct DisplayRecord {
+    /// Surface submission that installed this picture.
+    pub submission: u64,
+    /// Backing and output policy of the presented generation.
+    pub output: thrum_render::runtime::FrameOutput,
+}
+
 /// The runtime half of a game, shared by window, browser and offscreen adapters.
 /// The adapter owns presentation, GPU recovery and the control view.
 pub trait Game {
@@ -202,6 +212,14 @@ pub trait Game {
     fn frame_edits(&mut self) -> Self::Edits {
         Self::Edits::default()
     }
+    /// Observe the display record when the Mac shell presents a picture.
+    #[cfg(target_os = "macos")]
+    fn observe_display(&mut self, _display: DisplayRecord) {}
+
+    /// Observe a completed frame on the Mac main thread, including its submitted output policy.
+    #[cfg(target_os = "macos")]
+    fn observe_frame(&mut self, _sample: &thrum_render::runtime::FrameSample) {}
+
     /// Opt in to output extent, density and safe-area reports from the platform shell.
     #[cfg(feature = "interface")]
     fn wants_interface_output(&self) -> bool {
@@ -220,8 +238,8 @@ pub trait Game {
         false
     }
 
-    /// Route a shell event. Positions are in backing pixels and converted by the game
-    /// using the scale of its last submitted interface layout.
+    /// Route a shell event. Positions are in the submitted picture's output pixels.
+    /// The game converts them using the density of its last submitted interface layout.
     /// # Errors
     /// Returns a game input refusal.
     #[cfg(feature = "interface")]

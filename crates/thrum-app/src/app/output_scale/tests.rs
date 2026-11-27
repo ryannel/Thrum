@@ -137,6 +137,20 @@ fn mode_change_uses_the_reported_mode_and_extent_at_the_limit() {
 }
 
 #[test]
+fn mode_change_publishes_at_the_limit_even_when_appkit_returns_to_the_old_request() {
+    let mut change = windowed();
+    let previous = change.current();
+    change.event(ModeEvent::Start(true), at(100));
+    assert_eq!(change.observe(FULLSCREEN, policy), None);
+    assert_eq!(change.expire(at(3099), || panic!("early mode read")), None);
+    assert_eq!(change.expire(at(3100), || false), Some(false));
+    assert_eq!(change.observe(WINDOW, policy), previous);
+    assert_eq!(change.expire(at(3101), || panic!("duplicate limit")), None);
+    change.event(ModeEvent::Complete(false), at(3102));
+    assert_eq!(change.observe(WINDOW, policy), None);
+}
+
+#[test]
 fn mode_change_allows_recovered_device_at_the_held_output_pair() {
     let mut change = windowed();
     change.event(ModeEvent::Start(true), at(100));

@@ -195,6 +195,7 @@ pub(in crate::window) async fn run(
         }),
         exit_content: None,
         exit_content_output: None,
+        output_record: None,
         hardware: Vec::new(),
     });
     let mut driver = Driver::with_surface(game, &device, &capabilities, &queue, surface)

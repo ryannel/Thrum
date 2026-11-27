@@ -96,6 +96,7 @@ fn prove(
         extent: OLD,
         format: FORMAT,
         output_scale: RenderScale::Native,
+        output_scale_forced: false,
         backing_scale: 2_f64.to_bits(),
         device: 1,
     };

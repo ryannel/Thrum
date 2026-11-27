@@ -139,6 +139,7 @@ pub(super) struct FrameReadback<R> {
     pub(super) transition_error: Option<String>,
     pub(super) surface_format: wgpu::TextureFormat,
     pub(super) readback: R,
+    pub(super) presented: Option<crate::DisplayRecord>,
 }
 
 pub(super) fn collect_observer<R, W: FrameWorld, V: SceneSource<W::Page>>(
@@ -207,6 +208,8 @@ pub(super) fn start<G: Game<World: Send, Scene: Send> + 'static>(
         assert!(FrameHost::<G::World, G::Scene>::MAX_IN_FLIGHT == SAMPLE_SLOTS);
     }
     let signal = wake.clone();
+    host.bind_surface_output(current_extent)
+        .map_err(|error| error.to_string())?;
     let observer = super::qualification::Observer::start(
         &mut host,
         origin,
@@ -215,13 +218,7 @@ pub(super) fn start<G: Game<World: Send, Scene: Send> + 'static>(
         qualification,
     )?;
     let extent_capture = extent_output
-        .map(|output| {
-            super::qualification::ExtentCapture::start(
-                &mut host,
-                output,
-                f64::from_bits(current_extent.backing_scale),
-            )
-        })
+        .map(|output| super::qualification::ExtentCapture::start(&mut host, output))
         .transpose()?;
     let transition_proof = proof.map(TransitionProof::start).transpose()?;
     let display_proof = super::display::proof::DisplayProof::start(&mut host, display)?;
@@ -282,6 +279,7 @@ impl<G: Game> Actor<G> {
                 transition_error: None,
                 surface_format: self.gpu.config.format,
                 readback: G::readback(&self.host),
+                presented: None,
             },
         };
         let mut backing = None;
@@ -641,7 +639,12 @@ impl<G: Game> Actor<G> {
         let report = encoded.submit(Some(&output))?;
         ensure_device(&self.gpu.watch)?;
         if report.surface_presented {
-            *present_call = Some(self.present(frame));
+            let present = self.present(frame);
+            *present_call = Some(present);
+            reply.platform.presented = Some(crate::DisplayRecord {
+                submission: present.1,
+                output: self.host.frame_output(),
+            });
             if let Some(proof) = &mut self.transition_proof {
                 proof.presented(frame_extent.as_ref());
             }
@@ -649,7 +652,7 @@ impl<G: Game> Actor<G> {
             if let Some(extent) = frame_extent
                 && let Some(capture) = &mut self.extent_capture
             {
-                capture.frame(&extent, drawable_extent);
+                capture.frame(&extent, drawable_extent, self.current_extent);
             }
         } else {
             reply.platform.surface_status = SurfaceStatus::SubmissionSkipped;
@@ -977,6 +980,9 @@ impl<G: Game> Actor<G> {
             format: profile.format,
             ..request
         };
+        self.host
+            .bind_surface_output(self.current_extent)
+            .map_err(RecoveryFailure::frame)?;
         self.transition
             .recovered(self.current_extent, !self.surface_lease.pending());
         ensure_device(&self.gpu.watch).map_err(RecoveryFailure::frame)?;

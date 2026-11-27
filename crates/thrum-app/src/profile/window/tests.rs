@@ -4,6 +4,7 @@ use crate::profile::declare;
 fn sample(order: u64) -> FrameSample {
     use thrum_render::synthetic::{CullMode, CullingReason, CullingSelection};
     FrameSample {
+        output: thrum_render::runtime::FrameOutput::native([64, 64]),
         native_segment: None,
         display_phase: 1.0,
         observation: Duration::ZERO,

@@ -412,6 +412,32 @@ fn surface_encode_outcome(
     }
 }
 
+/// Resolved window output policy for one generation.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct FrameOutput {
+    /// Window backing grid when this generation was requested.
+    pub backing_extent: [u32; 2],
+    /// Prepared scale applied to the backing grid.
+    pub output_scale: crate::synthetic::RenderScale,
+    /// Drawable and reconstruction grid.
+    pub output_extent: [u32; 2],
+    /// The launch configuration selected the output scale.
+    pub output_scale_forced: bool,
+}
+
+impl FrameOutput {
+    /// An output grid with one output pixel per backing pixel.
+    #[must_use]
+    pub fn native(extent: [u32; 2]) -> Self {
+        Self {
+            backing_extent: extent,
+            output_scale: crate::synthetic::RenderScale::Native,
+            output_extent: extent,
+            output_scale_forced: false,
+        }
+    }
+}
+
 /// One completed simulation-to-GPU frame. GPU pass values are absent when the
 /// adapter lacks timestamp queries or a timing readback fails. Callback time
 /// excludes deferred GPU completion and must not be added to GPU pass times.
@@ -431,6 +457,8 @@ pub struct FrameSample {
     pub jitter_phase: Option<u32>,
     /// Pixel extent of the drawn scene subrectangle.
     pub render_extent: [u32; 2],
+    /// Resolved output policy recorded with this frame.
+    pub output: FrameOutput,
     /// Dynamic quality committed for this frame, if enabled.
     pub governor: Option<GovernorFrame>,
     /// Committed updates served in this host call, including catch-up work.
@@ -714,6 +742,7 @@ pub struct FrameHost<W: FrameWorld, V: SceneSource<W::Page>> {
     prepared: PreparedRenderer,
     interface: Option<Box<crate::sprite::interface::PreparedInterface>>,
     presenter: Option<SurfacePresenter>,
+    surface_output_policy: Option<FrameOutput>,
     slots: Vec<FrameSlot>,
     retired_slots: Vec<FrameSlot>,
     completed: VecDeque<FrameSample>,
@@ -1408,6 +1437,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             prepared: gpu.prepared,
             interface,
             presenter,
+            surface_output_policy: None,
             slots: gpu.slots,
             retired_slots: Vec::with_capacity(IN_FLIGHT),
             completed: VecDeque::with_capacity(COMPLETED_REPORTS),
@@ -1898,6 +1928,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             })?;
         preparation::bind_presenter(&self.prepared, &mut self.slots, self.presenter.as_ref())?;
         self.resize_drawable_capture();
+        self.surface_output_policy = None;
         self.presenter_generation += 1;
         if self.native_provider_report().is_some() {
             self.invalidate_history();
@@ -2296,6 +2327,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
                     .three_d()
                     .and_then(PreparedSynthetic::pending_jitter_phase),
                 render_extent: scale.extent(self.render_extent),
+                output: self.frame_output(),
                 governor: self.governor_frame(),
                 completed_ticks: frame.completed_ticks,
                 queued_ticks: frame.queued_ticks,

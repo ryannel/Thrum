@@ -31,7 +31,7 @@ pub(super) struct ExtentCapture {
     frames: VecDeque<(FrameExtent, [u32; 2])>,
     status: bool,
     resize: Option<[u32; 2]>,
-    resized_extent: Option<[u32; 2]>,
+    resize_requested: bool,
     first_resized: Option<u64>,
 }
 
@@ -113,7 +113,6 @@ impl ExtentCapture {
     pub(super) fn start<W: FrameWorld, V: SceneSource<W::Page>>(
         host: &mut FrameHost<W, V>,
         capture: WindowExtentCapture,
-        backing_scale: f64,
     ) -> Result<Self, String> {
         host.enable_submitted_capture_with_limits(
             1,
@@ -124,27 +123,36 @@ impl ExtentCapture {
             },
         )
         .map_err(|error| error.to_string())?;
-        let resized_extent = capture.resize.map(|extent| {
-            let scale = winit::dpi::LogicalSize::new(extent[0], extent[1]);
-            let size = scale.to_physical::<u32>(backing_scale);
-            [size.width, size.height]
-        });
         Ok(Self {
             output: capture.output,
             frames: VecDeque::new(),
             status: capture.status,
             resize: capture.resize,
-            resized_extent,
+            resize_requested: false,
             first_resized: None,
         })
     }
 
-    pub(super) fn frame(&mut self, frame: &FrameExtent, drawable: [u32; 2]) {
+    pub(super) fn frame(
+        &mut self,
+        frame: &FrameExtent,
+        drawable: [u32; 2],
+        generation: thrum_render::runtime::ExtentRequest,
+    ) {
         if self.frames.len() == 64 {
             self.frames.pop_front();
         }
-        if self.resize.is_none() && self.resized_extent == Some(drawable) {
-            self.first_resized.get_or_insert(frame.submission);
+        if self.resize_requested
+            && let Some([width, height]) = self.resize
+        {
+            // Identify the accepted window resize in points. The generation
+            // itself supplies the output grid used for the capture.
+            let [backing_width, backing_height] = generation.extent;
+            let points = winit::dpi::PhysicalSize::new(backing_width, backing_height)
+                .to_logical::<u32>(f64::from_bits(generation.backing_scale));
+            if [points.width, points.height] == [width, height] {
+                self.first_resized.get_or_insert(frame.submission);
+            }
         }
         self.frames.push_back((*frame, drawable));
     }
@@ -170,13 +178,18 @@ impl ExtentCapture {
                 .filter(|(frame, _)| frame.submission == order)
                 .copied();
             let paint = image.sample.interface.and_then(|interface| interface.stamp);
-            let resized = self.resized_extent.is_some() && self.resize.is_none();
-            let matches_extent = !resized || self.resized_extent == Some(image.extent);
+            let resized = self.resize_requested;
+            let eligible = !resized || self.first_resized.is_some_and(|first| order >= first);
             if let Some((frame, drawable)) = frame
                 && image.sample.surface_presented
-                && matches_extent
+                && eligible
                 && (!self.status || paint.is_some())
             {
+                if image.extent != frame.destination || drawable != frame.destination {
+                    return Err(FrameError::InvalidState(
+                        "extent capture does not match its submitted drawable",
+                    ));
+                }
                 if resized && self.first_resized != Some(order) {
                     return Err(FrameError::InvalidState(
                         "the first resized submission was omitted",
@@ -195,7 +208,8 @@ impl ExtentCapture {
                     .map_err(|error| FrameError::Scene(error.to_string()))?;
                 std::fs::write(self.output.join(format!("{stem}.json")), record.to_string())
                     .map_err(|error| FrameError::Scene(error.to_string()))?;
-                if let Some(next) = self.resize.take() {
+                if !resized && let Some(next) = self.resize {
+                    self.resize_requested = true;
                     wake.send_event(super::UserEvent::ExtentResize(next))
                         .map_err(|error| FrameError::Scene(error.to_string()))?;
                 } else {

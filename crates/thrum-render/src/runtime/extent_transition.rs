@@ -1,6 +1,6 @@
 //! Debounce and single-owner preparation for a native surface generation.
 
-use super::{FrameError, PreparedExtent, SurfaceSwitch};
+use super::{FrameError, FrameOutput, PreparedExtent, SurfaceSwitch};
 use crate::synthetic::RenderScale;
 use std::{
     sync::{
@@ -20,6 +20,8 @@ pub struct ExtentRequest {
     pub extent: [u32; 2],
     /// Prepared output scale applied to the backing grid.
     pub output_scale: RenderScale,
+    /// The launch configuration selected the output scale.
+    pub output_scale_forced: bool,
     /// Backing scale, expressed as the platform's f64 bits.
     pub backing_scale: u64,
     /// Display output format.
@@ -33,6 +35,17 @@ impl ExtentRequest {
     #[must_use]
     pub fn output_extent(self) -> [u32; 2] {
         Self::scaled_extent(self.extent, self.output_scale)
+    }
+
+    /// The resolved policy carried by this request.
+    #[must_use]
+    pub fn output(self) -> FrameOutput {
+        FrameOutput {
+            backing_extent: self.extent,
+            output_scale: self.output_scale,
+            output_extent: self.output_extent(),
+            output_scale_forced: self.output_scale_forced,
+        }
     }
 
     /// Apply the prepared output step to a backing grid before a format is known.

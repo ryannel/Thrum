@@ -48,6 +48,12 @@ pub(crate) trait RuntimeSetup {
 
     fn readback(host: &Runtime) -> f32;
 
+    #[cfg(all(target_os = "macos", feature = "proving"))]
+    fn observe_display(&mut self, _display: thrum_app::DisplayRecord) {}
+
+    #[cfg(all(target_os = "macos", feature = "proving"))]
+    fn observe_frame(&mut self, _sample: &thrum_render::runtime::FrameSample) {}
+
     #[cfg(feature = "proving")]
     fn status_display(&self) -> bool;
 
@@ -106,6 +112,16 @@ impl<T: RuntimeSetup> Game for HostedGame<T> {
     #[cfg(target_os = "macos")]
     fn supports_edr(&self) -> bool {
         self.0.supports_edr()
+    }
+
+    #[cfg(all(target_os = "macos", feature = "proving"))]
+    fn observe_display(&mut self, display: thrum_app::DisplayRecord) {
+        self.0.observe_display(display);
+    }
+
+    #[cfg(all(target_os = "macos", feature = "proving"))]
+    fn observe_frame(&mut self, sample: &thrum_render::runtime::FrameSample) {
+        self.0.observe_frame(sample);
     }
 
     async fn prepare<'a>(

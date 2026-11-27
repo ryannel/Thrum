@@ -47,6 +47,7 @@ impl OutputRequest {
         ExtentRequest {
             extent: self.backing,
             output_scale: self.scale.step,
+            output_scale_forced: self.scale.forced,
             backing_scale,
             format,
             device,
@@ -65,6 +66,7 @@ pub(super) struct ModeChange {
     fullscreen: bool,
     held_until: Option<Duration>,
     published: Option<OutputRequest>,
+    publish_completion: bool,
 }
 
 impl ModeChange {
@@ -100,7 +102,7 @@ impl ModeChange {
         match event {
             ModeEvent::Start(_) => self.held_until = Some(now + Self::LIMIT),
             ModeEvent::Complete(fullscreen) => {
-                self.held_until = None;
+                self.publish_completion |= self.held_until.take().is_some();
                 self.fullscreen = fullscreen;
             }
         }
@@ -123,7 +125,7 @@ impl ModeChange {
             backing,
             scale: scale(self.fullscreen),
         };
-        if self.published == Some(next) {
+        if !std::mem::take(&mut self.publish_completion) && self.published == Some(next) {
             return None;
         }
         self.published = Some(next);

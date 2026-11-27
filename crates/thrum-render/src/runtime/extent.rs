@@ -1,6 +1,10 @@
 //! Coherent target-ring and surface transitions on the render owner.
 
-use super::{FrameError, FrameHost, FrameWorld, SceneSource, creation::CreationPhase, preparation};
+use super::{
+    FrameError, FrameHost, FrameOutput, FrameWorld, SceneSource, creation::CreationPhase,
+    preparation,
+};
+use crate::present::SurfacePresenter;
 use std::sync::Arc;
 #[cfg(not(target_arch = "wasm32"))]
 use {
@@ -11,7 +15,7 @@ use {
     },
     crate::{
         contribution::{ExtentResizeJob, SecondaryResize, SecondaryViewSlot},
-        present::{PresenterInputs, SurfacePresenter},
+        present::PresenterInputs,
         synthetic::{CaptureSource, secondary::SecondarySet},
     },
     std::sync::atomic::{AtomicBool, Ordering},
@@ -23,6 +27,7 @@ use {
 #[cfg(not(target_arch = "wasm32"))]
 pub struct ExtentPrepareInputs {
     extent: [u32; 2],
+    output: Option<FrameOutput>,
     format: wgpu::TextureFormat,
     device: wgpu::Device,
     queue: wgpu::Queue,
@@ -44,6 +49,7 @@ pub struct PreparedExtent {
     capture_owner: Option<Arc<()>>,
     contribution: Option<(Option<SecondarySet>, SecondaryResize)>,
     extent: [u32; 2],
+    output: Option<FrameOutput>,
     slots: Vec<FrameSlot>,
     presenter: SurfacePresenter,
     owner: Arc<()>,
@@ -104,6 +110,7 @@ impl ExtentPrepareInputs {
                 capture_owner: self.capture_owner,
                 contribution,
                 extent: self.extent,
+                output: self.output,
                 slots,
                 presenter,
                 owner: self.owner,
@@ -154,6 +161,43 @@ pub struct FrameExtent {
 }
 
 impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
+    /// Resolved output policy for the installed generation.
+    #[must_use]
+    pub fn frame_output(&self) -> FrameOutput {
+        self.surface_output_policy.unwrap_or_else(|| {
+            FrameOutput::native(
+                self.presenter
+                    .as_ref()
+                    .map_or(self.render_extent, SurfacePresenter::extent),
+            )
+        })
+    }
+
+    /// Bind the policy of a surface already installed at attach or device recovery.
+    /// # Errors
+    /// Refuses a request that does not match the installed surface and device.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn bind_surface_output(&mut self, request: super::ExtentRequest) -> Result<(), FrameError> {
+        // An empty window has no presentable policy. Device recovery can
+        // prepare a placeholder surface until the window is restored.
+        if request.extent.contains(&0) {
+            self.surface_output_policy = None;
+            return Ok(());
+        }
+        if request.device != self.generation
+            || !self.presenter.as_ref().is_some_and(|presenter| {
+                let profile = presenter.profile();
+                profile.format == request.format && profile.extent == request.output_extent()
+            })
+        {
+            return Err(FrameError::InvalidState(
+                "output policy does not match installed surface",
+            ));
+        }
+        self.surface_output_policy = Some(request.output());
+        Ok(())
+    }
+
     /// Retain the preparation inputs for the current scene and device.
     /// # Errors
     /// Refuses a host without a presenter.
@@ -177,7 +221,10 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         &self,
         request: super::ExtentRequest,
     ) -> Result<ExtentPrepareInputs, FrameError> {
-        self.extent_prepare_inputs_for_format(request.output_extent(), request.format)
+        let mut inputs =
+            self.extent_prepare_inputs_for_format(request.output_extent(), request.format)?;
+        inputs.output = Some(request.output());
+        Ok(inputs)
     }
 
     /// Retain detached preparation inputs for an extent and an optional EDR upgrade.
@@ -231,6 +278,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         }
         Ok(ExtentPrepareInputs {
             extent,
+            output: None,
             format,
             device: self.device.clone(),
             queue: self.queue.clone(),
@@ -304,6 +352,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.retired_slots
             .extend(previous.into_iter().filter(FrameSlot::is_pending));
         self.presenter = Some(candidate.presenter);
+        self.surface_output_policy = candidate.output;
         if let Some((views, replacement)) = candidate.contribution {
             if let Some(views) = views {
                 self.prepared.publish_secondary_extent(views);
@@ -386,6 +435,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
             }
             self.presenter = Some(presenter);
             self.render_extent = extent;
+            self.surface_output_policy = None;
             self.resize_drawable_capture();
             self.presenter_generation += 1;
             self.visual_owner = Arc::new(());
@@ -434,6 +484,7 @@ impl<W: FrameWorld, V: SceneSource<W::Page>> FrameHost<W, V> {
         self.slots = slots;
         self.presenter = Some(presenter);
         self.render_extent = extent;
+        self.surface_output_policy = None;
         self.resize_drawable_capture();
         if let Some(view) = view {
             self.scene.view = view;

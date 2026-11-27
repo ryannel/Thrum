@@ -25,6 +25,7 @@ use thrum_core::{
 
 pub(super) fn sample(tick: u64) -> FrameSample {
     FrameSample {
+        output: super::FrameOutput::native([64, 64]),
         native_segment: None,
         tick,
         presentation_alpha: 1.0,

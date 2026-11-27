@@ -286,11 +286,23 @@ pub fn run_window(
     } else {
         RouteStart::Immediate
     };
-    let game = || -> Result<_, thrum_controls::ControlError> {
+    #[cfg(feature = "proving")]
+    let output_record = transition
+        .as_ref()
+        .filter(|proof| {
+            matches!(
+                proof.arm,
+                thrum_app::TransitionArm::OutputScaleFullscreen
+                    | thrum_app::TransitionArm::OutputScaleMode
+            )
+        })
+        .map(|proof| proof.output.join("game-output.jsonl"));
+    let game = || -> Result<_, thrum_app::GameError> {
         Ok(HostedGame(WindowGame {
             demo: setup
                 .as_ref()
-                .map_or_else(|_| GameControls::new(), |setup| setup.game_controls())?,
+                .map_or_else(|_| GameControls::new(), |setup| setup.game_controls())
+                .map_err(|error| thrum_app::GameError::Rejected(error.to_string()))?,
             world: None,
             held_keys: 0,
             replay_controls: true,
@@ -317,6 +329,11 @@ pub fn run_window(
             exit_content: None,
             #[cfg(feature = "proving")]
             exit_content_output: governor.exit_content_report,
+            #[cfg(feature = "proving")]
+            output_record: output_record
+                .map(std::fs::File::create)
+                .transpose()
+                .map_err(|error| thrum_app::GameError::Rejected(error.to_string()))?,
             hardware,
         }))
     };
@@ -389,6 +406,8 @@ struct WindowGame {
     exit_content: Option<ExitContentReport>,
     #[cfg(feature = "proving")]
     exit_content_output: Option<std::path::PathBuf>,
+    #[cfg(feature = "proving")]
+    output_record: Option<std::fs::File>,
     hardware: Vec<HardwareRequest>,
 }
 
@@ -503,6 +522,7 @@ fn capture_game_with_route_limit(
         scene: None,
         exit_content: None,
         exit_content_output: None,
+        output_record: None,
         cloud_capture,
         capture_cooked,
         capture_eye: fixed_capture_eye()?,
@@ -530,6 +550,28 @@ fn fixed_capture_eye() -> Result<Option<[f32; 3]>, String> {
 }
 
 impl WindowGame {
+    #[cfg(feature = "proving")]
+    fn record_output(
+        &mut self,
+        source: &str,
+        submission: u64,
+        output: thrum_render::runtime::FrameOutput,
+    ) {
+        use std::io::Write as _;
+        if let Some(file) = &mut self.output_record {
+            let row = serde_json::json!({
+                "source": source,
+                "submission": submission,
+                "backing_extent": output.backing_extent,
+                "output_extent": output.output_extent,
+                "output_scale": output.output_scale.percent(),
+                "output_scale_forced": output.output_scale_forced,
+            });
+            if let Err(error) = writeln!(file, "{row}") {
+                eprintln!("game output record: {error}");
+            }
+        }
+    }
     fn axes(&self) -> [f32; 3] {
         let horizontal = axis(
             self.held_keys & (KEY_A | KEY_LEFT) != 0,
@@ -551,6 +593,18 @@ impl WindowGame {
 }
 
 impl RuntimeSetup for WindowGame {
+    #[cfg(feature = "proving")]
+    fn observe_display(&mut self, display: thrum_app::DisplayRecord) {
+        self.record_output("display", display.submission, display.output);
+    }
+
+    #[cfg(feature = "proving")]
+    fn observe_frame(&mut self, sample: &thrum_render::runtime::FrameSample) {
+        if sample.surface_presented {
+            self.record_output("frame", sample.submission_order, sample.output);
+        }
+    }
+
     #[cfg(feature = "proving")]
     fn frame_edits(&self) -> crate::controls::ControlEdits {
         if let Some(report) = &self.exit_content {

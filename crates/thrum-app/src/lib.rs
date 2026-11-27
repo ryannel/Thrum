@@ -67,6 +67,8 @@ pub use app::{
     run_with_extent_capture, run_with_qualification, run_with_qualification_and_display,
     run_with_transition_proof, thermal_state,
 };
+#[cfg(target_os = "macos")]
+pub use game::DisplayRecord;
 #[cfg(feature = "interface")]
 pub use game::OutputMetrics;
 #[cfg(not(target_arch = "wasm32"))]
