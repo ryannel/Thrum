@@ -153,11 +153,16 @@ fn check_rain_ring_lens(rate: f64, active: bool) {
         .filter(|&&depth| depth == 0.0)
         .count();
     let admitted = report.lock().expect("committed water").underwater_admitted;
-    eprintln!(
-        "{rate} mm/h at {height:.7} m above still water: {clipped} clipped pixels, lens admission {admitted:?}"
+    assert_eq!(
+        admitted,
+        Some(active),
+        "lens admission at {rate} mm/h and {height:.7} m above still water"
     );
-    assert_eq!(admitted, Some(active));
-    assert_eq!(clipped > 0, active);
+    assert_eq!(
+        clipped > 0,
+        active,
+        "{clipped} clipped pixels at {rate} mm/h and {height:.7} m above still water"
+    );
 }
 
 // Each station submits three independent render hosts. Keep the station
