@@ -2,7 +2,11 @@
 use std::{env, fs, path::PathBuf};
 
 fn main() {
-    const FILES: [&str; 2] = ["THRUM_WATER_STREAM_FILE", "THRUM_WATER_OUTLET_FILE"];
+    const FILES: [&str; 3] = [
+        "THRUM_WATER_STREAM_FILE",
+        "THRUM_WATER_OUTLET_FILE",
+        "THRUM_WATER_FALL_FILE",
+    ];
     for name in FILES {
         println!("cargo:rerun-if-env-changed={name}");
     }
@@ -28,7 +32,7 @@ fn main() {
     fs::write(
         output.join("river_package.rs"),
         format!(
-            "const FILES: [Option<([u8; 32], &[u8])>; 2] = [{}];",
+            "const FILES: [Option<([u8; 32], &[u8])>; 3] = [{}];",
             entries.join(", ")
         ),
     )

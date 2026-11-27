@@ -24,6 +24,7 @@ const STOCK_RECORDS: u64 = 4 * CELLS + 2;
 const PASS: &str = "whitewater";
 const SURF_FIRST: u32 = 12;
 const SHORE_BIRTHS: u32 = 17;
+const PLUNGE_BINDING: u32 = 25;
 pub(super) const HULL_LIMIT: usize = 16;
 
 #[repr(C)]
@@ -81,6 +82,7 @@ pub(crate) struct Foam {
     settings: wgpu::Buffer,
     scratch: wgpu::Buffer,
     shore_births: Option<wgpu::Buffer>,
+    plunge_births: Option<wgpu::Buffer>,
     group: wgpu::BindGroup,
     pipelines: [wgpu::ComputePipeline; 3],
     prepare_shore_births: Option<wgpu::ComputePipeline>,
@@ -98,6 +100,28 @@ fn buffer(device: &DeviceSite, label: &str, size: u64, usage: wgpu::BufferUsages
         usage,
         mapped_at_creation: false,
     })
+}
+
+fn transport_source(river: bool, plunge: bool) -> String {
+    let (prepare, finish) = if river {
+        (
+            include_str!("river_transport.wgsl"),
+            include_str!("river_transport_finish.wgsl"),
+        )
+    } else {
+        (
+            include_str!("transport.wgsl"),
+            include_str!("transport_finish.wgsl"),
+        )
+    };
+    if plunge {
+        format!(
+            "const PLUNGE_BINDING: u32 = {PLUNGE_BINDING}u;\n{}{prepare}            stocks = add_births(stocks, rates + plunge_births(point, spacing), dt);\n{finish}",
+            include_str!("plunge.wgsl")
+        )
+    } else {
+        format!("{prepare}            stocks = add_births(stocks, rates, dt);\n{finish}")
+    }
 }
 
 impl Foam {
@@ -148,6 +172,7 @@ impl Foam {
         surf: Option<&SurfGpu>,
         map: Option<&crate::map_gpu::MapGpu>,
         flow: Option<(thrum_water_model::FlowBandsProfile, u32)>,
+        plunge_capacity: Option<usize>,
     ) -> Self {
         use wgpu::BufferUsages as Usage;
         use wgpu::ShaderStages as Stages;
@@ -177,6 +202,14 @@ impl Foam {
                 Usage::STORAGE,
             )
         });
+        let plunge_births = plunge_capacity.map(|capacity| {
+            buffer(
+                device,
+                "plunge birth sources",
+                (16 + capacity * size_of::<crate::falls::Source>()) as u64,
+                Usage::STORAGE | Usage::COPY_DST,
+            )
+        });
         let mut entries: Vec<_> = field_layout
             .iter()
             .map(|&entry| {
@@ -193,6 +226,9 @@ impl Foam {
         if surf.is_some() {
             entries.extend(SurfGpu::layout(SURF_FIRST, Stages::COMPUTE));
             entries.push(binding::storage(SHORE_BIRTHS, Stages::COMPUTE, false, 0));
+        }
+        if plunge_births.is_some() {
+            entries.push(binding::storage(PLUNGE_BINDING, Stages::COMPUTE, true, 0));
         }
         let group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some(PASS),
@@ -221,6 +257,12 @@ impl Foam {
             bindings.push(wgpu::BindGroupEntry {
                 binding: SHORE_BIRTHS,
                 resource: births.as_entire_binding(),
+            });
+        }
+        if let Some(buffer) = &plunge_births {
+            bindings.push(wgpu::BindGroupEntry {
+                binding: PLUNGE_BINDING,
+                resource: buffer.as_entire_binding(),
             });
         }
         let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
@@ -255,11 +297,7 @@ impl Foam {
             + &crate::flow::carriage_source(flow.is_some())
             + &shore
             + include_str!("births.wgsl")
-            + if flow.is_some() {
-                include_str!("river_transport.wgsl")
-            } else {
-                include_str!("transport.wgsl")
-            }
+            + &transport_source(flow.is_some(), plunge_births.is_some())
             + include_str!("step.wgsl");
         if let Some((profile, first)) = flow {
             use std::fmt::Write;
@@ -296,6 +334,7 @@ const CHART_LOSS_BREAKING = vec2<f32>({onset:?}, {full:?});",
             settings,
             scratch,
             shore_births,
+            plunge_births,
             group,
             pipelines,
             prepare_shore_births,
@@ -331,6 +370,27 @@ const CHART_LOSS_BREAKING = vec2<f32>({onset:?}, {full:?});",
             view: None,
             history: None,
         };
+        if let Some(births) = &self.plunge_births {
+            let resource = graph.resources.len();
+            graph.resources.push((
+                ResourceDescriptor::Buffer {
+                    bytes: births.size(),
+                    usage: births.usage(),
+                },
+                ResourceScope::Persistent {
+                    owner: 0x706c_6e67,
+                    epoch: 0,
+                    initialized: true,
+                },
+            ));
+            inputs.push(EffectAccess {
+                resource,
+                range: 0..births.size(),
+                kind: AccessKind::StorageRead,
+                view: None,
+                history: None,
+            });
+        }
         inputs.push(EffectAccess {
             kind: AccessKind::StorageReadWrite,
             ..read.clone()
@@ -356,6 +416,21 @@ const CHART_LOSS_BREAKING = vec2<f32>({onset:?}, {full:?});",
                 .iter()
                 .map(|buffer| ("shore birth sources".into(), buffer.size())),
         )
+        .chain(
+            self.plunge_births
+                .iter()
+                .map(|buffer| ("plunge birth sources".into(), buffer.size())),
+        )
+    }
+
+    pub(crate) fn write_plunges(&self, queue: &wgpu::Queue, rows: &[crate::falls::Source]) {
+        if let Some(buffer) = &self.plunge_births {
+            let count = u32::try_from(rows.len()).expect("prepared plunge count");
+            queue.write_buffer(buffer, 0, bytemuck::bytes_of(&[count, 0, 0, 0]));
+            if !rows.is_empty() {
+                queue.write_buffer(buffer, 16, bytemuck::cast_slice(rows));
+            }
+        }
     }
 
     #[expect(

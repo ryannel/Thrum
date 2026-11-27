@@ -1,9 +1,10 @@
-use super::{Cell, Interaction, Patch, SampleSettings, Step, shader_constants};
+use super::{Cell, CellCarriage, Interaction, Patch, SampleSettings, Step, step_source};
 use thrum_test_support::{record, records};
 
 #[test]
 fn interaction_records_match_the_shader_layout() {
-    let step = shader_constants() + include_str!("../step.wgsl");
+    let step = step_source(false);
+    let ladder = step_source(true);
     let sample = Interaction::sample_source(0, 0, 1, true);
     let validate = |source: &str| {
         let shader = wgpu::naga::front::wgsl::parse_str(source)
@@ -17,6 +18,8 @@ fn interaction_records_match_the_shader_layout() {
     };
     // Each shader also validates as a portable module, beyond the record check.
     validate(&step);
+    validate(&ladder);
+    records::named("current ladder", &ladder, &[record!(CellCarriage, weights)]);
     validate(&sample);
     records::named(
         "interaction step",

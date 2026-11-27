@@ -2,7 +2,9 @@ use super::{CELLS, SIDE};
 use bytemuck::{Pod, Zeroable};
 use thrum_water_model::Map;
 
+mod currents;
 mod hollows;
+pub(super) use currents::{CARRIAGE_COUNTS, CellCarriage};
 pub(super) use hollows::WetHollows;
 
 pub(super) const DRY: u32 = u32::MAX;
@@ -41,6 +43,7 @@ pub(super) struct Window {
     pub cells: Vec<Cell>,
     pub depths: Vec<u32>,
     pub current: [f32; 2],
+    pub carriage: Option<currents::Carriage>,
 }
 
 /// Track source recency by wet support, independent of temporary region numbers.
@@ -98,6 +101,13 @@ impl RegionActivity {
 }
 
 impl Window {
+    pub(super) fn new(varying_current: bool) -> Self {
+        Self {
+            carriage: varying_current.then(currents::Carriage::default),
+            ..Self::default()
+        }
+    }
+
     #[expect(
         clippy::cast_possible_truncation,
         clippy::cast_possible_wrap,
@@ -230,6 +240,9 @@ impl Window {
                 }
             }
             self.depths.push(depths);
+        }
+        if let Some(carriage) = &mut self.carriage {
+            carriage.label(&self.cells, &self.wet, self.depths.len());
         }
         if level == 2 && self.wet.iter().flatten().any(|wet| wet.component.is_some()) {
             self.absorb_at_shore();

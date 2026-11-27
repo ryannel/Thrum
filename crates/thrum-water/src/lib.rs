@@ -2,6 +2,8 @@
 /// The render projection of ground stores.
 mod canopy;
 mod column;
+mod falls;
+pub use falls::FallsProfile;
 mod flow;
 pub mod foam;
 #[cfg(test)]
@@ -89,6 +91,8 @@ pub enum WaterError {
     UnsupportedMap(&'static str),
     /// Interaction capacities exceed the supported implementation limits.
     InvalidInteractionLimits,
+    /// Fall records do not match the map or the declared physical settings.
+    InvalidFalls,
     /// Surface detail cannot renew at a zero period.
     InvalidCarriagePeriod,
 }
@@ -104,6 +108,7 @@ impl std::fmt::Display for WaterError {
             }
             Self::InvalidLevel => f.write_str("water level must be finite"),
             Self::UnsupportedMap(reason) => f.write_str(reason),
+            Self::InvalidFalls => f.write_str("falls require mapped water, valid settings and a unique river with fall records"),
             Self::InvalidCarriagePeriod => f.write_str("carriage period must be positive"),
             Self::InvalidInteractionLimits => {
                 f.write_str("interaction requires 1–16 solves and at most 64 sources of each kind; the fine level requires interaction")
@@ -164,6 +169,7 @@ pub struct Water {
     interaction_tap: Option<interaction::WitnessTap>,
     foam: Option<foam::Whitewater>,
     foam_tap: Option<foam::Tap>,
+    falls: Option<falls::Falls>,
     surf_tap: Option<SurfTap>,
     caustic_tap: Option<CausticTap>,
     shaft_tap: Option<ShaftTap>,
@@ -354,6 +360,7 @@ impl Water {
             interaction_tap: None,
             foam: None,
             foam_tap: None,
+            falls: None,
             surf_tap: None,
             caustic_tap: None,
             shaft_tap: None,
@@ -395,6 +402,34 @@ impl Water {
             .get_or_insert_with(Default::default)
             .clone()
     }
+    /// Declare the falls of the named map rivers, using the corresponding stored samples.
+    ///
+    /// # Errors
+    /// Refuses unmapped water, missing or duplicate rivers, invalid settings and empty fall records.
+    pub fn enable_falls(
+        &mut self,
+        records: Vec<(usize, thrum_water_model::FallSamples)>,
+        profile: FallsProfile,
+    ) -> Result<(), WaterError> {
+        let map = self.map.lock().map_err(|_| WaterError::UnavailableMap)?;
+        let mut seen = std::collections::BTreeSet::new();
+        if !self.mapped
+            || !profile.valid()
+            || records.is_empty()
+            || records.iter().any(|(river, record)| {
+                !seen.insert(*river)
+                    || !map
+                        .river(*river)
+                        .is_some_and(|river| river.gauges == record.gauges())
+                    || record.segment_capacity() == 0
+            })
+        {
+            return Err(WaterError::InvalidFalls);
+        }
+        self.falls = Some(falls::Falls::new(records, profile));
+        Ok(())
+    }
+
     /// Enable transported whitewater and the shore film on mapped water.
     /// Wind is given in world x/z metres per second.
     ///
@@ -471,6 +506,9 @@ impl Water {
             }
             if let Some(tiles) = &p.hollow_tiles {
                 resources.push(("water hollows tile indices".into(), tiles.buffer.size()));
+            }
+            if let Some(sheet) = &p.sheet {
+                resources.extend(sheet.resource_bytes());
             }
             if let Some(gather) = &p.gather {
                 resources.push(("water gather regions".into(), gather.bytes()));
@@ -667,6 +705,7 @@ impl SceneContribution for Water {
                     .clone()
                     .map(|whitewater| (whitewater, foam.unwrap_or_default())),
                 self.surf_tap.as_ref().is_some_and(|tap| tap.1),
+                self.falls.as_ref(),
             )
             .map_err(thrum_render::runtime::FrameError::Scene)?,
         );
@@ -720,10 +759,16 @@ impl SceneContribution for Water {
             .iter()
             .chain(self.light_quality.iter())
             .chain(self.flow.iter().map(|flow| &flow.quality))
+            .chain(self.falls.iter().map(|falls| &falls.quality))
             .flat_map(|settings| settings.knobs().iter().cloned())
             .collect()
     }
     fn set_quality_knob(&mut self, name: &str, value: u32) -> Result<(), QualityError> {
+        if name == falls::SPACING
+            && let Some(falls) = &mut self.falls
+        {
+            return falls.quality.set(name, value);
+        }
         if name == flow::CADENCE
             && let Some(flow) = &mut self.flow
         {
@@ -756,7 +801,11 @@ impl SceneContribution for Water {
             .light_quality
             .as_mut()
             .map_or(QualityInvalidation::None, QualitySettings::commit);
-        invalidation.max(light).max(
+        let falls = self
+            .falls
+            .as_mut()
+            .map_or(QualityInvalidation::None, |falls| falls.quality.commit());
+        invalidation.max(light).max(falls).max(
             self.flow
                 .as_mut()
                 .map_or(QualityInvalidation::None, |flow| flow.quality.commit()),
@@ -821,8 +870,30 @@ impl SceneContribution for Water {
                 self.invalid || frame.time.capture,
             );
         }
+        if let (Some(config), Some(sheet)) = (&self.falls, &mut p.sheet) {
+            sheet.record(
+                &p.queue,
+                config,
+                displayed_map,
+                now,
+                previous,
+                self.invalid || frame.time.capture,
+            );
+        }
+        if !frame.time.capture
+            && let (Some(config), Some(plunges)) = (&self.falls, &mut p.plunges)
+            && plunges.record(
+                config,
+                &map,
+                frame.time.tick_duration,
+                p.interaction.is_some(),
+            )
+            && let Some(foam) = &p.foam
+        {
+            foam.write_plunges(&p.queue, &plunges.births);
+        }
         if let Some(interaction) = &mut p.interaction {
-            interaction.record(&p.queue, encoder, frame, &map);
+            interaction.record(&p.queue, encoder, frame, &map, p.plunges.as_ref());
         }
         if let Some(gather) = &mut p.gather {
             let underwater_admitted = self
@@ -1111,6 +1182,15 @@ impl SceneContribution for Water {
         frame: &ContributionFrame,
     ) {
         if let Some(p) = &self.prepared {
+            let index = if let Some(sheet) = &p.sheet {
+                let Some(index) = index.checked_sub(1) else {
+                    sheet.draw(pass, frame, &p.environment);
+                    return;
+                };
+                index
+            } else {
+                index
+            };
             let film = p.film.as_ref().filter(|_| {
                 index == usize::from(p.gather.is_some()) + usize::from(p.lens_cut.is_some())
             });
@@ -1177,7 +1257,7 @@ impl SceneContribution for Water {
     }
     fn after_opaque_runs(&self, index: usize, _: &ContributionFrame) -> bool {
         self.prepared.as_ref().is_some_and(|p| {
-            if index == 0 {
+            if index == usize::from(p.sheet.is_some()) {
                 p.gather.as_ref().is_some_and(optics::Gather::runs)
             } else if p.shaft_index() == Some(index) {
                 p.gather.as_ref().is_some_and(|gather| gather.under)
@@ -1196,7 +1276,7 @@ impl SceneContribution for Water {
         frame: &ContributionFrame,
     ) {
         if let Some(p) = &self.prepared {
-            if index == 0 {
+            if index == usize::from(p.sheet.is_some()) {
                 if let Some(gather) = &p.gather {
                     gather.encode(
                         pass,

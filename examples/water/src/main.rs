@@ -9,7 +9,20 @@ fn main() {
         .is_some_and(|arg| arg == "--prepare-rivers")
     {
         let path = std::env::args_os().nth(2).expect("river output directory");
-        prepare_rivers(std::path::Path::new(&path));
+        prepare_river_files(
+            water_scene::river::prepare_files(std::path::Path::new(&path)).map(Vec::from),
+        );
+        return;
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    if std::env::args_os()
+        .nth(1)
+        .is_some_and(|arg| arg == "--prepare-fall-river")
+    {
+        let path = std::env::args_os().nth(2).expect("fall output directory");
+        prepare_river_files(
+            water_scene::river::prepare_fall_file(std::path::Path::new(&path)).map(|key| vec![key]),
+        );
         return;
     }
     #[cfg(target_arch = "wasm32")]
@@ -71,7 +84,7 @@ fn main() {
                 Settings::WetShore(wind) => {
                     water_scene::island::build_wet_shore(wind, true).map(|(game, _, _, _)| game)
                 }
-                Settings::River(wind) => {
+                Settings::River(wind) | Settings::Fall(wind) => {
                     #[cfg(not(target_arch = "wasm32"))]
                     let directory = water_scene::river::store_directory(
                         std::env::var_os("THRUM_WATER_RIVER_STORE").map(std::path::PathBuf::from),
@@ -83,7 +96,12 @@ fn main() {
                     let directory = Some(directory.as_path());
                     #[cfg(target_arch = "wasm32")]
                     let directory = None;
-                    water_scene::river::build(wind, true, directory).map(|scene| scene.game)
+                    let build = if matches!(settings, Settings::Fall(_)) {
+                        water_scene::river::build_fall
+                    } else {
+                        water_scene::river::build
+                    };
+                    build(wind, true, directory).map(|scene| scene.game)
                 }
                 Settings::Channel(wind) => {
                     water_scene::channel::build(wind, true, true).map(|scene| scene.game)
@@ -128,10 +146,10 @@ fn main() {
 #[expect(
     clippy::print_stderr,
     clippy::print_stdout,
-    reason = "native packaging command's two key lines and errors"
+    reason = "native packaging commands return key lines and errors"
 )]
-fn prepare_rivers(directory: &std::path::Path) {
-    match water_scene::river::prepare_files(directory) {
+fn prepare_river_files(files: Result<Vec<String>, Box<dyn std::error::Error>>) {
+    match files {
         Ok(keys) => {
             for key in keys {
                 println!("{key}");

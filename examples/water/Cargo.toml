@@ -177,3 +177,13 @@ name = "under_light_capability_gpu"
 
 [[test]]
 name = "under_sun_path_gpu"
+
+# RIVERS WP6 names these target proofs.
+[[test]]
+name = "falls_gpu"
+
+[[test]]
+name = "plunge_gpu"
+
+[[test]]
+name = "current_ladder_gpu"

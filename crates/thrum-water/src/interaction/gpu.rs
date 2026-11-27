@@ -1,7 +1,9 @@
 use super::{
     BodyPressure, CELL_METRES, CELLS, DENSITY, FAR, FINE, FINE_TICKS, FineEndpoint, FineReport,
     GRAVITY, GRID_CELLS, GRID_WIDTH, MAX_TICKS, Mailbox, NEAR, Report, SIDE, Witness,
-    regions::{Cell, DEPTHS, DRY, REST, RegionActivity, WetHollows, Window},
+    regions::{
+        CARRIAGE_COUNTS, Cell, CellCarriage, DEPTHS, DRY, REST, RegionActivity, WetHollows, Window,
+    },
     static_dent,
 };
 use bytemuck::{Pod, Zeroable};
@@ -138,6 +140,7 @@ pub(crate) struct Interaction {
     pub(crate) sample: wgpu::Buffer,
     cells: wgpu::Buffer,
     patches: wgpu::Buffer,
+    carriage: Option<wgpu::Buffer>,
     steps: wgpu::Buffer,
     group: wgpu::BindGroup,
     pipelines: [wgpu::ComputePipeline; 6],
@@ -154,6 +157,7 @@ pub(crate) struct Interaction {
     patch_rows: Vec<Patch>,
     candidates: Vec<Source>,
     regions: Vec<(u32, u64, usize)>,
+    admitted: Vec<usize>,
     committed_pressures: [Vec<Pressure>; 2],
     recorded_pressures: Vec<Pressure>,
 }
@@ -173,6 +177,66 @@ pub(crate) fn shader_constants() -> String {
         static_dent::DIVIDER_METRES,
         static_dent::FINE_DIVIDER_METRES
     )
+}
+
+fn step_source(varying_current: bool) -> String {
+    const COMMON: &str = include_str!("step.wgsl");
+    const EVOLUTION: &str = include_str!("step_evolution.wgsl");
+    const WRITE: &str = include_str!("step_write.wgsl");
+    let constants = shader_constants();
+    if !varying_current {
+        return constants
+            + COMMON
+            + "    let level = step.level & ~FINE_SPLIT;\n"
+            + EVOLUTION
+            + include_str!("step_unweighted.wgsl")
+            + WRITE;
+    }
+    constants
+        + &format!("const CARRIAGE_COUNTS: u32 = {CARRIAGE_COUNTS}u;\n")
+        + COMMON
+        + "    let level = (step.level & 255u) & ~FINE_SPLIT;\n"
+        + EVOLUTION
+        + include_str!("step_weighted.wgsl")
+        + WRITE
+        + include_str!("current_blend.wgsl")
+}
+
+// Admit the old one-current solves in their existing priority order first.
+// A region only gets additional currents after every affordable region has one.
+fn admit_currents(
+    window: &Window,
+    regions: &[(u32, u64, usize)],
+    track_activity: bool,
+    budget: u32,
+    admitted: &mut Vec<usize>,
+) -> (u32, super::CarriageReport) {
+    let mut remaining = budget;
+    admitted.clear();
+    admitted.extend(regions.iter().map(|&(region, latest, _)| {
+        let depths = window.depths[region as usize].count_ones();
+        if (track_activity && latest == 0) || depths > remaining {
+            return 0;
+        }
+        remaining -= depths;
+        1
+    }));
+    let mut report = super::CarriageReport::default();
+    if let Some(carriage) = &window.carriage {
+        for (&(region, _, _), count) in regions.iter().zip(admitted) {
+            if *count == 0 {
+                continue;
+            }
+            let ladder = &carriage.regions[region as usize];
+            let depths = window.depths[region as usize].count_ones();
+            let extra = (remaining / depths) as usize;
+            *count = ladder.count.min(1 + extra);
+            remaining -= u32::try_from(*count - 1).expect("carriage count") * depths;
+            report.dropped += u32::try_from(ladder.count - *count).expect("carriage count");
+            report.maximum_error = report.maximum_error.max(ladder.error[*count - 1]);
+        }
+    }
+    (budget - remaining, report)
 }
 
 impl Interaction {
@@ -261,7 +325,7 @@ impl Interaction {
         read
     }
 
-    pub(crate) fn resource_bytes(&self) -> [(String, u64); 6] {
+    pub(crate) fn resource_bytes(&self) -> impl Iterator<Item = (String, u64)> + '_ {
         [
             ("interaction wave endpoints".into(), self.endpoints.size()),
             ("interaction transform workspace".into(), 6 * PLANE_BYTES),
@@ -270,9 +334,20 @@ impl Interaction {
             ("interaction step settings".into(), self.steps.size()),
             ("interaction sample settings".into(), self.sample.size()),
         ]
+        .into_iter()
+        .chain(
+            self.carriage
+                .iter()
+                .map(|buffer| ("interaction carriage weights".into(), buffer.size())),
+        )
     }
 
-    pub(crate) fn new(device: &DeviceSite, mailbox: Mailbox, initial_report: Report) -> Self {
+    pub(crate) fn new(
+        device: &DeviceSite,
+        mailbox: Mailbox,
+        initial_report: Report,
+        varying_current: bool,
+    ) -> Self {
         use wgpu::BufferUsages as Usage;
         let stride =
             (device.limits().min_uniform_buffer_offset_alignment as usize).max(size_of::<Step>());
@@ -307,6 +382,14 @@ impl Interaction {
             u64::from(levels) * (CELLS * size_of::<Cell>()) as u64,
             Usage::STORAGE | Usage::COPY_DST,
         );
+        let carriage = varying_current.then(|| {
+            buffer(
+                device,
+                "interaction carriage weights",
+                u64::from(levels) * (CELLS * size_of::<CellCarriage>()) as u64,
+                Usage::STORAGE | Usage::COPY_DST,
+            )
+        });
         let patches = buffer(
             device,
             "interaction pressure patches",
@@ -332,6 +415,11 @@ impl Interaction {
         let step_size = std::num::NonZeroU64::new(size_of::<Step>() as u64);
         let entries: Vec<_> = layout_entries
             .into_iter()
+            .chain(
+                carriage
+                    .iter()
+                    .map(|_| wgpu::BufferBindingType::Storage { read_only: true }),
+            )
             .zip(0_u32..)
             .map(|(ty, binding)| {
                 if binding == 0 {
@@ -368,6 +456,7 @@ impl Interaction {
         ];
         let entries: Vec<_> = resources
             .into_iter()
+            .chain(carriage.iter().map(wgpu::Buffer::as_entire_binding))
             .zip(0_u32..)
             .map(|(resource, binding)| wgpu::BindGroupEntry { binding, resource })
             .collect();
@@ -381,7 +470,7 @@ impl Interaction {
             bind_group_layouts: &[Some(&layout)],
             immediate_size: 0,
         });
-        let source = shader_constants() + include_str!("step.wgsl");
+        let source = step_source(varying_current);
         let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some(PASS),
             source: wgpu::ShaderSource::Wgsl(source.into()),
@@ -410,6 +499,7 @@ impl Interaction {
             sample,
             cells,
             patches,
+            carriage,
             steps,
             group,
             pipelines,
@@ -417,7 +507,7 @@ impl Interaction {
             initial_report,
             committed: None,
             recorded: None,
-            windows: Default::default(),
+            windows: std::array::from_fn(|_| Window::new(varying_current)),
             wet_hollows: WetHollows::default(),
             committed_activity: Default::default(),
             recorded_activity: Default::default(),
@@ -426,6 +516,7 @@ impl Interaction {
             patch_rows: Vec::new(),
             candidates: Vec::new(),
             regions: Vec::new(),
+            admitted: Vec::new(),
             committed_pressures: Default::default(),
             recorded_pressures: Vec::new(),
         }
@@ -445,6 +536,7 @@ impl Interaction {
         encoder: &mut wgpu::CommandEncoder,
         frame: &ContributionFrame,
         map: &Map,
+        plunges: Option<&crate::falls::Plunges>,
     ) {
         self.recorded = None;
         self.dispatches.clear();
@@ -534,6 +626,7 @@ impl Interaction {
             report.resets += 1;
             report.regions = [0; 2];
             report.solves = [0; 2];
+            report.carriage = Default::default();
             report.labelling_ms = 0.0;
             [
                 Endpoint {
@@ -614,7 +707,7 @@ impl Interaction {
                 }))
             {
                 let fine = level == FINE;
-                let track_activity = fine || track_hollows;
+                let track_activity = fine || track_hollows || self.carriage.is_some();
                 let activity = &mut self.recorded_activity[level];
                 let second = fine && fine_ticks == 2 && last == time.tick;
                 let to_scratch = fine && fine_ticks == 2 && !second;
@@ -637,6 +730,13 @@ impl Interaction {
                         (level * CELLS * size_of::<Cell>()) as u64,
                         bytemuck::cast_slice(&window.cells),
                     );
+                    if let (Some(buffer), Some(carriage)) = (&self.carriage, &window.carriage) {
+                        queue.write_buffer(
+                            buffer,
+                            (level * CELLS * size_of::<CellCarriage>()) as u64,
+                            bytemuck::cast_slice(&carriage.rows),
+                        );
+                    }
                 }
                 let metres = CELL_METRES[level];
                 let local = |world: [f64; 2]| {
@@ -676,12 +776,20 @@ impl Interaction {
                             body: Some(index),
                         });
                     }
-                    for impulse in pages
+                    let game = pages
                         .impulses
                         .get(&tick)
                         .into_iter()
-                        .flat_map(|page| &page.impulses)
-                    {
+                        .flat_map(|page| &page.impulses);
+                    let game_count = pages
+                        .impulses
+                        .get(&tick)
+                        .map_or(0, |page| page.impulses.len());
+                    let fall = plunges
+                        .into_iter()
+                        .flat_map(|impacts| impacts.impulses(tick))
+                        .take((mailbox.limits.impulses as usize).saturating_sub(game_count));
+                    for impulse in game.copied().chain(fall) {
                         let place = local(impulse.place);
                         self.candidates.push(Source {
                             patch: Patch {
@@ -720,13 +828,21 @@ impl Interaction {
                 self.regions.sort_unstable_by_key(|&(region, tick, _)| {
                     (region != priority, std::cmp::Reverse(tick), region)
                 });
-                let mut remaining = self.mailbox.limits.solves;
-                for &(region, latest, count) in &self.regions {
+                let budget = self.mailbox.limits.solves;
+                let (solves, carriage_report) = admit_currents(
+                    window,
+                    &self.regions,
+                    track_activity,
+                    budget,
+                    &mut self.admitted,
+                );
+                for (&(region, latest, count), &currents) in self.regions.iter().zip(&self.admitted)
+                {
                     if track_activity && latest == 0 {
                         continue;
                     }
                     let depths = window.depths[region as usize];
-                    if depths.count_ones() > remaining {
+                    if currents == 0 {
                         if track_activity {
                             activity.latest[region as usize] = None;
                         }
@@ -737,7 +853,6 @@ impl Interaction {
                         }
                         continue;
                     }
-                    remaining -= depths.count_ones();
                     if track_activity {
                         activity.latest[region as usize] = Some(latest);
                     }
@@ -758,9 +873,7 @@ impl Interaction {
                         if depths & (1 << index) == 0 {
                             continue;
                         }
-                        let offset = self.step_bytes.len();
-                        self.step_bytes.resize(offset + self.stride, 0);
-                        let step = Step {
+                        let mut step = Step {
                             shift: if second {
                                 [0; 2]
                             } else {
@@ -794,24 +907,43 @@ impl Interaction {
                             seconds: if fine { dt } else { dt * ticks as f32 },
                             ticks: if fine { 1.0 } else { ticks as f32 },
                         };
-                        self.step_bytes[offset..offset + size_of::<Step>()]
-                            .copy_from_slice(bytemuck::bytes_of(&step));
-                        self.dispatches.push(Dispatch {
-                            offset: offset as u32,
-                            load,
-                        });
-                        load = false;
+                        let ladder = window
+                            .carriage
+                            .as_ref()
+                            .map(|data| &data.regions[region as usize]);
+                        for current in 0..currents {
+                            if let Some(ladder) = ladder {
+                                step.current =
+                                    ladder.currents[currents - 1][current].as_vec2().to_array();
+                                step.level &= 255;
+                                step.level |= ((currents - 1) as u32) << 8 | (current as u32) << 16;
+                            }
+                            let offset = self.step_bytes.len();
+                            self.step_bytes.resize(offset + self.stride, 0);
+                            self.step_bytes[offset..offset + size_of::<Step>()]
+                                .copy_from_slice(bytemuck::bytes_of(&step));
+                            self.dispatches.push(Dispatch {
+                                offset: offset as u32,
+                                load,
+                            });
+                            load = false;
+                        }
                     }
                 }
                 let regions = window.depths.len() as u32;
-                let solves = self.mailbox.limits.solves - remaining;
                 if let Some(fine) = fine_report.as_mut().filter(|_| fine) {
                     fine.regions = regions;
                     fine.solves += solves;
+                    fine.carriage.dropped += carriage_report.dropped;
+                    fine.carriage.maximum_error = fine
+                        .carriage
+                        .maximum_error
+                        .max(carriage_report.maximum_error);
                     next.live[FINE] = solves != 0;
                 } else {
                     report.regions[level] = regions;
                     report.solves[level] = solves;
+                    report.carriage[level] = carriage_report;
                 }
                 if to_scratch {
                     fine_previous = FineEndpoint {

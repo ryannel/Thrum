@@ -21,6 +21,7 @@ RECORDS = {'first-frame': ROOT / 'tests/fixtures/waters/first-frame-cost.json',
            'surf': ROOT / '.orchestrate/evidence/WATERS/WP21/surf-cost.json',
            'channel': ROOT / '.orchestrate/evidence/WATERS/WP9/channel-cost.json',
            'river-calm': ROOT / '.orchestrate/evidence/RIVERS/WP5/river-calm-cost.json',
+           'fall': ROOT / '.orchestrate/evidence/RIVERS/WP6/fall-cost.json',
            'river': ROOT / '.orchestrate/evidence/RIVERS/WP4/river-cost.json',
            'rain-puddles': ROOT / 'tests/fixtures/puddles/yard-water-cost.json',
            'rain-rings': ROOT / 'tests/fixtures/puddles/rain-rings-cost.json',
@@ -36,6 +37,7 @@ FIRST_FRAME_FORMER = '/WATERS/M2-cost.json'
 WAKE_HISTORY = ROOT / 'examples/water/tests/fixtures/wake-cost-prior.json'
 SURF_HISTORY = ROOT / 'examples/water/tests/fixtures/surf-cost-prior.json'
 RIVER_HISTORY = ROOT / 'examples/water/tests/fixtures/river-cost-wp4.json'
+FLOW_HISTORY = ROOT / 'examples/water/tests/fixtures/river-cost-wp5.json'
 WP13_SURF = ROOT / 'examples/water/tests/fixtures/surf-cost-wp13.json'
 SURF_CACHE_INVESTIGATION = ROOT / 'examples/water/tests/fixtures/surf-cache-investigation.json'
 WAKE_ROUTE = {'wind': 'trade', 'view': 'overhead', 'speed_mps': 6}
@@ -51,8 +53,10 @@ def measure(scene):
     island = scene == 'island'
     channel = scene == 'channel'
     calm_river = scene == 'river-calm'
-    river = scene in ('river', 'river-calm')
+    fall = scene == 'fall'
+    river = scene in ('river', 'river-calm', 'fall')
     output = ROOT / ({
+        'fall': 'tmp/rivers-wp6/cost-current',
         'river-calm': 'tmp/rivers-wp5/cost-current',
         'river': 'tmp/rivers-wp4/cost-current', 'channel': 'tmp/waters-wp9/cost-current', 'island': 'tmp/waters-M4/cost-current',
     }.get(scene, 'tmp/waters-M2/cost-current'))
@@ -62,7 +66,9 @@ def measure(scene):
         env['THRUM_WATER_CHANNEL'] = 'trade'
     else:
         env.pop('THRUM_WATER_CHANNEL', None)
-    if river:
+    if fall:
+        env['THRUM_WATER_FALL'] = 'calm'
+    if river and not fall:
         env['THRUM_WATER_RIVER'] = 'calm' if calm_river else 'trade'
     elif channel:
         env.pop('THRUM_WATER_RIVER', None)
@@ -86,6 +92,12 @@ def measure(scene):
                 key = product['key']
                 (Path(directory) / f'{key}.river').replace(river_store / f'{key}.river')
             env['THRUM_WATER_RIVER_STORE'] = str(river_store)
+    fall_product = None
+    if fall:
+        prepared = run(['cargo', 'run', '--release', '--locked', '--offline', '-p', 'water-scene',
+                        '--', '--prepare-fall-river', str(river_store)], text=True, capture_output=True)
+        key = prepared.stdout.strip()
+        fall_product = {'key': key, 'bytes': (river_store / f'{key}.river').stat().st_size}
     run(['cargo', 'test', '--release', '--locked', '--offline', '-p', 'water-scene', '--test', 'proof_gpu'], env=env)
     data = json.loads((output / 'cost.json').read_text())
     data['commit'] = run(['git', 'rev-parse', 'HEAD'], capture_output=True, text=True).stdout.strip()
@@ -102,6 +114,9 @@ def measure(scene):
                         if calm_river else
                         'Both rivers from above the lake in trade wind, with identical terrain, floats and sky in both arms')
         data['river_files'] = products
+    if fall:
+        data['view'] = 'Fall cost overlook at 1440p, paired with identical cooked terrain and sky'
+        data['fall_product'] = fall_product
     data['scene'] = scene
     data['estimates'] = {'surface_vertices': 200000, 'surface_gpu_ms': 'unmeasured in design; largest term', 'long_cache_gpu_ms': '0.2-0.3', 'previous_inverted_cache_gpu_ms': 3.6, 'broadsides_surface_ms': 10.5}
     data['summary'] = []
@@ -186,6 +201,18 @@ def measure(scene):
                     'disposition': ('The flow transforms reuse wind FFT pipelines and use independent scratch for their cadence. The whitewater transport cost belongs '
                                     'to tick frames. No dedicated texture binding was added to the surface.'),
                 })
+    if fall:
+        prior = json.loads(FLOW_HISTORY.read_text())
+        data['wp5'] = {key: prior[key] for key in ('extent', 'view', 'commit', 'summary')}
+        for row, label, baseline, duration in channel_growth(data['summary'], prior['summary']):
+            data['investigations'].append({
+                'wire': 'pass grew by at least 25% compared to WP5',
+                'water': row['water'], 'tick_frame': row['tick_frame'], 'pass': label,
+                'measurement': f'{label} grew from {baseline:.3f} ms to {duration:.3f} ms.',
+                'disposition': ('The paired dry arm isolates the different camera and terrain coverage. '
+                                'The waterfall and interaction have their own timestamps, while the '
+                                'plunge births are accounted within the existing whitewater step.'),
+            })
     return data
 
 
@@ -308,6 +335,17 @@ def validate(data, scene):
                         for item in data['investigations']
                         if item['wire'] == 'pass grew by at least 25% compared to WP4'}
         for row, label, _, _ in channel_growth(data['summary'], data['wp4']['summary']):
+            assert (row['water'], row['tick_frame'], label) in investigated, label
+    if scene == 'fall':
+        assert data['wp5']['extent'] == [2560, 1440]
+        wet = [row for row in data['summary'] if row['water']]
+        assert all(any('waterfall sheet' in label for label in row['passes_ms']) for row in wet)
+        assert any('interaction waves' in label for row in wet for label in row['passes_ms'])
+        assert any('whitewater' in label for row in wet for label in row['passes_ms'])
+        investigated = {(item['water'], item['tick_frame'], item['pass'])
+                        for item in data['investigations']
+                        if item['wire'] == 'pass grew by at least 25% compared to WP5'}
+        for row, label, _, _ in channel_growth(data['summary'], data['wp5']['summary']):
             assert (row['water'], row['tick_frame'], label) in investigated, label
     if scene == 'island':
         named = data['first_frame_record']
@@ -1704,7 +1742,7 @@ def main():
     record = RECORDS[args.scene]
     data = measure(args.scene)
     validate(data, args.scene)
-    if args.scene in ('channel', 'river', 'river-calm'):
+    if args.scene in ('channel', 'river', 'river-calm', 'fall'):
         record = Path(os.environ.get('THRUM_WATER_OUTPUT', record))
         if record.is_dir():
             record /= f'{args.scene}-cost.json'

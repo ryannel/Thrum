@@ -35,8 +35,16 @@ pub fn map(
     forcing: &thrum_sea_model::Forcing,
     store: Option<&Path>,
 ) -> Result<Prepared, Box<dyn Error>> {
+    map_selection(forcing, store, false)
+}
+
+fn map_selection(
+    forcing: &thrum_sea_model::Forcing,
+    store: Option<&Path>,
+    fall: bool,
+) -> Result<Prepared, Box<dyn Error>> {
     let bed = crate::island::terrain_bed(TERRAIN)?;
-    let files = files(&bed, store)?;
+    let files = files(&bed, store, fall)?;
     prepare_map(&bed, files, forcing)
 }
 
@@ -109,8 +117,8 @@ fn prepare_map(
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-fn files(bed: &Bed, store: Option<&Path>) -> Result<[RiverFile; 2], Box<dyn Error>> {
-    store::load(bed, store.unwrap_or_else(|| Path::new(DEFAULT_STORE)))
+fn files(bed: &Bed, store: Option<&Path>, fall: bool) -> Result<[RiverFile; 2], Box<dyn Error>> {
+    store::load(bed, store.unwrap_or_else(|| Path::new(DEFAULT_STORE)), fall)
 }
 
 /// Generate the river files beside the cooked store for packaging.
@@ -119,9 +127,20 @@ fn files(bed: &Bed, store: Option<&Path>) -> Result<[RiverFile; 2], Box<dyn Erro
 #[cfg(not(target_arch = "wasm32"))]
 pub fn prepare_files(directory: &Path) -> Result<[String; 2], Box<dyn Error>> {
     let bed = crate::island::terrain_bed(TERRAIN)?;
-    let files = store::load(&bed, directory)?;
+    let files = store::load(&bed, directory, false)?;
     let (_, files) = prepare_map(&bed, files, &crate::channel::forcing(Wind::Calm))?;
     Ok(files.map(|file| key_hex(&file.key)))
+}
+
+/// Generate the fall selection's independently sampled spring file for packaging.
+/// # Errors
+/// Returns invalid terrain, a refused solve or an I/O error.
+#[cfg(not(target_arch = "wasm32"))]
+pub fn prepare_fall_file(directory: &Path) -> Result<String, Box<dyn Error>> {
+    let bed = crate::island::terrain_bed(TERRAIN)?;
+    let files = store::load(&bed, directory, true)?;
+    let (_, files) = prepare_map(&bed, files, &crate::channel::forcing(Wind::Calm))?;
+    Ok(key_hex(&files[0].key))
 }
 
 fn key_hex(key: &[u8; 32]) -> String {
@@ -137,8 +156,8 @@ fn key_hex(key: &[u8; 32]) -> String {
 include!(concat!(env!("OUT_DIR"), "/river_package.rs"));
 
 #[cfg(target_arch = "wasm32")]
-fn files(_: &Bed, _: Option<&Path>) -> Result<[RiverFile; 2], Box<dyn Error>> {
-    FILES
+fn files(_: &Bed, _: Option<&Path>, fall: bool) -> Result<[RiverFile; 2], Box<dyn Error>> {
+    [FILES[usize::from(fall) * 2], FILES[1]]
         .into_iter()
         .zip(NAMES)
         .map(|(entry, name)| {
@@ -250,6 +269,8 @@ pub struct Scene {
     pub query: thrum_water::query::QueryMailbox,
     /// Submitted river whitewater and control over chart-loss births.
     pub foam: Option<(thrum_water::foam::Tap, thrum_water::foam::Input)>,
+    /// Submitted interaction waves around the plunge pool.
+    pub wake: Option<thrum_water::interaction::WitnessTap>,
     /// The stream and outlet floats.
     pub floats: Box<dyn Fn() -> [crate::floating::Body; 2]>,
 }
@@ -274,10 +295,31 @@ pub fn build_with_flow(
     store: Option<&Path>,
     flow: bool,
 ) -> Result<Scene, Box<dyn Error>> {
+    build_selection(wind, draw_water, store, flow, false)
+}
+
+/// Build the river selection at its waterfall, with interaction windows on its plunge pool.
+/// # Errors
+/// Returns invalid assets, fall records, water or controls.
+pub fn build_fall(
+    wind: Wind,
+    draw_water: bool,
+    store: Option<&Path>,
+) -> Result<Scene, Box<dyn Error>> {
+    build_selection(wind, draw_water, store, true, true)
+}
+
+fn build_selection(
+    wind: Wind,
+    draw_water: bool,
+    store: Option<&Path>,
+    flow: bool,
+    falls: bool,
+) -> Result<Scene, Box<dyn Error>> {
     let mut forcing = crate::channel::forcing(wind);
     // The exposed floats take the prevailing wind alongside the map's current.
     forcing.wind_direction = 0.42;
-    let (mut map, files) = map(&forcing, store)?;
+    let (mut map, files) = map_selection(&forcing, store, falls)?;
     if flow {
         map.set_flow_bands(Some(
             thrum_water_model::FlowBands::new(thrum_water_model::FlowBandsProfile::default())
@@ -300,6 +342,8 @@ pub fn build_with_flow(
         ));
     }
     let [low, high] = files[0].gauge_range();
+    let spring_samples = files[0].gauges();
+    let fall = falls.then(|| FallViews::new(&files[0], &map)).transpose()?;
     let map = Arc::new(Mutex::new(map));
     let spectrum = thrum_sea_model::Spectrum::build(&forcing)?;
     let mut profile = crate::profile(&spectrum);
@@ -308,8 +352,39 @@ pub fn build_with_flow(
         points: 24,
         max_age: 8,
     });
+    if falls {
+        profile.interaction = Some(thrum_water::interaction::Limits {
+            impulses: 64,
+            ..Default::default()
+        });
+    }
     let fallback = crate::floating::fallback(&spectrum, profile.waves.choppiness)?;
     let mut water = thrum_water::Water::mapped(Arc::clone(&map), spectrum, profile)?;
+    if falls {
+        let records = files
+            .iter()
+            .enumerate()
+            .filter_map(|(id, file)| {
+                let samples = file.fall_samples();
+                (samples.segment_capacity() != 0).then_some((id, samples))
+            })
+            .collect();
+        water.enable_falls(
+            records,
+            thrum_water::FallsProfile {
+                plunge: thrum_water_model::PlungeProfile {
+                    wave_share: 0.28,
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+        )?;
+    }
+    let wake = falls.then(|| water.tap_interaction());
+    let follow = fall
+        .as_ref()
+        .zip(water.interaction_mailbox())
+        .map(|(view, mailbox)| (view.pool, mailbox));
     let (z, x) = forcing.wind_direction.sin_cos();
     let wind = glam::DVec2::new(x, z) * forcing.wind_speed;
     let foam = if flow {
@@ -322,12 +397,16 @@ pub fn build_with_flow(
     let report = water.report();
     let mut controls = Controls::new();
     let camera = controls
-        .slider("camera.river", "River view", 0.0..=18.0)
+        .slider(
+            "camera.river",
+            "River view",
+            if falls { 0.0..=8.0 } else { 0.0..=18.0 },
+        )
         .step(1.0)
         .add()?;
     let lake = controls
         .slider("lake.stage", "Lake stage (m)", 0.0..=1.0)
-        .default(0.5)
+        .default(if falls { 0.0 } else { 0.5 })
         .add()?;
     let spring = controls
         .slider("spring.stage", "Spring stage", 0.0..=1.0)
@@ -342,14 +421,17 @@ pub fn build_with_flow(
         .default(48.0)
         .add()?;
     let stage_map = Arc::clone(&map);
-    let game = SkyGame::new(controls, VIEWS[0].1, move |values, sky| {
+    let initial = fall.as_ref().map_or(VIEWS[0].1, |fall| fall.cameras[0]);
+    let game = SkyGame::new(controls, initial, move |values, sky| {
         #[expect(
             clippy::cast_possible_truncation,
             clippy::cast_sign_loss,
             reason = "bounded view index"
         )]
         let view = values.get(camera).round() as usize;
-        sky.camera = VIEWS[view].1;
+        sky.camera = fall
+            .as_ref()
+            .map_or_else(|| VIEWS[view].1, |fall| fall.cameras[view]);
         sky.sun_elevation_degrees = values.get(sun);
         sky.sun_azimuth_degrees = 165.0;
         sky.exposure_compensation_ev = 0.3;
@@ -359,7 +441,20 @@ pub fn build_with_flow(
             .expect("bounded lake stage");
         map.set_stage(0, f64::from(values.get(tide)))
             .expect("bounded tide");
-        let gauge = (high - low).mul_add(f64::from(values.get(spring)), low);
+        let spring = f64::from(values.get(spring));
+        let gauge = if falls {
+            let a = spring_samples[1];
+            let b = spring_samples[2];
+            if spring < 0.25 {
+                (a - low).mul_add(spring * 4.0, low)
+            } else if spring < 0.5 {
+                (b - a).mul_add((spring - 0.25) * 4.0, a)
+            } else {
+                (high - b).mul_add((spring - 0.5) * 2.0, b)
+            }
+        } else {
+            (high - low).mul_add(spring, low)
+        };
         if (map.gauge(0) - gauge).abs() > 1e-12 {
             map.set_gauge(0, gauge).expect("bounded spring stage");
         }
@@ -371,8 +466,14 @@ pub fn build_with_flow(
     let material = crate::island::island_material(0.0);
     let (game, _) =
         game.with_meshes_and_texture_lease(terrain, Some(("river island", &material)), &[])?;
-    let (game, floats) =
-        crate::floating::install_river_floats(game, Arc::clone(&map), &water, fallback, wind);
+    let (game, floats) = crate::floating::install_river_floats(
+        game,
+        Arc::clone(&map),
+        &water,
+        fallback,
+        wind,
+        follow,
+    );
     let game = if draw_water {
         game.with_contribution(Box::new(water), || ContentStatus::Drawn(1))
     } else {
@@ -385,8 +486,116 @@ pub fn build_with_flow(
         files,
         query,
         foam,
+        wake,
         floats,
     })
+}
+
+struct FallViews {
+    cameras: [Camera; 9],
+    pool: [f64; 2],
+}
+
+impl FallViews {
+    fn new(file: &RiverFile, map: &Map) -> Result<Self, Box<dyn Error>> {
+        use glam::{DVec2, DVec3};
+
+        let falls = file.falls_at(file.gauge_range()[1]);
+        let fall = falls
+            .iter()
+            .max_by_key(|fall| fall.segments.len())
+            .ok_or("spring river has no fall")?;
+        let path = &fall.segments[fall.segments.len() / 2].path;
+        let lip = path[0];
+        let foot = path[path.len() - 1];
+        let start = DVec2::from_array(lip.place);
+        let stop = DVec2::from_array(foot.place);
+        let forward = (stop - start).normalize_or(DVec2::Y);
+        let across = forward.perp();
+        let world = |xz: DVec2, y: f64| DVec3::new(xz.x, y, xz.y).as_vec3().to_array();
+        let pool = stop + forward * 2.0;
+        let pool_level = map
+            .sample(pool.to_array())
+            .map_or(foot.height.max(12.0), |sample| sample.row.level.max(12.0));
+        let middle_height = f64::midpoint(lip.height, pool_level);
+        let centre = start.lerp(stop, 0.35);
+        let look = |position: DVec2, eye, target, target_height, angle| {
+            let base = map.bed().height(position.to_array()).unwrap_or(eye);
+            Camera::look_at(
+                world(position, eye.max(base + 0.28)),
+                world(target, target_height),
+                angle,
+            )
+        };
+        Ok(Self {
+            cameras: [
+                look(
+                    centre + 5.0 * forward + across,
+                    lip.height + 0.25,
+                    centre,
+                    middle_height,
+                    59.0,
+                ),
+                look(
+                    centre + 2.0 * forward + 0.2 * across,
+                    middle_height + 0.5,
+                    centre,
+                    middle_height,
+                    74.0,
+                ),
+                look(
+                    centre + 3.0 * across + forward,
+                    lip.height + 0.25,
+                    centre,
+                    middle_height,
+                    65.0,
+                ),
+                look(
+                    centre - 0.55 * forward + 0.7 * across,
+                    lip.height + 0.35,
+                    centre + 0.4 * forward,
+                    middle_height,
+                    84.0,
+                ),
+                look(
+                    stop + 60.0 * forward + 4.0 * across,
+                    lip.height + 8.0,
+                    centre,
+                    middle_height,
+                    31.0,
+                ),
+                look(
+                    stop + 200.0 * forward + 6.0 * across,
+                    lip.height + 28.0,
+                    centre,
+                    middle_height,
+                    26.0,
+                ),
+                look(
+                    pool + 2.0 * forward + 1.5 * across,
+                    pool_level + 1.5,
+                    centre,
+                    pool_level + 0.3,
+                    65.0,
+                ),
+                look(
+                    pool + 3.0 * forward + across,
+                    pool_level + 15.0,
+                    pool,
+                    pool_level,
+                    50.0,
+                ),
+                look(
+                    centre + 7.2 * forward + across,
+                    lip.height + 0.5,
+                    centre,
+                    middle_height,
+                    63.0,
+                ),
+            ],
+            pool: pool.to_array(),
+        })
+    }
 }
 
 #[expect(

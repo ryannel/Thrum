@@ -56,6 +56,39 @@ pub struct UpperSample {
     pub lip_wetting: Vec<(u64, f64)>,
 }
 
+/// The fall records of a solved river, independent of the reach grids.
+#[derive(Clone, Debug)]
+pub struct FallSamples {
+    lowest: Vec<Fall>,
+    upper: Vec<UpperSample>,
+    gauges: Vec<f64>,
+}
+
+impl FallSamples {
+    /// The largest number of segments that may run at once across a gauge interval.
+    pub fn segment_capacity(&self) -> usize {
+        let count = |falls: &[Fall]| falls.iter().map(|fall| fall.segments.len()).sum();
+        let counts = std::iter::once(count(&self.lowest))
+            .chain(self.upper.iter().map(|sample| count(&sample.falls)))
+            .collect::<Vec<usize>>();
+        counts
+            .windows(2)
+            .map(|pair| pair[0] + pair[1])
+            .max()
+            .unwrap_or(counts[0])
+    }
+
+    /// Gauge levels from the same solve as the recorded paths.
+    pub fn gauges(&self) -> &[f64] {
+        &self.gauges
+    }
+
+    /// Mix the two samples that bracket the live river gauge.
+    pub fn at(&self, gauge: f64) -> Vec<Fall> {
+        falls_at(&self.lowest, &self.upper, &self.gauges, gauge)
+    }
+}
+
 /// A reach's row in a sample above the lowest, on its rectangle.
 #[derive(Clone, Debug, PartialEq)]
 pub struct ReachSample {
@@ -354,43 +387,51 @@ impl RiverFile {
     /// The river's falls at a gauge: each the mix of its records in the two samples that
     /// bracket the gauge, by [`mix_fall`]. A fall that runs in neither is left out.
     pub fn falls_at(&self, gauge: f64) -> Vec<Fall> {
-        let gauges = self.gauges();
-        let at = bracket(&gauges, gauge);
-        if gauges.len() == 1 {
-            return self.falls.clone();
-        }
-        let sample = |k: usize| {
-            if k == 0 {
-                &self.falls
-            } else {
-                &self.upper[k - 1].falls
-            }
-        };
-        let (lower, upper) = (sample(at.lower), sample(at.lower + 1));
-        let wetting = &self.upper[at.lower].lip_wetting;
-        let mut names: Vec<&str> = lower.iter().chain(upper).map(|f| f.name.as_str()).collect();
-        names.dedup();
-        let mut seen = Vec::new();
-        let mut out = Vec::new();
-        for name in names {
-            if seen.contains(&name) {
-                continue;
-            }
-            seen.push(name);
-            let a = lower.iter().find(|f| f.name == name);
-            let b = upper.iter().find(|f| f.name == name);
-            if let Some(f) = mix_fall(
-                a,
-                b,
-                [gauges[at.lower], gauges[at.lower + 1]],
-                at.gauge,
-                |id| wetting.iter().find(|w| w.0 == id).map(|w| w.1),
-            ) {
-                out.push(f);
-            }
-        }
-        out
+        falls_at(&self.falls, &self.upper, &self.gauges(), gauge)
     }
+
+    /// Copy the fall records without the reach grids for runtime preparation.
+    pub fn fall_samples(&self) -> FallSamples {
+        FallSamples {
+            lowest: self.falls.clone(),
+            upper: self.upper.clone(),
+            gauges: self.gauges(),
+        }
+    }
+}
+
+fn falls_at(lowest: &[Fall], upper: &[UpperSample], gauges: &[f64], gauge: f64) -> Vec<Fall> {
+    let at = bracket(gauges, gauge);
+    if gauges.len() == 1 {
+        return lowest.to_vec();
+    }
+    let sample = |k: usize| {
+        if k == 0 { lowest } else { &upper[k - 1].falls }
+    };
+    let wetting = &upper[at.lower].lip_wetting;
+    let (lower, upper) = (sample(at.lower), sample(at.lower + 1));
+    let mut names: Vec<&str> = lower.iter().chain(upper).map(|f| f.name.as_str()).collect();
+    names.dedup();
+    let mut seen = Vec::new();
+    let mut out = Vec::new();
+    for name in names {
+        if seen.contains(&name) {
+            continue;
+        }
+        seen.push(name);
+        let a = lower.iter().find(|f| f.name == name);
+        let b = upper.iter().find(|f| f.name == name);
+        if let Some(f) = mix_fall(
+            a,
+            b,
+            [gauges[at.lower], gauges[at.lower + 1]],
+            at.gauge,
+            |id| wetting.iter().find(|w| w.0 == id).map(|w| w.1),
+        ) {
+            out.push(f);
+        }
+    }
+    out
 }
 
 fn fail(reason: &'static str) -> WaterError {

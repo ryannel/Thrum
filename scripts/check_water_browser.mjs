@@ -8,7 +8,7 @@ import zlib from 'node:zlib';
 import {installWasmReceipt,readWasmReceipt} from './wasm_receipt.mjs';
 
 const mode = process.argv[process.argv.indexOf('--case') + 1];
-if (!['first-frame','frames','fixed','realtime','island','bodies','wake','foam','surf','channel','river','river-calm','rain-puddles','rain-rings','rain-footfall','rain-ground','under','under-light','clouds'].includes(mode)) throw Error('use --case first-frame|frames|fixed|realtime|island|bodies|wake|foam|surf|channel|river|river-calm|rain-puddles|rain-rings|rain-footfall|rain-ground|under|under-light|clouds');
+if (!['first-frame','frames','fixed','realtime','island','bodies','wake','foam','surf','channel','river','river-calm','fall','rain-puddles','rain-rings','rain-footfall','rain-ground','under','under-light','clouds'].includes(mode)) throw Error('use --case first-frame|frames|fixed|realtime|island|bodies|wake|foam|surf|channel|river|river-calm|fall|rain-puddles|rain-rings|rain-footfall|rain-ground|under|under-light|clouds');
 const opticsRoute = mode === 'fixed' ? process.env.THRUM_WATER_BROWSER_OPTICS : undefined;
 const diveRoute = ['fixed','realtime'].includes(mode) ? process.env.THRUM_WATER_BROWSER_DIVE : undefined;
 const surfInspection = process.env.THRUM_WATER_INSPECT_SURF === '1' && ['fixed','realtime'].includes(mode);
@@ -35,7 +35,7 @@ const [width,height] = mode === 'under-light' ? [320,180] : mode === 'under' ? [
   : cloudMotion || (mode === 'realtime' && diveRoute && !['under-light','caustic-window'].includes(process.env.THRUM_WATER_ROUTE)
       && process.env.THRUM_WATER_DIVE_TRAVEL===undefined) ? [1280,720]
   : mode === 'clouds' && (!cloudRoute || cloudControls || cloudReflection) ? [640,360]
-  : ['rain-rings','rain-footfall','rain-ground'].includes(mode) ? [960,540]
+  : ['fall','rain-rings','rain-footfall','rain-ground'].includes(mode) ? [960,540]
   : [2560,1440];
 const output = path.resolve(process.env.THRUM_WATER_OUTPUT ?? `tmp/waters-M3/${mode}-${Date.now()}`);
 await fs.mkdir(output,{recursive:true});
@@ -254,6 +254,73 @@ const underLightObserver = `
     return {rungs:values.map(field=>({mean:field.reduce((n,x)=>n+x,0)/field.length,
       deviation:field.reduce((n,x)=>n+Math.abs(x-1),0)/field.length})),
       depthDifference:difference(values[2],values[10]),temporal};
+  };
+`;
+const fallObserver = `
+  const fallViews=new WeakMap();
+  const makeTexture=GPUDevice.prototype.createTexture;
+  GPUDevice.prototype.createTexture=function(desc){
+    if(desc.format==='rg16float'||desc.format==='r8unorm'||desc.format==='depth32float'){
+      desc={...desc,usage:desc.usage|GPUTextureUsage.COPY_SRC};
+    }
+    return makeTexture.call(this,desc);
+  };
+  const makeView=GPUTexture.prototype.createView;
+  GPUTexture.prototype.createView=function(...args){
+    const view=makeView.apply(this,args);
+    fallViews.set(view,this);
+    return view;
+  };
+  const render=GPUCommandEncoder.prototype.beginRenderPass;
+  globalThis.__fallDraws=0;
+  let fallTargets;
+  GPUCommandEncoder.prototype.beginRenderPass=function(desc){
+    if(desc.label?.endsWith('waterfall sheet')){
+      __fallDraws++;
+      fallTargets=[
+        fallViews.get(desc.colorAttachments[1].view),
+        fallViews.get(desc.colorAttachments[2].view),
+        fallViews.get(desc.depthStencilAttachment.view),
+      ];
+    }
+    return render.call(this,desc);
+  };
+  globalThis.__fallInputs=async(width,height)=>{
+    if(!fallTargets?.every(Boolean))throw Error('waterfall frame attachments were not seen');
+    const [motion,reactive,depth]=fallTargets;
+    const device=__devices.at(-1), encoder=device.createCommandEncoder();
+    const buffers=[[motion,4],[reactive,1],[depth,4]].map(([source,bytes])=>{
+      const stride=Math.ceil(width*bytes/256)*256;
+      const buffer=device.createBuffer({size:stride*height,usage:GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ});
+      encoder.copyTextureToBuffer({texture:source,aspect:source===depth?'depth-only':'all'},
+        {buffer,bytesPerRow:stride},[width,height]);
+      return {buffer,stride};
+    });
+    device.queue.submit([encoder.finish()]);
+    const [m,r,d]=await Promise.all(buffers.map(async({buffer,stride})=>{
+      await buffer.mapAsync(GPUMapMode.READ);
+      const view=new DataView(buffer.getMappedRange().slice(0));
+      buffer.unmap();buffer.destroy();
+      return {view,stride};
+    }));
+    const half=h=>{
+      const bits=(h>>>10)&31, fraction=(h&1023)/1024;
+      return (h&32768?-1:1)*(bits===0?fraction*2**-14:(1+fraction)*2**(bits-15));
+    };
+    const rows=[];
+    for(let y=0;y<height;y++){
+      let count=0,sum=0,minDepth=1,maxDepth=0;
+      for(let x=Math.floor(width*.18);x<Math.floor(width*.82);x++){
+        const coverage=r.view.getUint8(y*r.stride+x);
+        const movement=-half(m.view.getUint16(y*m.stride+4*x+2,true));
+        if(coverage<45||movement<=.03||movement>40)continue;
+        const depth=d.view.getFloat32(y*d.stride+4*x,true);
+        minDepth=Math.min(depth,minDepth);maxDepth=Math.max(depth,maxDepth);
+        count++;sum+=movement;
+      }
+      if(count>3)rows.push({y,count,motion:sum/count,minDepth,maxDepth});
+    }
+    return rows;
   };
 `;
 function riverLook(rgba, station) {
@@ -824,8 +891,8 @@ try {
   await cdp.call('Page.enable',{},sid);await cdp.call('Runtime.enable',{},sid);
   await installWasmReceipt(cdp,sid);
   const surfRoute=mode==='surf'||surfInspection;
-  await cdp.call('Page.addScriptToEvaluateOnNewDocument',{source:observer+(cloudControls?cloudObserver:'')+(cloudReflection?reflectionObserver:'')+(['under','under-light'].includes(mode)?lensObserver:'')+(mode==='under-light'?underLightObserver:'')+(['island','surf','channel','river','river-calm','rain-puddles','rain-rings','rain-footfall','rain-ground'].includes(mode)?islandObserver:'')+`\ndocument.addEventListener('DOMContentLoaded',()=>{document.querySelector('canvas').width=${width};document.querySelector('canvas').height=${height};});`},sid);
-  const route=cloudRoute??diveRoute??opticsRoute??(surfRoute?(handoffCut?'?surf=gale':'?surf=trade'):mode==='foam'?'?foam=calm&speed=6&view=overhead&wake-bodies=1':mode==='wake'?'?wake=calm&speed=6&view=overhead&wake-bodies=1':mode==='bodies'?'?bodies=trade&speed=5':mode==='island'?'?island=trade':mode==='channel'?'?channel=trade':mode==='river-calm'?'?river=calm':mode==='river'?'?river=trade':['rain-puddles','rain-rings','rain-footfall','rain-ground'].includes(mode)?'?rain=calm':mode==='under'?lensRoute('sea','baseline'):mode==='under-light'?'?under-light-probe=clear-water':mode==='clouds'?'?clouds=fair':'');
+  await cdp.call('Page.addScriptToEvaluateOnNewDocument',{source:observer+(cloudControls?cloudObserver:'')+(cloudReflection?reflectionObserver:'')+(['under','under-light'].includes(mode)?lensObserver:'')+(mode==='under-light'?underLightObserver:'')+(mode==='fall'?fallObserver:'')+(['island','surf','channel','river','river-calm','fall','rain-puddles','rain-rings','rain-footfall','rain-ground'].includes(mode)?islandObserver:'')+`\ndocument.addEventListener('DOMContentLoaded',()=>{document.querySelector('canvas').width=${width};document.querySelector('canvas').height=${height};});`},sid);
+  const route=cloudRoute??diveRoute??opticsRoute??(surfRoute?(handoffCut?'?surf=gale':'?surf=trade'):mode==='foam'?'?foam=calm&speed=6&view=overhead&wake-bodies=1':mode==='wake'?'?wake=calm&speed=6&view=overhead&wake-bodies=1':mode==='bodies'?'?bodies=trade&speed=5':mode==='island'?'?island=trade':mode==='channel'?'?channel=trade':mode==='river-calm'?'?river=calm':mode==='river'?'?river=trade':mode==='fall'?'?fall=calm':['rain-puddles','rain-rings','rain-footfall','rain-ground'].includes(mode)?'?rain=calm':mode==='under'?lensRoute('sea','baseline'):mode==='under-light'?'?under-light-probe=clear-water':mode==='clouds'?'?clouds=fair':'');
   result.route=route;
   const navigate=async search=>{
     await cdp.call('Page.navigate',{url:url+search},sid);
@@ -1407,6 +1474,30 @@ try {
       'the float must rise and fall, with dry ground under the roof');
     assert(new Set(result.frames.map(frame=>frame.sha256_rgba)).size===3,'the submitted yard states must differ');
     result.rain={first,joined,high,parted,draws,submitted};
+  } else if(mode==='fall'){
+    await until(async()=>{
+      const status=await evaluate(`game.frame(${now});game.report()`);
+      return /^Cooked generation [0-9]+ drawn/.test(status);
+    },'cooked fall island drawn');
+    await evaluate("game.edit_control('spring.stage',1);game.edit_control('sun.elevation',65)");
+    for(let step=0;step<40;step++){
+      await until(()=>evaluate('game.frame_ready()'),'fall frame slot');
+      await drive(1000/60);
+    }
+    await capture('waterfall');
+    const rows=await evaluate(`__fallInputs(${width},${height})`);
+    const foam=await evaluate('__readFoam()');
+    await capture('waterfall-next',1000/60);
+    assert(result.frames[0].sha256_rgba!==result.frames[1].sha256_rgba,'submitted fall must advance');
+    assert(await evaluate('__fallDraws')>0,'waterfall draw must be submitted');
+    assert(rows.length>12,'submitted white sheet must move across many rows: '+JSON.stringify(rows));
+    const count=Math.max(3,Math.floor(rows.length/4));
+    const average=group=>group.reduce((n,row)=>n+row.motion,0)/group.length;
+    const lip=average(rows.slice(0,count)), foot=average(rows.slice(-count));
+    assert(foot>1.12*lip,`foot ${foot} must move faster than lip ${lip}`);
+    assert(rows.every(row=>row.minDepth>0&&row.maxDepth<=1),'sheet motion needs corresponding depth');
+    assert(foam.peak>0.03&&foam.filmCells>5,'submitted pool must hold foam');
+    result.fall={rows,lip,foot,foam,draws:await evaluate('__fallDraws')};
   } else if(mode==='river-calm'){
     await until(async()=>{
       const status=await evaluate(`game.frame(${now});game.report()`);

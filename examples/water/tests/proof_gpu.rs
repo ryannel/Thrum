@@ -51,13 +51,14 @@ fn channel_route() -> bool {
 
 #[cfg(target_os = "macos")]
 fn river_route() -> bool {
-    matches!(settings(), Settings::River(_))
+    matches!(settings(), Settings::River(_) | Settings::Fall(_))
 }
 
 #[cfg(target_os = "macos")]
 fn river_cost_view() -> usize {
     match settings() {
         Settings::River(Wind::Calm) => 3,
+        Settings::Fall(_) => 8,
         _ => 14,
     }
 }
@@ -95,7 +96,8 @@ fn whitewater() -> bool {
         | Settings::DiveShade(_, _)
         | Settings::RainYard(_)
         | Settings::Channel(_)
-        | Settings::River(_) => false,
+        | Settings::River(_)
+        | Settings::Fall(_) => false,
     }
 }
 
@@ -131,6 +133,11 @@ fn proof_game(water: bool) -> (thrum_app::sky::SkyGame, water_scene::SharedRepor
             let (game, report, _, _) =
                 water_scene::island::build_wet_shore(wind, water).expect("wet shore");
             (game, report)
+        }
+        Settings::Fall(wind) => {
+            let scene = water_scene::river::build_fall(wind, water, Some(&support::river_store()))
+                .expect("fall scene");
+            (scene.game, scene.report)
         }
         Settings::River(wind) => {
             let scene = water_scene::river::build(wind, water, Some(&support::river_store()))
@@ -425,10 +432,13 @@ fn driver(gpu: &thrum_test_support::Gpu) {
     }
     result["recipe"] =
         json!(std::env::var("THRUM_WATER_RECIPE").unwrap_or_else(|_| "native".into()));
-    if river_route() {
+    if matches!(settings(), Settings::River(_)) {
         let (_, camera) = water_scene::river::VIEWS[river_cost_view()];
         result["body_vertices"] = json!(report.bodies);
         result["camera"] = json!({"position": camera.position, "target": camera.target});
+    }
+    if matches!(settings(), Settings::Fall(_)) {
+        result["camera"] = json!({"view": "waterfall cost overlook"});
     }
     if !channel_route() && !river_route() {
         result["camera"] = json!({"focus_xz":water_scene::CAMERA_FOCUS,"eye_at_2m_along_wind":water_scene::camera_position(2.0,90.0),"vertical_fov_degrees":water_scene::CAMERA_FOV_DEGREES,"look_drop_over_100_m":water_scene::CAMERA_LOOK_DROP,"orbit_radius":"24m at 2m height, 40m at 40m height; bearing orbits the focus"});

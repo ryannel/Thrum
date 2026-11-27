@@ -114,6 +114,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
     let channel = super::channel_route();
     let channel_view = std::env::var("THRUM_WATER_CHANNEL_CAMERA").unwrap_or_else(|_| "2".into());
     let river = super::river_route();
+    let fall = matches!(super::settings(), super::Settings::Fall(_));
     let river_inspection = river.then(super::river_inspection::shot).flatten();
     let river_view = std::env::var("THRUM_WATER_RIVER_CAMERA").unwrap_or_else(|_| "0".into());
     let floating = super::floating();
@@ -121,6 +122,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
     let whitewater = super::whitewater();
     let surf = super::surf_route();
     let route = std::env::var("THRUM_WATER_ROUTE").unwrap_or_default();
+    let fall_dry = fall && route == "plunge-dry";
     let wet_yard = yard && matches!(route.as_str(), "wet-shower" | "wet-dry");
     let shore_ebb = matches!(super::settings(), super::Settings::WetShore(_)) && route == "ebb";
     let yard_camera_cut = yard && route == "yard-walk-low-sun-cut";
@@ -175,23 +177,26 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
         .unwrap_or(105.0);
     let optics_height = std::env::var("THRUM_WATER_OPTICS_HEIGHT").unwrap_or_else(|_| "2".into());
     let river_sequence = river && route == "flow-inspection";
+    let fall_sequence = fall && route == "fall-inspection";
     let river_start = river_inspection.as_ref().map(|shot| shot.start);
     let river_warmup = river_start.filter(|_| route == "continuous");
     let river_gauges = river && route == "foam-gauge-inspection";
     let river_shots: &[u8] = if river_sequence {
         &[17, 18, 0, 1, 4, 5, 8, 3]
+    } else if fall_sequence {
+        &[1, 0, 2, 3, 4, 5]
     } else if river_gauges {
         &[4, 4]
     } else {
         &[]
     };
-    let shot_seconds = 4.0;
-    let cpu_leases = if river_sequence {
+    let shot_seconds = if fall_sequence { 2.5 } else { 4.0 };
+    let cpu_leases = if river_sequence || fall_sequence {
         RIVER_CAPTURE_LEASES
     } else {
         CPU_LEASES
     };
-    let writer_queue = if river_sequence {
+    let writer_queue = if river_sequence || fall_sequence {
         RIVER_CAPTURE_LEASES
     } else {
         WRITER_QUEUE
@@ -263,6 +268,12 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
         ([960, 540], 4.0, 20.0, MAX_SUBMISSIONS)
     } else if river_stage {
         ([1280, 720], 20.5, 8.0, CHANNEL_SUBMISSIONS)
+    } else if fall_sequence {
+        ([1280, 720], 6.0 * shot_seconds, 15.0, RIVER_SUBMISSIONS)
+    } else if fall_dry {
+        ([1280, 720], 12.0, 9.0, MAX_SUBMISSIONS)
+    } else if fall {
+        ([1280, 720], 3.0, 24.0, MAX_SUBMISSIONS)
     } else if river {
         ([1280, 720], 4.0, 12.0, MAX_SUBMISSIONS)
     } else if channel {
@@ -471,6 +482,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
     let mut footfall_edit_time = None;
     let mut yard_view = 11;
     let mut river_shot = 0;
+    let mut shut_plunge = false;
     while begin.elapsed() < Duration::from_secs_f64(deadline) && submitted < max_submissions {
         let elapsed = begin.elapsed().as_secs_f64();
         if let Some(start) = footfall_start {
@@ -624,6 +636,12 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
                 .parameters(&edit.to_string())
                 .expect("river inspection controls");
             weather_edits.push(json!({"elapsed":elapsed,"parameters":edit}));
+        }
+        if fall_dry && !shut_plunge && elapsed >= 3.0 {
+            let edit = json!({"spring.stage": 0});
+            runtime.parameters(&edit.to_string()).expect("dry the lip");
+            weather_edits.push(json!({"elapsed": elapsed, "parameters": edit}));
+            shut_plunge = true;
         }
         if river_stage {
             let stage = (1.0 - (elapsed / 10.0 - 1.0).abs()).clamp(0.0, 1.0);
