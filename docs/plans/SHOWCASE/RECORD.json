@@ -454,12 +454,12 @@
       }
     },
     "WP8": {
-      "definitions": "a3879405733b94baf2af5aa68b9ecec2ac014f3c3ab0fc66df8198acadeed5ec",
+      "definitions": "e99b3975785c761d80347c7915d7c53959c2914fe5c6bdff6837bc71bfa15037",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "The owner answered the APPLE-PRESENTATION WP17 planner's question (full screen on the built-in display for V1). The owne",
-        "at": "2026-11-27T03:41:07Z"
+        "task": "The design review of SHOWCASE at .orchestrate/evidence/SHOWCASE/design-review.md asked for changes, with its 2 Must Fix ",
+        "at": "2026-11-27T05:00:15Z"
       },
       "ends_stretch": true
     },
@@ -658,11 +658,15 @@
     {
       "task": "The owner answered the APPLE-PRESENTATION WP17 planner's question (full screen on the built-in display for V1). The owner's words: \"So the 120 upscale for full screen.\" That is option 1: 120 Hz with the picture reconstructed below the panel's pixel size and scaled up by the display. Record the answer in APPLE-PRESENTATION's log in the owner's words, then plan APPLE-PRESENTATION's next work packages up to WP17 against it, add the ATMOSPHERE work package that lets it rebuild its charts on a governor cadence, and reword SHOWCASE WP8.6 to match. The earlier planner's measurements, the three options and a draft of WP17 for option 1 are in .orchestrate/evidence/APPLE-PRESENTATION/WP17-plan/README.md.",
       "at": "2026-11-27T03:41:07Z"
+    },
+    {
+      "task": "The design review of SHOWCASE at .orchestrate/evidence/SHOWCASE/design-review.md asked for changes, with its 2 Must Fix findings.",
+      "at": "2026-11-27T05:00:15Z"
     }
   ],
   "planner": {
-    "host": "claude",
-    "at": "2026-11-27T03:41:07Z"
+    "host": "codex",
+    "at": "2026-11-27T05:00:15Z"
   },
   "design_history": [
     {
