@@ -106,7 +106,10 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
     let whitewater = super::whitewater();
     let surf = super::surf_route();
     let route = std::env::var("THRUM_WATER_ROUTE").unwrap_or_default();
-    let walking = matches!(route.as_str(), "yard-walk" | "yard-walk-high-sun");
+    let walking = matches!(
+        route.as_str(),
+        "yard-walk" | "yard-walk-low-sun" | "yard-walk-high-sun"
+    );
     let footfall = yard
         && (walking
             || matches!(
@@ -114,7 +117,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
                 "yard-stone-left" | "yard-stone-right" | "yard-sill-dry" | "yard-joined"
             ));
     let footfall_edit = match route.as_str() {
-        "yard-walk" | "yard-walk-high-sun" => r#"{"rain.walk":1}"#,
+        _ if walking => r#"{"rain.walk":1}"#,
         "yard-stone-right" => r#"{"rain.stone_right":1}"#,
         "yard-sill-dry" | "yard-joined" => r#"{"rain.stone_sill":1}"#,
         _ => r#"{"rain.stone_left":1}"#,
@@ -128,7 +131,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
         match (yard, route.as_str()) {
             (true, "yard-stone-left") => "9",
             (true, "yard-stone-right") => "10",
-            (true, "yard-walk" | "yard-walk-high-sun") => "11",
+            (true, _) if walking => "11",
             (true, _) if footfall => "8",
             _ => "0",
         }
@@ -152,12 +155,7 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
         super::proof_game(true)
     };
     let (extent, interval, opportunities, max_submissions) = if footfall {
-        (
-            [1280, 720],
-            if walking { 5.5 } else { 5.0 },
-            32.0,
-            CHANNEL_SUBMISSIONS,
-        )
+        ([1280, 720], if walking { 5.5 } else { 5.0 }, 120.0, 750)
     } else if yard {
         ([1280, 720], 20.0, 9.0, CHANNEL_SUBMISSIONS)
     } else if dive {
@@ -202,7 +200,11 @@ pub(super) fn capture(gpu: &thrum_test_support::Gpu, directory: &Path) -> Value 
             ))
             .expect("initial dive view");
     }
-    let footfall_sun = (route == "yard-walk-high-sun").then_some([60, 12]);
+    let footfall_sun = match route.as_str() {
+        "yard-walk-high-sun" => Some([60, 12]),
+        "yard-walk-low-sun" => Some([8, 0]),
+        _ => None,
+    };
     if yard {
         let lighting = match footfall_sun {
             Some([elevation, azimuth]) => {
