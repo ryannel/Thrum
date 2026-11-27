@@ -844,3 +844,10 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   control's submitted RGBA. The protected reference guard passed.
   [Revised Mac inspection](../../../.orchestrate/evidence/ATMOSPHERE/WP12/adaptive-mac.md) ·
   [Revised Chrome inspection](../../../.orchestrate/evidence/ATMOSPHERE/WP12/adaptive-chrome.md)
+
+- 2026-11-27 WP12 review repairs separate camera cuts from phase edits and share one overlay classification
+  across diffuse, haze and reflection. The Metal probes read surface diffuse and verify skipped overlay writes.
+  The route counts every refresh over the whole take. The Chrome dusk taper preserves the first scrub frame and
+  the subsequent fade through the resumed spread-8 refreshes. The 120 Hz Mac inspection also passed.
+  [Metal review proofs](../../../.orchestrate/evidence/ATMOSPHERE/WP12/review-metal.md) ·
+  [Chrome review proofs](../../../.orchestrate/evidence/ATMOSPHERE/WP12/review-chrome/README.md)
