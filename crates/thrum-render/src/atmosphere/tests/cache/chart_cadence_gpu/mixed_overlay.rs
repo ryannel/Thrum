@@ -12,7 +12,12 @@ struct ForwardProbe {
 }
 
 impl ForwardProbe {
-    fn new(device: &wgpu::Device, prepared: &PreparedSynthetic) -> Self {
+    fn new(
+        device: &wgpu::Device,
+        prepared: &PreparedSynthetic,
+        count: u32,
+        level_step: f32,
+    ) -> Self {
         let (source, lighting, _) = prepared.forward_light_witness();
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("real forward reflection term"),
@@ -25,7 +30,7 @@ fn probe_vertex(@builtin(vertex_index) i: u32) -> @builtin(position) vec4<f32> {
 }}
 @fragment
 fn probe_fragment(@builtin(position) position: vec4<f32>) -> @location(0) vec4<f32> {{
-    let level = floor(position.x) * 0.5;
+    let level = floor(position.x) * {level_step:.1};
     let roughness = GGX_MIN_ROUGHNESS + (1.0 - GGX_MIN_ROUGHNESS) * level / 6.0;
     let value = indirect_radiance(vec3(1.0), 1.0, roughness, vec3(0.0, 0.0, 1.0),
         vec3(0.0, 0.0, 1.0), 1.0, vec3(0.0), position);
@@ -79,7 +84,7 @@ fn probe_fragment(@builtin(position) position: vec4<f32>) -> @location(0) vec4<f
             device.create_texture(&wgpu::TextureDescriptor {
                 label: Some("forward reflection level probe"),
                 size: wgpu::Extent3d {
-                    width: 3,
+                    width: count,
                     height: 1,
                     depth_or_array_layers: 1,
                 },
@@ -182,7 +187,7 @@ fn cloud_and_clear_reflection_levels_decode_before_blending() {
         cloudy.overlay(CLOUDY);
         clear.draw(air);
         cloudy.draw(air);
-        let forward = ForwardProbe::new(&device, &spread.prepared);
+        let forward = ForwardProbe::new(&device, &spread.prepared, 3, 0.5);
         let lent = observer_products(&spread);
         let probe = observer::Probe::new(
             &device,
@@ -237,3 +242,5 @@ fn cloud_and_clear_reflection_levels_decode_before_blending() {
         }
     });
 }
+
+mod light_edit;

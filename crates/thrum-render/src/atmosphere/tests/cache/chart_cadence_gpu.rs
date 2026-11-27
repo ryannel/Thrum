@@ -12,7 +12,7 @@ fn sun(elevation: f32, illuminance: f32, colour: [f32; 3]) -> AtmosphereFrame {
 }
 
 fn moving(step: f32) -> AtmosphereFrame {
-    sun(8.0 + step * 0.5, 90_000.0, [1.0, 0.92, 0.83])
+    sun(30.0 + step * 0.02, 90_000.0, [1.0, 0.92, 0.83])
 }
 
 struct Probe<'a> {
@@ -69,7 +69,7 @@ impl<'a> Probe<'a> {
         self.prepared.commit_atmosphere_quality();
     }
 
-    fn draw(&mut self, frame: AtmosphereFrame) -> Vec<String> {
+    fn update(&mut self, frame: AtmosphereFrame) {
         self.prepared
             .update_frame(
                 self.queue,
@@ -79,6 +79,10 @@ impl<'a> Probe<'a> {
                 1.0,
             )
             .unwrap();
+    }
+
+    fn draw(&mut self, frame: AtmosphereFrame) -> Vec<String> {
+        self.update(frame);
         submitted_names(&mut self.prepared, &self.target, self.caps, self.queue)
     }
 
@@ -205,8 +209,8 @@ fn cadence_one_updates_diffuse_on_light_edits() {
         probe.draw(initial);
         let mut previous = probe.products().remove(1);
         for frame in [
-            sun(8.0, 45_000.0, [1.0, 0.92, 0.83]),
-            sun(8.0, 45_000.0, [1.0, 0.45, 0.83]),
+            sun(30.0, 45_000.0, [1.0, 0.92, 0.83]),
+            sun(30.0, 45_000.0, [1.0, 0.45, 0.83]),
         ] {
             let names = probe.draw(frame);
             assert_eq!(

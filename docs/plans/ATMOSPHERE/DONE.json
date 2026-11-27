@@ -752,8 +752,8 @@
           "lock": "gpu",
           "ask": "Do the independent cadence-1 controls use the atmosphere snapshot and the overlay that the particular product was due to read, including both sides of the fractional-level comparison?",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP12/adaptive-chart-metal.log",
           "verdict": "",
           "review": ""
         },
@@ -763,8 +763,8 @@
           "check": "python3 scripts/atmosphere_cost.py chart-cadence --scene route",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "open",
-          "evidence": "",
+          "builder_result": "pass",
+          "evidence": ".orchestrate/evidence/ATMOSPHERE/WP12/adaptive-route-cost/chart-cost.json",
           "verdict": "",
           "review": ""
         },
