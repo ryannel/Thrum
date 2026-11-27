@@ -3501,12 +3501,12 @@
       }
     },
     "WP26": {
-      "definitions": "84888fdefb51ee7ea93d65027f33396df0dd469bd4cdd92c9854c20fe0370855",
+      "definitions": "55a94ad115654f70d59574b5afc0d7f19fe23254013672432eeb0315977ffd16",
       "reviews": [],
       "authorised": {
         "by": "plan",
-        "task": "WATERS WP16 is Blocked again (handoff .claude/worktrees/waters/.orchestrate/evidence/WATERS/WP16-handoff.md, branch buil",
-        "at": "2026-11-27T22:00:57Z"
+        "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 4 Must Fix find",
+        "at": "2026-11-27T23:09:13Z"
       }
     }
   },
@@ -3754,11 +3754,15 @@
     {
       "task": "WATERS WP16 is Blocked again (handoff .claude/worktrees/waters/.orchestrate/evidence/WATERS/WP16-handoff.md, branch build/waters at da0e65a1d): 9 of 12 items pass; open are WP16.6 joined bright lines on the lake and sea beds (three more looks: diffuse patches and disconnected streaks), WP16.7 water beside the keel, and WP16.11 Chrome (inherits those two). Lead ruling, in line with the owner's wish to research stubborn looks now rather than later (\"Yes, move Waters WP26 forward now\"): the bed caustic net and the keel-side light are the same underwater-light problem WP26 studies, and WP26 builds next. Move the open bed-net and keel cues from WP16.6, WP16.7 and WP16.11 into WP26, so WP16 closes and merges on what passes (keep any part of those items that reads now). WP26's research step must cover bed caustic nets too (how shipped high-end games make joined caustic lines on beds and hulls, modern techniques only), and use the builder's suggested diagnosis: one clock-matched bed view that reads the caustic field, the receiver's Sun factor and the composited image separately, to find which stage loses the lines. Leave WP16 ready to resume and merge.",
       "at": "2026-11-27T22:00:57Z"
+    },
+    {
+      "task": "The design review of WATERS at .orchestrate/evidence/WATERS/design-review.md asked for changes, with its 4 Must Fix findings.",
+      "at": "2026-11-27T23:09:13Z"
     }
   ],
   "planner": {
     "host": "claude",
-    "at": "2026-11-27T22:00:57Z"
+    "at": "2026-11-27T23:09:13Z"
   },
   "design_history": [
     {
