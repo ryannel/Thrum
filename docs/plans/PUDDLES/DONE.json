@@ -710,8 +710,8 @@
     {
       "id": "WP6",
       "name": "In the V1 valley, behind a selection, a shower darkens the desert floor and its rocks and leaves puddles in a patch of ground, and with the selection off the exit scene is what it was",
-      "status": "ready_for_review",
-      "failed_reviews": 0,
+      "status": "in_progress",
+      "failed_reviews": 1,
       "failed_reviews_with_repeat": 0,
       "diagnoses": 0,
       "depends_on": [
@@ -726,8 +726,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/PUDDLES/WP6/review-2/validated/README.md#wp66-linux-and-windows-type-check",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/PUDDLES/WP6-review.md"
         },
         {
           "id": "WP6.1",
@@ -738,8 +738,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/PUDDLES/WP6/review-2/validated/README.md#wp61-ordinary-route-and-selected-native-launch",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/PUDDLES/WP6-review.md"
         },
         {
           "id": "WP6.2",
@@ -747,10 +747,10 @@
           "check": "cargo test --locked --offline -p v1-game --test rain_valley_gpu",
           "lock": "gpu",
           "target": "mac-metal",
-          "builder_result": "pass",
-          "evidence": ".orchestrate/evidence/PUDDLES/WP6/review-2/validated/README.md#wp62-metal-model-agreement",
-          "verdict": "",
-          "review": ""
+          "builder_result": "open",
+          "evidence": "",
+          "verdict": "fail",
+          "review": ".orchestrate/evidence/PUDDLES/WP6-review.md"
         },
         {
           "id": "WP6.3",
@@ -759,8 +759,8 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/PUDDLES/WP6/review-2/validated/README.md#wp63-metal-visual-inspection",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/PUDDLES/WP6-review.md"
         },
         {
           "id": "WP6.4",
@@ -770,8 +770,8 @@
           "target": "chrome-webgpu",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/PUDDLES/WP6/review-2/validated/README.md#wp64-chrome-webgpu",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/PUDDLES/WP6-review.md"
         },
         {
           "id": "WP6.5",
@@ -781,8 +781,15 @@
           "target": "mac-metal",
           "builder_result": "pass",
           "evidence": ".orchestrate/evidence/PUDDLES/WP6/review-2/validated/README.md#wp65-paired-metal-cost",
-          "verdict": "",
-          "review": ""
+          "verdict": "pass",
+          "review": ".orchestrate/evidence/PUDDLES/WP6-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "name": "Valley rock wetness disagrees with the public CPU point query",
+          "item": "WP6.2",
+          "repeat": false
         }
       ]
     },

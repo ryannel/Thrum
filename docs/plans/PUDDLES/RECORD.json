@@ -1037,7 +1037,7 @@
         {
           "verdict": "fail",
           "commit": "064614ef077565db64450441e7c990e5e71d3c72",
-          "review": ".orchestrate/evidence/PUDDLES/WP6-review.md",
+          "review": ".orchestrate/evidence/PUDDLES/WP6-review-2.md",
           "items": {
             "WP6.1": "fail",
             "WP6.2": "pass",
@@ -1088,6 +1088,43 @@
             "turns": 1
           },
           "at": "2026-11-27T16:53:47Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "61258031fffbea7f353d8675c133f28b4bb7993b",
+          "review": ".orchestrate/evidence/PUDDLES/WP6-review.md",
+          "items": {
+            "WP6.6": "pass",
+            "WP6.1": "pass",
+            "WP6.2": "fail",
+            "WP6.3": "pass",
+            "WP6.4": "pass",
+            "WP6.5": "pass"
+          },
+          "findings": [
+            {
+              "name": "Valley rock wetness disagrees with the public CPU point query",
+              "item": "WP6.2",
+              "repeat": false
+            }
+          ],
+          "summary": "WP6 fails on model agreement. At the same point on a soaked valley boulder, Metal reports completely filled pores and the public CPU wetness query reports 0.78988, a difference of 0.21012 against a tolerance of 0.0005. The other five items pass, including the visual inspection, the retained exit flythrough and the Linux and Windows type-check.",
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 191358,
+            "cached": 7625728,
+            "output": 23837,
+            "turns": 1
+          },
+          "at": "2026-11-27T18:19:20Z"
         }
       ],
       "authorised": {
