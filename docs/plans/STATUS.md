@@ -341,6 +341,8 @@ A planner or the lead chose each of these where your words left it open. Each st
 - GAME-SDK assumes: [round 4's smaller additions](GAME-SDK/DESIGN.md#what-round-4-found), beyond the four you were told of, are wanted. ([plan](GAME-SDK/PLAN.md))
 - GAME-SDK assumes: a save's kept entities come back under the kept parents they hung from, and a relic on a player's back comes back on the ground. ([plan](GAME-SDK/PLAN.md))
 - GAME-SDK assumes: one terrain is drawn and stood on from one source, and a level may place things that are drawn and not solid. ([plan](GAME-SDK/PLAN.md))
+- GAME-SDK assumes: in a 3D game, an edit that changes a mesh's or a terrain's shape waits for the game to be started again, and an edit to how it looks is redrawn at once. ([plan](GAME-SDK/PLAN.md))
+- GAME-SDK assumes: a host with no window continues a saved run only through the standard lobby, reads its save once as it starts, and takes no save or restore asked for by a player's screen. ([plan](GAME-SDK/PLAN.md))
 - A name in the glossary waits for your agreement: Game SDK (the planner chose the name and the crate's name, `thrum`)
 - A name in the glossary waits for your agreement: Scene (the planner chose this meaning for game code)
 - A name in the glossary waits for your agreement: Rule (the planner chose "rule" over "system" and "behaviour" for game code)
