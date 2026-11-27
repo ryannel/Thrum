@@ -113,6 +113,11 @@ def mac_output_scale_mode(output):
         env.update(THRUM_RECIPE="apple-tile", THRUM_RECONSTRUCTION="metalfx")
         with awake_display():
             rows, frames, configures, identity = launch(output / "mode", binary, env, mode=True)
+    report = verify_mode(rows, frames, configures, identity)
+    return dict(report, target="mac-metal", binary_sha256=hashlib.sha256(binary.read_bytes()).hexdigest())
+
+
+def verify_mode(rows, frames, configures, identity):
     if identity["recipe"] != RECIPE["apple-tile"]:
         raise ValueError(f"wrong recipe {identity['recipe']}")
     requests = [row for row in rows if row["event"] == "request"]
@@ -165,24 +170,30 @@ def mac_output_scale_mode(output):
         held = [row for row in presented if start_time <= row["present_media"] < end_time]
         backing = [row for row in rows if row["event"] == "held_backing"
                    and start_time <= row["media"] < end_time]
-        if not held or not backing:
-            raise ValueError("mode animation has no backing observations or old-generation frames")
+        old = requests[index]
+        attempts = [row for row in frames if row["work"]
+                    and start_time <= row["work"][0][1] < end_time]
+        occluded = sum(row["status"] == "Occluded" for row in attempts)
+        if not backing or not attempts or not (held or occluded):
+            raise ValueError("mode animation has no backing observations or old-surface activity")
+        if any((row["window"], row["output_scale"], row["surface"])
+               != (old["backing"], old["output_scale"], old["output"]) for row in attempts):
+            raise ValueError("the render owner received a different grid during the AppKit hold")
         for row in held:
-            require_frame(row, requests[index]["output"])
+            require_frame(row, old["output"])
         next_start = changes[2]["media"] if index == 0 else float("inf")
         taken = [row for row in presented if switch["configure_ended"] <= row["present_media"] < next_start]
         if not taken:
             raise ValueError(f"new generation was not presented after {complete}")
         for row in taken:
             require_frame(row, request["output"])
-        if ({row["frame_extent"]["revision"] for row in held}
-                != {initial[0]["frame_extent"]["revision"] + index}
-                or {row["frame_extent"]["revision"] for row in taken}
-                != {initial[0]["frame_extent"]["revision"] + index + 1}):
+        old_revision = initial[0]["frame_extent"]["revision"] + index
+        if (any(row["frame_extent"]["revision"] != old_revision for row in held)
+                or {row["frame_extent"]["revision"] for row in taken} != {old_revision + 1}):
             raise ValueError("a mode change took more than one generation")
         intervals.append(dict(start=start, complete=complete, request=request, build=build,
                               configure=configure, switch=switch, seconds=end_time - start_time,
                               held_backing=backing, old_generation_frames=len(held),
+                              held_frame_requests=len(attempts), occluded_acquisitions=occluded,
                               new_generation_frames=len(taken)))
-    return dict(target="mac-metal", recipe=identity["recipe"], initial=requests[0], intervals=intervals,
-                binary_sha256=hashlib.sha256(binary.read_bytes()).hexdigest())
+    return dict(recipe=identity["recipe"], initial=requests[0], intervals=intervals)
