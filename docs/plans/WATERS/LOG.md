@@ -2038,3 +2038,22 @@
   out the wet-shore test at its 10 s limit. The scoped retry passed its
   assertions in 10.45 s under load.
   [Inspections and checks](../../../.orchestrate/evidence/WATERS/WP16/finish/README.md).
+
+## WP16 revised receiver and keel inspection
+
+- 2026-11-27 Independent Metal inspection against the revised WP16.6
+  found moving light on the hull and float in both winds and at both
+  Sun angles. The beach shows joined lines. Lake and sea bed light
+  moves as softer patches, with the joined lines still unclear,
+  especially at low Sun. Closer bed views did not settle question 1.
+  [Nine-question inspection](../../../.orchestrate/evidence/WATERS/WP16/resume/receivers/README.md).
+- Matched Metal captures with and without the hull's shadow draw show
+  that the caster attenuates the near-Sun glow. In the ordinary keel
+  captures the most readable boundaries are the hull and the moving
+  surface. The fresh opinion did not find the adjacent dark and lit
+  water WP16.7 asks for. The temporary capture and diagnostic changes
+  were removed.
+  [Keel comparison](../../../.orchestrate/evidence/WATERS/WP16/resume/keel/README.md).
+- WP16.8 retains its Metal pass. The eight executable WP16 target
+  checks passed again. WP16.11 still depends on the open visual cues.
+  [Target checks](../../../.orchestrate/evidence/WATERS/WP16/resume/target-checks.json).

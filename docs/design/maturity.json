@@ -3461,7 +3461,7 @@
         "experienced_quality": "builder_inspected_open",
         "scope": "WATERS WP16 adds direct-Sun caustics at opaque receivers and signed underwater beam scattering.",
         "correctness": "Metal checks the depth ladder, receiver application, common refracted exit, calm march and live quality controls. Hardware Chrome checks the portable ladder, receiver, signed shadow and incident meter without validation errors.",
-        "visuals": "The retained Metal beam stations and the changing 1 m noon glow read. The cast shadow beside the keel still lacks a clear visual witness. The hull and sunk float show moving light with fragmented patterns. Metal depth and crossing inspection passed. The Chrome visual list remains open.",
+        "visuals": "The retained Metal beam stations and the changing 1 m noon glow read. Moving light on the hull and sunk float meets the revised Metal question. The joined bed net remains unclear in the sea and lake, especially at low Sun. Matched Metal captures show the hull shadow attenuating the near-Sun glow. The adjacent water contrast remains unproved. Metal depth and crossing passed. The Chrome visual list remains open.",
         "device": "Apple M3 Max Metal and Chrome WebGPU. The paired 1440p Metal cost record measures the sea, lake and beach with both light profiles under shared load.",
         "evidence": "../../.orchestrate/evidence/WATERS/WP16/metal-checks.md"
       },
