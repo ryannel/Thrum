@@ -18,7 +18,7 @@ const SPLASHES_PER_SEGMENT: usize = 24;
 const RIBBONS_PER_SEGMENT: usize = 3;
 const VERTICES_PER_SEGMENT: usize =
     12 * RIBBONS_PER_SEGMENT * (ROWS + 3) + 6 * SPLASHES_PER_SEGMENT;
-const ATTRIBUTES: [wgpu::VertexAttribute; 5] = wgpu::vertex_attr_array![0 => Float32x4, 1 => Float32x4, 2 => Float32x4, 3 => Float32x4, 4 => Float32x4];
+const ATTRIBUTES: [wgpu::VertexAttribute; 5] = wgpu::vertex_attr_array![0 => Float32x4, 1 => Float32x4, 2 => Float32x4, 3 => Float32x4, 4 => Float32x3];
 
 #[repr(C)]
 #[derive(Clone, Copy, Pod, Zeroable)]
@@ -27,7 +27,7 @@ struct Vertex {
     velocity_along: [f32; 4],
     discharge: [f32; 4],
     across_fraction: [f32; 4],
-    edge_receiver: [f32; 4],
+    edge_receiver: [f32; 3],
 }
 
 #[repr(C)]
@@ -453,7 +453,6 @@ fn mesh(
                     f32::from(edge),
                     segment.bottom.height as f32,
                     f32::from(segment.plunge.is_some()),
-                    0.0,
                 ],
             }
         };
@@ -496,7 +495,7 @@ fn ribbons(section: [Vertex; 3]) -> [[Vertex; 3]; RIBBONS_PER_SEGMENT] {
             velocity_along: interpolate(a.velocity_along, b.velocity_along),
             discharge: interpolate(a.discharge, b.discharge),
             across_fraction: interpolate(a.across_fraction, b.across_fraction),
-            edge_receiver: [0.0, a.edge_receiver[1], a.edge_receiver[2], 0.0],
+            edge_receiver: [0.0, a.edge_receiver[1], a.edge_receiver[2]],
         }
     };
     std::array::from_fn(|index| {
@@ -520,17 +519,12 @@ fn ribbons(section: [Vertex; 3]) -> [[Vertex; 3]; RIBBONS_PER_SEGMENT] {
                 -1.0
             };
         let depth = (0.034 + 0.24 * fold) * split * (1.0 - fraction).max(0.0).sqrt();
-        let left = at(middle - narrowed);
-        let right = at(middle + narrowed);
-        let half_span =
-            0.5 * Vec3::from_slice(&left.world_time).distance(Vec3::from_slice(&right.world_time));
         [-1.0_f32, 0.0, 1.0].map(|edge| {
             let mut vertex = at(edge.mul_add(narrowed, middle));
             let position =
                 Vec3::from_slice(&vertex.world_time) + outward * depth * (1.0 - 0.42 * edge.abs());
             vertex.world_time = position.extend(vertex.world_time[3]).to_array();
-            vertex.edge_receiver[0] = edge;
-            vertex.edge_receiver[3] = half_span;
+            vertex.edge_receiver[0] = edge.abs();
             vertex
         })
     })
