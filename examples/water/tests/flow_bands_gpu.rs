@@ -198,6 +198,32 @@ mod flow {
         }
     }
 
+    pub(super) fn opt_out(gpu: &thrum_test_support::Gpu) {
+        let mut map = map(false);
+        map.set_flow_bands(None);
+        let mut scene = scene(gpu, map, camera(3.5));
+        drop(scene.fixture.frame_without_timings(0.0));
+        let graph = scene.fixture.host.scene_graph().expect("submitted graph");
+        let mut passes: Vec<_> = graph
+            .pass_names()
+            .filter(|name| name.contains("effect 0:") || *name == "contribution upload")
+            .collect();
+        passes.sort_unstable();
+        let mut resources = scene
+            .fixture
+            .report
+            .lock()
+            .expect("water report")
+            .resources
+            .clone();
+        resources.sort();
+        let before: serde_json::Value =
+            serde_json::from_str(include_str!("fixtures/flow-opt-out-pre-wp5.json"))
+                .expect("pre-WP5 Metal receipt");
+        assert_eq!(before["passes"], serde_json::json!(passes));
+        assert_eq!(before["resources"], serde_json::json!(resources));
+    }
+
     fn lane(band: usize) -> f32 {
         [3.5, 8.0, 12.5, 17.0][band]
     }
@@ -535,5 +561,12 @@ thrum_test_support::macos_gpu_test! {
 fn submitted_depth_tracks_running_water_in_calm() {
     let Some(gpu) = thrum_test_support::gpu("river flow depth", Some(wgpu::Backend::Metal)) else { return };
     flow::drawn(&gpu);
+}
+}
+
+thrum_test_support::macos_gpu_test! {
+fn map_without_flow_keeps_the_pre_wp5_graph_and_storage() {
+    let Some(gpu) = thrum_test_support::gpu("river opt-out", Some(wgpu::Backend::Metal)) else { return };
+    flow::opt_out(&gpu);
 }
 }

@@ -1,0 +1,114 @@
+{
+  "passes": [
+    "contribution upload",
+    "effect 0: effect 0: sea long waves",
+    "effect 10: effect 0: sea filtered 0 mip 5",
+    "effect 11: effect 0: sea filtered 0 mip 6",
+    "effect 12: effect 0: sea filtered 0 mip 7",
+    "effect 13: effect 0: sea filtered 0 mip 8",
+    "effect 14: effect 0: sea filtered 1 mip 1",
+    "effect 15: effect 0: sea filtered 1 mip 2",
+    "effect 16: effect 0: sea filtered 1 mip 3",
+    "effect 17: effect 0: sea filtered 1 mip 4",
+    "effect 18: effect 0: sea filtered 1 mip 5",
+    "effect 19: effect 0: sea filtered 1 mip 6",
+    "effect 1: effect 0: sea cascade evolve",
+    "effect 20: effect 0: sea filtered 1 mip 7",
+    "effect 2: effect 0: sea cascade rows",
+    "effect 3: effect 0: sea cascade columns",
+    "effect 4: effect 0: sea cascade unpack",
+    "effect 5: effect 0: sea filtered pack",
+    "effect 6: effect 0: sea filtered 0 mip 1",
+    "effect 7: effect 0: sea filtered 0 mip 2",
+    "effect 8: effect 0: sea filtered 0 mip 3",
+    "effect 9: effect 0: sea filtered 0 mip 4",
+    "effect after 0: effect 0: water surface"
+  ],
+  "resources": [
+    [
+      "sea cascades",
+      9437184
+    ],
+    [
+      "sea filtered 0",
+      10485720
+    ],
+    [
+      "sea filtered 1",
+      6990400
+    ],
+    [
+      "sea final transform",
+      9437184
+    ],
+    [
+      "sea long components",
+      6144
+    ],
+    [
+      "sea long field",
+      6488064
+    ],
+    [
+      "sea parameters",
+      176
+    ],
+    [
+      "sea query points",
+      32768
+    ],
+    [
+      "sea spectrum",
+      6291456
+    ],
+    [
+      "sea transform A",
+      9437184
+    ],
+    [
+      "sea transform B",
+      9437184
+    ],
+    [
+      "sea transform twiddles",
+      1024
+    ],
+    [
+      "sea upload staging",
+      39088
+    ],
+    [
+      "water map lattice",
+      329472
+    ],
+    [
+      "water map records",
+      2096
+    ],
+    [
+      "water mesh",
+      1167120
+    ],
+    [
+      "water parameters",
+      352
+    ],
+    [
+      "water query answers",
+      122880
+    ],
+    [
+      "water query inputs",
+      123200
+    ],
+    [
+      "water query readback",
+      122880
+    ],
+    [
+      "water surface triangle indices",
+      1300416
+    ]
+  ],
+  "revision": "3d1f03509fcf98ea666c40fde550637987914946"
+}
