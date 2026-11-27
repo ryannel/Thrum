@@ -472,7 +472,7 @@ impl GameScene {
     }
 
     /// The same resources the forward material and water surface read.
-    #[cfg(all(target_os = "macos", feature = "proving"))]
+    #[cfg(feature = "proving")]
     #[doc(hidden)]
     pub fn rain_proof_products(
         &self,

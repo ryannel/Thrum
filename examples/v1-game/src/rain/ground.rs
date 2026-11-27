@@ -150,7 +150,7 @@ fn rock_triangles(bytes: &[u8], vertices: usize) -> impl Iterator<Item = [[f64; 
         })
 }
 
-#[cfg(all(target_os = "macos", feature = "proving"))]
+#[cfg(feature = "proving")]
 #[expect(
     clippy::cast_possible_truncation,
     reason = "the cooked mesh inputs are already f32"

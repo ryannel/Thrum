@@ -1,9 +1,9 @@
 //! The opt-in valley shower. The world owns the rain state and each published
 //! endpoint lends its projection to the forward material and the water map.
 mod ground;
-#[cfg(all(target_os = "macos", feature = "proving"))]
+#[cfg(feature = "proving")]
 mod witness;
-#[cfg(all(target_os = "macos", feature = "proving"))]
+#[cfg(feature = "proving")]
 pub use witness::{RainWitness, rain_witness_points};
 
 use std::sync::{Arc, Mutex};
@@ -312,7 +312,7 @@ fn weather(age: u64) -> (Rain, f64) {
 }
 
 impl RainSurface {
-    #[cfg(all(target_os = "macos", feature = "proving"))]
+    #[cfg(feature = "proving")]
     pub(crate) fn proof_products(&self) -> (thrum_render::wetness::WetnessProvider, Map) {
         (
             self.provider(),
