@@ -733,14 +733,14 @@ fn surface_pipelines(
 
     let under = gather.is_some_and(|gather| gather.underwater);
     let surface_gather = gather.filter(|gather| gather.surface);
-    let assemble = |gather| {
+    let assemble = |optics| {
         shader_source(
             surface,
             library,
             map,
             interaction.is_some(),
             foam,
-            gather,
+            optics,
             rain,
             flow.is_some(),
         )
@@ -808,7 +808,11 @@ fn surface_pipelines(
         suffix.push_str(&crate::flow::constants(profile, first));
         suffix.push_str(include_str!("flow/surface.wgsl"));
     }
-    let source = assemble(surface_gather.is_some()) + &suffix;
+    let source = assemble(if surface_gather.is_some() {
+        ShaderOptics::Surface
+    } else {
+        ShaderOptics::Disabled
+    }) + &suffix;
     let module = |source: String| {
         surface
             .device
@@ -838,7 +842,7 @@ fn surface_pipelines(
             let film_source = if surface_gather.is_some() {
                 source.clone()
             } else {
-                assemble(true) + &suffix
+                assemble(ShaderOptics::Film) + &suffix
             };
             compose_rain_film(film_source, wet, foam.is_some(), rain)
         } else {
@@ -897,16 +901,23 @@ fn surface_pipelines(
     )
 }
 
+enum ShaderOptics {
+    Disabled,
+    Surface,
+    Film,
+}
+
 fn shader_source(
     surface: &SceneSurface<'_>,
     library: &str,
     map: Option<&MapGpu>,
     wake: bool,
     foam: Option<&Foam>,
-    gather: bool,
+    optics: ShaderOptics,
     rain: bool,
     flow: bool,
 ) -> String {
+    let gather = matches!(optics, ShaderOptics::Surface);
     let sun = if surface.sun_optical_depth {
         "fn water_sun(point: vec3<f32>) -> vec3<f32> { return sun_irradiance(point) * cloud_factor(point); }"
     } else {
@@ -1021,10 +1032,9 @@ fn shader_source(
                 ""
             }
             + include_str!("surface_composite.wgsl"),
-        if gather {
-            OPTICAL_PATHS
-        } else {
-            include_str!("optics/disabled.wgsl")
+        match optics {
+            ShaderOptics::Surface | ShaderOptics::Film => OPTICAL_PATHS,
+            ShaderOptics::Disabled => include_str!("optics/disabled.wgsl"),
         },
         map.map_or_else(
             || include_str!("open_surface.wgsl").to_owned(),
