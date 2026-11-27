@@ -6,7 +6,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 use thrum_render::contribution::{
-    ContributionFrame, ContributionPasses, SceneContribution, SceneSurface,
+    ContributionFrame, ContributionPasses, SceneContribution, SceneSurface, ShadowBounds,
 };
 use thrum_water::{BodyBounds, OpticsBodies};
 use wgpu::util::DeviceExt;
@@ -31,6 +31,7 @@ type Matrix = [[f32; 4]; 4];
 
 struct Prepared {
     pipeline: wgpu::RenderPipeline,
+    shadow: Option<wgpu::RenderPipeline>,
     vertices: wgpu::Buffer,
     instances: wgpu::Buffer,
     queue: wgpu::Queue,
@@ -47,6 +48,7 @@ pub(super) struct Draw {
     opaque: OpticsBodies,
     visible_count: usize,
     float_scale: f32,
+    shadow_bounds: Option<ShadowBounds>,
 }
 
 impl Draw {
@@ -63,6 +65,21 @@ impl Draw {
             opaque,
             visible_count,
             float_scale: 1.0,
+            shadow_bounds: None,
+        }
+    }
+
+    fn record_draw(&self, prepared: &Prepared, pass: &mut wgpu::RenderPass<'_>) {
+        let fleet = self.fleet.lock().expect("floating fleet");
+        pass.set_vertex_buffer(0, prepared.vertices.slice(..));
+        pass.set_vertex_buffer(1, prepared.instances.slice(..));
+        for (index, body) in (0_u32..).zip(&fleet.current).take(self.visible_count) {
+            let vertices = match body.hull {
+                Hull::Craft if !fleet.craft_present => continue,
+                Hull::Craft => &prepared.craft,
+                Hull::Float => &prepared.float,
+            };
+            pass.draw(vertices.clone(), index..index + 1);
         }
     }
 
@@ -106,7 +123,14 @@ impl SceneContribution for Draw {
         let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("floating craft and buoys"),
             source: wgpu::ShaderSource::Wgsl(
-                format!("{}\n{}", surface.shader_source, include_str!("draw.wgsl")).into(),
+                [
+                    surface.shader_source,
+                    include_str!("draw.wgsl"),
+                    sun_source(surface),
+                    cloud_source(surface),
+                ]
+                .join("\n")
+                .into(),
             ),
         });
         let targets: Vec<_> = surface
@@ -120,34 +144,38 @@ impl SceneContribution for Draw {
                 })
             })
             .collect();
+        let layouts = vertex_layouts();
         let pipeline = device.render(&wgpu::RenderPipelineDescriptor {
-            label: Some("floating craft and buoys"), layout: Some(surface.pipeline_layout),
+            label: Some("floating craft and buoys"),
+            layout: Some(surface.pipeline_layout),
             vertex: wgpu::VertexState {
-                module: &module, entry_point: Some("floating_vertex"), compilation_options: wgpu::PipelineCompilationOptions::default(),
-                buffers: &[
-                    Some(wgpu::VertexBufferLayout {
-                        array_stride: size_of::<Vertex>() as u64, step_mode: wgpu::VertexStepMode::Vertex,
-                        attributes: &wgpu::vertex_attr_array![0 => Float32x3, 1 => Float32x3, 2 => Float32x3],
-                    }),
-                    Some(wgpu::VertexBufferLayout {
-                        array_stride: size_of::<Instance>() as u64, step_mode: wgpu::VertexStepMode::Instance,
-                        attributes: &wgpu::vertex_attr_array![3 => Float32x4, 4 => Float32x4, 5 => Float32x4, 6 => Float32x4,
-                            7 => Float32x4, 8 => Float32x4, 9 => Float32x4, 10 => Float32x4, 11 => Uint32],
-                    }),
-                ],
+                module: &module,
+                entry_point: Some("floating_vertex"),
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
+                buffers: &layouts,
             },
             primitive: wgpu::PrimitiveState::default(),
             depth_stencil: Some(wgpu::DepthStencilState {
-                format: surface.depth_format, depth_write_enabled: Some(true),
-                depth_compare: Some(wgpu::CompareFunction::GreaterEqual), stencil: wgpu::StencilState::default(),
+                format: surface.depth_format,
+                depth_write_enabled: Some(true),
+                depth_compare: Some(wgpu::CompareFunction::GreaterEqual),
+                stencil: wgpu::StencilState::default(),
                 bias: wgpu::DepthBiasState::default(),
             }),
             multisample: wgpu::MultisampleState::default(),
             fragment: Some(wgpu::FragmentState {
-                module: &module, entry_point: Some("floating_fragment"), compilation_options: wgpu::PipelineCompilationOptions::default(), targets: &targets,
+                module: &module,
+                entry_point: Some("floating_fragment"),
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
+                targets: &targets,
             }),
-            multiview_mask: None, cache: None,
+            multiview_mask: None,
+            cache: None,
         });
+        let shadow = surface
+            .sun_path
+            .and(surface.shadow)
+            .map(|shadow| prepare_shadow(device, shadow, &layouts));
         let (craft_vertices, float_vertices) = vertices.split_at(split as usize);
         let bounds = [local_bounds(craft_vertices), local_bounds(float_vertices)];
         let vertices = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -165,6 +193,7 @@ impl SceneContribution for Draw {
         self.previous.clear();
         self.prepared = Some(Prepared {
             pipeline,
+            shadow,
             vertices,
             instances,
             queue: surface.queue.clone(),
@@ -189,18 +218,28 @@ impl SceneContribution for Draw {
                 .zip(&fleet.current)
                 .map(|(old, new)| pose(old, new, alpha)),
         );
-        let boxes = self
+        let placements = self
             .recorded
             .iter()
             .zip(&fleet.current)
             .take(self.visible_count)
             .filter(|(_, body)| !matches!(body.hull, Hull::Craft) || fleet.craft_present)
-            .filter_map(|(pose, body)| {
+            .map(|(pose, body)| {
                 let bounds = prepared.bounds[usize::from(matches!(body.hull, Hull::Float))];
                 placed_bounds(Mat4::from_cols_array_2d(pose), bounds)
             })
             .collect::<Vec<_>>();
+        let boxes = placements
+            .iter()
+            .filter_map(|&(lo, hi)| BodyBounds::new(lo, hi))
+            .collect::<Vec<_>>();
         self.opaque.publish(&boxes);
+        self.shadow_bounds = prepared.shadow.as_ref().and_then(|_| {
+            placements
+                .iter()
+                .filter_map(|&(lo, hi)| ShadowBounds::new(lo, hi))
+                .reduce(ShadowBounds::union)
+        });
         drop(fleet);
         let inputs: Vec<_> = self
             .recorded
@@ -224,17 +263,20 @@ impl SceneContribution for Draw {
         let Some(prepared) = &self.prepared else {
             return;
         };
-        let fleet = self.fleet.lock().expect("floating fleet");
         pass.set_pipeline(&prepared.pipeline);
-        pass.set_vertex_buffer(0, prepared.vertices.slice(..));
-        pass.set_vertex_buffer(1, prepared.instances.slice(..));
-        for (index, body) in (0_u32..).zip(&fleet.current).take(self.visible_count) {
-            let vertices = match body.hull {
-                Hull::Craft if !fleet.craft_present => continue,
-                Hull::Craft => &prepared.craft,
-                Hull::Float => &prepared.float,
-            };
-            pass.draw(vertices.clone(), index..index + 1);
+        self.record_draw(prepared, pass);
+    }
+
+    fn shadow_bounds(&self) -> Option<ShadowBounds> {
+        self.shadow_bounds
+    }
+
+    fn draw_shadow(&self, pass: &mut wgpu::RenderPass<'_>) {
+        if let Some(prepared) = &self.prepared
+            && let Some(pipeline) = &prepared.shadow
+        {
+            pass.set_pipeline(pipeline);
+            self.record_draw(prepared, pass);
         }
     }
 
@@ -243,6 +285,84 @@ impl SceneContribution for Draw {
             std::mem::swap(&mut self.recorded, &mut self.previous);
         }
     }
+}
+
+fn sun_source(surface: &SceneSurface<'_>) -> &'static str {
+    match (surface.sun_path.is_some(), surface.shadow.is_some()) {
+        (false, _) => {
+            "fn floating_sun_factor(_point: vec3<f32>, _normal: vec3<f32>) -> f32 { return 1.0; }"
+        }
+        (true, false) => include_str!("sun_unshadowed.wgsl"),
+        (true, true) => include_str!("sun_shadowed.wgsl"),
+    }
+}
+
+fn cloud_source(surface: &SceneSurface<'_>) -> &'static str {
+    if surface.sun_path.is_some() && surface.sun_optical_depth {
+        "fn floating_cloud_factor(point: vec3<f32>) -> f32 { return cloud_factor(point); }"
+    } else {
+        "fn floating_cloud_factor(_point: vec3<f32>) -> f32 { return 1.0; }"
+    }
+}
+
+fn vertex_layouts() -> [Option<wgpu::VertexBufferLayout<'static>>; 2] {
+    const VERTEX: [wgpu::VertexAttribute; 3] =
+        wgpu::vertex_attr_array![0 => Float32x3, 1 => Float32x3, 2 => Float32x3];
+    const INSTANCE: [wgpu::VertexAttribute; 9] = wgpu::vertex_attr_array![
+        3 => Float32x4, 4 => Float32x4, 5 => Float32x4, 6 => Float32x4,
+        7 => Float32x4, 8 => Float32x4, 9 => Float32x4, 10 => Float32x4, 11 => Uint32
+    ];
+    [
+        Some(wgpu::VertexBufferLayout {
+            array_stride: size_of::<Vertex>() as u64,
+            step_mode: wgpu::VertexStepMode::Vertex,
+            attributes: &VERTEX,
+        }),
+        Some(wgpu::VertexBufferLayout {
+            array_stride: size_of::<Instance>() as u64,
+            step_mode: wgpu::VertexStepMode::Instance,
+            attributes: &INSTANCE,
+        }),
+    ]
+}
+
+fn prepare_shadow(
+    device: &thrum_render::runtime::DeviceSite,
+    shadow: thrum_render::contribution::SceneShadowSurface<'_>,
+    buffers: &[Option<wgpu::VertexBufferLayout<'_>>],
+) -> wgpu::RenderPipeline {
+    const PASS: &str = "floating craft Sun casters";
+    let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+        label: Some(PASS),
+        source: wgpu::ShaderSource::Wgsl(include_str!("shadow.wgsl").into()),
+    });
+    let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+        label: Some(PASS),
+        bind_group_layouts: &[Some(shadow.view_layout)],
+        immediate_size: 0,
+    });
+    device.render(&wgpu::RenderPipelineDescriptor {
+        label: Some(PASS),
+        layout: Some(&layout),
+        vertex: wgpu::VertexState {
+            module: &shader,
+            entry_point: Some("floating_shadow_vertex"),
+            buffers,
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
+        },
+        fragment: None,
+        primitive: wgpu::PrimitiveState::default(),
+        depth_stencil: Some(wgpu::DepthStencilState {
+            format: shadow.depth_format,
+            depth_write_enabled: Some(true),
+            depth_compare: Some(wgpu::CompareFunction::Greater),
+            stencil: wgpu::StencilState::default(),
+            bias: wgpu::DepthBiasState::default(),
+        }),
+        multisample: wgpu::MultisampleState::default(),
+        multiview_mask: None,
+        cache: None,
+    })
 }
 
 fn pose(old: &Body, new: &Body, alpha: f64) -> Matrix {
@@ -429,12 +549,12 @@ fn local_bounds(vertices: &[Vertex]) -> [Vec3; 2] {
     )
 }
 
-fn placed_bounds(model: Mat4, [low, high]: [Vec3; 2]) -> Option<BodyBounds> {
+fn placed_bounds(model: Mat4, [low, high]: [Vec3; 2]) -> ([f32; 3], [f32; 3]) {
     let centre = model.transform_point3((low + high) * 0.5);
     let radius = (high - low) * 0.5;
     let extent = model.x_axis.truncate().abs() * radius.x
         + model.y_axis.truncate().abs() * radius.y
         + model.z_axis.truncate().abs() * radius.z
         + Vec3::splat(0.02);
-    BodyBounds::new((centre - extent).to_array(), (centre + extent).to_array())
+    ((centre - extent).to_array(), (centre + extent).to_array())
 }

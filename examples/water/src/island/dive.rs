@@ -20,7 +20,7 @@ const LAKE_LEVEL: f32 = 12.0;
 const POND_LEVEL: f32 = 10.6;
 const HIGH_LAKE_STAGE: f32 = 2.75;
 const STEP_SECONDS: f64 = 1.0 / 60.0;
-const ADAPTATION_SHARE: f64 = 0.68;
+const ADAPTATION_SHARE: f64 = 0.55;
 const SURFACE_TRANSMISSION: f64 = 0.96;
 
 /// An island waterline the inspection camera can cross.
@@ -245,7 +245,7 @@ fn build(
         // The shelf and offshore station share one clear-sea water type.
         Optics {
             extinction: [0.40, 0.13, 0.070],
-            downwelling: [0.22, 0.065, 0.033],
+            downwelling: [0.22, 0.080, 0.048],
             ..Optics::default()
         }
     } else {
