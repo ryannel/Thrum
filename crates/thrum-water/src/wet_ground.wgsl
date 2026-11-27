@@ -69,7 +69,7 @@ fn wet_shore(point: vec2<f32>) -> vec4<f32> {
     return select(vec4(0.0), shore, all(point >= bounds.xy) && all(point <= bounds.zw));
 }
 
-fn ground_wetness(point: vec3<f32>, normal: vec3<f32>) -> GroundWetness {
+fn ground_wetness_footprint(point: vec3<f32>, normal: vec3<f32>, footprint: f32) -> GroundWetness {
     let header = wet_load(0u);
     let lattice = wet_load(2u);
     var cell = vec4(0.0, -1.0, 0.0, 0.0);
@@ -104,8 +104,12 @@ fn ground_wetness(point: vec3<f32>, normal: vec3<f32>) -> GroundWetness {
     var cover = share;
     if appearance.z > 0.0 && any(low.zw > vec2(0.0)) {
         let pattern = wet_pattern(point.xz, low.zw, appearance.z);
-        // Filter the advancing film edge over a small height interval.
-        cover = smoothstep(0.0, 0.065, share - 0.90 * pattern);
+        // At a grazing view the footprint may cross the whole height ramp.
+        // Fade the resolved boundary into the average cover over that footprint.
+        let unresolved = smoothstep(0.013, 0.084, footprint);
+        let half_edge = 0.11 * unresolved;
+        let detail = smoothstep(-half_edge, 0.065 + half_edge, share - 0.90 * pattern);
+        cover = select(0.0, mix(detail, share, unresolved), surface > 0.0);
     }
     if appearance.w > class_data.w {
         cover *= 1.0 - smoothstep(class_data.w, appearance.w, point.y);
@@ -128,6 +132,10 @@ fn ground_wetness(point: vec3<f32>, normal: vec3<f32>) -> GroundWetness {
         return GroundWetness(max(hollow.w, margin), 0.0, 0.0, class_index, ground);
     }
     return GroundWetness(max(open.pores, margin), surface, cover, class_index, ground);
+}
+
+fn ground_wetness(point: vec3<f32>, normal: vec3<f32>) -> GroundWetness {
+    return ground_wetness_footprint(point, normal, 0.0);
 }
 
 fn wet_material(point: vec3<f32>, normal: vec3<f32>, base: vec3<f32>, roughness: f32,

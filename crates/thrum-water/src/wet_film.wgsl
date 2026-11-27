@@ -21,6 +21,13 @@ fn film_normal(pixel: vec2<f32>, ground: vec3<f32>) -> vec3<f32> {
     return normalize(plane * select(-1.0, 1.0, plane.y >= 0.0));
 }
 
+fn film_footprint(ground: vec3<f32>, normal: vec3<f32>) -> f32 {
+    let eye = view.camera_xyz_time.xyz - ground;
+    let range = length(eye);
+    let incidence = abs(dot(eye / max(range, 1e-4), normal));
+    return range * view_aux.viewport_inv_viewport.w / max(incidence, 0.08);
+}
+
 fn standing_film(pixel: vec2<f32>, ground: vec3<f32>, normal: vec3<f32>, wet: GroundWetness) -> Output {
     let appearance = wet_load(wet_class_start(wet.class_index) + 1u);
     let r = appearance.y;
@@ -33,15 +40,20 @@ fn standing_film(pixel: vec2<f32>, ground: vec3<f32>, normal: vec3<f32>, wet: Gr
     let facing = clamp(dot(v, n), 0.0, 1.0);
     let fresnel = water_fresnel(facing);
     let sky = environment_sky_radiance(ray);
-    let reach = optics.reach_slope_scene.x;
+    let reach = min(optics.reach_slope_scene.x, 24.0);
     // Near normal incidence the resolved environment supplies the sheen.
     // Reserve scenery rays for the grazing lobe, where their silhouette reads.
     let grazing = 1.0 - smoothstep(0.39, 0.76, facing);
-    let clarity = grazing * (1.0 - 0.85 * r) * smoothstep(0.013, 0.15, ray.y);
+    let clarity = grazing * (1.0 - 0.85 * r) * smoothstep(0.005, 0.09, ray.y);
     var light = sky;
     if clarity > 0.0 && optics.reach_slope_scene.z > 0.0 {
         let origin = ground + vec3(0.0, 0.009, 0.0);
-        let scene = scene_reflection(origin, ray, reach, clarity, no_reflection(reach));
+        // A film already lies on the opaque bed. Its ray needs a scenery
+        // hit rather than the mapped bank fallback used by the water sheet.
+        let hit = trace_scene(origin, ray, reach, reach, false);
+        let along = dot(hit.point - origin, ray);
+        let border = scene_edge(optics_uv(hit.pixel));
+        let scene = ReflectionLayer(hit, along, clarity * hit.edge * border * reach_weight(along, reach));
         light = reflect_layer(scene, sky, 1.0);
     }
     let uv = pixel * view_aux.viewport_inv_viewport.zw;

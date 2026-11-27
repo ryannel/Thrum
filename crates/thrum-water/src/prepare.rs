@@ -1108,7 +1108,7 @@ fn compose_rain_film(
     source.push_str(header);
     source.push_str(
         "    let normal = film_normal(pixel.xy, ground);
-    let wet = ground_wetness(ground, normal);
+    let wet = ground_wetness_footprint(ground, normal, film_footprint(ground, normal));
     if wet.hollows_ground {
         if wet.cover <= 0.0 { discard; }
         return standing_film(pixel.xy, ground, normal, wet);
