@@ -1933,7 +1933,10 @@ Sun 60° up, from 1 m down that path is 1.1 m long and hides a quarter of the su
 light scattered on it varies from ray to ray by 1.4% to 3.5% in winds of 1 to 8 m/s, where from 3 m it
 varies by 14% to 18% on a path that hides over half. As a share of the picture the streaks are under 1%
 from 1 m, about 10% from 3 m and about 20% from 10 m. A murky lake hides more on the same path and still
-shows under 3% from 1 m. With the Sun 15° up the light crosses the surface at a slant, the waves focus it
+shows under 3% from 1 m, and 13% to 19% from 3 m. So under a high Sun the lake's beams stand from 3 m as
+the sea's do, and WP16.7 inspects them there at noon, which is also the lake view of separate beams that
+Chrome is judged on. The figure is the model's: no frame of that view had been taken when it was written.
+With the Sun 15° up the light crosses the surface at a slant, the waves focus it
 sooner, and the same share from 1 m is 5% to 8% in the sea and 12% to 20% in the lake (part S3). So from
 1 m under a high Sun the water round the Sun's direction is a glow, which is the direction's closed form
 with a little of the march in it, and it changes as the waves pass. That is what a swimmer just under the

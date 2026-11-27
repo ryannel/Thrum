@@ -1614,3 +1614,11 @@
   Sun low, and the hull line is the design's: its shadow darker than the lit water beside it. WP16.6, WP16.8
   and WP16.11 are unchanged.
   [The decision](../../../.orchestrate/evidence/WATERS/WP16-shallow-beams-decision.md).
+
+## WP16 noon lake beams
+
+- 2026-11-27 Planner, for Must Fix 1 of the design review at `2054bb2a03f9`: WP16.7 now names 3 m under the
+  lake at noon as a station where separate beams must stand and sweep, so neither it nor WP16.11, which
+  takes the view by reference, can pass on a noon lake that is a glow all the way down. The design gives
+  part S3's figure for the view.
+  [The change](../../../.orchestrate/evidence/WATERS/WP16-noon-lake-beams.md).

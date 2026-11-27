@@ -106,7 +106,7 @@
 
 ## WP16 Under water the Sun casts a moving net of light on the bed and the hull, shafts of light stand in the water, and the picture stays readable as the camera goes down
 
-WP16.7 changed ([log](LOG.md#wp16-shallow-beams)); three-look count restarts.
+WP16.7 changed ([log](LOG.md#wp16-noon-lake-beams)); three-look count restarts.
 
 ## WP20 A pitching crest seen close is drawn whole, with no tabs, strands, bands or flashing patch on its face, on the Mac and in Chrome
 
