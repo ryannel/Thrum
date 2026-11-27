@@ -2738,6 +2738,34 @@
         "by": "plan",
         "task": "Diagnose WATERS WP15. It has failed review 4 times, 3 of them on an item or a finding an earlier review had failed, so t",
         "at": "2026-11-27T03:04:28Z"
+      },
+      "ready_for_review": {
+        "commit": "5b58da41dee45b1c67452093d95f58f538f531eb",
+        "checked": "5b58da41dee45b1c67452093d95f58f538f531eb",
+        "at": "2026-11-27T04:18:33Z",
+        "host": "codex",
+        "model": "gpt-6.2-sol",
+        "effort": "medium",
+        "observed": {
+          "model": "gpt-6.2-sol",
+          "effort": "medium"
+        },
+        "cli": "codex-cli 0.171.0-alpha.13.2",
+        "path": "headless",
+        "usage": {
+          "input": 391843,
+          "cached": 59062400,
+          "output": 91159,
+          "turns": 1,
+          "incomplete_turns": 1
+        },
+        "session_usage": {
+          "input": 614048,
+          "cached": 75990784,
+          "output": 121019,
+          "turns": 2,
+          "incomplete_turns": 1
+        }
       }
     },
     "WP14": {
