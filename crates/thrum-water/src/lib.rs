@@ -32,7 +32,8 @@ use thrum_water_model::Map;
 /// The surface pass's timing name.
 pub const SURFACE_PASS: &str = "water surface";
 /// Rain depth and canopy evaluator used by the surface and its conformance tests.
-pub const RAIN_GAIN_WGSL: &str = include_str!("rain_gain.wgsl");
+pub const RAIN_GAIN_WGSL: &str =
+    concat!(include_str!("canopy.wgsl"), include_str!("rain_gain.wgsl"),);
 const VIEW_RECORDS: &str = include_str!("view.wgsl");
 
 /// Physical and mesh settings. Named sea states belong to the game.

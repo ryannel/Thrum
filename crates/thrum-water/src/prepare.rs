@@ -760,7 +760,6 @@ fn surface_pipelines(
             thrum_sea::rain::SHARED_LAYERS + if flow.is_some() { 10 } else { 0 }
         )
         .expect("write shader source");
-        suffix.push_str(super::canopy::COLUMNS_WGSL);
         suffix.push_str(super::RAIN_GAIN_WGSL);
         suffix.push_str(include_str!("rain.wgsl"));
     }

@@ -19,7 +19,9 @@ fn rain_exposure(point: vec2<f32>, level: f32) -> f32 {
 }
 
 fn rain_response(index: u32) -> vec2<f32> {
-    return canopy_load(rain_columns, u32(rain.footprint_scale.w) + index).xy;
+    let dense_start = rain.grid.x * rain.grid.y;
+    let start = select(dense_start, u32(rain.footprint_scale.w), rain.footprint_scale.z != 0.0);
+    return canopy_load(rain_columns, start + index).xy;
 }
 
 fn rain_gain(point: vec2<f32>, row: SurfaceRow) -> f32 {
