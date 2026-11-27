@@ -886,7 +886,7 @@
         {
           "verdict": "fail",
           "commit": "b56c49ab0617e53e6243ba7e7e3b8bfb383c825c",
-          "review": ".orchestrate/evidence/RIVERS/WP5-review.md",
+          "review": ".orchestrate/evidence/RIVERS/WP5-review-1.md",
           "items": {
             "WP5.1": "pass",
             "WP5.2": "pass",
@@ -931,6 +931,53 @@
             "turns": 1
           },
           "at": "2026-11-27T05:20:23Z"
+        },
+        {
+          "verdict": "fail",
+          "commit": "104d7681f4bbe130981934755044eadb6aad41bc",
+          "review": ".orchestrate/evidence/RIVERS/WP5-review.md",
+          "items": {
+            "WP5.1": "pass",
+            "WP5.2": "pass",
+            "WP5.10": "pass",
+            "WP5.3": "pass",
+            "WP5.4": "fail",
+            "WP5.5": "fail",
+            "WP5.6": "pass",
+            "WP5.7": "pass",
+            "WP5.8": "pass"
+          },
+          "findings": [
+            {
+              "name": "Riffle chop pulses at the solved current\u2019s carriage period",
+              "item": "WP5.4",
+              "different": "The straight bands after prolonged play are gone. The amplitude of the drawn chop now falls and recovers across the riffle at each half-cycle, including at startup.",
+              "repeat": false
+            },
+            {
+              "name": "Foam trails fade and brighten together across the reach",
+              "item": "WP5.5",
+              "different": "The downstream holes stay rounded after a minute. The new finding is the synchronized loss and return of white contrast in separate areas of the rock reach and in the pool.",
+              "repeat": false
+            }
+          ],
+          "summary": "Seven of nine items pass. The quiet reaches now receive foam only by transport, and the rock keeps its curved ripples and open lace after a minute. WP5.4 and WP5.5 still fail because the riffle's chop pulses in a dead calm about four times a second, and white trails fade and brighten together on a separate two-second cycle.",
+          "host": "codex",
+          "model": "gpt-6.2-astra",
+          "effort": "high",
+          "observed": {
+            "model": "gpt-6.2-astra",
+            "effort": "high"
+          },
+          "cli": "codex-cli 0.171.0-alpha.13.2",
+          "path": "headless",
+          "usage": {
+            "input": 189400,
+            "cached": 10684800,
+            "output": 26737,
+            "turns": 1
+          },
+          "at": "2026-11-27T06:30:31Z"
         }
       ],
       "authorised": {
