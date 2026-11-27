@@ -413,10 +413,15 @@ reads no light, so a pass can run either alone: a prepass the surface step, a ra
 step.
 
 Indirect light arriving at a surface the scene shades, diffuse and specular, is one query of the light step: by
-world position, shading normal, view direction, roughness and pixel position. Today it answers from the
-environment's diffuse and reflection products and the material's occlusion, and uses neither the position nor the
-pixel. A world-space cache answers by position and a screen-space gather by pixel, behind the same query, so no
-caller changes when one is added. Nothing lights such a surface indirectly outside the query. The environment's
+world position, shading normal, view direction, roughness and pixel position. With no gather selected it answers
+from the environment's diffuse and reflection products and the material's occlusion, and uses neither the position
+nor the pixel. A world-space cache answers by position and a screen-space gather by pixel, behind the same query, so
+no caller changes when one is added. Nothing lights such a surface indirectly outside the query. A scene's
+**ambient occlusion** is one value at a pixel behind that query. The scene selects it when it is prepared (C04)
+and it resolves to one method: a screen-space gather on any recipe, or rays where the scene prefers them and they
+run. A scene resolved to one method runs no pass of the other, so the two never multiply. The value multiplies
+indirect light together with the material's occlusion, and no direct light and no emission
+([seam ruling for ATMOSPHERE WP14](../plans/ARCHITECTURE.md#seam-ruling-for-atmosphere-wp14)). The environment's
 own products stay source quantities, asked by direction at the camera's location; a medium, and water's own
 optics, read them as sources ([the decision](decisions/POST-V1-FOUNDATIONS.md)).
 

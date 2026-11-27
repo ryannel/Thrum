@@ -24,6 +24,9 @@ the authored valley: `SHOWCASE` WP9 fixes them, and WP6 waits for it.
 which holds the display's full 120 Hz at full screen and waits for it.
 [The Sun's cascades round the camera](#the-suns-cascades-round-the-camera-wp13) governs WP13, added the same
 day for the owner's three reports of Sun shadows that flicker, float and stop at a line.
+[Ambient occlusion on the default path](#ambient-occlusion-on-the-default-path-wp14) governs WP14, added the
+same day when the owner amended [decision 34](../ARCHITECTURE.md#owner-decisions): "Yes, add screen-space
+ambient occlusion to the default path".
 
 **The owner's bar, 17 November 2026:** "Ok let's lower the bar." Thrum is a game engine, and the aim is the most
 plausible result as fast as possible, not physical accuracy. Rendering work is judged against its inspection list at
@@ -1844,7 +1847,7 @@ them (`synthetic.wgsl`). With the showcase camera (46° tall, near plane 0.1 m) 
 |---|---|---|
 | 1 and 3, flicker | With the camera and the Sun both held, consecutive frames are identical. With the camera flying or turning and the Sun held, shadows keep their shape. With the camera held and the clock running, a rock's shadow changes outline every frame, a cactus's shadow comes and goes, and the sphere's shadow edge is a staircase whose steps move every frame | The maps are snapped to whole texels for a moving camera, which works. Nothing can hold them as the Sun turns: each frame draws every caster onto a grid at a new angle. That shows because a texel is tens of pixels on screen (26 in the sphere's staircase at 1,280 × 720), an edge whose penumbra is under half a texel is read with one 2×2 comparison, and a caster thinner than a texel is drawn only when it covers a texel's centre |
 | 3, floating | A lit strip rings each sunlit cube's base. At a low Sun the first cube-length of shadow is pale speckle | The receiver's depth offset is sized by the texel: half a texel's depth step, which grows as 1 / tan(Sun elevation), plus a fixed 6 cm. That is 8 cm along the ray at 35°, 27 cm at 10°, against a 36 cm cube, and about 1 m in the far map |
-| 3, floating in shade | A cube inside the sphere's shadow has no contact cue | Nothing on the default path darkens where objects meet ([owner decision 34](../ARCHITECTURE.md#owner-decisions)). Not this work package's: see [Not built](#not-built-by-wp13) |
+| 3, floating in shade | A cube inside the sphere's shadow has no contact cue | Nothing on the default path darkens where objects meet. Not this work package's: [WP14](#ambient-occlusion-on-the-default-path-wp14) builds it |
 | 2, the line | Props cast shadows up to a line across the ground and none beyond | Past the 512 m reach a receiver reads only the caster height map, whose 32 m texels hold no prop, and the hand-over is a 51 m band |
 
 ### Research
@@ -2052,12 +2055,299 @@ same poses and says so.
 
 ### Not built
 
-- **Contact darkening in shade.** A cube inside another shadow gets no cue from the Sun. Ambient occlusion is
-  `RAY-TRACING`'s, on the Mac, by a launch setting, and [owner decision 34](../ARCHITECTURE.md#owner-decisions)
-  plans no screen-space stand-in. WP13 judges grounding in sunlight.
+- **Contact darkening in shade.** A cube inside another shadow gets no cue from the Sun. That cue is ambient
+  occlusion, which [WP14](#ambient-occlusion-on-the-default-path-wp14) builds on the default path after the
+  owner amended [decision 34](../ARCHITECTURE.md#owner-decisions). WP13 judges grounding in sunlight.
 - **Screen-space contact shadows** for the last millimetres at a base. They need the opaque depth before
   shading, which the forward pass does not have.
 - **Shadows of props past the reach**, and a cadence for the coarse cascades (above).
 - **The moving edge on the authored west-lookout spur** between 17.40 and 17.80 h, which stays open under G3s
   with [WP3's record](#wp3-surface-sun-visibility). WP13 replaces the filter that record studied and does not
   judge the spur.
+
+## Ambient occlusion on the default path (WP14)
+
+WP14, added on 27 November 2026. [The diagnosis](../../../.orchestrate/evidence/ATMOSPHERE/WP13-diagnosis/README.md#the-causes)
+of the owner's shadow reports found, as cause 7, that in shade nothing darkens where an object meets the ground:
+the default path had no ambient occlusion, because [owner decision 34](../ARCHITECTURE.md#owner-decisions)
+gave it to ray tracing alone and planned no screen-space stand-in. Asked whether to revisit that decision so the
+default path gets cheap screen-space ambient occlusion, the owner said:
+
+> Yes, add screen-space ambient occlusion to the default path
+
+Decision 34 as amended: screen-space ambient occlusion is on the default path, on the Mac and in Chrome.
+Ray-traced occlusion from `RAY-TRACING` stays the higher tier where rays run, and replaces the screen-space
+method there. The two never stack. Lamp shadows are still traced only.
+
+WP14 is built after WP13. Both edit the forward shader and the light group, both move the same exact baselines,
+and WP14's lists are judged at the cubes, where WP13 first has to hold the sphere's shadow still.
+
+### Cues
+
+- **Grounded in shade.** A thing standing on ground the Sun does not reach, inside another shadow, in a ridge's
+  shade or after sunset, has a soft darkening where it meets the ground, and reads as standing on it. Creases
+  where things touch are darker than the faces beside them.
+- **Sunlight keeps its look.** The darkening is the sky light's alone. Sunlit ground, flat faces and the sky
+  look as they do without it, and nothing looks dirty or outlined.
+- **Steady.** Flying, turning and beside drifting balloons, the darkening stays on what it belongs to: no dark
+  or light outline round a silhouette, no grain or shimmer, no trail.
+
+Range: the bare valley's sphere, rock and cubes (0.36 m) and the exit scene's 8,500 still props, 0.25 m cactus
+trunks to 7 m boulders, with 1,500 balloons adrift, from the ground to the flythrough's height, at every hour,
+at render extents from 1280 × 720 to the full screen's 2,316 × 1,497 under the governor, on both of the Mac's
+recipes and in Chrome.
+
+### Who owns it
+
+**The scene's ambient occlusion is `ATMOSPHERE`'s**: the request a scene makes, the one method each scene
+resolves to, the value a fragment reads and how the light step applies it, the screen-space method with its
+history, and its quality value. `RAY-TRACING` owns the traced method: its rays, its filter and its channel of
+the traced visibility history ([its design](../RAY-TRACING/DESIGN.md#ambient-occlusion-wp5)).
+
+The reason is the one that already divides the Sun. Ambient occlusion is how much of the sky's light reaches a
+surface, as a Sun shadow is how much of the Sun's does. This module owns both sources and the Sun's visibility
+at a receiver, with the cascades as its portable method and `RAY-TRACING`'s rays as the traced one. Occlusion
+gets the same cut: one operation, a portable method here and a traced method there. It also owns the routes,
+the takes from before and the grounding lists of WP13, which WP14 is judged beside.
+
+| Other owner considered | Why not |
+|---|---|
+| `EFFECT-GRAPH`, as an effect | It owns how a module declares passes and state, and no effect. Occlusion is not a contribution a scene lists: the forward shader's light step reads it for every surface |
+| `RAY-TRACING` | Nothing of its is a default, it is built only when no V1 work package can start, and it exists only on the Apple tile recipe. Work that is on by default in Chrome cannot live under those rules |
+| `APPLE-PRESENTATION` | It owns how a history is keyed, accepted and reset, and the governor. Occlusion follows those rules and registers a quality value, as the aerial lookup and the charts do |
+| A new module | One work package, in files this module and the forward shader already hold, with no state another module would build on |
+
+### Research
+
+- **Ground-truth ambient occlusion (GTAO).** Activision's method for Call of Duty searches the depth buffer for
+  the horizon in a few slices round the view direction and integrates the open arc with a cosine weight, which
+  matches a ray-traced reference where older horizon methods over-darken. It is computed at half resolution,
+  filtered over space and time, and cost 0.5 ms on a PS4 at 1080p
+  ([Jiménez, Wu, Pesce and Jarabo 2016](https://www.activision.com/cdn/research/Practical_Real_Time_Strategies_for_Accurate_Indirect_Occlusion_NEW%20VERSION_COLOR.pdf)).
+  Unreal and Unity's HDRP offer it as their screen-space method.
+- **An open implementation.** Intel's [XeGTAO](https://github.com/GameTechDev/XeGTAO) (MIT) adds a depth
+  mip chain so far taps stay cheap, noise that varies over space and time, an edge-aware filter and normals
+  taken from depth, and is tuned against a ray-traced reference. Intel says it supersedes ASSAO. Its source may
+  be ported.
+- **Visibility bitmask.** A depth buffer read as a solid height field makes a thin thing shade everything
+  behind it, which is the dark halo of screen-space occlusion. Keeping the occluded sectors of each slice as a
+  bitmask, with a thickness for each depth sample, lets light pass behind a thin thing at the same cost
+  ([Therrien, Levesque and Gilet 2023](https://arxiv.org/abs/2301.11376)). Bevy replaced its GTAO with it in
+  0.15, in WGSL on wgpu, for "thin geometry" ([release notes](https://bevy.org/news/bevy-0-15/)); that source
+  (MIT or Apache-2.0) may be ported too.
+- **Occlusion read by a forward shader.** Forward renderers that apply occlusion to indirect light alone need
+  it before they shade. Godot's and Unity's forward paths get it from a depth prepass
+  ([the decision](../../design/decisions/POST-V1-FOUNDATIONS.md)). Apple's GPUs resolve which surface is
+  visible before they shade ([Harness Apple GPUs with Metal](https://developer.apple.com/videos/play/wwdc2020/10602/)),
+  so a prepass saves no shading there and adds a draw of every mesh.
+- **What Thrum already has.** `RAY-TRACING` WP5 runs its occlusion pass after the frame's opaque geometry and
+  the next frame's forward pass reads the result by reprojection, checked against depth. That read passed
+  review on this Mac at contact, at rest and in motion (the `RAY_TRACING_WP5` row of
+  [the maturity ledger](../../design/maturity.json)).
+
+### Mechanism
+
+**One value at a fragment, from one method a scene resolves when it is prepared.**
+
+- **The request.** A scene asks for ambient occlusion as off, or as a radius in metres with a preferred
+  method, screen-space or traced. It is fixed when the scene is prepared, like the Sun's shadow method. A scene
+  that gives none gets none: it prepares no occlusion pass, texture or binding and draws the bytes it drew
+  (C04).
+- **Resolution.** One function resolves it before anything is allocated. A radius resolves to the
+  **screen-space** method on every recipe and device. A preference for **traced** resolves to traced where
+  `RAY-TRACING`'s admission passes, and otherwise to screen-space at the same radius with the admission's
+  reason. A scene resolved to one method declares no pass, texture or pipeline of the other. Where the forward
+  stage would bind more sampled textures than the device allows, or the device lacks a format the pass
+  needs, occlusion resolves off with that reason and the scene is not refused (C08).
+- **The showcase asks.** The valley, with or without the proof overlay, and the exit scene ask for the
+  screen-space method at the game's radius, 1 m to start, in every launch: the Mac's two recipes, Chrome and
+  the iPhone simulator. A proving build's launch value can turn it off, set the radius or prefer traced.
+  `RAY-TRACING`'s launches that ask for traced occlusion resolve as they do today where rays run.
+- **Report.** The report that names the Sun's shadow method names occlusion too: what was asked, the method
+  resolved and why they differ.
+
+**The screen-space method** is GTAO's horizon search with the visibility bitmask, at half the render extent
+each way, accumulated over frames. It is a pass of the scene's own, declared in the one graph after the
+frame's opaque geometry, where the traced visibility pass sits. It reads the frame's depth, view record and
+motion target, which every view of a 3D scene publishes (C07), and nothing else of the frame:
+
+1. **Depth.** It reduces the frame's depth to a half-extent linear depth with a short mip chain. A tap far
+   from its pixel reads a coarse mip, so the cost does not grow with the radius.
+2. **Normal.** It rebuilds each pixel's normal from neighbouring depths, taking the neighbours on the pixel's
+   own surface. That is the triangle's normal, which is what occlusion wants. No guide buffer and no prepass
+   is built.
+3. **Gather.** In a few slices round the view direction it steps outward to the radius, in metres at the
+   pixel's depth, up to a cap in pixels. Each tap marks the sectors of the slice it covers in a bitmask, from
+   its own depth to a constant thickness behind it. The open sectors, weighted by the cosine to the normal,
+   are the visibility. The slice directions and the step offsets differ from pixel to pixel and from frame to
+   frame. The sky's pixels neither receive nor occlude. A tap outside the frame marks nothing.
+4. **Over time.** It reprojects last frame's result through the motion target, rejects history whose depth
+   disagrees, clamps what is left to the range of this frame's neighbourhood and blends. Its memory in frames
+   is the **settle length**, a runtime value the builder sets by eye and the report states.
+5. **Over space.** One edge-stopping filter, guided by depth and the rebuilt normal, so darkening does not
+   leak across a silhouette.
+
+The result is **the occlusion history**: at half extent, the visibility and the depth it belongs to. The
+traced method's filtered result has the same two values, so shading reads either without knowing which
+method wrote it.
+
+**What a fragment reads.** The forward pass reads last frame's occlusion history at the fragment's previous
+position, which it already has for its motion vector: the four nearest half-extent texels, each weighted by
+how well its stored depth matches the fragment's. That is the bilateral upsample. With no matching history
+the value is 1. This is the read `RAY-TRACING` WP5 built, and from WP14 both methods use the one function.
+Fragments drawn after opaque geometry, such as water, read nothing and are as they were.
+
+**What it multiplies.** Indirect light only (C08): the diffuse sky light, and the reflected sky light through
+Lagarde's specular occlusion. It multiplies the material's own occlusion and does not replace it. It never
+touches the Sun's light, a lamp's or emitted light. This is the application `RAY-TRACING` WP5 built, in the
+atmosphere-lit and the fixed-light variants of the shader, and both methods use the one function.
+
+**Latency is accepted, as it is for traced occlusion.** A surface shows the value its place had a frame ago.
+After a thing arrives or leaves, its darkening follows within the settle length and one frame. Occlusion is
+broad and faint and the display is at 120 Hz. A darkening still visible after that is a trail, and fails.
+
+**History.** The occlusion history is committed only with a submitted frame, and reset on a camera cut and a
+replaced device, by `APPLE-PRESENTATION`'s history rules. Its textures are sized once for a generation, from
+the output extent, as the forward attachments are, and the pass fills half the drawn rectangle. A step of the
+render scale does not reset it: the pass and the fragment's read address the history by the drawn extent it
+was written at, so the first frame at a new scale reads the frame before it and nothing is created. The
+governor steps the scale during play, and a reset there would blink every contact in view. The traced
+method's history resets at a step today and keeps doing so.
+
+**Quality.** One quality value, the gather's slices and steps, declared through the contribution seam's
+quality knobs with three tier values and no history invalidation, for the governor. The policy's order is
+unchanged: scale first, then tiers. No tier turns occlusion off.
+
+| What a neighbour relies on | What it sees |
+|---|---|
+| `RAY-TRACING`: a scene that asked for traced occlusion, where rays run, traces it and draws what it drew | The same. The request now names the method, and such a scene declares no screen-space pass. Where its admission fails, the scene shows screen-space occlusion where it showed none |
+| `RAY-TRACING`: with soft Sun shadows and traced occlusion both on, one history texture carries both | Unchanged |
+| A scene that asks for no occlusion, which is every scene but the showcase's | Its bytes, passes and bindings are today's. `SCENE-VIEWS`', `CULLING`'s, `WATERS`' and `CLOUDS`' tests are of such scenes |
+| `SCENE-VIEWS`: a secondary view's picture | A view has no history key and reads no occlusion, in any scene. A mirror shows the scene without it |
+| `APPLE-PRESENTATION`: history rules, the knob registry, `SceneSurface`'s three colour formats | Followed as found. The forward pass gains one sampled texture and one uniform in the light group, and no colour target |
+| The frame contract's guide buffers (C07) | Not selected. If a later module builds the prepass, the pass can take its normals and the read does not change |
+
+### Alternatives considered
+
+| Option | Why not |
+|---|---|
+| A depth prepass, with occlusion computed and read in the same frame | A second draw of 10,000 entities and every cooked mesh in every frame, on a frame with no time to spare at full screen, and on Apple's GPUs it saves no shading. One frame of latency on this term already passed review for the traced method |
+| Multiply the finished colour by occlusion after shading | It darkens sunlit and emissive surfaces as much as shaded ones, which is the dirty look of early screen-space occlusion, and C08 gives occlusion indirect light alone |
+| Plain GTAO horizons, as XeGTAO ships | A cactus trunk or a post would darken the ground metres behind it. The bitmask costs the same and is the published fix |
+| Hemisphere-kernel SSAO, HBAO, ASSAO | Older. They are not cosine-weighted, over-darken creases and halo more. Intel retired ASSAO for XeGTAO |
+| Full render extent | Four times the gather for a term with no fine detail. The depth-weighted read restores the edges |
+| No accumulation over frames, more taps in each | Several times the gather for the same grain |
+| Ray-traced occlusion everywhere | Chrome has no ray queries, and the traced path is an opt-in on this Mac |
+| Screen-space indirect light, or bent normals for the sky's direction | A further step on the same gather. Global illumination is left until after V1 |
+
+### Check that it can work
+
+- **Depth after opaque geometry is there.** The traced visibility pass and the late effects read it today, on
+  both recipes.
+- **The read exists and has been judged.** The forward read, its depth weights and the application are in the
+  tree and passed `RAY-TRACING` WP5's review on Metal. In Chrome the same WGSL is one more sampled texture in
+  the forward stage: by the count `synthetic/preparation.rs` makes, the valley's fullest composition is 15 of
+  WebGPU's 16 with it.
+- **Texels against things.** A pixel covers 1.18 mm for each metre of distance at 720 rows, so a half-extent
+  texel covers 2.4 mm. At 3 m a 0.36 m cube is about 50 texels and a 1 m radius is capped. At 100 m a texel is
+  24 cm: a 1 m rock is four texels and still gets a contact. By about 400 m the radius is a texel and
+  occlusion fades to nothing, where a prop is a few pixels and its shadow is thinning out too (WP13).
+- **The halo.** Plain horizons treat a cactus trunk as solid to any depth behind it, so ground within the
+  radius behind the trunk loses the whole arc above the trunk's front. With a thickness of some tens of
+  centimetres, only the sectors between the trunk's front and that depth behind it are marked: from ground
+  half a metre behind a 0.25 m trunk, a thin slice of the arc. Ground further behind than the radius is out
+  of reach of either, so a dark outline there can only be the filter or the read leaking across the
+  silhouette, which their depth weights are there to stop.
+- **If it does not work.** If a halo or shimmer survives tuning the thickness, the counts and the settle
+  length, the builder ends `BLOCKED` with frames. It does not add a prepass, blur the result until contacts
+  go soft, or multiply the finished colour.
+
+### Exact baselines for WP14
+
+WP14 is meant to change the showcase's default output, so [rule 1](../ARCHITECTURE.md#exact-baselines) applies
+as a planned move and [the module list's ruling](../ARCHITECTURE.md#ruling-on-atmosphere-wp14) says which sets
+move and who refreshes them. All five registered sets are captures of the valley as the game launches it, by
+day and by night, and all five are expected to move: sky light reaches the ground at every hour. The pixels
+that move are on surfaces within about the radius of another surface: the foot of the sphere, the rock and the
+cubes, and creases in the terrain. The sky, the stars and the bars do not move. Scenes of other modules ask
+for no occlusion, so no other exact test is expected to move.
+
+<a id="cost-of-wp14"></a>
+
+### Cost
+
+Nobody has measured it. The paper's 0.5 ms is for a gather of 0.5 million pixels, half of 1080p each way, on
+a PS4. Here the gather is 0.5 to 0.9 million pixels at the full screen's render extents, on a much faster GPU,
+so the pass is expected to be a few tenths of a millisecond on this Mac, and the forward pass gains four texel
+reads a fragment. It lands on a frame with no time to spare: at full screen at the panel's pixel size
+`APPLE-PRESENTATION` WP17 measured a timed span of about 10 ms against 8.33 ms, with the governor at its floor
+([its measurements](../../../.orchestrate/evidence/APPLE-PRESENTATION/WP17-plan/README.md)), and that work
+package draws full screen at an output scale of 67% to hold the rate. So the cost is
+recorded where that work package will read it (WP14.6): paired on and off on one commit, on the Apple row at
+the full screen's output extent with the governor on, on the portable row and in Chrome. No figure is a budget.
+
+The record's tripwires are the pass over about 0.5 ms on an Apple row, the forward pass more than about a
+tenth over its time with occlusion off, and a governor that settles on a lower render scale with occlusion on.
+When one trips, the builder pulls these levers in order and records what each bought:
+
+1. Fewer slices and steps at the first tier, with a longer settle length, while WP14's lists still pass.
+2. A shorter mip chain or a narrower spatial filter.
+3. The gather at a quarter of the render extent each way, with the history and the read kept at half.
+
+The occlusion history, its previous copy and the depth chain are about 20 bytes for each half-extent texel:
+17 MB at the full screen's output extent and 5 MB at 1280 × 720.
+
+### How WP14 is proved
+
+- **WP14.1**, tests on the CPU, for the request, its resolution, the composed shader and the quality value,
+  with a reviewer's question on the one read and the one application.
+- **WP14.2**, small tests on Metal, for what only the drawn depth, the pass and the forward read can show.
+- **WP14.3**, a reviewer's inspection of stills on the Mac: grounded in shade, and sunlight unchanged.
+- **WP14.4**, the same takes in motion: no halo, shimmer, trail or blink.
+- **WP14.5**, both lists in Chrome.
+- **WP14.6**, the cost record.
+- **WP14.7 and WP14.8**, the planned refresh of the exact baselines and a look at what moved.
+- **WP14.9**, the maturity ledger and the creator's page.
+
+Every inspection sets a take beside the same route with occlusion turned off, which is the "before". The
+routes are WP13's, in [the diagnosis folder](../../../.orchestrate/evidence/ATMOSPHERE/WP13-diagnosis/routes/),
+and three copies that differ from their originals only in `start`, which the builder keeps in
+`.orchestrate/evidence/ATMOSPHERE/WP14/routes/`:
+
+| Route | Scene | What it is for |
+|---|---|---|
+| `c2-moving-sunheld.json` | valley, `proof` overlay | Round the cubes with the Sun held at 15.3 h: cubes inside the sphere's shadow, and cubes in sunlight beside them |
+| `c2-dusk.json`, a copy with the Sun held 4° below the horizon (18.3 h as planned) | valley, `proof` overlay | The cubes, the sphere and the rock lit by the sky alone |
+| `valley-floor-dusk.json`, a copy held at the same hour | exit | Down to the valley floor and level across it at dusk: every prop is in shade |
+| `valley-floor-low-sun.json`, a copy held at 17.3 h | exit | The same flight with long shadows: props inside a ridge's or a mesa's shadow beside props in sunlight |
+| `balloons.json` | exit | Flying at 17 m/s over rocks and cacti toward the balloons, clock running from 16 h: sunlight, and motion |
+| `valley-floor.json` | exit | The descent and level flight with the clock running |
+| `e4-turn-sunheld.json` | exit | Turning in place: the frame's edges |
+
+If 18.3 h does not put the Sun about 4° down in the scene, the builder sets the hour that does and says so.
+
+### Risks
+
+| Risk | Early sign | Wrong substitute to refuse |
+|---|---|---|
+| Darkening that is everywhere | Sunlit ground and flat walls are greyer than with occlusion off | Passing "grounded" on a picture that is darker all over |
+| A halo traded for no contact | Thin props have no darkening at their base | Lowering the thickness until cacti float again, or raising it until they outline |
+| Shimmer hidden by the reconstructor | The takes with reconstruction off sparkle at contacts and the MetalFX take does not | Judging grain only with reconstruction on |
+| Blur in place of accumulation | Contacts are wide grey smudges with no dark core | Widening the spatial filter to hide grain |
+| A trail read as softness | A darkening lingers where a balloon's basket or the camera's parallax has moved on | Judging stills only |
+| A blink at a scale step | Contacts flash on the Apple row when the governor moves | Judging only takes in which the scale never stepped |
+| Cost carried by the governor | The Apple row keeps its rate because the render scale fell | Recording the frame rate and not the pass times and the scale |
+| A second kind of occlusion | A scene on the traced method also runs the screen-space pass, or the two are multiplied | Judging the traced launch by eye alone: WP14.2 counts the passes |
+
+<a id="not-built-by-wp14"></a>
+
+### Not built
+
+- **Occluders off screen.** A thing outside the frame, or hidden behind another, darkens nothing. The traced
+  method is the tier that lifts this, and WP14's lists do not judge it.
+- **Occlusion in a secondary view.** A mirror shows the scene without it.
+- **Lamp shadows without rays**, the other half of decision 34, which stays as it was.
+- **Screen-space contact shadows** for the Sun, which need depth before shading.
+- **Coloured or bounced occlusion**: the multi-bounce tint, bent normals and screen-space indirect light.
+- **Occlusion as the default of every scene.** A scene asks. Whether the starter scene and a game made with
+  the SDK ask by default is `CREATOR`'s and `GAME-SDK`'s to plan.

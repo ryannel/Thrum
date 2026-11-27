@@ -257,3 +257,8 @@
   cost and the higher CPU time under rising host load.
   [Metal proof](../../../.orchestrate/evidence/RAY-TRACING/WP5/forward-contract/README.md) ·
   [Route timings](../../../.orchestrate/evidence/RAY-TRACING/WP5/forward-contract/cost.md).
+- 2026-11-27 Owner, amending decision 34: "Yes, add screen-space ambient occlusion to the default path".
+  `ATMOSPHERE` WP14 builds it and takes the scene's ambient occlusion as its own; this module keeps the traced
+  method, which replaces the screen-space one and never stacks. A traced request that cannot be met now falls
+  back to screen-space. WP6.1, WP6.3, WP6.4 and WP6.5 follow, and WP6 waits for `ATMOSPHERE` WP14. No Done
+  work package changed. [The record](../../../.orchestrate/evidence/ATMOSPHERE/WP14-plan/README.md)

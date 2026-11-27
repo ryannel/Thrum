@@ -531,6 +531,15 @@ than the radius, against instances whose mask occludes. It accumulates and filte
 Sun's, in a second channel, and shading reads it the same way, upsampled against depth. Where history is
 absent the value is 1.
 
+**This is the traced method of the scene's ambient occlusion, from `ATMOSPHERE` WP14.** The owner amended
+[decision 34](../ARCHITECTURE.md#owner-decisions) on 27 November 2026: "Yes, add screen-space ambient
+occlusion to the default path". The request, its resolution to one method, the fragment's read and the
+application described here pass to `ATMOSPHERE`
+([its design](../ATMOSPHERE/DESIGN.md#ambient-occlusion-on-the-default-path-wp14)), which adds a screen-space
+method for every recipe. This module keeps the rays, the filter and the channel. A scene resolves to one
+method: where it asked for traced and rays run, it traces as described here and records no screen-space
+pass, so traced occlusion replaces the screen-space method and never multiplies it.
+
 The value multiplies the ambient term only: the diffuse sky light, and the reflected sky light through
 Lagarde's specular occlusion. It never touches the Sun or a lamp. It multiplies the material's own occlusion
 texture and does not replace it.
@@ -564,7 +573,9 @@ mailbox usable. The Maps retry follows the same rule with its own surface and th
 
 - **Requests.** A scene's preparation takes: the Sun's shadow method, `Maps` or `Traced` with the penumbra on
   or off; lamp shadows on or off; ambient occlusion off or a radius; and the structure alone, for the traced
-  view and for tests. With none given the scene is today's: `Maps`, and no ray effect. They sit beside the
+  view and for tests. With none given the scene is today's: `Maps`, and no ray effect. From `ATMOSPHERE` WP14
+  the occlusion request is that module's and names a method: a radius alone is the screen-space method, and
+  traced occlusion is a radius that prefers traced. They sit beside the
   scene's existing shadow option, and like the culling mode they are fixed when the scene is prepared.
 - **Nothing is chosen for a scene.** There is no `Auto`. The registry holds no list of measured devices, and
   nothing reads an adapter's name or its core count to turn an effect on. A ray effect runs because a launch
@@ -582,7 +593,8 @@ mailbox usable. The Maps retry follows the same rule with its own surface and th
   first builds it and the other uses it as found.
 - **Resolution, with a plain fallback.** One function of the registry resolves the requests against the
   generation, before anything is allocated. A ray request that cannot be met resolves to what the portable
-  path has: `Traced` to `Maps`, lamp shadows and ambient occlusion to off, the structure to none. The scene
+  path has: `Traced` to `Maps`, lamp shadows to off, traced ambient occlusion to off, and from `ATMOSPHERE`
+  WP14 to the screen-space method at the same radius, and the structure to none. The scene
   prepares Maps directly on the resolved recipe. A request the registry admits also needs every contribution
   to support candidate preparation. If an admitted traced candidate fails while the device is usable,
   [prepare Maps once from the inputs to the same operation](#scene-preparation-and-maps-fallback-wp3).
@@ -602,8 +614,9 @@ mailbox usable. The Maps retry follows the same rule with its own surface and th
   [preferred](#hardware-features-at-launch) name, the Apple tile recipe, and a scene that asks for `Traced`.
   The proving ground's valley has one launch selection, off by default, that does all three: it names
   `ray-query` as preferred, it states a preference for Apple tile where the device enabled ray queries, and
-  it asks the scene for `Traced` with the penumbra. It asks for no lamp shadow and no ambient occlusion,
-  which keep the selections WP3 and WP5 gave them. The window and the capture host read it alike. What that
+  it asks the scene for `Traced` with the penumbra. It asks for no lamp shadow and no traced ambient
+  occlusion, which keep the selections WP3 and WP5 gave them. The valley's own request for screen-space
+  occlusion, which every launch makes from `ATMOSPHERE` WP14, stands under the opt-in. The window and the capture host read it alike. What that
   one setting gives:
 
   | The launch, with the selection | Recipe | The Sun's shadow |
@@ -625,17 +638,19 @@ mailbox usable. The Maps retry follows the same rule with its own surface and th
   is the selection and nothing else: it names no recipe. The look is two inspections of the final build, each
   under the settings its capture's report gives:
   - **The opt-in as launched.** Frames captured with the selection as the launch line gives it: traced Sun
-    shadows with the penumbra, no lamp shadow, no ambient occlusion. The Sun's cues are judged at contact,
+    shadows with the penumbra, no lamp shadow, and ambient occlusion by the screen-space method, as the
+    valley launches it. The Sun's cues are judged at contact,
     at rest and in motion, by the lists of WP3 and WP4 that apply. This is what a person who follows the launch
     line sees, and the only inspection that would show a fault of this configuration alone, such as a soft
-    history that is bound only when ambient occlusion is on. At the night stop it shows lamps without
+    history that is bound only when traced ambient occlusion is on. At the night stop it shows lamps without
     shadows, and the record says so.
-  - **Every effect together.** Lamp shadows and ambient occlusion added through their own selections, judged
-    by the lists of WP3 to WP5. No sentence of the record gives this result as the opt-in's.
+  - **Every effect together.** Lamp shadows and traced ambient occlusion added through their own selections,
+    judged by the lists of WP3 to WP5. The report names traced as the occlusion method, and the frame
+    records no screen-space occlusion pass. No sentence of the record gives this result as the opt-in's.
 - **The paired timing is a tripwire.** On the final build with capture off, at 1280×720 and at 1920×1080, the
   valley's route runs from two launches. One is the opt-in launch as the record's launch line gives it, with
-  no recipe named: `Traced` with the penumbra, the default quality values, and lamp shadows and ambient
-  occlusion off. The other is the same launch without the selection and with Apple tile named, which draws
+  no recipe named: `Traced` with the penumbra, the default quality values, lamp shadows off and ambient
+  occlusion as the valley launches it, by the screen-space method. The other is the same launch without the selection and with Apple tile named, which draws
   `Maps`. So both run on the Apple tile recipe and differ in the Sun's method and in nothing else that draws:
   the same recipe, cooked draw path, reconstruction, display range, extent, route and quality values. Each
   run keeps its report of the resolved recipe, Sun shadow method and cooked draw path, which shows it. At
@@ -643,8 +658,8 @@ mailbox usable. The Maps retry follows the same rule with its own surface and th
   [the two figures](#cost-account) of every frame, each run's medians, each pass by name and the machine's
   load. It states the difference between the methods beside the spread between a method's own two runs, and
   where the spread is the larger it says that these runs could not tell the two methods apart at that
-  extent. Rows for `Traced` with hard edges, for lamp shadows, for ambient occlusion and for every effect
-  together sit beside the pair. It is taken while other builders work, as every timing of this module is. A traced frame about 25% above the map frame in
+  extent. Rows for `Traced` with hard edges, for lamp shadows, for traced ambient occlusion in place of the
+  screen-space method, and for every effect together sit beside the pair. It is taken while other builders work, as every timing of this module is. A traced frame about 25% above the map frame in
   either figure, or a visible hitch, is investigated and the record says what was found. No figure fails an
   item, and none turns anything on.
 

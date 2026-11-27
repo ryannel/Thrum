@@ -881,3 +881,14 @@ helpers are unchanged, and the saved selection records the harness-only hash cha
   gained [a seam ruling](../ARCHITECTURE.md#seam-ruling-for-atmosphere-wp13) and
   [a baseline ruling](../ARCHITECTURE.md#ruling-on-atmosphere-wp13).
   [What was rejected and what is left for the lead](../../../.orchestrate/evidence/ATMOSPHERE/WP13-diagnosis/README.md#the-plan)
+- 2026-11-27 Owner, on decision 34. The lead told the owner that the shadow diagnosis's cause 7 is the missing
+  contact darkening in shade, because decision 34 kept ambient occlusion to ray tracing, and asked whether to
+  revisit it so the default path gets cheap screen-space ambient occlusion. The owner: "Yes, add screen-space
+  ambient occlusion to the default path". This answers the plan's assumption that WP13 judges grounding in
+  sunlight alone, which is deleted. [Decision 34 as amended](../ARCHITECTURE.md#owner-decisions)
+- 2026-11-27 WP14 planned, after WP13: the scene's ambient occlusion becomes this module's, with a
+  screen-space method and `RAY-TRACING`'s rays as the traced method that replaces it. In WP13 only the quality
+  bar's sentence that cited decision 34 changed. [Design](DESIGN.md#ambient-occlusion-on-the-default-path-wp14) ·
+  [what changed in each file, and what is left for the lead](../../../.orchestrate/evidence/ATMOSPHERE/WP14-plan/README.md)
+- 2026-11-27 WP12 is Done, so its builder's note left the plan file.
+  [The note](../../../.orchestrate/evidence/ATMOSPHERE/WP12/builder-note.md)

@@ -11,11 +11,14 @@
 - Assumption: WP12.3 counts the saving as kept when four-frame refreshes cover at least three quarters of the frames of the Mac route's moving segment. The planner chose the fraction. The first build's fixed spread covered about 94%.
 - Assumption: with the governor off, a cloud's reflection under a cloud producer that has stopped writing keeps the old sunlight after a change of the Sun's brightness or colour, until the producer next writes. That is today's behaviour, kept so that no governor-off picture changes. Under the governor it is corrected.
 - Assumption: WP12 judges the knob at 4 in the Mac window and at 8 in Chrome, the longest spread at the slower display. Chrome at 4 is not captured.
-- Assumption: WP13 judges whether an object looks grounded in sunlight, by its shadow starting at its foot. In shade nothing darkens where an object meets the ground, because [decision 34](../ARCHITECTURE.md#owner-decisions) keeps ambient occlusion off the default path. The other choice is a screen-space contact or occlusion pass on the default path, which changes that decision and is the owner's.
 - Assumption: under WP13 a small thing stops casting a shadow at a distance set by its size, where the shadow would be under about a texel and a half, and every Sun shadow fades out by 2,048 m into the caster height map's ground shadows. The other choice is every prop casting to the horizon, which costs more maps or a different technique.
 - Assumption: WP13 starts from nine 2048² cascades, about 150 MB of depth against 12 MB today. These are the planner's starting values, and the builder tunes count, size and reach by eye against WP13.4 to WP13.6 and by the cost record.
 - Assumption: "mind the cost" is a paired cost record on the Mac with named ways to cut it (WP13.8), not a budget. The record feeds `APPLE-PRESENTATION` WP17, which owns 120 Hz full screen.
 - Assumption: WP13 is not behind a selection and has no governor knob. A cascade redrawn every few frames was rejected: on the game's clock a balloon's shadow crosses the ground at about 20 m/s, so a held map would judder.
+- Assumption: "the default path" means the showcase. The valley and the exit scene show screen-space ambient occlusion in every launch, on both of the Mac's recipes and in Chrome, and an engine scene that does not ask gets none, so no other module's tests move. The other choice turns it on for every 3D scene. The starter scene and the SDK's 3D scenes are left to `CREATOR` and `GAME-SDK`.
+- Assumption: the darkening is one frame late, as ray-traced occlusion already is, and follows a thing that arrives or leaves within a few frames. The other choice is a depth prepass, a second draw of the scene every frame.
+- Assumption: a thing outside the picture, or hidden behind another, darkens nothing, and a mirror shows no darkening. Ray-traced occlusion has neither limit.
+- Assumption: for WP14, "the frame budget at 120 Hz full screen in mind" is a paired cost record with named ways to cut it (WP14.6), not a budget. It feeds `APPLE-PRESENTATION` WP17.
 
 ## WP5 Other modules read the one sky and Sun, and one cloud optical depth dims direct sunlight once
 
@@ -44,27 +47,6 @@ Run the [bounded CPU trial](DESIGN.md#wp4-finite-disk-shadow-diagnostic) on the 
 
 ## WP12 The sky's charts are rebuilt over several frames under the governor, so they cost each frame a fraction of what they did and nothing in the sky is seen to update
 
-Read [the chart cadence](DESIGN.md#the-chart-cadence-wp12) first. The knob registry is `APPLE-PRESENTATION`'s:
-build the ungoverned value in the governor's files under
-[the module list's ruling](../ARCHITECTURE.md#seam-ruling-for-atmosphere-wp12), keep the aerial knob and the
-tests of `APPLE-PRESENTATION` D7.5 as they are, and merge one after the other with `APPLE-PRESENTATION` WP18,
-which is built beside this in the frame host. Capture WP12.4 in a window: full screen is not this work
-package's.
-
-Start from the first build's verified checkpoint, `286a34491` on `build/atmosphere`, and keep its scheduler,
-device probes, trace, route timing and compatibility fixes. What changes is
-[how a refresh's spread is chosen](DESIGN.md#the-spread-follows-the-motion): the knob becomes the ceiling,
-with nothing new in the governor's files. That checkpoint's schedule tests and probes step the Sun by 0.5° or
-more, which now shortens the spread, so restate their steps as fractions of a tolerance. Its trace must
-also tell a refresh the scheduler chose at spread 1 from a motion cut. Its scheduler keys
-only diffuse on the Sun's light, and [the governed keys](DESIGN.md#governed-keys) add the reflection levels in
-an overlay scene. Its WP12.4 and WP12.5 takes are not reused: the game's clock, not the scrub, is now where
-the charts are spread, and Chrome's takes need a surface of roughness 1 in view and a scrub whose first
-submission arrives partway through a refresh. Its Chrome frames
-150 to 165 at 8 stay as the example of the fault, and its
-[handoff](../../../.orchestrate/evidence/ATMOSPHERE/WP12-handoff.md) lists what else is owed, a clean run of
-the workspace's tests among it.
-
 ## WP13 Sun shadows hold still as the Sun moves, start at the foot of what casts them, and thin out with distance with no line where they stop, on the Mac and in Chrome
 
 Read [the Sun's cascades round the camera](DESIGN.md#the-suns-cascades-round-the-camera-wp13) first, then the
@@ -83,3 +65,16 @@ The Chrome takes of WP13.7 use `scripts/capture_v1_browser.mjs --route-file` and
 The checks of WP13.1 and WP13.2 select tests by name: `sun_cascade_layout` for the CPU rules and
 `sun_cascades_gpu` for the Metal tests. `WATERS` WP16 builds in the same Sun files, so whichever lands
 second carries the other's change. The cost record goes to `.orchestrate/evidence/ATMOSPHERE/WP13/cost.md`.
+
+## WP14 Things standing in shade look grounded: a soft darkening where they meet the ground, steady while flying, on the Mac and in Chrome
+
+Read [ambient occlusion on the default path](DESIGN.md#ambient-occlusion-on-the-default-path-wp14) first, then
+the module list's [seam ruling](../ARCHITECTURE.md#seam-ruling-for-atmosphere-wp14) and
+[baseline ruling](../ARCHITECTURE.md#ruling-on-atmosphere-wp14).
+
+Start from `RAY-TRACING` WP5's occlusion in `thrum-render`'s `synthetic/raytrace/ambient*`, whose history, read
+and application the screen-space method shares. Record each file ported from XeGTAO or Bevy in
+`docs/provenance/ATMOSPHERE.md`. WP14.1 and WP14.2 select tests by name: `ambient_occlusion_selection` and
+`screen_occlusion_gpu`. Keep the three route copies in `.orchestrate/evidence/ATMOSPHERE/WP14/routes/` and the
+cost record at `.orchestrate/evidence/ATMOSPHERE/WP14/cost.md`. If `GAME-SPLIT` WP4 has moved the game, the
+game's own request for occlusion is made where the game lives.

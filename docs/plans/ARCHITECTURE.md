@@ -9,7 +9,7 @@
 | 5 | APPLE-TILE | Apple devices run their own frame recipe beside the portable one, with a native Metal step inside the frame | T2-CAPTURE WP0 and WP1, PLATFORM-RUNTIME-MAC WP1, COOKED-DRAW WP1 |
 | 6 | CREATOR | A newcomer starts a scene with one command, tunes it with controls and sees where frame time goes, on Mac and in Chrome | APPLE-TILE WP3 |
 | 7 | APPLE-PRESENTATION | Sharp, stable images from upscaling, highlights brighter than SDR white, and a governor that holds the frame rate | APPLE-TILE WP0, WP2, WP3, WP11, WP12 and WP13; ATMOSPHERE WP12 and SHOWCASE WP7 for its WP17 |
-| 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, and the air near the camera, where haze, fog and shafts of light are drawn | CONTENT-LOOP WP4 for its WP9 to pass the full check; APPLE-PRESENTATION WP3 and SHOWCASE WP9 for its WP6; APPLE-PRESENTATION WP7 for its WP12 |
+| 8 | ATMOSPHERE | One physical sky, Sun, haze, night and stars, which every other part of the engine reads, the air near the camera, where haze, fog and shafts of light are drawn, and the soft darkening where things meet the ground in shade | CONTENT-LOOP WP4 for its WP9 to pass the full check; APPLE-PRESENTATION WP3 and SHOWCASE WP9 for its WP6; APPLE-PRESENTATION WP7 for its WP12 |
 | 9 | BASELINE-GUARD | A change that alters another module's exact reference images is found on main within about two hours and traced to the commit that made it | |
 | 10 | CULLING | Only what the camera can see is drawn, decided on the GPU | APPLE-TILE WP2, BASELINE-GUARD WP1 |
 | 11 | EFFECT-GRAPH | Sea, clouds and sky run their own simulation and drawing steps inside the one frame, and answer a game's questions every tick even when a frame is skipped | APPLE-TILE WP2 and WP3, APPLE-PRESENTATION WP2, BASELINE-GUARD WP1 |
@@ -33,7 +33,7 @@
 | 29 | REVIEW-RENDER | The review's findings in the renderer are fixed with no pixel changed: one writer for each light buffer, GPU records held by test, typed pass names, typed errors | ATMOSPHERE WP9, APPLE-TILE WP10, APPLE-PRESENTATION WP3, EFFECT-GRAPH WP3 and CULLING WP3 to start; REPO-RULES WP1 for its errors |
 | 30 | HOST | The Mac window, the browser page, the iPhone app, captures and tests get their device and their fault, pause and recovery behaviour from one place, and a game is hosted through one contract | CREATOR WP3, APPLE-TILE WP10, APPLE-PRESENTATION WP3, EFFECT-GRAPH WP3, CULLING WP3, REVIEW-ENGINE WP1 and REPO-RULES WP1 |
 | 31 | GAME-SPLIT | The showcase game moves to its own repository and uses only the engine's public API, and the engine proves itself without it | REPO-RULES WP1 and TEST-SUPPORT WP1 to start; REVIEW-ENGINE WP3, CULLING WP3, EFFECT-GRAPH WP3 and APPLE-PRESENTATION WP3 for the boundary; HOST WP4 to cut the game free; SHOWCASE WP8 for the move; CLOUDS WP12, GAME-UI WP6, PUDDLES WP6, RENDER-2D WP5, ATMOSPHERE WP8, CONTENT-LOOP WP2, SESSION WP6 and TRANSPORT WP2 for the rename |
-| 32 | RAY-TRACING | On the Mac, the Sun and lamps cast ray-traced shadows that are right at contact and soften with distance, and props are grounded by ray-traced ambient occlusion; a person turns them on with a launch setting, and where rays cannot run the scene draws shadow maps as today | CULLING WP3 and CONTENT-LOOP WP2 to start; ATMOSPHERE WP5, APPLE-PRESENTATION WP3 and SHOWCASE WP5 for shadows; EFFECT-GRAPH WP3 and APPLE-PRESENTATION WP2 for soft shadows; SHOWCASE WP8 to close |
+| 32 | RAY-TRACING | On the Mac, the Sun and lamps cast ray-traced shadows that are right at contact and soften with distance, and props are grounded by ray-traced ambient occlusion; a person turns them on with a launch setting, and where rays cannot run the scene draws shadow maps as today | CULLING WP3 and CONTENT-LOOP WP2 to start; ATMOSPHERE WP5, APPLE-PRESENTATION WP3 and SHOWCASE WP5 for shadows; EFFECT-GRAPH WP3 and APPLE-PRESENTATION WP2 for soft shadows; SHOWCASE WP8 and ATMOSPHERE WP14 to close |
 | 33 | MESH-SHADING | On the Mac, cooked meshes are culled and drawn a meshlet at a time by the GPU's object and mesh stages, with no draw call for each meshlet, turned on by a launch setting and never by default | CONTENT-LOOP WP2 and COOKED-DRAW WP1 to start; SHOWCASE WP8 to close |
 | 34 | GATE-TIME | A merge's check takes about five minutes where it took fifty: it runs only the fast tests its change can reach, side by side and each once, and the long tests and the whole workspace run on main after the merge | Nothing to start; TEST-SUPPORT WP2 for the runs that happen twice; TEST-SUPPORT WP6 for the guard rules; WATERS WP7 for the water scene's slow tests; REVIEW-RENDER WP2 for the reference tests; DEAD-TOOLS WP2 for the contributor guide |
 | 35 | DEAD-TOOLS | Scripts, benches and records that nothing runs or reads are gone and the check refuses new ones, no tool writes into `docs/evidence`, and each module's record of what it copied is tracked in Git | Nothing to start; TEST-SUPPORT WP2 for its last work package |
@@ -115,7 +115,7 @@ is the game and starts when the exit is reached. The exit has no dependency on t
 | `COOKED-DRAW` | G5 | The direct cooked draw path and the selection between it and the indirect path | [Design](COOKED-DRAW/DESIGN.md) |
 | `APPLE-TILE` | G3t | Recipe selection from the capability registry, the frame lifecycle and its one split scene/output graph, the pre-tone scene-linear input, the native Metal segment and its provider interface | [Design](APPLE-TILE/DESIGN.md) |
 | `APPLE-PRESENTATION` | G4 | The view record (jitter, matrices), motion and reactive targets, history keys and acceptance, reconstruction, render extent and generation transitions, exposure retention, EDR present, the display record, the quality governor, pipeline preparation | [Design](APPLE-PRESENTATION/DESIGN.md); [planning notes for WP4–WP11](#apple-presentation-wp4wp11-g4) |
-| `ATMOSPHERE` | G3s; track 2 from WP7 | The one sky, Sun, aerial perspective, night and stars; the environment identity; the direct-Sun path to receivers; the air's optics for a haze the weather sets; the view volume, which integrates air, haze and a provider's medium jointly near the camera, with its history | [Design](ATMOSPHERE/DESIGN.md) |
+| `ATMOSPHERE` | G3s; track 2 from WP7 | The one sky, Sun, aerial perspective, night and stars; the environment identity; the direct-Sun path to receivers; the air's optics for a haze the weather sets; the view volume, which integrates air, haze and a provider's medium jointly near the camera, with its history; from WP14 the scene's ambient occlusion: its request, the one method a scene resolves, the read and its application in the light step, and the screen-space method with its history | [Design](ATMOSPHERE/DESIGN.md) |
 | `BASELINE-GUARD` | T2 | The exact-baseline registry, the verifier that the main-branch check `exact-images` runs, and the reference guard in `./dev check`. Retained references stay with each baseline's owner | [Design](BASELINE-GUARD/DESIGN.md) |
 | `CULLING` | G3c | Instance visibility lists, occlusion history, the culling mode and its resolution, the mesh-bucket route and Sun-caster culling | [Design](CULLING/DESIGN.md) |
 | `CONTENT-LOOP` | G5 | Cooked products, the manifest, runtime mapping and GPU residency of cooked meshes, textures and volumes; leases of resident products to other modules; the geometry of cooked mesh rows | [Design](CONTENT-LOOP/DESIGN.md) |
@@ -281,6 +281,7 @@ interface by itself: a builder writes a proposal in its module's log and a plann
 | **Secondary view** (water's mirror view): a contribution declares slots when the scene is prepared and asks each frame for a view from a rigid camera it names on the main camera's vertical (its two horizontal coordinates, at any height, facing any way; any other is refused by name), with an optional clip plane, from which its air may start when the plane is level, and a least size. The view holds the scene's opaque geometry beyond the clip plane, entities and cooked placements, shaded by the scene's own shader with visibility, Sun cascades, local-light clusters and air made again for that view, in the scene target's encoding for it (radiance through the view's air, pre-exposed; for a mirror that air starts at the plane, and the reader applies the air from its own camera to the plane itself), with coverage and depth, at the frame's jitter phase, and no sky, water, fog, after-opaque effect or history. The asking contribution reads its own slot's colour, depth and record in its own passes. A scene that declares none compiles and draws as before, but for where [ruling 3](#seam-rulings-for-scene-views) lays its height map out | `SCENE-VIEWS:WP3` (entities from its WP1, cooked placements from its WP2) → `WATERS:WP14`; `PUDDLES` and `RIVERS` through `WATERS` | C07, [SCENE-VIEWS](SCENE-VIEWS/DESIGN.md#slots-and-requests), [WATERS](WATERS/DESIGN.md#mirror-views-scenery-the-camera-cannot-see) |
 | **Sun-path factor**: a water provider's factor on a receiver's direct Sun, read at the receiver's own position beside the cloud factor: `1 + D (C − 1)`, the beam's share times the caustic field's departure from even light, and exactly 1 at or above the water's level and outside the provider's window. With it goes the point at which a receiver under water reads its Sun visibility, where its refracted Sun ray leaves the water. This is C08's caustics, an illumination contribution whose owner is `WATERS`, applied once by V3's direct-Sun path | `WATERS:WP16` → `ATMOSPHERE`'s direct-Sun receivers in the forward pass, and every contribution that compiles the scene's shader | C08, [WATERS](WATERS/DESIGN.md#light-under-water-caustics-shafts-and-the-meter), [ruling 5](#seam-rulings-for-waters) |
 | **Aloft casters**: a scene marks a mesh row of its entities as aloft. The row casts into the Sun cascades as before and is left out of the top-down caster height map, which holds the ground and what stands on it, so beyond the cascades it casts no shadow. A row is not aloft unless marked, and a scene that marks none draws the same bytes | `ATMOSPHERE:WP10` → `SHOWCASE:WP5`; any scene with entities in the air | [ATMOSPHERE](ATMOSPHERE/DESIGN.md#what-the-caster-height-map-holds), [the ruling](#seam-ruling-for-atmosphere-m10) |
+| **Ambient occlusion**: a scene's preparation takes ambient occlusion as off, or a radius in metres with a preferred method, screen-space or traced. It resolves to one method before anything is allocated: screen-space on every recipe and device, and traced where the scene prefers it and `RAY-TRACING`'s admission passes, with the reason reported where the two differ. The method writes the occlusion history, a visibility and the depth it belongs to at half the render extent, and the forward pass reads it a frame late by reprojection and applies it to indirect light alone. A scene resolved to one method records no pass of the other, and a scene that asks for none prepares nothing and draws the same bytes. Default: off; the showcase asks in every launch | `ATMOSPHERE:WP14` (the request, the resolution, the read and the screen-space method), `RAY-TRACING:WP5` (the traced method) → games, the proving ground, `SHOWCASE`'s scenes | C04, C07, C08, [ATMOSPHERE](ATMOSPHERE/DESIGN.md#ambient-occlusion-on-the-default-path-wp14), [the ruling](#seam-ruling-for-atmosphere-wp14) |
 | **Lent Sun visibility**: with the environment products, the scene's Sun visibility at a world point as one tap of its cascades and height map, for an effect's own volume samples; 1 in a scene with no shadows | `ATMOSPHERE` (built by `WATERS:WP16`, [ruling 6](#seam-rulings-for-waters)) → `WATERS`' shafts | C08, [WATERS](WATERS/DESIGN.md#light-under-water-caustics-shafts-and-the-meter) |
 | **Meter medium factor**: a camera request may carry three numbers that multiply the incident light the camera's meter reads, for a camera inside a medium; 1 by default, and with 1 the resolved exposure sample is unchanged to the bit. `thrum-water-model` gives the factor for a camera under water, and the game sets it | `APPLE-PRESENTATION` (V4; built by `WATERS:WP16`, [ruling 7](#seam-rulings-for-waters)) → games | C07, [WATERS](WATERS/DESIGN.md#light-under-water-caustics-shafts-and-the-meter) |
 | **River**: everything one steady solve of the map's bed writes, as a stored file with a key: one chart for each reach, each holding one or more flow samples (level, current, loss and flow gains) and the gauge level of each; brink ends where the ground drops away; and a fall record for each fall. A chart's loss is the power that breaks the surface, in watts a square metre. A game declares a river's rectangle, sources, bodies and flow samples; a build step or a native game's preparation solves it, and a page only loads it | `RIVERS:WP1` (one sample), `RIVERS:WP2` (falls), `RIVERS:WP3` (samples and gains) → games, and `WATERS`' map through [rulings 1 to 3](#seam-rulings-for-rivers) | [RIVERS](RIVERS/DESIGN.md#what-a-solve-writes) |
@@ -440,6 +441,45 @@ more passes where they name two, with the same claims (`ATMOSPHERE` WP13.3). The
 cascades" hold as written: the aloft mark, the lent Sun visibility, which `WATERS` WP16 builds as one tap of
 whichever cascade holds the point, and a secondary view's one cascade. If `WATERS` WP16 and WP13 are built at
 once, whichever lands second carries the other's change. Once built, the layout belongs to the Sun path.
+
+<a id="seam-ruling-for-atmosphere-wp14"></a>
+**Seam ruling for `ATMOSPHERE` WP14, 27 November 2026.** The owner amended [decision 34](#owner-decisions):
+"Yes, add screen-space ambient occlusion to the default path". Ambient occlusion is how much of the sky's
+light reaches a surface, as a Sun shadow is how much of the Sun's, and `ATMOSPHERE` owns both sources and
+already owns the Sun's visibility with `RAY-TRACING`'s rays as its traced method. So from WP14 the scene's
+ambient occlusion is `ATMOSPHERE`'s: the request, the one method a scene resolves, the read and its
+application in the light step, and the screen-space method with its history
+([its design](ATMOSPHERE/DESIGN.md#ambient-occlusion-on-the-default-path-wp14)). `RAY-TRACING` keeps the traced
+method: its rays, its filter and its channel of the traced visibility history. One authority, so a scene has
+one occlusion value at a fragment from one method, and traced occlusion replaces the screen-space method
+where a scene asks and rays run. They never stack.
+
+The WP14 builder builds it in `thrum-render`: files of its own for the screen-space pass, and changes in
+places other modules built or own. Those are the occlusion selection in `capabilities.rs` and
+`synthetic/preparation.rs`, and the read and application in `synthetic/raytrace/ambient*`, which `RAY-TRACING`
+WP5 built under [track 5's ruling 6](#seam-rulings-for-track-5) and which pass to `ATMOSPHERE` here; the
+forward shader's composition and the light group's two occlusion bindings (the forward pass, as
+[APPLE-TILE's design](APPLE-TILE/DESIGN.md#mechanisms) describes it), which gain no colour target; the scene's
+graph and the typed pass names (`synthetic/scene_graph.rs`, `pass_key.rs`, `REVIEW-RENDER`'s); the history's
+acceptance and reset, by `APPLE-PRESENTATION`'s rules as found; one quality value registered through the
+contribution seam's knobs, with no change to the governor's registry or policy; the resolved-selections
+record of [track 5's ruling 10](#seam-rulings-for-track-5), whose occlusion line gains the method; and the
+showcase's scene setup and proving launch values in `examples/v1-game` and its browser page (`SHOWCASE`'s),
+where the valley and the exit scene ask for the screen-space method in every launch.
+
+It follows [the two steps of the forward shader](#held-open-for-after-v1-cluster-level-of-detail-dynamic-gi-and-virtual-shadow-maps)
+(ruling 2 there): occlusion is an argument of the light step and reaches indirect light alone (C08). It selects
+no guide buffer (ruling 3 there): the pass takes its normals from depth, and no depth prepass is built. A scene
+that asks for no occlusion prepares nothing and draws the bytes it drew, so the test scenes of `CULLING`,
+`SCENE-VIEWS`, `WATERS`, `CLOUDS` and the rest do not move, and a secondary view reads no occlusion in any
+scene. No item of `APPLE-TILE`, `APPLE-PRESENTATION`, `REVIEW-RENDER`, `SCENE-VIEWS`, `CULLING`, `WATERS`,
+`CLOUDS` or `SHOWCASE` changes, and no Done item of `RAY-TRACING`. `RAY-TRACING`'s tests that `./dev check` and
+the long tests run keep passing, restated only where they name the request, with the same claims: a scene that
+prefers traced, where rays run, traces what it traced. `RAY-TRACING` WP6, which is not started, is re-planned
+with this ruling and waits for WP14: where rays cannot run, a traced request now resolves to the screen-space
+method where it resolved to off. `WATERS` WP16 and `PUDDLES` build in the same shader, so whichever lands
+second carries the other's change. Once built, the selection, the read and the screen-space pass belong to the
+scene's ambient occlusion.
 
 <a id="seam-ruling-for-effect-graph-m4"></a>
 **Seam ruling for `EFFECT-GRAPH` WP4.** `CLOUDS` WP2 found that the interpolation alpha is not the display's time:
@@ -1082,6 +1122,37 @@ one Sun visibility every scene reads.
   builder ends `BLOCKED` with it. A test that compares a run with itself, as `CULLING`'s and `SCENE-VIEWS`'
   equalities do, needs no change.
 - **Everyone else.** Nothing is owed: the run on main after WP13's landing compares with the new references.
+
+<a id="ruling-on-atmosphere-wp14"></a>
+
+**Ruling on `ATMOSPHERE` WP14 (with `APPLE-TILE` and `SHOWCASE`), 27 November 2026.** WP14 is meant to change
+the showcase's default output: the valley and the exit scene show screen-space ambient occlusion in every
+launch ([its design](ATMOSPHERE/DESIGN.md#ambient-occlusion-on-the-default-path-wp14)), by the owner's
+amendment of [decision 34](#owner-decisions). The engine's own default stays off, so the selection rule 1 asks
+for exists; it is the showcase's default that moves, because the owner asked for the default path.
+
+- **Which baselines move.** All five are captures of the valley as the game launches it, and all five are
+  expected to move: `apple-tile-native`, `chrome-day-sdr`, `chrome-day-scene-linear`, `chrome-night-sdr` and
+  `chrome-night-scene-linear`. Sky light reaches the ground by day and by night. The pixels that move are on
+  surfaces within about the occlusion radius of another surface, at the foot of the sphere, the rock and the
+  cubes and in terrain creases, and each is darker; the sky, the stars and the bars are predicted not to
+  move. WP14's builder records which sets moved.
+- **Who refreshes them.** As for [`ATMOSPHERE` WP13](#ruling-on-atmosphere-wp13): WP14's builder regenerates
+  each reference that moved, from the changed commit, with `APPLE-TILE`'s own scripts, in the landing that
+  turns occlusion on in the showcase. In the registry it changes the `pin` and the `refresh` of each baseline
+  whose reference moved, and the refresh names `ruling-on-atmosphere-wp14`, `ATMOSPHERE` and `WP14`. Every
+  other field of the registry, the comparisons, their sampling and every script stay as they are. Both
+  modules' logs record the cause and each moved reference's old and new SHA-256. `ATMOSPHERE` WP14.7 holds
+  this, and WP14.8 has a reviewer see that only occlusion moved them.
+- **After WP13.** WP14 is built after WP13 in the same module, so the references it replaces are the ones
+  WP13's refresh left, and the two refreshes never meet in one landing.
+- **`SHOWCASE`'s two thresholded baselines.** The bare valley's six stops and the exit's rows show the same
+  contacts and may move past their thresholds. They are not in the verifier and nothing on main compares
+  them. WP14's builder does not touch them. `SHOWCASE` replaces them by
+  [its own refresh](SHOWCASE/DESIGN.md#the-route-check-sees-a-missing-prop), as the ruling on WP13 says.
+- **Other exact tests.** No other module's scene asks for occlusion, so none is expected to move. One that
+  does move is that module's under rule 1, and the builder ends `BLOCKED` with it.
+- **Everyone else.** Nothing is owed: the run on main after WP14's landing compares with the new references.
 
 <a id="ruling-on-culling-m3"></a>
 
@@ -2460,7 +2531,7 @@ design gives the research.
 |---|---|---|
 | The Sun's shadow on surfaces: two 1024² cascades, then a height map, with bias and a low-Sun correction | `RAY-TRACING`: a ray against the scene's own triangles, hard first, then soft | A ray is right at any distance and at contact. Visibility is the cheapest use of a ray |
 | Lamps cast no shadow | `RAY-TRACING`: one ray for each lamp a surface faces | Raster needs a shadow map for each lamp. A ray needs none |
-| Nothing darkens where objects meet | `RAY-TRACING`: ambient occlusion by ray | The scene's own geometry, including what is off screen |
+| Nothing darkens where objects meet | `RAY-TRACING`: ambient occlusion by ray. From 27 November 2026 the default path has a screen-space method, `ATMOSPHERE` WP14's, and the ray is the higher tier that replaces it ([decision 34](#owner-decisions)) | The scene's own geometry, including what is off screen, which the screen-space method cannot see |
 | A cooked mesh costs one Metal draw for each meshlet, rejected ones included, and its shadows draw it whole | `MESH-SHADING`: the object stage culls and the mesh stage draws, in one draw for each placement | wgpu has no GPU-counted multi-draw on Metal, and the stages are the public way to draw a GPU-chosen set |
 | Reflections of scenery, on water and on glossy things | Not planned | They shade what a ray hits. The consumer is water's mirror lookup, `WATERS` WP14 on `SCENE-VIEWS`, which is not built; [owner decision 23](#owner-decisions) stands until a plan replaces it |
 | Light bounced from the ground and walls | Not planned | A radiance cache with state of its own, on hit shading. A later module on `RAY-TRACING`'s structure |
@@ -2481,7 +2552,7 @@ at once, and so that one path failing to measure a win does not hold the other.
 
 | Module | Owns (state and code) | Design |
 |---|---|---|
-| `RAY-TRACING` | The mesh structures and the scene structure; ray instances and their masks; the traced method of the scene's Sun visibility; lamp shadows; the traced visibility pass with its history, soft Sun shadows and ambient occlusion; this Mac's opt-in record for ray paths (a `raytrace` module in `thrum-render`, and [ruled changes](#seam-rulings-for-track-5) elsewhere) | [Design](RAY-TRACING/DESIGN.md) |
+| `RAY-TRACING` | The mesh structures and the scene structure; ray instances and their masks; the traced method of the scene's Sun visibility; lamp shadows; the traced visibility pass with its history, soft Sun shadows and the traced method of the scene's ambient occlusion, which is `ATMOSPHERE`'s from its WP14; this Mac's opt-in record for ray paths (a `raytrace` module in `thrum-render`, and [ruled changes](#seam-rulings-for-track-5) elsewhere) | [Design](RAY-TRACING/DESIGN.md) |
 | `MESH-SHADING` | The object and mesh stage shaders and pipelines of the cooked draw; a mesh's meshlet storage on the GPU; this Mac's opt-in record for the mesh stages (files of its own in `thrum-asset-gpu`, and [ruled changes](#seam-rulings-for-track-5) elsewhere) | [Design](MESH-SHADING/DESIGN.md) |
 
 ### Off the critical path
@@ -2554,7 +2625,9 @@ belongs to its owner: later work there keeps its tests passing.
    structure and the visibility history, and the cascades are drawn only while something reads them. In a
    scene that did not ask, the shader text and every byte are today's. `ATMOSPHERE`'s direct-Sun path, its
    products and the Sun-path optical depth are unchanged: the traced value takes the place of the map lookup
-   and nothing else.
+   and nothing else. From `ATMOSPHERE` WP14 the occlusion's read and its application in the ambient term are
+   `ATMOSPHERE`'s, shared with the screen-space method, and this ruling's part is the traced method that
+   writes the value ([the ruling](#seam-ruling-for-atmosphere-wp14)).
 7. **The frame graph, history and timing** (`RAY-TRACING` WP1, WP3 and WP4; `graph.rs`, the frame host,
    `timing.rs`). The structure build and the traced visibility pass are passes of the one graph, with their
    reads and writes declared. The visibility history is accepted, reset and committed by
@@ -2576,7 +2649,8 @@ belongs to its owner: later work there keeps its tests passing.
 10. **Resolved selections** (`RAY-TRACING` WP3, `MESH-SHADING` WP1). The report that names the culling mode also
     names the hardware features the device enabled, the Sun shadow method, the penumbra, lamp shadows, ambient
     occlusion and the cooked draw path, each as resolved, with the reason where it did not resolve as asked.
-    `SHOWCASE`'s exit report prints what it reads; no item of `SHOWCASE` changes.
+    `SHOWCASE`'s exit report prints what it reads; no item of `SHOWCASE` changes. From `ATMOSPHERE` WP14 the
+    occlusion line names the method resolved: off, screen-space or traced.
 11. **Pipeline preparation** (no build). A scene with a ray or mesh-stage request creates its pipelines
     through the creation authority before it is ready, from WGSL. `APPLE-PRESENTATION` WP10's shaders compiled
     ahead of time and WP12's pipeline archive cover a launch with no hardware request, which is what their
@@ -2603,7 +2677,7 @@ belongs to its owner: later work there keeps its tests passing.
 |---|---|---|
 | **Hardware features at launch**: a launch names the hardware features it wants, each as required or preferred, and one function makes the device. A required name is enabled or the launch is refused by name. A preferred name never fails a launch: it is left out where the adapter does not offer it or the device request with it fails. The registry records what was enabled and why any name was not. Default: none. No host adds either name unasked | `RAY-TRACING:WP1`, `MESH-SHADING:WP1` → hosts, tests, captures | C04, [RAY-TRACING](RAY-TRACING/DESIGN.md#hardware-features-at-launch) |
 | **Ray instances**: a contribution offers each frame, for each opaque thing it holds in the scene, drawn or not, a mesh structure, a transform and a mask (casts shadows, occludes ambient light); the scene structure is rebuilt from them each frame | `RAY-TRACING:WP2` → `CONTENT-LOOP`'s cooked contribution; any later contribution with opaque geometry | [RAY-TRACING](RAY-TRACING/DESIGN.md#the-structure-wp1-wp2) |
-| **Traced visibility**: a scene's preparation takes the Sun's shadow method (`Maps` or `Traced` with penumbra on or off), lamp shadows and ambient occlusion with a radius. Admission before allocation requires ray queries, the Apple tile recipe and candidate preparation support from every contribution. If admission or traced preparation fails, the scene draws Maps with lamp shadows and occlusion off and reports why. Ordinary Maps callers keep the existing rebuild hooks. Ray effects are off by default | `RAY-TRACING:WP3` (Sun, lamps), `WP4` (penumbra), `WP5` (ambient occlusion) → games, the proving ground | C04, C08, [Selection](RAY-TRACING/DESIGN.md#selection-fallback-and-the-opt-in), [contribution admission](RAY-TRACING/DESIGN.md#scene-preparation-and-maps-fallback-wp3) |
+| **Traced visibility**: a scene's preparation takes the Sun's shadow method (`Maps` or `Traced` with penumbra on or off), lamp shadows and ambient occlusion with a radius. Admission before allocation requires ray queries, the Apple tile recipe and candidate preparation support from every contribution. If admission or traced preparation fails, the scene draws Maps with lamp shadows off and reports why; its occlusion is off, and from `ATMOSPHERE` WP14 the screen-space method at the same radius (the ambient occlusion row of [Interfaces](#interfaces)). Ordinary Maps callers keep the existing rebuild hooks. Ray effects are off by default | `RAY-TRACING:WP3` (Sun, lamps), `WP4` (penumbra), `WP5` (ambient occlusion) → games, the proving ground | C04, C08, [Selection](RAY-TRACING/DESIGN.md#selection-fallback-and-the-opt-in), [contribution admission](RAY-TRACING/DESIGN.md#scene-preparation-and-maps-fallback-wp3) |
 | **Cooked draw path**: `Direct`, `Indirect` or `MeshStages`, resolved from the registry for the scene and for each mesh, and reported with the reason where it did not resolve as asked. `Auto` is `COOKED-DRAW`'s selection on every device and never the stages. `MeshStages` is met only on a device that enabled the stages and on the Apple tile recipe. Anywhere else, which includes the portable recipe whether named or resolved, and where a stage pipeline fails to build, the scene draws what `Auto` draws. It is not refused | `MESH-SHADING:WP1`, on `COOKED-DRAW`'s selection → games, the proving ground | C04, [MESH-SHADING](MESH-SHADING/DESIGN.md#selection-fallback-and-the-opt-in) |
 
 
@@ -3200,8 +3274,17 @@ For [track 5](#track-5-ray-tracing-and-mesh-shaders-on-the-mac), each recorded a
     be turned on together; neither module checks the pair. The mesh stages and the ray effects draw only on
     the Apple tile recipe, so each setting also selects Apple tile where no recipe is named, and a launch
     that names the portable recipe stays on the existing path.
-34. **Effects with no portable version.** Lamp shadows and ambient occlusion appear only on a device that
-    traces rays, on the Apple tile recipe. On the portable recipe a scene that asks for a ray effect draws without it and reports why. No screen-space stand-in is planned for Chrome or the portable recipe.
+34. **Effects with no portable version: amended for ambient occlusion.** Lamp shadows appear only on a device
+    that traces rays, on the Apple tile recipe. On the portable recipe a scene that asks for them draws
+    without them and reports why, and no stand-in is planned. Ambient occlusion was held to the same rule
+    until 27 November 2026. That day the lead told the owner that the shadow diagnosis found nothing darkens
+    where an object meets the ground in shade, because this decision kept ambient occlusion to ray tracing,
+    and asked whether to revisit it so the default path gets cheap screen-space ambient occlusion. The owner:
+    "Yes, add screen-space ambient occlusion to the default path". So screen-space ambient occlusion is on the
+    default path, on the Mac and in Chrome, as `ATMOSPHERE` WP14 builds it
+    ([the ruling](#seam-ruling-for-atmosphere-wp14)). Ray-traced occlusion from `RAY-TRACING` stays the higher
+    tier where rays run, and replaces the screen-space method there. The two never stack. The plan reads "the
+    default path" as the showcase, and records that as [an assumption](ATMOSPHERE/PLAN.md#open-for-the-owner).
 35. **Where track 5 sits in the queue.** Behind every V1 work package. Its order among the other work off the
     exit is the lead's; the owner can set it.
 36. **wgpu's experimental features.** Both modules depend on them. A fault in wgpu waits for
@@ -3873,3 +3956,16 @@ Each stands until the owner overturns it, and moves to its module's plan, under 
   asks of it and its planning input. Ruling 3 gains pad input in the shells and a host with no window, ruling
   4 says a pad works a modal through `GAME-UI`'s bindings as built, and ruling 9 is new. No other module's
   section, item, dependency or interface row changed, and nothing `SWARM` waits on moved.
+- 2026-11-27 The owner amended decision 34: "Yes, add screen-space ambient occlusion to the default path",
+  asked after the shadow diagnosis found that nothing darkens where an object meets the ground in shade.
+  `ATMOSPHERE` gained WP14, after WP13, and from it owns the scene's ambient occlusion: a screen-space method
+  on every recipe, with `RAY-TRACING`'s rays as the traced method that replaces it where a scene asks and rays
+  run. It adds [a seam ruling](#seam-ruling-for-atmosphere-wp14), [a baseline ruling](#ruling-on-atmosphere-wp14)
+  under which its builder refreshes all five of `APPLE-TILE`'s sets, and an ambient occlusion interface row.
+  The traced visibility row, track 5's rulings 6 and 10, the two ownership rows, the module table's rows 8
+  and 32 and C08 follow. `RAY-TRACING`'s design and its unstarted WP6 are re-planned to match, and WP6 waits for
+  WP14. No Done item, no other module's item or dependency and no line of the exit coverage table changed.
+  Left for the lead and the owner: whether the V1 exit waits for WP14, as for WP13; `SHOWCASE` WP8 naming the
+  refresh of its two thresholded baselines; taking `APPLE-PRESENTATION` WP17's sitting on a frame that holds
+  WP14's cost; and whether the starter scene and the SDK's 3D scenes ask for occlusion by default, which is
+  `CREATOR`'s and `GAME-SDK`'s to plan.
