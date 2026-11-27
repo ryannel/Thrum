@@ -376,11 +376,15 @@ fn build_selection(
         water.enable_falls(
             records,
             thrum_water::FallsProfile {
+                sheet: thrum_water_model::SheetProfile {
+                    breakup: 3.75,
+                    breakup_exponent: 0.20,
+                    tear: 0.028,
+                },
                 plunge: thrum_water_model::PlungeProfile {
                     wave_share: 0.75,
                     ..Default::default()
                 },
-                ..Default::default()
             },
         )?;
     }
@@ -531,6 +535,13 @@ impl FallViews {
             .map_or(foot.height.max(12.0), |sample| sample.row.level.max(12.0));
         let middle_height = f64::midpoint(lip.height, pool_level);
         let centre = start.lerp(stop, 0.35);
+        let bank_offset = fall
+            .segments
+            .iter()
+            .flat_map(|segment| segment.lip)
+            .map(|point| (DVec2::from_array(point) - stop).dot(across))
+            .fold(0.0, f64::max);
+        let bank_target = stop + 0.45 * forward;
         let look = |position: DVec2, eye, target, target_height, angle| {
             let base = map.bed().height(position.to_array()).unwrap_or(eye);
             Camera::look_at(
@@ -584,11 +595,11 @@ impl FallViews {
                     26.0,
                 ),
                 look(
-                    pool + 2.0 * forward + 1.5 * across,
-                    pool_level + 1.5,
-                    centre,
+                    bank_target + 1.15 * forward + (bank_offset + 1.40) * across,
+                    pool_level + 2.0,
+                    bank_target,
                     pool_level + 0.3,
-                    65.0,
+                    62.0,
                 ),
                 look(
                     pool + 3.0 * forward + across,
